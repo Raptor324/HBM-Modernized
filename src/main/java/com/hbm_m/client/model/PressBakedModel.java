@@ -7,7 +7,9 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.client.model.data.ModelData;
+//? if forge {
+/*import net.minecraftforge.client.model.data.ModelData;
+*///?}
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
@@ -57,10 +59,38 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
 
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
-        return getQuads(state, side, rand, ModelData.EMPTY, null);
+        //? if forge {
+        /*return getQuads(state, side, rand, ModelData.EMPTY, null);
+        *///?}
+
+        //? if fabric {
+        // ITEM RENDER
+        if (state == null) {
+            return getItemQuads(side, rand);
+        }
+
+        // WORLD RENDER: Base baked into chunk mesh
+        BakedModel basePart = parts.get(BASE);
+        if (basePart != null) {
+            List<BakedQuad> partQuads = new ArrayList<>();
+            for (Direction d : Direction.values()) {
+                partQuads.addAll(basePart.getQuads(state, d, rand));
+            }
+            partQuads.addAll(basePart.getQuads(state, null, rand));
+            if (!partQuads.isEmpty()) {
+                List<BakedQuad> translated = ModelHelper.translateQuads(partQuads, 0.5f, 0f, 0.5f);
+                if (side != null) {
+                    return translated.stream().filter(q -> q.getDirection() == side).toList();
+                }
+                return translated;
+            }
+        }
+        return Collections.emptyList();
+        //?}
     }
 
-    @Override
+    //? if forge {
+    /*@Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                     RandomSource rand, ModelData modelData,
                                     @Nullable net.minecraft.client.renderer.RenderType renderType) {
@@ -118,6 +148,38 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
         }
         return quads;
     }
+    *///?}
+
+    //? if fabric {
+    private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand) {
+        if (!itemQuadsCached) {
+            cachedItemQuads = buildItemQuads(rand);
+            itemQuadsCached = true;
+        }
+
+        if (side != null) {
+            return cachedItemQuads.stream()
+                .filter(quad -> quad.getDirection() == side)
+                .toList();
+        }
+
+        return cachedItemQuads;
+    }
+
+    private List<BakedQuad> buildItemQuads(RandomSource rand) {
+        List<BakedQuad> quads = new ArrayList<>();
+        for (String partName : getItemRenderPartNames()) {
+            BakedModel part = parts.get(partName);
+            if (part == null) continue;
+
+            for (Direction dir : Direction.values()) {
+                quads.addAll(part.getQuads(null, dir, rand));
+            }
+            quads.addAll(part.getQuads(null, null, rand));
+        }
+        return quads;
+    }
+    //?}
 
     @Override
     protected List<String> getItemRenderPartNames() {
@@ -136,7 +198,13 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
 
     @Override
     public TextureAtlasSprite getParticleIcon() {
-        return getParticleIcon(ModelData.EMPTY);
+        //? if forge {
+        /*return getParticleIcon(ModelData.EMPTY);
+        *///?}
+
+        //? if fabric {
+        return super.getParticleIcon();
+        //?}
     }
 
     @Override

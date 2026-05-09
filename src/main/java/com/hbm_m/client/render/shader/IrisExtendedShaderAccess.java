@@ -1,5 +1,6 @@
 package com.hbm_m.client.render.shader;
 
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -11,9 +12,15 @@ import com.hbm_m.client.render.ModShaders;
 import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraftforge.api.distmarker.Dist;
+import dev.architectury.platform.Platform;
+//? if forge {
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.ModList;
+*///?}
+//? if fabric {
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;//?}
+
 
 /**
  * Reflective bridge to Iris/Oculus internals that exposes the
@@ -30,7 +37,11 @@ import net.minecraftforge.fml.ModList;
  * If Iris is not loaded, lookup fails, or any exception occurs, this class returns
  * the vanilla simple block_lit shader so the renderer still produces output.
  */
-@OnlyIn(Dist.CLIENT)
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
 public final class IrisExtendedShaderAccess {
 
     private IrisExtendedShaderAccess() {}
@@ -445,7 +456,7 @@ public final class IrisExtendedShaderAccess {
         if (reflectionInitialized) return;
         reflectionInitialized = true;
 
-        if (!ModList.get().isLoaded("oculus") && !ModList.get().isLoaded("iris")) {
+        if (!Platform.isModLoaded("oculus") && !Platform.isModLoaded("iris")) {
             return;
         }
         // Iris/Oculus has shuffled package layout across versions. Try a few well-known names.

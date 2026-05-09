@@ -4,9 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.fluids.FluidLocalization;
 import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.lib.RefStrings;
@@ -16,6 +17,7 @@ import com.hbm_m.network.SetChemPlantRecipeC2SPacket;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
 
+import dev.architectury.hooks.fluid.FluidStackHooks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
@@ -27,8 +29,14 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class GUIScreenRecipeSelector extends Screen {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+    //? if fabric && < 1.21.1 {
+    private static final ResourceLocation TEXTURE = new ResourceLocation(
             RefStrings.MODID, "textures/gui/processing/gui_recipe_selector.png");
+    //?} else {
+        /*private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+            RefStrings.MODID, "textures/gui/processing/gui_recipe_selector.png");
+    *///?}
+
     
     public static final String NULL_SELECTION = "null";
     
@@ -57,6 +65,16 @@ public class GUIScreenRecipeSelector extends Screen {
     private MachineChemicalPlantBlockEntity chemicalPlant;
 
     private record RecipeEntry(ResourceLocation id, ItemStack icon, @Nullable net.minecraft.world.item.crafting.Recipe<?> recipe) {}
+
+    /** Поиск по имени иконки, пути/id рецепта (англ.) — чтобы находить по chem_gasoline и т.п. */
+    private static boolean recipeSelectorEntryMatches(RecipeEntry entry, String lowerQuery) {
+        if (entry.icon.getHoverName().getString().toLowerCase(Locale.ROOT).contains(lowerQuery)) {
+            return true;
+        }
+        ResourceLocation rl = entry.id;
+        return rl != null && (rl.getPath().toLowerCase(Locale.ROOT).contains(lowerQuery)
+                || rl.getNamespace().toLowerCase(Locale.ROOT).contains(lowerQuery));
+    }
     
     public GUIScreenRecipeSelector(BlockPos machinePos, ResourceLocation currentRecipe, Screen parentScreen) {
         super(Component.translatable("gui.hbm_m.assembler_recipe_selector"));
@@ -97,7 +115,7 @@ public class GUIScreenRecipeSelector extends Screen {
         } else {
             String lowerQuery = query.toLowerCase(Locale.ROOT);
             for (RecipeEntry entry : allRecipes) {
-                if (entry.icon.getHoverName().getString().toLowerCase(Locale.ROOT).contains(lowerQuery)) {
+                if (recipeSelectorEntryMatches(entry, lowerQuery)) {
                     filteredRecipes.add(entry);
                 }
             }
@@ -106,7 +124,7 @@ public class GUIScreenRecipeSelector extends Screen {
     }
     
     @Override
-    public void render(@Nonnull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics);
         drawGuiBackground(guiGraphics, mouseX, mouseY);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
@@ -308,11 +326,11 @@ public class GUIScreenRecipeSelector extends Screen {
     
     private void applySelection() {
         if (assembler != null) {
-            ModPacketHandler.INSTANCE.sendToServer(
-                    new SetAssemblerRecipeC2SPacket(machinePos, selectedRecipe));
+            ModPacketHandler.sendToServer(ModPacketHandler.SET_ASSEMBLER_RECIPE,
+                new SetAssemblerRecipeC2SPacket(machinePos, selectedRecipe));
         } else if (chemicalPlant != null) {
-            ModPacketHandler.INSTANCE.sendToServer(
-                    new SetChemPlantRecipeC2SPacket(machinePos, selectedRecipe));
+            ModPacketHandler.sendToServer(ModPacketHandler.SET_CHEM_RECIPE,
+                new SetChemPlantRecipeC2SPacket(machinePos, selectedRecipe));
         }
         if (this.minecraft != null) {
             this.minecraft.setScreen(this.parentScreen);
@@ -466,7 +484,7 @@ public class GUIScreenRecipeSelector extends Screen {
             }
             for (var fin : chemicalRecipe.getFluidInputs()) {
                 tooltip.add(Component.literal("  " + fin.amount() + "mB ").withStyle(ChatFormatting.BLUE)
-                        .append(Component.literal(fin.fluidId().toString()).withStyle(ChatFormatting.GRAY)));
+                        .append(FluidLocalization.nameFromFluidId(fin.fluidId()).copy().withStyle(ChatFormatting.GRAY)));
             }
 
             tooltip.add(Component.translatable("gui.recipe.output").withStyle(ChatFormatting.BOLD));
@@ -478,7 +496,7 @@ public class GUIScreenRecipeSelector extends Screen {
             for (var out : chemicalRecipe.getFluidOutputs()) {
                 if (out.isEmpty()) continue;
                 tooltip.add(Component.literal("  " + out.getAmount() + "mB ").withStyle(ChatFormatting.BLUE)
-                        .append(out.getDisplayName()));
+                        .append(FluidStackHooks.getName(out)));
             }
         }
     }

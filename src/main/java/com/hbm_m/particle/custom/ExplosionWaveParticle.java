@@ -1,14 +1,16 @@
 package com.hbm_m.particle.custom;
 
+
+import org.jetbrains.annotations.NotNull;
+
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.particle.*;
+import net.minecraft.client.particle.Particle;
+import net.minecraft.client.particle.ParticleProvider;
+import net.minecraft.client.particle.ParticleRenderType;
+import net.minecraft.client.particle.SpriteSet;
+import net.minecraft.client.particle.TextureSheetParticle;
 import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
-import javax.annotation.Nonnull;
-
-@OnlyIn(Dist.CLIENT)
 public class ExplosionWaveParticle extends TextureSheetParticle {
 
     private final float initialAlpha;
@@ -69,7 +71,6 @@ public class ExplosionWaveParticle extends TextureSheetParticle {
     }
 
     // Фабрика для создания частиц
-    @OnlyIn(Dist.CLIENT)
     public static class Provider implements ParticleProvider<SimpleParticleType> {
         private final SpriteSet spriteSet;
 
@@ -78,7 +79,7 @@ public class ExplosionWaveParticle extends TextureSheetParticle {
         }
 
         @Override
-        public Particle createParticle(@Nonnull SimpleParticleType particleType, @Nonnull ClientLevel level,
+        public Particle createParticle(@NotNull SimpleParticleType particleType, @NotNull ClientLevel level,
                                        double x, double y, double z,
                                        double dx, double dy, double dz) {
             return new ExplosionWaveParticle(level, x, y, z, this.spriteSet, dx, dy, dz);

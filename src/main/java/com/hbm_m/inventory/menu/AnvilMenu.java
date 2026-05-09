@@ -2,17 +2,16 @@ package com.hbm_m.inventory.menu;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machines.AnvilBlockEntity;
+import com.hbm_m.platform.ModItemStackHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.Container;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemStackHandler;
-import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
 
 public class AnvilMenu extends AbstractContainerMenu {
@@ -48,16 +47,16 @@ public class AnvilMenu extends AbstractContainerMenu {
         addPlayerInventory(inv);
         addPlayerHotbar(inv);
 
-        IItemHandler itemHandler = blockEntity.getItemHandler();
+        Container anvilContainer = new HandlerContainer(blockEntity.getItemHandler());
 
         // Слот A (вход 1) - индекс 36
-        this.addSlot(new SmithingInputSlot(itemHandler, 0, 17, 27));
+        this.addSlot(new SmithingInputSlot(anvilContainer, 0, 17, 27));
 
         // Слот B (вход 2) - индекс 37
-        this.addSlot(new SmithingInputSlot(itemHandler, 1, 53, 27));
+        this.addSlot(new SmithingInputSlot(anvilContainer, 1, 53, 27));
 
         // Слот C (выход) - индекс 38, только для извлечения
-        this.addSlot(new SmithingOutputSlot(itemHandler, 2, 89, 27));
+        this.addSlot(new SmithingOutputSlot(anvilContainer, 2, 89, 27));
     }
 
     public void tryCraft(Player player, boolean craftAll) {
@@ -125,7 +124,7 @@ public class AnvilMenu extends AbstractContainerMenu {
         this.access.execute((level, pos) -> {
             // Выполняем только на сервере
             if (!level.isClientSide) {
-                ItemStackHandler handler = blockEntity.getItemHandler();
+                var handler = blockEntity.getItemHandler();
                 
                 // Проходим только по ВХОДНЫМ слотам (0 и 1)
                 // Слот 2 (выход) пропускаем, чтобы не дюпать результат
@@ -176,9 +175,9 @@ public class AnvilMenu extends AbstractContainerMenu {
     /**
      * Входной слот для ковки - при изменении обновляет рецепт
      */
-    private class SmithingInputSlot extends SlotItemHandler {
-        public SmithingInputSlot(IItemHandler itemHandler, int index, int xPosition, int yPosition) {
-            super(itemHandler, index, xPosition, yPosition);
+    private class SmithingInputSlot extends Slot {
+        public SmithingInputSlot(Container container, int index, int xPosition, int yPosition) {
+            super(container, index, xPosition, yPosition);
         }
 
         @Override
@@ -204,10 +203,10 @@ public class AnvilMenu extends AbstractContainerMenu {
     /**
      * Выходной слот - только для извлечения, при взятии расходует материалы
      */
-    private class SmithingOutputSlot extends SlotItemHandler {
+    private class SmithingOutputSlot extends Slot {
 
-        public SmithingOutputSlot(IItemHandler itemHandler, int index, int xPosition, int yPosition) {
-            super(itemHandler, index, xPosition, yPosition);
+        public SmithingOutputSlot(Container container, int index, int xPosition, int yPosition) {
+            super(container, index, xPosition, yPosition);
         }
 
         @Override
@@ -228,6 +227,71 @@ public class AnvilMenu extends AbstractContainerMenu {
         public void setChanged() {
             super.setChanged();
             blockEntity.updateCrafting();
+        }
+    }
+
+    /**
+     * Ванильный Container-адаптер поверх {@link ModItemStackHandler}.
+     * Нужен, чтобы меню не зависело от Forge `IItemHandler`/`SlotItemHandler`.
+     */
+    private static final class HandlerContainer implements Container {
+        private final ModItemStackHandler handler;
+
+        private HandlerContainer(ModItemStackHandler handler) {
+            this.handler = handler;
+        }
+
+        @Override
+        public int getContainerSize() {
+            return handler.getSlots();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            for (int i = 0; i < handler.getSlots(); i++) {
+                if (!handler.getStackInSlot(i).isEmpty()) return false;
+            }
+            return true;
+        }
+
+        @Override
+        public @NotNull ItemStack getItem(int slot) {
+            return handler.getStackInSlot(slot);
+        }
+
+        @Override
+        public @NotNull ItemStack removeItem(int slot, int amount) {
+            return handler.extractItem(slot, amount, false);
+        }
+
+        @Override
+        public @NotNull ItemStack removeItemNoUpdate(int slot) {
+            ItemStack cur = handler.getStackInSlot(slot);
+            if (cur.isEmpty()) return ItemStack.EMPTY;
+            handler.setStackInSlot(slot, ItemStack.EMPTY);
+            return cur;
+        }
+
+        @Override
+        public void setItem(int slot, @NotNull ItemStack stack) {
+            handler.setStackInSlot(slot, stack);
+        }
+
+        @Override
+        public void setChanged() {
+            // изменения трекаются в ModItemStackHandler.onContentsChanged()
+        }
+
+        @Override
+        public boolean stillValid(@NotNull Player player) {
+            return true;
+        }
+
+        @Override
+        public void clearContent() {
+            for (int i = 0; i < handler.getSlots(); i++) {
+                handler.setStackInSlot(i, ItemStack.EMPTY);
+            }
         }
     }
 }

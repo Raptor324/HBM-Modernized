@@ -1,35 +1,32 @@
 package com.hbm_m.powerarmor.overlay;
 
-import com.hbm_m.main.MainRegistry;
 import com.hbm_m.powerarmor.ModPowerArmorItem;
+import com.hbm_m.particle.explosions.basic.CameraShakeHandler;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ViewportEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import dev.architectury.event.events.client.ClientTickEvent;
 
-@Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class PowerArmorHardLandingCameraShakeClient {
 
     private static boolean wasInAir = false;
     private static float maxFall = 0.0F;
 
-    private static long shakeStartMs = 0L;
-    private static long shakeDurationMs = 350L;
-    private static float shakeStrength = 0.0F;  // в градусах
     final static float SHAKE_MIN_FALL = 1.5F;   // старт тряски (как у молота)
     final static float SHAKE_FULL_FALL = 8.0F;  // к этой высоте уже почти максимум
+    private static boolean INITIALIZED = false;
 
-    @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) return;
+    /** Register client-only tick hook on all loaders (Architectury). */
+    public static void initClient() {
+        if (INITIALIZED) return;
+        INITIALIZED = true;
+        ClientTickEvent.CLIENT_POST.register(client -> onClientTick());
+    }
 
+    private static void onClientTick() {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer p = mc.player;
         if (p == null) return;
@@ -60,33 +57,10 @@ public final class PowerArmorHardLandingCameraShakeClient {
 
         // Интенсивность: растёт с высотой, но мягко ограничена
         float norm = Mth.clamp((fall - SHAKE_MIN_FALL) / (SHAKE_FULL_FALL - SHAKE_MIN_FALL), 0.0F, 1.0F);
-        float minStrength = 0.25F; // градусы
-        float maxStrength = 1.2F;  // градусы
-        shakeStrength = minStrength + (maxStrength - minStrength) * norm;
-        shakeStartMs = System.currentTimeMillis();
-    }
+        float intensity = 0.25F + (1.2F - 0.25F) * norm;
 
-    @SubscribeEvent
-    public static void onCameraAngles(ViewportEvent.ComputeCameraAngles event) {
-        if (shakeStartMs == 0L || shakeStrength <= 0.0F) return;
-
-        long now = System.currentTimeMillis();
-        float t = (now - shakeStartMs) / (float) shakeDurationMs;
-        if (t >= 1.0F) {
-            shakeStartMs = 0L;
-            shakeStrength = 0.0F;
-            return;
-        }
-
-        // плавное затухание + синус (без рандома, чтобы не дергало)
-        float damp = (1.0F - t);
-        damp *= damp;
-
-        float wave = Mth.sin(t * (float)Math.PI * 6.0F); // 3 "качка"
-        float offset = wave * damp * shakeStrength;
-
-        event.setPitch(event.getPitch() + offset);
-        event.setYaw(event.getYaw() + offset * 0.6F);
-        event.setRoll(event.getRoll() + offset * 0.8F);
+        // На Forge эффект применится через CameraShakeHandler.ForgeHooks (ViewportEvent/RenderGuiEvent).
+        // На Fabric это остаётся safe-no-op по визуалу, но логика не ломает компиляцию.
+        CameraShakeHandler.addShake(intensity, 10); // 10 тиков, как у ударной волны
     }
 }

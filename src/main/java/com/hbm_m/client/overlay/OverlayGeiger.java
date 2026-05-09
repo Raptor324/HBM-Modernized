@@ -14,8 +14,10 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
+//? if forge {
+/*import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+*///?}
 
 public class OverlayGeiger {
 
@@ -26,9 +28,14 @@ public class OverlayGeiger {
     private static boolean hasGeigerCached = false;
     private static final long INVENTORY_CHECK_INTERVAL = 1000;
 
-    private static final ResourceLocation OVERLAY = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/misc/overlay_misc.png");
+    //? if fabric && < 1.21.1 {
+    private static final ResourceLocation OVERLAY = new ResourceLocation(RefStrings.MODID, "textures/misc/overlay_misc.png");
+    //?} else {
+        /*private static final ResourceLocation OVERLAY = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/misc/overlay_misc.png");
+    *///?}
 
-    public static void onRenderOverlay(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+
+    public static void render(GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
@@ -95,6 +102,14 @@ public class OverlayGeiger {
         }
     }
 
+    //? if forge {
+    /*public static void onRenderOverlay(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+        render(guiGraphics, partialTick, screenWidth, screenHeight);
+    }
+
+    public static final IGuiOverlay GEIGER_HUD_OVERLAY = OverlayGeiger::onRenderOverlay;
+    *///?}
+
     private static boolean checkForGeiger(LocalPlayer player) {
         // Проверяем руки в первую очередь
         if (player.getMainHandItem().getItem() instanceof ItemGeigerCounter || player.getOffhandItem().getItem() instanceof ItemGeigerCounter) {
@@ -108,6 +123,4 @@ public class OverlayGeiger {
         }
         return false;
     }
-
-    public static final IGuiOverlay GEIGER_HUD_OVERLAY = OverlayGeiger::onRenderOverlay;
 }

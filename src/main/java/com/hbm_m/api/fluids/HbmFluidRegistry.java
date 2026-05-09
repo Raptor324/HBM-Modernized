@@ -5,10 +5,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+import com.hbm_m.inventory.fluid.FluidType;
+import com.hbm_m.inventory.fluid.ModFluids;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.registries.ForgeRegistries;
 
 /**
  * Registry for fluid identifier GUI: ordered list of fluids and lookup by ResourceLocation.
@@ -105,40 +107,39 @@ public final class HbmFluidRegistry {
 
     /** Resolves fluid by ResourceLocation (e.g. "hbm_m:water_source"). */
     public static Optional<Fluid> getFluidByLocation(ResourceLocation loc) {
-        Fluid f = ForgeRegistries.FLUIDS.getValue(loc);
+        Fluid f = BuiltInRegistries.FLUID.get(loc);
         return f != null && f != net.minecraft.world.level.material.Fluids.EMPTY
             ? Optional.of(f) : Optional.empty();
     }
 
     /** Gets ResourceLocation for fluid (source form). */
     public static ResourceLocation getFluidLocation(Fluid fluid) {
-        return ForgeRegistries.FLUIDS.getKey(fluid);
+        return BuiltInRegistries.FLUID.getKey(fluid);
     }
 
-    /** Gets fluid name (without _source) for NBT storage. */
+    /**
+     * Имя жидкости (без суффикса {@code _source}) для хранения в NBT.
+     * Делегирует в {@link FluidType#getName()} — единый источник правды.
+     */
     public static String getFluidName(Fluid fluid) {
-        ResourceLocation loc = ForgeRegistries.FLUIDS.getKey(fluid);
-        if (loc == null) return "none";
-        String path = loc.getPath();
-        if (path.endsWith("_source")) {
-            return path.substring(0, path.length() - 7);
-        }
-        return path;
+        return FluidType.forFluid(fluid).getName();
     }
 
-    /** Returns tint color for fluid (for identifier icon). */
+    /** Тинт-цвет жидкости по её внутреннему имени; единственное место хранения — {@link ModFluids}. */
     public static int getTintColor(String fluidName) {
         return ModFluids.getTintColor(fluidName);
     }
 
-    /** Returns tint color for Fluid. */
+    /**
+     * Тинт-цвет жидкости. Делегирует в {@link FluidType#getTint()}.
+     */
     public static int getTintColor(Fluid fluid) {
-        return getTintColor(getFluidName(fluid));
+        return FluidType.forFluid(fluid).getTint();
     }
 
     /** Index of fluid in ordered list, or -1. */
     public static int getIndex(Fluid fluid) {
-        ResourceLocation loc = ForgeRegistries.FLUIDS.getKey(fluid);
+        ResourceLocation loc = BuiltInRegistries.FLUID.getKey(fluid);
         if (loc == null) return -1;
         for (int i = 0; i < ORDERED_FLUIDS.size(); i++) {
             if (ORDERED_FLUIDS.get(i).getSource() == fluid) {

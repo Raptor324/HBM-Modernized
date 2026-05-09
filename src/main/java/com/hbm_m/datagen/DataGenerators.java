@@ -1,6 +1,6 @@
 package com.hbm_m.datagen;
-
-import java.lang.reflect.Field;
+//? if forge {
+/*import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Set;
@@ -121,6 +121,5 @@ public class DataGenerators {
     public static List<PlacementModifier> orePlacement(PlacementModifier p_195347_, PlacementModifier p_195348_) {
         return List.of(p_195347_, InSquarePlacement.spread(), p_195348_, BiomeFilter.biome());
     }
-
-
 }
+*///?}

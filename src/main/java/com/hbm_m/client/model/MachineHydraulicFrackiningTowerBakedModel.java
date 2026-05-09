@@ -12,7 +12,9 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.client.model.data.ModelData;
+//? if forge {
+/*import net.minecraftforge.client.model.data.ModelData;
+*///?}
 
 public class MachineHydraulicFrackiningTowerBakedModel extends AbstractMultipartBakedModel {
 
@@ -30,22 +32,38 @@ public class MachineHydraulicFrackiningTowerBakedModel extends AbstractMultipart
     }
 
     @Override
-    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
-                                     RandomSource rand, ModelData modelData, @Nullable net.minecraft.client.renderer.RenderType renderType) {
-        
+    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
         if (shouldSkipWorldRendering(state)) {
             return List.of();
         }
 
         List<BakedQuad> result = new ArrayList<>();
-        
+        BakedModel basePart = parts.get("Cube_Cube.001");
+        if (basePart != null) {
+            result.addAll(basePart.getQuads(state, side, rand));
+        }
+        return result;
+    }
+
+    //? if forge {
+    /*@Override
+    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
+                                     RandomSource rand, ModelData modelData, @Nullable net.minecraft.client.renderer.RenderType renderType) {
+
+        if (shouldSkipWorldRendering(state)) {
+            return List.of();
+        }
+
+        List<BakedQuad> result = new ArrayList<>();
+
         BakedModel basePart = parts.get("Cube_Cube.001");
         if (basePart != null) {
             result.addAll(basePart.getQuads(state, side, rand, modelData, renderType));
         }
-        
+
         return result;
     }
+    *///?}
 
     @Override
     protected List<String> getItemRenderPartNames() {

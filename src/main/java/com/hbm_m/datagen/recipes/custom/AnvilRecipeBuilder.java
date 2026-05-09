@@ -1,12 +1,12 @@
 package com.hbm_m.datagen.recipes.custom;
-
-import java.util.ArrayList;
+//? if forge {
+/*import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -15,6 +15,7 @@ import com.hbm_m.recipe.AnvilRecipe;
 
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.CriterionTriggerInstance;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
@@ -22,7 +23,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeSerializer;
-import net.minecraftforge.registries.ForgeRegistries;
 
 public class AnvilRecipeBuilder implements RecipeBuilder {
     private final ItemStack inputA;
@@ -101,7 +101,7 @@ public class AnvilRecipeBuilder implements RecipeBuilder {
     }
 
     @Override
-    public AnvilRecipeBuilder unlockedBy(@Nonnull String criterionName, @Nonnull CriterionTriggerInstance criterionTrigger) {
+    public AnvilRecipeBuilder unlockedBy(@NotNull String criterionName, @NotNull CriterionTriggerInstance criterionTrigger) {
         this.advancement.addCriterion(criterionName, criterionTrigger);
         return this;
     }
@@ -117,13 +117,13 @@ public class AnvilRecipeBuilder implements RecipeBuilder {
     }
 
     @Override
-    public void save(@Nonnull Consumer<FinishedRecipe> consumer, @Nonnull ResourceLocation recipeId) {
+    public void save(@NotNull Consumer<FinishedRecipe> consumer, @NotNull ResourceLocation recipeId) {
         consumer.accept(new Result(recipeId, this));
     }
 
     private static JsonObject stackToJson(ItemStack stack) {
         JsonObject obj = new JsonObject();
-        obj.addProperty("item", ForgeRegistries.ITEMS.getKey(stack.getItem()).toString());
+        obj.addProperty("item", BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
         if (stack.getCount() > 1) {
             obj.addProperty("count", stack.getCount());
         }
@@ -143,7 +143,7 @@ public class AnvilRecipeBuilder implements RecipeBuilder {
         }
 
         @Override
-        public void serializeRecipeData(@Nonnull JsonObject json) {
+        public void serializeRecipeData(@NotNull JsonObject json) {
             if (!builder.inputA.isEmpty()) {
                 json.add("input_a", stackToJson(builder.inputA));
             }
@@ -210,4 +210,4 @@ public class AnvilRecipeBuilder implements RecipeBuilder {
 
     private record OutputEntry(ItemStack stack, float chance) { }
 }
-
+*///?}

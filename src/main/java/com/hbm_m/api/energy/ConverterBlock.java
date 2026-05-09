@@ -1,7 +1,5 @@
 package com.hbm_m.api.energy;
 
-import com.hbm_m.api.energy.EnergyNetworkManager; // Импорт менеджера!
-import com.hbm_m.api.energy.ConverterBlockEntity;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.block.entity.ModBlockEntities;
 import net.minecraft.core.BlockPos;
@@ -14,7 +12,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.RenderShape;
-import net.minecraft.world.level.block.Block; // Важно
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;

@@ -7,7 +7,9 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.client.model.data.ModelData;
+//? if forge {
+/*import net.minecraftforge.client.model.data.ModelData;
+*///?}
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -64,10 +66,38 @@ public class HeatingOvenBakedModel extends AbstractMultipartBakedModel implement
 
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
-        return getQuads(state, side, rand, ModelData.EMPTY, null);
+        //? if forge {
+        /*return getQuads(state, side, rand, ModelData.EMPTY, null);
+        *///?}
+
+        //? if fabric {
+        // ITEM RENDER (Inventory/Hand)
+        if (state == null) {
+            return getItemQuads(side, rand);
+        }
+
+        // WORLD RENDER: Main is baked into chunk
+        BakedModel mainPart = parts.get(MAIN);
+        if (mainPart != null) {
+            List<BakedQuad> partQuads = new ArrayList<>();
+            for (Direction d : Direction.values()) {
+                partQuads.addAll(mainPart.getQuads(state, d, rand));
+            }
+            partQuads.addAll(mainPart.getQuads(state, null, rand));
+            if (!partQuads.isEmpty()) {
+                List<BakedQuad> translated = ModelHelper.translateQuads(partQuads, 0.5f, 0f, 0.5f);
+                if (side != null) {
+                    return translated.stream().filter(q -> q.getDirection() == side).toList();
+                }
+                return translated;
+            }
+        }
+        return Collections.emptyList();
+        //?}
     }
 
-    @Override
+    //? if forge {
+    /*@Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                     RandomSource rand, ModelData modelData,
                                     @Nullable net.minecraft.client.renderer.RenderType renderType) {
@@ -134,6 +164,47 @@ public class HeatingOvenBakedModel extends AbstractMultipartBakedModel implement
 
         return quads;
     }
+    *///?}
+
+    //? if fabric {
+    private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand) {
+        if (!itemQuadsCached) {
+            cachedItemQuads = buildItemQuads(rand);
+            itemQuadsCached = true;
+        }
+
+        if (side != null) {
+            return cachedItemQuads.stream()
+                .filter(quad -> quad.getDirection() == side)
+                .toList();
+        }
+        return cachedItemQuads;
+    }
+
+    private List<BakedQuad> buildItemQuads(RandomSource rand) {
+        List<BakedQuad> quads = new ArrayList<>();
+
+        // Render Main and Door for item display
+        BakedModel mainPart = parts.get(MAIN);
+        BakedModel doorPart = parts.get(DOOR);
+
+        if (mainPart != null) {
+            for (Direction d : Direction.values()) {
+                quads.addAll(mainPart.getQuads(null, d, rand));
+            }
+            quads.addAll(mainPart.getQuads(null, null, rand));
+        }
+
+        if (doorPart != null) {
+            for (Direction d : Direction.values()) {
+                quads.addAll(doorPart.getQuads(null, d, rand));
+            }
+            quads.addAll(doorPart.getQuads(null, null, rand));
+        }
+
+        return quads;
+    }
+    //?}
 
     @Override
     public boolean useAmbientOcclusion() {

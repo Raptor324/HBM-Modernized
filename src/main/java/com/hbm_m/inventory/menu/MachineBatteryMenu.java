@@ -2,10 +2,10 @@ package com.hbm_m.inventory.menu;
 
 import com.hbm_m.block.entity.machines.MachineBatteryBlockEntity;
 import com.hbm_m.block.machines.MachineBatteryBlock;
+import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;
-import com.hbm_m.util.LongDataPacker;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
@@ -15,12 +15,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.energy.IEnergyStorage;
-import net.minecraftforge.items.SlotItemHandler;
-import net.minecraftforge.network.PacketDistributor;
-
-import java.util.Optional;
 
 public class MachineBatteryMenu extends AbstractContainerMenu implements ILongEnergyMenu {
     public final MachineBatteryBlockEntity blockEntity;
@@ -60,10 +54,10 @@ public class MachineBatteryMenu extends AbstractContainerMenu implements ILongEn
         addPlayerInventory(inv);
         addPlayerHotbar(inv);
 
-        this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
-            this.addSlot(new SlotItemHandler(handler, 0, 26, 17));  // INPUT
-            this.addSlot(new SlotItemHandler(handler, 1, 26, 53));  // OUTPUT
-        });
+        var handler = this.blockEntity.getInventory();
+        var container = new ModItemStackHandlerContainer(handler, this.blockEntity::setChanged);
+        this.addSlot(new Slot(container, 0, 26, 17));  // INPUT
+        this.addSlot(new Slot(container, 1, 26, 53));  // OUTPUT
 
         addDataSlots(data);
     }
@@ -155,15 +149,13 @@ public class MachineBatteryMenu extends AbstractContainerMenu implements ILongEn
                     currentMax != lastSyncedMaxEnergy ||
                     currentDelta != lastSyncedDelta) {
 
-                ModPacketHandler.INSTANCE.send(
-                        PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player),
-                        new PacketSyncEnergy(
-                                this.containerId,
-                                currentEnergy,
-                                currentMax,
-                                currentDelta // [NEW] Отправляем long дельту
-                        )
-                );
+                ModPacketHandler.sendToPlayer((ServerPlayer) this.player, ModPacketHandler.SYNC_ENERGY,
+                    new PacketSyncEnergy(
+                        this.containerId,
+                        currentEnergy,
+                        currentMax,
+                        currentDelta
+                    ));
 
                 lastSyncedEnergy = currentEnergy;
                 lastSyncedMaxEnergy = currentMax;
@@ -183,31 +175,13 @@ public class MachineBatteryMenu extends AbstractContainerMenu implements ILongEn
 
         // Из инвентаря игрока в машину
         if (index >= PLAYER_INVENTORY_START && index < PLAYER_INVENTORY_END) {
-            Optional<IEnergyStorage> energyCapability = sourceStack.getCapability(ForgeCapabilities.ENERGY).resolve();
-
-            if (energyCapability.isPresent()) {
-                IEnergyStorage itemEnergy = energyCapability.get();
-                boolean moved = false;
-
-                // Если предмет может ОТДАВАТЬ энергию -> INPUT
-                if (itemEnergy.canExtract()) {
-                    if (moveItemStackTo(sourceStack, TE_INPUT_SLOT, TE_INPUT_SLOT + 1, false)) {
-                        moved = true;
-                    }
-                }
-
-                // Если предмет может ПРИНИМАТЬ энергию -> OUTPUT
-                if (!moved && itemEnergy.canReceive()) {
-                    if (moveItemStackTo(sourceStack, TE_OUTPUT_SLOT, TE_OUTPUT_SLOT + 1, false)) {
-                        moved = true;
-                    }
-                }
-
-                if (!moved) {
+            // Loader-agnostic shift-click:
+            // пробуем положить в input, если не получилось — в output.
+            // Валидность предмета проверяется контейнером/BlockEntity.
+            if (!moveItemStackTo(sourceStack, TE_INPUT_SLOT, TE_INPUT_SLOT + 1, false)) {
+                if (!moveItemStackTo(sourceStack, TE_OUTPUT_SLOT, TE_OUTPUT_SLOT + 1, false)) {
                     return ItemStack.EMPTY;
                 }
-            } else {
-                return ItemStack.EMPTY;
             }
 
             // Из машины в инвентарь игрока

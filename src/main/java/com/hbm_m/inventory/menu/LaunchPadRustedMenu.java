@@ -7,14 +7,14 @@ import com.hbm_m.lib.RefStrings;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.items.SlotItemHandler;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Меню для ржавой пусковой площадки.
@@ -35,8 +35,6 @@ public class LaunchPadRustedMenu extends AbstractContainerMenu {
     private static final int MACHINE_SLOTS = 4;
 
     private final LaunchPadRustedBlockEntity blockEntity;
-    private final Level level;
-    private final Player player;
 
     public LaunchPadRustedMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
         this(id, inv, getBlockEntity(inv, extraData));
@@ -45,24 +43,22 @@ public class LaunchPadRustedMenu extends AbstractContainerMenu {
     public LaunchPadRustedMenu(int id, Inventory inv, LaunchPadRustedBlockEntity blockEntity) {
         super(getMenuType(), id);
         this.blockEntity = blockEntity;
-        this.level = inv.player.level();
-        this.player = inv.player;
 
-        var handler = blockEntity.getInventory();
+        Container machineContainer = new HandlerContainer(blockEntity.getInventory());
 
         // Выходной слот (нельзя класть предметы)
-        this.addSlot(new SlotItemHandler(handler, SLOT_OUTPUT, 26, 72) {
+        this.addSlot(new Slot(machineContainer, SLOT_OUTPUT, 26, 72) {
             @Override
             public boolean mayPlace(net.minecraft.world.item.ItemStack stack) {
                 return false;
             }
         });
         // Launch codes
-        this.addSlot(new SlotItemHandler(handler, SLOT_CODES, 116, 45));
+        this.addSlot(new Slot(machineContainer, SLOT_CODES, 116, 45));
         // Launch key
-        this.addSlot(new SlotItemHandler(handler, SLOT_KEY, 134, 45));
+        this.addSlot(new Slot(machineContainer, SLOT_KEY, 134, 45));
         // Designator (only IDesignatorItem)
-        this.addSlot(new SlotItemHandler(handler, SLOT_DESIGNATOR, 26, 99) {
+        this.addSlot(new Slot(machineContainer, SLOT_DESIGNATOR, 26, 99) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return stack.getItem() instanceof IDesignatorItem;
@@ -140,5 +136,70 @@ public class LaunchPadRustedMenu extends AbstractContainerMenu {
         }
 
         return originalStack;
+    }
+
+    /**
+     * Ванильный Container-адаптер поверх {@link ModItemStackHandler}.
+     * Нужен, чтобы меню не зависело от Forge `IItemHandler`/`SlotItemHandler`.
+     */
+    private static final class HandlerContainer implements Container {
+        private final ModItemStackHandler handler;
+
+        private HandlerContainer(ModItemStackHandler handler) {
+            this.handler = handler;
+        }
+
+        @Override
+        public int getContainerSize() {
+            return handler.getSlots();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            for (int i = 0; i < handler.getSlots(); i++) {
+                if (!handler.getStackInSlot(i).isEmpty()) return false;
+            }
+            return true;
+        }
+
+        @Override
+        public ItemStack getItem(int slot) {
+            return handler.getStackInSlot(slot);
+        }
+
+        @Override
+        public ItemStack removeItem(int slot, int amount) {
+            return handler.extractItem(slot, amount, false);
+        }
+
+        @Override
+        public ItemStack removeItemNoUpdate(int slot) {
+            ItemStack cur = handler.getStackInSlot(slot);
+            if (cur.isEmpty()) return ItemStack.EMPTY;
+            handler.setStackInSlot(slot, ItemStack.EMPTY);
+            return cur;
+        }
+
+        @Override
+        public void setItem(int slot, ItemStack stack) {
+            handler.setStackInSlot(slot, stack);
+        }
+
+        @Override
+        public void setChanged() {
+            // изменения трекаются в ModItemStackHandler.onContentsChanged()
+        }
+
+        @Override
+        public boolean stillValid(Player player) {
+            return true;
+        }
+
+        @Override
+        public void clearContent() {
+            for (int i = 0; i < handler.getSlots(); i++) {
+                handler.setStackInSlot(i, ItemStack.EMPTY);
+            }
+        }
     }
 }

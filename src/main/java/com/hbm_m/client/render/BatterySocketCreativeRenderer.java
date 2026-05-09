@@ -3,6 +3,7 @@ package com.hbm_m.client.render;
 import java.util.Random;
 
 import com.hbm_m.block.entity.machines.BatterySocketBlockEntity;
+import com.hbm_m.client.render.RenderDistanceHelper;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -25,9 +26,19 @@ import net.minecraft.world.level.Level;
 public class BatterySocketCreativeRenderer implements BlockEntityRenderer<BatterySocketBlockEntity> {
 
     private static final ResourceLocation MOD_SKIN =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/entity/battery_socket/creative_avatar.png");
+            //? if fabric && < 1.21.1 {
+            new ResourceLocation(RefStrings.MODID, "textures/entity/battery_socket/creative_avatar.png");
+            //?} else {
+                        /*ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/entity/battery_socket/creative_avatar.png");
+            *///?}
+
     private static final ResourceLocation STEVE =
-            ResourceLocation.withDefaultNamespace("textures/entity/player/wide/steve.png");
+            //? if fabric {
+            new ResourceLocation(ResourceLocation.DEFAULT_NAMESPACE, "textures/entity/player/wide/steve.png");
+            //?}
+            //? if forge {
+            /*ResourceLocation.withDefaultNamespace("textures/entity/player/wide/steve.png");
+            *///?}
 
     private final PlayerModel<?> playerModel;
 
@@ -111,6 +122,6 @@ public class BatterySocketCreativeRenderer implements BlockEntityRenderer<Batter
 
     @Override
     public int getViewDistance() {
-        return 256;
+        return RenderDistanceHelper.getStaticViewDistanceBlocks();
     }
 }

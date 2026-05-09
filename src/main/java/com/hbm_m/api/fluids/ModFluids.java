@@ -2,135 +2,122 @@ package com.hbm_m.api.fluids;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import com.hbm_m.main.MainRegistry;
 
+import dev.architectury.core.fluid.ArchitecturyFlowingFluid;
+import dev.architectury.core.fluid.SimpleArchitecturyFluidAttributes;
+import dev.architectury.registry.registries.DeferredRegister;
+import dev.architectury.registry.registries.RegistrySupplier;
+
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.common.SoundActions;
-import net.minecraftforge.eventbus.api.IEventBus;
+
+//? if forge {
+/*import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fluids.FluidType;
-import net.minecraftforge.fluids.ForgeFlowingFluid;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.minecraft.core.registries.BuiltInRegistries;
+*///?}
 
 public class ModFluids {
-    public static final DeferredRegister<FluidType> FLUID_TYPES = DeferredRegister.create(ForgeRegistries.Keys.FLUID_TYPES, MainRegistry.MOD_ID);
-    public static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(ForgeRegistries.FLUIDS, MainRegistry.MOD_ID);
 
-    // Storage for fluid entries
+    public static final DeferredRegister<Fluid> FLUIDS =
+            DeferredRegister.create(MainRegistry.MOD_ID, Registries.FLUID);
+
     private static final Map<String, FluidEntry> FLUID_ENTRIES = new HashMap<>();
-
-    /** Tint colors for fluid identifier icons and GUI. Populated by registerFluid. */
     private static final Map<String, Integer> TINT_COLORS = new HashMap<>();
 
-    // Fluid holder class
-    public static class FluidEntry {
-        public final RegistryObject<FluidType> type;
-        public final RegistryObject<Fluid> source;
-        public final RegistryObject<Fluid> flowing;
-        private FlowingFluid sourceFluid;
-        private FlowingFluid flowingFluid;
+    // ===================================================================================== //
+    // FluidEntry
+    // ===================================================================================== //
 
-        public FluidEntry(RegistryObject<FluidType> type, RegistryObject<Fluid> source, RegistryObject<Fluid> flowing) {
-            this.type = type;
+    public static class FluidEntry {
+        public final RegistrySupplier<Fluid> source;
+        public final RegistrySupplier<Fluid> flowing;
+
+        public FluidEntry(RegistrySupplier<Fluid> source, RegistrySupplier<Fluid> flowing) {
             this.source = source;
             this.flowing = flowing;
         }
 
-        public Fluid getSource() {
-            return source.get();
-        }
-
-        public Fluid getFlowing() {
-            return flowing.get();
-        }
+        public Fluid getSource()  { return source.get(); }
+        public Fluid getFlowing() { return flowing.get(); }
     }
 
-    // Helper method to register a fluid
+    // ===================================================================================== //
+    // Registration helpers
+    // ===================================================================================== //
+
     private static FluidEntry registerFluid(String name, int density, int viscosity, int tintColor) {
-        final FluidEntry[] entryHolder = new FluidEntry[1];
+        // Holder для cross-reference между source и flowing
+        final RegistrySupplier<?>[] sourceRef   = new RegistrySupplier[1];
+        final RegistrySupplier<?>[] flowingRef  = new RegistrySupplier[1];
+        //? if fabric && < 1.21.1 {
+        ResourceLocation stillTex   = new ResourceLocation(MainRegistry.MOD_ID, "gui/fluids/" + name);
+        ResourceLocation flowingTex = new ResourceLocation(MainRegistry.MOD_ID, "gui/fluids/" + name);
+         //?} else {
+        /*ResourceLocation stillTex   = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "gui/fluids/" + name);
+        ResourceLocation flowingTex = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "gui/fluids/" + name);
+        *///?}
+        // Атрибуты жидкости — единые для обеих платформ через Architectury API
+        // source/flowing передаём через supplier, чтобы избежать circular init
+        SimpleArchitecturyFluidAttributes attributes = SimpleArchitecturyFluidAttributes
+                .ofSupplier(
+                        () -> (Supplier<? extends Fluid>) flowingRef[0],
+                        () -> (Supplier<? extends Fluid>) sourceRef[0]
+                )
+                .sourceTexture(stillTex)
+                .flowingTexture(flowingTex)
+                .color(tintColor)
+                .density(density)
+                .viscosity(viscosity)
+                .fillSound(SoundEvents.BUCKET_FILL)
+                .emptySound(SoundEvents.BUCKET_EMPTY);
 
-        // Register FluidType
-        RegistryObject<FluidType> type = FLUID_TYPES.register(name, () -> new FluidType(
-                FluidType.Properties.create()
-                        .descriptionId("fluid.hbm_m." + name)
-                        .sound(SoundActions.BUCKET_FILL, SoundEvents.BUCKET_FILL)
-                        .sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY)
-                        .density(density)
-                        .viscosity(viscosity)
-        ) {
-            @Override
-            public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
-                consumer.accept(new IClientFluidTypeExtensions() {
-                    private final ResourceLocation STILL = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "gui/fluids/" + name);
-                    private final ResourceLocation FLOW = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "gui/fluids/" + name);
-
-                    @Override
-                    public ResourceLocation getStillTexture() {
-                        return STILL;
-                    }
-
-                    @Override
-                    public ResourceLocation getFlowingTexture() {
-                        return FLOW;
-                    }
-
-                    @Override
-                    public int getTintColor() {
-                        return tintColor;
-                    }
-                });
-            }
-        });
-
-        // Create properties supplier
-        Supplier<ForgeFlowingFluid.Properties> propsSupplier = () -> new ForgeFlowingFluid.Properties(
-                type,
-                () -> entryHolder[0].sourceFluid,
-                () -> entryHolder[0].flowingFluid
+        // Регистрируем source
+        RegistrySupplier<Fluid> source = FLUIDS.register(
+                //? if fabric && < 1.21.1 {
+                new ResourceLocation(MainRegistry.MOD_ID, name),
+                //?} else {
+                /*ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name),
+                *///?}
+                () -> new ArchitecturyFlowingFluid.Source(attributes)
         );
 
-        // Register source fluid
-        RegistryObject<Fluid> source = FLUIDS.register(name + "_source", () -> {
-            entryHolder[0].sourceFluid = new ForgeFlowingFluid.Source(propsSupplier.get());
-            entryHolder[0].flowingFluid = new ForgeFlowingFluid.Flowing(propsSupplier.get());
-            return entryHolder[0].sourceFluid;
-        });
+        // Регистрируем flowing
+        RegistrySupplier<Fluid> flowing = FLUIDS.register(
+                //? if fabric && < 1.21.1 {
+                new ResourceLocation(MainRegistry.MOD_ID, name + "_flowing"),
+                 //?} else {
+                /*ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name + "_flowing"),
+                *///?}
+                () -> new ArchitecturyFlowingFluid.Flowing(attributes)
+        );
 
-        // Register flowing fluid
-        RegistryObject<Fluid> flowing = FLUIDS.register(name + "_flowing", () -> {
-            return entryHolder[0].flowingFluid;
-        });
+        sourceRef[0]  = source;
+        flowingRef[0] = flowing;
 
-        entryHolder[0] = new FluidEntry(type, source, flowing);
-        FLUID_ENTRIES.put(name, entryHolder[0]);
+        FluidEntry entry = new FluidEntry(source, flowing);
+        FLUID_ENTRIES.put(name, entry);
         TINT_COLORS.put(name, tintColor);
-        return entryHolder[0];
+        return entry;
     }
 
-    // Shorthand for standard liquids (density 1000, viscosity 1000)
     private static FluidEntry registerFluid(String name, int color) {
         return registerFluid(name, 1000, 1000, color);
     }
 
-    // Shorthand for gases (density -100, viscosity 100)
     private static FluidEntry registerGas(String name, int color) {
         return registerFluid(name, -100, 100, color);
     }
 
-    // Shorthand for heavy liquids (density 1500, viscosity 2000)
     private static FluidEntry registerHeavyFluid(String name, int color) {
         return registerFluid(name, 1500, 2000, color);
     }
 
-    // Shorthand for plasmas (density -50, viscosity 50)
     private static FluidEntry registerPlasma(String name, int color) {
         return registerFluid(name, -50, 50, color);
     }
@@ -348,25 +335,27 @@ public class ModFluids {
     // Helper method to get fluid by name
     //=====================================================================================//
 
-    public static FluidEntry getEntry(String name) {
-        return FLUID_ENTRIES.get(name);
-    }
+    public static FluidEntry getEntry(String name)           { return FLUID_ENTRIES.get(name); }
+    public static Map<String, FluidEntry> getAllEntries()     { return FLUID_ENTRIES; }
+    public static int getTintColor(String name)              { return TINT_COLORS.getOrDefault(name, 0xFFFFFF); }
 
-    public static Map<String, FluidEntry> getAllEntries() {
-        return FLUID_ENTRIES;
-    }
+    // ===================================================================================== //
+    // Registration
+    // ===================================================================================== //
 
-    /** Returns tint color for fluid identifier/GUI. Default 0xFFFFFF if not set. */
-    public static int getTintColor(String name) {
-        return TINT_COLORS.getOrDefault(name, 0xFFFFFF);
+    /**
+     * Вызывается из точки входа мода.
+     * На Forge — передаётся mod event bus; на Fabric — просто вызывается register().
+     */
+    //? if forge {
+    /*public static void register(IEventBus eventBus) {
+        FLUIDS.register();
     }
+    *///?}
 
-    //=====================================================================================//
-    // Registration method
-    //=====================================================================================//
-
-    public static void register(IEventBus eventBus) {
-        FLUID_TYPES.register(eventBus);
-        FLUIDS.register(eventBus);
+    //? if fabric {
+    public static void register() {
+        FLUIDS.register();
     }
+    //?}
 }

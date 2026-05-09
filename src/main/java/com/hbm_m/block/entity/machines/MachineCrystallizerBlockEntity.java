@@ -5,7 +5,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineCrystallizerMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.recipe.CrystallizerRecipe;
@@ -22,13 +22,21 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.Capability;
+//? if forge {
+/*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.templates.FluidTank;
+*///?}
+
+//? if fabric {
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+//?}
 
 /**
  * Crystallizer BlockEntity — рудный окислитель, порт с 1.7.10.
@@ -74,14 +82,17 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
 
     private final FluidTank tank = new FluidTank(TANK_CAPACITY) {
         @Override
-        protected void onContentsChanged() {
+        public void onContentsChanged() {
             setChanged();
             if (level != null && !level.isClientSide) {
                 level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
             }
         }
     };
-    private final LazyOptional<IFluidHandler> tankHandler = LazyOptional.of(() -> tank);
+    //? if forge {
+    /*// FluidTank itself is NOT an IFluidHandler; it exposes Forge handler via getCapability().
+    private final LazyOptional<IFluidHandler> tankHandler = tank.getCapability();
+    *///?}
 
     private int progress = 0;
     private int duration = DEFAULT_DURATION;
@@ -121,7 +132,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
 
         // Поиск рецепта по входу + текущей жидкости в баке.
         ItemStack inputStack = entity.inventory.getStackInSlot(SLOT_INPUT);
-        FluidStack tankFluid = entity.tank.getFluid();
+        FluidStack tankFluid = entity.getTankFluidStack();
         CrystallizerRecipe recipe = CrystallizerRecipes.findRecipe(inputStack, tankFluid);
 
         boolean wasOn = entity.isOn;
@@ -175,7 +186,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
         if (getEnergyStored() < getPowerRequired()) return false;
 
         // Хватает ли кислоты в баке.
-        if (recipe.getAcid() != null && tank.getFluidAmount() < recipe.getAcidAmount()) {
+        if (recipe.getAcid() != null && tank.getFluidAmountMb() < recipe.getAcidAmount()) {
             return false;
         }
 
@@ -204,7 +215,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
 
         // Слить кислоту, если рецепт её требует.
         if (recipe.getAcid() != null && recipe.getAcidAmount() > 0) {
-            tank.drain(recipe.getAcidAmount(), IFluidHandler.FluidAction.EXECUTE);
+            tank.drainMb(recipe.getAcidAmount());
         }
 
         // Productivity: шанс не тратить вход. С апгрейдом EFFECT шанс растёт
@@ -226,58 +237,75 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
         if (fillStack.isEmpty()) return;
         if (!inventory.getStackInSlot(SLOT_FLUID_OUTPUT).isEmpty()) return;
 
-        var result = FluidUtil.tryEmptyContainer(fillStack, tank, TANK_CAPACITY, null, true);
+        //? if forge {
+        /*IFluidHandler handler = tankHandler.orElse(null);
+        if (handler == null) return;
+
+        var result = FluidUtil.tryEmptyContainer(fillStack, handler, TANK_CAPACITY, null, true);
         if (result.isSuccess()) {
             inventory.setStackInSlot(SLOT_FLUID_INPUT, ItemStack.EMPTY);
             inventory.setStackInSlot(SLOT_FLUID_OUTPUT, result.getResult());
             setChanged();
         }
+        *///?}
+
+        //? if fabric {
+        ItemStack one = fillStack.copy();
+        one.setCount(1);
+
+        Storage<FluidVariant> itemStorage = FluidStorage.ITEM.find(one, null);
+        if (itemStorage == null) return;
+
+        try (Transaction tx = Transaction.openOuter()) {
+            long moved = net.fabricmc.fabric.api.transfer.v1.storage.StorageUtil.move(
+                    itemStorage,
+                    tank.getStorage(),
+                    v -> true,
+                    Long.MAX_VALUE,
+                    tx
+            );
+            if (moved > 0) {
+                tx.commit();
+                inventory.setStackInSlot(SLOT_FLUID_INPUT, ItemStack.EMPTY);
+                inventory.setStackInSlot(SLOT_FLUID_OUTPUT, one);
+                setChanged();
+            }
+        }
+        //?}
     }
 
     private void chargeFromBattery() {
         ItemStack stack = inventory.getStackInSlot(SLOT_BATTERY);
-        if (stack.isEmpty()) return;
-
-        if (stack.getItem() instanceof ItemCreativeBattery) {
+        if (!stack.isEmpty() && stack.getItem() instanceof ItemCreativeBattery) {
             setEnergyStored(getMaxEnergyStored());
             return;
         }
-
-        stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).ifPresent(provider -> {
-            long needed = getMaxEnergyStored() - getEnergyStored();
-            if (needed <= 0) return;
-            long extracted = provider.extractEnergy(Math.min(needed, getReceiveSpeed()), false);
-            if (extracted > 0) {
-                setEnergyStored(getEnergyStored() + extracted);
-                setChanged();
-            }
-        });
-
-        if (!stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()) {
-            stack.getCapability(ForgeCapabilities.ENERGY).ifPresent(provider -> {
-                long needed = getMaxEnergyStored() - getEnergyStored();
-                if (needed <= 0) return;
-                int extracted = provider.extractEnergy((int) Math.min(needed, getReceiveSpeed()), false);
-                if (extracted > 0) {
-                    setEnergyStored(getEnergyStored() + extracted);
-                    setChanged();
-                }
-            });
-        }
+        chargeFromBatterySlot(SLOT_BATTERY);
     }
 
-    /**
-     * Длительность с учётом апгрейда скорости.
-     * TODO: подключить апгрейд SPEED — каждый уровень -25% времени, минимум 25% от базового.
-     */
     private int calcDuration(CrystallizerRecipe recipe) {
         return recipe.getDuration();
     }
 
-    /**
-     * Энергозатрат на тик. Базовое — 1000 HE/tick.
-     * TODO: апгрейды SPEED и EFFECT увеличивают потребление: +100% за каждый SPEED, +200% за каждый EFFECT.
-     */
+    //? if forge {
+    /*private FluidStack getTankFluidStack() {
+        var fluid = tank.getStoredFluid();
+        int amount = tank.getFluidAmountMb();
+        return fluid == null || amount <= 0 ? FluidStack.EMPTY : new FluidStack(fluid, amount);
+    }
+    *///?}
+
+    private boolean canProcess() {
+        if (inventory.getStackInSlot(SLOT_INPUT).isEmpty()) return false;
+        if (getEnergyStored() < getPowerRequired()) return false;
+        // Заглушка: CrystallizerRecipes.getOutput - всегда null
+        return false;
+    }
+
+    private void processItem() {
+        // Заглушка: логика крафтов
+    }
+
     public int getPowerRequired() {
         return BASE_POWER_PER_TICK;
     }
@@ -322,18 +350,22 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_INPUT) {
             // Принимаем только то, что подходит хотя бы под один рецепт с текущей жидкостью.
-            return CrystallizerRecipes.findRecipe(stack, tank.getFluid()) != null;
+            return CrystallizerRecipes.findRecipe(stack, getTankFluidStack()) != null;
         }
         if (slot == SLOT_BATTERY) {
-            return stack.getCapability(ForgeCapabilities.ENERGY).isPresent()
-                || stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()
-                || stack.getItem() instanceof ItemCreativeBattery;
+            if (stack.getItem() instanceof ItemCreativeBattery) return true;
+            return isEnergyProviderItem(stack);
         }
         if (slot == SLOT_OUTPUT || slot == SLOT_FLUID_OUTPUT) {
             return false;
         }
         if (slot == SLOT_FLUID_INPUT) {
-            return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
+            //? if forge {
+            /*return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
+            *///?}
+            //? if fabric {
+            return FluidStorage.ITEM.find(stack, null) != null;
+            //?}
         }
         if (slot == SLOT_UPGRADE_1 || slot == SLOT_UPGRADE_2) {
             // TODO: проверка ItemMachineUpgrade когда будет реализован
@@ -359,7 +391,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        tag.put("tank", tank.writeToNBT(new CompoundTag()));
+        tag.put("tank", tank.writeNBT(new CompoundTag()));
         tag.putInt("progress", progress);
         tag.putInt("duration", duration);
         tag.putBoolean("isOn", isOn);
@@ -369,14 +401,15 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
     public void load(CompoundTag tag) {
         super.load(tag);
         if (tag.contains("tank")) {
-            tank.readFromNBT(tag.getCompound("tank"));
+            tank.readNBT(tag.getCompound("tank"));
         }
         progress = tag.getInt("progress");
         duration = tag.contains("duration") ? tag.getInt("duration") : DEFAULT_DURATION;
         isOn = tag.getBoolean("isOn");
     }
 
-    @Override
+    //? if forge {
+    /*@Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
             return tankHandler.cast();
@@ -389,4 +422,5 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
         super.invalidateCaps();
         tankHandler.invalidate();
     }
+    *///?}
 }

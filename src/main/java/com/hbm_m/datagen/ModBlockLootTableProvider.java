@@ -1,14 +1,18 @@
 package com.hbm_m.datagen;
-
+//? if forge {
+/*import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.advancements.critereon.EnchantmentPredicate;
 import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.advancements.critereon.MinMaxBounds;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.Item;
@@ -27,8 +31,6 @@ import net.minecraft.world.level.storage.loot.predicates.MatchTool;
 import net.minecraft.world.level.storage.loot.providers.nbt.ContextNbtProvider;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
 
 public class ModBlockLootTableProvider extends BlockLootSubProvider {
 
@@ -40,14 +42,14 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         // 1) Базовые лут-таблицы для всех блоков:
         // - если есть обычный BlockItem -> dropSelf
         // - если BlockItem нет (registerBlockWithoutItem) -> пробуем дропнуть item с тем же id
-        for (RegistryObject<Block> entry : ModBlocks.BLOCKS.getEntries()) {
+        for (RegistrySupplier<Block> entry : ModBlocks.BLOCKS) {
             Block block = entry.get();
             if (block.asItem() != Items.AIR) {
                 this.dropSelf(block);
                 continue;
             }
 
-            Item mappedItem = ForgeRegistries.ITEMS.getValue(entry.getId());
+            Item mappedItem = BuiltInRegistries.ITEM.get(entry.getId());
             if (mappedItem != null && mappedItem != Items.AIR) {
                 dropMappedItem(block, mappedItem);
             } else {
@@ -336,11 +338,11 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 );
         this.add(block, tableBuilder);
     }
-    /**
+    /^*
      * Руда тип 1:
      * - При Silk Touch дропает блок руды.
      * - Иначе дропает сырьё с учетом Fortune и Explosion decay.
-     */
+     ^/
     private void dropOreType1(Block block, Block silkTouchDrop, net.minecraft.world.item.Item normalDrop) {
         LootTable.Builder tableBuilder = LootTable.lootTable()
                 .withPool(
@@ -372,11 +374,11 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         this.add(block, tableBuilder);
     }
 
-    /**
+    /^*
      * Руда тип 2:
      * - При Silk Touch дропает блок руды.collections
      * - Иначе дропает сырьё с set_count (от min до max), Fortune и Explosion decay.
-     */
+     ^/
     private void dropOreType2(Block block, Block silkTouchDrop,
                               net.minecraft.world.item.Item normalDrop,
                               float minCount, float maxCount) {
@@ -415,12 +417,11 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
     @Override
     protected Iterable<Block> getKnownBlocks() {
         // Генерируем для всех зарегистрированных блоков мода
-        return ModBlocks.BLOCKS.getEntries()
-                .stream()
-                .flatMap(RegistryObject::stream)
-                .toList();
+        List<Block> list = new ArrayList<>();
+        for (RegistrySupplier<Block> entry : ModBlocks.BLOCKS) {
+            list.add(entry.get());
+        }
+        return list;
     }
-
-
-
 }
+*///?}

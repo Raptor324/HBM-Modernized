@@ -8,13 +8,13 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.items.IItemHandler;
 
 // ИЗМЕНЕНИЕ: Импортируем нашу long-систему
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Objects;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Модуль крафта для продвинутой сборочной машины.
@@ -32,7 +32,7 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
 
     // ИЗМЕНЕНИЕ: Конструктор теперь принимает ILongEnergyStorage
     public MachineModuleAdvancedAssembler(int moduleIndex, IEnergyReceiver energyStorage,
-                                          IItemHandler itemHandler, Level level) {
+                                          ModItemStackHandler itemHandler, Level level) {
         super(moduleIndex, energyStorage, itemHandler, level);
 
         // Настройка по умолчанию: 12 входных (4-15), 1 выходной (16)

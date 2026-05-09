@@ -1,31 +1,32 @@
 package com.hbm_m.item.radiation_meter;
 
-// Предмет-геигер для измерения радиации в окружающей среде и на игроке.
-// Показывает уровень радиации в чате при использовании и издает звуки щелчков в зависимости от уровня радиации.
-// Используется на сервере, отправляет данные на клиент для звуков и HUD.
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
 
-import net.minecraft.sounds.SoundEvent;
-import net.minecraftforge.registries.RegistryObject;
+import org.jetbrains.annotations.NotNull;
+
+import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.RadiationDataPacket;
 import com.hbm_m.network.sounds.GeigerSoundPacket;
 import com.hbm_m.sound.ModSounds;
+
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+
+// Предмет-геигер для измерения радиации в окружающей среде и на игроке.
+// Показывает уровень радиации в чате при использовании и издает звуки щелчков в зависимости от уровня радиации.
+// Используется на сервере, отправляет данные на клиент для звуков и HUD.
+
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.network.PacketDistributor;
-import com.hbm_m.config.ModClothConfig;
-
-import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
 
 public class ItemGeigerCounter extends AbstractRadiationMeterItem {
 
@@ -61,7 +62,7 @@ public class ItemGeigerCounter extends AbstractRadiationMeterItem {
     }
 
     @Override
-    public void inventoryTick(@Nonnull ItemStack pStack, @Nonnull Level pLevel, @Nonnull Entity pEntity, int pSlotId, boolean pIsSelected) {
+    public void inventoryTick(@NotNull ItemStack pStack, @NotNull Level pLevel, @NotNull Entity pEntity, int pSlotId, boolean pIsSelected) {
         if (!pLevel.isClientSide() && pEntity instanceof ServerPlayer serverPlayer && serverPlayer.isAlive()) {
             soundTickCounter++;
             final int SOUND_INTERVAL_TICKS = 5;
@@ -76,7 +77,7 @@ public class ItemGeigerCounter extends AbstractRadiationMeterItem {
                 }
 
                 if (!serverPlayer.isCreative() && !serverPlayer.isSpectator()) {
-                    ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer),
+                    ModPacketHandler.sendToPlayer(serverPlayer, ModPacketHandler.RADIATION_DATA,
                         new RadiationDataPacket(data.getTotalEnvironmentRad(), data.playerRad()));
                 }
 
@@ -104,22 +105,20 @@ public class ItemGeigerCounter extends AbstractRadiationMeterItem {
             soundIndex = 1; // Редкий фоновый щелчок
         }
 
-        Optional<RegistryObject<SoundEvent>> soundRegistryObject = switch (soundIndex) {
-            case 1 -> Optional.of(ModSounds.GEIGER_1);
-            case 2 -> Optional.of(ModSounds.GEIGER_2);
-            case 3 -> Optional.of(ModSounds.GEIGER_3);
-            case 4 -> Optional.of(ModSounds.GEIGER_4);
-            case 5 -> Optional.of(ModSounds.GEIGER_5);
-            case 6 -> Optional.of(ModSounds.GEIGER_6);
+        Optional<SoundEvent> sound = switch (soundIndex) {
+            case 1 -> Optional.of(ModSounds.GEIGER_1.get());
+            case 2 -> Optional.of(ModSounds.GEIGER_2.get());
+            case 3 -> Optional.of(ModSounds.GEIGER_3.get());
+            case 4 -> Optional.of(ModSounds.GEIGER_4.get());
+            case 5 -> Optional.of(ModSounds.GEIGER_5.get());
+            case 6 -> Optional.of(ModSounds.GEIGER_6.get());
             default -> Optional.empty();
         };
 
-        soundRegistryObject.ifPresent(regObject -> {
-            SoundEvent soundEvent = regObject.get();
-            if (soundEvent != null) {
-                ResourceLocation soundLocation = soundEvent.getLocation();
-                ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new GeigerSoundPacket(soundLocation, 0.4F, 1.0F));
-            }
+        sound.ifPresent(soundEvent -> {
+            ResourceLocation soundLocation = soundEvent.getLocation();
+            ModPacketHandler.sendToPlayer(player, ModPacketHandler.GEIGER_SOUND,
+                new GeigerSoundPacket(soundLocation, 0.4F, 1.0F));
         });
     }
 }

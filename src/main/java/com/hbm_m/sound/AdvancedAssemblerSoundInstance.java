@@ -4,10 +4,18 @@ import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundSource;
-import net.minecraftforge.api.distmarker.Dist;
+//? if forge {
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-
-@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;//?}
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
 public class AdvancedAssemblerSoundInstance extends AbstractTickableSoundInstance {
 
     // Конструктор теперь принимает только BlockPos, так как ему больше не нужно знать о BlockEntity.

@@ -5,6 +5,7 @@ import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.AnvilCraftC2SPacket;
 import com.hbm_m.network.AnvilSelectRecipeC2SPacket;
 import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.recipe.AnvilRecipe;
 import com.hbm_m.recipe.AnvilRecipeManager;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -23,18 +24,23 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import net.minecraftforge.items.ItemStackHandler;
 
 public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
     
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+    //? if fabric && < 1.21.1 {
+    private static final ResourceLocation TEXTURE = new ResourceLocation(
             RefStrings.MODID, "textures/gui/processing/gui_anvil.png");
+    //?} else {
+        /*private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+            RefStrings.MODID, "textures/gui/processing/gui_anvil.png");
+    *///?}
+
     private static final int DISPLAY_SLOTS = 10;
     
     private final List<AnvilRecipe> originRecipes = new ArrayList<>();
@@ -323,7 +329,8 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         if (isOverCraftButton(mouseX, mouseY) && isCraftButtonEnabled()) {
             playClickSound();
             boolean craftAll = hasShiftDown();
-            ModPacketHandler.INSTANCE.sendToServer(
+            ModPacketHandler.sendToServer(
+                ModPacketHandler.ANVIL_CRAFT,
                 new AnvilCraftC2SPacket(menu.blockEntity.getBlockPos(), craftAll));
             return true;
         }
@@ -402,7 +409,8 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         ResourceLocation id = recipe != null ? recipe.getId() : null;
         cachedServerSelection = id;
         menu.blockEntity.setSelectedRecipeId(id);
-        ModPacketHandler.INSTANCE.sendToServer(
+        ModPacketHandler.sendToServer(
+            ModPacketHandler.ANVIL_SELECT_RECIPE,
             new AnvilSelectRecipeC2SPacket(menu.blockEntity.getBlockPos(), id));
     }
     
@@ -776,7 +784,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
             return 0;
         }
         
-        ItemStackHandler handler = menu.blockEntity.getItemHandler();
+        ModItemStackHandler handler = menu.blockEntity.getItemHandler();
         int count = 0;
         int slotLimit = Math.min(handler.getSlots(), 2);
         

@@ -5,19 +5,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.hbm_m.api.fluids.ModFluids;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
 
+import dev.architectury.fluid.FluidStack;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 
 /**
  * Chemical Plant recipe registry - adapted from 1.7.10 HBM.
@@ -123,12 +124,12 @@ public class ChemicalPlantRecipes {
         private final TagKey<Item> tag;
 
         public TagInput(String tagName) {
-            this.tag = ItemTags.create(ResourceLocation.tryParse(tagName));
+            this.tag = TagKey.create(Registries.ITEM, new ResourceLocation(tagName));
             this.count = 1;
         }
 
         public TagInput(String tagName, int count) {
-            this.tag = ItemTags.create(ResourceLocation.tryParse(tagName));
+            this.tag = TagKey.create(Registries.ITEM, new ResourceLocation(tagName));
             this.count = count;
         }
 
@@ -150,8 +151,8 @@ public class ChemicalPlantRecipes {
         @Override
         public List<ItemStack> getDisplayStacks() {
             List<ItemStack> stacks = new ArrayList<>();
-            ForgeRegistries.ITEMS.tags().getTag(tag).forEach(item -> {
-                stacks.add(new ItemStack(item, count));
+            BuiltInRegistries.ITEM.getTagOrEmpty(tag).forEach(holder -> {
+                stacks.add(new ItemStack(holder.value(), count));
             });
             return stacks.isEmpty() ? List.of(ItemStack.EMPTY) : stacks;
         }
@@ -253,30 +254,30 @@ public class ChemicalPlantRecipes {
         /// REGULAR FLUIDS ///
         register("chem.hydrogen", "Hydrogen Production",
                 List.of(new ItemInput(ModItems.getPowders(ModPowders.COAL).get(), 1)),
-                List.of(new FluidStack(ModFluids.WATER.getSource(), 8000)),
+                List.of(FluidStack.create(ModFluids.WATER.getSource(), 8000L)),
                 List.of(),
-                List.of(new FluidStack(ModFluids.HYDROGEN.getSource(), 500)),
+                List.of(FluidStack.create(ModFluids.HYDROGEN.getSource(), 500L)),
                 20, 400);
         
         register("chem.oxygen", "Oxygen Production",
                 List.of(),
-                List.of(new FluidStack(ModFluids.AIR.getSource(), 8000)),
+                List.of(FluidStack.create(ModFluids.AIR.getSource(), 8000L)),
                 List.of(),
-                List.of(new FluidStack(ModFluids.OXYGEN.getSource(), 500)),
+                List.of(FluidStack.create(ModFluids.OXYGEN.getSource(), 500L)),
                 20, 400);
         
         register("chem.xenon", "Xenon Extraction",
                 List.of(),
-                List.of(new FluidStack(ModFluids.AIR.getSource(), 16000)),
+                List.of(FluidStack.create(ModFluids.AIR.getSource(), 16000L)),
                 List.of(),
-                List.of(new FluidStack(ModFluids.XENON.getSource(), 50)),
+                List.of(FluidStack.create(ModFluids.XENON.getSource(), 50L)),
                 300, 1000);
         
         register("chem.co2", "Carbon Dioxide Production",
                 List.of(),
-                List.of(new FluidStack(ModFluids.GAS.getSource(), 1000)),
+                List.of(FluidStack.create(ModFluids.GAS.getSource(), 1000L)),
                 List.of(),
-                List.of(new FluidStack(ModFluids.CARBONDIOXIDE.getSource(), 1000)),
+                List.of(FluidStack.create(ModFluids.CARBONDIOXIDE.getSource(), 1000L)),
                 60, 100);
         
         /// OILS ///
@@ -284,150 +285,150 @@ public class ChemicalPlantRecipes {
                 List.of(new ItemInput(Items.SUGAR, 10)),
                 List.of(),
                 List.of(),
-                List.of(new FluidStack(ModFluids.ETHANOL.getSource(), 1000)),
+                List.of(FluidStack.create(ModFluids.ETHANOL.getSource(), 1000L)),
                 50, 100);
         
         register("chem.biofuel", "Biofuel Production",
                 List.of(),
-                List.of(new FluidStack(ModFluids.BIOGAS.getSource(), 1500), 
-                        new FluidStack(ModFluids.ETHANOL.getSource(), 250)),
+                List.of(FluidStack.create(ModFluids.BIOGAS.getSource(), 1500L),
+                        FluidStack.create(ModFluids.ETHANOL.getSource(), 250L)),
                 List.of(),
-                List.of(new FluidStack(ModFluids.BIOFUEL.getSource(), 1000)),
+                List.of(FluidStack.create(ModFluids.BIOFUEL.getSource(), 1000L)),
                 60, 100);
         
         register("chem.reoil", "Reclaimed Oil",
                 List.of(),
-                List.of(new FluidStack(ModFluids.SLOP.getSource(), 1000)),
+                List.of(FluidStack.create(ModFluids.SLOP.getSource(), 1000L)),
                 List.of(),
-                List.of(new FluidStack(ModFluids.RECLAIMED.getSource(), 800)),
+                List.of(FluidStack.create(ModFluids.RECLAIMED.getSource(), 800L)),
                 40, 100);
         
         register("chem.gasoline", "Gasoline Production",
                 List.of(),
-                List.of(new FluidStack(ModFluids.NAPHTHA.getSource(), 1000)),
+                List.of(FluidStack.create(ModFluids.NAPHTHA.getSource(), 1000L)),
                 List.of(),
-                List.of(new FluidStack(ModFluids.GASOLINE.getSource(), 800)),
+                List.of(FluidStack.create(ModFluids.GASOLINE.getSource(), 800L)),
                 40, 100);
         
         register("chem.coallube", "Lubricant from Coal Creosote",
                 List.of(),
-                List.of(new FluidStack(ModFluids.COALCREOSOTE.getSource(), 1000)),
+                List.of(FluidStack.create(ModFluids.COALCREOSOTE.getSource(), 1000L)),
                 List.of(),
-                List.of(new FluidStack(ModFluids.LUBRICANT.getSource(), 1000)),
+                List.of(FluidStack.create(ModFluids.LUBRICANT.getSource(), 1000L)),
                 40, 100);
         
         register("chem.heavylube", "Lubricant from Heavy Oil",
                 List.of(),
-                List.of(new FluidStack(ModFluids.HEAVYOIL.getSource(), 2000)),
+                List.of(FluidStack.create(ModFluids.HEAVYOIL.getSource(), 2000L)),
                 List.of(),
-                List.of(new FluidStack(ModFluids.LUBRICANT.getSource(), 1000)),
+                List.of(FluidStack.create(ModFluids.LUBRICANT.getSource(), 1000L)),
                 40, 100);
         
         /// ACIDS ///
         register("chem.peroxide", "Peroxide Production",
                 List.of(),
-                List.of(new FluidStack(ModFluids.WATER.getSource(), 1000)),
+                List.of(FluidStack.create(ModFluids.WATER.getSource(), 1000L)),
                 List.of(),
-                List.of(new FluidStack(ModFluids.PEROXIDE.getSource(), 1000)),
+                List.of(FluidStack.create(ModFluids.PEROXIDE.getSource(), 1000L)),
                 50, 100);
         
         register("chem.sulfuricacid", "Sulfuric Acid Production",
                 List.of(new ItemInput(ModItems.SULFUR.get(), 1)),
-                List.of(new FluidStack(ModFluids.PEROXIDE.getSource(), 1000),
-                        new FluidStack(ModFluids.WATER.getSource(), 1000)),
+                List.of(FluidStack.create(ModFluids.PEROXIDE.getSource(), 1000L),
+                        FluidStack.create(ModFluids.WATER.getSource(), 1000L)),
                 List.of(),
-                List.of(new FluidStack(ModFluids.SULFURIC_ACID.getSource(), 2000)),
+                List.of(FluidStack.create(ModFluids.SULFURIC_ACID.getSource(), 2000L)),
                 50, 100);
         
         register("chem.nitricacid", "Nitric Acid Production",
                 List.of(new ItemInput(ModItems.CRYSTAL_NITER.get(), 1)),
-                List.of(new FluidStack(ModFluids.SULFURIC_ACID.getSource(), 500)),
+                List.of(FluidStack.create(ModFluids.SULFURIC_ACID.getSource(), 500L)),
                 List.of(),
-                List.of(new FluidStack(ModFluids.NITRIC_ACID.getSource(), 1000)),
+                List.of(FluidStack.create(ModFluids.NITRIC_ACID.getSource(), 1000L)),
                 50, 100);
         
         register("chem.birkeland", "Birkeland-Eyde Process",
                 List.of(),
-                List.of(new FluidStack(ModFluids.AIR.getSource(), 8000),
-                        new FluidStack(ModFluids.WATER.getSource(), 2000)),
+                List.of(FluidStack.create(ModFluids.AIR.getSource(), 8000L),
+                        FluidStack.create(ModFluids.WATER.getSource(), 2000L)),
                 List.of(),
-                List.of(new FluidStack(ModFluids.NITRIC_ACID.getSource(), 1000)),
+                List.of(FluidStack.create(ModFluids.NITRIC_ACID.getSource(), 1000L)),
                 200, 5000);
         
         /// COOLANTS ///
         register("chem.perfluoromethyl", "Perfluoromethyl Production",
                 List.of(new ItemInput(ModItems.FLUORITE.get(), 1)),
-                List.of(new FluidStack(ModFluids.PETROLEUM.getSource(), 1000),
-                        new FluidStack(ModFluids.UNSATURATEDS.getSource(), 500)),
+                List.of(FluidStack.create(ModFluids.PETROLEUM.getSource(), 1000L),
+                        FluidStack.create(ModFluids.UNSATURATEDS.getSource(), 500L)),
                 List.of(),
-                List.of(new FluidStack(ModFluids.PERFLUOROMETHYL.getSource(), 1000)),
+                List.of(FluidStack.create(ModFluids.PERFLUOROMETHYL.getSource(), 1000L)),
                 20, 100);
         
         /// STEAM ///
         register("chem.steam", "Steam Production",
                 List.of(),
-                List.of(new FluidStack(ModFluids.WATER.getSource(), 1000)),
+                List.of(FluidStack.create(ModFluids.WATER.getSource(), 1000L)),
                 List.of(),
-                List.of(new FluidStack(ModFluids.STEAM.getSource(), 1000)),
+                List.of(FluidStack.create(ModFluids.STEAM.getSource(), 1000L)),
                 10, 50);
         
         /// OXYHYDROGEN ///
         register("chem.oxyhydrogen", "Oxyhydrogen Production",
                 List.of(),
-                List.of(new FluidStack(ModFluids.HYDROGEN.getSource(), 500),
-                        new FluidStack(ModFluids.OXYGEN.getSource(), 250)),
+                List.of(FluidStack.create(ModFluids.HYDROGEN.getSource(), 500L),
+                        FluidStack.create(ModFluids.OXYGEN.getSource(), 250L)),
                 List.of(),
-                List.of(new FluidStack(ModFluids.OXYHYDROGEN.getSource(), 500)),
+                List.of(FluidStack.create(ModFluids.OXYHYDROGEN.getSource(), 500L)),
                 20, 100);
         
         /// DEUTERIUM ///
         register("chem.deuterium", "Deuterium Extraction",
                 List.of(),
-                List.of(new FluidStack(ModFluids.HEAVYWATER.getSource(), 2000)),
+                List.of(FluidStack.create(ModFluids.HEAVYWATER.getSource(), 2000L)),
                 List.of(),
-                List.of(new FluidStack(ModFluids.DEUTERIUM.getSource(), 500)),
+                List.of(FluidStack.create(ModFluids.DEUTERIUM.getSource(), 500L)),
                 100, 1000);
         
         /// UF6 PROCESSING ///
         register("chem.uf6", "Uranium Hexafluoride Production",
                 List.of(new ItemInput(ModItems.getPowder(ModIngots.URANIUM).get(), 1),
                         new ItemInput(ModItems.FLUORITE.get(), 4)),
-                List.of(new FluidStack(ModFluids.WATER.getSource(), 1000)),
+                List.of(FluidStack.create(ModFluids.WATER.getSource(), 1000L)),
                 List.of(new ItemStack(ModItems.SULFUR.get(), 2)),
-                List.of(new FluidStack(ModFluids.UF6.getSource(), 1200)),
+                List.of(FluidStack.create(ModFluids.UF6.getSource(), 1200L)),
                 100, 500);
         
         register("chem.puf6", "Plutonium Hexafluoride Production",
                 List.of(new ItemInput(ModItems.getPowder(ModIngots.PLUTONIUM).get(), 1),
                         new ItemInput(ModItems.FLUORITE.get(), 3)),
-                List.of(new FluidStack(ModFluids.WATER.getSource(), 1000)),
+                List.of(FluidStack.create(ModFluids.WATER.getSource(), 1000L)),
                 List.of(),
-                List.of(new FluidStack(ModFluids.PUF6.getSource(), 900)),
+                List.of(FluidStack.create(ModFluids.PUF6.getSource(), 900L)),
                 200, 500);
         
         /// SCHRABIDIUM ///
         register("chem.sas3", "Schrabidium Sulfide Production",
                 List.of(new ItemInput(ModItems.getPowder(ModIngots.SCHRABIDIUM).get(), 1),
                         new ItemInput(ModItems.SULFUR.get(), 2)),
-                List.of(new FluidStack(ModFluids.PEROXIDE.getSource(), 2000)),
+                List.of(FluidStack.create(ModFluids.PEROXIDE.getSource(), 2000L)),
                 List.of(),
-                List.of(new FluidStack(ModFluids.SAS3.getSource(), 1000)),
+                List.of(FluidStack.create(ModFluids.SAS3.getSource(), 1000L)),
                 200, 5000);
         
         register("chem.schrabidic", "Schrabidic Acid Production",
                 List.of(),
-                List.of(new FluidStack(ModFluids.SAS3.getSource(), 2000),
-                        new FluidStack(ModFluids.PEROXIDE.getSource(), 2000)),
+                List.of(FluidStack.create(ModFluids.SAS3.getSource(), 2000L),
+                        FluidStack.create(ModFluids.PEROXIDE.getSource(), 2000L)),
                 List.of(),
-                List.of(new FluidStack(ModFluids.SCHRABIDIC.getSource(), 2000)),
+                List.of(FluidStack.create(ModFluids.SCHRABIDIC.getSource(), 2000L)),
                 60, 5000);
         
         /// KEVLAR ///
         register("chem.kevlar", "Kevlar Production",
                 List.of(),
-                List.of(new FluidStack(ModFluids.AROMATICS.getSource(), 200),
-                        new FluidStack(ModFluids.NITRIC_ACID.getSource(), 100),
-                        new FluidStack(ModFluids.CHLORINE.getSource(), 100)),
+                List.of(FluidStack.create(ModFluids.AROMATICS.getSource(), 200L),
+                        FluidStack.create(ModFluids.NITRIC_ACID.getSource(), 100L),
+                        FluidStack.create(ModFluids.CHLORINE.getSource(), 100L)),
                 List.of(new ItemStack(ModItems.PLATE_KEVLAR.get(), 4)),
                 List.of(),
                 60, 300);
@@ -435,11 +436,11 @@ public class ChemicalPlantRecipes {
         /// DHC ///
         register("chem.dhc", "Deuterohydrocarbon Production",
                 List.of(),
-                List.of(new FluidStack(ModFluids.DEUTERIUM.getSource(), 500),
-                        new FluidStack(ModFluids.REFORMGAS.getSource(), 250),
-                        new FluidStack(ModFluids.SYNGAS.getSource(), 250)),
+                List.of(FluidStack.create(ModFluids.DEUTERIUM.getSource(), 500L),
+                        FluidStack.create(ModFluids.REFORMGAS.getSource(), 250L),
+                        FluidStack.create(ModFluids.SYNGAS.getSource(), 250L)),
                 List.of(),
-                List.of(new FluidStack(ModFluids.HYDROGEN.getSource(), 500)), // DHC not available, using hydrogen placeholder
+                List.of(FluidStack.create(ModFluids.HYDROGEN.getSource(), 500L)), // DHC not available, using hydrogen placeholder
                 400, 500);
     }
 }

@@ -8,18 +8,33 @@ import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;
 
+import dev.architectury.utils.Env;
+//? if forge {
+/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+*///?}
+//? if fabric {
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;//?}
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+//? if forge {
+/*import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-
-@OnlyIn(Dist.CLIENT)
-@Mod.EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
+*///?}
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
+//? if forge {
+/*@Mod.EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
+*///?}
 public class OverlayInfoToast {
 
     private static final List<Entry> ENTRIES = new ArrayList<>();
@@ -76,7 +91,8 @@ public class OverlayInfoToast {
         show(text, ticks, id, 0xFFFFFF);
     }
 
-    @SubscribeEvent
+    //? if forge {
+    /*@SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         if (Minecraft.getInstance().isPaused()) return;
@@ -88,8 +104,9 @@ public class OverlayInfoToast {
             if (e.ticksLeft <= 0) it.remove();
         }
     }
+    *///?}
 
-    public static final IGuiOverlay OVERLAY = (gui, gfx, partialTick, screenWidth, screenHeight) -> {
+    public static void render(GuiGraphics gfx, float partialTick, int screenWidth, int screenHeight) {
         if (ENTRIES.isEmpty()) return;
 
         Minecraft mc = Minecraft.getInstance();
@@ -135,5 +152,10 @@ public class OverlayInfoToast {
         }
 
         RenderSystem.disableBlend();
-    };
+    }
+
+    //? if forge {
+    /*public static final IGuiOverlay OVERLAY = (gui, gfx, partialTick, screenWidth, screenHeight) ->
+            render(gfx, partialTick, screenWidth, screenHeight);
+    *///?}
 }

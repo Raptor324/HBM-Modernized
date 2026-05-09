@@ -41,13 +41,13 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
 
 public class UniversalMachinePartBlock extends BaseEntityBlock implements IDetonatable {
 
@@ -66,17 +66,25 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         return false;
     }
 
-    // FACING is the only property we need to sync with the controller
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+    /**
+     * Флаг проходимости для AI-pathfinding (как {@code OPEN} у ванильной двери).
+     * Хранится в blockstate для надёжного доступа из {@link net.minecraft.world.level.pathfinder.WalkNodeEvaluator}
+     * без необходимости обращаться к BlockEntity (которое может быть недоступно в PathNavigationRegion).
+     * Устанавливается контроллером-дверью при открытии/закрытии.
+     */
+    public static final BooleanProperty PASSABLE = BooleanProperty.create("passable");
 
     public UniversalMachinePartBlock(Properties pProperties) {
         super(pProperties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        this.registerDefaultState(this.stateDefinition.any()
+                .setValue(FACING, Direction.NORTH)
+                .setValue(PASSABLE, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) {
-        pBuilder.add(FACING);
+        pBuilder.add(FACING, PASSABLE);
     }
 
     @Nullable
@@ -192,43 +200,43 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
 
         // Сначала проверяем, есть ли у контроллера общая сложная форма (мастер-шейп)
         VoxelShape masterShape = controller.getCustomMasterVoxelShape(controllerState);
-        
+
         if (masterShape != null && !masterShape.isEmpty()) {
             BlockPos vecToController = controllerPos.subtract(pPos);
             return masterShape.move(vecToController.getX(), vecToController.getY(), vecToController.getZ());
         }
 
-        // Используем pattern matching или приведение типов, чтобы задействовать переменную doorBlock
         if (controllerBlock instanceof DoorBlock doorBlock) {
             BlockEntity controllerBE = pLevel.getBlockEntity(controllerPos);
-            
-            if (controllerBE instanceof DoorBlockEntity doorBE) {
-                String declId = doorBlock.getDoorDeclId();
-                DoorDecl decl = com.hbm_m.block.entity.doors.DoorDeclRegistry.getById(declId);
-                
-                if (decl != null && decl.getStructureDefinition() != null) {
-                    DoorDecl.DoorStructureDefinition def = decl.getStructureDefinition();
-                    
-                    Direction facing = controllerState.getValue(DoorBlock.FACING);
-                    BlockPos worldOffset = pPos.subtract(controllerPos);
-                    BlockPos localOffset = MultiblockStructureHelper.rotateBack(worldOffset, facing);
 
-                    // Считаем открытой, если состояние не 0 (0 = закрыта)
-                    boolean isOpen = doorBE.getState() != 0; 
-                    
-                    // Выбираем карту коллизии используя переменную
-                    Map<BlockPos, VoxelShape> map = isOpen ? def.getOpenShapes() : def.getClosedShapes();
-                    
-                    VoxelShape shape = map.get(localOffset);
-                    if (shape != null) {
-                        if (!shape.isEmpty()) {
-                            return MultiblockStructureHelper.rotateShape(shape, facing);
-                        }
-                        return shape;
+            DoorDecl decl = DoorDeclRegistry.getById(doorBlock.getDoorDeclId());
+
+            if (decl != null && decl.getStructureDefinition() != null) {
+                DoorDecl.DoorStructureDefinition def = decl.getStructureDefinition();
+
+                Direction facing = controllerState.getValue(DoorBlock.FACING);
+                BlockPos worldOffset = pPos.subtract(controllerPos);
+                BlockPos localOffset = MultiblockStructureHelper.rotateBack(worldOffset, facing);
+
+                boolean isOpen;
+                if (controllerBE instanceof DoorBlockEntity doorBE) {
+                    isOpen = doorBE.getState() != 0;
+                } else {
+                    // Pathfinding без TE у контроллера: полностью открыто по BlockState
+                    isOpen = controllerState.getValue(DoorBlock.OPEN);
+                }
+
+                Map<BlockPos, VoxelShape> map = isOpen ? def.getOpenShapes() : def.getClosedShapes();
+
+                VoxelShape shape = map.get(localOffset);
+                if (shape != null) {
+                    if (!shape.isEmpty()) {
+                        return MultiblockStructureHelper.rotateShape(shape, facing);
                     }
+                    return shape;
                 }
             }
-       }
+        }
 
         // 4. Общая логика для всех остальных частей мультиблока (MachineAssembler и т.д.)
         MultiblockStructureHelper helper = controller.getStructureHelper();
@@ -239,6 +247,19 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         BlockPos gridPos = localOffset.offset(helper.getControllerOffset());
 
         return helper.getSpecificCollisionShape(gridPos, facing);
+    }
+
+    /**
+     * Как у ванильной двери: проходимость определяется blockstate-свойством {@link #PASSABLE},
+     * которое обновляется контроллером-дверью при открытии/закрытии.
+     * Это гарантирует корректную работу AI-pathfinding без обращения к BlockEntity.
+     */
+    @Override
+    public boolean isPathfindable(BlockState state, BlockGetter level, BlockPos pos, PathComputationType type) {
+        return switch (type) {
+            case LAND, AIR -> state.getValue(PASSABLE);
+            default -> false;
+        };
     }
 
     @Override
@@ -252,13 +273,10 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         // Это особенно важно, когда контроллер был разрушен - блок сразу станет осиротевшим
         if (pLevel.isClientSide()) {
             if (isOrphaned(pLevel, pPos)) {
-                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-                    com.hbm_m.client.ClientRenderHandler.addOrphanedPhantomBlock(pPos);
-                });
+                // Мы уже на клиенте (level.isClientSide), поэтому можно безопасно дернуть клиентский хук напрямую.
+                com.hbm_m.client.ClientRenderHandler.addOrphanedPhantomBlock(pPos);
             } else {
-                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-                    com.hbm_m.client.ClientRenderHandler.removeOrphanedPhantomBlock(pPos);
-                });
+                com.hbm_m.client.ClientRenderHandler.removeOrphanedPhantomBlock(pPos);
             }
         }
         if (pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part) {
@@ -277,7 +295,6 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
      * Позволяет блокам с ролью LADDER быть использованными как лестница.
      * Работает с любых боковых сторон.
      */
-    @Override
     public boolean isLadder(BlockState pState, LevelReader pLevel, BlockPos pPos, LivingEntity pEntity) {
         // Проверяем, что это мультиблочная часть с ролью LADDER
         if (pLevel instanceof Level level && level.getBlockEntity(pPos) instanceof IMultiblockPart part) {
@@ -446,7 +463,6 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
      * Исправляет частицы при приземлении на фантомный блок.
      * Вместо текстуры фантома (которой нет), берет текстуру контроллера.
      */
-    @Override
     public boolean addLandingEffects(BlockState state1, ServerLevel level, BlockPos pos, BlockState state2, LivingEntity entity, int numberOfParticles) {
         if (level.getBlockEntity(pos) instanceof IMultiblockPart part) {
             BlockPos controllerPos = part.getControllerPos();
@@ -471,7 +487,6 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
     /**
      * Исправляет частицы при беге по фантомному блоку.
      */
-    @Override
     public boolean addRunningEffects(BlockState state, Level level, BlockPos pos, Entity entity) {
         // Это выполняется на клиенте
         if (level.isClientSide && level.getBlockEntity(pos) instanceof IMultiblockPart part) {

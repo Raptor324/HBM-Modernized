@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 // Предмет-дозиметр для измерения радиации в окружающей среде.
 // Показывает уровень радиации в чате при использовании и издает звуки щелчков в зависимости от уровня радиации.
@@ -22,8 +22,6 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.registries.RegistryObject;
 
 
 public class ItemDosimeter extends AbstractRadiationMeterItem {
@@ -51,7 +49,7 @@ public class ItemDosimeter extends AbstractRadiationMeterItem {
      * @return Компонент сообщения для отправки игроку.
      */
 
-    @Nonnull
+    @NotNull
     @Override
     protected Component createUsageMessage(RadiationData data) {
         float totalEnvironmentRad = data.getTotalEnvironmentRad();
@@ -82,7 +80,7 @@ public class ItemDosimeter extends AbstractRadiationMeterItem {
      * Скопирован из GeigerCounterItem и вызывает измененный метод playDosimeterTickSound.
      */
     @Override
-    public void inventoryTick(@Nonnull ItemStack pStack, @Nonnull Level pLevel, @Nonnull Entity pEntity, int pSlotId, boolean pIsSelected) {
+    public void inventoryTick(@NotNull ItemStack pStack, @NotNull Level pLevel, @NotNull Entity pEntity, int pSlotId, boolean pIsSelected) {
         if (!pLevel.isClientSide() && pEntity instanceof ServerPlayer serverPlayer && serverPlayer.isAlive()) {
             soundTickCounter++;
             final int SOUND_INTERVAL_TICKS = 5; // Звук проигрывается раз в 5 тиков (четверть секунды)
@@ -125,20 +123,18 @@ public class ItemDosimeter extends AbstractRadiationMeterItem {
         }
 
         // Этот блок остается таким же, т.к. он универсален
-        Optional<RegistryObject<SoundEvent>> soundRegistryObject = switch (soundIndex) {
-            case 1 -> Optional.of(ModSounds.GEIGER_1);
-            case 2 -> Optional.of(ModSounds.GEIGER_2);
-            case 3 -> Optional.of(ModSounds.GEIGER_3);
+        Optional<SoundEvent> sound = switch (soundIndex) {
+            case 1 -> Optional.of(ModSounds.GEIGER_1.get());
+            case 2 -> Optional.of(ModSounds.GEIGER_2.get());
+            case 3 -> Optional.of(ModSounds.GEIGER_3.get());
             // Остальные кейсы просто никогда не будут вызваны
             default -> Optional.empty();
         };
 
-        soundRegistryObject.ifPresent(regObject -> {
-            SoundEvent soundEvent = regObject.get();
-            if (soundEvent != null) {
-                ResourceLocation soundLocation = soundEvent.getLocation();
-                ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new GeigerSoundPacket(soundLocation, 0.4F, 1.0F));
-            }
+        sound.ifPresent(soundEvent -> {
+            ResourceLocation soundLocation = soundEvent.getLocation();
+            ModPacketHandler.sendToPlayer(player, ModPacketHandler.GEIGER_SOUND,
+                new GeigerSoundPacket(soundLocation, 0.4F, 1.0F));
         });
     }
 }

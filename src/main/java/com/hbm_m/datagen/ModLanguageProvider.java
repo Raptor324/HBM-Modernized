@@ -1,6 +1,6 @@
 package com.hbm_m.datagen;
-
-import static com.hbm_m.block.ModBlocks.ENABLED_INGOT_BLOCKS;
+//? if forge {
+/*import static com.hbm_m.block.ModBlocks.ENABLED_INGOT_BLOCKS;
 import static com.hbm_m.block.ModBlocks.getIngotBlock;
 
 import java.util.Arrays;
@@ -19,7 +19,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.common.data.LanguageProvider;
-import net.minecraftforge.registries.RegistryObject;
+
+import dev.architectury.registry.registries.RegistrySupplier;
 
 public class ModLanguageProvider extends LanguageProvider {
     // 1. Создаем НАШЕ СОБСТВЕННОЕ поле для хранения языка
@@ -91,7 +92,7 @@ public class ModLanguageProvider extends LanguageProvider {
     private void addIngotBlockTranslations(Set<ResourceLocation> translatedBlocks) {
         for (ModIngots ingot : ModIngots.values()) {
             if (ENABLED_INGOT_BLOCKS.contains(ingot.getName())) {
-                RegistryObject<Block> block = getIngotBlock(ingot);
+                RegistrySupplier<Block> block = getIngotBlock(ingot);
                 if (block != null && !translatedBlocks.contains(block.getId())) {
                     add(block.get(), buildBlockName(ingot));
                 }
@@ -127,7 +128,7 @@ public class ModLanguageProvider extends LanguageProvider {
     protected void addTranslations() {
         // АВТОМАТИЧЕСКАЯ ЛОКАЛИЗАЦИЯ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
-            RegistryObject<Item> ingotItem = ModItems.getIngot(ingot);
+            RegistrySupplier<Item> ingotItem = ModItems.getIngot(ingot);
             if (ingotItem != null && ingotItem.isPresent()) {
                 String translation = ingot.getTranslation(this.locale);
                 if (translation != null) {
@@ -140,7 +141,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
         // АВТОМАТИЧЕСКАЯ ЛОКАЛИЗАЦИЯ ПОРОШКОВ
         for (ModPowders powders : ModPowders.values()) {
-            RegistryObject<Item> powderItem = ModItems.getPowders(powders);
+            RegistrySupplier<Item> powderItem = ModItems.getPowders(powders);
             if (powderItem != null && powderItem.isPresent()) {
                 String translation = powders.getTranslation(this.locale);
                 if (translation != null) {
@@ -152,7 +153,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
         // ДОБАВЛЕНИЕ ЛОКАЛИЗАЦИИ ДЛЯ ПОРОШКОВ ИЗ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
-            RegistryObject<Item> powder = ModItems.getPowder(ingot);
+            RegistrySupplier<Item> powder = ModItems.getPowder(ingot);
             if (powder != null && powder.isPresent() && !translatedPowders.contains(powder.getId())) {
                 add(powder.get(), buildPowderName(ingot, false));
             }
@@ -404,8 +405,39 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("desc.gui.assembler.warning", "Некорректный шаблон!");
                 add("desc.gui.upgrade", "Улучшения");
                 add("desc.gui.upgrade.speed", "Скорость: -25% времени за уровень");
+                add("desc.gui.upgrade.power", "Мощность: -25% потребления за уровень");
                 add("desc.gui.upgrade.effectiveness", "Эффективность: шанс бесплатного крафта");
+                add("desc.gui.upgrade.afterburner", "Форсаж: дополнительные эффекты");
                 add("desc.gui.upgrade.overdrive", "Овердрайв: x2 циклов за тик за уровень");
+
+                // Upgrade items
+                add("item.hbm_m.upgrade_speed_1", "Апгрейд скорости Mk.I");
+                add("item.hbm_m.upgrade_speed_2", "Апгрейд скорости Mk.II");
+                add("item.hbm_m.upgrade_speed_3", "Апгрейд скорости Mk.III");
+                add("item.hbm_m.upgrade_effect_1", "Апгрейд эффективности Mk.I");
+                add("item.hbm_m.upgrade_effect_2", "Апгрейд эффективности Mk.II");
+                add("item.hbm_m.upgrade_effect_3", "Апгрейд эффективности Mk.III");
+                add("item.hbm_m.upgrade_power_1", "Апгрейд мощности Mk.I");
+                add("item.hbm_m.upgrade_power_2", "Апгрейд мощности Mk.II");
+                add("item.hbm_m.upgrade_power_3", "Апгрейд мощности Mk.III");
+                add("item.hbm_m.upgrade_fortune_1", "Апгрейд удачи Mk.I");
+                add("item.hbm_m.upgrade_fortune_2", "Апгрейд удачи Mk.II");
+                add("item.hbm_m.upgrade_fortune_3", "Апгрейд удачи Mk.III");
+                add("item.hbm_m.upgrade_afterburn_1", "Апгрейд форсажа Mk.I");
+                add("item.hbm_m.upgrade_afterburn_2", "Апгрейд форсажа Mk.II");
+                add("item.hbm_m.upgrade_afterburn_3", "Апгрейд форсажа Mk.III");
+                add("item.hbm_m.upgrade_overdrive_1", "Апгрейд овердрайва Mk.I");
+                add("item.hbm_m.upgrade_overdrive_2", "Апгрейд овердрайва Mk.II");
+                add("item.hbm_m.upgrade_overdrive_3", "Апгрейд овердрайва Mk.III");
+
+                // Upgrade tooltips
+                add("tooltip.hbm_m.upgrade.type.speed", "Скорость: ускоряет работу, увеличивает потребление");
+                add("tooltip.hbm_m.upgrade.type.effect", "Эффективность: увеличивает радиус/эффект");
+                add("tooltip.hbm_m.upgrade.type.power", "Мощность: снижает потребление энергии");
+                add("tooltip.hbm_m.upgrade.type.fortune", "Удача: увеличивает выход продукции");
+                add("tooltip.hbm_m.upgrade.type.afterburn", "Форсаж: добавляет дополнительные эффекты");
+                add("tooltip.hbm_m.upgrade.type.overdrive", "Овердрайв: экстремальное ускорение");
+                add("tooltip.hbm_m.upgrade.tier", "Уровень: %d");
 
                 // === ИНСТРУМЕНТЫ И УСТРОЙСТВА ===
                 add("tooltip.hbm_m.gigadet.line1", "Был создан по приколу");
@@ -855,13 +887,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.fluid_tank.empty_locked", "Пусто (тип цистерны: %s)");
                 add("gui.hbm_m.fluid_tank.empty_filter", "Пусто (фильтр: %s)");
                 add("gui.hbm_m.fluid_tank.filter_set", "Тип установлен: %s!");
-                add("gui.hbm_m.fluid_tank.mode.0", "Режим: Только ввод");
+                add("gui.hbm_m.fluid_tank.mode.0", "Режим: Только вывод");
                 add("gui.hbm_m.fluid_tank.mode.1", "Режим: Буфер");
-                add("gui.hbm_m.fluid_tank.mode.2", "Режим: Только вывод");
+                add("gui.hbm_m.fluid_tank.mode.2", "Режим: Только ввод");
                 add("gui.hbm_m.fluid_tank.mode.3", "Режим: Отключено");
                 add("gui.hbm_m.fluid_tank.pressure", "Давление: %s PU");
                 add("gui.hbm_m.fluid_tank.pressurized", "Под давлением — используйте компрессор!");
-                add("gui.hbm_m.fluid_tank.hold_shift_more", "Удерживайте LSHIFT для подробностей");
+                add("gui.hbm_m.fluid_tank.hold_shift_more", "Удерживайте <LSHIFT> для подробностей");
                 add("fluid.hbm_m.trait.polluting", "[Загрязняющая]");
                 add("fluid.hbm_m.trait.polluting.when_spilled", "При разливе:");
                 add("fluid.hbm_m.trait.polluting.when_burned", "При сжигании:");
@@ -1610,6 +1642,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.battery.mode.locked.desc", "Все операции с энергией отключены.");
 
                 add("gui.recipe.setRecipe", "Выбрать рецепт");
+                add("gui.recipe.duration", "Время");
+                add("gui.recipe.consumption", "Потребление");
+                add("gui.recipe.input", "Вход");
+                add("gui.recipe.output", "Выход");
                 add("gui.hbm_m.fluid.empty", "Пусто");
 
                 add("tooltip.hbm_m.battery.stored", "Хранится энергии:");
@@ -2195,8 +2231,39 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("desc.gui.assembler.warning", "No valid template!");
                 add("desc.gui.upgrade", "Upgrades");
                 add("desc.gui.upgrade.speed", "Speed: -25% time per level");
+                add("desc.gui.upgrade.power", "Power: -25% consumption per level");
                 add("desc.gui.upgrade.effectiveness", "Effectiveness: free craft chance");
+                add("desc.gui.upgrade.afterburner", "Afterburner: additional effects");
                 add("desc.gui.upgrade.overdrive", "Overdrive: x2 cycles per tick per level");
+
+                // Upgrade items
+                add("item.hbm_m.upgrade_speed_1", "Speed Upgrade Mk.I");
+                add("item.hbm_m.upgrade_speed_2", "Speed Upgrade Mk.II");
+                add("item.hbm_m.upgrade_speed_3", "Speed Upgrade Mk.III");
+                add("item.hbm_m.upgrade_effect_1", "Effectiveness Upgrade Mk.I");
+                add("item.hbm_m.upgrade_effect_2", "Effectiveness Upgrade Mk.II");
+                add("item.hbm_m.upgrade_effect_3", "Effectiveness Upgrade Mk.III");
+                add("item.hbm_m.upgrade_power_1", "Power Upgrade Mk.I");
+                add("item.hbm_m.upgrade_power_2", "Power Upgrade Mk.II");
+                add("item.hbm_m.upgrade_power_3", "Power Upgrade Mk.III");
+                add("item.hbm_m.upgrade_fortune_1", "Fortune Upgrade Mk.I");
+                add("item.hbm_m.upgrade_fortune_2", "Fortune Upgrade Mk.II");
+                add("item.hbm_m.upgrade_fortune_3", "Fortune Upgrade Mk.III");
+                add("item.hbm_m.upgrade_afterburn_1", "Afterburner Upgrade Mk.I");
+                add("item.hbm_m.upgrade_afterburn_2", "Afterburner Upgrade Mk.II");
+                add("item.hbm_m.upgrade_afterburn_3", "Afterburner Upgrade Mk.III");
+                add("item.hbm_m.upgrade_overdrive_1", "Overdrive Upgrade Mk.I");
+                add("item.hbm_m.upgrade_overdrive_2", "Overdrive Upgrade Mk.II");
+                add("item.hbm_m.upgrade_overdrive_3", "Overdrive Upgrade Mk.III");
+
+                // Upgrade tooltips
+                add("tooltip.hbm_m.upgrade.type.speed", "Speed: increases processing speed, increases power consumption");
+                add("tooltip.hbm_m.upgrade.type.effect", "Effectiveness: increases range/effect");
+                add("tooltip.hbm_m.upgrade.type.power", "Power: reduces energy consumption");
+                add("tooltip.hbm_m.upgrade.type.fortune", "Fortune: increases output yield");
+                add("tooltip.hbm_m.upgrade.type.afterburn", "Afterburner: adds additional effects");
+                add("tooltip.hbm_m.upgrade.type.overdrive", "Overdrive: extreme speed boost at high cost");
+                add("tooltip.hbm_m.upgrade.tier", "Tier: %d");
 
                 // === ИНСТРУМЕНТЫ И УСТРОЙСТВА ===
                 add("tooltip.hbm_m.crowbar.line1", "Tool for prying open containers.");
@@ -2566,13 +2633,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.fluid_tank.empty_locked", "Empty (tank type: %s)");
                 add("gui.hbm_m.fluid_tank.empty_filter", "Empty (filter: %s)");
                 add("gui.hbm_m.fluid_tank.filter_set", "Type set to %s!");
-                add("gui.hbm_m.fluid_tank.mode.0", "Mode: Input only");
+                add("gui.hbm_m.fluid_tank.mode.0", "Mode: Output only");
                 add("gui.hbm_m.fluid_tank.mode.1", "Mode: Buffer");
-                add("gui.hbm_m.fluid_tank.mode.2", "Mode: Output only");
+                add("gui.hbm_m.fluid_tank.mode.2", "Mode: Input only");
                 add("gui.hbm_m.fluid_tank.mode.3", "Mode: Disabled");
                 add("gui.hbm_m.fluid_tank.pressure", "Pressure: %s PU");
                 add("gui.hbm_m.fluid_tank.pressurized", "Pressurized — use a compressor!");
-                add("gui.hbm_m.fluid_tank.hold_shift_more", "Hold LSHIFT for more info");
+                add("gui.hbm_m.fluid_tank.hold_shift_more", "Hold <LSHIFT> for more info");
                 add("fluid.hbm_m.trait.polluting", "[Polluting]");
                 add("fluid.hbm_m.trait.polluting.when_spilled", "When spilled:");
                 add("fluid.hbm_m.trait.polluting.when_burned", "When burned:");
@@ -3340,6 +3407,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.battery.mode.locked.desc", "All energy operations are disabled.");
 
                 add("gui.recipe.setRecipe", "Set Recipe");
+                add("gui.recipe.duration", "Duration");
+                add("gui.recipe.consumption", "Consumption");
+                add("gui.recipe.input", "Input");
+                add("gui.recipe.output", "Output");
                 add("gui.hbm_m.fluid.empty", "Empty");
 
                 add("tooltip.hbm_m.battery.stored", "Stored energy:");
@@ -3596,3 +3667,4 @@ public class ModLanguageProvider extends LanguageProvider {
         }
     }
 }
+*///?}

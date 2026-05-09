@@ -19,12 +19,11 @@ public class ItemBlades extends Item {
         this.unbreakable = true;
     }
 
-    @Override
+    // Forge/NeoForge: stack-sensitive durability (как ModPowerArmorItem).
     public boolean isDamageable(ItemStack stack) {
         return !unbreakable;
     }
 
-    @Override
     public int getMaxDamage(ItemStack stack) {
         return unbreakable ? 0 : maxUses;
     }

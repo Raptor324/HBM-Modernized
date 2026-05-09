@@ -1,14 +1,15 @@
 package com.hbm_m.network;
 
-import java.util.function.Supplier;
-
 import com.hbm_m.item.grenades_and_activators.MultiDetonatorItem;
+import com.hbm_m.network.C2SPacket;
 
+import dev.architectury.networking.NetworkManager.PacketContext;
+
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
 
-public class SetActivePointPacket {
+public class SetActivePointPacket implements C2SPacket {
 
     private final int pointIndex;
 
@@ -16,49 +17,42 @@ public class SetActivePointPacket {
         this.pointIndex = pointIndex;
     }
 
-    public SetActivePointPacket() {
-        this(0);
-    }
+    // ── Serialization ─────────────────────────────────────────────────────────
 
-    public static void encode(SetActivePointPacket msg, net.minecraft.network.FriendlyByteBuf buf) {
-        buf.writeInt(msg.pointIndex);
-    }
-
-    public static SetActivePointPacket decode(net.minecraft.network.FriendlyByteBuf buf) {
+    public static SetActivePointPacket decode(FriendlyByteBuf buf) {
         return new SetActivePointPacket(buf.readInt());
     }
 
-    public static boolean handle(SetActivePointPacket msg, Supplier<NetworkEvent.Context> ctxSupplier) {
-        NetworkEvent.Context ctx = ctxSupplier.get();
-        ctx.enqueueWork(() -> {
-            ServerPlayer player = ctx.getSender();
-            if (player != null) {
-                handleSetActivePoint(player, msg.pointIndex);
-            }
-        });
-        ctx.setPacketHandled(true);
-        return true;
+    @Override
+    public void write(FriendlyByteBuf buf) {
+        buf.writeInt(pointIndex);
     }
 
-    private static void handleSetActivePoint(ServerPlayer player, int pointIndex) {
-        ItemStack mainItem = player.getMainHandItem();
-        ItemStack offItem = player.getOffhandItem();
+    // ── Handler ───────────────────────────────────────────────────────────────
 
-        ItemStack detonatorStack = ItemStack.EMPTY;
-        if (mainItem.getItem() instanceof MultiDetonatorItem) {
-            detonatorStack = mainItem;
-        } else if (offItem.getItem() instanceof MultiDetonatorItem) {
-            detonatorStack = offItem;
-        }
+    public static void handle(SetActivePointPacket msg, PacketContext context) {
+        context.queue(() -> {
+            if (!(context.getPlayer() instanceof ServerPlayer player)) return;
 
-        if (!detonatorStack.isEmpty()) {
-            MultiDetonatorItem detonatorItem =
-                    (MultiDetonatorItem) detonatorStack.getItem();
+            ItemStack mainItem = player.getMainHandItem();
+            ItemStack offItem  = player.getOffhandItem();
 
-            detonatorItem.setActivePoint(detonatorStack, pointIndex);
+            ItemStack detonatorStack = ItemStack.EMPTY;
+            if (mainItem.getItem() instanceof MultiDetonatorItem) detonatorStack = mainItem;
+            else if (offItem.getItem() instanceof MultiDetonatorItem) detonatorStack = offItem;
 
-            // Принудительно синхронизируем изменения ItemStack
+            if (detonatorStack.isEmpty()) return;
+
+            MultiDetonatorItem detonatorItem = (MultiDetonatorItem) detonatorStack.getItem();
+            detonatorItem.setActivePoint(detonatorStack, msg.pointIndex);
             player.containerMenu.broadcastChanges();
-        }
+        });
+    }
+
+    // ── Send helper ───────────────────────────────────────────────────────────
+
+    public static void sendToServer(int pointIndex) {
+        ModPacketHandler.sendToServer(ModPacketHandler.SET_ACTIVE_POINT,
+                new SetActivePointPacket(pointIndex));
     }
 }

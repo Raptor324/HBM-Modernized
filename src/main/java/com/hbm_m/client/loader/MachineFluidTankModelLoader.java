@@ -11,14 +11,17 @@ import java.util.Set;
 
 public class MachineFluidTankModelLoader extends AbstractObjPartModelLoader<MachineFluidTankBakedModel> {
 
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath("hbm_m", "tank");
+    //? if fabric && < 1.21.1 {
+    public static final ResourceLocation ID = new ResourceLocation("hbm_m", "tank");
+    //?} else {
+        /*public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath("hbm_m", "tank");
+    *///?}
 
-    @Override
+
     protected Set<String> getPartNames(JsonObject jsonObject) {
         return Set.of("Frame", "Tank");
     }
 
-    @Override
     protected MachineFluidTankBakedModel createBakedModel(HashMap<String, BakedModel> bakedParts, ItemTransforms transforms, ResourceLocation modelLocation) {
         return new MachineFluidTankBakedModel(bakedParts, transforms);
     }

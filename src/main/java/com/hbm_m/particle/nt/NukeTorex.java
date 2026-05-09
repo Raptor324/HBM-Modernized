@@ -10,7 +10,7 @@ import org.joml.Vector3f;
 
 import com.hbm_m.client.ClientRenderHandler;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.powerarmor.ModEventHandlerClient;
+import com.hbm_m.powerarmor.PowerArmorClientState;
 import com.hbm_m.sound.ModSounds;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -52,8 +52,18 @@ public class NukeTorex extends ParticleNT {
     private static final int MAX_CLOUDLETS_FANCY = 12_000;
     private static final int MAX_CLOUDLETS_FAST = 6_000;
 
-    private static final ResourceLocation CLOUDLET = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/particle_base.png");
-    private static final ResourceLocation FLASH = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/flare.png");
+    //? if fabric && < 1.21.1 {
+    private static final ResourceLocation CLOUDLET = new ResourceLocation(RefStrings.MODID, "textures/particle/particle_base.png");
+    //?} else {
+        /*private static final ResourceLocation CLOUDLET = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/particle_base.png");
+    *///?}
+
+    //? if fabric && < 1.21.1 {
+    private static final ResourceLocation FLASH = new ResourceLocation(RefStrings.MODID, "textures/particle/flare.png");
+    //?} else {
+        /*private static final ResourceLocation FLASH = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/flare.png");
+    *///?}
+
 
     public NukeTorex(ClientLevel level, double x, double y, double z) {
         super(level, x, y, z);
@@ -458,11 +468,11 @@ public class NukeTorex extends ParticleNT {
         // buffer.endBatch(ClientRenderHandler.CustomRenderTypes.NUKE_CLOUDS.apply(CLOUDLET));
 
         long now = System.currentTimeMillis();
-        if (this.age < 10 && now - ModEventHandlerClient.flashTimestamp > 1_000) {
-            ModEventHandlerClient.triggerNuclearFlash();
+        if (this.age < 10 && now - PowerArmorClientState.flashTimestamp > 1_000) {
+            PowerArmorClientState.triggerNuclearFlash();
         }
-        if (this.didPlaySound && !this.didShake && now - ModEventHandlerClient.shakeTimestamp > 1_000) {
-            ModEventHandlerClient.shakeTimestamp = now;
+        if (this.didPlaySound && !this.didShake && now - PowerArmorClientState.shakeTimestamp > 1_000) {
+            PowerArmorClientState.shakeTimestamp = now;
             this.didShake = true;
             Player player = Minecraft.getInstance().player;
             if (player != null) {

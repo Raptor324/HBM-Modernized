@@ -1,15 +1,17 @@
 package com.hbm_m.block.entity.machines;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.api.fluids.FluidNetProvider;
 import com.hbm_m.api.fluids.FluidNode;
 import com.hbm_m.api.fluids.IFluidPipeMK2;
+import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.api.network.UniNodespace;
 import com.hbm_m.block.entity.ModBlockEntities;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -22,7 +24,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.registries.ForgeRegistries;
 
 /**
  * BlockEntity клапана (порт TileEntityFluidValve из 1.7.10).
@@ -54,7 +55,7 @@ public class FluidValveBlockEntity extends BlockEntity implements IFluidPipeMK2 
 
     @Override
     public boolean canConnect(Fluid fluid, Direction fromDir) {
-        return fromDir != null && fluid == this.fluidType && open;
+        return fromDir != null && open && VanillaFluidEquivalence.sameSubstance(fluid, this.fluidType);
     }
 
     // =====================================================================================
@@ -133,20 +134,34 @@ public class FluidValveBlockEntity extends BlockEntity implements IFluidPipeMK2 
         }
     }
 
-    @Override
-    public void onLoad() {
-        super.onLoad();
-        if (level != null && !level.isClientSide) {
-            boolean powered = level.hasNeighborSignal(worldPosition);
-            boolean newOpen = !powered;
-            if (newOpen != open) {
-                updateRedstone(level, worldPosition);
-            }
+    private void initFromLevel(Level level) {
+        if (level.isClientSide) return;
+        boolean powered = level.hasNeighborSignal(worldPosition);
+        boolean newOpen = !powered;
+        if (newOpen != open) {
+            updateRedstone(level, worldPosition);
         }
         if (level instanceof ServerLevel sl && open) {
             ensureNode(sl);
         }
     }
+
+
+    //? if forge {
+    /*@Override
+    public void onLoad() {
+        super.onLoad();
+        if (level != null) initFromLevel(level);
+    }
+    *///?}
+
+    //? if fabric {
+    @Override
+    public void setLevel(Level level) {
+        super.setLevel(level);
+        initFromLevel(level);
+    }
+    //?}
 
     @Override
     public void setRemoved() {
@@ -155,29 +170,31 @@ public class FluidValveBlockEntity extends BlockEntity implements IFluidPipeMK2 
         super.setRemoved();
     }
 
-    @Override
+    //? if forge {
+    /*@Override
     public void onChunkUnloaded() {
         if (node != null) node.expired = true;
         super.onChunkUnloaded();
     }
+    *///?}
 
     // =====================================================================================
     // NBT
     // =====================================================================================
 
     @Override
-    protected void saveAdditional(@Nonnull CompoundTag tag) {
+    protected void saveAdditional( @NotNull CompoundTag tag) {
         super.saveAdditional(tag);
-        ResourceLocation loc = ForgeRegistries.FLUIDS.getKey(fluidType);
+        ResourceLocation loc = BuiltInRegistries.FLUID.getKey(fluidType);
         if (loc != null) tag.putString(NBT_FLUID_TYPE, loc.toString());
         tag.putBoolean(NBT_OPEN, open);
     }
 
     @Override
-    public void load(@Nonnull CompoundTag tag) {
+    public void load(@NotNull CompoundTag tag) {
         super.load(tag);
         if (tag.contains(NBT_FLUID_TYPE)) {
-            Fluid f = ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse(tag.getString(NBT_FLUID_TYPE)));
+            Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(tag.getString(NBT_FLUID_TYPE)));
             this.fluidType = f != null ? f : Fluids.EMPTY;
         }
         open = !tag.contains(NBT_OPEN) || tag.getBoolean(NBT_OPEN);

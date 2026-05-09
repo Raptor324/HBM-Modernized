@@ -29,7 +29,7 @@ import com.hbm_m.block.entity.machines.MachineCentrifugeBlockEntity;
 import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.block.entity.machines.MachineCrystallizerBlockEntity;
 import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
-import com.hbm_m.block.entity.machines.MachineHydraulicFrackiningTowerBlockEntity;
+import com.hbm_m.block.entity.machines.MachineFrackingTowerBlockEntity;
 import com.hbm_m.block.entity.machines.MachineIndustrialBoilerBlockEntity;
 import com.hbm_m.block.entity.machines.MachineIndustrialTurbineBlockEntity;
 import com.hbm_m.block.entity.machines.MachinePressBlockEntity;
@@ -41,54 +41,53 @@ import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import dev.architectury.registry.registries.DeferredRegister;
+import net.minecraft.core.registries.Registries;
+import dev.architectury.registry.registries.RegistrySupplier;
 
 
 public class ModBlockEntities {
 
 	public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
-			DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, RefStrings.MODID);
+			DeferredRegister.create(RefStrings.MODID, Registries.BLOCK_ENTITY_TYPE);
 
-	public static final RegistryObject<BlockEntityType<MachineCrystallizerBlockEntity>> CRYSTALLIZER =
+	public static final RegistrySupplier<BlockEntityType<MachineCrystallizerBlockEntity>> CRYSTALLIZER =
 		BLOCK_ENTITIES.register("crystallizer", () ->
 			BlockEntityType.Builder.of(MachineCrystallizerBlockEntity::new, ModBlocks.CRYSTALLIZER.get())
 				.build(null));
 
-	public static final RegistryObject<BlockEntityType<MachineHydraulicFrackiningTowerBlockEntity>> HYDRAULIC_FRACKINING_TOWER_BE =
+	public static final RegistrySupplier<BlockEntityType<MachineFrackingTowerBlockEntity>> HYDRAULIC_FRACKINING_TOWER_BE =
 		BLOCK_ENTITIES.register("hydraulic_frackining_tower_be", () ->
-            BlockEntityType.Builder.of(MachineHydraulicFrackiningTowerBlockEntity::new, ModBlocks.HYDRAULIC_FRACKINING_TOWER.get())
+            BlockEntityType.Builder.of(MachineFrackingTowerBlockEntity::new, ModBlocks.HYDRAULIC_FRACKINING_TOWER.get())
                 .build(null));
 
-    public static final RegistryObject<BlockEntityType<GeigerCounterBlockEntity>> GEIGER_COUNTER_BE =
+    public static final RegistrySupplier<BlockEntityType<GeigerCounterBlockEntity>> GEIGER_COUNTER_BE =
 		BLOCK_ENTITIES.register("geiger_counter_be", () ->
 			BlockEntityType.Builder.<GeigerCounterBlockEntity>of(GeigerCounterBlockEntity::new, ModBlocks.GEIGER_COUNTER_BLOCK.get())
 				.build(null));
 
-    public static final RegistryObject<BlockEntityType<MachineAssemblerBlockEntity>> MACHINE_ASSEMBLER_BE =
+    public static final RegistrySupplier<BlockEntityType<MachineAssemblerBlockEntity>> MACHINE_ASSEMBLER_BE =
 		BLOCK_ENTITIES.register("machine_assembler_be", () ->
 			BlockEntityType.Builder.<MachineAssemblerBlockEntity>of(MachineAssemblerBlockEntity::new, ModBlocks.MACHINE_ASSEMBLER.get())
 				.build(null));
 
-    public static final RegistryObject<BlockEntityType<MachineAdvancedAssemblerBlockEntity>> ADVANCED_ASSEMBLY_MACHINE_BE =
+    public static final RegistrySupplier<BlockEntityType<MachineAdvancedAssemblerBlockEntity>> ADVANCED_ASSEMBLY_MACHINE_BE =
 		BLOCK_ENTITIES.register("advanced_assembly_machine_be", () ->
 			BlockEntityType.Builder.<MachineAdvancedAssemblerBlockEntity>of(MachineAdvancedAssemblerBlockEntity::new, ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get())
 				.build(null));
 
-    public static final RegistryObject<BlockEntityType<MachineBatteryBlockEntity>> MACHINE_BATTERY_BE =
+    public static final RegistrySupplier<BlockEntityType<MachineBatteryBlockEntity>> MACHINE_BATTERY_BE =
             BLOCK_ENTITIES.register("machine_battery_be", () -> {
-                // Превращаем список RegistryObject в массив Block[]
+                // Превращаем список RegistrySupplier в массив Block[]
                 Block[] validBlocks = ModBlocks.BATTERY_BLOCKS.stream()
-                        .map(RegistryObject::get)
+                        .map(RegistrySupplier::get)
                         .toArray(Block[]::new);
 
                 return BlockEntityType.Builder.<MachineBatteryBlockEntity>of(MachineBatteryBlockEntity::new, validBlocks)
                         .build(null);
             });
 
-    public static final RegistryObject<BlockEntityType<AnvilBlockEntity>> ANVIL_BE =
+    public static final RegistrySupplier<BlockEntityType<AnvilBlockEntity>> ANVIL_BE =
         BLOCK_ENTITIES.register("anvil_be", () ->
             BlockEntityType.Builder.<AnvilBlockEntity>of(AnvilBlockEntity::new,
                     ModBlocks.ANVIL_IRON.get(),
@@ -105,108 +104,108 @@ public class ModBlockEntities {
                     ModBlocks.ANVIL_MURKY.get())
                 .build(null));
 
-    public static final RegistryObject<BlockEntityType<MineBlockEntity>> MINE_BLOCK_ENTITY =
+    public static final RegistrySupplier<BlockEntityType<MineBlockEntity>> MINE_BLOCK_ENTITY =
             BLOCK_ENTITIES.register("mine_block_entity", () ->
                     BlockEntityType.Builder.of(MineBlockEntity::new, ModBlocks.MINE_AP.get())
                             .build(null)
             );
 
-    public static final RegistryObject<BlockEntityType<MineBlockEntity>> MINE_NUKE_BLOCK_ENTITY =
+    public static final RegistrySupplier<BlockEntityType<MineBlockEntity>> MINE_NUKE_BLOCK_ENTITY =
             BLOCK_ENTITIES.register("mine_nuke_block_entity", () ->
                     BlockEntityType.Builder.of(MineBlockEntity::new, ModBlocks.MINE_FAT.get())
                             .build(null)
             );
 
-    public static final RegistryObject<BlockEntityType<NukeFatManBlockEntity>> NUKE_FAT_MAN_BE =
+    public static final RegistrySupplier<BlockEntityType<NukeFatManBlockEntity>> NUKE_FAT_MAN_BE =
             BLOCK_ENTITIES.register("nuke_fat_man_be", () ->
                     BlockEntityType.Builder.of(NukeFatManBlockEntity::new, ModBlocks.NUKE_FAT_MAN.get())
                             .build(null));
 
-    public static final RegistryObject<BlockEntityType<MachineShredderBlockEntity>> SHREDDER =
+    public static final RegistrySupplier<BlockEntityType<MachineShredderBlockEntity>> SHREDDER =
             BLOCK_ENTITIES.register("shredder", () ->
                     BlockEntityType.Builder.of(MachineShredderBlockEntity::new,
                             ModBlocks.SHREDDER.get()).build(null));
 
-    public static final RegistryObject<BlockEntityType<MachineCentrifugeBlockEntity>> CENTRIFUGE_BE =
+    public static final RegistrySupplier<BlockEntityType<MachineCentrifugeBlockEntity>> CENTRIFUGE_BE =
             BLOCK_ENTITIES.register("centrifuge_be", () ->
                     BlockEntityType.Builder.of(MachineCentrifugeBlockEntity::new,
                             ModBlocks.CENTRIFUGE.get()).build(null));
 
-    public static final RegistryObject<BlockEntityType<UniversalMachinePartBlockEntity>> UNIVERSAL_MACHINE_PART_BE =
+    public static final RegistrySupplier<BlockEntityType<UniversalMachinePartBlockEntity>> UNIVERSAL_MACHINE_PART_BE =
         BLOCK_ENTITIES.register("universal_machine_part_be", () ->
 			BlockEntityType.Builder.<UniversalMachinePartBlockEntity>of(UniversalMachinePartBlockEntity::new, ModBlocks.UNIVERSAL_MACHINE_PART.get())
 				.build(null));
 
-	public static final RegistryObject<BlockEntityType<WireBlockEntity>> WIRE_BE =
+	public static final RegistrySupplier<BlockEntityType<WireBlockEntity>> WIRE_BE =
 		BLOCK_ENTITIES.register("wire_be", () ->
 			BlockEntityType.Builder.<WireBlockEntity>of(WireBlockEntity::new, ModBlocks.WIRE_COATED.get())
 				.build(null));
 
-	public static final RegistryObject<BlockEntityType<LaunchPadBlockEntity>> LAUNCH_PAD_BE =
+	public static final RegistrySupplier<BlockEntityType<LaunchPadBlockEntity>> LAUNCH_PAD_BE =
 		BLOCK_ENTITIES.register("launch_pad_be", () ->
 			BlockEntityType.Builder.<LaunchPadBlockEntity>of(LaunchPadBlockEntity::new, ModBlocks.LAUNCH_PAD.get())
 				.build(null));
 
-	public static final RegistryObject<BlockEntityType<LaunchPadRustedBlockEntity>> LAUNCH_PAD_RUSTED_BE =
+	public static final RegistrySupplier<BlockEntityType<LaunchPadRustedBlockEntity>> LAUNCH_PAD_RUSTED_BE =
 		BLOCK_ENTITIES.register("launch_pad_rusted_be", () ->
 			BlockEntityType.Builder.<LaunchPadRustedBlockEntity>of(LaunchPadRustedBlockEntity::new, ModBlocks.LAUNCH_PAD_RUSTED.get())
 				.build(null));
 
 
 
-    public static final RegistryObject<BlockEntityType<SwitchBlockEntity>> SWITCH_BE =
+    public static final RegistrySupplier<BlockEntityType<SwitchBlockEntity>> SWITCH_BE =
             BLOCK_ENTITIES.register("switch_be", () ->
                     BlockEntityType.Builder.of(SwitchBlockEntity::new, ModBlocks.SWITCH.get())
                             .build(null));
 
-	public static final RegistryObject<BlockEntityType<BlastFurnaceBlockEntity>> BLAST_FURNACE_BE =
+	public static final RegistrySupplier<BlockEntityType<BlastFurnaceBlockEntity>> BLAST_FURNACE_BE =
 			BLOCK_ENTITIES.register("blast_furnace_be", () ->
 					BlockEntityType.Builder.of(BlastFurnaceBlockEntity::new,
 							ModBlocks.BLAST_FURNACE.get()).build(null));
 
-	public static final RegistryObject<BlockEntityType<MachinePressBlockEntity>> PRESS_BE =
+	public static final RegistrySupplier<BlockEntityType<MachinePressBlockEntity>> PRESS_BE =
 			BLOCK_ENTITIES.register("press_be", () ->
 					BlockEntityType.Builder.of(MachinePressBlockEntity::new,
 							ModBlocks.PRESS.get()).build(null));
 
-	public static final RegistryObject<BlockEntityType<MachineWoodBurnerBlockEntity>> WOOD_BURNER_BE =
+	public static final RegistrySupplier<BlockEntityType<MachineWoodBurnerBlockEntity>> WOOD_BURNER_BE =
 			BLOCK_ENTITIES.register("wood_burner_be", () ->
 					BlockEntityType.Builder.of(MachineWoodBurnerBlockEntity::new,
 							ModBlocks.WOOD_BURNER.get()).build(null));
 
-            public static final RegistryObject<BlockEntityType<MachineChemicalPlantBlockEntity>> CHEMICAL_PLANT_BE =
+            public static final RegistrySupplier<BlockEntityType<MachineChemicalPlantBlockEntity>> CHEMICAL_PLANT_BE =
                     BLOCK_ENTITIES.register("chemical_plant_be", () ->
                             BlockEntityType.Builder.of(MachineChemicalPlantBlockEntity::new,
                                     ModBlocks.CHEMICAL_PLANT.get()).build(null));
 
-    public static final RegistryObject<BlockEntityType<MachineFluidTankBlockEntity>> FLUID_TANK_BE =
+    public static final RegistrySupplier<BlockEntityType<MachineFluidTankBlockEntity>> FLUID_TANK_BE =
             BLOCK_ENTITIES.register("fluid_tank_be", () ->
                     BlockEntityType.Builder.of(MachineFluidTankBlockEntity::new,
                             ModBlocks.FLUID_TANK.get()).build(null));
 
-    public static final RegistryObject<BlockEntityType<BatterySocketBlockEntity>> BATTERY_SOCKET_BE =
+    public static final RegistrySupplier<BlockEntityType<BatterySocketBlockEntity>> BATTERY_SOCKET_BE =
             BLOCK_ENTITIES.register("battery_socket_be", () ->
                     BlockEntityType.Builder.of(BatterySocketBlockEntity::new,
                             ModBlocks.MACHINE_BATTERY_SOCKET.get()).build(null));
 
-    public static final RegistryObject<BlockEntityType<MachineIndustrialBoilerBlockEntity>> INDUSTRIAL_BOILER_BE =
+    public static final RegistrySupplier<BlockEntityType<MachineIndustrialBoilerBlockEntity>> INDUSTRIAL_BOILER_BE =
             BLOCK_ENTITIES.register("industrial_boiler_be", () ->
                     BlockEntityType.Builder.of(MachineIndustrialBoilerBlockEntity::new,
                             ModBlocks.INDUSTRIAL_BOILER.get()).build(null));
 
-    public static final RegistryObject<BlockEntityType<MachineRefineryBlockEntity>> REFINERY_BE =
+    public static final RegistrySupplier<BlockEntityType<MachineRefineryBlockEntity>> REFINERY_BE =
             BLOCK_ENTITIES.register("refinery_be", () ->
                     BlockEntityType.Builder.of(MachineRefineryBlockEntity::new,
                             ModBlocks.REFINERY.get()).build(null));
 
-    public static final RegistryObject<BlockEntityType<MachineIndustrialTurbineBlockEntity>> INDUSTRIAL_TURBINE_BE =
+    public static final RegistrySupplier<BlockEntityType<MachineIndustrialTurbineBlockEntity>> INDUSTRIAL_TURBINE_BE =
             BLOCK_ENTITIES.register("industrial_turbine_be", () ->
                     BlockEntityType.Builder.of(MachineIndustrialTurbineBlockEntity::new,
                             ModBlocks.INDUSTRIAL_TURBINE.get()).build(null));
 
     // ДВЕРИ
 
-    public static final RegistryObject<BlockEntityType<DoorBlockEntity>> DOOR_ENTITY =
+    public static final RegistrySupplier<BlockEntityType<DoorBlockEntity>> DOOR_ENTITY =
         BLOCK_ENTITIES.register("door", () -> 
                 BlockEntityType.Builder.of(DoorBlockEntity::new,
                 // Все блоки дверей, которые используют этот BlockEntity
@@ -225,72 +224,72 @@ public class ModBlockEntities {
                         ModBlocks.VAULT_DOOR.get())
                     .build(null));
 
-    public static final RegistryObject<BlockEntityType<IronCrateBlockEntity>> IRON_CRATE_BE =
+    public static final RegistrySupplier<BlockEntityType<IronCrateBlockEntity>> IRON_CRATE_BE =
             BLOCK_ENTITIES.register("iron_crate_be", () ->
                     BlockEntityType.Builder.<IronCrateBlockEntity>of(
                             IronCrateBlockEntity::new,
                             ModBlocks.CRATE_IRON.get()
                     ).build(null));
 
-    public static final RegistryObject<BlockEntityType<SteelCrateBlockEntity>> STEEL_CRATE_BE =
+    public static final RegistrySupplier<BlockEntityType<SteelCrateBlockEntity>> STEEL_CRATE_BE =
             BLOCK_ENTITIES.register("steel_crate_be", () ->
                     BlockEntityType.Builder.<SteelCrateBlockEntity>of(
                             SteelCrateBlockEntity::new,
                             ModBlocks.CRATE_STEEL.get()
                     ).build(null));
-    public static final RegistryObject<BlockEntityType<DeshCrateBlockEntity>> DESH_CRATE_BE =
+    public static final RegistrySupplier<BlockEntityType<DeshCrateBlockEntity>> DESH_CRATE_BE =
             BLOCK_ENTITIES.register("desh_crate_be", () ->
                     BlockEntityType.Builder.<DeshCrateBlockEntity>of(
                             DeshCrateBlockEntity::new,
                             ModBlocks.CRATE_DESH.get()
                     ).build(null));
 
-    public static final RegistryObject<BlockEntityType<TungstenCrateBlockEntity>> TUNGSTEN_CRATE_BE =
+    public static final RegistrySupplier<BlockEntityType<TungstenCrateBlockEntity>> TUNGSTEN_CRATE_BE =
             BLOCK_ENTITIES.register("tungsten_crate_be", () ->
                     BlockEntityType.Builder.<TungstenCrateBlockEntity>of(
                             TungstenCrateBlockEntity::new,
                             ModBlocks.CRATE_TUNGSTEN.get()
                     ).build(null));
 
-    public static final RegistryObject<BlockEntityType<TemplateCrateBlockEntity>> TEMPLATE_CRATE_BE =
+    public static final RegistrySupplier<BlockEntityType<TemplateCrateBlockEntity>> TEMPLATE_CRATE_BE =
             BLOCK_ENTITIES.register("template_crate_be", () ->
                     BlockEntityType.Builder.<TemplateCrateBlockEntity>of(
                             TemplateCrateBlockEntity::new,
                             ModBlocks.CRATE_TEMPLATE.get()
                     ).build(null));
 
-    public static final RegistryObject<BlockEntityType<ConverterBlockEntity>> CONVERTER_BE =
+    public static final RegistrySupplier<BlockEntityType<ConverterBlockEntity>> CONVERTER_BE =
             BLOCK_ENTITIES.register("converter_be",
                     () -> BlockEntityType.Builder.of(ConverterBlockEntity::new, ModBlocks.CONVERTER_BLOCK.get()).build(null));
 
-    public static final RegistryObject<BlockEntityType<HeatingOvenBlockEntity>> HEATING_OVEN_BE =
+    public static final RegistrySupplier<BlockEntityType<HeatingOvenBlockEntity>> HEATING_OVEN_BE =
             BLOCK_ENTITIES.register("heating_oven_be", () ->
                     BlockEntityType.Builder.of(HeatingOvenBlockEntity::new,
                             ModBlocks.HEATING_OVEN.get()).build(null));
 
-    public static final RegistryObject<BlockEntityType<FluidDuctBlockEntity>> FLUID_DUCT_BE =
+    public static final RegistrySupplier<BlockEntityType<FluidDuctBlockEntity>> FLUID_DUCT_BE =
             BLOCK_ENTITIES.register("fluid_duct_be", () ->
                     BlockEntityType.Builder.of(FluidDuctBlockEntity::new,
                             ModBlocks.FLUID_DUCT.get(),
                             ModBlocks.FLUID_DUCT_COLORED.get(),
                             ModBlocks.FLUID_DUCT_SILVER.get()).build(null));
 
-    public static final RegistryObject<BlockEntityType<FluidValveBlockEntity>> FLUID_VALVE_BE =
+    public static final RegistrySupplier<BlockEntityType<FluidValveBlockEntity>> FLUID_VALVE_BE =
             BLOCK_ENTITIES.register("fluid_valve_be", () ->
                     BlockEntityType.Builder.of(FluidValveBlockEntity::new,
                             ModBlocks.FLUID_VALVE.get()).build(null));
 
-    public static final RegistryObject<BlockEntityType<FluidPumpBlockEntity>> FLUID_PUMP_BE =
+    public static final RegistrySupplier<BlockEntityType<FluidPumpBlockEntity>> FLUID_PUMP_BE =
             BLOCK_ENTITIES.register("fluid_pump_be", () ->
                     BlockEntityType.Builder.of(FluidPumpBlockEntity::new,
                             ModBlocks.FLUID_PUMP.get()).build(null));
 
-    public static final RegistryObject<BlockEntityType<FluidExhaustBlockEntity>> FLUID_EXHAUST_BE =
+    public static final RegistrySupplier<BlockEntityType<FluidExhaustBlockEntity>> FLUID_EXHAUST_BE =
             BLOCK_ENTITIES.register("fluid_exhaust_be", () ->
                     BlockEntityType.Builder.of(FluidExhaustBlockEntity::new,
                             ModBlocks.FLUID_EXHAUST.get()).build(null));
 
-    public static void register(IEventBus eventBus) {
-        BLOCK_ENTITIES.register(eventBus);
+    public static void init() {
+        BLOCK_ENTITIES.register();
     }
 }

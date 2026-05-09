@@ -1,4 +1,5 @@
-package com.hbm_m.client.particle;
+//? if forge {
+/*package com.hbm_m.client.particle;
 
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.particle.nt.ParticleEngineNT;
@@ -42,3 +43,14 @@ public class EngineHandler {
         }
     }
 }
+*///?}
+
+//? if fabric {
+package com.hbm_m.client.particle;
+
+/**
+ * Fabric: Forge event subscriber isn't available here yet.
+ * This is a stub to keep compilation working across loaders.
+ */
+public class EngineHandler { }
+//?}

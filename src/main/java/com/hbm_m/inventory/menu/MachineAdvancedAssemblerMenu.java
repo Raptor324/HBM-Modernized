@@ -4,8 +4,10 @@ import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity;
+import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.util.LongDataPacker; // <-- Убедись, что этот импорт есть
 
 import net.minecraft.network.FriendlyByteBuf;
@@ -19,8 +21,9 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.SlotItemHandler;
+//? if fabric {
+import team.reborn.energy.api.EnergyStorage;
+//?}
 
 public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
@@ -42,16 +45,28 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
         this.data = pData;
         this.player = pPlayerInventory.player; // Сохраняем игрока
 
-        // Добавляем слоты машины
-        this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
-            this.addSlot(new SlotItemHandler(handler, 0, 152, 81)); // Energy
-            this.addSlot(new SlotItemHandler(handler, 1, 35, 126)); // Blueprint
-            this.addSlot(new SlotItemHandler(handler, 2, 152, 108)); // Upgrade
-            this.addSlot(new SlotItemHandler(handler, 3, 152, 126)); // Upgrade
-            for (int i = 0; i < 4; ++i) for (int j = 0; j < 3; ++j) { // Input
-                this.addSlot(new SlotItemHandler(handler, 4 + (i * 3) + j, 8 + j * 18, 18 + i * 18));
+        // Добавляем слоты машины (без Forge-only SlotItemHandler)
+        var handler = this.blockEntity.getInventory();
+        var container = new ModItemStackHandlerContainer(handler, this.blockEntity::setChanged);
+
+        this.addSlot(new Slot(container, 0, 152, 81) { // Energy
+            @Override public boolean mayPlace(ItemStack stack) {
+                if (ItemEnergyAccess.getHbmProvider(stack).isPresent() || ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
+                //? if fabric {
+                return EnergyStorage.ITEM.find(stack, null) != null;
+                //?} else {
+                /*return false;
+                *///?}
             }
-            this.addSlot(new SlotItemHandler(handler, 16, 98, 45)); // Output
+        });
+        this.addSlot(new Slot(container, 1, 35, 126)); // Blueprint
+        this.addSlot(new Slot(container, 2, 152, 108)); // Upgrade
+        this.addSlot(new Slot(container, 3, 152, 126)); // Upgrade
+        for (int i = 0; i < 4; ++i) for (int j = 0; j < 3; ++j) { // Input
+            this.addSlot(new Slot(container, 4 + (i * 3) + j, 8 + j * 18, 18 + i * 18));
+        }
+        this.addSlot(new Slot(container, 16, 98, 45) { // Output
+            @Override public boolean mayPlace(ItemStack stack) { return false; }
         });
 
         addPlayerInventory(pPlayerInventory);
@@ -127,15 +142,13 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
         super.broadcastChanges();
 
         if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
-            ModPacketHandler.INSTANCE.send(
-                    net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> (net.minecraft.server.level.ServerPlayer) this.player),
-                    new com.hbm_m.network.packet.PacketSyncEnergy(
-                            this.containerId,
-                            blockEntity.getEnergyStored(),
-                            blockEntity.getMaxEnergyStored(),
-                            0L // <--- Передаем 0 как дельту
-                    )
-            );
+            ModPacketHandler.sendToPlayer((net.minecraft.server.level.ServerPlayer) this.player, ModPacketHandler.SYNC_ENERGY,
+                new com.hbm_m.network.packet.PacketSyncEnergy(
+                    this.containerId,
+                    blockEntity.getEnergyStored(),
+                    blockEntity.getMaxEnergyStored(),
+                    0L
+                ));
         }
     }
 

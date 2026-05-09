@@ -2,11 +2,11 @@ package com.hbm_m.item.fekal_electric;
 
 import java.util.List;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyCapabilityProvider;
-import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.util.EnergyFormatter;
 
 import net.minecraft.ChatFormatting;
@@ -17,7 +17,10 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
+
+//? if forge {
+/*import net.minecraftforge.common.capabilities.ICapabilityProvider;
+*///?}
 
 public class ModBatteryItem extends Item {
     protected final long capacity;
@@ -48,12 +51,14 @@ public class ModBatteryItem extends Item {
         return maxExtract;
     }
 
-    @Nullable
+    //? if forge {
+    /*@Nullable
     @Override
     public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
 
         return new EnergyCapabilityProvider(stack, this.capacity, this.maxReceive, this.maxExtract);
     }
+    *///?}
 
     // --- Статический метод для установки энергии ---
     /**
@@ -86,33 +91,35 @@ public class ModBatteryItem extends Item {
     }
 
     @Override
-    public boolean isBarVisible(@Nonnull ItemStack stack) {
+    public boolean isBarVisible(@NotNull ItemStack stack) {
         return true;
     }
 
     @Override
-    public int getBarWidth(@Nonnull ItemStack stack) {
-        return stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
+    public int getBarWidth(@NotNull ItemStack stack) {
+        var provider = ItemEnergyAccess.getHbmProvider(stack);
+        if (provider.isPresent()) {
+            var energy = provider.get();
+            if (energy.getMaxEnergyStored() <= 0) return 0;
+            return (int) Math.round(13.0 * energy.getEnergyStored() / (double) energy.getMaxEnergyStored());
+        }
+
+        return ItemEnergyAccess.getHbmReceiver(stack)
                 .map(energy -> {
                     if (energy.getMaxEnergyStored() <= 0) return 0;
                     return (int) Math.round(13.0 * energy.getEnergyStored() / (double) energy.getMaxEnergyStored());
                 })
-                .orElseGet(() -> stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER)
-                        .map(energy -> {
-                            if (energy.getMaxEnergyStored() <= 0) return 0;
-                            return (int) Math.round(13.0 * energy.getEnergyStored() / (double) energy.getMaxEnergyStored());
-                        })
-                        .orElse(0));
+                .orElse(0);
     }
 
     @Override
-    public int getBarColor(@Nonnull ItemStack stack) {
-        float ratio = stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
+    public int getBarColor(@NotNull ItemStack stack) {
+        float ratio = ItemEnergyAccess.getHbmProvider(stack)
                 .map(energy -> {
                     if (energy.getMaxEnergyStored() <= 0) return 0.0f;
                     return (float) energy.getEnergyStored() / energy.getMaxEnergyStored();
                 })
-                .orElseGet(() -> stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER)
+                .orElseGet(() -> ItemEnergyAccess.getHbmReceiver(stack)
                         .map(energy -> {
                             if (energy.getMaxEnergyStored() <= 0) return 0.0f;
                             return (float) energy.getEnergyStored() / energy.getMaxEnergyStored();
@@ -123,13 +130,12 @@ public class ModBatteryItem extends Item {
     }
 
     @Override
-    public void appendHoverText(@Nonnull ItemStack stack, @Nullable Level level, @Nonnull List<Component> tooltip, @Nonnull TooltipFlag flag) {
-        // [🔥 ИЗМЕНЕНО: Мы передаем ChatFormatting.AQUA в addEnergyTooltip 🔥]
-        stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
+    public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
+        ItemEnergyAccess.getHbmProvider(stack)
                 .ifPresent(energy -> addEnergyTooltip(tooltip, energy.getEnergyStored(), energy.getMaxEnergyStored(), ChatFormatting.AQUA));
 
-        if (!stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()) {
-            stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER)
+        if (ItemEnergyAccess.getHbmProvider(stack).isEmpty()) {
+            ItemEnergyAccess.getHbmReceiver(stack)
                     .ifPresent(energy -> addEnergyTooltip(tooltip, energy.getEnergyStored(), energy.getMaxEnergyStored(), ChatFormatting.AQUA));
         }
 

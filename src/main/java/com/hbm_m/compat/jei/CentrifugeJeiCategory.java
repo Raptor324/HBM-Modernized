@@ -2,18 +2,20 @@ package com.hbm_m.compat.jei;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
-import mezz.jei.api.constants.VanillaTypes;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
+
+import java.util.List;
+
+//? if forge {
+/*import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemStack;
-
-import java.util.List;
 
 public class CentrifugeJeiCategory implements IRecipeCategory<CentrifugeJeiRecipe> {
 
@@ -21,7 +23,12 @@ public class CentrifugeJeiCategory implements IRecipeCategory<CentrifugeJeiRecip
             RecipeType.create(RefStrings.MODID, "centrifuge", CentrifugeJeiRecipe.class);
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_centrifuge.png");
+            //? if fabric && < 1.21.1 {
+            new ResourceLocation(RefStrings.MODID, "textures/gui/processing/gui_centrifuge.png");
+            //?} else {
+                        /^ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_centrifuge.png");
+            ^///?}
+
 
     private final IDrawable background;
     private final IDrawable icon;
@@ -71,3 +78,7 @@ public class CentrifugeJeiCategory implements IRecipeCategory<CentrifugeJeiRecip
         }
     }
 }
+*///?} else {
+public final class CentrifugeJeiCategory {
+    private CentrifugeJeiCategory() {}
+}//?}

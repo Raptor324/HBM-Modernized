@@ -2,15 +2,18 @@ package com.hbm_m.item.liquids;
 
 import java.util.List;
 
+import dev.architectury.fluid.FluidStack;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
-import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.block.machines.FluidDuctBlock;
 import com.hbm_m.interfaces.IItemControlReceiver;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
 import com.hbm_m.interfaces.IMultiblockPart;
+import com.hbm_m.inventory.fluid.ModFluids;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -78,7 +81,10 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
             if (tankType == ModFluids.NONE.getSource() || tankType == Fluids.EMPTY) {
                 nameKey = "fluid.hbm_m.none";
             } else {
-                nameKey = tankType.getFluidType().getDescriptionId();
+                nameKey = "fluid."
+                        + BuiltInRegistries.FLUID.getKey(tankType).getNamespace()
+                        + "."
+                        + BuiltInRegistries.FLUID.getKey(tankType).getPath();
             }
             Component fluidName = Component.translatable(nameKey).withStyle(ChatFormatting.YELLOW);
             Component line = Component.translatable("gui.hbm_m.fluid_tank.filter_set", fluidName)
@@ -145,9 +151,11 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
         if (primary == null || primary == net.minecraft.world.level.material.Fluids.EMPTY || primary == ModFluids.NONE.getSource()) {
             return Component.translatable("item.hbm_m.fluid_identifier.none");
         }
-        
+
         // Позволяем клиенту самому переводить и склеивать текст (работает в мультиплеере для разных языков)
-        return Component.translatable("item.hbm_m.fluid_identifier", Component.translatable(primary.getFluidType().getDescriptionId()));
+        Component fluidName = FluidStack.create(primary, 1000).getName();
+
+        return Component.translatable("item.hbm_m.fluid_identifier", fluidName);
     }
 
     @Override
@@ -166,7 +174,13 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
                 || fluid == ModFluids.NONE.getSource()) {
             return Component.translatable("fluid.hbm_m.none");
         }
-        return Component.translatable(fluid.getFluidType().getDescriptionId());
+        //? if forge {
+        /*return Component.translatable(fluid.getFluidType().getDescriptionId());
+         *///?} else {
+        ResourceLocation key = BuiltInRegistries.FLUID.getKey(fluid);
+        // Стандартное соглашение об именовании: "fluid.modid.fluid_name"
+                return Component.translatable("fluid." + key.getNamespace() + "." + key.getPath());
+        //?}
     }
 
     @Override

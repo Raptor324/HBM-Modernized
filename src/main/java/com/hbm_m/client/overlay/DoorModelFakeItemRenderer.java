@@ -1,32 +1,49 @@
 package com.hbm_m.client.overlay;
 
+
 import com.hbm_m.client.model.variant.DoorModelRegistry;
 import com.hbm_m.client.model.variant.DoorModelSelection;
 
-import net.minecraft.nbt.CompoundTag;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
+//? if forge {
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+*///?}
+//? if fabric {
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+//?}
 
 /**
- * Рендерит 3D модель двери с выбранным скином в GUI через стандартный renderFakeItem.
- * Модель подменяется через ItemOverrides в DoorBakedModel - NBT "hbm_m:door_preview"
- * с выбором (modelType, skin, doorId) заставляет ItemRenderer использовать нужную модель.
- * Это даёт корректный порядок рендера частей и трансформации из display.gui.
+ * Рендерит 3D модель двери с выбранным скином в GUI.
+ *
+ * ItemOverrides.EMPTY в 1.20+: кастомные overrides недоступны,
+ * поэтому NBT-based подмена модели не работает. Вместо этого
+ * разрешаем BakedModel из реестра напрямую и рендерим через
+ * ItemRenderer.render() с подменённой моделью.
  */
-@OnlyIn(Dist.CLIENT)
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
 public final class DoorModelFakeItemRenderer {
 
-    private static final String PREVIEW_TAG = "hbm_m:door_preview";
-    /** Масштаб иконок (1.0 = стандартный размер, 0.8 = чуть меньше) */
     private static final float ICON_SCALE = 0.9f;
 
     private DoorModelFakeItemRenderer() {}
 
     /**
      * Рендерит 3D модель двери с указанным выбором (legacy/modern+skin) в слот GUI.
-     * Использует renderFakeItem с ItemStack, в NBT которого записан выбор - DoorItemOverrides
-     * подставляет нужную модель, и ItemRenderer рендерит её стандартным образом.
      *
      * @param guiGraphics контекст рендеринга
      * @param selection   выбор модели и скина
@@ -34,27 +51,77 @@ public final class DoorModelFakeItemRenderer {
      * @param doorStack   ItemStack двери (базовый стек для fallback)
      * @param x           X координата слота
      * @param y           Y координата слота
-     * @param size        размер слота (не используется - renderFakeItem сам масштабирует)
+     * @param size        размер слота (не используется)
      */
     public static void renderDoorModel(net.minecraft.client.gui.GuiGraphics guiGraphics, DoorModelSelection selection,
                                        String doorId, ItemStack doorStack, int x, int y, int size) {
+        Minecraft mc = Minecraft.getInstance();
         DoorModelRegistry registry = DoorModelRegistry.getInstance();
-        ItemStack stackToRender;
-        if (!registry.isRegistered(doorId) || registry.getModelPath(doorId, selection) == null) {
-            stackToRender = doorStack;
-        } else {
-            ItemStack previewStack = doorStack.copy();
-            CompoundTag preview = selection.save();
-            preview.putString("doorId", doorId);
-            previewStack.getOrCreateTag().put(PREVIEW_TAG, preview);
-            stackToRender = previewStack;
+
+        BakedModel modelToRender = null;
+
+        if (registry.isRegistered(doorId)) {
+            ResourceLocation modelPath = registry.getModelPath(doorId, selection);
+            if (modelPath != null) {
+                BakedModel candidate = mc.getModelManager().getModel(modelPath);
+                if (candidate != null && candidate != mc.getModelManager().getMissingModel()) {
+                    modelToRender = candidate;
+                }
+            }
         }
 
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(x + 8, y + 8, 0);
         guiGraphics.pose().scale(ICON_SCALE, ICON_SCALE, 1f);
         guiGraphics.pose().translate(-8, -8, 0);
-        guiGraphics.renderFakeItem(stackToRender, 0, 0);
+
+        if (modelToRender != null) {
+            renderModelAsItem(guiGraphics, doorStack, modelToRender);
+        } else {
+            guiGraphics.renderFakeItem(doorStack, 0, 0);
+        }
+
         guiGraphics.pose().popPose();
+    }
+
+    /**
+     * Рендерит произвольную BakedModel как item в позиции (0,0) текущего PoseStack.
+     * Повторяет логику GuiGraphics.renderItem() но с подменённой моделью.
+     */
+    private static void renderModelAsItem(net.minecraft.client.gui.GuiGraphics guiGraphics,
+                                           ItemStack stack, BakedModel model) {
+        Minecraft mc = Minecraft.getInstance();
+        PoseStack pose = guiGraphics.pose();
+        MultiBufferSource.BufferSource bufferSource = guiGraphics.bufferSource();
+
+        pose.pushPose();
+        pose.translate(8.0f, 8.0f, 150.0f);
+        pose.mulPoseMatrix(new org.joml.Matrix4f().scaling(1.0f, -1.0f, 1.0f));
+        pose.scale(16.0f, 16.0f, 16.0f);
+
+        RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+        boolean useFlatLight = !model.usesBlockLight();
+        if (useFlatLight) {
+            com.mojang.blaze3d.platform.Lighting.setupForFlatItems();
+        }
+
+        mc.getItemRenderer().render(
+                stack,
+                ItemDisplayContext.GUI,
+                false,
+                pose,
+                bufferSource,
+                LightTexture.FULL_BRIGHT,
+                OverlayTexture.NO_OVERLAY,
+                model
+        );
+        bufferSource.endBatch();
+
+        if (useFlatLight) {
+            com.mojang.blaze3d.platform.Lighting.setupFor3DItems();
+        }
+
+        pose.popPose();
     }
 }

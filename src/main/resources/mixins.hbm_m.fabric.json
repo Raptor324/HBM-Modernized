@@ -1,0 +1,18 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.hbm_m.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "mixins.hbm_m.refmap.json",
+  "mixins": [],
+  "server": [],
+  "client": [
+    "client.MixinEffectRenderingInventoryScreen",
+    "client.MixinGui",
+    "client.MixinItemRenderer",
+    "SodiumBlockRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -1,12 +1,19 @@
 package com.hbm_m.datagen.recipes.custom;
+//? if forge {
+/*import java.util.function.Consumer;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 // Билдер рецептов для ShredderRecipe.
 // Позволяет легко создавать рецепты для шреддера (один вход -> один выход).
 // Используется в классе генерации данных ModRecipeProvider.
 import com.google.gson.JsonObject;
 import com.hbm_m.recipe.ShredderRecipe;
+
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.CriterionTriggerInstance;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
@@ -14,11 +21,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
-import net.minecraftforge.registries.ForgeRegistries;
-import org.jetbrains.annotations.Nullable;
-
-import javax.annotation.Nonnull;
-import java.util.function.Consumer;
 
 public class ShredderRecipeBuilder implements RecipeBuilder {
     private final Ingredient input;
@@ -30,31 +32,31 @@ public class ShredderRecipeBuilder implements RecipeBuilder {
         this.output = output;
     }
 
-    /**
+    /^*
      * Создает новый билдер рецепта для шреддера.
      * @param input Ингредиент (вход)
      * @param output Результат (выход)
-     */
+     ^/
     public static ShredderRecipeBuilder shredderRecipe(Ingredient input, ItemStack output) {
         return new ShredderRecipeBuilder(input, output);
     }
 
-    /**
+    /^*
      * Удобный метод для создания рецепта с одним предметом на входе.
-     */
+     ^/
     public static ShredderRecipeBuilder shredderRecipe(Item input, ItemStack output) {
         return new ShredderRecipeBuilder(Ingredient.of(input), output);
     }
 
-    /**
+    /^*
      * Удобный метод для создания рецепта с одним предметом на входе и выходе.
-     */
+     ^/
     public static ShredderRecipeBuilder shredderRecipe(Item input, Item output, int count) {
         return new ShredderRecipeBuilder(Ingredient.of(input), new ItemStack(output, count));
     }
 
     @Override
-    public RecipeBuilder unlockedBy(@Nonnull String pCriterionName, @Nonnull CriterionTriggerInstance pCriterionTrigger) {
+    public RecipeBuilder unlockedBy(@NotNull String pCriterionName, @NotNull CriterionTriggerInstance pCriterionTrigger) {
         this.advancement.addCriterion(pCriterionName, pCriterionTrigger);
         return this;
     }
@@ -70,7 +72,7 @@ public class ShredderRecipeBuilder implements RecipeBuilder {
     }
 
     @Override
-    public void save(@Nonnull Consumer<FinishedRecipe> pFinishedRecipeConsumer, @Nonnull ResourceLocation pRecipeId) {
+    public void save(@NotNull Consumer<FinishedRecipe> pFinishedRecipeConsumer, @NotNull ResourceLocation pRecipeId) {
         pFinishedRecipeConsumer.accept(new Result(pRecipeId, this));
     }
 
@@ -86,13 +88,13 @@ public class ShredderRecipeBuilder implements RecipeBuilder {
         }
 
         @Override
-        public void serializeRecipeData(@Nonnull JsonObject pJson) {
+        public void serializeRecipeData(@NotNull JsonObject pJson) {
             // Сериализуем входной ингредиент
             pJson.add("ingredient", this.builder.input.toJson());
 
             // Сериализуем выходной предмет
             JsonObject resultJson = new JsonObject();
-            resultJson.addProperty("item", ForgeRegistries.ITEMS.getKey(this.builder.output.getItem()).toString());
+            resultJson.addProperty("item", BuiltInRegistries.ITEM.getKey(this.builder.output.getItem()).toString());
             if (this.builder.output.getCount() > 1) {
                 resultJson.addProperty("count", this.builder.output.getCount());
             }
@@ -124,4 +126,4 @@ public class ShredderRecipeBuilder implements RecipeBuilder {
         }
     }
 }
-
+*///?}

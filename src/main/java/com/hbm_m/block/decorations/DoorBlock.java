@@ -37,6 +37,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -135,9 +136,16 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
         return false; // Это отключает логику "выталкивания" игрока изнутри блока
     }
 
+    /**
+     * Как ванильная дверь: проходимость определяется blockstate-свойством {@link #OPEN}.
+     * Не зависит от BlockEntity, работает надёжно в PathNavigationRegion.
+     */
     @Override
-    public boolean isPathfindable(BlockState state, BlockGetter world, BlockPos pos, net.minecraft.world.level.pathfinder.PathComputationType type) {
-        return false; // Помогает ИИ понимать, что здесь стена (когда закрыто)
+    public boolean isPathfindable(BlockState state, BlockGetter level, BlockPos pos, PathComputationType type) {
+        return switch (type) {
+            case LAND, AIR -> state.getValue(OPEN);
+            default -> false;
+        };
     }
 
     /**
@@ -235,11 +243,12 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         // 1. Получаем TE, но НЕ делаем жесткой зависимости от него
         BlockEntity be = level.getBlockEntity(pos);
-        boolean isOpen = false;
-
-        // Проверяем состояние только если TE существует
+        boolean isOpen;
         if (be instanceof DoorBlockEntity doorBE) {
             isOpen = doorBE.getState() != 0; // 0 = закрыто, остальное = открыто/движется
+        } else {
+            // Pathfinding и др. BlockGetter без TE: опираемся на OPEN (полностью открыто), см. DoorBlockEntity.serverTick
+            isOpen = state.getValue(OPEN);
         }
 
         // 2. Если дверь открыта (или открывается)
@@ -257,7 +266,7 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
             return Shapes.empty();
         }
 
-        // 3. Если закрыта (ИЛИ если TE == null) -> возвращаем корректную тонкую форму!
+        // 3. Если закрыта (или TE недоступен и OPEN=false) — форма из закрытой схемы
         // Важно: мы используем structureHelper, который уже знает форму из конструктора.
         // Больше никакого Shapes.block() в конце!
         return structureHelper.getSpecificCollisionShape(BlockPos.ZERO, state.getValue(FACING));

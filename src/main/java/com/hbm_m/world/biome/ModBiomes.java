@@ -1,54 +1,73 @@
 package com.hbm_m.world.biome;
 
 import com.hbm_m.main.MainRegistry;
-
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.RegistryObject;
+
+//? if !fabric {
+
+/*import dev.architectury.registry.registries.DeferredRegister;
+import dev.architectury.registry.registries.RegistrySupplier;
+*///?}
 
 /**
- * MOD BIOMES v3.0 - FIXED
- *
- * Исправления:
- * - Используется правильный Registries.BIOME вместо ForgeRegistries
- * - Правильная регистрация через DeferredRegister
- * - ResourceKey правильно создан
- * - Вся система совместима с Minecraft 1.20.1
+ * Ключи биомов кратера для кода (смазывание, подмена биомов при взрывах и т.д.).
+ * <p><b>Fabric 1.20.1:</b> во встроенных реестрах нет статического {@code BIOME}
+ * — содержимое берётся из datapack ресурсов мода (те же {@code data/hbm_m/worldgen/biome/*.json},
+ * регистрировать в коде через {@code BuiltInRegistries.BIOME} нельзя).</p>
+ * <p><b>Forge / NeoForge:</b> те же JSON остаются в jar; дополнительно биомы регистрируются через
+ * {@link DeferredRegister} и фабрики {@link CraterBiomes}, как раньше.</p>
  */
 public class ModBiomes {
 
     static {
-        MainRegistry.LOGGER.debug("[HBM_MODS] ========================================");
-        MainRegistry.LOGGER.debug("[HBM_MODS] ModBiomes класс загружен!");
-        MainRegistry.LOGGER.debug("[HBM_MODS] DeferredRegister создан!");
-        MainRegistry.LOGGER.debug("[HBM_MODS] ========================================");
+        MainRegistry.LOGGER.debug("[HBM_MODS] ModBiomes class loaded");
     }
 
-    // ГЛАВНЫЙ DeferredRegister - используем правильный реестр
-    public static final DeferredRegister<Biome> BIOMES =
-            DeferredRegister.create(Registries.BIOME, MainRegistry.MOD_ID);
+    public static final ResourceKey<Biome> INNER_CRATER_KEY =
+            ResourceKey.create(
+                    Registries.BIOME,
+                    //? if fabric && < 1.21.1 {
+                    new ResourceLocation(MainRegistry.MOD_ID, "inner_crater")
+                    //?} else {
 
-    // РЕГИСТРАЦИЯ Inner Crater - самая тёмная зона
-    public static final RegistryObject<Biome> INNER_CRATER = BIOMES.register(
+                    /*ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "inner_crater")
+                    *///?}
+                    );
+
+    public static final ResourceKey<Biome> OUTER_CRATER_KEY =
+            ResourceKey.create(
+                    Registries.BIOME,
+                    //? if fabric && < 1.21.1 {
+                    new ResourceLocation(MainRegistry.MOD_ID, "outer_crater")
+                    //?} else {
+
+                    /*ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "outer_crater")
+                    *///?}
+                    );
+
+    //? if !fabric {
+
+    /*public static final DeferredRegister<Biome> BIOMES =
+            DeferredRegister.create(MainRegistry.MOD_ID, Registries.BIOME);
+
+    public static final RegistrySupplier<Biome> INNER_CRATER = BIOMES.register(
             "inner_crater",
             CraterBiomes::createInnerCraterBiome
     );
 
-    //РЕГИСТРАЦИЯ Outer Crater - менее тёмная зона
-    public static final RegistryObject<Biome> OUTER_CRATER = BIOMES.register(
+    public static final RegistrySupplier<Biome> OUTER_CRATER = BIOMES.register(
             "outer_crater",
             CraterBiomes::createOuterCraterBiome
     );
+    *///?}
 
-    // ResourceKey для использования в коде (для lookup в реестре)
-    public static final ResourceKey<Biome> INNER_CRATER_KEY =
-            ResourceKey.create(Registries.BIOME,
-                    ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "inner_crater"));
+    public static void init() {
+        //? if !fabric {
 
-    public static final ResourceKey<Biome> OUTER_CRATER_KEY =
-            ResourceKey.create(Registries.BIOME,
-                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "outer_crater"));
+        /*BIOMES.register();
+        *///?}
+    }
 }

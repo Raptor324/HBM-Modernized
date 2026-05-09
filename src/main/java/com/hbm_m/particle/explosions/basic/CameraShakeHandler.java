@@ -1,14 +1,7 @@
 package com.hbm_m.particle.explosions.basic;
 
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
-import com.hbm_m.lib.RefStrings;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderGuiEvent;
-import net.minecraftforge.client.event.ViewportEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import dev.architectury.event.events.client.ClientTickEvent;
 
 /**
  *  ОБРАБОТЧИК ТРЯСКИ КАМЕРЫ И GUI
@@ -16,7 +9,6 @@ import net.minecraftforge.fml.common.Mod;
  * Управляет эффектом тряски камеры и интерфейса при воздействии ударной волны
  * Создаёт резкие импульсные толчки вместо мелкого дрожания
  */
-@Mod.EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
 public class CameraShakeHandler {
 
     // ┌─────────────────────────────────────────────────────────────┐
@@ -40,6 +32,7 @@ public class CameraShakeHandler {
     private static final float VISUAL_MULTIPLIER = 12.0F;
 
     //  МНОЖИТЕЛЬ ДЛЯ GUI (меньше чем для камеры, чтобы не было слишком сильно)
+    @SuppressWarnings("unused")
     private static final float GUI_MULTIPLIER = 2.5F;
 
     //  СКОРОСТЬ СМЕНЫ НАПРАВЛЕНИЯ: чем больше - тем быстрее меняется
@@ -48,6 +41,19 @@ public class CameraShakeHandler {
     //  ЧАСТОТА ОБНОВЛЕНИЯ ЦЕЛЕВЫХ ЗНАЧЕНИЙ (в тиках)
     private static int updateCounter = 0;
     private static final int UPDATE_FREQUENCY = 2; // Каждые 2 тика = 10 раз в секунду
+
+    private static boolean INITIALIZED = false;
+
+    /** Register client tick updates on all loaders (Architectury). */
+    public static void initClient() {
+        if (INITIALIZED) return;
+        INITIALIZED = true;
+        ClientTickEvent.CLIENT_PRE.register(client -> {
+            if (Minecraft.getInstance().level != null) {
+                tick();
+            }
+        });
+    }
 
     /**
      *  ДОБАВИТЬ ЭФФЕКТ ТРЯСКИ
@@ -121,84 +127,56 @@ public class CameraShakeHandler {
         }
     }
 
-    /**
-     *  СОБЫТИЕ ИЗМЕНЕНИЯ КАМЕРЫ
-     */
-    @SubscribeEvent
-    public static void onCameraSetup(ViewportEvent.ComputeCameraAngles event) {
-        if (shakeIntensity > 0.0F || Math.abs(shakeOffsetX) > 0.01F) {
-            event.setYaw(event.getYaw() + shakeOffsetX);
-            event.setPitch(event.getPitch() + shakeOffsetY);
-            event.setRoll(event.getRoll() + shakeOffsetRoll);
+    // --- Loader-specific hooks ---
+    //
+    // Forge provides direct camera+GUI hooks via events (ViewportEvent / RenderGuiEvent).
+    // On Fabric these hooks are not available here; we keep the core shake state/tick
+    // loader-agnostic so it can be driven by client tick, and optionally integrated
+    // via mixins or platform hooks later.
+
+    //? if forge {
+    /*@net.minecraftforge.fml.common.Mod.EventBusSubscriber(
+            modid = com.hbm_m.lib.RefStrings.MODID,
+            value = net.minecraftforge.api.distmarker.Dist.CLIENT
+    )
+    public static final class ForgeHooks {
+        @net.minecraftforge.eventbus.api.SubscribeEvent
+        public static void onCameraSetup(net.minecraftforge.client.event.ViewportEvent.ComputeCameraAngles event) {
+            if (shakeIntensity > 0.0F || Math.abs(shakeOffsetX) > 0.01F) {
+                event.setYaw(event.getYaw() + shakeOffsetX);
+                event.setPitch(event.getPitch() + shakeOffsetY);
+                event.setRoll(event.getRoll() + shakeOffsetRoll);
+            }
         }
-    }
 
-    /**
-     *  НОВОЕ: СОБЫТИЕ РЕНДЕРА GUI (ПОКАЧИВАНИЕ ИНТЕРФЕЙСА)
-     *
-     * Применяет трансформации к PoseStack для смещения всего GUI
-     * EventPriority.HIGHEST = самый ранний приоритет, чтобы эффект применялся ко всему GUI
-     */
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public static void onRenderGuiPre(RenderGuiEvent.Pre event) {
-        if (shakeIntensity > 0.0F || Math.abs(shakeOffsetX) > 0.01F) {
-            PoseStack poseStack = event.getGuiGraphics().pose();
+        @net.minecraftforge.eventbus.api.SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.HIGHEST)
+        public static void onRenderGuiPre(net.minecraftforge.client.event.RenderGuiEvent.Pre event) {
+            if (shakeIntensity > 0.0F || Math.abs(shakeOffsetX) > 0.01F) {
+                com.mojang.blaze3d.vertex.PoseStack poseStack = event.getGuiGraphics().pose();
+                poseStack.pushPose();
 
-            // Сохраняем текущее состояние матрицы
-            poseStack.pushPose();
+                float guiOffsetX = shakeOffsetX * GUI_MULTIPLIER;
+                float guiOffsetY = shakeOffsetY * GUI_MULTIPLIER;
 
-            // ┌─────────────────────────────────────────────────────────────┐
-            // │ ПРИМЕНЯЕМ СМЕЩЕНИЕ К GUI                                    │
-            // └─────────────────────────────────────────────────────────────┘
+                int screenWidth = event.getGuiGraphics().guiWidth();
+                int screenHeight = event.getGuiGraphics().guiHeight();
+                float centerX = screenWidth / 2.0F;
+                float centerY = screenHeight / 2.0F;
 
-            // Вычисляем смещения для GUI (меньше чем для камеры)
-            float guiOffsetX = shakeOffsetX * GUI_MULTIPLIER;
-            float guiOffsetY = shakeOffsetY * GUI_MULTIPLIER;
-
-            // Центр экрана (для вращения вокруг центра)
-            int screenWidth = event.getGuiGraphics().guiWidth();
-            int screenHeight = event.getGuiGraphics().guiHeight();
-            float centerX = screenWidth / 2.0F;
-            float centerY = screenHeight / 2.0F;
-
-            // Перемещаем к центру экрана
-            poseStack.translate(centerX, centerY, 0);
-
-            // Применяем вращение (roll) вокруг оси Z
-            poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(shakeOffsetRoll * 0.2F));
-
-            // Применяем смещение
-            poseStack.translate(guiOffsetX, guiOffsetY, 0);
-
-            // Возвращаем обратно
-            poseStack.translate(-centerX, -centerY, 0);
+                poseStack.translate(centerX, centerY, 0);
+                poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(shakeOffsetRoll * 0.2F));
+                poseStack.translate(guiOffsetX, guiOffsetY, 0);
+                poseStack.translate(-centerX, -centerY, 0);
+            }
         }
-    }
 
-    /**
-     *  НОВОЕ: ВОССТАНОВЛЕНИЕ МАТРИЦЫ ПОСЛЕ РЕНДЕРА GUI
-     *
-     * Возвращаем PoseStack в исходное состояние после рендера всего GUI
-     */
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onRenderGuiPost(RenderGuiEvent.Post event) {
-        if (shakeIntensity > 0.0F || Math.abs(shakeOffsetX) > 0.01F) {
-            PoseStack poseStack = event.getGuiGraphics().pose();
-
-            // Восстанавливаем сохранённое состояние матрицы
-            poseStack.popPose();
-        }
-    }
-
-    /**
-     *  СОБЫТИЕ РЕНДЕРА (для обновления тряски)
-     */
-    @SubscribeEvent
-    public static void onRenderTick(net.minecraftforge.event.TickEvent.RenderTickEvent event) {
-        if (event.phase == net.minecraftforge.event.TickEvent.Phase.START) {
-            if (Minecraft.getInstance().level != null) {
-                tick();
+        @net.minecraftforge.eventbus.api.SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.LOWEST)
+        public static void onRenderGuiPost(net.minecraftforge.client.event.RenderGuiEvent.Post event) {
+            if (shakeIntensity > 0.0F || Math.abs(shakeOffsetX) > 0.01F) {
+                com.mojang.blaze3d.vertex.PoseStack poseStack = event.getGuiGraphics().pose();
+                poseStack.popPose();
             }
         }
     }
+    *///?}
 }

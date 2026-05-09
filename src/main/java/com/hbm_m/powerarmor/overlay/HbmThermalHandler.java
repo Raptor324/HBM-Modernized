@@ -1,8 +1,10 @@
 package com.hbm_m.powerarmor.overlay;
 
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.powerarmor.ModEventHandlerClient;
+import com.hbm_m.powerarmor.PowerArmorClientState;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -16,23 +18,28 @@ import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 
+/**
+ * Тепловизор (FULL_SHADER): общий обработчик состояния/шейдера.
+ *
+ * Хуки на рендер-ивенты делаются в loader-specific коде (Forge event / Fabric callback),
+ * но логика шейдера и проверок живёт здесь, чтобы класс существовал во всех таргетах.
+ */
 public class HbmThermalHandler implements ResourceManagerReloadListener {
 
-    // Создаем единственный экземпляр класса
     public static final HbmThermalHandler INSTANCE = new HbmThermalHandler();
 
-    private static final ResourceLocation THERMAL_EFFECT = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/post/thermal.json");
-    private static PostChain thermalChain;
+    //? if fabric && < 1.21.1 {
+    private static final ResourceLocation THERMAL_EFFECT = new ResourceLocation(MainRegistry.MOD_ID, "shaders/post/thermal.json");
+    //?} else {
+    /*private static final ResourceLocation THERMAL_EFFECT = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/post/thermal.json");
+    *///?}
+
+    private static @Nullable PostChain thermalChain;
     private static int lastWidth = 0;
     private static int lastHeight = 0;
-    
-    // Tracks whether this frame actually has any "hot" entities to render
     private static boolean hasHotEntitiesThisFrame = false;
 
-    // Приватный конструктор, чтобы использовать только INSTANCE
     private HbmThermalHandler() {}
 
     @Override
@@ -40,31 +47,28 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
         cleanup();
     }
 
-    private static void cleanup() {
+    public static void cleanup() {
         if (thermalChain != null) {
             thermalChain.close();
             thermalChain = null;
         }
     }
 
-    @SubscribeEvent
-    public void onRenderLevel(RenderLevelStageEvent event) {
-        if (!ModEventHandlerClient.isThermalActive()) {
-            return;
-        }
-        
-        ModClothConfig.ThermalRenderMode mode = ModClothConfig.get().thermalRenderMode;
-        
-        if (mode == ModClothConfig.ThermalRenderMode.ORIGINAL_FALLBACK) {
-            return;
-        }
+    public static boolean isThermalShaderModeActive() {
+        return PowerArmorClientState.isThermalActive()
+            && ModClothConfig.get().thermalRenderMode == ModClothConfig.ThermalRenderMode.FULL_SHADER;
+    }
 
-        // FULL_SHADER: полнофункциональный шейдерный тепловизор
-        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
-            prepareAndRenderEntities(event.getPoseStack(), event.getPartialTick());
-        } else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
-            applyPostProcess(event.getPartialTick());
-        }
+    /** Вызывать после рендера сущностей (аналоги AFTER_ENTITIES). */
+    public static void onAfterEntities(PoseStack poseStack, float partialTick) {
+        if (!isThermalShaderModeActive()) return;
+        prepareAndRenderEntities(poseStack, partialTick);
+    }
+
+    /** Вызывать после рендера мира (аналоги AFTER_LEVEL). */
+    public static void onAfterLevel(float partialTick) {
+        if (!isThermalShaderModeActive()) return;
+        applyPostProcess(partialTick);
     }
 
     private static boolean ensureChain(Minecraft mc) {
@@ -76,7 +80,7 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
                 lastHeight = mc.getWindow().getHeight();
             } catch (Exception e) {
                 MainRegistry.LOGGER.error("Failed to load thermal shader", e);
-                ModEventHandlerClient.deactivateThermal();
+                PowerArmorClientState.deactivateThermal();
                 return false;
             }
         }
@@ -127,9 +131,9 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
             thermalBuffer.setClearColor(0.0F, 0.0F, 0.0F, 0.0F);
             thermalBuffer.clear(Minecraft.ON_OSX);
 
-            if (mc.getMainRenderTarget().isStencilEnabled() && !thermalBuffer.isStencilEnabled()) {
-                thermalBuffer.enableStencil();
-            }
+            // if (mc.getMainRenderTarget().isStencilEnabled() && !thermalBuffer.isStencilEnabled()) {
+            //     thermalBuffer.enableStencil();
+            // }
             try {
                 thermalBuffer.copyDepthFrom(mc.getMainRenderTarget());
             } catch (Throwable depthCopyError) {
@@ -250,4 +254,22 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
         @Override public void defaultColor(int r, int g, int b, int a) {}
         @Override public void unsetDefaultColor() {}
     }
+
+    // ======================================================================
+    // Forge hook (optional): keeps old behaviour when Forge events available
+    // ======================================================================
+    //? if forge {
+    /*@net.minecraftforge.fml.common.Mod.EventBusSubscriber(modid = com.hbm_m.lib.RefStrings.MODID, value = net.minecraftforge.api.distmarker.Dist.CLIENT, bus = net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus.FORGE)
+    public static final class ForgeHooks {
+        @net.minecraftforge.eventbus.api.SubscribeEvent
+        public static void onRenderLevel(net.minecraftforge.client.event.RenderLevelStageEvent event) {
+            if (!HbmThermalHandler.isThermalShaderModeActive()) return;
+            if (event.getStage() == net.minecraftforge.client.event.RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
+                HbmThermalHandler.onAfterEntities(event.getPoseStack(), event.getPartialTick());
+            } else if (event.getStage() == net.minecraftforge.client.event.RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+                HbmThermalHandler.onAfterLevel(event.getPartialTick());
+            }
+        }
+    }
+    *///?}
 }

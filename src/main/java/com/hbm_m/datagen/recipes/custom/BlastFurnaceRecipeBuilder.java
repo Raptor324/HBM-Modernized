@@ -1,4 +1,9 @@
 package com.hbm_m.datagen.recipes.custom;
+//? if forge {
+/*import java.util.function.Consumer;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 // Билдер рецептов для BlastFurnaceRecipe.
 // Позволяет быстро описывать двухкомпонентные рецепты доменной печи и генерирует корректный JSON.
@@ -6,8 +11,10 @@ package com.hbm_m.datagen.recipes.custom;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hbm_m.recipe.BlastFurnaceRecipe;
+
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.CriterionTriggerInstance;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
@@ -16,11 +23,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.ItemLike;
-import net.minecraftforge.registries.ForgeRegistries;
-import org.jetbrains.annotations.Nullable;
-
-import javax.annotation.Nonnull;
-import java.util.function.Consumer;
 
 public class BlastFurnaceRecipeBuilder implements RecipeBuilder {
 
@@ -44,7 +46,7 @@ public class BlastFurnaceRecipeBuilder implements RecipeBuilder {
     }
 
     @Override
-    public RecipeBuilder unlockedBy(@Nonnull String criterionName, @Nonnull CriterionTriggerInstance trigger) {
+    public RecipeBuilder unlockedBy(@NotNull String criterionName, @NotNull CriterionTriggerInstance trigger) {
         this.advancement.addCriterion(criterionName, trigger);
         return this;
     }
@@ -60,7 +62,7 @@ public class BlastFurnaceRecipeBuilder implements RecipeBuilder {
     }
 
     @Override
-    public void save(@Nonnull Consumer<FinishedRecipe> consumer, @Nonnull ResourceLocation recipeId) {
+    public void save(@NotNull Consumer<FinishedRecipe> consumer, @NotNull ResourceLocation recipeId) {
         consumer.accept(new Result(recipeId, this));
     }
 
@@ -75,14 +77,14 @@ public class BlastFurnaceRecipeBuilder implements RecipeBuilder {
         }
 
         @Override
-        public void serializeRecipeData(@Nonnull JsonObject json) {
+        public void serializeRecipeData(@NotNull JsonObject json) {
             JsonArray ingredients = new JsonArray();
             ingredients.add(builder.inputA.toJson());
             ingredients.add(builder.inputB.toJson());
             json.add("ingredients", ingredients);
 
             JsonObject outputObject = new JsonObject();
-            outputObject.addProperty("item", ForgeRegistries.ITEMS.getKey(builder.output.getItem()).toString());
+            outputObject.addProperty("item", BuiltInRegistries.ITEM.getKey(builder.output.getItem()).toString());
             if (builder.output.getCount() > 1) {
                 outputObject.addProperty("count", builder.output.getCount());
             }
@@ -112,4 +114,4 @@ public class BlastFurnaceRecipeBuilder implements RecipeBuilder {
         }
     }
 }
-
+*///?}

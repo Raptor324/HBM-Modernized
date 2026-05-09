@@ -10,11 +10,11 @@ import com.google.gson.stream.JsonWriter;
 import com.hbm_m.util.EnergyFormatter;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.registries.ForgeRegistries;
 
 public class FT_Coolable extends FluidTrait {
     
@@ -73,7 +73,7 @@ public class FT_Coolable extends FluidTrait {
 
     @Override
     public void serializeJSON(JsonWriter writer) throws IOException {
-        ResourceLocation loc = ForgeRegistries.FLUIDS.getKey(this.coolsTo);
+        ResourceLocation loc = BuiltInRegistries.FLUID.getKey(this.coolsTo);
         writer.name("coolsTo").value(loc != null ? loc.toString() : "minecraft:empty");
         writer.name("amountReq").value(this.amountReq);
         writer.name("amountProd").value(this.amountProduced);
@@ -86,7 +86,7 @@ public class FT_Coolable extends FluidTrait {
     
     @Override
     public void deserializeJSON(JsonObject obj) {
-        Fluid f = ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse(obj.get("coolsTo").getAsString()));
+        Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(obj.get("coolsTo").getAsString()));
         this.coolsTo = f != null ? f : Fluids.EMPTY;
         this.amountReq = obj.get("amountReq").getAsInt();
         this.amountProduced = obj.get("amountProd").getAsInt();

@@ -1,4 +1,11 @@
 package com.hbm_m.datagen.recipes.custom;
+//? if forge {
+/*import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 // Билдер рецептов для AssemblerRecipe с поддержкой количества ингредиентов.
 // Позволяет легко создавать рецепты с несколькими ингредиентами, каждый из которых имеет свое количество.
@@ -6,8 +13,10 @@ package com.hbm_m.datagen.recipes.custom;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hbm_m.recipe.AssemblerRecipe;
+
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.CriterionTriggerInstance;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
@@ -15,14 +24,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
-import net.minecraftforge.registries.ForgeRegistries;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
-
-import javax.annotation.Nonnull;
 
 public class AssemblerRecipeBuilder implements RecipeBuilder {
     private final ItemStack output;
@@ -45,17 +46,17 @@ public class AssemblerRecipeBuilder implements RecipeBuilder {
     }
 
     
-    /**
+    /^*
      * Добавляет ингредиент с указанным количеством.
-     */
+     ^/
     public AssemblerRecipeBuilder addIngredient(Ingredient ingredient, int count) {
         this.ingredients.add(new CountableIngredient(ingredient, count));
         return this;
     }
     
-    /**
+    /^*
      * Удобный метод для добавления ванильных предметов.
-     */
+     ^/
     public AssemblerRecipeBuilder addIngredient(Item item, int count) {
         return addIngredient(Ingredient.of(item), count);
     }
@@ -70,7 +71,7 @@ public class AssemblerRecipeBuilder implements RecipeBuilder {
 
 
     @Override
-    public RecipeBuilder unlockedBy(@Nonnull String pCriterionName, @Nonnull CriterionTriggerInstance pCriterionTrigger) {
+    public RecipeBuilder unlockedBy(@NotNull String pCriterionName, @NotNull CriterionTriggerInstance pCriterionTrigger) {
         this.advancement.addCriterion(pCriterionName, pCriterionTrigger);
         return this;
     }
@@ -86,7 +87,7 @@ public class AssemblerRecipeBuilder implements RecipeBuilder {
     }
 
     @Override
-    public void save(@Nonnull Consumer<FinishedRecipe> pFinishedRecipeConsumer, @Nonnull ResourceLocation pRecipeId) {
+    public void save(@NotNull Consumer<FinishedRecipe> pFinishedRecipeConsumer, @NotNull ResourceLocation pRecipeId) {
         pFinishedRecipeConsumer.accept(new Result(pRecipeId, this));
     }
 
@@ -103,7 +104,7 @@ public class AssemblerRecipeBuilder implements RecipeBuilder {
         
 
         @Override
-        public void serializeRecipeData(@Nonnull JsonObject pJson) {
+        public void serializeRecipeData(@NotNull JsonObject pJson) {
             JsonArray jsonIngredients = new JsonArray();
 
             for (CountableIngredient countableIng : this.builder.ingredients) {
@@ -116,7 +117,7 @@ public class AssemblerRecipeBuilder implements RecipeBuilder {
             pJson.add("ingredients", jsonIngredients);
 
             JsonObject jsonOutput = new JsonObject();
-            jsonOutput.addProperty("item", ForgeRegistries.ITEMS.getKey(this.builder.output.getItem()).toString());
+            jsonOutput.addProperty("item", BuiltInRegistries.ITEM.getKey(this.builder.output.getItem()).toString());
             if (this.builder.output.getCount() > 1) {
                 jsonOutput.addProperty("count", this.builder.output.getCount());
             }
@@ -155,3 +156,4 @@ public class AssemblerRecipeBuilder implements RecipeBuilder {
         }
     }
 }
+*///?}

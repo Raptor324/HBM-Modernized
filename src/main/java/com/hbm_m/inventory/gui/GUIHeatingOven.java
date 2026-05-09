@@ -15,7 +15,12 @@ import net.minecraft.world.entity.player.Inventory;
  */
 public class GUIHeatingOven extends AbstractContainerScreen<HeatingOvenMenu> {
     private static final ResourceLocation GUI_TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/gui_heating_oven.png");
+            //? if fabric && < 1.21.1 {
+            new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/gui_heating_oven.png");
+            //?} else {
+                        /*ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/gui_heating_oven.png");
+            *///?}
+
 
     public GUIHeatingOven(HeatingOvenMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);

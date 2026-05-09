@@ -12,7 +12,9 @@
   ],
   "client": [
     "GameRendererMixin",
-    "LightTextureMixin"
+    "LightTextureMixin",
+    "ModelBlockRendererMixin",
+    "LivingEntityRendererInvoker"
   ],
   "injectors": {
     "defaultRequire": 1

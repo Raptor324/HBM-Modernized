@@ -23,7 +23,12 @@ import net.minecraft.world.entity.player.Inventory;
 public class GUIBatterySocket extends AbstractContainerScreen<BatterySocketMenu> {
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/storage/gui_battery_socket.png");
+            //? if fabric && < 1.21.1 {
+            new ResourceLocation(RefStrings.MODID, "textures/gui/storage/gui_battery_socket.png");
+            //?} else {
+                        /*ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/storage/gui_battery_socket.png");
+            *///?}
+
 
     public GUIBatterySocket(BatterySocketMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
@@ -154,17 +159,20 @@ public class GUIBatterySocket extends AbstractContainerScreen<BatterySocketMenu>
         if (button == 0) {
             if (isMouseOver(mouseX, mouseY, 106, 16, 18, 18)) {
                 playClick();
-                ModPacketHandler.INSTANCE.sendToServer(new UpdateBatteryC2SPacket(menu.blockEntity.getBlockPos(), 0));
+                ModPacketHandler.sendToServer(ModPacketHandler.UPDATE_BATTERY,
+                    new UpdateBatteryC2SPacket(menu.blockEntity.getBlockPos(), 0));
                 return true;
             }
             if (isMouseOver(mouseX, mouseY, 106, 52, 18, 18)) {
                 playClick();
-                ModPacketHandler.INSTANCE.sendToServer(new UpdateBatteryC2SPacket(menu.blockEntity.getBlockPos(), 1));
+                ModPacketHandler.sendToServer(ModPacketHandler.UPDATE_BATTERY,
+                    new UpdateBatteryC2SPacket(menu.blockEntity.getBlockPos(), 1));
                 return true;
             }
             if (isMouseOver(mouseX, mouseY, 125, 35, 16, 16)) {
                 playClick();
-                ModPacketHandler.INSTANCE.sendToServer(new UpdateBatteryC2SPacket(menu.blockEntity.getBlockPos(), 2));
+                ModPacketHandler.sendToServer(ModPacketHandler.UPDATE_BATTERY,
+                    new UpdateBatteryC2SPacket(menu.blockEntity.getBlockPos(), 2));
                 return true;
             }
         }

@@ -4,9 +4,22 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.interfaces.IEnergyConnector;
 import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.multiblock.PartRole;
+import com.hbm_m.api.fluids.FluidNetProvider;
+import com.hbm_m.api.fluids.FluidNode;
+import com.hbm_m.api.fluids.ForgeFluidHandlerAdapter;
+import com.hbm_m.api.fluids.IFluidConnectorMK2;
+import com.hbm_m.api.fluids.IFluidProviderMK2;
+import com.hbm_m.api.fluids.IFluidReceiverMK2;
+import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
+import com.hbm_m.api.fluids.IFluidStandardSenderMK2;
+import com.hbm_m.api.fluids.IFluidUserMK2;
+import com.hbm_m.api.network.NodeDirPos;
+import com.hbm_m.api.network.UniNodespace;
+import com.hbm_m.api.energy.EnergyNetworkManager;
+import com.hbm_m.inventory.fluid.tank.FluidTank;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -16,26 +29,40 @@ import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.world.level.block.Block;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
+
+//? if forge {
+/*import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.block.machines.FluidDuctBlock;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+*///?}
 
-public class UniversalMachinePartBlockEntity extends BlockEntity implements IMultiblockPart {
+//? if fabric {
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+//?}
 
-    /**
-     * Прямое соединение "коннектор к коннектору" без промежуточных труб.
-     * Делаем минимальную перекачку между контроллерами, если две connector-части стоят вплотную.
-     *
-     * Важно: перенос идёт только через FLUID_CONNECTOR / UNIVERSAL_CONNECTOR роли,
-     * чтобы сохранить запрет прямого подключения к лицу контроллера.
-     */
-    private static final int DIRECT_FLUID_TRANSFER_PER_TICK = 1000;
+public class UniversalMachinePartBlockEntity extends BlockEntity implements IMultiblockPart, IEnergyConnector, IFluidConnectorMK2 {
+
+    // Виртуальные узлы жидкостной сети на позиции коннектора, по одному на тип жидкости контроллера.
+    // Используется для "коннектор-к-коннектору" без труб: переносы делает FluidNet,
+    // как если бы между ними стояла обычная труба.
+    //
+    // Раньше тут был ровно один узел с "первым непустым" типом. Это ломало мультижидкостные мультиблоки
+    // (хим. установка с 6 баками): сеть видела только один тип за раз. Теперь по узлу на тип
+    // (UniNodespace различает узлы по NodeKey = (BlockPos, INetworkProvider)).
+    private final java.util.Map<Fluid, FluidNode> fluidNodes = new java.util.HashMap<>();
 
     private BlockPos controllerPos;
     private PartRole role = PartRole.DEFAULT;
@@ -47,6 +74,27 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
 
     public UniversalMachinePartBlockEntity(BlockPos pPos, BlockState pBlockState) {
         super(ModBlockEntities.UNIVERSAL_MACHINE_PART_BE.get(), pPos, pBlockState);
+    }
+
+    @Override
+    public void setRemoved() {
+        if (level instanceof ServerLevel sl) {
+            destroyAllFluidNodes(sl);
+            // Энергия: убираем узел части, чтобы пересобралась сеть.
+            EnergyNetworkManager.get(sl).removeNode(worldPosition);
+        }
+        super.setRemoved();
+    }
+
+    @Override
+    public boolean canConnect(Fluid fluid, Direction fromDir) {
+        if (fromDir == null) return false;
+        if (!isFluidConnector(this.role)) return false;
+        // Если grid-side ограничен у коннектора, проверяем разрешённые стороны.
+        if (allowedFluidSides != null && !allowedFluidSides.isEmpty() && !allowedFluidSides.contains(fromDir)) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -82,69 +130,256 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         if (level.isClientSide) {
             return;
         }
+
+        // Энергия: роль-коннектор должна быть узлом EnergyNetworkManager,
+        // чтобы коннектор-к-коннектору работал точно как через кабели.
+        if (level instanceof ServerLevel serverLevel
+                && (be.role.canReceiveEnergy() || be.role.canSendEnergy())) {
+            EnergyNetworkManager manager = EnergyNetworkManager.get(serverLevel);
+            if (!manager.hasNode(pos)) {
+                manager.addNode(pos);
+            }
+        }
+
         if (!isFluidConnector(be.role) || be.controllerPos == null) {
             return;
         }
 
-        // Чтобы не перекачивать дважды (A->B и B->A из двух тиков),
-        // выбираем "ведущую" позицию пары по asLong().
+        // Коннекторы вплотную НЕ делают прямую перекачку.
+        // Создаём виртуальный узел на позиции коннектора и подписываем контроллер в сеть.
+        if (level instanceof ServerLevel serverLevel) {
+            be.tickFluidConnector(serverLevel);
+        }
+        return;
+
+        //? if fabric {
         long selfKey = pos.asLong();
         for (Direction dir : Direction.values()) {
             BlockPos otherPos = pos.relative(dir);
-            if (selfKey >= otherPos.asLong()) {
-                continue;
-            }
+            if (selfKey >= otherPos.asLong()) continue;
             BlockEntity otherBe = level.getBlockEntity(otherPos);
-            if (!(otherBe instanceof UniversalMachinePartBlockEntity otherPart)) {
-                continue;
+            if (!(otherBe instanceof UniversalMachinePartBlockEntity otherPart)) continue;
+            if (!isFluidConnector(otherPart.role) || otherPart.controllerPos == null) continue;
+            if (be.controllerPos.equals(otherPart.controllerPos)) continue;
+            tryDirectFluidTransferFabric(level, be, otherPart);
+        }
+        return;
+        //?}
+
+    }
+
+    //? if forge {
+    /*/^*
+     * Тик жидкостного коннектора: 1.7.10-философия для 1.20.1.
+     *
+     * Делает две вещи:
+     *  1) Создаёт по виртуальному {@link FluidNode} на каждый уникальный тип жидкости контроллера —
+     *     это решает проблему мультижидкостных контроллеров (хим. установка 6 баков), где раньше
+     *     виден был только "первый непустой" тип.
+     *  2) Подписывает контроллер в сети — нативно, если контроллер реализует MK2-интерфейсы,
+     *     иначе через {@link ForgeFluidHandlerAdapter} (совместимость со сторонними машинами).
+     *
+     * Аналог 1.7.10: контроллер сам обходит {@code getConPos()} и делает {@code trySubscribe}/
+     * {@code tryProvide}. У нас контроллер скрыт за мультиблоком; роль "посредника" играет коннектор.
+     ^/
+    private void tickFluidConnector(ServerLevel serverLevel) {
+        BlockEntity controller = serverLevel.getBlockEntity(controllerPos);
+        if (controller == null || controller.isRemoved()) {
+            destroyAllFluidNodes(serverLevel);
+            return;
+        }
+
+        // 1) Собираем уникальные типы жидкостей, которые контроллер хочет видеть в сетях.
+        //    Для MK2-контроллеров — все его баки; для обычных — обходим Forge IFluidHandler.
+        java.util.Set<Fluid> activeTypes = collectControllerFluidTypes(controller);
+
+        if (activeTypes.isEmpty()) {
+            destroyAllFluidNodes(serverLevel);
+            return;
+        }
+
+        // 2) Удалить узлы для типов, которые больше неактуальны.
+        java.util.Iterator<java.util.Map.Entry<Fluid, FluidNode>> it = fluidNodes.entrySet().iterator();
+        while (it.hasNext()) {
+            java.util.Map.Entry<Fluid, FluidNode> entry = it.next();
+            Fluid f = entry.getKey();
+            FluidNode n = entry.getValue();
+            if (!activeTypes.contains(f) || n == null || n.isExpired()) {
+                if (n != null && !n.isExpired()) UniNodespace.destroyNode(serverLevel, n);
+                it.remove();
             }
-            if (!isFluidConnector(otherPart.role) || otherPart.controllerPos == null) {
-                continue;
+        }
+
+        // 3) Создать недостающие узлы.
+        NodeDirPos[] connections = buildFluidNodeConnections();
+        for (Fluid type : activeTypes) {
+            if (fluidNodes.containsKey(type)) continue;
+            FluidNode node = new FluidNode(FluidNetProvider.forFluid(type), worldPosition)
+                    .setConnections(connections);
+            UniNodespace.createNode(serverLevel, node);
+            fluidNodes.put(type, node);
+        }
+
+        // 4) Подписать контроллер в каждой сети (per fluid type).
+        boolean ctrlMk2 = controller instanceof IFluidUserMK2;
+        boolean ctrlSender = controller instanceof IFluidStandardSenderMK2;
+        boolean ctrlReceiver = controller instanceof IFluidStandardReceiverMK2;
+
+        for (Fluid type : activeTypes) {
+            var nodeRef = UniNodespace.getNode(serverLevel, worldPosition, FluidNetProvider.forFluid(type));
+            if (!(nodeRef instanceof FluidNode fn) || fn.net == null) continue;
+
+            if (ctrlMk2) {
+                // Нативный MK2: регистрируем контроллер прямо в сети.
+                // FluidNet.update() сам разруливает (type, pressure) через get*Tanks().
+                if (controller instanceof IFluidProviderMK2 prov) fn.net.addProvider(prov);
+                if (controller instanceof IFluidReceiverMK2 rec)  fn.net.addReceiver(rec);
+            } else {
+                // Совместимость: оборачиваем в Forge-адаптер (pressure=0).
+                ForgeFluidHandlerAdapter adapter = new ForgeFluidHandlerAdapter(serverLevel, worldPosition, null, type);
+                fn.net.addProvider(adapter);
+                fn.net.addReceiver(adapter);
             }
-            tryDirectFluidTransfer(level, be, otherPart);
+        }
+
+        // 5) Если контроллер MK2 — попросим его trySubscribe/tryProvide ещё и в трубы соседей,
+        //    чтобы сети, в которых нет наших виртуальных узлов (например, чужая труба соседнего
+        //    мультиблока), увидели контроллер. Это аналог 1.7.10 getConPos()-обхода.
+        if (ctrlMk2) {
+            for (Direction dir : Direction.values()) {
+                if (allowedFluidSides != null && !allowedFluidSides.isEmpty() && !allowedFluidSides.contains(dir)) {
+                    continue;
+                }
+                BlockPos pipePos = worldPosition.relative(dir);
+                BlockEntity pipeBe = serverLevel.getBlockEntity(pipePos);
+                // Подписываемся только в IFluidConnectorMK2 (трубы/коннекторы).
+                // Прочие соседи (обычные машины) — не цель: для них всё ещё работает legacy-путь
+                // через FluidDuctBlockEntity → ForgeFluidHandlerAdapter, если они вообще через трубу.
+                if (!(pipeBe instanceof IFluidConnectorMK2)) continue;
+
+                if (ctrlReceiver) {
+                    IFluidStandardReceiverMK2 rec = (IFluidStandardReceiverMK2) controller;
+                    for (FluidTank t : rec.getReceivingTanks()) {
+                        Fluid type = t.getTankType();
+                        if (type == null || type == Fluids.EMPTY) continue;
+                        if (type == com.hbm_m.inventory.fluid.ModFluids.NONE.getSource()) continue;
+                        rec.trySubscribe(type, serverLevel, pipePos, dir);
+                    }
+                }
+                if (ctrlSender) {
+                    IFluidStandardSenderMK2 snd = (IFluidStandardSenderMK2) controller;
+                    for (FluidTank t : snd.getSendingTanks()) {
+                        if (t.getFill() <= 0) continue;
+                        snd.tryProvide(t, serverLevel, pipePos, dir);
+                    }
+                }
+            }
         }
     }
 
-    private static void tryDirectFluidTransfer(Level level, UniversalMachinePartBlockEntity a, UniversalMachinePartBlockEntity b) {
-        BlockEntity aCtrl = level.getBlockEntity(a.controllerPos);
-        BlockEntity bCtrl = level.getBlockEntity(b.controllerPos);
-        if (aCtrl == null || bCtrl == null) {
-            return;
+    /^*
+     * Возвращает множество уникальных типов жидкостей, которые контроллер представлен в сети.
+     * Для MK2 — все баки {@code getAllTanks()} с непустым типом; для остальных — пробуем читать
+     * Forge IFluidHandler (а для цистерны — её настроенный тип, даже если бак пуст).
+     ^/
+    private java.util.Set<Fluid> collectControllerFluidTypes(BlockEntity controller) {
+        java.util.Set<Fluid> result = new java.util.LinkedHashSet<>();
+        if (controller instanceof IFluidUserMK2 mk2) {
+            for (FluidTank tank : mk2.getAllTanks()) {
+                Fluid type = tank.getTankType();
+                if (type != null && type != Fluids.EMPTY
+                        && type != com.hbm_m.inventory.fluid.ModFluids.NONE.getSource()) {
+                    result.add(type);
+                }
+            }
+            return result;
         }
-
-        LazyOptional<IFluidHandler> aCap = aCtrl.getCapability(ForgeCapabilities.FLUID_HANDLER, null);
-        LazyOptional<IFluidHandler> bCap = bCtrl.getCapability(ForgeCapabilities.FLUID_HANDLER, null);
-        IFluidHandler aHandler = aCap.resolve().orElse(null);
-        IFluidHandler bHandler = bCap.resolve().orElse(null);
-        if (aHandler == null || bHandler == null) {
-            return;
+        if (controller instanceof MachineFluidTankBlockEntity tank) {
+            Fluid type = tank.getFluidTank().getTankType();
+            if (type != null && type != Fluids.EMPTY
+                    && type != com.hbm_m.inventory.fluid.ModFluids.NONE.getSource()) {
+                result.add(type);
+            }
+            return result;
         }
-
-        // В один тик делаем максимум одну "успешную" передачу по паре, чтобы избежать дрожания.
-        if (transferOnce(aHandler, bHandler, DIRECT_FLUID_TRANSFER_PER_TICK) > 0) {
-            return;
+        IFluidHandler handler = controller.getCapability(ForgeCapabilities.FLUID_HANDLER, null).resolve().orElse(null);
+        if (handler != null) {
+            for (int i = 0; i < handler.getTanks(); i++) {
+                FluidStack fs = handler.getFluidInTank(i);
+                if (fs != null && !fs.isEmpty()) result.add(fs.getFluid());
+            }
         }
-        transferOnce(bHandler, aHandler, DIRECT_FLUID_TRANSFER_PER_TICK);
+        return result;
     }
 
-    private static int transferOnce(IFluidHandler from, IFluidHandler to, int maxAmount) {
-        if (maxAmount <= 0) {
-            return 0;
+    private NodeDirPos[] buildFluidNodeConnections() {
+        if (allowedFluidSides == null || allowedFluidSides.isEmpty()) {
+            return new NodeDirPos[] {
+                    new NodeDirPos(worldPosition.relative(Direction.EAST),  Direction.EAST),
+                    new NodeDirPos(worldPosition.relative(Direction.WEST),  Direction.WEST),
+                    new NodeDirPos(worldPosition.relative(Direction.UP),    Direction.UP),
+                    new NodeDirPos(worldPosition.relative(Direction.DOWN),  Direction.DOWN),
+                    new NodeDirPos(worldPosition.relative(Direction.SOUTH), Direction.SOUTH),
+                    new NodeDirPos(worldPosition.relative(Direction.NORTH), Direction.NORTH),
+            };
         }
-        FluidStack simulated = from.drain(maxAmount, IFluidHandler.FluidAction.SIMULATE);
-        if (simulated.isEmpty()) {
-            return 0;
+        java.util.ArrayList<NodeDirPos> cons = new java.util.ArrayList<>();
+        for (Direction d : Direction.values()) {
+            if (allowedFluidSides.contains(d)) {
+                cons.add(new NodeDirPos(worldPosition.relative(d), d));
+            }
         }
-        int accepted = to.fill(simulated, IFluidHandler.FluidAction.SIMULATE);
-        if (accepted <= 0) {
-            return 0;
-        }
-        FluidStack drained = from.drain(accepted, IFluidHandler.FluidAction.EXECUTE);
-        if (drained.isEmpty()) {
-            return 0;
-        }
-        return to.fill(drained, IFluidHandler.FluidAction.EXECUTE);
+        return cons.toArray(new NodeDirPos[0]);
     }
+
+    private void destroyAllFluidNodes(ServerLevel serverLevel) {
+        for (FluidNode n : fluidNodes.values()) {
+            if (n != null && !n.isExpired()) UniNodespace.destroyNode(serverLevel, n);
+        }
+        fluidNodes.clear();
+    }
+    *///?}
+
+    //? if fabric {
+    @SuppressWarnings("UnstableApiUsage")
+    private static void tryDirectFluidTransferFabric(Level level, UniversalMachinePartBlockEntity a, UniversalMachinePartBlockEntity b) {
+        var aStorage = FluidStorage.SIDED.find(level, a.controllerPos, null);
+        var bStorage = FluidStorage.SIDED.find(level, b.controllerPos, null);
+        if (aStorage == null || bStorage == null) return;
+
+        try (var tx = net.fabricmc.fabric.api.transfer.v1.transaction.Transaction.openOuter()) {
+            for (var view : aStorage) {
+                if (view.isResourceBlank() || view.getAmount() <= 0) continue;
+                long maxDrain = Math.min(view.getAmount(), DIRECT_FLUID_TRANSFER_PER_TICK * 81L);
+                long inserted = bStorage.insert(view.getResource(), maxDrain, tx);
+                if (inserted > 0) {
+                    long extracted = view.extract(view.getResource(), inserted, tx);
+                    if (extracted > 0) {
+                        tx.commit();
+                        return;
+                    }
+                }
+                break;
+            }
+        }
+
+        try (var tx = net.fabricmc.fabric.api.transfer.v1.transaction.Transaction.openOuter()) {
+            for (var view : bStorage) {
+                if (view.isResourceBlank() || view.getAmount() <= 0) continue;
+                long maxDrain = Math.min(view.getAmount(), DIRECT_FLUID_TRANSFER_PER_TICK * 81L);
+                long inserted = aStorage.insert(view.getResource(), maxDrain, tx);
+                if (inserted > 0) {
+                    long extracted = view.extract(view.getResource(), inserted, tx);
+                    if (extracted > 0) {
+                        tx.commit();
+                        return;
+                    }
+                }
+                break;
+            }
+        }
+    }
+    //?}
 
     @Override
     public BlockPos getControllerPos() {
@@ -200,7 +435,72 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         return this.allowedFluidSides;
     }
 
+    /**
+     * Как Forge {@code getCapability(HBM_ENERGY_*)}: часть с ролью коннектора участвует в визуале проводов и
+     * {@link com.hbm_m.capability.ModCapabilities#hasEnergyComponent} на Fabric ({@code instanceof}).
+     */
     @Override
+    public boolean canConnectEnergy(@Nullable Direction side) {
+        if (!this.role.canReceiveEnergy() && !this.role.canSendEnergy()) {
+            return false;
+        }
+        if (side == null) {
+            return true;
+        }
+        if (allowedEnergySides.isEmpty()) {
+            return true;
+        }
+        return allowedEnergySides.contains(side);
+    }
+
+    /**
+     * Fabric Transfer API: делегирование энергии в контроллер (аналог Forge {@code getCapability(ENERGY, side)}).
+     * Зарегистрирован через {@code EnergyStorage.SIDED.registerForBlockEntity} в FabricEntrypoint.
+     */
+    //? if fabric {
+    @Nullable
+    public team.reborn.energy.api.EnergyStorage getEnergyStorageSided(@Nullable Direction side) {
+        if (this.controllerPos == null || this.level == null) return null;
+        if (!this.role.canReceiveEnergy() && !this.role.canSendEnergy()) return null;
+        boolean energySideOk = side == null
+                || allowedEnergySides.isEmpty()
+                || allowedEnergySides.contains(side);
+        if (!energySideOk) return null;
+        BlockEntity ctrl = this.level.getBlockEntity(this.controllerPos);
+        if (ctrl == null) return null;
+        return team.reborn.energy.api.EnergyStorage.SIDED.find(this.level, this.controllerPos, ctrl.getBlockState(), ctrl, null);
+    }
+    //?}
+
+    /**
+     * Fabric Transfer API: делегирование жидкости в контроллер (аналог Forge {@code getCapability(FLUID_HANDLER, null)}).
+     */
+    //? if fabric {
+    @SuppressWarnings("UnstableApiUsage")
+    @Nullable
+    public Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
+        if (this.controllerPos == null || this.level == null) {
+            return null;
+        }
+        if (!isFluidConnector(this.role)) {
+            return null;
+        }
+        boolean fluidSideOk = side == null
+                || allowedFluidSides.isEmpty()
+                || allowedFluidSides.contains(side);
+        if (!fluidSideOk) {
+            return null;
+        }
+        BlockEntity ctrl = this.level.getBlockEntity(this.controllerPos);
+        if (ctrl == null) {
+            return null;
+        }
+        return FluidStorage.SIDED.find(this.level, this.controllerPos, ctrl.getBlockState(), ctrl, null);
+    }
+    //?}
+
+    //? if forge {
+    /*@Override
     public void onLoad() {
         super.onLoad();
         // При загрузке мира роль восстанавливается из NBT, минуя setPartRole.
@@ -209,7 +509,22 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
                 (isFluidConnector(role) || role.canReceiveEnergy() || role.canSendEnergy())) {
             level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
         }
+        // Клиент: после перезахода трубы могут визуально "не увидеть" коннектор до первого апдейта.
+        // Пересчитаем соединения вокруг части, чтобы рукава не отлипали/не липли к контроллеру случайно.
+        if (level != null && level.isClientSide && (isFluidConnector(role) || role.canReceiveEnergy() || role.canSendEnergy())) {
+            FluidDuctBlock.refreshAdjacentDucts(level, worldPosition);
+        }
     }
+
+    @Override
+    public void onChunkUnloaded() {
+        super.onChunkUnloaded();
+        if (this.level instanceof ServerLevel sl) {
+            destroyAllFluidNodes(sl);
+            EnergyNetworkManager.get(sl).removeNode(worldPosition);
+        }
+    }
+
 
     @NotNull
     @Override
@@ -276,6 +591,7 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
 
         return super.getCapability(cap, side);
     }
+    *///?}
 
     @Override
     protected void saveAdditional(CompoundTag pTag) {
@@ -336,6 +652,12 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
                 if ((mask & (1 << dir.get3DDataValue())) != 0) allowedFluidSides.add(dir);
             }
         }
+        //? if fabric {
+        if (level != null && !level.isClientSide()
+                && (isFluidConnector(this.role) || this.role.canReceiveEnergy() || this.role.canSendEnergy())) {
+            level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
+        }
+        //?}
     }
 
     @Nullable
@@ -349,7 +671,8 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         return this.saveWithoutMetadata();
     }
 
-    @Override
+    //? if forge {
+    /*@Override
     public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
         CompoundTag tag = pkt.getTag();
         if (tag != null) {
@@ -361,4 +684,5 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
             }
         }
     }
+    *///?}
 }

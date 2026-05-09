@@ -1,14 +1,26 @@
 package com.hbm_m.block.entity.machines;
 
+
+import java.util.Optional;
+
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.inventory.menu.MachineShredderMenu;
-import com.hbm_m.item.industrial.ItemBlades;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.industrial.ItemBlades;
 import com.hbm_m.recipe.ShredderRecipe;
-import com.hbm_m.sound.ClientSoundManager;
-import com.hbm_m.sound.ShredderSoundInstance;
+import com.hbm_m.sound.ClientSoundBootstrap;
+
+import dev.architectury.registry.registries.RegistrySupplier;
+//? if forge {
+/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+*///?}
+//? if fabric {
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;//?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
@@ -25,20 +37,14 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.registries.RegistryObject;
-import org.jetbrains.annotations.Nullable;
-
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-
-import java.util.Optional;
 
 /**
  * Шреддер машина - перерабатывает предметы в пыль/скрап
  * Основан на оригинальной версии из 1.7.10
  */
 public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
+
+    private static final String SHREDDER_SOUND_INSTANCE = "com.hbm_m.sound.ShredderSoundInstance";
 
     // Константы слотов (как в оригинале: 30 слотов)
     private static final int BATTERY_SLOT = 29;    // 29: батарея
@@ -116,16 +122,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
             return stack.getItem() instanceof ItemBlades;
         }
         if (slot == BATTERY_SLOT) {
-            // Разрешаем предметы, которые могут отдавать энергию
-            boolean hasHbmEnergy = stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
-                    .map(provider -> provider.canExtract())
-                    .orElse(false);
-            if (hasHbmEnergy) {
-                return true;
-            }
-            return stack.getCapability(ForgeCapabilities.ENERGY)
-                    .map(storage -> storage.canExtract())
-                    .orElse(false);
+            return isEnergyProviderItem(stack);
         }
         return false;
     }
@@ -152,24 +149,9 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    public net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket getUpdatePacket() {
-        CompoundTag tag = new CompoundTag();
-        saveAdditional(tag);
-        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this, be -> tag);
-    }
-    
-    @Override
-    public void onDataPacket(Connection net, net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket pkt) {
-        load(pkt.getTag());
-    }
-
-    @Override
     public void load(CompoundTag tag) {
         super.load(tag);
         progress = tag.getInt("progress");
-        if (tag.contains("power")) {
-            this.setEnergyStored(tag.getLong("power"));
-        }
         if (tag.contains("active")) {
             isActive = tag.getBoolean("active");
             // Обновляем clientIsActive (как в Advanced Assembler)
@@ -187,7 +169,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
         super.setRemoved();
         // Останавливаем звук при удалении блока
         if (level != null && level.isClientSide) {
-            ClientSoundManager.stopSound(worldPosition);
+            ClientSoundBootstrap.stopSound(level, worldPosition);
         }
     }
 
@@ -208,11 +190,21 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
             blockEntity.serverTick(level, pos);
         }
     }
-
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
     private void clientTick() {
-        ClientSoundManager.updateSound(this, getIsActive(),
-                () -> new ShredderSoundInstance(this.getBlockPos()));
+        ClientSoundBootstrap.updateSound(this, getIsActive(), () -> newShredderSoundInstance());
+    }
+
+    private Object newShredderSoundInstance() {
+        try {
+            return Class.forName(SHREDDER_SOUND_INSTANCE).getConstructor(BlockPos.class).newInstance(this.getBlockPos());
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
     }
     
     /**
@@ -315,57 +307,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
     // ==================== ENERGY ====================
 
     private void chargeFromBattery() {
-        ItemStack batteryStack = inventory.getStackInSlot(BATTERY_SLOT);
-        if (batteryStack.isEmpty()) {
-            return;
-        }
-
-        boolean transferred = batteryStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).map(itemEnergy -> {
-            if (!itemEnergy.canExtract()) {
-                return false;
-            }
-
-            long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
-            if (energyNeeded <= 0) {
-                return false;
-            }
-
-            long energyToTransfer = Math.min(energyNeeded, this.getReceiveSpeed());
-            long extracted = itemEnergy.extractEnergy(energyToTransfer, false);
-
-            if (extracted > 0) {
-                this.setEnergyStored(this.getEnergyStored() + extracted);
-                setChanged();
-                return true;
-            }
-            return false;
-        }).orElse(false);
-
-        if (transferred) {
-            return;
-        }
-
-        batteryStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
-            if (!itemEnergy.canExtract()) {
-                return;
-            }
-
-            long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
-            if (energyNeeded <= 0) {
-                return;
-            }
-
-            int maxTransfer = (int) Math.min(Integer.MAX_VALUE, Math.min(energyNeeded, this.getReceiveSpeed()));
-            if (maxTransfer <= 0) {
-                return;
-            }
-
-            int extracted = itemEnergy.extractEnergy(maxTransfer, false);
-            if (extracted > 0) {
-                this.setEnergyStored(this.getEnergyStored() + extracted);
-                setChanged();
-            }
-        });
+        chargeFromBatterySlot(BATTERY_SLOT);
     }
 
     public boolean hasPower() {
@@ -575,17 +517,17 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
         if (item == ModItems.DUST.get() || item == ModItems.DUST_TINY.get()) {
             return true;
         }
-        for (RegistryObject<Item> powder : ModItems.POWDERS.values()) {
+        for (RegistrySupplier<Item> powder : ModItems.POWDERS.values()) {
             if (powder != null && powder.isPresent() && powder.get() == item) {
                 return true;
             }
         }
-        for (RegistryObject<Item> powder : ModItems.INGOT_POWDERS.values()) {
+        for (RegistrySupplier<Item> powder : ModItems.INGOT_POWDERS.values()) {
             if (powder != null && powder.isPresent() && powder.get() == item) {
                 return true;
             }
         }
-        for (RegistryObject<Item> powder : ModItems.INGOT_POWDERS_TINY.values()) {
+        for (RegistrySupplier<Item> powder : ModItems.INGOT_POWDERS_TINY.values()) {
             if (powder != null && powder.isPresent() && powder.get() == item) {
                 return true;
             }

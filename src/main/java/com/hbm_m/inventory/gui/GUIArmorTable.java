@@ -1,5 +1,8 @@
 package com.hbm_m.inventory.gui;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.armormod.menu.ArmorTableMenu;
 import com.hbm_m.interfaces.IHasTooltip;
 import com.hbm_m.interfaces.IMixinSlot;
@@ -15,13 +18,16 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 public class GUIArmorTable extends AbstractContainerScreen<ArmorTableMenu> {
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/machine/gui_armor_modifier.png");
+            //? if fabric && < 1.21.1 {
+            new ResourceLocation(RefStrings.MODID, "textures/gui/machine/gui_armor_modifier.png");
+            //?} else {
+                        /*ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/machine/gui_armor_modifier.png");
+            *///?}
+
 
     private static final int SIDE_PANEL_WIDTH = 22;
     private static final int SIDE_PANEL_HEIGHT = 80;
@@ -46,15 +52,24 @@ public class GUIArmorTable extends AbstractContainerScreen<ArmorTableMenu> {
         super.init();
         this.inventoryLabelY = this.imageHeight - 96;
 
-        for (Slot slot : this.menu.slots) {
-            if (isArmorSlot(slot)) {
-                int armorIndex = slot.index - 46;
-                // ИСПОЛЬЗУЕМ КОНСТАНТЫ ДЛЯ РАСЧЕТА ПОЗИЦИИ
-                int newX = SLOT_START_X;
-                int newY = SLOT_START_Y + (armorIndex * 18);
+        // ВАЖНО: Slot#index — это индекс *в контейнере-источнике* (у брони это 36..39),
+        // а нам нужно двигать слоты по их индексу *в меню* (46..49).
+        repositionArmorSidePanelSlots();
+    }
 
-                ((IMixinSlot) slot).setPos(newX, newY);
-            }
+    private void repositionArmorSidePanelSlots() {
+        int[] armorMenuSlotIndices = new int[] {
+                ArmorTableMenu.SLOT_ARMOR_SIDE_HELMET,
+                ArmorTableMenu.SLOT_ARMOR_SIDE_CHEST,
+                ArmorTableMenu.SLOT_ARMOR_SIDE_LEGS,
+                ArmorTableMenu.SLOT_ARMOR_SIDE_BOOTS
+        };
+
+        for (int i = 0; i < armorMenuSlotIndices.length; i++) {
+            Slot slot = this.menu.getSlot(armorMenuSlotIndices[i]);
+            int newX = SLOT_START_X;
+            int newY = SLOT_START_Y + (i * 18);
+            ((IMixinSlot) slot).setPos(newX, newY);
         }
     }
 
@@ -64,7 +79,7 @@ public class GUIArmorTable extends AbstractContainerScreen<ArmorTableMenu> {
      * потому что теперь он знает ПРАВИЛЬНЫЕ координаты слотов.
      */
     @Override
-    public void render(@Nonnull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         renderBackground(guiGraphics);
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
         // Отдельно вызываем рендер наших кастомных подсказок, чтобы они были поверх всего.
@@ -73,28 +88,30 @@ public class GUIArmorTable extends AbstractContainerScreen<ArmorTableMenu> {
     }
     
     private void renderSlotBackgrounds(GuiGraphics guiGraphics) {
-        // Проходимся по всем слотам в контейнере
-        for (final Slot slot : this.menu.slots) {
-            // Нас интересуют только слоты брони и только если они пустые
-            if (isArmorSlot(slot) && !slot.hasItem()) {
-                // Получаем нужную иконку для этого слота
-                ResourceLocation spriteLocation = getArmorSlotBackground(slot.index);
-                if (spriteLocation != null) {
-                    // Получаем саму текстуру (спрайт) из атласа
-                    TextureAtlasSprite sprite = Minecraft.getInstance()
-                            .getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
-                            .apply(spriteLocation);
-                    
-                    // Рисуем спрайт в координатах слота
-                    // slot.x и slot.y уже правильные благодаря нашему миксину
-                    guiGraphics.blit(this.leftPos + slot.x, this.topPos + slot.y, 0, 16, 16, sprite);
-                }
+        int[] armorMenuSlotIndices = new int[] {
+                ArmorTableMenu.SLOT_ARMOR_SIDE_HELMET,
+                ArmorTableMenu.SLOT_ARMOR_SIDE_CHEST,
+                ArmorTableMenu.SLOT_ARMOR_SIDE_LEGS,
+                ArmorTableMenu.SLOT_ARMOR_SIDE_BOOTS
+        };
+
+        for (int menuSlotIndex : armorMenuSlotIndices) {
+            Slot slot = this.menu.getSlot(menuSlotIndex);
+            if (!slot.hasItem()) {
+                ResourceLocation spriteLocation = getArmorSlotBackground(menuSlotIndex);
+                if (spriteLocation == null) continue;
+
+                TextureAtlasSprite sprite = Minecraft.getInstance()
+                        .getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
+                        .apply(spriteLocation);
+
+                guiGraphics.blit(this.leftPos + slot.x, this.topPos + slot.y, 0, 16, 16, sprite);
             }
         }
     }
 
     @Override
-    protected void renderBg(@Nonnull GuiGraphics guiGraphics, float partialTicks, int mouseX, int mouseY) {
+    protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTicks, int mouseX, int mouseY) {
         int x = this.leftPos;
         int y = this.topPos;
 
@@ -133,7 +150,7 @@ public class GUIArmorTable extends AbstractContainerScreen<ArmorTableMenu> {
     }
 
     @Override
-    protected void renderTooltip(@Nonnull GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    protected void renderTooltip(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
         // Сначала вызываем стандартную логику, чтобы не сломать подсказки для предметов
         super.renderTooltip(guiGraphics, mouseX, mouseY);
         
@@ -148,19 +165,11 @@ public class GUIArmorTable extends AbstractContainerScreen<ArmorTableMenu> {
     // Он все еще нужен для логики в init()
     
     @Nullable
-    private ResourceLocation getArmorSlotBackground(int slotIndex) {
-        int armorIndex = slotIndex - 46; // 0=head, 1=chest, 2=legs, 3=feet
-        return switch (armorIndex) {
-            case 0 -> InventoryMenu.EMPTY_ARMOR_SLOT_HELMET;
-            case 1 -> InventoryMenu.EMPTY_ARMOR_SLOT_CHESTPLATE;
-            case 2 -> InventoryMenu.EMPTY_ARMOR_SLOT_LEGGINGS;
-            case 3 -> InventoryMenu.EMPTY_ARMOR_SLOT_BOOTS;
-            default -> null;
-        };
-    }
-
-    private boolean isArmorSlot(Slot slot) {
-        int armorSlotStartIndex = 46;
-        return slot.index >= armorSlotStartIndex && slot.index < armorSlotStartIndex + 4;
+    private ResourceLocation getArmorSlotBackground(int menuSlotIndex) {
+        if (menuSlotIndex == ArmorTableMenu.SLOT_ARMOR_SIDE_HELMET) return InventoryMenu.EMPTY_ARMOR_SLOT_HELMET;
+        if (menuSlotIndex == ArmorTableMenu.SLOT_ARMOR_SIDE_CHEST) return InventoryMenu.EMPTY_ARMOR_SLOT_CHESTPLATE;
+        if (menuSlotIndex == ArmorTableMenu.SLOT_ARMOR_SIDE_LEGS) return InventoryMenu.EMPTY_ARMOR_SLOT_LEGGINGS;
+        if (menuSlotIndex == ArmorTableMenu.SLOT_ARMOR_SIDE_BOOTS) return InventoryMenu.EMPTY_ARMOR_SLOT_BOOTS;
+        return null;
     }
 }

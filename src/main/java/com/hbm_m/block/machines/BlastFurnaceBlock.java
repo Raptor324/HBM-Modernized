@@ -1,9 +1,13 @@
 package com.hbm_m.block.machines;
 
+import org.jetbrains.annotations.Nullable;
+
 // Этот класс реализует блок доменной печи, которая используется для плавки руды в слитки.
 // Печь имеет два состояния: активное (горит) и неактивное.
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.BlastFurnaceBlockEntity;
+
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
@@ -29,8 +33,6 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
-import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("deprecation")
 public class BlastFurnaceBlock extends BaseEntityBlock {
@@ -94,7 +96,7 @@ public class BlastFurnaceBlock extends BaseEntityBlock {
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
             if(entity instanceof BlastFurnaceBlockEntity) {
-                NetworkHooks.openScreen(((ServerPlayer) player), (BlastFurnaceBlockEntity) entity, pos);
+                MenuRegistry.openExtendedMenu((ServerPlayer) player, (BlastFurnaceBlockEntity) entity, buf -> buf.writeBlockPos(pos));
             } else {
                 throw new IllegalStateException("Our Container provider is missing!");
             }

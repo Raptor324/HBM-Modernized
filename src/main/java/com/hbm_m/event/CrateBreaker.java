@@ -1,35 +1,30 @@
 package com.hbm_m.event;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.main.MainRegistry;
 import com.hbm_m.sound.ModSounds;
-
+import dev.architectury.event.EventResult;
+import dev.architectury.event.events.common.InteractionEvent;
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.RegistryObject;
 
-@Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
 public class CrateBreaker {
 
     private static final Random RANDOM = new Random();
 
-    private static final List<RegistryObject<Block>> BREAKABLE_CRATES = List.of(
+    private static final List<RegistrySupplier<Block>> BREAKABLE_CRATES = List.of(
             ModBlocks.CRATE,
             ModBlocks.CRATE_CONSERVE,
             ModBlocks.CRATE_LEAD,
@@ -37,7 +32,7 @@ public class CrateBreaker {
             ModBlocks.CRATE_METAL
     );
 
-    private static final List<RegistryObject<?>> CRACK_SOUNDS = List.of(
+    private static final List<RegistrySupplier<net.minecraft.sounds.SoundEvent>> CRACK_SOUNDS = List.of(
             ModSounds.CRATEBREAK1,
             ModSounds.CRATEBREAK2,
             ModSounds.CRATEBREAK3,
@@ -46,7 +41,7 @@ public class CrateBreaker {
     );
 
     // Дроп с шансом для каждого ящика: список (предмет, шанс выпадения)
-    private static final Map<RegistryObject<Block>, List<DropChance>> CRATE_DROPS = Map.of(
+    private static final Map<RegistrySupplier<Block>, List<DropChance>> CRATE_DROPS = Map.of(
             ModBlocks.CRATE, List.of(
                     new DropChance(ModBlocks.CRT_BROKEN, 0.1),
                     new DropChance(ModBlocks.BARREL_CORRODED, 0.1),
@@ -254,106 +249,93 @@ public class CrateBreaker {
 
     );
 
-    private record DropChance(RegistryObject<?> item, double chance, int count) { public DropChance(RegistryObject<?> item, double chance) {
+    private record DropChance(RegistrySupplier<?> item, double chance, int count) { public DropChance(RegistrySupplier<?> item, double chance) {
         this(item, chance, 1); // если количество не указано, будет 1
     }
     }
 
-    @SubscribeEvent
-    public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
-        Level level = event.getLevel();
-        if (level.isClientSide) return;
+    /**
+     * Регистрация обработчика события.
+     * Вызывается один раз при инициализации мода.
+     */
+    public static void init() {
+        InteractionEvent.RIGHT_CLICK_BLOCK.register((player, hand, pos, face) -> {
+            Level level = player.level();
+            if (level.isClientSide) return EventResult.pass();
 
-        Entity entity = event.getEntity();
-        if (!(entity instanceof Player player)) return;
+            ItemStack held = player.getItemInHand(hand);
+            if (!held.is(ModItems.CROWBAR.get())) return EventResult.pass();
 
-        ItemStack held = player.getItemInHand(event.getHand());
-        if (!held.is(ModItems.CROWBAR.get())) return;
+            Block block = level.getBlockState(pos).getBlock();
 
-        BlockPos pos = event.getPos();
-        Block block = level.getBlockState(pos).getBlock();
-
-        RegistryObject<Block> matchedCrate = null;
-        for (RegistryObject<Block> crate : BREAKABLE_CRATES) {
-            Block b = crate.orElse(null);
-            if (b != null && b == block) {
-                matchedCrate = crate;
-                break;
+            RegistrySupplier<Block> matchedCrate = null;
+            for (RegistrySupplier<Block> crate : BREAKABLE_CRATES) {
+                Block b = crate.getOrNull();
+                if (b != null && b == block) {
+                    matchedCrate = crate;
+                    break;
+                }
             }
-        }
-        if (matchedCrate == null) return;
+            if (matchedCrate == null) return EventResult.pass();
 
-        event.setCanceled(true);
-
-        // Анимация руки
-        if (player instanceof ServerPlayer serverPlayer) {
-            serverPlayer.swing(event.getHand(), true);
-        }
-
-        // Ломаем блок без ванильного дропа
-        level.destroyBlock(pos, false);
-
-        // Случайный звук треска
-        RegistryObject<?> soundObj = CRACK_SOUNDS.get(RANDOM.nextInt(CRACK_SOUNDS.size()));
-        if (soundObj != null) {
-            var soundEvent = soundObj.get();
-            if (soundEvent instanceof net.minecraft.sounds.SoundEvent se) {
-                level.playSound(null, pos, se, net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 1.0F);
+            // Анимация руки
+            if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.swing(hand, true);
             }
-        }
 
-        // Дропы для конкретного ящика
-        List<DropChance> dropChances = CRATE_DROPS.get(matchedCrate);
-        if (dropChances == null) return;
+            // Ломаем блок без ванильного дропа
+            level.destroyBlock(pos, false);
 
-        // 4 независимых ролла
-        for (int i = 0; i < 4; i++) {
-            dropChances.stream()
-                    .filter(dc -> RANDOM.nextDouble() <= dc.chance())
-                    .findAny()
-                    .ifPresent(dc -> {
-                        // Получаем объект для дропа
-                        var obj = dc.item().get();
-                        Item itemToDrop = null;
+            // Случайный звук треска
+            RegistrySupplier<SoundEvent> soundObj = CRACK_SOUNDS.get(RANDOM.nextInt(CRACK_SOUNDS.size()));
+            if (soundObj != null) {
+                SoundEvent se = soundObj.get();
+                if (se != null) {
+                    level.playSound(null, pos, se, net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 1.0F);
+                }
+            }
 
-                        if (obj instanceof Item it) {
-                            itemToDrop = it;
-                        } else if (obj instanceof Block bl) {
-                            itemToDrop = Item.byBlock(bl);
-                        }
+            // Дропы для конкретного ящика
+            List<DropChance> dropChances = CRATE_DROPS.get(matchedCrate);
+            if (dropChances != null) {
+                // 4 независимых ролла
+                for (int i = 0; i < 4; i++) {
+                    dropChances.stream()
+                            .filter(dc -> RANDOM.nextDouble() <= dc.chance())
+                            .findAny()
+                            .ifPresent(dc -> spawnDrop(level, pos, dc));
+                }
+            }
 
-                        if (itemToDrop == null || itemToDrop == Items.AIR) return;
-
-                        // Определяем стабильное количество:
-                        // если у DropChance есть компонент count() - используем его,
-                        // иначе дефолт 1.
-                        int count = 1;
-
-                        try {
-                            // Вызов аксессора записи через отражение, если он существует
-                            var m = dc.getClass().getMethod("count");
-                            Object val = m.invoke(dc);
-                            if (val instanceof Integer c && c > 0) {
-                                count = c;
-                            }
-                        } catch (ReflectiveOperationException ignored) {
-                            // компонента count нет - оставляем 1
-                        }
-
-                        ItemStack stack = new ItemStack(itemToDrop, count);
-                        ItemEntity dropEntity = new ItemEntity(
-                                level,
-                                pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                                stack
-                        );
-                        dropEntity.setDeltaMovement(
-                                (RANDOM.nextDouble() - 0.5) * 0.5,
-                                RANDOM.nextDouble() * 0.3 + 0.1,
-                                (RANDOM.nextDouble() - 0.5) * 0.5
-                        );
-                        level.addFreshEntity(dropEntity);
-                    });
-        }
+            return EventResult.interruptTrue();
+        });
     }
 
+    private static void spawnDrop(Level level, BlockPos pos, DropChance dc) {
+        var obj = dc.item().get();
+        Item itemToDrop = null;
+
+        if (obj instanceof Item it) {
+            itemToDrop = it;
+        } else if (obj instanceof Block bl) {
+            itemToDrop = Item.byBlock(bl);
+        }
+
+        if (itemToDrop == null || itemToDrop == Items.AIR) return;
+
+        int count = dc.count();
+
+        ItemStack stack = new ItemStack(itemToDrop, count);
+        ItemEntity dropEntity = new ItemEntity(
+                level,
+                pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                stack
+        );
+        dropEntity.setDeltaMovement(
+                (RANDOM.nextDouble() - 0.5) * 0.5,
+                RANDOM.nextDouble() * 0.3 + 0.1,
+                (RANDOM.nextDouble() - 0.5) * 0.5
+        );
+        level.addFreshEntity(dropEntity);
+    }
 }

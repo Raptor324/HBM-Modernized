@@ -36,6 +36,35 @@ AGENTS.md
 /plans
 /plans
 .cursorignore
+build-logic/build
+build-logic/.gradle
+build-logic/build
+versions/1.20.1-fabric/build
+versions/1.20.1-fabric/.gradle
+versions/1.20.1-fabric/run
+versions/1.21.1-fabric/.eclipse
+versions/1.20.1-forge/build
+versions/1.20.1-forge/.gradle
+versions/1.20.1-forge/run
+versions/1.20.1-forge/.eclipse
+versions/1.21.1-fabric/build
+versions/1.21.1-fabric/.gradle
+versions/1.21.1-fabric/run
+versions/1.21.1-fabric/.eclipse
+versions/1.21.1-neoforge/build
+versions/1.21.1-neoforge/.gradle
+versions/1.21.1-neoforge/run
+versions/1.21.1-neoforge/.eclipse
+versions/1.21.11-neoforge/build
+versions/1.21.11-neoforge/.gradle
+versions/1.21.11-neoforge/run
+versions/1.21.11-neoforge/.eclipse
+versions/1.21.11-fabric/build
+versions/1.21.11-fabric/.gradle
+versions/1.21.11-fabric/run
+versions/1.21.11-fabric/.eclipse
+versions/datagen/
+legacy/forgegradle/.gradle
 
 # ================= Logs & Temporary Files =================
 # Логи, дампы ошибок и временные файлы.
@@ -49,6 +78,7 @@ logs/
 agent
 ideas
 libs/
+design.md
 # ================= OS Specific =================
 # Системные файлы, которые могут случайно появиться.
 .DS_Store

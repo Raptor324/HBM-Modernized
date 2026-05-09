@@ -1,5 +1,6 @@
 package com.hbm_m.powerarmor.layer;
 
+
 import java.util.Map;
 
 import org.jetbrains.annotations.NotNull;
@@ -17,14 +18,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Render layer for DNT Power Armor (entity rendering).
  * Mirrors the T51 pipeline but uses DNT OBJ/model id and textures.
  */
-@OnlyIn(Dist.CLIENT)
 public class DNTPowerArmorLayer<T extends LivingEntity, M extends HumanoidModel<T>> extends AbstractObjArmorLayer<T, M> {
 
     private static final ResourceLocation DNT_ATLAS_LOCATION = InventoryMenu.BLOCK_ATLAS;
@@ -51,7 +49,12 @@ public class DNTPowerArmorLayer<T extends LivingEntity, M extends HumanoidModel<
         );
 
         private static Material withTex(String path) {
-            return new Material(DNT_ATLAS_LOCATION, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, path));
+            //? if fabric && < 1.21.1 {
+            return new Material(DNT_ATLAS_LOCATION, new ResourceLocation(MainRegistry.MOD_ID, path));
+            //?} else {
+                        /*return new Material(DNT_ATLAS_LOCATION, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, path));
+            *///?}
+
         }
 
         @Override

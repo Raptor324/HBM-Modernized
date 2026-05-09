@@ -1,15 +1,22 @@
 package com.hbm_m.client.render;
 
+
+import java.lang.ref.Cleaner;
 import java.nio.FloatBuffer;
 import java.util.List;
-import java.lang.ref.Cleaner;
+
 
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.ARBDrawInstanced;
+import org.lwjgl.opengl.ARBInstancedArrays;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL31;
@@ -36,10 +43,15 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.api.distmarker.Dist;
+//? if forge {
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
-
+*///?}
+//? if fabric {
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+//?}
 /**
  * Instanced Renderer для статических частей (Base/Frame).
  * Без шейдеров рендерит все машины одного типа одним {@code glDrawElementsInstanced}.
@@ -47,7 +59,11 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
  * + companion VBO с {@code IrisVertexFormats.ENTITY} layout, что даёт корректный
  * G-buffer / shadow pass / pack uniforms.
  */
-@OnlyIn(Dist.CLIENT)
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
 public class InstancedStaticPartRenderer extends AbstractGpuMesh {
 
     private static final int MAX_INSTANCES = 1024;
@@ -60,19 +76,25 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
     //   InstLightC23  vec4 (loc 8) @ 17   -- c2.uv, c3.uv
     //   InstLightC45  vec4 (loc 9) @ 21   -- c4.uv, c5.uv
     //   InstLightC67  vec4 (loc 10) @ 25  -- c6.uv, c7.uv
+    //   InstFadeAlpha float (loc 11) @ 29 -- captured at addInstance (flush used wrong global FadeAlpha)
+    // Sliced: lights @13..44, InstFadeAlpha (loc 15) @45
     private static final int INSTANCE_ATTRIB_FIRST = 3;
     private static final int LIGHT_FLOAT_OFFSET = 13; // first float of light data in instance record
-    private static final int BASE_INSTANCE_DATA_SIZE = 29; // legacy: 8 corners = 16 floats
-    private static final int SLICED_INSTANCE_DATA_SIZE = 45; // 4 slices * 4 probes * 2 floats = 32 floats
+    private static final int BASE_INSTANCE_DATA_SIZE = 30; // + InstFadeAlpha
+    private static final int SLICED_INSTANCE_DATA_SIZE = 46; // 4 slices * 4 probes * 2 floats = 32 floats + fade
 
     private final boolean useSlicedLight;
     private final int instanceDataSize;
     private final int instanceAttribLast;
+    /** Float index of {@code InstFadeAlpha} inside one instance record. */
+    private final int instanceFadeFloatOffset;
     private final int lightFloatCount;
 
     private int instanceCount = 0;
     private float batchSkyDarken = -1f; // кэш getSkyDarken на батч
     private boolean overflowLogged = false;
+    /** Один WARN на сессию, если instanced-шейдер null при flush батча (раньше на Fabric не вызывали registerFabricShaders). */
+    private static volatile boolean warnedInstancedShaderNullFlush;
 
     /**
      * Per-instance smoothed lightmap UV2 - interleaved {@code (blockU, skyV)}
@@ -147,6 +169,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
     private Uniform uFogColor;
     private Uniform uSampler0;
     private Uniform uBrightness;
+    private Uniform uFadeAlpha;
 
     /**
      * Iris-extended uniform locations cached against {@link #cachedShader}'s
@@ -199,12 +222,31 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         this.quadsForIris = quadsForIris;
         this.useSlicedLight = useSlicedLight;
         this.instanceDataSize = useSlicedLight ? SLICED_INSTANCE_DATA_SIZE : BASE_INSTANCE_DATA_SIZE;
-        this.instanceAttribLast = useSlicedLight ? 14 : 10;
+        this.instanceAttribLast = useSlicedLight ? 15 : 11;
+        this.instanceFadeFloatOffset = useSlicedLight ? 45 : 29;
         this.lightFloatCount = useSlicedLight ? 32 : 16;
         this.tmpCornerUV = new float[lightFloatCount];
         this.tmpCornerShort = new short[lightFloatCount];
         if (data == null) {
             MainRegistry.LOGGER.error("InstancedStaticPartRenderer: Received NULL VboData! Cannot create renderer.");
+            initialized = false;
+            return;
+        }
+        if (!RenderSystem.isOnRenderThread()) {
+            MainRegistry.LOGGER.warn("InstancedStaticPartRenderer: Skipping initialization because this is not render thread.");
+            data.close();
+            initialized = false;
+            return;
+        }
+        if (GLFW.glfwGetCurrentContext() == 0L) {
+            MainRegistry.LOGGER.warn("InstancedStaticPartRenderer: No current GLFW OpenGL context (e.g. Sodium BE pass); falling back to non-instanced render path.");
+            data.close();
+            initialized = false;
+            return;
+        }
+        if (!supportsInstancedAttributeDivisor()) {
+            MainRegistry.LOGGER.warn("InstancedStaticPartRenderer: Instancing entrypoints unavailable (no GL caps / divisor or draw-instanced). Falling back to non-instanced render path.");
+            data.close();
             initialized = false;
             return;
         }
@@ -256,40 +298,43 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             // InstPos (vec3) @ 0
             GL20.glEnableVertexAttribArray(3);
             GL20.glVertexAttribPointer(3, 3, GL11.GL_FLOAT, false, stride, 0);
-            GL33.glVertexAttribDivisor(3, 1);
+            glVertexAttribDivisorCompat(3, 1);
 
             // InstRot (vec4) @ 3 floats = 12 bytes
             GL20.glEnableVertexAttribArray(4);
             GL20.glVertexAttribPointer(4, 4, GL11.GL_FLOAT, false, stride, 3 * 4);
-            GL33.glVertexAttribDivisor(4, 1);
+            glVertexAttribDivisorCompat(4, 1);
 
             // InstBboxMin (vec3) @ 7 floats = 28 bytes
             GL20.glEnableVertexAttribArray(5);
             GL20.glVertexAttribPointer(5, 3, GL11.GL_FLOAT, false, stride, 7 * 4);
-            GL33.glVertexAttribDivisor(5, 1);
+            glVertexAttribDivisorCompat(5, 1);
 
             // InstBboxSize (vec3) @ 10 floats = 40 bytes
             GL20.glEnableVertexAttribArray(6);
             GL20.glVertexAttribPointer(6, 3, GL11.GL_FLOAT, false, stride, 10 * 4);
-            GL33.glVertexAttribDivisor(6, 1);
+            glVertexAttribDivisorCompat(6, 1);
 
             if (!useSlicedLight) {
                 // InstLightC01 (vec4) @ 13 floats
                 GL20.glEnableVertexAttribArray(7);
                 GL20.glVertexAttribPointer(7, 4, GL11.GL_FLOAT, false, stride, 13 * 4);
-                GL33.glVertexAttribDivisor(7, 1);
+                glVertexAttribDivisorCompat(7, 1);
                 // InstLightC23 (vec4) @ 17 floats
                 GL20.glEnableVertexAttribArray(8);
                 GL20.glVertexAttribPointer(8, 4, GL11.GL_FLOAT, false, stride, 17 * 4);
-                GL33.glVertexAttribDivisor(8, 1);
+                glVertexAttribDivisorCompat(8, 1);
                 // InstLightC45 (vec4) @ 21 floats
                 GL20.glEnableVertexAttribArray(9);
                 GL20.glVertexAttribPointer(9, 4, GL11.GL_FLOAT, false, stride, 21 * 4);
-                GL33.glVertexAttribDivisor(9, 1);
+                glVertexAttribDivisorCompat(9, 1);
                 // InstLightC67 (vec4) @ 25 floats
                 GL20.glEnableVertexAttribArray(10);
                 GL20.glVertexAttribPointer(10, 4, GL11.GL_FLOAT, false, stride, 25 * 4);
-                GL33.glVertexAttribDivisor(10, 1);
+                glVertexAttribDivisorCompat(10, 1);
+                GL20.glEnableVertexAttribArray(11);
+                GL20.glVertexAttribPointer(11, 1, GL11.GL_FLOAT, false, stride, 29 * 4L);
+                glVertexAttribDivisorCompat(11, 1);
             } else {
                 // 4 slices * 2 vec4 per slice = 8 vec4 attributes, starting at float offset 13.
                 // loc 7  -> +0 floats
@@ -304,8 +349,11 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                     int loc = 7 + a;
                     GL20.glEnableVertexAttribArray(loc);
                     GL20.glVertexAttribPointer(loc, 4, GL11.GL_FLOAT, false, stride, (LIGHT_FLOAT_OFFSET + a * 4) * 4L);
-                    GL33.glVertexAttribDivisor(loc, 1);
+                    glVertexAttribDivisorCompat(loc, 1);
                 }
+                GL20.glEnableVertexAttribArray(15);
+                GL20.glVertexAttribPointer(15, 1, GL11.GL_FLOAT, false, stride, 45 * 4L);
+                glVertexAttribDivisorCompat(15, 1);
             }
 
             GL30.glBindVertexArray(0);
@@ -334,6 +382,66 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         } finally {
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
             GL30.glBindVertexArray(previousVao);
+        }
+    }
+
+    /**
+     * Проверка возможности инстансинга и (при инициализации) вызовы divisor/draw должны
+     * согласоваться: нельзя принимать только {@code glVertexAttribDivisorARB}, а вызывать
+     * {@link GL33#glVertexAttribDivisor} — на части контекстов core entrypoint отсутствует
+     * (нативный abort: функция недоступна в текущем контексте).
+     * <p>
+     * Без привязанного GLFW-контекста {@link GL#getCapabilities()} на потоке не используем —
+     * иначе возможны устаревшие TLS capabilities (Sodium/Iris).
+     */
+    private static boolean supportsInstancedAttributeDivisor() {
+        try {
+            var caps = resolveGlCapabilities();
+            if (caps == null) {
+                return false;
+            }
+            boolean hasDivisor = caps.glVertexAttribDivisor != 0L || caps.glVertexAttribDivisorARB != 0L;
+            boolean hasDrawInstanced = caps.glDrawElementsInstanced != 0L || caps.glDrawElementsInstancedARB != 0L;
+            return hasDivisor && hasDrawInstanced;
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
+    @Nullable
+    private static GLCapabilities resolveGlCapabilities() {
+        if (GLFW.glfwGetCurrentContext() == 0L) {
+            return null;
+        }
+        var caps = GL.getCapabilities();
+        if (caps != null) {
+            return caps;
+        }
+        try {
+            GL.createCapabilities();
+        } catch (Throwable ignored) {
+            return null;
+        }
+        return GL.getCapabilities();
+    }
+
+    /** Core GL 3.3 divisor, иначе {@link ARBInstancedArrays} (должно совпадать с {@link #supportsInstancedAttributeDivisor}). */
+    private static void glVertexAttribDivisorCompat(int index, int divisor) {
+        GLCapabilities caps = GL.getCapabilities();
+        if (caps != null && caps.glVertexAttribDivisor != 0L) {
+            GL33.glVertexAttribDivisor(index, divisor);
+        } else {
+            ARBInstancedArrays.glVertexAttribDivisorARB(index, divisor);
+        }
+    }
+
+    /** Core GL 3.1 draw instanced, иначе {@link ARBDrawInstanced}. */
+    private static void glDrawElementsInstancedCompat(int mode, int count, int type, long indices, int primcount) {
+        GLCapabilities caps = GL.getCapabilities();
+        if (caps != null && caps.glDrawElementsInstanced != 0L) {
+            GL31.glDrawElementsInstanced(mode, count, type, indices, primcount);
+        } else {
+            ARBDrawInstanced.glDrawElementsInstancedARB(mode, count, type, indices, primcount);
         }
     }
 
@@ -381,10 +489,15 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             }
             // Fallback to the classic putBulkData path that defers to Iris's pipeline.
             if (quadsForIris != null && !quadsForIris.isEmpty() && bufferSource != null) {
-                VertexConsumer consumer = bufferSource.getBuffer(RenderType.solid());
+                float fade = SingleMeshVboRenderer.getFadeAlpha();
+                VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
                 var pose = poseStack.last();
                 for (BakedQuad quad : quadsForIris) {
-                    consumer.putBulkData(pose, quad, 1f, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY, false);
+                    //? if forge {
+                    /*consumer.putBulkData(pose, quad, fade, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
+                    *///?} else {
+                    consumer.putBulkData(pose, quad, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY);
+                    //?}
                 }
             }
             return;
@@ -396,10 +509,15 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                                                : ModShaders.getBlockLitInstancedShader();
         if (shader == null) {
             if (quadsForIris != null && !quadsForIris.isEmpty() && bufferSource != null) {
-                VertexConsumer consumer = bufferSource.getBuffer(RenderType.solid());
+                float fade = SingleMeshVboRenderer.getFadeAlpha();
+                VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
                 PoseStack.Pose pose = poseStack.last();
                 for (BakedQuad quad : quadsForIris) {
-                    consumer.putBulkData(pose, quad, 1f, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY, false);
+                    //? if forge {
+                    /*consumer.putBulkData(pose, quad, fade, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
+                    *///?} else {
+                    consumer.putBulkData(pose, quad, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY);
+                    //?}
                 }
             }
             return;
@@ -419,17 +537,26 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
             shader.apply();
 
+            float fade = instanceBuffer.get(instanceFadeFloatOffset);
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
             RenderSystem.depthMask(true);
             GL11.glDisable(GL11.GL_CULL_FACE);
+            if (fade < 0.99f) {
+                RenderSystem.enableBlend();
+                RenderSystem.defaultBlendFunc();
+            }
 
             GL30.glBindVertexArray(vaoId);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, instanceVboId);
             GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, 0, instanceBuffer);
             for (int i = INSTANCE_ATTRIB_FIRST; i <= instanceAttribLast; i++) GL20.glEnableVertexAttribArray(i);
 
-            GL31.glDrawElementsInstanced(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0, 1);
+            glDrawElementsInstancedCompat(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0, 1);
+
+            if (fade < 0.99f) {
+                RenderSystem.disableBlend();
+            }
         } catch (Exception e) {
             MainRegistry.LOGGER.error("InstancedStaticPartRenderer.renderSingle failed", e);
         } finally {
@@ -482,22 +609,53 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                             @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
         if (!initialized) return;
 
-        if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
+        //? if fabric {
+        // On Fabric, Iris draws MUST happen eagerly during block entity
+        // dispatch — not deferred to flush(). Fabric API has no
+        // AFTER_BLOCK_ENTITIES event; the flush fires at AFTER_TRANSLUCENT,
+        // by which point Iris has already moved past the block entity phase,
+        // unbound the shader program, and swapped framebuffers. Deferred
+        // flushBatchIris() at that point hits "GL No active program" and
+        // draws to screen-space instead of world-space.
+        //
+        // The BER already opens a persistent IrisRenderBatch around all
+        // parts of one machine (see renderWithVBO → useIrisBatch), so
+        // drawSingleWithIrisExtended piggybacks on that batch and the
+        // per-machine apply()/clear() cost is amortized identically to
+        // the Forge instanced path — just without the deferred flush.
+        if (ShaderCompatibilityDetector.isExternalShaderActive()) {
             if (drawSingleWithIrisExtended(poseStack, packedLight, blockPos, blockEntity)) {
                 return;
             }
-            // Companion mesh unavailable - fall back to Iris's own pipeline via
-            // a putBulkData call. This still casts a shadow because Iris reads
-            // from RenderType.solid()'s buffer at the end of the shadow pass.
             if (quadsForIris != null && !quadsForIris.isEmpty() && bufferSource != null) {
-                VertexConsumer consumer = bufferSource.getBuffer(RenderType.solid());
+                float fade = SingleMeshVboRenderer.getFadeAlpha();
+                VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
                 var pose = poseStack.last();
                 for (BakedQuad quad : quadsForIris) {
-                    consumer.putBulkData(pose, quad, 1f, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY, false);
+                    consumer.putBulkData(pose, quad, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY);
                 }
             }
             return;
         }
+        //?}
+
+        //? if forge {
+        /*if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
+            if (drawSingleWithIrisExtended(poseStack, packedLight, blockPos, blockEntity)) {
+                return;
+            }
+            if (quadsForIris != null && !quadsForIris.isEmpty() && bufferSource != null) {
+                float fade = SingleMeshVboRenderer.getFadeAlpha();
+                VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
+                var pose = poseStack.last();
+                for (BakedQuad quad : quadsForIris) {
+                MainRegistry.LOGGER.warn("InstancedStaticPartRenderer.addInstance: Fallback to the classic putBulkData!!");
+                    consumer.putBulkData(pose, quad, fade, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
+                }
+            }
+            return;
+        }
+        *///?}
 
         if (instanceCount >= MAX_INSTANCES) {
             if (!overflowLogged) {
@@ -606,6 +764,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         instanceBuffer.put(sx).put(sy).put(sz);
         // Light probes payload: either 16 floats (legacy) or 32 floats (sliced)
         instanceBuffer.put(tmpCornerUV);
+        instanceBuffer.put(SingleMeshVboRenderer.getFadeAlpha());
 
         instanceCount++;
     }
@@ -686,6 +845,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                       .put(objBbox[4] - objBbox[1])
                       .put(objBbox[5] - objBbox[2]);
         instanceBuffer.put(tmpCornerUV);
+        instanceBuffer.put(SingleMeshVboRenderer.getFadeAlpha());
         instanceBuffer.flip();
     }
 
@@ -693,11 +853,18 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         flush(RenderSystem.getProjectionMatrix());
     }
 
-    public void flush(RenderLevelStageEvent event) {
+    //? if forge {
+    /*public void flush(net.minecraftforge.client.event.RenderLevelStageEvent event) {
         flush(event.getProjectionMatrix());
     }
+    *///?}
+    //? if fabric {
+    public void flush(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext event) {
+        flush(event.projectionMatrix());
+    }
+    //?}
 
-    private void flush(Matrix4f projectionMatrix) {
+    public void flush(Matrix4f projectionMatrix) {
         if (instanceCount == 0) return;
 
         if (!initialized || vaoId == -1 || eboId == -1) {
@@ -706,8 +873,19 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             return;
         }
 
-        boolean shaderActive = ShaderCompatibilityDetector.isExternalShaderActive();
-        if (shaderActive) {
+        // Use the Iris batch path only when we can actually obtain a usable
+        // ExtendedShader (Iris loaded + reflection resolved + shader pack active
+        // + config enabled). When Iris is active but the ExtendedShader path
+        // is not available (e.g. reflection failed, config disabled, or Iris
+        // version unsupported), fall through to the vanilla instanced shader
+        // which works correctly regardless of Iris presence. Without this
+        // guard, flush would call flushBatchIris → getBlockShader falls back
+        // to the vanilla block_lit_simple shader → Iris's pipeline state
+        // (framebuffer binds, program context) clashes with our draw calls →
+        // "GL No active program" / "Uniform must be a matrix type" errors
+        // and models rendered on screen instead of in the world.
+        boolean useIrisFlush = ShaderCompatibilityDetector.useNewIrisVboPath();
+        if (useIrisFlush) {
             flushBatchIris(projectionMatrix);
         } else {
             flushBatchVanilla(projectionMatrix);
@@ -746,6 +924,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         this.uFogColor = shader.getUniform("FogColor");
         this.uSampler0 = shader.getUniform("Sampler0");
         this.uBrightness = shader.getUniform("Brightness");
+        this.uFadeAlpha = shader.getUniform("FadeAlpha");
 
         // Iris-extended uniform locations are looked up lazily inside flushBatchIris
         // because the program id is only valid after shader.apply(); mark them as
@@ -771,12 +950,19 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             uFogColor.set(fogColor[0], fogColor[1], fogColor[2], fogColor[3]);
         }
         if (uSampler0 != null) uSampler0.set(0);
+        if (uFadeAlpha != null) uFadeAlpha.set(SingleMeshVboRenderer.getFadeAlpha());
     }
 
     private void flushBatchVanilla(Matrix4f projectionMatrix) {
         ShaderInstance shader = useSlicedLight ? ModShaders.getBlockLitInstancedSlicedShader()
                                                : ModShaders.getBlockLitInstancedShader();
         if (shader == null) {
+            if (!warnedInstancedShaderNullFlush) {
+                warnedInstancedShaderNullFlush = true;
+                MainRegistry.LOGGER.warn(
+                        "InstancedStaticPartRenderer: instanced shader is null, discarding flush of {} instances (Fabric: ClientSetup.registerFabricShaders)",
+                        instanceCount);
+            }
             return;
         }
 
@@ -807,12 +993,25 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
             shader.apply();
 
+            float minFade = 1f;
+            for (int i = 0; i < instanceCount; i++) {
+                float fa = instanceBuffer.get(i * instanceDataSize + instanceFadeFloatOffset);
+                if (fa < minFade) minFade = fa;
+            }
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
             RenderSystem.depthMask(true);
             RenderSystem.disableCull();
+            if (minFade < 0.99f) {
+                RenderSystem.enableBlend();
+                RenderSystem.defaultBlendFunc();
+            }
 
-            GL31.glDrawElementsInstanced(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0, instanceCount);
+            glDrawElementsInstancedCompat(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0, instanceCount);
+
+            if (minFade < 0.99f) {
+                RenderSystem.disableBlend();
+            }
 
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during instanced flush (vanilla)", e);
@@ -1116,6 +1315,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                     }
                 }
 
+                if (uFadeAlpha != null) {
+                    uFadeAlpha.set(instanceBuffer.get(base + instanceFadeFloatOffset));
+                }
+
                 GL11.glDrawElements(GL11.GL_TRIANGLES, targetIndexCount, GL11.GL_UNSIGNED_INT, 0);
 
                 lastQx = qx; lastQy = qy; lastQz = qz; lastQw = qw;
@@ -1358,6 +1561,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         this.uFogColor = null;
         this.uSampler0 = null;
         this.uBrightness = null;
+        this.uFadeAlpha = null;
 
         RenderSystem.recordRenderCall(() -> {
             try {

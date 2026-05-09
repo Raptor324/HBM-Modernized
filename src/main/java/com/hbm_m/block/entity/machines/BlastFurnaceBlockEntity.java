@@ -4,6 +4,7 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.Optional;
 
+import com.hbm_m.platform.ModItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,12 +37,22 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.Capability;
+//? if forge {
+/*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemHandlerHelper;
-import net.minecraftforge.items.ItemStackHandler;
+*///?}
+
+//? if fabric {
+import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.storage.base.CombinedStorage;
+import net.fabricmc.fabric.api.transfer.v1.storage.base.FilteringStorage;
+
+import java.util.ArrayList;
+import java.util.List;
+//?}
 
 public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider {
 
@@ -52,7 +63,7 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
     private static final int PROCESS_TIME = 400;
     private static final int MAX_FUEL = 12_800;
 
-    private final ItemStackHandler itemHandler = new ItemStackHandler(4) {
+    private final ModItemStackHandler itemHandler = new ModItemStackHandler (4) {
         @Override
         protected void onContentsChanged(int slot) {
             setChanged();
@@ -73,8 +84,19 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
         }
     };
 
-    private final Map<Direction, LazyOptional<IItemHandler>> sidedItemHandlers = new EnumMap<>(Direction.class);
+    /** Общий (loader-agnostic) доступ к инвентарю для меню/рендера. */
+    public ModItemStackHandler getInventory() {
+        return itemHandler;
+    }
+
+    //? if forge {
+    /*private final Map<Direction, LazyOptional<IItemHandler>> sidedItemHandlers = new EnumMap<>(Direction.class);
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
+    *///?}
+
+    //? if fabric {
+    private final Map<Direction, Storage<ItemVariant>> sidedStorages = new EnumMap<>(Direction.class);
+    //?}
 
     private final ContainerData data;
     private int progress;
@@ -128,25 +150,25 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
         };
     }
 
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.ITEM_HANDLER) {
-            if (side == null) {
-                return lazyItemHandler.cast();
-            }
-            return sidedItemHandlers.getOrDefault(side, lazyItemHandler).cast();
-        }
-        return super.getCapability(cap, side);
-    }
-
-    @Override
+    //? if forge {
+    /*@Override
     public void onLoad() {
         super.onLoad();
         lazyItemHandler = LazyOptional.of(() -> itemHandler);
         sidedItemHandlers.clear();
         for (Direction direction : Direction.values()) {
-            sidedItemHandlers.put(direction, LazyOptional.of(() -> new DirectionalItemHandler(direction)));
+            final Direction dir = direction;
+            sidedItemHandlers.put(dir, LazyOptional.of(() -> new DirectionalItemHandler(dir)));
         }
+    }
+
+    @Override
+    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+        if (cap == ForgeCapabilities.ITEM_HANDLER) {
+            if (side == null) return lazyItemHandler.cast();
+            return sidedItemHandlers.getOrDefault(side, lazyItemHandler).cast();
+        }
+        return super.getCapability(cap, side);
     }
 
     @Override
@@ -155,6 +177,48 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
         lazyItemHandler.invalidate();
         sidedItemHandlers.values().forEach(LazyOptional::invalidate);
     }
+    *///?}
+
+    //? if fabric {
+    @Override
+    public void setLevel(Level level) {
+        super.setLevel(level);
+        buildSidedStorages();
+    }
+
+    @Nullable
+    public Storage<ItemVariant> getItemStorage(@Nullable Direction side) {
+        if (side == null) return itemHandler.getStorage();
+        return sidedStorages.getOrDefault(side, null);
+    }
+
+    private void buildSidedStorages() {
+        sidedStorages.clear();
+        for (Direction dir : Direction.values()) {
+            sidedStorages.put(dir, buildStorageForSide(dir));
+        }
+    }
+
+    @SuppressWarnings("UnstableApiUsage")
+    private Storage<ItemVariant> buildStorageForSide(Direction direction) {
+        List<Storage<ItemVariant>> parts = new ArrayList<>();
+        for (int s = 0; s < itemHandler.getSlots(); s++) {
+            final int slot = s;
+            parts.add(new FilteringStorage<>(itemHandler.getSlotStorage(slot)) {
+                @Override
+                protected boolean canInsert(ItemVariant resource) {
+                    return canInsertFromDirection(slot, direction)
+                            && itemHandler.isItemValid(slot, resource.toStack());
+                }
+                @Override
+                protected boolean canExtract(ItemVariant resource) {
+                    return canExtractFromDirection(slot);
+                }
+            });
+        }
+        return new CombinedStorage<>(parts);
+    }
+    //?}
 
     public void drops() {
         SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
@@ -261,7 +325,8 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
         }
         fuel = newFuelLevel;
 
-        ItemStack remainder = stack.getCraftingRemainingItem();
+        Item remaining = stack.getItem().getCraftingRemainingItem();
+        ItemStack remainder = remaining != null ? new ItemStack(remaining) : ItemStack.EMPTY;
         stack.shrink(1);
         if (stack.isEmpty()) {
             itemHandler.setStackInSlot(FUEL_SLOT, remainder);
@@ -279,14 +344,15 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
     }
 
     private boolean canAcceptResult(ItemStack result) {
-        ItemStack currentOutput = itemHandler.getStackInSlot(OUTPUT_SLOT);
-        if (currentOutput.isEmpty()) {
-            return true;
-        }
-        if (!ItemHandlerHelper.canItemStacksStack(currentOutput, result)) {
-            return false;
-        }
-        return currentOutput.getCount() + result.getCount() <= currentOutput.getMaxStackSize();
+        ItemStack current = itemHandler.getStackInSlot(OUTPUT_SLOT);
+        if (current.isEmpty()) return true;
+        if (!canItemStacksStack(current, result)) return false;
+        return current.getCount() + result.getCount() <= current.getMaxStackSize();
+    }
+
+    private static boolean canItemStacksStack(ItemStack a, ItemStack b) {
+        if (a.isEmpty() || !a.is(b.getItem())) return false;
+        return ItemStack.isSameItemSameTags(a, b);
     }
 
     private Optional<BlastFurnaceRecipe> getCurrentRecipe() {
@@ -425,47 +491,37 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
         return saveWithoutMetadata();
     }
 
-    private class DirectionalItemHandler implements IItemHandler {
+    // ─────────────────── DirectionalItemHandler (Forge only) ─────────────────
+
+    //? if forge {
+    /*private class DirectionalItemHandler implements IItemHandler {
         private final Direction direction;
 
-        private DirectionalItemHandler(Direction direction) {
-            this.direction = direction;
-        }
+        private DirectionalItemHandler(Direction direction) { this.direction = direction; }
+
+        @Override public int getSlots() { return itemHandler.getSlots(); }
 
         @Override
-        public int getSlots() {
-            return itemHandler.getSlots();
-        }
-
-        @Override
-        public @NotNull ItemStack getStackInSlot(int slot) {
-            return itemHandler.getStackInSlot(slot);
-        }
+        public @NotNull ItemStack getStackInSlot(int slot) { return itemHandler.getStackInSlot(slot); }
 
         @Override
         public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
-            if (!canInsertFromDirection(slot, direction) || !itemHandler.isItemValid(slot, stack)) {
-                return stack;
-            }
+            if (!canInsertFromDirection(slot, direction) || !itemHandler.isItemValid(slot, stack)) return stack;
             return itemHandler.insertItem(slot, stack, simulate);
         }
 
         @Override
         public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
-            if (!canExtractFromDirection(slot)) {
-                return ItemStack.EMPTY;
-            }
+            if (!canExtractFromDirection(slot)) return ItemStack.EMPTY;
             return itemHandler.extractItem(slot, amount, simulate);
         }
 
-        @Override
-        public int getSlotLimit(int slot) {
-            return itemHandler.getSlotLimit(slot);
-        }
+        @Override public int getSlotLimit(int slot) { return itemHandler.getSlotLimit(slot); }
 
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
             return itemHandler.isItemValid(slot, stack) && canInsertFromDirection(slot, direction);
         }
     }
+    *///?}
 }

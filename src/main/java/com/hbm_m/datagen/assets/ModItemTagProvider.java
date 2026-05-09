@@ -1,9 +1,16 @@
 package com.hbm_m.datagen.assets;
+//? if forge {
+/*import java.util.concurrent.CompletableFuture;
 
-import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.tags_and_tiers.ModTags;
+import org.jetbrains.annotations.NotNull;
+
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
 import com.hbm_m.lib.RefStrings;
+
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.PackOutput;
@@ -16,88 +23,94 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.common.data.ExistingFileHelper;
-import net.minecraftforge.registries.RegistryObject;
 
-import javax.annotation.Nonnull;
-import java.util.concurrent.CompletableFuture;
+import static com.hbm_m.item.tags_and_tiers.ModTags.Items.*;
 
 public class ModItemTagProvider extends ItemTagsProvider {
-
-    // Теги, определяющие, в какой ФИЗИЧЕСКИЙ СЛОТ можно положить предмет
-    public static final TagKey<Item> UPGRADE_MODULES = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "upgrade_modules"));
-
-    public static final TagKey<Item> SLOT_HELMET_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_helmet"));
-    public static final TagKey<Item> SLOT_CHESTPLATE_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_chestplate"));
-    public static final TagKey<Item> SLOT_LEGGINGS_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_leggings"));
-    public static final TagKey<Item> SLOT_BOOTS_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_boots"));
-    public static final TagKey<Item> SLOT_SERVOS_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_servos"));
-    public static final TagKey<Item> SLOT_CLADDING_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_cladding"));
-    public static final TagKey<Item> SLOT_SPECIAL_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_special"));
-    public static final TagKey<Item> SLOT_BATTERY_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_battery"));
-    public static final TagKey<Item> SLOT_INSERT_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_insert"));
-
-    // Теги, определяющие, с каким ТИПОМ БРОНИ совместим предмет
-    public static final TagKey<Item> REQUIRES_HELMET = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/requires_helmet"));
-    public static final TagKey<Item> REQUIRES_CHESTPLATE = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/requires_chestplate"));
-    public static final TagKey<Item> REQUIRES_LEGGINGS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/requires_leggings"));
-    public static final TagKey<Item> REQUIRES_BOOTS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/requires_boots"));
-
-    public static final TagKey<Item> BLADES = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "blades"));
-
-    // Теги для штампов пресса
-    public static final TagKey<Item> STAMPS_PLATE = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "stamps/plate"));
-    public static final TagKey<Item> STAMPS_WIRE = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "stamps/wire"));
-    public static final TagKey<Item> STAMPS_CIRCUIT = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "stamps/circuit"));
 
     public ModItemTagProvider(PackOutput packOutput, CompletableFuture<HolderLookup.Provider> lookupProvider, CompletableFuture<TagLookup<Block>> blockTagsProvider, ExistingFileHelper existingFileHelper) {
         super(packOutput, lookupProvider, blockTagsProvider, RefStrings.MODID, existingFileHelper);
     }
 
     @Override
-    protected void addTags(@Nonnull HolderLookup.Provider provider) {
+    protected void addTags(@NotNull HolderLookup.Provider provider) {
 
         //  АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ ТЕГОВ ДЛЯ СЛИТКОВ
-        TagsProvider.TagAppender<Item> ingotsTagBuilder = this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ingots")));
+        //? if fabric && < 1.21.1 {
+        TagsProvider.TagAppender<Item> ingotsTagBuilder = this.tag(ItemTags.create(new ResourceLocation("forge", "ingots")));
+        //?} else {
+                /^TagsProvider.TagAppender<Item> ingotsTagBuilder = this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ingots")));
+        ^///?}
+
 
         for (ModIngots ingot : ModIngots.values()) {
-            RegistryObject<Item> ingotObject = ModItems.getIngot(ingot);
+            RegistrySupplier<Item> ingotObject = ModItems.getIngot(ingot);
             //  ПРОВЕРКА НА NULL И НА РЕГИСТРАЦИЮ
             if (ingotObject != null && ingotObject.isPresent()) {
                 String ingotName = ingot.getName();
-                this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ingots/" + ingotName)))
+                //? if fabric && < 1.21.1 {
+                this.tag(ItemTags.create(new ResourceLocation("forge", "ingots/" + ingotName)))
                         .add(ingotObject.get());
+                //?} else {
+                                /^this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ingots/" + ingotName)))
+                        .add(ingotObject.get());
+                ^///?}
+
                 ingotsTagBuilder.add(ingotObject.getKey());
             }
         }
 
         //  АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ ТЕГОВ ДЛЯ ПОРОШКОВ
-        TagsProvider.TagAppender<Item> powdersTagBuilder = this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders")));
+        //? if fabric && < 1.21.1 {
+        TagsProvider.TagAppender<Item> powdersTagBuilder = this.tag(ItemTags.create(new ResourceLocation("forge", "powders")));
+        //?} else {
+                /^TagsProvider.TagAppender<Item> powdersTagBuilder = this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders")));
+        ^///?}
+
 
         for (ModPowders powder : ModPowders.values()) {
-            RegistryObject<Item> powderObject = ModItems.getPowders(powder);
+            RegistrySupplier<Item> powderObject = ModItems.getPowders(powder);
             //  ПОЛНАЯ ПРОВЕРКА - ИСПРАВЛЕНА ОСНОВНАЯ ОШИБКА!
             if (powderObject != null && powderObject.isPresent()) {
                 String powderName = powder.getName();
-                this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + powderName)))
+                //? if fabric && < 1.21.1 {
+                this.tag(ItemTags.create(new ResourceLocation("forge", "powders/" + powderName)))
                         .add(powderObject.get());
+                //?} else {
+                                /^this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + powderName)))
+                        .add(powderObject.get());
+                ^///?}
+
                 powdersTagBuilder.add(powderObject.getKey());
             }
         }
 
         //  ПОРОШКИ ИЗ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
-            RegistryObject<Item> powderObject = ModItems.getPowder(ingot);
+            RegistrySupplier<Item> powderObject = ModItems.getPowder(ingot);
             if (powderObject != null && powderObject.isPresent()) {  //  ДОБАВЛЕНА ПРОВЕРКА isPresent()
-                this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + ingot.getName())))
+                //? if fabric && < 1.21.1 {
+                this.tag(ItemTags.create(new ResourceLocation("forge", "powders/" + ingot.getName())))
                         .add(powderObject.get());
+                //?} else {
+                                /^this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + ingot.getName())))
+                        .add(powderObject.get());
+                ^///?}
+
                 powdersTagBuilder.add(powderObject.getKey());
             }
 
             //  МАЛЕНЬКИЕ ПОРОШКИ С ПРОВЕРКОЙ
             ModItems.getTinyPowder(ingot).ifPresent(tiny -> {
                 if (tiny != null && tiny.isPresent()) {  //  ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА
-                    this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + ingot.getName() + "/tiny")))
+                    //? if fabric && < 1.21.1 {
+                    this.tag(ItemTags.create(new ResourceLocation("forge", "powders/" + ingot.getName() + "/tiny")))
                             .add(tiny.get());
+                    //?} else {
+                                        /^this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + ingot.getName() + "/tiny")))
+                            .add(tiny.get());
+                    ^///?}
+
                 }
             });
         }
@@ -108,16 +121,34 @@ public class ModItemTagProvider extends ItemTagsProvider {
 
 
         // АВТОМАТИЧЕСКОЕ КОПИРОВАНИЕ ТЕГОВ ИЗ БЛОКОВ
-        this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")),
+        //? if fabric && < 1.21.1 {
+        this.copy(BlockTags.create(new ResourceLocation("forge", "storage_blocks/uranium")),
                 ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")));
-        this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/plutonium")),
+        //?} else {
+                /^this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")),
+                ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")));
+        ^///?}
+
+        //? if fabric && < 1.21.1 {
+        this.copy(BlockTags.create(new ResourceLocation("forge", "storage_blocks/plutonium")),
                 ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/plutonium")));
-        this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")),
+        //?} else {
+                /^this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/plutonium")),
+                ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/plutonium")));
+        ^///?}
+
+        //? if fabric && < 1.21.1 {
+        this.copy(BlockTags.create(new ResourceLocation("forge", "ores/uranium")),
                 ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")));
+        //?} else {
+                /^this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")),
+                ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")));
+        ^///?}
 
 
 
-        this.tag(BLADES)
+
+        this.tag(ModTags.Items.BLADES)
                 .add(ModItems.BLADE_STEEL.get())
                 .add(ModItems.BLADE_TITANIUM.get())
                 .add(ModItems.BLADE_ALLOY.get())
@@ -125,7 +156,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
         // ТЕГИ ДЛЯ ШТАМПОВ ПРЕССА
 
         // Все штампы пластин
-        this.tag(STAMPS_PLATE)
+        this.tag(ModTags.Items.STAMPS_PLATE)
                 .add(ModItems.STAMP_STONE_PLATE.get())
                 .add(ModItems.STAMP_IRON_PLATE.get())
                 .add(ModItems.STAMP_STEEL_PLATE.get())
@@ -134,7 +165,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.STAMP_DESH_PLATE.get());
 
         // Все штампы проводов
-        this.tag(STAMPS_WIRE)
+        this.tag(ModTags.Items.STAMPS_WIRE)
                 .add(ModItems.STAMP_STONE_WIRE.get())
                 .add(ModItems.STAMP_IRON_WIRE.get())
                 .add(ModItems.STAMP_STEEL_WIRE.get())
@@ -143,7 +174,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.STAMP_DESH_WIRE.get());
 
         // Все штампы микросхем
-        this.tag(STAMPS_CIRCUIT)
+        this.tag(ModTags.Items.STAMPS_CIRCUIT)
                 .add(ModItems.STAMP_STONE_CIRCUIT.get())
                 .add(ModItems.STAMP_IRON_CIRCUIT.get())
                 .add(ModItems.STAMP_STEEL_CIRCUIT.get())
@@ -151,7 +182,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.STAMP_OBSIDIAN_CIRCUIT.get())
                 .add(ModItems.STAMP_DESH_CIRCUIT.get());
 
-        this.tag(REQUIRES_HELMET)
+        this.tag(ModTags.Items.REQUIRES_HELMET)
                 .add(ModItems.GHIORSIUM_CLADDING.get())
                 .add(ModItems.DESH_CLADDING.get())
                 .add(ModItems.LEAD_CLADDING.get())
@@ -166,7 +197,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.ARMOR_BATTERY_MK2.get())
                 .add(ModItems.ARMOR_BATTERY_MK3.get());
 
-        this.tag(REQUIRES_CHESTPLATE)
+        this.tag(ModTags.Items.REQUIRES_CHESTPLATE)
                 .add(ModItems.HEART_PIECE.get())
                 .add(ModItems.HEART_CONTAINER.get())
                 .add(ModItems.HEART_BOOSTER.get())
@@ -186,7 +217,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.ARMOR_BATTERY_MK2.get())
                 .add(ModItems.ARMOR_BATTERY_MK3.get());
 
-        this.tag(REQUIRES_LEGGINGS)
+        this.tag(ModTags.Items.REQUIRES_LEGGINGS)
                 .add(ModItems.GHIORSIUM_CLADDING.get())
                 .add(ModItems.DESH_CLADDING.get())
                 .add(ModItems.LEAD_CLADDING.get())
@@ -201,7 +232,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.ARMOR_BATTERY_MK2.get())
                 .add(ModItems.ARMOR_BATTERY_MK3.get());
 
-        this.tag(REQUIRES_BOOTS)
+        this.tag(ModTags.Items.REQUIRES_BOOTS)
                 .add(ModItems.GHIORSIUM_CLADDING.get())
                 .add(ModItems.DESH_CLADDING.get())
                 .add(ModItems.LEAD_CLADDING.get())
@@ -224,7 +255,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.HEART_FAB.get())
                 .add(ModItems.BLACK_DIAMOND.get());
 
-        this.tag(SLOT_CLADDING_MODS)
+        this.tag(ModTags.Items.SLOT_CLADDING_MODS)
                 .add(ModItems.GHIORSIUM_CLADDING.get())
                 .add(ModItems.DESH_CLADDING.get())
                 .add(ModItems.LEAD_CLADDING.get())
@@ -232,11 +263,11 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.PAINT_CLADDING.get());
 
 
-        this.tag(SLOT_HELMET_MODS);
-        this.tag(SLOT_CHESTPLATE_MODS);
-        this.tag(SLOT_LEGGINGS_MODS);
-        this.tag(SLOT_BOOTS_MODS);
-        this.tag(SLOT_SERVOS_MODS);
+        this.tag(ModTags.Items.SLOT_HELMET_MODS);
+        this.tag(ModTags.Items.SLOT_CHESTPLATE_MODS);
+        this.tag(ModTags.Items.SLOT_LEGGINGS_MODS);
+        this.tag(ModTags.Items.SLOT_BOOTS_MODS);
+        this.tag(ModTags.Items.SLOT_SERVOS_MODS);
         
         this.tag(SLOT_BATTERY_MODS)
                 .add(ModItems.ARMOR_BATTERY.get())
@@ -245,7 +276,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 
         this.tag(SLOT_INSERT_MODS);
 
-        this.tag(UPGRADE_MODULES)
+        this.tag(ModTags.Items.UPGRADE_MODULES)
                 .addTag(SLOT_HELMET_MODS)
                 .addTag(SLOT_CHESTPLATE_MODS)
                 .addTag(SLOT_LEGGINGS_MODS)
@@ -293,5 +324,10 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 ModItems.COBALT_LEGGINGS.get(),
                 ModItems.COBALT_BOOTS.get(),
                 ModItems.ALLOY_BOOTS.get());
+
+        // Vanilla jukebox accepts only items in this tag (1.20.1)
+        this.tag(ItemTags.MUSIC_DISCS)
+                .add(ModItems.MUSIC_DISC_BUNKER.get());
     }
 }
+*///?}

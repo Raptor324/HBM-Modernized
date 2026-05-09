@@ -17,10 +17,20 @@ import net.minecraft.world.level.block.Blocks;
 public class ModHazards {
 
     public static final TagKey<Item> URANIUM_INGOTS = TagKey.create(Registries.ITEM,
-            ResourceLocation.fromNamespaceAndPath("forge", "ingots/uranium"));
+            //? if fabric && < 1.21.1 {
+            new ResourceLocation("forge", "ingots/uranium"));
+            //?} else {
+                        /*ResourceLocation.fromNamespaceAndPath("forge", "ingots/uranium"));
+            *///?}
+
 
     public static final TagKey<Item> ALKALI_METALS = TagKey.create(Registries.ITEM,
-            ResourceLocation.fromNamespaceAndPath("forge", "ingots/sodium"));
+            //? if fabric && < 1.21.1 {
+            new ResourceLocation("forge", "ingots/sodium"));
+            //?} else {
+                        /*ResourceLocation.fromNamespaceAndPath("forge", "ingots/sodium"));
+            *///?}
+
 
      public static void registerHazards() {
         // АВТОМАТИЧЕСКАЯ РЕГИСТРАЦИЯ ОПАСНОСТЕЙ ДЛЯ СЛИТКОВ 

@@ -18,16 +18,19 @@ layout(location = 11) in vec4 InstLightS2C01;
 layout(location = 12) in vec4 InstLightS2C23;
 layout(location = 13) in vec4 InstLightS3C01;
 layout(location = 14) in vec4 InstLightS3C23;
+layout(location = 15) in float InstFadeAlpha;
 #else
 layout(location = 7)  in vec4 InstLightC01;  // corner0.uv, corner1.uv
 layout(location = 8)  in vec4 InstLightC23;
 layout(location = 9)  in vec4 InstLightC45;
 layout(location = 10) in vec4 InstLightC67;
+layout(location = 11) in float InstFadeAlpha;
 #endif
 #endif
 
 uniform mat4 ModelViewMat;
 uniform mat4 ProjMat;
+uniform float FadeAlpha;
 
 // 8-corner trilinear lightmap uniforms (used by the non-instanced path).
 // Corner index encoding matches LightSampleCache.getOrSample8:
@@ -57,6 +60,8 @@ out vec2 texCoord;
 out vec2 lightmapUV;
 out float vertexDistance;
 out vec3 fragNormal;
+// Per-vertex fade: InstFadeAlpha when instancing (batched flush reads stale uniform otherwise).
+out float vFadeAlpha;
 
 #ifdef USE_INSTANCING
 mat4 quatToMat4(vec4 q) {
@@ -204,4 +209,10 @@ void main() {
     // Center within the 16×16 lightmap cell like vanilla block UV2 → texcoord.
     lightmapUV = (uvLm + vec2(8.0)) / 256.0;
     vertexDistance = length(viewPos.xyz);
+
+#ifdef USE_INSTANCING
+    vFadeAlpha = InstFadeAlpha;
+#else
+    vFadeAlpha = FadeAlpha;
+#endif
 }

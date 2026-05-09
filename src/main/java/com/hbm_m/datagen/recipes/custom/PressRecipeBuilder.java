@@ -1,10 +1,19 @@
 package com.hbm_m.datagen.recipes.custom;
+//? if forge {
+/*import java.util.Objects;
+import java.util.function.Consumer;
+
+import org.jetbrains.annotations.NotNull;
+
+import org.jetbrains.annotations.Nullable;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hbm_m.recipe.PressRecipe;
+
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.CriterionTriggerInstance;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
@@ -14,18 +23,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.ItemLike;
-import net.minecraftforge.registries.ForgeRegistries;
-import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import java.util.Objects;
-import java.util.function.Consumer;
-
-/**
+/^*
  * Builder for {@link PressRecipe} data generation.
  * Mirrors the JSON structure used by the manual press recipe files but provides
  * the same ergonomic API style as {@link AssemblerRecipeBuilder}.
- */
+ ^/
 public class PressRecipeBuilder implements RecipeBuilder {
 
     private final ItemStack output;
@@ -54,7 +57,7 @@ public class PressRecipeBuilder implements RecipeBuilder {
 
     public PressRecipeBuilder stamp(ItemLike item) {
         this.stampJson = itemJson(Objects.requireNonNull(
-                ForgeRegistries.ITEMS.getKey(item.asItem()), "Item is not registered"));
+                BuiltInRegistries.ITEM.getKey(item.asItem()), "Item is not registered"));
         return this;
     }
 
@@ -75,7 +78,7 @@ public class PressRecipeBuilder implements RecipeBuilder {
 
     public PressRecipeBuilder material(ItemLike item) {
         this.materialJson = itemJson(Objects.requireNonNull(
-                ForgeRegistries.ITEMS.getKey(item.asItem()), "Item is not registered"));
+                BuiltInRegistries.ITEM.getKey(item.asItem()), "Item is not registered"));
         return this;
     }
 
@@ -97,7 +100,7 @@ public class PressRecipeBuilder implements RecipeBuilder {
     }
 
     @Override
-    public RecipeBuilder unlockedBy(@Nonnull String pCriterionName, @Nonnull CriterionTriggerInstance pCriterionTrigger) {
+    public RecipeBuilder unlockedBy(@NotNull String pCriterionName, @NotNull CriterionTriggerInstance pCriterionTrigger) {
         this.advancement.addCriterion(pCriterionName, pCriterionTrigger);
         return this;
     }
@@ -113,7 +116,7 @@ public class PressRecipeBuilder implements RecipeBuilder {
     }
 
     @Override
-    public void save(@Nonnull Consumer<FinishedRecipe> pFinishedRecipeConsumer, @Nonnull ResourceLocation pRecipeId) {
+    public void save(@NotNull Consumer<FinishedRecipe> pFinishedRecipeConsumer, @NotNull ResourceLocation pRecipeId) {
         if (this.stampJson == null) {
             throw new IllegalStateException("Stamp ingredient is not defined for press recipe " + pRecipeId);
         }
@@ -134,7 +137,7 @@ public class PressRecipeBuilder implements RecipeBuilder {
         }
 
         @Override
-        public void serializeRecipeData(@Nonnull JsonObject pJson) {
+        public void serializeRecipeData(@NotNull JsonObject pJson) {
             JsonArray jsonIngredients = new JsonArray();
             jsonIngredients.add(this.builder.stampJson.deepCopy());
             jsonIngredients.add(this.builder.materialJson.deepCopy());
@@ -142,7 +145,7 @@ public class PressRecipeBuilder implements RecipeBuilder {
 
             JsonObject jsonOutput = new JsonObject();
             jsonOutput.addProperty("item", Objects.requireNonNull(
-                    ForgeRegistries.ITEMS.getKey(this.builder.output.getItem()),
+                    BuiltInRegistries.ITEM.getKey(this.builder.output.getItem()),
                     "Output item is not registered").toString());
             if (this.builder.output.getCount() > 1) {
                 jsonOutput.addProperty("count", this.builder.output.getCount());
@@ -173,4 +176,4 @@ public class PressRecipeBuilder implements RecipeBuilder {
         }
     }
 }
-
+*///?}

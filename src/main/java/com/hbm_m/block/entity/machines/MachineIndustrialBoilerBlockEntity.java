@@ -3,6 +3,8 @@ package com.hbm_m.block.entity.machines;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
+import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.MachineIndustrialBoilerBlock;
@@ -20,14 +22,20 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.common.capabilities.Capability;
+
+//? if forge {
+/*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemStackHandler;
+*///?}
+
+//? if fabric {
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+//?}
 
 /**
  * Industrial Boiler BlockEntity - converts water to steam using heat/energy.
@@ -37,7 +45,7 @@ import net.minecraftforge.items.ItemStackHandler;
  * - Steam tank: 6,400,000 mB
  * - TU (Thermal Units) for heat input
  */
-public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity {
+public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
 
     // Slot definitions
     public static final int SLOT_WATER_IN = 0;
@@ -67,8 +75,10 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity {
     // GUI data
     protected final ContainerData data;
 
-    private final LazyOptional<IFluidHandler> lazyWaterHandler;
+    //? if forge {
+    /*private final LazyOptional<IFluidHandler> lazyWaterHandler;
     private final LazyOptional<IFluidHandler> lazySteamHandler;
+    *///?}
 
     public MachineIndustrialBoilerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.INDUSTRIAL_BOILER_BE.get(), pos, state,
@@ -77,8 +87,10 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity {
         this.waterTank = new FluidTank(Fluids.WATER, WATER_CAPACITY);
         this.steamTank = new FluidTank(Fluids.EMPTY, STEAM_CAPACITY);
 
-        this.lazyWaterHandler = LazyOptional.of(() -> new WaterFluidHandler(this));
+        //? if forge {
+        /*this.lazyWaterHandler = LazyOptional.of(() -> new WaterFluidHandler(this));
         this.lazySteamHandler = LazyOptional.of(() -> new SteamFluidHandler(this));
+        *///?}
 
         this.data = new ContainerData() {
             @Override
@@ -122,12 +134,62 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity {
         // Convert water to steam if we have enough energy
         be.processBoiling();
 
+        // 1.7.10-стиль подписки в MK2-сеть.
+        // Steam (output): UP — наружу; Water (input): остальные стороны — внутрь.
+        for (Direction dir : Direction.values()) {
+            BlockPos pipePos = pos.relative(dir);
+            BlockEntity pipeBe = level.getBlockEntity(pipePos);
+            if (!(pipeBe instanceof com.hbm_m.api.fluids.IFluidConnectorMK2)) continue;
+
+            if (dir == Direction.UP) {
+                // Steam out
+                if (be.steamTank.getFill() > 0) {
+                    be.tryProvide(be.steamTank, level, pipePos, dir);
+                }
+            } else {
+                // Water in (sides + bottom)
+                be.trySubscribe(Fluids.WATER, level, pipePos, dir);
+            }
+        }
+
         // Update visual state
         if (wasActive != be.isActive()) {
             level.setBlock(pos, state.setValue(MachineIndustrialBoilerBlock.LIT, be.isActive()), 3);
         }
 
         be.setChanged();
+    }
+
+    // =====================================================================================
+    // IFluidStandardTransceiverMK2
+    // - waterTank — приёмник (вода)
+    // - steamTank — поставщик (placeholder Fluids.WATER до появления реальной жидкости steam;
+    //   для steam-жидкости уже сейчас можно будет включить pressure-тиры (1/2/3)).
+    // =====================================================================================
+
+    @Override
+    public FluidTank[] getAllTanks() { return new FluidTank[]{ waterTank, steamTank }; }
+
+    @Override
+    public FluidTank[] getReceivingTanks() { return new FluidTank[]{ waterTank }; }
+
+    @Override
+    public FluidTank[] getSendingTanks() {
+        return steamTank.getFill() > 0 ? new FluidTank[]{ steamTank } : new FluidTank[0];
+    }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    @Override
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, Direction fromDir) {
+        if (fromDir == null) return false;
+        // UP — только steam-out; остальное — только water-in.
+        // Так как steam ещё не отдельная жидкость (placeholder=Fluids.WATER), временно разрешаем оба
+        // на UP и !UP — реальная фильтрация и так по типу, тип здесь один и тот же.
+        return true;
     }
 
     private void processFluidContainers() {
@@ -255,7 +317,8 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity {
     }
 
     // --- Capabilities ---
-    @Override
+    //? if forge {
+    /*@Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
             // Water input from sides and bottom, steam output from top
@@ -273,6 +336,7 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity {
         lazyWaterHandler.invalidate();
         lazySteamHandler.invalidate();
     }
+    *///?}
 
     // --- GUI ---
     @Override
@@ -295,8 +359,14 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         return switch (slot) {
-            case SLOT_WATER_IN -> stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
+            //? if forge {
+            /*case SLOT_WATER_IN -> stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
             case SLOT_STEAM_IN -> stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
+            *///?}
+            //? if fabric {
+            case SLOT_WATER_IN -> FluidStorage.ITEM.find(stack, null) != null;
+            case SLOT_STEAM_IN -> FluidStorage.ITEM.find(stack, null) != null;
+            //?}
             case SLOT_WATER_OUT, SLOT_STEAM_OUT -> false; // Output slots
             default -> false;
         };
@@ -313,7 +383,8 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity {
     }
 
     // --- Fluid Handlers ---
-    private static class WaterFluidHandler implements IFluidHandler {
+    //? if forge {
+    /*private static class WaterFluidHandler implements IFluidHandler {
         private final MachineIndustrialBoilerBlockEntity be;
 
         WaterFluidHandler(MachineIndustrialBoilerBlockEntity be) {
@@ -333,12 +404,12 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity {
 
         @Override
         public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) {
-            return stack.getFluid() == Fluids.WATER;
+            return VanillaFluidEquivalence.isWater(stack.getFluid());
         }
 
         @Override
         public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
-            if (resource.isEmpty() || resource.getFluid() != Fluids.WATER) return 0;
+            if (resource.isEmpty() || !VanillaFluidEquivalence.isWater(resource.getFluid())) return 0;
             
             int space = be.waterTank.getMaxFill() - be.waterTank.getFill();
             int toFill = Math.min(space, resource.getAmount());
@@ -415,4 +486,5 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity {
             return drained;
         }
     }
+    *///?}
 }

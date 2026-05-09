@@ -19,6 +19,7 @@
     }
   },
   "flip_v": true,
+  "render_type": "minecraft:cutout",
   "textures": {
     "particle": "hbm_m:block/machine/assembler_base_new"
   },

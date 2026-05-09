@@ -7,11 +7,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.items.IItemHandler;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.interfaces.IEnergyReceiver;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Базовый модуль машины, инкапсулирующий логику крафта.
@@ -27,7 +27,7 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     protected final int moduleIndex;
     // ИЗМЕНЕНИЕ: Теперь используем ILongEnergyStorage вместо IEnergyStorage
     protected final IEnergyReceiver energyStorage;
-    protected final IItemHandler itemHandler;
+    protected final ModItemStackHandler itemHandler;
     protected final Level level;
     protected int[] inputSlots;
     protected int[] outputSlots;
@@ -43,7 +43,7 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     public boolean needsSync = false;
 
     // ИЗМЕНЕНИЕ: Конструктор теперь принимает ILongEnergyStorage
-    public MachineModuleBase(int moduleIndex, IEnergyReceiver energyStorage, IItemHandler itemHandler, Level level) {
+    public MachineModuleBase(int moduleIndex, IEnergyReceiver energyStorage, ModItemStackHandler itemHandler, Level level) {
         this.moduleIndex = moduleIndex;
         this.energyStorage = energyStorage;
         this.itemHandler = itemHandler;

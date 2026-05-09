@@ -1,20 +1,23 @@
 package com.hbm_m.datagen;
+//? if forge {
+/*import java.util.concurrent.CompletableFuture;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import com.hbm_m.damagesource.ModDamageTypes;
 
 // Провайдер генерации тегов типов урона для мода.
 // Здесь мы добавляем наши пользовательские типы урона в ванильные теги,
 // используя стандартный API Minecraft.
 
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.damagesource.ModDamageTypes;
+
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.tags.DamageTypeTagsProvider;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraftforge.common.data.ExistingFileHelper;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.concurrent.CompletableFuture;
-import javax.annotation.Nonnull;
 
 public class ModDamageTypeTagProvider extends DamageTypeTagsProvider {
 
@@ -23,7 +26,7 @@ public class ModDamageTypeTagProvider extends DamageTypeTagsProvider {
     }
 
     @Override
-    protected void addTags(@Nonnull HolderLookup.Provider pProvider) {
+    protected void addTags(@NotNull HolderLookup.Provider pProvider) {
         // Здесь мы добавляем наши типы урона в ванильные теги, используя стандартный API.
 
         // Тег: Урон, который игнорирует броню
@@ -91,3 +94,4 @@ public class ModDamageTypeTagProvider extends DamageTypeTagsProvider {
         // DamageTypeTags.BYPASSES_RESISTANCE
     }
 }
+*///?}

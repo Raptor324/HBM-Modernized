@@ -19,7 +19,7 @@ from pathlib import Path
 
 
 DECLARATION_RE = re.compile(
-    r"public\s+static\s+final\s+RegistryObject<[^>]+>\s+([A-Z0-9_]+)\s*="
+    r"public\s+static\s+final\s+RegistrySupplier<[^>]+>\s+([A-Z0-9_]+)\s*="
 )
 ACCEPT_CALL_RE = re.compile(r"event\.accept\((.*?)\);", re.DOTALL)
 REF_RE = re.compile(r"Mod(Items|Blocks)\.([A-Z0-9_]+)")

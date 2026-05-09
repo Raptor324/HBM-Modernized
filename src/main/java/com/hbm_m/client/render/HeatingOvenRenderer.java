@@ -1,36 +1,44 @@
 package com.hbm_m.client.render;
 
+
+//? if forge {
+/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+*///?}
+//? if fabric {
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;//?}
+
+import java.util.List;
+
 import com.hbm_m.block.entity.machines.HeatingOvenBlockEntity;
-import com.hbm_m.block.machines.HeatingOvenBlock;
-import com.hbm_m.client.model.HeatingOvenBakedModel;
+import com.hbm_m.client.render.RenderDistanceHelper;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
 
-import net.minecraft.client.Minecraft;
+import dev.architectury.utils.Env;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.phys.AABB;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.model.data.ModelData;
-
-import java.util.List;
+//? if forge {
+/*import net.minecraftforge.client.model.data.ModelData;
+*///?}
 
 /**
  * Renderer for HeatingOven block entity.
  * Renders animated door and inner burning state based on original 1.7.10 code.
  */
-@OnlyIn(Dist.CLIENT)
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
 public class HeatingOvenRenderer implements BlockEntityRenderer<HeatingOvenBlockEntity> {
 
     private static final RandomSource RANDOM = RandomSource.create(42);
@@ -51,11 +59,21 @@ public class HeatingOvenRenderer implements BlockEntityRenderer<HeatingOvenBlock
 
         VertexConsumer buffer = bufferSource.getBuffer(RenderType.solid());
 
-        List<BakedQuad> quads = part.getQuads(null, null, RANDOM, ModelData.EMPTY, RenderType.solid());
+        //? if forge {
+        /*List<BakedQuad> quads = part.getQuads(null, null, RANDOM, ModelData.EMPTY, RenderType.solid());
+        *///?}
+        //? if fabric {
+        List<BakedQuad> quads = part.getQuads(null, null, RANDOM);
+        //?}
         renderQuads(poseStack, buffer, quads, packedLight, packedOverlay);
 
         for (Direction dir : Direction.values()) {
-            quads = part.getQuads(null, dir, RANDOM, ModelData.EMPTY, RenderType.solid());
+            //? if forge {
+            /*quads = part.getQuads(null, dir, RANDOM, ModelData.EMPTY, RenderType.solid());
+            *///?}
+            //? if fabric {
+            quads = part.getQuads(null, dir, RANDOM);
+            //?}
             renderQuads(poseStack, buffer, quads, packedLight, packedOverlay);
         }
     }
@@ -85,11 +103,21 @@ public class HeatingOvenRenderer implements BlockEntityRenderer<HeatingOvenBlock
 
         VertexConsumer buffer = bufferSource.getBuffer(RenderType.solid());
 
-        List<BakedQuad> quads = innerBurningPart.getQuads(null, null, RANDOM, ModelData.EMPTY, RenderType.solid());
+        //? if forge {
+        /*List<BakedQuad> quads = innerBurningPart.getQuads(null, null, RANDOM, ModelData.EMPTY, RenderType.solid());
+        *///?}
+        //? if fabric {
+        List<BakedQuad> quads = innerBurningPart.getQuads(null, null, RANDOM);
+        //?}
         renderQuads(poseStack, buffer, quads, fullBright, packedOverlay);
 
         for (Direction dir : Direction.values()) {
-            quads = innerBurningPart.getQuads(null, dir, RANDOM, ModelData.EMPTY, RenderType.solid());
+            //? if forge {
+            /*quads = innerBurningPart.getQuads(null, dir, RANDOM, ModelData.EMPTY, RenderType.solid());
+            *///?}
+            //? if fabric {
+            quads = innerBurningPart.getQuads(null, dir, RANDOM);
+            //?}
             renderQuads(poseStack, buffer, quads, fullBright, packedOverlay);
         }
     }
@@ -100,8 +128,12 @@ public class HeatingOvenRenderer implements BlockEntityRenderer<HeatingOvenBlock
 
         var pose = poseStack.last();
         for (BakedQuad quad : quads) {
-            buffer.putBulkData(pose, quad, 1.0f, 1.0f, 1.0f, 1.0f, 
-                packedLight, packedOverlay, true);
+            //? if forge {
+            /*buffer.putBulkData(pose, quad, 1.0f, 1.0f, 1.0f, 1.0f,
+                    packedLight, packedOverlay, true);
+            *///?} else {
+            buffer.putBulkData(pose, quad, 1.0f, 1.0f, 1.0f, packedLight, packedOverlay);
+            //?}
         }
     }
 
@@ -122,6 +154,6 @@ public class HeatingOvenRenderer implements BlockEntityRenderer<HeatingOvenBlock
 
     @Override
     public int getViewDistance() {
-        return 64;
+        return RenderDistanceHelper.getStaticViewDistanceBlocks();
     }
 }

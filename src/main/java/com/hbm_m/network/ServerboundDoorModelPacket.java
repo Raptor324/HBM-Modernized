@@ -1,110 +1,86 @@
 package com.hbm_m.network;
 
-import java.util.function.Supplier;
-
 import com.hbm_m.block.entity.doors.DoorBlockEntity;
 import com.hbm_m.client.model.variant.DoorModelSelection;
 import com.hbm_m.client.model.variant.DoorModelType;
 import com.hbm_m.client.model.variant.DoorSkin;
 import com.hbm_m.main.MainRegistry;
 
+import dev.architectury.networking.NetworkManager.PacketContext;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.network.NetworkEvent;
 
-/**
- * Пакет для синхронизации выбора модели двери.
- * Отправляется с клиента при выборе модели/скина в UI меню.
- * 
- * @author HBM-M Team
- */
-public class ServerboundDoorModelPacket {
-    
-    private final BlockPos blockPos;
+public class ServerboundDoorModelPacket implements C2SPacket {
+
+    private final BlockPos           blockPos;
     private final DoorModelSelection selection;
-    
+
     public ServerboundDoorModelPacket(BlockPos blockPos, DoorModelSelection selection) {
-        this.blockPos = blockPos;
+        this.blockPos  = blockPos;
         this.selection = selection;
     }
-    
-    /**
-     * Статический метод для кодирования пакета в буфер
-     */
-    public static void encode(ServerboundDoorModelPacket msg, FriendlyByteBuf buffer) {
-        buffer.writeBlockPos(msg.blockPos);
-        buffer.writeUtf(msg.selection.getModelType().getId());
-        buffer.writeUtf(msg.selection.getSkin().getId());
-    }
-    
-    /**
-     * Статический метод для декодирования пакета из буфера
-     */
-    public static ServerboundDoorModelPacket decode(FriendlyByteBuf buffer) {
-        BlockPos blockPos = buffer.readBlockPos();
-        
-        String typeId = buffer.readUtf(16);
-        String skinId = buffer.readUtf(64);
-        
+
+    // ── Serialization ─────────────────────────────────────────────────────────
+
+    public static ServerboundDoorModelPacket decode(FriendlyByteBuf buf) {
+        BlockPos       blockPos = buf.readBlockPos();
+        String         typeId   = buf.readUtf(16);
+        String         skinId   = buf.readUtf(64);
+
         DoorModelType type = DoorModelType.fromId(typeId);
-        DoorSkin skin = DoorSkin.of(skinId);
-        
-        DoorModelSelection selection = new DoorModelSelection(type, skin);
-        return new ServerboundDoorModelPacket(blockPos, selection);
+        DoorSkin      skin = DoorSkin.of(skinId);
+
+        return new ServerboundDoorModelPacket(blockPos, new DoorModelSelection(type, skin));
     }
-    
-    /**
-     * Статический метод для обработки пакета
-     */
-    public static void handle(ServerboundDoorModelPacket msg, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        context.enqueueWork(() -> {
-            ServerPlayer player = context.getSender();
-            if (player == null) return;
-            
+
+    @Override
+    public void write(FriendlyByteBuf buf) {
+        buf.writeBlockPos(blockPos);
+        // Должно совпадать с readUtf(16/64), иначе декодер на другой стороне уезжает по буферу.
+        buf.writeUtf(selection.getModelType().getId(), 16);
+        buf.writeUtf(selection.getSkin().getId(), 64);
+    }
+
+    // ── Handler ───────────────────────────────────────────────────────────────
+
+    public static void handle(ServerboundDoorModelPacket msg, PacketContext context) {
+        context.queue(() -> {
+            if (!(context.getPlayer() instanceof ServerPlayer player)) return;
+
             ServerLevel level = player.serverLevel();
-            if (level == null) return;
-            
-            // Проверка расстояния
+
             double distanceSq = player.distanceToSqr(
-                msg.blockPos.getX() + 0.5,
-                msg.blockPos.getY() + 0.5,
-                msg.blockPos.getZ() + 0.5
+                    msg.blockPos.getX() + 0.5,
+                    msg.blockPos.getY() + 0.5,
+                    msg.blockPos.getZ() + 0.5
             );
-            
+
             if (distanceSq > 64.0) {
                 MainRegistry.LOGGER.debug("Player too far from door: {}", msg.blockPos);
                 return;
             }
-            
+
             BlockEntity be = level.getBlockEntity(msg.blockPos);
-            if (!(be instanceof DoorBlockEntity doorEntity)) {
-                return;
-            }
-            
-            if (!doorEntity.isController()) {
-                return;
-            }
-            
-            // Устанавливаем выбор
+            if (!(be instanceof DoorBlockEntity doorEntity) || !doorEntity.isController()) return;
+
             doorEntity.setModelSelection(msg.selection);
-            
-            MainRegistry.LOGGER.debug("Door model changed: {} -> {} at {}", 
-                doorEntity.getDoorDeclId(), msg.selection.getDisplayName(doorEntity.getDoorDeclId()).getString(), msg.blockPos);
-            
+
+            MainRegistry.LOGGER.debug("Door model changed: {} -> {} at {}",
+                    doorEntity.getDoorDeclId(),
+                    msg.selection.getDisplayName(doorEntity.getDoorDeclId()).getString(),
+                    msg.blockPos);
         });
-        
-        context.setPacketHandled(true);
     }
-    
-    /**
-     * Отправить пакет на сервер
-     */
+
+    // ── Send helper ───────────────────────────────────────────────────────────
+
     public static void send(BlockPos blockPos, DoorModelSelection selection) {
-        ModPacketHandler.INSTANCE.sendToServer(new ServerboundDoorModelPacket(blockPos, selection));
+        ModPacketHandler.sendToServer(ModPacketHandler.DOOR_MODEL,
+                new ServerboundDoorModelPacket(blockPos, selection));
         MainRegistry.LOGGER.debug("Sending door model packet: {} -> {}", blockPos, selection);
     }
 }

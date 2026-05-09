@@ -11,11 +11,22 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
+//? if forge {
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
+import net.minecraftforge.items.IItemHandler;
+*///?}
+
+//? if fabric {
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+//?}
 
 import org.jetbrains.annotations.Nullable;
 
@@ -28,7 +39,7 @@ import org.jetbrains.annotations.Nullable;
 public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
 
     private final Level level;
-    /** Позиция BE для {@link #getCapability} (для FLUID_CONNECTOR мультиблока — контроллер). */
+    /** Позиция BE для {getCapability} (для FLUID_CONNECTOR мультиблока — контроллер). */
     private final BlockPos machinePos;
     /**
      * Сторона {@code machinePos} для capability; для жидкостного коннектора цистерны — {@code null}
@@ -66,7 +77,21 @@ public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
 
     @Override
     public boolean canConnect(Fluid fluid, Direction fromDir) {
-        return fluid == targetFluid && fromDir != null;
+        return fromDir != null && VanillaFluidEquivalence.sameSubstance(fluid, targetFluid);
+    }
+
+    @Override
+    public boolean isInfiniteNetworkSource(Fluid fluid) {
+        if (!VanillaFluidEquivalence.sameSubstance(fluid, targetFluid)) return false;
+        // Источник "бесконечный" только если в инвентаре машины лежит бесконечная бочка-источник.
+        return hasInfiniteBarrel(true);
+    }
+
+    @Override
+    public boolean isInfiniteNetworkSink(Fluid fluid) {
+        if (!VanillaFluidEquivalence.sameSubstance(fluid, targetFluid)) return false;
+        // Сток "бесконечный" только если в инвентаре машины лежит бесконечная бочка-утилизатор (InfiniteFluidItem).
+        return hasInfiniteBarrel(false);
     }
 
     // --- IFluidUserMK2 ---
@@ -85,24 +110,58 @@ public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
 
     @Override
     public long getFluidAvailable(Fluid fluid, int pressure) {
-        if (fluid != targetFluid || pressure != 0) return 0;
-        IFluidHandler handler = getHandler();
+        if (!VanillaFluidEquivalence.sameSubstance(fluid, targetFluid) || pressure != 0) return 0;
+        //? if forge {
+        /*IFluidHandler handler = getForgeHandler();
         if (handler == null) return 0;
-        FluidStack simulated = handler.drain(new FluidStack(fluid, Integer.MAX_VALUE), FluidAction.SIMULATE);
+        // Важно для ванильных жидкостей: Forge IFluidHandler часто требует точного совпадения
+        // fluid instance (source vs flowing). drain(int) не требует указания типа и корректно
+        // работает для любых хранилищ, после чего мы фильтруем по substance.
+        FluidStack simulated = handler.drain(Integer.MAX_VALUE, FluidAction.SIMULATE);
+        if (simulated.isEmpty() || !VanillaFluidEquivalence.sameSubstance(simulated.getFluid(), fluid)) {
+            return 0;
+        }
         return simulated.isEmpty() ? 0 : simulated.getAmount();
+        *///?}
+
+        //? if fabric {
+        Storage<FluidVariant> storage = getFabricStorage();
+        if (storage == null || !storage.supportsExtraction()) return 0;
+        try (Transaction tx = Transaction.openOuter()) {
+            return storage.extract(FluidVariant.of(fluid), Long.MAX_VALUE, tx);
+            // не коммитим — это симуляция
+        }
+        //?}
     }
 
     @Override
     public void useUpFluid(Fluid fluid, int pressure, long amount) {
-        if (fluid != targetFluid || pressure != 0 || amount <= 0) return;
-        IFluidHandler handler = getHandler();
+        if (!VanillaFluidEquivalence.sameSubstance(fluid, targetFluid) || pressure != 0 || amount <= 0) return;
+        //? if forge {
+        /*IFluidHandler handler = getForgeHandler();
         if (handler == null) return;
-        handler.drain(new FluidStack(fluid, clampInt(amount)), FluidAction.EXECUTE);
+        FluidStack simulated = handler.drain(clampInt(amount), FluidAction.SIMULATE);
+        if (simulated.isEmpty() || !VanillaFluidEquivalence.sameSubstance(simulated.getFluid(), fluid)) {
+            return;
+        }
+        handler.drain(Math.min(simulated.getAmount(), clampInt(amount)), FluidAction.EXECUTE);
+        *///?}
+
+        //? if fabric {
+        Storage<FluidVariant> storage = getFabricStorage();
+        if (storage == null) return;
+        try (Transaction tx = Transaction.openOuter()) {
+            storage.extract(FluidVariant.of(fluid), amount, tx);
+            tx.commit();
+        }
+        //?}
     }
 
     @Override
     public int[] getProvidingPressureRange(Fluid fluid) {
-        return fluid == targetFluid ? IFluidUserMK2.DEFAULT_PRESSURE_RANGE : new int[]{ 1, 0 };
+        return VanillaFluidEquivalence.sameSubstance(fluid, targetFluid)
+                ? IFluidUserMK2.DEFAULT_PRESSURE_RANGE
+                : new int[]{ 1, 0 };
     }
 
     // --- IFluidStandardReceiverMK2 ---
@@ -114,10 +173,21 @@ public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
 
     @Override
     public long getDemand(Fluid fluid, int pressure) {
-        if (fluid != targetFluid || pressure != 0) return 0;
-        IFluidHandler handler = getHandler();
+        if (!VanillaFluidEquivalence.sameSubstance(fluid, targetFluid) || pressure != 0) return 0;
+        //? if forge {
+        /*IFluidHandler handler = getForgeHandler();
         if (handler == null) return 0;
-        return handler.fill(new FluidStack(fluid, Integer.MAX_VALUE), FluidAction.SIMULATE);
+        return handler.fill(new FluidStack(resolveForgeFillFluid(handler, fluid), Integer.MAX_VALUE), FluidAction.SIMULATE);
+        *///?}
+
+        //? if fabric {
+        Storage<FluidVariant> storage = getFabricStorage();
+        if (storage == null || !storage.supportsInsertion()) return 0;
+        try (Transaction tx = Transaction.openOuter()) {
+            return storage.insert(FluidVariant.of(fluid), Long.MAX_VALUE, tx);
+            // не коммитим — это симуляция
+        }
+        //?}
     }
 
     /**
@@ -137,30 +207,91 @@ public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
 
     @Override
     public long transferFluid(Fluid fluid, int pressure, long amount) {
-        if (fluid != targetFluid || pressure != 0 || amount <= 0) return amount;
-        IFluidHandler handler = getHandler();
+        if (!VanillaFluidEquivalence.sameSubstance(fluid, targetFluid) || pressure != 0 || amount <= 0) return amount;
+        //? if forge {
+        /*IFluidHandler handler = getForgeHandler();
         if (handler == null) return amount;
-        int filled = handler.fill(new FluidStack(fluid, clampInt(amount)), FluidAction.EXECUTE);
+        int filled = handler.fill(new FluidStack(resolveForgeFillFluid(handler, fluid), clampInt(amount)), FluidAction.EXECUTE);
         return amount - filled;
+        *///?}
+
+        //? if fabric {
+        Storage<FluidVariant> storage = getFabricStorage();
+        if (storage == null) return amount;
+        try (Transaction tx = Transaction.openOuter()) {
+            long filled = storage.insert(FluidVariant.of(fluid), amount, tx);
+            if (filled > 0) tx.commit();
+            return amount - filled;
+        }
+        //?}
     }
 
     @Override
     public int[] getReceivingPressureRange(Fluid fluid) {
-        return fluid == targetFluid ? IFluidUserMK2.DEFAULT_PRESSURE_RANGE : new int[]{ 1, 0 };
+        return VanillaFluidEquivalence.sameSubstance(fluid, targetFluid)
+                ? IFluidUserMK2.DEFAULT_PRESSURE_RANGE
+                : new int[]{ 1, 0 };
     }
 
     // --- Helpers ---
 
-    private IFluidHandler getHandler() {
+    //? if forge {
+    /*private boolean hasInfiniteBarrel(boolean wantSource) {
+        BlockEntity be = level.getBlockEntity(machinePos);
+        if (be == null || be.isRemoved()) return false;
+        IItemHandler items = be.getCapability(ForgeCapabilities.ITEM_HANDLER, null).orElse(null);
+        if (items == null) return false;
+        for (int i = 0; i < items.getSlots(); i++) {
+            var stack = items.getStackInSlot(i);
+            if (stack.isEmpty()) continue;
+            if (stack.getItem() instanceof com.hbm_m.item.liquids.InfiniteFluidItem inf) {
+                // Instant-режим в сети только для универсальной бочки (fluid_barrel_infinite).
+                if (!inf.isInstantNetwork()) continue;
+                return true; // и источник, и утилизатор (как fluid_barrel_infinite)
+            }
+        }
+        return false;
+    }
+
+    /^*
+     * Для fill() на Forge важно использовать тот же fluid instance, который уже хранится в IFluidHandler,
+     * иначе ванильные баки/forge tanks могут отвергнуть заполнение (source vs flowing).
+     * Если хранилище пусто, используем канонический представитель для water/lava семейства.
+     ^/
+    private static Fluid resolveForgeFillFluid(IFluidHandler handler, Fluid target) {
+        for (int i = 0; i < handler.getTanks(); i++) {
+            FluidStack inTank = handler.getFluidInTank(i);
+            if (!inTank.isEmpty()) {
+                return inTank.getFluid();
+            }
+        }
+        return VanillaFluidEquivalence.forVanillaContainerFill(target);
+    }
+
+    @Nullable
+    private IFluidHandler getForgeHandler() {
         BlockEntity be = level.getBlockEntity(machinePos);
         if (be == null || be.isRemoved()) return null;
         return be.getCapability(ForgeCapabilities.FLUID_HANDLER, sideOfMachineFacingDuct)
                 .orElse(null);
     }
+    *///?}
 
-    private static int clampInt(long v) {
+    //? if fabric {
+    @Nullable
+    private Storage<FluidVariant> getFabricStorage() {
+        BlockEntity be = level.getBlockEntity(machinePos);
+        if (be == null || be.isRemoved()) return null;
+        BlockState st = level.getBlockState(machinePos);
+        return FluidStorage.SIDED.find(level, machinePos, st, be, sideOfMachineFacingDuct);
+    }
+    //?}
+
+    //? if forge {
+    /*private static int clampInt(long v) {
         return (int) Math.min(v, Integer.MAX_VALUE);
     }
+    *///?}
 
     /** Объект создаётся каждый раз при необходимости, идентичность определяется по (pos, dir, fluid). */
     @Override

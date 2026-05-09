@@ -8,10 +8,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
-import com.hbm_m.block.machines.MachineFluidTankBlock; // Добавлен импорт вашего блока
+import com.hbm_m.block.machines.MachineFluidTankBlock;
 import com.hbm_m.util.MultipartFacingTransforms;
 
 import net.minecraft.client.Minecraft;
+import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.main.MainRegistry;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
@@ -21,7 +23,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.client.model.data.ModelData;
+//? if forge {
+/*import net.minecraftforge.client.model.data.ModelData;
+*///?}
 
 public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
@@ -30,7 +34,12 @@ public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel impl
     private static final Object NULL_SIDE_KEY = new Object();
     
     // Текстура по умолчанию (если пустой бак)
-    private static final ResourceLocation DEFAULT_TEX = ResourceLocation.fromNamespaceAndPath("hbm_m", "block/tank/tank_none");
+    //? if fabric && < 1.21.1 {
+    private static final ResourceLocation DEFAULT_TEX = new ResourceLocation("hbm_m", "block/tank/tank_none");
+    //?} else {
+        /*private static final ResourceLocation DEFAULT_TEX = ResourceLocation.fromNamespaceAndPath("hbm_m", "block/tank/tank_none");
+    *///?}
+
 
     public MachineFluidTankBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms) {
         super(parts, transforms);
@@ -46,52 +55,83 @@ public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel impl
         return false;
     }
 
-    @Override
+    //? if forge {
+    /*@Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand, ModelData modelData, @Nullable RenderType renderType) {
+        return getQuadsInternal(state, side, rand, modelData, renderType);
+    }
+    *///?}
+
+    //? if fabric {
+    /**
+     * Текстура «стакана» берётся из {@link MachineFluidTankBlockEntity#getRenderAttachmentData()}
+     * через {@link FabricRenderDataBridge} на этапе сборки чанка (см. mixins на ModelBlockRenderer / Sodium).
+     * При смене типа жидкости клиентский {@code BlockEntity.load()} должен планировать пересборку чанка,
+     * иначе кэш меша Sodium останется со старыми UV.
+     */
+    @Override
+    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
+        return getQuadsInternal(state, side, rand, FabricRenderDataBridge.get(), null);
+    }
+    //?}
+
+    // Общая внутренняя логика
+    private List<BakedQuad> getQuadsInternal(@Nullable BlockState state, @Nullable Direction side, RandomSource rand, @Nullable Object modelDataObj, @Nullable RenderType renderType) {
         List<BakedQuad> quads = new ArrayList<>();
-
-        // 1. Получаем угол поворота блока (если это предмет в инвентаре, state == null, вернется 0)
         int rotationY = getRotationYForFacing(state);
-
-        // 2. Вычисляем исходную сторону (до поворота) для правильного Culling'а
         Direction querySide = getUnrotatedSide(side, rotationY);
 
-        // 3. Рендер рамы
+        // Рама
         BakedModel frame = getPart("Frame");
         if (frame != null) {
-            List<BakedQuad> frameQuads = frame.getQuads(state, querySide, rand, modelData, renderType);
-            
-            if (rotationY != 0) {
-                quads.addAll(ModelHelper.transformQuadsByFacing(frameQuads, rotationY));
-            } else {
-                quads.addAll(frameQuads);
-            }
+            //? if forge {
+            /*quads.addAll(ModelHelper.transformQuadsByFacing(frame.getQuads(state, querySide, rand, (ModelData)modelDataObj, renderType), rotationY));
+            *///?} else {
+            quads.addAll(ModelHelper.transformQuadsByFacing(frame.getQuads(state, querySide, rand), rotationY));
+             //?}
         }
 
-        // 4. Рендер бака с учетом ModelData
+        // Бак
         BakedModel tank = getPart("Tank");
         if (tank != null) {
             ResourceLocation fluidTex = DEFAULT_TEX;
-            if (modelData != null && modelData.has(MachineFluidTankBlockEntity.FLUID_TEXTURE_PROPERTY)) {
-                ResourceLocation propTex = modelData.get(MachineFluidTankBlockEntity.FLUID_TEXTURE_PROPERTY);
-                if (propTex != null) {
-                    fluidTex = propTex;
-                }
-            }
 
-            // Запрашиваем кэшированные полигоны для неповёрнутой стороны
-            List<BakedQuad> tankQuads = getCachedTankQuads(tank, fluidTex, querySide, rand);
-            
-            if (rotationY != 0) {
-                quads.addAll(ModelHelper.transformQuadsByFacing(tankQuads, rotationY));
-            } else {
-                quads.addAll(tankQuads);
+            //? if forge {
+            /*ModelData modelData = (ModelData) modelDataObj;
+            if (modelData != null && modelData.has(MachineFluidTankBlockEntity.FLUID_TEXTURE_PROPERTY)) {
+                fluidTex = modelData.get(MachineFluidTankBlockEntity.FLUID_TEXTURE_PROPERTY);
             }
+            if (ModClothConfig.get().enableDebugLogging) {
+                boolean hasProp = modelData != null && modelData.has(MachineFluidTankBlockEntity.FLUID_TEXTURE_PROPERTY);
+                MainRegistry.LOGGER.debug("[ModelDebug] fluid_tank modelData present={} hasProperty={} tex={}", modelData != null, hasProp, fluidTex);
+            }
+            *///?}
+
+            //? if fabric {
+            if (modelDataObj instanceof ResourceLocation fabricTex) {
+                fluidTex = fabricTex;
+            }
+            //?}
+
+            List<BakedQuad> tankQuads = getCachedTankQuads(tank, fluidTex, querySide, rand);
+            quads.addAll(ModelHelper.transformQuadsByFacing(tankQuads, rotationY));
         }
 
         return quads;
     }
 
+    //? if forge {
+    /*@Override
+    protected List<BakedQuad> getQuadsForModelData(
+        @Nullable BlockState state,
+        @Nullable Direction side,
+        RandomSource rand,
+        ModelData modelData,
+        @Nullable RenderType renderType
+    ) {
+        return getQuadsInternal(state, side, rand, modelData, renderType);
+    }
+    *///?}
     /**
      * Возвращает градус поворота по оси Y на основе свойства FACING.
      */
@@ -118,24 +158,44 @@ public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel impl
         return r;
     }
 
-    private List<BakedQuad> getCachedTankQuads(BakedModel originalTank, ResourceLocation textureLocation, @Nullable Direction side, RandomSource rand) {
+    private List<BakedQuad> getCachedTankQuads(
+            BakedModel originalTank,
+            ResourceLocation textureLocation,
+            @Nullable Direction side,
+            RandomSource rand
+    ) {
         final ResourceLocation safeTexture = textureLocation == null ? DEFAULT_TEX : textureLocation;
-    
-        Map<Object, List<BakedQuad>> directionalCache = quadCache.computeIfAbsent(safeTexture, k -> new ConcurrentHashMap<>());
-    
+
+        //? if forge {
+
+        /*List<BakedQuad> result = new ArrayList<>();
+        List<BakedQuad> originalQuads = originalTank.getQuads(null, side, rand, ModelData.EMPTY, null);
+        TextureAtlasSprite newSprite = Minecraft.getInstance()
+            .getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS)
+            .apply(safeTexture);
+        for (BakedQuad quad : originalQuads) {
+            result.add(retextureAndFixUV(quad, newSprite));
+        }
+        return result;
+    *///?}
+
+        //? if fabric {
+        Map<Object, List<BakedQuad>> directionalCache =
+                quadCache.computeIfAbsent(safeTexture, k -> new ConcurrentHashMap<>());
         Object cacheKey = side == null ? NULL_SIDE_KEY : side;
-    
+
         return directionalCache.computeIfAbsent(cacheKey, k -> {
             List<BakedQuad> newQuads = new ArrayList<>();
-            List<BakedQuad> originalQuads = originalTank.getQuads(null, side, rand, ModelData.EMPTY, null);
-            
-            TextureAtlasSprite newSprite = Minecraft.getInstance().getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS).apply(safeTexture);
-    
+            List<BakedQuad> originalQuads = originalTank.getQuads(null, side, rand);
+            TextureAtlasSprite newSprite = Minecraft.getInstance()
+                    .getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS)
+                    .apply(safeTexture);
             for (BakedQuad quad : originalQuads) {
                 newQuads.add(retextureAndFixUV(quad, newSprite));
             }
             return newQuads;
         });
+        //?}
     }
 
     private BakedQuad retextureAndFixUV(BakedQuad original, TextureAtlasSprite newSprite) {

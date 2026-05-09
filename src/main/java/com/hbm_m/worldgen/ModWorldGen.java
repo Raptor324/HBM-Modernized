@@ -2,6 +2,8 @@ package com.hbm_m.worldgen;
 
 import com.hbm_m.lib.RefStrings;
 
+import dev.architectury.registry.registries.DeferredRegister;
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -10,31 +12,31 @@ import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorType;
-import net.minecraftforge.common.world.BiomeModifier;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
 
 public class ModWorldGen {
 
-    public static final DeferredRegister<BiomeModifier> BIOME_MODIFIERS =
-            DeferredRegister.create(ForgeRegistries.Keys.BIOME_MODIFIERS, RefStrings.MODID);
+    // Biome modifiers are Forge-only registry (forge:biome_modifier), not a vanilla registry.
+    // Architectury's DeferredRegister cannot access it via RegistrarManager.
+    //? if forge {
+    /*public static final net.minecraftforge.registries.DeferredRegister<net.minecraftforge.common.world.BiomeModifier> BIOME_MODIFIERS =
+            net.minecraftforge.registries.DeferredRegister.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, RefStrings.MODID);
+    *///?}
 
     public static final DeferredRegister<Feature<?>> FEATURES =
-            DeferredRegister.create(ForgeRegistries.FEATURES, RefStrings.MODID);
+            DeferredRegister.create(RefStrings.MODID, Registries.FEATURE);
 
 
     public static final DeferredRegister<StructureProcessorType<?>> PROCESSORS =
-            DeferredRegister.create(Registries.STRUCTURE_PROCESSOR, RefStrings.MODID);
+            DeferredRegister.create(RefStrings.MODID, Registries.STRUCTURE_PROCESSOR);
 
     public static final ResourceKey<ConfiguredFeature<?, ?>> URANIUM_ORE_CONFIGURED_KEY =
             ResourceKey.create(Registries.CONFIGURED_FEATURE, RefStrings.resourceLocation("ore_uranium"));
 
-    public static final RegistryObject<StructureProcessorType<StructureFoundationProcessor>>
+    public static final RegistrySupplier<StructureProcessorType<StructureFoundationProcessor>>
             FOUNDATION_PROCESSOR = PROCESSORS.register("foundation_processor",
             () -> () -> StructureFoundationProcessor.CODEC);
 
-    public static final RegistryObject<Feature<NoneFeatureConfiguration>> OILCLASTER_SURROUNDED =
+    public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> OILCLASTER_SURROUNDED =
             FEATURES.register("oilclaster_surrounded", () -> new OilClasterSurroundedFeature(NoneFeatureConfiguration.CODEC));
 
     public static final ResourceKey<PlacedFeature> URANIUM_ORE_PLACED_KEY =
@@ -42,5 +44,24 @@ public class ModWorldGen {
 
     public static final ResourceKey<PlacedFeature> STRAWBERRY_BUSH_PLACED =
             ResourceKey.create(Registries.PLACED_FEATURE,
-                    ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "strawberry_bush_placed"));
+                    //? if fabric && < 1.21.1 {
+                    new ResourceLocation(RefStrings.MODID, "strawberry_bush_placed"));
+                    //?} else {
+                                        /*ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "strawberry_bush_placed"));
+                    *///?}
+
+
+    /** Регистрация worldgen DeferredRegister на всех лоадерах. */
+    public static void register() {
+        FEATURES.register();
+        PROCESSORS.register();
+    }
+
+    //? if forge {
+    /*/^* Регистрация worldgen DeferredRegister на Forge mod event bus (как в старом {@code MainRegistry}). ^/
+    public static void register(net.minecraftforge.eventbus.api.IEventBus modEventBus) {
+        BIOME_MODIFIERS.register(modEventBus);
+        register();
+    }
+    *///?}
 }

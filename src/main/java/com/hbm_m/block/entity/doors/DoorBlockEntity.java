@@ -1,10 +1,10 @@
 package com.hbm_m.block.entity.doors;
 
+
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.client.model.variant.DoorModelProperties;
 import com.hbm_m.client.model.variant.DoorModelRegistry;
 import com.hbm_m.client.model.variant.DoorModelSelection;
 import com.hbm_m.client.model.variant.DoorModelType;
@@ -15,8 +15,16 @@ import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
-import com.hbm_m.sound.ClientSoundManager;
+import com.hbm_m.sound.ClientSoundBootstrap;
 
+// Forge-only model-data / distmarker imports intentionally removed for Fabric compilation.
+//? if fabric {
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;//?}
+//? if forge {
+/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -26,19 +34,19 @@ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.model.data.ModelData;
 
 
-public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
-    
+public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
+    //? if fabric {
+    , net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity
+    //?}
+{
+    private static final String DOOR_LOOP_SOUND_FACTORY = "com.hbm_m.client.sound.DoorLoopSoundFactory";
+
     // 0=закрыта, 1=открыта, 2=закрывается, 3=открывается
     public byte state = 0;
     private int openTicks = 0;
@@ -54,8 +62,12 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     /**
      * Кэшированные ModelData для производительности
      */
-    @OnlyIn(Dist.CLIENT)
-    private ModelData cachedModelData;
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
+    private Object cachedModelData;
 
     private String doorDeclId;
     
@@ -64,15 +76,22 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     private PartRole partRole = PartRole.DEFAULT;
 
     private java.util.Set<Direction> allowedClimbSides = java.util.EnumSet.noneOf(Direction.class);
-    
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
     private Object loopingSound;
 
     /** Called from DoorAnimationDelayHelper when delay expires. Client-only. */
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
     public void clearAnimationDelayClient() {
         this.cachedModelData = null;
-        requestModelDataUpdate();
+        // requestModelDataUpdate() is Forge-only (model data system). On Fabric it's a no-op.
     }
 
     public DoorBlockEntity(BlockPos pos, BlockState state, String doorDeclId) {
@@ -92,6 +111,18 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     public DoorModelSelection getModelSelection() {
         return modelSelection;
     }
+
+    //? if fabric {
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getRenderAttachmentData() {
+        boolean isMoving = state == 2 || state == 3;
+        boolean isOpen = state == 1;
+        boolean isOverlap = !isMoving && cachedModelData != null;
+        return new DoorRenderData(modelSelection, isMoving, isOpen, isOverlap);
+    }
+
+    public record DoorRenderData(DoorModelSelection selection, boolean moving, boolean open, boolean overlap) {}
+    //?}
     
     /**
      * Установить выбор модели
@@ -104,7 +135,6 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             // Инвалидируем кэш
             if (level != null && level.isClientSide) {
                 this.cachedModelData = null;
-                requestModelDataUpdate();
                 DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
             }
             
@@ -399,7 +429,6 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         // Инвалидируем кэш ModelData при изменении состояния движения
         if (level != null && level.isClientSide) {
             this.cachedModelData = null;
-            requestModelDataUpdate();
             DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
         }
         syncToClient();
@@ -463,6 +492,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         
         Direction facing = blockState.getValue(DoorBlock.FACING);
         MultiblockStructureHelper structureHelper = doorBlock.getStructureHelper();
+        boolean isOpen = this.state != 0;
         
         // Контроллер: флаг 2 (NOTIFY_CLIENTS) - оповещаем клиентов о смене блокстейта.
         // updateNeighborsAt только для контроллера (редстоун и т.д.), не для каждого блока двери.
@@ -473,9 +503,13 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
 
         for (BlockPos partPos : structureHelper.getAllPartPositions(controllerPos, facing)) {
             BlockState partState = level.getBlockState(partPos);
-            // Флаг 2 (NOTIFY_CLIENTS only): заставляет клиента перерисовать блок.
-            // Флаг 1 (UPDATE_NEIGHBORS) убран - вызывал каскад соседних обновлений для каждой части,
-            // из-за чего Sodium пересобирал чанки десятки раз при открытии/закрытии.
+            if (partState.hasProperty(com.hbm_m.block.machines.UniversalMachinePartBlock.PASSABLE)) {
+                boolean currentPassable = partState.getValue(com.hbm_m.block.machines.UniversalMachinePartBlock.PASSABLE);
+                if (currentPassable != isOpen) {
+                    level.setBlock(partPos, partState.setValue(com.hbm_m.block.machines.UniversalMachinePartBlock.PASSABLE, isOpen), 2);
+                }
+            }
+            partState = level.getBlockState(partPos);
             level.sendBlockUpdated(partPos, partState, partState, 2);
             level.getLightEngine().checkBlock(partPos);
         }
@@ -549,7 +583,11 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     // }
 
     // ==================== Client Sound Handling ====================
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
     private void handleNewState(byte oldState, byte newState) {
         if (oldState == newState) return;
         if (!isController()) return;
@@ -570,74 +608,65 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             handleSoundEnd(decl.getCloseSoundEnd());
             
         } else {
-            ClientSoundManager.stopSound(worldPosition);
+            ClientSoundBootstrap.stopSound(level, worldPosition);
         }
     }
-
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
     private void handleSoundTransition(SoundEvent startSound, SoundEvent loopSound, SoundEvent loopSound2) {
         // 1. Разовый звук старта
         if (startSound != null) {
-            ClientSoundManager.playOneShotSound(worldPosition, startSound, getDoorDecl().getSoundVolume());
+            ClientSoundBootstrap.playOneShotSound(level, worldPosition, startSound, getDoorDecl().getSoundVolume());
         }
         
         // 2. Первый цикл (основной)
         if (loopSound != null) {
-            ClientSoundManager.updateDoorSound(worldPosition, "loop1", true, () -> createLoopingSound(loopSound));
+            ClientSoundBootstrap.updateDoorSoundRaw(level, worldPosition, "loop1", true, () -> createLoopingSoundReflect(loopSound));
         }
         
         // 3. Второй цикл (дополнительный, например сирена)
         if (loopSound2 != null) {
-            ClientSoundManager.updateDoorSound(worldPosition, "loop2", true, () -> createLoopingSound(loopSound2));
+            ClientSoundBootstrap.updateDoorSoundRaw(level, worldPosition, "loop2", true, () -> createLoopingSoundReflect(loopSound2));
         }
     }
-
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
     private void handleSoundEnd(SoundEvent endSound) {
         // Останавливаем ОБА цикла
-        ClientSoundManager.stopSpecificSound(worldPosition, "loop1");
-        ClientSoundManager.stopSpecificSound(worldPosition, "loop2");
+        ClientSoundBootstrap.stopSpecificSound(level, worldPosition, "loop1");
+        ClientSoundBootstrap.stopSpecificSound(level, worldPosition, "loop2");
         
         // Воспроизводим звук финиша
         if (endSound != null) {
-            ClientSoundManager.playOneShotSound(worldPosition, endSound, getDoorDecl().getSoundVolume());
+            ClientSoundBootstrap.playOneShotSound(level, worldPosition, endSound, getDoorDecl().getSoundVolume());
         }
     }
-
-    @OnlyIn(Dist.CLIENT)
-    private net.minecraft.client.resources.sounds.AbstractTickableSoundInstance createLoopingSound(SoundEvent sound) {
-        return new net.minecraft.client.resources.sounds.AbstractTickableSoundInstance(sound, SoundSource.BLOCKS, RandomSource.create()) {
-            {
-                this.x = DoorBlockEntity.this.worldPosition.getX() + 0.5;
-                this.y = DoorBlockEntity.this.worldPosition.getY() + 0.5;
-                this.z = DoorBlockEntity.this.worldPosition.getZ() + 0.5;
-                this.volume = getDoorDecl().getSoundVolume();
-                this.pitch = 1.0f;
-                this.looping = true;
-            }
-            
-            @Override
-            public void tick() {
-                Level level = net.minecraft.client.Minecraft.getInstance().level; //  Полное имя
-                if (level == null) {
-                    this.stop();
-                    return;
-                }
-                
-                BlockEntity be = level.getBlockEntity(DoorBlockEntity.this.worldPosition);
-                if (!(be instanceof DoorBlockEntity doorBE) ||
-                    (doorBE.state != 2 && doorBE.state != 3)) {
-                    this.stop();
-                }
-            }
-        };
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
+    private Object createLoopingSoundReflect(SoundEvent sound) {
+        try {
+            return Class.forName(DOOR_LOOP_SOUND_FACTORY)
+                .getMethod("create", DoorBlockEntity.class, SoundEvent.class)
+                .invoke(null, this, sound);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void setRemoved() {
         super.setRemoved();
         if (level != null && level.isClientSide) {
-            ClientSoundManager.stopSound(worldPosition);
+            ClientSoundBootstrap.stopSound(level, worldPosition);
         }
     }
 
@@ -723,25 +752,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             }
         }
     }
-
-    @OnlyIn(Dist.CLIENT)
-    @Override
-    public ModelData getModelData() {
-        if (cachedModelData == null) {
-            // isMoving: state 2/3 или период overlap (BER продолжает рисовать створки)
-            boolean inDelay = DoorAnimationDelayHelper.isInDelayPeriod(this);
-            boolean isOverlap = (state == 0 || state == 1) && inDelay;
-            boolean isMoving = state == 2 || state == 3 || isOverlap;
-            boolean isOpen = state == 1;
-            cachedModelData = ModelData.builder()
-                .with(DoorModelProperties.MODEL_SELECTION_PROPERTY, modelSelection)
-                .with(DoorModelProperties.DOOR_MOVING_PROPERTY, isMoving)
-                .with(DoorModelProperties.OPEN_PROPERTY, isOpen)
-                .with(DoorModelProperties.OVERLAP_PROPERTY, isOverlap)
-                .build();
-        }
-        return cachedModelData;
-    }
+    // Forge-only ModelData hook removed for Fabric compilation.
 
     /**
      * Инициализирует выбор модели на основе конфигурации.
@@ -750,7 +761,11 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
      * Если hadModelSelectionInNbt=true - не перезаписывать: значение уже загружено из NBT
      * (в т.ч. явный выбор LEGACY, который равен DoorModelSelection.DEFAULT).
      */
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
     public void initModelSelection(boolean applyConfigDefault) {
         if (!applyConfigDefault) {
             return; // Значение из NBT - не перезаписывать
@@ -774,8 +789,10 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         saveAdditional(tag);
         return tag;
     }
+    //? if forge {
+    /*@Override
+    *///?}
 
-    @Override
     public void handleUpdateTag(CompoundTag tag) {
         load(tag);
     }
@@ -790,7 +807,9 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         return this.openTicks;
     }
 
-    @Override
+    //? if forge {
+    /*@Override
+    *///?}
     public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
         CompoundTag tag = pkt.getTag();
         if (tag != null) {
@@ -801,7 +820,6 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             load(tag);
 
             if (level != null && level.isClientSide) {
-                requestModelDataUpdate();
                 // Инвалидируем чанк только при реальном изменении видимого состояния:
                 // DOOR_MOVING/OPEN перехода или смены скина/модели.
                 // Иначе каждый BE-пакет (даже с теми же данными) вызывал пересборку.
@@ -838,8 +856,9 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             }
         }
     }
-
-    @Override
+    //? if forge {
+    /*@Override
+    *///?}
     public AABB getRenderBoundingBox() {
         double radius = 8.0; // Fallback
         if (level != null && level.isClientSide) {

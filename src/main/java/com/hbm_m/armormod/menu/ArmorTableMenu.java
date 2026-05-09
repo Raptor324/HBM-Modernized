@@ -4,6 +4,7 @@ import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.block.ModBlocks;
 
+import com.hbm_m.item.tags_and_tiers.ModTags;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -15,22 +16,20 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.Container;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.ItemStackHandler;
-import net.minecraftforge.items.SlotItemHandler;
-import com.hbm_m.datagen.assets.ModItemTagProvider;
 import com.hbm_m.interfaces.IHasTooltip;
 import com.hbm_m.inventory.menu.ModMenuTypes;
 import com.hbm_m.sound.ModSounds;
 
 import java.util.Map;
-import javax.annotation.Nonnull;
 
 public class ArmorTableMenu extends AbstractContainerMenu {
 
-    private final ItemStackHandler armorInventory = new ItemStackHandler(1);
-    private final ItemStackHandler modsInventory = new ItemStackHandler(9);
+    private final Container armorInventory = new SimpleContainer(1);
+    private final Container modsInventory = new SimpleContainer(9);
     private final ContainerLevelAccess access;
     private final Player player;
     
@@ -97,16 +96,15 @@ public class ArmorTableMenu extends AbstractContainerMenu {
     }
     
     @Override
-    public void removed(@Nonnull Player pPlayer) {
+    public void removed(Player pPlayer) {
         super.removed(pPlayer);
         if (!pPlayer.level().isClientSide) {
-            pPlayer.drop(this.armorInventory.getStackInSlot(0), false);
+            pPlayer.drop(this.armorInventory.getItem(0), false);
         }
     }
 
-    @Nonnull
     @Override
-    public ItemStack quickMoveStack(@Nonnull Player pPlayer, int pIndex) {
+    public ItemStack quickMoveStack(Player pPlayer, int pIndex) {
         ItemStack itemstack = ItemStack.EMPTY;
         Slot slot = this.slots.get(pIndex);
 
@@ -237,7 +235,7 @@ public class ArmorTableMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public boolean stillValid(@Nonnull Player pPlayer) {
+    public boolean stillValid(Player pPlayer) {
         return stillValid(access, pPlayer, ModBlocks.ARMOR_TABLE.get());
     }
 
@@ -270,10 +268,10 @@ public class ArmorTableMenu extends AbstractContainerMenu {
             ));
         }
     }
-    private class CentralArmorSlot extends SlotItemHandler implements IHasTooltip {
+    private class CentralArmorSlot extends Slot implements IHasTooltip {
         
-        public CentralArmorSlot(ItemStackHandler handler, int index, int x, int y) {
-            super(handler, index, x, y);
+        public CentralArmorSlot(Container container, int index, int x, int y) {
+            super(container, index, x, y);
         }
 
         @Override
@@ -289,11 +287,11 @@ public class ArmorTableMenu extends AbstractContainerMenu {
         public void set(ItemStack pStack) {
             super.set(pStack);
             // Когда кладем броню, загружаем моды из ее NBT в стол
-            ArmorModificationHelper.loadModsIntoTable(pStack, modsInventory);
+            ArmorModificationHelper.loadModsIntoTable(pStack, ArmorTableMenu.this.modsInventory);
         }
     }
 
-    private class ModificationSlot extends SlotItemHandler implements IHasTooltip {
+    private class ModificationSlot extends Slot implements IHasTooltip {
         
         private static final Map<Integer, String> TOOLTIP_KEYS = Map.of(
             0, "tooltip.hbm_m.armor_table.helmet_slot",
@@ -307,13 +305,17 @@ public class ArmorTableMenu extends AbstractContainerMenu {
             8, "tooltip.hbm_m.armor_table.battery_slot"
         );
         
-        public ModificationSlot(ItemStackHandler handler, int index, int x, int y) {
-            super(handler, index, x, y);
+        public ModificationSlot(Container container, int index, int x, int y) {
+            super(container, index, x, y);
+        }
+
+        private int getModSlotIndex() {
+            return this.index;
         }
 
         @Override
         public Component getEmptyTooltip() {
-            String key = TOOLTIP_KEYS.getOrDefault(this.getSlotIndex(), "");
+            String key = TOOLTIP_KEYS.getOrDefault(getModSlotIndex(), "");
             return Component.translatable(key).withStyle(ChatFormatting.DARK_PURPLE);
         }
 
@@ -325,23 +327,23 @@ public class ArmorTableMenu extends AbstractContainerMenu {
             }
 
             // Проверка 2: Есть ли броня в центральном слоте? (остается)
-            ItemStack armorStack = armorInventory.getStackInSlot(0);
+            ItemStack armorStack = ArmorTableMenu.this.armorInventory.getItem(0);
             if (armorStack.isEmpty() || !(armorStack.getItem() instanceof ArmorItem armorItem)) {
                 return false;
             }
             
             // Проверка 3: Соответствует ли тип мода этому физическому слоту? (остается)
-            if (mod.type != this.getSlotIndex()) {
+            if (mod.type != getModSlotIndex()) {
                 return false;
             }
             // Проверка 4: Совместим ли мод с ТИПОМ БРОНИ?
             ArmorItem.Type armorType = armorItem.getType();
 
             return switch (armorType) {
-                case HELMET -> stack.is(ModItemTagProvider.REQUIRES_HELMET);
-                case CHESTPLATE -> stack.is(ModItemTagProvider.REQUIRES_CHESTPLATE);
-                case LEGGINGS -> stack.is(ModItemTagProvider.REQUIRES_LEGGINGS);
-                case BOOTS -> stack.is(ModItemTagProvider.REQUIRES_BOOTS);
+                case HELMET -> stack.is(ModTags.Items.REQUIRES_HELMET);
+                case CHESTPLATE -> stack.is(ModTags.Items.REQUIRES_CHESTPLATE);
+                case LEGGINGS -> stack.is(ModTags.Items.REQUIRES_LEGGINGS);
+                case BOOTS -> stack.is(ModTags.Items.REQUIRES_BOOTS);
                 default -> false; // На случай будущих типов брони
             };
         }
@@ -357,20 +359,20 @@ public class ArmorTableMenu extends AbstractContainerMenu {
             }
 
             // Когда СТАВИМ мод, пересчитываем NBT брони
-            ItemStack armor = armorInventory.getStackInSlot(0);
+            ItemStack armor = ArmorTableMenu.this.armorInventory.getItem(0);
             if (!armor.isEmpty()) {
-                ArmorModificationHelper.saveTableToArmor(armor, modsInventory, ArmorTableMenu.this.player);
+                ArmorModificationHelper.saveTableToArmor(armor, ArmorTableMenu.this.modsInventory, ArmorTableMenu.this.player);
             }
         }
 
         @Override
-        public void onTake(@Nonnull Player pPlayer, @Nonnull ItemStack pStack) {
+        public void onTake(Player pPlayer, ItemStack pStack) {
             super.onTake(pPlayer, pStack);
             pPlayer.level().playSound(null, pPlayer.getX(), pPlayer.getY(), pPlayer.getZ(), ModSounds.EXTRACT_RANDOM.get(), SoundSource.PLAYERS, 0.4F, 1.0F);
             // Когда ЗАБИРАЕМ мод, тоже пересчитываем NBT брони
-            ItemStack armor = armorInventory.getStackInSlot(0);
+            ItemStack armor = ArmorTableMenu.this.armorInventory.getItem(0);
             if (!armor.isEmpty()) {
-                ArmorModificationHelper.saveTableToArmor(armor, modsInventory, ArmorTableMenu.this.player);
+                ArmorModificationHelper.saveTableToArmor(armor, ArmorTableMenu.this.modsInventory, ArmorTableMenu.this.player);
             }
         }
     }

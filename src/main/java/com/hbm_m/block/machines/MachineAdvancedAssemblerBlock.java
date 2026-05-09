@@ -3,7 +3,7 @@ package com.hbm_m.block.machines;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
@@ -15,11 +15,14 @@ import com.hbm_m.multiblock.MultiblockSideTuples;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 
+//? if forge {
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
+*///?}
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
@@ -42,8 +45,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.network.NetworkHooks;
 
 public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IMultiblockController {
 
@@ -106,14 +107,8 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
                 }
 
                 BlockEntity blockEntity = level.getBlockEntity(pos);
-                if (blockEntity instanceof MachineAdvancedAssemblerBlockEntity) {
-                    // Получаем capability инвентаря
-                    blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
-                        // Проходимся по всем слотам и выбрасываем их содержимое
-                        for (int i = 0; i < handler.getSlots(); i++) {
-                            Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), handler.getStackInSlot(i));
-                        }
-                    });
+                if (blockEntity instanceof com.hbm_m.block.entity.BaseMachineBlockEntity be) {
+                    be.dropInventoryContents();
                 }
 
                 helper.destroyStructure(level, pos, facing);
@@ -137,7 +132,7 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (!pLevel.isClientSide()) {
             if (pLevel.getBlockEntity(pPos) instanceof MenuProvider provider) {
-                NetworkHooks.openScreen((ServerPlayer) pPlayer, provider, pPos);
+                MenuRegistry.openExtendedMenu((ServerPlayer) pPlayer, provider, buf -> buf.writeBlockPos(pPos));
             }
         }
         return InteractionResult.sidedSuccess(pLevel.isClientSide());

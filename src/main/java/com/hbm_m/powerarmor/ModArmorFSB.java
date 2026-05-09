@@ -1,5 +1,11 @@
 package com.hbm_m.powerarmor;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.jetbrains.annotations.NotNull;
+
+import com.hbm_m.platform.PlayerPersistentData;
 import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.nbt.CompoundTag;
@@ -14,18 +20,20 @@ import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+
+//? if forge {
+/*import java.util.function.Consumer;
+
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
+*///?}
 
 // Full Set Bonus armor base class
-@Mod.EventBusSubscriber(modid = com.hbm_m.main.MainRegistry.MOD_ID)
+//? if forge {
+/*@Mod.EventBusSubscriber(modid = com.hbm_m.main.MainRegistry.MOD_ID)*///?}
 public class ModArmorFSB extends ArmorItem {
 
     private String texture = "";
@@ -113,18 +121,21 @@ public class ModArmorFSB extends ArmorItem {
     }
 
     public ModArmorFSB setOverlay(String path) {
-        this.overlay = ResourceLocation.parse(path);
+        // В 1.20+ parse() больше нет; tryParse() возвращает null при ошибке
+        this.overlay = ResourceLocation.tryParse(path);
         return this;
     }
 
-    @Override
+    //? if forge {
+    /*@Override
     public String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
         return texture;
     }
+    *///?}
 
 
     public static boolean hasFSBArmor(Player player) {
-        CompoundTag data = player.getPersistentData();
+        CompoundTag data = PlayerPersistentData.get(player);
         long currentTick = player.level().getGameTime();
         long lastCheck = data.getLong(TAG_FSB_CACHE_TICK);
         
@@ -207,26 +218,6 @@ public class ModArmorFSB extends ArmorItem {
         return false;
     }
 
-    public void handleTick(net.minecraftforge.event.TickEvent.PlayerTickEvent event) {
-        Player player = event.player;
-        boolean step = true;
-
-        if (ModArmorFSB.hasFSBArmor(player)) {
-            ItemStack chest = player.getItemBySlot(EquipmentSlot.CHEST);
-            ModArmorFSB chestplate = (ModArmorFSB) chest.getItem();
-
-            if (!chestplate.effects.isEmpty()) {
-                for (MobEffectInstance effect : chestplate.effects) {
-                    player.addEffect(new MobEffectInstance(effect.getEffect(), effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.isVisible()));
-                }
-            }
-
-            if (step && chestplate.stepSound != null && player.level().isClientSide && player.onGround()) {
-                steppy(player, chestplate.stepSound);
-            }
-        }
-    }
-
     public static void steppy(Player player, String sound) {
         try {
             // Simplified stepping logic for 1.20.1
@@ -283,24 +274,72 @@ public class ModArmorFSB extends ArmorItem {
         }
     }
 
-    @Override
-    public void onArmorTick(@Nonnull ItemStack stack, @Nonnull Level world, @Nonnull Player player) {
-        // FSB armor tick logic can be implemented here
-        // For now, simplified version - geiger logic moved to ModPowerArmorItem
+    // Forge: ArmorItem.onArmorTick; NeoForge/Fabric: только inventoryTick (слот брони).
+    //? if forge {
+    /*@Override
+    public void onArmorTick(@NotNull ItemStack stack, @NotNull Level world, @NotNull Player player) {
+        tickFsbArmor(stack, world, player);
     }
+    *///?} else {
+    @Override
+    public void inventoryTick(@NotNull ItemStack stack, @NotNull Level world, @NotNull Entity entity, int slotId, boolean selected) {
+        super.inventoryTick(stack, world, entity, slotId, selected);
+        if (!(entity instanceof Player player)) return;
+        if (!stackIsEquippedArmor(player, stack)) return;
+        tickFsbArmor(stack, world, player);
+    }
+    //?}
+
+    /** Общая логика FSB: эффекты и шаги (один раз за тик на надетом слоте). */
+    private void tickFsbArmor(@NotNull ItemStack stack, @NotNull Level world, @NotNull Player player) {
+        if (!ModArmorFSB.hasFSBArmor(player)) return;
+
+        ItemStack chest = player.getItemBySlot(EquipmentSlot.CHEST);
+        if (!(chest.getItem() instanceof ModArmorFSB chestplate)) return;
+
+        if (!chestplate.effects.isEmpty()) {
+            for (MobEffectInstance effect : chestplate.effects) {
+                player.addEffect(new MobEffectInstance(
+                        effect.getEffect(),
+                        effect.getDuration(),
+                        effect.getAmplifier(),
+                        effect.isAmbient(),
+                        effect.isVisible()
+                ));
+            }
+        }
+
+        if (chestplate.stepSound != null && world.isClientSide && player.onGround()) {
+            steppy(player, chestplate.stepSound);
+        }
+    }
+
+    private static boolean stackIsEquippedArmor(Player player, ItemStack stack) {
+        for (EquipmentSlot s : ARMOR_SLOTS) {
+            if (player.getItemBySlot(s) == stack) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static final EquipmentSlot[] ARMOR_SLOTS = {
+            EquipmentSlot.FEET, EquipmentSlot.LEGS, EquipmentSlot.CHEST, EquipmentSlot.HEAD
+    };
 
     public boolean isArmorEnabled(ItemStack stack) {
         return true;
     }
 
-    @Override
+    //? if forge {
+    /*@Override
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
         consumer.accept(new IClientItemExtensions() {
             // Basic implementation, can be extended for part hiding
         });
     }
 
-    // Event handlers
+    // Event handlers (Forge-only)
     @SubscribeEvent
     public static void onLivingAttack(LivingAttackEvent event) {
         // Handle attack events for FSB armor
@@ -310,4 +349,5 @@ public class ModArmorFSB extends ArmorItem {
     public static void onLivingHurt(LivingHurtEvent event) {
         // Handle hurt events for FSB armor
     }
+    *///?}
 }

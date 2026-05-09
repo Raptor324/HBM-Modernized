@@ -6,7 +6,10 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
+//? if forge {
+/*import net.minecraftforge.client.gui.overlay.ForgeGui;
+import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+*///?}
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -15,7 +18,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 // рендер полосок энергии брони
 public class OverlayPowerArmor {
 
-    public static void onRenderOverlay(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+    public static void render(GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
     
@@ -53,11 +56,10 @@ public class OverlayPowerArmor {
             topAnchor = screenHeight - 26;
         } else {
             // Выживание:
-            // ТАК КАК МЫ РЕГИСТРИРУЕМСЯ ПОСЛЕ БРОНИ (см. пункт 2 ниже),
-            // gui.leftHeight УЖЕ учитывает высоту брони.
-            // Нам просто нужно встать поверх текущего уровня.
+            // На Forge мы можем корректно стакаться по gui.leftHeight.
+            // На Fabric этого поля нет, поэтому используем фиксированный якорь над хотбаром.
             left += 1;
-            topAnchor = screenHeight - gui.leftHeight + 5;
+            topAnchor = screenHeight - 39;
         }
         
         int height = topAnchor;
@@ -106,13 +108,27 @@ public class OverlayPowerArmor {
     
         tessellator.end();
         RenderSystem.disableBlend();
-        
+    }
+
+    //? if forge {
+    /*public static void onRenderOverlay(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+        render(guiGraphics, partialTick, screenWidth, screenHeight);
         // В выживании увеличиваем leftHeight, чтобы СЛЕДУЮЩИЕ элементы (например, воздух)
         // рисовались над нашими полосками.
-        if (!player.isCreative()) {
-            gui.leftHeight += (piecesToShow * 3) + 2; 
+        if (gui != null) {
+            Minecraft mc = Minecraft.getInstance();
+            LocalPlayer player = mc.player;
+            if (player != null && !player.isCreative()) {
+                ItemStack chestplate = player.getItemBySlot(EquipmentSlot.CHEST);
+                if (chestplate.getItem() instanceof ModPowerArmorItem armorItem) {
+                    boolean noHelmet = armorItem.getSpecs().noHelmetRequired;
+                    int piecesToShow = noHelmet ? 3 : 4;
+                    gui.leftHeight += (piecesToShow * 3) + 2;
+                }
+            }
         }
     }
 
-    public static final net.minecraftforge.client.gui.overlay.IGuiOverlay POWER_ARMOR_OVERLAY = OverlayPowerArmor::onRenderOverlay;
+    public static final IGuiOverlay POWER_ARMOR_OVERLAY = OverlayPowerArmor::onRenderOverlay;
+    *///?}
 }

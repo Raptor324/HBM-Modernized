@@ -2,15 +2,16 @@ package com.hbm_m.item.tags_and_tiers;
 // Простой предмет, который выполняет заданное действие при использовании.
 // Действие передается через BiConsumer в конструкторе.
 
+import java.util.function.BiConsumer;
+
+import org.jetbrains.annotations.NotNull;
+
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import java.util.function.BiConsumer;
-
-import javax.annotation.Nonnull;
 
 public class ItemSimpleConsumable extends Item {
 // BiConsumer принимает игрока и стак, который он использует.
@@ -22,7 +23,7 @@ public class ItemSimpleConsumable extends Item {
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(@Nonnull Level level, @Nonnull Player player, @Nonnull InteractionHand hand) {
+    public InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
         // Выполняем заданное действие

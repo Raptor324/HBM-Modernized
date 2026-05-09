@@ -1,19 +1,27 @@
-package com.hbm_m.client;
+//? if forge {
+/*package com.hbm_m.client;
 
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.particle.custom.AgentOrangeParticle;
 import com.hbm_m.particle.custom.MissileContrailParticle;
-import com.hbm_m.particle.explosions.basic.*;
+import com.hbm_m.particle.explosions.basic.ExplosionFireParticle;
+import com.hbm_m.particle.explosions.basic.ExplosionFlashParticle;
+import com.hbm_m.particle.explosions.basic.ExplosionSparkParticle;
+import com.hbm_m.particle.explosions.basic.FireSparkParticle;
+import com.hbm_m.particle.explosions.basic.MushroomSmokeParticle;
+import com.hbm_m.particle.explosions.basic.ShockwaveRingParticle;
+import com.hbm_m.particle.explosions.basic.WaveSmokeParticle;
 import com.hbm_m.particle.explosions.nuclear.small.DarkSmokeParticle;
 import com.hbm_m.particle.explosions.nuclear.small.DarkWaveSmokeParticle;
 import com.hbm_m.particle.explosions.nuclear.small.LargeDarkSmoke;
 import com.hbm_m.particle.explosions.nuclear.small.LargeExplosionSpark;
+
 import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.api.distmarker.Dist;
 
 @Mod.EventBusSubscriber(modid = "hbm_m", bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientParticleHandler {
@@ -88,3 +96,4 @@ public class ClientParticleHandler {
 
     }
 }
+*///?}

@@ -1,20 +1,32 @@
 package com.hbm_m.client.model.variant;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.hbm_m.main.MainRegistry;
+
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
-import net.minecraftforge.api.distmarker.Dist;
+//? if fabric {
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;//?}
+//? if forge {
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.util.*;
+*///?}
 
 /**
  * Реестр моделей и скинов дверей.
@@ -22,7 +34,11 @@ import java.util.*;
  * 
  * @author HBM-M Team
  */
-@OnlyIn(Dist.CLIENT)
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
 public class DoorModelRegistry implements ResourceManagerReloadListener {
     
     private static final DoorModelRegistry INSTANCE = new DoorModelRegistry();
@@ -215,10 +231,18 @@ public class DoorModelRegistry implements ResourceManagerReloadListener {
             for (String doorType : knownDoorTypes) {
                 // Путь к конфигу рядом с моделью
                 // models/block/doors/large_vehicle_door_config.json
-                ResourceLocation configPath = ResourceLocation.fromNamespaceAndPath(
+                //? if fabric && < 1.21.1 {
+                ResourceLocation configPath = new ResourceLocation(
                     namespace, 
                     CONFIG_PATH + doorType + CONFIG_SUFFIX
                 );
+                //?} else {
+                                /*ResourceLocation configPath = ResourceLocation.fromNamespaceAndPath(
+                    namespace, 
+                    CONFIG_PATH + doorType + CONFIG_SUFFIX
+                );
+                *///?}
+
                 
                 try {
                     Optional<Resource> resource = resourceManager.getResource(configPath);
@@ -306,14 +330,14 @@ public class DoorModelRegistry implements ResourceManagerReloadListener {
             // Модели
             ResourceLocation legacyModel = null;
             if (json.has("legacy_model")) {
-                legacyModel = ResourceLocation.parse(json.get("legacy_model").getAsString());
+                legacyModel = ResourceLocation.tryParse(json.get("legacy_model").getAsString());
             }
             
             ResourceLocation modernModel = null;
             if (json.has("modern_model")) {
                 JsonObject modern = json.getAsJsonObject("modern_model");
                 if (modern.has("model")) {
-                    modernModel = ResourceLocation.parse(modern.get("model").getAsString());
+                    modernModel = ResourceLocation.tryParse(modern.get("model").getAsString());
                 }
             }
             

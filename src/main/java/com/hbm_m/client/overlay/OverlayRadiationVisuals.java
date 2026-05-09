@@ -5,9 +5,12 @@ package com.hbm_m.client.overlay;
 // Использует IGuiOverlay из Forge для интеграции с GUI игры.
 import com.hbm_m.config.ModClothConfig;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+//? if forge {
+/*import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+*///?}
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -34,7 +37,7 @@ public class OverlayRadiationVisuals {
         }
     }
 
-    public static final IGuiOverlay RADIATION_PIXELS_OVERLAY = (gui, guiGraphics, partialTick, width, height) -> {
+    public static void render(GuiGraphics guiGraphics, float partialTick, int width, int height) {
         ModClothConfig config = ModClothConfig.get();
         var player = Minecraft.getInstance().player;
         
@@ -75,7 +78,12 @@ public class OverlayRadiationVisuals {
         for (RadiationPixel pixel : activePixels) {
             guiGraphics.fill(pixel.x, pixel.y, pixel.x + 1, pixel.y + 1, pixel.color);
         }
-    };
+    }
+
+    //? if forge {
+    /*public static final IGuiOverlay RADIATION_PIXELS_OVERLAY = (gui, guiGraphics, partialTick, width, height) ->
+            render(guiGraphics, partialTick, width, height);
+    *///?}
 
     /**
      * Вспомогательный метод, чтобы не дублировать код создания пикселя.

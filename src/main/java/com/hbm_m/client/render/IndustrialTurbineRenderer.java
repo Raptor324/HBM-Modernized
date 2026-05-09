@@ -1,20 +1,30 @@
 package com.hbm_m.client.render;
 
+
 import com.hbm_m.block.entity.machines.MachineIndustrialTurbineBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraftforge.api.distmarker.Dist;
+//? if forge {
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+*///?}
+//? if fabric {
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;//?}
 
 /**
  * Renderer for the Industrial Turbine.
  * Currently a placeholder — the static model is rendered via RenderShape.MODEL.
  * TODO: Animate the Flywheel OBJ group spinning when the turbine is active.
  */
-@OnlyIn(Dist.CLIENT)
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
 public class IndustrialTurbineRenderer implements BlockEntityRenderer<MachineIndustrialTurbineBlockEntity> {
 
     public IndustrialTurbineRenderer(BlockEntityRendererProvider.Context context) {

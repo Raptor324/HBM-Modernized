@@ -1,10 +1,11 @@
-package com.hbm_m.powerarmor.overlay;
+//? if forge {
+/*package com.hbm_m.powerarmor.overlay;
 
 import org.joml.Matrix4f;
 
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.powerarmor.ModEventHandlerClient;
+import com.hbm_m.powerarmor.PowerArmorClientState;
 import com.hbm_m.powerarmor.ModPowerArmorItem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
@@ -36,7 +37,7 @@ public class VATSRenderHandler {
         if (player == null || entity == player) return;
 
         // VATS должен быть активен
-        if (!ModEventHandlerClient.isVATSActive()) return;
+        if (!PowerArmorClientState.isVATSActive()) return;
 
         // Игрок должен носить FSB броню с VATS (как у тебя в логике)
         if (!ModPowerArmorItem.hasFSBArmor(player)) return;
@@ -51,7 +52,6 @@ public class VATSRenderHandler {
         double maxDistSqr = maxDistBlocks * maxDistBlocks;
 
         if (player.distanceToSqr(entity) > maxDistSqr) return;
-
 
         // Считаем заполнение (1 полоска = 1 HP)
         float maxHp = entity.getMaxHealth();
@@ -100,3 +100,4 @@ public class VATSRenderHandler {
         return sb.toString();
     }
 }
+*///?}

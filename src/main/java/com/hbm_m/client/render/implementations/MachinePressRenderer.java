@@ -1,10 +1,15 @@
 package com.hbm_m.client.render.implementations;
 
+
+//? if forge {
+/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+*///?}
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-import com.hbm_m.block.machines.MachinePressBlock;
 import com.hbm_m.block.entity.machines.MachinePressBlockEntity;
+import com.hbm_m.block.machines.MachinePressBlock;
 import com.hbm_m.client.model.PressBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
@@ -12,6 +17,8 @@ import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.ObjModelVboBuilder;
 import com.hbm_m.client.render.OcclusionCullingHelper;
+import com.hbm_m.client.render.RenderDistanceHelper;
+import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
@@ -20,6 +27,10 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
+//? if fabric {
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+//?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -30,10 +41,11 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-
-@OnlyIn(Dist.CLIENT)
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
 public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePressBlockEntity, PressBakedModel> {
 
     private static final String HEAD_PART = "Head";
@@ -74,6 +86,10 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
             return;
         }
 
+        float staticFade = RenderDistanceHelper.computeStaticFade(blockPos);
+        if (staticFade < 0) return;
+        SingleMeshVboRenderer.setFadeAlpha(staticFade);
+
         int blockLight = LightTexture.block(packedLight);
         int skyLight = LightTexture.sky(packedLight);
         int dynamicLight = LightTexture.pack(blockLight, skyLight);
@@ -98,24 +114,48 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
 
         // Base рендерится через BlockState/BakedModel (запечён в чанк Embeddium/Sodium)
 
-        boolean freezeAnimation = shouldSkipAnimationUpdate(blockPos);
-        Matrix4f headTransform = buildHeadTransform(model, blockEntity, partialTick, freezeAnimation);
+        float animFade = RenderDistanceHelper.computeAnimatedFade(blockPos);
+        if (animFade < 0) return null;
+        float savedFade = SingleMeshVboRenderer.getFadeAlpha();
+        SingleMeshVboRenderer.setFadeAlpha(Math.min(savedFade, animFade));
+        Matrix4f headTransform = buildHeadTransform(model, blockEntity, partialTick, false);
         boolean useInstancedHead = instancedHead != null && instancedHead.isInitialized();
-        boolean useBatching = ModClothConfig.useInstancedBatching();
+        boolean useBatching = ModClothConfig.useInstancedBatching() && animFade >= 0.99f;
         boolean inShadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
         if (useBatching && !inShadowPass && useInstancedHead) {
-            poseStack.pushPose();
+            //? if fabric {
+            // Под Iris addInstance() сразу рисует через drawSingleWithIrisExtended и ждёт
+            // активный IrisRenderBatch (см. InstancedStaticPartRenderer). Без обёртки —
+            // «standalone» путь к шейдеру пакета, голова то есть то пропадает.
+            if (ShaderCompatibilityDetector.isExternalShaderActive()) {
+                try (IrisRenderBatch ignored = IrisRenderBatch.begin(false, RenderSystem.getProjectionMatrix())) {
+                    poseStack.pushPose();
+                    poseStack.last().pose().mul(headTransform);
+                    instancedHead.addInstance(poseStack, packedLight, blockPos, blockEntity, bufferSource);
+                    poseStack.popPose();
+                }
+            } else {
+                poseStack.pushPose();
+                poseStack.last().pose().mul(headTransform);
+                instancedHead.addInstance(poseStack, packedLight, blockPos, blockEntity, bufferSource);
+                poseStack.popPose();
+            }
+            //?} else {
+            /*poseStack.pushPose();
             poseStack.last().pose().mul(headTransform);
             instancedHead.addInstance(poseStack, packedLight, blockPos, blockEntity, bufferSource);
             poseStack.popPose();
+            *///?}
         } else {
-            if (instancedHead != null && !instancedHead.isInitialized()) {
-                MainRegistry.LOGGER.warn("MachinePressRenderer: instancedHead exists but NOT initialized, using fallback");
-            }
             // Under Iris/Oculus, the per-part extended-shader path is extremely sensitive to
             // apply()/clear() frequency. When instancing is disabled, we open an IrisRenderBatch
             // session so the head draw shares one apply()/clear() with other parts in this pass.
-            boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || inShadowPass);
+            //? if forge {
+            /*boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || inShadowPass);
+            *///?}
+            //? if fabric {
+            boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath();
+            //?}
             if (useIrisBatch) {
                 try (IrisRenderBatch batch = IrisRenderBatch.begin(inShadowPass, RenderSystem.getProjectionMatrix())) {
                     gpuRenderer.renderAnimatedHead(poseStack, packedLight, headTransform, blockPos, blockEntity, bufferSource);
@@ -124,6 +164,7 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
                 gpuRenderer.renderAnimatedHead(poseStack, packedLight, headTransform, blockPos, blockEntity, bufferSource);
             }
         }
+        SingleMeshVboRenderer.setFadeAlpha(savedFade);
         return headTransform;
     }
 
@@ -139,22 +180,6 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
             .scale(HEAD_SCALE, HEAD_SCALE, HEAD_SCALE);
     }
 
-    private boolean shouldSkipAnimationUpdate(BlockPos blockPos) {
-        var minecraft = Minecraft.getInstance();
-        var camera = minecraft.gameRenderer.getMainCamera();
-        var cameraPos = camera.getPosition();
-
-        double dx = blockPos.getX() + 0.5 - cameraPos.x;
-        double dy = blockPos.getY() + 0.5 - cameraPos.y;
-        double dz = blockPos.getZ() + 0.5 - cameraPos.z;
-        double distanceSquared = dx * dx + dy * dy + dz * dz;
-
-        int thresholdChunks = ModClothConfig.get().modelUpdateDistance;
-        double thresholdBlocks = thresholdChunks * 16.0;
-        double thresholdSquared = thresholdBlocks * thresholdBlocks;
-
-        return distanceSquared > thresholdSquared;
-    }
 
     private void renderWorkpiece(
             MachinePressBlockEntity blockEntity,
@@ -244,11 +269,18 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
         }
         try {
             BakedModel headModel = model.getPart(HEAD_PART);
+            instancedHead = null;
             if (headModel != null) {
                 var headData = ObjModelVboBuilder.buildSinglePart(headModel, HEAD_PART);
                 if (headData != null) {
                     var headQuads = GlobalMeshCache.getOrCompile("press_head", headModel);
-                    instancedHead = new InstancedStaticPartRenderer(headData, headQuads);
+                    InstancedStaticPartRenderer candidate = new InstancedStaticPartRenderer(headData, headQuads);
+                    if (candidate.isInitialized()) {
+                        instancedHead = candidate;
+                    } else {
+                        MainRegistry.LOGGER.warn("MachinePressRenderer: instancedHead couldn't initialize, using fallback");
+                        candidate.cleanup();
+                    }
                 }
             }
         } catch (Exception e) {
@@ -259,8 +291,8 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
         }
     }
 
-    public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
-        if (instancedHead != null) instancedHead.flush(event);
+    public static void flushInstancedBatches(org.joml.Matrix4f projectionMatrix) {
+        if (instancedHead != null) instancedHead.flush(projectionMatrix);
     }
 
     public static void clearCaches() {

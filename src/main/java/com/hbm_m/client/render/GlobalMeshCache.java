@@ -1,5 +1,10 @@
 package com.hbm_m.client.render;
 
+//? if fabric {
+
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+//?}
 import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -19,10 +24,15 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
-import net.minecraftforge.api.distmarker.Dist;
+//? if forge {
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-
-@OnlyIn(Dist.CLIENT)
+*///?}
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
 public class GlobalMeshCache {
 
     private static final int MAX_CACHE_SIZE = 256;
@@ -151,7 +161,11 @@ public class GlobalMeshCache {
         int neutralLight = 0;
 
         for (BakedQuad quad : quads) {
-            builder.putBulkData(neutralPose, quad, r, g, b, a, neutralLight, OverlayTexture.NO_OVERLAY, false);
+            //? if forge {
+            /*builder.putBulkData(neutralPose, quad, r, g, b, a, neutralLight, OverlayTexture.NO_OVERLAY, false);
+            *///?} else {
+            builder.putBulkData(neutralPose, quad, r, g, b, neutralLight, OverlayTexture.NO_OVERLAY);
+            //?}
         }
 
         BufferBuilder.RenderedBuffer renderedBuffer = builder.end();

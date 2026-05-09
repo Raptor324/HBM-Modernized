@@ -28,9 +28,24 @@ import net.minecraft.world.phys.Vec3;
  */
 public class NukeExplosionRings extends ParticleNT {
 
-    private static final ResourceLocation TEXTURE_FLARE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/nuke_explosion_flare.png");
-    private static final ResourceLocation TEXTURE_FIRE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/nuke_explosion.png");
-    private static final ResourceLocation TEXTURE_SMOKE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/nuke_explosion_smoke.png");
+    //? if fabric && < 1.21.1 {
+    private static final ResourceLocation TEXTURE_FLARE = new ResourceLocation(RefStrings.MODID, "textures/particle/nuke_explosion_flare.png");
+    //?} else {
+        /*private static final ResourceLocation TEXTURE_FLARE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/nuke_explosion_flare.png");
+    *///?}
+
+    //? if fabric && < 1.21.1 {
+    private static final ResourceLocation TEXTURE_FIRE = new ResourceLocation(RefStrings.MODID, "textures/particle/nuke_explosion.png");
+    //?} else {
+        /*private static final ResourceLocation TEXTURE_FIRE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/nuke_explosion.png");
+    *///?}
+
+    //? if fabric && < 1.21.1 {
+    private static final ResourceLocation TEXTURE_SMOKE = new ResourceLocation(RefStrings.MODID, "textures/particle/nuke_explosion_smoke.png");
+    //?} else {
+        /*private static final ResourceLocation TEXTURE_SMOKE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/nuke_explosion_smoke.png");
+    *///?}
+
 
     private static final int MAX_SUB_PARTICLES = 1_500;
     private static final int FLARE_LIFETIME_MUL = 4;

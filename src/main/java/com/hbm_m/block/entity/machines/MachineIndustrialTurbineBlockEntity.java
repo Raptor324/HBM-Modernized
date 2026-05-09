@@ -3,12 +3,10 @@ package com.hbm_m.block.entity.machines;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
-import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -22,10 +20,20 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.Capability;
+//? if forge {
+/*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+*///?}
+
+//? if fabric {
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.storage.base.SingleSlotStorage;
+import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
+import net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant;
+//?}
 
 /**
  * Industrial Turbine BlockEntity - converts steam to energy (HE).
@@ -62,8 +70,15 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity 
     private final FluidTank steamTank;
     private final FluidTank spentSteamTank;
 
-    private final LazyOptional<IFluidHandler> lazySteamHandler;
+    //? if forge {
+    /*private final LazyOptional<IFluidHandler> lazySteamHandler;
     private final LazyOptional<IFluidHandler> lazySpentHandler;
+    *///?}
+
+    //? if fabric {
+    private final Storage<FluidVariant> steamStorage;
+    private final Storage<FluidVariant> spentStorage;
+    //?}
 
     private boolean isActive = false;
     private float anim = 0.0F;
@@ -100,8 +115,14 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity 
         this.steamTank = new FluidTank(STEAM_CAPACITY);
         this.spentSteamTank = new FluidTank(ModFluids.SPENTSTEAM.getSource(), SPENT_STEAM_CAPACITY);
 
-        this.lazySteamHandler = steamTank.getCapability();
-        this.lazySpentHandler = spentSteamTank.getCapability();
+        //? if forge {
+        /*this.lazySteamHandler = LazyOptional.empty();
+        this.lazySpentHandler = LazyOptional.empty();
+        *///?}
+        //? if fabric {
+        this.steamStorage = new TankStorage(steamTank, true, false);
+        this.spentStorage = new TankStorage(spentSteamTank, false, true);
+        //?}
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineIndustrialTurbineBlockEntity be) {
@@ -245,14 +266,14 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_STEAM_IN || slot == SLOT_SPENT_IN) {
-            return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
+            //? if forge {
+            /*return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
+            *///?}
+            //? if fabric {
+            return net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage.ITEM.find(stack, null) != null;
+            //?}
         }
         return false;
-    }
-
-    @Override
-    protected void setupFluidCapability() {
-        // Handled via custom FluidTank wrappers
     }
 
     @Nullable
@@ -304,27 +325,116 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity 
 
     // --- Capabilities ---
 
-    @Override
+    //? if forge {
+    /*@Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            // Input steam from the front/sides, extract spent from back
-            if (side == null) return lazySteamHandler.cast();
-            // Default to steam input
+            // UP = spent output, остальное = steam input
+            if (side == Direction.UP) return lazySpentHandler.cast();
             return lazySteamHandler.cast();
         }
         return super.getCapability(cap, side);
     }
 
     @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
+    protected void setupFluidCapability() {
+        // Forge-side wrappers currently отсутствуют в com.hbm_m.inventory.fluid.tank.FluidTank (Forge branch stubbed).
+        // Если понадобится, можно восстановить ForgeFluidHandlerWrapper в FluidTank и вернуть getCapability().
     }
 
     @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        lazySteamHandler.invalidate();
+        lazySpentHandler.invalidate();
+    }
+    *///?}
+
+    //? if fabric {
+    @Nullable
+    public Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
+        // UP: spent out, иначе steam in
+        if (side == Direction.UP) return spentStorage;
+        return steamStorage;
+    }
+    //?}
+
+
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         return new net.minecraft.world.phys.AABB(
                 worldPosition.offset(-2, -1, -4),
                 worldPosition.offset(3, 4, 8)
         );
     }
+
+    //? if fabric {
+    @SuppressWarnings("UnstableApiUsage")
+    private static final class TankStorage extends SnapshotParticipant<TankStorage.Snapshot>
+            implements SingleSlotStorage<FluidVariant> {
+
+        private static final long DROPLETS_PER_MB = 81L;
+
+        private final FluidTank tank;
+        private final boolean allowInsert;
+        private final boolean allowExtract;
+
+        private TankStorage(FluidTank tank, boolean allowInsert, boolean allowExtract) {
+            this.tank = tank;
+            this.allowInsert = allowInsert;
+            this.allowExtract = allowExtract;
+        }
+
+        @Override
+        public long insert(FluidVariant resource, long maxAmount, TransactionContext transaction) {
+            if (!allowInsert) return 0;
+            if (resource.isBlank() || maxAmount <= 0) return 0;
+
+            long spaceMb = tank.getMaxFill() - tank.getFill();
+            if (spaceMb <= 0) return 0;
+
+            if (tank.getFill() > 0 && tank.getTankType() != resource.getFluid()) {
+                return 0;
+            }
+
+            long toFillMb = Math.min(spaceMb, maxAmount / DROPLETS_PER_MB);
+            if (toFillMb <= 0) return 0;
+
+            updateSnapshots(transaction);
+            if (tank.getTankType() == net.minecraft.world.level.material.Fluids.EMPTY) {
+                tank.setTankType(resource.getFluid());
+            }
+            tank.fill(tank.getFill() + (int) toFillMb);
+            return toFillMb * DROPLETS_PER_MB;
+        }
+
+        @Override
+        public long extract(FluidVariant resource, long maxAmount, TransactionContext transaction) {
+            if (!allowExtract) return 0;
+            if (resource.isBlank() || maxAmount <= 0) return 0;
+            if (tank.getFill() <= 0) return 0;
+            if (tank.getTankType() != resource.getFluid()) return 0;
+
+            long toDrainMb = Math.min(tank.getFill(), (int) (maxAmount / DROPLETS_PER_MB));
+            if (toDrainMb <= 0) return 0;
+
+            updateSnapshots(transaction);
+            tank.fill(tank.getFill() - (int) toDrainMb);
+            return toDrainMb * DROPLETS_PER_MB;
+        }
+
+        @Override public boolean isResourceBlank() { return tank.getFill() <= 0 || tank.getTankType() == net.minecraft.world.level.material.Fluids.EMPTY; }
+        @Override public FluidVariant getResource() { return isResourceBlank() ? FluidVariant.blank() : FluidVariant.of(tank.getTankType()); }
+        @Override public long getAmount() { return (long) tank.getFill() * DROPLETS_PER_MB; }
+        @Override public long getCapacity() { return (long) tank.getMaxFill() * DROPLETS_PER_MB; }
+
+        @Override protected Snapshot createSnapshot() { return new Snapshot(tank.getTankType(), tank.getFill()); }
+        @Override protected void readSnapshot(Snapshot snapshot) {
+            tank.setTankType(snapshot.type);
+            tank.fill(snapshot.amountMb);
+        }
+        @Override protected void onFinalCommit() {}
+
+        private record Snapshot(net.minecraft.world.level.material.Fluid type, int amountMb) {}
+    }
+    //?}
 }

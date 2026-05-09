@@ -1,11 +1,10 @@
 package com.hbm_m.api.fluids.bootstrap;
 
-import com.hbm_m.api.fluids.ModFluids;
+import com.hbm_m.inventory.fluid.FluidType;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.trait.FT_Combustible;
 import com.hbm_m.inventory.fluid.trait.FT_Combustible.FuelGrade;
 import com.hbm_m.inventory.fluid.trait.FT_Flammable;
-import com.hbm_m.inventory.fluid.trait.FluidTraitManager;
-
 import net.minecraft.world.level.material.Fluid;
 
 /**
@@ -29,9 +28,9 @@ public final class ModFluidCalculatedFuel {
     private static void reg(Fluid fluid, double base, double combustMult, FuelGrade grade) {
         long flammable = round((long) base);
         long combustible = round((long) (base * combustMult));
-        FluidTraitManager.addTrait(fluid, new FT_Flammable(flammable));
+        FluidType.addTrait(fluid, new FT_Flammable(flammable));
         if (combustible > 0 && grade != null) {
-            FluidTraitManager.addTrait(fluid, new FT_Combustible(grade, combustible));
+            FluidType.addTrait(fluid, new FT_Combustible(grade, combustible));
         }
     }
 
@@ -84,7 +83,7 @@ public final class ModFluidCalculatedFuel {
         reg(ModFluids.UNSATURATEDS.getSource(), BASELINE / 0.15 * flammabilityHigh * demandHigh * complexityRefinery * complexityCracking, 0, null);
         reg(ModFluids.LPG.getSource(), BASELINE / 0.1 * flammabilityNormal * demandMedium * complexityRefinery * complexityChemplant, 2.5, FuelGrade.HIGH);
 
-        FT_Flammable keroseneFlam = FluidTraitManager.getTrait(ModFluids.KEROSENE.getSource(), FT_Flammable.class);
+        FT_Flammable keroseneFlam = FluidType.getTrait(ModFluids.KEROSENE.getSource(), FT_Flammable.class);
         long keroseneHeat = keroseneFlam != null ? keroseneFlam.getHeatEnergy() : 0L;
         reg(ModFluids.NITAN.getSource(), keroseneHeat * 25L, 2.5, FuelGrade.HIGH);
         reg(ModFluids.BALEFIRE.getSource(), keroseneHeat * 100L, 2.5, FuelGrade.HIGH);
@@ -96,11 +95,11 @@ public final class ModFluidCalculatedFuel {
         reg(ModFluids.XYLENE.getSource(), BASELINE / 0.15 * flammabilityNormal * demandMedium * complexityVacuum * complexityFraction, 2.5D, FuelGrade.HIGH);
         reg(ModFluids.HEATINGOIL_VACUUM.getSource(), BASELINE / 0.24 * flammabilityNormal * demandLow * complexityVacuum * complexityFraction, 1.25D, FuelGrade.LOW);
 
-        FT_Flammable dieselFlam = FluidTraitManager.getTrait(ModFluids.DIESEL.getSource(), FT_Flammable.class);
+        FT_Flammable dieselFlam = FluidType.getTrait(ModFluids.DIESEL.getSource(), FT_Flammable.class);
         long dieselHeat = dieselFlam != null ? dieselFlam.getHeatEnergy() : 0L;
-        FT_Flammable dieselCrackFlam = FluidTraitManager.getTrait(ModFluids.DIESEL_CRACK.getSource(), FT_Flammable.class);
+        FT_Flammable dieselCrackFlam = FluidType.getTrait(ModFluids.DIESEL_CRACK.getSource(), FT_Flammable.class);
         long dieselCrackHeat = dieselCrackFlam != null ? dieselCrackFlam.getHeatEnergy() : 0L;
-        FT_Flammable keroseneFlam2 = FluidTraitManager.getTrait(ModFluids.KEROSENE.getSource(), FT_Flammable.class);
+        FT_Flammable keroseneFlam2 = FluidType.getTrait(ModFluids.KEROSENE.getSource(), FT_Flammable.class);
         long keroseneHeat2 = keroseneFlam2 != null ? keroseneFlam2.getHeatEnergy() : 0L;
 
         reg(ModFluids.DIESEL_REFORM.getSource(), dieselHeat * complexityReform, 2.5D, FuelGrade.HIGH);
@@ -110,7 +109,7 @@ public final class ModFluidCalculatedFuel {
 
         int coalHeat = 400_000;
         reg(ModFluids.COALOIL.getSource(), (coalHeat * (1000 / 100) * flammabilityLow * demandLow * complexityChemplant), 0, null);
-        FT_Flammable coaloilFlam = FluidTraitManager.getTrait(ModFluids.COALOIL.getSource(), FT_Flammable.class);
+        FT_Flammable coaloilFlam = FluidType.getTrait(ModFluids.COALOIL.getSource(), FT_Flammable.class);
         long coaloil = coaloilFlam != null ? coaloilFlam.getHeatEnergy() : 0L;
         reg(ModFluids.COALGAS.getSource(), (coaloil / 0.3 * flammabilityNormal * demandMedium * complexityChemplant * complexityFraction), 1.5, FuelGrade.MEDIUM);
         reg(ModFluids.COALGAS_LEADED.getSource(), (coaloil / 0.3 * flammabilityNormal * demandMedium * complexityChemplant * complexityFraction * complexityLeaded), 1.5, FuelGrade.MEDIUM);

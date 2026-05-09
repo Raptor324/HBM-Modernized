@@ -14,7 +14,6 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.items.wrapper.RecipeWrapper;
 import org.jetbrains.annotations.Nullable;
 
 public class ShredderRecipe implements Recipe<Container> {
@@ -82,7 +81,12 @@ public class ShredderRecipe implements Recipe<Container> {
 
     public static class Serializer implements RecipeSerializer<ShredderRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredding");
+        //? if fabric && < 1.21.1 {
+        public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "shredding");
+        //?} else {
+                /*public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredding");
+        *///?}
+
 
         @Override
         public ShredderRecipe fromJson(ResourceLocation recipeId, JsonObject json) {

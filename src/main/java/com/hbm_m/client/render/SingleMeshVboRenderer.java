@@ -1,5 +1,10 @@
 package com.hbm_m.client.render;
 
+
+//? if forge {
+/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+*///?}
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.List;
@@ -21,6 +26,10 @@ import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
+//? if fabric {
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+//?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
@@ -33,15 +42,34 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-@OnlyIn(Dist.CLIENT)
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
 public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
 
     /** Optional companion mesh in Iris-extended {@code NEW_ENTITY} format, lazy-built. */
     @Nullable
     private IrisCompanionMesh irisCompanion;
     private boolean irisCompanionAttempted;
+
+    /**
+     * Thread-local fade alpha for distance-based dissolve. Set by BER callers
+     * via {@link #setFadeAlpha(float)} before invoking {@link #render}; the
+     * value is uploaded to the {@code FadeAlpha} shader uniform and also applied
+     * to the Iris putBulkData fallback path via vertex color modulation.
+     * Defaults to 1.0 (fully opaque) and is reset after each render call.
+     */
+    private static final ThreadLocal<Float> currentFadeAlpha = ThreadLocal.withInitial(() -> 1.0f);
+
+    public static void setFadeAlpha(float alpha) {
+        currentFadeAlpha.set(alpha);
+    }
+
+    public static float getFadeAlpha() {
+        return currentFadeAlpha.get();
+    }
 
     // Scratch for 8-corner trilinear uniform upload in the non-instanced path.
     // tmpLocalPose holds the per-BE transform stripped of both the camera view
@@ -135,8 +163,17 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             return true;
         }
 
-        AABB renderBounds = blockEntity.getRenderBoundingBox();
+        AABB renderBounds = worldBoundsFromMesh(blockEntity);
         return OcclusionCullingHelper.shouldRender(blockPos, blockEntity.getLevel(), renderBounds);
+    }
+
+    /** Без Forge {@code getRenderBoundingBox}: мирный AABB из позиции BE и object-space {@link #objBbox}. */
+    private AABB worldBoundsFromMesh(BlockEntity blockEntity) {
+        BlockPos pos = blockEntity.getBlockPos();
+        return new AABB(
+                pos.getX() + objBbox[0], pos.getY() + objBbox[1], pos.getZ() + objBbox[2],
+                pos.getX() + objBbox[3], pos.getY() + objBbox[4], pos.getZ() + objBbox[5]
+        );
     }
 
     @Nullable
@@ -235,10 +272,15 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
 
     private void renderToBufferSource(PoseStack poseStack, int packedLight, List<BakedQuad> quads, MultiBufferSource bufferSource) {
         if (quads == null || quads.isEmpty() || bufferSource == null) return;
-        var consumer = bufferSource.getBuffer(RenderType.solid());
+        float fade = currentFadeAlpha.get();
+        var consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.cutout());
         var pose = poseStack.last();
         for (BakedQuad quad : quads) {
-            consumer.putBulkData(pose, quad, 1f, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY, false);
+            //? if forge {
+            /*consumer.putBulkData(pose, quad, fade, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
+            *///?} else {
+            consumer.putBulkData(pose, quad, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY);
+            //?}
         }
     }
 
@@ -253,7 +295,14 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
 
     public void render(PoseStack poseStack, int packedLight, BlockPos blockPos,
                        @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
-        if (!shouldRenderWithCulling(blockPos, blockEntity)) return;
+        // Per-part culling removed: all current call sites (multiblock BERs)
+        // perform a single per-BlockEntity OcclusionCullingHelper.shouldRender()
+        // check with the full multiblock AABB BEFORE invoking render() on each
+        // part. The per-mesh AABB computed by worldBoundsFromMesh() is much
+        // smaller and does not cover the structure's dummy blocks, so the
+        // structure's own solid blocks register as occluders and cause the
+        // model to flicker when the camera moves. This matches the same fix
+        // already applied in InstancedStaticPartRenderer.addInstance().
 
         if (ShaderCompatibilityDetector.isExternalShaderActive()) {
             // 1) Try the Iris ExtendedShader path with our companion mesh - gives correct G-buffer
@@ -419,18 +468,30 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 fogColorUniform.set(fogColor[0], fogColor[1], fogColor[2], fogColor[3]);
             }
 
+            var fadeAlphaUniform = shader.getUniform("FadeAlpha");
+            if (fadeAlphaUniform != null) fadeAlphaUniform.set(currentFadeAlpha.get());
+
             // Must come BEFORE apply() - apply() reads samplerMap populated here and
             // does glUseProgram + glUniform1i + glBindTexture in one shot.
             prepareBlockLitSamplers(shader);
             shader.apply();
 
+            float fade = currentFadeAlpha.get();
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
             RenderSystem.depthMask(true);
             RenderSystem.disableCull();
+            if (fade < 0.99f) {
+                RenderSystem.enableBlend();
+                RenderSystem.defaultBlendFunc();
+            }
 
             GL30.glBindVertexArray(vaoId);
             GL11.glDrawElements(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0);
+
+            if (fade < 0.99f) {
+                RenderSystem.disableBlend();
+            }
 
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during VBO render", e);

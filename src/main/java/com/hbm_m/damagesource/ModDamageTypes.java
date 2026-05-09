@@ -14,7 +14,12 @@ public class ModDamageTypes {
     // Helper-метод для краткости
     private static ResourceKey<DamageType> createKey(String name) {
 
-        return ResourceKey.create(Registries.DAMAGE_TYPE, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, name));
+        //? if fabric && < 1.21.1 {
+        return ResourceKey.create(Registries.DAMAGE_TYPE, new ResourceLocation(RefStrings.MODID, name));
+        //?} else {
+                /*return ResourceKey.create(Registries.DAMAGE_TYPE, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, name));
+        *///?}
+
     }
     
     public static final ResourceKey<DamageType> BLAST = createKey("blast");

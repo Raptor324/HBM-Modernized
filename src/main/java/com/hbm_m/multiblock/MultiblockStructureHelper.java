@@ -41,7 +41,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.PacketDistributor;
 
 public class MultiblockStructureHelper {
     
@@ -70,8 +69,10 @@ public class MultiblockStructureHelper {
     private final Map<BlockPos, Set<Direction>> fluidLocalDirections = new HashMap<>();
     /** Локальные стороны подключения энергии на самом контроллере (если заданы). Пусто = все стороны. */
     private Set<Direction> controllerEnergyLocalDirections = Collections.emptySet();
-    /** Локальные стороны подключения жидкостей на самом контроллере (если заданы). Пусто = все стороны. */
+    /** Локальные стороны подключения жидкостей на самом контроллере. Если {@link #controllerFluidSidesFromStructure} — множество из tuple (пусто = ни одной стороны); иначе не используется для apply (устар.). */
     private Set<Direction> controllerFluidLocalDirections = Collections.emptySet();
+    /** В fluidSideMap указан символ контроллера — {@link #applyControllerSideConfig} вызывает {@link IMultiblockSidedIO#setAllowedFluidSidesFromMultiblockStructure}. */
+    private boolean controllerFluidSidesFromStructure = false;
     private final Map<BlockPos, VoxelShape> partShapes;
     private final Map<BlockPos, VoxelShape> collisionShapes;
     // Позиция контроллера в структуре (относительно центра)
@@ -405,6 +406,7 @@ public class MultiblockStructureHelper {
             }
             if (fluidSideMap != null && fluidSideMap.containsKey(controllerSymbol)) {
                 helper.controllerFluidLocalDirections = fluidTupleToLocalSet(controllerSymbol, fluidSideMap.get(controllerSymbol));
+                helper.controllerFluidSidesFromStructure = true;
             }
         }
         return helper;
@@ -643,7 +645,7 @@ public class MultiblockStructureHelper {
             if (player instanceof ServerPlayer serverPlayer) {
                 // Проверяем, включена ли опция в конфиге, перед отправкой пакета
                 if (ModClothConfig.get().obstructionHighlight.enableObstructionHighlight) {
-                    ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new HighlightBlocksPacket(obstructions));
+                    // TODO(multiloader): re-implement highlight packet sending on Fabric.
                 }
             }
             player.displayClientMessage(Component.translatable("chat.hbm_m.structure.obstructed"), true);
@@ -665,6 +667,7 @@ public class MultiblockStructureHelper {
 
         List<BlockPos> energyConnectorPositions = new ArrayList<>();
         List<BlockPos> allPlacedPositions = new ArrayList<>();
+        var energyManager = com.hbm_m.api.energy.EnergyNetworkManager.get((net.minecraft.server.level.ServerLevel) level);
         
         for (Map.Entry<BlockPos, Supplier<BlockState>> entry : structureMap.entrySet()) {
             BlockPos gridPos = entry.getKey();
@@ -730,6 +733,7 @@ public class MultiblockStructureHelper {
                     }
                     partBe.setAllowedEnergySides(worldEnergy);
                     energyConnectorPositions.add(worldPos);
+                    energyManager.addNode(worldPos);
                 }
 
                 // FLUID_CONNECTOR и UNIVERSAL_CONNECTOR - стороны из fluidSideMap или все шесть
@@ -797,11 +801,11 @@ public class MultiblockStructureHelper {
         }
 
         EnumSet<Direction> worldFluid = EnumSet.noneOf(Direction.class);
-        if (controllerFluidLocalDirections != null && !controllerFluidLocalDirections.isEmpty()) {
+        if (controllerFluidSidesFromStructure) {
             for (Direction localDir : controllerFluidLocalDirections) {
                 worldFluid.add(rotateLocalDirectionToWorld(localDir, facing));
             }
-            sided.setAllowedFluidSides(worldFluid);
+            sided.setAllowedFluidSidesFromMultiblockStructure(worldFluid);
         }
     }
     
@@ -825,9 +829,17 @@ public class MultiblockStructureHelper {
         if (level.isClientSide || IS_DESTROYING.get()) return;
         IS_DESTROYING.set(true);
         try {
+            var energyManager = com.hbm_m.api.energy.EnergyNetworkManager.get((net.minecraft.server.level.ServerLevel) level);
             for (BlockPos gridPos : structureMap.keySet()) {
                 BlockPos worldPos = getRotatedPos(controllerPos, gridPos, facing);
                 if (level.getBlockState(worldPos).getBlock() instanceof UniversalMachinePartBlock) {
+                    BlockEntity be = level.getBlockEntity(worldPos);
+                    if (be instanceof IMultiblockPart part) {
+                        PartRole role = part.getPartRole();
+                        if (role.canReceiveEnergy() || role.canSendEnergy()) {
+                            energyManager.removeNode(worldPos);
+                        }
+                    }
                     level.setBlock(worldPos, Blocks.AIR.defaultBlockState(), 3);
                 }
             }

@@ -145,12 +145,12 @@ public class NukeMk5ChunkEater implements IExplosionRay {
     public static float masqueradeResistance(Level level, BlockState state, BlockPos pos) {
         Block block = state.getBlock();
         if (block == Blocks.SANDSTONE) {
-            return Blocks.STONE.defaultBlockState().getExplosionResistance(level, pos, null);
+            return Blocks.STONE.getExplosionResistance();
         }
         if (block == Blocks.OBSIDIAN) {
-            return Blocks.STONE.defaultBlockState().getExplosionResistance(level, pos, null) * 3;
+            return Blocks.STONE.getExplosionResistance() * 3;
         }
-        return state.getExplosionResistance(level, pos, null);
+        return state.getBlock().getExplosionResistance();
     }
 
     private class CoordComparator implements Comparator<ChunkPos> {

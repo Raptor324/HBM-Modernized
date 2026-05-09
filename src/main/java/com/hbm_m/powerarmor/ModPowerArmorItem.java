@@ -18,10 +18,12 @@ import com.hbm_m.powerarmor.layer.PowerArmorEmptyModel;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.sound.ModSounds;
+import com.hbm_m.platform.PlayerPersistentData;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -35,13 +37,12 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+//? if forge {
+/*import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.minecraftforge.event.entity.living.LivingEquipmentChangeEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+*///?}
 
 public class ModPowerArmorItem extends ModArmorFSBPowered {
     private static final Random RANDOM = new Random();
@@ -50,7 +51,7 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
     private final PowerArmorSpecs specs;
 
     public ModPowerArmorItem(ArmorMaterial material, Type type, Properties properties, PowerArmorSpecs specs) {
-        // NOTE: the texture passed to the base class is not used for rendering because we override getArmorTexture()
+        // NOTE: the texture passed to the base class is not used on Forge because we override getArmorTexture()
         // below. Keep this value generic to avoid hard-coding a specific armor set (e.g. T51) into the base class.
         super(material, type, properties, MainRegistry.MOD_ID + ":textures/block/armor/power_armor.png",
                 specs.capacity, specs.maxReceive, specs.consumption, specs.drain);
@@ -89,12 +90,14 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
         return specs;
     }
 
-    // ПУТЬ К ТЕКСТУРЕ
-    @Override
+    // ПУТЬ К ТЕКСТУРЕ (Forge: расширение брони; на Fabric/NeoForge рендер через свои хуки)
+    //? if forge {
+    /*@Override
     public String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
         String tex = resolveArmorTextureName(stack, slot);
         return MainRegistry.MOD_ID + ":textures/block/armor/" + tex + ".png";
     }
+    *///?}
 
     /**
      * Resolves the armor texture name (without extension) based on the item's registry id.
@@ -104,7 +107,7 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
      * - hbm_m:ajr_chestplate -> ajr_helmet / ajr_chest / ajr_leg (depending on slot)
      */
     private static String resolveArmorTextureName(ItemStack stack, EquipmentSlot slot) {
-        ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
+        ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
         String path = id != null ? id.getPath() : "";
 
         String prefix = stripKnownArmorSuffix(path);
@@ -128,13 +131,14 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
         return itemPath;
     }
 
-    @Override
+    //? if forge {
+    /*@Override
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
         consumer.accept(new IClientItemExtensions() {
             private PowerArmorEmptyModel model;
 
             @Override
-            public @NotNull HumanoidModel<?> getHumanoidArmorModel(LivingEntity livingEntity, ItemStack itemStack, 
+            public @NotNull HumanoidModel<?> getHumanoidArmorModel(LivingEntity livingEntity, ItemStack itemStack,
                     EquipmentSlot equipmentSlot, HumanoidModel<?> original) {
                 if (this.model == null) {
                     ModelPart layer = Minecraft.getInstance().getEntityModels().bakeLayer(ModModelLayers.POWER_ARMOR);
@@ -143,19 +147,13 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
 
                 this.model.setAllVisible(false);
                 switch (equipmentSlot) {
-                    case HEAD -> {
-                        this.model.head.visible = true;
-                    }
+                    case HEAD -> this.model.head.visible = true;
                     case CHEST -> {
                         this.model.body.visible = true;
                         this.model.rightArm.visible = true;
                         this.model.leftArm.visible = true;
                     }
-                    case LEGS -> {
-                        this.model.rightLeg.visible = true;
-                        this.model.leftLeg.visible = true;
-                    }
-                    case FEET -> {
+                    case LEGS, FEET -> {
                         this.model.rightLeg.visible = true;
                         this.model.leftLeg.visible = true;
                     }
@@ -172,6 +170,7 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
             }
         });
     }
+    *///?}
 
     private void copyRotations(HumanoidModel<?> source, HumanoidModel<?> target) {
         target.head.copyFrom(source.head);
@@ -221,25 +220,83 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
         }
     }
 
-    @Override
+    //? if forge {
+    /*@Override
     public void onArmorTick(ItemStack stack, Level world, Player player) {
         if (world.isClientSide()) return; // Клиентские эффекты обрабатываются отдельно
-        
-        // Применяем эффекты ТОЛЬКО для нагрудника (избегаем дублирования от 4 предметов)
+
         if (this.getType() == Type.CHESTPLATE && hasFSBArmor(player)) {
             long energy = getCharge(stack);
-            
+
             if (energy > 0) {
                 applyPassiveEffects(player, specs.passiveEffects);
             } else {
                 removePassiveEffects(player, specs.passiveEffects);
             }
-            
+
             handlePowerArmorGeiger(stack, world, player);
+            handleHardLandingNoFallDamage(world, player);
         }
-        
-        // Дрен энергии обрабатывается в родительском классе
+
         super.onArmorTick(stack, world, player);
+    }
+    *///?} else {
+    @Override
+    public void inventoryTick(ItemStack stack, Level world, Entity entity, int slotId, boolean selected) {
+        super.inventoryTick(stack, world, entity, slotId, selected);
+        if (world.isClientSide()) return;
+        if (!(entity instanceof Player player)) return;
+        if (this.getType() != Type.CHESTPLATE || player.getItemBySlot(EquipmentSlot.CHEST) != stack) return;
+        if (!hasFSBArmor(player)) return;
+
+        long energy = getCharge(stack);
+        if (energy > 0) {
+            applyPassiveEffects(player, specs.passiveEffects);
+        } else {
+            removePassiveEffects(player, specs.passiveEffects);
+        }
+        handlePowerArmorGeiger(stack, world, player);
+        handleHardLandingNoFallDamage(world, player);
+    }
+    //?}
+
+    private static final String TAG_HL_MAX_FALL = "hbm_hl_max_fall";
+    private static final String TAG_HL_LANDED = "hbm_hl_landed";
+
+    /**
+     * HardLanding perk: полностью убирает урон от падения.
+     *
+     * Без миксинов/Forge-ивентов: сохраняем максимум fallDistance для визуальных эффектов,
+     * но обнуляем {@link Player#fallDistance} каждый тик, чтобы ванильный урон всегда был 0.
+     */
+    private void handleHardLandingNoFallDamage(Level level, Player player) {
+        if (!specs.hasHardLanding) return;
+        if (player.isFallFlying()) return;
+        if (player.isSpectator()) return;
+
+        CompoundTag data = PlayerPersistentData.get(player);
+
+        if (!player.onGround()) {
+            float cur = player.fallDistance;
+            float prevMax = data.getFloat(TAG_HL_MAX_FALL);
+            if (cur > prevMax) {
+                data.putFloat(TAG_HL_MAX_FALL, cur);
+            }
+
+            // Ключевая строка: не даём ваниле насчитать падение.
+            player.fallDistance = 0.0F;
+            data.putBoolean(TAG_HL_LANDED, false);
+            return;
+        }
+
+        float maxFall = data.getFloat(TAG_HL_MAX_FALL);
+        if (maxFall > 0.0F && !data.getBoolean(TAG_HL_LANDED)) {
+            // Совместимость с существующими хендлерами/звуками.
+            data.putBoolean("hbm_hard_landing_occured", maxFall > 1.5F);
+            data.putBoolean(TAG_HL_LANDED, true);
+        }
+
+        data.putFloat(TAG_HL_MAX_FALL, 0.0F);
     }
 
     private void applyPassiveEffects(Player player, List<MobEffectInstance> effects) {
@@ -268,12 +325,10 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
         }
     }
 
-    @Override
     public boolean isDamageable(ItemStack stack) {
         return false; // Силовая броня не изнашивается ванильным способом
     }
 
-    @Override
     public int getMaxDamage(ItemStack stack) {
         return 0; // Нулевая прочность = отключение ванильной системы
     }
@@ -286,7 +341,7 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
         if (hasExternalGeigerDeviceCached(player)) return;
         
         // Таймер на игроке (НЕ на классе предмета!)
-        CompoundTag data = player.getPersistentData();
+        CompoundTag data = PlayerPersistentData.get(player);
         int counter = data.getInt("hbm_power_armor_geiger_tick");
         counter++;
         
@@ -302,7 +357,7 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
     }
 
     private boolean hasExternalGeigerDeviceCached(Player player) {
-        CompoundTag data = player.getPersistentData();
+        CompoundTag data = PlayerPersistentData.get(player);
         long currentTick = player.level().getGameTime();
         long lastCheckTick = data.getLong(TAG_GEIGER_CHECK_TICK);
         
@@ -357,22 +412,23 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
             soundIndex = 1; // Rare background click
         }
         
-        Optional<RegistryObject<SoundEvent>> soundRegistryObject = switch (soundIndex) {
-            case 1 -> Optional.of(ModSounds.GEIGER_1);
-            case 2 -> Optional.of(ModSounds.GEIGER_2);
-            case 3 -> Optional.of(ModSounds.GEIGER_3);
-            case 4 -> Optional.of(ModSounds.GEIGER_4);
-            case 5 -> Optional.of(ModSounds.GEIGER_5);
-            case 6 -> Optional.of(ModSounds.GEIGER_6);
+        Optional<SoundEvent> sound = switch (soundIndex) {
+            case 1 -> Optional.of(ModSounds.GEIGER_1.get());
+            case 2 -> Optional.of(ModSounds.GEIGER_2.get());
+            case 3 -> Optional.of(ModSounds.GEIGER_3.get());
+            case 4 -> Optional.of(ModSounds.GEIGER_4.get());
+            case 5 -> Optional.of(ModSounds.GEIGER_5.get());
+            case 6 -> Optional.of(ModSounds.GEIGER_6.get());
             default -> Optional.empty();
         };
-        soundRegistryObject.ifPresent(regObject -> {
-            SoundEvent soundEvent = regObject.get();
-            if (soundEvent != null) {
-                ResourceLocation soundLocation = soundEvent.getLocation();
-                ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), 
-                        new GeigerSoundPacket(soundLocation, 0.4F, 1.0F));
-            }
+        sound.ifPresent(soundEvent -> {
+            ResourceLocation soundLocation = soundEvent.getLocation();
+            com.hbm_m.network.sounds.GeigerSoundPacket.sendTo(
+                    (ServerPlayer) player,
+                    soundLocation,
+                    0.4F,
+                    1.0F
+            );
         });
     }
 
@@ -430,18 +486,20 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
         return specs.resRadiation;
     }
 
-    @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID)
+    //? if forge {
+    /*@Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID)
     public static class PowerArmorSoundHandler {
         @SubscribeEvent
         public static void onEquipmentChange(LivingEquipmentChangeEvent event) {
             if (event.getEntity().level().isClientSide) return; // Только сервер
             if (event.getFrom().getItem() == event.getTo().getItem()) return; // Игнорируем смену NBT
-            
+
             // Если надели или сняли нашу броню
-            if (event.getTo().getItem() instanceof ModPowerArmorItem || 
+            if (event.getTo().getItem() instanceof ModPowerArmorItem ||
                 event.getFrom().getItem() instanceof ModPowerArmorItem) {
                 event.getEntity().playSound(SoundEvents.ARMOR_EQUIP_IRON, 1.0F, 1.0F);
             }
         }
     }
+    *///?}
 }

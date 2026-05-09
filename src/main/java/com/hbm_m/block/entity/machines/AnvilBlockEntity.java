@@ -1,14 +1,23 @@
 package com.hbm_m.block.entity.machines;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.anvils.AnvilBlock;
 import com.hbm_m.block.machines.anvils.AnvilTier;
-import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.inventory.menu.AnvilMenu;
 import com.hbm_m.item.fekal_electric.ModBatteryItem;
+import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.recipe.AnvilRecipe;
 import com.hbm_m.recipe.AnvilRecipeManager;
+
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
@@ -16,6 +25,7 @@ import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
@@ -27,25 +37,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemStackHandler;
-import net.minecraftforge.network.NetworkHooks;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Consumer;
-
-import net.minecraft.util.RandomSource;
 
 public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
 
-    private final ItemStackHandler itemHandler = new ItemStackHandler(3) {
+    private final ModItemStackHandler itemHandler = new ModItemStackHandler(3) {
         @Override
         protected void onContentsChanged(int slot) {
             // Если изменились входные слоты, нужно пересчитать выход
@@ -60,8 +55,6 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
             return slot != 2;
         }
     };    
-
-    private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
     
     @Nullable
     private ResourceLocation selectedRecipeId;
@@ -70,25 +63,7 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
         super(ModBlockEntities.ANVIL_BE.get(), pos, state);
     }
 
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.ITEM_HANDLER) {
-            return lazyItemHandler.cast();
-        }
-        return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void onLoad() {
-        super.onLoad();
-        lazyItemHandler = LazyOptional.of(() -> itemHandler);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        lazyItemHandler.invalidate();
-    }
+    // Forge item handler capabilities removed for Fabric compilation.
 
     @Override
     protected void saveAdditional(CompoundTag tag) {
@@ -107,7 +82,7 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
         super.load(tag);
         itemHandler.deserializeNBT(tag.getCompound("inventory"));
         selectedRecipeId = tag.contains("SelectedRecipe") ? 
-            ResourceLocation.parse(tag.getString("SelectedRecipe")) : null;
+            ResourceLocation.tryParse(tag.getString("SelectedRecipe")) : null;
     }
 
     public void drops() {
@@ -130,10 +105,10 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     public void openGui(ServerPlayer player) {
-        NetworkHooks.openScreen(player, this, this.worldPosition);
+        player.openMenu(this);
     }
 
-    public ItemStackHandler getItemHandler() {
+    public ModItemStackHandler getItemHandler() {
         return itemHandler;
     }
 
@@ -811,9 +786,11 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
-    @Override
+    //? if forge {
+    /*@Override
     public void handleUpdateTag(CompoundTag tag) {
         load(tag);
     }
+    *///?}
 }
 

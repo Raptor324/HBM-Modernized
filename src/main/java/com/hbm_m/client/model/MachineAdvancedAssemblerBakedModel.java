@@ -17,7 +17,9 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.client.model.data.ModelData;
+//? if forge {
+/*import net.minecraftforge.client.model.data.ModelData;
+*///?}
 
 public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
@@ -67,10 +69,55 @@ public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedMo
 
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
-        return getQuads(state, side, rand, ModelData.EMPTY, null);
+        //? if forge {
+        /*return getQuads(state, side, rand, ModelData.EMPTY, null);
+        *///?}
+
+        //? if fabric {
+        if (state == null) {
+            return getItemQuads(side, rand);
+        }
+        if (ShaderCompatibilityDetector.useVboGeometry()) {
+            return List.of();
+        }
+
+        List<BakedQuad> result = new ArrayList<>();
+        int rotationY = getRotationYForFacing(state);
+
+        BakedModel basePart = parts.get("Base");
+        if (basePart != null) {
+            result.addAll(ModelHelper.transformQuadsByFacing(
+                basePart.getQuads(state, side, rand), rotationY));
+        }
+
+        if (state.hasProperty(MachineAdvancedAssemblerBlock.FRAME)
+            && state.getValue(MachineAdvancedAssemblerBlock.FRAME)) {
+            BakedModel framePart = parts.get("Frame");
+            if (framePart != null) {
+                result.addAll(ModelHelper.transformQuadsByFacing(
+                    framePart.getQuads(state, side, rand), rotationY));
+            }
+        }
+
+        boolean renderActive = state.hasProperty(MachineAdvancedAssemblerBlock.RENDER_ACTIVE)
+            && state.getValue(MachineAdvancedAssemblerBlock.RENDER_ACTIVE);
+        if (!renderActive) {
+            String[] animatedParts = {"Ring", "ArmLower1", "ArmUpper1", "Head1", "Spike1",
+                "ArmLower2", "ArmUpper2", "Head2", "Spike2"};
+            for (String partName : animatedParts) {
+                BakedModel part = parts.get(partName);
+                if (part != null) {
+                    result.addAll(ModelHelper.transformQuadsByFacing(
+                        part.getQuads(state, side, rand), rotationY));
+                }
+            }
+        }
+        return result;
+        //?}
     }
 
-    @Override
+    //? if forge {
+    /*@Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                      RandomSource rand, ModelData modelData, @Nullable net.minecraft.client.renderer.RenderType renderType) {
         // ITEM RENDER (Инвентарь/Рука)
@@ -155,6 +202,37 @@ public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedMo
         }
         this.cachedItemQuads = allQuads;
     }
+    *///?}
+
+    //? if fabric {
+    private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand) {
+        if (!itemQuadsCached) {
+            buildItemQuads(rand);
+            itemQuadsCached = true;
+        }
+        if (side != null) {
+            return cachedItemQuads.stream()
+                .filter(quad -> quad.getDirection() == side)
+                .toList();
+        }
+        return cachedItemQuads;
+    }
+
+    private void buildItemQuads(RandomSource rand) {
+        List<BakedQuad> allQuads = new ArrayList<>();
+        List<String> itemRenderParts = getItemRenderPartNames();
+        for (String partName : itemRenderParts) {
+            BakedModel part = parts.get(partName);
+            if (part != null) {
+                for (Direction dir : Direction.values()) {
+                    allQuads.addAll(part.getQuads(null, dir, rand));
+                }
+                allQuads.addAll(part.getQuads(null, null, rand));
+            }
+        }
+        this.cachedItemQuads = allQuads;
+    }
+    //?}
 
     @Override
     protected List<String> getItemRenderPartNames() {
@@ -172,7 +250,13 @@ public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedMo
 
     @Override
     public TextureAtlasSprite getParticleIcon() {
-        return getParticleIcon(ModelData.EMPTY);
+        //? if forge {
+        /*return getParticleIcon(ModelData.EMPTY);
+        *///?}
+
+        //? if fabric {
+        return super.getParticleIcon();
+        //?}
     }
 
     @Override

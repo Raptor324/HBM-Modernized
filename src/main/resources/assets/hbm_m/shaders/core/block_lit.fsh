@@ -3,6 +3,7 @@
 in vec2 texCoord;
 in vec2 lightmapUV;
 in float vertexDistance;
+in float vFadeAlpha;
 
 uniform sampler2D Sampler0;
 uniform sampler2D Sampler2;
@@ -21,12 +22,13 @@ void main() {
     vec3 lit = baseColor.rgb * lm;
     lit *= 0.6;
 
-    if (baseColor.a < 0.1) {
+    float alpha = baseColor.a * vFadeAlpha;
+    if (alpha < 0.01) {
         discard;
     }
 
     float fogFactor = clamp((FogEnd - vertexDistance) / (FogEnd - FogStart), 0.0, 1.0);
     vec3 colorWithFog = mix(FogColor.rgb, lit, fogFactor);
 
-    fragColor = vec4(colorWithFog, baseColor.a);
+    fragColor = vec4(colorWithFog, alpha);
 }

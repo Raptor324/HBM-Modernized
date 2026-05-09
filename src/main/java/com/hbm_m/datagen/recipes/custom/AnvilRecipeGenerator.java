@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
-
-import java.util.function.Consumer;
+//? if forge {
+/*import java.util.function.Consumer;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.machines.anvils.AnvilTier;
@@ -15,7 +15,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.registries.RegistryObject;
+import dev.architectury.registry.registries.RegistrySupplier;
+import dev.architectury.registry.registries.RegistrySupplier;
 
 public final class AnvilRecipeGenerator {
     private AnvilRecipeGenerator() { }
@@ -212,7 +213,7 @@ public final class AnvilRecipeGenerator {
                         .addOutput(stack(ModItems.CANNED_ASBESTOS), 0.5F));
     }
 
-    /**
+    /^*
      * Регистрирует рецепт объединения (Combine Recipe).
      *
      * @param writer      Потребитель рецептов
@@ -222,7 +223,7 @@ public final class AnvilRecipeGenerator {
      * @param inputB      Второй входной слот
      * @param output      Результат
      * @param tier        Минимальный тир наковальни
-     */
+     ^/
     private static void registerCombineRecipe(Consumer<FinishedRecipe> writer, String tierFolder, String name,
                                                 ItemStack inputA, ItemStack inputB, ItemStack output,
                                                 AnvilTier tier) {
@@ -230,9 +231,9 @@ public final class AnvilRecipeGenerator {
         registerCombineRecipe(writer, tierFolder, name, inputA, inputB, output, tier, builder -> {});
     }
 
-    /**
+    /^*
      * Регистрирует рецепт объединения с дополнительными настройками (например, сохранение предметов).
-     */
+     ^/
     private static void registerCombineRecipe(Consumer<FinishedRecipe> writer, String tierFolder, String name,
                                                 ItemStack inputA, ItemStack inputB, ItemStack output,
                                                 AnvilTier tier, Consumer<AnvilRecipeBuilder> settings) {
@@ -268,13 +269,26 @@ public final class AnvilRecipeGenerator {
     }
 
     private static ResourceLocation anvilId(String tierFolder, String category, String name) {
-        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID,
+        //? if fabric && < 1.21.1 {
+        return new ResourceLocation(RefStrings.MODID,
                 "anvil/" + tierFolder + "/" + category + "_" + name);
+        //?} else {
+                /^return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID,
+                "anvil/" + tierFolder + "/" + category + "_" + name);
+        ^///?}
+
     }
 
     private static ItemStack stack(Object obj, int count) {
-        if (obj instanceof RegistryObject<?>) {
-            Object val = ((RegistryObject<?>) obj).get();
+        if (obj instanceof RegistrySupplier<?>) {
+            Object val = ((RegistrySupplier<?>) obj).get();
+            if (val instanceof Item) {
+                return new ItemStack((Item) val, count);
+            } else if (val instanceof Block) {
+                return new ItemStack(((Block) val).asItem(), count);
+            }
+        } else if (obj instanceof RegistrySupplier<?>) {
+            Object val = ((RegistrySupplier<?>) obj).get();
             if (val instanceof Item) {
                 return new ItemStack((Item) val, count);
             } else if (val instanceof Block) {
@@ -291,7 +305,5 @@ public final class AnvilRecipeGenerator {
     private static ItemStack stack(Object obj) {
         return stack(obj, 1);
     }
-
-
 }
-
+*///?}

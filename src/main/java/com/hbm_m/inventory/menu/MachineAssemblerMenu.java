@@ -1,25 +1,30 @@
 package com.hbm_m.inventory.menu;
 
+import org.jetbrains.annotations.NotNull;
+
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machines.MachineAssemblerBlockEntity;
+import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.main.MainRegistry;
-
 import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.api.energy.ItemEnergyAccess;
+
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.*;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.world.inventory.SimpleContainerData;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.SlotItemHandler;
-
-import javax.annotation.Nonnull;
-
-import org.jetbrains.annotations.NotNull;
+//? if fabric {
+import team.reborn.energy.api.EnergyStorage;
+//?}
 
 public class MachineAssemblerMenu extends AbstractContainerMenu implements ILongEnergyMenu {
     private final MachineAssemblerBlockEntity blockEntity;
@@ -41,25 +46,30 @@ public class MachineAssemblerMenu extends AbstractContainerMenu implements ILong
         this.level = inv.player.level();
         this.data = data;
 
-            addPlayerInventory(inv);
-            addPlayerHotbar(inv);
+        addPlayerInventory(inv);
+        addPlayerHotbar(inv);
 
-        this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
+        var handler = this.blockEntity.getInventory();
+        var container = new ModItemStackHandlerContainer(handler, this.blockEntity::setChanged);
             // Слот для батареи (0)
-            this.addSlot(new SlotItemHandler(handler, 0, 80, 18) {
+            this.addSlot(new Slot(container, 0, 80, 18) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack stack) {
-                    // Разрешаем класть только предметы, которые могут хранить энергию
-                    return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+                    if (ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
+                    //? if fabric {
+                    return EnergyStorage.ITEM.find(stack, null) != null;
+                    //?} else {
+                    /*return false;
+                    *///?}
                 }
             });
             // Слоты для улучшений (1, 2, 3) - без ограничений
-            this.addSlot(new SlotItemHandler(handler, 1, 152, 18));
-            this.addSlot(new SlotItemHandler(handler, 2, 152, 36));
-            this.addSlot(new SlotItemHandler(handler, 3, 152, 54));
+            this.addSlot(new Slot(container, 1, 152, 18));
+            this.addSlot(new Slot(container, 2, 152, 36));
+            this.addSlot(new Slot(container, 3, 152, 54));
 
             // Слот для схемы (4)
-            this.addSlot(new SlotItemHandler(handler, 4, 80, 54) {
+            this.addSlot(new Slot(container, 4, 80, 54) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack stack) {
                     // Разрешаем класть только предметы, являющиеся шаблонами сборщика
@@ -68,7 +78,7 @@ public class MachineAssemblerMenu extends AbstractContainerMenu implements ILong
             });
 
             // Слот для вывода (5)
-            this.addSlot(new SlotItemHandler(handler, 5, 134, 90) {
+            this.addSlot(new Slot(container, 5, 134, 90) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack stack) {
                     // Запрещаем игроку класть что-либо в выходной слот
@@ -82,10 +92,9 @@ public class MachineAssemblerMenu extends AbstractContainerMenu implements ILong
                     int slotIndex = 6 + (row * 2) + col;
                     int x = 8 + col * 18;
                     int y = 18 + row * 18;
-                    this.addSlot(new SlotItemHandler(handler, slotIndex, x, y));
+                    this.addSlot(new Slot(container, slotIndex, x, y));
                 }
             }
-        });
 
         addDataSlots(data);
     }
@@ -133,15 +142,13 @@ public class MachineAssemblerMenu extends AbstractContainerMenu implements ILong
         super.broadcastChanges();
 
         if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
-            ModPacketHandler.INSTANCE.send(
-                    net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> (net.minecraft.server.level.ServerPlayer) this.player),
-                    new com.hbm_m.network.packet.PacketSyncEnergy(
-                            this.containerId,
-                            blockEntity.getEnergyStored(),
-                            blockEntity.getMaxEnergyStored(),
-                            blockEntity.getEnergyDelta()
-                    )
-            );
+            ModPacketHandler.sendToPlayer((net.minecraft.server.level.ServerPlayer) this.player, ModPacketHandler.SYNC_ENERGY,
+                new com.hbm_m.network.packet.PacketSyncEnergy(
+                    this.containerId,
+                    blockEntity.getEnergyStored(),
+                    blockEntity.getMaxEnergyStored(),
+                    blockEntity.getEnergyDelta()
+                ));
         }
     }
 
@@ -188,7 +195,7 @@ public class MachineAssemblerMenu extends AbstractContainerMenu implements ILong
 
         return maxProgress != 0 && progress != 0 ? progress * progressArrowSize / maxProgress : 0;
     }
-    
+
     // Логика Shift-Click, адаптированная из старого кода
     private static final int VANILLA_SLOT_COUNT = 36;
     private static final int VANILLA_FIRST_SLOT_INDEX = 0;
@@ -196,7 +203,7 @@ public class MachineAssemblerMenu extends AbstractContainerMenu implements ILong
     private static final int TE_INVENTORY_SLOT_COUNT = 18;
 
     @Override
-    public @NotNull ItemStack quickMoveStack(@Nonnull Player playerIn, int pIndex) {
+    public @NotNull ItemStack quickMoveStack(@NotNull Player playerIn, int pIndex) {
         Slot sourceSlot = this.slots.get(pIndex);
         if (sourceSlot == null || !sourceSlot.hasItem()) return ItemStack.EMPTY;
         ItemStack sourceStack = sourceSlot.getItem();
@@ -211,7 +218,11 @@ public class MachineAssemblerMenu extends AbstractContainerMenu implements ILong
             boolean moved = false;
 
             // 1) Energy-capable items -> energy slot (index TE_INVENTORY_FIRST_SLOT_INDEX + 0)
-            if (sourceStack.getCapability(ForgeCapabilities.ENERGY).isPresent()) {
+            if (ItemEnergyAccess.getHbmReceiver(sourceStack).isPresent()
+                    //? if fabric {
+                    || EnergyStorage.ITEM.find(sourceStack, null) != null
+                    //?}
+            ) {
                 moved = this.moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX + 0, TE_INVENTORY_FIRST_SLOT_INDEX + 1, false);
             }
 
@@ -251,7 +262,7 @@ public class MachineAssemblerMenu extends AbstractContainerMenu implements ILong
     }
 
     @Override
-    public boolean stillValid(@Nonnull Player pPlayer) {
+    public boolean stillValid(@NotNull Player pPlayer) {
         return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()),
                 pPlayer, ModBlocks.MACHINE_ASSEMBLER.get());
     }

@@ -1,20 +1,23 @@
 package com.hbm_m.inventory.gui;
 
+
 import java.util.ArrayList;
 import java.util.List;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
-import com.hbm_m.api.fluids.ModFluids;
-import com.hbm_m.inventory.fluid.trait.FluidTraitManager;
+import com.hbm_m.inventory.fluid.FluidType;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.FluidIdentifierControlPacket;
 
+
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
@@ -22,18 +25,30 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+
 
 /**
  * GUI for selecting primary/secondary fluid in the fluid identifier.
  * LMB: set primary. RMB: set secondary.
  */
-@OnlyIn(Dist.CLIENT)
+//? if forge {
+/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+/^@OnlyIn(Dist.CLIENT)
+^/*///?}
+//? if fabric {
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+@Environment(EnvType.CLIENT)//?}
 public class GUIFluidIdentifier extends Screen {
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_fluid.png");
+            //? if fabric && < 1.21.1 {
+            new ResourceLocation(RefStrings.MODID, "textures/gui/gui_fluid.png");
+            //?} else {
+                        /*ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_fluid.png");
+            *///?}
+
 
     private static final int X_SIZE = 176;
     private static final int Y_SIZE = 54;
@@ -142,9 +157,15 @@ public class GUIFluidIdentifier extends Screen {
                 if (fluid == ModFluids.NONE.getSource() || fluid == Fluids.EMPTY) {
                     tooltip.add(Component.translatable("fluid.hbm_m.none"));
                 } else {
-                    tooltip.add(Component.translatable(fluid.getFluidType().getDescriptionId()));
+                    ResourceLocation fluidId = BuiltInRegistries.FLUID.getKey(fluid);
+                    if (fluidId != null) {
+                        tooltip.add(Component.translatable(
+                                "fluid." + fluidId.getNamespace() + "." + fluidId.getPath()));
+                    } else {
+                        tooltip.add(Component.literal(HbmFluidRegistry.getFluidName(fluid)));
+                    }
                 }
-                FluidTraitManager.appendFluidTypeTooltip(fluid, Screen.hasShiftDown(), tooltip);
+                FluidType.forFluid(fluid).addInfo(Screen.hasShiftDown(), tooltip);
                 guiGraphics.renderComponentTooltip(font, tooltip, mouseX, mouseY);
                 break;
             }

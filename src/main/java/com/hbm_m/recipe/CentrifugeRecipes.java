@@ -5,16 +5,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.hbm_m.item.ModItems;
-
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 
 /**
  * Centrifuge recipe registry - adapted from 1.7.10 HBM.
@@ -69,7 +69,7 @@ public class CentrifugeRecipes {
         private final TagKey<Item> tag;
 
         public TagInput(String tagName) {
-            this.tag = ItemTags.create(ResourceLocation.tryParse(tagName));
+            this.tag = TagKey.create(Registries.ITEM, new ResourceLocation(tagName));
         }
 
         public TagInput(TagKey<Item> tag) {
@@ -84,7 +84,7 @@ public class CentrifugeRecipes {
         @Override
         public List<ItemStack> getDisplayStacks() {
             List<ItemStack> stacks = new ArrayList<>();
-            ForgeRegistries.ITEMS.tags().getTag(tag).forEach(item -> {
+            BuiltInRegistries.ITEM.getTagOrEmpty(tag).forEach(item -> {
                 stacks.add(new ItemStack(item));
             });
             return stacks.isEmpty() ? List.of(ItemStack.EMPTY) : stacks;
@@ -405,7 +405,7 @@ public class CentrifugeRecipes {
     private static ItemStack stack(String itemId, int count) {
         ResourceLocation loc = ResourceLocation.tryParse(itemId);
         if (loc == null) return ItemStack.EMPTY;
-        Item item = ForgeRegistries.ITEMS.getValue(loc);
+        Item item = BuiltInRegistries.ITEM.get(loc);
         if (item == null || item == Items.AIR) return ItemStack.EMPTY;
         return new ItemStack(item, count);
     }
@@ -418,7 +418,7 @@ public class CentrifugeRecipes {
     public static void addItemRecipe(String itemId, ItemStack... outputs) {
         ResourceLocation loc = ResourceLocation.tryParse(itemId);
         if (loc == null) return;
-        Item item = ForgeRegistries.ITEMS.getValue(loc);
+        Item item = BuiltInRegistries.ITEM.get(loc);
         if (item == null || item == Items.AIR) return;
         addItemRecipe(item, outputs);
     }

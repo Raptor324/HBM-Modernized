@@ -11,7 +11,7 @@ public final class DesignatorClient {
     private DesignatorClient() {}
 
     /**
-     * Call only from client (e.g. via DistExecutor.unsafeRunWhenOn(Dist.CLIENT, ...)).
+     * Call only from client (e.g. via DistExecutor.unsafeRunWhenOn(EnvType.CLIENT, ...)).
      */
     public static void openScreen(Player player) {
         if (player == null) return;

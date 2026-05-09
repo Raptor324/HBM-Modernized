@@ -1,18 +1,17 @@
 package com.hbm_m.network;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 import com.hbm_m.client.ClientRenderHandler;
+import com.hbm_m.network.S2CPacket;
 
-// Пакет для подсветки блоков на клиенте.
-// Отправляется с сервера на клиент для выделения определённых блоков (при проверке структуры).
+import dev.architectury.networking.NetworkManager.PacketContext;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.server.level.ServerPlayer;
 
-public class HighlightBlocksPacket {
+public class HighlightBlocksPacket implements S2CPacket {
 
     private final List<BlockPos> positions;
 
@@ -20,60 +19,76 @@ public class HighlightBlocksPacket {
         this.positions = positions;
     }
 
-    // Метод для записи данных (энкодер)
-    public void toBytes(FriendlyByteBuf buf) {
+    // ── Serialization ─────────────────────────────────────────────────────────
+
+    public static HighlightBlocksPacket fromBytes(FriendlyByteBuf buf) {
+        return new HighlightBlocksPacket(
+                buf.readCollection(java.util.ArrayList::new, FriendlyByteBuf::readBlockPos));
+    }
+
+    @Override
+    public void write(FriendlyByteBuf buf) {
         buf.writeCollection(positions, FriendlyByteBuf::writeBlockPos);
     }
 
-    // Метод для чтения данных (декодер)
-    public static HighlightBlocksPacket fromBytes(FriendlyByteBuf buf) {
+    // ── Handler ───────────────────────────────────────────────────────────────
 
-        return new HighlightBlocksPacket(buf.readCollection(java.util.ArrayList::new, FriendlyByteBuf::readBlockPos));
+    public static void handle(HighlightBlocksPacket msg, PacketContext context) {
+        context.queue(() -> ClientRenderHandler.highlightBlocks(msg.positions));
     }
 
-    // Статический метод для обработки пакета (обработчик)
-    public static void handle(HighlightBlocksPacket msg, Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            // Просто вызываем метод без длительности
-            ClientRenderHandler.highlightBlocks(msg.positions);
-        });
-        ctx.get().setPacketHandled(true);
+    // ── Send helper ───────────────────────────────────────────────────────────
+
+    public static void sendTo(ServerPlayer player, List<BlockPos> positions) {
+        ModPacketHandler.sendToPlayer(player, ModPacketHandler.HIGHLIGHT_BLOCKS,
+                new HighlightBlocksPacket(positions));
     }
 
-    /**
-     * Пакет для добавления/удаления осиротевших фантомных блоков из постоянной подсветки.
-     */
-    public static class OrphanedPhantomsPacket {
+    // ══════════════════════════════════════════════════════════════════════════
+    // Вложенный пакет: OrphanedPhantomsPacket
+    // ══════════════════════════════════════════════════════════════════════════
+
+    public static class OrphanedPhantomsPacket implements S2CPacket {
+
         private final List<BlockPos> addPositions;
         private final List<BlockPos> removePositions;
 
         public OrphanedPhantomsPacket(List<BlockPos> addPositions, List<BlockPos> removePositions) {
-            this.addPositions = addPositions;
+            this.addPositions    = addPositions;
             this.removePositions = removePositions;
         }
 
-        public void toBytes(FriendlyByteBuf buf) {
-            buf.writeCollection(addPositions, FriendlyByteBuf::writeBlockPos);
-            buf.writeCollection(removePositions, FriendlyByteBuf::writeBlockPos);
-        }
+        // ── Serialization ─────────────────────────────────────────────────────
 
         public static OrphanedPhantomsPacket fromBytes(FriendlyByteBuf buf) {
             return new OrphanedPhantomsPacket(
-                buf.readCollection(java.util.ArrayList::new, FriendlyByteBuf::readBlockPos),
-                buf.readCollection(java.util.ArrayList::new, FriendlyByteBuf::readBlockPos)
+                    buf.readCollection(java.util.ArrayList::new, FriendlyByteBuf::readBlockPos),
+                    buf.readCollection(java.util.ArrayList::new, FriendlyByteBuf::readBlockPos)
             );
         }
 
-        public static void handle(OrphanedPhantomsPacket msg, Supplier<NetworkEvent.Context> ctx) {
-            ctx.get().enqueueWork(() -> {
-                for (BlockPos pos : msg.addPositions) {
-                    ClientRenderHandler.addOrphanedPhantomBlock(pos);
-                }
-                for (BlockPos pos : msg.removePositions) {
-                    ClientRenderHandler.removeOrphanedPhantomBlock(pos);
-                }
+        @Override
+        public void write(FriendlyByteBuf buf) {
+            buf.writeCollection(addPositions,    FriendlyByteBuf::writeBlockPos);
+            buf.writeCollection(removePositions, FriendlyByteBuf::writeBlockPos);
+        }
+
+        // ── Handler ───────────────────────────────────────────────────────────
+
+        public static void handle(OrphanedPhantomsPacket msg, PacketContext context) {
+            context.queue(() -> {
+                for (BlockPos pos : msg.addPositions)    ClientRenderHandler.addOrphanedPhantomBlock(pos);
+                for (BlockPos pos : msg.removePositions) ClientRenderHandler.removeOrphanedPhantomBlock(pos);
             });
-            ctx.get().setPacketHandled(true);
+        }
+
+        // ── Send helper ───────────────────────────────────────────────────────
+
+        public static void sendTo(ServerPlayer player, List<BlockPos> add, List<BlockPos> remove) {
+            // Нужно зарегистрировать ID в ModPacketHandler, например:
+            // public static final ResourceLocation ORPHANED_PHANTOMS = id("orphaned_phantoms");
+            ModPacketHandler.sendToPlayer(player, ModPacketHandler.ORPHANED_PHANTOMS,
+                    new OrphanedPhantomsPacket(add, remove));
         }
     }
 }

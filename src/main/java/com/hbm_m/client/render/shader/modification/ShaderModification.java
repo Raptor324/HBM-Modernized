@@ -1,14 +1,19 @@
 package com.hbm_m.client.render.shader.modification;
 
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.hbm_m.main.MainRegistry;
-
-import net.minecraftforge.api.distmarker.Dist;
+//? if forge {
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+*///?}
+//? if fabric {
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;//?}
 
 /**
  * Lightweight GLSL source modifier inspired by Veil's ShaderModification system,
@@ -25,7 +30,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  * registration / load time, not during rendering. It also serves as a foundation for
  * future Iris {@code TransformPatcher} integration (Variant B).
  */
-@OnlyIn(Dist.CLIENT)
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
 public final class ShaderModification {
 
     /**

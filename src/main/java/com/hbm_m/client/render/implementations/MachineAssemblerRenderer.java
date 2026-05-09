@@ -1,9 +1,10 @@
 package com.hbm_m.client.render.implementations;
 
+
 import org.joml.Matrix4f;
 
-import com.hbm_m.block.machines.MachineAssemblerBlock;
 import com.hbm_m.block.entity.machines.MachineAssemblerBlockEntity;
+import com.hbm_m.block.machines.MachineAssemblerBlock;
 import com.hbm_m.client.model.MachineAssemblerBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
@@ -11,6 +12,8 @@ import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.ObjModelVboBuilder;
 import com.hbm_m.client.render.OcclusionCullingHelper;
+import com.hbm_m.client.render.RenderDistanceHelper;
+import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
@@ -21,6 +24,15 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
+//? if forge {
+/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+*///?}
+
+//? if fabric {
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+//?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -33,12 +45,12 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.IItemHandler;
 
-@OnlyIn(Dist.CLIENT)
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
 public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineAssemblerBlockEntity, MachineAssemblerBakedModel> {
 
     private MachineAssemblerVboRenderer gpu;
@@ -140,11 +152,13 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         // super.render() runs, so this only stays true when culling passes.
         visibleThisFrame = true;
 
+        float staticFade = RenderDistanceHelper.computeStaticFade(blockPos);
+        if (staticFade < 0) return;
+        SingleMeshVboRenderer.setFadeAlpha(staticFade);
+
         // Источник статической геометрии: VBO/Iris путь vs baked-model путь.
         boolean useVboGeometry = ShaderCompatibilityDetector.useVboGeometry();
         if (useVboGeometry) {
-            // Шейдеров нет ИЛИ включён useIrisExtendedShaderPath:
-            // полный VBO/инстансинг рендер, baked-model вернул пустые quad'ы.
             renderWithVBO(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource);
         } else if (renderActive && be.isCrafting()) {
             // Шейдеры + работает: baked рисует Base, BER дорисовывает подвижные части через putBulkData.
@@ -202,7 +216,15 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         // See MachineAdvancedAssemblerRenderer.renderWithVBO and IrisRenderBatch
         // for the full rationale.
         boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
-        boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || shadowPass);
+        //? if forge {
+        /*boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || shadowPass);
+        *///?}
+        //? if fabric {
+        // On Fabric, always open an IrisRenderBatch when Iris VBO path is
+        // active. addInstance() draws eagerly (no deferred flush), so the
+        // batch amortizes apply()/clear() across all parts of one machine.
+        boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath();
+        //?}
         if (useIrisBatch) {
             try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
                 renderAssemblerPartsInternal(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useBatching);
@@ -220,6 +242,11 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
                                               BlockPos blockPos,
                                               MultiBufferSource bufferSource,
                                               boolean useBatching) {
+        float staticFade = SingleMeshVboRenderer.getFadeAlpha();
+        float animFade = RenderDistanceHelper.computeAnimatedFade(blockPos);
+        boolean anyFading = staticFade < 0.99f || (animFade >= 0 && animFade < 0.99f);
+        boolean effectiveBatching = useBatching && !anyFading;
+
         // Match legacy orientation: rotate full assembler 90 degrees clockwise.
         poseStack.pushPose();
         poseStack.translate(0.5f, 0.0f, 0.5f);
@@ -228,7 +255,7 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
 
         poseStack.pushPose();
         poseStack.translate(-0.5f, 0.0f, -0.5f);
-        if (useBatching && instancedBody != null && instancedBody.isInitialized()) {
+        if (effectiveBatching && instancedBody != null && instancedBody.isInitialized()) {
             poseStack.pushPose();
             instancedBody.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
             poseStack.popPose();
@@ -237,9 +264,10 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         }
         poseStack.popPose();
 
-        boolean skipAnimation = shouldSkipAnimationUpdate(blockPos);
-        if (!skipAnimation) {
-            renderAnimated(be, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useBatching);
+        if (animFade >= 0) {
+            SingleMeshVboRenderer.setFadeAlpha(Math.min(staticFade, animFade));
+            renderAnimated(be, partialTick, poseStack, dynamicLight, blockPos, bufferSource, effectiveBatching);
+            SingleMeshVboRenderer.setFadeAlpha(staticFade);
         }
         poseStack.popPose();
     }
@@ -333,7 +361,7 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
                                             LegacyAnimator animator,
                                             MachineAssemblerBlockEntity be,
                                             float pt) {
-        if (shouldSkipAnimationUpdate(be.getBlockPos())) return;
+        if (shouldSkipAnimatedRender(be.getBlockPos())) return;
 
         boolean isActive = be.isCrafting();
         if (!isActive) return;
@@ -401,7 +429,7 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
                                         PoseStack poseStack,
                                         MultiBufferSource bufferSource,
                                         int packedLight, int packedOverlay) {
-        if (shouldSkipAnimationUpdate(be.getBlockPos())) return;
+        if (shouldSkipAnimatedRender(be.getBlockPos())) return;
 
         ItemStack icon = getRecipeOutput(be);
         if (icon.isEmpty()) return;
@@ -446,10 +474,7 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
     }
 
     private ItemStack getRecipeOutput(MachineAssemblerBlockEntity be) {
-        IItemHandler handler = be.getCapability(ForgeCapabilities.ITEM_HANDLER).orElse(null);
-        if (handler == null) return ItemStack.EMPTY;
-
-        ItemStack template = handler.getStackInSlot(4);
+        ItemStack template = be.getInventory().getStackInSlot(4);
         if (template.isEmpty() || !(template.getItem() instanceof ItemAssemblyTemplate)) {
             return ItemStack.EMPTY;
         }
@@ -459,29 +484,17 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
 
     // ==================== DISTANCE CHECK ====================
 
-    private boolean shouldSkipAnimationUpdate(BlockPos blockPos) {
-        var minecraft = Minecraft.getInstance();
-        var camera = minecraft.gameRenderer.getMainCamera();
-        var cameraPos = camera.getPosition();
-
-        double dx = blockPos.getX() + 0.5 - cameraPos.x;
-        double dy = blockPos.getY() + 0.5 - cameraPos.y;
-        double dz = blockPos.getZ() + 0.5 - cameraPos.z;
-        double distanceSquared = dx * dx + dy * dy + dz * dz;
-
-        int thresholdChunks = ModClothConfig.get().modelUpdateDistance;
-        double thresholdBlocks = thresholdChunks * 16.0;
-
-        return distanceSquared > thresholdBlocks * thresholdBlocks;
+    private boolean shouldSkipAnimatedRender(BlockPos blockPos) {
+        return RenderDistanceHelper.computeAnimatedFade(blockPos) < 0;
     }
 
     // ==================== INSTANCED BATCHING ====================
 
-    public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
-        if (instancedBody != null) instancedBody.flush(event);
-        if (instancedSlider != null) instancedSlider.flush(event);
-        if (instancedArm != null) instancedArm.flush(event);
-        if (instancedCog != null) instancedCog.flush(event);
+    public static void flushInstancedBatches(org.joml.Matrix4f projectionMatrix) {
+        if (instancedBody != null) instancedBody.flush(projectionMatrix);
+        if (instancedSlider != null) instancedSlider.flush(projectionMatrix);
+        if (instancedArm != null) instancedArm.flush(projectionMatrix);
+        if (instancedCog != null) instancedCog.flush(projectionMatrix);
     }
 
     public static void clearCaches() {
@@ -502,5 +515,5 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
     }
 
     @Override
-    public int getViewDistance() { return 128; }
+    public int getViewDistance() { return RenderDistanceHelper.getStaticViewDistanceBlocks(); }
 }

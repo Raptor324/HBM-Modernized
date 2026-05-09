@@ -27,7 +27,6 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.server.ServerLifecycleHooks;
 
 /**
  * Crater Generator v21.0 - BIOME SYNC FIX
@@ -190,7 +189,7 @@ public class CraterGenerator {
                     selafitBlocks, random,
                     wasteLogBlock, wastePlanksBlock, burnedGrassBlock, startTime);
 
-            MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+            MinecraftServer server = level.getServer();
             if (server != null) {
                 server.tell(new TickTask(5, () -> {
                     System.out.println("\n[CRATER_GENERATOR] Step 1.5: Cleaning center sphere...");
@@ -229,6 +228,7 @@ public class CraterGenerator {
         return allRays;
     }
 
+    /** Debug ray visualization is client-only; never enable on dedicated server. */
     private static boolean isDebugScreenEnabled() {
 	if (FMLEnvironment.dist != Dist.CLIENT) {
 	    return false;
@@ -314,7 +314,7 @@ public class CraterGenerator {
             List<RayData> debugRays,
             Runnable onComplete) {
 
-        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        MinecraftServer server = level.getServer();
         if (server == null) {
             onComplete.run();
             return;
@@ -640,7 +640,7 @@ public class CraterGenerator {
             Block wastePlanks,
             Block burnedGrass) {
 
-        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        MinecraftServer server = level.getServer();
         if (server == null) return;
 
         List<BlockPos> allBlocksList = new ArrayList<>(allCraterBlocks);

@@ -3,8 +3,6 @@ package com.hbm_m.block.machines;
 import com.hbm_m.block.entity.machines.GeigerCounterBlockEntity;
 import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.network.ModPacketHandler;
-import com.hbm_m.network.sounds.GeigerSoundPacket;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.sound.ModSounds;
 
@@ -14,6 +12,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -34,11 +33,10 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.PacketDistributor;
 import net.minecraft.network.chat.Component;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class GeigerCounterBlock extends BaseEntityBlock {
     // Свойство для хранения направления, куда "смотрит" блок
@@ -52,18 +50,18 @@ public class GeigerCounterBlock extends BaseEntityBlock {
     }
 
     @Override
-    public VoxelShape getShape(@Nonnull BlockState pState, @Nonnull BlockGetter pLevel, @Nonnull BlockPos pPos, @Nonnull CollisionContext pContext) {
+    public VoxelShape getShape(@NotNull BlockState pState, @NotNull BlockGetter pLevel, @NotNull BlockPos pPos, @NotNull CollisionContext pContext) {
         return SHAPE;
     }
 
     @Nullable
     @Override
-    public BlockEntity newBlockEntity(@Nonnull BlockPos pPos, @Nonnull BlockState pState) {
+    public BlockEntity newBlockEntity(@NotNull BlockPos pPos, @NotNull BlockState pState) {
         return new GeigerCounterBlockEntity(pPos, pState);
     }
 
     @Override
-    public InteractionResult use(@Nonnull BlockState pState, @Nonnull Level pLevel, @Nonnull BlockPos pPos, @Nonnull Player pPlayer, @Nonnull InteractionHand pHand, @Nonnull BlockHitResult pHit) {
+    public InteractionResult use(@NotNull BlockState pState, @NotNull Level pLevel, @NotNull BlockPos pPos, @NotNull Player pPlayer, @NotNull InteractionHand pHand, @NotNull BlockHitResult pHit) {
         // Выполняем логику только на стороне сервера
         if (!pLevel.isClientSide()) {
             
@@ -116,9 +114,9 @@ public class GeigerCounterBlock extends BaseEntityBlock {
                 SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
                 if (soundEvent != null) {
                     ResourceLocation soundLocation = soundEvent.getLocation();
-                    // Важно: pPlayer нужно привести к ServerPlayer для отправки пакета
                     if (pPlayer instanceof ServerPlayer serverPlayer) {
-                        ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new GeigerSoundPacket(soundLocation, 1.0F, 1.0F));
+                        // Loader-agnostic: проигрываем звук напрямую сервером игроку (без Forge PacketDistributor).
+                        serverPlayer.playNotifySound(soundEvent, SoundSource.PLAYERS, 1.0F, 1.0F);
                     }
                 }
             }
@@ -139,7 +137,7 @@ public class GeigerCounterBlock extends BaseEntityBlock {
 
     @Nullable
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@Nonnull Level pLevel, @Nonnull BlockState pState, @Nonnull BlockEntityType<T> pBlockEntityType) {
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level pLevel, @NotNull BlockState pState, @NotNull BlockEntityType<T> pBlockEntityType) {
         // Мы хотим, чтобы наш BlockEntity работал только на стороне сервера
         if (pLevel.isClientSide()) {
             return null;
@@ -152,30 +150,30 @@ public class GeigerCounterBlock extends BaseEntityBlock {
     // Вращение блока 
 
     @Override
-    public BlockState getStateForPlacement(@Nonnull BlockPlaceContext pContext) {
+    public BlockState getStateForPlacement(@NotNull BlockPlaceContext pContext) {
         // Устанавливаем направление блока в зависимости от того, куда смотрел игрок при установке
         return this.defaultBlockState().setValue(FACING, pContext.getHorizontalDirection());
     }
 
     @Override
-    protected void createBlockStateDefinition(@Nonnull StateDefinition.Builder<Block, BlockState> pBuilder) {
+    protected void createBlockStateDefinition(@NotNull StateDefinition.Builder<Block, BlockState> pBuilder) {
         pBuilder.add(FACING);
     }
 
     // Рендер и сигналы 
     @Override
-    public RenderShape getRenderShape(@Nonnull BlockState pState) {
+    public RenderShape getRenderShape(@NotNull BlockState pState) {
         return RenderShape.MODEL;
     }
     
     // Как в старом моде, блок будет выдавать сигнал компаратору
     @Override
-    public boolean hasAnalogOutputSignal(@Nonnull BlockState pState) {
+    public boolean hasAnalogOutputSignal(@NotNull BlockState pState) {
         return true;
     }
 
     @Override
-    public int getAnalogOutputSignal(@Nonnull BlockState pState, @Nonnull Level pLevel, @Nonnull BlockPos pPos) {
+    public int getAnalogOutputSignal(@NotNull BlockState pState, @NotNull Level pLevel, @NotNull BlockPos pPos) {
         BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
         if (blockEntity instanceof GeigerCounterBlockEntity geiger) {
             // Возвращаем уровень радиации, ограниченный 15 (макс. сигнал редстоуна)

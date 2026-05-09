@@ -1,7 +1,11 @@
 package com.hbm_m.client.render.implementations;
 
-import com.hbm_m.block.entity.machines.MachineHydraulicFrackiningTowerBlockEntity;
-import com.hbm_m.block.machines.MachineHydraulicFrackiningTowerBlock;
+//? if forge {
+/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+*///?}
+import com.hbm_m.block.entity.machines.MachineFrackingTowerBlockEntity;
+import com.hbm_m.block.machines.MachineFrackingTowerBlock;
 import com.hbm_m.client.model.MachineHydraulicFrackiningTowerBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
@@ -9,6 +13,8 @@ import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.ObjModelVboBuilder;
 import com.hbm_m.client.render.OcclusionCullingHelper;
+import com.hbm_m.client.render.RenderDistanceHelper;
+import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
@@ -16,6 +22,10 @@ import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
+//? if fabric {
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+//?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -24,11 +34,12 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-
-@OnlyIn(Dist.CLIENT)
-public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRenderer<MachineHydraulicFrackiningTowerBlockEntity, MachineHydraulicFrackiningTowerBakedModel> {
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
+public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRenderer<MachineFrackingTowerBlockEntity, MachineHydraulicFrackiningTowerBakedModel> {
 
     private MachineHydraulicFrackiningTowerVboRenderer gpu;
     private MachineHydraulicFrackiningTowerBakedModel cachedModel;
@@ -46,10 +57,9 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
         instancersInitialized = false;
     }
 
-    // Реализуем метод flush, чтобы отрисовывать накопленные инстансы в конце кадра
-    public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
+    public static void flushInstancedBatches(org.joml.Matrix4f projectionMatrix) {
         if (instancedMain != null) {
-            instancedMain.flush(event);
+            instancedMain.flush(projectionMatrix);
         }
     }
 
@@ -82,12 +92,12 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
     }
 
     @Override
-    protected Direction getFacing(MachineHydraulicFrackiningTowerBlockEntity be) {
-        return be.getBlockState().getValue(MachineHydraulicFrackiningTowerBlock.FACING);
+    protected Direction getFacing(MachineFrackingTowerBlockEntity be) {
+        return be.getBlockState().getValue(MachineFrackingTowerBlock.FACING);
     }
 
     @Override
-    protected void renderParts(MachineHydraulicFrackiningTowerBlockEntity be,
+    protected void renderParts(MachineFrackingTowerBlockEntity be,
                                MachineHydraulicFrackiningTowerBakedModel model,
                                LegacyAnimator animator,
                                float partialTick,
@@ -103,6 +113,10 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
         if (!OcclusionCullingHelper.shouldRender(blockPos, Minecraft.getInstance().level, renderBounds)) {
             return;
         }
+
+        float staticFade = RenderDistanceHelper.computeStaticFade(blockPos);
+        if (staticFade < 0) return;
+        SingleMeshVboRenderer.setFadeAlpha(staticFade);
 
         if (cachedModel != model || gpu == null) {
             cachedModel = model;
@@ -133,7 +147,7 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
             // Шейдеров нет ИЛИ включён useIrisExtendedShaderPath: используем нашу VBO/инстанс-систему.
             // SingleMeshVboRenderer и InstancedStaticPartRenderer сами выберут Iris ExtendedShader,
             // если шейдер-пак активен (см. ShaderCompatibilityDetector.canUseIrisExtendedShader).
-            if (useBatching && instancedMain != null && instancedMain.isInitialized()) {
+            if (useBatching && staticFade >= 0.99f && instancedMain != null && instancedMain.isInitialized()) {
                 instancedMain.addInstance(poseStack, packedLight, blockPos, be, bufferSource);
             } else {
                 // Ветка всегда без instancing (один part → SingleMeshVboRenderer). Под Iris
@@ -154,7 +168,7 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
         poseStack.popPose();
     }
 
-    @Override public boolean shouldRenderOffScreen(MachineHydraulicFrackiningTowerBlockEntity be) { return false; }
+    @Override public boolean shouldRenderOffScreen(MachineFrackingTowerBlockEntity be) { return false; }
 
-    @Override public int getViewDistance() { return 128; }
+    @Override public int getViewDistance() { return RenderDistanceHelper.getStaticViewDistanceBlocks(); }
 }

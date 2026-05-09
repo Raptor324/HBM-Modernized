@@ -6,7 +6,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import org.slf4j.Logger;
 
@@ -131,10 +131,19 @@ public class EnergyNetworkManager extends SavedData {
     }
 
     public void addNode(BlockPos pos) {
-        addNode(pos, null);
+        addNode(pos, null, true);
     }
 
     private void addNode(BlockPos pos, @Nullable EnergyNetwork networkToAvoid) {
+        addNode(pos, networkToAvoid, true);
+    }
+
+    /**
+     * @param allowAutoRepairPull если false — не тянуть соседние «потерянные» узлы рекурсивно.
+     *        Иначе провод и часть мультиблока с {@code IEnergyConnector} вызывают взаимный
+     *        {@code addNode} и {@link StackOverflowError} (тикering block entity).
+     */
+    private void addNode(BlockPos pos, @Nullable EnergyNetwork networkToAvoid, boolean allowAutoRepairPull) {
         long posLong = pos.asLong();
 
         // 1. Защита от дубликатов и проверка существования
@@ -166,18 +175,16 @@ public class EnergyNetworkManager extends SavedData {
 
             // [АВТО-ПОЧИНКА]
             // Если в памяти менеджера соседа НЕТ, но чанк загружен...
-            if (neighbor == null && level.isLoaded(neighborPos)) {
+            if (allowAutoRepairPull && neighbor == null && level.isLoaded(neighborPos)) {
                 // Проверяем, есть ли там реальный TileEntity с энергией
                 net.minecraft.world.level.block.entity.BlockEntity be = level.getBlockEntity(neighborPos);
                 if (be != null) {
-                    boolean isEnergyBlock = be.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_PROVIDER).isPresent() ||
-                            be.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_RECEIVER).isPresent() ||
-                            be.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_CONNECTOR).isPresent();
+                    boolean isEnergyBlock = com.hbm_m.capability.ModCapabilities.hasEnergyComponent(be);
 
                     if (isEnergyBlock) {
                         // Мы нашли "потерянный" провод! Добавляем его принудительно.
-                        // Это рекурсивно вызовет addNode для провода и починит сеть дальше.
-                        addNode(neighborPos);
+                        // Вложенный вызов без повторной автопочинки — иначе ping-pong (провод <-> коннектор).
+                        addNode(neighborPos, null, false);
                         neighbor = allNodes.get(neighborLong); // Теперь он точно есть
                     }
                 }

@@ -1,5 +1,6 @@
 package com.hbm_m.powerarmor.layer;
 
+
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -29,15 +30,15 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.model.data.ModelData;
+
+//? if forge {
+/*import net.minecraftforge.client.model.data.ModelData;
+*///?}
 
 /**
  * Абстрактный базовый класс для рендеринга OBJ-брони.
  * Содержит всю общую логику рендеринга, оставляя подклассам только конфигурацию.
  */
-@OnlyIn(Dist.CLIENT)
 public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends HumanoidModel<T>> extends RenderLayer<T, M> {
 
     protected static final float PIXEL_SCALE = 1.0F / 16.0F;
@@ -180,16 +181,29 @@ public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends Hu
         PoseStack.Pose pose = poseStack.last();
         
         for (var dir : net.minecraft.core.Direction.values()) {
-            List<net.minecraft.client.renderer.block.model.BakedQuad> quads = model.getQuads(null, dir, rand, ModelData.EMPTY, null);
+            List<net.minecraft.client.renderer.block.model.BakedQuad> quads = getQuadsCompat(model, dir, rand);
             if (quads != null && !quads.isEmpty()) {
                 for (var q : quads) putQuadManual(vc, pose, q, light);
             }
         }
 
-        List<net.minecraft.client.renderer.block.model.BakedQuad> general = model.getQuads(null, null, rand, ModelData.EMPTY, null);
+        List<net.minecraft.client.renderer.block.model.BakedQuad> general = getQuadsCompat(model, null, rand);
         if (general != null && !general.isEmpty()) {
             for (var q : general) putQuadManual(vc, pose, q, light);
         }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static List<net.minecraft.client.renderer.block.model.BakedQuad> getQuadsCompat(
+            BakedModel model,
+            @org.jetbrains.annotations.Nullable net.minecraft.core.Direction dir,
+            RandomSource rand
+    ) {
+        //? if forge {
+        /*return model.getQuads(null, dir, rand, ModelData.EMPTY, null);
+        *///?} else {
+        return model.getQuads(null, dir, rand);
+        //?}
     }
 
     private static void putQuadManual(VertexConsumer builder, PoseStack.Pose pose, net.minecraft.client.renderer.block.model.BakedQuad quad, int light) {

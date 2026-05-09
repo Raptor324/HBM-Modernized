@@ -1,10 +1,13 @@
 package com.hbm_m.block.machines;
 
 import java.util.Map;
+//? if forge {
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
+*///?}
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import javax.annotation.Nonnull;
-
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.ImmutableMap;
@@ -16,11 +19,11 @@ import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
@@ -43,9 +46,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.Lazy;
-import net.minecraftforge.network.NetworkHooks;
+
 
 /**
  * Сборочная машина (мультиблок 3x2x3).
@@ -56,7 +57,7 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final BooleanProperty RENDER_ACTIVE = BooleanProperty.create("render_active");
 
-    static final Lazy<Map<Direction, VoxelShape>> SHAPES_LAZY = Lazy.of(() ->
+    private static final Supplier<Map<Direction, VoxelShape>> SHAPES = memoize(() ->
             ImmutableMap.<Direction, VoxelShape>builder()
                     .put(Direction.NORTH, buildShapeNorth().move(0.5, 0, 0.5))
                     .put(Direction.SOUTH,  buildShapeSouth().move(0.5, 0, 0.5))
@@ -64,6 +65,17 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
                     .put(Direction.EAST,   buildShapeEast().move(0.5, 0, 0.5))
                     .build()
     );
+
+    private static <T> Supplier<T> memoize(Supplier<T> factory) {
+        AtomicReference<T> ref = new AtomicReference<>();
+        return () -> {
+            T existing = ref.get();
+            if (existing != null) return existing;
+            T created = factory.get();
+            ref.compareAndSet(null, created);
+            return ref.get();
+        };
+    }
 
     private static VoxelShape buildShapeNorth() {
         return Shapes.or(
@@ -159,7 +171,7 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
 
     @Override
     public VoxelShape getCustomMasterVoxelShape(BlockState state) {
-        return SHAPES_LAZY.get().get(state.getValue(FACING));
+        return SHAPES.get().get(state.getValue(FACING));
     }
 
     private static Map<BlockPos, Supplier<BlockState>> defineStructure() {
@@ -216,14 +228,8 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
                 }
                 
                 BlockEntity blockEntity = level.getBlockEntity(pos);
-                if (blockEntity instanceof MachineAssemblerBlockEntity) {
-                    // Получаем capability инвентаря
-                    blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
-                        // Проходимся по всем слотам и выбрасываем их содержимое
-                        for (int i = 0; i < handler.getSlots(); i++) {
-                            Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), handler.getStackInSlot(i));
-                        }
-                    });
+                if (blockEntity instanceof com.hbm_m.block.entity.BaseMachineBlockEntity be) {
+                    be.dropInventoryContents();
                 }
 
                 helper.destroyStructure(level, pos, facing);
@@ -233,12 +239,12 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
     }
 
     @Override
-    public InteractionResult use(@Nonnull BlockState state, @Nonnull Level level, @Nonnull BlockPos pos, @Nonnull Player player, @Nonnull InteractionHand hand, @Nonnull BlockHitResult hit) {
+    public InteractionResult use(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
         if (!level.isClientSide) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider) {
                 if (player instanceof ServerPlayer serverPlayer) {
-                    NetworkHooks.openScreen(serverPlayer, (MenuProvider) entity, pos);
+                    MenuRegistry.openExtendedMenu(serverPlayer, (MenuProvider) entity, buf -> buf.writeBlockPos(pos));
                 }
             }
         }
@@ -256,27 +262,27 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
     }
 
     @Override
-    public RenderShape getRenderShape(@Nonnull BlockState state) {
+    public RenderShape getRenderShape(@NotNull BlockState state) {
         return RenderShape.MODEL;
     }
 
     @Nullable @Override
-    public BlockEntity newBlockEntity(@Nonnull BlockPos pos, @Nonnull BlockState state) {
+    public BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
         return new MachineAssemblerBlockEntity(pos, state);
     }
 
     @Nullable @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@Nonnull Level level, @Nonnull BlockState state, @Nonnull BlockEntityType<T> type) {
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level level, @NotNull BlockState state, @NotNull BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.MACHINE_ASSEMBLER_BE.get(), MachineAssemblerBlockEntity::tick);
     }
 
     @Nullable @Override
-    public BlockState getStateForPlacement(@Nonnull BlockPlaceContext context) {
+    public BlockState getStateForPlacement(@NotNull BlockPlaceContext context) {
         return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 
     @Override
-    protected void createBlockStateDefinition(@Nonnull StateDefinition.Builder<Block, BlockState> builder) {
+    protected void createBlockStateDefinition(@NotNull StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING, RENDER_ACTIVE);
     }
 }

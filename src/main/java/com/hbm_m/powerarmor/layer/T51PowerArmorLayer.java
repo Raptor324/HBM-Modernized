@@ -1,5 +1,6 @@
 package com.hbm_m.powerarmor.layer;
 
+
 import java.util.Map;
 
 import org.jetbrains.annotations.NotNull;
@@ -17,14 +18,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Render layer для T51 Power Armor.
  * Использует абстрактный базовый класс для общей логики рендеринга OBJ-брони.
  */
-@OnlyIn(Dist.CLIENT)
 public class T51PowerArmorLayer<T extends LivingEntity, M extends HumanoidModel<T>> extends AbstractObjArmorLayer<T, M> {
 
     /**
@@ -58,7 +56,12 @@ public class T51PowerArmorLayer<T extends LivingEntity, M extends HumanoidModel<
         );
 
         private static Material withTex(String path) {
-            return new Material(T51_ATLAS_LOCATION, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, path));
+            //? if fabric && < 1.21.1 {
+            return new Material(T51_ATLAS_LOCATION, new ResourceLocation(MainRegistry.MOD_ID, path));
+            //?} else {
+                        /*return new Material(T51_ATLAS_LOCATION, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, path));
+            *///?}
+
         }
 
         @Override

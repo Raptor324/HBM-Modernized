@@ -67,7 +67,7 @@ public interface IFluidStandardSenderMK2 extends IFluidProviderMK2 {
     default long getFluidAvailable(Fluid fluid, int pressure) {
         long amount = 0;
         for (FluidTank tank : getSendingTanks()) {
-            if (tank.getTankType() == fluid && tank.getPressure() == pressure) {
+            if (VanillaFluidEquivalence.sameSubstance(tank.getTankType(), fluid) && tank.getPressure() == pressure) {
                 amount += tank.getFill();
             }
         }
@@ -78,12 +78,12 @@ public interface IFluidStandardSenderMK2 extends IFluidProviderMK2 {
     default void useUpFluid(Fluid fluid, int pressure, long amount) {
         int tanks = 0;
         for (FluidTank t : getSendingTanks()) {
-            if (t.getTankType() == fluid && t.getPressure() == pressure) tanks++;
+            if (VanillaFluidEquivalence.sameSubstance(t.getTankType(), fluid) && t.getPressure() == pressure) tanks++;
         }
         if (tanks > 1) {
             int share = (int) Math.floor((double) amount / tanks);
             for (FluidTank t : getSendingTanks()) {
-                if (t.getTankType() == fluid && t.getPressure() == pressure) {
+                if (VanillaFluidEquivalence.sameSubstance(t.getTankType(), fluid) && t.getPressure() == pressure) {
                     int rem = Math.min(share, t.getFill());
                     t.fill(t.getFill() - rem);
                     amount -= rem;
@@ -92,7 +92,7 @@ public interface IFluidStandardSenderMK2 extends IFluidProviderMK2 {
         }
         if (amount > 0) {
             for (FluidTank t : getSendingTanks()) {
-                if (t.getTankType() == fluid && t.getPressure() == pressure) {
+                if (VanillaFluidEquivalence.sameSubstance(t.getTankType(), fluid) && t.getPressure() == pressure) {
                     int rem = (int) Math.min(amount, t.getFill());
                     t.fill(t.getFill() - rem);
                     amount -= rem;
@@ -106,7 +106,7 @@ public interface IFluidStandardSenderMK2 extends IFluidProviderMK2 {
         int lowest = IFluidUserMK2.HIGHEST_VALID_PRESSURE;
         int highest = 0;
         for (FluidTank t : getSendingTanks()) {
-            if (t.getTankType() == fluid) {
+            if (VanillaFluidEquivalence.sameSubstance(t.getTankType(), fluid)) {
                 if (t.getPressure() < lowest)  lowest  = t.getPressure();
                 if (t.getPressure() > highest) highest = t.getPressure();
             }

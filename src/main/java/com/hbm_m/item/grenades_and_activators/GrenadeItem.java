@@ -1,7 +1,7 @@
 package com.hbm_m.item.grenades_and_activators;
 import java.util.List;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.entity.grenades.GrenadeProjectileEntity;
 import com.hbm_m.entity.grenades.GrenadeType;
@@ -19,14 +19,15 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.registries.RegistryObject;
+
+import dev.architectury.registry.registries.RegistrySupplier;
 
 public class GrenadeItem extends Item {
     
     private final GrenadeType grenadeType;
-    private final RegistryObject<EntityType<GrenadeProjectileEntity>> entityType;
+    private final RegistrySupplier<EntityType<GrenadeProjectileEntity>> entityType;
 
-    public GrenadeItem(Properties properties, GrenadeType grenadeType, RegistryObject<EntityType<GrenadeProjectileEntity>> entityType) {
+    public GrenadeItem(Properties properties, GrenadeType grenadeType, RegistrySupplier<EntityType<GrenadeProjectileEntity>> entityType) {
         super(properties);
         this.grenadeType = grenadeType;
         this.entityType = entityType;

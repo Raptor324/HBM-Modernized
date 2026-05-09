@@ -103,7 +103,7 @@ public class BlastFurnaceRecipe implements Recipe<SimpleContainer> {
 
         @Override
         public @Nullable BlastFurnaceRecipe fromNetwork(ResourceLocation recipeId, FriendlyByteBuf buffer) {
-            NonNullList<Ingredient> inputs = NonNullList.withSize(buffer.readInt(), Ingredient.EMPTY);
+            NonNullList<Ingredient> inputs = NonNullList.withSize(buffer.readVarInt(), Ingredient.EMPTY);
 
             for(int i = 0; i < inputs.size(); i++) {
                 inputs.set(i, Ingredient.fromNetwork(buffer));
@@ -115,13 +115,14 @@ public class BlastFurnaceRecipe implements Recipe<SimpleContainer> {
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, BlastFurnaceRecipe recipe) {
-            buffer.writeInt(recipe.inputItems.size());
+            buffer.writeVarInt(recipe.getIngredients().size());
 
             for (Ingredient ingredient : recipe.getIngredients()) {
                 ingredient.toNetwork(buffer);
             }
 
-            buffer.writeItemStack(recipe.getResultItem(null), false);
+            // Заменяем writeItemStack(stack, false) на ванильный writeItem(stack)
+            buffer.writeItem(recipe.getResultItem(null));
         }
     }
 }

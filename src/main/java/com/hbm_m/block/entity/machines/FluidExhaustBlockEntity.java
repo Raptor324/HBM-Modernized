@@ -1,13 +1,14 @@
 package com.hbm_m.block.entity.machines;
 
-import javax.annotation.Nonnull;
+import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.api.fluids.FluidNetProvider;
 import com.hbm_m.api.fluids.FluidNode;
 import com.hbm_m.api.fluids.IFluidPipeMK2;
-import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.api.network.UniNodespace;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.inventory.fluid.ModFluids;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -77,16 +78,32 @@ public class FluidExhaustBlockEntity extends BlockEntity implements IFluidPipeMK
     // Node lifecycle
     // =====================================================================================
 
-    @Override
+    private void initNodes(ServerLevel serverLevel) {
+        Fluid[] smokes = smokeTypes();
+        for (int i = 0; i < smokes.length; i++) {
+            ensureNode(serverLevel, i, smokes[i]);
+        }
+    }
+
+    //? if forge {
+    /*@Override
     public void onLoad() {
         super.onLoad();
         if (level instanceof ServerLevel serverLevel) {
-            Fluid[] smokes = smokeTypes();
-            for (int i = 0; i < smokes.length; i++) {
-                ensureNode(serverLevel, i, smokes[i]);
-            }
+            initNodes(serverLevel);
         }
     }
+    *///?}
+
+    //? if fabric {
+    @Override
+    public void setLevel(Level level) {
+        super.setLevel(level);
+        if (level instanceof ServerLevel serverLevel) {
+            initNodes(serverLevel);
+        }
+    }
+    //?}
 
     @Override
     public void setRemoved() {
@@ -101,13 +118,20 @@ public class FluidExhaustBlockEntity extends BlockEntity implements IFluidPipeMK
         super.setRemoved();
     }
 
-    @Override
+    //? if forge {
+    /*@Override
     public void onChunkUnloaded() {
-        for (FluidNode n : nodes) {
-            if (n != null) n.expired = true;
+        if (level instanceof ServerLevel serverLevel) {
+            for (int i = 0; i < nodes.length; i++) {
+                if (nodes[i] != null && !nodes[i].isExpired()) {
+                    UniNodespace.destroyNode(serverLevel, nodes[i]);
+                }
+                nodes[i] = null;
+            }
         }
         super.onChunkUnloaded();
     }
+    *///?}
 
     private void ensureNode(ServerLevel serverLevel, int index, Fluid fluid) {
         if (nodes[index] == null || nodes[index].isExpired()) {
@@ -141,12 +165,12 @@ public class FluidExhaustBlockEntity extends BlockEntity implements IFluidPipeMK
     // =====================================================================================
 
     @Override
-    protected void saveAdditional(@Nonnull CompoundTag tag) {
+    protected void saveAdditional(@NotNull CompoundTag tag) {
         super.saveAdditional(tag);
     }
 
     @Override
-    public void load(@Nonnull CompoundTag tag) {
+    public void load(@NotNull CompoundTag tag) {
         super.load(tag);
     }
 

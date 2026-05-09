@@ -2,13 +2,14 @@ package com.hbm_m.block.machines;
 
 import java.util.List;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.MachineBatteryBlockEntity;
 import com.hbm_m.util.EnergyFormatter;
 
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -38,7 +39,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.network.NetworkHooks;
+
 
 /**
  * Универсальный класс блока для всех энергохранилищ.
@@ -117,7 +118,7 @@ public class MachineBatteryBlock extends BaseEntityBlock {
         if (!level.isClientSide) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MachineBatteryBlockEntity battery) {
-                NetworkHooks.openScreen((ServerPlayer) player, battery, pos);
+                MenuRegistry.openExtendedMenu((ServerPlayer) player, battery, buf -> buf.writeBlockPos(pos));
             }
             return InteractionResult.CONSUME;
         }

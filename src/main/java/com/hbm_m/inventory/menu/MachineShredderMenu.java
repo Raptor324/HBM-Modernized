@@ -4,11 +4,9 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machines.MachineShredderBlockEntity;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;
-import com.hbm_m.network.packet.PacketSyncEnergy;
 import com.hbm_m.item.industrial.ItemBlades;
-import com.hbm_m.util.LongDataPacker;
+import com.hbm_m.platform.ModItemStackHandler;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -19,9 +17,6 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.items.ItemStackHandler;
-import net.minecraftforge.items.SlotItemHandler;
-import net.minecraftforge.network.PacketDistributor;
 
 public class MachineShredderMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
@@ -29,6 +24,7 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
     private final Level level;
     private final ContainerData data;
     private final Player player; // 2. Сохраняем игрока для пакетов
+    private final HandlerContainer machineInventory;
 
     // 3. Поля для клиентской энергии
     private long clientEnergy;
@@ -61,7 +57,8 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
         this.player = playerInventory.player;
         addDataSlots(data);
 
-        ItemStackHandler itemHandler = this.blockEntity.getInventory();
+        ModItemStackHandler itemHandler = this.blockEntity.getInventory();
+        this.machineInventory = new HandlerContainer(itemHandler);
 
         // Входные слоты (3x3 сетка) - верхняя левая часть GUI (0-8)
         int startX = 44;
@@ -69,7 +66,7 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 3; col++) {
                 int index = row * 3 + col;
-                this.addSlot(new SlotItemHandler(itemHandler, index,
+                this.addSlot(new Slot(machineInventory, index,
                         startX + col * 18, startY + row * 18));
             }
         }
@@ -80,7 +77,7 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
         for (int col = 0; col < 6; col++) {
             for (int row = 0; row < 3; row++) {
                 int index = col * 3 + row;
-                this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOTS + index,
+                this.addSlot(new Slot(machineInventory, INPUT_SLOTS + index,
                         outputX + row * 18, outputY + col * 18) {
                     @Override
                     public boolean mayPlace(ItemStack stack) {
@@ -93,17 +90,11 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
         // Слоты для лезвий (2 слота) - внизу слева (27-28)
         int bladeX = 44;
         int bladeY = 108;
-        this.addSlot(new SlotItemHandler(itemHandler, BLADE_LEFT, bladeX, bladeY));
-        this.addSlot(new SlotItemHandler(itemHandler, BLADE_RIGHT, bladeX + 36, bladeY));
+        this.addSlot(new Slot(machineInventory, BLADE_LEFT, bladeX, bladeY));
+        this.addSlot(new Slot(machineInventory, BLADE_RIGHT, bladeX + 36, bladeY));
 
         // Слот для батареи (29) - внизу слева, под лезвиями
-        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, 8, 108) {
-            @Override
-            public boolean mayPlace(ItemStack stack) {
-                // Разрешаем класть только предметы с энергетической capability
-                return stack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY).isPresent();
-            }
-        });
+        this.addSlot(new Slot(machineInventory, BATTERY_SLOT, 8, 108));
 
         // Инвентарь игрока
         int playerInvX = 8;
@@ -159,25 +150,25 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
         else if (index >= playerInventoryStart && index < playerInventoryEnd) {
             // Проверяем тип предмета
             boolean isBlade = slotStack.getItem() instanceof ItemBlades;
-            boolean isBattery = slotStack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY).isPresent();
+            boolean isBattery = machineInventory.canPlaceItem(BATTERY_SLOT, slotStack);
 
             boolean moved = false;
-            
+
             if (isBattery) {
                 // Пытаемся поместить в слот для батареи
                 moved = this.moveItemStackTo(slotStack, BATTERY_SLOT, BATTERY_SLOT + 1, false);
             }
-            
+
             if (!moved && isBlade) {
                 // Пытаемся поместить в слоты для лезвий
                 moved = this.moveItemStackTo(slotStack, BLADE_LEFT, BLADE_RIGHT + 1, false);
             }
-            
+
             if (!moved) {
                 // Пытаемся поместить во входные слоты (разрешаем все предметы, кроме лезвий)
                 moved = this.moveItemStackTo(slotStack, 0, INPUT_SLOTS, false);
             }
-            
+
             if (!moved) {
                 return ItemStack.EMPTY;
             }
@@ -270,15 +261,90 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
         super.broadcastChanges();
 
         if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
-            ModPacketHandler.INSTANCE.send(
-                    net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> (net.minecraft.server.level.ServerPlayer) this.player),
-                    new com.hbm_m.network.packet.PacketSyncEnergy(
-                            this.containerId,
-                            blockEntity.getEnergyStored(),
-                            blockEntity.getMaxEnergyStored(),
-                            0L // <--- Передаем 0 как дельту
-                    )
-            );
+            ModPacketHandler.sendToPlayer((net.minecraft.server.level.ServerPlayer) this.player, ModPacketHandler.SYNC_ENERGY,
+                new com.hbm_m.network.packet.PacketSyncEnergy(
+                    this.containerId,
+                    blockEntity.getEnergyStored(),
+                    blockEntity.getMaxEnergyStored(),
+                    0L
+                ));
+        }
+    }
+
+    /** Vanilla-адаптер для {@link ModItemStackHandler}, чтобы использовать обычные {@link Slot}. */
+    private static final class HandlerContainer implements net.minecraft.world.Container {
+        private final ModItemStackHandler handler;
+
+        private HandlerContainer(ModItemStackHandler handler) {
+            this.handler = handler;
+        }
+
+        @Override
+        public int getContainerSize() {
+            return handler.getSlots();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            for (int i = 0; i < handler.getSlots(); i++) {
+                if (!handler.getStackInSlot(i).isEmpty()) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public ItemStack getItem(int slot) {
+            return handler.getStackInSlot(slot);
+        }
+
+        @Override
+        public ItemStack removeItem(int slot, int amount) {
+            ItemStack existing = handler.getStackInSlot(slot);
+            if (existing.isEmpty() || amount <= 0) {
+                return ItemStack.EMPTY;
+            }
+
+            ItemStack split = existing.split(amount);
+            handler.setStackInSlot(slot, existing);
+            setChanged();
+            return split;
+        }
+
+        @Override
+        public ItemStack removeItemNoUpdate(int slot) {
+            ItemStack existing = handler.getStackInSlot(slot);
+            handler.setStackInSlot(slot, ItemStack.EMPTY);
+            return existing;
+        }
+
+        @Override
+        public void setItem(int slot, ItemStack stack) {
+            handler.setStackInSlot(slot, stack);
+            setChanged();
+        }
+
+        @Override
+        public void setChanged() {
+            // Изменения уже отслеживаются в handler, но Slot ожидает этот вызов.
+        }
+
+        @Override
+        public boolean stillValid(Player player) {
+            return true;
+        }
+
+        @Override
+        public void clearContent() {
+            for (int i = 0; i < handler.getSlots(); i++) {
+                handler.setStackInSlot(i, ItemStack.EMPTY);
+            }
+        }
+
+        @Override
+        public boolean canPlaceItem(int slot, ItemStack stack) {
+            return handler.isItemValid(slot, stack);
         }
     }
 }

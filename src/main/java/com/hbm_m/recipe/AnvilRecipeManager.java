@@ -1,5 +1,6 @@
 package com.hbm_m.recipe;
 
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -7,14 +8,20 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.hbm_m.block.machines.anvils.AnvilTier;
-
+//? if fabric {
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+//?}
+//? if forge {
+/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+*///?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+
 
 public final class AnvilRecipeManager {
 
@@ -24,7 +31,12 @@ public final class AnvilRecipeManager {
         return level.getRecipeManager().getAllRecipesFor(AnvilRecipe.Type.INSTANCE);
     }
 
-    @OnlyIn(Dist.CLIENT)
+    //? if fabric {
+    @Environment(EnvType.CLIENT)
+    //?}
+    //? if forge {
+    /*@OnlyIn(Dist.CLIENT)
+    *///?}
     public static List<AnvilRecipe> getClientRecipes() {
         Minecraft minecraft = Minecraft.getInstance();
         Level level = minecraft.level;

@@ -14,26 +14,32 @@ import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.CentrifugeRecipes;
 import com.hbm_m.recipe.CentrifugeRecipes.RecipeInput;
-import com.hbm_m.recipe.ChemicalPlantRecipes;
-import com.hbm_m.recipe.ChemicalPlantRecipes.ChemicalRecipe;
+import com.hbm_m.recipe.ChemicalPlantRecipe;
 
-import mezz.jei.api.IModPlugin;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
+
+//? if forge {
+/*import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.registration.ISubtypeRegistration;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.registries.ForgeRegistries;
 
 @JeiPlugin
 public class HbmJeiPlugin implements IModPlugin {
 
     private static final ResourceLocation PLUGIN_UID =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "jei_plugin");
+            //? if fabric && < 1.21.1 {
+            new ResourceLocation(RefStrings.MODID, "jei_plugin");
+            //?} else {
+                        /^ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "jei_plugin");
+            ^///?}
+
 
     @Override
     public ResourceLocation getPluginUid() {
@@ -71,9 +77,9 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.registerSubtypeInterpreter(
             ModItems.FLUID_BARREL.get(),
             (stack, ctx) -> {
-                FluidStack fluid = FluidBarrelItem.getFluid(stack);
+                dev.architectury.fluid.FluidStack fluid = FluidBarrelItem.getFluid(stack);
                 if (fluid.isEmpty()) return "empty";
-                ResourceLocation fluidId = ForgeRegistries.FLUIDS.getKey(fluid.getFluid());
+                ResourceLocation fluidId = BuiltInRegistries.FLUID.getKey(fluid.getFluid());
                 return (fluidId != null ? fluidId.toString() : "unknown") + ":" + fluid.getAmount();
             }
         );
@@ -92,7 +98,7 @@ public class HbmJeiPlugin implements IModPlugin {
             (stack, ctx) -> {
                 ItemStack output = ItemAssemblyTemplate.getRecipeOutput(stack);
                 if (output.isEmpty()) return "empty";
-                ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(output.getItem());
+                ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(output.getItem());
                 return (itemId != null ? itemId.toString() : "unknown") +
                     (output.hasTag() ? output.getTag().toString() : "");
             }
@@ -119,11 +125,19 @@ public class HbmJeiPlugin implements IModPlugin {
 
     private static List<ChemicalPlantJeiRecipe> getChemicalPlantRecipes() {
         List<ChemicalPlantJeiRecipe> recipes = new ArrayList<>();
-        
-        for (ChemicalRecipe recipe : ChemicalPlantRecipes.getRecipeList()) {
+
+        // Datapack recipes (hbm_m:chemical_plant)
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) return recipes;
+        List<ChemicalPlantRecipe> all = mc.level.getRecipeManager().getAllRecipesFor(ChemicalPlantRecipe.Type.INSTANCE);
+        for (ChemicalPlantRecipe recipe : all) {
             recipes.add(new ChemicalPlantJeiRecipe(recipe));
         }
-        
+
         return recipes;
     }
 }
+*///?} else {
+public final class HbmJeiPlugin {
+    private HbmJeiPlugin() {}
+}//?}

@@ -1,11 +1,6 @@
-package com.hbm_m.powerarmor.render;
+//? if forge {
+/*package com.hbm_m.powerarmor.render;
 
-import net.minecraft.client.renderer.block.model.ItemTransforms;
-import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.client.resources.model.ModelResourceLocation;
-import net.minecraft.world.item.ArmorItem;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.Map;
 
@@ -13,11 +8,25 @@ import com.hbm_m.interfaces.IArmorModelConfig;
 import com.hbm_m.powerarmor.ModPowerArmorItem;
 import com.hbm_m.powerarmor.T51Armor;
 
-/**
+import net.minecraft.client.renderer.block.model.ItemTransforms;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//? if fabric {
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;//?}
+
+/^*
  * Модель для рендеринга T51 Power Armor в GUI и руке.
  * Использует абстрактный базовый класс для общей логики рендеринга.
- */
-@OnlyIn(Dist.CLIENT)
+ ^/
+//? if forge {
+/^@OnlyIn(Dist.CLIENT)
+^///?}
+//? if fabric {
+@Environment(EnvType.CLIENT)//?}
 public class T51ArmorBakedModel extends AbstractArmorBakedModel {
 
     private static final String[] T51_ORDER = {
@@ -35,9 +44,9 @@ public class T51ArmorBakedModel extends AbstractArmorBakedModel {
         return new T51ArmorBakedModel(this.parts, newTransforms);
     }
 
-    /**
+    /^*
      * Конфигурация для T51 Power Armor.
-     */
+     ^/
     private static class T51ModelConfig implements IArmorModelConfig {
         @Override
         public String getArmorSetId() {
@@ -80,3 +89,4 @@ public class T51ArmorBakedModel extends AbstractArmorBakedModel {
         }
     }
 }
+*///?}

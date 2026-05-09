@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.machines.BatterySocketBlockEntity;
 import com.hbm_m.block.machines.MachineBatterySocketBlock;
+import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
@@ -20,12 +21,13 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.client.model.data.ModelData;
+//? if forge {
+/*import net.minecraftforge.client.model.data.ModelData;
+*///?}
 
 public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
-    private static final ResourceLocation BATTERY_TEX =
-            ResourceLocation.fromNamespaceAndPath("hbm_m", "block/machines/battery_socket");
+    private static final ResourceLocation BATTERY_TEX = RefStrings.resourceLocation("block/machines/battery_socket");
 
     private final Map<Object, List<BakedQuad>> batteryQuadCache = new ConcurrentHashMap<>();
     private static final Object NULL_SIDE_KEY = new Object();
@@ -44,8 +46,10 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
         return false;
     }
 
-    @Override
-    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand, ModelData modelData, @Nullable RenderType renderType) {
+    //? if forge {
+    /*@Override
+    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand,
+            ModelData modelData, @Nullable RenderType renderType) {
         List<BakedQuad> quads = new ArrayList<>();
         int rotationY = getRotationYForFacing(state);
         Direction querySide = getUnrotatedSide(side, rotationY);
@@ -67,6 +71,32 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
 
         return quads;
     }
+    *///?}
+
+    //? if fabric {
+    @Override
+    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
+        List<BakedQuad> quads = new ArrayList<>();
+        int rotationY = getRotationYForFacing(state);
+        Direction querySide = getUnrotatedSide(side, rotationY);
+
+        BakedModel socket = getPart("Socket");
+        if (socket != null) {
+            List<BakedQuad> socketQuads = socket.getQuads(state, querySide, rand);
+            quads.addAll(rotationY != 0 ? ModelHelper.transformQuadsByFacing(socketQuads, rotationY) : socketQuads);
+        }
+
+        boolean showBattery = Boolean.TRUE.equals(FabricRenderDataBridge.get());
+        if (showBattery) {
+            BakedModel battery = getPart("Battery");
+            if (battery != null) {
+                List<BakedQuad> batteryQuads = getRetexturedBatteryQuads(battery, querySide, rand);
+                quads.addAll(rotationY != 0 ? ModelHelper.transformQuadsByFacing(batteryQuads, rotationY) : batteryQuads);
+            }
+        }
+        return quads;
+    }
+    //?}
 
     private static int getRotationYForFacing(@Nullable BlockState state) {
         if (state == null || !state.hasProperty(MachineBatterySocketBlock.FACING)) return 0;
@@ -93,9 +123,16 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
         return batteryQuadCache.computeIfAbsent(key, k -> {
             List<BakedQuad> out = new ArrayList<>();
             TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS).apply(BATTERY_TEX);
-            for (BakedQuad q : battery.getQuads(null, side, rand, ModelData.EMPTY, null)) {
+            //? if forge {
+            /*for (BakedQuad q : battery.getQuads(null, side, rand, ModelData.EMPTY, null)) {
                 out.add(retextureQuad(q, sprite));
             }
+            *///?}
+            //? if fabric {
+            for (BakedQuad q : battery.getQuads(null, side, rand)) {
+                out.add(retextureQuad(q, sprite));
+            }
+            //?}
             return out;
         });
     }

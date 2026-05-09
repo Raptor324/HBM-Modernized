@@ -1,9 +1,9 @@
 package com.hbm_m.datagen.assets;
-
-import java.util.Set;
+//? if forge {
+/*import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 // Провайдер генерации тегов блоков для мода.
 // Здесь мы определяем, какими инструментами можно добывать наши блоки и руды,
@@ -13,6 +13,7 @@ import javax.annotation.Nonnull;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
 
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
@@ -26,7 +27,6 @@ import net.minecraft.world.level.block.WebBlock;
 import net.minecraftforge.common.Tags;
 import net.minecraftforge.common.data.BlockTagsProvider;
 import net.minecraftforge.common.data.ExistingFileHelper;
-import net.minecraftforge.registries.RegistryObject;
 
 public class ModBlockTagProvider extends BlockTagsProvider {
 
@@ -35,7 +35,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
     }
 
     @Override
-    protected void addTags(@Nonnull HolderLookup.Provider provider) {
+    protected void addTags(@NotNull HolderLookup.Provider provider) {
         // ============ МИНЕРАЛЬНЫЙ ТАГ: ДОБЫЧА КИРКАМИ ============
 
 
@@ -85,7 +85,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
         );
 
         // --- 3. Автоматический цикл ---
-        for (RegistryObject<Block> regObject : ModBlocks.BLOCKS.getEntries()) {
+        for (RegistrySupplier<Block> regObject : ModBlocks.BLOCKS) {
             Block block = regObject.get();
 
             // Фильтр: пропускаем растения, листья, паутину
@@ -130,7 +130,8 @@ public class ModBlockTagProvider extends BlockTagsProvider {
 
         // ============ ТЕГ ДЛЯ OCCLUSION CULLING ============
         // Блоки, через которые можно видеть (не блокируют рендеринг машин)
-        this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "non_occluding")))
+        //? if fabric && < 1.21.1 {
+        this.tag(BlockTags.create(new ResourceLocation(RefStrings.MODID, "non_occluding")))
                 .add(ModBlocks.UNIVERSAL_MACHINE_PART.get())
                 .addTag(Tags.Blocks.GLASS)
                 .addTag(Tags.Blocks.GLASS_PANES)
@@ -170,15 +171,77 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(Blocks.TRIPWIRE)
                 .add(Blocks.TRIPWIRE_HOOK)
                 .add(Blocks.CAMPFIRE);
+        //?} else {
+                /^this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "non_occluding")))
+                .add(ModBlocks.UNIVERSAL_MACHINE_PART.get())
+                .addTag(Tags.Blocks.GLASS)
+                .addTag(Tags.Blocks.GLASS_PANES)
+                .addTag(BlockTags.FENCES)
+                .addTag(BlockTags.FENCE_GATES)
+                .addTag(BlockTags.WALLS)
+                .addTag(BlockTags.DOORS)
+                .addTag(BlockTags.TRAPDOORS)
+                .addTag(BlockTags.BUTTONS)
+                .addTag(BlockTags.PRESSURE_PLATES)
+                .addTag(BlockTags.RAILS)
+                .addTag(BlockTags.STAIRS)
+                .addTag(BlockTags.SLABS)
+                .addTag(BlockTags.CORAL_PLANTS)
+                .addTag(BlockTags.LEAVES)
+                .addTag(BlockTags.SAPLINGS)
+                .addTag(BlockTags.FLOWERS)
+                .addTag(BlockTags.SIGNS)
+                .addTag(BlockTags.BANNERS)
+                .addTag(BlockTags.CANDLES)
+                .addTag(BlockTags.CLIMBABLE)
+                .add(Blocks.IRON_BARS)
+                .add(Blocks.CHAIN)
+                .add(Blocks.LANTERN)
+                .add(Blocks.SOUL_LANTERN)
+                .add(Blocks.TORCH)
+                .add(Blocks.SOUL_TORCH)
+                .add(Blocks.REDSTONE_TORCH)
+                .add(Blocks.BREWING_STAND)
+                .add(Blocks.ENCHANTING_TABLE)
+                .add(Blocks.END_ROD)
+                .add(Blocks.LIGHTNING_ROD)
+                .add(Blocks.HOPPER)
+                .add(Blocks.COBWEB)
+                .add(Blocks.SCAFFOLDING)
+                .add(Blocks.LEVER)
+                .add(Blocks.TRIPWIRE)
+                .add(Blocks.TRIPWIRE_HOOK)
+                .add(Blocks.CAMPFIRE);
+        ^///?}
+
 
         // ============ ТЕГИ СОВМЕСТИМОСТИ С ДРУГИМИ МОДАМИ ============
-        this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")))
+        //? if fabric && < 1.21.1 {
+        this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks/uranium")))
                 .add(ModBlocks.URANIUM_BLOCK.get());
+        //?} else {
+                /^this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")))
+                .add(ModBlocks.URANIUM_BLOCK.get());
+        ^///?}
 
-        this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/plutonium")))
+
+        //? if fabric && < 1.21.1 {
+        this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks/plutonium")))
                 .add(ModBlocks.PLUTONIUM_BLOCK.get());
+        //?} else {
+                /^this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/plutonium")))
+                .add(ModBlocks.PLUTONIUM_BLOCK.get());
+        ^///?}
 
-        this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")))
+
+        //? if fabric && < 1.21.1 {
+        this.tag(BlockTags.create(new ResourceLocation("forge", "ores/uranium")))
                 .add(ModBlocks.URANIUM_ORE.get());
+        //?} else {
+                /^this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")))
+                .add(ModBlocks.URANIUM_ORE.get());
+        ^///?}
+
     }
 }
+*///?}

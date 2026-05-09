@@ -13,14 +13,13 @@ import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.machines.MachineAssemblerBlock;
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.inventory.menu.MachineAssemblerMenu;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.recipe.AssemblerRecipe;
-import com.hbm_m.sound.ClientSoundManager;
+import com.hbm_m.sound.ClientSoundBootstrap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -38,17 +37,37 @@ import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+
+import com.hbm_m.platform.ModItemStackHandler;
+
+//? if forge {
+/*import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
+*///?}
+
+//? if fabric {
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.storage.base.CombinedStorage;
+import net.fabricmc.fabric.api.transfer.v1.storage.base.SingleSlotStorage;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+import team.reborn.energy.api.EnergyStorage;
+//?}
 
 /**
  * Сборочная машина (Assembler) - мультиблочная структура для автоматизированного крафта.
  * Адаптировано для long-энергосистемы с наследованием от BaseMachineBlockEntity.
  */
 public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
+
+    private static final String ASSEMBLER_SOUND_INSTANCE = "com.hbm_m.sound.AssemblerSoundInstance";
 
     // Слоты
     private static final int SLOT_COUNT = 18;
@@ -63,12 +82,16 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     private int progress = 0;
     private int maxProgress = 100;
 
-    private long lastEnergy = 0;
-    private long energyDelta = 0;
-
     // Proxy handlers для multiblock parts
-    private LazyOptional<IItemHandler> lazyInputProxy = LazyOptional.empty();
+    //? if forge {
+    /*private LazyOptional<IItemHandler> lazyInputProxy = LazyOptional.empty();
     private LazyOptional<IItemHandler> lazyOutputProxy = LazyOptional.empty();
+    *///?}
+
+    //? if fabric {
+    @Nullable private Storage<ItemVariant> inputProxy;
+    @Nullable private Storage<ItemVariant> outputProxy;
+    //?}
 
     // Отслеживание источников предметов
     private final Set<BlockPos> lastPullSources = new HashSet<>();
@@ -122,8 +145,14 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == ENERGY_SLOT) {
-            return stack.getCapability(ForgeCapabilities.ENERGY).isPresent() ||
-                    stack.getItem() instanceof ItemCreativeBattery;
+            //? if forge {
+            /*return stack.getCapability(ForgeCapabilities.ENERGY).isPresent()
+                    || stack.getItem() instanceof ItemCreativeBattery;
+            *///?}
+            //? if fabric {
+            return EnergyStorage.ITEM.find(stack, null) != null
+                    || stack.getItem() instanceof ItemCreativeBattery;
+            //?}
         }
         if (slot == TEMPLATE_SLOT) {
             return stack.getItem() instanceof ItemAssemblyTemplate;
@@ -143,7 +172,8 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
     // ==================== MULTIBLOCK PART SUPPORT ====================
 
-    public LazyOptional<IItemHandler> getItemHandlerForPart(PartRole role) {
+    //? if forge {
+    /*public LazyOptional<IItemHandler> getItemHandlerForPart(PartRole role) {
         if (role == PartRole.ITEM_INPUT) {
             if (!lazyInputProxy.isPresent()) {
                 lazyInputProxy = LazyOptional.of(this::createInputProxy);
@@ -234,6 +264,33 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             }
         };
     }
+    *///?}
+
+    //? if fabric {
+    public Storage<ItemVariant> getItemStorageForPart(PartRole role) {
+        if (role == PartRole.ITEM_INPUT) {
+            if (inputProxy == null) inputProxy = createInputProxyStorage();
+            return inputProxy;
+        }
+        if (role == PartRole.ITEM_OUTPUT) {
+            if (outputProxy == null) outputProxy = createOutputProxyStorage();
+            return outputProxy;
+        }
+        return Storage.empty();
+    }
+
+    private Storage<ItemVariant> createInputProxyStorage() {
+        java.util.List<SingleSlotStorage<ItemVariant>> slots = new java.util.ArrayList<>();
+        for (int i = INPUT_SLOT_START; i <= INPUT_SLOT_END; i++) {
+            slots.add(inventory.getSlotStorage(i));
+        }
+        return new CombinedStorage<>(slots);
+    }
+
+    private Storage<ItemVariant> createOutputProxyStorage() {
+        return inventory.getSlotStorage(OUTPUT_SLOT);
+    }
+    //?}
 
     // ==================== TICK LOGIC ====================
 
@@ -245,10 +302,17 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
     private void clientTick() {
-        ClientSoundManager.updateSound(this, this.isCrafting(),
-                () -> new com.hbm_m.sound.AssemblerSoundInstance(this.getBlockPos()));
+
+        ClientSoundBootstrap.updateSound(this, this.isCrafting(), () -> newAssemblerSoundInstance());
+    }
+
+    private Object newAssemblerSoundInstance() {
+        try {
+            return Class.forName(ASSEMBLER_SOUND_INSTANCE).getConstructor(BlockPos.class).newInstance(this.getBlockPos());
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void serverTick() {
@@ -341,7 +405,8 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             return;
         }
 
-        // Обычная батарея через HBM capability
+        //? if forge {
+        /*// Обычная батарея через HBM capability
         energySourceStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).ifPresent(itemEnergy -> {
             long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
             if (energyNeeded <= 0) return;
@@ -350,9 +415,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             long energyToTransfer = Math.min(energyNeeded, maxCanReceive);
 
             if (energyToTransfer > 0) {
-                // ПРАВИЛЬНО: используем extractEnergy вместо прямого доступа
                 long extracted = itemEnergy.extractEnergy(energyToTransfer, false);
-
                 if (extracted > 0) {
                     this.setEnergyStored(this.getEnergyStored() + extracted);
                     setChanged();
@@ -375,6 +438,26 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                 }
             });
         }
+        *///?}
+
+        //? if fabric {
+        var itemEnergy = EnergyStorage.ITEM.find(energySourceStack, null);
+        if (itemEnergy == null) return;
+
+        long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
+        if (energyNeeded <= 0) return;
+
+        long maxTransfer = Math.min(energyNeeded, this.getReceiveSpeed());
+        if (maxTransfer <= 0) return;
+
+        try (Transaction tx = Transaction.openOuter()) {
+            long extracted = itemEnergy.extract(maxTransfer, tx);
+            if (extracted > 0) {
+                setEnergyStored(getEnergyStored() + extracted);
+                tx.commit();
+            }
+        }
+        //?}
     }
 
 
@@ -498,9 +581,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             else if (dxN == 0 && dzN == -1) dirToNeighbor = Direction.NORTH;
             else continue;
 
-            IItemHandler cap = neighbor.getCapability(ForgeCapabilities.ITEM_HANDLER, dirToNeighbor).orElse(null);
-            if (cap == null) continue;
-
             for (Map.Entry<Ingredient, Integer> entry : required.entrySet()) {
                 Ingredient ingredient = entry.getKey();
                 int need = entry.getValue();
@@ -515,6 +595,10 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
                 int missing = need - present;
                 if (missing <= 0) continue;
+
+                //? if forge {
+                /*IItemHandler cap = neighbor.getCapability(ForgeCapabilities.ITEM_HANDLER, dirToNeighbor).orElse(null);
+                if (cap == null) continue;
 
                 for (int slot = 0; slot < cap.getSlots() && missing > 0; slot++) {
                     ItemStack possible = cap.getStackInSlot(slot);
@@ -538,6 +622,46 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                         }
                     }
                 }
+                *///?}
+
+                //? if fabric {
+                Storage<ItemVariant> cap = ItemStorage.SIDED.find(level, neighborPosGlobal, dirToNeighbor);
+                if (cap == null) continue;
+
+                // Вытаскиваем по одному до missing (Transfer API оперирует ItemVariant/count)
+                // и пытаемся вставить в наши входные слоты.
+                for (int attempt = 0; attempt < missing; attempt++) {
+                    boolean movedOne = false;
+                    try (Transaction tx = Transaction.openOuter()) {
+                        for (var view : cap) {
+                            ItemVariant v = view.getResource();
+                            if (v.isBlank()) continue;
+                            ItemStack one = v.toStack(1);
+                            if (!ingredient.test(one)) continue;
+
+                            long extracted = view.extract(v, 1, tx);
+                            if (extracted != 1) continue;
+
+                            // Вставляем 1 предмет во входные слоты (через ModItemStackHandler insertItem)
+                            ItemStack toInsert = one;
+                            for (int dest = INPUT_SLOT_START; dest <= INPUT_SLOT_END && !toInsert.isEmpty(); dest++) {
+                                toInsert = inventory.insertItem(dest, toInsert, false);
+                            }
+                            if (toInsert.isEmpty()) {
+                                tx.commit();
+                                movedOne = true;
+                                break;
+                            } else {
+                                // откатим (не коммитим)
+                                break;
+                            }
+                        }
+                    }
+                    if (!movedOne) break;
+                    lastPullSources.add(neighborPosGlobal);
+                    setChanged();
+                }
+                //?}
             }
         }
     }
@@ -576,8 +700,8 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
             Direction side1 = outDir.getOpposite();
             Direction side2 = facingDir;
-
-            IItemHandler cap = neighbor.getCapability(ForgeCapabilities.ITEM_HANDLER, side1)
+            //? if forge {
+            /*IItemHandler cap = neighbor.getCapability(ForgeCapabilities.ITEM_HANDLER, side1)
                     .orElse(neighbor.getCapability(ForgeCapabilities.ITEM_HANDLER, side2)
                             .orElse(null));
 
@@ -594,6 +718,27 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             }
 
             out = inventory.getStackInSlot(OUTPUT_SLOT);
+            *///?}
+
+            //? if fabric {
+            Storage<ItemVariant> cap = ItemStorage.SIDED.find(level, neighborPos, side1);
+            if (cap == null) cap = ItemStorage.SIDED.find(level, neighborPos, side2);
+            if (cap == null) continue;
+
+            ItemStack stack = inventory.getStackInSlot(OUTPUT_SLOT);
+            if (stack.isEmpty()) continue;
+
+            ItemVariant variant = ItemVariant.of(stack);
+            long amount = stack.getCount();
+            try (Transaction tx = Transaction.openOuter()) {
+                long inserted = cap.insert(variant, amount, tx);
+                if (inserted > 0) {
+                    stack.shrink((int) inserted);
+                    tx.commit();
+                }
+            }
+            out = inventory.getStackInSlot(OUTPUT_SLOT);
+            //?}
         }
     }
 
@@ -624,7 +769,8 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         return tag;
     }
 
-    @Override
+    //? if forge {
+    /*@Override
     public <T> LazyOptional<T> getCapability(@NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
             return itemHandler.cast();
@@ -638,13 +784,16 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         lazyInputProxy.invalidate();
         lazyOutputProxy.invalidate();
     }
+    *///?}
 
     // ==================== CLIENT ====================
 
-    @OnlyIn(Dist.CLIENT)
+    //? if forge {
+    /*@OnlyIn(Dist.CLIENT)
     public void setCrafting(boolean crafting) {
         this.isCrafting = crafting;
     }
+    *///?}
 
     public boolean isCrafting() {
         return isCrafting;
@@ -655,8 +804,8 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     // частями (slider, arm, 4 cogs), которые торчат за пределы статической
     // footprint. Делегируем структурному helper'у - он кэширует AABB по
     // facing один раз на ВЕСЬ helper и переиспользует для всех BE этого типа.
-    // Inflate 1.0 покрывает sway руки и slider'а.
-    @Override
+    // Inflate 1.35: 1.0 давало пограничные ложные окклюжены + мигание при
+    // Iris shadow/main в одном кадре; advanced assembler использует 1.5.
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         BlockState state = getBlockState();
         if (!(state.getBlock() instanceof MachineAssemblerBlock block)) {
@@ -665,7 +814,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                     worldPosition.offset(3, 3, 3));
         }
         Direction facing = state.getValue(MachineAssemblerBlock.FACING);
-        return block.getStructureHelper().getRenderBoundingBox(worldPosition, facing, 1.0);
+        return block.getStructureHelper().getRenderBoundingBox(worldPosition, facing, 1.35);
     }
 
     @Override
@@ -677,11 +826,16 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     @Override
     public void setRemoved() {
         super.setRemoved(); // Сначала вызываем super
-
-        // Используем DistExecutor.runWhenOn - это правильный API для void возврата
-        net.minecraftforge.fml.DistExecutor.runWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
-            ClientSoundManager.updateSound(this, false, null);
-        });
+        //? if forge {
+        /*if (this.level != null && this.level.isClientSide) {
+            ClientSoundBootstrap.updateSound(this, false, null);
+        }
+        *///?}
+        //? if fabric {
+        if (level != null && level.isClientSide) {
+            ClientSoundBootstrap.updateSound(this, false, null);
+        }
+        //?}
 
         // Удаление узла сети (у тебя это уже есть в конце файла, оставь как было)
         if (this.level != null && !this.level.isClientSide) {
@@ -689,5 +843,3 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         }
     }
 }
-
-

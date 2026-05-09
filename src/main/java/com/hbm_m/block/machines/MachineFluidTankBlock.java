@@ -3,8 +3,7 @@ package com.hbm_m.block.machines;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import javax.annotation.Nonnull;
-
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
@@ -15,11 +14,10 @@ import com.hbm_m.multiblock.MultiblockSideTuples;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 
-
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -40,8 +38,10 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.network.NetworkHooks;
+//? if forge {
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
+*///?}
+
 
 public class MachineFluidTankBlock extends BaseEntityBlock implements IMultiblockController {
 
@@ -95,13 +95,19 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
             'L', MultiblockSideTuples.ladder(false, false, true, false)
         );
 
+        // Символ контроллера 'C': жидкость с лица самого контроллера отключена (только F-коннекторы). См. {@link com.hbm_m.interfaces.IMultiblockSidedIO#setAllowedFluidSidesFromMultiblockStructure}.
+        Map<Character, boolean[]> controllerFluidSideMap = Map.of(
+            'C', MultiblockSideTuples.fluid(false, false, false, false, false, false)
+        );
+
         return MultiblockStructureHelper.createFromLayersWithRolesAndSides(
             new String[][]{layer0, layer1, layer2},
             symbolMap,
             () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
             roleMap,
             ladderSideMap,
-            null
+            null,
+            controllerFluidSideMap
         );
     }
 
@@ -127,17 +133,13 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
     }
 
     @Override
-    public void onRemove(@Nonnull BlockState state, @Nonnull Level level, @Nonnull BlockPos pos, @Nonnull BlockState newState, boolean isMoving) {
+    public void onRemove(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide()) {
             Direction facing = state.getValue(FACING);
 
             BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (blockEntity instanceof MachineFluidTankBlockEntity) {
-                blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
-                    for (int i = 0; i < handler.getSlots(); i++) {
-                        Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), handler.getStackInSlot(i));
-                    }
-                });
+            if (blockEntity instanceof com.hbm_m.block.entity.BaseMachineBlockEntity be) {
+                be.dropInventoryContents();
             }
             structureHelper.destroyStructure(level, pos, facing);
         }
@@ -168,7 +170,7 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
     }
 
     @Override
-    public InteractionResult use(@Nonnull BlockState state, @Nonnull Level level, @Nonnull BlockPos pos, @Nonnull Player player, @Nonnull InteractionHand hand, @Nonnull BlockHitResult hit) {
+    public InteractionResult use(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
         if (level.isClientSide) {
             return InteractionResult.sidedSuccess(true);
         }
@@ -178,32 +180,32 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
             return InteractionResult.PASS;
         }
 
-        NetworkHooks.openScreen((ServerPlayer) player, tank, pos);
+        MenuRegistry.openExtendedMenu((ServerPlayer) player, tank, buf -> buf.writeBlockPos(pos));
         return InteractionResult.sidedSuccess(false);
     }
 
     @Override
-    public RenderShape getRenderShape(@Nonnull BlockState state) {
+    public RenderShape getRenderShape(@NotNull BlockState state) {
         return RenderShape.MODEL;
     }
 
     @Nullable @Override
-    public BlockEntity newBlockEntity(@Nonnull BlockPos pos, @Nonnull BlockState state) {
+    public BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
         return new MachineFluidTankBlockEntity(pos, state);
     }
 
     @Nullable @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@Nonnull Level level, @Nonnull BlockState state, @Nonnull BlockEntityType<T> type) {
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level level, @NotNull BlockState state, @NotNull BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.FLUID_TANK_BE.get(), MachineFluidTankBlockEntity::tick);
     }
 
     @Nullable @Override
-    public BlockState getStateForPlacement(@Nonnull BlockPlaceContext context) {
+    public BlockState getStateForPlacement(@NotNull BlockPlaceContext context) {
         return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 
     @Override
-    protected void createBlockStateDefinition(@Nonnull StateDefinition.Builder<Block, BlockState> builder) {
+    protected void createBlockStateDefinition(@NotNull StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING);
     }
 }
