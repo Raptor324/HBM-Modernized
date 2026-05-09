@@ -44,6 +44,7 @@ import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.recipe.CentrifugeRecipes;
 import com.hbm_m.recipe.ChemicalPlantRecipes;
+import com.hbm_m.recipe.CrystallizerRecipes;
 import com.hbm_m.recipe.ModRecipes;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.world.biome.ModBiomes;
@@ -158,6 +159,9 @@ public class MainRegistry {
             
             ChemicalPlantRecipes.registerRecipes();
             LOGGER.info("ChemicalPlantRecipes initialized successfully");
+
+            CrystallizerRecipes.registerDefaults();
+            LOGGER.info("CrystallizerRecipes initialized successfully");
 
             ModFluidTraitsBootstrap.registerAll();
             LOGGER.info("ModFluidTraitsBootstrap: fluid tooltip traits registered");
