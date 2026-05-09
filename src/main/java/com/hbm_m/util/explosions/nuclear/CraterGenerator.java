@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.TickTask;
@@ -24,6 +25,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 
 /**
  * Crater Generator v21.0 - BIOME SYNC FIX
@@ -227,7 +230,15 @@ public class CraterGenerator {
 
     /** Debug ray visualization is client-only; never enable on dedicated server. */
     private static boolean isDebugScreenEnabled() {
-        return false;
+	if (FMLEnvironment.dist != Dist.CLIENT) {
+	    return false;
+	}
+        try {
+            Minecraft mc = Minecraft.getInstance();
+            return mc != null && mc.options.renderDebug;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     // *** FIXED: Wave noise function ***

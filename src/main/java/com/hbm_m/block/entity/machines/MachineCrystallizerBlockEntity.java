@@ -8,6 +8,8 @@ import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineCrystallizerMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
+import com.hbm_m.recipe.CrystallizerRecipe;
+import com.hbm_m.recipe.CrystallizerRecipes;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -24,6 +26,7 @@ import net.minecraft.world.level.block.state.BlockState;
 /*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 *///?}
@@ -36,9 +39,28 @@ import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 //?}
 
 /**
- * Crystallizer BlockEntity - порт с 1.7.10.
- * 8 слотов: input, battery, output, fluid input, fluid output, 2 upgrades, fluid ID.
- * Tank 8000 mB, энергия 1M. Логика крафтов - заглушка.
+ * Crystallizer BlockEntity — рудный окислитель, порт с 1.7.10.
+ *
+ * <p>Слоты:</p>
+ * <ul>
+ *   <li>0 — вход (руда / предмет)</li>
+ *   <li>1 — батарея</li>
+ *   <li>2 — выход (кристалл)</li>
+ *   <li>3 — слот заливки жидкости (ведро/контейнер с кислотой)</li>
+ *   <li>4 — слот выхода жидкости (опустевший контейнер)</li>
+ *   <li>5, 6 — апгрейды (пока не реализовано)</li>
+ *   <li>7 — слот идентификатора жидкости (пока не реализовано)</li>
+ * </ul>
+ *
+ * <p>Логика обработки:</p>
+ * <ol>
+ *   <li>Зарядка от батареи в слоте 1.</li>
+ *   <li>Перенос жидкости из контейнера в слоте 3 в внутренний бак.</li>
+ *   <li>Поиск рецепта в {@link CrystallizerRecipes} по входу и текущей жидкости в баке.</li>
+ *   <li>Если рецепт найден и есть энергия / кислота / место в выходе — крутим прогресс.</li>
+ *   <li>По достижении {@code duration} — выдаём результат, тратим кислоту,
+ *       с учётом productivity тратим (или не тратим) вход.</li>
+ * </ol>
  */
 public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
 
@@ -47,6 +69,8 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
     private static final int SLOT_OUTPUT = 2;
     private static final int SLOT_FLUID_INPUT = 3;
     private static final int SLOT_FLUID_OUTPUT = 4;
+    private static final int SLOT_UPGRADE_1 = 5;
+    private static final int SLOT_UPGRADE_2 = 6;
     private static final int SLOT_FLUID_ID = 7;
 
     private static final int SLOT_COUNT = 8;
@@ -54,6 +78,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
     private static final long MAX_RECEIVE = 1_000;
     private static final int TANK_CAPACITY = 8_000;
     private static final int DEFAULT_DURATION = 600;
+    private static final int BASE_POWER_PER_TICK = 1_000;
 
     private final FluidTank tank = new FluidTank(TANK_CAPACITY) {
         @Override
@@ -105,26 +130,118 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
         entity.chargeFromBattery();
         entity.transferFluidsFromItems();
 
-        // tank.setType(7) - заглушка: IItemFluidIdentifier в 1.20.1 может отсутствовать
-        // UpgradeManager - заглушка: слоты 5, 6 принимают любой предмет
+        // Поиск рецепта по входу + текущей жидкости в баке.
+        ItemStack inputStack = entity.inventory.getStackInSlot(SLOT_INPUT);
+        FluidStack tankFluid = entity.tank.getFluid();
+        CrystallizerRecipe recipe = CrystallizerRecipes.findRecipe(inputStack, tankFluid);
 
+        boolean wasOn = entity.isOn;
         entity.isOn = false;
-        if (entity.canProcess()) {
-            entity.progress++;
-            entity.setEnergyStored(entity.getEnergyStored() - entity.getPowerRequired());
-            entity.isOn = true;
 
-            if (entity.progress >= entity.getDuration()) {
-                entity.progress = 0;
-                entity.processItem();
+        if (recipe != null) {
+            // Длительность с учётом апгрейда скорости (пока заглушка — берём из рецепта).
+            entity.duration = entity.calcDuration(recipe);
+
+            if (entity.canProcess(recipe)) {
+                int powerCost = entity.getPowerRequired();
+                entity.setEnergyStored(entity.getEnergyStored() - powerCost);
+                entity.progress++;
+                entity.isOn = true;
+
+                if (entity.progress >= entity.duration) {
+                    entity.progress = 0;
+                    entity.processItem(recipe);
+                }
+                entity.setChanged();
+                entity.sendUpdateToClient();
+            } else {
+                if (entity.progress != 0) {
+                    entity.progress = 0;
+                    entity.setChanged();
+                }
             }
-            entity.setChanged();
-            entity.sendUpdateToClient();
         } else {
             if (entity.progress != 0) {
                 entity.progress = 0;
                 entity.setChanged();
             }
+        }
+
+        // Обновим клиента, если поменялся статус "вкл/выкл" (для рендера и индикаторов).
+        if (wasOn != entity.isOn) {
+            entity.sendUpdateToClient();
+        }
+    }
+
+    /**
+     * Проверяет, можно ли запустить или продолжить крафт.
+     */
+    private boolean canProcess(CrystallizerRecipe recipe) {
+        ItemStack inputStack = inventory.getStackInSlot(SLOT_INPUT);
+
+        // Хватает ли количества входного предмета.
+        if (inputStack.getCount() < recipe.getInputCount()) return false;
+
+        // Хватает ли энергии на тик.
+        if (getEnergyStored() < getPowerRequired()) return false;
+
+        // Хватает ли кислоты в баке.
+        if (recipe.getAcid() != null && tank.getFluidAmount() < recipe.getAcidAmount()) {
+            return false;
+        }
+
+        // Поместится ли результат в выходной слот.
+        ItemStack outSlot = inventory.getStackInSlot(SLOT_OUTPUT);
+        ItemStack out = recipe.getOutput();
+        if (!outSlot.isEmpty()) {
+            if (!ItemStack.isSameItemSameTags(outSlot, out)) return false;
+            if (outSlot.getCount() + out.getCount() > outSlot.getMaxStackSize()) return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Завершение крафта: выдать выход, слить кислоту, потратить вход (с учётом productivity).
+     */
+    private void processItem(CrystallizerRecipe recipe) {
+        ItemStack out = recipe.getOutput().copy();
+        ItemStack outSlot = inventory.getStackInSlot(SLOT_OUTPUT);
+        if (outSlot.isEmpty()) {
+            inventory.setStackInSlot(SLOT_OUTPUT, out);
+        } else {
+            outSlot.grow(out.getCount());
+        }
+
+        // Слить кислоту, если рецепт её требует.
+        if (recipe.getAcid() != null && recipe.getAcidAmount() > 0) {
+            tank.drain(recipe.getAcidAmount(), IFluidHandler.FluidAction.EXECUTE);
+        }
+
+        // Productivity: шанс не тратить вход. С апгрейдом EFFECT шанс растёт
+        // (пока без апгрейдов — берём базовое значение из рецепта).
+        float freeChance = recipe.getProductivity();
+        if (freeChance <= 0f || level.random.nextFloat() >= freeChance) {
+            inventory.getStackInSlot(SLOT_INPUT).shrink(recipe.getInputCount());
+        }
+
+        setChanged();
+    }
+
+    /**
+     * Перенос жидкости из контейнера (слот 3) в бак.
+     * Опустевший контейнер уезжает в слот 4.
+     */
+    private void transferFluidsFromItems() {
+        ItemStack fillStack = inventory.getStackInSlot(SLOT_FLUID_INPUT);
+        if (fillStack.isEmpty()) return;
+        if (!inventory.getStackInSlot(SLOT_FLUID_OUTPUT).isEmpty()) return;
+
+        var result = FluidUtil.tryEmptyContainer(fillStack, tank, TANK_CAPACITY, null, true);
+        if (result.isSuccess()) {
+            inventory.setStackInSlot(SLOT_FLUID_INPUT, ItemStack.EMPTY);
+            inventory.setStackInSlot(SLOT_FLUID_OUTPUT, result.getResult());
+            setChanged();
         }
     }
 
@@ -188,11 +305,15 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
     }
 
     public int getPowerRequired() {
-        return 1000;
+        return BASE_POWER_PER_TICK;
     }
 
     public int getDuration() {
         return duration;
+    }
+
+    public boolean isOn() {
+        return isOn;
     }
 
     public long getPowerScaled(int scale) {
@@ -225,6 +346,10 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
+        if (slot == SLOT_INPUT) {
+            // Принимаем только то, что подходит хотя бы под один рецепт с текущей жидкостью.
+            return CrystallizerRecipes.findRecipe(stack, tank.getFluid()) != null;
+        }
         if (slot == SLOT_BATTERY) {
             if (stack.getItem() instanceof ItemCreativeBattery) return true;
             return isEnergyProviderItem(stack);
@@ -240,8 +365,13 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
             return FluidStorage.ITEM.find(stack, null) != null;
             //?}
         }
+        if (slot == SLOT_UPGRADE_1 || slot == SLOT_UPGRADE_2) {
+            // TODO: проверка ItemMachineUpgrade когда будет реализован
+            return true;
+        }
         if (slot == SLOT_FLUID_ID) {
-            return true; // Заглушка: IItemFluidIdentifier
+            // TODO: IItemFluidIdentifier
+            return true;
         }
         return true;
     }
