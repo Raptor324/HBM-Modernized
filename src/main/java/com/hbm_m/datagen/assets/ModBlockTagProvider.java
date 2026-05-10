@@ -12,6 +12,7 @@ import javax.annotation.Nonnull;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.item.tags_and_tiers.ModTags;
 
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
@@ -180,5 +181,11 @@ public class ModBlockTagProvider extends BlockTagsProvider {
 
         this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")))
                 .add(ModBlocks.URANIUM_ORE.get());
+
+        // ============ CONNECTED TEXTURES (CT) ============
+        // Steel <-> rusty steel соединяются между собой как в 1.7.10 BlockDecoCT.canConnect().
+        this.tag(ModTags.Blocks.DECO_STEEL_CONNECTABLE)
+                .add(ModBlocks.DECO_STEEL.get())
+                .add(ModBlocks.DECO_RUSTY_STEEL.get());
     }
 }

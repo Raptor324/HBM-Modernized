@@ -148,6 +148,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.SELLAFIELD_SLAKED3);
         blockWithItem(ModBlocks.FREAKY_ALIEN_BLOCK);
 
+        // Connected textures blocks (настоящий CT рендерится через BakedModel wrapper).
+        registerDecoCtBlock(ModBlocks.DECO_STEEL, "deco_steel");
+        registerDecoCtBlock(ModBlocks.DECO_RUSTY_STEEL, "deco_rusty_steel");
+
         // Модель для ядерных осадков
         // Эта функция автоматически создаст все 8 состояний высоты для блока
         // и свяжет их с моделями, которые выглядят как снег, но с вашей текстурой.
@@ -1256,6 +1260,16 @@ public class ModBlockStateProvider extends BlockStateProvider {
     private void blockWithItem(RegistryObject<Block> blockObject) {
         simpleBlock(blockObject.get());
         simpleBlockItem(blockObject.get(), models().getExistingFile(blockTexture(blockObject.get())));
+    }
+
+    private void registerDecoCtBlock(RegistryObject<Block> blockObject, String name) {
+        // Важно: добавляем ссылку на *_ct текстуру в JSON, чтобы она гарантированно попала в block atlas.
+        ModelFile model = models().withExistingParent(name, mcLoc("block/cube_all"))
+                .texture("all", modLoc("block/" + name))
+                .texture("ct", modLoc("block/" + name + "_ct"))
+                .texture("particle", modLoc("block/" + name));
+        simpleBlock(blockObject.get(), model);
+        simpleBlockItem(blockObject.get(), model);
     }
 
 

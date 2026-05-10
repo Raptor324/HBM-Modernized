@@ -23,6 +23,7 @@ import com.hbm_m.client.loader.MachineFluidTankModelLoader;
 import com.hbm_m.client.loader.MachineHydraulicFrackiningTowerModelLoader;
 import com.hbm_m.client.loader.PressModelLoader;
 import com.hbm_m.client.loader.TemplateModelLoader;
+import com.hbm_m.client.model.ConnectedDecoSteelBakedModel;
 import com.hbm_m.client.overlay.OverlayGeiger;
 import com.hbm_m.client.overlay.OverlayInfoToast;
 import com.hbm_m.client.overlay.OverlayRadiationVisuals;
@@ -74,7 +75,6 @@ import com.hbm_m.inventory.gui.GUIMachineBattery;
 import com.hbm_m.inventory.gui.GUIMachineCentrifuge;
 import com.hbm_m.inventory.gui.GUIMachineChemicalPlant;
 import com.hbm_m.inventory.gui.GUIMachineCyclotron;
-import com.hbm_m.inventory.gui.GUIMachineCrucible;
 import com.hbm_m.inventory.gui.GUIMachineArcWelder;
 import com.hbm_m.inventory.gui.GUIIndustrialTurbine;
 import com.hbm_m.inventory.gui.GUIMachineCrackingTower;
@@ -94,7 +94,6 @@ import com.hbm_m.inventory.gui.GUIMachineTurbine;
 import com.hbm_m.inventory.gui.GUIMachineZirnox;
 import com.hbm_m.inventory.gui.GUIMachineFluidTank;
 import com.hbm_m.inventory.gui.GUIMachineFrackingTower;
-import com.hbm_m.inventory.gui.GUIMachineGasCentrifuge;
 import com.hbm_m.inventory.gui.GUIMachinePress;
 import com.hbm_m.inventory.gui.GUIMachineShredder;
 import com.hbm_m.inventory.gui.GUIMachineWoodBurner;
@@ -314,6 +313,25 @@ public class ClientSetup {
                 MainRegistry.LOGGER.warn("Could not find model for waste_leaves to wrap.");
             }
         }
+
+        // Connected textures (настоящий CT как в 1.7.10): подменяем baked модели блоков.
+        wrapDecoCtModel(event, new ModelResourceLocation(ModBlocks.DECO_STEEL.getId(), ""),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_steel"),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_steel_ct"));
+        wrapDecoCtModel(event, new ModelResourceLocation(ModBlocks.DECO_RUSTY_STEEL.getId(), ""),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_rusty_steel"),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_rusty_steel_ct"));
+    }
+
+    private static void wrapDecoCtModel(ModelEvent.ModifyBakingResult event, ResourceLocation modelId,
+                                        ResourceLocation fullTex, ResourceLocation ctTex) {
+        BakedModel original = event.getModels().get(modelId);
+        if (original == null) return;
+
+        // Важно: при первом заходе в мир атлас/спрайты могут ещё быть не готовы (missing sprite),
+        // но F3+T позже "чинит" это за счёт повторного bake. Чтобы CT включался без ручного reload,
+        // используем ленивое получение спрайтов в самой BakedModel.
+        event.getModels().put(modelId, new ConnectedDecoSteelBakedModel(original, fullTex, ctTex));
     }
 
     /**

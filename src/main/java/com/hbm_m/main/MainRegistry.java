@@ -894,6 +894,7 @@ public class MainRegistry {
         if (event.getTab() == ModCreativeTabs.NTM_BUILDING_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
 
             event.accept(ModBlocks.DECO_STEEL);
+            event.accept(ModBlocks.DECO_RUSTY_STEEL);
             event.accept(ModBlocks.CONCRETE);
             event.accept(ModBlocks.CONCRETE_ASBESTOS);
             event.accept(ModBlocks.CONCRETE_COLORED_SAND);

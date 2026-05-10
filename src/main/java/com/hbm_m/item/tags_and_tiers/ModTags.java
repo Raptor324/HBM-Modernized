@@ -22,6 +22,9 @@ public class ModTags {
 
         public static final TagKey<Block> NON_OCCLUDING = create("non_occluding");
 
+        /** Блоки, которые соединяются CT между собой (steel ↔ rusty steel). */
+        public static final TagKey<Block> DECO_STEEL_CONNECTABLE = create("deco_steel_connectable");
+
         private static TagKey<Block> tag(String name) {
             return BlockTags.create(ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name));
         }
