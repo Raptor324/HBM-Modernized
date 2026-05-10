@@ -15,12 +15,14 @@ import net.minecraft.sounds.SoundSource;
 //? if forge {
 /*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-/^@OnlyIn(Dist.CLIENT)
-^/*///?}
+*///?}
 //? if fabric {
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 @Environment(EnvType.CLIENT)//?}
+//? if forge {
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 public class ShredderSoundInstance extends AbstractTickableSoundInstance {
 
     public ShredderSoundInstance(BlockPos pos) {

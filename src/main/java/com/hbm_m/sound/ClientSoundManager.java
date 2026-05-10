@@ -38,10 +38,11 @@ public class ClientSoundManager {
         String key = getKey(pos, soundType);
         if (isMoving) {
             ACTIVE_SOUNDS.compute(key, (k, existing) -> {
-                // На повторном заходе/перезагрузке чанка инстанс может остаться в map,
-                // но сам SoundInstance может быть уже остановлен. В этом случае нужно
-                // повторно запустить звук, иначе loop "не возвращается".
-                if (existing == null || existing.isStopped()) {
+                // На повторном заходе/перезагрузке чанка или re-login инстанс может
+                // остаться в map, но SoundManager уже выгрузил его. Проверяем через
+                // isActive() — иначе loop не возобновляется.
+                if (existing == null || existing.isStopped()
+                        || !Minecraft.getInstance().getSoundManager().isActive(existing)) {
                     AbstractTickableSoundInstance newSound = loopSoundSupplier.get();
                     Minecraft.getInstance().getSoundManager().play(newSound);
                     return newSound;

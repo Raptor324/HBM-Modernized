@@ -101,6 +101,31 @@ public class FluidTank implements Cloneable {
             protected void onContentsChanged() {
                 FluidTank.this.onContentsChanged();
             }
+
+            /^*
+             * При выдаче жидкости наружу приводим HBM-аналоги vanilla water/lava
+             * обратно к minecraft:water / minecraft:lava, иначе ванильные вёдра
+             * (и другие Forge-контейнеры) откажутся принимать drain.
+             ^/
+            @Override
+            public FluidStack drain(FluidStack resource, IFluidHandler.FluidAction action) {
+                FluidStack drained = super.drain(resource, action);
+                if (drained.isEmpty()) return drained;
+                Fluid normalized = VanillaFluidEquivalence.forVanillaContainerFill(drained.getFluid());
+                return normalized != drained.getFluid()
+                        ? new FluidStack(normalized, drained.getAmount())
+                        : drained;
+            }
+
+            @Override
+            public FluidStack drain(int maxDrain, IFluidHandler.FluidAction action) {
+                FluidStack drained = super.drain(maxDrain, action);
+                if (drained.isEmpty()) return drained;
+                Fluid normalized = VanillaFluidEquivalence.forVanillaContainerFill(drained.getFluid());
+                return normalized != drained.getFluid()
+                        ? new FluidStack(normalized, drained.getAmount())
+                        : drained;
+            }
         };
         this.lazyFluidHandler = LazyOptional.of(() -> forgeStorage);
         *///?}
@@ -189,6 +214,30 @@ public class FluidTank implements Cloneable {
     public int getCapacityMb() { return capacity; }
     public int getSpaceMb() { return capacity - getFluidAmountMb(); }
     public boolean isEmpty() { return getFluidAmountMb() <= 0; }
+
+    /**
+     * Динамический лимит скорости для MK2-сети (анти-осцилляция).
+     *
+     * <p>Идея из оригинала: max transfer зависит от заполненности. Полный бак отдаёт быстрее, пустой — почти не отдаёт;
+     * пустой бак принимает быстро, полный — почти не принимает. Это снижает "пинг-понг" между двумя трансиверами.</p>
+     *
+     * @param maxSpeedMbPerTick базовая скорость (верхний предел)
+     * @param sending true = отдача (providerSpeed), false = приём (receiverSpeed)
+     */
+    public long getDynamicNetworkSpeedMb(long maxSpeedMbPerTick, boolean sending) {
+        if (maxSpeedMbPerTick <= 0) return 0L;
+        int cap = getCapacityMb();
+        if (cap <= 0) return 0L;
+
+        int fill = getFluidAmountMb();
+        int space = Math.max(0, cap - fill);
+        int weight = sending ? fill : space;
+        if (weight <= 0) return 0L;
+
+        long scaled = (maxSpeedMbPerTick * (long) weight) / (long) cap;
+        // Не даём "залипнуть" на 0 при малых объёмах, но и не превышаем max.
+        return Math.max(1L, Math.min(maxSpeedMbPerTick, scaled));
+    }
 
     @NotNull
     public Fluid getConfiguredFluid() {

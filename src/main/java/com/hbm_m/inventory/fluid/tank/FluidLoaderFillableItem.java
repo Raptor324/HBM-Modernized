@@ -56,51 +56,47 @@ public class FluidLoaderFillableItem implements FluidTank.LoadingHandler {
 
             boolean ok;
             if (draining) {
-                // emptyItem: mod (как fluid handler item) -> tank
+                // emptyItem: mod (как fluid handler item) -> tank — all-or-nothing
                 ok = mod.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(handler -> {
                     FluidStack simulatedDrain = handler.drain(Integer.MAX_VALUE, IFluidHandlerItem.FluidAction.SIMULATE);
                     if (simulatedDrain.isEmpty()) return false;
 
-                    // Тип должен совпасть с типом бака
+                    int modFill = simulatedDrain.getAmount();
+
                     if (simulatedDrain.getFluid() != tank.getTankType()) return false;
 
                     int space = tank.getMaxFill() - tank.getFill();
-                    if (space <= 0) return false;
+                    if (space < modFill) return false; // all-or-nothing
 
-                    int toDrain = Math.min(simulatedDrain.getAmount(), space);
-                    if (toDrain <= 0) return false;
-
-                    FluidStack drainedReal = handler.drain(toDrain, IFluidHandlerItem.FluidAction.EXECUTE);
-                    if (drainedReal.isEmpty()) return false;
+                    FluidStack drainedReal = handler.drain(simulatedDrain, IFluidHandlerItem.FluidAction.EXECUTE);
+                    if (drainedReal.isEmpty() || drainedReal.getAmount() != modFill) return false;
 
                     tank.fill(tank.getFill() + drainedReal.getAmount());
-                    return tank.getFill() == tank.getMaxFill();
+                    return true;
                 }).orElse(false);
             } else {
-                // fillItem: tank -> mod
+                // fillItem: tank -> mod — all-or-nothing
                 ok = mod.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(handler -> {
                     if (tank.getFill() <= 0) return false;
                     if (!FluidTank.isFluidTypeExplicitlySet(tank.getTankType())) return false;
 
                     int available = tank.getFill();
-                    if (available <= 0) return false;
 
                     int capacity = handler.getTankCapacity(0);
                     if (capacity <= 0) return false;
 
-                    int toFill = Math.min(available, capacity);
-                    if (toFill <= 0) return false;
+                    if (available < capacity) return false; // all-or-nothing
 
-                    FluidStack resource = new FluidStack(tank.getTankType(), toFill);
+                    FluidStack resource = new FluidStack(tank.getTankType(), capacity);
 
                     int filledSim = handler.fill(resource, IFluidHandlerItem.FluidAction.SIMULATE);
-                    if (filledSim <= 0) return false;
+                    if (filledSim != capacity) return false;
 
                     int filledReal = handler.fill(resource, IFluidHandlerItem.FluidAction.EXECUTE);
-                    if (filledReal <= 0) return false;
+                    if (filledReal != capacity) return false;
 
                     tank.fill(tank.getFill() - filledReal);
-                    return tank.getFill() == 0;
+                    return true;
                 }).orElse(false);
             }
 

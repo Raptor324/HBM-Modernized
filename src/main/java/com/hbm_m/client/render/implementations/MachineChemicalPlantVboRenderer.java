@@ -16,7 +16,7 @@ import com.hbm_m.client.model.MachineChemicalPlantBakedModel;
 import com.hbm_m.client.model.ModelHelper;
 import com.hbm_m.client.render.GlobalMeshCache;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
-import com.hbm_m.util.MultipartFacingTransforms;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
@@ -25,23 +25,20 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.Level;
 
 //? if forge {
-/*import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.client.model.data.ModelData;
+/*import net.minecraftforge.client.model.data.ModelData;
 *///?}
-//? if fabric {
-import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
-//?}
 
 import net.minecraft.world.level.block.entity.BlockEntity;
 
@@ -164,6 +161,12 @@ public class MachineChemicalPlantVboRenderer {
         poseStack.popPose();
     }
 
+    private static final ResourceLocation CHEMPLANT_FLUID_TEX =
+        new ResourceLocation("hbm_m", "block/machine/chemical_plant_fluid");
+
+    /** Render-type для жидкости в BER: не deferred translucent (чтобы не зависеть от terrain batch). */
+    private static final RenderType FLUID_RENDER_TYPE = RenderType.translucentMovingBlock();
+
     //? if forge {
     /*private static boolean tryRenderFluidBakedPart(MachineChemicalPlantBakedModel model, Direction facing, float anim,
                                                    PoseStack poseStack, MultiBufferSource bufferSource,
@@ -174,13 +177,17 @@ public class MachineChemicalPlantVboRenderer {
         List<BakedQuad> quads = collectChemplantFluidQuads(fluidPart);
         if (quads.isEmpty()) return false;
 
-        int rotY = MultipartFacingTransforms.chemicalPlantBakedRotationY(facing);
-        quads = ModelHelper.transformQuadsByFacing(quads, rotY);
+        TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS)
+            .apply(CHEMPLANT_FLUID_TEX);
+
+        // Поворот блока уже применён caller'ом через poseStack (setupBlockTransform).
+        // Дублирующий transformQuadsByFacing убран — иначе fluid смещается при N/S/E/W.
         float du = -anim / 100f;
         float dv = (float) (chemicalSps(anim * 0.1) * 0.1 - 0.25);
-        quads = ModelHelper.offsetQuadUvs(quads, du, dv);
+        quads = ModelHelper.offsetQuadUvsWrapped(quads, du, dv,
+            sprite.getU0(), sprite.getU1(), sprite.getV0(), sprite.getV1());
 
-        VertexConsumer vc = bufferSource.getBuffer(RenderType.translucent());
+        VertexConsumer vc = bufferSource.getBuffer(FLUID_RENDER_TYPE);
         PoseStack.Pose pose = poseStack.last();
         float r = visual.r(), g = visual.g(), b = visual.b(), a = 0.5f;
         for (BakedQuad quad : quads) {
@@ -207,30 +214,16 @@ public class MachineChemicalPlantVboRenderer {
 
     private static void renderSwirl(MachineChemicalPlantBlockEntity blockEntity, float partialTick, PoseStack poseStack,
                                     MultiBufferSource buffer, int packedLight, int packedOverlay, FluidVisual visual) {
-        FluidStack fluid = visual.textureFluid();
-        //? if forge {
-        /*IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid.getFluid());
-        var stillTexture = ext.getStillTexture(FluidStackHooksForge.toForge(fluid));
-        if (stillTexture == null) return;
-        var sprite = Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(stillTexture);
-        *///?} else {
-        var mc = Minecraft.getInstance();
-        if (mc.level == null) return;
-        var handler = FluidRenderHandlerRegistry.INSTANCE.get(fluid.getFluid());
-        if (handler == null) return;
-        var sprites = handler.getFluidSprites(mc.level, BlockPos.ZERO, fluid.getFluid().defaultFluidState());
-        if (sprites == null || sprites.length == 0 || sprites[0] == null) return;
-        var sprite = sprites[0];
-        //?}
+        TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS)
+            .apply(CHEMPLANT_FLUID_TEX);
+        if (sprite == null) return;
+
         float red = visual.r();
         float green = visual.g();
         float blue = visual.b();
-        float alpha = 0.85F;
+        float alpha = 0.5F;
         float fill = 1.0F;
 
-        // UV-скролл считаем от gameTime и НЕ обнуляем при кратковременном "false".
-        // Тогда при рваной синхронизации снапшотов (didProcess/progress/render_active)
-        // текстура не "телепортируется" в стартовую позицию.
         long time = blockEntity.getLevel() != null ? blockEntity.getLevel().getGameTime() : 0L;
         float t = (time + partialTick) * 0.02F;
         float scroll = t - (float) Mth.floor(t);
@@ -250,7 +243,7 @@ public class MachineChemicalPlantVboRenderer {
         float y0 = 1.02F;
         float y1 = y0 + (1.34F - y0) * fill;
 
-        VertexConsumer vc = buffer.getBuffer(RenderType.translucent());
+        VertexConsumer vc = buffer.getBuffer(FLUID_RENDER_TYPE);
 
         poseStack.pushPose();
         PoseStack.Pose pose = poseStack.last();

@@ -46,6 +46,7 @@ import net.minecraft.world.phys.AABB;
 /*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.fluids.FluidActionResult;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 *///?}
@@ -110,8 +111,6 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
     private float anim = 0.0F;
     private float prevAnim = 0.0F;
 
-    private int renderCooldownTimer = 0;
-
     protected final ContainerData data = new ContainerData() {
         @Override
         public int get(int index) {
@@ -122,7 +121,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
                 case 3 -> (int) ((getEnergyStored() >> 32) & 0xFFFFFFFFL);
                 case 4 -> (int) (getMaxEnergyStored() & 0xFFFFFFFFL);
                 case 5 -> (int) ((getMaxEnergyStored() >> 32) & 0xFFFFFFFFL);
-                case 6 -> module != null && (module.getDidProcess() || renderCooldownTimer > 0) ? 1 : 0;
+                case 6 -> module != null && module.getDidProcess() ? 1 : 0;
                 default -> 0;
             };
         }
@@ -247,12 +246,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
         ItemStack blueprint = entity.inventory.getStackInSlot(SLOT_SCHEMATIC);
         boolean dirty = entity.module.update(level, blueprint, speed, pow);
 
-        if (entity.module.getDidProcess()) {
-            entity.renderCooldownTimer = 100;
-        } else if (entity.renderCooldownTimer > 0) {
-            entity.renderCooldownTimer--;
-        }
-        boolean shouldRenderActive = entity.renderCooldownTimer > 0;
+        boolean shouldRenderActive = entity.module.getDidProcess();
         if (state.hasProperty(MachineChemicalPlantBlock.RENDER_ACTIVE)) {
             boolean active = state.getValue(MachineChemicalPlantBlock.RENDER_ACTIVE);
             if (active != shouldRenderActive) {
@@ -417,11 +411,12 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
 
             // Бесконечные контейнеры обрабатываются через FluidTank.loadTank / FluidLoaderInfinite
             // и не требуют пустого нижнего слота под «опустошённый» стак Forge.
-            boolean infiniteIn = fullContainer.getItem() instanceof com.hbm_m.item.liquids.InfiniteFluidItem;
-            if (!infiniteIn && !inventory.getStackInSlot(emptyContainerSlot).isEmpty()) continue;
+            // FluidLoaderStandard.emptyItem сам проверит canPlaceItemInSlot и стакаемость.
 
             //? if forge {
             /*if (inputTanks[i].loadTank(fullContainerSlot, emptyContainerSlot, slotView)) {
+                inventory.setStackInSlot(fullContainerSlot, slotView[fullContainerSlot]);
+                inventory.setStackInSlot(emptyContainerSlot, slotView[emptyContainerSlot]);
                 setChanged();
             }
             *///?}
@@ -471,22 +466,18 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
     }
 
     private void transferFluidsToItems() {
+        //? if forge {
+        /*ItemStack[] slotView = chemPlantInventorySlotBacking();
+        *///?}
         for (int i = 0; i < 3; i++) {
             int emptyContainerSlot = SLOT_FLUID_OUTPUT_START + i;
             int filledContainerSlot = SLOT_FLUID_OUTPUT_EMPTY_START + i;
-            ItemStack emptyContainer = inventory.getStackInSlot(emptyContainerSlot);
-            if (emptyContainer.isEmpty()) continue;
-            if (!inventory.getStackInSlot(filledContainerSlot).isEmpty()) continue;
 
             //? if forge {
-            /*IFluidHandler handler = outputTanks[i].getCapability().orElse(null);
-            if (handler != null) {
-                var result = FluidUtil.tryFillContainer(emptyContainer, handler, TANK_CAPACITY, null, true);
-                if (result.isSuccess()) {
-                    emptyContainer.shrink(1);
-                    inventory.setStackInSlot(filledContainerSlot, result.getResult());
-                    setChanged();
-                }
+            /*if (outputTanks[i].unloadTank(emptyContainerSlot, filledContainerSlot, slotView)) {
+                inventory.setStackInSlot(emptyContainerSlot, slotView[emptyContainerSlot]);
+                inventory.setStackInSlot(filledContainerSlot, slotView[filledContainerSlot]);
+                setChanged();
             }
             *///?}
 
@@ -630,12 +621,13 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
     public boolean isChemplantEffectsActive() {
         if (level == null) return false;
         if (!level.isClientSide) {
-            return module.getDidProcess() || renderCooldownTimer > 0;
+            return module.getDidProcess();
         }
+        // На клиенте единственный источник правды — синхронизированный blockstate RENDER_ACTIVE.
+        // didProcess / progress могут рассинхронизироваться между пакетами и давать "лишние" 5-8 с.
         BlockState st = getBlockState();
-        boolean renderActive = st.hasProperty(MachineChemicalPlantBlock.RENDER_ACTIVE)
+        return st.hasProperty(MachineChemicalPlantBlock.RENDER_ACTIVE)
             && st.getValue(MachineChemicalPlantBlock.RENDER_ACTIVE);
-        return renderActive || module.getDidProcess() || module.getProgress() > 0;
     }
 
     @Nullable
@@ -798,7 +790,8 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
                     tank.drainMb(toDrain);
                     be.setChanged();
                 }
-                return new net.minecraftforge.fluids.FluidStack(tank.getStoredFluid(), toDrain);
+                Fluid normalized = com.hbm_m.api.fluids.VanillaFluidEquivalence.forVanillaContainerFill(tank.getStoredFluid());
+                return new net.minecraftforge.fluids.FluidStack(normalized, toDrain);
             }
             return net.minecraftforge.fluids.FluidStack.EMPTY;
         }
@@ -816,7 +809,8 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
                     tank.drainMb(toDrain);
                     be.setChanged();
                 }
-                return new net.minecraftforge.fluids.FluidStack(tank.getStoredFluid(), toDrain);
+                Fluid normalized = com.hbm_m.api.fluids.VanillaFluidEquivalence.forVanillaContainerFill(tank.getStoredFluid());
+                return new net.minecraftforge.fluids.FluidStack(normalized, toDrain);
             }
             return net.minecraftforge.fluids.FluidStack.EMPTY;
         }

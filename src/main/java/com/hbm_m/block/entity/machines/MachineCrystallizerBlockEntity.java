@@ -241,7 +241,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
         /*IFluidHandler handler = tankHandler.orElse(null);
         if (handler == null) return;
 
-        var result = FluidUtil.tryEmptyContainer(fillStack, handler, TANK_CAPACITY, null, true);
+        var result = FluidUtil.tryEmptyContainer(fillStack, (IFluidHandler) tank, TANK_CAPACITY, null, false);
         if (result.isSuccess()) {
             inventory.setStackInSlot(SLOT_FLUID_INPUT, ItemStack.EMPTY);
             inventory.setStackInSlot(SLOT_FLUID_OUTPUT, result.getResult());
@@ -366,10 +366,6 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
             //? if fabric {
             return FluidStorage.ITEM.find(stack, null) != null;
             //?}
-        }
-        if (slot == SLOT_UPGRADE_1 || slot == SLOT_UPGRADE_2) {
-            // TODO: проверка ItemMachineUpgrade когда будет реализован
-            return true;
         }
         if (slot == SLOT_FLUID_ID) {
             // TODO: IItemFluidIdentifier

@@ -192,6 +192,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     // =====================================================================================
 
     private static final FluidTank[] EMPTY_TANKS = new FluidTank[0];
+    private static final long BASE_NETWORK_SPEED_MB_PER_TICK = 1_000_000_000L;
 
     @Override
     public FluidTank[] getAllTanks() { return new FluidTank[]{ fluidTank }; }
@@ -208,6 +209,26 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     public FluidTank[] getReceivingTanks() {
         if (hasExploded || mode == 0 || mode == 3) return EMPTY_TANKS;
         return new FluidTank[]{ fluidTank };
+    }
+
+    @Override
+    public long getProviderSpeed(Fluid fluid, int pressure) {
+        if (hasExploded || mode == 2 || mode == 3) return 0L;
+        // Скорость зависит от заполненности: пустой бак почти не отдаёт → меньше "пинг-понга".
+        // Дополнительно ограничиваем "не более половины текущего fill за тик", чтобы два одинаковых буфера
+        // не могли полностью поменяться местами за один тик (классический full↔empty пингпонг).
+        long dyn = fluidTank.getDynamicNetworkSpeedMb(BASE_NETWORK_SPEED_MB_PER_TICK, true);
+        long halfFill = Math.max(1L, (long) fluidTank.getFill() / 2L);
+        return Math.min(dyn, halfFill);
+    }
+
+    @Override
+    public long getReceiverSpeed(Fluid fluid, int pressure) {
+        if (hasExploded || mode == 0 || mode == 3) return 0L;
+        // Скорость зависит от свободного места: полный бак почти не принимает.
+        long dyn = fluidTank.getDynamicNetworkSpeedMb(BASE_NETWORK_SPEED_MB_PER_TICK, false);
+        long halfSpace = Math.max(1L, (long) Math.max(0, fluidTank.getMaxFill() - fluidTank.getFill()) / 2L);
+        return Math.min(dyn, halfSpace);
     }
 
     @Override

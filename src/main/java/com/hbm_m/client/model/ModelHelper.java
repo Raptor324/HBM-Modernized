@@ -13,6 +13,7 @@ import org.joml.Vector4f;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
+import net.minecraft.util.Mth;
 //? if forge {
 /*import net.minecraftforge.client.model.pipeline.QuadBakingVertexConsumer;
 *///?}
@@ -189,6 +190,56 @@ public class ModelHelper {
                 float vv = Float.intBitsToFloat(newVerts[i + 5]);
                 newVerts[i + 4] = Float.floatToIntBits(u + du);
                 newVerts[i + 5] = Float.floatToIntBits(vv + dv);
+            }
+            result.add(new BakedQuad(newVerts, quad.getTintIndex(), quad.getDirection(), quad.getSprite(), quad.isShade()));
+        }
+        return result;
+    }
+
+    /**
+     * Смещение UV с wrap внутри sprite bounds.
+     * du, dv — смещение в нормализованном [0,1] пространстве текстуры (как GL_TEXTURE matrix в 1.7.10).
+     * uMin/uMax/vMin/vMax — bounds спрайта в атласе.
+     */
+    public static List<BakedQuad> offsetQuadUvsWrapped(List<BakedQuad> quads, float du, float dv,
+                                                        float uMin, float uMax, float vMin, float vMax) {
+        if (quads == null || quads.isEmpty() || (du == 0f && dv == 0f)) {
+            return quads;
+        }
+        float uRange = uMax - uMin;
+        float vRange = vMax - vMin;
+        if (uRange <= 0f || vRange <= 0f) {
+            return quads;
+        }
+
+        List<BakedQuad> result = new ArrayList<>(quads.size());
+        for (BakedQuad quad : quads) {
+            int[] verts = quad.getVertices();
+            if (verts.length < 4 * MIN_STRIDE) {
+                result.add(quad);
+                continue;
+            }
+            int stride = verts.length / 4;
+            if (stride < 6) {
+                result.add(quad);
+                continue;
+            }
+            int[] newVerts = verts.clone();
+            for (int v = 0; v < 4; v++) {
+                int i = v * stride;
+                float uSprite = Float.intBitsToFloat(newVerts[i + 4]);
+                float vSprite = Float.intBitsToFloat(newVerts[i + 5]);
+
+                float uRaw = (uSprite - uMin) / uRange;
+                float vRaw = (vSprite - vMin) / vRange;
+
+                float newURaw = uRaw + du;
+                float newVRaw = vRaw + dv;
+                newURaw = newURaw - Mth.floor(newURaw);
+                newVRaw = newVRaw - Mth.floor(newVRaw);
+
+                newVerts[i + 4] = Float.floatToIntBits(uMin + newURaw * uRange);
+                newVerts[i + 5] = Float.floatToIntBits(vMin + newVRaw * vRange);
             }
             result.add(new BakedQuad(newVerts, quad.getTintIndex(), quad.getDirection(), quad.getSprite(), quad.isShade()));
         }
