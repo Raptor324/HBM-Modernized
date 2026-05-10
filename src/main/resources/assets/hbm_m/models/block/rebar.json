@@ -1,48 +1,48 @@
 {
   "loader": "forge:composite",
   "textures": {
-    "particle": "hbm_m:block/crt_broken"
+    "particle": "hbm_m:block/rebar"
   },
   "children": {
-    "crt_broken_model": {
+    "rebar_model": {
       "loader": "forge:obj",
-      "model": "hbm_m:models/block/crt.obj",
+      "model": "hbm_m:models/block/rebar.obj",
       "flip_v": true,
       "textures": {
-        "default": "hbm_m:block/crt_broken"
+        "default": "hbm_m:block/rebar"
       }
     }
   },
   "transform": {
-    "translation": [0.5, 0.0, -1.5],
+    "translation": [0.50, 0.0, -1.5],
     "rotation": [0, 90, 0],
     "scale": 1.0
   },
   "display": {
     "thirdperson_righthand": {
-      "rotation": [ 75, 90, 0 ],
+      "rotation": [ 75, 180, 0 ],
       "translation": [ 0.00, 2.50, 0.00 ],
       "scale": [ 0.38, 0.38, 0.38 ]
     },
     "thirdperson_lefthand": {
-      "rotation": [ 75, 90, 0 ],
+      "rotation": [ 75, 180, 0 ],
       "translation": [ 0.00, 2.50, 0.00 ],
       "scale": [ 0.38, 0.38, 0.38 ]
     },
     "firstperson_righthand": {
-      "rotation": [ 0, 90, 0 ],
-      "translation": [ 2.00, -1.00, 0.00 ],
-      "scale": [ 0.40, 0.40, 0.40 ]
+      "rotation": [ 0, 134, 0 ],
+      "translation": [ 1.00, 2.00, 0.00 ],
+      "scale": [ 0.30, 0.30, 0.30 ]
     },
     "firstperson_lefthand": {
-      "rotation": [ 0, 90, 0 ],
+      "rotation": [ 0, 180, 0 ],
       "translation": [ 2.00, -1.00, 0.00 ],
       "scale": [ 0.40, 0.40, 0.40 ]
     },
     "gui": {
-      "rotation": [ 30, 145, 180 ],
-      "translation": [ 1.25, 0.50, 0.50 ],
-      "scale": [ 0.65, 0.65, 0.65 ]
+      "rotation": [ 30, 225, 0 ],
+      "translation": [ 0.00, 0.00, 0.00 ],
+      "scale": [ 0.60, 0.60, 0.60 ]
     },
     "head": {
       "rotation": [ 0, 180, 0 ],
@@ -57,7 +57,7 @@
     "ground": {
       "rotation": [ 0, 0, 0 ],
       "translation": [ 0.00, 3.00, 0.00 ],
-      "scale": [ 0.25, 0.25, 0.25 ]
+      "scale": [ 0.35, 0.35, 0.35 ]
     }
   }
 }

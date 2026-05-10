@@ -1,15 +1,15 @@
 {
   "loader": "forge:composite",
   "textures": {
-    "particle": "hbm_m:block/crt_broken"
+    "particle": "hbm_m:block/deco_steel_blank_clean"
   },
   "children": {
-    "crt_broken_model": {
+    "scaffold_model": {
       "loader": "forge:obj",
-      "model": "hbm_m:models/block/crt.obj",
+      "model": "hbm_m:models/block/deco_steel_scaffold.obj",
       "flip_v": true,
       "textures": {
-        "default": "hbm_m:block/crt_broken"
+        "default": "hbm_m:block/deco_steel_blank_clean"
       }
     }
   },
@@ -20,28 +20,28 @@
   },
   "display": {
     "thirdperson_righthand": {
-      "rotation": [ 75, 90, 0 ],
+      "rotation": [ 75, 180, 0 ],
       "translation": [ 0.00, 2.50, 0.00 ],
       "scale": [ 0.38, 0.38, 0.38 ]
     },
     "thirdperson_lefthand": {
-      "rotation": [ 75, 90, 0 ],
+      "rotation": [ 75, 180, 0 ],
       "translation": [ 0.00, 2.50, 0.00 ],
       "scale": [ 0.38, 0.38, 0.38 ]
     },
     "firstperson_righthand": {
-      "rotation": [ 0, 90, 0 ],
+      "rotation": [ 0, 180, 0 ],
       "translation": [ 2.00, -1.00, 0.00 ],
       "scale": [ 0.40, 0.40, 0.40 ]
     },
     "firstperson_lefthand": {
-      "rotation": [ 0, 90, 0 ],
+      "rotation": [ 0, 180, 0 ],
       "translation": [ 2.00, -1.00, 0.00 ],
       "scale": [ 0.40, 0.40, 0.40 ]
     },
     "gui": {
-      "rotation": [ 30, 145, 180 ],
-      "translation": [ 1.25, 0.50, 0.50 ],
+      "rotation": [ 30, 325, 180 ],
+      "translation": [ 0.25, -0.25, 0.50 ],
       "scale": [ 0.65, 0.65, 0.65 ]
     },
     "head": {
