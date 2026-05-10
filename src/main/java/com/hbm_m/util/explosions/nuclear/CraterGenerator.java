@@ -25,8 +25,9 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.loading.FMLEnvironment;
+
+import dev.architectury.platform.Platform;
+import dev.architectury.utils.Env;
 
 /**
  * Crater Generator v21.0 - BIOME SYNC FIX
@@ -230,9 +231,9 @@ public class CraterGenerator {
 
     /** Debug ray visualization is client-only; never enable on dedicated server. */
     private static boolean isDebugScreenEnabled() {
-	if (FMLEnvironment.dist != Dist.CLIENT) {
-	    return false;
-	}
+        if (Platform.getEnvironment() != Env.CLIENT) {
+            return false;
+        }
         try {
             Minecraft mc = Minecraft.getInstance();
             return mc != null && mc.options.renderDebug;

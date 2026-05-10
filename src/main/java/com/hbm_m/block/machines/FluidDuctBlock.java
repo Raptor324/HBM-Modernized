@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.hbm_m.api.fluids.FluidCapabilityAccess;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,7 +30,12 @@ import com.hbm_m.item.liquids.FluidDuctItem;
 
 //? if fabric {
 import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;//?}
+import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+//?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -68,7 +74,6 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 /*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderGuiEvent;
-import com.hbm_m.api.fluids.FluidCapabilityAccess;
 *///?}
 
 /**
@@ -227,6 +232,7 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
         refreshAdjacentDucts(level, pos);
     }
 
+    @SuppressWarnings("UnstableApiUsage") // Fabric Transfer API в ветке //? if fabric
     private boolean canConnectTo(LevelAccessor level, BlockPos myPos, BlockPos neighborPos, Direction direction) {
         BlockState neighborState = level.getBlockState(neighborPos);
         Block selfBlock = level.getBlockState(myPos).getBlock();
@@ -290,7 +296,24 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
                 *///?}
 
                 //? if fabric {
-                return ductFluid == Fluids.EMPTY;  TODO: Fabric Transfer API sided check
+                // Паритет с Forge: capability FLUID_HANDLER с side=null на контроллере.
+                // SIDED.find(..., null) → getFluidStorage(null) у BlockEntity (см. FabricEntrypoint).
+                if (!(level instanceof Level lvl)) {
+                    return false;
+                }
+                BlockPos ctrlPos = part.getControllerPos();
+                BlockState ctrlState = level.getBlockState(ctrlPos);
+                Storage<FluidVariant> storage = FluidStorage.SIDED.find(lvl, ctrlPos, ctrlState, ctrl, null);
+                if (storage == null) {
+                    return false;
+                }
+                if (ductFluid == Fluids.EMPTY) {
+                    return true;
+                }
+                try (Transaction tx = Transaction.openOuter()) {
+                    long inserted = storage.insert(FluidVariant.of(ductFluid), 81L, tx);
+                    return inserted > 0;
+                }
                 //?}
             }
 

@@ -3,18 +3,14 @@ package com.hbm_m.module.machine;
 import com.hbm_m.interfaces.IEnergyReceiver;
 import com.hbm_m.recipe.AssemblerRecipe;
 import net.minecraft.core.NonNullList;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.Level;
-
-// ИЗМЕНЕНИЕ: Импортируем нашу long-систему
 
 import org.jetbrains.annotations.Nullable;
 import java.util.List;
-import java.util.Objects;
 import com.hbm_m.platform.ModItemStackHandler;
+import com.hbm_m.recipe.index.ModRecipeIndex;
 
 /**
  * Модуль крафта для продвинутой сборочной машины.
@@ -23,12 +19,6 @@ import com.hbm_m.platform.ModItemStackHandler;
  * ОБНОВЛЕНО: Теперь использует ILongEnergyStorage для поддержки больших значений энергии
  */
 public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerRecipe> {
-
-    // ИЗМЕНЕНИЕ: Используем long вместо int
-    private long energyPerTick = 100L;
-
-    @Nullable
-    private AssemblerRecipe preferredRecipe = null;
 
     // ИЗМЕНЕНИЕ: Конструктор теперь принимает ILongEnergyStorage
     public MachineModuleAdvancedAssembler(int moduleIndex, IEnergyReceiver energyStorage,
@@ -58,12 +48,6 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
         return this;
     }
 
-    // ИЗМЕНЕНИЕ: Принимаем long
-    public MachineModuleAdvancedAssembler setEnergyPerTick(long energy) {
-        this.energyPerTick = energy;
-        return this;
-    }
-
     // ========== РЕАЛИЗАЦИЯ АБСТРАКТНЫХ МЕТОДОВ ==========
 
     @Override
@@ -76,29 +60,11 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
     public AssemblerRecipe findRecipeForInputs() {
         if (level == null) return null;
 
-        // Если preferredRecipe установлен, проверяем его
-        if (preferredRecipe != null) {
-            if (matchesRecipe(preferredRecipe)) {
-                return preferredRecipe;
-            } else {
-                return null;
-            }
-        }
-
-        // Читаем папку из слота 1
+        // В отличие от химмашины: здесь авто-выбор. Blueprint применяется как фильтр.
         ItemStack blueprint = itemHandler.getStackInSlot(1);
-
-        // Автоматический поиск с учетом blueprint pool
-        RecipeManager recipeManager = level.getRecipeManager();
-        List<AssemblerRecipe> allRecipes = recipeManager.getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
-
-        for (AssemblerRecipe recipe : allRecipes) {
-            // Проверяем и ингредиенты, И blueprint pool
-            if (matchesRecipe(recipe) && isRecipeValidForBlueprint(recipe, blueprint)) {
-                return recipe;
-            }
+        for (AssemblerRecipe recipe : ModRecipeIndex.of(level.getRecipeManager()).getAll(getRecipeType())) {
+            if (matchesRecipe(recipe) && isRecipeAllowedByBlueprint(recipe, blueprint)) return recipe;
         }
-
         return null;
     }
 
@@ -130,18 +96,17 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
         return true;
     }
 
+    /**
+     * API used by BE/GUI: prefer a specific recipe (or clear preference).
+     * Stored as ID, resolved via {@link ModRecipeIndex} when needed.
+     */
     public void setPreferredRecipe(@Nullable AssemblerRecipe recipe) {
-        this.preferredRecipe = recipe;
-
-        if (currentRecipe != null && recipe != null
-                && !Objects.equals(currentRecipe.getId(), recipe.getId())) {
-            resetProgress();
-        }
+        setPreferredRecipeId(recipe != null ? recipe.getId() : null);
     }
 
     @Nullable
     public AssemblerRecipe getPreferredRecipe() {
-        return this.preferredRecipe;
+        return preferredRecipeId != null ? getRecipeByIdCached(getRecipeType(), preferredRecipeId) : null;
     }
 
     @Override
@@ -153,9 +118,6 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
     public boolean canProcess(AssemblerRecipe recipe) {
         if (recipe == null) return false;
 
-        // ИЗМЕНЕНИЕ: Работаем с long
-        if (energyStorage.getEnergyStored() < this.energyPerTick) return false;
-
         // Проверяем входные предметы
         if (!matchesRecipe(recipe)) return false;
 
@@ -166,7 +128,11 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
         if (outputSlot.isEmpty()) return true; // Слот пуст - ОК
 
         // Проверяем совместимость
+        //? if < 1.21.1 {
         if (!ItemStack.isSameItemSameTags(outputSlot, result)) return false;
+        //?} else {
+        /*if (!ItemStack.isSameItemSameComponents(outputSlot, result)) return false;
+        *///?}
 
         // Проверяем, поместится ли результат
         return outputSlot.getCount() + result.getCount() <= outputSlot.getMaxStackSize();
@@ -190,15 +156,7 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
         ItemStack result = recipe.getResultItem(level.registryAccess()).copy();
 
         // insertItem автоматически объединит стаки, если возможно
-        ItemStack remainder = itemHandler.insertItem(outputSlots[0], result, false);
-
-        // Если remainder не пустой - слот переполнен (не должно произойти, т.к. canProcess проверяет)
-        if (!remainder.isEmpty()) {
-            // Логируем ошибку или выбрасываем предмет в мир
-            if (level != null && !level.isClientSide()) {
-                System.err.println("ОШИБКА: Не удалось вставить результат крафта!");
-            }
-        }
+        itemHandler.insertItem(outputSlots[0], result, false);
     }
 
     @Override
@@ -209,7 +167,7 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
     // ИЗМЕНЕНИЕ: Возвращаем long вместо int
     @Override
     protected long getRecipeEnergyCost(AssemblerRecipe recipe) {
-        return recipe != null ? recipe.getPowerConsumption() : this.energyPerTick;
+        return recipe.getPowerConsumption();
     }
 
     @Override
@@ -217,10 +175,7 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
     protected AssemblerRecipe findRecipeForItem(ItemStack stack) {
         if (level == null) return null;
 
-        List<AssemblerRecipe> allRecipes = level.getRecipeManager()
-                .getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
-
-        for (AssemblerRecipe recipe : allRecipes) {
+        for (AssemblerRecipe recipe : ModRecipeIndex.of(level.getRecipeManager()).getAll(getRecipeType())) {
             for (Ingredient ingredient : recipe.getIngredients()) {
                 if (ingredient.test(stack)) {
                     return recipe;
@@ -236,29 +191,7 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
      * Использует AssemblerRecipeConfig для валидации
      */
     @Override
-    protected boolean isRecipeValidForBlueprint(AssemblerRecipe recipe, ItemStack blueprint) {
-        // Получаем pool рецепта
-        String recipePool = recipe.getBlueprintPool();
-
-        // Базовые рецепты (без pool) - всегда доступны
-        if (recipePool == null || recipePool.isEmpty()) {
-            return true;
-        }
-
-        // Если blueprint пустой - рецепты с pool НЕ доступны
-        if (blueprint == null || blueprint.isEmpty()) {
-            return false;
-        }
-
-        // Получаем pool из blueprint
-        CompoundTag nbt = blueprint.getTag();
-        if (nbt == null || !nbt.contains("blueprintPool")) {
-            return false;
-        }
-
-        String blueprintPool = nbt.getString("blueprintPool");
-
-        // Проверяем совпадение pool
-        return recipePool.equals(blueprintPool);
+    protected boolean isRecipeAllowedByBlueprint(AssemblerRecipe recipe, @Nullable ItemStack blueprint) {
+        return isBlueprintAllowedForPool(recipe.getBlueprintPool(), blueprint);
     }
 }

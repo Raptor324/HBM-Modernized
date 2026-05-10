@@ -5,7 +5,12 @@ import java.lang.ref.Cleaner;
 import java.nio.FloatBuffer;
 import java.util.List;
 
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.*;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -13,14 +18,15 @@ import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.ARBDrawInstanced;
 import org.lwjgl.opengl.ARBInstancedArrays;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GLCapabilities;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL14;
+import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL31;
 import org.lwjgl.opengl.GL33;
+import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryUtil;
 
 import com.hbm_m.client.render.shader.IrisExtendedShaderAccess;
@@ -33,16 +39,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
 /*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -477,7 +473,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
     }
 
     public void renderSingle(PoseStack poseStack, int packedLight, BlockPos blockPos,
-        @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
+                             @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
         if (!initialized || vaoId <= 0 || eboId <= 0 || indexCount <= 0) return;
 
         if (ShaderCompatibilityDetector.isExternalShaderActive()) {
@@ -532,7 +528,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             // can emit a non-instanced draw via the same VAO layout.
             uploadSingleInstance(poseStack, packedLight, blockEntity);
 
-            applyCommonUniforms(shader, RenderSystem.getProjectionMatrix(), new Matrix4f());
+            applyCommonUniforms(shader, RenderSystem.getProjectionMatrix(), new Matrix4f(RenderSystem.getModelViewMatrix()));
             // Must come BEFORE apply() — see prepareBlockLitSamplers javadoc.
             SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
             shader.apply();
@@ -974,6 +970,11 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         boolean depthTestWasEnabled = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
         boolean depthMaskWasEnabled = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
         int previousDepthFunc = GL11.glGetInteger(GL11.GL_DEPTH_FUNC);
+        boolean blendWasEnabled = GL11.glIsEnabled(GL11.GL_BLEND);
+        int prevBlendSrcRgb = GL11.glGetInteger(GL14.GL_BLEND_SRC_RGB);
+        int prevBlendDstRgb = GL11.glGetInteger(GL14.GL_BLEND_DST_RGB);
+        int prevBlendSrcAlpha = GL11.glGetInteger(GL14.GL_BLEND_SRC_ALPHA);
+        int prevBlendDstAlpha = GL11.glGetInteger(GL14.GL_BLEND_DST_ALPHA);
 
         try {
             GL30.glBindVertexArray(vaoId);
@@ -985,9 +986,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             }
 
             RenderSystem.setShader(() -> shader);
-            // ModelView is identity; instancing shader composes its own per-vertex transform
-            // from the per-instance attributes.
-            applyCommonUniforms(shader, projectionMatrix, new Matrix4f());
+            // На Fabric flush выполняется в WorldRenderEvents.AFTER_TRANSLUCENT, где Mojang модель-вью
+            // стек уже включает camera/view transform. Identity здесь приводит к неверному depth/clip
+            // и эффекту "за моделью видно землю". Поэтому используем текущую ModelView матрицу.
+            applyCommonUniforms(shader, projectionMatrix, new Matrix4f(RenderSystem.getModelViewMatrix()));
 
             // Must come BEFORE apply() — see prepareBlockLitSamplers javadoc.
             SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
@@ -1024,6 +1026,12 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             else RenderSystem.disableDepthTest();
             if (cullWasEnabled) RenderSystem.enableCull();
             else RenderSystem.disableCull();
+            // Critical: instanced flush runs on Fabric in AFTER_TRANSLUCENT. If we don't restore blend state,
+            // the vanilla outline / HUD passes can render with wrong blending and look like they "leak"
+            // through depth. We restore both enablement and factors.
+            RenderSystem.blendFuncSeparate(prevBlendSrcRgb, prevBlendDstRgb, prevBlendSrcAlpha, prevBlendDstAlpha);
+            if (blendWasEnabled) RenderSystem.enableBlend();
+            else RenderSystem.disableBlend();
             RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
         }
     }
@@ -1065,6 +1073,11 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         boolean depthTestWasEnabled = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
         boolean depthMaskWasEnabled = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
         int previousDepthFunc = GL11.glGetInteger(GL11.GL_DEPTH_FUNC);
+        boolean blendWasEnabled = GL11.glIsEnabled(GL11.GL_BLEND);
+        int prevBlendSrcRgb = GL11.glGetInteger(GL14.GL_BLEND_SRC_RGB);
+        int prevBlendDstRgb = GL11.glGetInteger(GL14.GL_BLEND_DST_RGB);
+        int prevBlendSrcAlpha = GL11.glGetInteger(GL14.GL_BLEND_SRC_ALPHA);
+        int prevBlendDstAlpha = GL11.glGetInteger(GL14.GL_BLEND_DST_ALPHA);
 
         // Pack shaders (BSL in particular) read `blockEntityId / 100` and switch
         // to special-case branches on certain ids - 155 → EMISSIVE_RECOLOR (paints
@@ -1338,6 +1351,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             else RenderSystem.disableDepthTest();
             if (cullWasEnabled) RenderSystem.enableCull();
             else RenderSystem.disableCull();
+            RenderSystem.blendFuncSeparate(prevBlendSrcRgb, prevBlendDstRgb, prevBlendSrcAlpha, prevBlendDstAlpha);
+            if (blendWasEnabled) RenderSystem.enableBlend();
+            else RenderSystem.disableBlend();
             RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
             // Restore Mojang's shader-texture slot 0 to the block atlas so any
             // texture-binding pollution we may have inherited does not bleed

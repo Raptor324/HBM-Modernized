@@ -2,9 +2,10 @@ package com.hbm_m.recipe;
 
 import javax.annotation.Nullable;
 
+import dev.architectury.fluid.FluidStack;
+
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraftforge.fluids.FluidStack;
 
 /**
  * Рецепт рудного окислителя (Crystallizer).
@@ -54,7 +55,7 @@ public class CrystallizerRecipe {
     public float getProductivity() { return productivity; }
 
     public int getAcidAmount() {
-        return acid == null ? 0 : acid.getAmount();
+        return acid == null ? 0 : (int) Math.min(Integer.MAX_VALUE, acid.getAmount());
     }
 
     /**

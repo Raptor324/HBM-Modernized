@@ -1,28 +1,50 @@
 //? if fabric {
 package com.hbm_m.main;
 
-import com.hbm_m.api.fluids.ModFluids;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.hbm_m.inventory.fluid.ModFluids;
+import com.hbm_m.api.fluids.bootstrap.ModFluidTraitsBootstrap;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.lib.RefStrings;
 import com.hbm_m.item.fekal_electric.ModBatteryItem;
 import com.hbm_m.item.liquids.FluidBarrelItem;
 import com.hbm_m.item.liquids.InfiniteFluidItem;
 import com.hbm_m.radiation.ChunkRadiationManager;
+import com.hbm_m.recipe.ChemicalPlantRecipes;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
 import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
 import net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant;
 import team.reborn.energy.api.EnergyStorage;
 
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+
 public final class FabricEntrypoint implements ModInitializer {
+
+    /** Источник «water» из {@link ModFluids}; когда есть в {@link BuiltInRegistries#FLUID}, {@link dev.architectury.registry.registries.RegistrySupplier#get()} безопасен. */
+    private static final ResourceLocation HBM_WATER_SOURCE_ID = RefStrings.resourceLocation("water");
+
+    /**
+     * На Fabric {@link dev.architectury.event.events.common.LifecycleEvent#SETUP} и даже
+     * {@link net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents#CLIENT_STARTED}
+     * бывают раньше фактической записи жидкостей в {@link BuiltInRegistries#FLUID}.
+     * Ждём появления ключа и один раз регистрируем рецепты/трейты на тике сервера или клиента.
+     */
+    private static final AtomicBoolean FLUID_DEPENDENT_SETUP_DONE = new AtomicBoolean(false);
+
     @Override
     public void onInitialize() {
-        MainRegistry.init();
-        // Как на Forge (ModFluids.register(modBus)): без этого FLUIDS не привязан к шине,
-        // и LifecycleEvent.SETUP → commonSetup падает на .get() (hbm_m:water).
+        // Сначала подписка FLUIDS на реестр — до MainRegistry.init(), который вешает SETUP.
         ModFluids.register();
+        MainRegistry.init();
+        registerFluidDependentSetupWhenReady();
 
         ItemStorage.SIDED.registerForBlockEntity(
                 (be, side) -> be.getItemStorage(side),
@@ -97,6 +119,41 @@ public final class FabricEntrypoint implements ModInitializer {
 
         CreativeModeTabEventHandler.initFabric();
         ChunkRadiationManager.initFabric();
+    }
+
+    private static void registerFluidDependentSetupWhenReady() {
+        Runnable tryRunFluidDependentSetup = () -> {
+            synchronized (FabricEntrypoint.class) {
+                if (FLUID_DEPENDENT_SETUP_DONE.get()) {
+                    return;
+                }
+                if (!BuiltInRegistries.FLUID.containsKey(HBM_WATER_SOURCE_ID)) {
+                    return;
+                }
+                try {
+                    ChemicalPlantRecipes.registerRecipes();
+                    ModFluidTraitsBootstrap.registerAll();
+                    FLUID_DEPENDENT_SETUP_DONE.set(true);
+                } catch (RuntimeException ex) {
+                    // На всякий случай: если ключ уже есть, но DeferredRegister ещё не связан.
+                    if (!isDeferredFluidNotYetBound(ex)) {
+                        throw ex;
+                    }
+                }
+            }
+        };
+        ServerTickEvents.END_SERVER_TICK.register(server -> tryRunFluidDependentSetup.run());
+        ClientTickEvents.END_CLIENT_TICK.register(client -> tryRunFluidDependentSetup.run());
+    }
+
+    private static boolean isDeferredFluidNotYetBound(RuntimeException ex) {
+        if (!(ex instanceof NullPointerException)) {
+            return false;
+        }
+        StackTraceElement[] st = ex.getStackTrace();
+        return st.length > 0
+                && "get".equals(st[0].getMethodName())
+                && st[0].getClassName().contains("DeferredRegister");
     }
 
     private static final class BatteryEnergyStorage extends SnapshotParticipant<Long> implements EnergyStorage {

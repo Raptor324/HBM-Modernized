@@ -5,18 +5,19 @@ import java.util.List;
 
 import javax.annotation.Nullable;
 
-import com.hbm_m.api.fluids.ModFluids;
-import com.hbm_m.block.ModBlocks;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
 
-import net.minecraft.tags.ItemTags;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
-import net.minecraftforge.fluids.FluidStack;
+
+import dev.architectury.fluid.FluidStack;
 
 /**
  * Реестр рецептов для рудного окислителя (Crystallizer).
@@ -68,10 +69,9 @@ public final class CrystallizerRecipes {
      */
     public static void registerDefaults() {
         if (!RECIPES.isEmpty()) return; // защита от двойной регистрации
-
-        FluidStack sulfur   = new FluidStack(ModFluids.SULFURIC_ACID.getSource(), 500);
-        FluidStack nitric   = new FluidStack(ModFluids.NITRIC_ACID.getSource(),   500);
-        FluidStack hiperf   = new FluidStack(ModFluids.RADIOSOLVENT.getSource(),  500);
+        FluidStack nitric   = FluidStack.create(ModFluids.NITRIC_ACID.getSource(),   500L);
+        FluidStack hiperf   = FluidStack.create(ModFluids.RADIOSOLVENT.getSource(),  500L);
+        FluidStack sulfur   = FluidStack.create(ModFluids.SULFURIC_ACID.getSource(), 500L);
 
         // === Базовые руды (через теги Forge — ловят и наши, и ванильные руды) ===
         addOreTag("forge:ores/coal",     ModItems.CRYSTAL_COAL.get(),     0.05f, null);
@@ -114,7 +114,7 @@ public final class CrystallizerRecipes {
 
         // Кость -> 16 слизи с серной кислотой (1000 mB)
         addItem(Items.BONE, new ItemStack(Items.SLIME_BALL, 16), 0f, MIXING_TIME,
-                new FluidStack(ModFluids.SULFURIC_ACID.getSource(), 1_000));
+                FluidStack.create(ModFluids.SULFURIC_ACID.getSource(), 1_000L));
 
         // Алмазная пыль -> алмаз (нужен ModItems.POWDER_DIAMOND)
         // addItem(ModItems.POWDER_DIAMOND.get(), new ItemStack(Items.DIAMOND), 0f, UTILITY_TIME, null);
@@ -130,7 +130,11 @@ public final class CrystallizerRecipes {
     // ───────────────── helpers ─────────────────
 
     private static void addOreTag(String tagId, Item output, float productivity, @Nullable FluidStack acid) {
-        TagKey<Item> tag = ItemTags.create(net.minecraft.resources.ResourceLocation.tryParse(tagId));
+        ResourceLocation id = ResourceLocation.tryParse(tagId);
+        if (id == null) {
+            throw new IllegalArgumentException("Invalid item tag id: " + tagId);
+        }
+        TagKey<Item> tag = TagKey.create(Registries.ITEM, id);
         Ingredient ing = Ingredient.of(tag);
         RECIPES.add(new CrystallizerRecipe(ing, 1, acid, new ItemStack(output), BASE_TIME, productivity));
     }

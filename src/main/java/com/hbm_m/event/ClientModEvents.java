@@ -19,12 +19,6 @@ import com.hbm_m.config.ModClothConfig;
 
 import dev.architectury.event.events.client.ClientTickEvent;
 import dev.architectury.event.events.client.ClientTooltipEvent;
-import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.TagKey;
-import net.minecraft.world.item.ArmorItem;
 //? if fabric {
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 //?}
@@ -35,6 +29,12 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 *///?}
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.ArmorItem;
 
 //? if forge {
 /*@Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
@@ -99,11 +99,17 @@ public class ClientModEvents {
 
         //? if fabric {
         WorldRenderEvents.AFTER_TRANSLUCENT.register(context -> {
+            // Late safety net: close any persistent batch left open during BER.
+            // Instanced flush is done earlier (BEFORE_BLOCK_OUTLINE) so solid VBO
+            // doesn't render after translucent (which breaks depth/outline).
+            IrisRenderBatch.closePersistentIfActive();
+        });
+
+        WorldRenderEvents.BEFORE_BLOCK_OUTLINE.register((context, hitResult) -> {
             if (ModClothConfig.useInstancedBatching()) {
-                // Tear down any IrisRenderBatch opened during BER (e.g. Chemical Plant
-                // Slider/Spinner + instanced Base/Frame). flushBatchIris does its own
-                // shader.apply/clear; leaving ACTIVE set after clear() poisons the next
-                // frame with "No active program" / matrix uniform errors.
+                // Best Fabric equivalent to Forge AFTER_BLOCK_ENTITIES:
+                // block entities have been dispatched (instances collected) and
+                // we're still before outline + translucent passes.
                 IrisRenderBatch.closePersistentIfActive();
                 org.joml.Matrix4f proj = context.projectionMatrix();
                 MachineAdvancedAssemblerRenderer.flushInstancedBatches(proj);
@@ -113,23 +119,10 @@ public class ClientModEvents {
                 MachinePressRenderer.flushInstancedBatches(proj);
                 MachineChemicalPlantRenderer.flushInstancedBatches(proj);
             }
-            // Bump the per-pass shader-lookup cache in IrisExtendedShaderAccess so
-            // the next frame re-resolves the shader from the (possibly rebuilt)
-            // pipeline instead of returning a stale instance. Within a single
-            // frame all draws share the cached shader - this is the single
-            // largest CPU saving on the per-part Iris path (~8.78% per profiler
-            // trace).
             IrisExtendedShaderAccess.tickPass();
-            // Bump the per-frame light-sample cache so the next frame resamples
-            // (BUT shadow pass + main pass of the SAME frame still share one
-            // sample - fired here, after both passes have drained their BE
-            // dispatches). Saves ~17% on dense multiblock scenes by collapsing
-            // 11×N redundant 6-block lookups down to N per frame.
             LightSampleCache.onFrameStart();
-            // Кэш окклюжена тоже должен жить кадр, а не тик (иначе при FPS>TPS
-            // одна и та же видимость переиспользуется несколько рендер-кадров
-            // и даёт заметный flicker на BER-only моделях).
             OcclusionCullingHelper.onFrameStart();
+            return true;
         });
 
         WorldRenderEvents.LAST.register(context -> {

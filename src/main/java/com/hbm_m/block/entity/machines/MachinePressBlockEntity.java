@@ -3,6 +3,7 @@ package com.hbm_m.block.entity.machines;
 
 import java.util.Optional;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
@@ -12,13 +13,18 @@ import com.hbm_m.recipe.PressRecipe;
 import com.hbm_m.sound.ModSounds;
 
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+/*import com.hbm_m.capability.ModCapabilities;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.LazyOptional;
 *///?}
 //? if fabric {
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;//?}
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
@@ -36,6 +42,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.item.crafting.RecipeType;
 
 public class MachinePressBlockEntity extends BaseMachineBlockEntity {
     
@@ -102,12 +109,30 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
     };
 
     public MachinePressBlockEntity(BlockPos pos, BlockState state) {
-        // ИСПРАВЬ: добавь capacity и transferRate
         super(ModBlockEntities.PRESS_BE.get(), pos, state,
                 SLOT_COUNT,   // inventorySize
-                50_000L,      // capacity (энергия)
-                1000L);       // transferRate (скорость приёма/отдачи)
+                0L,           // capacity (пресс не использует энергию)
+                0L);          // receiveRate (не должен заряжаться)
     }
+
+    @Override
+    public boolean canConnectEnergy(Direction side) {
+        return false;
+    }
+
+    //? if forge {
+    /*@Override
+    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+        // Пресс НЕ является частью энергетической сети и не должен цепляться проводами/заряжаться.
+        if (cap == ModCapabilities.HBM_ENERGY_PROVIDER
+                || cap == ModCapabilities.HBM_ENERGY_RECEIVER
+                || cap == ModCapabilities.HBM_ENERGY_CONNECTOR
+                || cap == ForgeCapabilities.ENERGY) {
+            return LazyOptional.empty();
+        }
+        return super.getCapability(cap, side);
+    }
+    *///?}
 
 
     
@@ -338,8 +363,17 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         for (int i = 0; i < inventory.getSlots(); i++) {
             container.setItem(i, inventory.getStackInSlot(i));
         }
-        
-        return level.getRecipeManager().getRecipeFor(PressRecipe.Type.INSTANCE, container, level);
+
+        // getRecipeFor() иногда не сходится по дженерикам в зависимости от маппингов,
+        // поэтому берём список рецептов и матчим вручную.
+        @SuppressWarnings("rawtypes")
+        RecipeType type = (RecipeType) PressRecipe.Type.INSTANCE;
+        for (Object holderObj : level.getRecipeManager().getAllRecipesFor(type)) {
+            if (holderObj instanceof PressRecipe recipe && recipe.matches(container, level)) {
+                return Optional.of(recipe);
+            }
+        }
+        return Optional.empty();
     }
     
     // ==================== UTILITY ====================

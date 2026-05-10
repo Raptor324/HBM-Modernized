@@ -441,8 +441,8 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             return;
         }
 
-        // Временно оставляем только Forge FE, чтобы убрать несовпадения capability-сигнатур HBM energy в этом порте.
-        energySourceStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
+        //? if forge {
+        /*energySourceStack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
             long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
             if (energyNeeded <= 0) return;
 
@@ -454,6 +454,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
                 setChanged();
             }
         });
+        *///?}
 
         //? if fabric {
         var itemEnergy = EnergyStorage.ITEM.find(energySourceStack, null);
@@ -497,8 +498,8 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         if (level == null) return List.of();
         ItemStack folderStack = getBlueprintFolder();
         String activePool = ItemBlueprintFolder.getBlueprintPool(folderStack);
-        List<AssemblerRecipe> allRecipes = level.getRecipeManager()
-                .getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
+        List<AssemblerRecipe> allRecipes = com.hbm_m.recipe.index.ModRecipeIndex.of(level.getRecipeManager())
+                .getAll(AssemblerRecipe.Type.INSTANCE);
         return allRecipes.stream()
                 .filter(recipe -> {
                     String recipePool = recipe.getBlueprintPool();

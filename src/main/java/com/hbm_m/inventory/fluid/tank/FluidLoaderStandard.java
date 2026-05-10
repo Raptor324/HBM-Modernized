@@ -157,7 +157,12 @@ public class FluidLoaderStandard implements FluidTank.LoadingHandler {
         }
         if (drained <= 0) return false;
 
-        tank.fill(tank.getFill() + (int) (drained / 81L));
+        // На Fabric нельзя использовать tank.fill/setFill когда бак пустой:
+        // setFill опирается на getStoredFluid() (variant), и если variant blank — жидкость не "коммитится".
+        int mb = (int) (drained / 81L);
+        if (mb <= 0) return false;
+        int filled = tank.fillMb(storedVariant.getFluid(), mb);
+        if (filled != mb) return false;
         FluidTank.placeItemInSlot(slots, out, execInv.getItem(0));
         slots[in].shrink(1);
         if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
@@ -267,7 +272,10 @@ public class FluidLoaderStandard implements FluidTank.LoadingHandler {
         }
         if (filled <= 0) return false;
 
-        tank.fill(tank.getFill() - (int) (filled / 81L));
+        // На Fabric бак может быть пустым по variant, поэтому используем drainMb.
+        int mb = (int) (filled / 81L);
+        if (mb <= 0) return false;
+        tank.drainMb(mb);
         FluidTank.placeItemInSlot(slots, out, execInv.getItem(0));
         slots[in].shrink(1);
         if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;

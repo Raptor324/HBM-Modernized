@@ -93,6 +93,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
 
     private final FluidTank[] inputTanks = new FluidTank[3];
     private final FluidTank[] outputTanks = new FluidTank[3];
+    private boolean tanksDirty = false;
 
     //? if forge {
     /*private final LazyOptional<IFluidHandler>[] inputTankHandlers = new LazyOptional[3];
@@ -115,7 +116,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
         @Override
         public int get(int index) {
             return switch (index) {
-                case 0 -> module != null ? module.getProgress() : 0;
+                case 0 -> module != null ? module.getProgressInt() : 0;
                 case 1 -> module != null ? module.getMaxProgress() : 100;
                 case 2 -> (int) (getEnergyStored() & 0xFFFFFFFFL);
                 case 3 -> (int) ((getEnergyStored() >> 32) & 0xFFFFFFFFL);
@@ -185,18 +186,14 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
                 @Override
                 public void onContentsChanged() {
                     setChanged();
-                    if (level != null && !level.isClientSide) {
-                        level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-                    }
+                    tanksDirty = true;
                 }
             };
             outputTanks[i] = new FluidTank(TANK_CAPACITY) {
                 @Override
                 public void onContentsChanged() {
                     setChanged();
-                    if (level != null && !level.isClientSide) {
-                        level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-                    }
+                    tanksDirty = true;
                 }
             };
             //? if forge {
@@ -209,13 +206,18 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
                 this, inventory,
                 new int[]{SLOT_SOLID_INPUT_START, SLOT_SOLID_INPUT_START + 1, SLOT_SOLID_INPUT_START + 2},
                 new int[]{SLOT_SOLID_OUTPUT_START, SLOT_SOLID_OUTPUT_START + 1, SLOT_SOLID_OUTPUT_START + 2},
-                inputTanks, outputTanks);
+                inputTanks, outputTanks,
+                this.level);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineChemicalPlantBlockEntity entity) {
         entity.prevAnim = entity.anim;
 
         if (level.isClientSide) {
+            // Модуль создаётся в конструкторе с level=null (BE ещё не привязан к миру),
+            // на сервере он обновляется каждый тик; на клиенте тоже нужно обновлять,
+            // иначе peekRecipe(level) всегда возвращает null и визуал/цвет берётся только из fallback.
+            entity.module.setLevel(level);
             if (entity.isChemplantEffectsActive()) {
                 entity.anim++;
             }
@@ -227,6 +229,17 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
         entity.syncRenderActiveStub();
 
         entity.ensureNetworkInitialized();
+        entity.module.setLevel(level);
+        ChemicalPlantRecipe capRecipe = entity.module.peekRecipe(level);
+        long desiredCap = MAX_POWER;
+        if (capRecipe != null) {
+            desiredCap = Math.max(desiredCap, capRecipe.getPowerConsumption() * 100L);
+        }
+        desiredCap = Math.max(desiredCap, entity.getEnergyStored());
+        if (desiredCap != entity.getMaxEnergyStored()) {
+            entity.setEnergyCapacity(desiredCap);
+        }
+
         entity.chargeFromBattery();
         entity.upgradeManager.checkSlots(entity.inventory, SLOT_UPGRADE_START, SLOT_UPGRADE_END, VALID_UPGRADES);
         entity.transferFluidsFromItems();
@@ -244,14 +257,29 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
         double pow = 1.0 - 0.25 * p + s + (10.0 / 3.0) * o;
 
         ItemStack blueprint = entity.inventory.getStackInSlot(SLOT_SCHEMATIC);
-        boolean dirty = entity.module.update(level, blueprint, speed, pow);
+        boolean dirty = entity.module.updateAndGetDirty(speed, pow, true, blueprint);
 
-        boolean shouldRenderActive = entity.module.getDidProcess();
+        if (entity.module.getDidProcess()) {
+            ItemStack maybeSword = entity.inventory.getStackInSlot(SLOT_BATTERY);
+            if (!maybeSword.isEmpty() && maybeSword.is(com.hbm_m.item.ModItems.METEORITE_SWORD.get())) {
+                entity.inventory.setStackInSlot(SLOT_BATTERY, new ItemStack(com.hbm_m.item.ModItems.METEORITE_SWORD_SEARED.get()));
+                dirty = true;
+            }
+        }
+
+        // RENDER_ACTIVE должен быть стабильным флагом "идёт процесс", а не 1-tick импульсом didProcess.
+        // Иначе на клиенте BER (жидкость/звук/анимация) почти всегда выключен.
+        boolean shouldRenderActive = entity.module.getProgressInt() > 0 || entity.module.getDidProcess();
         if (state.hasProperty(MachineChemicalPlantBlock.RENDER_ACTIVE)) {
             boolean active = state.getValue(MachineChemicalPlantBlock.RENDER_ACTIVE);
             if (active != shouldRenderActive) {
                 level.setBlock(pos, state.setValue(MachineChemicalPlantBlock.RENDER_ACTIVE, shouldRenderActive), 3);
             }
+        }
+
+        if (entity.tanksDirty) {
+            dirty = true;
+            entity.tanksDirty = false;
         }
 
         if (dirty) {
@@ -400,9 +428,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
     }
 
     private void transferFluidsFromItems() {
-        //? if forge {
-        /*ItemStack[] slotView = chemPlantInventorySlotBacking();
-        *///?}
+        ItemStack[] slotView = chemPlantInventorySlotBacking();
         for (int i = 0; i < 3; i++) {
             int fullContainerSlot = SLOT_FLUID_INPUT_START + i;
             int emptyContainerSlot = SLOT_FLUID_INPUT_EMPTY_START + i;
@@ -413,111 +439,25 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
             // и не требуют пустого нижнего слота под «опустошённый» стак Forge.
             // FluidLoaderStandard.emptyItem сам проверит canPlaceItemInSlot и стакаемость.
 
-            //? if forge {
-            /*if (inputTanks[i].loadTank(fullContainerSlot, emptyContainerSlot, slotView)) {
+            if (inputTanks[i].loadTank(fullContainerSlot, emptyContainerSlot, slotView)) {
                 inventory.setStackInSlot(fullContainerSlot, slotView[fullContainerSlot]);
                 inventory.setStackInSlot(emptyContainerSlot, slotView[emptyContainerSlot]);
                 setChanged();
             }
-            *///?}
-
-            //? if fabric {
-            Fluid configuredFluid = inputTanks[i].getConfiguredFluid();
-            if (configuredFluid == Fluids.EMPTY) continue;
-
-            ItemStack one = fullContainer.copy();
-            one.setCount(1);
-            Storage<FluidVariant> itemStorage = FluidStorage.ITEM.find(one, ContainerItemContext.withConstant(one));
-            if (itemStorage == null) continue;
-            StorageView<FluidVariant> view = null;
-            for (StorageView<FluidVariant> v : itemStorage) {
-                if (!v.isResourceBlank() && v.getAmount() > 0) { view = v; break; }
-            }
-            if (view == null) continue;
-
-            if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(configuredFluid, view.getResource().getFluid())) continue;
-
-            Storage<FluidVariant> tankStorage = inputTanks[i].getStorage();
-            long spaceDroplets = (long) inputTanks[i].getSpaceMb() * 81L; // 81 droplets = 1 mB
-            if (spaceDroplets <= 0) continue;
-
-            boolean moved = false;
-            try (Transaction tx = Transaction.openOuter()) {
-                FluidVariant variant = view.getResource();
-                long movable = Math.min(view.getAmount(), spaceDroplets);
-                long inserted = tankStorage.insert(variant, movable, tx);
-                if (inserted <= 0) {
-                    // no-op
-                } else {
-                    long extracted = itemStorage.extract(variant, inserted, tx);
-                    if (extracted == inserted) {
-                        tx.commit();
-                        moved = true;
-                    }
-                }
-            }
-            if (!moved) continue;
-
-            fullContainer.shrink(1);
-            inventory.setStackInSlot(emptyContainerSlot, one);
-            setChanged();
-            //?}
         }
     }
 
     private void transferFluidsToItems() {
-        //? if forge {
-        /*ItemStack[] slotView = chemPlantInventorySlotBacking();
-        *///?}
+        ItemStack[] slotView = chemPlantInventorySlotBacking();
         for (int i = 0; i < 3; i++) {
             int emptyContainerSlot = SLOT_FLUID_OUTPUT_START + i;
             int filledContainerSlot = SLOT_FLUID_OUTPUT_EMPTY_START + i;
 
-            //? if forge {
-            /*if (outputTanks[i].unloadTank(emptyContainerSlot, filledContainerSlot, slotView)) {
+            if (outputTanks[i].unloadTank(emptyContainerSlot, filledContainerSlot, slotView)) {
                 inventory.setStackInSlot(emptyContainerSlot, slotView[emptyContainerSlot]);
                 inventory.setStackInSlot(filledContainerSlot, slotView[filledContainerSlot]);
                 setChanged();
             }
-            *///?}
-
-            //? if fabric {
-            if (outputTanks[i].isEmpty()) continue;
-
-            ItemStack one = emptyContainer.copy();
-            one.setCount(1);
-            Storage<FluidVariant> itemStorage = FluidStorage.ITEM.find(one, ContainerItemContext.withConstant(one));
-            if (itemStorage == null) continue;
-
-            Storage<FluidVariant> tankStorage = outputTanks[i].getStorage();
-            StorageView<FluidVariant> view = null;
-            for (StorageView<FluidVariant> v : tankStorage) {
-                if (!v.isResourceBlank() && v.getAmount() > 0) { view = v; break; }
-            }
-            if (view == null) continue;
-
-            boolean moved = false;
-            try (Transaction tx = Transaction.openOuter()) {
-                FluidVariant variant = view.getResource();
-                long available = view.getAmount();
-                long toMove = Math.min(available, (long) TANK_CAPACITY * 81L);
-                long inserted = itemStorage.insert(variant, toMove, tx);
-                if (inserted <= 0) {
-                    // no-op
-                } else {
-                    long extracted = tankStorage.extract(variant, inserted, tx);
-                    if (extracted == inserted) {
-                        tx.commit();
-                        moved = true;
-                    }
-                }
-            }
-            if (!moved) continue;
-
-            emptyContainer.shrink(1);
-            inventory.setStackInSlot(filledContainerSlot, one);
-            setChanged();
-            //?}
         }
     }
 
@@ -597,7 +537,8 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
         if (level == null) return List.of();
         ItemStack folder = inventory.getStackInSlot(SLOT_SCHEMATIC);
         String installedPool = ItemBlueprintFolder.getBlueprintPool(folder);
-        List<ChemicalPlantRecipe> all = level.getRecipeManager().getAllRecipesFor(ChemicalPlantRecipe.Type.INSTANCE);
+        List<ChemicalPlantRecipe> all = com.hbm_m.recipe.index.ModRecipeIndex.of(level.getRecipeManager())
+                .getAll(ChemicalPlantRecipe.Type.INSTANCE);
         return all.stream().filter(r -> {
             String pool = r.getBlueprintPool();
             if (pool == null || pool.isEmpty()) return true;
@@ -647,7 +588,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
     }
 
     public int getProgress() {
-        return module.getProgress();
+        return module.getProgressInt();
     }
 
     public int getMaxProgress() {

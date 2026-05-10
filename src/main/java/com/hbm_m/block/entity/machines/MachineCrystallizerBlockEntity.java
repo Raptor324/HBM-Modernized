@@ -11,6 +11,8 @@ import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.recipe.CrystallizerRecipe;
 import com.hbm_m.recipe.CrystallizerRecipes;
 
+import dev.architectury.fluid.FluidStack;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -22,11 +24,11 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluids;
 //? if forge {
 /*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 *///?}
@@ -287,13 +289,15 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
         return recipe.getDuration();
     }
 
-    //? if forge {
-    /*private FluidStack getTankFluidStack() {
+    /** Снимок бака для сопоставления с рецептами (Architectury {@link FluidStack}, миллибакеты). */
+    private FluidStack getTankFluidStack() {
         var fluid = tank.getStoredFluid();
         int amount = tank.getFluidAmountMb();
-        return fluid == null || amount <= 0 ? FluidStack.EMPTY : new FluidStack(fluid, amount);
+        if (fluid == null || fluid == Fluids.EMPTY || amount <= 0) {
+            return FluidStack.empty();
+        }
+        return FluidStack.create(fluid, amount);
     }
-    *///?}
 
     private boolean canProcess() {
         if (inventory.getStackInSlot(SLOT_INPUT).isEmpty()) return false;

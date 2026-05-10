@@ -32,9 +32,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 
 //? if forge {
 /*import net.minecraftforge.client.model.data.ModelData;
@@ -89,7 +89,9 @@ public class MachineChemicalPlantVboRenderer {
         Level level = be.getLevel();
         if (level == null) return null;
         ChemicalPlantRecipe recipe = be.getModule().peekRecipe(level);
-        if (recipe == null) return null;
+        if (recipe == null) {
+            return getTankFallbackVisual(be);
+        }
 
         List<FluidStack> colorFluids = !recipe.getFluidOutputs().isEmpty()
             ? recipe.getFluidOutputs()
@@ -136,6 +138,52 @@ public class MachineChemicalPlantVboRenderer {
         return new FluidVisual(texFluid, rr, gg, bb);
     }
 
+    @Nullable
+    private static FluidVisual getTankFallbackVisual(MachineChemicalPlantBlockEntity be) {
+        // На клиенте выбранный рецепт часто не синхронизирован; при этом жидкости в баках видимы и должны красить рендер.
+        // Чтобы совпадать с оригиналом 1.7.10 (средний цвет по fluid-стекам рецепта), делаем "best effort":
+        //  - если есть жидкости в выходных баках — усредняем по ним (аналог outputFluid),
+        //  - иначе усредняем по входным бакам (аналог inputFluid).
+        var outputs = be.getOutputTanks();
+        var inputs = be.getInputTanks();
+
+        int colors = 0;
+        float rr = 0, gg = 0, bb = 0;
+        FluidStack firstNonEmpty = null;
+
+        for (var t : outputs) {
+            if (t == null || t.isEmpty()) continue;
+            if (firstNonEmpty == null) {
+                firstNonEmpty = FluidStack.create(t.getStoredFluid(), (long) t.getFluidAmountMb());
+            }
+            int tint = HbmFluidRegistry.getTintColor(t.getStoredFluid());
+            rr += ((tint >> 16) & 0xFF) / 255.0F;
+            gg += ((tint >> 8) & 0xFF) / 255.0F;
+            bb += (tint & 0xFF) / 255.0F;
+            colors++;
+        }
+
+        if (colors == 0) {
+            for (var t : inputs) {
+                if (t == null || t.isEmpty()) continue;
+                if (firstNonEmpty == null) {
+                    firstNonEmpty = FluidStack.create(t.getStoredFluid(), (long) t.getFluidAmountMb());
+                }
+                int tint = HbmFluidRegistry.getTintColor(t.getStoredFluid());
+                rr += ((tint >> 16) & 0xFF) / 255.0F;
+                gg += ((tint >> 8) & 0xFF) / 255.0F;
+                bb += (tint & 0xFF) / 255.0F;
+                colors++;
+            }
+        }
+
+        if (colors <= 0 || firstNonEmpty == null || firstNonEmpty.isEmpty()) return null;
+        rr /= colors;
+        gg /= colors;
+        bb /= colors;
+        return new FluidVisual(firstNonEmpty, rr, gg, bb);
+    }
+
     /** Как {@link com.hbm.util.BobMathUtil#sps(double)}. */
     private static double chemicalSps(double x) {
         return Math.sin(Math.PI / 2.0 * Math.cos(x));
@@ -150,31 +198,41 @@ public class MachineChemicalPlantVboRenderer {
         poseStack.pushPose();
         poseStack.translate(-0.5f, 0f, -0.5f);
         float anim = be.getAnim(partialTick);
-        Direction facing = be.getBlockState().getValue(MachineChemicalPlantBlock.FACING);
-        //? if forge {
-        /*if (!tryRenderFluidBakedPart(model, facing, anim, poseStack, bufferSource, packedLight, packedOverlay, visual)) {
-            renderSwirl(be, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
-        }
-        *///?} else {
-        renderSwirl(be, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
-        //?}
+        BlockState state = be.getBlockState();
+        Direction facing = state.getValue(MachineChemicalPlantBlock.FACING);
+        // Под шейдерами (Oculus/Iris) важно, чтобы tracked shader-texture слот 0 указывал на block atlas.
+        // Иначе translucent RenderType может семплить "чужую" текстуру до первого toggle/reload шейдера.
+        RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
+        // Только правильная геометрия части "Fluid". Без swirl-fallback, чтобы не было конфликтов с batched/VBO.
+        tryRenderFluidBakedPart(model, state, facing, anim, poseStack, bufferSource, packedLight, packedOverlay, visual);
         poseStack.popPose();
     }
 
     private static final ResourceLocation CHEMPLANT_FLUID_TEX =
         new ResourceLocation("hbm_m", "block/machine/chemical_plant_fluid");
 
-    /** Render-type для жидкости в BER: не deferred translucent (чтобы не зависеть от terrain batch). */
-    private static final RenderType FLUID_RENDER_TYPE = RenderType.translucentMovingBlock();
+    /**
+     * RenderType для жидкости.
+     * - Forge: используем entityTranslucent с block atlas, чтобы рендер гарантированно попал в BE-пайплайн/буфер
+     *   (terrain translucent на Forge может не флашиться на первом входе до ресурсного события).
+     * - Fabric: используем block translucent (depth write OFF), иначе жидкость может писать depth и "вырезать" корпус
+     *   при instanced/batched пути.
+     */
+    //? if forge {
+    /*private static final RenderType FLUID_RENDER_TYPE = RenderType.entityTranslucent(TextureAtlas.LOCATION_BLOCKS);
+    *///?} else {
+    private static final RenderType FLUID_RENDER_TYPE = RenderType.translucent();
+    //?}
 
     //? if forge {
-    /*private static boolean tryRenderFluidBakedPart(MachineChemicalPlantBakedModel model, Direction facing, float anim,
+    /*private static boolean tryRenderFluidBakedPart(MachineChemicalPlantBakedModel model, BlockState state, Direction facing, float anim,
                                                    PoseStack poseStack, MultiBufferSource bufferSource,
                                                    int packedLight, int packedOverlay, FluidVisual visual) {
         BakedModel fluidPart = model.getPart("Fluid");
         if (fluidPart == null) return false;
 
-        List<BakedQuad> quads = collectChemplantFluidQuads(fluidPart);
+        // Forge BakedModel implementations (esp. OBJ/part models) may return no quads when state is null.
+        List<BakedQuad> quads = collectChemplantFluidQuads(fluidPart, state);
         if (quads.isEmpty()) return false;
 
         TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS)
@@ -196,14 +254,14 @@ public class MachineChemicalPlantVboRenderer {
         return true;
     }
 
-    private static List<BakedQuad> collectChemplantFluidQuads(BakedModel fluidPart) {
+    private static List<BakedQuad> collectChemplantFluidQuads(BakedModel fluidPart, @Nullable BlockState state) {
         RandomSource rand = RandomSource.create(42);
         for (RenderType layer : new RenderType[]{null, RenderType.cutout(), RenderType.solid(), RenderType.translucent()}) {
             List<BakedQuad> quads = new ArrayList<>();
             for (Direction dir : Direction.values()) {
-                quads.addAll(fluidPart.getQuads(null, dir, rand, ModelData.EMPTY, layer));
+                quads.addAll(fluidPart.getQuads(state, dir, rand, ModelData.EMPTY, layer));
             }
-            quads.addAll(fluidPart.getQuads(null, null, rand, ModelData.EMPTY, layer));
+            quads.addAll(fluidPart.getQuads(state, null, rand, ModelData.EMPTY, layer));
             if (!quads.isEmpty()) {
                 return quads;
             }
@@ -212,86 +270,79 @@ public class MachineChemicalPlantVboRenderer {
     }
     *///?}
 
-    private static void renderSwirl(MachineChemicalPlantBlockEntity blockEntity, float partialTick, PoseStack poseStack,
-                                    MultiBufferSource buffer, int packedLight, int packedOverlay, FluidVisual visual) {
+    //? if fabric {
+    private static boolean tryRenderFluidBakedPart(MachineChemicalPlantBakedModel model, BlockState state, Direction facing, float anim,
+                                                   PoseStack poseStack, MultiBufferSource bufferSource,
+                                                   int packedLight, int packedOverlay, FluidVisual visual) {
+        BakedModel fluidPart = model.getPart("Fluid");
+        if (fluidPart == null) return false;
+
+        List<BakedQuad> quads = collectChemplantFluidQuads(fluidPart, state);
+        if (quads.isEmpty()) return false;
+
         TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS)
             .apply(CHEMPLANT_FLUID_TEX);
-        if (sprite == null) return;
 
-        float red = visual.r();
-        float green = visual.g();
-        float blue = visual.b();
-        float alpha = 0.5F;
-        float fill = 1.0F;
+        // Поворот блока уже применён caller'ом через poseStack (setupBlockTransform).
+        float du = -anim / 100f;
+        float dv = (float) (chemicalSps(anim * 0.1) * 0.1 - 0.25);
+        quads = ModelHelper.offsetQuadUvsWrapped(quads, du, dv,
+            sprite.getU0(), sprite.getU1(), sprite.getV0(), sprite.getV1());
 
-        long time = blockEntity.getLevel() != null ? blockEntity.getLevel().getGameTime() : 0L;
-        float t = (time + partialTick) * 0.02F;
-        float scroll = t - (float) Mth.floor(t);
-
-        float uMin = sprite.getU0();
-        float uMax = sprite.getU1();
-        float vMin = sprite.getV0();
-        float vMax = sprite.getV1();
-
-        float du = (uMax - uMin) * scroll;
-        float dv = (vMax - vMin) * scroll;
-
-        float x0 = -0.35F;
-        float x1 = 0.35F;
-        float z0 = 0.65F;
-        float z1 = 1.35F;
-        float y0 = 1.02F;
-        float y1 = y0 + (1.34F - y0) * fill;
-
-        VertexConsumer vc = buffer.getBuffer(FLUID_RENDER_TYPE);
-
-        poseStack.pushPose();
+        // В Fabric overload putBulkData(...) не принимает alpha → получается полностью непрозрачная жидкость.
+        // Поэтому для baked-квадов отправляем вершины вручную с alpha=0.5 как в 1.7.10.
+        VertexConsumer vc = bufferSource.getBuffer(FLUID_RENDER_TYPE);
         PoseStack.Pose pose = poseStack.last();
         Matrix4f poseMat = pose.pose();
         Matrix3f normalMat = pose.normal();
 
-        addVertex(vc, poseMat, normalMat, x0, y1, z0, red, green, blue, alpha, uMin + du, vMin + dv, packedOverlay, packedLight, 0, 1, 0);
-        addVertex(vc, poseMat, normalMat, x0, y1, z1, red, green, blue, alpha, uMin + du, vMax + dv, packedOverlay, packedLight, 0, 1, 0);
-        addVertex(vc, poseMat, normalMat, x1, y1, z1, red, green, blue, alpha, uMax + du, vMax + dv, packedOverlay, packedLight, 0, 1, 0);
-        addVertex(vc, poseMat, normalMat, x1, y1, z0, red, green, blue, alpha, uMax + du, vMin + dv, packedOverlay, packedLight, 0, 1, 0);
-
-        addVertex(vc, poseMat, normalMat, x0, y0, z0, red, green, blue, alpha, uMin + du, vMax + dv, packedOverlay, packedLight, 0, 0, -1);
-        addVertex(vc, poseMat, normalMat, x1, y0, z0, red, green, blue, alpha, uMax + du, vMax + dv, packedOverlay, packedLight, 0, 0, -1);
-        addVertex(vc, poseMat, normalMat, x1, y1, z0, red, green, blue, alpha, uMax + du, vMin + dv, packedOverlay, packedLight, 0, 0, -1);
-        addVertex(vc, poseMat, normalMat, x0, y1, z0, red, green, blue, alpha, uMin + du, vMin + dv, packedOverlay, packedLight, 0, 0, -1);
-
-        addVertex(vc, poseMat, normalMat, x0, y0, z1, red, green, blue, alpha, uMin + du, vMax + dv, packedOverlay, packedLight, 0, 0, 1);
-        addVertex(vc, poseMat, normalMat, x0, y1, z1, red, green, blue, alpha, uMin + du, vMin + dv, packedOverlay, packedLight, 0, 0, 1);
-        addVertex(vc, poseMat, normalMat, x1, y1, z1, red, green, blue, alpha, uMax + du, vMin + dv, packedOverlay, packedLight, 0, 0, 1);
-        addVertex(vc, poseMat, normalMat, x1, y0, z1, red, green, blue, alpha, uMax + du, vMax + dv, packedOverlay, packedLight, 0, 0, 1);
-
-        addVertex(vc, poseMat, normalMat, x0, y0, z0, red, green, blue, alpha, uMin + du, vMax + dv, packedOverlay, packedLight, -1, 0, 0);
-        addVertex(vc, poseMat, normalMat, x0, y1, z0, red, green, blue, alpha, uMin + du, vMin + dv, packedOverlay, packedLight, -1, 0, 0);
-        addVertex(vc, poseMat, normalMat, x0, y1, z1, red, green, blue, alpha, uMax + du, vMin + dv, packedOverlay, packedLight, -1, 0, 0);
-        addVertex(vc, poseMat, normalMat, x0, y0, z1, red, green, blue, alpha, uMax + du, vMax + dv, packedOverlay, packedLight, -1, 0, 0);
-
-        addVertex(vc, poseMat, normalMat, x1, y0, z0, red, green, blue, alpha, uMin + du, vMax + dv, packedOverlay, packedLight, 1, 0, 0);
-        addVertex(vc, poseMat, normalMat, x1, y0, z1, red, green, blue, alpha, uMax + du, vMax + dv, packedOverlay, packedLight, 1, 0, 0);
-        addVertex(vc, poseMat, normalMat, x1, y1, z1, red, green, blue, alpha, uMax + du, vMin + dv, packedOverlay, packedLight, 1, 0, 0);
-        addVertex(vc, poseMat, normalMat, x1, y1, z0, red, green, blue, alpha, uMin + du, vMin + dv, packedOverlay, packedLight, 1, 0, 0);
-
-        poseStack.popPose();
+        float r = visual.r(), g = visual.g(), b = visual.b(), a = 0.5f;
+        for (BakedQuad quad : quads) {
+            emitQuadWithAlpha(vc, poseMat, normalMat, quad, r, g, b, a, packedOverlay, packedLight);
+        }
+        return true;
     }
 
-    private static void addVertex(VertexConsumer vc, Matrix4f poseMat, Matrix3f normalMat,
-                                  float x, float y, float z,
-                                  float r, float g, float b, float a,
-                                  float u, float v,
-                                  int overlay, int light,
-                                  float nx, float ny, float nz) {
-        vc.vertex(poseMat, x, y, z)
-            .color(r, g, b, a)
-            .uv(u, v)
-            .overlayCoords(overlay)
-            .uv2(light)
-            .normal(normalMat, nx, ny, nz)
-            .endVertex();
+    private static void emitQuadWithAlpha(VertexConsumer vc, Matrix4f poseMat, Matrix3f normalMat,
+                                          BakedQuad quad,
+                                          float r, float g, float b, float a,
+                                          int packedOverlay, int packedLight) {
+        int[] v = quad.getVertices();
+        // BakedQuad хранит 4 вершины; в 1.20.1 формат BLOCK = 8 int на вершину.
+        // x,y,z,u,v лежат как float bits.
+        Direction dir = quad.getDirection();
+        float nx = dir.getStepX();
+        float ny = dir.getStepY();
+        float nz = dir.getStepZ();
+
+        for (int i = 0; i < 4; i++) {
+            int base = i * 8;
+            float x = Float.intBitsToFloat(v[base]);
+            float y = Float.intBitsToFloat(v[base + 1]);
+            float z = Float.intBitsToFloat(v[base + 2]);
+            float u = Float.intBitsToFloat(v[base + 4]);
+            float vv = Float.intBitsToFloat(v[base + 5]);
+
+            vc.vertex(poseMat, x, y, z)
+                .color(r, g, b, a)
+                .uv(u, vv)
+                .overlayCoords(packedOverlay)
+                .uv2(packedLight)
+                .normal(normalMat, nx, ny, nz)
+                .endVertex();
+        }
     }
+
+    private static List<BakedQuad> collectChemplantFluidQuads(BakedModel fluidPart, @Nullable BlockState state) {
+        RandomSource rand = RandomSource.create(42);
+        List<BakedQuad> quads = new ArrayList<>();
+        for (Direction dir : Direction.values()) {
+            quads.addAll(fluidPart.getQuads(state, dir, rand));
+        }
+        quads.addAll(fluidPart.getQuads(state, null, rand));
+        return quads;
+    }
+    //?}
 
     public void renderStaticBase(PoseStack poseStack, int packedLight, BlockPos blockPos,
                                 @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {

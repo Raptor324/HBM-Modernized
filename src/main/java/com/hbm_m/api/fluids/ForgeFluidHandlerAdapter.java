@@ -13,6 +13,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.item.ItemStack;
 //? if forge {
 /*import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidStack;
@@ -24,7 +25,10 @@ import net.minecraftforge.items.IItemHandler;
 //? if fabric {
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 //?}
 
@@ -236,24 +240,7 @@ public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
     // --- Helpers ---
 
     //? if forge {
-    /*private boolean hasInfiniteBarrel(boolean wantSource) {
-        BlockEntity be = level.getBlockEntity(machinePos);
-        if (be == null || be.isRemoved()) return false;
-        IItemHandler items = be.getCapability(ForgeCapabilities.ITEM_HANDLER, null).orElse(null);
-        if (items == null) return false;
-        for (int i = 0; i < items.getSlots(); i++) {
-            var stack = items.getStackInSlot(i);
-            if (stack.isEmpty()) continue;
-            if (stack.getItem() instanceof com.hbm_m.item.liquids.InfiniteFluidItem inf) {
-                // Instant-режим в сети только для универсальной бочки (fluid_barrel_infinite).
-                if (!inf.isInstantNetwork()) continue;
-                return true; // и источник, и утилизатор (как fluid_barrel_infinite)
-            }
-        }
-        return false;
-    }
-
-    /^*
+    /*/^*
      * Для fill() на Forge важно использовать тот же fluid instance, который уже хранится в IFluidHandler,
      * иначе ванильные баки/forge tanks могут отвергнуть заполнение (source vs flowing).
      * Если хранилище пусто, используем канонический представитель для water/lava семейства.
@@ -275,15 +262,55 @@ public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
         return be.getCapability(ForgeCapabilities.FLUID_HANDLER, sideOfMachineFacingDuct)
                 .orElse(null);
     }
+
+    @SuppressWarnings("removal")
+    private boolean hasInfiniteBarrel(boolean wantSource) {
+        BlockEntity be = level.getBlockEntity(machinePos);
+        if (be == null || be.isRemoved()) return false;
+        IItemHandler items = be.getCapability(ForgeCapabilities.ITEM_HANDLER, null).orElse(null);
+        if (items == null) return false;
+        for (int i = 0; i < items.getSlots(); i++) {
+            var stack = items.getStackInSlot(i);
+            if (stack.isEmpty()) continue;
+            if (stack.getItem() instanceof com.hbm_m.item.liquids.InfiniteFluidItem inf) {
+                if (!inf.isInstantNetwork()) continue;
+                return true;
+            }
+        }
+        return false;
+    }
     *///?}
 
     //? if fabric {
+    @SuppressWarnings("UnstableApiUsage")
     @Nullable
     private Storage<FluidVariant> getFabricStorage() {
         BlockEntity be = level.getBlockEntity(machinePos);
         if (be == null || be.isRemoved()) return null;
         BlockState st = level.getBlockState(machinePos);
         return FluidStorage.SIDED.find(level, machinePos, st, be, sideOfMachineFacingDuct);
+    }
+
+    /** Паритет с Forge {@code hasInfiniteBarrel}: скан инвентаря контроллера на бочку {@link com.hbm_m.item.liquids.InfiniteFluidItem#isInstantNetwork()}. */
+    @SuppressWarnings("UnstableApiUsage")
+    private boolean hasInfiniteBarrel(boolean wantSource) {
+        BlockEntity be = level.getBlockEntity(machinePos);
+        if (be == null || be.isRemoved()) return false;
+        BlockState st = level.getBlockState(machinePos);
+        Storage<ItemVariant> inv = ItemStorage.SIDED.find(level, machinePos, st, be, null);
+        if (inv == null) return false;
+        for (StorageView<ItemVariant> view : inv) {
+            if (view.isResourceBlank()) continue;
+            int n = (int) Math.min(view.getAmount(), view.getResource().toStack(1).getMaxStackSize());
+            if (n <= 0) continue;
+            ItemStack stack = view.getResource().toStack(n);
+            if (stack.isEmpty()) continue;
+            if (stack.getItem() instanceof com.hbm_m.item.liquids.InfiniteFluidItem inf) {
+                if (!inf.isInstantNetwork()) continue;
+                return true;
+            }
+        }
+        return false;
     }
     //?}
 

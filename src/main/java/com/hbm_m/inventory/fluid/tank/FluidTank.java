@@ -12,6 +12,11 @@ import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.item.liquids.InfiniteFluidItem;
 
+//? if fabric {
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.base.SingleVariantStorage;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+//?}
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -26,18 +31,6 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 *///?}
-
-//? if fabric {
-import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
-import net.fabricmc.fabric.api.transfer.v1.item.InventoryStorage;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
-import net.fabricmc.fabric.api.transfer.v1.storage.base.SingleVariantStorage;
-import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
-import net.minecraft.world.SimpleContainer;
-//?}
 
 public class FluidTank implements Cloneable {
 
@@ -302,8 +295,16 @@ public class FluidTank implements Cloneable {
         /*forgeStorage.setFluid(fluid == Fluids.EMPTY || fluid == null ? FluidStack.EMPTY : new FluidStack(fluid, amountMb));
         *///?}
         //? if fabric {
-        fabricStorage.variant = fluid == Fluids.EMPTY || fluid == null ? FluidVariant.blank() : FluidVariant.of(fluid);
-        fabricStorage.amount = (long) amountMb * DROPLETS_PER_MB;
+        // Важно для Fabric: variant и amount живут отдельно. Если оставить variant != blank при amount == 0,
+        // то "пустой" бак будет считаться имеющим тип storedFluid, и conformedFluid (тип, заданный идентификатором)
+        // не сможет переопределить отображение/логику после перезахода в мир.
+        if (fluid == null || fluid == Fluids.EMPTY || amountMb <= 0) {
+            fabricStorage.variant = FluidVariant.blank();
+            fabricStorage.amount = 0L;
+        } else {
+            fabricStorage.variant = FluidVariant.of(fluid);
+            fabricStorage.amount = (long) amountMb * DROPLETS_PER_MB;
+        }
         //?}
     }
 

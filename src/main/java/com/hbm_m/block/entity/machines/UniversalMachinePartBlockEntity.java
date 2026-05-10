@@ -51,6 +51,7 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
 //?}
 
 public class UniversalMachinePartBlockEntity extends BlockEntity implements IMultiblockPart, IEnergyConnector, IFluidConnectorMK2 {
@@ -150,26 +151,10 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         if (level instanceof ServerLevel serverLevel) {
             be.tickFluidConnector(serverLevel);
         }
-        return;
-
-        //? if fabric {
-        long selfKey = pos.asLong();
-        for (Direction dir : Direction.values()) {
-            BlockPos otherPos = pos.relative(dir);
-            if (selfKey >= otherPos.asLong()) continue;
-            BlockEntity otherBe = level.getBlockEntity(otherPos);
-            if (!(otherBe instanceof UniversalMachinePartBlockEntity otherPart)) continue;
-            if (!isFluidConnector(otherPart.role) || otherPart.controllerPos == null) continue;
-            if (be.controllerPos.equals(otherPart.controllerPos)) continue;
-            tryDirectFluidTransferFabric(level, be, otherPart);
-        }
-        return;
-        //?}
 
     }
 
-    //? if forge {
-    /*/^*
+    /**
      * Тик жидкостного коннектора: 1.7.10-философия для 1.20.1.
      *
      * Делает две вещи:
@@ -181,7 +166,7 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
      *
      * Аналог 1.7.10: контроллер сам обходит {@code getConPos()} и делает {@code trySubscribe}/
      * {@code tryProvide}. У нас контроллер скрыт за мультиблоком; роль "посредника" играет коннектор.
-     ^/
+     */
     private void tickFluidConnector(ServerLevel serverLevel) {
         BlockEntity controller = serverLevel.getBlockEntity(controllerPos);
         if (controller == null || controller.isRemoved()) {
@@ -277,11 +262,11 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         }
     }
 
-    /^*
+    /**
      * Возвращает множество уникальных типов жидкостей, которые контроллер представлен в сети.
      * Для MK2 — все баки {@code getAllTanks()} с непустым типом; для остальных — пробуем читать
-     * Forge IFluidHandler (а для цистерны — её настроенный тип, даже если бак пуст).
-     ^/
+     * Forge IFluidHandler / Fabric Transfer API (а для цистерны — её настроенный тип, даже если бак пуст).
+     */
     private java.util.Set<Fluid> collectControllerFluidTypes(BlockEntity controller) {
         java.util.Set<Fluid> result = new java.util.LinkedHashSet<>();
         if (controller instanceof IFluidUserMK2 mk2) {
@@ -302,13 +287,33 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
             }
             return result;
         }
-        IFluidHandler handler = controller.getCapability(ForgeCapabilities.FLUID_HANDLER, null).resolve().orElse(null);
+        //? if forge {
+        /*IFluidHandler handler = controller.getCapability(ForgeCapabilities.FLUID_HANDLER, null).resolve().orElse(null);
         if (handler != null) {
             for (int i = 0; i < handler.getTanks(); i++) {
                 FluidStack fs = handler.getFluidInTank(i);
                 if (fs != null && !fs.isEmpty()) result.add(fs.getFluid());
             }
         }
+        *///?}
+        //? if fabric {
+        if (controller.getLevel() instanceof ServerLevel sl) {
+            BlockPos bp = controller.getBlockPos();
+            BlockState st = sl.getBlockState(bp);
+            Storage<FluidVariant> storage = FluidStorage.SIDED.find(sl, bp, st, controller, null);
+            if (storage != null) {
+                for (StorageView<FluidVariant> view : storage) {
+                    if (!view.isResourceBlank() && view.getAmount() > 0) {
+                        Fluid f = view.getResource().getFluid();
+                        if (f != null && f != Fluids.EMPTY
+                                && f != com.hbm_m.inventory.fluid.ModFluids.NONE.getSource()) {
+                            result.add(f);
+                        }
+                    }
+                }
+            }
+        }
+        //?}
         return result;
     }
 
@@ -338,48 +343,6 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         }
         fluidNodes.clear();
     }
-    *///?}
-
-    //? if fabric {
-    @SuppressWarnings("UnstableApiUsage")
-    private static void tryDirectFluidTransferFabric(Level level, UniversalMachinePartBlockEntity a, UniversalMachinePartBlockEntity b) {
-        var aStorage = FluidStorage.SIDED.find(level, a.controllerPos, null);
-        var bStorage = FluidStorage.SIDED.find(level, b.controllerPos, null);
-        if (aStorage == null || bStorage == null) return;
-
-        try (var tx = net.fabricmc.fabric.api.transfer.v1.transaction.Transaction.openOuter()) {
-            for (var view : aStorage) {
-                if (view.isResourceBlank() || view.getAmount() <= 0) continue;
-                long maxDrain = Math.min(view.getAmount(), DIRECT_FLUID_TRANSFER_PER_TICK * 81L);
-                long inserted = bStorage.insert(view.getResource(), maxDrain, tx);
-                if (inserted > 0) {
-                    long extracted = view.extract(view.getResource(), inserted, tx);
-                    if (extracted > 0) {
-                        tx.commit();
-                        return;
-                    }
-                }
-                break;
-            }
-        }
-
-        try (var tx = net.fabricmc.fabric.api.transfer.v1.transaction.Transaction.openOuter()) {
-            for (var view : bStorage) {
-                if (view.isResourceBlank() || view.getAmount() <= 0) continue;
-                long maxDrain = Math.min(view.getAmount(), DIRECT_FLUID_TRANSFER_PER_TICK * 81L);
-                long inserted = aStorage.insert(view.getResource(), maxDrain, tx);
-                if (inserted > 0) {
-                    long extracted = view.extract(view.getResource(), inserted, tx);
-                    if (extracted > 0) {
-                        tx.commit();
-                        return;
-                    }
-                }
-                break;
-            }
-        }
-    }
-    //?}
 
     @Override
     public BlockPos getControllerPos() {

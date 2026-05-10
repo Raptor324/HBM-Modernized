@@ -85,7 +85,9 @@ public interface IFluidStandardSenderMK2 extends IFluidProviderMK2 {
             for (FluidTank t : getSendingTanks()) {
                 if (VanillaFluidEquivalence.sameSubstance(t.getTankType(), fluid) && t.getPressure() == pressure) {
                     int rem = Math.min(share, t.getFill());
-                    t.fill(t.getFill() - rem);
+                    // Используем drainMb, чтобы корректно сработали platform storage + onContentsChanged (GUI sync, pipes, etc.)
+                    // На Fabric простое setFill/fill может менять amount без транзакции и не дергать onFinalCommit.
+                    t.drainMb(rem);
                     amount -= rem;
                 }
             }
@@ -94,7 +96,7 @@ public interface IFluidStandardSenderMK2 extends IFluidProviderMK2 {
             for (FluidTank t : getSendingTanks()) {
                 if (VanillaFluidEquivalence.sameSubstance(t.getTankType(), fluid) && t.getPressure() == pressure) {
                     int rem = (int) Math.min(amount, t.getFill());
-                    t.fill(t.getFill() - rem);
+                    t.drainMb(rem);
                     amount -= rem;
                 }
             }

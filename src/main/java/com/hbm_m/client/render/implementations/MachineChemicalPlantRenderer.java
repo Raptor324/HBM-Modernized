@@ -15,20 +15,14 @@ import com.hbm_m.client.render.PartGeometry;
 import com.hbm_m.client.render.RenderDistanceHelper;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
+//? if forge {
+/*import com.hbm_m.client.render.shader.IrisPhaseGuard;
+*///?}
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.world.phys.AABB;
 
 //? if forge {
 /*import net.minecraftforge.api.distmarker.Dist;
@@ -38,7 +32,15 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 //? if fabric {
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;//?}
+//?}
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.AABB;
 //? if forge {
 /*@OnlyIn(Dist.CLIENT)
 *///?}
@@ -144,7 +146,13 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         // Под новым VBO путём (useVboGeometry==true) baked пуст и нам нужно рендерить всё самим.
         if (!useVboGeometry && !renderActive) {
             if (visual != null) {
+                //? if forge {
+                /*try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
+                    MachineChemicalPlantVboRenderer.renderChemplantFluid(be, model, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
+                }
+                *///?} else {
                 MachineChemicalPlantVboRenderer.renderChemplantFluid(be, model, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
+                //?}
             }
             return;
         }
@@ -156,7 +164,13 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         renderWithVBO(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource, renderActive);
 
         if (visual != null) {
+            //? if forge {
+            /*try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
+                MachineChemicalPlantVboRenderer.renderChemplantFluid(be, model, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
+            }
+            *///?} else {
             MachineChemicalPlantVboRenderer.renderChemplantFluid(be, model, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
+            //?}
         }
     }
 

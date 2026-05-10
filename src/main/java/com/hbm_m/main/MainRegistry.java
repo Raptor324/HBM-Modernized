@@ -107,9 +107,17 @@ public final class MainRegistry {
         DamageResistanceHandler.initArmorStats();
 
         CentrifugeRecipes.registerRecipes();
-        ChemicalPlantRecipes.registerRecipes();
 
+        // На Fabric DeferredRegister жидкостей ещё не заполнил BuiltInRegistries на момент SETUP
+        // (см. FabricEntrypoint#registerFluidDependentSetupWhenReady).
+        //? if forge {
+        /*ChemicalPlantRecipes.registerRecipes();
         ModFluidTraitsBootstrap.registerAll();
+        *///?}
+        //? if neoforge {
+        /*ChemicalPlantRecipes.registerRecipes();
+        ModFluidTraitsBootstrap.registerAll();
+        *///?}
 
         LOGGER.info("Common setup finished");
     }

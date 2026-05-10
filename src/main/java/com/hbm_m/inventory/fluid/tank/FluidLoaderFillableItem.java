@@ -9,6 +9,14 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 *///?}
+
+//? if fabric {
+import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+//?}
 /**
  * Порт FluidLoaderFillableItem из 1.7.10.
  *
@@ -57,7 +65,8 @@ public class FluidLoaderFillableItem implements FluidTank.LoadingHandler {
             boolean ok;
             if (draining) {
                 // emptyItem: mod (как fluid handler item) -> tank — all-or-nothing
-                ok = mod.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(handler -> {
+                //? if forge {
+                /*ok = mod.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(handler -> {
                     FluidStack simulatedDrain = handler.drain(Integer.MAX_VALUE, IFluidHandlerItem.FluidAction.SIMULATE);
                     if (simulatedDrain.isEmpty()) return false;
 
@@ -74,9 +83,14 @@ public class FluidLoaderFillableItem implements FluidTank.LoadingHandler {
                     tank.fill(tank.getFill() + drainedReal.getAmount());
                     return true;
                 }).orElse(false);
+                *///?}
+                //? if fabric {
+                ok = fabricDrainModToTankAllOrNothing(mod, tank);
+                //?}
             } else {
                 // fillItem: tank -> mod — all-or-nothing
-                ok = mod.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(handler -> {
+                //? if forge {
+                /*ok = mod.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(handler -> {
                     if (tank.getFill() <= 0) return false;
                     if (!FluidTank.isFluidTypeExplicitlySet(tank.getTankType())) return false;
 
@@ -98,6 +112,10 @@ public class FluidLoaderFillableItem implements FluidTank.LoadingHandler {
                     tank.fill(tank.getFill() - filledReal);
                     return true;
                 }).orElse(false);
+                *///?}
+                //? if fabric {
+                ok = fabricFillTankToModAllOrNothing(mod, tank);
+                //?}
             }
 
             any |= ok;
@@ -106,4 +124,52 @@ public class FluidLoaderFillableItem implements FluidTank.LoadingHandler {
 
         return any;
     }
+
+    //? if fabric {
+    @SuppressWarnings("UnstableApiUsage")
+    private static boolean fabricDrainModToTankAllOrNothing(ItemStack mod, FluidTank tank) {
+        Storage<FluidVariant> storage = FluidStorage.ITEM.find(mod, ContainerItemContext.withConstant(mod));
+        if (storage == null) return false;
+        FluidVariant want = FluidVariant.of(tank.getTankType());
+        long simDrop;
+        try (Transaction tx = Transaction.openOuter()) {
+            simDrop = storage.extract(want, Long.MAX_VALUE, tx);
+        }
+        if (simDrop <= 0 || simDrop % 81L != 0) return false;
+        int modMb = (int) (simDrop / 81L);
+        int space = tank.getMaxFill() - tank.getFill();
+        if (space < modMb) return false;
+        try (Transaction tx = Transaction.openOuter()) {
+            long ext = storage.extract(want, simDrop, tx);
+            if (ext != simDrop) return false;
+            tx.commit();
+        }
+        int filled = tank.fillMb(want.getFluid(), modMb);
+        return filled == modMb;
+    }
+
+    @SuppressWarnings("UnstableApiUsage")
+    private static boolean fabricFillTankToModAllOrNothing(ItemStack mod, FluidTank tank) {
+        if (tank.getFill() <= 0) return false;
+        if (!FluidTank.isFluidTypeExplicitlySet(tank.getTankType())) return false;
+        Storage<FluidVariant> storage = FluidStorage.ITEM.find(mod, ContainerItemContext.withConstant(mod));
+        if (storage == null) return false;
+        FluidVariant fv = FluidVariant.of(tank.getTankType());
+        long capDrop;
+        try (Transaction tx = Transaction.openOuter()) {
+            capDrop = storage.insert(fv, Long.MAX_VALUE, tx);
+        }
+        if (capDrop <= 0 || capDrop % 81L != 0) return false;
+        int capMb = (int) (capDrop / 81L);
+        int available = tank.getFill();
+        if (available < capMb) return false;
+        try (Transaction tx = Transaction.openOuter()) {
+            long ins = storage.insert(fv, capDrop, tx);
+            if (ins != capDrop) return false;
+            tx.commit();
+        }
+        int drained = tank.drainMb(capMb);
+        return drained == capMb;
+    }
+    //?}
 }

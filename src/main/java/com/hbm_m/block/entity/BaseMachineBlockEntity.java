@@ -61,7 +61,7 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
 
     // Энергия (long для больших значений)
     protected long energy = 0;
-    protected final long capacity;
+    protected long capacity;
     protected final long maxReceive;
     protected final long maxExtract;
 
@@ -197,6 +197,18 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         return this.capacity;
     }
 
+    /** Меняет энергетический кап машины (нужно некоторым портам, например химмашине). */
+    protected final void setEnergyCapacity(long newCapacity) {
+        long cap = Math.max(0L, newCapacity);
+        if (cap == this.capacity) return;
+        this.capacity = cap;
+        if (this.energy > this.capacity) {
+            this.energy = this.capacity;
+        }
+        setChanged();
+        sendUpdateToClient();
+    }
+
     @Override
     public void setEnergyStored(long energy) {
         this.energy = Math.max(0, Math.min(this.capacity, energy));
@@ -294,6 +306,7 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         super.saveAdditional(tag);
         tag.put("inventory", inventory.serializeNBT());
         tag.putLong("energy", energy);
+        tag.putLong("capacity", capacity);
         tag.putLong("lastEnergy", lastEnergy);
         tag.putLong("energyDelta", energyDelta);
     }
@@ -303,6 +316,9 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         super.load(tag);
         inventory.deserializeNBT(tag.getCompound("inventory"));
         energy = tag.getLong("energy");
+        if (tag.contains("capacity")) {
+            capacity = Math.max(0L, tag.getLong("capacity"));
+        }
         lastEnergy = tag.getLong("lastEnergy");
         energyDelta = tag.getLong("energyDelta");
     }

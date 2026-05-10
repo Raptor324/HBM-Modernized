@@ -3,6 +3,7 @@ package com.hbm_m.module.machine;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -11,7 +12,9 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.interfaces.IEnergyReceiver;
+import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.platform.ModItemStackHandler;
+import com.hbm_m.recipe.index.ModRecipeIndex;
 
 /**
  * Базовый модуль машины, инкапсулирующий логику крафта.
@@ -28,7 +31,7 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     // ИЗМЕНЕНИЕ: Теперь используем ILongEnergyStorage вместо IEnergyStorage
     protected final IEnergyReceiver energyStorage;
     protected final ModItemStackHandler itemHandler;
-    protected final Level level;
+    protected Level level;
     protected int[] inputSlots;
     protected int[] outputSlots;
 
@@ -37,6 +40,18 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     protected int maxProgress = 100;
     @Nullable
     protected T currentRecipe = null;
+
+    // === RECIPE SELECTION / CACHE (ID based) ===
+    @Nullable
+    protected ResourceLocation selectedRecipeId = null;
+    @Nullable
+    protected ResourceLocation preferredRecipeId = null;
+    protected boolean autoSelectRecipe = true;
+
+    @Nullable
+    private ResourceLocation cachedRecipeId = null;
+    @Nullable
+    private T cachedRecipeById = null;
 
     // === SIGNALS ===
     public boolean didProcess = false;
@@ -47,6 +62,11 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
         this.moduleIndex = moduleIndex;
         this.energyStorage = energyStorage;
         this.itemHandler = itemHandler;
+        this.level = level;
+    }
+
+    /** BlockEntity может создать модуль до установки level — обновляем ссылку при каждом тике. */
+    public void setLevel(Level level) {
         this.level = level;
     }
 
@@ -69,71 +89,107 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     @Nullable
     protected abstract T findRecipeForItem(ItemStack stack);
 
-    public void update(double speedMultiplier, double powerMultiplier, boolean extraCondition) {
-        this.didProcess = false;
-        this.needsSync = false;
+    /**
+     * Optional hook: вызывается при смене рецепта (ID или auto-выбор).
+     * Например, машины с жидкостными баками могут сконфигурировать типы баков.
+     */
+    protected void onRecipeChanged(@Nullable T previous, @Nullable T current) {
+        // no-op by default
+    }
 
-        // Поиск или валидация рецепта
-        if (currentRecipe == null || !matchesCurrentRecipe(currentRecipe)) {
-            currentRecipe = findRecipeForInputs();
-            if (currentRecipe != null) {
-                maxProgress = getRecipeDuration(currentRecipe);
-                progress = 0.0;
-                needsSync = true;
-            }
+    /**
+     * Хук семантики энергогейта:
+     * - true (default): как у ассемблера — при старте ждём энергию на весь цикл.
+     * - false: как у химмашины в 1.7.10 — достаточно энергии только на текущий тик.
+     */
+    protected boolean requiresFullEnergyBufferToStart() {
+        return true;
+    }
+
+    /**
+     * Центральная проверка blueprint pool.
+     */
+    protected static boolean isBlueprintPoolAllowed(@Nullable String recipePool, ItemStack blueprint) {
+        if (recipePool == null || recipePool.isEmpty()) return true;
+        String installed = ItemBlueprintFolder.getBlueprintPool(blueprint);
+        return installed != null && !installed.isEmpty() && installed.equals(recipePool);
+    }
+
+    /** Утилита для рецептов, которые имеют поле blueprintPool (как в 1.7.10 pooled recipes). */
+    protected static boolean isBlueprintAllowedForPool(@Nullable String recipePool, @Nullable ItemStack blueprint) {
+        if (blueprint == null || blueprint.isEmpty()) {
+            return recipePool == null || recipePool.isEmpty();
         }
+        return isBlueprintPoolAllowed(recipePool, blueprint);
+    }
 
-        // Обработка крафта
-        if (extraCondition && currentRecipe != null && canProcess(currentRecipe)) {
-            // ИЗМЕНЕНИЕ: Используем long для энергии
-            long energyPerTick = (long) (getRecipeEnergyCost(currentRecipe) * powerMultiplier);
+    /**
+     * Optional hook: recipe is allowed for current blueprint.
+     * Default: always allowed (machines without blueprint system).
+     */
+    protected boolean isRecipeAllowedByBlueprint(T recipe, @Nullable ItemStack blueprint) {
+        return true;
+    }
 
-            // Проверяем, хватит ли энергии на весь крафт перед началом
-            long totalEnergyRequired = energyPerTick * maxProgress;
-
-            // Если крафт только начинается (progress == 0), проверяем полную стоимость
-            if (progress == 0.0 && energyStorage.getEnergyStored() < totalEnergyRequired) {
-                // Недостаточно энергии для полного крафта - не начинаем
-                return;
-            }
-
-            // Проверяем наличие энергии для ЭТОГО тика
-            if (energyStorage.getEnergyStored() >= energyPerTick) {
-                // НОВЫЙ СПОСОБ ПОТРЕБЛЕНИЯ ЭНЕРГИИ
-                long currentEnergy = energyStorage.getEnergyStored();
-                energyStorage.setEnergyStored(currentEnergy - energyPerTick);
-
-                double step = Math.min(speedMultiplier, 1.0);
-                this.progress += step;
-                this.didProcess = true;
-
-                // Завершаем крафт
-                if (progress >= maxProgress) {
-                    processCraft(currentRecipe);
-                    this.needsSync = true;
-
-                    // Проверяем, можем ли продолжить с тем же рецептом
-                    if (canProcess(currentRecipe)) {
-                        progress -= maxProgress;
-                    } else {
-                        progress = 0.0;
-                        currentRecipe = null;
-                    }
-                }
-            } else {
-                // Недостаточно энергии для этого тика - сбрасываем прогресс
-                if (progress > 0.0) {
-                    progress = 0.0;
-                    needsSync = true;
-                }
-            }
-        } else {
-            // Сброс прогресса при отсутствии условий
-            if (progress > 0.0) {
-                progress = 0.0;
-                needsSync = true;
-            }
+    /**
+     * Fast recipe lookup by id using {@link ModRecipeIndex}.
+     */
+    @Nullable
+    protected final T getRecipeByIdCached(RecipeType<T> type, @Nullable ResourceLocation id) {
+        if (level == null || id == null) {
+            cachedRecipeId = null;
+            cachedRecipeById = null;
+            return null;
         }
+        if (id.equals(cachedRecipeId) && cachedRecipeById != null) {
+            return cachedRecipeById;
+        }
+        cachedRecipeId = id;
+        cachedRecipeById = ModRecipeIndex.of(level.getRecipeManager())
+                .getById(type, id)
+                .orElse(null);
+        return cachedRecipeById;
+    }
+
+    /**
+     * Default selection: preferred -> selected -> auto (findRecipeForInputs).
+     */
+    @Nullable
+    protected T pickRecipeForTick() {
+        RecipeType<T> type = getRecipeType();
+        if (preferredRecipeId != null) {
+            return getRecipeByIdCached(type, preferredRecipeId);
+        }
+        if (selectedRecipeId != null) {
+            return getRecipeByIdCached(type, selectedRecipeId);
+        }
+        if (autoSelectRecipe) {
+            return findRecipeForInputs();
+        }
+        return null;
+    }
+
+    /**
+     * Энергетический гейт "как у ассемблера":
+     * - если крафт только начинается, машина ждёт пока накопится энергия на ВЕСЬ цикл;
+     * - если крафт уже идёт, и на текущий тик энергии не хватает — прогресс не сбрасываем, просто ждём.
+     *
+     * Вынесено в базовый модуль, чтобы разные машины могли переиспользовать одну логику.
+     */
+    public static boolean hasEnoughEnergyToStartCraft(double progress, long storedEnergy, long energyPerTick, int maxProgress) {
+        if (energyPerTick <= 0) return true;
+        if (maxProgress <= 0) return true;
+        if (progress > 0.0) return true;
+        long totalEnergyRequired = energyPerTick * (long) maxProgress;
+        return storedEnergy >= totalEnergyRequired;
+    }
+
+    public static boolean hasEnoughEnergyForTick(long storedEnergy, long energyPerTick) {
+        return energyPerTick <= 0 || storedEnergy >= energyPerTick;
+    }
+
+    public final void update(double speedMultiplier, double powerMultiplier, boolean extraCondition) {
+        update(speedMultiplier, powerMultiplier, extraCondition, null);
     }
 
     public boolean isItemValidForSlot(int slot, ItemStack stack) {
@@ -186,53 +242,96 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     @Nullable
     public T getCurrentRecipe() { return currentRecipe; }
     public boolean isProcessing() { return didProcess; }
+    /** Совместимость со старым API модулей/BE. */
+    public boolean getDidProcess() { return didProcess; }
 
     // === SERIALIZATION ===
     public void writeToNBT(CompoundTag nbt) {
         nbt.putDouble("Progress_" + moduleIndex, progress);
         nbt.putInt("MaxProgress_" + moduleIndex, maxProgress);
+        writeExtraToNbt(nbt);
     }
 
     public void readFromNBT(CompoundTag nbt) {
         this.progress = nbt.getDouble("Progress_" + moduleIndex);
         this.maxProgress = nbt.getInt("MaxProgress_" + moduleIndex);
+        readExtraFromNbt(nbt);
     }
+
+    /** Совместимость: старое имя NBT-сериализации (химмашина и др.). */
+    public final void writeNBT(CompoundTag tag) { writeToNBT(tag); }
+    public final void readNBT(CompoundTag tag) { readFromNBT(tag); }
 
     public void serialize(FriendlyByteBuf buf) {
         buf.writeDouble(progress);
         buf.writeInt(maxProgress);
+        writeExtraToBuf(buf);
     }
 
     public void deserialize(FriendlyByteBuf buf) {
         this.progress = buf.readDouble();
         this.maxProgress = buf.readInt();
+        readExtraFromBuf(buf);
     }
 
-    /**
-     * Абстрактный метод для проверки blueprint pool
-     * Должен быть реализован в подклассах, которые используют blueprint систему
-     */
-    protected abstract boolean isRecipeValidForBlueprint(T recipe, ItemStack blueprint);
+    /** Доп. состояние модуля, которое не относится к базовому прогрессу (например выбранный рецепт). */
+    protected void writeExtraToNbt(CompoundTag nbt) {}
+    protected void readExtraFromNbt(CompoundTag nbt) {}
+    protected void writeExtraToBuf(FriendlyByteBuf buf) {}
+    protected void readExtraFromBuf(FriendlyByteBuf buf) {}
+
+    // === OUTPUT FIT / PLACEMENT HELPERS (multi-slot) ===
+
+    protected final boolean canFitAllItemOutputs(java.util.List<ItemStack> itemOutputs, int[] outputSlots) {
+        return OutputPlacement.canFitAll(itemHandler, itemOutputs, outputSlots);
+    }
+
+    protected final void placeAllItemOutputs(java.util.List<ItemStack> itemOutputs, int[] outputSlots) {
+        OutputPlacement.placeAll(itemHandler, itemOutputs, outputSlots);
+    }
+
+    // === Selection setters (used by thin modules / GUIs) ===
+
+    public void setSelectedRecipeId(@Nullable ResourceLocation id) {
+        this.selectedRecipeId = id;
+        this.cachedRecipeId = null;
+        this.cachedRecipeById = null;
+        resetProgress();
+    }
+
+    public void setPreferredRecipeId(@Nullable ResourceLocation id) {
+        this.preferredRecipeId = id;
+        this.cachedRecipeId = null;
+        this.cachedRecipeById = null;
+        resetProgress();
+    }
+
+    @Nullable
+    public ResourceLocation getSelectedRecipeId() {
+        return selectedRecipeId;
+    }
 
     /**
      * Обновление с поддержкой blueprint
      */
-    public void update(double speedMultiplier, double powerMultiplier, boolean extraCondition, ItemStack blueprint) {
+    public void update(double speedMultiplier, double powerMultiplier, boolean extraCondition, @Nullable ItemStack blueprint) {
         this.didProcess = false;
         this.needsSync = false;
 
         // Поиск или валидация рецепта
         if (currentRecipe == null || !matchesCurrentRecipe(currentRecipe)) {
-            currentRecipe = findRecipeForInputs();
+            T prev = currentRecipe;
+            currentRecipe = pickRecipeForTick();
             if (currentRecipe != null) {
                 maxProgress = getRecipeDuration(currentRecipe);
                 progress = 0.0;
                 needsSync = true;
+                onRecipeChanged(prev, currentRecipe);
             }
         }
 
         // Проверка blueprint pool
-        if (currentRecipe != null && !isRecipeValidForBlueprint(currentRecipe, blueprint)) {
+        if (currentRecipe != null && !isRecipeAllowedByBlueprint(currentRecipe, blueprint)) {
             this.didProcess = false;
             this.progress = 0.0;
             this.currentRecipe = null;
@@ -245,26 +344,32 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
             // ИЗМЕНЕНИЕ: Используем long для энергии
             long energyPerTick = (long) (getRecipeEnergyCost(currentRecipe) * powerMultiplier);
 
-            // Проверяем, хватит ли энергии на весь крафт перед началом
-            long totalEnergyRequired = energyPerTick * maxProgress;
+            long storedEnergy = energyStorage.getEnergyStored();
 
-            // Если крафт только начинается (progress == 0), проверяем полную стоимость
-            if (progress == 0.0 && energyStorage.getEnergyStored() < totalEnergyRequired) {
-                // Недостаточно энергии для полного крафта - не начинаем
+            // Ассемблер-логика ожидания энергии (общая для всех машин)
+            if (requiresFullEnergyBufferToStart()
+                    && !hasEnoughEnergyToStartCraft(progress, storedEnergy, energyPerTick, maxProgress)) {
+                return;
+            }
+            if (!hasEnoughEnergyForTick(storedEnergy, energyPerTick)) {
                 return;
             }
 
-            // Проверяем наличие энергии для ЭТОГО тика
-            if (energyStorage.getEnergyStored() >= energyPerTick) {
-                // Потребляем энергию ПЕРЕД увеличением прогресса (как в оригинале)
-                long currentEnergy = energyStorage.getEnergyStored();
-                energyStorage.setEnergyStored(currentEnergy - energyPerTick);
+            // Потребляем энергию ПЕРЕД увеличением прогресса (как в оригинале)
+            energyStorage.setEnergyStored(storedEnergy - energyPerTick);
 
-                double step = Math.min(speedMultiplier, 1.0);
-                this.progress += step;
-                this.didProcess = true;
+            double step = Math.max(0.0, speedMultiplier);
+            if (step <= 0.0) return;
 
-                if (progress >= maxProgress) {
+            this.progress += step;
+            this.didProcess = true;
+
+            // В 1.7.10 overdrive мог "перескочить" несколько циклов за тик.
+            // Безопасный кап итераций — защита от бесконечного while при некорректном maxProgress.
+            if (maxProgress > 0 && progress >= maxProgress) {
+                final int maxIterations = 64;
+                int it = 0;
+                while (progress >= maxProgress && it++ < maxIterations) {
                     processCraft(currentRecipe);
                     this.needsSync = true;
 
@@ -273,19 +378,118 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
                     } else {
                         progress = 0.0;
                         currentRecipe = null;
+                        break;
                     }
                 }
-            } else {
-                // Недостаточно энергии для этого тика - сбрасываем прогресс
-                if (progress > 0.0) {
-                    progress = 0.0;
-                    needsSync = true;
+
+                if (it >= maxIterations) {
+                    progress = Math.min(progress, (double) maxProgress - 1.0);
                 }
             }
         } else {
             if (progress > 0.0) {
                 progress = 0.0;
                 needsSync = true;
+            }
+        }
+    }
+
+    private static final class OutputPlacement {
+        private OutputPlacement() {}
+
+        private static java.util.List<ItemStack> nonEmpty(java.util.List<ItemStack> outs) {
+            if (outs == null || outs.isEmpty()) return java.util.List.of();
+            java.util.List<ItemStack> list = new java.util.ArrayList<>(outs.size());
+            for (ItemStack o : outs) {
+                if (o == null || o.isEmpty()) continue;
+                list.add(o);
+            }
+            return list;
+        }
+
+        private static ItemStack[] snapshot(ModItemStackHandler handler, int[] slots) {
+            ItemStack[] sim = new ItemStack[slots.length];
+            for (int j = 0; j < slots.length; j++) {
+                ItemStack cur = handler.getStackInSlot(slots[j]);
+                sim[j] = cur.isEmpty() ? ItemStack.EMPTY : cur.copy();
+            }
+            return sim;
+        }
+
+        private static boolean canMerge(ItemStack slotStack, ItemStack incoming) {
+            if (incoming == null || incoming.isEmpty()) return true;
+            if (slotStack == null || slotStack.isEmpty()) return true;
+            //? if < 1.21.1 {
+            if (!ItemStack.isSameItemSameTags(slotStack, incoming)) return false;
+            //?} else {
+            /*if (!ItemStack.isSameItemSameComponents(slotStack, incoming)) return false;
+            *///?}
+            return (long) slotStack.getCount() + incoming.getCount() <= slotStack.getMaxStackSize();
+        }
+
+        private static boolean dfs(java.util.List<ItemStack> outs, int idx, ItemStack[] sim, int[] chosenSlotPerOutput) {
+            if (idx >= outs.size()) return true;
+            ItemStack inc = outs.get(idx);
+            for (int j = 0; j < sim.length; j++) {
+                ItemStack slotStack = sim[j];
+                if (!canMerge(slotStack, inc)) continue;
+
+                ItemStack prev = slotStack.isEmpty() ? ItemStack.EMPTY : slotStack.copy();
+                if (slotStack.isEmpty()) {
+                    sim[j] = inc.copy();
+                } else {
+                    ItemStack merged = slotStack.copy();
+                    merged.grow(inc.getCount());
+                    sim[j] = merged;
+                }
+                chosenSlotPerOutput[idx] = j;
+                if (dfs(outs, idx + 1, sim, chosenSlotPerOutput)) return true;
+                sim[j] = prev;
+            }
+            return false;
+        }
+
+        static boolean canFitAll(ModItemStackHandler handler, java.util.List<ItemStack> itemOutputs, int[] outputSlots) {
+            java.util.List<ItemStack> outs = nonEmpty(itemOutputs);
+            if (outs.isEmpty()) return true;
+            ItemStack[] sim = snapshot(handler, outputSlots);
+            int[] pick = new int[outs.size()];
+            return dfs(outs, 0, sim, pick);
+        }
+
+        static void placeAll(ModItemStackHandler handler, java.util.List<ItemStack> itemOutputs, int[] outputSlots) {
+            java.util.List<ItemStack> outs = nonEmpty(itemOutputs);
+            if (outs.isEmpty()) return;
+
+            ItemStack[] sim = snapshot(handler, outputSlots);
+            int[] pick = new int[outs.size()];
+            if (dfs(outs, 0, sim, pick)) {
+                for (int i = 0; i < outs.size(); i++) {
+                    int j = pick[i];
+                    int slot = outputSlots[j];
+                    ItemStack out = outs.get(i);
+                    ItemStack cur = handler.getStackInSlot(slot);
+                    if (cur.isEmpty()) {
+                        handler.setStackInSlot(slot, out.copy());
+                    } else {
+                        cur.grow(out.getCount());
+                    }
+                }
+                return;
+            }
+
+            // Fallback: deterministic positional placement if DFS can't solve.
+            for (int i = 0; i < itemOutputs.size(); i++) {
+                ItemStack output = itemOutputs.get(i);
+                if (output == null || output.isEmpty()) continue;
+                if (i >= outputSlots.length) break;
+                int slot = outputSlots[i];
+                ItemStack cur = handler.getStackInSlot(slot);
+                if (cur.isEmpty()) {
+                    handler.setStackInSlot(slot, output.copy());
+                } else {
+                    cur.grow(output.getCount());
+                }
             }
         }
     }

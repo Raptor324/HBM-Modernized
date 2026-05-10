@@ -1,13 +1,10 @@
 package com.hbm_m.module.machine;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.interfaces.IEnergyReceiver;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
-import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
 
 import dev.architectury.fluid.FluidStack;
@@ -19,35 +16,20 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-public class MachineModuleChemplant {
+public class MachineModuleChemplant extends MachineModuleBase<ChemicalPlantRecipe> {
 
-    private final IEnergyReceiver energyStorage;
-    private final ModItemStackHandler inventory;
-
-    private final int[] solidInputSlots;
-    private final int[] solidOutputSlots;
     private final FluidTank[] inputTanks;
     private final FluidTank[] outputTanks;
 
-    @Nullable private ResourceLocation selectedRecipeId;
-    @Nullable private ChemicalPlantRecipe cachedRecipe;
-    private boolean recipeCacheDirty;
     @Nullable private ResourceLocation lastTankSetupRecipeId;
 
-    private int progress;
-    private int maxProgress = 100;
-    private double progressAccum;
-
-    public boolean didProcess;
-    public boolean needsSync;
-
-    public MachineModuleChemplant(IEnergyReceiver energy, ModItemStackHandler inv,
+    public MachineModuleChemplant(com.hbm_m.interfaces.IEnergyReceiver energy, com.hbm_m.platform.ModItemStackHandler inv,
                                   int[] solidIn, int[] solidOut,
-                                  FluidTank[] fluidIn, FluidTank[] fluidOut) {
-        this.energyStorage = energy;
-        this.inventory = inv;
-        this.solidInputSlots = solidIn;
-        this.solidOutputSlots = solidOut;
+                                  FluidTank[] fluidIn, FluidTank[] fluidOut,
+                                  Level level) {
+        super(0, energy, inv, level);
+        this.inputSlots = solidIn;
+        this.outputSlots = solidOut;
         this.inputTanks = fluidIn;
         this.outputTanks = fluidOut;
     }
@@ -61,85 +43,34 @@ public class MachineModuleChemplant {
      * @param powerMul множитель потребления энергии (1.0 = базовое)
      * @return true, если состояние изменилось и нужен sync
      */
-    public boolean update(Level level, ItemStack blueprint, double speed, double powerMul) {
-        didProcess = false;
-        needsSync = false;
-
-        ChemicalPlantRecipe recipe = getCachedRecipe(level);
-
-        if (recipe != null && !isRecipeValidForBlueprint(recipe, blueprint)) {
+    public boolean updateAndGetDirty(double speed, double powerMul, boolean extraCondition, ItemStack blueprint) {
+        // Нужно сохранить семантику химмашины: при несоответствии blueprint pool сбрасываем выбранный рецепт целиком.
+        ChemicalPlantRecipe r = getRecipeByIdCached(getRecipeType(), selectedRecipeId);
+        if (r != null && !isRecipeAllowedByBlueprint(r, blueprint)) {
             selectedRecipeId = null;
-            cachedRecipe = null;
-            recipeCacheDirty = false;
-            recipe = null;
-            progress = 0;
-            progressAccum = 0;
-            needsSync = true;
+            lastTankSetupRecipeId = null;
+            resetProgress();
+            return true;
         }
 
-        setupTanksIfNeeded(recipe);
-
-        if (recipe != null) {
-            maxProgress = recipe.getDuration();
-            long powerPerTick = (long) (recipe.getPowerConsumption() * powerMul);
-
-            if (canProcess(recipe) && energyStorage.getEnergyStored() >= powerPerTick) {
-                // Потребляем энергию для текущего тика
-                energyStorage.setEnergyStored(energyStorage.getEnergyStored() - powerPerTick);
-
-                // ИЗМЕНЕНО: Кап скорости и перенос остатков прогресса как в 1.7.10
-                double step = Math.min(speed, maxProgress);
-                progressAccum += step;
-                progress = (int) progressAccum;
-
-                didProcess = true;
-                needsSync = true;
-
-                if (progressAccum >= maxProgress) {
-                    finishRecipe(recipe);
-
-                    if (canProcess(recipe)) {
-                        progressAccum -= maxProgress;
-                        progress = (int) progressAccum;
-                    } else {
-                        progressAccum = 0;
-                        progress = 0;
-                    }
-                }
-            } else {
-                if (progressAccum != 0 || didProcess) {
-                    progressAccum = 0;
-                    progress = 0;
-                    didProcess = false;
-                    needsSync = true;
-                }
-            }
-        } else {
-            if (progressAccum != 0 || didProcess) {
-                progressAccum = 0;
-                progress = 0;
-                didProcess = false;
-                needsSync = true;
-            }
-        }
+        super.update(speed, powerMul, extraCondition, blueprint);
         return needsSync;
     }
 
-    /**
-     * Настройка типов баков под выбранный рецепт.
-     *
-     * Важно: не делаем reset/дренаж каждый тик — иначе любые внешние трубы будут
-     * бесконечно пытаться заливать "лишние" баки, которые тут же обнуляются.
-     */
-    private void setupTanksIfNeeded(@Nullable ChemicalPlantRecipe recipe) {
-        if (selectedRecipeId == null || recipe == null) {
+    @Override
+    protected boolean requiresFullEnergyBufferToStart() {
+        return true;
+    }
+
+    @Override
+    protected void onRecipeChanged(@Nullable ChemicalPlantRecipe previous, @Nullable ChemicalPlantRecipe current) {
+        // Важно: не делаем reset/дренаж каждый тик — конфигурируем только при смене id.
+        if (selectedRecipeId == null || current == null) {
             lastTankSetupRecipeId = null;
             return;
         }
-        if (selectedRecipeId.equals(lastTankSetupRecipeId)) {
-            return;
-        }
-        setupTanks(recipe);
+        if (selectedRecipeId.equals(lastTankSetupRecipeId)) return;
+        setupTanks(current);
         lastTankSetupRecipeId = selectedRecipeId;
     }
 
@@ -152,11 +83,65 @@ public class MachineModuleChemplant {
             lastTankSetupRecipeId = null;
             return;
         }
-        ChemicalPlantRecipe recipe = getCachedRecipe(level);
+        ChemicalPlantRecipe recipe = getRecipeByIdCached(getRecipeType(), selectedRecipeId);
         if (recipe != null) {
             setupTanks(recipe);
             lastTankSetupRecipeId = selectedRecipeId;
         }
+    }
+
+    @Override
+    protected net.minecraft.world.item.crafting.RecipeType<ChemicalPlantRecipe> getRecipeType() {
+        return ChemicalPlantRecipe.Type.INSTANCE;
+    }
+
+    @Override
+    protected @Nullable ChemicalPlantRecipe findRecipeForInputs() {
+        // Рецепт выбирается явно через GUI, поэтому "по инпутам" — это поиск по selectedRecipeId.
+        return getRecipeByIdCached(getRecipeType(), selectedRecipeId);
+    }
+
+    @Override
+    protected boolean canProcess(@Nullable ChemicalPlantRecipe recipe) {
+        if (recipe == null) return false;
+        return canProcessInternal(recipe);
+    }
+
+    @Override
+    protected void processCraft(ChemicalPlantRecipe recipe) {
+        finishRecipe(recipe);
+    }
+
+    @Override
+    protected boolean matchesCurrentRecipe(ChemicalPlantRecipe recipe) {
+        if (selectedRecipeId == null) return false;
+        return recipe != null && selectedRecipeId.equals(recipe.getId());
+    }
+
+    @Override
+    protected int getRecipeDuration(ChemicalPlantRecipe recipe) {
+        return recipe.getDuration();
+    }
+
+    @Override
+    protected long getRecipeEnergyCost(ChemicalPlantRecipe recipe) {
+        return recipe.getPowerConsumption();
+    }
+
+    @Override
+    protected @Nullable ChemicalPlantRecipe findRecipeForItem(ItemStack stack) {
+        // Для химмашины это используется только как "валидация" мусора в слотах — проверяем, подходит ли предмет в любой вход текущего рецепта.
+        ChemicalPlantRecipe r = getRecipeByIdCached(getRecipeType(), selectedRecipeId);
+        if (r == null) return null;
+        for (var in : r.getItemInputs()) {
+            if (in.ingredient().test(stack)) return r;
+        }
+        return null;
+    }
+
+    @Override
+    protected boolean isRecipeAllowedByBlueprint(ChemicalPlantRecipe recipe, @Nullable ItemStack blueprint) {
+        return isBlueprintAllowedForPool(recipe.getBlueprintPool(), blueprint);
     }
 
     public void setupTanks(@Nullable ChemicalPlantRecipe recipe) {
@@ -184,12 +169,12 @@ public class MachineModuleChemplant {
         }
     }
 
-    public boolean canProcess(ChemicalPlantRecipe recipe) {
+    private boolean canProcessInternal(ChemicalPlantRecipe recipe) {
         List<ChemicalPlantRecipe.CountedIngredient> itemInputs = recipe.getItemInputs();
         for (int i = 0; i < itemInputs.size(); i++) {
-            if (i >= solidInputSlots.length) return false;
-            int slot = solidInputSlots[i];
-            ItemStack slotStack = inventory.getStackInSlot(slot);
+            if (i >= inputSlots.length) return false;
+            int slot = inputSlots[i];
+            ItemStack slotStack = itemHandler.getStackInSlot(slot);
             ChemicalPlantRecipe.CountedIngredient req = itemInputs.get(i);
             if (!req.ingredient().test(slotStack) || slotStack.getCount() < req.count()) return false;
         }
@@ -209,7 +194,7 @@ public class MachineModuleChemplant {
         }
 
         List<ItemStack> itemOutputs = recipe.getItemOutputs();
-        if (!canFitAllItemOutputs(itemOutputs)) {
+        if (!canFitAllItemOutputs(itemOutputs, outputSlots)) {
             return false;
         }
 
@@ -228,8 +213,8 @@ public class MachineModuleChemplant {
     private void finishRecipe(ChemicalPlantRecipe recipe) {
         List<ChemicalPlantRecipe.CountedIngredient> itemInputs = recipe.getItemInputs();
         for (int i = 0; i < itemInputs.size(); i++) {
-            int slot = solidInputSlots[i];
-            inventory.getStackInSlot(slot).shrink(itemInputs.get(i).count());
+            int slot = inputSlots[i];
+            itemHandler.getStackInSlot(slot).shrink(itemInputs.get(i).count());
         }
 
         List<ChemicalPlantRecipe.FluidIngredient> fluidInputs = recipe.getFluidInputs();
@@ -238,7 +223,7 @@ public class MachineModuleChemplant {
         }
 
         List<ItemStack> itemOutputs = recipe.getItemOutputs();
-        placeAllItemOutputs(itemOutputs);
+        placeAllItemOutputs(itemOutputs, outputSlots);
 
         List<FluidStack> fluidOutputs = recipe.getFluidOutputs();
         for (int i = 0; i < fluidOutputs.size(); i++) {
@@ -248,231 +233,48 @@ public class MachineModuleChemplant {
         }
     }
 
-    /** Непустые предметные выходы рецепта — порядок важен для DFS. */
-    private List<ItemStack> nonEmptyItemOutputs(List<ItemStack> itemOutputs) {
-        List<ItemStack> list = new ArrayList<>(3);
-        for (ItemStack o : itemOutputs) {
-            if (o.isEmpty()) continue;
-            list.add(o);
-        }
-        return list;
-    }
-
-    private ItemStack[] copyOutputSlotStacks() {
-        ItemStack[] sim = new ItemStack[solidOutputSlots.length];
-        for (int j = 0; j < solidOutputSlots.length; j++) {
-            ItemStack cur = inventory.getStackInSlot(solidOutputSlots[j]);
-            sim[j] = cur.isEmpty() ? ItemStack.EMPTY : cur.copy();
-        }
-        return sim;
-    }
-
-    private static boolean canMergeItemInto(ItemStack slotStack, ItemStack incoming) {
-        if (incoming.isEmpty()) return true;
-        if (slotStack.isEmpty()) return true;
-        if (!ItemStack.isSameItemSameTags(slotStack, incoming)) return false;
-        return (long) slotStack.getCount() + incoming.getCount() <= slotStack.getMaxStackSize();
-    }
-
-    /**
-     * Подбираем для каждой порции выхода один из трёх выходных слотов (слияние с уже лежащими стаками).
-     */
-    private boolean dfsPlaceItemOutputs(List<ItemStack> outs, int idx, ItemStack[] sim, int[] chosenSlotPerOutput) {
-        if (idx >= outs.size()) return true;
-        ItemStack inc = outs.get(idx);
-        for (int j = 0; j < solidOutputSlots.length; j++) {
-            ItemStack slotStack = sim[j];
-            if (!canMergeItemInto(slotStack, inc)) continue;
-
-            ItemStack prev = slotStack.isEmpty() ? ItemStack.EMPTY : slotStack.copy();
-            if (slotStack.isEmpty()) {
-                sim[j] = inc.copy();
-            } else {
-                ItemStack merged = slotStack.copy();
-                merged.grow(inc.getCount());
-                sim[j] = merged;
-            }
-            chosenSlotPerOutput[idx] = j;
-            if (dfsPlaceItemOutputs(outs, idx + 1, sim, chosenSlotPerOutput)) return true;
-            sim[j] = prev;
-        }
-        return false;
-    }
-
-    private boolean canFitAllItemOutputs(List<ItemStack> itemOutputs) {
-        List<ItemStack> outs = nonEmptyItemOutputs(itemOutputs);
-        if (outs.isEmpty()) return true;
-
-        ItemStack[] sim = copyOutputSlotStacks();
-        int[] pick = new int[outs.size()];
-        return dfsPlaceItemOutputs(outs, 0, sim, pick);
-    }
-
-    private void placeAllItemOutputs(List<ItemStack> itemOutputs) {
-        List<ItemStack> outs = nonEmptyItemOutputs(itemOutputs);
-        if (outs.isEmpty()) return;
-        ItemStack[] sim = copyOutputSlotStacks();
-        int[] pick = new int[outs.size()];
-        if (dfsPlaceItemOutputs(outs, 0, sim, pick)) {
-            for (int i = 0; i < outs.size(); i++) {
-                int j = pick[i];
-                int slot = solidOutputSlots[j];
-                ItemStack out = outs.get(i);
-                ItemStack cur = inventory.getStackInSlot(slot);
-                if (cur.isEmpty()) {
-                    inventory.setStackInSlot(slot, out.copy());
-                } else {
-                    cur.grow(out.getCount());
-                }
-            }
-            return;
-        }
-        // Fallback: порядная привязка выход → слот как в старом порте (DFS не нашёл решение из-за гонки/особого рецепта).
-        for (int i = 0; i < itemOutputs.size(); i++) {
-            ItemStack output = itemOutputs.get(i);
-            if (output.isEmpty()) continue;
-            if (i >= solidOutputSlots.length) break;
-            int slot = solidOutputSlots[i];
-            ItemStack cur = inventory.getStackInSlot(slot);
-            if (cur.isEmpty()) {
-                inventory.setStackInSlot(slot, output.copy());
-            } else {
-                cur.grow(output.getCount());
-            }
-        }
-    }
-
-    private boolean isRecipeValidForBlueprint(ChemicalPlantRecipe recipe, ItemStack folder) {
-        String pool = recipe.getBlueprintPool();
-        if (pool == null || pool.isEmpty()) return true;
-        String installed = com.hbm_m.item.industrial.ItemBlueprintFolder.getBlueprintPool(folder);
-        return installed != null && !installed.isEmpty() && installed.equals(pool);
-    }
-
-    @Nullable
-    private ChemicalPlantRecipe getCachedRecipe(Level level) {
-        if (selectedRecipeId == null) {
-            cachedRecipe = null;
-            return null;
-        }
-        if (cachedRecipe == null || recipeCacheDirty) {
-            cachedRecipe = level.getRecipeManager()
-                    .byKey(selectedRecipeId)
-                    .filter(r -> r instanceof ChemicalPlantRecipe)
-                    .map(r -> (ChemicalPlantRecipe) r)
-                    .orElse(null);
-            recipeCacheDirty = false;
-        }
-        return cachedRecipe;
-    }
-
-    /** Рецепт из кэша / менеджера без привязки к тику {@link #update}; для сети и капабилити. */
+    /** Рецепт из менеджера по id — для сети и капабилити. */
     @Nullable
     public ChemicalPlantRecipe peekRecipe(Level level) {
-        return getCachedRecipe(level);
+        return getRecipeByIdCached(getRecipeType(), selectedRecipeId);
     }
-
-    /**
-     * Полезные хелперы из 1.7.10 для труб и воронок.
-     * Проверяет, подходит ли предмет в слот для текущего рецепта.
-     */
-    public boolean isItemValid(int slot, ItemStack stack) {
-        if (cachedRecipe == null) return false;
-        List<ChemicalPlantRecipe.CountedIngredient> inputs = cachedRecipe.getItemInputs();
-        for (int i = 0; i < solidInputSlots.length; i++) {
-            if (solidInputSlots[i] == slot) {
-                if (i < inputs.size()) {
-                    return inputs.get(i).ingredient().test(stack);
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Возвращает true, если в слоте лежит мусор, не подходящий текущему рецепту.
-     */
-    public boolean isSlotClogged(int slot) {
-        boolean isInput = false;
-        for (int s : solidInputSlots) {
-            if (s == slot) {
-                isInput = true;
-                break;
-            }
-        }
-        if (!isInput) return false;
-
-        ItemStack stack = inventory.getStackInSlot(slot);
-        if (stack.isEmpty()) return false;
-        return !isItemValid(slot, stack);
-    }
-
-    // === Getters / Setters ===
 
     public void setSelectedRecipe(@Nullable ResourceLocation id) {
-        this.selectedRecipeId = id;
-        this.cachedRecipe = null;
-        this.recipeCacheDirty = true;
-        this.progressAccum = 0;
-        this.progress = 0;
-        this.didProcess = false;
+        setSelectedRecipeId(id);
         this.lastTankSetupRecipeId = null;
-        this.needsSync = true;
     }
 
-    @Nullable
-    public ResourceLocation getSelectedRecipeId() { return selectedRecipeId; }
-    public int getProgress() { return progress; }
-    public int getMaxProgress() { return maxProgress; }
-    public boolean getDidProcess() { return didProcess; }
-
-    // === Сериализация (NBT и Sync) ===
-
-    public void writeNBT(CompoundTag tag) {
-        tag.putBoolean("HasRecipe", selectedRecipeId != null);
+    @Override
+    protected void writeExtraToNbt(CompoundTag nbt) {
+        nbt.putBoolean("HasRecipe", selectedRecipeId != null);
         if (selectedRecipeId != null) {
-            tag.putString("SelectedRecipe", selectedRecipeId.toString());
+            nbt.putString("SelectedRecipe", selectedRecipeId.toString());
         }
-        tag.putDouble("progressAccum", progressAccum);
-        tag.putInt("progress", progress);
-        tag.putInt("maxProgress", maxProgress);
     }
 
-    public void readNBT(CompoundTag tag) {
-        if (tag.contains("HasRecipe") && tag.getBoolean("HasRecipe")) {
-            selectedRecipeId = ResourceLocation.tryParse(tag.getString("SelectedRecipe"));
-            recipeCacheDirty = true;
+    @Override
+    protected void readExtraFromNbt(CompoundTag nbt) {
+        if (nbt.contains("HasRecipe") && nbt.getBoolean("HasRecipe")) {
+            selectedRecipeId = ResourceLocation.tryParse(nbt.getString("SelectedRecipe"));
         } else {
             selectedRecipeId = null;
-            cachedRecipe = null;
-            recipeCacheDirty = false;
         }
-        progressAccum = tag.getDouble("progressAccum");
-        progress = tag.getInt("progress");
-        maxProgress = tag.getInt("maxProgress");
-        if (maxProgress <= 0) maxProgress = 100;
     }
 
-    public void serialize(FriendlyByteBuf buf) {
-        buf.writeDouble(progressAccum);
-        buf.writeInt(maxProgress);
+    @Override
+    protected void writeExtraToBuf(FriendlyByteBuf buf) {
         buf.writeBoolean(selectedRecipeId != null);
         if (selectedRecipeId != null) {
             buf.writeResourceLocation(selectedRecipeId);
         }
     }
 
-    public void deserialize(FriendlyByteBuf buf) {
-        this.progressAccum = buf.readDouble();
-        this.progress = (int) this.progressAccum;
-        this.maxProgress = buf.readInt();
+    @Override
+    protected void readExtraFromBuf(FriendlyByteBuf buf) {
         if (buf.readBoolean()) {
-            this.selectedRecipeId = buf.readResourceLocation();
-            this.recipeCacheDirty = true;
+            selectedRecipeId = buf.readResourceLocation();
         } else {
-            this.selectedRecipeId = null;
-            this.cachedRecipe = null;
-            this.recipeCacheDirty = false;
+            selectedRecipeId = null;
         }
     }
 }
