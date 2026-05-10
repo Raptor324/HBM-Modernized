@@ -9,18 +9,18 @@ import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.machines.MachineAssemblerBlock;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.block.machines.MachineWoodBurnerBlock;
+import com.hbm_m.client.model.ChemicalPlantBakedModel;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.multiblock.PartRole;
 
+import com.hbm_m.util.MultipartFacingTransforms;
 import net.minecraft.core.Direction;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.SlabBlock;
-import net.minecraft.world.level.block.SnowLayerBlock;
-import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraftforge.client.model.generators.BlockStateProvider;
@@ -151,6 +151,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // Connected textures blocks (настоящий CT рендерится через BakedModel wrapper).
         registerDecoCtBlock(ModBlocks.DECO_STEEL, "deco_steel");
         registerDecoCtBlock(ModBlocks.DECO_RUSTY_STEEL, "deco_rusty_steel");
+        registerDecoCtBlock(ModBlocks.DECO_TUNGSTEN, "deco_tungsten");
+        registerDecoCtBlock(ModBlocks.DECO_RED_COPPER, "deco_red_copper");
+        registerDecoCtBlock(ModBlocks.DECO_ALUMINUM, "deco_aluminum");
+        registerDecoCtBlock(ModBlocks.DECO_BERYLLIUM, "deco_beryllium");
+        registerDecoCtBlock(ModBlocks.DECO_LEAD, "deco_lead");
 
         // Модель для ядерных осадков
         // Эта функция автоматически создаст все 8 состояний высоты для блока
@@ -492,6 +497,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlock(ModBlocks.FLUID_EXHAUST.get(), fluidExhaustModel);
 
         // Decor
+        customObjBlock(ModBlocks.REBAR);
+
+        // Decor
         customObjBlock(ModBlocks.CRT_BROKEN);
         customObjBlock(ModBlocks.CRT_BSOD);
         customObjBlock(ModBlocks.CRT_CLEAN);
@@ -501,6 +509,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlock(ModBlocks.GEIGER_COUNTER_BLOCK);
         customObjBlock(ModBlocks.TAPE_RECORDER);
         customObjBlock(ModBlocks.TOASTER);
+        customObjBlock(ModBlocks.DECO_STEEL_SCAFFOLD);
 
         // Other
         customObjBlock(ModBlocks.AIRBOMB);
@@ -521,6 +530,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlock(ModBlocks.DUD_SALTED);
         simpleBlockWithItem(ModBlocks.MINE_AP.get(), models().getExistingFile(modLoc("block/mine_ap")));
         simpleBlockWithItem(ModBlocks.MINE_FAT.get(), models().getExistingFile(modLoc("block/mine_fat")));
+        customObjBlock(ModBlocks.NAVAL_MINE);
         customObjBlock(ModBlocks.CRATE_CONSERVE);
         customObjBlock(ModBlocks.FILE_CABINET);
 
@@ -1214,7 +1224,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         // 4. Проверяем существование текстуры
         ResourceLocation textureLocation = modLoc("textures/block/" + textureName + ".png");
-        if (!existingFileHelper.exists(textureLocation, net.minecraft.server.packs.PackType.CLIENT_RESOURCES)) {
+        if (!existingFileHelper.exists(textureLocation, PackType.CLIENT_RESOURCES)) {
             MainRegistry.LOGGER.warn("Texture not found for block {}: {}. Skipping model generation.",
                     registrationName, textureLocation);
             return;
@@ -1236,11 +1246,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
         String textureName = "ore_" + registrationName;
         ResourceLocation textureLocation = modLoc("textures/block/" + textureName + ".png");
 
-        if (!existingFileHelper.exists(textureLocation, net.minecraft.server.packs.PackType.CLIENT_RESOURCES)) {
+        if (!existingFileHelper.exists(textureLocation, PackType.CLIENT_RESOURCES)) {
             // Пробуем без префикса "ore_"
             textureName = registrationName;
             textureLocation = modLoc("textures/block/" + textureName + ".png");
-            if (!existingFileHelper.exists(textureLocation, net.minecraft.server.packs.PackType.CLIENT_RESOURCES)) {
+            if (!existingFileHelper.exists(textureLocation, PackType.CLIENT_RESOURCES)) {
                 MainRegistry.LOGGER.warn("Texture not found for block {} (tried: {} and {}). Skipping model generation.",
                         registrationName, "ore_" + registrationName, registrationName);
                 return;
@@ -1342,8 +1352,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
      */
     /**
      * Chemical plant: без {@code rotationY} в blockstate - поворот задаётся только в
-     * {@link com.hbm_m.client.model.ChemicalPlantBakedModel} через
-     * {@link com.hbm_m.util.MultipartFacingTransforms#legacyBlockEntityBakedRotationY}, в точности как
+     * {@link ChemicalPlantBakedModel} через
+     * {@link MultipartFacingTransforms#legacyBlockEntityBakedRotationY}, в точности как
      * {@code LegacyAnimator.setupBlockTransform} у VBO (иначе vanilla y + getQuads дают двойной поворот).
      */
     private void registerChemicalPlantBlock(RegistryObject<? extends Block> blockObject) {

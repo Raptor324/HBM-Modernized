@@ -186,6 +186,12 @@ public class ModBlockTagProvider extends BlockTagsProvider {
         // Steel <-> rusty steel соединяются между собой как в 1.7.10 BlockDecoCT.canConnect().
         this.tag(ModTags.Blocks.DECO_STEEL_CONNECTABLE)
                 .add(ModBlocks.DECO_STEEL.get())
+                .add(ModBlocks.DECO_TUNGSTEN.get())
+                .add(ModBlocks.DECO_RED_COPPER.get())
+                .add(ModBlocks.DECO_ALUMINUM.get())
+                .add(ModBlocks.DECO_BERYLLIUM.get())
+                .add(ModBlocks.DECO_LEAD.get())
                 .add(ModBlocks.DECO_RUSTY_STEEL.get());
+
     }
 }

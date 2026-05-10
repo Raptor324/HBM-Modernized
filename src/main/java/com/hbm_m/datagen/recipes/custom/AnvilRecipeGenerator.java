@@ -191,11 +191,16 @@ public final class AnvilRecipeGenerator {
                         .addOutput(stack(ModItems.VACUUM_TUBE), 0.5F)
                         .addOutput(stack(ModItems.MICROCHIP), 0.1F));
 
-        registerDisassemblyRecipe(writer, "steel", "cabinet_breakdown",
-                AnvilTier.STEEL,
+        registerDisassemblyRecipe(writer, "iron", "cabinet_breakdown",
+                AnvilTier.IRON,
                 stack(ModBlocks.FILE_CABINET),
-                stack(ModItems.PLATE_STEEL, 4),
-                builder -> builder.addOutput(stack(ModItems.DUST), 1.0F));
+                stack(ModItems.PLATE_STEEL, 2),
+                builder -> builder.addOutput(stack(ModItems.DUST), 1.0F)
+                        .addOutput(stack(ModItems.PLATE_STEEL), 0.5F)
+                        .addOutput(stack(ModItems.PLATE_STEEL), 0.5F)
+                        .addOutput(stack(ModItems.INSULATOR), 0.25F)
+                        .addOutput(stack(ModItems.INSULATOR), 0.25F)
+                        .addOutput(stack(ModItems.SCRAP), 1F));
 
         registerDisassemblyRecipe(writer, "steel", "toaster_breakdown",
                 AnvilTier.STEEL,
@@ -210,6 +215,7 @@ public final class AnvilRecipeGenerator {
                 stack(ModItems.CANNED_JIZZ, 1),
                 builder -> builder
                         .addOutput(stack(ModItems.CANNED_ASBESTOS), 0.5F));
+
     }
 
     /**

@@ -115,17 +115,7 @@ import com.hbm_m.lib.RefStrings;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.level.block.BarrelBlock;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.DropExperienceBlock;
-import net.minecraft.world.level.block.FlowerBlock;
-import net.minecraft.world.level.block.GlassBlock;
-import net.minecraft.world.level.block.LeavesBlock;
-import net.minecraft.world.level.block.SlabBlock;
-import net.minecraft.world.level.block.SnowLayerBlock;
-import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.material.MapColor;
@@ -831,6 +821,36 @@ public class ModBlocks {
                     .sound(SoundType.STONE)
                     .requiresCorrectToolForDrops()));
 
+    public static final RegistryObject<Block> DECO_TUNGSTEN = registerBlock("deco_tungsten",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> DECO_RED_COPPER = registerBlock("deco_red_copper",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> DECO_ALUMINUM = registerBlock("deco_aluminum",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> DECO_BERYLLIUM = registerBlock("deco_beryllium",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> DECO_LEAD = registerBlock("deco_lead",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops()));
+
     //  ДОБАВЛЕНО: Ядерные осадки (как снег)
     public static final RegistryObject<Block> NUCLEAR_FALLOUT = registerBlock("nuclear_fallout",
             () -> new SnowLayerBlock(BlockBehaviour.Properties.copy(Blocks.SNOW)
@@ -878,12 +898,16 @@ public class ModBlocks {
     public static final RegistryObject<Block> FILE_CABINET = registerBlock("file_cabinet",
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
 
+    public static final RegistryObject<Block> REBAR = registerBlock("rebar",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(3F, 6.0F).noOcclusion()));
     public static final RegistryObject<Block> STEEL_POLE = registerBlock("steel_pole",
-            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(2.5F, 6.0F).noOcclusion()));
+            () -> new CrtBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(2.5F, 6.0F).noOcclusion()));
     public static final RegistryObject<Block> ANTENNA_TOP = registerBlock("antenna_top",
-            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(2.5F, 6.0F).noOcclusion()));
+            () -> new CrtBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(2.5F, 6.0F).noOcclusion()));
     public static final RegistryObject<Block> PUTER = registerBlock("puter",
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1F, 6.0F).noOcclusion()));
+    public static final RegistryObject<Block> DECO_STEEL_SCAFFOLD = registerBlock("deco_steel_scaffold",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(2.5F, 6.0F).noOcclusion()));
 
     public static final RegistryObject<Block> B29 = registerBlock("b29",
             () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
@@ -896,6 +920,9 @@ public class ModBlocks {
 
     public static final RegistryObject<Block> MINE_AP = registerBlock("mine_ap",
             () -> new MineBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+
+    public static final RegistryObject<Block> NAVAL_MINE = registerBlock("naval_mine",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(5, 6.0F).noOcclusion()));
 
     public static final RegistryObject<Block> CRATE_CONSERVE = registerBlock("crate_conserve",
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));

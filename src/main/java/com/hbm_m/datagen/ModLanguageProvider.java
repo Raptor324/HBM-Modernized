@@ -2857,7 +2857,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.TOASTER.get(), "Toaster");
                 add(ModBlocks.STEEL_POLE.get(), "Antenna Pole");
                 add(ModBlocks.ANTENNA_TOP.get(), "Antenna Top");
-                add(ModBlocks.PUTER.get(), "PC-Personal Computer");
+                add(ModBlocks.PUTER.get(), "IBM Personal Computer 300pl");
+                add(ModBlocks.DECO_STEEL_SCAFFOLD.get(), "Steel Scaffolding");
+                add(ModBlocks.REBAR.get(), "Rebar");
                 add(ModBlocks.BARREL_CORRODED.get(), "Corroded Barrel");
                 add(ModBlocks.BARREL_LOX.get(), "LOX Barrel");
                 add(ModBlocks.BARREL_PINK.get(), "Pink Barrel");
@@ -2889,6 +2891,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.DUD_CONVENTIONAL.get(), "Unexploded High-Explosive Bomb");
                 add(ModBlocks.MINE_FAT.get(), "FatMan Mine");
                 add(ModBlocks.MINE_AP.get(), "Anti-Personnel Mine");
+                add(ModBlocks.NAVAL_MINE.get(), "N45 Naval Mine");
                 add(ModItems.GRENADE_NUC.get(), "Nuclear Grenade");
                 add(ModItems.GRENADE_IF_HE.get(), "IF Grenade: HE");
                 add(ModItems.GRENADE_IF_FIRE.get(), "IF Grenade: Incendiary");
@@ -3309,6 +3312,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.crucible", "Crucible");
                 add(ModBlocks.DECO_STEEL.get(), "Steel Deco Block");
                 add(ModBlocks.DECO_RUSTY_STEEL.get(), "Rusty Steel Deco Block");
+                add(ModBlocks.DECO_TUNGSTEN.get(), "Tungsten deco Block");
+                add(ModBlocks.DECO_ALUMINUM.get(), "Aluminum deco Block");
+                add(ModBlocks.DECO_RED_COPPER.get(), "Red Copper deco Block");
+                add(ModBlocks.DECO_BERYLLIUM.get(), "Beryllium deco Block");
+                add(ModBlocks.DECO_LEAD.get(), "Lead deco Block");
                 add("block.hbm_m.depth_stone_slab", "Depth Stone Slab");
                 add("block.hbm_m.depth_stone_nether_slab", "Nether Depth Stone Slab");
                 add("block.hbm_m.depth_stone_stairs", "Depth Stone Stairs");
@@ -3323,8 +3331,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.wire_coated", "Red Copper Wire");
 
                 // ORES
-                add(ModBlocks.SEQUESTRUM_ORE.get(), "Salpeter Ore");
-                add(ModItems.SEQUESTRUM.get(), "Salpeter");
+                add(ModBlocks.SEQUESTRUM_ORE.get(), "Niter Ore");
+                add(ModItems.SEQUESTRUM.get(), "Niter");
                 add(ModItems.AIRSTRIKE_TEST.get(), "Airstrike Designator");
                 add(ModItems.AIRSTRIKE_HEAVY.get(), "Airstrike Designator");
                 add(ModItems.AIRSTRIKE_AGENT.get(), "Airstrike Designator");

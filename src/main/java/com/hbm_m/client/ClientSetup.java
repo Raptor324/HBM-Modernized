@@ -321,6 +321,21 @@ public class ClientSetup {
         wrapDecoCtModel(event, new ModelResourceLocation(ModBlocks.DECO_RUSTY_STEEL.getId(), ""),
                 ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_rusty_steel"),
                 ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_rusty_steel_ct"));
+        wrapDecoCtModel(event, new ModelResourceLocation(ModBlocks.DECO_TUNGSTEN.getId(), ""),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_tungsten"),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_tungsten_ct"));
+        wrapDecoCtModel(event, new ModelResourceLocation(ModBlocks.DECO_RED_COPPER.getId(), ""),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_red_copper"),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_red_copper_ct"));
+        wrapDecoCtModel(event, new ModelResourceLocation(ModBlocks.DECO_ALUMINUM.getId(), ""),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_aluminum"),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_aluminum_ct"));
+        wrapDecoCtModel(event, new ModelResourceLocation(ModBlocks.DECO_BERYLLIUM.getId(), ""),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_beryllium"),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_beryllium_ct"));
+        wrapDecoCtModel(event, new ModelResourceLocation(ModBlocks.DECO_LEAD.getId(), ""),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_lead"),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_lead_ct"));
     }
 
     private static void wrapDecoCtModel(ModelEvent.ModifyBakingResult event, ResourceLocation modelId,

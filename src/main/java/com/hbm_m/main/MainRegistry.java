@@ -895,6 +895,11 @@ public class MainRegistry {
 
             event.accept(ModBlocks.DECO_STEEL);
             event.accept(ModBlocks.DECO_RUSTY_STEEL);
+            event.accept(ModBlocks.DECO_TUNGSTEN);
+            event.accept(ModBlocks.DECO_RED_COPPER);
+            event.accept(ModBlocks.DECO_BERYLLIUM);
+            event.accept(ModBlocks.DECO_ALUMINUM);
+            event.accept(ModBlocks.DECO_LEAD);
             event.accept(ModBlocks.CONCRETE);
             event.accept(ModBlocks.CONCRETE_ASBESTOS);
             event.accept(ModBlocks.CONCRETE_COLORED_SAND);
@@ -1136,6 +1141,7 @@ public class MainRegistry {
             event.accept(ModBlocks.CRT_BSOD);
             event.accept(ModBlocks.TOASTER);
             event.accept(ModBlocks.STEEL_POLE);
+            event.accept(ModBlocks.DECO_STEEL_SCAFFOLD);
             event.accept(ModBlocks.ANTENNA_TOP);
             event.accept(ModBlocks.PUTER);
 

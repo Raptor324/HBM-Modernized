@@ -10,6 +10,8 @@ import com.hbm_m.item.tags_and_tiers.ModIngots;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraftforge.common.Tags;
 
 /**
  * Groups all assembler recipes so they can be maintained separately from {@link ModRecipeProvider}.
@@ -92,7 +94,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.INSULATOR.get(), 4)
                 .addIngredient(ModItems.MOTOR.get(), 4)
                 .addIngredient(ModItems.METAL_ROD.get(), 16) //Needs High Speed Steel Bolt
-                .addIngredient(Items.GREEN_DYE, 4)
+                .addIngredient(Ingredient.of(Tags.Items.DYES_GREEN), 4)
                 .save(writer, "large_vehicle_door");
 
         AssemblerRecipeBuilder.assemblerRecipe(
@@ -101,7 +103,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.INSULATOR.get(), 4)
                 .addIngredient(ModItems.MOTOR.get(), 2)
                 .addIngredient(ModItems.BOLT_STEEL.get(), 16)
-                .addIngredient(Items.GREEN_DYE, 4)
+                .addIngredient(Ingredient.of(Tags.Items.DYES_GREEN), 4)
                 .save(writer, "silo_hatch");
 
         AssemblerRecipeBuilder.assemblerRecipe(
@@ -110,14 +112,14 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.INSULATOR.get(), 8)
                 .addIngredient(ModItems.MOTOR.get(), 2)
                 .addIngredient(ModItems.BOLT_STEEL.get(), 16)
-                .addIngredient(Items.GREEN_DYE, 8)
+                .addIngredient(Ingredient.of(Tags.Items.DYES_GREEN), 8)
                 .save(writer, "silo_hatch_large");
 
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModBlocks.WATER_DOOR.get(), 1), 40, 125)
                 .addIngredient(ModItems.PLATE_STEEL.get(), 16)
                 .addIngredient(ModItems.BOLT_STEEL.get(), 4) //NEEDS DURA-STEEL BOLT
-                .addIngredient(ModItems.CINNABAR.get(), 1)
+                .addIngredient(Ingredient.of(Tags.Items.DYES_RED), 1)
                 .save(writer, "water_door");
 
         AssemblerRecipeBuilder.assemblerRecipe(
@@ -127,7 +129,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.INSULATOR.get(), 8)
                 .addIngredient(ModItems.MOTOR.get(), 2)
                 .addIngredient(ModItems.BOLT_STEEL.get(), 32) //DURA-STEEL BOLT NEEDED
-                .addIngredient(ModItems.CINNABAR.get(), 4) //CRACKED OIL TAR NEEDED
+                .addIngredient(Ingredient.of(Tags.Items.DYES_BLACK), 4)
                 .save(writer, "door_qe_containment");
 
         AssemblerRecipeBuilder.assemblerRecipe(
@@ -147,7 +149,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.INSULATOR.get(), 16)
                 .addIngredient(ModItems.MOTOR.get(), 4)
                 .addIngredient(ModItems.BOLT_STEEL.get(), 16) //DURA-STEEL BOLT NEEDED
-                .addIngredient(Items.GREEN_DYE, 4) // GREEN CRAYON NEEDED
+                .addIngredient(Ingredient.of(Tags.Items.DYES_GREEN), 4)
                 .save(writer, "round_airlock_door");
 
         AssemblerRecipeBuilder.assemblerRecipe(
@@ -157,7 +159,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.INSULATOR.get(), 8)
                 .addIngredient(ModItems.MOTOR.get(), 4)
                 .addIngredient(ModItems.BOLT_STEEL.get(), 32) //DURA-STEEL BOLT NEEDED
-                .addIngredient(Items.RED_DYE, 4)
+                .addIngredient(Ingredient.of(Tags.Items.DYES_RED), 4)
                 .save(writer, "secure_access_door");
 
         AssemblerRecipeBuilder.assemblerRecipe(
@@ -184,7 +186,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.INSULATOR.get(), 4)
                 .addIngredient(ModItems.MOTOR.get(), 2)
                 .addIngredient(ModItems.BOLT_STEEL.get(), 4) //DURA-STEEL BOLT NEEDED
-                .addIngredient(Items.GREEN_DYE, 2) // WHITE CRAYON NEEDED
+                .addIngredient(Ingredient.of(Tags.Items.DYES_GREEN), 2) // WHITE CRAYON NEEDED
                 .save(writer, "door_sliding_seal");
     }
 
