@@ -12,6 +12,7 @@ import com.hbm_m.client.render.*;
 import com.hbm_m.client.render.effect.RenderFallout;
 import com.hbm_m.client.render.implementations.*;
 import com.hbm_m.client.render.shader.ShaderReloadListener;
+import com.hbm_m.client.render.MachineCrystallizerRenderer;
 import com.hbm_m.client.tooltip.CrateContentsTooltipComponent;
 import com.hbm_m.client.tooltip.CrateContentsTooltipComponentRenderer;
 import com.hbm_m.config.ModClothConfig;
@@ -379,6 +380,7 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.CHEMICAL_PLANT_BE.get(), MachineChemicalPlantRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.HYDRAULIC_FRACKINING_TOWER_BE.get(), MachineHydraulicFrackiningTowerRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.HEATING_OVEN_BE.get(), HeatingOvenRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.CRYSTALLIZER.get(), MachineCrystallizerRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), IndustrialTurbineRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.BATTERY_SOCKET_BE.get(), BatterySocketCreativeRenderer::new);
         *///?}
@@ -432,6 +434,7 @@ public class ClientSetup {
         register(ModBlockEntities.PRESS_BE.get(), MachinePressRenderer::new);
         register(ModBlockEntities.CHEMICAL_PLANT_BE.get(), MachineChemicalPlantRenderer::new);
         register(ModBlockEntities.HYDRAULIC_FRACKINING_TOWER_BE.get(), MachineHydraulicFrackiningTowerRenderer::new);
+        register(ModBlockEntities.CRYSTALLIZER.get(), MachineCrystallizerRenderer::new);
         register(ModBlockEntities.HEATING_OVEN_BE.get(), HeatingOvenRenderer::new);
         register(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), IndustrialTurbineRenderer::new);
         register(ModBlockEntities.BATTERY_SOCKET_BE.get(), BatterySocketCreativeRenderer::new);
@@ -717,6 +720,18 @@ public class ClientSetup {
                 /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_legacy"));
         ^///?}
 
+        //? if fabric && < 1.21.1 {
+        event.register(new ResourceLocation(RefStrings.MODID, "block/machines/crystallizer_fluid"));
+        //?} else {
+        /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/crystallizer_fluid"));
+        ^///?}
+
+        //? if fabric && < 1.21.1 {
+        event.register(new ResourceLocation(RefStrings.MODID, "block/machines/crystallizer_spinner"));
+        //?} else {
+        /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/crystallizer_spinner"));
+        ^///?}
+        
         //? if fabric && < 1.21.1 {
         event.register(new ResourceLocation(RefStrings.MODID, "block/doors/round_airlock_door_modern"));
         //?} else {

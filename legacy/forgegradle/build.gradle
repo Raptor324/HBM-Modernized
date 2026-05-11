@@ -186,6 +186,7 @@ dependencies {
 
     runtimeOnly fg.deobf("curse.maven:xaeros-world-map-317780:7598469")
     runtimeOnly fg.deobf("curse.maven:xaeros-minimap-263420:7598586")
+    runtimeOnly fg.deobf("curse.maven:jade-324717:6855440")
 
     
     api(fg.deobf("me.shedaniel.cloth:cloth-config-forge:11.1.136"))

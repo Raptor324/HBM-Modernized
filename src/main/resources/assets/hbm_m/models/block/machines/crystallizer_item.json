@@ -13,8 +13,7 @@
 			"default": "hbm_m:block/machine/acidizer"
 		},
 		"visibility": {
-			"Fluid": false,
-			"Spinner": false
+			"Fluid": false
 		}
 		}
 	},

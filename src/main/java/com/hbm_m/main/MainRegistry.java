@@ -29,10 +29,12 @@ import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.recipe.CentrifugeRecipes;
 import com.hbm_m.recipe.ChemicalPlantRecipes;
+import com.hbm_m.recipe.CrystallizerRecipes;
 import com.hbm_m.recipe.ModRecipes;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.world.biome.ModBiomes;
 import com.mojang.logging.LogUtils;
+import com.hbm_m.recipe.CrystallizerRecipes;
 
 import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.event.events.common.TickEvent;
@@ -108,6 +110,7 @@ public final class MainRegistry {
 
         CentrifugeRecipes.registerRecipes();
         ChemicalPlantRecipes.registerRecipes();
+        CrystallizerRecipes.registerDefaults();
 
         ModFluidTraitsBootstrap.registerAll();
 

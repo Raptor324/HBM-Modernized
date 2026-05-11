@@ -9,6 +9,7 @@ import com.hbm_m.client.gui.FluidGuiRendering;
 import com.hbm_m.inventory.menu.MachineCrystallizerMenu;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
+import com.hbm_m.inventory.fluid.ModFluids;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
@@ -37,6 +38,11 @@ public class GUIMachineCrystallizer extends GuiInfoScreen<MachineCrystallizerMen
     private static final int TANK_HEIGHT = 52;
     private static final int TANK_CAPACITY = 8_000;
 
+    // Область подписи ожидаемой жидкости в нижней центральной части GUI.
+    private static final int EXPECTED_FLUID_LABEL_CENTER_X = 98;
+    private static final int EXPECTED_FLUID_LABEL_Y = 82;
+    private static final int EXPECTED_FLUID_LABEL_MAX_WIDTH = 74;
+
     public GUIMachineCrystallizer(MachineCrystallizerMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
@@ -50,9 +56,12 @@ public class GUIMachineCrystallizer extends GuiInfoScreen<MachineCrystallizerMen
 
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
-        long maxEnergy = menu.getMaxEnergyLong();
+        // Шкала энергии — берём из ContainerData (синхрон ванилью).
+        long energyStored = menu.getEnergyStored();
+        long maxEnergy = menu.getMaxEnergyStored();
         if (maxEnergy > 0) {
-            int i = (int) menu.getBlockEntity().getPowerScaled(52);
+            int i = (int) (energyStored * 52L / maxEnergy);
+            if (i > 52) i = 52;
             guiGraphics.blit(TEXTURE, this.leftPos + 152, this.topPos + 70 - i, 176, 64 - i, 16, i);
         }
 
@@ -63,7 +72,10 @@ public class GUIMachineCrystallizer extends GuiInfoScreen<MachineCrystallizerMen
 
         drawInfoPanel(guiGraphics, 117, 22, PanelType.SMALL_BLUE_INFO);
 
-        renderFluidTank(guiGraphics, menu.getBlockEntity().getTank(), this.leftPos + 35, this.topPos + 70);
+        // Шкала жидкости. Окошко бака на текстуре GUI занимает y=18..70 (top+18 — верх,
+        // top+70 — низ). renderFluidTank рисует жидкость снизу вверх: уровень растёт от
+        // нижнего края окна. Поэтому передаём ВЕРХ окна — top+18.
+        renderFluidTank(guiGraphics, menu.getBlockEntity().getTank(), this.leftPos + 35, this.topPos + 18);
     }
 
     private void renderFluidTank(GuiGraphics guiGraphics, FluidTank tank, int x, int y) {
@@ -93,10 +105,43 @@ public class GUIMachineCrystallizer extends GuiInfoScreen<MachineCrystallizerMen
         com.mojang.blaze3d.systems.RenderSystem.disableBlend();
     }
 
+
+    private Component getExpectedFluidLabel() {
+        Fluid expected = menu.getBlockEntity().getTank().getTankType();
+
+        if (expected == null
+                || expected == net.minecraft.world.level.material.Fluids.EMPTY
+                || expected == ModFluids.NONE.getSource()) {
+            return Component.literal("Вставьте идентификатор");
+        }
+
+        String fluidName = HbmFluidRegistry.getFluidName(expected);
+        return Component.translatable("fluid." + RefStrings.MODID + "." + fluidName);
+    }
+
+    private void drawCenteredFittedString(GuiGraphics guiGraphics, Component text, int centerX, int y, int maxWidth, int color) {
+        int textWidth = this.font.width(text);
+        if (textWidth <= 0) return;
+
+        float scale = textWidth > maxWidth ? (float) maxWidth / (float) textWidth : 1.0F;
+
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().scale(scale, scale, 1.0F);
+
+        int drawX = Math.round((centerX - textWidth * scale / 2.0F) / scale);
+        int drawY = Math.round(y / scale);
+        guiGraphics.drawString(this.font, text, drawX, drawY, color, false);
+
+        guiGraphics.pose().popPose();
+    }
+
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         String name = this.title.getString();
         guiGraphics.drawString(this.font, name, this.imageWidth / 2 - this.font.width(name) / 2, 6, 0x404040, false);
+        drawCenteredFittedString(guiGraphics, getExpectedFluidLabel(),
+                EXPECTED_FLUID_LABEL_CENTER_X, EXPECTED_FLUID_LABEL_Y,
+                EXPECTED_FLUID_LABEL_MAX_WIDTH, 0x404040);
         guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 0x404040, false);
     }
 
@@ -113,7 +158,7 @@ public class GUIMachineCrystallizer extends GuiInfoScreen<MachineCrystallizerMen
 
         drawElectricityInfo(guiGraphics, mouseX, mouseY,
                 152, 18, 16, 52,
-                menu.getEnergyLong(), menu.getMaxEnergyLong());
+                menu.getEnergyStored(), menu.getMaxEnergyStored());
 
         if (isPointInRect(35, 18, 16, 52, mouseX, mouseY)) {
             renderTankTooltip(guiGraphics, menu.getBlockEntity().getTank(), mouseX, mouseY);

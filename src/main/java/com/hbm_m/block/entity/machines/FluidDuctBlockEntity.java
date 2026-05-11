@@ -67,6 +67,13 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
     private FluidNode node;
 
     /**
+     * Клиентский отложенный refresh визуальных соединений после загрузки чанка.
+     * На первом onLoad соседний UniversalMachinePartBlockEntity/контроллер может ещё не иметь
+     * актуального NBT на клиенте, поэтому пересчитываем трубу несколько тиков подряд.
+     */
+    private int clientVisualRefreshTicks = 0;
+
+    /**
      * Кэш адаптеров для соседних Forge-машин.
      * Ключ — направление от duct к машине.
      */
@@ -162,11 +169,22 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
         super.onLoad();
         if (level instanceof ServerLevel serverLevel) {
             ensureNode(serverLevel);
+
+            if (getBlockState().getBlock() instanceof FluidDuctBlock duct) {
+                BlockState current = getBlockState();
+                BlockState updated = duct.getConnectionState(serverLevel, worldPosition);
+                if (updated != current) {
+                    serverLevel.setBlock(worldPosition, updated, Block.UPDATE_CLIENTS | Block.UPDATE_NEIGHBORS);
+                } else {
+                    serverLevel.sendBlockUpdated(worldPosition, current, current, Block.UPDATE_CLIENTS);
+                }
+                // Ещё один пересчёт через пару тиков: соседние BE мультиблоков могут загрузиться позже трубы.
+                serverLevel.scheduleTick(worldPosition, current.getBlock(), 2);
+            }
         }
-        // Клиент: после перезахода соединения blockstate могут остаться в "дефолтном" виде,
-        // если соседние BE/капабилити ещё не были готовы во время первичного расчёта.
-        // Принудительно пересчитаем соединения для себя и соседних duct-блоков.
+
         if (level != null && level.isClientSide && getBlockState().getBlock() instanceof FluidDuctBlock) {
+            clientVisualRefreshTicks = 40;
             FluidDuctBlock.refreshAdjacentDucts(level, worldPosition);
         }
     }
@@ -208,8 +226,40 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
     // Tick — регистрация Forge-машин в сети
     // =====================================================================================
 
+    private void clientTick(Level level, BlockPos pos) {
+        if (clientVisualRefreshTicks <= 0) {
+            return;
+        }
+
+        clientVisualRefreshTicks--;
+        // Не каждый кадр, чтобы не спамить пересборкой чанка, но достаточно долго после входа в мир.
+        if ((level.getGameTime() & 1L) == 0L) {
+            FluidDuctBlock.refreshAdjacentDucts(level, pos);
+        }
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, FluidDuctBlockEntity entity) {
-        if (level.isClientSide || !(level instanceof ServerLevel serverLevel)) return;
+        if (level.isClientSide) {
+            entity.clientTick(level, pos);
+            return;
+        }
+        if (!(level instanceof ServerLevel serverLevel)) return;
+
+        // === DEBUG: статус трубы раз в 2 секунды (удалить после отладки) ===
+        if (level.getGameTime() % 40 == 0) {
+            String typeStr = entity.fluidType == net.minecraft.world.level.material.Fluids.EMPTY
+                ? "EMPTY (труба не покрашена идентификатором!)"
+                : net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(entity.fluidType).toString();
+            int connectedSides = 0;
+            for (Direction d : Direction.values()) {
+                if (state.getValue(FluidDuctBlock.PROPERTY_BY_DIRECTION.get(d))) connectedSides++;
+            }
+            org.slf4j.LoggerFactory.getLogger("FluidDuctDBG")
+                .info("[tick] pos={} fluidType={} connectedSides={} hasNode={}",
+                    pos, typeStr, connectedSides, entity.node != null && !entity.node.isExpired());
+        }
+        // === END DEBUG ===
+
         if (entity.fluidType == Fluids.EMPTY) return;
 
         // Восстановить узел, если потерялся
@@ -223,6 +273,10 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
             BlockPos neighborPos = pos.relative(dir);
             BlockEntity neighbor = level.getBlockEntity(neighborPos);
 
+            // === DEBUG (удалить после отладки) ===
+            boolean shouldLogThis = level.getGameTime() % 40 == 0;
+            // === END DEBUG ===
+
             // Пропускаем другие трубы (они сами обслуживают свои узлы)
             if (neighbor == null || neighbor instanceof FluidDuctBlockEntity) continue;
             // Пропускаем машины, реализующие MK2 напрямую (они вызывают trySubscribe/tryProvide сами)
@@ -231,6 +285,15 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
             // Проверяем, что у соседа есть IFluidHandler на нашей стороне
             Direction sideOfNeighborFacingDuct = dir.getOpposite();
             boolean hasFluidHandler = checkNeighborFluidHandler(level, neighbor, sideOfNeighborFacingDuct);
+
+            // === DEBUG ===
+            if (shouldLogThis) {
+                org.slf4j.LoggerFactory.getLogger("FluidDuctDBG")
+                    .info("  neighbor at {} dir={} class={} hasHandler={}",
+                        neighborPos, dir, neighbor.getClass().getSimpleName(), hasFluidHandler);
+            }
+            // === END DEBUG ===
+
             if (!hasFluidHandler) {
                 entity.adapterCache.remove(dir);
                 continue;

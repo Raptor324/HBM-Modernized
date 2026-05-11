@@ -115,6 +115,10 @@ dependencies {
 	"modRuntimeOnly"("curse.maven:smooth-boot-reloaded-633412:5016280")
 	"modRuntimeOnly"("maven.modrinth:spark:1.10.53-forge")
 	"modRuntimeOnly"("curse.maven:screenshot-to-clipboard-326950:3643026")
+
+	"modRuntimeOnly"("curse.maven:xaeros-world-map-317780:7598469")
+    "modRuntimeOnly"("curse.maven:xaeros-minimap-263420:7598586")
+	"modRuntimeOnly"("curse.maven:jade-324717:6855440")
 }
 
 sourceSets {
