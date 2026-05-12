@@ -456,6 +456,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.WOOD_BURNER);
         blockItemFromBlockModelMachine(ModBlocks.CHEMICAL_PLANT);
         blockItemFromBlockModelMachine(ModBlocks.CRUCIBLE);
+        blockItemFromBlockModelMachine(ModBlocks.FOUNDRY_BASIN);
         blockItemFromBlockModelMachine(ModBlocks.CENTRIFUGE);
         blockItemFromBlockModelMachine(ModBlocks.GAS_CENTRIFUGE);
         blockItemFromBlockModelMachine(ModBlocks.CRYSTALLIZER);

@@ -44,6 +44,7 @@ import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.recipe.CentrifugeRecipes;
 import com.hbm_m.recipe.ChemicalPlantRecipes;
+import com.hbm_m.recipe.CrucibleRecipes;
 import com.hbm_m.recipe.ModRecipes;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.world.biome.ModBiomes;
@@ -158,6 +159,9 @@ public class MainRegistry {
             
             ChemicalPlantRecipes.registerRecipes();
             LOGGER.info("ChemicalPlantRecipes initialized successfully");
+
+            CrucibleRecipes.INSTANCE.registerDefaults();
+            LOGGER.info("CrucibleRecipes initialized successfully");
 
             ModFluidTraitsBootstrap.registerAll();
             LOGGER.info("ModFluidTraitsBootstrap: fluid tooltip traits registered");
@@ -1185,6 +1189,8 @@ public class MainRegistry {
             event.accept(ModBlocks.WOOD_BURNER);
             event.accept(ModBlocks.CHEMICAL_PLANT);
             event.accept(ModBlocks.CRUCIBLE);
+            event.accept(ModBlocks.FOUNDRY_BASIN);
+            event.accept(ModBlocks.FOUNDRY_CHANNEL);
             event.accept(ModBlocks.GAS_CENTRIFUGE);
             event.accept(ModBlocks.CENTRIFUGE);
             event.accept(ModBlocks.CRYSTALLIZER);

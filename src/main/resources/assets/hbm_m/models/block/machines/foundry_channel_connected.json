@@ -1,0 +1,40 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "top": "hbm_m:block/crucible/foundry_channel_top",
+    "bottom": "hbm_m:block/crucible/foundry_channel_bottom",
+    "side": "hbm_m:block/crucible/foundry_channel_side",
+    "inner": "hbm_m:block/crucible/foundry_channel_inner",
+    "particle": "hbm_m:block/crucible/foundry_channel_side"
+  },
+  "elements": [
+    {
+      "from": [10, 0, 5],
+      "to": [16, 2, 11],
+      "faces": {
+        "down": { "texture": "#bottom", "cullface": "down" },
+        "up": { "texture": "#bottom" },
+        "east": { "texture": "#side", "cullface": "east" }
+      }
+    },
+    {
+      "from": [10, 0, 5],
+      "to": [16, 8, 6],
+      "faces": {
+        "up": { "texture": "#top", "cullface": "up" },
+        "north": { "texture": "#side", "cullface": "north" },
+        "south": { "texture": "#inner" }
+      }
+    },
+    {
+      "from": [10, 0, 10],
+      "to": [16, 8, 11],
+      "faces": {
+        "up": { "texture": "#top", "cullface": "up" },
+        "north": { "texture": "#inner" },
+        "south": { "texture": "#side", "cullface": "south" }
+      }
+    }
+  ]
+}

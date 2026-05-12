@@ -1,0 +1,77 @@
+{
+  "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "top": "hbm_m:block/crucible/foundry_basin_top",
+    "bottom": "hbm_m:block/crucible/foundry_basin_bottom",
+    "side": "hbm_m:block/crucible/foundry_basin_side",
+    "inner": "hbm_m:block/crucible/foundry_basin_inner",
+    "particle": "hbm_m:block/crucible/foundry_basin_side"
+  },
+  "elements": [
+    {
+      "from": [0, 15, 0],
+      "to": [16, 16, 16],
+      "faces": {
+        "down": { "texture": "#top" },
+        "up": { "texture": "#top", "cullface": "up" },
+        "north": { "texture": "#side", "cullface": "north" },
+        "south": { "texture": "#side", "cullface": "south" },
+        "west": { "texture": "#side", "cullface": "west" },
+        "east": { "texture": "#side", "cullface": "east" }
+      }
+    },
+    {
+      "from": [0, 0, 0],
+      "to": [16, 2, 16],
+      "faces": {
+        "down": { "texture": "#bottom", "cullface": "down" },
+        "up": { "texture": "#bottom" },
+        "north": { "texture": "#side", "cullface": "north" },
+        "south": { "texture": "#side", "cullface": "south" },
+        "west": { "texture": "#side", "cullface": "west" },
+        "east": { "texture": "#side", "cullface": "east" }
+      }
+    },
+    {
+      "from": [0, 2, 0],
+      "to": [2, 16, 16],
+      "faces": {
+        "north": { "texture": "#side", "cullface": "north" },
+        "south": { "texture": "#side", "cullface": "south" },
+        "west": { "texture": "#side", "cullface": "west" },
+        "east": { "texture": "#inner" },
+        "up": { "texture": "#top", "cullface": "up" }
+      }
+    },
+    {
+      "from": [14, 2, 0],
+      "to": [16, 16, 16],
+      "faces": {
+        "north": { "texture": "#side", "cullface": "north" },
+        "south": { "texture": "#side", "cullface": "south" },
+        "west": { "texture": "#inner" },
+        "east": { "texture": "#side", "cullface": "east" },
+        "up": { "texture": "#top", "cullface": "up" }
+      }
+    },
+    {
+      "from": [2, 2, 0],
+      "to": [14, 16, 2],
+      "faces": {
+        "north": { "texture": "#side", "cullface": "north" },
+        "south": { "texture": "#inner" },
+        "up": { "texture": "#top", "cullface": "up" }
+      }
+    },
+    {
+      "from": [2, 2, 14],
+      "to": [14, 16, 16],
+      "faces": {
+        "north": { "texture": "#inner" },
+        "south": { "texture": "#side", "cullface": "south" },
+        "up": { "texture": "#top", "cullface": "up" }
+      }
+    }
+  ]
+}

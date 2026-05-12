@@ -48,7 +48,9 @@ import com.hbm_m.block.machines.MachineLargePylonBlock;
 import com.hbm_m.block.machines.MachineCentrifugeBlock;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.block.machines.MachineCoolingTowerBlock;
+import com.hbm_m.block.machines.MachineFoundryChannelBlock;
 import com.hbm_m.block.machines.MachineCrucibleBlock;
+import com.hbm_m.block.machines.MachineFoundryBasinBlock;
 import com.hbm_m.block.machines.MachineCrystallizerBlock;
 import com.hbm_m.block.machines.MachineCyclotronBlock;
 import com.hbm_m.block.machines.MachineArcWelderBlock;
@@ -419,6 +421,12 @@ public class ModBlocks {
 
     public static final RegistryObject<Block> CRUCIBLE = registerBlock("crucible",
             () -> new MachineCrucibleBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistryObject<Block> FOUNDRY_BASIN = registerBlock("foundry_basin",
+            () -> new MachineFoundryBasinBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistryObject<Block> FOUNDRY_CHANNEL = registerBlock("foundry_channel",
+            () -> new MachineFoundryChannelBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f, 2.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistryObject<Block> GAS_CENTRIFUGE = registerBlockWithoutItem("gas_centrifuge",
             () -> new MachineGasCentrifugeBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));

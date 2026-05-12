@@ -438,6 +438,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.MINING_DRILL);
         customMachineBlock(ModBlocks.FEL);
         customMachineBlock(ModBlocks.SILEX);
+        simpleMachineBlock(ModBlocks.FOUNDRY_BASIN);
         customMachineBlock(ModBlocks.CENTRIFUGE);
         customMachineBlock(ModBlocks.BREEDER);
         customMachineBlock(ModBlocks.LARGE_PYLON);
@@ -1311,6 +1312,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
         horizontalBlock(blockObject.get(),
             models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath())));
     }
+
+        private <T extends Block> void simpleMachineBlock(RegistryObject<T> blockObject) {
+                simpleBlock(blockObject.get(),
+                        models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath())));
+        }
 
     private <T extends Block> void customBombBlock(RegistryObject<T> blockObject) {
         // Создаём только blockstate, который ссылается на JSON модель

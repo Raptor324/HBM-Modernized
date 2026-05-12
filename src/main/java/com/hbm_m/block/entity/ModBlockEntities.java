@@ -47,6 +47,7 @@ import com.hbm_m.block.entity.machines.MachineRbmkConsoleBlockEntity;
 import com.hbm_m.block.entity.machines.MachineSubstationBlockEntity;
 import com.hbm_m.block.entity.machines.MachineTurbineBlockEntity;
 import com.hbm_m.block.entity.machines.MachineZirnoxBlockEntity;
+import com.hbm_m.block.entity.machines.MachineCrucibleBlockEntity;
 import com.hbm_m.block.entity.machines.MachineGasCentrifugeBlockEntity;
 import com.hbm_m.block.entity.machines.MachineHydraulicFrackiningTowerBlockEntity;
 import com.hbm_m.block.entity.machines.MachineIndustrialBoilerBlockEntity;
@@ -505,6 +506,11 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("fluid_exhaust_be", () ->
                     BlockEntityType.Builder.of(FluidExhaustBlockEntity::new,
                             ModBlocks.FLUID_EXHAUST.get()).build(null));
+
+    public static final RegistryObject<BlockEntityType<MachineCrucibleBlockEntity>> CRUCIBLE_BE =
+            BLOCK_ENTITIES.register("crucible_be", () ->
+                    BlockEntityType.Builder.of(MachineCrucibleBlockEntity::new,
+                            ModBlocks.CRUCIBLE.get()).build(null));
 
     public static void register(IEventBus eventBus) {
         BLOCK_ENTITIES.register(eventBus);
