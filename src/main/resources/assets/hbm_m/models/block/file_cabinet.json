@@ -14,40 +14,50 @@
     }
   },
   "transform": {
-    "translation": [0.5, 0.0, 0.5],
-    "rotation": [0, 0, 0],
+    "translation": [-1.5, 0, -1.5],
+    "rotation": [0, 180, 0],
     "scale": 1.0
   },
   "display": {
-    "gui": {
-      "rotation": [ 210, 225, 180 ],
-      "translation": [ -0.5, -0.2, 0 ],
-      "scale": [ 0.65, 0.65, 0.65 ]
-    },
-    "ground": {
-      "rotation": [ 0, 0, 0 ],
-      "translation": [ 0, 3, 0 ],
-      "scale": [ 0.25, 0.25, 0.25 ]
-    },
-    "fixed": {
-      "rotation": [ 0, 0, 0 ],
-      "translation": [ 0, 0, 0 ],
-      "scale": [ 0.5, 0.5, 0.5 ]
-    },
     "thirdperson_righthand": {
-      "rotation": [ 75, 180, 0 ],
-      "translation": [ 0, 2.5, 0 ],
-      "scale": [ 0.375, 0.375, 0.375 ]
+      "rotation": [ 75, 90, 0 ],
+      "translation": [ 0.00, 2.50, 0.00 ],
+      "scale": [ 0.38, 0.38, 0.38 ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [ 75, 90, 0 ],
+      "translation": [ 0.00, 2.50, 0.00 ],
+      "scale": [ 0.38, 0.38, 0.38 ]
     },
     "firstperson_righthand": {
-      "rotation": [ 0, 180, 0 ],
-      "translation": [ 2, -1, 0 ],
-      "scale": [ 0.4, 0.4, 0.4 ]
+      "rotation": [ 0, 84, 0 ],
+      "translation": [ 1.00, 2.00, 0.00 ],
+      "scale": [ 0.30, 0.30, 0.30 ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [ 0, 90, 0 ],
+      "translation": [ 2.00, -1.00, 0.00 ],
+      "scale": [ 0.40, 0.40, 0.40 ]
+    },
+    "gui": {
+      "rotation": [ 30, 145, 0 ],
+      "translation": [ -0.50, -1.45, 0.00 ],
+      "scale": [ 0.60, 0.60, 0.60 ]
     },
     "head": {
       "rotation": [ 0, 180, 0 ],
-      "translation": [ 0, 13, 7 ],
-      "scale": [ 1, 1, 1 ]
+      "translation": [ 0.00, 13.00, 7.00 ],
+      "scale": [ 1.00, 1.00, 1.00 ]
+    },
+    "fixed": {
+      "rotation": [ 0, 90, 0 ],
+      "translation": [ 0.00, 0.00, 0.00 ],
+      "scale": [ 0.50, 0.50, 0.50 ]
+    },
+    "ground": {
+      "rotation": [ 0, 0, 0 ],
+      "translation": [ 0.00, 3.00, 0.00 ],
+      "scale": [ 0.35, 0.35, 0.35 ]
     }
   }
 }

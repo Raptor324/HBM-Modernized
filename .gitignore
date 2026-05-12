@@ -36,7 +36,9 @@ AGENTS.md
 /plans
 /plans
 .cursorignore
-
+build-logic
+versions
+legacy
 # ================= Logs & Temporary Files =================
 # Логи, дампы ошибок и временные файлы.
 *.log
@@ -49,6 +51,7 @@ logs/
 agent
 ideas
 libs/
+design.md
 # ================= OS Specific =================
 # Системные файлы, которые могут случайно появиться.
 .DS_Store

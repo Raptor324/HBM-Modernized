@@ -16,7 +16,6 @@ import com.hbm_m.api.energy.WireBlock;
 import com.hbm_m.block.bomb.NukeFatManBlock;
 import com.hbm_m.block.decorations.CageLampBlock;
 import com.hbm_m.block.decorations.CrtBlock;
-import com.hbm_m.block.decorations.DecoSteelBlock;
 import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.block.explosives.AirBombBlock;
 import com.hbm_m.block.explosives.AirNukeBombBlock;
@@ -40,14 +39,17 @@ import com.hbm_m.block.machines.HeatingOvenBlock;
 import com.hbm_m.block.machines.LaunchPadBlock;
 import com.hbm_m.block.machines.LaunchPadRustedBlock;
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
+import com.hbm_m.block.machines.MachineArcWelderBlock;
 import com.hbm_m.block.machines.MachineAssemblerBlock;
 import com.hbm_m.block.machines.MachineBatteryBlock;
 import com.hbm_m.block.machines.MachineBatterySocketBlock;
 import com.hbm_m.block.machines.MachineBreederBlock;
-import com.hbm_m.block.machines.MachineLargePylonBlock;
+import com.hbm_m.block.machines.MachineCatalyticReformerBlock;
 import com.hbm_m.block.machines.MachineCentrifugeBlock;
+import com.hbm_m.block.machines.MachineChemicalFactoryBlock;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.block.machines.MachineCoolingTowerBlock;
+<<<<<<< HEAD
 import com.hbm_m.block.machines.MachineFoundryChannelBlock;
 import com.hbm_m.block.machines.MachineCrucibleBlock;
 import com.hbm_m.block.machines.MachineFoundryBasinBlock;
@@ -73,26 +75,49 @@ import com.hbm_m.block.machines.MachineHydraulicFrackiningTowerBlock;
 import com.hbm_m.block.machines.MachineIndustrialBoilerBlock;
 import com.hbm_m.block.machines.MachineSolarBoilerBlock;
 import com.hbm_m.block.machines.MachineSolarMirrorsBlock;
+=======
+>>>>>>> 5b5e6f9db9b41c5a52c191e6d92033f8a93b3a9c
 import com.hbm_m.block.machines.MachineCoreEmitterBlock;
 import com.hbm_m.block.machines.MachineCoreInjectorBlock;
 import com.hbm_m.block.machines.MachineCoreReceiverBlock;
-import com.hbm_m.block.machines.MachineVacuumDistillBlock;
-import com.hbm_m.block.machines.MachineTurbofanBlock;
-import com.hbm_m.block.machines.MachineWatzPowerplantBlock;
-import com.hbm_m.block.machines.MachineHydrotreaterBlock;
-import com.hbm_m.block.machines.MachineCatalyticReformerBlock;
+import com.hbm_m.block.machines.MachineCrackingTowerBlock;
+import com.hbm_m.block.machines.MachineCrucibleBlock;
+import com.hbm_m.block.machines.MachineCrystallizerBlock;
+import com.hbm_m.block.machines.MachineCyclotronBlock;
+import com.hbm_m.block.machines.MachineDerrickBlock;
 import com.hbm_m.block.machines.MachineDeuteriumTowerBlock;
-import com.hbm_m.block.machines.MachineChemicalFactoryBlock;
-import com.hbm_m.block.machines.MachineSteamTurbineBlock;
-import com.hbm_m.block.machines.MachineLiquefactorBlock;
+import com.hbm_m.block.machines.MachineFelBlock;
+import com.hbm_m.block.machines.MachineFlareStackBlock;
+import com.hbm_m.block.machines.MachineFluidTankBlock;
+import com.hbm_m.block.machines.MachineFractionTowerBlock;
+import com.hbm_m.block.machines.MachineGasCentrifugeBlock;
+import com.hbm_m.block.machines.MachineHydraulicFrackiningTowerBlock;
+import com.hbm_m.block.machines.MachineHydrotreaterBlock;
+import com.hbm_m.block.machines.MachineIndustrialBoilerBlock;
 import com.hbm_m.block.machines.MachineIndustrialTurbineBlock;
+import com.hbm_m.block.machines.MachineLargePylonBlock;
+import com.hbm_m.block.machines.MachineLiquefactorBlock;
+import com.hbm_m.block.machines.MachineMiningDrillBlock;
+import com.hbm_m.block.machines.MachineMixerBlock;
 import com.hbm_m.block.machines.MachinePressBlock;
 import com.hbm_m.block.machines.MachinePumpjackBlock;
 import com.hbm_m.block.machines.MachineRadarBlock;
+import com.hbm_m.block.machines.MachineRbmkConsoleBlock;
 import com.hbm_m.block.machines.MachineRefineryBlock;
 import com.hbm_m.block.machines.MachineShredderBlock;
+import com.hbm_m.block.machines.MachineSilexBlock;
+import com.hbm_m.block.machines.MachineSolarBoilerBlock;
+import com.hbm_m.block.machines.MachineSolarMirrorsBlock;
+import com.hbm_m.block.machines.MachineSolderingStationBlock;
+import com.hbm_m.block.machines.MachineSteamTurbineBlock;
+import com.hbm_m.block.machines.MachineSubstationBlock;
 import com.hbm_m.block.machines.MachineTowerSmallBlock;
+import com.hbm_m.block.machines.MachineTurbineBlock;
+import com.hbm_m.block.machines.MachineTurbofanBlock;
+import com.hbm_m.block.machines.MachineVacuumDistillBlock;
+import com.hbm_m.block.machines.MachineWatzPowerplantBlock;
 import com.hbm_m.block.machines.MachineWoodBurnerBlock;
+import com.hbm_m.block.machines.MachineZirnoxBlock;
 import com.hbm_m.block.machines.UniversalMachinePartBlock;
 import com.hbm_m.block.machines.anvils.AnvilBlock;
 import com.hbm_m.block.machines.anvils.AnvilTier;
@@ -118,17 +143,7 @@ import com.hbm_m.lib.RefStrings;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.level.block.BarrelBlock;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.DropExperienceBlock;
-import net.minecraft.world.level.block.FlowerBlock;
-import net.minecraft.world.level.block.GlassBlock;
-import net.minecraft.world.level.block.LeavesBlock;
-import net.minecraft.world.level.block.SlabBlock;
-import net.minecraft.world.level.block.SnowLayerBlock;
-import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.material.MapColor;
@@ -829,7 +844,43 @@ public class ModBlocks {
                     .requiresCorrectToolForDrops()));
 
     public static final RegistryObject<Block> DECO_STEEL = registerBlock("deco_steel",
-            () -> new DecoSteelBlock(BlockBehaviour.Properties.of()
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> DECO_RUSTY_STEEL = registerBlock("deco_rusty_steel",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> DECO_TUNGSTEN = registerBlock("deco_tungsten",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> DECO_RED_COPPER = registerBlock("deco_red_copper",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> DECO_ALUMINUM = registerBlock("deco_aluminum",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> DECO_BERYLLIUM = registerBlock("deco_beryllium",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> DECO_LEAD = registerBlock("deco_lead",
+            () -> new Block(BlockBehaviour.Properties.of()
                     .strength(0.5F, 6.0F)
                     .sound(SoundType.STONE)
                     .requiresCorrectToolForDrops()));
@@ -881,6 +932,17 @@ public class ModBlocks {
     public static final RegistryObject<Block> FILE_CABINET = registerBlock("file_cabinet",
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
 
+    public static final RegistryObject<Block> REBAR = registerBlock("rebar",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(3F, 6.0F).noOcclusion()));
+    public static final RegistryObject<Block> STEEL_POLE = registerBlock("steel_pole",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(2.5F, 6.0F).noOcclusion()));
+    public static final RegistryObject<Block> ANTENNA_TOP = registerBlock("antenna_top",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(2.5F, 6.0F).noOcclusion()));
+    public static final RegistryObject<Block> PUTER = registerBlock("puter",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1F, 6.0F).noOcclusion()));
+    public static final RegistryObject<Block> DECO_STEEL_SCAFFOLD = registerBlock("deco_steel_scaffold",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(2.5F, 6.0F).noOcclusion()));
+
     public static final RegistryObject<Block> B29 = registerBlock("b29",
             () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
 
@@ -892,6 +954,9 @@ public class ModBlocks {
 
     public static final RegistryObject<Block> MINE_AP = registerBlock("mine_ap",
             () -> new MineBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+
+    public static final RegistryObject<Block> NAVAL_MINE = registerBlock("naval_mine",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(5, 6.0F).noOcclusion()));
 
     public static final RegistryObject<Block> CRATE_CONSERVE = registerBlock("crate_conserve",
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
