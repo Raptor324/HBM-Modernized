@@ -64,6 +64,7 @@ import com.hbm_m.client.machine.AdvancedAssemblerClientTicker;
  * - Полная логика мультиблока, GUI, анимации и рецептов перенесена из старой системы
  * - Энергосистема остается long-ориентированной с совместимостью Forge Energy
  */
+@SuppressWarnings("UnstableApiUsage")
 public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity implements IFrameSupportable, IMultiblockSidedIO {
 
     private static final int SLOT_COUNT = 17;

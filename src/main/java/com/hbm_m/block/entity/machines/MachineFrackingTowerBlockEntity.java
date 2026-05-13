@@ -47,6 +47,7 @@ import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
  * - Производит сырую нефть и газ
  * - Поддержка апгрейдов скорости и энергии
  */
+@SuppressWarnings("UnstableApiUsage")
 public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
     
     // Энергия

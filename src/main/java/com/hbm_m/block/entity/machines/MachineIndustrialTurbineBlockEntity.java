@@ -44,6 +44,7 @@ import net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant;
  * - Energy output: up to 500 HE/t depending on steam type
  * - Steam consumption: 50 mB/t
  */
+@SuppressWarnings("UnstableApiUsage")
 public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity {
 
     // Slot definitions

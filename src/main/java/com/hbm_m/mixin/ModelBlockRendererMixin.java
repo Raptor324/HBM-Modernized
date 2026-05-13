@@ -16,6 +16,7 @@ import net.fabricmc.fabric.api.rendering.data.v1.RenderAttachedBlockView;
 //?}
 
 @Mixin(ModelBlockRenderer.class)
+@SuppressWarnings("UnstableApiUsage")
 public class ModelBlockRendererMixin {
 
     //? if fabric {

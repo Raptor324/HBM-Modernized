@@ -56,6 +56,7 @@ import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
 import net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant;
 import team.reborn.energy.api.EnergyStorage;
 
+@SuppressWarnings("UnstableApiUsage")
 public class HbmForgeWrapper extends SnapshotParticipant<Long> implements EnergyStorage {
 
     private final ConverterBlockEntity tile;

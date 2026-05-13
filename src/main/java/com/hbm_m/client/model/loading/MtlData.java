@@ -2,6 +2,7 @@
 package com.hbm_m.client.model.loading;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -57,7 +58,8 @@ final class MtlData {
         Map<String, String> textures = new HashMap<>();
         Map<String, Integer> tints = new HashMap<>();
         String currentMtl = null;
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(res.open(), StandardCharsets.UTF_8))) {
+        try (InputStream in = res.open();
+             BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
             String line;
             while ((line = br.readLine()) != null) {
                 line = line.trim();

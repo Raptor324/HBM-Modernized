@@ -31,6 +31,7 @@ import team.reborn.energy.api.EnergyStorage;
  * Координаты как в {@code ContainerMachineChemicalPlant}, кроме второго слота апгрейда:
  * в оригинале (170, 108) он уходит за правый край текстуры 176px; здесь (152, 126), под первым.
  */
+@SuppressWarnings("UnstableApiUsage")
 public class MachineChemicalPlantMenu extends AbstractContainerMenu {
 
     private static final int TE_SLOT_COUNT = 22;

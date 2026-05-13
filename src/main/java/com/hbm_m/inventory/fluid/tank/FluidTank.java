@@ -32,6 +32,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 *///?}
 
+@SuppressWarnings("UnstableApiUsage")
 public class FluidTank implements Cloneable {
 
     public static final FluidTank[] EMPTY_ARRAY = new FluidTank[0];

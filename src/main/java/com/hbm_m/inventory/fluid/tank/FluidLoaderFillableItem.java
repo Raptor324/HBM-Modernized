@@ -30,6 +30,7 @@ import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
  * В 1.7.10 заполнение блокировалось давлением tank.pressure != 0 — переносим это как запрет
  * и на emptyItem, и на fillItem.
  */
+@SuppressWarnings("UnstableApiUsage")
 public class FluidLoaderFillableItem implements FluidTank.LoadingHandler {
 
     @Override

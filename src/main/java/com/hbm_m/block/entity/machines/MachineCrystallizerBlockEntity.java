@@ -64,6 +64,7 @@ import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
  *       с учётом productivity тратим (или не тратим) вход.</li>
  * </ol>
  */
+@SuppressWarnings("UnstableApiUsage")
 public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
 
     private static final int SLOT_INPUT = 0;

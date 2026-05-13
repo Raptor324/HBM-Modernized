@@ -26,6 +26,7 @@ import team.reborn.energy.api.EnergyStorage;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 
+@SuppressWarnings("UnstableApiUsage")
 public final class FabricEntrypoint implements ModInitializer {
 
     /** Источник «water» из {@link ModFluids}; когда есть в {@link BuiltInRegistries#FLUID}, {@link dev.architectury.registry.registries.RegistrySupplier#get()} безопасен. */

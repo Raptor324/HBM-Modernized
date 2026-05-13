@@ -15,6 +15,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
  * Fabric требует {@link IdentifiableResourceReloadListener} для регистрации в {@code ResourceManagerHelper}.
  * На Forge это не нужно, поэтому класс существует только на Fabric через stonecutter.
  */
+@SuppressWarnings("UnstableApiUsage")
 public final class IdentifiableReloadListenerAdapter implements IdentifiableResourceReloadListener {
     private final ResourceLocation id;
     private final PreparableReloadListener delegate;

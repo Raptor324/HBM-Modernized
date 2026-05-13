@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.hbm_m.main.MainRegistry;
 
@@ -38,8 +39,8 @@ public class SellafitSolidificationTracker {
     private static final int TOTAL_SOLIDIFICATION_TICKS =
             SELLAFIT_SOLIDIFICATION_TICKS + SAFETY_MARGIN_TICKS; // 220 тиков
 
-    // ОПТИМИЗАЦИЯ: Кэш размера для быстрого доступа к количеству чанков
-    private static volatile int cachedSize = 0;
+    // ОПТИМИЗАЦИЯ: Кэш размера для быстрого доступа к количеству чанков (атомарно — параллельные put/remove)
+    private static final AtomicInteger cachedSize = new AtomicInteger(0);
 
     /**
      * Регистрирует момент начала обработки чанка
@@ -48,7 +49,7 @@ public class SellafitSolidificationTracker {
         long chunkKey = getChunkKey(chunkX, chunkZ);
         int currentTick = (int)(level.getGameTime() & Integer.MAX_VALUE); // Быстрее чем %
         chunkSolidificationTime.put(chunkKey, currentTick);
-        cachedSize++;
+        cachedSize.incrementAndGet();
     }
 
     /**
@@ -103,7 +104,7 @@ public class SellafitSolidificationTracker {
     public static void clearChunk(int chunkX, int chunkZ) {
         long chunkKey = getChunkKey(chunkX, chunkZ);
         if (chunkSolidificationTime.remove(chunkKey) != null) {
-            cachedSize--;
+            cachedSize.decrementAndGet();
         }
     }
 
@@ -150,7 +151,7 @@ public class SellafitSolidificationTracker {
      * ОПТИМИЗИРОВАНО: использует кэшированное значение вместо .size()
      */
     public static int getTrackedChunksCount() {
-        return cachedSize;
+        return cachedSize.get();
     }
 
     /**
@@ -158,7 +159,7 @@ public class SellafitSolidificationTracker {
      */
     public static void clearAll() {
         chunkSolidificationTime.clear();
-        cachedSize = 0;
+        cachedSize.set(0);
     }
 
     /**
@@ -190,8 +191,9 @@ public class SellafitSolidificationTracker {
         }
 
         for (Long key : keysToRemove) {
-            chunkSolidificationTime.remove(key);
-            cachedSize--;
+            if (chunkSolidificationTime.remove(key) != null) {
+                cachedSize.decrementAndGet();
+            }
         }
 
         if (!keysToRemove.isEmpty()) {

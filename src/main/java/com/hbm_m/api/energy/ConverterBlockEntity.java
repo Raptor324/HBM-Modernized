@@ -26,6 +26,7 @@ import team.reborn.energy.api.EnergyStorage;
 import team.reborn.energy.api.base.SimpleEnergyStorage;
 //?}
 
+@SuppressWarnings("UnstableApiUsage")
 public class ConverterBlockEntity extends BlockEntity implements IEnergyReceiver, IEnergyProvider {
 
     private long energy = 0;

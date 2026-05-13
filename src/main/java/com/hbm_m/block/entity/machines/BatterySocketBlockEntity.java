@@ -45,6 +45,7 @@ import team.reborn.energy.api.EnergyStorage;
 /**
  * Battery socket: one portable battery slot, modes like machine battery, energy from item capabilities.
  */
+@SuppressWarnings("UnstableApiUsage")
 public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder
     //? if fabric {
     , net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity

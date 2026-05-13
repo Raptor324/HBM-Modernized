@@ -50,6 +50,7 @@ import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
  *   со скоростью {@code transferRate}
  * - универсальным (fluid_barrel_infinite): тип по NBT (или по запросу), и может использоваться как "instant" для сети
  */
+@SuppressWarnings("UnstableApiUsage")
 public class InfiniteFluidItem extends Item {
 
     private final int transferRate; // mB per transfer (e.g. 1_000_000_000 like 1.7.10)

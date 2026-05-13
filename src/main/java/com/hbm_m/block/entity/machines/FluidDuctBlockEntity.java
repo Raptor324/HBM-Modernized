@@ -56,6 +56,7 @@ import net.minecraft.world.level.material.Fluids;
  *    и регистрирует их как providers/receivers в сети трубы.
  *  - Фактический перенос жидкостей выполняется FluidNet.update() (в UniNodespace.updateNodespace()).
  */
+@SuppressWarnings("UnstableApiUsage")
 public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
 
     private static final String NBT_FLUID_TYPE = "FluidType";

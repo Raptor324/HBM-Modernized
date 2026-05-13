@@ -26,6 +26,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import team.reborn.energy.api.EnergyStorage;
 //?}
 
+@SuppressWarnings("UnstableApiUsage")
 public class MachineAssemblerMenu extends AbstractContainerMenu implements ILongEnergyMenu {
     private final MachineAssemblerBlockEntity blockEntity;
     private final Level level;

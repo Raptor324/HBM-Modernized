@@ -51,6 +51,7 @@ import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
  * Базовый класс для всех машин с энергией.
  * Реализует хранение энергии, инвентарь и синхронизацию.
  */
+@SuppressWarnings("UnstableApiUsage")
 public abstract class BaseMachineBlockEntity extends BlockEntity implements MenuProvider, IEnergyProvider, IEnergyReceiver {
 
     // Инвентарь

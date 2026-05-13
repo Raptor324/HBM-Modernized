@@ -159,6 +159,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 //? if forge {
 /*@Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 *///?}
+@SuppressWarnings("UnstableApiUsage")
 public class ClientSetup {
 
     private static boolean initialized = false;

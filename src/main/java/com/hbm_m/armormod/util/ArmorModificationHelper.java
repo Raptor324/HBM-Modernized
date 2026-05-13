@@ -231,11 +231,12 @@ public class ArmorModificationHelper {
             tableInventory.setItem(i, ItemStack.EMPTY);
         }
 
-        if (!armorStack.hasTag() || !armorStack.getTag().contains(MOD_COMPOUND_KEY)) {
+        CompoundTag armorTagForMods = armorStack.getTag();
+        if (armorTagForMods == null || !armorTagForMods.contains(MOD_COMPOUND_KEY)) {
             return;
         }
 
-        CompoundTag mods = armorStack.getTag().getCompound(MOD_COMPOUND_KEY);
+        CompoundTag mods = armorTagForMods.getCompound(MOD_COMPOUND_KEY);
         for (int i = 0; i < 9; i++) { // 9 слотов модов
             String key = MOD_SLOT_KEY_PREFIX + i;
             if (mods.contains(key)) {
@@ -349,11 +350,12 @@ public class ArmorModificationHelper {
      * @return Список ItemStack'ов модов или пустой список, если модов нет.
      */
     public static List<ItemStack> getModsFromArmor(ItemStack armorStack) {
-        if (!armorStack.hasTag() || !armorStack.getTag().contains(MOD_COMPOUND_KEY, 10)) {
+        CompoundTag armorTagForList = armorStack.getTag();
+        if (armorTagForList == null || !armorTagForList.contains(MOD_COMPOUND_KEY, 10)) {
             return Collections.emptyList();
         }
 
-        CompoundTag modsCompound = armorStack.getTag().getCompound(MOD_COMPOUND_KEY);
+        CompoundTag modsCompound = armorTagForList.getCompound(MOD_COMPOUND_KEY);
         if (modsCompound.isEmpty()) {
             return Collections.emptyList();
         }

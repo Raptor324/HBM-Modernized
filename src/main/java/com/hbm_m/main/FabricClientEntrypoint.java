@@ -7,6 +7,7 @@ import com.hbm_m.config.ModConfigKeybindHandler;
 import com.hbm_m.event.ClientModEvents;
 import net.fabricmc.api.ClientModInitializer;
 
+@SuppressWarnings("UnstableApiUsage")
 public final class FabricClientEntrypoint implements ClientModInitializer {
     @Override
     public void onInitializeClient() {

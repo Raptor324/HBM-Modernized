@@ -5,6 +5,7 @@ import org.joml.Matrix4f;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
+import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -55,8 +56,10 @@ public class ColladaAnimationData {
         try {
             Optional<Resource> res = manager.getResource(loc);
             if (res.isPresent()) {
-                ColladaAnimationParser.Result r = ColladaAnimationParser.parse(res.get().open());
-                return new ColladaAnimationData(r);
+                try (InputStream in = res.get().open()) {
+                    ColladaAnimationParser.Result r = ColladaAnimationParser.parse(in);
+                    return new ColladaAnimationData(r);
+                }
             }
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Anim Load Fail: " + loc, e);

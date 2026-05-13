@@ -2,6 +2,7 @@
 package com.hbm_m.client.model.loading;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -27,6 +28,7 @@ import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 @Environment(EnvType.CLIENT)
+@SuppressWarnings("UnstableApiUsage")
 public final class ForgeLikeModelLoadingFabric {
 
     private ForgeLikeModelLoadingFabric() {}
@@ -75,10 +77,10 @@ public final class ForgeLikeModelLoadingFabric {
         Map<ResourceLocation, Resource> jsons = listModelJsons(rm);
         for (var entry : jsons.entrySet()) {
             ResourceLocation fileId = entry.getKey(); // e.g. hbm_m:models/block/foo.json
-            Resource res = entry.getValue();
-
             JsonObject json;
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(res.open(), StandardCharsets.UTF_8))) {
+            Resource res = entry.getValue();
+            try (InputStream in = res.open();
+                 BufferedReader br = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {
                 json = JsonParser.parseReader(br).getAsJsonObject();
             } catch (Exception e) {
                 MainRegistry.LOGGER.warn("Failed to read model json {}", fileId, e);

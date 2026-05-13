@@ -39,6 +39,7 @@ import team.reborn.energy.api.EnergyStorage;
  * Энергохранилище с настраиваемыми режимами работы.
  * Режимы: 0 = BOTH, 1 = INPUT, 2 = OUTPUT, 3 = DISABLED
  */
+@SuppressWarnings("UnstableApiUsage")
 public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder {
 
     private static final int SLOT_CHARGE = 0;

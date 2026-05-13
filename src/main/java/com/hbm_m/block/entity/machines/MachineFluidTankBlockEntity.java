@@ -60,6 +60,7 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
 *///?}
 
+@SuppressWarnings("UnstableApiUsage")
 public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProvider, IMultiblockSidedIO, IFluidStandardTransceiverMK2
     //? if fabric {
     , net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity

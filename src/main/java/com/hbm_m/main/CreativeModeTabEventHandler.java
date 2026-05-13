@@ -39,6 +39,7 @@ import net.minecraft.world.level.block.Block;
 /**
  * Наполнение креативных вкладок (логика из старого Forge {@code MainRegistry#addCreative}).
  */
+@SuppressWarnings("UnstableApiUsage")
 public final class CreativeModeTabEventHandler {
 
     private CreativeModeTabEventHandler() {

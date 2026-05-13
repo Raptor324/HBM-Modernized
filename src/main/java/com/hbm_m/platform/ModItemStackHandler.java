@@ -28,6 +28,7 @@ import net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("UnstableApiUsage")
 public abstract class ModItemStackHandler {
 
     protected final ItemStack[] stacks;

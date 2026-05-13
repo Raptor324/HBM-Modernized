@@ -22,6 +22,7 @@ import net.minecraftforge.energy.IEnergyStorage;
 import team.reborn.energy.api.EnergyStorage;
 //?}
 
+@SuppressWarnings("UnstableApiUsage")
 public class MachineWoodBurnerMenu extends AbstractContainerMenu implements ILongEnergyMenu {
     
     public final MachineWoodBurnerBlockEntity blockEntity;

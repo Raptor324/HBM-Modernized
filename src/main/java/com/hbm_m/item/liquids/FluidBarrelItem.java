@@ -44,6 +44,7 @@ import net.minecraft.world.level.Level;
  * Fluid Barrel - A portable fluid container that can hold 16,000 mB (16 buckets) of any fluid.
  * Similar to a tank but as an item.
  */
+@SuppressWarnings("UnstableApiUsage")
 public class FluidBarrelItem extends Item {
 
     public static final int CAPACITY = 16000; // 16 buckets

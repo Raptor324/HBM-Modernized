@@ -38,6 +38,7 @@ import dev.architectury.event.events.common.ExplosionEvent;
  * ЕДИНЫЙ менеджер радиации, управляющий обработчиками и ВСЕМИ связанными событиями.
  * Этот класс является единственным источником истины для системы радиации.
  */
+@SuppressWarnings("UnstableApiUsage")
 public class ChunkRadiationManager {
 
     // Singleton instance. Этот объект должен быть зарегистрирован в FORGE Event Bus.

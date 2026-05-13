@@ -65,6 +65,7 @@ import team.reborn.energy.api.EnergyStorage;
  * Сборочная машина (Assembler) - мультиблочная структура для автоматизированного крафта.
  * Адаптировано для long-энергосистемы с наследованием от BaseMachineBlockEntity.
  */
+@SuppressWarnings("UnstableApiUsage")
 public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
     private static final String ASSEMBLER_SOUND_INSTANCE = "com.hbm_m.sound.AssemblerSoundInstance";

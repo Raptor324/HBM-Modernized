@@ -54,6 +54,7 @@ import java.util.ArrayList;
 import java.util.List;
 //?}
 
+@SuppressWarnings("UnstableApiUsage")
 public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider {
 
     private static final int FUEL_SLOT = 0;

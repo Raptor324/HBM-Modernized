@@ -45,6 +45,7 @@ import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
  * - Steam tank: 6,400,000 mB
  * - TU (Thermal Units) for heat input
  */
+@SuppressWarnings("UnstableApiUsage")
 public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
 
     // Slot definitions

@@ -37,6 +37,7 @@ import net.minecraftforge.fluids.capability.IFluidHandlerItem;
  * это приводит к потере жидкости.  Поэтому здесь используется ручной
  * drain→fill с жёсткой проверкой amount.</p>
  */
+@SuppressWarnings("UnstableApiUsage")
 public class FluidLoaderStandard implements FluidTank.LoadingHandler {
 
     @Override

@@ -40,6 +40,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * Поддерживает только pressure=0 (Forge IFluidHandler не знает о давлении).
  */
+@SuppressWarnings("UnstableApiUsage")
 public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
 
     private final Level level;

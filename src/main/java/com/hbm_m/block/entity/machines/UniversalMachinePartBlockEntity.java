@@ -54,6 +54,7 @@ import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
 //?}
 
+@SuppressWarnings("UnstableApiUsage")
 public class UniversalMachinePartBlockEntity extends BlockEntity implements IMultiblockPart, IEnergyConnector, IFluidConnectorMK2 {
 
     // Виртуальные узлы жидкостной сети на позиции коннектора, по одному на тип жидкости контроллера.

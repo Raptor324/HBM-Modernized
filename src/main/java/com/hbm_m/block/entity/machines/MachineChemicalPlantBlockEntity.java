@@ -66,6 +66,7 @@ import team.reborn.energy.api.EnergyStorage;
  * 22 слота, 6 FluidTank (3 input, 3 output), энергия.
  * Логика крафтов - заглушка.
  */
+@SuppressWarnings("UnstableApiUsage")
 public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity implements IUpgradeInfoProvider, IFluidStandardTransceiverMK2 {
 
     private static final String CHEMICAL_PLANT_SOUND_INSTANCE = "com.hbm_m.sound.ChemicalPlantSoundInstance";

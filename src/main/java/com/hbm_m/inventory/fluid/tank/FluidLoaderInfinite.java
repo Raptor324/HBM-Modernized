@@ -38,6 +38,7 @@ import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
  *   * allowPressure делегируем тому, что решит общий pressure-flow: tank.loadTank уже не блокирует
  *     infinite предметы под давлением, а сам Infinite*Item не имеет separate pressure-проверки.
  */
+@SuppressWarnings("UnstableApiUsage")
 public class FluidLoaderInfinite implements FluidTank.LoadingHandler {
 
     private static final Random rand = new Random();

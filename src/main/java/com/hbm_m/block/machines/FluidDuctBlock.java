@@ -85,6 +85,7 @@ import net.minecraftforge.client.event.RenderGuiEvent;
  * Fluid identifier: normal click sets fluid on one duct; <b>sneak (Shift)</b> + click paints the connected network of the
  * same block type (depth-capped). Vanilla does not expose Ctrl on the server; use sneak for recursive mode.
  */
+@SuppressWarnings("UnstableApiUsage")
 public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
 
     public static final BooleanProperty NORTH = BlockStateProperties.NORTH;

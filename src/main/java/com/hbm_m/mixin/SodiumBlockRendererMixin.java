@@ -14,6 +14,7 @@ import net.fabricmc.fabric.api.rendering.data.v1.RenderAttachedBlockView;
 
 @Pseudo
 @Mixin(targets = "me.jellysquid.mods.sodium.client.render.chunk.compile.pipeline.BlockRenderer", remap = false)
+@SuppressWarnings("UnstableApiUsage")
 public class SodiumBlockRendererMixin {
 
     @Dynamic("Sodium BlockRenderer")

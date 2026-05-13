@@ -21,6 +21,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@SuppressWarnings("UnstableApiUsage")
 public class ArmorModificationServerEvents {
 
     private static final Set<UUID> playersToUpdate = new HashSet<>();
