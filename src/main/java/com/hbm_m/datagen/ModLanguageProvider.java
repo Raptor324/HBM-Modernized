@@ -1,14 +1,13 @@
 package com.hbm_m.datagen;
 
-import static com.hbm_m.block.ModBlocks.ENABLED_INGOT_BLOCKS;
-import static com.hbm_m.block.ModBlocks.getIngotBlock;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.hbm_m.block.ModBlocks;
+import static com.hbm_m.block.ModBlocks.ENABLED_INGOT_BLOCKS;
+import static com.hbm_m.block.ModBlocks.getIngotBlock;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
@@ -1248,8 +1247,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.block_cdalloy", "Блок CDalloy");
                 add("block.hbm_m.deco_steel", "Стальной декоративный блок");
                 add(ModBlocks.DECO_RUSTY_STEEL.get(), "Ржавый стальной декоративный блок");
-                add(ModBlocks.CRUCIBLE.get(), "Тигель (WIP)");
-                add("container.hbm_m.crucible", "Тигель");
                 add("block.hbm_m.depth_stone_slab", "Плита из глубинного камня");
                 add("block.hbm_m.depth_stone_nether_slab", "Плита из адского глубинного камня");
                 add("block.hbm_m.depth_stone_stairs", "Ступеньки из глубинных кирпичей");
@@ -3320,8 +3317,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.block_ferrouranium", "Ferrouranium Block");
                 add("block.hbm_m.block_tcalloy", "TCalloy Block");
                 add("block.hbm_m.block_cdalloy", "CDalloy Block");
-                add(ModBlocks.CRUCIBLE.get(), "Crucible (WIP)");
-                add("container.hbm_m.crucible", "Crucible");
                 add(ModBlocks.DECO_STEEL.get(), "Steel Deco Block");
                 add(ModBlocks.DECO_RUSTY_STEEL.get(), "Rusty Steel Deco Block");
                 add(ModBlocks.DECO_TUNGSTEN.get(), "Tungsten deco Block");
