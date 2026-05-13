@@ -75,11 +75,8 @@ import com.hbm_m.inventory.gui.GUIMachineBattery;
 import com.hbm_m.inventory.gui.GUIMachineCentrifuge;
 import com.hbm_m.inventory.gui.GUIMachineChemicalPlant;
 import com.hbm_m.inventory.gui.GUIMachineCyclotron;
-<<<<<<< HEAD
 import com.hbm_m.client.render.implementations.CrucibleRenderer;
 import com.hbm_m.inventory.gui.GUIMachineCrucible;
-=======
->>>>>>> 5b5e6f9db9b41c5a52c191e6d92033f8a93b3a9c
 import com.hbm_m.inventory.gui.GUIMachineArcWelder;
 import com.hbm_m.inventory.gui.GUIIndustrialTurbine;
 import com.hbm_m.inventory.gui.GUIMachineCrackingTower;

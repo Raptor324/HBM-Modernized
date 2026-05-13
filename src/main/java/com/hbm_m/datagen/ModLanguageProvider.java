@@ -163,7 +163,6 @@ public class ModLanguageProvider extends LanguageProvider {
             });
         }
 
-<<<<<<< HEAD
         if ("ru_ru".equals(this.locale)) {
             add(ModBlocks.CRUCIBLE.get(), "Тигель (WIP)");
             add(ModBlocks.FOUNDRY_BASIN.get(), "Литейный бассейн");
@@ -176,10 +175,6 @@ public class ModLanguageProvider extends LanguageProvider {
             add("container.hbm_m.crucible", "Crucible");
         }
 
-
-
-=======
->>>>>>> 5b5e6f9db9b41c5a52c191e6d92033f8a93b3a9c
     // ЯВНАЯ ЛОКАЛИЗАЦИЯ ДЛЯ ОСТАЛЬНЫХ КЛЮЧЕЙ
         switch (this.locale) {
             case "ru_ru":
