@@ -1,5 +1,5 @@
 //? if fabric {
-package com.hbm_m.client.model.loading;
+/*package com.hbm_m.client.model.loading;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -15,12 +15,12 @@ public final class ModelStateTransforms {
 
     private ModelStateTransforms() {}
 
-    /**
+    /^*
      * Returns the raw modelState rotation. Does NOT add an extra pivot layer,
      * because BlockModelRotation.getRotation() already contains the pivot internally.
      *
      * Forge equivalent: just uses modelTransform.getRotation() directly.
-     */
+     ^/
     public static Transformation getModelStateRotation(ModelState state) {
         if (state == null) return Transformation.identity();
         Transformation rot = state.getRotation();
@@ -28,7 +28,7 @@ public final class ModelStateTransforms {
         return rot;
     }
 
-    /**
+    /^*
      * Composes modelState rotation and rootTransform following Forge's exact pipeline:
      * <pre>
      *   combined = modelState.compose(rootTransform)
@@ -38,7 +38,7 @@ public final class ModelStateTransforms {
      * </pre>
      *
      * This is the matrix actually applied to OBJ vertex positions.
-     */
+     ^/
     public static Transformation composeForObjBaking(ModelState state, Transformation rootTransform) {
         Transformation modelRot = getModelStateRotation(state);
 
@@ -61,7 +61,7 @@ public final class ModelStateTransforms {
         return blockCenterToCorner(combined);
     }
 
-    /**
+    /^*
      * Replicates Forge's Transformation.blockCenterToCorner():
      * <pre>
      *   result = T(origin) * transform * T(-origin)
@@ -69,13 +69,13 @@ public final class ModelStateTransforms {
      * where origin = (0.5, 0.5, 0.5).
      *
      * This converts from a "center of block" reference to a "corner of block" reference.
-     */
+     ^/
     public static Transformation blockCenterToCorner(Transformation transform) {
         if (isIdentity(transform)) return Transformation.identity();
         return applyOrigin(transform, new Vector3f(0.5f, 0.5f, 0.5f));
     }
 
-    /**
+    /^*
      * Replicates Forge's IForgeTransformation.applyOrigin():
      * <pre>
      *   Matrix4f ret = transform.getMatrix();
@@ -84,7 +84,7 @@ public final class ModelStateTransforms {
      *   tmp.translation(-origin);
      *   ret.mul(tmp);            // ret = T(origin) * transform * T(-origin)
      * </pre>
-     */
+     ^/
     public static Transformation applyOrigin(Transformation transform, Vector3f origin) {
         if (isIdentity(transform)) return Transformation.identity();
 
@@ -124,5 +124,5 @@ public final class ModelStateTransforms {
         }
     }
 }
-//?}
+*///?}
 

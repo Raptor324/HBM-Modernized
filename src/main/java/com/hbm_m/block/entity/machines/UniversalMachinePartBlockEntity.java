@@ -38,21 +38,21 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 
 //? if forge {
-/*import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.block.machines.FluidDuctBlock;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-*///?}
+//?}
 
 //? if fabric {
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
-//?}
+*///?}
 
 @SuppressWarnings("UnstableApiUsage")
 public class UniversalMachinePartBlockEntity extends BlockEntity implements IMultiblockPart, IEnergyConnector, IFluidConnectorMK2 {
@@ -289,16 +289,16 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
             return result;
         }
         //? if forge {
-        /*IFluidHandler handler = controller.getCapability(ForgeCapabilities.FLUID_HANDLER, null).resolve().orElse(null);
+        IFluidHandler handler = controller.getCapability(ForgeCapabilities.FLUID_HANDLER, null).resolve().orElse(null);
         if (handler != null) {
             for (int i = 0; i < handler.getTanks(); i++) {
                 FluidStack fs = handler.getFluidInTank(i);
                 if (fs != null && !fs.isEmpty()) result.add(fs.getFluid());
             }
         }
-        *///?}
+        //?}
         //? if fabric {
-        if (controller.getLevel() instanceof ServerLevel sl) {
+        /*if (controller.getLevel() instanceof ServerLevel sl) {
             BlockPos bp = controller.getBlockPos();
             BlockState st = sl.getBlockState(bp);
             Storage<FluidVariant> storage = FluidStorage.SIDED.find(sl, bp, st, controller, null);
@@ -314,7 +314,7 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
                 }
             }
         }
-        //?}
+        *///?}
         return result;
     }
 
@@ -422,7 +422,7 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
      * Зарегистрирован через {@code EnergyStorage.SIDED.registerForBlockEntity} в FabricEntrypoint.
      */
     //? if fabric {
-    @Nullable
+    /*@Nullable
     public team.reborn.energy.api.EnergyStorage getEnergyStorageSided(@Nullable Direction side) {
         if (this.controllerPos == null || this.level == null) return null;
         if (!this.role.canReceiveEnergy() && !this.role.canSendEnergy()) return null;
@@ -434,13 +434,13 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         if (ctrl == null) return null;
         return team.reborn.energy.api.EnergyStorage.SIDED.find(this.level, this.controllerPos, ctrl.getBlockState(), ctrl, null);
     }
-    //?}
+    *///?}
 
     /**
      * Fabric Transfer API: делегирование жидкости в контроллер (аналог Forge {@code getCapability(FLUID_HANDLER, null)}).
      */
     //? if fabric {
-    @SuppressWarnings("UnstableApiUsage")
+    /*@SuppressWarnings("UnstableApiUsage")
     @Nullable
     public Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
         if (this.controllerPos == null || this.level == null) {
@@ -461,10 +461,10 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         }
         return FluidStorage.SIDED.find(this.level, this.controllerPos, ctrl.getBlockState(), ctrl, null);
     }
-    //?}
+    *///?}
 
     //? if forge {
-    /*@Override
+    @Override
     public void onLoad() {
         super.onLoad();
         // При загрузке мира роль восстанавливается из NBT, минуя setPartRole.
@@ -555,7 +555,7 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
 
         return super.getCapability(cap, side);
     }
-    *///?}
+    //?}
 
     @Override
     protected void saveAdditional(CompoundTag pTag) {
@@ -617,11 +617,11 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
             }
         }
         //? if fabric {
-        if (level != null && !level.isClientSide()
+        /*if (level != null && !level.isClientSide()
                 && (isFluidConnector(this.role) || this.role.canReceiveEnergy() || this.role.canSendEnergy())) {
             level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
         }
-        //?}
+        *///?}
     }
 
     @Nullable
@@ -636,7 +636,7 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
         CompoundTag tag = pkt.getTag();
         if (tag != null) {
@@ -648,5 +648,5 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
             }
         }
     }
-    *///?}
+    //?}
 }

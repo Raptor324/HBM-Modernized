@@ -29,10 +29,10 @@ import dev.architectury.fluid.FluidStack;
 public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTankMenu> {
 
     //? if fabric && < 1.21.1 {
-    private static final ResourceLocation TEXTURE = new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/storage/gui_tank.png");
-     //?} else {
-    /*private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/storage/gui_tank.png");
-    *///?}
+    /*private static final ResourceLocation TEXTURE = new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/storage/gui_tank.png");
+     *///?} else {
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/storage/gui_tank.png");
+    //?}
 
 
     private final int tankX = 71;

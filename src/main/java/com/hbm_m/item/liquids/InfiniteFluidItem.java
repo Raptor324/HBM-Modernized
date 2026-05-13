@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 //? if forge {
-/*import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
@@ -31,16 +31,16 @@ import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
-*///?}
+//?}
 
 //? if fabric {
-import java.util.Iterator;
+/*import java.util.Iterator;
 import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
 import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
-//?}
+*///?}
 
 /**
  * Infinite fluid item (port of 1.7.10 ItemInfiniteFluid).
@@ -105,7 +105,7 @@ public class InfiniteFluidItem extends Item {
     // ================================================================== //
 
     //? if forge {
-    /*@Override
+    @Override
     public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
         return new InfiniteFluidCapabilityProvider(stack, transferRate, fixedFluid);
     }
@@ -208,13 +208,13 @@ public class InfiniteFluidItem extends Item {
             return new FluidStack(resource.getFluid(), amountToDrain);
         }
     }
-    *///?}
+    //?}
 
     //  FABRIC — Fabric Transfer API (Storage)                            //
     // ================================================================== //
 
     //? if fabric {
-    public Storage<FluidVariant> createFabricStorage(ItemStack stack, @Nullable ContainerItemContext context) {
+    /*public Storage<FluidVariant> createFabricStorage(ItemStack stack, @Nullable ContainerItemContext context) {
         return new Storage<FluidVariant>() {
             private ItemStack currentStack() {
                 // Fabric Transfer API иногда зовёт provider с context == null (например, при FluidStorage.ITEM.find(stack, null)).
@@ -280,5 +280,5 @@ public class InfiniteFluidItem extends Item {
             }
         };
     }
-    //?}
+    *///?}
 }

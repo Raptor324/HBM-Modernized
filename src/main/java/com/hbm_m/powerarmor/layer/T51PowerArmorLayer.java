@@ -57,10 +57,10 @@ public class T51PowerArmorLayer<T extends LivingEntity, M extends HumanoidModel<
 
         private static Material withTex(String path) {
             //? if fabric && < 1.21.1 {
-            return new Material(T51_ATLAS_LOCATION, new ResourceLocation(MainRegistry.MOD_ID, path));
-            //?} else {
-                        /*return new Material(T51_ATLAS_LOCATION, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, path));
-            *///?}
+            /*return new Material(T51_ATLAS_LOCATION, new ResourceLocation(MainRegistry.MOD_ID, path));
+            *///?} else {
+                        return new Material(T51_ATLAS_LOCATION, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, path));
+            //?}
 
         }
 

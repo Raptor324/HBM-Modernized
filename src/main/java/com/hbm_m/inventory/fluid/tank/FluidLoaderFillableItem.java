@@ -5,18 +5,18 @@ import com.hbm_m.armormod.util.ArmorModificationHelper;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 //? if forge {
-/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
-*///?}
+//?}
 
 //? if fabric {
-import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
+/*import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
-//?}
+*///?}
 /**
  * Порт FluidLoaderFillableItem из 1.7.10.
  *
@@ -67,7 +67,7 @@ public class FluidLoaderFillableItem implements FluidTank.LoadingHandler {
             if (draining) {
                 // emptyItem: mod (как fluid handler item) -> tank — all-or-nothing
                 //? if forge {
-                /*ok = mod.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(handler -> {
+                ok = mod.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(handler -> {
                     FluidStack simulatedDrain = handler.drain(Integer.MAX_VALUE, IFluidHandlerItem.FluidAction.SIMULATE);
                     if (simulatedDrain.isEmpty()) return false;
 
@@ -84,14 +84,14 @@ public class FluidLoaderFillableItem implements FluidTank.LoadingHandler {
                     tank.fill(tank.getFill() + drainedReal.getAmount());
                     return true;
                 }).orElse(false);
-                *///?}
-                //? if fabric {
-                ok = fabricDrainModToTankAllOrNothing(mod, tank);
                 //?}
+                //? if fabric {
+                /*ok = fabricDrainModToTankAllOrNothing(mod, tank);
+                *///?}
             } else {
                 // fillItem: tank -> mod — all-or-nothing
                 //? if forge {
-                /*ok = mod.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(handler -> {
+                ok = mod.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(handler -> {
                     if (tank.getFill() <= 0) return false;
                     if (!FluidTank.isFluidTypeExplicitlySet(tank.getTankType())) return false;
 
@@ -113,10 +113,10 @@ public class FluidLoaderFillableItem implements FluidTank.LoadingHandler {
                     tank.fill(tank.getFill() - filledReal);
                     return true;
                 }).orElse(false);
-                *///?}
-                //? if fabric {
-                ok = fabricFillTankToModAllOrNothing(mod, tank);
                 //?}
+                //? if fabric {
+                /*ok = fabricFillTankToModAllOrNothing(mod, tank);
+                *///?}
             }
 
             any |= ok;
@@ -127,7 +127,7 @@ public class FluidLoaderFillableItem implements FluidTank.LoadingHandler {
     }
 
     //? if fabric {
-    @SuppressWarnings("UnstableApiUsage")
+    /*@SuppressWarnings("UnstableApiUsage")
     private static boolean fabricDrainModToTankAllOrNothing(ItemStack mod, FluidTank tank) {
         Storage<FluidVariant> storage = FluidStorage.ITEM.find(mod, ContainerItemContext.withConstant(mod));
         if (storage == null) return false;
@@ -172,5 +172,5 @@ public class FluidLoaderFillableItem implements FluidTank.LoadingHandler {
         int drained = tank.drainMb(capMb);
         return drained == capMb;
     }
-    //?}
+    *///?}
 }

@@ -1,5 +1,5 @@
 //? if forge {
-/*package com.hbm_m.api.energy;
+package com.hbm_m.api.energy;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,9 +23,9 @@ public class EnergyNetworkTickHandler {
         }
     }
 }
-*///?}
+//?}
 //? if fabric {
-package com.hbm_m.api.energy;
+/*package com.hbm_m.api.energy;
 
 import dev.architectury.event.events.common.TickEvent;
 import net.minecraft.server.level.ServerLevel;
@@ -36,4 +36,4 @@ public class EnergyNetworkTickHandler {
         TickEvent.SERVER_LEVEL_POST.register((ServerLevel level) -> EnergyNetworkManager.get(level).tick());
     }
 }
-//?}
+*///?}

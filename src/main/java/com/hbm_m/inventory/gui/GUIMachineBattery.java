@@ -30,10 +30,10 @@ public class GUIMachineBattery extends AbstractContainerScreen<MachineBatteryMen
     // Используем современный .fromNamespaceAndPath()
     private static final ResourceLocation TEXTURE =
             //? if fabric && < 1.21.1 {
-            new ResourceLocation(RefStrings.MODID, "textures/gui/storage/gui_battery.png");
-            //?} else {
-                        /*ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/storage/gui_battery.png");
-            *///?}
+            /*new ResourceLocation(RefStrings.MODID, "textures/gui/storage/gui_battery.png");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/storage/gui_battery.png");
+            //?}
 
 
     public GUIMachineBattery(MachineBatteryMenu pMenu, Inventory pPlayerInventory, Component pTitle) {

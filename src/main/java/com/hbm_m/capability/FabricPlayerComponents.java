@@ -1,5 +1,5 @@
 //? if fabric {
-package com.hbm_m.capability;
+/*package com.hbm_m.capability;
 
 import com.hbm_m.lib.RefStrings;
 
@@ -16,12 +16,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 
-/**
+/^*
  * Fabric-only CCA регистрация component'а радиации игрока.
  *
  * Подключается через fabric.mod.json entrypoint:
  * "cardinal-components-entity": ["com.hbm_m.capability.FabricPlayerComponents"]
- */
+ ^/
 public final class FabricPlayerComponents implements EntityComponentInitializer {
     public static final ComponentKey<IPlayerRadiationComponent> PLAYER_RADIATION =
             ComponentRegistry.getOrCreate(
@@ -29,10 +29,10 @@ public final class FabricPlayerComponents implements EntityComponentInitializer 
                     IPlayerRadiationComponent.class
             );
 
-    /**
+    /^*
      * Общий "persistent data" игрока для Fabric (аналог Forge getPersistentData()).
      * Используется для редких серверных счётчиков/кэшей (tick timers, cached flags).
-     */
+     ^/
     public static final ComponentKey<IPersistentDataComponent> PLAYER_PERSISTENT_DATA =
             ComponentRegistry.getOrCreate(
                     new ResourceLocation(RefStrings.MODID, "player_persistent_data"),
@@ -142,5 +142,5 @@ public final class FabricPlayerComponents implements EntityComponentInitializer 
         return PLAYER_PERSISTENT_DATA.get(player).getData();
     }
 }
-//?}
+*///?}
 

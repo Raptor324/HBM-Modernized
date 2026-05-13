@@ -1,5 +1,5 @@
 //? if fabric {
-package com.hbm_m.main;
+/*package com.hbm_m.main;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -29,15 +29,15 @@ import net.minecraft.resources.ResourceLocation;
 @SuppressWarnings("UnstableApiUsage")
 public final class FabricEntrypoint implements ModInitializer {
 
-    /** Источник «water» из {@link ModFluids}; когда есть в {@link BuiltInRegistries#FLUID}, {@link dev.architectury.registry.registries.RegistrySupplier#get()} безопасен. */
+    /^* Источник «water» из {@link ModFluids}; когда есть в {@link BuiltInRegistries#FLUID}, {@link dev.architectury.registry.registries.RegistrySupplier#get()} безопасен. ^/
     private static final ResourceLocation HBM_WATER_SOURCE_ID = RefStrings.resourceLocation("water");
 
-    /**
+    /^*
      * На Fabric {@link dev.architectury.event.events.common.LifecycleEvent#SETUP} и даже
      * {@link net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents#CLIENT_STARTED}
      * бывают раньше фактической записи жидкостей в {@link BuiltInRegistries#FLUID}.
      * Ждём появления ключа и один раз регистрируем рецепты/трейты на тике сервера или клиента.
-     */
+     ^/
     private static final AtomicBoolean FLUID_DEPENDENT_SETUP_DONE = new AtomicBoolean(false);
 
     @Override
@@ -225,4 +225,4 @@ public final class FabricEntrypoint implements ModInitializer {
         }
     }
 }
-//?}
+*///?}

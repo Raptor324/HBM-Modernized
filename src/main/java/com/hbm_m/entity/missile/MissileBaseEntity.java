@@ -1,6 +1,7 @@
 package com.hbm_m.entity.missile;
 
-import com.hbm_m.item.ModItems;
+import api.hbm.entity.IRadarDetectable;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
@@ -27,7 +28,7 @@ import net.minecraft.world.phys.Vec3;
  *
  * Chunkloading и радар пока опущены/станут заглушками.
  */
-public abstract class MissileBaseEntity extends ThrowableItemProjectile {
+public abstract class MissileBaseEntity extends ThrowableItemProjectile implements IRadarDetectable {
 
     protected int startX;
     protected int startZ;
@@ -79,8 +80,14 @@ public abstract class MissileBaseEntity extends ThrowableItemProjectile {
 
     @Override
     protected Item getDefaultItem() {
-        // Для прототипа возвращаем единственный тип ракеты – missile_test
-        return ModItems.MISSILE_TEST.get();
+        return getMissileItem();
+    }
+
+    protected abstract Item getMissileItem();
+
+    @Override
+    public RadarTargetType getTargetType() {
+        return RadarTargetType.MISSILE_TIER0;
     }
 
     @Override

@@ -15,10 +15,10 @@ public class RefStrings {
 	
 	public static ResourceLocation resourceLocation(String path) {
         //? if fabric && < 1.21.1 {
-        return new ResourceLocation(MODID, path);
-        //?} else {
-                /*return ResourceLocation.fromNamespaceAndPath(MODID, path);
-        *///?}
+        /*return new ResourceLocation(MODID, path);
+        *///?} else {
+                return ResourceLocation.fromNamespaceAndPath(MODID, path);
+        //?}
 
 	}
 }

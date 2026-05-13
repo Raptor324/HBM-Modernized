@@ -6,7 +6,7 @@ import net.minecraft.world.level.material.Fluids;
 import org.jetbrains.annotations.NotNull;
 
 //? if forge {
-/*import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 
 
@@ -121,20 +121,20 @@ public class ModFluidTank extends FluidTank {
         }
     }
 }
-*///?}
+//?}
 
 //? if fabric {
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.storage.base.SingleVariantStorage;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 
-/**
+/^*
  * На Fabric ModFluidTank — обёртка над SingleVariantStorage<FluidVariant>.
  *
  * Единицы: Fabric Transfer API использует «droplets» (1 мБ = 81 droplets).
  * Все публичные методы принимают/возвращают миллибакеты (int/long) для
  * совместимости с логикой машин, написанной под Forge mB.
- */
+ ^/
 @SuppressWarnings("UnstableApiUsage")
 public abstract class ModFluidTank {
 
@@ -303,4 +303,4 @@ public abstract class ModFluidTank {
         }
     }
 }
-//?}
+*///?}

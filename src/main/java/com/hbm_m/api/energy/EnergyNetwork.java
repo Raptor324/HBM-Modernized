@@ -16,8 +16,8 @@ import java.util.UUID;
 import org.slf4j.Logger;
 
 //? if forge {
-/*import com.hbm_m.capability.ModCapabilities;
-*///?}
+import com.hbm_m.capability.ModCapabilities;
+//?}
 import com.hbm_m.interfaces.IEnergyModeHolder;
 import com.hbm_m.interfaces.IEnergyProvider;
 import com.hbm_m.interfaces.IEnergyReceiver;
@@ -79,13 +79,13 @@ public class EnergyNetwork {
             Optional<IEnergyProvider> providerCap;
             Optional<IEnergyReceiver> receiverCap;
             //? if forge {
-            /*providerCap = be.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).resolve();
+            providerCap = be.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).resolve();
             receiverCap = be.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).resolve();
-            *///?}
-            //? if fabric {
-            providerCap = be instanceof IEnergyProvider p ? Optional.of(p) : Optional.empty();
-            receiverCap = be instanceof IEnergyReceiver r ? Optional.of(r) : Optional.empty();
             //?}
+            //? if fabric {
+            /*providerCap = be instanceof IEnergyProvider p ? Optional.of(p) : Optional.empty();
+            receiverCap = be instanceof IEnergyReceiver r ? Optional.of(r) : Optional.empty();
+            *///?}
 
             boolean isProvider = providerCap.isPresent();
             boolean isReceiver = receiverCap.isPresent();

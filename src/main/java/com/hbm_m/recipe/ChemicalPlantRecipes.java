@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.hbm_m.inventory.fluid.ModFluids;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
@@ -279,6 +280,15 @@ public class ChemicalPlantRecipes {
                 List.of(),
                 List.of(FluidStack.create(ModFluids.CARBONDIOXIDE.getSource(), 1000L)),
                 60, 100);
+
+        register("chem.concrete", "Concrete Production",
+                List.of(new ItemInput(Items.GRAVEL, 8),
+                        new ItemInput(Items.SAND, 8),
+                        new ItemInput(ModItems.getPowders(ModPowders.CEMENT).get(), 1)),
+                List.of(FluidStack.create(ModFluids.WATER.getSource(), 2000L)),
+                List.of(new ItemStack(ModBlocks.CONCRETE.get(), 16)),
+                List.of(),
+                80, 200);
         
         /// OILS ///
         register("chem.ethanol", "Ethanol Production",

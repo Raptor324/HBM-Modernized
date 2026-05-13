@@ -26,19 +26,19 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
 //? if forge {
-/*import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-*///?}
+//?}
 
 //? if fabric {
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
-//?}
+*///?}
 
 /**
  * Crystallizer BlockEntity — рудный окислитель, порт с 1.7.10.
@@ -93,9 +93,9 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
         }
     };
     //? if forge {
-    /*// FluidTank itself is NOT an IFluidHandler; it exposes Forge handler via getCapability().
+    // FluidTank itself is NOT an IFluidHandler; it exposes Forge handler via getCapability().
     private final LazyOptional<IFluidHandler> tankHandler = tank.getCapability();
-    *///?}
+    //?}
 
     private int progress = 0;
     private int duration = DEFAULT_DURATION;
@@ -241,7 +241,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
         if (!inventory.getStackInSlot(SLOT_FLUID_OUTPUT).isEmpty()) return;
 
         //? if forge {
-        /*IFluidHandler handler = tankHandler.orElse(null);
+        IFluidHandler handler = tankHandler.orElse(null);
         if (handler == null) return;
 
         var result = FluidUtil.tryEmptyContainer(fillStack, (IFluidHandler) tank, TANK_CAPACITY, null, false);
@@ -250,10 +250,10 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
             inventory.setStackInSlot(SLOT_FLUID_OUTPUT, result.getResult());
             setChanged();
         }
-        *///?}
+        //?}
 
         //? if fabric {
-        ItemStack one = fillStack.copy();
+        /*ItemStack one = fillStack.copy();
         one.setCount(1);
 
         Storage<FluidVariant> itemStorage = FluidStorage.ITEM.find(one, null);
@@ -274,7 +274,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
                 setChanged();
             }
         }
-        //?}
+        *///?}
     }
 
     private void chargeFromBattery() {
@@ -366,11 +366,11 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
         }
         if (slot == SLOT_FLUID_INPUT) {
             //? if forge {
-            /*return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-            *///?}
-            //? if fabric {
-            return FluidStorage.ITEM.find(stack, null) != null;
+            return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
             //?}
+            //? if fabric {
+            /*return FluidStorage.ITEM.find(stack, null) != null;
+            *///?}
         }
         if (slot == SLOT_FLUID_ID) {
             // TODO: IItemFluidIdentifier
@@ -410,7 +410,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
             return tankHandler.cast();
@@ -423,5 +423,5 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
         super.invalidateCaps();
         tankHandler.invalidate();
     }
-    *///?}
+    //?}
 }

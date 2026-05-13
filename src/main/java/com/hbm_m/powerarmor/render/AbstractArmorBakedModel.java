@@ -1,5 +1,5 @@
 //? if forge {
-/*package com.hbm_m.powerarmor.render;
+package com.hbm_m.powerarmor.render;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,12 +22,12 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.client.model.data.ModelData;
 
-/^*
+/**
  * Абстрактный базовый класс для рендеринга иконок брони в GUI.
  *
  * Forge-only: использует ModelData/RenderType overloads и Forge OBJ pipeline.
  * Для Fabric позже будет отдельная реализация.
- ^/
+ */
 public abstract class AbstractArmorBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
     protected final IArmorModelConfig config;
@@ -37,7 +37,7 @@ public abstract class AbstractArmorBakedModel extends AbstractMultipartBakedMode
         this.config = config;
     }
 
-    /^* Создаёт новую модель с теми же частями, но другими трансформациями. ^/
+    /** Создаёт новую модель с теми же частями, но другими трансформациями. */
     public abstract AbstractArmorBakedModel withTransforms(ItemTransforms newTransforms);
 
     @Override
@@ -93,4 +93,4 @@ public abstract class AbstractArmorBakedModel extends AbstractMultipartBakedMode
         return getQuads(state, side, rand, ModelData.EMPTY, null);
     }
 }
-*///?}
+//?}

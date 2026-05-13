@@ -7,18 +7,18 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 //? if forge {
-/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
-*///?}
+//?}
 
 //? if fabric {
-import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
+/*import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
-//?}
+*///?}
 /**
  * FluidLoaderInfinite из 1.7.10 — точная семантика по логике:
  *
@@ -105,7 +105,7 @@ public class FluidLoaderInfinite implements FluidTank.LoadingHandler {
 
     private int drainAmountFromInfinite(ItemStack stack, Fluid fluid, int maxRequest) {
         //? if forge {
-        /*return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(handler -> {
+        return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(handler -> {
             // Важно: InfiniteFluidItem может быть "ненастроенным" (FluidType = EMPTY).
             // В таком состоянии его drain(int) вернёт EMPTY, но drain(FluidStack) обязан
             // выдавать запрошенный тип (как в 1.7.10: тип определяется баком/контекстом).
@@ -117,14 +117,14 @@ public class FluidLoaderInfinite implements FluidTank.LoadingHandler {
             // drained.getAmount() ограничен transferRate внутри предмета
             return drained.getAmount();
         }).orElse(0);
-        *///?}
-        //? if fabric {
-        return fabricDrainAmountFromInfinite(stack, fluid, maxRequest);
         //?}
+        //? if fabric {
+        /*return fabricDrainAmountFromInfinite(stack, fluid, maxRequest);
+        *///?}
     }
 
     //? if fabric {
-    @SuppressWarnings("UnstableApiUsage")
+    /*@SuppressWarnings("UnstableApiUsage")
     private static int fabricDrainAmountFromInfinite(ItemStack stack, Fluid fluid, int maxRequest) {
         Storage<FluidVariant> storage = FluidStorage.ITEM.find(stack, ContainerItemContext.withConstant(stack));
         if (storage == null) return 0;
@@ -149,5 +149,5 @@ public class FluidLoaderInfinite implements FluidTank.LoadingHandler {
             return (int) Math.min(Integer.MAX_VALUE / 81, ext / 81L);
         }
     }
-    //?}
+    *///?}
 }

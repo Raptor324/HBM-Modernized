@@ -23,9 +23,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 //? if forge {
-/*import com.hbm_m.api.energy.EnergyCapabilityProvider;
+import com.hbm_m.api.energy.EnergyCapabilityProvider;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
-*///?}
+//?}
 
 // Full Set Bonus Powered armor - combines FSB functionality with battery system
 public class ModArmorFSBPowered extends ModArmorFSB {
@@ -154,13 +154,13 @@ public class ModArmorFSBPowered extends ModArmorFSB {
      * (Forge/NeoForge: IItemExtension#setDamage; на Fabric такого хука нет.)
      */
     //? if !fabric {
-    /*@Override
+    @Override
     public void setDamage(ItemStack stack, int damage) {
         if (this.consumption > 0) {
             this.dischargeBattery(stack, (long) damage * this.consumption);
         }
     }
-    *///?}
+    //?}
 
     private int getArmorContainerId(Player player, EquipmentSlot slot) {
         int slotIndex = switch (slot) {
@@ -179,19 +179,19 @@ public class ModArmorFSBPowered extends ModArmorFSB {
      * Passive energy drain per tick when wearing full FSB armor set.
      */
     //? if forge {
-    /*@Override
+    @Override
     public void onArmorTick(ItemStack stack, Level world, Player player) {
         super.onArmorTick(stack, world, player);
         tickPoweredDrain(stack, world, player);
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     public void inventoryTick(ItemStack stack, Level world, Entity entity, int slotId, boolean selected) {
         super.inventoryTick(stack, world, entity, slotId, selected);
         if (!(entity instanceof Player player)) return;
         tickPoweredDrain(stack, world, player);
     }
-    //?}
+    *///?}
 
     private void tickPoweredDrain(ItemStack stack, Level world, Player player) {
         if (this.drain > 0 && ModArmorFSB.hasFSBArmor(player)
@@ -226,11 +226,11 @@ public class ModArmorFSBPowered extends ModArmorFSB {
     }
 
     //? if forge {
-    /*@Nullable
+    @Nullable
     @Override
     public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
         long modifiedCapacity = getMaxCharge(stack);
         return new EnergyCapabilityProvider(stack, modifiedCapacity, chargeRate, modifiedCapacity);
     }
-    *///?}
+    //?}
 }

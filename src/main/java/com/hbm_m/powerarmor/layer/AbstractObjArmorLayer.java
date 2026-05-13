@@ -32,8 +32,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
 //? if forge {
-/*import net.minecraftforge.client.model.data.ModelData;
-*///?}
+import net.minecraftforge.client.model.data.ModelData;
+//?}
 
 /**
  * Абстрактный базовый класс для рендеринга OBJ-брони.
@@ -200,10 +200,10 @@ public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends Hu
             RandomSource rand
     ) {
         //? if forge {
-        /*return model.getQuads(null, dir, rand, ModelData.EMPTY, null);
-        *///?} else {
-        return model.getQuads(null, dir, rand);
-        //?}
+        return model.getQuads(null, dir, rand, ModelData.EMPTY, null);
+        //?} else {
+        /*return model.getQuads(null, dir, rand);
+        *///?}
     }
 
     private static void putQuadManual(VertexConsumer builder, PoseStack.Pose pose, net.minecraft.client.renderer.block.model.BakedQuad quad, int light) {

@@ -1,5 +1,5 @@
 //? if forge {
-/*package com.hbm_m.client.loader;
+package com.hbm_m.client.loader;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -32,10 +32,10 @@ import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
 import net.minecraftforge.client.model.obj.ObjLoader;
 import net.minecraftforge.client.model.obj.ObjModel;
 
-/^*
+/**
  * Model loader for HeatingOven that loads an OBJ file with multiple parts:
  * Main, Door, Inner, InnerBurning
- ^/
+ */
 public class HeatingOvenModelLoader implements IGeometryLoader<HeatingOvenModelLoader.HeatingOvenGeometry> {
 
     private static final Set<String> PART_NAMES = Set.of(
@@ -105,9 +105,9 @@ public class HeatingOvenModelLoader implements IGeometryLoader<HeatingOvenModelL
         }
     }
 
-    /^*
+    /**
      * Context that filters which part is visible during baking
-     ^/
+     */
     private static class SinglePartBakingContext implements IGeometryBakingContext {
         private final IGeometryBakingContext parent;
         private final String visiblePart;
@@ -153,18 +153,18 @@ public class HeatingOvenModelLoader implements IGeometryLoader<HeatingOvenModelL
         }
     }
 }
-*///?}
+//?}
 
 //? if fabric {
-package com.hbm_m.client.loader;
+/*package com.hbm_m.client.loader;
 
-/**
+/^*
  * Fabric: Forge geometry/OBJ pipeline isn't available.
  * Stub to keep compilation working across loaders.
- */
+ ^/
 public class HeatingOvenModelLoader {
     public HeatingOvenModelLoader() {
         throw new UnsupportedOperationException("HeatingOvenModelLoader is not implemented on Fabric yet.");
     }
 }
-//?}
+*///?}

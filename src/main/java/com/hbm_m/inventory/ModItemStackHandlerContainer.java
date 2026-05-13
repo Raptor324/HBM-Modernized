@@ -78,5 +78,10 @@ public final class ModItemStackHandlerContainer implements Container {
         }
         onDirty.run();
     }
+
+    @Override
+    public boolean canPlaceItem(int slot, ItemStack stack) {
+        return handler.isItemValid(slot, stack);
+    }
 }
 

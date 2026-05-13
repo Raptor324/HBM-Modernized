@@ -35,14 +35,14 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 //? if forge {
-/*import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-*///?}
+//?}
 
 //? if fabric {
-import com.hbm_m.capability.ModCapabilities;
-//?}
+/*import com.hbm_m.capability.ModCapabilities;
+*///?}
 
 public class WireBlock extends BaseEntityBlock {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -176,17 +176,17 @@ public class WireBlock extends BaseEntityBlock {
         }
 
         //? if forge {
-        /*// Forge: дополнительная проверка через Capability для совместимости со сторонними модами
+        // Forge: дополнительная проверка через Capability для совместимости со сторонними модами
         if (be.getCapability(ModCapabilities.HBM_ENERGY_CONNECTOR, sideFromNeighbor).isPresent()) return true;
         if (be.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, sideFromNeighbor).isPresent()) return true;
         if (be.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER, sideFromNeighbor).isPresent()) return true;
         return be.getCapability(ForgeCapabilities.ENERGY, sideFromNeighbor).isPresent();
-        *///?}
+        //?}
 
         //? if fabric {
-        // Fabric: проверяем через cardinal-components
+        /*// Fabric: проверяем через cardinal-components
         return ModCapabilities.hasEnergyComponent(be);
-        //?}
+        *///?}
     }
 
     public static BooleanProperty getProperty(Direction direction) {

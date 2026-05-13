@@ -31,9 +31,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-/*import net.minecraftforge.client.ChunkRenderTypeSet;
+import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
-*///?}
+//?}
 
 public class DoorBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
     
@@ -75,16 +75,16 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
         //? if forge {
-        /*return getQuads(state, side, rand, ModelData.EMPTY, null);
-        *///?}
+        return getQuads(state, side, rand, ModelData.EMPTY, null);
+        //?}
 
         //? if fabric {
-        return getQuadsFabric(state, side, rand, FabricRenderDataBridge.get());
-        //?}
+        /*return getQuadsFabric(state, side, rand, FabricRenderDataBridge.get());
+        *///?}
     }
     
     //? if forge {
-    /*@Override
+    @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                      RandomSource rand, ModelData modelData, 
                                      @Nullable net.minecraft.client.renderer.RenderType renderType) {
@@ -114,10 +114,10 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         return getStaticPartQuads(state, side, rand, modelData, renderType);
     }
     
-    /^*
+    /**
      * Получает части модели с учётом выбора (legacy/modern/skin).
      * Если в ModelData есть выбор и реестр имеет конфиг - используем модель из реестра.
-     ^/
+     */
     private Map<String, BakedModel> getPartsForModelData(ModelData modelData) {
         var selection = modelData.get(DoorModelProperties.MODEL_SELECTION_PROPERTY);
         if (selection == null) return parts;
@@ -139,10 +139,10 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         return parts;
     }
 
-    /^*
+    /**
      * Возвращает квады только статичных частей (frame) для Iris-пути при движущейся двери.
      * Подвижные части скрыты - их рендерит BER через putBulkData.
-     ^/
+     */
     private List<BakedQuad> getStaticPartQuads(@Nullable BlockState state, @Nullable Direction side,
                                                 RandomSource rand, ModelData modelData,
                                                 @Nullable net.minecraft.client.renderer.RenderType renderType) {
@@ -173,10 +173,10 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         return result;
     }
     
-    /^*
+    /**
      * Возвращает квады всех частей для Iris-пути при статичной двери.
      * Створка (анимированные части) трансформируется в позицию open/closed.
-     ^/
+     */
     private List<BakedQuad> getAllPartQuads(@Nullable BlockState state, @Nullable Direction side,
                                             RandomSource rand, ModelData modelData,
                                             @Nullable net.minecraft.client.renderer.RenderType renderType) {
@@ -233,10 +233,10 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         }
         return allQuads;
     }
-    *///?}
+    //?}
 
     //? if fabric {
-    public List<BakedQuad> getQuadsFabric(@Nullable BlockState state, @Nullable Direction side,
+    /*public List<BakedQuad> getQuadsFabric(@Nullable BlockState state, @Nullable Direction side,
                                           RandomSource rand, @Nullable Object renderData) {
         if (state == null) {
             return getItemQuads(side, rand);
@@ -397,7 +397,7 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         }
         this.cachedItemQuads = allQuads;
     }
-    //?}
+    *///?}
 
     private static boolean isStaticPart(String partName) {
         for (String s : STATIC_PART_NAMES) {
@@ -503,7 +503,7 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
     
     //? if forge {
     
-    /*private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand,
+    private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand,
                                           ModelData modelData, 
                                           @Nullable net.minecraft.client.renderer.RenderType renderType) {
         // Кэшируем квады для item рендера
@@ -547,7 +547,7 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         this.cachedItemQuads = allQuads;
     }
     
-    *///?}
+    //?}
     
     @Override
     public ItemOverrides getOverrides() {
@@ -557,22 +557,22 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
     // В 1.20+ ItemOverrides имеет приватный конструктор, поэтому кастомные overrides недоступны.
 
     //? if forge {
-    /*@Override
+    @Override
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
         // cutoutMipped для прозрачных текстур (стекло, решётки и т.д.)
         return ChunkRenderTypeSet.of(RenderType.cutoutMipped());
     }
-    *///?}
+    //?}
 
     @Override
     public TextureAtlasSprite getParticleIcon() {
         //? if forge {
-        /*return getParticleIcon(ModelData.EMPTY);
-        *///?}
+        return getParticleIcon(ModelData.EMPTY);
+        //?}
 
         //? if fabric {
-        return super.getParticleIcon();
-        //?}
+        /*return super.getParticleIcon();
+        *///?}
     }
     
     @Override

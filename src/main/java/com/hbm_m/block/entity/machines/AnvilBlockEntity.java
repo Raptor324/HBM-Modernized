@@ -787,10 +787,10 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public void handleUpdateTag(CompoundTag tag) {
         load(tag);
     }
-    *///?}
+    //?}
 }
 

@@ -1,5 +1,5 @@
 //? if forge {
-/*package com.hbm_m.client.loader;
+package com.hbm_m.client.loader;
 
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonObject;
@@ -46,13 +46,13 @@ public class TemplateModelLoader implements IGeometryLoader<TemplateModelLoader.
         }
     }
 }
-*///?}
+//?}
 
 //? if fabric {
-package com.hbm_m.client.loader;
+/*package com.hbm_m.client.loader;
 
-/** Fabric: геометрия Forge не используется; см. {@code ForgeLikeModelLoadingFabric}. */
+/^* Fabric: геометрия Forge не используется; см. {@code ForgeLikeModelLoadingFabric}. ^/
 public final class TemplateModelLoader {
     private TemplateModelLoader() {}
 }
-//?}
+*///?}

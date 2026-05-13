@@ -7,7 +7,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 import java.util.function.Supplier;
 
 //? if forge {
-/*import com.hbm_m.item.tags_and_tiers.ModTags;
+import com.hbm_m.item.tags_and_tiers.ModTags;
 import com.hbm_m.main.MainRegistry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Tiers;
@@ -15,58 +15,58 @@ import net.minecraftforge.common.ForgeTier;
 import net.minecraftforge.common.TierSortingRegistry;
 
 import java.util.List;
-*///?}
+//?}
 
 public class ModToolTiers {
     public static final Tier ALLOY =
             //? if forge {
-            /*TierSortingRegistry.registerTier(
+            TierSortingRegistry.registerTier(
                     new ForgeTier(4, 1500, 6f, 6f, 25,
                             ModTags.Blocks.NEEDS_ALLOY_TOOL, () -> Ingredient.of(ModItems.PLATE_STEEL.get())),
                     new ResourceLocation(MainRegistry.MOD_ID, "alloy"), List.of(Tiers.NETHERITE), List.of()
             );
-            *///?} else {
+            //?} else {
 
-            new SimpleTier(4, 1500, 6f, 6f, 25, () -> Ingredient.of(ModItems.PLATE_STEEL.get()));
-            //?}
+            /*new SimpleTier(4, 1500, 6f, 6f, 25, () -> Ingredient.of(ModItems.PLATE_STEEL.get()));
+            *///?}
 
     public static final Tier STEEL =
             //? if forge {
-            /*TierSortingRegistry.registerTier(
+            TierSortingRegistry.registerTier(
                     new ForgeTier(3, 600, 4f, 4f, 18,
                             ModTags.Blocks.NEEDS_STEEL_TOOL, () -> Ingredient.of(ModItems.PLATE_STEEL.get())),
                     new ResourceLocation(MainRegistry.MOD_ID, "steel"), List.of(Tiers.IRON), List.of()
             );
-            *///?} else {
+            //?} else {
 
-            new SimpleTier(3, 600, 4f, 4f, 18, () -> Ingredient.of(ModItems.PLATE_STEEL.get()));
-            //?}
+            /*new SimpleTier(3, 600, 4f, 4f, 18, () -> Ingredient.of(ModItems.PLATE_STEEL.get()));
+            *///?}
 
 
     public static final Tier STARMETAL =
             //? if forge {
-            /*TierSortingRegistry.registerTier(
+            TierSortingRegistry.registerTier(
                     new ForgeTier(5, 19000, 9f, 8f, 25,
                             ModTags.Blocks.NEEDS_STARMETAL_TOOL, () -> Ingredient.of(ModItems.PLATE_STEEL.get())),
                     new ResourceLocation(MainRegistry.MOD_ID, "starmetal"), List.of(Tiers.IRON), List.of()
             );
-            *///?} else {
+            //?} else {
 
-            new SimpleTier(5, 19000, 9f, 8f, 25, () -> Ingredient.of(ModItems.PLATE_STEEL.get()));
-            //?}
+            /*new SimpleTier(5, 19000, 9f, 8f, 25, () -> Ingredient.of(ModItems.PLATE_STEEL.get()));
+            *///?}
 
 
     public static final Tier TITANIUM =
             //? if forge {
-            /*TierSortingRegistry.registerTier(
+            TierSortingRegistry.registerTier(
                     new ForgeTier(3, 750, 3.25f, 3f, 15,
                             ModTags.Blocks.NEEDS_TITANIUM_TOOL, () -> Ingredient.of(ModItems.PLATE_STEEL.get())),
                     new ResourceLocation(MainRegistry.MOD_ID, "titanium"), List.of(Tiers.IRON), List.of()
             );
-            *///?} else {
+            //?} else {
 
-            new SimpleTier(3, 750, 3.25f, 3f, 15, () -> Ingredient.of(ModItems.PLATE_STEEL.get()));
-            //?}
+            /*new SimpleTier(3, 750, 3.25f, 3f, 15, () -> Ingredient.of(ModItems.PLATE_STEEL.get()));
+            *///?}
 
     /**
      * Fabric/NeoForge: {@link ModItems} регистрирует инструменты до {@code plate_steel}; Architectury при

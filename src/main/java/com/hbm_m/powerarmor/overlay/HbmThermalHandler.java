@@ -30,10 +30,10 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
     public static final HbmThermalHandler INSTANCE = new HbmThermalHandler();
 
     //? if fabric && < 1.21.1 {
-    private static final ResourceLocation THERMAL_EFFECT = new ResourceLocation(MainRegistry.MOD_ID, "shaders/post/thermal.json");
-    //?} else {
-    /*private static final ResourceLocation THERMAL_EFFECT = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/post/thermal.json");
-    *///?}
+    /*private static final ResourceLocation THERMAL_EFFECT = new ResourceLocation(MainRegistry.MOD_ID, "shaders/post/thermal.json");
+    *///?} else {
+    private static final ResourceLocation THERMAL_EFFECT = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/post/thermal.json");
+    //?}
 
     private static @Nullable PostChain thermalChain;
     private static int lastWidth = 0;
@@ -259,7 +259,7 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
     // Forge hook (optional): keeps old behaviour when Forge events available
     // ======================================================================
     //? if forge {
-    /*@net.minecraftforge.fml.common.Mod.EventBusSubscriber(modid = com.hbm_m.lib.RefStrings.MODID, value = net.minecraftforge.api.distmarker.Dist.CLIENT, bus = net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus.FORGE)
+    @net.minecraftforge.fml.common.Mod.EventBusSubscriber(modid = com.hbm_m.lib.RefStrings.MODID, value = net.minecraftforge.api.distmarker.Dist.CLIENT, bus = net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus.FORGE)
     public static final class ForgeHooks {
         @net.minecraftforge.eventbus.api.SubscribeEvent
         public static void onRenderLevel(net.minecraftforge.client.event.RenderLevelStageEvent event) {
@@ -271,5 +271,5 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
             }
         }
     }
-    *///?}
+    //?}
 }

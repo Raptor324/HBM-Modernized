@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import java.util.Objects;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import org.jetbrains.annotations.NotNull;
@@ -24,11 +24,11 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.ItemLike;
 
-/^*
+/**
  * Builder for {@link PressRecipe} data generation.
  * Mirrors the JSON structure used by the manual press recipe files but provides
  * the same ergonomic API style as {@link AssemblerRecipeBuilder}.
- ^/
+ */
 public class PressRecipeBuilder implements RecipeBuilder {
 
     private final ItemStack output;
@@ -176,4 +176,4 @@ public class PressRecipeBuilder implements RecipeBuilder {
         }
     }
 }
-*///?}
+//?}

@@ -2,19 +2,19 @@ package com.hbm_m.client.render;
 
 
 //? if fabric {
-import net.fabricmc.api.EnvType;
+/*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-//?}
+*///?}
 import net.minecraft.client.renderer.ShaderInstance;
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-*///?}
+//?}
 //? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
+//?}
 //? if fabric {
-@Environment(EnvType.CLIENT)//?}
+/*@Environment(EnvType.CLIENT)*///?}
 public class ModShaders {
     private static ShaderInstance dynamicCutoutShader;
     private static ShaderInstance blockLitSimpleShader;

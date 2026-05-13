@@ -1,5 +1,5 @@
 //? if fabric {
-package com.hbm_m.mixin.client;
+/*package com.hbm_m.mixin.client;
 
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -22,12 +22,12 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-/**
+/^*
  * Fabric (в т.ч. с Sodium): подмена {@link ItemRenderer#getModel} — базовая иконка из
  * {@code models/item/assembly_template_base.json} (без {@code hbm_m:template_loader}); при Shift — модель выхода рецепта.
  * <p>
  * {@link CallbackInfoReturnable#setReturnValue} требует {@code cancellable = true} на {@link Inject}.
- */
+ ^/
 @Mixin(ItemRenderer.class)
 public abstract class MixinItemRenderer {
 
@@ -79,4 +79,4 @@ public abstract class MixinItemRenderer {
         }
     }
 }
-//?}
+*///?}

@@ -23,8 +23,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if fabric {
-import team.reborn.energy.api.EnergyStorage;
-//?}
+/*import team.reborn.energy.api.EnergyStorage;
+*///?}
 
 @SuppressWarnings("UnstableApiUsage")
 public class MachineAssemblerMenu extends AbstractContainerMenu implements ILongEnergyMenu {
@@ -58,10 +58,10 @@ public class MachineAssemblerMenu extends AbstractContainerMenu implements ILong
                 public boolean mayPlace(@NotNull ItemStack stack) {
                     if (ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
                     //? if fabric {
-                    return EnergyStorage.ITEM.find(stack, null) != null;
-                    //?} else {
-                    /*return false;
-                    *///?}
+                    /*return EnergyStorage.ITEM.find(stack, null) != null;
+                    *///?} else {
+                    return false;
+                    //?}
                 }
             });
             // Слоты для улучшений (1, 2, 3) - без ограничений
@@ -221,8 +221,8 @@ public class MachineAssemblerMenu extends AbstractContainerMenu implements ILong
             // 1) Energy-capable items -> energy slot (index TE_INVENTORY_FIRST_SLOT_INDEX + 0)
             if (ItemEnergyAccess.getHbmReceiver(sourceStack).isPresent()
                     //? if fabric {
-                    || EnergyStorage.ITEM.find(sourceStack, null) != null
-                    //?}
+                    /*|| EnergyStorage.ITEM.find(sourceStack, null) != null
+                    *///?}
             ) {
                 moved = this.moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX + 0, TE_INVENTORY_FIRST_SLOT_INDEX + 1, false);
             }

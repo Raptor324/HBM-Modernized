@@ -13,10 +13,10 @@ import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.item.liquids.InfiniteFluidItem;
 
 //? if fabric {
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.storage.base.SingleVariantStorage;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
-//?}
+*///?}
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -27,10 +27,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 //? if forge {
-/*import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-*///?}
+//?}
 
 @SuppressWarnings("UnstableApiUsage")
 public class FluidTank implements Cloneable {
@@ -63,20 +63,20 @@ public class FluidTank implements Cloneable {
     // ══════════════════ Platform Storage Backings ══════════════════
 
     //? if forge {
-    /*protected final net.minecraftforge.fluids.capability.templates.FluidTank forgeStorage;
+    protected final net.minecraftforge.fluids.capability.templates.FluidTank forgeStorage;
     protected final LazyOptional<IFluidHandler> lazyFluidHandler;
-    *///?}
+    //?}
 
     //? if fabric {
-    public static final long DROPLETS_PER_MB = 81L;
+    /*public static final long DROPLETS_PER_MB = 81L;
     protected final SingleVariantStorage<FluidVariant> fabricStorage;
-    //?}
+    *///?}
 
     public FluidTank(int capacity) {
         this.capacity = capacity;
 
         //? if forge {
-        /*this.forgeStorage = new net.minecraftforge.fluids.capability.templates.FluidTank(capacity) {
+        this.forgeStorage = new net.minecraftforge.fluids.capability.templates.FluidTank(capacity) {
             @Override
             public boolean isFluidValid(FluidStack stack) {
                 return FluidTank.this.isFluidValid(stack.getFluid());
@@ -96,11 +96,11 @@ public class FluidTank implements Cloneable {
                 FluidTank.this.onContentsChanged();
             }
 
-            /^*
+            /**
              * При выдаче жидкости наружу приводим HBM-аналоги vanilla water/lava
              * обратно к minecraft:water / minecraft:lava, иначе ванильные вёдра
              * (и другие Forge-контейнеры) откажутся принимать drain.
-             ^/
+             */
             @Override
             public FluidStack drain(FluidStack resource, IFluidHandler.FluidAction action) {
                 FluidStack drained = super.drain(resource, action);
@@ -122,10 +122,10 @@ public class FluidTank implements Cloneable {
             }
         };
         this.lazyFluidHandler = LazyOptional.of(() -> forgeStorage);
-        *///?}
+        //?}
 
         //? if fabric {
-        this.fabricStorage = new SingleVariantStorage<FluidVariant>() {
+        /*this.fabricStorage = new SingleVariantStorage<FluidVariant>() {
             @Override
             protected FluidVariant getBlankVariant() { return FluidVariant.blank(); }
             @Override
@@ -135,7 +135,7 @@ public class FluidTank implements Cloneable {
             @Override
             protected void onFinalCommit() { FluidTank.this.onContentsChanged(); }
         };
-        //?}
+        *///?}
     }
 
     public FluidTank(Fluid type, int capacity) {
@@ -146,11 +146,11 @@ public class FluidTank implements Cloneable {
     public void onContentsChanged() {}
 
     //? if forge {
-    /*/^*
+    /**
      * Vanilla Forge {@link net.minecraftforge.fluids.capability.templates.FluidTank} смешивает только при совпадении
      * жидкости и NBT по {@link FluidStack#isFluidEqual(FluidStack)}; {@code minecraft:water} и {@code hbm_m:water} тогда блокируются.
      * Подменяем тип входящего стека на уже хранимый или на логический {@link #conformedFluid} при эквивалентности.
-     ^/
+     */
     private FluidStack harmonizeForgeFillResource(FluidStack storedFluid, FluidStack resource) {
         if (resource.isEmpty()) {
             return resource;
@@ -176,7 +176,7 @@ public class FluidTank implements Cloneable {
                 : resource;
     }
 
-    *///?}
+    //?}
 
     public boolean isFluidValid(Fluid fluid) {
         if (pressure != 0) return false;
@@ -189,20 +189,20 @@ public class FluidTank implements Cloneable {
     @NotNull
     public Fluid getStoredFluid() {
         //? if forge {
-        /*return forgeStorage.getFluid().isEmpty() ? Fluids.EMPTY : forgeStorage.getFluid().getFluid();
-        *///?}
+        return forgeStorage.getFluid().isEmpty() ? Fluids.EMPTY : forgeStorage.getFluid().getFluid();
+        //?}
         //? if fabric {
-        return fabricStorage.getResource().isBlank() ? Fluids.EMPTY : fabricStorage.getResource().getFluid();
-         //?}
+        /*return fabricStorage.getResource().isBlank() ? Fluids.EMPTY : fabricStorage.getResource().getFluid();
+         *///?}
     }
 
     public int getFluidAmountMb() {
         //? if forge {
-        /*return forgeStorage.getFluidAmount();
-        *///?}
+        return forgeStorage.getFluidAmount();
+        //?}
         //? if fabric {
-        return (int) (fabricStorage.getAmount() / DROPLETS_PER_MB);
-         //?}
+        /*return (int) (fabricStorage.getAmount() / DROPLETS_PER_MB);
+         *///?}
     }
 
     public int getCapacityMb() { return capacity; }
@@ -247,44 +247,44 @@ public class FluidTank implements Cloneable {
             this.conformedFluid = fluid;
         }
         //? if forge {
-        /*return forgeStorage.fill(new FluidStack(fluid, amountMb), IFluidHandler.FluidAction.EXECUTE);
-        *///?}
+        return forgeStorage.fill(new FluidStack(fluid, amountMb), IFluidHandler.FluidAction.EXECUTE);
+        //?}
         //? if fabric {
-        if (!isFluidValid(fluid)) return 0;
+        /*if (!isFluidValid(fluid)) return 0;
         try (Transaction tx = Transaction.openOuter()) {
             long inserted = fabricStorage.insert(FluidVariant.of(fluid), (long) amountMb * DROPLETS_PER_MB, tx);
             tx.commit();
             return (int) (inserted / DROPLETS_PER_MB);
         }
-        //?}
+        *///?}
     }
 
     public int drainMb(int amountMb) {
         if (amountMb <= 0) return 0;
         //? if forge {
-        /*return forgeStorage.drain(amountMb, IFluidHandler.FluidAction.EXECUTE).getAmount();
-        *///?}
+        return forgeStorage.drain(amountMb, IFluidHandler.FluidAction.EXECUTE).getAmount();
+        //?}
         //? if fabric {
-        try (Transaction tx = Transaction.openOuter()) {
+        /*try (Transaction tx = Transaction.openOuter()) {
             long extracted = fabricStorage.extract(fabricStorage.getResource(), (long) amountMb * DROPLETS_PER_MB, tx);
             tx.commit();
             return (int) (extracted / DROPLETS_PER_MB);
         }
-        //?}
+        *///?}
     }
 
     public int fillInternal(Fluid fluid, int amountMb) {
         if (amountMb <= 0 || fluid == Fluids.EMPTY || fluid == null) return 0;
         //? if forge {
-        /*return forgeStorage.fill(new FluidStack(fluid, amountMb), IFluidHandler.FluidAction.EXECUTE);
-        *///?}
+        return forgeStorage.fill(new FluidStack(fluid, amountMb), IFluidHandler.FluidAction.EXECUTE);
+        //?}
         //? if fabric {
-        try (Transaction tx = Transaction.openOuter()) {
+        /*try (Transaction tx = Transaction.openOuter()) {
             long inserted = fabricStorage.insert(FluidVariant.of(fluid), (long) amountMb * DROPLETS_PER_MB, tx);
             tx.commit();
             return (int) (inserted / DROPLETS_PER_MB);
         }
-        //?}
+        *///?}
     }
 
     public int drainInternal(int amountMb) {
@@ -293,10 +293,10 @@ public class FluidTank implements Cloneable {
 
     public void setFluid(Fluid fluid, int amountMb) {
         //? if forge {
-        /*forgeStorage.setFluid(fluid == Fluids.EMPTY || fluid == null ? FluidStack.EMPTY : new FluidStack(fluid, amountMb));
-        *///?}
+        forgeStorage.setFluid(fluid == Fluids.EMPTY || fluid == null ? FluidStack.EMPTY : new FluidStack(fluid, amountMb));
+        //?}
         //? if fabric {
-        // Важно для Fabric: variant и amount живут отдельно. Если оставить variant != blank при amount == 0,
+        /*// Важно для Fabric: variant и amount живут отдельно. Если оставить variant != blank при amount == 0,
         // то "пустой" бак будет считаться имеющим тип storedFluid, и conformedFluid (тип, заданный идентификатором)
         // не сможет переопределить отображение/логику после перезахода в мир.
         if (fluid == null || fluid == Fluids.EMPTY || amountMb <= 0) {
@@ -306,17 +306,17 @@ public class FluidTank implements Cloneable {
             fabricStorage.variant = FluidVariant.of(fluid);
             fabricStorage.amount = (long) amountMb * DROPLETS_PER_MB;
         }
-        //?}
+        *///?}
     }
 
     // ══════════════════ Capabilities Exposure ══════════════════
 
     //? if forge {
-    /*public LazyOptional<IFluidHandler> getCapability() { return lazyFluidHandler; }
-    *///?}
+    public LazyOptional<IFluidHandler> getCapability() { return lazyFluidHandler; }
+    //?}
     //? if fabric {
-    public SingleVariantStorage<FluidVariant> getStorage() { return fabricStorage; }
-     //?}
+    /*public SingleVariantStorage<FluidVariant> getStorage() { return fabricStorage; }
+     *///?}
 
     // ══════════════════ Legacy 1.7.10 Methods & Aliases ══════════════════
 
@@ -372,8 +372,8 @@ public class FluidTank implements Cloneable {
         int oldAmt = getFluidAmountMb();
         this.capacity = size;
         //? if forge {
-        /*forgeStorage.setCapacity(size);
-        *///?}
+        forgeStorage.setCapacity(size);
+        //?}
         if (oldAmt > size) {
             setFluid(getStoredFluid(), size);
             return oldAmt - size;
@@ -452,11 +452,11 @@ public class FluidTank implements Cloneable {
         nbt.putInt(prefix + "_amount", getFluidAmountMb());
         nbt.putInt(prefix + "_max", capacity);
         //? if forge {
-        /*ResourceLocation loc = BuiltInRegistries.FLUID.getKey(getConfiguredFluid());
-        *///?}
-        //? if fabric {
         ResourceLocation loc = BuiltInRegistries.FLUID.getKey(getConfiguredFluid());
-         //?}
+        //?}
+        //? if fabric {
+        /*ResourceLocation loc = BuiltInRegistries.FLUID.getKey(getConfiguredFluid());
+         *///?}
         nbt.putString(prefix + "_type", loc != null ? loc.toString() : "minecraft:empty");
         nbt.putShort(prefix + "_p", (short) pressure);
     }
@@ -466,43 +466,43 @@ public class FluidTank implements Cloneable {
         int amt = nbt.getInt(prefix + "_amount");
         capacity = nbt.getInt(prefix + "_max");
         //? if forge {
-        /*forgeStorage.setCapacity(capacity);
-        *///?}
+        forgeStorage.setCapacity(capacity);
+        //?}
 
         String typeIdStr = nbt.getString(prefix + "_type");
         //? if forge {
-        /*Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(typeIdStr));
-        Fluid resolved = (f != null) ? f : Fluids.EMPTY;
-        this.conformedFluid = resolved;
-        setFluid(resolved, amt);
-        *///?}
-        //? if fabric {
         Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(typeIdStr));
         Fluid resolved = (f != null) ? f : Fluids.EMPTY;
         this.conformedFluid = resolved;
         setFluid(resolved, amt);
         //?}
+        //? if fabric {
+        /*Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(typeIdStr));
+        Fluid resolved = (f != null) ? f : Fluids.EMPTY;
+        this.conformedFluid = resolved;
+        setFluid(resolved, amt);
+        *///?}
         pressure = nbt.getShort(prefix + "_p");
     }
 
     public CompoundTag writeNBT(CompoundTag tag) {
         //? if forge {
-        /*forgeStorage.writeToNBT(tag);
-        *///?}
+        forgeStorage.writeToNBT(tag);
+        //?}
         //? if fabric {
-        FluidVariant variant = fabricStorage.getResource();
+        /*FluidVariant variant = fabricStorage.getResource();
         if (!variant.isBlank()) {
             tag.merge(variant.toNbt());
             tag.putLong("Amount", fabricStorage.getAmount());
         }
-        //?}
+        *///?}
         if (conformedFluid != Fluids.EMPTY) {
             //? if forge {
-            /*ResourceLocation loc = BuiltInRegistries.FLUID.getKey(conformedFluid);
-            *///?}
-            //? if fabric {
             ResourceLocation loc = BuiltInRegistries.FLUID.getKey(conformedFluid);
-             //?}
+            //?}
+            //? if fabric {
+            /*ResourceLocation loc = BuiltInRegistries.FLUID.getKey(conformedFluid);
+             *///?}
             if (loc != null) tag.putString("ConformedFluid", loc.toString());
         }
         tag.putShort("Pressure", (short) pressure);
@@ -511,10 +511,10 @@ public class FluidTank implements Cloneable {
 
     public void readNBT(CompoundTag tag) {
         //? if forge {
-        /*forgeStorage.readFromNBT(tag);
-        *///?}
+        forgeStorage.readFromNBT(tag);
+        //?}
         //? if fabric {
-        try (Transaction tx = Transaction.openOuter()) {
+        /*try (Transaction tx = Transaction.openOuter()) {
             FluidVariant cur = fabricStorage.getResource();
             long curAmt = fabricStorage.getAmount();
             if (!cur.isBlank() && curAmt > 0) {
@@ -530,14 +530,14 @@ public class FluidTank implements Cloneable {
             }
             tx.commit();
         }
-        //?}
+        *///?}
         if (tag.contains("ConformedFluid")) {
             //? if forge {
-            /*Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(tag.getString("ConformedFluid")));
-            *///?}
-            //? if fabric {
             Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(tag.getString("ConformedFluid")));
-             //?}
+            //?}
+            //? if fabric {
+            /*Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(tag.getString("ConformedFluid")));
+             *///?}
             conformedFluid = f != null ? f : Fluids.EMPTY;
         } else {
             conformedFluid = Fluids.EMPTY;
@@ -551,13 +551,13 @@ public class FluidTank implements Cloneable {
         buf.writeInt(getFluidAmountMb());
         buf.writeInt(capacity);
         //? if forge {
-        /*ResourceLocation loc = BuiltInRegistries.FLUID.getKey(getStoredFluid());
-        ResourceLocation cLoc = BuiltInRegistries.FLUID.getKey(conformedFluid);
-        *///?}
-        //? if fabric {
         ResourceLocation loc = BuiltInRegistries.FLUID.getKey(getStoredFluid());
         ResourceLocation cLoc = BuiltInRegistries.FLUID.getKey(conformedFluid);
-         //?}
+        //?}
+        //? if fabric {
+        /*ResourceLocation loc = BuiltInRegistries.FLUID.getKey(getStoredFluid());
+        ResourceLocation cLoc = BuiltInRegistries.FLUID.getKey(conformedFluid);
+         *///?}
         buf.writeResourceLocation(loc != null ? loc : ResourceLocation.tryParse("minecraft:empty"));
         buf.writeResourceLocation(cLoc != null ? cLoc : ResourceLocation.tryParse("minecraft:empty"));
         buf.writeShort((short) pressure);
@@ -567,14 +567,14 @@ public class FluidTank implements Cloneable {
         int amt = buf.readInt();
         this.capacity = buf.readInt();
         //? if forge {
-        /*forgeStorage.setCapacity(this.capacity);
+        forgeStorage.setCapacity(this.capacity);
         Fluid f = BuiltInRegistries.FLUID.get(buf.readResourceLocation());
         this.conformedFluid = BuiltInRegistries.FLUID.get(buf.readResourceLocation());
-        *///?}
+        //?}
         //? if fabric {
-        Fluid f = BuiltInRegistries.FLUID.get(buf.readResourceLocation());
+        /*Fluid f = BuiltInRegistries.FLUID.get(buf.readResourceLocation());
         this.conformedFluid = BuiltInRegistries.FLUID.get(buf.readResourceLocation());
-         //?}
+         *///?}
         Fluid resolved = (f != null) ? f : Fluids.EMPTY;
         setFluid(resolved, amt);
         pressure = buf.readShort();
@@ -624,21 +624,21 @@ public class FluidTank implements Cloneable {
     }
 
     //? if forge {
-    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-            *///?}
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+            //?}
             //? if fabric {
-    @net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-     //?}
+    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+     *///?}
     public void renderTank(net.minecraft.client.gui.GuiGraphics guiGraphics, int x, int y, int width, int height) {
         renderTank(guiGraphics, x, y, width, height, 0);
     }
 
     //? if forge {
-    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-            *///?}
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+            //?}
             //? if fabric {
-    @net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-     //?}
+    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+     *///?}
     public void renderTank(net.minecraft.client.gui.GuiGraphics guiGraphics, int x, int y, int width, int height, int orientation) {
         Fluid drawType = getConfiguredFluid();
         int fluidAmt = getFluidAmountMb();
@@ -651,11 +651,11 @@ public class FluidTank implements Cloneable {
         float b = (fluidColor & 255) / 255.0F;
 
         //? if forge {
-        /*dev.architectury.fluid.FluidStack fStack = dev.architectury.fluid.FluidStack.create(drawType, fluidAmt);
-        *///?}
-        //? if fabric {
         dev.architectury.fluid.FluidStack fStack = dev.architectury.fluid.FluidStack.create(drawType, fluidAmt);
-         //?}
+        //?}
+        //? if fabric {
+        /*dev.architectury.fluid.FluidStack fStack = dev.architectury.fluid.FluidStack.create(drawType, fluidAmt);
+         *///?}
 
         ResourceLocation fluidPng = com.hbm_m.client.gui.FluidGuiRendering.guiTexturePngForFluid(drawType, fStack);
         if (fluidPng == null) return;
@@ -683,11 +683,11 @@ public class FluidTank implements Cloneable {
     }
 
     //? if forge {
-    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-            *///?}
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+            //?}
             //? if fabric {
-    @net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-     //?}
+    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+     *///?}
     public void renderTankInfo(net.minecraft.client.gui.GuiGraphics guiGraphics, net.minecraft.client.gui.Font font, int mouseX, int mouseY, int x, int y, int width, int height) {
         if (!(mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height)) return;
 

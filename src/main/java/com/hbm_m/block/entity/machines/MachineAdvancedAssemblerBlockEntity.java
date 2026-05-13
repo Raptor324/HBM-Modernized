@@ -40,24 +40,24 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.DistExecutor;
-*///?}
+//?}
 
 //? if fabric {
-import net.fabricmc.api.EnvType;
+/*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import team.reborn.energy.api.EnergyStorage;
 import com.hbm_m.client.machine.AdvancedAssemblerClientTicker;
-//?}
+*///?}
 /**
  * Advanced Assembler Block Entity:
  * - Наследование от BaseMachineBlockEntity
@@ -92,9 +92,9 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     };
 
     //? if forge {
-    /*protected LazyOptional<IFluidHandler> fluidInputHandler = LazyOptional.empty();
+    protected LazyOptional<IFluidHandler> fluidInputHandler = LazyOptional.empty();
     protected LazyOptional<IFluidHandler> fluidOutputHandler = LazyOptional.empty();
-    *///?}
+    //?}
 
     /** Разрешённые стороны прямого подключения к контроллеру (пусто = все). */
     private java.util.Set<Direction> allowedEnergySides = java.util.EnumSet.noneOf(Direction.class);
@@ -121,7 +121,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     // Клиентский тикер (ленивая инициализация на клиенте) — тип Object, чтобы сервер не резолвил AdvancedAssemblerClientTicker
     //? if forge {
-    /*private static Object newAdvAssemblerClientTickerInstance() {
+    private static Object newAdvAssemblerClientTickerInstance() {
         try {
             return Class.forName("com.hbm_m.client.machine.AdvancedAssemblerClientTicker").getDeclaredConstructor().newInstance();
         } catch (ReflectiveOperationException e) {
@@ -133,11 +133,11 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             () -> () -> LazyOptional.of(MachineAdvancedAssemblerBlockEntity::newAdvAssemblerClientTickerInstance),
             () -> () -> LazyOptional.empty()
     );
-    *///?}
-    //? if fabric {
-    @Nullable
-    private AdvancedAssemblerClientTicker clientTicker;
     //?}
+    //? if fabric {
+    /*@Nullable
+    private AdvancedAssemblerClientTicker clientTicker;
+    *///?}
 
     // ContainerData: упаковываем long как два int через LongDataPacker
     protected final ContainerData data = new ContainerData() {
@@ -194,9 +194,9 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     @Override
     protected void setupFluidCapability() {
         //? if forge {
-        /*fluidInputHandler = inputTank.getCapability();
+        fluidInputHandler = inputTank.getCapability();
         fluidOutputHandler = outputTank.getCapability();
-        *///?}
+        //?}
     }
 
     // Ограничиваем валидность слотов
@@ -280,12 +280,12 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineAdvancedAssemblerBlockEntity entity) {
         if (level.isClientSide) {
             //? if forge {
-            /*entity.clientTicker.ifPresent(ticker -> invokeAdvAssemblerClientTick(ticker, level, pos, state, entity));
-            *///?}
-            //? if fabric {
-            if (entity.clientTicker == null) entity.clientTicker = new AdvancedAssemblerClientTicker();
-            entity.clientTicker.clientTick(level, pos, state, entity);
+            entity.clientTicker.ifPresent(ticker -> invokeAdvAssemblerClientTick(ticker, level, pos, state, entity));
             //?}
+            //? if fabric {
+            /*if (entity.clientTicker == null) entity.clientTicker = new AdvancedAssemblerClientTicker();
+            entity.clientTicker.clientTick(level, pos, state, entity);
+            *///?}
         } else {
             entity.serverTick();
         }
@@ -443,7 +443,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         }
 
         //? if forge {
-        /*energySourceStack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
+        energySourceStack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
             long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
             if (energyNeeded <= 0) return;
 
@@ -455,10 +455,10 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
                 setChanged();
             }
         });
-        *///?}
+        //?}
 
         //? if fabric {
-        var itemEnergy = EnergyStorage.ITEM.find(energySourceStack, null);
+        /*var itemEnergy = EnergyStorage.ITEM.find(energySourceStack, null);
         if (itemEnergy == null) return;
 
         long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
@@ -474,7 +474,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
                 tx.commit();
             }
         }
-        //?}
+        *///?}
     }
 
     // Рецепты и ghost-предметы
@@ -698,7 +698,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     // Capability: используем базовые item/energy/fluids, плюс локальные хэндлеры флюидов
     //? if forge {
-    /*@Override
+    @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
             return itemHandler.cast();
@@ -730,10 +730,10 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         }
         return super.getCapability(cap, side);
     }
-    *///?}
+    //?}
 
     //? if fabric {
-    @Nullable
+    /*@Nullable
     public Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
         if (side != null) {
             if (fluidSidesFromMultiblockStructure) {
@@ -744,7 +744,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         if (side == Direction.UP) return outputTank.getStorage();
         return inputTank.getStorage();
     }
-    //?}
+    *///?}
 
     @Override
     public void setAllowedEnergySides(java.util.Set<Direction> sides) {
@@ -780,42 +780,42 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public void onLoad() {
         super.onLoad();
         if (level != null && !level.isClientSide && assemblerModule == null) {
             this.assemblerModule = new MachineModuleAdvancedAssembler(0, this, this.inventory, this.level);
         }
     }
-    *///?}
+    //?}
 
     //? if forge {
-    /*@Override
+    @Override
     public void invalidateCaps() {
         super.invalidateCaps();
         fluidInputHandler.invalidate();
         fluidOutputHandler.invalidate();
         clientTicker.invalidate();
     }
-    *///?}
+    //?}
 
     @Override
     public void setRemoved() {
         //? if forge {
-        /*if (level != null && level.isClientSide) {
+        if (level != null && level.isClientSide) {
             clientTicker.ifPresent(MachineAdvancedAssemblerBlockEntity::invokeAdvAssemblerClientTickerOnRemoved);
         }
-        *///?}
+        //?}
         //? if fabric {
-        if (level != null && level.isClientSide && clientTicker != null) {
+        /*if (level != null && level.isClientSide && clientTicker != null) {
             clientTicker.onRemoved();
         }
-        //?}
+        *///?}
         super.setRemoved();
     }
 
     //? if fabric {
-    @Environment(EnvType.CLIENT)
+    /*@Environment(EnvType.CLIENT)
     public float getRingAngle() {
         return clientTicker != null ? clientTicker.getRingAngle() : 0;
     }
@@ -829,10 +829,10 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     public AdvancedAssemblerClientTicker.AssemblerArm[] getArms() {
         return clientTicker != null ? clientTicker.getArms() : new AdvancedAssemblerClientTicker.AssemblerArm[0];
     }
-    //?}
+    *///?}
 
     //? if forge {
-    /*@OnlyIn(Dist.CLIENT)
+    @OnlyIn(Dist.CLIENT)
     public float getRingAngle() {
         if (!clientTicker.isPresent()) {
             return 0f;
@@ -879,7 +879,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             throw new RuntimeException(e);
         }
     }
-    *///?}
+    //?}
 
     @Override
     protected void ensureNetworkInitialized() {

@@ -1,5 +1,5 @@
 //? if fabric {
-package com.hbm_m.client.model.loading;
+/*package com.hbm_m.client.model.loading;
 
 import java.util.Map;
 
@@ -43,11 +43,11 @@ public interface ForgeLikeUnbakedModel extends UnbakedModel {
         }
     }
 
-    /**
+    /^*
      * Textures map from JSON ("textures": {"particle": "...", "default": "..."}).
      * Kept so OBJ material references like {@code map_Kd #default} can resolve.
-     */
+     ^/
     Map<String, ResourceLocation> textures();
 }
-//?}
+*///?}
 

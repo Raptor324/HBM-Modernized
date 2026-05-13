@@ -12,12 +12,12 @@ import net.minecraft.resources.ResourceLocation;
 public final class RadawayEffectRenderer {
 
     //? if fabric && < 1.21.1 {
-    public static final ResourceLocation POTIONS_SHEET =
-            new ResourceLocation(RefStrings.MODID, "textures/gui/potions.png");
-    //?} else {
     /*public static final ResourceLocation POTIONS_SHEET =
+            new ResourceLocation(RefStrings.MODID, "textures/gui/potions.png");
+    *///?} else {
+    public static final ResourceLocation POTIONS_SHEET =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/potions.png");
-    *///?}
+    //?}
 
     // Координаты иконки на спрайт-листе
     public static final int U         = 18;

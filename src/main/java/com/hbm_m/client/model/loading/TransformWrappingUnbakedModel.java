@@ -1,5 +1,5 @@
 //? if fabric {
-package com.hbm_m.client.model.loading;
+/*package com.hbm_m.client.model.loading;
 
 import java.util.Collection;
 import java.util.Map;
@@ -54,5 +54,5 @@ final class TransformWrappingUnbakedModel implements ForgeLikeUnbakedModel {
         return new BakedModelTransformOverride(baked, overrideTransforms);
     }
 }
-//?}
+*///?}
 

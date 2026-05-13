@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 //? if fabric {
-import com.hbm_m.client.model.FabricRenderDataBridge;
+/*import com.hbm_m.client.model.FabricRenderDataBridge;
 
 import net.fabricmc.fabric.api.rendering.data.v1.RenderAttachedBlockView;
 
@@ -36,4 +36,4 @@ public class SodiumBlockRendererMixin {
         FabricRenderDataBridge.clear();
     }
 }
-//?}
+*///?}

@@ -1,0 +1,17 @@
+{
+  "loader": "forge:obj",
+  "model": "hbm_m:models/block/radar.obj",
+  "flip_v": true,
+  "render_type": "minecraft:solid",
+  "textures": {
+    "particle": "hbm_m:block/machine/radar_dish",
+    "default": "hbm_m:block/machine/radar_dish"
+  },
+  "transform": {
+    "translation": [0.5, 0, 0.5]
+  },
+  "visibility": {
+    "Dish": true,
+    "Base": false
+  }
+}

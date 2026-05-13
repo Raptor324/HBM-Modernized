@@ -13,16 +13,16 @@ import com.hbm_m.recipe.PressRecipe;
 import com.hbm_m.sound.ModSounds;
 
 //? if forge {
-/*import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-*///?}
+//?}
 //? if fabric {
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;//?}
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -121,7 +121,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         // Пресс НЕ является частью энергетической сети и не должен цепляться проводами/заряжаться.
         if (cap == ModCapabilities.HBM_ENERGY_PROVIDER
@@ -132,7 +132,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         }
         return super.getCapability(cap, side);
     }
-    *///?}
+    //?}
 
 
     
@@ -265,10 +265,10 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         }
     }
 //? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
+//?}
 //? if fabric {
-@Environment(EnvType.CLIENT)//?}
+/*@Environment(EnvType.CLIENT)*///?}
     private void clientTick() {
         float target = convertPressToProgress();
         if (!clientPressInitialized) {
@@ -280,10 +280,10 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         visualPressPosition = Mth.lerp(0.25F, visualPressPosition, target);
     }
 //? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
+//?}
 //? if fabric {
-@Environment(EnvType.CLIENT)//?}
+/*@Environment(EnvType.CLIENT)*///?}
     public float getPressAnimationProgress(float partialTick) {
         float interpolated = Mth.lerp(partialTick, prevVisualPressPosition, visualPressPosition);
         return Mth.clamp(interpolated, 0.0F, 1.0F);

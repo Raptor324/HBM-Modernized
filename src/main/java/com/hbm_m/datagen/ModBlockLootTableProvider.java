@@ -1,6 +1,6 @@
 package com.hbm_m.datagen;
 //? if forge {
-/*import java.util.ArrayList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -338,11 +338,11 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 );
         this.add(block, tableBuilder);
     }
-    /^*
+    /**
      * Руда тип 1:
      * - При Silk Touch дропает блок руды.
      * - Иначе дропает сырьё с учетом Fortune и Explosion decay.
-     ^/
+     */
     private void dropOreType1(Block block, Block silkTouchDrop, net.minecraft.world.item.Item normalDrop) {
         LootTable.Builder tableBuilder = LootTable.lootTable()
                 .withPool(
@@ -374,11 +374,11 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         this.add(block, tableBuilder);
     }
 
-    /^*
+    /**
      * Руда тип 2:
      * - При Silk Touch дропает блок руды.collections
      * - Иначе дропает сырьё с set_count (от min до max), Fortune и Explosion decay.
-     ^/
+     */
     private void dropOreType2(Block block, Block silkTouchDrop,
                               net.minecraft.world.item.Item normalDrop,
                               float minCount, float maxCount) {
@@ -424,4 +424,4 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         return list;
     }
 }
-*///?}
+//?}

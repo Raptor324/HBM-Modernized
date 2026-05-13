@@ -1,13 +1,13 @@
 //? if forge {
-/*package com.hbm_m.client;
+package com.hbm_m.client;
 
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
-/^*
+/**
  * Forge-only event wiring for {@link ClientRenderHandler}.
- ^/
+ */
 public final class ClientRenderHandlerForge {
     private ClientRenderHandlerForge() {}
 
@@ -25,5 +25,5 @@ public final class ClientRenderHandlerForge {
         ClientRenderHandler.onRenderWorldLate(mc.renderBuffers().bufferSource(), event.getPoseStack(), cameraPos);
     }
 }
-*///?}
+//?}
 

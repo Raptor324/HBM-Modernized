@@ -8,9 +8,9 @@ import net.minecraft.world.level.biome.Biome;
 
 //? if !fabric {
 
-/*import dev.architectury.registry.registries.DeferredRegister;
+import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
-*///?}
+//?}
 
 /**
  * Ключи биомов кратера для кода (смазывание, подмена биомов при взрывах и т.д.).
@@ -30,27 +30,27 @@ public class ModBiomes {
             ResourceKey.create(
                     Registries.BIOME,
                     //? if fabric && < 1.21.1 {
-                    new ResourceLocation(MainRegistry.MOD_ID, "inner_crater")
-                    //?} else {
+                    /*new ResourceLocation(MainRegistry.MOD_ID, "inner_crater")
+                    *///?} else {
 
-                    /*ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "inner_crater")
-                    *///?}
+                    ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "inner_crater")
+                    //?}
                     );
 
     public static final ResourceKey<Biome> OUTER_CRATER_KEY =
             ResourceKey.create(
                     Registries.BIOME,
                     //? if fabric && < 1.21.1 {
-                    new ResourceLocation(MainRegistry.MOD_ID, "outer_crater")
-                    //?} else {
+                    /*new ResourceLocation(MainRegistry.MOD_ID, "outer_crater")
+                    *///?} else {
 
-                    /*ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "outer_crater")
-                    *///?}
+                    ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "outer_crater")
+                    //?}
                     );
 
     //? if !fabric {
 
-    /*public static final DeferredRegister<Biome> BIOMES =
+    public static final DeferredRegister<Biome> BIOMES =
             DeferredRegister.create(MainRegistry.MOD_ID, Registries.BIOME);
 
     public static final RegistrySupplier<Biome> INNER_CRATER = BIOMES.register(
@@ -62,12 +62,12 @@ public class ModBiomes {
             "outer_crater",
             CraterBiomes::createOuterCraterBiome
     );
-    *///?}
+    //?}
 
     public static void init() {
         //? if !fabric {
 
-        /*BIOMES.register();
-        *///?}
+        BIOMES.register();
+        //?}
     }
 }

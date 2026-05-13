@@ -10,26 +10,26 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import com.hbm_m.main.MainRegistry;
-*///?}
+//?}
 
 import java.util.List;
 
 //? if forge {
-/*@Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-*///?}
+@Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+//?}
 public class ArmorModificationClientEvents {
 
     //? if forge {
-    /*@SubscribeEvent
+    @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         init();
     }
-    *///?}
+    //?}
 
     public static void init() {
         ClientTooltipEvent.ITEM.register(ArmorModificationClientEvents::onArmorTooltip);

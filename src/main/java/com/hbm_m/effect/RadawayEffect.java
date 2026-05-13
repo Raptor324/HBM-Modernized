@@ -15,8 +15,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.function.Consumer;
 
 //? if forge {
-/*import net.minecraftforge.client.extensions.common.IClientMobEffectExtensions;
-*///?}
+import net.minecraftforge.client.extensions.common.IClientMobEffectExtensions;
+//?}
 
 public class RadawayEffect extends MobEffect {
 
@@ -42,7 +42,7 @@ public class RadawayEffect extends MobEffect {
     // На Fabric рендеринг делается через Mixin (см. MixinEffectRenderingInventoryScreen,
     // MixinGui) — они вызывают RadawayEffectRenderer напрямую.
     //? if forge {
-    /*@Override
+    @Override
     public void initializeClient(@NotNull Consumer<IClientMobEffectExtensions> consumer) {
         consumer.accept(new IClientMobEffectExtensions() {
 
@@ -63,5 +63,5 @@ public class RadawayEffect extends MobEffect {
             }
         });
     }
-    *///?}
+    //?}
 }

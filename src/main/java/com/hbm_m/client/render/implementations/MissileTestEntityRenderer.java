@@ -35,10 +35,10 @@ public class MissileTestEntityRenderer extends EntityRenderer<MissileTestEntity>
     public ResourceLocation getTextureLocation(MissileTestEntity entity) {
         // Текстура не используется до добавления модели
         //? if fabric && < 1.21.1 {
-        return new ResourceLocation("minecraft", "textures/block/iron_block.png");
-        //?} else {
-                /*return ResourceLocation.fromNamespaceAndPath("minecraft", "textures/block/iron_block.png");
-        *///?}
+        /*return new ResourceLocation("minecraft", "textures/block/iron_block.png");
+        *///?} else {
+                return ResourceLocation.fromNamespaceAndPath("minecraft", "textures/block/iron_block.png");
+        //?}
 
     }
 }

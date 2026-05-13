@@ -15,13 +15,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-*///?}
-//? if fabric {
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 //?}
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+*///?}
 
 /**
  * Рендерит 3D модель двери с выбранным скином в GUI.
@@ -32,10 +32,10 @@ import net.fabricmc.api.Environment;
  * ItemRenderer.render() с подменённой моделью.
  */
 //? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
+//?}
 //? if fabric {
-@Environment(EnvType.CLIENT)//?}
+/*@Environment(EnvType.CLIENT)*///?}
 public final class DoorModelFakeItemRenderer {
 
     private static final float ICON_SCALE = 0.9f;

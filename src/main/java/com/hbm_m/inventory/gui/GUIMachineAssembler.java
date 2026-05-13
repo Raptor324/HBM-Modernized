@@ -24,10 +24,10 @@ public class GUIMachineAssembler extends GuiInfoScreen<MachineAssemblerMenu> {
 
     private static final ResourceLocation TEXTURE =
             //? if fabric && < 1.21.1 {
-            new ResourceLocation(RefStrings.MODID, "textures/gui/gui_assembler.png");
-            //?} else {
-                        /*ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_assembler.png");
-            *///?}
+            /*new ResourceLocation(RefStrings.MODID, "textures/gui/gui_assembler.png");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_assembler.png");
+            //?}
 
     
     // Константа для корректного индекса слота шаблона

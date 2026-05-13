@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.assets;
 //? if forge {
-/*// Провайдер генерации состояний блоков и моделей для блоков мода.
+// Провайдер генерации состояний блоков и моделей для блоков мода.
 // Используется в классе DataGenerators для регистрации.
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.decorations.DoorBlock;
@@ -9,18 +9,18 @@ import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.machines.MachineAssemblerBlock;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.block.machines.MachineWoodBurnerBlock;
+import com.hbm_m.client.model.MachineChemicalPlantBakedModel;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.multiblock.PartRole;
 
+import com.hbm_m.util.MultipartFacingTransforms;
 import net.minecraft.core.Direction;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.SlabBlock;
-import net.minecraft.world.level.block.SnowLayerBlock;
-import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraftforge.client.model.generators.BlockStateProvider;
@@ -29,7 +29,6 @@ import net.minecraftforge.client.model.generators.VariantBlockStateBuilder;
 import net.minecraftforge.common.data.ExistingFileHelper;
 
 import dev.architectury.registry.registries.RegistrySupplier;
-
 public class ModBlockStateProvider extends BlockStateProvider {
 
     private final ExistingFileHelper existingFileHelper;
@@ -148,6 +147,15 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.SELLAFIELD_SLAKED2);
         blockWithItem(ModBlocks.SELLAFIELD_SLAKED3);
         blockWithItem(ModBlocks.FREAKY_ALIEN_BLOCK);
+
+        // Connected textures blocks (настоящий CT рендерится через BakedModel wrapper).
+        registerDecoCtBlock(ModBlocks.DECO_STEEL, "deco_steel");
+        registerDecoCtBlock(ModBlocks.DECO_RUSTY_STEEL, "deco_rusty_steel");
+        registerDecoCtBlock(ModBlocks.DECO_TUNGSTEN, "deco_tungsten");
+        registerDecoCtBlock(ModBlocks.DECO_RED_COPPER, "deco_red_copper");
+        registerDecoCtBlock(ModBlocks.DECO_ALUMINUM, "deco_aluminum");
+        registerDecoCtBlock(ModBlocks.DECO_BERYLLIUM, "deco_beryllium");
+        registerDecoCtBlock(ModBlocks.DECO_LEAD, "deco_lead");
 
         // Модель для ядерных осадков
         // Эта функция автоматически создаст все 8 состояний высоты для блока
@@ -419,13 +427,41 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         // Machines
         customMachineBlock(ModBlocks.CRYSTALLIZER);
-        registerChemicalPlantBlock(ModBlocks.CHEMICAL_PLANT);
+        customMachineBlock(ModBlocks.CHEMICAL_PLANT);
         customMachineBlock(ModBlocks.HYDRAULIC_FRACKINING_TOWER);
+        customMachineBlock(ModBlocks.COOLING_TOWER);
+        customMachineBlock(ModBlocks.TOWER_SMALL);
+        customMachineBlock(ModBlocks.CYCLOTRON);
+        customMachineBlock(ModBlocks.ZIRNOX);
+        customMachineBlock(ModBlocks.ARC_WELDER);
+        customMachineBlock(ModBlocks.SOLDERING_STATION);
+        customMachineBlock(ModBlocks.MIXER);
+        customMachineBlock(ModBlocks.DERRICK);
+        customMachineBlock(ModBlocks.RBMK_CONSOLE);
+        customMachineBlock(ModBlocks.FLARE_STACK);
+        customMachineBlock(ModBlocks.PUMPJACK);
+        customMachineBlock(ModBlocks.RADAR);
+        customMachineBlock(ModBlocks.LARGE_RADAR);
+        customMachineBlock(ModBlocks.CRACKING_TOWER);
+        customMachineBlock(ModBlocks.FRACTION_TOWER);
+        customMachineBlock(ModBlocks.MINING_DRILL);
+        customMachineBlock(ModBlocks.FEL);
+        customMachineBlock(ModBlocks.SILEX);
+        simpleMachineBlock(ModBlocks.FOUNDRY_BASIN);
         customMachineBlock(ModBlocks.CENTRIFUGE);
+        customMachineBlock(ModBlocks.BREEDER);
+        customMachineBlock(ModBlocks.LARGE_PYLON);
         customMachineBlock(ModBlocks.LAUNCH_PAD);
         customMachineBlock(ModBlocks.LAUNCH_PAD_RUSTED);
         customBombBlock(ModBlocks.NUKE_FAT_MAN);
+        customMachineBlock(ModBlocks.CORE_EMITTER);
+        customMachineBlock(ModBlocks.CORE_INJECTOR);
+        customMachineBlock(ModBlocks.CORE_RECEIVER);
+        customMachineBlock(ModBlocks.VACUUM_DISTILL);
+        customMachineBlock(ModBlocks.TURBOFAN);
         customMachineBlock(ModBlocks.INDUSTRIAL_TURBINE);
+        customMachineBlock(ModBlocks.TURBINE);
+        customMachineBlock(ModBlocks.SUBSTATION);
         registerMachineAssemblerBlock(ModBlocks.MACHINE_ASSEMBLER);
         registerAdvancedAssemblyMachineBlock(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
         customMachineBlock(ModBlocks.PRESS);
@@ -462,12 +498,19 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlock(ModBlocks.FLUID_EXHAUST.get(), fluidExhaustModel);
 
         // Decor
+        customObjBlock(ModBlocks.REBAR);
+
+        // Decor
         customObjBlock(ModBlocks.CRT_BROKEN);
         customObjBlock(ModBlocks.CRT_BSOD);
         customObjBlock(ModBlocks.CRT_CLEAN);
+        customObjBlock(ModBlocks.STEEL_POLE);
+        customObjBlock(ModBlocks.ANTENNA_TOP);
+        customObjBlock(ModBlocks.PUTER);
         customObjBlock(ModBlocks.GEIGER_COUNTER_BLOCK);
         customObjBlock(ModBlocks.TAPE_RECORDER);
         customObjBlock(ModBlocks.TOASTER);
+        customObjBlock(ModBlocks.DECO_STEEL_SCAFFOLD);
 
         // Other
         customObjBlock(ModBlocks.AIRBOMB);
@@ -488,6 +531,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlock(ModBlocks.DUD_SALTED);
         simpleBlockWithItem(ModBlocks.MINE_AP.get(), models().getExistingFile(modLoc("block/mine_ap")));
         simpleBlockWithItem(ModBlocks.MINE_FAT.get(), models().getExistingFile(modLoc("block/mine_fat")));
+        customObjBlock(ModBlocks.NAVAL_MINE);
         customObjBlock(ModBlocks.CRATE_CONSERVE);
         customObjBlock(ModBlocks.FILE_CABINET);
 
@@ -1167,10 +1211,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         oreWithItem(ModBlocks.SEQUESTRUM_ORE);
     }
 
-    /^*
+    /**
      * Метод для блоков, у которых текстура имеет префикс "block_".
      * Например, для блока с именем "uranium_block" он будет искать текстуру "block_uranium".
-     ^/
+     */
     private void resourceBlockWithItem(RegistrySupplier<Block> blockObject) {
         // 1. Получаем регистрационное имя (теперь оно уже "block_uranium")
         String registrationName = blockObject.getId().getPath();
@@ -1181,7 +1225,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         // 4. Проверяем существование текстуры
         ResourceLocation textureLocation = modLoc("textures/block/" + textureName + ".png");
-        if (!existingFileHelper.exists(textureLocation, net.minecraft.server.packs.PackType.CLIENT_RESOURCES)) {
+        if (!existingFileHelper.exists(textureLocation, PackType.CLIENT_RESOURCES)) {
             MainRegistry.LOGGER.warn("Texture not found for block {}: {}. Skipping model generation.",
                     registrationName, textureLocation);
             return;
@@ -1203,11 +1247,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
         String textureName = "ore_" + registrationName;
         ResourceLocation textureLocation = modLoc("textures/block/" + textureName + ".png");
 
-        if (!existingFileHelper.exists(textureLocation, net.minecraft.server.packs.PackType.CLIENT_RESOURCES)) {
+        if (!existingFileHelper.exists(textureLocation, PackType.CLIENT_RESOURCES)) {
             // Пробуем без префикса "ore_"
             textureName = registrationName;
             textureLocation = modLoc("textures/block/" + textureName + ".png");
-            if (!existingFileHelper.exists(textureLocation, net.minecraft.server.packs.PackType.CLIENT_RESOURCES)) {
+            if (!existingFileHelper.exists(textureLocation, PackType.CLIENT_RESOURCES)) {
                 MainRegistry.LOGGER.warn("Texture not found for block {} (tried: {} and {}). Skipping model generation.",
                         registrationName, "ore_" + registrationName, registrationName);
                 return;
@@ -1221,12 +1265,22 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(blockObject.get(), models().getExistingFile(modLoc("block/" + textureName)));
     }
 
-    /^*
+    /**
      * Старый метод для блоков, у которых имя текстуры СОВПАДАЕТ с именем регистрации.
-     ^/
+     */
     private void blockWithItem(RegistrySupplier<Block> blockObject) {
         simpleBlock(blockObject.get());
         simpleBlockItem(blockObject.get(), models().getExistingFile(blockTexture(blockObject.get())));
+    }
+
+    private void registerDecoCtBlock(RegistrySupplier<Block> blockObject, String name) {
+        // Важно: добавляем ссылку на *_ct текстуру в JSON, чтобы она гарантированно попала в block atlas.
+        ModelFile model = models().withExistingParent(name, mcLoc("block/cube_all"))
+                .texture("all", modLoc("block/" + name))
+                .texture("ct", modLoc("block/" + name + "_ct"))
+                .texture("particle", modLoc("block/" + name));
+        simpleBlock(blockObject.get(), model);
+        simpleBlockItem(blockObject.get(), model);
     }
 
 
@@ -1243,10 +1297,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
     }
 
 
-    /^*
+    /**
      * Генерирует состояние для блока с кастомной OBJ моделью.
      * ВАЖНО: Сам файл модели (.json) должен быть создан вручную в /resources!
-     ^/
+     */
     private <T extends Block> void customObjBlock(RegistrySupplier<T> blockObject) {
         // Создаём только blockstate, который ссылается на JSON модель
         // JSON модель должна лежать в resources/assets/hbm_m/models/block/<название>.json
@@ -1286,6 +1340,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
             models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath())));
     }
 
+    private <T extends Block> void simpleMachineBlock(RegistrySupplier<T> blockObject) {
+        simpleBlock(blockObject.get(),
+                models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath())));
+    }
+
     private <T extends Block> void customBombBlock(RegistrySupplier<T> blockObject) {
         // Создаём только blockstate, который ссылается на JSON модель
         // JSON модель должна лежать в resources/assets/hbm_m/models/block/bomb/<название>.json
@@ -1293,16 +1352,16 @@ public class ModBlockStateProvider extends BlockStateProvider {
             models().getExistingFile(modLoc("block/bomb/" + blockObject.getId().getPath())));
     }
 
-    /^*
+    /**
      * Advanced Assembly Machine: FACING + FRAME (frame в BlockState для запекания в чанк).
      * Одна модель - getQuads возвращает Base+Frame при frame=true.
-     ^/
-    /^*
+     */
+    /**
      * Chemical plant: без {@code rotationY} в blockstate - поворот задаётся только в
      * {@link com.hbm_m.client.model.MachineChemicalPlantBakedModel} через
      * {@link com.hbm_m.util.MultipartFacingTransforms#legacyBlockEntityBakedRotationY}, в точности как
      * {@code LegacyAnimator.setupBlockTransform} у VBO (иначе vanilla y + getQuads дают двойной поворот).
-     ^/
+     */
     private void registerChemicalPlantBlock(RegistrySupplier<? extends Block> blockObject) {
         VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
         ModelFile modelFile = models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath()));
@@ -1361,13 +1420,13 @@ public class ModBlockStateProvider extends BlockStateProvider {
         }
     }
 
-    /^*
+    /**
      * Генерирует модель и состояние для горизонтально-ориентированного блока.
      * @param blockObject Блок
      * @param sideTexture Текстура для боковых и задней сторон
      * @param frontTexture Текстура для лицевой стороны (север)
      * @param topTexture Текстура для верха и низа
-     ^/
+     */
     private void orientableBlockWithItem(RegistrySupplier<Block> blockObject, ResourceLocation sideTexture, ResourceLocation frontTexture, ResourceLocation topTexture) {
         // 1. Создаем модель блока с разными текстурами.
         //    Метод orientable использует стандартные имена: side, front, top, bottom.
@@ -1444,10 +1503,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(block.get(), models().withExistingParent(baseName + "_inventory", mcLoc("block/snow_height2")).texture("texture", texture).texture("particle", texture));
     }
 
-    /^*
+    /**
      * Регистрирует blockstate для машин со свойством LIT (включен/выключен).
      * Генерирует варианты для каждого направления FACING и состояния LIT.
-     ^/
+     */
     private void registerLitMachineBlock(RegistrySupplier<? extends Block> blockObject, 
                                           DirectionProperty facingProperty,
                                           BooleanProperty litProperty,
@@ -1483,9 +1542,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // simpleBlockItem(blockObject.get(), offModelFile);
     }
 
-    /^*
+    /**
      * Возвращает угол поворота Y для направления в градусах.
-     ^/
+     */
     private int getRotationY(Direction facing) {
         return switch (facing) {
             case SOUTH -> 180;
@@ -1496,4 +1555,4 @@ public class ModBlockStateProvider extends BlockStateProvider {
         };
     }
 }
-*///?}
+//?}

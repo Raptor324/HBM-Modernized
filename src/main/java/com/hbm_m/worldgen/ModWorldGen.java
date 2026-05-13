@@ -18,9 +18,9 @@ public class ModWorldGen {
     // Biome modifiers are Forge-only registry (forge:biome_modifier), not a vanilla registry.
     // Architectury's DeferredRegister cannot access it via RegistrarManager.
     //? if forge {
-    /*public static final net.minecraftforge.registries.DeferredRegister<net.minecraftforge.common.world.BiomeModifier> BIOME_MODIFIERS =
+    public static final net.minecraftforge.registries.DeferredRegister<net.minecraftforge.common.world.BiomeModifier> BIOME_MODIFIERS =
             net.minecraftforge.registries.DeferredRegister.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, RefStrings.MODID);
-    *///?}
+    //?}
 
     public static final DeferredRegister<Feature<?>> FEATURES =
             DeferredRegister.create(RefStrings.MODID, Registries.FEATURE);
@@ -45,10 +45,10 @@ public class ModWorldGen {
     public static final ResourceKey<PlacedFeature> STRAWBERRY_BUSH_PLACED =
             ResourceKey.create(Registries.PLACED_FEATURE,
                     //? if fabric && < 1.21.1 {
-                    new ResourceLocation(RefStrings.MODID, "strawberry_bush_placed"));
-                    //?} else {
-                                        /*ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "strawberry_bush_placed"));
-                    *///?}
+                    /*new ResourceLocation(RefStrings.MODID, "strawberry_bush_placed"));
+                    *///?} else {
+                                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "strawberry_bush_placed"));
+                    //?}
 
 
     /** Регистрация worldgen DeferredRegister на всех лоадерах. */
@@ -58,10 +58,10 @@ public class ModWorldGen {
     }
 
     //? if forge {
-    /*/^* Регистрация worldgen DeferredRegister на Forge mod event bus (как в старом {@code MainRegistry}). ^/
+    /** Регистрация worldgen DeferredRegister на Forge mod event bus (как в старом {@code MainRegistry}). */
     public static void register(net.minecraftforge.eventbus.api.IEventBus modEventBus) {
         BIOME_MODIFIERS.register(modEventBus);
         register();
     }
-    *///?}
+    //?}
 }

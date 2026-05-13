@@ -32,7 +32,7 @@ public abstract class LoadedMachineBlockEntity extends BlockEntity {
         this.isLoaded = false;
     }
     //? if forge {
-    /*@Override
+    @Override
     public void onChunkUnloaded() {
         super.onChunkUnloaded();
         this.isLoaded = false;
@@ -43,7 +43,7 @@ public abstract class LoadedMachineBlockEntity extends BlockEntity {
         super.onLoad();
         this.isLoaded = true;
     }
-    *///?}
+    //?}
     
     public boolean isMuffled() {
         return muffled;

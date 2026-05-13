@@ -51,30 +51,30 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
 //? if forge {
-/*import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.client.model.data.ModelProperty;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
-*///?}
+//?}
 
 @SuppressWarnings("UnstableApiUsage")
 public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProvider, IMultiblockSidedIO, IFluidStandardTransceiverMK2
     //? if fabric {
-    , net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity
-    //?}
+    /*, net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity
+    *///?}
 {
 
     //? if fabric {
-    /**
+    /*/^*
      * Единый экземпляр для Fabric Transfer API (регистрация {@link com.hbm_m.main.FabricEntrypoint}).
      * Логика fill/drain как у Forge {@code NetworkFluidHandlerWrapper}.
-     */
+     ^/
     @SuppressWarnings("UnstableApiUsage")
     private final TankFabricNetworkStorage tankFabricNetworkStorage = new TankFabricNetworkStorage(this);
-    //?}
+    *///?}
 
     public static final int SLOT_ID_IN = 0;
     public static final int SLOT_ID_OUT = 1;
@@ -105,9 +105,9 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     protected final ContainerData data;
 
     //? if forge {
-    /*private final LazyOptional<IItemHandler> lazyItemHandler;
+    private final LazyOptional<IItemHandler> lazyItemHandler;
     private final LazyOptional<IFluidHandler> lazyFluidHandler;
-    *///?}
+    //?}
 
     /** Разрешённые стороны прямого подключения к контроллеру. Если {@link #fluidSidesFromMultiblockStructure} — пусто допустимо (= ни одной стороны); иначе пусто = все стороны. */
     private java.util.Set<Direction> allowedFluidSides = java.util.EnumSet.noneOf(Direction.class);
@@ -115,8 +115,8 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     private boolean fluidSidesFromMultiblockStructure = false;
 
     //? if forge {
-    /*public static final ModelProperty<ResourceLocation> FLUID_TEXTURE_PROPERTY = new ModelProperty<>();
-    *///?}
+    public static final ModelProperty<ResourceLocation> FLUID_TEXTURE_PROPERTY = new ModelProperty<>();
+    //?}
 
     public MachineFluidTankBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.FLUID_TANK_BE.get(), pos, state);
@@ -163,13 +163,13 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         };
 
         //? if forge {
-        /*this.lazyItemHandler = LazyOptional.of(() -> itemHandler);
+        this.lazyItemHandler = LazyOptional.of(() -> itemHandler);
         this.lazyFluidHandler = LazyOptional.of(() -> new NetworkFluidHandlerWrapper(this));
-        *///?}
+        //?}
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public void onLoad() {
         super.onLoad();
         // На Forge ModelData кешируется отдельно от NBT; при загрузке чанка гарантируем первичную инициализацию.
@@ -182,7 +182,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         // Дёргаем повторно здесь, чтобы визуальные соединения труб всегда пересчитались после перезахода.
         refreshAdjacentFluidDuctConnections();
     }
-    *///?}
+    //?}
 
     // =====================================================================================
     // IFluidStandardTransceiverMK2 — нативное участие в MK2-сети.
@@ -391,7 +391,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public void onDataPacket(net.minecraft.network.Connection net, net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket pkt) {
         // Важно: super.onDataPacket вызывает load(tag). Нам нужно сравнить старое/новое и
         // при смене текстуры попросить Forge обновить ModelData и пересобрать меш чанка.
@@ -405,19 +405,19 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
         }
     }
-    *///?}
+    //?}
 
     public void handleUpdateTag(CompoundTag tag) {
         load(tag);
         if (level != null && level.isClientSide) {
             //? if forge {
-            /*requestModelDataUpdate();
-            *///?}
+            requestModelDataUpdate();
+            //?}
             // На Forge для корректной перерисовки нужен UPDATE_CLIENTS (иначе baked model может не обновиться).
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
             //? if fabric {
-            scheduleChunkRebuild();
-            //?}
+            /*scheduleChunkRebuild();
+            *///?}
         }
     }
 
@@ -484,17 +484,17 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     }
 
     //? if fabric {
-    @net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
     private void scheduleChunkRebuild() {
         if (level != null && level.isClientSide) {
             com.hbm_m.client.render.DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
         }
     }
 
-    /**
+    /^*
      * Сторона {@code null}: делегирование с коннекторов мультиблока / внутренний доступ без фильтра по грани.
      * Для {@code side != null}: если задан tuple fluidSideMap контроллера — только перечисленные грани; иначе пустой разрешённый набор = все грани (совместимость).
-     */
+     ^/
     @SuppressWarnings("UnstableApiUsage")
     @org.jetbrains.annotations.Nullable
     public net.fabricmc.fabric.api.transfer.v1.storage.Storage<net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant> getFluidStorage(
@@ -518,7 +518,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
         private static final long DROPLETS_PER_MB = 81L;
         private final MachineFluidTankBlockEntity entity;
-        /** Остаток дроплетов (&lt; 81), накапливается между insert до полной мБ — уменьшает потери округления на Fabric. */
+        /^* Остаток дроплетов (&lt; 81), накапливается между insert до полной мБ — уменьшает потери округления на Fabric. ^/
         private long insertRemainderDroplets;
 
         private TankFabricNetworkStorage(MachineFluidTankBlockEntity entity) {
@@ -629,7 +629,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
         private record Snapshot(Fluid type, int amountMb, long insertRemainderDroplets) {}
     }
-    //?}
+    *///?}
 
     public ResourceLocation getTankTextureLocation() {
         Fluid fluid = fluidTank.getTankType();
@@ -639,10 +639,10 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     
         if (fluid == null || fluid == Fluids.EMPTY || fluid == ModFluids.NONE.getSource()) {
             //? if fabric && < 1.21.1 {
-            return new ResourceLocation(MainRegistry.MOD_ID, "block/tank/tank_none");
-            //?} else {
-                        /*return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block/tank/tank_none");
-            *///?}
+            /*return new ResourceLocation(MainRegistry.MOD_ID, "block/tank/tank_none");
+            *///?} else {
+                        return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block/tank/tank_none");
+            //?}
 
         }
     
@@ -650,28 +650,28 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         String fluidName = typeId != null ? typeId.getPath() : "none";
         
         //? if fabric && < 1.21.1 {
-        return new ResourceLocation(MainRegistry.MOD_ID, "block/tank/tank_" + fluidName);
-        //?} else {
-                /*return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block/tank/tank_" + fluidName);
-        *///?}
+        /*return new ResourceLocation(MainRegistry.MOD_ID, "block/tank/tank_" + fluidName);
+        *///?} else {
+                return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block/tank/tank_" + fluidName);
+        //?}
 
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public @NotNull ModelData getModelData() {
         return ModelData.builder()
                 .with(FLUID_TEXTURE_PROPERTY, getTankTextureLocation())
                 .build();
     }
-    *///?}
+    //?}
 
     //? if fabric {
-    @Override
+    /*@Override
     public @org.jetbrains.annotations.Nullable Object getRenderAttachmentData() {
         return getTankTextureLocation();
     }
-    //?}
+    *///?}
 
     public void explode() {
         if (this.hasExploded) return;
@@ -758,15 +758,15 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     @Override
     public void load(CompoundTag tag) {
         //? if fabric {
-        // На Fabric клиентский пакет синхронизации часто приходит через load(), а не через
+        /*// На Fabric клиентский пакет синхронизации часто приходит через load(), а не через
         // onDataPacket (Forge). Без инвалидации чанка Sodium держит старые квады baked-модели.
         final boolean clientFabric = level != null && level.isClientSide;
         final ResourceLocation prevTankTexture = clientFabric ? getTankTextureLocation() : null;
-        //?}
-        //? if forge {
-        /*final boolean clientForge = level != null && level.isClientSide;
-        final ResourceLocation prevTankTextureForge = clientForge ? getTankTextureLocation() : null;
         *///?}
+        //? if forge {
+        final boolean clientForge = level != null && level.isClientSide;
+        final ResourceLocation prevTankTextureForge = clientForge ? getTankTextureLocation() : null;
+        //?}
 
         super.load(tag);
         itemHandler.deserializeNBT(tag.getCompound("Inventory"));
@@ -796,17 +796,17 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         }
 
         //? if fabric {
-        if (clientFabric && !getTankTextureLocation().equals(prevTankTexture)) {
+        /*if (clientFabric && !getTankTextureLocation().equals(prevTankTexture)) {
             scheduleChunkRebuild();
         }
-        //?}
+        *///?}
 
         //? if forge {
-        /*if (clientForge && prevTankTextureForge != null && !prevTankTextureForge.equals(getTankTextureLocation())) {
+        if (clientForge && prevTankTextureForge != null && !prevTankTextureForge.equals(getTankTextureLocation())) {
             requestModelDataUpdate();
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
         }
-        *///?}
+        //?}
         if (level != null) {
             refreshAdjacentFluidDuctConnections();
         }
@@ -843,7 +843,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
             return lazyItemHandler.cast();
@@ -862,7 +862,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             }
         return super.getCapability(cap, side);
     }
-    *///?}
+    //?}
 
     @Override
     public void setAllowedFluidSidesFromMultiblockStructure(java.util.Set<Direction> sides) {
@@ -893,9 +893,9 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     public void setRemoved() {
         super.setRemoved();
         //? if forge {
-        /*lazyItemHandler.invalidate();
+        lazyItemHandler.invalidate();
         lazyFluidHandler.invalidate();
-        *///?}
+        //?}
     }
 
     @Override
@@ -965,7 +965,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     }
 
     //? if forge {
-    /*private class NetworkFluidHandlerWrapper implements IFluidHandler {
+    private class NetworkFluidHandlerWrapper implements IFluidHandler {
         private final MachineFluidTankBlockEntity entity;
         private IFluidHandler internal;
 
@@ -1008,5 +1008,5 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             return internal.drain(maxDrain, action);
         }
     }
-    *///?}
+    //?}
 }

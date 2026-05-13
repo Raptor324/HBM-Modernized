@@ -8,8 +8,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-/*import net.minecraftforge.client.model.data.ModelData;
-*///?}
+import net.minecraftforge.client.model.data.ModelData;
+//?}
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
@@ -60,11 +60,11 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
         //? if forge {
-        /*return getQuads(state, side, rand, ModelData.EMPTY, null);
-        *///?}
+        return getQuads(state, side, rand, ModelData.EMPTY, null);
+        //?}
 
         //? if fabric {
-        // ITEM RENDER
+        /*// ITEM RENDER
         if (state == null) {
             return getItemQuads(side, rand);
         }
@@ -86,11 +86,11 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
             }
         }
         return Collections.emptyList();
-        //?}
+        *///?}
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                     RandomSource rand, ModelData modelData,
                                     @Nullable net.minecraft.client.renderer.RenderType renderType) {
@@ -148,10 +148,10 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
         }
         return quads;
     }
-    *///?}
+    //?}
 
     //? if fabric {
-    private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand) {
+    /*private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand) {
         if (!itemQuadsCached) {
             cachedItemQuads = buildItemQuads(rand);
             itemQuadsCached = true;
@@ -179,7 +179,7 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
         }
         return quads;
     }
-    //?}
+    *///?}
 
     @Override
     protected List<String> getItemRenderPartNames() {
@@ -199,12 +199,12 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
     @Override
     public TextureAtlasSprite getParticleIcon() {
         //? if forge {
-        /*return getParticleIcon(ModelData.EMPTY);
-        *///?}
+        return getParticleIcon(ModelData.EMPTY);
+        //?}
 
         //? if fabric {
-        return super.getParticleIcon();
-        //?}
+        /*return super.getParticleIcon();
+        *///?}
     }
 
     @Override

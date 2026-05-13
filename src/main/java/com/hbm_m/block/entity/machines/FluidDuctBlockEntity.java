@@ -19,8 +19,8 @@ import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.FluidDuctBlock;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 //? if fabric {
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-//?}
+/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -37,8 +37,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 //? if forge {
-/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
- *///?}
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+ //?}
 
 /**
  * BlockEntity трубы. Хранит тип жидкости и управляет MK2 узлом в UniNodespace.
@@ -158,7 +158,7 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public void onLoad() {
         super.onLoad();
         if (level instanceof ServerLevel serverLevel) {
@@ -171,17 +171,17 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
             FluidDuctBlock.refreshAdjacentDucts(level, worldPosition);
         }
     }
-    *///?}
+    //?}
 
     //? if fabric {
-    @Override
+    /*@Override
     public void setLevel(Level level) {
         super.setLevel(level);
         if (level instanceof ServerLevel serverLevel) {
             ensureNode(serverLevel);
         }
     }
-    //?}
+    *///?}
 
     @Override
     public void setRemoved() {
@@ -194,7 +194,7 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public void onChunkUnloaded() {
         if (level instanceof ServerLevel serverLevel && node != null && !node.isExpired()) {
             UniNodespace.destroyNode(serverLevel, node);
@@ -203,7 +203,7 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
         adapterCache.clear();
         super.onChunkUnloaded();
     }
-    *///?}
+    //?}
 
     // =====================================================================================
     // Tick — регистрация Forge-машин в сети
@@ -256,11 +256,11 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
      */
     private static boolean checkNeighborFluidHandler(Level level, BlockEntity neighbor, Direction side) {
         //? if forge {
-        /*return neighbor.getCapability(ForgeCapabilities.FLUID_HANDLER, side).isPresent();
-         *///?}
+        return neighbor.getCapability(ForgeCapabilities.FLUID_HANDLER, side).isPresent();
+         //?}
         //? if fabric {
-        return FluidStorage.SIDED.find(level, neighbor.getBlockPos(), neighbor.getBlockState(), neighbor, side) != null;
-        //?}
+        /*return FluidStorage.SIDED.find(level, neighbor.getBlockPos(), neighbor.getBlockState(), neighbor, side) != null;
+        *///?}
     }
 
     // =====================================================================================
@@ -329,8 +329,8 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
     private void refreshClientTintMesh() {
         if (level == null || !level.isClientSide) return;
         //? if forge {
-        /*requestModelDataUpdate();
-         *///?}
+        requestModelDataUpdate();
+         //?}
         level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_IMMEDIATE);
         DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
     }

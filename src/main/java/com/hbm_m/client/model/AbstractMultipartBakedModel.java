@@ -11,8 +11,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-/*import net.minecraftforge.client.model.data.ModelData;
-*///?}
+import net.minecraftforge.client.model.data.ModelData;
+//?}
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -77,7 +77,7 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public TextureAtlasSprite getParticleIcon(ModelData data) {
         if (cachedParticleIcon == null) {
             // Используем getPartNamesInternal() для получения приоритетного порядка
@@ -141,16 +141,36 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
     }
 
 
-    /^*
+    /**
      * Vanilla BakedModel legacy methods (still required by the interface).
      * Delegate to Forge's extended overloads.
-     ^/
+     */
     @Override
     @Deprecated
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
         return getQuads(state, side, rand, ModelData.EMPTY, null);
     }
 
+    //?}
+
+    //? if fabric {
+    /*@Override
+    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
+        return getQuadsForModelDataFabric(state, side, rand);
+    }
+
+    /^* Fabric: без Forge ModelData — делегируем частям vanilla getQuads. ^/
+    protected List<BakedQuad> getQuadsForModelDataFabric(
+            @Nullable BlockState state,
+            @Nullable Direction side,
+            RandomSource rand
+    ) {
+        List<BakedQuad> quads = new ArrayList<>();
+        for (BakedModel part : parts.values()) {
+            quads.addAll(part.getQuads(state, side, rand));
+        }
+        return quads;
+    }
     *///?}
 
     protected abstract boolean shouldSkipWorldRendering(@Nullable BlockState state);

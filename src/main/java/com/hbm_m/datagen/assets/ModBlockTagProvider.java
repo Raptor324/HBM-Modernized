@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.assets;
 //? if forge {
-/*import java.util.Set;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import org.jetbrains.annotations.NotNull;
@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.item.tags_and_tiers.ModTags;
 
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.HolderLookup;
@@ -131,7 +132,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
         // ============ ТЕГ ДЛЯ OCCLUSION CULLING ============
         // Блоки, через которые можно видеть (не блокируют рендеринг машин)
         //? if fabric && < 1.21.1 {
-        this.tag(BlockTags.create(new ResourceLocation(RefStrings.MODID, "non_occluding")))
+        /*this.tag(BlockTags.create(new ResourceLocation(RefStrings.MODID, "non_occluding")))
                 .add(ModBlocks.UNIVERSAL_MACHINE_PART.get())
                 .addTag(Tags.Blocks.GLASS)
                 .addTag(Tags.Blocks.GLASS_PANES)
@@ -171,8 +172,8 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(Blocks.TRIPWIRE)
                 .add(Blocks.TRIPWIRE_HOOK)
                 .add(Blocks.CAMPFIRE);
-        //?} else {
-                /^this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "non_occluding")))
+        *///?} else {
+                this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "non_occluding")))
                 .add(ModBlocks.UNIVERSAL_MACHINE_PART.get())
                 .addTag(Tags.Blocks.GLASS)
                 .addTag(Tags.Blocks.GLASS_PANES)
@@ -212,36 +213,47 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(Blocks.TRIPWIRE)
                 .add(Blocks.TRIPWIRE_HOOK)
                 .add(Blocks.CAMPFIRE);
-        ^///?}
+        //?}
 
 
         // ============ ТЕГИ СОВМЕСТИМОСТИ С ДРУГИМИ МОДАМИ ============
         //? if fabric && < 1.21.1 {
-        this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks/uranium")))
+        /*this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks/uranium")))
                 .add(ModBlocks.URANIUM_BLOCK.get());
-        //?} else {
-                /^this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")))
+        *///?} else {
+                this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")))
                 .add(ModBlocks.URANIUM_BLOCK.get());
-        ^///?}
+        //?}
 
 
         //? if fabric && < 1.21.1 {
-        this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks/plutonium")))
+        /*this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks/plutonium")))
                 .add(ModBlocks.PLUTONIUM_BLOCK.get());
-        //?} else {
-                /^this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/plutonium")))
+        *///?} else {
+                this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/plutonium")))
                 .add(ModBlocks.PLUTONIUM_BLOCK.get());
-        ^///?}
+        //?}
 
 
         //? if fabric && < 1.21.1 {
-        this.tag(BlockTags.create(new ResourceLocation("forge", "ores/uranium")))
+        /*this.tag(BlockTags.create(new ResourceLocation("forge", "ores/uranium")))
                 .add(ModBlocks.URANIUM_ORE.get());
-        //?} else {
-                /^this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")))
+        *///?} else {
+                this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")))
                 .add(ModBlocks.URANIUM_ORE.get());
-        ^///?}
+        //?}
+
+        // ============ CONNECTED TEXTURES (CT) ============
+        // Steel <-> rusty steel соединяются между собой как в 1.7.10 BlockDecoCT.canConnect().
+        this.tag(ModTags.Blocks.DECO_STEEL_CONNECTABLE)
+                .add(ModBlocks.DECO_STEEL.get())
+                .add(ModBlocks.DECO_TUNGSTEN.get())
+                .add(ModBlocks.DECO_RED_COPPER.get())
+                .add(ModBlocks.DECO_ALUMINUM.get())
+                .add(ModBlocks.DECO_BERYLLIUM.get())
+                .add(ModBlocks.DECO_LEAD.get())
+                .add(ModBlocks.DECO_RUSTY_STEEL.get());
 
     }
 }
-*///?}
+//?}

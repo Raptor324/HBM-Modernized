@@ -1,5 +1,5 @@
 //? if fabric {
-package com.hbm_m.client.model.loading;
+/*package com.hbm_m.client.model.loading;
 
 import java.util.Locale;
 
@@ -22,14 +22,14 @@ final class JsonModelTransforms {
 
     private JsonModelTransforms() {}
 
-    /**
+    /^*
      * Forge root transforms:
      * - support either raw {@code matrix} or element-wise specification
      * - element-wise order: translation -> left_rotation -> scale -> right_rotation
      * - rotation/scale happen around the specified origin (pivot)
      *
      * See: Forge docs "Root Transforms" (1.20.1).
-     */
+     ^/
     static Matrix4f parseRootTransformMatrix(JsonObject transformJson) {
         if (transformJson == null) return new Matrix4f().identity();
 
@@ -127,13 +127,13 @@ final class JsonModelTransforms {
         return new Vector3f(x, y, z);
     }
 
-    /**
+    /^*
      * Forge root transform rotation supports:
      * - object axis->degrees: {"x":90}
      * - array of such objects: [{"x":90},{"y":45}]
      * - array[3] degrees: [x,y,z]
      * - array[4] quaternion: [x,y,z,w]
-     */
+     ^/
     private static Quaternionf parseRotation(JsonElement e) {
         if (e == null || e.isJsonNull()) return new Quaternionf();
         if (e.isJsonArray()) {
@@ -240,5 +240,5 @@ final class JsonModelTransforms {
         return new org.joml.Vector3f(x, y, z);
     }
 }
-//?}
+*///?}
 

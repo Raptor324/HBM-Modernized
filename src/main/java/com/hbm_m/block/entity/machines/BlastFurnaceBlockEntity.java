@@ -38,21 +38,21 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-/*import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
-*///?}
+//?}
 
 //? if fabric {
-import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
+/*import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.storage.base.CombinedStorage;
 import net.fabricmc.fabric.api.transfer.v1.storage.base.FilteringStorage;
 
 import java.util.ArrayList;
 import java.util.List;
-//?}
+*///?}
 
 @SuppressWarnings("UnstableApiUsage")
 public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider {
@@ -91,13 +91,13 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
     }
 
     //? if forge {
-    /*private final Map<Direction, LazyOptional<IItemHandler>> sidedItemHandlers = new EnumMap<>(Direction.class);
+    private final Map<Direction, LazyOptional<IItemHandler>> sidedItemHandlers = new EnumMap<>(Direction.class);
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
-    *///?}
+    //?}
 
     //? if fabric {
-    private final Map<Direction, Storage<ItemVariant>> sidedStorages = new EnumMap<>(Direction.class);
-    //?}
+    /*private final Map<Direction, Storage<ItemVariant>> sidedStorages = new EnumMap<>(Direction.class);
+    *///?}
 
     private final ContainerData data;
     private int progress;
@@ -152,7 +152,7 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public void onLoad() {
         super.onLoad();
         lazyItemHandler = LazyOptional.of(() -> itemHandler);
@@ -178,10 +178,10 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
         lazyItemHandler.invalidate();
         sidedItemHandlers.values().forEach(LazyOptional::invalidate);
     }
-    *///?}
+    //?}
 
     //? if fabric {
-    @Override
+    /*@Override
     public void setLevel(Level level) {
         super.setLevel(level);
         buildSidedStorages();
@@ -219,7 +219,7 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
         }
         return new CombinedStorage<>(parts);
     }
-    //?}
+    *///?}
 
     public void drops() {
         SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
@@ -495,7 +495,7 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
     // ─────────────────── DirectionalItemHandler (Forge only) ─────────────────
 
     //? if forge {
-    /*private class DirectionalItemHandler implements IItemHandler {
+    private class DirectionalItemHandler implements IItemHandler {
         private final Direction direction;
 
         private DirectionalItemHandler(Direction direction) { this.direction = direction; }
@@ -524,5 +524,5 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
             return itemHandler.isItemValid(slot, stack) && canInsertFromDirection(slot, direction);
         }
     }
-    *///?}
+    //?}
 }

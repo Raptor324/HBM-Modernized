@@ -13,7 +13,6 @@ import com.hbm_m.api.energy.WireBlock;
 import com.hbm_m.block.bomb.NukeFatManBlock;
 import com.hbm_m.block.decorations.CageLampBlock;
 import com.hbm_m.block.decorations.CrtBlock;
-import com.hbm_m.block.decorations.DecoSteelBlock;
 import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.block.explosives.AirBombBlock;
 import com.hbm_m.block.explosives.AirNukeBombBlock;
@@ -37,20 +36,59 @@ import com.hbm_m.block.machines.HeatingOvenBlock;
 import com.hbm_m.block.machines.LaunchPadBlock;
 import com.hbm_m.block.machines.LaunchPadRustedBlock;
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
+import com.hbm_m.block.machines.MachineArcWelderBlock;
 import com.hbm_m.block.machines.MachineAssemblerBlock;
 import com.hbm_m.block.machines.MachineBatteryBlock;
 import com.hbm_m.block.machines.MachineBatterySocketBlock;
+import com.hbm_m.block.machines.MachineBreederBlock;
+import com.hbm_m.block.machines.MachineCatalyticReformerBlock;
 import com.hbm_m.block.machines.MachineCentrifugeBlock;
+import com.hbm_m.block.machines.MachineChemicalFactoryBlock;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
+import com.hbm_m.block.machines.MachineCoolingTowerBlock;
+import com.hbm_m.block.machines.MachineFoundryChannelBlock;
+import com.hbm_m.block.machines.MachineFoundryBasinBlock;
+import com.hbm_m.block.machines.MachineCoreEmitterBlock;
+import com.hbm_m.block.machines.MachineCoreInjectorBlock;
+import com.hbm_m.block.machines.MachineCoreReceiverBlock;
+import com.hbm_m.block.machines.MachineCrackingTowerBlock;
+import com.hbm_m.block.machines.MachineCrucibleBlock;
 import com.hbm_m.block.machines.MachineCrystallizerBlock;
+import com.hbm_m.block.machines.MachineCyclotronBlock;
+import com.hbm_m.block.machines.MachineDerrickBlock;
+import com.hbm_m.block.machines.MachineDeuteriumTowerBlock;
+import com.hbm_m.block.machines.MachineFelBlock;
+import com.hbm_m.block.machines.MachineFlareStackBlock;
 import com.hbm_m.block.machines.MachineFluidTankBlock;
 import com.hbm_m.block.machines.MachineFrackingTowerBlock;
+import com.hbm_m.block.machines.MachineFractionTowerBlock;
+import com.hbm_m.block.machines.MachineGasCentrifugeBlock;
+import com.hbm_m.block.machines.MachineHydrotreaterBlock;
 import com.hbm_m.block.machines.MachineIndustrialBoilerBlock;
 import com.hbm_m.block.machines.MachineIndustrialTurbineBlock;
+import com.hbm_m.block.machines.MachineLargePylonBlock;
+import com.hbm_m.block.machines.MachineLiquefactorBlock;
+import com.hbm_m.block.machines.MachineMiningDrillBlock;
+import com.hbm_m.block.machines.MachineMixerBlock;
 import com.hbm_m.block.machines.MachinePressBlock;
+import com.hbm_m.block.machines.MachinePumpjackBlock;
+import com.hbm_m.block.machines.MachineRadarBlock;
+import com.hbm_m.block.machines.MachineRbmkConsoleBlock;
 import com.hbm_m.block.machines.MachineRefineryBlock;
 import com.hbm_m.block.machines.MachineShredderBlock;
+import com.hbm_m.block.machines.MachineSilexBlock;
+import com.hbm_m.block.machines.MachineSolarBoilerBlock;
+import com.hbm_m.block.machines.MachineSolarMirrorsBlock;
+import com.hbm_m.block.machines.MachineSolderingStationBlock;
+import com.hbm_m.block.machines.MachineSteamTurbineBlock;
+import com.hbm_m.block.machines.MachineSubstationBlock;
+import com.hbm_m.block.machines.MachineTowerSmallBlock;
+import com.hbm_m.block.machines.MachineTurbineBlock;
+import com.hbm_m.block.machines.MachineTurbofanBlock;
+import com.hbm_m.block.machines.MachineVacuumDistillBlock;
+import com.hbm_m.block.machines.MachineWatzPowerplantBlock;
 import com.hbm_m.block.machines.MachineWoodBurnerBlock;
+import com.hbm_m.block.machines.MachineZirnoxBlock;
 import com.hbm_m.block.machines.UniversalMachinePartBlock;
 import com.hbm_m.block.machines.anvils.AnvilBlock;
 import com.hbm_m.block.machines.anvils.AnvilTier;
@@ -76,17 +114,7 @@ import com.hbm_m.lib.RefStrings;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.level.block.BarrelBlock;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.DropExperienceBlock;
-import net.minecraft.world.level.block.FlowerBlock;
-import net.minecraft.world.level.block.GlassBlock;
-import net.minecraft.world.level.block.LeavesBlock;
-import net.minecraft.world.level.block.SlabBlock;
-import net.minecraft.world.level.block.SnowLayerBlock;
-import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.material.MapColor;
@@ -311,11 +339,83 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> HYDRAULIC_FRACKINING_TOWER = registerBlockWithoutItem("hydraulic_frackining_tower",
             () -> new MachineFrackingTowerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
+    public static final RegistrySupplier<Block> COOLING_TOWER = registerBlockWithoutItem("cooling_tower",
+            () -> new MachineCoolingTowerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> TOWER_SMALL = registerBlockWithoutItem("tower_small",
+            () -> new MachineTowerSmallBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> CYCLOTRON = registerBlockWithoutItem("cyclotron",
+            () -> new MachineCyclotronBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> ZIRNOX = registerBlockWithoutItem("zirnox",
+            () -> new MachineZirnoxBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> ARC_WELDER = registerBlockWithoutItem("arc_welder",
+            () -> new MachineArcWelderBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> SOLDERING_STATION = registerBlockWithoutItem("soldering_station",
+            () -> new MachineSolderingStationBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> MIXER = registerBlockWithoutItem("mixer",
+            () -> new MachineMixerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> DERRICK = registerBlockWithoutItem("derrick",
+            () -> new MachineDerrickBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> RBMK_CONSOLE = registerBlockWithoutItem("rbmk_console",
+            () -> new MachineRbmkConsoleBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> FLARE_STACK = registerBlockWithoutItem("flare_stack",
+            () -> new MachineFlareStackBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> PUMPJACK = registerBlockWithoutItem("pumpjack",
+            () -> new MachinePumpjackBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> RADAR = registerBlockWithoutItem("radar",
+            () -> new MachineRadarBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> LARGE_RADAR = registerBlockWithoutItem("large_radar",
+            () -> new MachineRadarBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> CRACKING_TOWER = registerBlockWithoutItem("cracking_tower",
+            () -> new MachineCrackingTowerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> FRACTION_TOWER = registerBlockWithoutItem("fraction_tower",
+            () -> new MachineFractionTowerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> MINING_DRILL = registerBlockWithoutItem("mining_drill",
+            () -> new MachineMiningDrillBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> FEL = registerBlockWithoutItem("fel",
+            () -> new MachineFelBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> SILEX = registerBlockWithoutItem("silex",
+            () -> new MachineSilexBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
     public static final RegistrySupplier<Block> CRYSTALLIZER = registerBlockWithoutItem("crystallizer",
             () -> new MachineCrystallizerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
+    public static final RegistrySupplier<Block> BREEDER = registerBlockWithoutItem("breeder",
+            () -> new MachineBreederBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> LARGE_PYLON = registerBlockWithoutItem("large_pylon",
+            () -> new MachineLargePylonBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
     public static final RegistrySupplier<Block> CHEMICAL_PLANT = registerBlockWithoutItem("chemical_plant",
             () -> new MachineChemicalPlantBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> CRUCIBLE = registerBlock("crucible",
+            () -> new MachineCrucibleBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> FOUNDRY_BASIN = registerBlock("foundry_basin",
+            () -> new MachineFoundryBasinBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> FOUNDRY_CHANNEL = registerBlock("foundry_channel",
+            () -> new MachineFoundryChannelBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f, 2.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> GAS_CENTRIFUGE = registerBlockWithoutItem("gas_centrifuge",
+            () -> new MachineGasCentrifugeBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> CENTRIFUGE = registerBlockWithoutItem("centrifuge",
             () -> new MachineCentrifugeBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).isSuffocating((state, world, pos) -> false)));
@@ -338,11 +438,59 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> INDUSTRIAL_BOILER = registerBlockWithoutItem("industrial_boiler",
             () -> new MachineIndustrialBoilerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
+    public static final RegistrySupplier<Block> SOLAR_BOILER = registerBlockWithoutItem("solar_boiler",
+            () -> new MachineSolarBoilerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(3.0f, 3.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> SOLAR_MIRRORS = registerBlockWithoutItem("solar_mirrors",
+            () -> new MachineSolarMirrorsBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f, 2.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> WATZ_POWERPLANT = registerBlockWithoutItem("watz_powerplant",
+            () -> new MachineWatzPowerplantBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 5.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> HYDROTREATER = registerBlockWithoutItem("hydrotreater",
+            () -> new MachineHydrotreaterBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> CATALYTIC_REFORMER = registerBlockWithoutItem("catalytic_reformer",
+            () -> new MachineCatalyticReformerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> DEUTERIUM_TOWER = registerBlockWithoutItem("deuterium_tower",
+            () -> new MachineDeuteriumTowerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> CHEMICAL_FACTORY = registerBlockWithoutItem("chemical_factory",
+            () -> new MachineChemicalFactoryBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 5.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> STEAM_TURBINE = registerBlockWithoutItem("steam_turbine",
+            () -> new MachineSteamTurbineBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL)));
+
+    public static final RegistrySupplier<Block> LIQUEFACTOR = registerBlockWithoutItem("liquefactor",
+            () -> new MachineLiquefactorBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> CORE_EMITTER = registerBlockWithoutItem("core_emitter",
+            () -> new MachineCoreEmitterBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> CORE_INJECTOR = registerBlockWithoutItem("core_injector",
+            () -> new MachineCoreInjectorBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> CORE_RECEIVER = registerBlockWithoutItem("core_receiver",
+            () -> new MachineCoreReceiverBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> VACUUM_DISTILL = registerBlockWithoutItem("vacuum_distill",
+            () -> new MachineVacuumDistillBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> TURBOFAN = registerBlockWithoutItem("turbofan",
+            () -> new MachineTurbofanBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
     public static final RegistrySupplier<Block> REFINERY = registerBlockWithoutItem("refinery",
             () -> new MachineRefineryBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> INDUSTRIAL_TURBINE = registerBlockWithoutItem("industrial_turbine",
             () -> new MachineIndustrialTurbineBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> TURBINE = registerBlockWithoutItem("turbine",
+            () -> new MachineTurbineBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> SUBSTATION = registerBlockWithoutItem("substation",
+            () -> new MachineSubstationBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> FLUID_DUCT = registerBlockWithoutItem("fluid_duct",
             () -> new FluidDuctBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).sound(SoundType.METAL).noOcclusion(),
@@ -667,7 +815,43 @@ public class ModBlocks {
                     .requiresCorrectToolForDrops()));
 
     public static final RegistrySupplier<Block> DECO_STEEL = registerBlock("deco_steel",
-            () -> new DecoSteelBlock(BlockBehaviour.Properties.of()
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops()));
+
+    public static final RegistrySupplier<Block> DECO_RUSTY_STEEL = registerBlock("deco_rusty_steel",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops()));
+
+    public static final RegistrySupplier<Block> DECO_TUNGSTEN = registerBlock("deco_tungsten",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops()));
+
+    public static final RegistrySupplier<Block> DECO_RED_COPPER = registerBlock("deco_red_copper",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops()));
+
+    public static final RegistrySupplier<Block> DECO_ALUMINUM = registerBlock("deco_aluminum",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops()));
+
+    public static final RegistrySupplier<Block> DECO_BERYLLIUM = registerBlock("deco_beryllium",
+            () -> new Block(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops()));
+
+    public static final RegistrySupplier<Block> DECO_LEAD = registerBlock("deco_lead",
+            () -> new Block(BlockBehaviour.Properties.of()
                     .strength(0.5F, 6.0F)
                     .sound(SoundType.STONE)
                     .requiresCorrectToolForDrops()));
@@ -719,6 +903,17 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> FILE_CABINET = registerBlock("file_cabinet",
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
 
+    public static final RegistrySupplier<Block> REBAR = registerBlock("rebar",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(3F, 6.0F).noOcclusion()));
+    public static final RegistrySupplier<Block> STEEL_POLE = registerBlock("steel_pole",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(2.5F, 6.0F).noOcclusion()));
+    public static final RegistrySupplier<Block> ANTENNA_TOP = registerBlock("antenna_top",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(2.5F, 6.0F).noOcclusion()));
+    public static final RegistrySupplier<Block> PUTER = registerBlock("puter",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1F, 6.0F).noOcclusion()));
+    public static final RegistrySupplier<Block> DECO_STEEL_SCAFFOLD = registerBlock("deco_steel_scaffold",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(2.5F, 6.0F).noOcclusion()));
+
     public static final RegistrySupplier<Block> B29 = registerBlock("b29",
             () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
 
@@ -730,6 +925,9 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> MINE_AP = registerBlock("mine_ap",
             () -> new MineBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+
+    public static final RegistrySupplier<Block> NAVAL_MINE = registerBlock("naval_mine",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(5, 6.0F).noOcclusion()));
 
     public static final RegistrySupplier<Block> CRATE_CONSERVE = registerBlock("crate_conserve",
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));

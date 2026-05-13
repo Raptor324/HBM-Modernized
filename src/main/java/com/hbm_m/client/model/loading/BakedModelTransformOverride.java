@@ -1,5 +1,5 @@
 //? if fabric {
-package com.hbm_m.client.model.loading;
+/*package com.hbm_m.client.model.loading;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -44,5 +44,5 @@ final class BakedModelTransformOverride implements BakedModel {
         return transforms;
     }
 }
-//?}
+*///?}
 

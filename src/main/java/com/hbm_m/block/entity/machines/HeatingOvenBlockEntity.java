@@ -41,6 +41,8 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
     // Constants
     private static final int MAX_BURN_TIME = 400;
     private static final int COOK_TIME = 200;
+    private static final long ENERGY_CAPACITY = 20_000L;
+    private static final long TU_GENERATION_PER_TICK = 500L;
 
     // State variables
     private int burnTime = 0;
@@ -88,7 +90,8 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
     };
 
     public HeatingOvenBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.HEATING_OVEN_BE.get(), pos, state, SLOT_COUNT, 0, 0);
+        super(ModBlockEntities.HEATING_OVEN_BE.get(), pos, state, SLOT_COUNT,
+                ENERGY_CAPACITY, 0L, TU_GENERATION_PER_TICK);
     }
 
     @Override
@@ -118,6 +121,7 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
     }
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, HeatingOvenBlockEntity blockEntity) {
+        blockEntity.ensureNetworkInitialized();
         boolean wasOnBefore = blockEntity.isOn;
 
         // Update door animation
@@ -141,6 +145,12 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
             } else {
                 blockEntity.isOn = false;
             }
+        }
+
+        // Generate TU whenever the oven is burning fuel.
+        if (blockEntity.isOn) {
+            blockEntity.setEnergyStored(Math.min(blockEntity.getMaxEnergyStored(),
+                    blockEntity.getEnergyStored() + TU_GENERATION_PER_TICK));
         }
 
         // Process cooking if burning
@@ -253,7 +263,7 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public void handleUpdateTag(CompoundTag tag) {
         // Forge-only hook; на Fabric используется стандартная синхронизация через load()
         wasOn = tag.getBoolean("isOn");
@@ -261,7 +271,7 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
         prevDoorAngle = doorAngle;
         doorOpen = tag.getBoolean("doorOpen");
     }
-    *///?}
+    //?}
 
     @Override
     public AABB getRenderBoundingBox() {
@@ -292,7 +302,7 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
     // Energy methods - heating oven doesn't use energy
     @Override
     public boolean canConnectEnergy(Direction side) {
-        return false;
+        return true;
     }
 
     @Override

@@ -1,5 +1,5 @@
 //? if forge {
-/*package com.hbm_m.powerarmor.render;
+package com.hbm_m.powerarmor.render;
 
 
 import java.util.Map;
@@ -15,18 +15,18 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 //? if fabric {
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;//?}
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;*///?}
 
-/^*
+/**
  * Модель для рендеринга T51 Power Armor в GUI и руке.
  * Использует абстрактный базовый класс для общей логики рендеринга.
- ^/
+ */
 //? if forge {
-/^@OnlyIn(Dist.CLIENT)
-^///?}
+@OnlyIn(Dist.CLIENT)
+//?}
 //? if fabric {
-@Environment(EnvType.CLIENT)//?}
+/*@Environment(EnvType.CLIENT)*///?}
 public class T51ArmorBakedModel extends AbstractArmorBakedModel {
 
     private static final String[] T51_ORDER = {
@@ -44,9 +44,9 @@ public class T51ArmorBakedModel extends AbstractArmorBakedModel {
         return new T51ArmorBakedModel(this.parts, newTransforms);
     }
 
-    /^*
+    /**
      * Конфигурация для T51 Power Armor.
-     ^/
+     */
     private static class T51ModelConfig implements IArmorModelConfig {
         @Override
         public String getArmorSetId() {
@@ -89,4 +89,4 @@ public class T51ArmorBakedModel extends AbstractArmorBakedModel {
         }
     }
 }
-*///?}
+//?}

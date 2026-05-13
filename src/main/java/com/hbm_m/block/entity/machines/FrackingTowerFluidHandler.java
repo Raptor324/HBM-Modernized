@@ -1,16 +1,16 @@
 package com.hbm_m.block.entity.machines;
 //? if forge {
-/*import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.inventory.fluid.ModFluids;
 
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
-/^*
+/**
  * Обработчик жидкостей для Fracking Tower.
  * Управляет тремя танками: нефть (выход), газ (выход), FrackSol (вход).
- ^/
+ */
 public class FrackingTowerFluidHandler implements IFluidHandler {
 
     private final MachineFrackingTowerBlockEntity blockEntity;
@@ -129,4 +129,4 @@ public class FrackingTowerFluidHandler implements IFluidHandler {
                 : FluidStack.EMPTY;
     }
 }
-*///?}
+//?}

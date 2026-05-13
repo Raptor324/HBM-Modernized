@@ -38,11 +38,11 @@ import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 //? if forge {
-/*import net.minecraftforge.client.extensions.common.IClientItemExtensions;
+import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.minecraftforge.event.entity.living.LivingEquipmentChangeEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-*///?}
+//?}
 
 public class ModPowerArmorItem extends ModArmorFSBPowered {
     private static final Random RANDOM = new Random();
@@ -92,12 +92,12 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
 
     // ПУТЬ К ТЕКСТУРЕ (Forge: расширение брони; на Fabric/NeoForge рендер через свои хуки)
     //? if forge {
-    /*@Override
+    @Override
     public String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
         String tex = resolveArmorTextureName(stack, slot);
         return MainRegistry.MOD_ID + ":textures/block/armor/" + tex + ".png";
     }
-    *///?}
+    //?}
 
     /**
      * Resolves the armor texture name (without extension) based on the item's registry id.
@@ -132,7 +132,7 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
         consumer.accept(new IClientItemExtensions() {
             private PowerArmorEmptyModel model;
@@ -170,7 +170,7 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
             }
         });
     }
-    *///?}
+    //?}
 
     private void copyRotations(HumanoidModel<?> source, HumanoidModel<?> target) {
         target.head.copyFrom(source.head);
@@ -221,7 +221,7 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public void onArmorTick(ItemStack stack, Level world, Player player) {
         if (world.isClientSide()) return; // Клиентские эффекты обрабатываются отдельно
 
@@ -240,8 +240,8 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
 
         super.onArmorTick(stack, world, player);
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     public void inventoryTick(ItemStack stack, Level world, Entity entity, int slotId, boolean selected) {
         super.inventoryTick(stack, world, entity, slotId, selected);
         if (world.isClientSide()) return;
@@ -258,7 +258,7 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
         handlePowerArmorGeiger(stack, world, player);
         handleHardLandingNoFallDamage(world, player);
     }
-    //?}
+    *///?}
 
     private static final String TAG_HL_MAX_FALL = "hbm_hl_max_fall";
     private static final String TAG_HL_LANDED = "hbm_hl_landed";
@@ -487,7 +487,7 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
     }
 
     //? if forge {
-    /*@Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID)
+    @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID)
     public static class PowerArmorSoundHandler {
         @SubscribeEvent
         public static void onEquipmentChange(LivingEquipmentChangeEvent event) {
@@ -501,5 +501,5 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
             }
         }
     }
-    *///?}
+    //?}
 }

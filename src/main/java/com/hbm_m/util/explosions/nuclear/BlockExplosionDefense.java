@@ -165,7 +165,7 @@ public class BlockExplosionDefense {
     }
 
     //? if forge {
-    /*@net.minecraftforge.fml.common.Mod.EventBusSubscriber(
+    @net.minecraftforge.fml.common.Mod.EventBusSubscriber(
             modid = "hbm_m",
             bus = net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus.FORGE,
             value = net.minecraftforge.api.distmarker.Dist.CLIENT
@@ -199,7 +199,7 @@ public class BlockExplosionDefense {
             }
         }
     }
-    *///?}
+    //?}
 
     /**
      *  Проверка: это ли один из наших модульных блоков

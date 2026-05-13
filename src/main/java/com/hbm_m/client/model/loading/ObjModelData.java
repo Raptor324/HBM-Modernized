@@ -1,5 +1,5 @@
 //? if fabric {
-package com.hbm_m.client.model.loading;
+/*package com.hbm_m.client.model.loading;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -34,7 +34,7 @@ public final class ObjModelData {
     private final List<Vec3> normals;
     private final List<Face> faces;
     private final Map<String, String> materialToTexture; // map_Kd raw string (can be "#key" or "ns:path")
-    /** Как у Forge OBJ: {@code forge_TintIndex} из MTL (например оверлей трубы = 1 для {@link net.minecraft.client.color.block.BlockColors}). */
+    /^* Как у Forge OBJ: {@code forge_TintIndex} из MTL (например оверлей трубы = 1 для {@link net.minecraft.client.color.block.BlockColors}). ^/
     private final Map<String, Integer> materialTintIndex;
     private final float minX, minY, minZ, maxX, maxY, maxZ;
 
@@ -80,16 +80,16 @@ public final class ObjModelData {
         return materialToTexture.get(materialName);
     }
 
-    /** Tint index для квада (совпадает с Forge OBJ); -1 = без покраски блоком. */
+    /^* Tint index для квада (совпадает с Forge OBJ); -1 = без покраски блоком. ^/
     public int tintIndexForMaterial(@Nullable String materialName) {
         if (materialName == null) return -1;
         return materialTintIndex.getOrDefault(materialName, -1);
     }
 
-    /**
+    /^*
      * Heuristic: if model vertices include negative coordinates, it's usually authored around origin (e.g. [-0.5..0.5]).
      * Such models should rotate around origin, and then be translated into block space by JSON "transform".
-     */
+     ^/
     public boolean prefersOriginPivot() {
         return minX < 0.0f || minY < 0.0f || minZ < 0.0f;
     }
@@ -98,10 +98,10 @@ public final class ObjModelData {
         return load(rm, objLocation, null);
     }
 
-    /**
+    /^*
      * @param mtlOverride абсолютный id MTL из JSON {@code mtl_override} (Forge OBJ). Если задан — используется только он
      * (как полная подстановка материалов для этого bake), без слияния с {@code mtllib} из OBJ; иначе — MTL из {@code mtllib}.
-     */
+     ^/
     public static ObjModelData load(ResourceManager rm, ResourceLocation objLocation, @Nullable ResourceLocation mtlOverride) {
         // Forge expects location like "modid:models/block/foo.obj"
         ResourceLocation file = new ResourceLocation(objLocation.getNamespace(), objLocation.getPath());
@@ -225,5 +225,5 @@ public final class ObjModelData {
         return out;
     }
 }
-//?}
+*///?}
 

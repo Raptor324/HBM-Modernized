@@ -1,5 +1,5 @@
 //? if fabric {
-package com.hbm_m.client.model.loading;
+/*package com.hbm_m.client.model.loading;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -159,5 +159,5 @@ public final class ForgeCompositeUnbakedModel implements ForgeLikeUnbakedModel {
         return new CompositeBakedModel(bakedKids, particle, itemTransforms, ItemOverrides.EMPTY, null);
     }
 }
-//?}
+*///?}
 

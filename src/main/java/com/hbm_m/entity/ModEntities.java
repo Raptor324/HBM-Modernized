@@ -3,6 +3,8 @@ package com.hbm_m.entity;
 import com.hbm_m.entity.effect.FalloutRain;
 import com.hbm_m.entity.grenades.*;
 import com.hbm_m.entity.logic.NukeExplosionMK5Entity;
+import com.hbm_m.entity.mob.NoloEntity;
+import com.hbm_m.entity.missile.MissileABMEntity;
 import com.hbm_m.entity.missile.MissileTestEntity;
 import com.hbm_m.main.MainRegistry;
 
@@ -124,6 +126,14 @@ public class ModEntities {
                             .updateInterval(3)
                             .build("missile_test"));
 
+    public static final RegistrySupplier<EntityType<MissileABMEntity>> MISSILE_ABM =
+            ENTITY_TYPES.register("missile_abm",
+                    () -> EntityType.Builder.<MissileABMEntity>of(MissileABMEntity::new, MobCategory.MISC)
+                            .sized(0.5F, 0.5F)
+                            .clientTrackingRange(256)
+                            .updateInterval(3)
+                            .build("missile_abm"));
+
     // Длительная сущность ядерного взрыва MK5 (Fat Man и другие мощные боеприпасы)
     public static final RegistrySupplier<EntityType<NukeExplosionMK5Entity>> NUKE_MK5 =
             ENTITY_TYPES.register("nuke_mk5",
@@ -148,7 +158,22 @@ public class ModEntities {
                     .updateInterval(20)
                     .build("falling_sellafit"));
 
+    public static final RegistrySupplier<EntityType<NoloEntity>> NOLO = ENTITY_TYPES.register("nolo",
+            () -> EntityType.Builder.of(NoloEntity::new, MobCategory.CREATURE)
+                    .sized(0.6F, 0.7F)
+                    .clientTrackingRange(10)
+                    .build("nolo"));
+
     public static void init() {
         ENTITY_TYPES.register();
+        //? if fabric {
+        /*net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
+                NOLO.get(), NoloEntity.createAttributes());
+        net.minecraft.world.entity.SpawnRestriction.register(
+                NOLO.get(),
+                net.minecraft.world.entity.SpawnPlacements.Type.ON_GROUND,
+                net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                NoloEntity::checkNoloSpawnRules);
+        *///?}
     }
 }

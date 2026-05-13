@@ -1,5 +1,5 @@
 //? if fabric {
-package com.hbm_m.client.model.loading;
+/*package com.hbm_m.client.model.loading;
 
 import java.util.Collections;
 import java.util.List;
@@ -82,4 +82,4 @@ public class ObjBakedModel implements BakedModel {
         return overrides;
     }
 }
-//?}
+*///?}

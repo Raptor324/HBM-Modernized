@@ -61,6 +61,7 @@ public class ModPacketHandler {
     public static final ResourceLocation DOOR_MODEL            = id("door_model");
     public static final ResourceLocation FLUID_IDENTIFIER_CTRL = id("fluid_identifier_ctrl");
     public static final ResourceLocation ITEM_DESIGNATOR       = id("item_designator");
+    public static final ResourceLocation UPDATE_RADAR          = id("update_radar");
     public static final ResourceLocation ORPHANED_PHANTOMS     = id("orphaned_phantoms");
     public static final ResourceLocation SPAWN_PARTICLE        = id("spawn_particle");
 
@@ -178,16 +179,20 @@ public class ModPacketHandler {
         registerC2S(ITEM_DESIGNATOR,
                 ItemDesignatorPacket::decode,
                 ItemDesignatorPacket::handle);
+
+        registerC2S(UPDATE_RADAR,
+                UpdateRadarC2SPacket::decode,
+                UpdateRadarC2SPacket::handle);
     }
 
     // ══════════════════════ Вспомогательные методы ════════════════════════════
 
     private static ResourceLocation id(String path) {
         //? if fabric && < 1.21.1 {
-        return new ResourceLocation(RefStrings.MODID, path);
-        //?} else {
-        /*return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, path);
-        *///?}
+        /*return new ResourceLocation(RefStrings.MODID, path);
+        *///?} else {
+        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, path);
+        //?}
     }
 
     /**

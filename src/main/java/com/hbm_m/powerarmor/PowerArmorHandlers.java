@@ -32,14 +32,14 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 //? if forge {
-/*import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
+import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-*///?}
+//?}
 
 /**
  * Combined handler for Power Armor events.
@@ -51,7 +51,7 @@ import net.minecraftforge.fml.common.Mod;
  * - Все расчеты через централизованную систему DT+DR
  */
 //? if forge {
-/*@Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)*///?}
+@Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)//?}
 public final class PowerArmorHandlers {
 
     private static final String TAG_DASH_COOLDOWN = "hbm_power_armor_dash_cooldown";
@@ -76,7 +76,7 @@ public final class PowerArmorHandlers {
      * и рассчитываем урон через DamageResistanceHandler
      */
     //? if forge {
-    /*@SubscribeEvent(priority = EventPriority.HIGHEST)
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onLivingAttack(LivingAttackEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
         if (player.level().isClientSide) return;
@@ -114,13 +114,13 @@ public final class PowerArmorHandlers {
             data.putFloat("hbm_power_armor_damage", calculatedDamage);
         }
     }
-    *///?}
+    //?}
 
     /**
      * LOWEST priority - применяем наш урон ПОСЛЕ всей ванильной обработки
      */
     //? if forge {
-    /*@SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onLivingHurt(LivingHurtEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
         if (player.level().isClientSide) return;
@@ -133,7 +133,7 @@ public final class PowerArmorHandlers {
             data.remove("hbm_power_armor_damage");
         }
     }
-    *///?}
+    //?}
 
     // ========== MOVEMENT HANDLING ==========
     
@@ -221,10 +221,10 @@ public final class PowerArmorHandlers {
     
     private static final TagKey<net.minecraft.world.level.block.Block> HBM_HARDLANDING_BREAKABLE =
             //? if fabric && < 1.21.1 {
-            TagKey.create(Registries.BLOCK, new ResourceLocation(MainRegistry.MOD_ID, "hardlanding_breakable"));
-            //?} else {
-                        /*TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "hardlanding_breakable"));
-            *///?}
+            /*TagKey.create(Registries.BLOCK, new ResourceLocation(MainRegistry.MOD_ID, "hardlanding_breakable"));
+            *///?} else {
+                        TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "hardlanding_breakable"));
+            //?}
 
 
     private static void handleHardLanding(ServerPlayer player) {

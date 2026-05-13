@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import com.hbm_m.datagen.recipes.ModRecipeProvider;
+import com.hbm_m.datagen.recipes.ModRecipeProvider;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
 import com.hbm_m.item.ModItems;
@@ -15,10 +15,10 @@ import net.minecraftforge.common.Tags;
 
 import java.util.function.Consumer;
 
-/^*
+/**
  * Handles Blast Furnace recipe generation to keep {@link ModRecipeProvider} focused on orchestration.
  * Recipes based on original HBM BlastFurnaceRecipes.
- ^/
+ */
 public final class BlastFurnaceRecipeGenerator {
 
     private BlastFurnaceRecipeGenerator() {}
@@ -30,10 +30,10 @@ public final class BlastFurnaceRecipeGenerator {
                 Ingredient.of(Items.IRON_INGOT),
                 Ingredient.of(ItemTags.COALS)
         //? if fabric && < 1.21.1 {
-        ).save(writer, new ResourceLocation(RefStrings.MODID, "blast_furnace/steel_from_ingot"));
-        //?} else {
-                /^).save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "blast_furnace/steel_from_ingot"));
-        ^///?}
+        /*).save(writer, new ResourceLocation(RefStrings.MODID, "blast_furnace/steel_from_ingot"));
+        *///?} else {
+                ).save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "blast_furnace/steel_from_ingot"));
+        //?}
 
 
         // IRON.ore() + COAL -> steel x2
@@ -42,10 +42,10 @@ public final class BlastFurnaceRecipeGenerator {
                 Ingredient.of(Tags.Items.ORES_IRON),
                 Ingredient.of(ItemTags.COALS)
         //? if fabric && < 1.21.1 {
-        ).save(writer, new ResourceLocation(RefStrings.MODID, "blast_furnace/steel_from_ore"));
-        //?} else {
-                /^).save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "blast_furnace/steel_from_ore"));
-        ^///?}
+        /*).save(writer, new ResourceLocation(RefStrings.MODID, "blast_furnace/steel_from_ore"));
+        *///?} else {
+                ).save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "blast_furnace/steel_from_ore"));
+        //?}
 
 
         // IRON.ore() + COAL_BLOCK -> steel x3 (coal block burns hotter, like coke)
@@ -54,10 +54,10 @@ public final class BlastFurnaceRecipeGenerator {
                 Ingredient.of(Tags.Items.ORES_IRON),
                 Ingredient.of(Items.COAL_BLOCK)
         //? if fabric && < 1.21.1 {
-        ).save(writer, new ResourceLocation(RefStrings.MODID, "blast_furnace/steel_from_ore_coal_block"));
-        //?} else {
-                /^).save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "blast_furnace/steel_from_ore_coal_block"));
-        ^///?}
+        /*).save(writer, new ResourceLocation(RefStrings.MODID, "blast_furnace/steel_from_ore_coal_block"));
+        *///?} else {
+                ).save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "blast_furnace/steel_from_ore_coal_block"));
+        //?}
 
 
         // IRON.ore() + coal powder -> steel x3 (flux-like)
@@ -66,10 +66,10 @@ public final class BlastFurnaceRecipeGenerator {
                 Ingredient.of(Tags.Items.ORES_IRON),
                 Ingredient.of(ModItems.getPowders(ModPowders.COAL).get())
         //? if fabric && < 1.21.1 {
-        ).save(writer, new ResourceLocation(RefStrings.MODID, "blast_furnace/steel_from_ore_powder"));
-        //?} else {
-                /^).save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "blast_furnace/steel_from_ore_powder"));
-        ^///?}
+        /*).save(writer, new ResourceLocation(RefStrings.MODID, "blast_furnace/steel_from_ore_powder"));
+        *///?} else {
+                ).save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "blast_furnace/steel_from_ore_powder"));
+        //?}
 
 
         // CU + REDSTONE -> red_copper x2
@@ -78,10 +78,10 @@ public final class BlastFurnaceRecipeGenerator {
                 Ingredient.of(Items.COPPER_INGOT),
                 Ingredient.of(Items.REDSTONE)
         //? if fabric && < 1.21.1 {
-        ).save(writer, new ResourceLocation(RefStrings.MODID, "blast_furnace/red_copper"));
-        //?} else {
-                /^).save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "blast_furnace/red_copper"));
-        ^///?}
+        /*).save(writer, new ResourceLocation(RefStrings.MODID, "blast_furnace/red_copper"));
+        *///?} else {
+                ).save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "blast_furnace/red_copper"));
+        //?}
 
 
         // STEEL + RED_COPPER (MINGRADE analogue) -> advanced_alloy x2
@@ -90,11 +90,11 @@ public final class BlastFurnaceRecipeGenerator {
                 Ingredient.of(ModItems.getIngot(ModIngots.STEEL).get()),
                 Ingredient.of(ModItems.getIngot(ModIngots.RED_COPPER).get())
         //? if fabric && < 1.21.1 {
-        ).save(writer, new ResourceLocation(RefStrings.MODID, "blast_furnace/advanced_alloy"));
-        //?} else {
-                /^).save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "blast_furnace/advanced_alloy"));
-        ^///?}
+        /*).save(writer, new ResourceLocation(RefStrings.MODID, "blast_furnace/advanced_alloy"));
+        *///?} else {
+                ).save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "blast_furnace/advanced_alloy"));
+        //?}
 
     }
 }
-*///?}
+//?}

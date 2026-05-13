@@ -135,7 +135,7 @@ public class CameraShakeHandler {
     // via mixins or platform hooks later.
 
     //? if forge {
-    /*@net.minecraftforge.fml.common.Mod.EventBusSubscriber(
+    @net.minecraftforge.fml.common.Mod.EventBusSubscriber(
             modid = com.hbm_m.lib.RefStrings.MODID,
             value = net.minecraftforge.api.distmarker.Dist.CLIENT
     )
@@ -178,5 +178,5 @@ public class CameraShakeHandler {
             }
         }
     }
-    *///?}
+    //?}
 }

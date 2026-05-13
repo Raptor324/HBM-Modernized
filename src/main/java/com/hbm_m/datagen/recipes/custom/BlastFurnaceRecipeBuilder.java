@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import java.util.function.Consumer;
+import java.util.function.Consumer;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -114,4 +114,4 @@ public class BlastFurnaceRecipeBuilder implements RecipeBuilder {
         }
     }
 }
-*///?}
+//?}

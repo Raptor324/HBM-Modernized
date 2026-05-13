@@ -175,12 +175,12 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
             return Component.translatable("fluid.hbm_m.none");
         }
         //? if forge {
-        /*return Component.translatable(fluid.getFluidType().getDescriptionId());
-         *///?} else {
-        ResourceLocation key = BuiltInRegistries.FLUID.getKey(fluid);
+        return Component.translatable(fluid.getFluidType().getDescriptionId());
+         //?} else {
+        /*ResourceLocation key = BuiltInRegistries.FLUID.getKey(fluid);
         // Стандартное соглашение об именовании: "fluid.modid.fluid_name"
                 return Component.translatable("fluid." + key.getNamespace() + "." + key.getPath());
-        //?}
+        *///?}
     }
 
     @Override

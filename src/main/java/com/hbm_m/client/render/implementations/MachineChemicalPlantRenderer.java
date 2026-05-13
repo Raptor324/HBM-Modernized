@@ -16,8 +16,8 @@ import com.hbm_m.client.render.RenderDistanceHelper;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 //? if forge {
-/*import com.hbm_m.client.render.shader.IrisPhaseGuard;
-*///?}
+import com.hbm_m.client.render.shader.IrisPhaseGuard;
+//?}
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
@@ -25,14 +25,14 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-*///?}
+//?}
 
 //? if fabric {
-import net.fabricmc.api.EnvType;
+/*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-//?}
+*///?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -42,10 +42,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.phys.AABB;
 //? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
+//?}
 //? if fabric {
-@Environment(EnvType.CLIENT)//?}
+/*@Environment(EnvType.CLIENT)*///?}
 public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChemicalPlantBlockEntity, MachineChemicalPlantBakedModel> {
 
     private MachineChemicalPlantVboRenderer gpu;
@@ -147,12 +147,12 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         if (!useVboGeometry && !renderActive) {
             if (visual != null) {
                 //? if forge {
-                /*try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
+                try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
                     MachineChemicalPlantVboRenderer.renderChemplantFluid(be, model, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
                 }
-                *///?} else {
-                MachineChemicalPlantVboRenderer.renderChemplantFluid(be, model, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
-                //?}
+                //?} else {
+                /*MachineChemicalPlantVboRenderer.renderChemplantFluid(be, model, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
+                *///?}
             }
             return;
         }
@@ -165,12 +165,12 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
 
         if (visual != null) {
             //? if forge {
-            /*try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
+            try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
                 MachineChemicalPlantVboRenderer.renderChemplantFluid(be, model, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
             }
-            *///?} else {
-            MachineChemicalPlantVboRenderer.renderChemplantFluid(be, model, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
-            //?}
+            //?} else {
+            /*MachineChemicalPlantVboRenderer.renderChemplantFluid(be, model, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
+            *///?}
         }
     }
 

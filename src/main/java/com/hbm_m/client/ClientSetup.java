@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 //? if fabric {
-import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
+/*import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRegistry;
@@ -24,7 +24,7 @@ import net.minecraft.server.packs.PackType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeManager;
 import static dev.architectury.registry.client.rendering.BlockEntityRendererRegistry.register;
-//?}
+*///?}
 
 import org.jetbrains.annotations.NotNull;
 
@@ -61,9 +61,17 @@ import com.hbm_m.client.render.implementations.DoorRenderer;
 import com.hbm_m.client.render.implementations.MachineAdvancedAssemblerRenderer;
 import com.hbm_m.client.render.implementations.MachineAssemblerRenderer;
 import com.hbm_m.client.render.implementations.MachineChemicalPlantRenderer;
+import com.hbm_m.client.loader.MachineCoolingTowerModelLoader;
+import com.hbm_m.client.render.GasCentrifugeRenderer;
+import com.hbm_m.client.render.LaunchPadMissileRenderer;
+import com.hbm_m.client.render.MachineRadarRenderer;
+import com.hbm_m.client.render.implementations.CrucibleRenderer;
+import com.hbm_m.client.render.implementations.MachineCoolingTowerRenderer;
 import com.hbm_m.client.render.implementations.MachineHydraulicFrackiningTowerRenderer;
 import com.hbm_m.client.render.implementations.MachinePressRenderer;
+import com.hbm_m.client.render.implementations.MissileABMEntityRenderer;
 import com.hbm_m.client.render.implementations.MissileTestEntityRenderer;
+import com.hbm_m.client.render.implementations.NoloEntityRenderer;
 import com.hbm_m.client.render.shader.ShaderReloadListener;
 import com.hbm_m.client.tooltip.CrateContentsTooltipComponent;
 import com.hbm_m.client.tooltip.CrateContentsTooltipComponentRenderer;
@@ -84,6 +92,28 @@ import com.hbm_m.inventory.gui.GUIMachineAdvancedAssembler;
 import com.hbm_m.inventory.gui.GUIMachineAssembler;
 import com.hbm_m.inventory.gui.GUIMachineBattery;
 import com.hbm_m.inventory.gui.GUIMachineCentrifuge;
+import com.hbm_m.inventory.gui.GUIMachineCyclotron;
+import com.hbm_m.inventory.gui.GUIMachineArcWelder;
+import com.hbm_m.inventory.gui.GUIMachineBreeder;
+import com.hbm_m.inventory.gui.GUIMachineCrackingTower;
+import com.hbm_m.inventory.gui.GUIMachineCrucible;
+import com.hbm_m.inventory.gui.GUIMachineDerrick;
+import com.hbm_m.inventory.gui.GUIMachineFel;
+import com.hbm_m.inventory.gui.GUIMachineFlareStack;
+import com.hbm_m.inventory.gui.GUIMachineGasCentrifuge;
+import com.hbm_m.inventory.gui.GUIMachineFractionTower;
+import com.hbm_m.inventory.gui.GUIMachineLargePylon;
+import com.hbm_m.inventory.gui.GUIMachineMixer;
+import com.hbm_m.inventory.gui.GUIMachineMiningDrill;
+import com.hbm_m.inventory.gui.GUIMachinePumpjack;
+import com.hbm_m.inventory.gui.GUIMachineRadar;
+import com.hbm_m.inventory.gui.GUIMachineRbmkConsole;
+import com.hbm_m.inventory.gui.GUIMachineSilex;
+import com.hbm_m.inventory.gui.GUIMachineSolderingStation;
+import com.hbm_m.inventory.gui.GUIMachineSubstation;
+import com.hbm_m.inventory.gui.GUIMachineTurbine;
+import com.hbm_m.inventory.gui.GUIMachineZirnox;
+import com.hbm_m.inventory.gui.GUIIndustrialTurbine;
 import com.hbm_m.inventory.gui.GUIMachineChemicalPlant;
 import com.hbm_m.inventory.gui.GUIMachineFluidTank;
 import com.hbm_m.inventory.gui.GUIMachineFrackingTower;
@@ -136,7 +166,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.ModelEvent;
@@ -154,11 +184,11 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-*///?}
+//?}
 
 //? if forge {
-/*@Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-*///?}
+@Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+//?}
 @SuppressWarnings("UnstableApiUsage")
 public class ClientSetup {
 
@@ -216,7 +246,7 @@ public class ClientSetup {
     }
 
     //? if fabric {
-    private static volatile boolean fabricShadersLoaded = false;
+    /*private static volatile boolean fabricShadersLoaded = false;
 
     private static void registerFabricRenderLayers() {
         BlockRenderLayerMap.INSTANCE.putBlocks(RenderType.cutout(),
@@ -370,10 +400,10 @@ public class ClientSetup {
             MainRegistry.LOGGER.error("Failed to register shaders on Fabric", e);
         }
     }
-    //?}
+    *///?}
 
     //? if forge {
-    /*@SubscribeEvent
+    @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         MainRegistry.LOGGER.info("FMLClientSetupEvent fired. Initializing client.");
         initClient();
@@ -386,10 +416,32 @@ public class ClientSetup {
         // Forge-only: дисконнект (на Fabric есть свой хук).
         MinecraftForge.EVENT_BUS.addListener(ClientSetup::onClientDisconnect);
     }
-    *///?}
+    //?}
 
     private static void registerScreens() {
         MenuScreens.register(ModMenuTypes.CRYSTALLIZER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCrystallizer::new);
+        MenuScreens.register(ModMenuTypes.BREEDER_MENU.get(), GUIMachineBreeder::new);
+        MenuScreens.register(ModMenuTypes.LARGE_PYLON_MENU.get(), GUIMachineLargePylon::new);
+        MenuScreens.register(ModMenuTypes.CYCLOTRON_MENU.get(), GUIMachineCyclotron::new);
+        MenuScreens.register(ModMenuTypes.ZIRNOX_MENU.get(), GUIMachineZirnox::new);
+        MenuScreens.register(ModMenuTypes.ARC_WELDER_MENU.get(), GUIMachineArcWelder::new);
+        MenuScreens.register(ModMenuTypes.SOLDERING_STATION_MENU.get(), GUIMachineSolderingStation::new);
+        MenuScreens.register(ModMenuTypes.MIXER_MENU.get(), GUIMachineMixer::new);
+        MenuScreens.register(ModMenuTypes.DERRICK_MENU.get(), GUIMachineDerrick::new);
+        MenuScreens.register(ModMenuTypes.RBMK_CONSOLE_MENU.get(), GUIMachineRbmkConsole::new);
+        MenuScreens.register(ModMenuTypes.FLARE_STACK_MENU.get(), GUIMachineFlareStack::new);
+        MenuScreens.register(ModMenuTypes.PUMPJACK_MENU.get(), GUIMachinePumpjack::new);
+        MenuScreens.register(ModMenuTypes.RADAR_MENU.get(), GUIMachineRadar::new);
+        MenuScreens.register(ModMenuTypes.CRACKING_TOWER_MENU.get(), GUIMachineCrackingTower::new);
+        MenuScreens.register(ModMenuTypes.FRACTION_TOWER_MENU.get(), GUIMachineFractionTower::new);
+        MenuScreens.register(ModMenuTypes.MINING_DRILL_MENU.get(), GUIMachineMiningDrill::new);
+        MenuScreens.register(ModMenuTypes.FEL_MENU.get(), GUIMachineFel::new);
+        MenuScreens.register(ModMenuTypes.SILEX_MENU.get(), GUIMachineSilex::new);
+        MenuScreens.register(ModMenuTypes.GAS_CENTRIFUGE_MENU.get(), GUIMachineGasCentrifuge::new);
+        MenuScreens.register(ModMenuTypes.INDUSTRIAL_TURBINE_MENU.get(), GUIIndustrialTurbine::new);
+        MenuScreens.register(ModMenuTypes.TURBINE_MENU.get(), GUIMachineTurbine::new);
+        MenuScreens.register(ModMenuTypes.SUBSTATION_MENU.get(), GUIMachineSubstation::new);
+        MenuScreens.register(ModMenuTypes.CRUCIBLE_MENU.get(), GUIMachineCrucible::new);
         MenuScreens.register(ModMenuTypes.ARMOR_TABLE_MENU.get(), GUIArmorTable::new);
         MenuScreens.register(ModMenuTypes.MACHINE_ASSEMBLER_MENU.get(), GUIMachineAssembler::new);
         MenuScreens.register(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), GUIMachineAdvancedAssembler::new);
@@ -417,7 +469,7 @@ public class ClientSetup {
 
     private static void registerRenderersCommon() {
         //? if forge {
-        /*ModEntities.GRENADE_NUC_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
+        ModEntities.GRENADE_NUC_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
         ModEntities.GRENADE_IF_FIRE_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
         ModEntities.GRENADE_IF_SLIME_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
         ModEntities.GRENADE_IF_HE_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
@@ -428,6 +480,7 @@ public class ClientSetup {
         ModEntities.GRENADESLIME_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
         ModEntities.GRENADE_IF_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
         ModEntities.MISSILE_TEST.ifPresent(entityType -> EntityRenderers.register(entityType, MissileTestEntityRenderer::new));
+        ModEntities.MISSILE_ABM.ifPresent(entityType -> EntityRenderers.register(entityType, MissileABMEntityRenderer::new));
 
         BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.MACHINE_ASSEMBLER_BE.get(), MachineAssemblerRenderer::new);
@@ -438,10 +491,10 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.HEATING_OVEN_BE.get(), HeatingOvenRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), IndustrialTurbineRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.BATTERY_SOCKET_BE.get(), BatterySocketCreativeRenderer::new);
-        *///?}
+        //?}
 
         //? if fabric {
-        ModEntities.GRENADE_NUC_PROJECTILE.ifPresent(entityType ->
+        /*ModEntities.GRENADE_NUC_PROJECTILE.ifPresent(entityType ->
                 EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
         ModEntities.GRENADE_IF_FIRE_PROJECTILE.ifPresent(entityType ->
                 EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
@@ -463,6 +516,10 @@ public class ClientSetup {
                 EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
         ModEntities.MISSILE_TEST.ifPresent(entityType ->
                 EntityRendererRegistry.register(entityType, MissileTestEntityRenderer::new));
+        ModEntities.MISSILE_ABM.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileABMEntityRenderer::new));
+        ModEntities.NOLO.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, NoloEntityRenderer::new));
 
         // Airstrike + авиационные бомбы (иначе на Fabric entityRenderer == null → краш при рендере)
         ModEntities.AIRNUKEBOMB_PROJECTILE.ifPresent(entityType ->
@@ -492,7 +549,13 @@ public class ClientSetup {
         register(ModBlockEntities.HEATING_OVEN_BE.get(), HeatingOvenRenderer::new);
         register(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), IndustrialTurbineRenderer::new);
         register(ModBlockEntities.BATTERY_SOCKET_BE.get(), BatterySocketCreativeRenderer::new);
-        //?}
+        register(ModBlockEntities.COOLING_TOWER_BE.get(), MachineCoolingTowerRenderer::new);
+        register(ModBlockEntities.GAS_CENTRIFUGE_BE.get(), GasCentrifugeRenderer::new);
+        register(ModBlockEntities.RADAR_BE.get(), MachineRadarRenderer::new);
+        register(ModBlockEntities.LAUNCH_PAD_BE.get(), LaunchPadMissileRenderer::new);
+        register(ModBlockEntities.LAUNCH_PAD_RUSTED_BE.get(), LaunchPadMissileRenderer::new);
+        register(ModBlockEntities.CRUCIBLE_BE.get(), CrucibleRenderer::new);
+        *///?}
     }
 
     private static void registerParticlesCommon() {
@@ -502,9 +565,9 @@ public class ClientSetup {
         //?}
 
         //? if fabric {
-        ParticleFactoryRegistry.getInstance().register(ModParticleTypes.DARK_PARTICLE.get(), DarkParticle.Provider::new);
+        /*ParticleFactoryRegistry.getInstance().register(ModParticleTypes.DARK_PARTICLE.get(), DarkParticle.Provider::new);
         ParticleFactoryRegistry.getInstance().register(ModParticleTypes.RAD_FOG_PARTICLE.get(), RadFogParticle.Provider::new);
-        //?}
+        *///?}
     }
 
     private static void registerColorsCommon() {
@@ -514,7 +577,7 @@ public class ClientSetup {
         //?}
 
         //? if fabric {
-        ColorProviderRegistry.ITEM.register((stack, tintIndex) -> {
+        /*ColorProviderRegistry.ITEM.register((stack, tintIndex) -> {
             if (tintIndex == 0) return 0xFFFFFF;
             return com.hbm_m.item.liquids.FluidIdentifierItem.getTintColor(stack);
         }, ModItems.FLUID_IDENTIFIER.get());
@@ -549,12 +612,12 @@ public class ClientSetup {
         }, com.hbm_m.block.ModBlocks.FLUID_DUCT.get(),
                 com.hbm_m.block.ModBlocks.FLUID_DUCT_COLORED.get(),
                 com.hbm_m.block.ModBlocks.FLUID_DUCT_SILVER.get());
-        //?}
+        *///?}
     }
 
     private static void registerReloadListenersCommon() {
         //? if fabric {
-        // Критично: без вызова registerFabricShaders на Fabric не выполнялся loadFabricShaders — instanced shader == null,
+        /*// Критично: без вызова registerFabricShaders на Fabric не выполнялся loadFabricShaders — instanced shader == null,
         // flushBatchVanilla молча сбрасывал батч (машины пропадали), renderSingle уходил в putBulkData с WARN на каждый quad.
         registerFabricRenderLayers();
         registerFabricShaders();
@@ -574,7 +637,7 @@ public class ClientSetup {
                 new com.hbm_m.client.reload.IdentifiableReloadListenerAdapter(
                         new ResourceLocation(RefStrings.MODID, "deferred_cache_cleanup_reload_listener"),
                         new com.hbm_m.client.reload.DeferredCacheCleanupReloadListener()));
-        //?}
+        *///?}
     }
 
     private static void registerHudCommon() {
@@ -584,7 +647,7 @@ public class ClientSetup {
         //?}
 
         //? if fabric {
-        HudRenderCallback.EVENT.register((gfx, tickDelta) -> {
+        /*HudRenderCallback.EVENT.register((gfx, tickDelta) -> {
             Minecraft mc = Minecraft.getInstance();
             if (mc == null || mc.getWindow() == null) return;
             int w = mc.getWindow().getGuiScaledWidth();
@@ -596,14 +659,14 @@ public class ClientSetup {
             OverlayInfoToast.render(gfx, tickDelta, w, h);
             com.hbm_m.client.overlay.BlockLookOverlayHud.render(gfx);
         });
-        //?}
+        *///?}
     }
 
     private static void registerWorldRenderHooksCommon() {
         // Forge: wired via Forge event subscribers (RenderLevelStageEvent) in separate classes.
 
         //? if fabric {
-        // Closest equivalent to "after particles" stage for our debug text:
+        /*// Closest equivalent to "after particles" stage for our debug text:
         // we're in world render pass and have camera + PoseStack.
         WorldRenderEvents.AFTER_ENTITIES.register(ctx ->
                 ChunkRadiationDebugRenderer.render(ctx.matrixStack(), ctx.camera().getPosition()));
@@ -619,7 +682,7 @@ public class ClientSetup {
         // Clear radiation cache when joining/leaving worlds/dimensions.
         ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> ClientRadiationData.clearAll());
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ClientRadiationData.clearAll());
-        //?}
+        *///?}
     }
 
     private static void registerDisconnectHandlerCommon() {
@@ -629,8 +692,8 @@ public class ClientSetup {
         //?}
 
         //? if fabric {
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> clearClientCachesDeferred());
-        //?}
+        /*ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> clearClientCachesDeferred());
+        *///?}
     }
 
     private static void clearClientCachesDeferred() {
@@ -695,7 +758,7 @@ public class ClientSetup {
     }
 
     //? if forge {
-    /*@SubscribeEvent
+    @SubscribeEvent
     public static void onModelBake(ModelEvent.ModifyBakingResult event) {
         Map<ResourceLocation, BakedModel> modelRegistry = event.getModels();
         
@@ -719,7 +782,7 @@ public class ClientSetup {
         }
     }
 
-    /^*
+    /**
      * Continuity (через Connector/FFAPI) оборачивает все blockstate-модели в CtmBakedModel
      * (extends ForwardingBakedModel). Это ломает два поведения при активном шейдере:
      *
@@ -730,7 +793,7 @@ public class ClientSetup {
      *
      * Решение: в LOWEST-приоритете (после Continuity) разворачиваем обёртки обратно
      * для всех моделей нашего мода, чтобы terrain-рендер использовал vanilla/Forge-путь.
-     ^/
+     */
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onModelBakeUnwrapContinuity(ModelEvent.ModifyBakingResult event) {
         Map<ResourceLocation, BakedModel> models = event.getModels();
@@ -769,254 +832,254 @@ public class ClientSetup {
         // Регистрируем модели вариантов дверей, чтобы они загружались в ModelManager
         // round_airlock_door
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/round_airlock_door_legacy"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_legacy"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/round_airlock_door_legacy"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_legacy"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/round_airlock_door_modern"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/round_airlock_door_modern"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/round_airlock_door_modern_clean"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern_clean"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/round_airlock_door_modern_clean"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern_clean"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/round_airlock_door_modern_green"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern_green"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/round_airlock_door_modern_green"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern_green"));
+        //?}
 
         // large_vehicle_door
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/large_vehicle_door_legacy"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_legacy"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/large_vehicle_door_legacy"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_legacy"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/large_vehicle_door_modern"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/large_vehicle_door_modern"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/large_vehicle_door_modern_rad"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern_rad"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/large_vehicle_door_modern_rad"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern_rad"));
+        //?}
 
         // fire_door
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_legacy"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_legacy"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_legacy"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_legacy"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern_black"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_black"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern_black"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_black"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern_orange"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_orange"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern_orange"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_orange"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern_trefoil"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_trefoil"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern_trefoil"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_trefoil"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern_yellow"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_yellow"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern_yellow"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_yellow"));
+        //?}
 
         // secure_access_door
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_legacy"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_legacy"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_legacy"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_legacy"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_modern"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_modern"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_modern_gray"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_gray"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_modern_gray"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_gray"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_modern_yellow"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_yellow"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_modern_yellow"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_yellow"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_modern_black"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_black"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_modern_black"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_black"));
+        //?}
 
         // water_door
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/water_door_legacy"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_legacy"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/water_door_legacy"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_legacy"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/water_door_modern"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_modern"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/water_door_modern"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_modern"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/water_door_clean"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_clean"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/water_door_clean"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_clean"));
+        //?}
 
         // qe_containment_door
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_containment_door_legacy"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_legacy"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_containment_door_legacy"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_legacy"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_containment_door_modern"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_containment_door_modern"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil_yellow"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil_yellow"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil_yellow"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil_yellow"));
+        //?}
 
         // qe_sliding_door
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_sliding_door_legacy"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_legacy"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_sliding_door_legacy"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_legacy"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_sliding_door_modern"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_modern"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_sliding_door_modern"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_modern"));
+        //?}
 
         // sliding_blast_door
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_blast_door_legacy"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_legacy"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_blast_door_legacy"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_legacy"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_blast_door_modern"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_blast_door_modern"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant1"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant1"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant1"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant1"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant2"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant2"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant2"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant2"));
+        //?}
 
         // sliding_seal_door
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_seal_door_legacy"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_legacy"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_seal_door_legacy"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_legacy"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_seal_door_modern"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_modern"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_seal_door_modern"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_modern"));
+        //?}
 
 
         // vault_door
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_2"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_2"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_2"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_2"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_81"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_81"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_81"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_81"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_87"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_87"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_87"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_87"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_99"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_99"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_99"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_99"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_101"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_101"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_101"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_101"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_106"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_106"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_106"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_106"));
+        //?}
 
         //? if fabric && < 1.21.1 {
-        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_111"));
-        //?} else {
-                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_111"));
-        ^///?}
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_111"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_111"));
+        //?}
 
         
         MainRegistry.LOGGER.debug("Registered door variant models for loading");
@@ -1037,8 +1100,9 @@ public class ClientSetup {
         event.register("template_loader", new TemplateModelLoader());
         event.register("press_loader", new PressModelLoader());
         event.register("heating_oven_loader", new HeatingOvenModelLoader());
+        event.register("cooling_tower_loader", new MachineCoolingTowerModelLoader());
 
-        MainRegistry.LOGGER.info("Registered geometry loaders: advanced_assembly_machine_loader, chemical_plant_loader, machine_assembler_loader, hydraulic_frackining_tower_loader, template_loader, door, press_loader, heating_oven_loader");
+        MainRegistry.LOGGER.info("Registered geometry loaders: advanced_assembly_machine_loader, chemical_plant_loader, machine_assembler_loader, hydraulic_frackining_tower_loader, template_loader, door, press_loader, heating_oven_loader, cooling_tower_loader");
     }
 
     // Key mappings регистрируются в ModConfigKeybindHandler.init() через Architectury.
@@ -1100,6 +1164,9 @@ public class ClientSetup {
         event.registerEntityRenderer(ModEntities.NUKE_FALLOUT_RAIN.get(), RenderFallout::new);
         event.registerEntityRenderer(ModEntities.NUKE_MK5.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.FALLING_SELLAFIT_ENTITY_TYPE.get(), FallingBlockRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_TEST.get(), MissileTestEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_ABM.get(), MissileABMEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.NOLO.get(), NoloEntityRenderer::new);
     }
 
     @SubscribeEvent
@@ -1203,31 +1270,31 @@ public class ClientSetup {
         // ResourceProvider wrapper synthesize it from the real source + the define injection.
         ResourceLocation realVsh =
             //? if fabric && < 1.21.1 {
-            new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit.vsh");
-            //?} else {
-                        /^ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit.vsh");
-            ^///?}
+            /*new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit.vsh");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit.vsh");
+            //?}
 
         ResourceLocation virtualInstancedVsh =
             //? if fabric && < 1.21.1 {
-            new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced.vsh");
-            //?} else {
-                        /^ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced.vsh");
-            ^///?}
+            /*new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced.vsh");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced.vsh");
+            //?}
 
         ResourceLocation virtualSlicedVsh =
             //? if fabric && < 1.21.1 {
-            new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit_sliced.vsh");
-            //?} else {
-                        /^ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit_sliced.vsh");
-            ^///?}
+            /*new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit_sliced.vsh");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit_sliced.vsh");
+            //?}
 
         ResourceLocation virtualInstancedSlicedVsh =
             //? if fabric && < 1.21.1 {
-            new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced_sliced.vsh");
-            //?} else {
-                        /^ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced_sliced.vsh");
-            ^///?}
+            /*new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced_sliced.vsh");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced_sliced.vsh");
+            //?}
 
 
         com.hbm_m.client.render.shader.modification.ShaderModification instancingDefine =
@@ -1259,18 +1326,18 @@ public class ClientSetup {
             new ShaderInstance(
                 event.getResourceProvider(),
                 //? if fabric && < 1.21.1 {
-                new ResourceLocation(MainRegistry.MOD_ID, "block_lit_simple"),
+                /*new ResourceLocation(MainRegistry.MOD_ID, "block_lit_simple"),
                 blockLitSimpleFormat
             ),
             ModShaders::setBlockLitSimpleShader
         );
-                //?} else {
-                                /^ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_simple"),
+                *///?} else {
+                                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_simple"),
                 blockLitSimpleFormat
             ),
             ModShaders::setBlockLitSimpleShader
         );
-                ^///?}
+                //?}
 
         MainRegistry.LOGGER.info("Successfully registered block_lit_simple shader");
 
@@ -1278,18 +1345,18 @@ public class ClientSetup {
             new ShaderInstance(
                 instancedProvider,
                 //? if fabric && < 1.21.1 {
-                new ResourceLocation(MainRegistry.MOD_ID, "block_lit_instanced"),
+                /*new ResourceLocation(MainRegistry.MOD_ID, "block_lit_instanced"),
                 blockLitInstancedFormat
             ),
             ModShaders::setBlockLitInstancedShader
         );
-                //?} else {
-                                /^ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_instanced"),
+                *///?} else {
+                                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_instanced"),
                 blockLitInstancedFormat
             ),
             ModShaders::setBlockLitInstancedShader
         );
-                ^///?}
+                //?}
 
         MainRegistry.LOGGER.info("Successfully registered block_lit_instanced shader");
 
@@ -1297,18 +1364,18 @@ public class ClientSetup {
             new ShaderInstance(
                 slicedProvider,
                 //? if fabric && < 1.21.1 {
-                new ResourceLocation(MainRegistry.MOD_ID, "block_lit_simple_sliced"),
+                /*new ResourceLocation(MainRegistry.MOD_ID, "block_lit_simple_sliced"),
                 blockLitSimpleFormat
             ),
             ModShaders::setBlockLitSimpleSlicedShader
         );
-                //?} else {
-                                /^ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_simple_sliced"),
+                *///?} else {
+                                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_simple_sliced"),
                 blockLitSimpleFormat
             ),
             ModShaders::setBlockLitSimpleSlicedShader
         );
-                ^///?}
+                //?}
 
         MainRegistry.LOGGER.info("Successfully registered block_lit_simple_sliced shader");
 
@@ -1316,18 +1383,18 @@ public class ClientSetup {
             new ShaderInstance(
                 instancedSlicedProvider,
                 //? if fabric && < 1.21.1 {
-                new ResourceLocation(MainRegistry.MOD_ID, "block_lit_instanced_sliced"),
+                /*new ResourceLocation(MainRegistry.MOD_ID, "block_lit_instanced_sliced"),
                 blockLitInstancedFormat
             ),
             ModShaders::setBlockLitInstancedSlicedShader
         );
-                //?} else {
-                                /^ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_instanced_sliced"),
+                *///?} else {
+                                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_instanced_sliced"),
                 blockLitInstancedFormat
             ),
             ModShaders::setBlockLitInstancedSlicedShader
         );
-                ^///?}
+                //?}
 
         MainRegistry.LOGGER.info("Successfully registered block_lit_instanced_sliced shader");
         
@@ -1390,5 +1457,5 @@ public class ClientSetup {
         // Generic dummy armor model for all power armor items.
         event.registerLayerDefinition(ModModelLayers.POWER_ARMOR, PowerArmorEmptyModel::createBodyLayer);
     }
-    *///?}
+    //?}
 }

@@ -1,5 +1,5 @@
 //? if forge {
-/*package com.hbm_m.client.render.shader;
+package com.hbm_m.client.render.shader;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -12,28 +12,28 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.ModList;
 
-/^*
+/**
  * Try-with-resources scope helper that calls
  * {@code WorldRenderingPipeline.setPhase(WorldRenderingPhase.<phase>)} on entry
  * and restores {@code WorldRenderingPhase.NONE} on close.
- ^/
+ */
 @OnlyIn(Dist.CLIENT)
 public final class IrisPhaseGuard implements AutoCloseable {
 
     private static volatile boolean initialized = false;
     private static volatile boolean available = false;
 
-    /^* Slow-path Method handles, kept around for the rare case MH binding fails. ^/
+    /** Slow-path Method handles, kept around for the rare case MH binding fails. */
     private static Method getPipelineManager;
     private static Method getPipelineNullable;
     private static Method setPhase;
 
-    /^*
+    /**
      * Hot-path MethodHandles. {@code asType()}-adapted to {@code (Object)Object}
      * / {@code (Object, Object)void} so call sites can invokeExact with boxed
      * arguments - see {@link #currentPipeline()} and {@link #pushBlockEntities()}
      * for the call shapes.
-     ^/
+     */
     private static MethodHandle getPipelineManagerMH;
     private static MethodHandle getPipelineNullableMH;
     private static MethodHandle setPhaseMH;
@@ -51,10 +51,10 @@ public final class IrisPhaseGuard implements AutoCloseable {
         this.active = active;
     }
 
-    /^*
+    /**
      * Pushes {@code BLOCK_ENTITIES} phase. Returns a guard whose {@link #close()} restores
      * {@code NONE}. When Iris is missing or the reflective call fails the guard is a no-op.
-     ^/
+     */
     public static IrisPhaseGuard pushBlockEntities() {
         if (!initialized) {
             initReflection();
@@ -84,10 +84,10 @@ public final class IrisPhaseGuard implements AutoCloseable {
         }
     }
 
-    /^*
+    /**
      * Hot-path setPhase invocation. Falls back to {@link Method#invoke} only when
      * MH binding could not complete during {@link #initReflection}.
-     ^/
+     */
     private static void invokeSetPhase(Object pipeline, Object phase) throws Throwable {
         if (setPhaseMH != null) {
             setPhaseMH.invokeExact(pipeline, phase);
@@ -175,10 +175,10 @@ public final class IrisPhaseGuard implements AutoCloseable {
         }
     }
 }
-*///?}
+//?}
 
 //? if fabric {
-package com.hbm_m.client.render.shader;
+/*package com.hbm_m.client.render.shader;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -189,7 +189,7 @@ import com.hbm_m.main.MainRegistry;
 
 import dev.architectury.platform.Platform;
 
-/**
+/^*
  * Try-with-resources scope helper that calls
  * {@code WorldRenderingPipeline.setPhase(WorldRenderingPhase.BLOCK_ENTITIES)} on entry
  * and restores {@code WorldRenderingPhase.NONE} on close.
@@ -198,7 +198,7 @@ import dev.architectury.platform.Platform;
  * phase, causing the shader pipeline to use wrong framebuffer targets / program
  * bindings. This manifests as "GL No active program", models rendered to screen
  * instead of world, and "Uniform must be a matrix type" errors.
- */
+ ^/
 public final class IrisPhaseGuard implements AutoCloseable {
 
     private static volatile boolean initialized = false;
@@ -337,4 +337,4 @@ public final class IrisPhaseGuard implements AutoCloseable {
         }
     }
 }
-//?}
+*///?}

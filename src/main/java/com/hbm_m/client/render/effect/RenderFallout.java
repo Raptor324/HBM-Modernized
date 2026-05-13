@@ -25,10 +25,10 @@ import net.minecraft.world.level.levelgen.Heightmap;
 public class RenderFallout extends EntityRenderer<FalloutRain> {
 
     //? if fabric && < 1.21.1 {
-    private static final ResourceLocation FALLOUT = new ResourceLocation(RefStrings.MODID, "textures/entity/fallout.png");
-    //?} else {
-        /*private static final ResourceLocation FALLOUT = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/entity/fallout.png");
-    *///?}
+    /*private static final ResourceLocation FALLOUT = new ResourceLocation(RefStrings.MODID, "textures/entity/fallout.png");
+    *///?} else {
+        private static final ResourceLocation FALLOUT = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/entity/fallout.png");
+    //?}
 
 
     /** Максимальный радиус рендера fallout-колонн (в блоках). */

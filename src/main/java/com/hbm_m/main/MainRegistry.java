@@ -111,9 +111,9 @@ public final class MainRegistry {
         // На Fabric DeferredRegister жидкостей ещё не заполнил BuiltInRegistries на момент SETUP
         // (см. FabricEntrypoint#registerFluidDependentSetupWhenReady).
         //? if forge {
-        /*ChemicalPlantRecipes.registerRecipes();
+        ChemicalPlantRecipes.registerRecipes();
         ModFluidTraitsBootstrap.registerAll();
-        *///?}
+        //?}
         //? if neoforge {
         /*ChemicalPlantRecipes.registerRecipes();
         ModFluidTraitsBootstrap.registerAll();

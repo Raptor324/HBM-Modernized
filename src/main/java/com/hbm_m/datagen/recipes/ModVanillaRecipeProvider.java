@@ -1,7 +1,8 @@
 package com.hbm_m.datagen.recipes;
 //? if forge {
-/*import java.util.function.Consumer;
+import java.util.function.Consumer;
 
+import net.minecraftforge.common.Tags;
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.block.ModBlocks;
@@ -456,6 +457,54 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(Items.PAPER), has(Items.PAPER))
                 .save(writer, recipeId("crafting/template_folder"));
 
+        // BUILDING BLOCKS START
+
+        // DECO
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.DECO_STEEL_SCAFFOLD.get(), 8)
+                .pattern("###")
+                .pattern(" # ")
+                .pattern("###")
+                .define('#', ModItems.getIngot(ModIngots.STEEL).get())
+                .unlockedBy("has_steel_ingot", has(ModItems.getIngot(ModIngots.STEEL).get()))
+                .save(writer, recipeId("crafting/deco_steel_scaffold"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.STEEL_POLE.get(), 16)
+                .pattern("# #")
+                .pattern("###")
+                .pattern("# #")
+                .define('#', ModItems.getIngot(ModIngots.STEEL).get())
+                .unlockedBy("has_steel_ingot", has(ModItems.getIngot(ModIngots.STEEL).get()))
+                .save(writer, recipeId("crafting/steel_pole"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.ANTENNA_TOP.get(), 1)
+                .pattern("# #")
+                .pattern("#@#")
+                .pattern("$$$")
+                .define('#', ModItems.getIngot(ModIngots.STEEL).get())
+                .define('@', ModItems.getIngot(ModIngots.RED_COPPER).get())
+                .define('$', ModItems.getIngot(ModIngots.BERYLLIUM).get())
+                .unlockedBy("has_steel_ingot", has(ModItems.getIngot(ModIngots.STEEL).get()))
+                .save(writer, recipeId("crafting/antenna_top"));
+
+        // OTHER
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.REINFORCED_GLASS.get(), 5)
+                .pattern("$#$")
+                .pattern("#$#")
+                .pattern("$#$")
+                .define('#', Blocks.GLASS)
+                .define('$', Blocks.IRON_BARS)
+                .unlockedBy("has_iron_Ingot", has(Items.IRON_INGOT))
+                .save(writer, recipeId("crafting/reinforced_glass"));
+
+        // CONCRETES AND STONES
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.REBAR.get(), 8)
+                .pattern("## ")
+                .pattern("## ")
+                .pattern("   ")
+                .define('#', ModItems.BOLT_STEEL.get())
+                .unlockedBy("has_concrete", has(ModBlocks.CONCRETE.get()))
+                .save(writer, recipeId("crafting/rebar"));
+
         ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.REINFORCED_STONE.get(), 4)
                 .pattern("#$#")
                 .pattern("$#$")
@@ -464,6 +513,131 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('$', Blocks.STONE)
                 .unlockedBy("has_stone", has(Blocks.STONE))
                 .save(writer, recipeId("crafting/reinforced_stone"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.REINFORCED_STONE_STAIRS.get(), 4)
+                .pattern("#  ")
+                .pattern("## ")
+                .pattern("###")
+                .define('#', ModBlocks.REINFORCED_STONE.get())
+                .unlockedBy("has_stone", has(Blocks.STONE))
+                .save(writer, recipeId("crafting/reinforced_stone_stairs"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.REINFORCED_STONE_SLAB.get(), 6)
+                .pattern("###")
+                .define('#', ModBlocks.REINFORCED_STONE.get())
+                .unlockedBy("has_stone", has(Blocks.STONE))
+                .save(writer, recipeId("crafting/reinforced_stone_slab"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.CONCRETE_HAZARD.get(), 6)
+                .pattern("###")
+                .pattern("$ @")
+                .pattern("###")
+                .define('#', ModBlocks.CONCRETE.get())
+                .define('$', ModItems.SULFUR.get())
+                .define('@', Ingredient.of(Tags.Items.DYES_GREEN))
+                .unlockedBy("has_concrete", has(ModBlocks.CONCRETE.get()))
+                .save(writer, recipeId("crafting/concrete_hazard"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.CONCRETE_HAZARD_STAIRS.get(), 4)
+                .pattern("#  ")
+                .pattern("## ")
+                .pattern("###")
+                .define('#', ModBlocks.CONCRETE_HAZARD.get())
+                .unlockedBy("has_concrete", has(ModBlocks.CONCRETE.get()))
+                .save(writer, recipeId("crafting/concrete_hazard_stairs"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.CONCRETE_HAZARD_SLAB.get(), 6)
+                .pattern("###")
+                .define('#', ModBlocks.CONCRETE_HAZARD.get())
+                .unlockedBy("has_concrete", has(ModBlocks.CONCRETE.get()))
+                .save(writer, recipeId("crafting/concrete_hazard_slab"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.BRICK_CONCRETE.get(), 6)
+                .pattern(" # ")
+                .pattern("#$#")
+                .pattern(" # ")
+                .define('#', ModBlocks.CONCRETE.get())
+                .define('$', Items.CLAY_BALL)
+                .unlockedBy("has_concrete", has(ModBlocks.CONCRETE.get()))
+                .save(writer, recipeId("crafting/brick_concrete"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.BRICK_CONCRETE_STAIRS.get(), 4)
+                .pattern("#  ")
+                .pattern("## ")
+                .pattern("###")
+                .define('#', ModBlocks.BRICK_CONCRETE.get())
+                .unlockedBy("has_concrete", has(ModBlocks.CONCRETE.get()))
+                .save(writer, recipeId("crafting/brick_conrete_stairs"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.BRICK_CONCRETE_SLAB.get(), 6)
+                .pattern("###")
+                .define('#', ModBlocks.BRICK_CONCRETE.get())
+                .unlockedBy("has_concrete", has(ModBlocks.CONCRETE.get()))
+                .save(writer, recipeId("crafting/brick_concrete_slab"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.CONCRETE_PILLAR.get(), 6)
+                .pattern("#$#")
+                .pattern("#$#")
+                .pattern("#$#")
+                .define('#', ModBlocks.CONCRETE.get())
+                .define('$', Blocks.IRON_BARS)
+                .unlockedBy("has_concrete", has(ModBlocks.CONCRETE.get()))
+                .save(writer, recipeId("crafting/concrete_rebar"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.CONCRETE_REBAR_ALT.get(), 5)
+                .pattern("#$#")
+                .pattern("$#$")
+                .pattern("#$#")
+                .define('#', ModBlocks.CONCRETE.get())
+                .define('$', Blocks.IRON_BARS)
+                .unlockedBy("has_concrete", has(ModBlocks.CONCRETE.get()))
+                .save(writer, recipeId("crafting/concrete_rebar_alt"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.CONCRETE_VENT.get(), 3)
+                .pattern("$#")
+                .pattern("##")
+                .define('#', ModBlocks.CONCRETE.get())
+                .define('$', Blocks.IRON_TRAPDOOR)
+                .unlockedBy("has_concrete", has(ModBlocks.CONCRETE.get()))
+                .save(writer, recipeId("crafting/concrete_vent"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.CONCRETE_TILE_TREFOIL.get(), 1)
+                .pattern("#$ ")
+                .define('#', ModBlocks.CONCRETE_TILE.get())
+                .define('$', Tags.Items.DYES_BLACK)
+                .unlockedBy("has_concrete", has(ModBlocks.CONCRETE.get()))
+                .save(writer, recipeId("crafting/concrete_tile_marked"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.CONCRETE_FAN.get(), 3)
+                .pattern("$#")
+                .pattern("##")
+                .define('#', ModBlocks.CONCRETE.get())
+                .define('$', ModItems.PLATE_IRON.get())
+                .unlockedBy("has_concrete", has(ModBlocks.CONCRETE.get()))
+                .save(writer, recipeId("crafting/concrete_fan"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.CONCRETE_TILE.get(), 4)
+                .pattern("## ")
+                .pattern("## ")
+                .define('#', ModBlocks.CONCRETE.get())
+                .unlockedBy("has_concrete", has(ModBlocks.CONCRETE.get()))
+                .save(writer, recipeId("crafting/concrete_tile"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.CONCRETE_TILE_STAIRS.get(), 4)
+                .pattern("#  ")
+                .pattern("## ")
+                .pattern("###")
+                .define('#', ModBlocks.CONCRETE_TILE.get())
+                .unlockedBy("has_concrete", has(ModBlocks.CONCRETE.get()))
+                .save(writer, recipeId("crafting/concrete_tile_stairs"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.CONCRETE_TILE_SLAB.get(), 6)
+                .pattern("###")
+                .define('#', ModBlocks.CONCRETE_TILE.get())
+                .unlockedBy("has_concrete", has(ModBlocks.CONCRETE.get()))
+                .save(writer, recipeId("crafting/concrete_tile_slab"));
+
+        // BUILDING BLOCKS END
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.DET_MINER.get(), 4)
                 .pattern("$$$")
@@ -551,6 +725,14 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('B', Items.CLAY_BALL)
                 .unlockedBy(getHasName(ModItems.ALUMINUM_RAW.get()), has(ModItems.ALUMINUM_RAW.get()))
                 .save(writer, recipeId("crafting/alclay_fireclay"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.getPowders(ModPowders.CEMENT).get(), 4)
+                .pattern("AB")
+                .pattern("BB")
+                .define('A', ModItems.getPowders(ModPowders.LIMESTONE).get())
+                .define('B', Items.CLAY_BALL)
+                .unlockedBy(getHasName(ModItems.getPowders(ModPowders.LIMESTONE).get()), has(ModItems.getPowders(ModPowders.LIMESTONE).get()))
+                .save(writer, recipeId("crafting/limestone_cement"));
 
         registerSmelting(writer, ModItems.FIRECLAY_BALL.get(), ModItems.FIREBRICK.get(), 0.1F, 100, "firebrick_smelting");
     }
@@ -998,10 +1180,10 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
 
     private ResourceLocation recipeId(String path) {
         //? if fabric && < 1.21.1 {
-        return new ResourceLocation(RefStrings.MODID, path);
-        //?} else {
-                /^return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, path);
-        ^///?}
+        /*return new ResourceLocation(RefStrings.MODID, path);
+        *///?} else {
+                return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, path);
+        //?}
     }
 }
-*///?}
+//?}

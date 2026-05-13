@@ -2,12 +2,12 @@ package com.hbm_m.client.render;
 
 
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-*///?}
+//?}
 //? if fabric {
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;//?}
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;*///?}
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -55,10 +55,10 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
  * paths.
  */
 //? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
+//?}
 //? if fabric {
-@Environment(EnvType.CLIENT)//?}
+/*@Environment(EnvType.CLIENT)*///?}
 public final class IrisCompanionMesh {
 
     private final List<BakedQuad> quads;
@@ -314,17 +314,17 @@ public final class IrisCompanionMesh {
             final int fullBrightLight = LightTexture.pack(15, 15);
             for (BakedQuad quad : quads) {
                 //? if forge {
-                /*builder.putBulkData(neutralPose, quad,
+                builder.putBulkData(neutralPose, quad,
                         1.0F, 1.0F, 1.0F, 1.0F,
                         fullBrightLight,
                         OverlayTexture.NO_OVERLAY,
                         false);
-                *///?} else {
-                builder.putBulkData(neutralPose, quad,
+                //?} else {
+                /*builder.putBulkData(neutralPose, quad,
                         1.0F, 1.0F, 1.0F,
                         fullBrightLight,
                         OverlayTexture.NO_OVERLAY);
-                //?}
+                *///?}
             }
 
             BufferBuilder.RenderedBuffer rendered = builder.end();

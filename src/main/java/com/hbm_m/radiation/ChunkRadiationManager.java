@@ -13,7 +13,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 //? if forge {
-/*import net.minecraftforge.common.util.BlockSnapshot;
+import net.minecraftforge.common.util.BlockSnapshot;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.level.BlockEvent;
@@ -21,17 +21,17 @@ import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.event.level.ExplosionEvent;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-*///?}
+//?}
 
 //? if fabric {
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
+/*import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import dev.architectury.event.events.common.BlockEvent;
 import dev.architectury.event.events.common.ExplosionEvent;
-//?}
+*///?}
 
 
 /**
@@ -64,7 +64,7 @@ public class ChunkRadiationManager {
     private int tickCounter = 0;
 
     //? if fabric {
-    public static void initFabric() {
+    /*public static void initFabric() {
         ServerWorldEvents.LOAD.register((server, level) -> {
             if (ModClothConfig.get().enableChunkRads) {
                 if (ModClothConfig.get().enableDebugLogging) {
@@ -137,12 +137,12 @@ public class ChunkRadiationManager {
             }
         });
     }
-    //?}
+    *///?}
 
     // ОБРАБОТЧИКИ СОБЫТИЙ ЖИЗНЕННОГО ЦИКЛА МИРА 
 
     //? if forge {
-    /*@SubscribeEvent
+    @SubscribeEvent
     public void onWorldLoad(LevelEvent.Load event) {
         if (ModClothConfig.get().enableChunkRads) {
             if (event.getLevel() instanceof Level level) {
@@ -195,7 +195,7 @@ public class ChunkRadiationManager {
         }
         getProxy().receiveWorldTick(event);
     }
-    *///?}
+    //?}
 
     // ОБРАБОТЧИКИ СОБЫТИЙ ИЗМЕНЕНИЯ БЛОКОВ 
 
@@ -232,7 +232,7 @@ public class ChunkRadiationManager {
 
 
     //? if forge {
-    /*@SubscribeEvent
+    @SubscribeEvent
     public void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
         BlockSnapshot snapshot = event.getBlockSnapshot();
         BlockState oldState = snapshot.getReplacedBlock();
@@ -266,7 +266,7 @@ public class ChunkRadiationManager {
             handler.clearPlayerDebugCache(event.getEntity().getUUID());
         }
     }
-    *///?}
+    //?}
 
     // СТАТИЧЕСКИЕ МЕТОДЫ-ОБЕРТКИ 
 

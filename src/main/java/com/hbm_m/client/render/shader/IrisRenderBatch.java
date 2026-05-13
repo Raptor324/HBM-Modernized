@@ -55,14 +55,14 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
  * actually emits {@code shader.clear()}.
  */
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-/^@OnlyIn(Dist.CLIENT)
-^/*///?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-import net.fabricmc.api.EnvType;
+/*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-@Environment(EnvType.CLIENT)//?}
+@Environment(EnvType.CLIENT)*///?}
 public final class IrisRenderBatch implements AutoCloseable {
 
     private static final IrisRenderBatch INSTANCE = new IrisRenderBatch();
@@ -216,7 +216,7 @@ public final class IrisRenderBatch implements AutoCloseable {
      */
     public static IrisRenderBatch begin(boolean shadowPass, Matrix4f projectionMatrix) {
         //? if forge {
-        /*// Pass-change detection: if the active batch's pass differs from the
+        // Pass-change detection: if the active batch's pass differs from the
         // requested one, tear it down before opening the new one. The previous
         // batch's framebuffer/shader bindings are already invalidated by Iris's
         // own pass switch, but our cached uniform handles still match the
@@ -256,10 +256,10 @@ public final class IrisRenderBatch implements AutoCloseable {
             INSTANCE.isShadowPass = false;
             return null;
         }
-        *///?}
+        //?}
 
         //? if fabric {
-        // On Fabric there is no AFTER_BLOCK_ENTITIES event. The persistent
+        /*// On Fabric there is no AFTER_BLOCK_ENTITIES event. The persistent
         // batch model used on Forge keeps shader.apply() bound across all BEs
         // in one pass — but the eventual shader.clear() fires at
         // AFTER_TRANSLUCENT, by which point Iris has already moved past the
@@ -298,7 +298,7 @@ public final class IrisRenderBatch implements AutoCloseable {
             INSTANCE.isShadowPass = false;
             return null;
         }
-        //?}
+        *///?}
     }
 
     /**

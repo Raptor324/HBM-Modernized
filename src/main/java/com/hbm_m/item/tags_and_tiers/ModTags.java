@@ -12,10 +12,10 @@ public class ModTags {
 
     private static ResourceLocation modIdPath(String name) {
         //? if fabric && < 1.21.1 {
-        return new ResourceLocation(MainRegistry.MOD_ID, name);
-        //?} else {
-        /*return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name);
-        *///?}
+        /*return new ResourceLocation(MainRegistry.MOD_ID, name);
+        *///?} else {
+        return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name);
+        //?}
     }
 
     public static class Blocks {
@@ -29,6 +29,9 @@ public class ModTags {
         public static final TagKey<Block> NEEDS_TITANIUM_TOOL = tag("needs_titanium_tool");
 
         public static final TagKey<Block> NON_OCCLUDING = tag("non_occluding");
+
+        /** Блоки, которые соединяются CT между собой (steel ↔ rusty steel). */
+        public static final TagKey<Block> DECO_STEEL_CONNECTABLE = tag("deco_steel_connectable");
 
         private static TagKey<Block> tag(String name) {
             return TagKey.create(Registries.BLOCK, modIdPath(name));

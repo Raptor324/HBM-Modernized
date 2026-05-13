@@ -1,5 +1,5 @@
 //? if fabric {
-package com.hbm_m.client.model.loading;
+/*package com.hbm_m.client.model.loading;
 
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
@@ -63,4 +63,4 @@ final class QuadTransforms {
         return new BakedQuad(out, quad.getTintIndex(), dir, quad.getSprite(), quad.isShade());
     }
 }
-//?}
+*///?}

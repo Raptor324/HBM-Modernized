@@ -2,13 +2,13 @@ package com.hbm_m.client.render.implementations;
 
 
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-*///?}
-//? if fabric {
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 //?}
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+*///?}
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -48,10 +48,10 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 //? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
+//?}
 //? if fabric {
-@Environment(EnvType.CLIENT)//?}
+/*@Environment(EnvType.CLIENT)*///?}
 public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<MachineAdvancedAssemblerBlockEntity, MachineAdvancedAssemblerBakedModel> {
 
     private MachineAdvancedAssemblerVboRenderer gpu;
@@ -291,11 +291,11 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         //      themselves "in the sky" at shadow-camera coordinates.
         boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
         //? if forge {
-        /*boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || shadowPass);
-        *///?}
-        //? if fabric {
-        boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath();
+        boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || shadowPass);
         //?}
+        //? if fabric {
+        /*boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath();
+        *///?}
         if (useIrisBatch) {
             try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
                 // batch == null means Iris couldn't hand out a usable shader; fall

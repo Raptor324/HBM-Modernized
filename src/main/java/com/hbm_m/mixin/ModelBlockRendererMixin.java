@@ -12,15 +12,15 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 //? if fabric {
-import net.fabricmc.fabric.api.rendering.data.v1.RenderAttachedBlockView;
-//?}
+/*import net.fabricmc.fabric.api.rendering.data.v1.RenderAttachedBlockView;
+*///?}
 
 @Mixin(ModelBlockRenderer.class)
 @SuppressWarnings("UnstableApiUsage")
 public class ModelBlockRendererMixin {
 
     //? if fabric {
-    @Inject(method = "tesselateBlock", at = @At("HEAD"))
+    /*@Inject(method = "tesselateBlock", at = @At("HEAD"))
     private void hbm_m$captureRenderData(BlockAndTintGetter level, BakedModel model, BlockState state,
                                           BlockPos pos, com.mojang.blaze3d.vertex.PoseStack poseStack,
                                           com.mojang.blaze3d.vertex.VertexConsumer consumer, boolean checkSides,
@@ -41,5 +41,5 @@ public class ModelBlockRendererMixin {
                                         CallbackInfo ci) {
         FabricRenderDataBridge.clear();
     }
-    //?}
+    *///?}
 }

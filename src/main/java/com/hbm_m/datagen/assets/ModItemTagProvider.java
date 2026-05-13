@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.assets;
 //? if forge {
-/*import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletableFuture;
 
 import com.hbm_m.item.tags_and_tiers.ModTags;
 import org.jetbrains.annotations.NotNull;
@@ -37,10 +37,10 @@ public class ModItemTagProvider extends ItemTagsProvider {
 
         //  АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ ТЕГОВ ДЛЯ СЛИТКОВ
         //? if fabric && < 1.21.1 {
-        TagsProvider.TagAppender<Item> ingotsTagBuilder = this.tag(ItemTags.create(new ResourceLocation("forge", "ingots")));
-        //?} else {
-                /^TagsProvider.TagAppender<Item> ingotsTagBuilder = this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ingots")));
-        ^///?}
+        /*TagsProvider.TagAppender<Item> ingotsTagBuilder = this.tag(ItemTags.create(new ResourceLocation("forge", "ingots")));
+        *///?} else {
+                TagsProvider.TagAppender<Item> ingotsTagBuilder = this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ingots")));
+        //?}
 
 
         for (ModIngots ingot : ModIngots.values()) {
@@ -49,12 +49,12 @@ public class ModItemTagProvider extends ItemTagsProvider {
             if (ingotObject != null && ingotObject.isPresent()) {
                 String ingotName = ingot.getName();
                 //? if fabric && < 1.21.1 {
-                this.tag(ItemTags.create(new ResourceLocation("forge", "ingots/" + ingotName)))
+                /*this.tag(ItemTags.create(new ResourceLocation("forge", "ingots/" + ingotName)))
                         .add(ingotObject.get());
-                //?} else {
-                                /^this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ingots/" + ingotName)))
+                *///?} else {
+                                this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ingots/" + ingotName)))
                         .add(ingotObject.get());
-                ^///?}
+                //?}
 
                 ingotsTagBuilder.add(ingotObject.getKey());
             }
@@ -62,10 +62,10 @@ public class ModItemTagProvider extends ItemTagsProvider {
 
         //  АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ ТЕГОВ ДЛЯ ПОРОШКОВ
         //? if fabric && < 1.21.1 {
-        TagsProvider.TagAppender<Item> powdersTagBuilder = this.tag(ItemTags.create(new ResourceLocation("forge", "powders")));
-        //?} else {
-                /^TagsProvider.TagAppender<Item> powdersTagBuilder = this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders")));
-        ^///?}
+        /*TagsProvider.TagAppender<Item> powdersTagBuilder = this.tag(ItemTags.create(new ResourceLocation("forge", "powders")));
+        *///?} else {
+                TagsProvider.TagAppender<Item> powdersTagBuilder = this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders")));
+        //?}
 
 
         for (ModPowders powder : ModPowders.values()) {
@@ -74,12 +74,12 @@ public class ModItemTagProvider extends ItemTagsProvider {
             if (powderObject != null && powderObject.isPresent()) {
                 String powderName = powder.getName();
                 //? if fabric && < 1.21.1 {
-                this.tag(ItemTags.create(new ResourceLocation("forge", "powders/" + powderName)))
+                /*this.tag(ItemTags.create(new ResourceLocation("forge", "powders/" + powderName)))
                         .add(powderObject.get());
-                //?} else {
-                                /^this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + powderName)))
+                *///?} else {
+                                this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + powderName)))
                         .add(powderObject.get());
-                ^///?}
+                //?}
 
                 powdersTagBuilder.add(powderObject.getKey());
             }
@@ -90,12 +90,12 @@ public class ModItemTagProvider extends ItemTagsProvider {
             RegistrySupplier<Item> powderObject = ModItems.getPowder(ingot);
             if (powderObject != null && powderObject.isPresent()) {  //  ДОБАВЛЕНА ПРОВЕРКА isPresent()
                 //? if fabric && < 1.21.1 {
-                this.tag(ItemTags.create(new ResourceLocation("forge", "powders/" + ingot.getName())))
+                /*this.tag(ItemTags.create(new ResourceLocation("forge", "powders/" + ingot.getName())))
                         .add(powderObject.get());
-                //?} else {
-                                /^this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + ingot.getName())))
+                *///?} else {
+                                this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + ingot.getName())))
                         .add(powderObject.get());
-                ^///?}
+                //?}
 
                 powdersTagBuilder.add(powderObject.getKey());
             }
@@ -104,12 +104,12 @@ public class ModItemTagProvider extends ItemTagsProvider {
             ModItems.getTinyPowder(ingot).ifPresent(tiny -> {
                 if (tiny != null && tiny.isPresent()) {  //  ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА
                     //? if fabric && < 1.21.1 {
-                    this.tag(ItemTags.create(new ResourceLocation("forge", "powders/" + ingot.getName() + "/tiny")))
+                    /*this.tag(ItemTags.create(new ResourceLocation("forge", "powders/" + ingot.getName() + "/tiny")))
                             .add(tiny.get());
-                    //?} else {
-                                        /^this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + ingot.getName() + "/tiny")))
+                    *///?} else {
+                                        this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + ingot.getName() + "/tiny")))
                             .add(tiny.get());
-                    ^///?}
+                    //?}
 
                 }
             });
@@ -122,28 +122,28 @@ public class ModItemTagProvider extends ItemTagsProvider {
 
         // АВТОМАТИЧЕСКОЕ КОПИРОВАНИЕ ТЕГОВ ИЗ БЛОКОВ
         //? if fabric && < 1.21.1 {
-        this.copy(BlockTags.create(new ResourceLocation("forge", "storage_blocks/uranium")),
+        /*this.copy(BlockTags.create(new ResourceLocation("forge", "storage_blocks/uranium")),
                 ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")));
-        //?} else {
-                /^this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")),
+        *///?} else {
+                this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")),
                 ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")));
-        ^///?}
+        //?}
 
         //? if fabric && < 1.21.1 {
-        this.copy(BlockTags.create(new ResourceLocation("forge", "storage_blocks/plutonium")),
+        /*this.copy(BlockTags.create(new ResourceLocation("forge", "storage_blocks/plutonium")),
                 ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/plutonium")));
-        //?} else {
-                /^this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/plutonium")),
+        *///?} else {
+                this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/plutonium")),
                 ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/plutonium")));
-        ^///?}
+        //?}
 
         //? if fabric && < 1.21.1 {
-        this.copy(BlockTags.create(new ResourceLocation("forge", "ores/uranium")),
+        /*this.copy(BlockTags.create(new ResourceLocation("forge", "ores/uranium")),
                 ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")));
-        //?} else {
-                /^this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")),
+        *///?} else {
+                this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")),
                 ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")));
-        ^///?}
+        //?}
 
 
 
@@ -330,4 +330,4 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.MUSIC_DISC_BUNKER.get());
     }
 }
-*///?}
+//?}

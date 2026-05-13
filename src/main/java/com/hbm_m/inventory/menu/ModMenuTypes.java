@@ -13,12 +13,18 @@ public class ModMenuTypes {
 
     public static final DeferredRegister<MenuType<?>> MENUS =
             DeferredRegister.create(RefStrings.MODID, Registries.MENU);
-			
+
     public static final RegistrySupplier<MenuType<MachineCrystallizerMenu>> CRYSTALLIZER_MENU =
             MENUS.register("crystallizer_menu", () -> MenuRegistry.ofExtended(MachineCrystallizerMenu::new));
 
     public static final RegistrySupplier<MenuType<ArmorTableMenu>> ARMOR_TABLE_MENU =
             MENUS.register("armor_table_menu", () -> MenuRegistry.ofExtended(ArmorTableMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineBreederMenu>> BREEDER_MENU =
+            MENUS.register("breeder_menu", () -> MenuRegistry.ofExtended(MachineBreederMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineLargePylonMenu>> LARGE_PYLON_MENU =
+            MENUS.register("large_pylon_menu", () -> MenuRegistry.ofExtended(MachineLargePylonMenu::new));
 
     public static final RegistrySupplier<MenuType<MachineAssemblerMenu>> MACHINE_ASSEMBLER_MENU =
             MENUS.register("machine_assembler_menu", () -> MenuRegistry.ofExtended(MachineAssemblerMenu::new));
@@ -50,6 +56,12 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<MachineCentrifugeMenu>> CENTRIFUGE_MENU =
             MENUS.register("centrifuge_menu", () -> MenuRegistry.ofExtended(MachineCentrifugeMenu::new));
 
+    public static final RegistrySupplier<MenuType<MachineCrucibleMenu>> CRUCIBLE_MENU =
+            MENUS.register("crucible_menu", () -> MenuRegistry.ofExtended(MachineCrucibleMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineGasCentrifugeMenu>> GAS_CENTRIFUGE_MENU =
+            MENUS.register("gas_centrifuge_menu", () -> MenuRegistry.ofExtended(MachineGasCentrifugeMenu::new));
+
     public static final RegistrySupplier<MenuType<IronCrateMenu>> IRON_CRATE_MENU =
             MENUS.register("iron_crate_menu", () -> MenuRegistry.ofExtended(IronCrateMenu::new));
 
@@ -74,7 +86,61 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<MachineChemicalPlantMenu>> CHEMICAL_PLANT_MENU =
             MENUS.register("chemical_plant_menu", () -> MenuRegistry.ofExtended(MachineChemicalPlantMenu::new));
 
-	public static final RegistrySupplier<MenuType<MachineFrackingTowerMenu>> FRACTURING_TOWER_MENU =
+    public static final RegistrySupplier<MenuType<MachineCyclotronMenu>> CYCLOTRON_MENU =
+            MENUS.register("cyclotron_menu", () -> MenuRegistry.ofExtended(MachineCyclotronMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineZirnoxMenu>> ZIRNOX_MENU =
+            MENUS.register("zirnox_menu", () -> MenuRegistry.ofExtended(MachineZirnoxMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineArcWelderMenu>> ARC_WELDER_MENU =
+            MENUS.register("arc_welder_menu", () -> MenuRegistry.ofExtended(MachineArcWelderMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineSolderingStationMenu>> SOLDERING_STATION_MENU =
+            MENUS.register("soldering_station_menu", () -> MenuRegistry.ofExtended(MachineSolderingStationMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineMixerMenu>> MIXER_MENU =
+            MENUS.register("mixer_menu", () -> MenuRegistry.ofExtended(MachineMixerMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineDerrickMenu>> DERRICK_MENU =
+            MENUS.register("derrick_menu", () -> MenuRegistry.ofExtended(MachineDerrickMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineRbmkConsoleMenu>> RBMK_CONSOLE_MENU =
+            MENUS.register("rbmk_console_menu", () -> MenuRegistry.ofExtended(MachineRbmkConsoleMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineFlareStackMenu>> FLARE_STACK_MENU =
+            MENUS.register("flare_stack_menu", () -> MenuRegistry.ofExtended(MachineFlareStackMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachinePumpjackMenu>> PUMPJACK_MENU =
+            MENUS.register("pumpjack_menu", () -> MenuRegistry.ofExtended(MachinePumpjackMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineRadarMenu>> RADAR_MENU =
+            MENUS.register("radar_menu", () -> MenuRegistry.ofExtended(MachineRadarMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineCrackingTowerMenu>> CRACKING_TOWER_MENU =
+            MENUS.register("cracking_tower_menu", () -> MenuRegistry.ofExtended(MachineCrackingTowerMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineFractionTowerMenu>> FRACTION_TOWER_MENU =
+            MENUS.register("fraction_tower_menu", () -> MenuRegistry.ofExtended(MachineFractionTowerMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineMiningDrillMenu>> MINING_DRILL_MENU =
+            MENUS.register("mining_drill_menu", () -> MenuRegistry.ofExtended(MachineMiningDrillMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineFelMenu>> FEL_MENU =
+            MENUS.register("fel_menu", () -> MenuRegistry.ofExtended(MachineFelMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineSilexMenu>> SILEX_MENU =
+            MENUS.register("silex_menu", () -> MenuRegistry.ofExtended(MachineSilexMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineIndustrialTurbineMenu>> INDUSTRIAL_TURBINE_MENU =
+            MENUS.register("industrial_turbine_menu", () -> MenuRegistry.ofExtended(MachineIndustrialTurbineMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineTurbineMenu>> TURBINE_MENU =
+            MENUS.register("turbine_menu", () -> MenuRegistry.ofExtended(MachineTurbineMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineSubstationMenu>> SUBSTATION_MENU =
+            MENUS.register("substation_menu", () -> MenuRegistry.ofExtended(MachineSubstationMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineFrackingTowerMenu>> FRACTURING_TOWER_MENU =
             MENUS.register("fracking_tower_menu", () -> MenuRegistry.ofExtended(MachineFrackingTowerMenu::new));
 
     public static final RegistrySupplier<MenuType<LaunchPadLargeMenu>> LAUNCH_PAD_LARGE_MENU =

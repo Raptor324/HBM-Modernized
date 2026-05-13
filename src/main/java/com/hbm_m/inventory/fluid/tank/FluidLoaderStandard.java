@@ -3,7 +3,7 @@ package com.hbm_m.inventory.fluid.tank;
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 
 //? if fabric {
-import com.hbm_m.item.liquids.FluidBarrelItem;
+/*import com.hbm_m.item.liquids.FluidBarrelItem;
 import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
@@ -12,15 +12,15 @@ import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import net.minecraft.world.SimpleContainer;
-//?}
+*///?}
 
 import net.minecraft.world.item.ItemStack;
 //? if forge {
-/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
-*///?}
+//?}
 
 /**
  * Стандартный загрузчик жидкости (ведро/бочка → бак и бак → ведро/бочка).
@@ -50,7 +50,7 @@ public class FluidLoaderStandard implements FluidTank.LoadingHandler {
         }
 
         //? if forge {
-        /*if (tank.getPressure() != 0) return false;
+        if (tank.getPressure() != 0) return false;
 
         ItemStack one = inputStack.copy();
         one.setCount(1);
@@ -107,10 +107,10 @@ public class FluidLoaderStandard implements FluidTank.LoadingHandler {
         slots[in].shrink(1);
         if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
         return true;
-        *///?}
+        //?}
 
         //? if fabric {
-        ItemStack simCopy = inputStack.copy();
+        /*ItemStack simCopy = inputStack.copy();
         simCopy.setCount(1);
         SimpleContainer simInv = new SimpleContainer(simCopy);
         ContainerItemContext simCtx = ContainerItemContext.ofSingleSlot(InventoryStorage.of(simInv, null).getSlot(0));
@@ -168,7 +168,7 @@ public class FluidLoaderStandard implements FluidTank.LoadingHandler {
         slots[in].shrink(1);
         if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
         return true;
-        //?}
+        *///?}
     }
 
     @Override
@@ -181,7 +181,7 @@ public class FluidLoaderStandard implements FluidTank.LoadingHandler {
         }
 
         //? if forge {
-        /*if (tank.getPressure() != 0) return false;
+        if (tank.getPressure() != 0) return false;
 
         ItemStack one = inputStack.copy();
         one.setCount(1);
@@ -235,10 +235,10 @@ public class FluidLoaderStandard implements FluidTank.LoadingHandler {
         slots[in].shrink(1);
         if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
         return true;
-        *///?}
+        //?}
 
         //? if fabric {
-        ItemStack simCopy = inputStack.copy();
+        /*ItemStack simCopy = inputStack.copy();
         simCopy.setCount(1);
         SimpleContainer simInv = new SimpleContainer(simCopy);
         ContainerItemContext simCtx = ContainerItemContext.ofSingleSlot(InventoryStorage.of(simInv, null).getSlot(0));
@@ -281,6 +281,6 @@ public class FluidLoaderStandard implements FluidTank.LoadingHandler {
         slots[in].shrink(1);
         if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
         return true;
-        //?}
+        *///?}
     }
 }

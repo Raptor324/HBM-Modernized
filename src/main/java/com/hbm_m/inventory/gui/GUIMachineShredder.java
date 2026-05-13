@@ -14,10 +14,10 @@ public class GUIMachineShredder extends GuiInfoScreen<MachineShredderMenu> {
 
     private static final ResourceLocation TEXTURE =
             //? if fabric && < 1.21.1 {
-            new ResourceLocation(RefStrings.MODID, "textures/gui/gui_shredder.png");
-            //?} else {
-                        /*ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_shredder.png");
-            *///?}
+            /*new ResourceLocation(RefStrings.MODID, "textures/gui/gui_shredder.png");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_shredder.png");
+            //?}
 
 
     // Progress Bar constants (как в оригинале)

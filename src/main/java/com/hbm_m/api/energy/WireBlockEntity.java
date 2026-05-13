@@ -11,12 +11,12 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 //? if forge {
-/*import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-*///?}
+//?}
 
 /**
  * BlockEntity для провода.
@@ -25,8 +25,8 @@ import org.jetbrains.annotations.Nullable;
 public class WireBlockEntity extends BlockEntity implements IEnergyConnector {
 
     //? if forge {
-    /*private final LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
-     *///?}
+    private final LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
+     //?}
 
     public WireBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.WIRE_BE.get(), pos, state);
@@ -58,7 +58,7 @@ public class WireBlockEntity extends BlockEntity implements IEnergyConnector {
 
     // --- Capabilities ---
     //? if forge {
-    /*@Override
+    @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ModCapabilities.HBM_ENERGY_CONNECTOR) {
             return hbmConnector.cast();
@@ -80,7 +80,7 @@ public class WireBlockEntity extends BlockEntity implements IEnergyConnector {
             EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
         }
     }
-    *///?}
+    //?}
 
     @Override
     public void setRemoved() {
@@ -90,8 +90,8 @@ public class WireBlockEntity extends BlockEntity implements IEnergyConnector {
             EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
         }
         //? if forge {
-        /*hbmConnector.invalidate();
-         *///?}
+        hbmConnector.invalidate();
+         //?}
     }
 
     // И при загрузке/установке блока:

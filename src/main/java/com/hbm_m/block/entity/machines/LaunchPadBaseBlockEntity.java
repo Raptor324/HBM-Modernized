@@ -4,11 +4,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.api.item.IDesignatorItem;
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
+import com.hbm_m.entity.missile.MissileABMEntity;
+import com.hbm_m.entity.missile.MissileBaseEntity;
 import com.hbm_m.entity.missile.MissileTestEntity;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.missile.MissileItem;
@@ -70,7 +73,8 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity {
 
     static {
         // Прототип: missile_test -> MissileTestEntity
-        MISSILES.put(ModItems.MISSILE_TEST.get(), new EntityTypeRef());
+        MISSILES.put(ModItems.MISSILE_TEST.get(), new EntityTypeRef(MissileTestEntity::new));
+        MISSILES.put(ModItems.MISSILE_ABM.get(), new EntityTypeRef(MissileABMEntity::new));
     }
 
     /**
@@ -210,8 +214,12 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity {
             return null;
         }
 
-        // Сейчас у нас только один тип ракеты – MissileTestEntity
-        MissileTestEntity missile = new MissileTestEntity(level);
+        EntityTypeRef typeRef = MISSILES.get(stack.getItem());
+        if (typeRef == null) {
+            return null;
+        }
+
+        MissileBaseEntity missile = typeRef.create(level);
         missile.initLaunch(
                 worldPosition.getX() + 0.5D,
                 worldPosition.getY() + getLaunchOffset(),
@@ -275,7 +283,17 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity {
      * Внутренняя заглушка для потенциального реестра типов сущностей ракет.
      * Сейчас не содержит ничего, но оставлена для будущего расширения.
      */
-    protected static class EntityTypeRef { }
+    protected static class EntityTypeRef {
+        private final Function<Level, ? extends MissileBaseEntity> factory;
+
+        protected EntityTypeRef(Function<Level, ? extends MissileBaseEntity> factory) {
+            this.factory = factory;
+        }
+
+        protected MissileBaseEntity create(Level level) {
+            return factory.apply(level);
+        }
+    }
 
     // -----------------------
     // NBT

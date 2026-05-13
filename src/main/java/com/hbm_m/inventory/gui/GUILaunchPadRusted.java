@@ -22,10 +22,10 @@ public class GUILaunchPadRusted extends GuiInfoScreen<LaunchPadRustedMenu> {
 
     private static final ResourceLocation TEXTURE =
             //? if fabric && < 1.21.1 {
-            new ResourceLocation(RefStrings.MODID, "textures/gui/weapon/gui_launch_pad_rusted.png");
-            //?} else {
-                        /*ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/weapon/gui_launch_pad_rusted.png");
-            *///?}
+            /*new ResourceLocation(RefStrings.MODID, "textures/gui/weapon/gui_launch_pad_rusted.png");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/weapon/gui_launch_pad_rusted.png");
+            //?}
 
 
     public GUILaunchPadRusted(LaunchPadRustedMenu menu, Inventory playerInventory, Component title) {

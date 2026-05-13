@@ -19,15 +19,15 @@ import dev.architectury.event.events.client.ClientTooltipEvent;
 // Обработчик событий клиента, добавляющий подсказки к предметам (опасности, OreDict теги).
 // Подсказки показываются при наведении на предмет в инвентаре.
 //? if fabric {
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
-//?}
+/*import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+*///?}
 //? if forge {
-/*import com.hbm_m.lib.RefStrings;
+import com.hbm_m.lib.RefStrings;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-*///?}
+//?}
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -36,8 +36,8 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.ArmorItem;
 
 //? if forge {
-/*@Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
-*///?}
+@Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+//?}
 @SuppressWarnings("UnstableApiUsage")
 public class ClientModEvents {
 
@@ -89,16 +89,16 @@ public class ClientModEvents {
         });
 
         //? if fabric {
-        net.fabricmc.fabric.api.client.rendering.v1.TooltipComponentCallback.EVENT.register(data -> {
+        /*net.fabricmc.fabric.api.client.rendering.v1.TooltipComponentCallback.EVENT.register(data -> {
             if (data instanceof com.hbm_m.client.tooltip.CrateContentsTooltipComponent c) {
                 return new com.hbm_m.client.tooltip.CrateContentsTooltipComponentRenderer(c);
             }
             return null;
         });
-        //?}
+        *///?}
 
         //? if fabric {
-        WorldRenderEvents.AFTER_TRANSLUCENT.register(context -> {
+        /*WorldRenderEvents.AFTER_TRANSLUCENT.register(context -> {
             // Late safety net: close any persistent batch left open during BER.
             // Instanced flush is done earlier (BEFORE_BLOCK_OUTLINE) so solid VBO
             // doesn't render after translucent (which breaks depth/outline).
@@ -136,12 +136,12 @@ public class ClientModEvents {
             // here guarantees a clean slate at the start of every frame.
             IrisRenderBatch.closePersistentIfActive();
         });
-        //?}
+        *///?}
     }
 
     // Управляем батчами для ВСЕХ машин
     //? if forge {
-    /*@SubscribeEvent
+    @SubscribeEvent
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
             if (ModClothConfig.useInstancedBatching()) {
@@ -187,5 +187,5 @@ public class ClientModEvents {
             IrisRenderBatch.closePersistentIfActive();
         }
     }
-    *///?}
+    //?}
 }

@@ -1,5 +1,5 @@
 //? if forge {
-/*package com.hbm_m.powerarmor.render;
+package com.hbm_m.powerarmor.render;
 
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.mixin.LivingEntityRendererInvoker;
@@ -97,5 +97,5 @@ public final class ClientPowerArmorRenderForge {
 
     private ClientPowerArmorRenderForge() {}
 }
-*///?}
+//?}
 

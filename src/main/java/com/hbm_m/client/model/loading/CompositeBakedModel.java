@@ -1,5 +1,5 @@
 //? if fabric {
-package com.hbm_m.client.model.loading;
+/*package com.hbm_m.client.model.loading;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -89,5 +89,5 @@ final class CompositeBakedModel implements BakedModel {
         return overrides;
     }
 }
-//?}
+*///?}
 

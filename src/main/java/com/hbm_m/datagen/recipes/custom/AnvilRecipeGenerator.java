@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import java.util.function.Consumer;
+import java.util.function.Consumer;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.machines.anvils.AnvilTier;
@@ -192,11 +192,16 @@ public final class AnvilRecipeGenerator {
                         .addOutput(stack(ModItems.VACUUM_TUBE), 0.5F)
                         .addOutput(stack(ModItems.MICROCHIP), 0.1F));
 
-        registerDisassemblyRecipe(writer, "steel", "cabinet_breakdown",
-                AnvilTier.STEEL,
+        registerDisassemblyRecipe(writer, "iron", "cabinet_breakdown",
+                AnvilTier.IRON,
                 stack(ModBlocks.FILE_CABINET),
-                stack(ModItems.PLATE_STEEL, 4),
-                builder -> builder.addOutput(stack(ModItems.DUST), 1.0F));
+                stack(ModItems.PLATE_STEEL, 2),
+                builder -> builder.addOutput(stack(ModItems.DUST), 1.0F)
+                        .addOutput(stack(ModItems.PLATE_STEEL), 0.5F)
+                        .addOutput(stack(ModItems.PLATE_STEEL), 0.5F)
+                        .addOutput(stack(ModItems.INSULATOR), 0.25F)
+                        .addOutput(stack(ModItems.INSULATOR), 0.25F)
+                        .addOutput(stack(ModItems.SCRAP), 1F));
 
         registerDisassemblyRecipe(writer, "steel", "toaster_breakdown",
                 AnvilTier.STEEL,
@@ -211,9 +216,10 @@ public final class AnvilRecipeGenerator {
                 stack(ModItems.CANNED_JIZZ, 1),
                 builder -> builder
                         .addOutput(stack(ModItems.CANNED_ASBESTOS), 0.5F));
+
     }
 
-    /^*
+    /**
      * Регистрирует рецепт объединения (Combine Recipe).
      *
      * @param writer      Потребитель рецептов
@@ -223,7 +229,7 @@ public final class AnvilRecipeGenerator {
      * @param inputB      Второй входной слот
      * @param output      Результат
      * @param tier        Минимальный тир наковальни
-     ^/
+     */
     private static void registerCombineRecipe(Consumer<FinishedRecipe> writer, String tierFolder, String name,
                                                 ItemStack inputA, ItemStack inputB, ItemStack output,
                                                 AnvilTier tier) {
@@ -231,9 +237,9 @@ public final class AnvilRecipeGenerator {
         registerCombineRecipe(writer, tierFolder, name, inputA, inputB, output, tier, builder -> {});
     }
 
-    /^*
+    /**
      * Регистрирует рецепт объединения с дополнительными настройками (например, сохранение предметов).
-     ^/
+     */
     private static void registerCombineRecipe(Consumer<FinishedRecipe> writer, String tierFolder, String name,
                                                 ItemStack inputA, ItemStack inputB, ItemStack output,
                                                 AnvilTier tier, Consumer<AnvilRecipeBuilder> settings) {
@@ -270,12 +276,12 @@ public final class AnvilRecipeGenerator {
 
     private static ResourceLocation anvilId(String tierFolder, String category, String name) {
         //? if fabric && < 1.21.1 {
-        return new ResourceLocation(RefStrings.MODID,
+        /*return new ResourceLocation(RefStrings.MODID,
                 "anvil/" + tierFolder + "/" + category + "_" + name);
-        //?} else {
-                /^return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID,
+        *///?} else {
+                return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID,
                 "anvil/" + tierFolder + "/" + category + "_" + name);
-        ^///?}
+        //?}
 
     }
 
@@ -306,4 +312,4 @@ public final class AnvilRecipeGenerator {
         return stack(obj, 1);
     }
 }
-*///?}
+//?}

@@ -1,14 +1,13 @@
 package com.hbm_m.datagen;
 //? if forge {
-/*import static com.hbm_m.block.ModBlocks.ENABLED_INGOT_BLOCKS;
-import static com.hbm_m.block.ModBlocks.getIngotBlock;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.hbm_m.block.ModBlocks;
+import static com.hbm_m.block.ModBlocks.ENABLED_INGOT_BLOCKS;
+import static com.hbm_m.block.ModBlocks.getIngotBlock;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
@@ -164,7 +163,17 @@ public class ModLanguageProvider extends LanguageProvider {
             });
         }
 
-
+        if ("ru_ru".equals(this.locale)) {
+            add(ModBlocks.CRUCIBLE.get(), "Тигель (WIP)");
+            add(ModBlocks.FOUNDRY_BASIN.get(), "Литейный бассейн");
+            add(ModBlocks.FOUNDRY_CHANNEL.get(), "Литейный канал");
+            add("container.hbm_m.crucible", "Тигель");
+        } else {
+            add(ModBlocks.CRUCIBLE.get(), "Crucible (WIP)");
+            add(ModBlocks.FOUNDRY_BASIN.get(), "Foundry Basin");
+            add(ModBlocks.FOUNDRY_CHANNEL.get(), "Foundry Channel");
+            add("container.hbm_m.crucible", "Crucible");
+        }
 
     // ЯВНАЯ ЛОКАЛИЗАЦИЯ ДЛЯ ОСТАЛЬНЫХ КЛЮЧЕЙ
         switch (this.locale) {
@@ -213,6 +222,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 // ПРОТОТИП РАКЕТЫ
                 add("item.hbm_m.missile_test", "Тестовая баллистическая ракета");
+                add("item.hbm_m.missile_abm", "Противобаллистическая ракета");
                 add("item.hbm_m.missile.tier.tier0", "Ракета: уровень 0");
                 add("item.hbm_m.missile.tier.tier1", "Ракета: уровень 1");
                 add("item.hbm_m.missile.tier.tier2", "Ракета: уровень 2");
@@ -575,6 +585,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.CRT_BSOD.get(), "BSOD Монитор ");
                 add(ModBlocks.CRT_CLEAN.get(), "Монитор");
                 add(ModBlocks.TOASTER.get(), "Тостер");
+                add(ModBlocks.STEEL_POLE.get(), "Antenna Pole"); //NEEDS TRANSLATION
+                add(ModBlocks.ANTENNA_TOP.get(), "Antenna Top"); //NEEDS TRANSLATION
+                add(ModBlocks.PUTER.get(), "(PC) Personal Computer"); //NEEDS TRANSLATION
                 add(ModBlocks.BARREL_CORRODED.get(), "Проржавевшая бочка");
                 add(ModBlocks.BARREL_LOX.get(), "Бочка с жидким кислородом");
                 add(ModBlocks.BARREL_PINK.get(), "Бочка с керосином");
@@ -1198,6 +1211,20 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.FLUID_EXHAUST.get(), "Выхлопная труба");
                 add("gui.hbm_m.fluid_duct.overlay.fluid_empty", "Жидкость не задана");
                 add(ModBlocks.INDUSTRIAL_BOILER.get(), "Промышленный котел");
+                add(ModBlocks.SOLAR_BOILER.get(), "Солнечный котел");
+                    add(ModBlocks.SOLAR_MIRRORS.get(), "Солнечные зеркала (WIP)");
+                    add(ModBlocks.WATZ_POWERPLANT.get(), "Электростанция Ватц (WIP)");
+                    add(ModBlocks.HYDROTREATER.get(), "Гидроочиститель (WIP)");
+                    add(ModBlocks.CATALYTIC_REFORMER.get(), "Каталитический риформер (WIP)");
+                    add(ModBlocks.DEUTERIUM_TOWER.get(), "Башня дейтерия (WIP)");
+                    add(ModBlocks.CHEMICAL_FACTORY.get(), "Химический завод (WIP)");
+                    add(ModBlocks.STEAM_TURBINE.get(), "Паровая турбина (WIP)");
+                    add(ModBlocks.LIQUEFACTOR.get(), "Сжижитель (WIP)");
+                    add(ModBlocks.CORE_EMITTER.get(), "Эмиттер ядра (WIP)");
+                    add(ModBlocks.CORE_INJECTOR.get(), "Инжектор ядра (WIP)");
+                    add(ModBlocks.CORE_RECEIVER.get(), "Приемник ядра (WIP)");
+                    add(ModBlocks.VACUUM_DISTILL.get(), "Вакуумная дистилляция (WIP)");
+                    add(ModBlocks.TURBOFAN.get(), "Турбовентилятор (WIP)");
                 add("block.hbm_m.machine_battery", "Энергохранилище");
                 add("block.hbm_m.ore_oil", "Нефтеносная руда");
                 add("block.hbm_m.geysir_dirt", "Гейзерный грунт");
@@ -1250,7 +1277,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.block_tcalloy", "Блок TCalloy");
                 // перевод cd alloy block также неточный
                 add("block.hbm_m.block_cdalloy", "Блок CDalloy");
-                add("block.hbm_m.deco_steel", "Декоративный стальной блок");
+                add("block.hbm_m.deco_steel", "Стальной декоративный блок");
+                add(ModBlocks.DECO_RUSTY_STEEL.get(), "Ржавый стальной декоративный блок");
                 add("block.hbm_m.depth_stone_slab", "Плита из глубинного камня");
                 add("block.hbm_m.depth_stone_nether_slab", "Плита из адского глубинного камня");
                 add("block.hbm_m.depth_stone_stairs", "Ступеньки из глубинных кирпичей");
@@ -1562,13 +1590,58 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.designator.set_x", "Установить текущую позицию X...");
                 add("gui.hbm_m.designator.set_z", "Установить текущую позицию Z...");
                 add(ModBlocks.CRYSTALLIZER.get(), "Рудный окислитель (WIP)");
+                add(ModBlocks.BREEDER.get(), "Реактор-размножитель (WIP)");
+                add(ModBlocks.LARGE_PYLON.get(), "Большой пилон (WIP)");
                 add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Башня гидроразрыва пласта (WIP)");
+                add(ModBlocks.COOLING_TOWER.get(), "Градирня (WIP)");
+                add(ModBlocks.TOWER_SMALL.get(), "Малая башня (WIP)");
+                add(ModBlocks.CYCLOTRON.get(), "Циклотрон (WIP)");
+                add(ModBlocks.ZIRNOX.get(), "Зирнокс (WIP)");
+                add(ModBlocks.ARC_WELDER.get(), "Дуговой сварщик (WIP)");
+                add(ModBlocks.SOLDERING_STATION.get(), "Паяльная станция (WIP)");
+                add(ModBlocks.MIXER.get(), "Промышленный миксер (WIP)");
+                add(ModBlocks.DERRICK.get(), "Деррик (WIP)");
+                add(ModBlocks.RBMK_CONSOLE.get(), "Пульт РБМК (WIP)");
+                add(ModBlocks.FLARE_STACK.get(), "Факельная башня (WIP)");
+                add(ModBlocks.PUMPJACK.get(), "Станок-качалка (WIP)");
+                add(ModBlocks.RADAR.get(), "Радар (WIP)");
+                add(ModBlocks.LARGE_RADAR.get(), "Большой радар (WIP)");
+                add(ModBlocks.CRACKING_TOWER.get(), "Крекинг башня (WIP)");
+                add(ModBlocks.FRACTION_TOWER.get(), "Фракционная башня (WIP)");
+                add(ModBlocks.MINING_DRILL.get(), "Large Mining Drill");
+                add(ModBlocks.FEL.get(), "FEL (WIP)");
+                add(ModBlocks.SILEX.get(), "Silex (WIP)");
                 add(ModBlocks.CHEMICAL_PLANT.get(), "Химический завод (WIP)");
                 add(ModBlocks.CENTRIFUGE.get(), "Центрифуга (WIP)");
                 add(ModBlocks.INDUSTRIAL_TURBINE.get(), "Промышленная турбина");
+                add(ModBlocks.TURBINE.get(), "Турбина (WIP)");
+                add(ModBlocks.SUBSTATION.get(), "Подстанция (WIP)");
                 add("container.hbm_m.wood_burner", "Дровяной генератор");
                 add("container.hbm_m.industrial_boiler", "Промышленный котел");
-                add("container.hbm_m.industrial_turbine", "Промышленная турбина");
+                add("container.hbm_m.solar_boiler", "Солнечный котел");
+                    add("container.hbm_m.solar_mirrors", "Солнечные зеркала");
+                    add("container.hbm_m.watz_powerplant", "Электростанция Ватц");
+                    add("container.hbm_m.hydrotreater", "Гидроочиститель");
+                    add("container.hbm_m.catalytic_reformer", "Каталитический риформер");
+                    add("container.hbm_m.deuterium_tower", "Башня дейтерия");
+                    add("container.hbm_m.chemical_factory", "Химический завод");
+                    add("container.hbm_m.steam_turbine", "Паровая турбина");
+                    add("container.hbm_m.liquefactor", "Сжижитель");
+                    add("container.hbm_m.core_emitter", "Эмиттер ядра");
+                    add("container.hbm_m.core_injector", "Инжектор ядра");
+                    add("container.hbm_m.core_receiver", "Приемник ядра");
+                    add("container.hbm_m.vacuum_distill", "Вакуумная дистилляция");
+                    add("container.hbm_m.turbofan", "Турбовентилятор");
+                    add("container.hbm_m.industrial_turbine", "Промышленная турбина");
+                add("container.hbm_m.radar", "Радар (WIP)");
+                add("chat.radar.tolow", "Радар должен быть установлен выше!");
+                add("gui.hbm_m.radar.scan_missiles", "Сканировать ракеты");
+                add("gui.hbm_m.radar.scan_players", "Сканировать игроков");
+                add("gui.hbm_m.radar.smart_mode", "Умный режим");
+                add("gui.hbm_m.radar.red_mode", "Красный режим");
+                add("container.hbm_m.fraction_tower", "Фракционная башня (WIP)");
+                add("container.hbm_m.turbine", "Турбина (WIP)");
+                add("container.hbm_m.substation", "Подстанция (WIP)");
                 add("container.hbm_m.heating_oven", "Нагревательная печь");
                 add("container.hbm_m.machine_battery", "Энергохранилище");
                 add("container.hbm_m.battery_socket", "Аккумуляторный разъём");
@@ -1581,6 +1654,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.crate_tungsten", "Вольфрамовый ящик");
                 add("container.hbm_m.crate_template", "Шаблонный ящик");
                 add("container.hbm_m.crystallizer", "Кристаллизатор");
+                add("container.hbm_m.breeder", "Бридер");
+                add("container.hbm_m.large_pylon", "Большой пилон");
                 add("container.hbm_m.chemical_plant", "Химический завод");
                 add("container.hbm_m.centrifuge", "Центрифуга");
 
@@ -1893,6 +1968,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 // Missile prototype + shared missile strings
                 add("item.hbm_m.missile_test", "Test Ballistic Missile");
+                add("item.hbm_m.missile_abm", "Anti Ballistic Missile");
                 add("item.hbm_m.missile.tier.tier0", "Missile: Tier 0");
                 add("item.hbm_m.missile.tier.tier1", "Missile: Tier 1");
                 add("item.hbm_m.missile.tier.tier2", "Missile: Tier 2");
@@ -2167,6 +2243,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.ATOMIC_CLOCK.get(), "Atomic Clock");
                 add(ModItems.VACUUM_TUBE.get(), "Vacuum Tube");
                 add(ModItems.CAPACITOR.get(), "Capacitor");
+                add(ModItems.CENTRIFUGE_ELEMENT.get(), "Centrifuge Element");
                 add(ModItems.PCB.get(), "PCB");
                 add(ModItems.STRAWBERRY.get(), "Strawberry");
 
@@ -2854,6 +2931,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.CRT_BSOD.get(), "BSOD CRT");
                 add(ModBlocks.CRT_CLEAN.get(), "Clean CRT");
                 add(ModBlocks.TOASTER.get(), "Toaster");
+                add(ModBlocks.STEEL_POLE.get(), "Antenna Pole");
+                add(ModBlocks.ANTENNA_TOP.get(), "Antenna Top");
+                add(ModBlocks.PUTER.get(), "IBM Personal Computer 300pl");
+                add(ModBlocks.DECO_STEEL_SCAFFOLD.get(), "Steel Scaffolding");
+                add(ModBlocks.REBAR.get(), "Rebar");
                 add(ModBlocks.BARREL_CORRODED.get(), "Corroded Barrel");
                 add(ModBlocks.BARREL_LOX.get(), "LOX Barrel");
                 add(ModBlocks.BARREL_PINK.get(), "Pink Barrel");
@@ -2885,6 +2967,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.DUD_CONVENTIONAL.get(), "Unexploded High-Explosive Bomb");
                 add(ModBlocks.MINE_FAT.get(), "FatMan Mine");
                 add(ModBlocks.MINE_AP.get(), "Anti-Personnel Mine");
+                add(ModBlocks.NAVAL_MINE.get(), "N45 Naval Mine");
                 add(ModItems.GRENADE_NUC.get(), "Nuclear Grenade");
                 add(ModItems.GRENADE_IF_HE.get(), "IF Grenade: HE");
                 add(ModItems.GRENADE_IF_FIRE.get(), "IF Grenade: Incendiary");
@@ -3151,10 +3234,30 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.designator.set_x", "Set coord to current X position...");
                 add("gui.hbm_m.designator.set_z", "Set coord to current Z position...");
                 add(ModBlocks.CRYSTALLIZER.get(), "Ore Acidizer (WIP)");
+                add(ModBlocks.BREEDER.get(), "Breeder (WIP)");
+                add(ModBlocks.LARGE_PYLON.get(), "Large Pylon (WIP)");
                 add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Hydraulic Fracking Tower (WIP)");
+                add(ModBlocks.COOLING_TOWER.get(), "Cooling Tower (WIP)");
+                add(ModBlocks.TOWER_SMALL.get(), "Tower Small (WIP)");
+                add(ModBlocks.CYCLOTRON.get(), "Cyclotron (WIP)");
+                add(ModBlocks.ZIRNOX.get(), "Zirnox (WIP)");
+                add(ModBlocks.ARC_WELDER.get(), "Arc Welder (WIP)");
+                add(ModBlocks.SOLDERING_STATION.get(), "Soldering Station (WIP)");
+                add(ModBlocks.MIXER.get(), "Industrial Mixer (WIP)");
                 add(ModBlocks.CHEMICAL_PLANT.get(), "Chemical Plant (WIP)");
                 add(ModBlocks.CENTRIFUGE.get(), "Centrifuge (WIP)");
                 add(ModBlocks.FLUID_TANK.get(), "Tank (WIP)");
+                add(ModBlocks.DERRICK.get(), "Derrick (WIP)");
+                add(ModBlocks.RBMK_CONSOLE.get(), "RBMK Console (WIP)");
+                add(ModBlocks.FLARE_STACK.get(), "Flare Stack (WIP)");
+                add(ModBlocks.PUMPJACK.get(), "Pumpjack (WIP)");
+                add(ModBlocks.RADAR.get(), "Radar (WIP)");
+                add(ModBlocks.LARGE_RADAR.get(), "Large Radar (WIP)");
+                add(ModBlocks.CRACKING_TOWER.get(), "Cracking Tower (WIP)");
+                add(ModBlocks.FRACTION_TOWER.get(), "Fraction Tower (WIP)");
+                add(ModBlocks.MINING_DRILL.get(), "Large Mining Drill");
+                add(ModBlocks.FEL.get(), "FEL (WIP)");
+                add(ModBlocks.SILEX.get(), "Silex (WIP)");
                 add(ModBlocks.MACHINE_BATTERY_SOCKET.get(), "Battery Socket");
                 add(ModBlocks.FLUID_DUCT.get(), "Fluid Duct (NEO)");
                 add(ModBlocks.FLUID_DUCT_COLORED.get(), "Fluid Duct (Colored)");
@@ -3170,7 +3273,23 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.FLUID_EXHAUST.get(), "Fluid Exhaust");
                 add("gui.hbm_m.fluid_duct.overlay.fluid_empty", "No fluid assigned");
                 add(ModBlocks.INDUSTRIAL_BOILER.get(), "Industrial Boiler");
-                add(ModBlocks.INDUSTRIAL_TURBINE.get(), "Industrial Turbine");
+                add(ModBlocks.SOLAR_BOILER.get(), "Solar Boiler");
+                    add(ModBlocks.SOLAR_MIRRORS.get(), "Solar Mirrors (WIP)");
+                    add(ModBlocks.WATZ_POWERPLANT.get(), "Watz Powerplant (WIP)");
+                    add(ModBlocks.HYDROTREATER.get(), "Hydrotreater (WIP)");
+                    add(ModBlocks.CATALYTIC_REFORMER.get(), "Catalytic Reformer (WIP)");
+                    add(ModBlocks.DEUTERIUM_TOWER.get(), "Deuterium Tower (WIP)");
+                    add(ModBlocks.CHEMICAL_FACTORY.get(), "Chemical Factory (WIP)");
+                    add(ModBlocks.STEAM_TURBINE.get(), "Steam Turbine (WIP)");
+                    add(ModBlocks.LIQUEFACTOR.get(), "Liquefactor (WIP)");
+                    add(ModBlocks.CORE_EMITTER.get(), "Core Emitter (WIP)");
+                    add(ModBlocks.CORE_INJECTOR.get(), "Core Injector (WIP)");
+                    add(ModBlocks.CORE_RECEIVER.get(), "Core Receiver (WIP)");
+                    add(ModBlocks.VACUUM_DISTILL.get(), "Vacuum Distill (WIP)");
+                    add(ModBlocks.TURBOFAN.get(), "Turbofan (WIP)");
+                    add(ModBlocks.INDUSTRIAL_TURBINE.get(), "Industrial Turbine");
+                add(ModBlocks.TURBINE.get(), "Turbine (WIP)");
+                add(ModBlocks.SUBSTATION.get(), "Substation (WIP)");
                 add("block.hbm_m.machine_battery", "Machine Battery");
                 add("block.hbm_m.shredder", "Shredder");
                 add("block.hbm_m.wood_burner", "Wood Burner Generator");
@@ -3265,7 +3384,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.block_ferrouranium", "Ferrouranium Block");
                 add("block.hbm_m.block_tcalloy", "TCalloy Block");
                 add("block.hbm_m.block_cdalloy", "CDalloy Block");
-                add("block.hbm_m.deco_steel", "Decorative Steel Block");
+                add(ModBlocks.DECO_STEEL.get(), "Steel Deco Block");
+                add(ModBlocks.DECO_RUSTY_STEEL.get(), "Rusty Steel Deco Block");
+                add(ModBlocks.DECO_TUNGSTEN.get(), "Tungsten deco Block");
+                add(ModBlocks.DECO_ALUMINUM.get(), "Aluminum deco Block");
+                add(ModBlocks.DECO_RED_COPPER.get(), "Red Copper deco Block");
+                add(ModBlocks.DECO_BERYLLIUM.get(), "Beryllium deco Block");
+                add(ModBlocks.DECO_LEAD.get(), "Lead deco Block");
                 add("block.hbm_m.depth_stone_slab", "Depth Stone Slab");
                 add("block.hbm_m.depth_stone_nether_slab", "Nether Depth Stone Slab");
                 add("block.hbm_m.depth_stone_stairs", "Depth Stone Stairs");
@@ -3280,8 +3405,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.wire_coated", "Red Copper Wire");
 
                 // ORES
-                add(ModBlocks.SEQUESTRUM_ORE.get(), "Salpeter Ore");
-                add(ModItems.SEQUESTRUM.get(), "Salpeter");
+                add(ModBlocks.SEQUESTRUM_ORE.get(), "Niter Ore");
+                add(ModItems.SEQUESTRUM.get(), "Niter");
                 add(ModItems.AIRSTRIKE_TEST.get(), "Airstrike Designator");
                 add(ModItems.AIRSTRIKE_HEAVY.get(), "Airstrike Designator");
                 add(ModItems.AIRSTRIKE_AGENT.get(), "Airstrike Designator");
@@ -3332,7 +3457,30 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.machine_assembler", "Assembly Machine");
                 add("container.hbm_m.wood_burner", "Wood Burner Generator");
                 add("container.hbm_m.industrial_boiler", "Industrial Boiler");
-                add("container.hbm_m.industrial_turbine", "Industrial Turbine");
+                add("container.hbm_m.solar_boiler", "Solar Boiler");
+                    add("container.hbm_m.solar_mirrors", "Solar Mirrors");
+                    add("container.hbm_m.watz_powerplant", "Watz Powerplant");
+                    add("container.hbm_m.hydrotreater", "Hydrotreater");
+                    add("container.hbm_m.catalytic_reformer", "Catalytic Reformer");
+                    add("container.hbm_m.deuterium_tower", "Deuterium Tower");
+                    add("container.hbm_m.chemical_factory", "Chemical Factory");
+                    add("container.hbm_m.steam_turbine", "Steam Turbine");
+                    add("container.hbm_m.liquefactor", "Liquefactor");
+                    add("container.hbm_m.core_emitter", "Core Emitter");
+                    add("container.hbm_m.core_injector", "Core Injector");
+                    add("container.hbm_m.core_receiver", "Core Receiver");
+                    add("container.hbm_m.vacuum_distill", "Vacuum Distill");
+                    add("container.hbm_m.turbofan", "Turbofan");
+                    add("container.hbm_m.industrial_turbine", "Industrial Turbine");
+                add("container.hbm_m.radar", "Radar (WIP)");
+                add("chat.radar.tolow", "Radar must be placed higher up!");
+                add("gui.hbm_m.radar.scan_missiles", "Scan missiles");
+                add("gui.hbm_m.radar.scan_players", "Scan players");
+                add("gui.hbm_m.radar.smart_mode", "Smart mode");
+                add("gui.hbm_m.radar.red_mode", "Red mode");
+                add("container.hbm_m.fraction_tower", "Fraction Tower (WIP)");
+                add("container.hbm_m.turbine", "Turbine (WIP)");
+                add("container.hbm_m.substation", "Substation (WIP)");
                 add("container.hbm_m.heating_oven", "Heating Oven");
                 add("container.hbm_m.advanced_assembly_machine", "Assembly Machine");
                 add("container.hbm_m.machine_battery", "Machine Battery");
@@ -3346,6 +3494,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.crate_tungsten", "Tungsten Crate");
                 add("container.hbm_m.crate_template", "Template Crate");
                 add("container.hbm_m.crystallizer", "Crystallizer");
+                add("container.hbm_m.breeder", "Breeder");
+                add("container.hbm_m.large_pylon", "Large Pylon");
                 add("container.hbm_m.chemical_plant", "Chemical Plant");
                 add("container.hbm_m.centrifuge", "Centrifuge");
 
@@ -3667,4 +3817,4 @@ public class ModLanguageProvider extends LanguageProvider {
         }
     }
 }
-*///?}
+//?}

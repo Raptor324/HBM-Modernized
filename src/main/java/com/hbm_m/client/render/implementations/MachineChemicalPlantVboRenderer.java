@@ -37,24 +37,24 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 //? if forge {
-/*import net.minecraftforge.client.model.data.ModelData;
-*///?}
+import net.minecraftforge.client.model.data.ModelData;
+//?}
 
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-*///?}
-//? if fabric {
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 //?}
-//? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
 //? if fabric {
-@Environment(EnvType.CLIENT)//?}
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+*///?}
+//? if forge {
+@OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 /**
  * VBO рендер Base/Frame/Slider/Spinner; жидкость — как 1.7.10 {@code RenderChemicalPlant}:
  * только геометрия {@code Fluid}, отдельная карта {@code chemical_plant_fluid}, tint + alpha 0.5,
@@ -219,13 +219,13 @@ public class MachineChemicalPlantVboRenderer {
      *   при instanced/batched пути.
      */
     //? if forge {
-    /*private static final RenderType FLUID_RENDER_TYPE = RenderType.entityTranslucent(TextureAtlas.LOCATION_BLOCKS);
-    *///?} else {
-    private static final RenderType FLUID_RENDER_TYPE = RenderType.translucent();
-    //?}
+    private static final RenderType FLUID_RENDER_TYPE = RenderType.entityTranslucent(TextureAtlas.LOCATION_BLOCKS);
+    //?} else {
+    /*private static final RenderType FLUID_RENDER_TYPE = RenderType.translucent();
+    *///?}
 
     //? if forge {
-    /*private static boolean tryRenderFluidBakedPart(MachineChemicalPlantBakedModel model, BlockState state, Direction facing, float anim,
+    private static boolean tryRenderFluidBakedPart(MachineChemicalPlantBakedModel model, BlockState state, Direction facing, float anim,
                                                    PoseStack poseStack, MultiBufferSource bufferSource,
                                                    int packedLight, int packedOverlay, FluidVisual visual) {
         BakedModel fluidPart = model.getPart("Fluid");
@@ -268,10 +268,10 @@ public class MachineChemicalPlantVboRenderer {
         }
         return List.of();
     }
-    *///?}
+    //?}
 
     //? if fabric {
-    private static boolean tryRenderFluidBakedPart(MachineChemicalPlantBakedModel model, BlockState state, Direction facing, float anim,
+    /*private static boolean tryRenderFluidBakedPart(MachineChemicalPlantBakedModel model, BlockState state, Direction facing, float anim,
                                                    PoseStack poseStack, MultiBufferSource bufferSource,
                                                    int packedLight, int packedOverlay, FluidVisual visual) {
         BakedModel fluidPart = model.getPart("Fluid");
@@ -342,7 +342,7 @@ public class MachineChemicalPlantVboRenderer {
         quads.addAll(fluidPart.getQuads(state, null, rand));
         return quads;
     }
-    //?}
+    *///?}
 
     public void renderStaticBase(PoseStack poseStack, int packedLight, BlockPos blockPos,
                                 @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {

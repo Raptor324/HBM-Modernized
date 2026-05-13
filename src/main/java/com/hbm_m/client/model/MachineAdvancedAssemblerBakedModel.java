@@ -18,8 +18,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-/*import net.minecraftforge.client.model.data.ModelData;
-*///?}
+import net.minecraftforge.client.model.data.ModelData;
+//?}
 
 public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
@@ -70,11 +70,11 @@ public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedMo
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
         //? if forge {
-        /*return getQuads(state, side, rand, ModelData.EMPTY, null);
-        *///?}
+        return getQuads(state, side, rand, ModelData.EMPTY, null);
+        //?}
 
         //? if fabric {
-        if (state == null) {
+        /*if (state == null) {
             return getItemQuads(side, rand);
         }
         if (ShaderCompatibilityDetector.useVboGeometry()) {
@@ -113,11 +113,11 @@ public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedMo
             }
         }
         return result;
-        //?}
+        *///?}
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                      RandomSource rand, ModelData modelData, @Nullable net.minecraft.client.renderer.RenderType renderType) {
         // ITEM RENDER (Инвентарь/Рука)
@@ -202,10 +202,10 @@ public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedMo
         }
         this.cachedItemQuads = allQuads;
     }
-    *///?}
+    //?}
 
     //? if fabric {
-    private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand) {
+    /*private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand) {
         if (!itemQuadsCached) {
             buildItemQuads(rand);
             itemQuadsCached = true;
@@ -232,7 +232,7 @@ public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedMo
         }
         this.cachedItemQuads = allQuads;
     }
-    //?}
+    *///?}
 
     @Override
     protected List<String> getItemRenderPartNames() {
@@ -251,12 +251,12 @@ public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedMo
     @Override
     public TextureAtlasSprite getParticleIcon() {
         //? if forge {
-        /*return getParticleIcon(ModelData.EMPTY);
-        *///?}
+        return getParticleIcon(ModelData.EMPTY);
+        //?}
 
         //? if fabric {
-        return super.getParticleIcon();
-        //?}
+        /*return super.getParticleIcon();
+        *///?}
     }
 
     @Override

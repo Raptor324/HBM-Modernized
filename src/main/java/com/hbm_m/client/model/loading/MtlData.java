@@ -1,5 +1,5 @@
 //? if fabric {
-package com.hbm_m.client.model.loading;
+/*package com.hbm_m.client.model.loading;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -22,16 +22,16 @@ final class MtlData {
 
     private MtlData() {}
 
-    /**
+    /^*
      * Результат разбора MTL: diffuse по материалу и опциональные {@code forge_TintIndex} (как в Forge OBJ).
-     */
+     ^/
     record MtlParseResult(Map<String, String> texturesByMaterial, Map<String, Integer> tintIndexByMaterial) {
         static final MtlParseResult EMPTY = new MtlParseResult(Map.of(), Map.of());
     }
 
-    /**
+    /^*
      * MTL из {@code mtllib} относительно каталога OBJ.
-     */
+     ^/
     static MtlParseResult load(ResourceManager rm, ResourceLocation objLocation, String mtllibFile) {
         String objPath = objLocation.getPath();
         int lastSlash = objPath.lastIndexOf('/');
@@ -41,9 +41,9 @@ final class MtlData {
         return readMtlFile(rm, mtlLoc, "OBJ " + objLocation);
     }
 
-    /**
+    /^*
      * MTL по абсолютному id (как в JSON {@code mtl_override}: {@code modid:models/.../file.mtl}).
-     */
+     ^/
     static MtlParseResult loadAbsolute(ResourceManager rm, ResourceLocation mtlFile) {
         return readMtlFile(rm, mtlFile, mtlFile.toString());
     }
@@ -90,4 +90,4 @@ final class MtlData {
         return new MtlParseResult(Map.copyOf(textures), Map.copyOf(tints));
     }
 }
-//?}
+*///?}

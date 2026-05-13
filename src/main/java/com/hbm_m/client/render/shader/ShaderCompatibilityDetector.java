@@ -1,5 +1,5 @@
 //? if forge {
-/*package com.hbm_m.client.render.shader;
+package com.hbm_m.client.render.shader;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -23,25 +23,25 @@ public class ShaderCompatibilityDetector {
     private static Method irisIsRenderingShadowPass = null;
     private static Object irisApiInstance = null;
 
-    /^*
+    /**
      * Hot-path MethodHandles for the two Iris API queries called every frame
      * (often per-BE per-pass). {@link Method#invoke} boxes args into an
      * {@code Object[]} and goes through reflection access checks on every call;
      * {@link MethodHandle#invokeExact} is JIT-friendly and avoids both. Bound
      * with {@code asType()} to {@code (Object)boolean} so call sites can
      * invokeExact without knowing the concrete IrisApi class.
-     ^/
+     */
     private static MethodHandle irisIsShaderPackInUseMH = null;
     private static MethodHandle irisIsRenderingShadowPassMH = null;
     
     // Кэш для оптимизации и для обращений с background-потоков (Sodium chunk builder)
     private static boolean lastState = false;
-    /^*
+    /**
      * Thread-safe кэш: обновляется только с render-потока, читается с любых потоков.
      * Sodium строит чанки на фоновых потоках - они не могут вызывать Iris API напрямую.
-     ^/
+     */
     private static volatile boolean cachedShaderActive = false;
-    /^* Отложенная инвалидация - обрабатывается в ClientTickEvent.END ^/
+    /** Отложенная инвалидация - обрабатывается в ClientTickEvent.END */
     private static volatile boolean pendingChunkInvalidation = false;
 
     private static void init() {
@@ -121,10 +121,10 @@ public class ShaderCompatibilityDetector {
         }
     }
 
-    /^*
+    /**
      * Вызывать из ClientTickEvent.END - инвалидирует чанки при смене шейдера.
      * НЕ вызывать из render loop - ломает итерацию Sodium (ReferenceOpenHashSet.wrapped is null).
-     ^/
+     */
     public static void processPendingChunkInvalidation() {
         if (!pendingChunkInvalidation) return;
         pendingChunkInvalidation = false;
@@ -138,10 +138,10 @@ public class ShaderCompatibilityDetector {
         }
     }
 
-    /^*
+    /**
      * Проверяет, рендерится ли сейчас shadow pass Iris (для realtime shadows).
      * Используется для пропуска рендера HBM-моделей в shadow pass - даёт ~2x FPS при включённых тенях.
-     ^/
+     */
     public static boolean isRenderingShadowPass() {
         if (!initialized) init();
         if (irisApiInstance == null) return false;
@@ -157,16 +157,16 @@ public class ShaderCompatibilityDetector {
         }
     }
 
-    /^*
+    /**
      * True when an active Iris pipeline can hand out an {@code ExtendedShader} for our raw-GL
      * draws. When false, callers should fall back to the vanilla shader path or to
      * {@code bufferSource.putBulkData} delegation.
-     ^/
+     */
     public static boolean canUseIrisExtendedShader() {
         return isExternalShaderActive() && IrisExtendedShaderAccess.isReflectionAvailable();
     }
 
-    /^*
+    /**
      * True если статическая геометрия машин должна предоставляться нашей VBO/инстанс-системой
      * (а не baked-моделью). Иначе baked-model заполняет статику в чанк-меш, а BER рисует
      * только подвижные части через putBulkData.
@@ -178,23 +178,23 @@ public class ShaderCompatibilityDetector {
      *
      * Этот метод - единственная точка истины для разветвления и в рендерерах, и в baked-моделях.
      * Если они расходятся, статика рисуется дважды или не рисуется вовсе.
-     ^/
+     */
     public static boolean useVboGeometry() {
         return !isExternalShaderActive() || ModClothConfig.useIrisExtendedShaderPath();
     }
 
-    /^*
+    /**
      * True если сейчас активен шейдер-пак И при этом по конфигу мы должны идти через нашу VBO/Iris-систему
      * вместо старого baked + putBulkData. Удобный сахар для условий «под шейдерами, но через новый путь».
-     ^/
+     */
     public static boolean useNewIrisVboPath() {
         return isExternalShaderActive() && ModClothConfig.useIrisExtendedShaderPath();
     }
 }
-*///?}
+//?}
 
 //? if fabric {
-package com.hbm_m.client.render.shader;
+/*package com.hbm_m.client.render.shader;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -208,13 +208,13 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import dev.architectury.platform.Platform;
 import net.minecraft.client.Minecraft;
 
-/**
+/^*
  * Fabric Iris/Oculus integration.
  * Detects Iris shader state via reflection so the VBO render pipeline
  * correctly routes draws through the Iris ExtendedShader path instead
  * of attempting raw GL draws against a vanilla shader that Iris has
  * replaced (which produces "GL No active program" errors).
- */
+ ^/
 public class ShaderCompatibilityDetector {
 
     private ShaderCompatibilityDetector() {}
@@ -339,4 +339,4 @@ public class ShaderCompatibilityDetector {
         return isExternalShaderActive() && ModClothConfig.useIrisExtendedShaderPath();
     }
 }
-//?}
+*///?}

@@ -1,5 +1,5 @@
 //? if fabric {
-package com.hbm_m.client.model.loading;
+/*package com.hbm_m.client.model.loading;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
@@ -51,7 +51,7 @@ final class HbmLoaderAdapters {
 
     private static volatile Gson cachedVanillaBlockModelGson;
 
-    /** Vanilla {@code BlockModel.GSON} — поле не public; без access widener читаем рефлексией. */
+    /^* Vanilla {@code BlockModel.GSON} — поле не public; без access widener читаем рефлексией. ^/
     private static Gson vanillaBlockModelGson() {
         Gson cached = cachedVanillaBlockModelGson;
         if (cached != null) {
@@ -406,4 +406,4 @@ final class HbmLoaderAdapters {
         return new Vector3f(arr.get(0).getAsFloat(), arr.get(1).getAsFloat(), arr.get(2).getAsFloat());
     }
 }
-//?}
+*///?}

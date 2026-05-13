@@ -1,5 +1,5 @@
 //? if fabric {
-package com.hbm_m.client.reload;
+/*package com.hbm_m.client.reload;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -11,10 +11,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
 
-/**
+/^*
  * Fabric требует {@link IdentifiableResourceReloadListener} для регистрации в {@code ResourceManagerHelper}.
  * На Forge это не нужно, поэтому класс существует только на Fabric через stonecutter.
- */
+ ^/
 @SuppressWarnings("UnstableApiUsage")
 public final class IdentifiableReloadListenerAdapter implements IdentifiableResourceReloadListener {
     private final ResourceLocation id;
@@ -45,5 +45,5 @@ public final class IdentifiableReloadListenerAdapter implements IdentifiableReso
         return delegate.reload(preparationBarrier, resourceManager, preparationsProfiler, reloadProfiler, backgroundExecutor, gameExecutor);
     }
 }
-//?}
+*///?}
 

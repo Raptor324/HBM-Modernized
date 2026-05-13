@@ -23,19 +23,19 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 //? if forge {
-/*import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
-*///?}
+//?}
 
 //? if fabric {
-import dev.architectury.fluid.FluidStack;
+/*import dev.architectury.fluid.FluidStack;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
-//?}
+*///?}
 
 /**
  * BlockEntity для Fracking Tower (Гидроразрывная вышка).
@@ -78,8 +78,8 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
     protected final FluidTank fracksolTank;
 
     //? if forge {
-    /*protected LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
-     *///?}
+    protected LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
+     //?}
 
     //=====================================================================================//
     // СОСТОЯНИЕ МАШИНЫ
@@ -123,50 +123,50 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
         
         // Инициализация танков
         //? if forge {
-        /*this.oilTank = new FluidTank(64_000) {
-            @Override
-            public boolean isFluidValid(Fluid fluid) {
-                return fluid.isSame(ModFluids.CRUDE_OIL.getSource());
-            }
-        };
-
-        this.gasTank = new FluidTank(64_000) {
-            @Override
-            public boolean isFluidValid(Fluid fluid) {
-                return fluid.isSame(ModFluids.GAS.getSource());
-            }
-        };
-
-        this.fracksolTank = new FluidTank(64_000) {
-            @Override
-            public boolean isFluidValid(Fluid fluid) {
-                return fluid.isSame(ModFluids.FRACKSOL.getSource());
-            }
-        };
-        *///?}
-
-        //? if fabric {
         this.oilTank = new FluidTank(64_000) {
             @Override
-            public boolean isFluidValid(net.minecraft.world.level.material.Fluid fluid) {
+            public boolean isFluidValid(Fluid fluid) {
                 return fluid.isSame(ModFluids.CRUDE_OIL.getSource());
             }
         };
 
         this.gasTank = new FluidTank(64_000) {
             @Override
-            public boolean isFluidValid(net.minecraft.world.level.material.Fluid fluid) {
+            public boolean isFluidValid(Fluid fluid) {
                 return fluid.isSame(ModFluids.GAS.getSource());
             }
         };
 
         this.fracksolTank = new FluidTank(64_000) {
             @Override
-            public boolean isFluidValid(net.minecraft.world.level.material.Fluid fluid) {
+            public boolean isFluidValid(Fluid fluid) {
                 return fluid.isSame(ModFluids.FRACKSOL.getSource());
             }
         };
         //?}
+
+        //? if fabric {
+        /*this.oilTank = new FluidTank(64_000) {
+            @Override
+            public boolean isFluidValid(net.minecraft.world.level.material.Fluid fluid) {
+                return fluid.isSame(ModFluids.CRUDE_OIL.getSource());
+            }
+        };
+
+        this.gasTank = new FluidTank(64_000) {
+            @Override
+            public boolean isFluidValid(net.minecraft.world.level.material.Fluid fluid) {
+                return fluid.isSame(ModFluids.GAS.getSource());
+            }
+        };
+
+        this.fracksolTank = new FluidTank(64_000) {
+            @Override
+            public boolean isFluidValid(net.minecraft.world.level.material.Fluid fluid) {
+                return fluid.isSame(ModFluids.FRACKSOL.getSource());
+            }
+        };
+        *///?}
     }
 
     //=====================================================================================//
@@ -347,7 +347,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
         if (inputStack.isEmpty() || sourceTank.isEmpty()) return;
 
         //? if fabric {
-        var containerStorage = FluidStorage.ITEM.find(inputStack, net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext.withConstant(inputStack));
+        /*var containerStorage = FluidStorage.ITEM.find(inputStack, net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext.withConstant(inputStack));
         if (containerStorage == null) return;
         FluidVariant variant = FluidVariant.of(sourceTank.getStoredFluid());
         long toTransfer = (long) sourceTank.getFluidAmountMb() * FluidTank.DROPLETS_PER_MB;
@@ -358,7 +358,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
                 tx.commit();
             }
         }
-        //?}
+        *///?}
     }
 
     /**
@@ -458,13 +458,13 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
     //=====================================================================================//
 
     //? if fabric {
-    @Nullable
+    /*@Nullable
     public Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
         if (side == Direction.DOWN) return fracksolTank.getStorage();
         if (side == Direction.UP)   return oilTank.getStorage();
         return gasTank.getStorage();
     }
-    //?}
+    *///?}
 
     @Override
     protected void saveAdditional(CompoundTag tag) {
@@ -497,7 +497,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
     //=====================================================================================//
 
     //? if forge {
-    /*protected void setupFluidCapability() {
+    protected void setupFluidCapability() {
         fluidHandler = LazyOptional.of(() -> new FrackingTowerFluidHandler(this));
     }
 
@@ -510,7 +510,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
         super.invalidateCaps();
         fluidHandler.invalidate();
     }
-    *///?}
+    //?}
 
     //=====================================================================================//
     // РЕНДЕРИНГ

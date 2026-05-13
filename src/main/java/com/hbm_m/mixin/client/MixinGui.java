@@ -1,5 +1,5 @@
 //? if fabric {
-package com.hbm_m.mixin.client;
+/*package com.hbm_m.mixin.client;
 
 import com.hbm_m.effect.RadawayEffect;
 import com.hbm_m.effect.render.RadawayEffectRenderer;
@@ -17,12 +17,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
+/^*
  * Fabric: иконка Radaway на HUD.
  * В 1.20.1 {@code Gui#renderEffects} собирает отложенные {@link Runnable}, иконка рисуется в
  * {@code lambda$renderEffects$0} через {@code blit(..., TextureAtlasSprite)} — без обёртки Runnable теряется
  * связь с {@link MobEffectInstance} на момент отрисовки.
- */
+ ^/
 @Mixin(Gui.class)
 public abstract class MixinGui {
 
@@ -49,10 +49,10 @@ public abstract class MixinGui {
         return next;
     }
 
-    /**
+    /^*
      * Перед {@code List.add(Runnable)} поток уже содержит текущий {@code MobEffectInstance} из {@link #hbm_m$trackHudLoopIteratorNext};
      * оборачиваем Runnable, чтобы при отложенном {@code forEach} восстановить его для {@link #hbm_m$wrapHudEffectSpriteBlit}.
-     */
+     ^/
     @ModifyArg(
             method = "renderEffects(Lnet/minecraft/client/gui/GuiGraphics;)V",
             at = @At(value = "INVOKE", target = "Ljava/util/List;add(Ljava/lang/Object;)Z", remap = false),
@@ -107,10 +107,10 @@ public abstract class MixinGui {
         original.call(gfx, x, y, blitOffset, width, height, sprite);
     }
 
-    /**
+    /^*
      * Некоторые маппинги/версии рисуют HUD-эффекты через overload с tint (RGBA), а не через простой blit.
      * Делаем второй перехват на всякий случай, чтобы не зависеть от конкретного ванильного пути.
-     */
+     ^/
     @WrapOperation(
             method = "renderEffects(Lnet/minecraft/client/gui/GuiGraphics;)V",
             at = @At(
@@ -141,4 +141,4 @@ public abstract class MixinGui {
         original.call(gfx, x, y, blitOffset, width, height, sprite, red, green, blue, alpha);
     }
 }
-//?}
+*///?}

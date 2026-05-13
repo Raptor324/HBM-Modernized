@@ -2,9 +2,9 @@ package com.hbm_m.client.render.implementations;
 
 
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-*///?}
+//?}
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -28,9 +28,9 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
 //? if fabric {
-import net.fabricmc.api.EnvType;
+/*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-//?}
+*///?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -42,10 +42,10 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 //? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
+//?}
 //? if fabric {
-@Environment(EnvType.CLIENT)//?}
+/*@Environment(EnvType.CLIENT)*///?}
 public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePressBlockEntity, PressBakedModel> {
 
     private static final String HEAD_PART = "Head";
@@ -124,7 +124,7 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
         boolean inShadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
         if (useBatching && !inShadowPass && useInstancedHead) {
             //? if fabric {
-            // Под Iris addInstance() сразу рисует через drawSingleWithIrisExtended и ждёт
+            /*// Под Iris addInstance() сразу рисует через drawSingleWithIrisExtended и ждёт
             // активный IrisRenderBatch (см. InstancedStaticPartRenderer). Без обёртки —
             // «standalone» путь к шейдеру пакета, голова то есть то пропадает.
             if (ShaderCompatibilityDetector.isExternalShaderActive()) {
@@ -140,22 +140,22 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
                 instancedHead.addInstance(poseStack, packedLight, blockPos, blockEntity, bufferSource);
                 poseStack.popPose();
             }
-            //?} else {
-            /*poseStack.pushPose();
+            *///?} else {
+            poseStack.pushPose();
             poseStack.last().pose().mul(headTransform);
             instancedHead.addInstance(poseStack, packedLight, blockPos, blockEntity, bufferSource);
             poseStack.popPose();
-            *///?}
+            //?}
         } else {
             // Under Iris/Oculus, the per-part extended-shader path is extremely sensitive to
             // apply()/clear() frequency. When instancing is disabled, we open an IrisRenderBatch
             // session so the head draw shares one apply()/clear() with other parts in this pass.
             //? if forge {
-            /*boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || inShadowPass);
-            *///?}
-            //? if fabric {
-            boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath();
+            boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || inShadowPass);
             //?}
+            //? if fabric {
+            /*boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath();
+            *///?}
             if (useIrisBatch) {
                 try (IrisRenderBatch batch = IrisRenderBatch.begin(inShadowPass, RenderSystem.getProjectionMatrix())) {
                     gpuRenderer.renderAnimatedHead(poseStack, packedLight, headTransform, blockPos, blockEntity, bufferSource);

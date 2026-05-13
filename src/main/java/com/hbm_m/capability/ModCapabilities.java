@@ -10,7 +10,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.bus.api.SubscribeEvent;
 *///?}
 //? if forge {
-/*import net.minecraftforge.common.capabilities.*;
+import net.minecraftforge.common.capabilities.*;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 public class ModCapabilities {
@@ -31,19 +31,19 @@ public class ModCapabilities {
             || be.getCapability(HBM_ENERGY_RECEIVER).isPresent();
     }
 }
-*///?}
+//?}
 
 //? if fabric {
-public class ModCapabilities {
-    /**
+/*public class ModCapabilities {
+    /^*
      * Проверяет, реализует ли BlockEntity хотя бы один из наших энергетических интерфейсов.
      * На Fabric мы не используем Capability-систему — вместо этого BlockEntity
      * напрямую реализует нужные интерфейсы.
-     */
+     ^/
     public static boolean hasEnergyComponent(BlockEntity be) {
         return be instanceof IEnergyConnector
                 || be instanceof IEnergyProvider
                 || be instanceof IEnergyReceiver;
     }
 }
-//?}
+*///?}

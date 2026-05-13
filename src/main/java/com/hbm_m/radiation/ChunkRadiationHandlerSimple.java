@@ -39,8 +39,8 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 //? if forge {
-/*import net.minecraftforge.event.level.ChunkEvent;
-*///?}
+import net.minecraftforge.event.level.ChunkEvent;
+//?}
 
 // Моя конфетка, сколько же сил и нервов я на тебя потратил!
 public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
@@ -269,24 +269,24 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public void receiveChunkUnload(ChunkEvent.Unload event) {
         if (event.getChunk() instanceof LevelChunk chunk && !chunk.getLevel().isClientSide()) {
             Optional.ofNullable(activeChunksByDimension.get(chunk.getLevel().dimension()
             .location())).ifPresent(set -> set.remove(chunk.getPos()));
         }
     }
-    *///?}
+    //?}
 
     // FABRIC АЛЬТЕРНАТИВА ВЫЗЫВАЕТСЯ ИЗ МЕНЕДЖЕРА
     //? if fabric {
-    public void receiveChunkUnloadFabric(LevelChunk chunk) {
+    /*public void receiveChunkUnloadFabric(LevelChunk chunk) {
         if (!chunk.getLevel().isClientSide()) {
             Optional.ofNullable(activeChunksByDimension.get(chunk.getLevel().dimension()
                     .location())).ifPresent(set -> set.remove(chunk.getPos()));
         }
     }
-    //?}
+    *///?}
 
     @Override
     public float getRadiation(Level level, int x, int y, int z) {

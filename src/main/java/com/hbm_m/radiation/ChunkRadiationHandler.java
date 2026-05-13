@@ -5,11 +5,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.LevelChunk;
 
 //? if forge {
-/*import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.level.ChunkDataEvent;
 import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.event.level.LevelEvent;
-*///?}
+//?}
 
 /**
  * Абстрактный класс для обработки радиации в чанках
@@ -76,7 +76,7 @@ public abstract class ChunkRadiationHandler {
      * Обработчики событий
      */
     //? if forge {
-    /*public void receiveWorldLoad(LevelEvent.Load event) { }
+    public void receiveWorldLoad(LevelEvent.Load event) { }
     public void receiveWorldUnload(LevelEvent.Unload event) { }
     public void receiveWorldTick(TickEvent.ServerTickEvent event) { }
 
@@ -85,7 +85,7 @@ public abstract class ChunkRadiationHandler {
     public void receiveChunkSave(ChunkDataEvent.Save event) { }
 
     public void receiveChunkUnload(ChunkEvent.Unload event) { }
-    *///?}
+    //?}
 
     public abstract void recalculateChunkRadiation(LevelChunk chunk);
     public abstract void receiveChunkLoad(LevelChunk chunk);

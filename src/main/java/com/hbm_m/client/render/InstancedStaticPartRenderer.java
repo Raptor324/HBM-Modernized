@@ -40,14 +40,14 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
-*///?}
-//? if fabric {
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 //?}
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+*///?}
 /**
  * Instanced Renderer для статических частей (Base/Frame).
  * Без шейдеров рендерит все машины одного типа одним {@code glDrawElementsInstanced}.
@@ -56,10 +56,10 @@ import net.fabricmc.api.Environment;
  * G-buffer / shadow pass / pack uniforms.
  */
 //? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
+//?}
 //? if fabric {
-@Environment(EnvType.CLIENT)//?}
+/*@Environment(EnvType.CLIENT)*///?}
 public class InstancedStaticPartRenderer extends AbstractGpuMesh {
 
     private static final int MAX_INSTANCES = 1024;
@@ -490,10 +490,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                 var pose = poseStack.last();
                 for (BakedQuad quad : quadsForIris) {
                     //? if forge {
-                    /*consumer.putBulkData(pose, quad, fade, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
-                    *///?} else {
-                    consumer.putBulkData(pose, quad, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY);
-                    //?}
+                    consumer.putBulkData(pose, quad, fade, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
+                    //?} else {
+                    /*consumer.putBulkData(pose, quad, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY);
+                    *///?}
                 }
             }
             return;
@@ -510,10 +510,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                 PoseStack.Pose pose = poseStack.last();
                 for (BakedQuad quad : quadsForIris) {
                     //? if forge {
-                    /*consumer.putBulkData(pose, quad, fade, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
-                    *///?} else {
-                    consumer.putBulkData(pose, quad, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY);
-                    //?}
+                    consumer.putBulkData(pose, quad, fade, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
+                    //?} else {
+                    /*consumer.putBulkData(pose, quad, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY);
+                    *///?}
                 }
             }
             return;
@@ -606,7 +606,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         if (!initialized) return;
 
         //? if fabric {
-        // On Fabric, Iris draws MUST happen eagerly during block entity
+        /*// On Fabric, Iris draws MUST happen eagerly during block entity
         // dispatch — not deferred to flush(). Fabric API has no
         // AFTER_BLOCK_ENTITIES event; the flush fires at AFTER_TRANSLUCENT,
         // by which point Iris has already moved past the block entity phase,
@@ -633,10 +633,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             }
             return;
         }
-        //?}
+        *///?}
 
         //? if forge {
-        /*if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
+        if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
             if (drawSingleWithIrisExtended(poseStack, packedLight, blockPos, blockEntity)) {
                 return;
             }
@@ -651,7 +651,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             }
             return;
         }
-        *///?}
+        //?}
 
         if (instanceCount >= MAX_INSTANCES) {
             if (!overflowLogged) {
@@ -850,15 +850,15 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
     }
 
     //? if forge {
-    /*public void flush(net.minecraftforge.client.event.RenderLevelStageEvent event) {
+    public void flush(net.minecraftforge.client.event.RenderLevelStageEvent event) {
         flush(event.getProjectionMatrix());
     }
-    *///?}
+    //?}
     //? if fabric {
-    public void flush(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext event) {
+    /*public void flush(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext event) {
         flush(event.projectionMatrix());
     }
-    //?}
+    *///?}
 
     public void flush(Matrix4f projectionMatrix) {
         if (instanceCount == 0) return;

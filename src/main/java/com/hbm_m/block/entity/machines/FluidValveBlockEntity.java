@@ -148,20 +148,20 @@ public class FluidValveBlockEntity extends BlockEntity implements IFluidPipeMK2 
 
 
     //? if forge {
-    /*@Override
+    @Override
     public void onLoad() {
         super.onLoad();
         if (level != null) initFromLevel(level);
     }
-    *///?}
+    //?}
 
     //? if fabric {
-    @Override
+    /*@Override
     public void setLevel(Level level) {
         super.setLevel(level);
         initFromLevel(level);
     }
-    //?}
+    *///?}
 
     @Override
     public void setRemoved() {
@@ -171,12 +171,12 @@ public class FluidValveBlockEntity extends BlockEntity implements IFluidPipeMK2 
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public void onChunkUnloaded() {
         if (node != null) node.expired = true;
         super.onChunkUnloaded();
     }
-    *///?}
+    //?}
 
     // =====================================================================================
     // NBT

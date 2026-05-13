@@ -1,5 +1,5 @@
 //? if fabric {
-package com.hbm_m.client.model.loading;
+/*package com.hbm_m.client.model.loading;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -106,13 +106,13 @@ final class ObjQuadBaker {
         return new BakedQuad(data, tintIndex, dir, sprite, shade);
     }
 
-    /**
+    /^*
      * Forge's automatic culling logic from ObjModel.makeQuad():
      * Checks that ALL 4 vertices lie on the face of the unit cube corresponding to the direction,
      * AND that the normal points outward in that direction.
      *
      * Forge uses Mth.equal(a, b) which checks |a - b| < 1e-5f.
-     */
+     ^/
     static void addQuadWithCulling(BakedQuad q, Map<Direction, List<BakedQuad>> out, boolean automaticCulling) {
         if (!automaticCulling) {
             out.get(null).add(q);
@@ -216,4 +216,4 @@ final class ObjQuadBaker {
         static ObjModelData MODEL;
     }
 }
-//?}
+*///?}

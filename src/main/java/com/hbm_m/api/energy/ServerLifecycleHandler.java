@@ -12,33 +12,33 @@ import org.slf4j.Logger;
  */
 
 //? if forge {
-/*import net.minecraftforge.event.server.ServerStartedEvent;
+import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-*///?}
-
-//? if fabric {
-import dev.architectury.event.events.common.LifecycleEvent;
 //?}
 
+//? if fabric {
+/*import dev.architectury.event.events.common.LifecycleEvent;
+*///?}
+
 //? if forge {
-/*@Mod.EventBusSubscriber(modid = "hbm_m")
- *///?}
+@Mod.EventBusSubscriber(modid = "hbm_m")
+ //?}
 public class ServerLifecycleHandler {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     //? if fabric {
-    public static void init() {
+    /*public static void init() {
         LifecycleEvent.SERVER_STARTED.register(ServerLifecycleHandler::runRebuild);
     }
-    //?}
+    *///?}
 
     //? if forge {
-    /*@SubscribeEvent
+    @SubscribeEvent
     public static void onServerStarted(ServerStartedEvent event) {
         runRebuild(event.getServer());
     }
-    *///?}
+    //?}
 
     public static void runRebuild(MinecraftServer server) {
         LOGGER.info("[HBM-NETWORK] Server has started, rebuilding energy networks for all dimensions...");

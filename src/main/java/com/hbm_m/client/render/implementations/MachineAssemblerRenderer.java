@@ -25,14 +25,14 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-*///?}
+//?}
 
 //? if fabric {
-import net.fabricmc.api.EnvType;
+/*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-//?}
+*///?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -47,10 +47,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 
 //? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
+//?}
 //? if fabric {
-@Environment(EnvType.CLIENT)//?}
+/*@Environment(EnvType.CLIENT)*///?}
 public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineAssemblerBlockEntity, MachineAssemblerBakedModel> {
 
     private MachineAssemblerVboRenderer gpu;
@@ -217,14 +217,14 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         // for the full rationale.
         boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
         //? if forge {
-        /*boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || shadowPass);
-        *///?}
+        boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || shadowPass);
+        //?}
         //? if fabric {
-        // On Fabric, always open an IrisRenderBatch when Iris VBO path is
+        /*// On Fabric, always open an IrisRenderBatch when Iris VBO path is
         // active. addInstance() draws eagerly (no deferred flush), so the
         // batch amortizes apply()/clear() across all parts of one machine.
         boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath();
-        //?}
+        *///?}
         if (useIrisBatch) {
             try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
                 renderAssemblerPartsInternal(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useBatching);

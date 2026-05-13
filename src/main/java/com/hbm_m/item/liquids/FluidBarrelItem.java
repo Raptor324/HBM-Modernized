@@ -13,22 +13,22 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 
 //? if forge {
-/*import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
-*///?}
+//?}
 
 //? if fabric {
-import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
+/*import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.storage.base.SingleVariantItemStorage;
 import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
-//?}
+*///?}
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.ChatFormatting;
@@ -60,10 +60,10 @@ public class FluidBarrelItem extends Item {
      */
     public static long getPlatformCapacity() {
         //? if fabric {
-        return CAPACITY * 81L;
-        //?} else {
-        /*return CAPACITY;
-         *///?}
+        /*return CAPACITY * 81L;
+        *///?} else {
+        return CAPACITY;
+         //?}
     }
 
     @Override
@@ -87,8 +87,8 @@ public class FluidBarrelItem extends Item {
         } else {
             long amount = fluid.getAmount();
             //? if fabric {
-            amount /= 81L;
-            //?}
+            /*amount /= 81L;
+            *///?}
             tooltip.add(Component.literal("Fluid: ").withStyle(ChatFormatting.GRAY)
                     .append(fluid.getName().copy().withStyle(ChatFormatting.AQUA)));
             tooltip.add(Component.literal("Amount: ").withStyle(ChatFormatting.GRAY)
@@ -102,8 +102,8 @@ public class FluidBarrelItem extends Item {
         if (fluid.isEmpty()) return false;
         long amount = fluid.getAmount();
         //? if fabric {
-        amount /= 81L;
-        //?}
+        /*amount /= 81L;
+        *///?}
         return amount < CAPACITY;
     }
 
@@ -113,8 +113,8 @@ public class FluidBarrelItem extends Item {
         if (fluid.isEmpty()) return 0;
         long amount = fluid.getAmount();
         //? if fabric {
-        amount /= 81L;
-        //?}
+        /*amount /= 81L;
+        *///?}
         return Math.round(13.0F * amount / CAPACITY);
     }
 
@@ -124,11 +124,11 @@ public class FluidBarrelItem extends Item {
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
         return new FluidBarrelCapabilityProvider(stack);
     }
-    *///?}
+    //?}
 
     // Static helper methods for NBT access
     public static FluidStack getFluid(ItemStack stack) {
@@ -181,7 +181,7 @@ public class FluidBarrelItem extends Item {
     // ================================================================== //
 
     //? if forge {
-    /*private static class FluidBarrelCapabilityProvider implements ICapabilityProvider {
+    private static class FluidBarrelCapabilityProvider implements ICapabilityProvider {
         private final FluidBarrelForgeHandler handler;
         private final LazyOptional<IFluidHandlerItem> optional;
 
@@ -217,7 +217,7 @@ public class FluidBarrelItem extends Item {
                     : new net.minecraftforge.fluids.FluidStack(arch.getFluid(), (int) arch.getAmount());
         }
 
-        /^* Вода/лава: HBM-реестр vs vanilla — один состав, но разные объекты {@link Fluid}. ^/
+        /** Вода/лава: HBM-реестр vs vanilla — один состав, но разные объекты {@link Fluid}. */
         private static boolean sameFluidPhysical(Fluid a, Fluid b) {
             if (a == b) return true;
             return VanillaFluidEquivalence.sameSubstance(a, b);
@@ -293,7 +293,7 @@ public class FluidBarrelItem extends Item {
             return out;
         }
     }
-    *///?}
+    //?}
 
     // ================================================================== //
     //  FABRIC — Fabric Transfer API (SingleVariantItemStorage)            //
@@ -302,7 +302,7 @@ public class FluidBarrelItem extends Item {
     // ================================================================== //
 
     //? if fabric {
-    public static Storage<FluidVariant> createFabricStorage(ContainerItemContext ctx) {
+    /*public static Storage<FluidVariant> createFabricStorage(ContainerItemContext ctx) {
         if (ctx == null) return null;
         return new SingleVariantItemStorage<FluidVariant>(ctx) {
 
@@ -350,5 +350,5 @@ public class FluidBarrelItem extends Item {
             }
         };
     }
-    //?}
+    *///?}
 }

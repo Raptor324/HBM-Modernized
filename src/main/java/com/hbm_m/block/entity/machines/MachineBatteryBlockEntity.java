@@ -23,17 +23,17 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 //? if forge {
-/*import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
-*///?}
+//?}
 
 //? if fabric {
-import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+/*import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import team.reborn.energy.api.EnergyStorage;
-//?}
+*///?}
 
 /**
  * Энергохранилище с настраиваемыми режимами работы.
@@ -58,9 +58,9 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
     private long averagedEnergyDelta = 0;
 
     //? if forge {
-    /*private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
+    private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
     private final PackedEnergyCapabilityProvider feCapabilityProvider = new PackedEnergyCapabilityProvider(this);
-    *///?}
+    //?}
 
     protected final ContainerData data;
 
@@ -122,13 +122,13 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         if (stack.isEmpty()) return false;
         if (stack.getItem() instanceof ItemCreativeBattery) return true;
         //? if forge {
-        /*return stack.getCapability(ForgeCapabilities.ENERGY).isPresent()
+        return stack.getCapability(ForgeCapabilities.ENERGY).isPresent()
                 || stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()
                 || stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).isPresent();
-        *///?}
-        //? if fabric {
-        return EnergyStorage.ITEM.find(stack, null) != null;
         //?}
+        //? if fabric {
+        /*return EnergyStorage.ITEM.find(stack, null) != null;
+        *///?}
     }
 
     @Override
@@ -180,7 +180,7 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         }
 
         //? if forge {
-        /*// 1) HBM long
+        // 1) HBM long
         var hbmCap = stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER);
         if (hbmCap.isPresent()) {
             hbmCap.ifPresent(source -> {
@@ -202,10 +202,10 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
             int extracted = source.extractEnergy(maxTransfer, false);
             if (extracted > 0) setEnergyStored(getEnergyStored() + extracted);
         });
-        *///?}
+        //?}
 
         //? if fabric {
-        var source = EnergyStorage.ITEM.find(stack, null);
+        /*var source = EnergyStorage.ITEM.find(stack, null);
         if (source == null || !source.supportsExtraction()) return;
 
         long toExtract = Math.min(getReceiveSpeed(), spaceAvailable);
@@ -218,7 +218,7 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
                 tx.commit();
             }
         }
-        //?}
+        *///?}
     }
 
     private void dischargeToItem() {
@@ -233,7 +233,7 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         }
 
         //? if forge {
-        /*// 1) HBM long
+        // 1) HBM long
         var hbmCap = stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER);
         if (hbmCap.isPresent()) {
             hbmCap.ifPresent(target -> {
@@ -253,10 +253,10 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
             int accepted = target.receiveEnergy(maxTransfer, false);
             if (accepted > 0) setEnergyStored(getEnergyStored() - accepted);
         });
-        *///?}
+        //?}
 
         //? if fabric {
-        var target = EnergyStorage.ITEM.find(stack, null);
+        /*var target = EnergyStorage.ITEM.find(stack, null);
         if (target == null || !target.supportsInsertion()) return;
 
         long toTransfer = Math.min(getProvideSpeed(), availableEnergy);
@@ -269,7 +269,7 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
                 tx.commit();
             }
         }
-        //?}
+        *///?}
     }
 
     public void handleButtonPress(int buttonId) {
@@ -319,7 +319,7 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public void onLoad() {
         super.onLoad();
         lazyItemHandler = LazyOptional.of(() -> inventory);
@@ -339,5 +339,5 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         if (feCap.isPresent()) return feCap;
         return super.getCapability(cap, side);
     }
-    *///?}
+    //?}
 }

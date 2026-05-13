@@ -7,7 +7,7 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 //? if forge {
-/*import net.minecraftforge.items.ItemStackHandler;
+import net.minecraftforge.items.ItemStackHandler;
 
 public abstract class ModItemStackHandler extends ItemStackHandler {
 
@@ -15,10 +15,10 @@ public abstract class ModItemStackHandler extends ItemStackHandler {
         super(size);
     }
 }
-*///?}
+//?}
 
 //? if fabric {
-import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
+/*import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.storage.base.CombinedStorage;
 import net.fabricmc.fabric.api.transfer.v1.storage.base.SingleSlotStorage;
@@ -208,4 +208,4 @@ public abstract class ModItemStackHandler {
         @Override protected void onFinalCommit()                 { onContentsChanged(slot); }
     }
 }
-//?}
+*///?}

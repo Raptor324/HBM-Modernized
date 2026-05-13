@@ -29,13 +29,13 @@ import com.hbm_m.item.ModItems;
 import com.hbm_m.item.liquids.FluidDuctItem;
 
 //? if fabric {
-import net.fabricmc.api.EnvType;
+/*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
-//?}
+*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -71,10 +71,10 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderGuiEvent;
-*///?}
+//?}
 
 /**
  * Fluid duct: multipart blockstate + Forge OBJ visibility on {@code pipe_neo.obj}. Fluid type lives in the block entity.
@@ -287,17 +287,17 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
                 // - если труба не окрашена (EMPTY) — показываем соединение просто по наличию fluid handler
                 // - если окрашена — показываем соединение только если контроллер реально принимает этот fluid (SIMULATE fill > 0)
                 //? if forge {
-                /*var cap = ctrl.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, null);
+                var cap = ctrl.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, null);
                 if (!cap.isPresent()) return false;
                 if (ductFluid == Fluids.EMPTY) return true;
                 var handler = cap.resolve().orElse(null);
                 if (handler == null) return false;
                 int canFill = handler.fill(new net.minecraftforge.fluids.FluidStack(ductFluid, 1), net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE);
                 return canFill > 0;
-                *///?}
+                //?}
 
                 //? if fabric {
-                // Паритет с Forge: capability FLUID_HANDLER с side=null на контроллере.
+                /*// Паритет с Forge: capability FLUID_HANDLER с side=null на контроллере.
                 // SIDED.find(..., null) → getFluidStorage(null) у BlockEntity (см. FabricEntrypoint).
                 if (!(level instanceof Level lvl)) {
                     return false;
@@ -315,7 +315,7 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
                     long inserted = storage.insert(FluidVariant.of(ductFluid), 81L, tx);
                     return inserted > 0;
                 }
-                //?}
+                *///?}
             }
 
             // Контроллер цистерны: прямое подключение запрещено правилами мультиблока.
@@ -539,10 +539,10 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
 
     @Override
 //? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
+//?}
 //? if fabric {
-@Environment(EnvType.CLIENT)//?}
+/*@Environment(EnvType.CLIENT)*///?}
     public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
         BlockEntity be = level.getBlockEntity(pos);
         if (!(be instanceof FluidDuctBlockEntity ductBe)) {

@@ -1,0 +1,14 @@
+{
+  "structures": [
+    {
+      "weight": 1,
+      "structure": "hbm_m:phoenix_factoryremake_overgrown1"
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "separation": 20,
+    "spacing": 60,
+    "salt": 889553777
+  }
+}

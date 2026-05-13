@@ -1,5 +1,5 @@
 //? if fabric {
-package com.hbm_m.client.model.loading;
+/*package com.hbm_m.client.model.loading;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -161,5 +161,5 @@ public final class ForgeObjUnbakedModel implements ForgeLikeUnbakedModel {
         return out;
     }
 }
-//?}
+*///?}
 

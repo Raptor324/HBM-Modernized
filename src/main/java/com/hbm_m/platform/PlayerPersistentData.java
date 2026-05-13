@@ -15,11 +15,11 @@ public final class PlayerPersistentData {
     public static CompoundTag get(Player player) {
         CompoundTag tag = new CompoundTag();
         //? if fabric {
-        tag = com.hbm_m.capability.FabricPlayerComponents.getPersistentData(player);
-        //?}
-        //? if forge {
-        /*tag = player.getPersistentData();
+        /*tag = com.hbm_m.capability.FabricPlayerComponents.getPersistentData(player);
         *///?}
+        //? if forge {
+        tag = player.getPersistentData();
+        //?}
         return tag;
     }
 }

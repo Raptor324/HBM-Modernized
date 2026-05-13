@@ -13,9 +13,9 @@ public class ModModelLayers {
      */
     public static final ModelLayerLocation POWER_ARMOR = new ModelLayerLocation(
             //? if fabric && < 1.21.1 {
-            new ResourceLocation(MainRegistry.MOD_ID, "power_armor"), "main");
-            //?} else {
-                        /*ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "power_armor"), "main");
-            *///?}
+            /*new ResourceLocation(MainRegistry.MOD_ID, "power_armor"), "main");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "power_armor"), "main");
+            //?}
 
 }

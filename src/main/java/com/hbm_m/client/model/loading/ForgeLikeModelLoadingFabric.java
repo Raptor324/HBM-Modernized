@@ -1,5 +1,5 @@
 //? if fabric {
-package com.hbm_m.client.model.loading;
+/*package com.hbm_m.client.model.loading;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -186,5 +186,5 @@ public final class ForgeLikeModelLoadingFabric {
         return Map.of();
     }
 }
-//?}
+*///?}
 

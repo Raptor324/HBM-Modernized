@@ -14,7 +14,7 @@ import net.minecraft.world.item.ItemStack;
  * JEI category for Chemical Plant recipes.
  */
 //? if forge {
-/*import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
+import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.forge.ForgeTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
@@ -31,10 +31,10 @@ public class ChemicalPlantJeiCategory implements IRecipeCategory<ChemicalPlantJe
 
     private static final ResourceLocation TEXTURE =
             //? if fabric && < 1.21.1 {
-            new ResourceLocation(RefStrings.MODID, "textures/gui/processing/gui_chemplant.png");
-            //?} else {
-                        /^ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_chemplant.png");
-            ^///?}
+            /*new ResourceLocation(RefStrings.MODID, "textures/gui/processing/gui_chemplant.png");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_chemplant.png");
+            //?}
 
 
     private final IDrawable background;
@@ -119,7 +119,7 @@ public class ChemicalPlantJeiCategory implements IRecipeCategory<ChemicalPlantJe
         }
     }
 }
-*///?} else {
-public final class ChemicalPlantJeiCategory {
+//?} else {
+/*public final class ChemicalPlantJeiCategory {
     private ChemicalPlantJeiCategory() {}
-}//?}
+}*///?}

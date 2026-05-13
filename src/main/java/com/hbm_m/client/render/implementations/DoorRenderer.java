@@ -32,9 +32,9 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 //? if fabric {
-import net.fabricmc.api.EnvType;
+/*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-//?}
+*///?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -48,13 +48,13 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.AABB;
 
 //? if forge {
-/*import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
-*///?}
+//?}
 //? if fabric {
-@Environment(EnvType.CLIENT)//?}
+/*@Environment(EnvType.CLIENT)*///?}
 public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, DoorBakedModel> {
 
     // Instanced рендерер для статической части frame
@@ -145,18 +145,18 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
         var rand = RandomSource.create(42);
         for (Direction d : Direction.values()) {
             //? if forge {
-            /*count += partModel.getQuads(null, d, rand, ModelData.EMPTY, RenderType.solid()).size();
-             *///?}
+            count += partModel.getQuads(null, d, rand, ModelData.EMPTY, RenderType.solid()).size();
+             //?}
             //? if fabric {
-            count += partModel.getQuads(null, d, rand).size();
-            //?}
+            /*count += partModel.getQuads(null, d, rand).size();
+            *///?}
         }
         //? if forge {
-        /*count += partModel.getQuads(null, null, rand, ModelData.EMPTY, RenderType.solid()).size();
-         *///?}
+        count += partModel.getQuads(null, null, rand, ModelData.EMPTY, RenderType.solid()).size();
+         //?}
         //? if fabric {
-        count += partModel.getQuads(null, null, rand).size();
-        //?}
+        /*count += partModel.getQuads(null, null, rand).size();
+        *///?}
         if (count == 0) {
             PARTS_WITHOUT_GEOMETRY.add(cacheKey);
             return false;
@@ -315,11 +315,11 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
             boolean useBatchingNow = ModClothConfig.useInstancedBatching();
             boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
             //? if forge {
-            /*boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatchingNow || shadowPass);
-            *///?}
-            //? if fabric {
-            boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath();
+            boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatchingNow || shadowPass);
             //?}
+            //? if fabric {
+            /*boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath();
+            *///?}
             if (useIrisBatch) {
                 try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
                     renderDoorVboParts(be, model, doorDecl, partNames, staticFramePart, doorType,
@@ -421,13 +421,13 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
                 var pose = poseStack.last();
                 for (var quad : quads) {
                     //? if forge {
-                    /*consumer.putBulkData(pose, quad, r, r, r, fade, packedLight,
+                    consumer.putBulkData(pose, quad, r, r, r, fade, packedLight,
                             net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, false);
-                    *///?}
-                    //? if fabric {
-                    consumer.putBulkData(pose, quad, r, r, r, packedLight,
-                            net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY);
                     //?}
+                    //? if fabric {
+                    /*consumer.putBulkData(pose, quad, r, r, r, packedLight,
+                            net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY);
+                    *///?}
                 }
             }
         }

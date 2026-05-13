@@ -25,10 +25,10 @@ import net.minecraft.world.item.crafting.Ingredient;
 
 public class GUITemplateFolder extends Screen {
     //? if fabric && < 1.21.1 {
-    private static final ResourceLocation TEXTURE = new ResourceLocation(RefStrings.MODID, "textures/gui/gui_planner.png");
-    //?} else {
-        /*private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_planner.png");
-    *///?}
+    /*private static final ResourceLocation TEXTURE = new ResourceLocation(RefStrings.MODID, "textures/gui/gui_planner.png");
+    *///?} else {
+        private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_planner.png");
+    //?}
 
     private final int imageWidth = 176;
     private final int imageHeight = 229;

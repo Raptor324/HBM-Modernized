@@ -7,7 +7,13 @@ import java.util.Map;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.inventory.gui.GUIMachineCentrifuge;
 import com.hbm_m.inventory.gui.GUIMachineChemicalPlant;
+import com.hbm_m.inventory.gui.GUIMachineCrucible;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.recipe.CrucibleAlloyingRecipe;
+import com.hbm_m.recipe.CrucibleAlloyingRecipes;
+import com.hbm_m.recipe.CrucibleMoldRecipes;
+import com.hbm_m.recipe.CrucibleRecipes;
+import com.hbm_m.recipe.CrucibleSmeltingRecipes;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.item.liquids.FluidBarrelItem;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
@@ -20,9 +26,10 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 //? if forge {
-/*import mezz.jei.api.IModPlugin;
+import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
@@ -35,10 +42,10 @@ public class HbmJeiPlugin implements IModPlugin {
 
     private static final ResourceLocation PLUGIN_UID =
             //? if fabric && < 1.21.1 {
-            new ResourceLocation(RefStrings.MODID, "jei_plugin");
-            //?} else {
-                        /^ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "jei_plugin");
-            ^///?}
+            /*new ResourceLocation(RefStrings.MODID, "jei_plugin");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "jei_plugin");
+            //?}
 
 
     @Override
@@ -50,18 +57,30 @@ public class HbmJeiPlugin implements IModPlugin {
     public void registerCategories(IRecipeCategoryRegistration registration) {
         registration.addRecipeCategories(new CentrifugeJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new ChemicalPlantJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new CrucibleCastingJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new CrucibleAlloyingJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new CrucibleSmeltingJeiCategory(registration.getJeiHelpers().getGuiHelper()));
     }
 
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
+        CrucibleRecipes.INSTANCE.registerDefaults();
+        ensureCrucibleFallbackRecipes();
         registration.addRecipes(CentrifugeJeiCategory.RECIPE_TYPE, getCentrifugeRecipes());
         registration.addRecipes(ChemicalPlantJeiCategory.RECIPE_TYPE, getChemicalPlantRecipes());
+        registration.addRecipes(CrucibleCastingJeiCategory.RECIPE_TYPE, getCrucibleCastingRecipes());
+        registration.addRecipes(CrucibleAlloyingJeiCategory.RECIPE_TYPE, getCrucibleAlloyingRecipes());
+        registration.addRecipes(CrucibleSmeltingJeiCategory.RECIPE_TYPE, getCrucibleSmeltingRecipes());
     }
 
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CENTRIFUGE.get()), CentrifugeJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CHEMICAL_PLANT.get()), ChemicalPlantJeiCategory.RECIPE_TYPE);
+        // Foundry basin is the primary catalyst; mold and strand caster are registered once those blocks are ported
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.FOUNDRY_BASIN.get()), CrucibleCastingJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.CRUCIBLE.get()), CrucibleAlloyingJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.CRUCIBLE.get()), CrucibleSmeltingJeiCategory.RECIPE_TYPE);
     }
 
     @Override
@@ -70,6 +89,12 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeClickArea(GUIMachineCentrifuge.class, 56, 0, 80, 38, CentrifugeJeiCategory.RECIPE_TYPE);
         // Chemical Plant click area around the progress bar
         registration.addRecipeClickArea(GUIMachineChemicalPlant.class, 62, 126, 70, 16, ChemicalPlantJeiCategory.RECIPE_TYPE);
+        // Crucible casting — matches the legacy NEI transfer rect: new Rectangle(65, 23, 36, 18)
+        registration.addRecipeClickArea(GUIMachineCrucible.class, 65, 23, 36, 18, CrucibleCastingJeiCategory.RECIPE_TYPE);
+        // Crucible alloying — same click zone on the crucible GUI
+        registration.addRecipeClickArea(GUIMachineCrucible.class, 65, 23, 36, 18, CrucibleAlloyingJeiCategory.RECIPE_TYPE);
+        // Crucible smelting — same click zone on the crucible GUI
+        registration.addRecipeClickArea(GUIMachineCrucible.class, 65, 23, 36, 18, CrucibleSmeltingJeiCategory.RECIPE_TYPE);
     }
 
     @Override
@@ -136,8 +161,49 @@ public class HbmJeiPlugin implements IModPlugin {
 
         return recipes;
     }
+
+    private static List<CrucibleCastingJeiRecipe> getCrucibleCastingRecipes() {
+        List<CrucibleCastingJeiRecipe> recipes = new ArrayList<>();
+        for (ItemStack[] r : CrucibleMoldRecipes.getMoldRecipes()) {
+            // r[0]=material, r[1]=mold, r[2]=unused, r[3]=output
+            recipes.add(new CrucibleCastingJeiRecipe(r[0], r[1], r[3]));
+        }
+        return recipes;
+    }
+
+    private static List<CrucibleAlloyingJeiRecipe> getCrucibleAlloyingRecipes() {
+        List<CrucibleAlloyingJeiRecipe> recipes = new ArrayList<>();
+        for (CrucibleAlloyingRecipe r : CrucibleAlloyingRecipes.getRecipes()) {
+            recipes.add(new CrucibleAlloyingJeiRecipe(r));
+        }
+        return recipes;
+    }
+
+    private static List<CrucibleSmeltingJeiRecipe> getCrucibleSmeltingRecipes() {
+        List<CrucibleSmeltingJeiRecipe> recipes = new ArrayList<>();
+        for (var entry : CrucibleSmeltingRecipes.getRecipes().entrySet()) {
+            recipes.add(new CrucibleSmeltingJeiRecipe(entry.getKey(), entry.getValue()));
+        }
+        return recipes;
+    }
+
+    private static void ensureCrucibleFallbackRecipes() {
+        if (CrucibleSmeltingRecipes.getRecipes().isEmpty()) {
+            CrucibleSmeltingRecipes.register(new ItemStack(Items.IRON_INGOT), new ItemStack(Items.IRON_INGOT));
+            CrucibleSmeltingRecipes.register(new ItemStack(Items.COPPER_INGOT), new ItemStack(Items.COPPER_INGOT));
+        }
+        if (CrucibleAlloyingRecipes.getRecipes().isEmpty()) {
+            CrucibleAlloyingRecipes.register(new CrucibleAlloyingRecipe("crucible.jei_fallback")
+                    .setup(1, new ItemStack(Items.IRON_INGOT))
+                    .inputs(new ItemStack(Items.IRON_INGOT), new ItemStack(Items.COAL))
+                    .outputs(new ItemStack(Items.IRON_NUGGET, 3)));
+        }
+        if (CrucibleMoldRecipes.getMoldRecipes().isEmpty()) {
+            CrucibleMoldRecipes.register(new ItemStack(Items.CLAY_BALL), new ItemStack(Items.BRICK), new ItemStack(Items.FLOWER_POT));
+        }
+    }
 }
-*///?} else {
-public final class HbmJeiPlugin {
+//?} else {
+/*public final class HbmJeiPlugin {
     private HbmJeiPlugin() {}
-}//?}
+}*///?}

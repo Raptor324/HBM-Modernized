@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.assets;
 //? if forge {
-/*import java.util.LinkedHashMap;
+import java.util.LinkedHashMap;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
@@ -199,6 +199,10 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.INFINITE_WATER_5000);
 
         simpleItem(ModItems.LIMESTONE);
+        simpleItem(ModItems.SHELL_STEEL);
+        simpleItem(ModItems.SHELL_COPPER);
+        simpleItem(ModItems.SHELL_ALUMINUM);
+        simpleItem(ModItems.SHELL_TITANIUM);
         simpleItem(ModItems.MALACHITE_CHUNK);
         simpleItem(ModItems.CANNED_ASBESTOS);
         simpleItem(ModItems.CANNED_ASS);
@@ -304,6 +308,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.ANALOG_CIRCUIT);
         simpleItem(ModItems.VACUUM_TUBE);
         simpleItem(ModItems.CAPACITOR);
+        simpleItem(ModItems.CENTRIFUGE_ELEMENT);
         simpleItem(ModItems.PCB);
         simpleItem(ModItems.ATOMIC_CLOCK);
         simpleItem(ModItems.MICROCHIP);
@@ -465,9 +470,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.GRENADEHE);
         simpleItem(ModItems.GRENADEFIRE);
 
-        // Missile prototype item: 3D OBJ модель, используем готовый missile_micro.json
-        withExistingParent(ModItems.MISSILE_TEST.getId().getPath(),
-                modLoc("missile/missile_micro"));
 
         ModBlocks.getAnvilBlocks().forEach(this::blockItemFromBlockModelMachine);
         
@@ -476,9 +478,32 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.BLAST_FURNACE);
         blockItemFromBlockModelMachine(ModBlocks.WOOD_BURNER);
         blockItemFromBlockModelMachine(ModBlocks.CHEMICAL_PLANT);
+        blockItemFromBlockModelMachine(ModBlocks.CRUCIBLE);
+        blockItemFromBlockModelMachine(ModBlocks.FOUNDRY_BASIN);
         blockItemFromBlockModelMachine(ModBlocks.CENTRIFUGE);
+        blockItemFromBlockModelMachine(ModBlocks.GAS_CENTRIFUGE);
         blockItemFromBlockModelMachine(ModBlocks.CRYSTALLIZER);
+        blockItemFromBlockModelMachine(ModBlocks.BREEDER);
+        blockItemFromBlockModelMachine(ModBlocks.LARGE_PYLON);
         blockItemFromBlockModelMachine(ModBlocks.HYDRAULIC_FRACKINING_TOWER);
+        blockItemFromBlockModelMachine(ModBlocks.COOLING_TOWER);
+        blockItemFromBlockModelMachine(ModBlocks.TOWER_SMALL);
+        blockItemFromBlockModelMachine(ModBlocks.CYCLOTRON);
+        blockItemFromBlockModelMachine(ModBlocks.ZIRNOX);
+        blockItemFromBlockModelMachine(ModBlocks.ARC_WELDER);
+        blockItemFromBlockModelMachine(ModBlocks.SOLDERING_STATION);
+        blockItemFromBlockModelMachine(ModBlocks.MIXER);
+        blockItemFromBlockModelMachine(ModBlocks.DERRICK);
+        blockItemFromBlockModelMachine(ModBlocks.RBMK_CONSOLE);
+        blockItemFromBlockModelMachine(ModBlocks.FLARE_STACK);
+        blockItemFromBlockModelMachine(ModBlocks.PUMPJACK);
+        blockItemFromBlockModelMachine(ModBlocks.RADAR);
+        blockItemFromBlockModelMachine(ModBlocks.LARGE_RADAR);
+        blockItemFromBlockModelMachine(ModBlocks.CRACKING_TOWER);
+        blockItemFromBlockModelMachine(ModBlocks.FRACTION_TOWER);
+        blockItemFromBlockModelMachine(ModBlocks.MINING_DRILL);
+        blockItemFromBlockModelMachine(ModBlocks.FEL);
+        blockItemFromBlockModelMachine(ModBlocks.SILEX);
         blockItemFromBlockModelMachine(ModBlocks.MACHINE_ASSEMBLER);
         blockItemFromBlockModelMachine(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
         blockItemFromBlockModelMachine(ModBlocks.FLUID_TANK);
@@ -487,7 +512,23 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelBomb(ModBlocks.NUKE_FAT_MAN);
         blockItemFromBlockModelMachine(ModBlocks.MACHINE_BATTERY_SOCKET);
         blockItemFromBlockModelMachine(ModBlocks.INDUSTRIAL_BOILER);
-        blockItemFromBlockModelMachine(ModBlocks.INDUSTRIAL_TURBINE);
+        blockItemFromBlockModelMachine(ModBlocks.SOLAR_BOILER);
+            blockItemFromBlockModelMachine(ModBlocks.SOLAR_MIRRORS);
+            blockItemFromBlockModelMachine(ModBlocks.WATZ_POWERPLANT);
+            blockItemFromBlockModelMachine(ModBlocks.HYDROTREATER);
+            blockItemFromBlockModelMachine(ModBlocks.CATALYTIC_REFORMER);
+            blockItemFromBlockModelMachine(ModBlocks.DEUTERIUM_TOWER);
+            blockItemFromBlockModelMachine(ModBlocks.CHEMICAL_FACTORY);
+            blockItemFromBlockModelMachine(ModBlocks.STEAM_TURBINE);
+            blockItemFromBlockModelMachine(ModBlocks.LIQUEFACTOR);
+            blockItemFromBlockModelMachine(ModBlocks.CORE_EMITTER);
+            blockItemFromBlockModelMachine(ModBlocks.CORE_INJECTOR);
+            blockItemFromBlockModelMachine(ModBlocks.CORE_RECEIVER);
+            blockItemFromBlockModelMachine(ModBlocks.VACUUM_DISTILL);
+            blockItemFromBlockModelMachine(ModBlocks.TURBOFAN);
+            blockItemFromBlockModelMachine(ModBlocks.INDUSTRIAL_TURBINE);
+        blockItemFromBlockModelMachine(ModBlocks.TURBINE);
+        blockItemFromBlockModelMachine(ModBlocks.SUBSTATION);
         blockItemFromBlockModel(ModBlocks.DUD_CONVENTIONAL);
         blockItemFromBlockModel(ModBlocks.DUD_NUKE);
         blockItemFromBlockModel(ModBlocks.DUD_SALTED);
@@ -497,12 +538,12 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModel(ModBlocks.FLUID_EXHAUST);
     };
 
-    /^*
+    /**
      * Вспомогательный метод для генерации простой модели предмета.
      * Он предполагает, что модель имеет родителя "item/generated" и одну текстуру "layer0".
      * Это стандарт для большинства 2D предметов в Minecraft.
      * @param itemObject RegistrySupplier предмета, для которого генерируется модель.
-     ^/
+     */
 
     private void simpleItem(RegistrySupplier<Item> itemObject) {
         // Получаем имя предмета из его ID (например, "uranium_ingot")
@@ -518,10 +559,10 @@ public class ModItemModelProvider extends ItemModelProvider {
         return withExistingParent(item.getId().getPath(),
                 ResourceLocation.tryParse("item/generated")).texture("layer0",
                 //? if fabric && < 1.21.1 {
-                new ResourceLocation(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
-                //?} else {
-                                /^ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
-                ^///?}
+                /*new ResourceLocation(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
+                *///?} else {
+                                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
+                //?}
 
     }
 
@@ -606,17 +647,17 @@ public class ModItemModelProvider extends ItemModelProvider {
                 String trimPath = "trims/items/" + armorType + "_trim_" + trimMaterial.location().getPath();
                 String currentTrimName = armorItemPath + "_" + trimMaterial.location().getPath() + "_trim";
                 //? if fabric && < 1.21.1 {
-                ResourceLocation armorItemResLoc = new ResourceLocation(MOD_ID, armorItemPath);
-                //?} else {
-                                /^ResourceLocation armorItemResLoc = ResourceLocation.fromNamespaceAndPath(MOD_ID, armorItemPath);
-                ^///?}
+                /*ResourceLocation armorItemResLoc = new ResourceLocation(MOD_ID, armorItemPath);
+                *///?} else {
+                                ResourceLocation armorItemResLoc = ResourceLocation.fromNamespaceAndPath(MOD_ID, armorItemPath);
+                //?}
 
                 ResourceLocation trimResLoc = ResourceLocation.tryParse(trimPath); // minecraft namespace
                 //? if fabric && < 1.21.1 {
-                ResourceLocation trimNameResLoc = new ResourceLocation(MOD_ID, currentTrimName);
-                //?} else {
-                                /^ResourceLocation trimNameResLoc = ResourceLocation.fromNamespaceAndPath(MOD_ID, currentTrimName);
-                ^///?}
+                /*ResourceLocation trimNameResLoc = new ResourceLocation(MOD_ID, currentTrimName);
+                *///?} else {
+                                ResourceLocation trimNameResLoc = ResourceLocation.fromNamespaceAndPath(MOD_ID, currentTrimName);
+                //?}
 
 
                 existingFileHelper.trackGenerated(trimResLoc, PackType.CLIENT_RESOURCES, ".png", "textures");
@@ -633,12 +674,12 @@ public class ModItemModelProvider extends ItemModelProvider {
                         .predicate(mcLoc("trim_type"), trimValue).end()
                         .texture("layer0",
                                 //? if fabric && < 1.21.1 {
-                                new ResourceLocation(MOD_ID,
+                                /*new ResourceLocation(MOD_ID,
                                         "item/" + itemRegistrySupplier.getId().getPath()));
-                                //?} else {
-                                                                /^ResourceLocation.fromNamespaceAndPath(MOD_ID,
+                                *///?} else {
+                                                                ResourceLocation.fromNamespaceAndPath(MOD_ID,
                                         "item/" + itemRegistrySupplier.getId().getPath()));
-                                ^///?}
+                                //?}
 
             });
         }
@@ -650,4 +691,4 @@ public class ModItemModelProvider extends ItemModelProvider {
     }
 
 }
-*///?}
+//?}

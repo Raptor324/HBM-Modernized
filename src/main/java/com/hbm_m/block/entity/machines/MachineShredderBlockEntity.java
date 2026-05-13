@@ -15,12 +15,12 @@ import com.hbm_m.sound.ClientSoundBootstrap;
 
 import dev.architectury.registry.registries.RegistrySupplier;
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-*///?}
+//?}
 //? if fabric {
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;//?}
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
@@ -191,10 +191,10 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
         }
     }
 //? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
+//?}
 //? if fabric {
-@Environment(EnvType.CLIENT)//?}
+/*@Environment(EnvType.CLIENT)*///?}
     private void clientTick() {
         ClientSoundBootstrap.updateSound(this, getIsActive(), () -> newShredderSoundInstance());
     }

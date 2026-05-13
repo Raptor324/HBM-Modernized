@@ -122,10 +122,10 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
     public static class Serializer implements RecipeSerializer<AssemblerRecipe> {
         public static final Serializer INSTANCE = new Serializer();
         //? if fabric && < 1.21.1 {
-        public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "assembler");
-        //?} else {
-                /*public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "assembler");
-        *///?}
+        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "assembler");
+        *///?} else {
+                public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "assembler");
+        //?}
 
 
         @Override
