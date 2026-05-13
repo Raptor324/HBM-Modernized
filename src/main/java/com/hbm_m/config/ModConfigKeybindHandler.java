@@ -7,8 +7,8 @@ import org.lwjgl.glfw.GLFW;
 import com.hbm_m.client.overlay.OverlayInfoToast;
 import com.hbm_m.inventory.gui.GUIMultiDetonator;
 import com.hbm_m.item.grenades_and_activators.MultiDetonatorItem;
-import com.hbm_m.powerarmor.PowerArmorClientState;
 import com.hbm_m.powerarmor.ModPowerArmorItem;
+import com.hbm_m.powerarmor.PowerArmorClientState;
 import com.hbm_m.powerarmor.PowerArmorHandlers;
 import com.mojang.blaze3d.platform.InputConstants;
 
