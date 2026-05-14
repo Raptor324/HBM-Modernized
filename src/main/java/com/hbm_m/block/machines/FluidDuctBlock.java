@@ -14,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.ImmutableMap;
 import com.hbm_m.api.fluids.HbmFluidRegistry;
+import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.block.entity.machines.FluidDuctBlockEntity;
 import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
@@ -283,9 +284,29 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
                     return ductFluidMatchesTankForVisual(ductFluid, tank);
                 }
 
+                // Остальные MK2-контроллеры (например Crystallizer):
+                // визуальное соединение нельзя определять через Forge fill(SIMULATE), потому что
+                // полностью заполненный бак вернёт 0 и труба визуально "отлипнет" после перезахода,
+                // хотя сеть и тип жидкости корректные. Для MK2 сверяем именно ожидаемый тип бака.
+                if (ctrl instanceof IFluidStandardReceiverMK2 receiver) {
+                    if (ductFluid == Fluids.EMPTY) return true;
+                    FluidTank[] receiving = receiver.getReceivingTanks();
+                    if (receiving == null) return false;
+                    for (FluidTank tank : receiving) {
+                        if (tank == null) continue;
+                        Fluid expected = normalizeDuctPaintFluid(tank.getTankType());
+                        if (expected != null
+                                && expected != Fluids.EMPTY
+                                && VanillaFluidEquivalence.sameSubstance(ductFluid, expected)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+
                 // Остальные контроллеры:
                 // - если труба не окрашена (EMPTY) — показываем соединение просто по наличию fluid handler
-                // - если окрашена — показываем соединение только если контроллер реально принимает этот fluid (SIMULATE fill > 0)
+                // - если окрашена — fallback через Forge fill(SIMULATE).
                 //? if forge {
                 var cap = ctrl.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, null);
                 if (!cap.isPresent()) return false;
@@ -342,27 +363,64 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
         return VanillaFluidEquivalence.sameSubstance(ductFluidNorm, tankType);
     }
 
-    /** Refresh this duct and same-block neighbors (after fluid / connection change). */
+    /**
+     * Refresh duct render connections around {@code pos}.
+     *
+     * <p>Важно для мультиблок-коннекторов: метод может вызываться как с позиции самой
+     * трубы, так и с позиции соседнего UniversalMachinePartBlockEntity. Поэтому обновляем
+     * все duct-блоки вокруг переданной позиции, а потом их соседей.</p>
+     */
     public static void refreshAdjacentDucts(Level level, BlockPos pos) {
-        BlockState st = level.getBlockState(pos);
-        Block b = st.getBlock();
-        if (!(b instanceof FluidDuctBlock duct)) {
+        Set<BlockPos> seeds = new HashSet<>();
+
+        if (level.getBlockState(pos).getBlock() instanceof FluidDuctBlock) {
+            seeds.add(pos);
+        }
+
+        for (Direction d : Direction.values()) {
+            BlockPos n = pos.relative(d);
+            if (level.getBlockState(n).getBlock() instanceof FluidDuctBlock) {
+                seeds.add(n);
+            }
+        }
+
+        if (seeds.isEmpty()) {
             return;
         }
+
         Set<BlockPos> update = new HashSet<>();
-        update.add(pos);
-        for (Direction d : Direction.values()) {
-            update.add(pos.relative(d));
+        for (BlockPos seed : seeds) {
+            update.add(seed);
+            for (Direction d : Direction.values()) {
+                update.add(seed.relative(d));
+            }
         }
+
+        int flags = Block.UPDATE_CLIENTS | Block.UPDATE_NEIGHBORS;
+        if (level.isClientSide) {
+            flags |= Block.UPDATE_IMMEDIATE;
+        }
+
         for (BlockPos p : update) {
-            if (level.getBlockState(p).getBlock() != b) {
+            BlockState st = level.getBlockState(p);
+            if (!(st.getBlock() instanceof FluidDuctBlock duct)) {
                 continue;
             }
+
             BlockState next = duct.getConnectionState(level, p);
-            level.setBlock(p, next, Block.UPDATE_CLIENTS);
+            if (next != st) {
+                level.setBlock(p, next, flags);
+            } else if (!level.isClientSide) {
+                level.sendBlockUpdated(p, st, st, Block.UPDATE_CLIENTS);
+            }
+
             BlockEntity be = level.getBlockEntity(p);
             if (be instanceof FluidDuctBlockEntity dbe) {
                 dbe.syncFluidToClients();
+            }
+
+            if (level.isClientSide) {
+                DoorChunkInvalidationHelper.scheduleChunkInvalidation(p);
             }
         }
     }
@@ -494,7 +552,7 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level level,
             @NotNull BlockState state, @NotNull BlockEntityType<T> type) {
-        return level.isClientSide ? null : (lvl, pos, st, be) -> {
+        return (lvl, pos, st, be) -> {
             if (be instanceof FluidDuctBlockEntity duct) {
                 FluidDuctBlockEntity.tick(lvl, pos, st, duct);
             }
