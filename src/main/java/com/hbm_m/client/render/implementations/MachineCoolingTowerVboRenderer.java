@@ -3,7 +3,7 @@ package com.hbm_m.client.render.implementations;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.client.model.MachineCoolingTowerBakedModel;
-import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.MeshRenderCache;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -27,7 +27,7 @@ public class MachineCoolingTowerVboRenderer {
                        @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
         BakedModel part = model.getPart(MAIN_PART);
         if (part != null) {
-            var r = GlobalMeshCache.getOrCreateRenderer("cooling_tower_" + MAIN_PART, part);
+            var r = MeshRenderCache.getOrCreateRenderer("cooling_tower_" + MAIN_PART, part);
             if (r != null) {
                 r.setUseSlicedLight(true);
                 r.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);
@@ -35,3 +35,4 @@ public class MachineCoolingTowerVboRenderer {
         }
     }
 }
+

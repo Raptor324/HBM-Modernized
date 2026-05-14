@@ -8,7 +8,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.client.model.MachineHydraulicFrackiningTowerBakedModel;
-import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.MeshRenderCache;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 //? if fabric {
@@ -37,7 +37,7 @@ public class MachineHydraulicFrackiningTowerVboRenderer {
                        @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
         BakedModel part = model.getPart(MAIN_PART);
         if (part != null) {
-            var r = GlobalMeshCache.getOrCreateRenderer("frackining_tower_" + MAIN_PART, part);
+            var r = MeshRenderCache.getOrCreateRenderer("frackining_tower_" + MAIN_PART, part);
             if (r != null) {
                 r.setUseSlicedLight(true);
                 r.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);

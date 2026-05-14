@@ -125,10 +125,7 @@ public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedMo
             return getItemQuads(side, rand, modelData, renderType);
         }
 
-        // WORLD RENDER: переключение по источнику геометрии.
-        // useVboGeometry() == true → модель пустая, всё рендерит BER (VBO/Iris путь).
-        // useVboGeometry() == false → baked путь (классика под шейдерами):
-        //   Base+Frame всегда; анимированные - только когда машина спит (особый рендер при работе).
+        // WORLD RENDER: геометрия всегда предоставляется BER/VBO системой.
         if (ShaderCompatibilityDetector.useVboGeometry()) {
             return List.of();
         }

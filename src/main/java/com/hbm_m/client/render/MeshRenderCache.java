@@ -5,7 +5,6 @@ package com.hbm_m.client.render;
 /*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 *///?}
-import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -33,10 +32,14 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 //?}
 //? if fabric {
 /*@Environment(EnvType.CLIENT)*///?}
-public class GlobalMeshCache {
+public class MeshRenderCache {
 
     private static final int MAX_CACHE_SIZE = 256;
-    private static final ConcurrentHashMap<String, WeakReference<SingleMeshVboRenderer>> PART_RENDERERS = new ConcurrentHashMap<>();
+    // Strong references: GPU resource lifecycle MUST be deterministic. A WeakReference
+    // cache risks the renderer being GC'd while still owning a VAO/VBO/EBO, which would
+    // never get freed because cleanup() can't be called on a collected object.
+    // Cleanup is driven explicitly by clearAll() on resource reload / client disconnect.
+    private static final ConcurrentHashMap<String, SingleMeshVboRenderer> PART_RENDERERS = new ConcurrentHashMap<>();
     private static final java.util.Set<String> FAILED_RENDERER_KEYS = ConcurrentHashMap.newKeySet();
 
     private static final Map<String, PartGeometry> COMPILED_GEOMETRY = Collections.synchronizedMap(
@@ -108,23 +111,14 @@ public class GlobalMeshCache {
 
     public static SingleMeshVboRenderer getOrCreateRenderer(String partKey, BakedModel model) {
         if (FAILED_RENDERER_KEYS.contains(partKey)) return null;
-        if (PART_RENDERERS.size() > MAX_CACHE_SIZE) {
-            cleanupDeadRenderers();
-        }
 
-        WeakReference<SingleMeshVboRenderer> ref = PART_RENDERERS.compute(partKey, (key, existingRef) -> {
-            SingleMeshVboRenderer renderer = (existingRef != null) ? existingRef.get() : null;
+        return PART_RENDERERS.computeIfAbsent(partKey, key -> {
+            SingleMeshVboRenderer renderer = createRendererForPart(key, model);
             if (renderer == null) {
-                renderer = createRendererForPart(key, model);
-                if (renderer == null) {
-                    FAILED_RENDERER_KEYS.add(key);
-                    return existingRef;
-                }
-                return new WeakReference<>(renderer);
+                FAILED_RENDERER_KEYS.add(key);
             }
-            return existingRef;
+            return renderer;
         });
-        return (ref != null) ? ref.get() : null;
     }
 
     public static List<BakedQuad> getOrCompile(String entityType, String partName, BakedModel modelPart) {
@@ -177,10 +171,6 @@ public class GlobalMeshCache {
         return vbo;
     }
 
-    private static void cleanupDeadRenderers() {
-        PART_RENDERERS.entrySet().removeIf(entry -> entry.getValue().get() == null);
-    }
-
     private static SingleMeshVboRenderer createRendererForPart(String partKey, BakedModel model) {
         PartGeometry geo = getOrCompilePartGeometry(partKey, model);
         if (geo.isEmpty()) {
@@ -193,19 +183,26 @@ public class GlobalMeshCache {
             return null;
         }
 
-        MainRegistry.LOGGER.debug("GlobalMeshCache: renderer for part '{}', {} vertices",
+        MainRegistry.LOGGER.debug("MeshRenderCache: renderer for part '{}', {} vertices",
             partName, prebuiltData.byteBuffer.remaining() / 32);
 
         final List<BakedQuad> quadsForIris = geo.solidQuads();
         return new SingleMeshVboRenderer() {
-            private boolean dataInitialized = false;
+            // One-shot owner: holds VboData until initVbo consumes it, then nulled out.
+            // initVbo() is only ever called once per renderer (gated by `initialized`),
+            // but if a future bug causes a re-init after cleanup(), throwing here is
+            // safer than returning already-freed native buffers.
+            private SingleMeshVboRenderer.VboData pendingData = prebuiltData;
 
             @Override
             protected SingleMeshVboRenderer.VboData buildVboData() {
-                if (!dataInitialized) {
-                    dataInitialized = true;
+                SingleMeshVboRenderer.VboData data = pendingData;
+                if (data == null) {
+                    throw new IllegalStateException(
+                        "buildVboData() called twice for part '" + partName + "'; VboData is one-shot");
                 }
-                return prebuiltData;
+                pendingData = null;
+                return data;
             }
 
             @Override
@@ -247,8 +244,7 @@ public class GlobalMeshCache {
     }
 
     public static void clearAll() {
-        for (WeakReference<SingleMeshVboRenderer> ref : PART_RENDERERS.values()) {
-            SingleMeshVboRenderer renderer = ref.get();
+        for (SingleMeshVboRenderer renderer : PART_RENDERERS.values()) {
             if (renderer != null) {
                 renderer.cleanup();
             }
@@ -271,7 +267,7 @@ public class GlobalMeshCache {
     }
 
     public static void logCacheStats() {
-        MainRegistry.LOGGER.debug("GlobalMeshCache stats:");
+        MainRegistry.LOGGER.debug("MeshRenderCache stats:");
         MainRegistry.LOGGER.debug("  Compiled part geometry entries: " + getCachedQuadsCount());
         MainRegistry.LOGGER.debug("  GPU buffers: " + getCachedBuffersCount());
         MainRegistry.LOGGER.debug("  Renderers: " + getCachedRenderersCount());

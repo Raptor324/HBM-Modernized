@@ -7,7 +7,7 @@ import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.client.model.MachineChemicalPlantBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
-import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.OcclusionCullingHelper;
@@ -87,7 +87,7 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         BakedModel part = model.getPart(partName);
         if (part == null) return null;
         String cacheKey = "chemplant_" + partName;
-        PartGeometry geo = GlobalMeshCache.getOrCompilePartGeometry(cacheKey, part);
+        PartGeometry geo = MeshRenderCache.getOrCompilePartGeometry(cacheKey, part);
         if (geo.isEmpty()) return null;
         var data = geo.toVboData(partName);
         if (data == null) return null;
@@ -206,7 +206,7 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         // ClientModEvents closes any persistent batch before those flushes so ACTIVE
         // is not left stale after shader.clear().
         boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
-        boolean useIrisBatch = useVboPath && ShaderCompatibilityDetector.useNewIrisVboPath();
+        boolean useIrisBatch = useVboPath && ShaderCompatibilityDetector.isExternalShaderActive();
         if (useIrisBatch) {
             try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
                 renderChemicalPlantPartsInternal(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useVboPath, useBatching, renderActive);
@@ -308,3 +308,4 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
     }
     @Override public int getViewDistance() { return RenderDistanceHelper.getStaticViewDistanceBlocks(); }
 }
+

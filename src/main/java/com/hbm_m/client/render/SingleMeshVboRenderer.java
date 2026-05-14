@@ -57,8 +57,12 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
      * Thread-local fade alpha for distance-based dissolve. Set by BER callers
      * via {@link #setFadeAlpha(float)} before invoking {@link #render}; the
      * value is uploaded to the {@code FadeAlpha} shader uniform and also applied
-     * to the Iris putBulkData fallback path via vertex color modulation.
-     * Defaults to 1.0 (fully opaque) and is reset after each render call.
+     * to the Iris putBulkData fallback path via alpha modulation.
+     * Defaults to 1.0 (fully opaque). NOTE: callers are responsible for
+     * restoring the previous value after their last {@link #render} call —
+     * BERs typically render multiple parts under the same fade, so the
+     * renderer itself does NOT auto-reset between part renders.
+     * See {@code MachinePressRenderer} for the save/restore pattern.
      */
     private static final ThreadLocal<Float> currentFadeAlpha = ThreadLocal.withInitial(() -> 1.0f);
 
@@ -90,7 +94,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
 
     /**
      * Квады для Iris-совместимого пути (BufferBuilder + GameRenderer shader).
-     * Переопределяется в рендерерах, созданных через GlobalMeshCache.
+     * Переопределяется в рендерерах, созданных через MeshRenderCache.
      */
     protected List<BakedQuad> getQuadsForIrisPath() {
         return null;
@@ -276,9 +280,9 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         var pose = poseStack.last();
         for (BakedQuad quad : quads) {
             //? if forge {
-            consumer.putBulkData(pose, quad, fade, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
+            consumer.putBulkData(pose, quad, 1f, 1f, 1f, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
             //?} else {
-            /*consumer.putBulkData(pose, quad, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY);
+            /*consumer.putBulkData(pose, quad, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY);
             *///?}
         }
     }
@@ -304,16 +308,13 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         // already applied in InstancedStaticPartRenderer.addInstance().
 
         if (ShaderCompatibilityDetector.isExternalShaderActive()) {
-            // 1) Try the Iris ExtendedShader path with our companion mesh - gives correct G-buffer
-            //    output, shadow casting and pack uniforms.
-            if (ShaderCompatibilityDetector.useNewIrisVboPath()) {
-                if (renderWithIrisExtended(poseStack, packedLight, blockPos, blockEntity)) {
-                    return;
-                }
+            // 1) Iris ExtendedShader path through our companion mesh.
+            if (renderWithIrisExtended(poseStack, packedLight, blockPos, blockEntity)) {
+                return;
             }
             // 2) Fallback: classic putBulkData delegation lets Iris's pipeline render us as
             //    plain terrain quads. Used when companion mesh build failed or Iris reflection
-            //    is unavailable (e.g. very old / very new Iris release we don't support yet).
+            //    is unavailable.
             List<BakedQuad> irisQuads = getQuadsForIrisPath();
             if (irisQuads != null && bufferSource != null) {
                 renderToBufferSource(poseStack, packedLight, irisQuads, bufferSource);
@@ -740,9 +741,17 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             this.maxX = maxX; this.maxY = maxY; this.maxZ = maxZ;
         }
 
+        public boolean isConsumed() {
+            return consumed;
+        }
+
         @Override
         public void close() {
             if (consumed) {
+                // Double-free attempt: native memory was already freed by a previous
+                // close(). Silently no-op in production to avoid crashes, but the
+                // assert will trip in development to surface the bug.
+                assert false : "VboData.close() called twice (already consumed)";
                 return;
             }
             consumed = true;

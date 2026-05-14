@@ -7,7 +7,7 @@ import com.hbm_m.block.entity.machines.MachineAssemblerBlockEntity;
 import com.hbm_m.block.machines.MachineAssemblerBlock;
 import com.hbm_m.client.model.MachineAssemblerBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
-import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.ObjModelVboBuilder;
@@ -104,7 +104,7 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         if (part == null) return null;
         var data = ObjModelVboBuilder.buildSinglePart(part, partName);
         if (data == null) return null;
-        var quads = GlobalMeshCache.getOrCompile("assembler_legacy_" + partName, part);
+        var quads = MeshRenderCache.getOrCompile("assembler_legacy_" + partName, part);
         return new InstancedStaticPartRenderer(data, quads);
     }
 
@@ -217,13 +217,10 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         // for the full rationale.
         boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
         //? if forge {
-        boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || shadowPass);
+        boolean useIrisBatch = ShaderCompatibilityDetector.isExternalShaderActive() && (!useBatching || shadowPass);
         //?}
         //? if fabric {
-        /*// On Fabric, always open an IrisRenderBatch when Iris VBO path is
-        // active. addInstance() draws eagerly (no deferred flush), so the
-        // batch amortizes apply()/clear() across all parts of one machine.
-        boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath();
+        /*boolean useIrisBatch = ShaderCompatibilityDetector.isExternalShaderActive();
         *///?}
         if (useIrisBatch) {
             try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
@@ -390,7 +387,7 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
                                 double x, double y, double z, float rotZDeg) {
         BakedModel part = model.getPart(partName);
         if (part == null) return;
-        var quads = GlobalMeshCache.getOrCompile("assembler_legacy_" + partName, part);
+        var quads = MeshRenderCache.getOrCompile("assembler_legacy_" + partName, part);
         if (quads == null || quads.isEmpty()) return;
 
         animator.push();
@@ -517,3 +514,4 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
     @Override
     public int getViewDistance() { return RenderDistanceHelper.getStaticViewDistanceBlocks(); }
 }
+

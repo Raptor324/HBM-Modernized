@@ -6,7 +6,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 
-import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -167,28 +166,11 @@ public class ShaderCompatibilityDetector {
     }
 
     /**
-     * True если статическая геометрия машин должна предоставляться нашей VBO/инстанс-системой
-     * (а не baked-моделью). Иначе baked-model заполняет статику в чанк-меш, а BER рисует
-     * только подвижные части через putBulkData.
-     *
-     * Логика:
-     *  - шейдеры выключены → всегда true (классический VBO путь);
-     *  - шейдеры включены + конфиг {@code useIrisExtendedShaderPath} включён → true (новый Iris ExtendedShader путь);
-     *  - шейдеры включены + конфиг выключен → false (старый baked + putBulkData путь, дефолт).
-     *
-     * Этот метод - единственная точка истины для разветвления и в рендерерах, и в baked-моделях.
-     * Если они расходятся, статика рисуется дважды или не рисуется вовсе.
+     * Статическая геометрия машин/дверей всегда предоставляется BER/VBO системой.
+     * Baked world quads для этих моделей не используются.
      */
     public static boolean useVboGeometry() {
-        return !isExternalShaderActive() || ModClothConfig.useIrisExtendedShaderPath();
-    }
-
-    /**
-     * True если сейчас активен шейдер-пак И при этом по конфигу мы должны идти через нашу VBO/Iris-систему
-     * вместо старого baked + putBulkData. Удобный сахар для условий «под шейдерами, но через новый путь».
-     */
-    public static boolean useNewIrisVboPath() {
-        return isExternalShaderActive() && ModClothConfig.useIrisExtendedShaderPath();
+        return true;
     }
 }
 //?}
@@ -201,7 +183,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 
-import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -332,11 +313,7 @@ public class ShaderCompatibilityDetector {
     }
 
     public static boolean useVboGeometry() {
-        return !isExternalShaderActive() || ModClothConfig.useIrisExtendedShaderPath();
-    }
-
-    public static boolean useNewIrisVboPath() {
-        return isExternalShaderActive() && ModClothConfig.useIrisExtendedShaderPath();
+        return true;
     }
 }
 *///?}

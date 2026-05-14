@@ -59,7 +59,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 //?}
 //? if fabric {
 /*@Environment(EnvType.CLIENT)*///?}
-public final class IrisCompanionMesh {
+public final class IrisCompanionMesh implements IrisCompanionMeshResource {
 
     private final List<BakedQuad> quads;
     private int vaoId = -1;

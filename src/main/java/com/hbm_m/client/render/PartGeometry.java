@@ -183,6 +183,10 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
 
             if (indexOffset == 0) {
                 MainRegistry.LOGGER.debug("PartGeometry: Part '{}' produced no valid quads for VBO", partName);
+                MemoryUtil.memFree(vb);
+                MemoryUtil.memFree(ib);
+                vb = null;
+                ib = null;
                 return null;
             }
 

@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 import com.hbm_m.client.model.MachineAssemblerBakedModel;
-import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.MeshRenderCache;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 //? if fabric {
@@ -39,7 +39,7 @@ public class MachineAssemblerVboRenderer {
                                  @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
         BakedModel part = model.getPart(BODY);
         if (part != null) {
-            var r = GlobalMeshCache.getOrCreateRenderer("assembler_legacy_" + BODY, part);
+            var r = MeshRenderCache.getOrCreateRenderer("assembler_legacy_" + BODY, part);
             if (r != null) r.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);
         }
     }
@@ -53,9 +53,10 @@ public class MachineAssemblerVboRenderer {
             if (transform != null) {
                 poseStack.last().pose().mul(transform);
             }
-            var r = GlobalMeshCache.getOrCreateRenderer("assembler_legacy_" + partName, part);
+            var r = MeshRenderCache.getOrCreateRenderer("assembler_legacy_" + partName, part);
             if (r != null) r.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);
             poseStack.popPose();
         }
     }
 }
+

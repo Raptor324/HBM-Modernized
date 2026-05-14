@@ -47,7 +47,7 @@ import com.hbm_m.client.overlay.OverlayInfoToast;
 import com.hbm_m.client.overlay.OverlayRadiationVisuals;
 import com.hbm_m.client.render.BatterySocketCreativeRenderer;
 import com.hbm_m.client.render.EmptyEntityRenderer;
-import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.HeatingOvenRenderer;
 import com.hbm_m.client.render.IndustrialTurbineRenderer;
 import com.hbm_m.client.render.ModShaders;
@@ -704,7 +704,7 @@ public class ClientSetup {
             DoorRenderer.clearAllCaches();
             MachinePressRenderer.clearCaches();
             MachineChemicalPlantRenderer.clearCaches();
-            GlobalMeshCache.clearAll();
+            MeshRenderCache.clearAll();
             AbstractObjArmorLayer.clearAllCaches();
         });
     }
@@ -1189,7 +1189,7 @@ public class ClientSetup {
                         DoorRenderer.clearAllCaches();
                         MachinePressRenderer.clearCaches();
                         MachineChemicalPlantRenderer.clearCaches();
-                        GlobalMeshCache.clearAll();
+                        MeshRenderCache.clearAll();
                         AbstractObjArmorLayer.clearAllCaches();
                         MainRegistry.LOGGER.info("VBO cache cleanup completed (deferred to render thread)");
                     } catch (Exception e) {

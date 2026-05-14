@@ -17,7 +17,7 @@ import com.hbm_m.client.model.DoorBakedModel;
 import com.hbm_m.client.model.variant.DoorModelRegistry;
 import com.hbm_m.client.model.variant.DoorModelSelection;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
-import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.ObjModelVboBuilder;
@@ -88,7 +88,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
             if (frameModel != null) {
                 var frameData = ObjModelVboBuilder.buildSinglePart(frameModel, framePartName);
                 if (frameData != null) {
-                    var frameQuads = GlobalMeshCache.getOrCompile(frameKey, frameModel);
+                    var frameQuads = MeshRenderCache.getOrCompile(frameKey, frameModel);
                     InstancedStaticPartRenderer frameRenderer = new InstancedStaticPartRenderer(frameData, frameQuads);
                     instancedFrameCache.put(frameKey, frameRenderer);
                     frameInitializationFlags.put(frameKey, true);
@@ -116,7 +116,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
             if (partModel != null) {
                 var data = ObjModelVboBuilder.buildSinglePart(partModel, partName);
                 if (data != null) {
-                    var partQuads = GlobalMeshCache.getOrCompile(cacheKey, partModel);
+                    var partQuads = MeshRenderCache.getOrCompile(cacheKey, partModel);
                     InstancedStaticPartRenderer renderer = new InstancedStaticPartRenderer(data, partQuads);
                     instancedPartCache.put(cacheKey, renderer);
                     partInitializationFlags.put(cacheKey, true);
@@ -221,17 +221,6 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
         float openTicks = be.getOpenProgress(partialTick) * doorDecl.getOpenTime();
         boolean isOpen = be.isOpen();
         
-        // Источник статической геометрии: VBO/Iris путь vs baked-model путь.
-        boolean useVboGeometry = ShaderCompatibilityDetector.useVboGeometry();
-        // Дверь движется (state 2=закрывается, 3=открывается)
-        boolean isMoving = be.isMoving();
-        
-        // Старый baked-путь под шейдерами + дверь не движется → всё в baked, BER не рендерит.
-        // Под VBO путём (нет шейдера ИЛИ useIrisExtendedShaderPath) baked пуст - рендерим всё сами.
-        if (!useVboGeometry && !isMoving) {
-            return;
-        }
-
         // Рамка и створки — одна дистанция modelStaticRenderDistance (без modelUpdateDistance):
         // иначе ThreadLocal FadeAlpha остаётся от другой BE, а instanced addInstance пишет чужую
         // альфу в буфер до flush (как с машинами).
@@ -260,10 +249,6 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
             String[] partNames = model.getPartNames();
             String staticFramePart = detectFramePart(partNames);
             
-            // Проверяем источник статической геометрии (см. ShaderCompatibilityDetector.useVboGeometry).
-            boolean useVboGeometry = ShaderCompatibilityDetector.useVboGeometry();
-            boolean isMoving = be.isMoving();
-
             // Load animation data once (можно отключить в конфиге при проблемах)
             ColladaAnimationData animData = null;
             if (ModClothConfig.get().useColladaDoorAnimations && doorDecl.getColladaAnimationSource() != null) {
@@ -275,31 +260,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
                 poseStack.mulPoseMatrix(ColladaAnimationParser.Z_UP_TO_Y_UP);
             }
 
-            // СТАРЫЙ ШЕЙДЕР-ПУТЬ: шейдеры активны И useIrisExtendedShaderPath выключен И дверь движется.
-            // Frame уже отрендерен через BakedModel - рендерим только анимированные части через putBulkData.
-            // (При !useVboGeometry && !isMoving мы уже сделали early-return в renderParts.)
-            if (!useVboGeometry && isMoving) {
-                // Пропускаем shadow pass - Iris сам сделает тени от основной геометрии
-                if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
-                    return;
-                }
-                
-                // Рендерим только анимированные части через putBulkData
-                for (String partName : partNames) {
-                    if (staticFramePart != null && staticFramePart.equals(partName)) {
-                        continue; // Frame уже в BakedModel
-                    }
-                    if (isChildInDae(partName, doorDecl, animData, partNames)) {
-                        continue; // Skip, will be rendered as child
-                    }
-                    
-                    renderAnimatedPartForIris(partName, doorType, selection, be, model, doorDecl, openTicks, 
-                                             poseStack, packedLight, animData, bufferSource, false);
-                }
-                return;
-            }
-
-            // VBO путь: либо нет шейдера, либо включён useIrisExtendedShaderPath - полный VBO рендер.
+            // VBO путь: полный рендер через BER.
             // Iris batching: open ONE shader.apply()/clear() pair around the entire
             // VBO path for this door - frame + animated parts can have 5-15 draws on
             // larger doors (water_door, qe_containment_door). Open the batch when:
@@ -315,10 +276,10 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
             boolean useBatchingNow = ModClothConfig.useInstancedBatching();
             boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
             //? if forge {
-            boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatchingNow || shadowPass);
+            boolean useIrisBatch = ShaderCompatibilityDetector.isExternalShaderActive() && (!useBatchingNow || shadowPass);
             //?}
             //? if fabric {
-            /*boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath();
+            /*boolean useIrisBatch = ShaderCompatibilityDetector.isExternalShaderActive();
             *///?}
             if (useIrisBatch) {
                 try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
@@ -365,7 +326,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
                     poseStack.pushPose();
                     try {
                         String fallbackKey = "door_" + doorType + "_" + getSelectionCacheKey(selection) + "_" + staticFramePart;
-                        var fallbackRenderer = GlobalMeshCache.getOrCreateRenderer(fallbackKey, frameModel);
+                        var fallbackRenderer = MeshRenderCache.getOrCreateRenderer(fallbackKey, frameModel);
                         if (fallbackRenderer != null) {
                             fallbackRenderer.render(poseStack, packedLight, blockPos, be, bufferSource);
                         }
@@ -392,75 +353,6 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
                             openTicks, poseStack, packedLight, blockPos, animData, bufferSource);
         }
     }
-    
-
-//     * Рендер анимированной части через putBulkData для Iris/Oculus пути.
-//     * doorType в ключе кэша - иначе qe_containment_door показывал бы створку fire_door.
-//     * @param child true при рекурсивном вызове для дочерних частей (water_door: spinny_upper/lower)
-
-    private void renderAnimatedPartForIris(String partName, String doorType, DoorModelSelection selection,
-                                           DoorBlockEntity be, DoorBakedModel model,
-                                           DoorDecl doorDecl, float openTicks, PoseStack poseStack,
-                                           int packedLight, ColladaAnimationData animData,
-                                           MultiBufferSource bufferSource, boolean child) {
-        if (!doorDecl.doesRender(partName, child)) return;
-        
-        poseStack.pushPose();
-        doPartTransform(poseStack, doorDecl, partName, openTicks, child, animData, selection);
-        
-        BakedModel partModel = model.getPart(partName);
-        if (partModel != null) {
-            String animCacheKey = "door_anim_" + doorType + "_" + getSelectionCacheKey(selection) + "_" + partName;
-            var quads = GlobalMeshCache.getOrCompile(animCacheKey, partModel);
-            if (quads != null && !quads.isEmpty() && bufferSource != null) {
-                float brightness = ModClothConfig.get().doorAnimatedPartBrightness / 100f;
-                float fade = SingleMeshVboRenderer.getFadeAlpha();
-                float r = brightness * fade;
-                RenderType animRt = fade < 0.99f ? RenderType.translucent() : RenderType.solid();
-                var consumer = bufferSource.getBuffer(animRt);
-                var pose = poseStack.last();
-                for (var quad : quads) {
-                    //? if forge {
-                    consumer.putBulkData(pose, quad, r, r, r, fade, packedLight,
-                            net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, false);
-                    //?}
-                    //? if fabric {
-                    /*consumer.putBulkData(pose, quad, r, r, r, packedLight,
-                            net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY);
-                    *///?}
-                }
-            }
-        }
-        
-        // Рекурсивно дети из DoorDecl (child=true - water_door.doesRender("spinny_*", true) вернёт true)
-        for (String c : doorDecl.getChildren(partName, selection)) {
-            renderAnimatedPartForIris(c, doorType, selection, be, model, doorDecl, openTicks, poseStack, 
-                                     packedLight, animData, bufferSource, true);
-        }
-
-        // Рекурсивно дети из DAE (как в renderHierarchyVbo)
-        if (animData != null) {
-            String daeName = doorDecl.getDaeObjectName(partName);
-            List<String> daeChildren = animData.getChildren(daeName);
-            for (String childDaeName : daeChildren) {
-                for (String potentialChild : model.getPartNames()) {
-                    if (doorDecl.getDaeObjectName(potentialChild).equals(childDaeName)) {
-                        boolean alreadyHandled = false;
-                        for (String c : doorDecl.getChildren(partName, selection)) {
-                            if (c.equals(potentialChild)) { alreadyHandled = true; break; }
-                        }
-                        if (!alreadyHandled) {
-                            renderAnimatedPartForIris(potentialChild, doorType, selection, be, model, doorDecl, openTicks,
-                                    poseStack, packedLight, animData, bufferSource, true);
-                        }
-                    }
-                }
-            }
-        }
-        
-        poseStack.popPose();
-    }
-
     private boolean isChildInDae(String partName, DoorDecl doorDecl, ColladaAnimationData animData, String[] allPartNames) {
         if (animData == null) return false;
         String daeName = doorDecl.getDaeObjectName(partName);

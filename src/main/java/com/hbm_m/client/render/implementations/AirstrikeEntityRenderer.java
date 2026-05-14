@@ -62,3 +62,4 @@ public class AirstrikeEntityRenderer extends EntityRenderer<AirstrikeEntity> {
         return new ResourceLocation("minecraft", "textures/block/iron_block.png");
     }
 }
+

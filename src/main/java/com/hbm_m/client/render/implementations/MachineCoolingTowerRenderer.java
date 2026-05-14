@@ -4,7 +4,7 @@ import com.hbm_m.block.entity.machines.MachineCoolingTowerBlockEntity;
 import com.hbm_m.block.machines.MachineCoolingTowerBlock;
 import com.hbm_m.client.model.MachineCoolingTowerBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
-import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.ObjModelVboBuilder;
@@ -18,7 +18,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
@@ -59,7 +58,7 @@ public class MachineCoolingTowerRenderer extends AbstractPartBasedRenderer<Machi
             BakedModel part = model.getPart("Cube_Cube.001");
             if (part != null) {
                 var data = ObjModelVboBuilder.buildSinglePart(part, "Cube_Cube.001");
-                var quads = GlobalMeshCache.getOrCompile("cooling_tower_Cube_Cube.001", part);
+                var quads = MeshRenderCache.getOrCompile("cooling_tower_Cube_Cube.001", part);
                 if (data != null) {
                     instancedMain = new InstancedStaticPartRenderer(data, quads, true);
                 }
@@ -109,28 +108,18 @@ public class MachineCoolingTowerRenderer extends AbstractPartBasedRenderer<Machi
 
         poseStack.pushPose();
 
-        boolean isShaderActive = ShaderCompatibilityDetector.isExternalShaderActive();
-        boolean useNewIrisVboPath = ShaderCompatibilityDetector.useNewIrisVboPath();
         boolean useBatching = ModClothConfig.useInstancedBatching();
 
-        if (isShaderActive && !useNewIrisVboPath) {
-            RenderType renderType = RenderType.cutoutMipped();
-            renderType.setupRenderState();
-            RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getRendertypeCutoutMippedShader);
-            gpu.render(poseStack, packedLight, blockPos, be, bufferSource);
-            renderType.clearRenderState();
+        if (useBatching && instancedMain != null && instancedMain.isInitialized()) {
+            instancedMain.addInstance(poseStack, packedLight, blockPos, be, bufferSource);
         } else {
-            if (useBatching && instancedMain != null && instancedMain.isInitialized()) {
-                instancedMain.addInstance(poseStack, packedLight, blockPos, be, bufferSource);
-            } else {
-                if (ShaderCompatibilityDetector.useNewIrisVboPath()) {
-                    boolean inShadow = ShaderCompatibilityDetector.isRenderingShadowPass();
-                    try (IrisRenderBatch batch = IrisRenderBatch.begin(inShadow, RenderSystem.getProjectionMatrix())) {
-                        gpu.render(poseStack, packedLight, blockPos, be, bufferSource);
-                    }
-                } else {
+            if (ShaderCompatibilityDetector.isExternalShaderActive()) {
+                boolean inShadow = ShaderCompatibilityDetector.isRenderingShadowPass();
+                try (IrisRenderBatch batch = IrisRenderBatch.begin(inShadow, RenderSystem.getProjectionMatrix())) {
                     gpu.render(poseStack, packedLight, blockPos, be, bufferSource);
                 }
+            } else {
+                gpu.render(poseStack, packedLight, blockPos, be, bufferSource);
             }
         }
 
@@ -141,3 +130,4 @@ public class MachineCoolingTowerRenderer extends AbstractPartBasedRenderer<Machi
 
     @Override public int getViewDistance() { return 128; }
 }
+

@@ -94,7 +94,7 @@ public class LegacyAnimator implements IDoorAnimator {
     public void renderPart(BakedModel modelPart) {
         if (modelPart == null) return;
         String tempKey = "Temp:" + System.identityHashCode(modelPart);
-        List<BakedQuad> quads = GlobalMeshCache.getOrCompile(tempKey, modelPart);
+        List<BakedQuad> quads = MeshRenderCache.getOrCompile(tempKey, modelPart);
         renderQuads(quads);
     }
 
@@ -102,3 +102,4 @@ public class LegacyAnimator implements IDoorAnimator {
         return new Matrix4f(poseStack.last().pose());
     }
 }
+

@@ -135,16 +135,14 @@ public class MachineAssemblerBakedModel extends AbstractMultipartBakedModel impl
             return getItemQuads(side, rand, modelData, renderType);
         }
         if (ShaderCompatibilityDetector.useVboGeometry()) {
-            // Геометрия предоставляется BER/VBO путём (шейдеров нет ИЛИ включён useIrisExtendedShaderPath).
+            // Геометрия предоставляется BER/VBO системой.
             return List.of();
         }
 
         List<BakedQuad> result = new ArrayList<>();
         int rotationY = getRotationYForFacing(state);
-        // Compensate baked pipeline's extra offset (2 blocks in +Z) so baked matches VBO.
         float bakedOffsetZ = -1.0f;
 
-        // Base is always baked-rendered.
         BakedModel bodyPart = parts.get("Body");
         if (bodyPart != null) {
             var bodyQuads = ModelHelper.translateQuads(

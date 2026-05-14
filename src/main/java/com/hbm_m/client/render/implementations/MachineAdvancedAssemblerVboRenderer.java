@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 import com.hbm_m.client.model.MachineAdvancedAssemblerBakedModel;
-import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.MeshRenderCache;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -43,7 +43,7 @@ public class MachineAdvancedAssemblerVboRenderer {
                                 @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
         BakedModel part = model.getPart(BASE);
         if (part != null) {
-            var r = GlobalMeshCache.getOrCreateRenderer("assembler_" + BASE, part);
+            var r = MeshRenderCache.getOrCreateRenderer("assembler_" + BASE, part);
             if (r != null) r.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);
         }
     }
@@ -57,7 +57,7 @@ public class MachineAdvancedAssemblerVboRenderer {
                                  @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
         BakedModel part = model.getPart(FRAME);
         if (part != null) {
-            var r = GlobalMeshCache.getOrCreateRenderer("assembler_" + FRAME, part);
+            var r = MeshRenderCache.getOrCreateRenderer("assembler_" + FRAME, part);
             if (r != null) r.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);
         }      
     }
@@ -81,7 +81,7 @@ public class MachineAdvancedAssemblerVboRenderer {
                 poseStack.last().pose().mul(transform);
             }
             
-            var r = GlobalMeshCache.getOrCreateRenderer("assembler_" + partName, part);
+            var r = MeshRenderCache.getOrCreateRenderer("assembler_" + partName, part);
             if (r != null) r.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);
             
             poseStack.popPose();

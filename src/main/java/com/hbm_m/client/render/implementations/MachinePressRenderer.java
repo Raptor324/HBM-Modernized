@@ -12,7 +12,7 @@ import com.hbm_m.block.entity.machines.MachinePressBlockEntity;
 import com.hbm_m.block.machines.MachinePressBlock;
 import com.hbm_m.client.model.PressBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
-import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.ObjModelVboBuilder;
@@ -151,10 +151,10 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
             // apply()/clear() frequency. When instancing is disabled, we open an IrisRenderBatch
             // session so the head draw shares one apply()/clear() with other parts in this pass.
             //? if forge {
-            boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || inShadowPass);
+            boolean useIrisBatch = ShaderCompatibilityDetector.isExternalShaderActive() && (!useBatching || inShadowPass);
             //?}
             //? if fabric {
-            /*boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath();
+            /*boolean useIrisBatch = ShaderCompatibilityDetector.isExternalShaderActive();
             *///?}
             if (useIrisBatch) {
                 try (IrisRenderBatch batch = IrisRenderBatch.begin(inShadowPass, RenderSystem.getProjectionMatrix())) {
@@ -273,7 +273,7 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
             if (headModel != null) {
                 var headData = ObjModelVboBuilder.buildSinglePart(headModel, HEAD_PART);
                 if (headData != null) {
-                    var headQuads = GlobalMeshCache.getOrCompile("press_head", headModel);
+                    var headQuads = MeshRenderCache.getOrCompile("press_head", headModel);
                     InstancedStaticPartRenderer candidate = new InstancedStaticPartRenderer(headData, headQuads);
                     if (candidate.isInitialized()) {
                         instancedHead = candidate;
@@ -303,4 +303,5 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
         instancerInitialized = false;
     }
 }
+
 

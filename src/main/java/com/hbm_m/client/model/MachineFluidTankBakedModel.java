@@ -101,10 +101,6 @@ public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel impl
             if (modelData != null && modelData.has(MachineFluidTankBlockEntity.FLUID_TEXTURE_PROPERTY)) {
                 fluidTex = modelData.get(MachineFluidTankBlockEntity.FLUID_TEXTURE_PROPERTY);
             }
-            if (ModClothConfig.get().enableDebugLogging) {
-                boolean hasProp = modelData != null && modelData.has(MachineFluidTankBlockEntity.FLUID_TEXTURE_PROPERTY);
-                MainRegistry.LOGGER.debug("[ModelDebug] fluid_tank modelData present={} hasProperty={} tex={}", modelData != null, hasProp, fluidTex);
-            }
             //?}
 
             //? if fabric {

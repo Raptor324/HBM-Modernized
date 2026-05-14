@@ -202,16 +202,6 @@ public class ModClothConfig implements ConfigData {
     @Gui.Tooltip
     public boolean useInstancedStaticRendering = true;
 
-    /**
-     * Под активным шейдер-паком (Iris/Oculus) рендерить машины через нашу VBO/Iris ExtendedShader-систему
-     * вместо классического пути baked-model + putBulkData. Экспериментально: даёт правильный G-buffer,
-     * SSAO, тени и униформы шейдер-пака на наших машинах, но per-machine draw call увеличивает CPU-затраты.
-     * Если оставлено выключенным - поведение точно такое же, как было до миграции.
-     */
-    @Category("rendering")
-    @Gui.Tooltip
-    public boolean useIrisExtendedShaderPath = true;
-
     @Category("rendering")
     @Gui.Tooltip
     public boolean useColladaDoorAnimations = true;
@@ -390,11 +380,4 @@ public class ModClothConfig implements ConfigData {
         return get().useInstancedStaticRendering;
     }
 
-    /**
-     * Под шейдерами рендерить через нашу VBO/Iris ExtendedShader-систему (вместо baked + putBulkData).
-     * Сам по себе этот флаг ничего не делает без активного шейдер-пака.
-     */
-    public static boolean useIrisExtendedShaderPath() {
-        return get().useIrisExtendedShaderPath;
-    }
 }

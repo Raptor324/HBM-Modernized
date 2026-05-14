@@ -67,9 +67,8 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
     
     @Override
     protected boolean shouldSkipWorldRendering(@Nullable BlockState state) {
-        // Пропускаем world рендер когда геометрия предоставляется BER/VBO путём
-        // (нет шейдера ИЛИ включён useIrisExtendedShaderPath под шейдерами).
-        return state != null && ShaderCompatibilityDetector.useVboGeometry();
+        // Геометрия всегда предоставляется BER/VBO системой.
+        return state != null;
     }
     
     @Override
@@ -93,25 +92,8 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
             return getItemQuads(side, rand, modelData, renderType);
         }
         
-        // WORLD RENDER - переключение по источнику геометрии.
-        // useVboGeometry() == true → модель пустая, всё рендерит BER (VBO/Iris путь).
-        // useVboGeometry() == false → baked путь под шейдерами: рендерим всё кроме анимированных частей
-        // (движущаяся дверь дорисовывается BER через putBulkData).
-        if (ShaderCompatibilityDetector.useVboGeometry()) {
-            return Collections.emptyList();
-        }
-        
-        // Движется ли дверь: BlockState обновляется первым (при block update), ModelData - при packet BlockEntity
-        boolean isMoving = state.hasProperty(DoorBlock.DOOR_MOVING) && state.getValue(DoorBlock.DOOR_MOVING);
-        Boolean movingFromData = modelData.get(DoorModelProperties.DOOR_MOVING_PROPERTY);
-        if (movingFromData != null) isMoving = movingFromData;
-        Boolean isOverlap = modelData.get(DoorModelProperties.OVERLAP_PROPERTY);
-        // Период overlap: дверь в open/closed, baked model и BER наслаиваются - устраняет моргание
-        if (Boolean.TRUE.equals(isOverlap) || !isMoving) {
-            return getAllPartQuads(state, side, rand, modelData, renderType);
-        }
-        // Дверь реально анимируется (state 2/3) - только frame, створки рисует BER
-        return getStaticPartQuads(state, side, rand, modelData, renderType);
+        // WORLD RENDER: геометрия всегда предоставляется BER/VBO системой.
+        return Collections.emptyList();
     }
     
     /**
@@ -241,24 +223,8 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         if (state == null) {
             return getItemQuads(side, rand);
         }
-        if (ShaderCompatibilityDetector.useVboGeometry()) {
-            return Collections.emptyList();
-        }
-
-        com.hbm_m.block.entity.doors.DoorBlockEntity.DoorRenderData data =
-                renderData instanceof com.hbm_m.block.entity.doors.DoorBlockEntity.DoorRenderData d ? d : null;
-
-        boolean isMoving = state.hasProperty(DoorBlock.DOOR_MOVING) && state.getValue(DoorBlock.DOOR_MOVING);
-        if (data != null) isMoving = data.moving();
-        boolean isOverlap = data != null && data.overlap();
-
-        DoorModelSelection selection = data != null ? data.selection() : null;
-        Map<String, BakedModel> partsToUse = getPartsForSelection(selection);
-
-        if (isOverlap || !isMoving) {
-            return getAllPartQuadsFabric(state, side, rand, data, partsToUse);
-        }
-        return getStaticPartQuadsFabric(state, side, rand, partsToUse);
+        // Геометрия всегда предоставляется BER/VBO системой.
+        return Collections.emptyList();
     }
 
     private List<BakedQuad> getStaticPartQuadsFabric(@Nullable BlockState state, @Nullable Direction side,

@@ -12,7 +12,7 @@ import net.fabricmc.api.Environment;*///?}
 import org.joml.Matrix4f;
 
 import com.hbm_m.client.model.PressBakedModel;
-import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.MeshRenderCache;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -50,9 +50,10 @@ public class MachinePressVboRenderer {
         if (transform != null) {
             poseStack.last().pose().mul(transform);
         }
-        var r = GlobalMeshCache.getOrCreateRenderer("press_" + HEAD, part);
+        var r = MeshRenderCache.getOrCreateRenderer("press_" + HEAD, part);
         if (r != null) r.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);
         poseStack.popPose();
     }
 }
+
 

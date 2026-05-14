@@ -8,7 +8,7 @@ import com.hbm_m.block.entity.machines.MachineFrackingTowerBlockEntity;
 import com.hbm_m.block.machines.MachineFrackingTowerBlock;
 import com.hbm_m.client.model.MachineHydraulicFrackiningTowerBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
-import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.ObjModelVboBuilder;
@@ -28,7 +28,6 @@ import net.fabricmc.api.Environment;
 *///?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
@@ -73,7 +72,7 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
             BakedModel part = model.getPart("Cube_Cube.001");
             if (part != null) {
                 var data = ObjModelVboBuilder.buildSinglePart(part, "Cube_Cube.001");
-                var quads = GlobalMeshCache.getOrCompile("frackining_tower_Cube_Cube.001", part);
+                var quads = MeshRenderCache.getOrCompile("frackining_tower_Cube_Cube.001", part);
                 if (data != null) {
                     // Tall tower: use sliced light probes (2x4x2) so mid-height side lights affect the mesh.
                     instancedMain = new InstancedStaticPartRenderer(data, quads, true);
@@ -130,38 +129,20 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
 
         poseStack.pushPose();
 
-        boolean isShaderActive = ShaderCompatibilityDetector.isExternalShaderActive();
-        boolean useNewIrisVboPath = ShaderCompatibilityDetector.useNewIrisVboPath();
         boolean useBatching = ModClothConfig.useInstancedBatching();
 
-        if (isShaderActive && !useNewIrisVboPath) {
-            // Старый путь под шейдерами: один draw через cutoutMipped, без инстансинга и без Iris ExtendedShader.
-            RenderType renderType = RenderType.cutoutMipped();
-            renderType.setupRenderState();
-            RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getRendertypeCutoutMippedShader);
-
-            gpu.render(poseStack, packedLight, blockPos, be, bufferSource);
-
-            renderType.clearRenderState();
+        if (useBatching && staticFade >= 0.99f && instancedMain != null && instancedMain.isInitialized()) {
+            instancedMain.addInstance(poseStack, packedLight, blockPos, be, bufferSource);
         } else {
-            // Шейдеров нет ИЛИ включён useIrisExtendedShaderPath: используем нашу VBO/инстанс-систему.
-            // SingleMeshVboRenderer и InstancedStaticPartRenderer сами выберут Iris ExtendedShader,
-            // если шейдер-пак активен (см. ShaderCompatibilityDetector.canUseIrisExtendedShader).
-            if (useBatching && staticFade >= 0.99f && instancedMain != null && instancedMain.isInitialized()) {
-                instancedMain.addInstance(poseStack, packedLight, blockPos, be, bufferSource);
-            } else {
-                // Ветка всегда без instancing (один part → SingleMeshVboRenderer). Под Iris
-                // открываем тот же persistent IrisRenderBatch, что Assembler/Chemical Plant:
-                // один shader.apply/пакет за проход вместо apply+clear на каждой вышке — иначе
-                // GL_INVALID_OPERATION / No active program и пропадание по углу камеры.
-                if (ShaderCompatibilityDetector.useNewIrisVboPath()) {
-                    boolean inShadow = ShaderCompatibilityDetector.isRenderingShadowPass();
-                    try (IrisRenderBatch batch = IrisRenderBatch.begin(inShadow, RenderSystem.getProjectionMatrix())) {
-                        gpu.render(poseStack, packedLight, blockPos, be, bufferSource);
-                    }
-                } else {
+            // Один part → SingleMeshVboRenderer. Под Iris открываем IrisRenderBatch:
+            // один shader.apply/пакет за проход вместо apply+clear на каждой вышке.
+            if (ShaderCompatibilityDetector.isExternalShaderActive()) {
+                boolean inShadow = ShaderCompatibilityDetector.isRenderingShadowPass();
+                try (IrisRenderBatch batch = IrisRenderBatch.begin(inShadow, RenderSystem.getProjectionMatrix())) {
                     gpu.render(poseStack, packedLight, blockPos, be, bufferSource);
                 }
+            } else {
+                gpu.render(poseStack, packedLight, blockPos, be, bufferSource);
             }
         }
 

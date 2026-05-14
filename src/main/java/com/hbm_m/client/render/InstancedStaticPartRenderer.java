@@ -60,7 +60,8 @@ import net.fabricmc.api.Environment;
 //?}
 //? if fabric {
 /*@Environment(EnvType.CLIENT)*///?}
-public class InstancedStaticPartRenderer extends AbstractGpuMesh {
+public class InstancedStaticPartRenderer extends AbstractGpuMesh
+        implements VanillaInstancedMeshRenderer, IrisCompanionMeshRenderer {
 
     private static final int MAX_INSTANCES = 1024;
     // Per-instance layout (floats):
@@ -472,27 +473,27 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         renderSingle(poseStack, packedLight, blockPos, blockEntity, null);
     }
 
+    @Override
     public void renderSingle(PoseStack poseStack, int packedLight, BlockPos blockPos,
                              @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
         if (!initialized || vaoId <= 0 || eboId <= 0 || indexCount <= 0) return;
 
         if (ShaderCompatibilityDetector.isExternalShaderActive()) {
-            // Try the Iris ExtendedShader path through our companion mesh.
-            if (ShaderCompatibilityDetector.useNewIrisVboPath()) {
-                if (drawSingleWithIrisExtended(poseStack, packedLight, blockPos, blockEntity)) {
-                    return;
-                }
+            // Iris ExtendedShader path through our companion mesh.
+            if (drawSingleWithIrisExtended(poseStack, packedLight, blockPos, blockEntity)) {
+                return;
             }
-            // Fallback to the classic putBulkData path that defers to Iris's pipeline.
+            // Fallback: putBulkData defers to Iris's pipeline (companion mesh build failed
+            // or ExtendedShader reflection unavailable).
             if (quadsForIris != null && !quadsForIris.isEmpty() && bufferSource != null) {
                 float fade = SingleMeshVboRenderer.getFadeAlpha();
                 VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
                 var pose = poseStack.last();
                 for (BakedQuad quad : quadsForIris) {
                     //? if forge {
-                    consumer.putBulkData(pose, quad, fade, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
+                    consumer.putBulkData(pose, quad, 1f, 1f, 1f, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
                     //?} else {
-                    /*consumer.putBulkData(pose, quad, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY);
+                    /*consumer.putBulkData(pose, quad, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY);
                     *///?}
                 }
             }
@@ -510,19 +511,18 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                 PoseStack.Pose pose = poseStack.last();
                 for (BakedQuad quad : quadsForIris) {
                     //? if forge {
-                    consumer.putBulkData(pose, quad, fade, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
+                    consumer.putBulkData(pose, quad, 1f, 1f, 1f, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
                     //?} else {
-                    /*consumer.putBulkData(pose, quad, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY);
+                    /*consumer.putBulkData(pose, quad, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY);
                     *///?}
                 }
             }
             return;
         }
 
-        int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
-        int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
-
-        try {
+        // RenderStateGuard symmetrically restores VAO/buffer/cull/depth/blend/shader
+        // so this single-draw path matches what flushBatchVanilla restores.
+        try (RenderStateGuard ignored = RenderStateGuard.snapshot()) {
             RenderSystem.setShader(() -> shader);
             // Prime a single instance slot with the current pose so the instanced shader path
             // can emit a non-instanced draw via the same VAO layout.
@@ -549,17 +549,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             for (int i = INSTANCE_ATTRIB_FIRST; i <= instanceAttribLast; i++) GL20.glEnableVertexAttribArray(i);
 
             glDrawElementsInstancedCompat(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0, 1);
-
-            if (fade < 0.99f) {
-                RenderSystem.disableBlend();
-            }
         } catch (Exception e) {
             MainRegistry.LOGGER.error("InstancedStaticPartRenderer.renderSingle failed", e);
         } finally {
             instanceBuffer.clear();
-            GL30.glBindVertexArray(previousVao);
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
-            RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
         }
     }
 
@@ -601,6 +594,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
      * traced to ~6.6% of frame time. We trust the renderer's per-BE check
      * and skip the redundant work here.
      */
+    @Override
     public void addInstance(PoseStack poseStack, int packedLight, BlockPos blockPos,
                             @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
         if (!initialized) return;
@@ -646,7 +640,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                 var pose = poseStack.last();
                 for (BakedQuad quad : quadsForIris) {
                 MainRegistry.LOGGER.warn("InstancedStaticPartRenderer.addInstance: Fallback to the classic putBulkData!!");
-                    consumer.putBulkData(pose, quad, fade, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
+                    consumer.putBulkData(pose, quad, 1f, 1f, 1f, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
                 }
             }
             return;
@@ -831,8 +825,13 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         }
         long partHash = System.identityHashCode(this);
 
-        LightSampleCache.getOrSample8(blockEntity, partHash, objBbox, blockPosForSample,
-                                      tmpLocalPose, packedLight, tmpCornerUV);
+        if (useSlicedLight) {
+            LightSampleCache.getOrSample16(blockEntity, partHash, objBbox, blockPosForSample,
+                                           tmpLocalPose, packedLight, tmpCornerUV);
+        } else {
+            LightSampleCache.getOrSample8(blockEntity, partHash, objBbox, blockPosForSample,
+                                          tmpLocalPose, packedLight, tmpCornerUV);
+        }
 
         instanceBuffer.put(posTmp.x).put(posTmp.y).put(posTmp.z);
         instanceBuffer.put(rotTmp.x).put(rotTmp.y).put(rotTmp.z).put(rotTmp.w);
@@ -845,6 +844,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         instanceBuffer.flip();
     }
 
+    @Override
     public void flush() {
         flush(RenderSystem.getProjectionMatrix());
     }
@@ -860,6 +860,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
     }
     *///?}
 
+    @Override
     public void flush(Matrix4f projectionMatrix) {
         if (instanceCount == 0) return;
 
@@ -880,7 +881,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         // (framebuffer binds, program context) clashes with our draw calls →
         // "GL No active program" / "Uniform must be a matrix type" errors
         // and models rendered on screen instead of in the world.
-        boolean useIrisFlush = ShaderCompatibilityDetector.useNewIrisVboPath();
+        boolean useIrisFlush = ShaderCompatibilityDetector.canUseIrisExtendedShader();
         if (useIrisFlush) {
             flushBatchIris(projectionMatrix);
         } else {
@@ -1051,7 +1052,8 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
      * per-instance loop and update only {@code ModelViewMat} between draws via a
      * direct {@link Uniform#upload()} call.
      */
-    private void flushBatchIris(Matrix4f projectionMatrix) {
+    @Override
+    public void flushBatchIris(Matrix4f projectionMatrix) {
         IrisCompanionMesh companion = getOrBuildIrisCompanion();
 
         boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
@@ -1368,8 +1370,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
      * Single-machine draw through the Iris ExtendedShader path. Returns {@code true}
      * if the draw was performed (companion mesh available, shader resolved).
      */
-    private boolean drawSingleWithIrisExtended(PoseStack poseStack, int packedLight,
-                                               BlockPos blockPos, @Nullable BlockEntity blockEntity) {
+    @Override
+    public boolean drawSingleWithIrisExtended(PoseStack poseStack, int packedLight,
+                                              BlockPos blockPos, @Nullable BlockEntity blockEntity) {
         IrisCompanionMesh companion = getOrBuildIrisCompanion();
         if (companion == null) return false;
 
@@ -1423,16 +1426,15 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         ShaderInstance shader = IrisExtendedShaderAccess.getBlockShader(shadowPass);
         if (shader == null) return false;
 
-        int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
-        int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
-        boolean cullWasEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
-
         // Same neutral-blockEntityId reset as flushBatchIris - even though the
         // single path was less prone to BSL's "red" symptom historically, the
         // value can still leak into our draw between Iris's pre-flushes.
         int previousBlockEntityId = IrisExtendedShaderAccess.setCurrentRenderedBlockEntity(0);
 
-        try (IrisPhaseGuard ignored = IrisPhaseGuard.pushBlockEntities()) {
+        // RenderStateGuard restores VAO/buffer/cull/depth/blend/shader symmetrically
+        // with flushBatchIris (problem #7 from render review).
+        try (RenderStateGuard stateGuard = RenderStateGuard.snapshot();
+             IrisPhaseGuard ignored = IrisPhaseGuard.pushBlockEntities()) {
             RenderSystem.setShader(() -> shader);
             updateUniformCache(shader);
 
@@ -1489,11 +1491,6 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             MainRegistry.LOGGER.error("InstancedStaticPartRenderer.drawSingleWithIrisExtended failed", e);
             return false;
         } finally {
-            GL30.glBindVertexArray(previousVao);
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
-            if (cullWasEnabled) RenderSystem.enableCull();
-            else RenderSystem.disableCull();
-            RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
             IrisExtendedShaderAccess.restoreCurrentRenderedBlockEntity(previousBlockEntityId);
         }
     }
@@ -1520,8 +1517,13 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             tmpLocalPose.m32(tmpLocalPose.m32() - (float) (anchor.getZ() - cam.z));
         }
         long partHash = System.identityHashCode(this);
-        LightSampleCache.getOrSample8(blockEntity, partHash, objBbox, anchor,
-                                      tmpLocalPose, packedLight, tmpCornerUV);
+        if (useSlicedLight) {
+            LightSampleCache.getOrSample16(blockEntity, partHash, objBbox, anchor,
+                                           tmpLocalPose, packedLight, tmpCornerUV);
+        } else {
+            LightSampleCache.getOrSample8(blockEntity, partHash, objBbox, anchor,
+                                          tmpLocalPose, packedLight, tmpCornerUV);
+        }
     }
 
     private float calculateBrightness(int packedLight) {
@@ -1549,10 +1551,12 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         return 0.05f + (maxLight / 15.0f) * 0.95f;
     }    
 
+    @Override
     public boolean isInitialized() {
         return initialized && vaoId > 0 && vboId > 0 && eboId > 0;
     }
 
+    @Override
     public int getInstanceCount() {
         return instanceCount;
     }

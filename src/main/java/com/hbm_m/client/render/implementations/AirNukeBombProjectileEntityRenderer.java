@@ -62,3 +62,4 @@ public class AirNukeBombProjectileEntityRenderer extends EntityRenderer<AirNukeB
         return new ResourceLocation("minecraft", "textures/block/iron_block.png");
     }
 }
+

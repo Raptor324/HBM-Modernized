@@ -90,3 +90,4 @@ public class CrucibleRenderer implements BlockEntityRenderer<MachineCrucibleBloc
         return false;
     }
 }
+

@@ -14,7 +14,7 @@ import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.client.model.MachineChemicalPlantBakedModel;
 import com.hbm_m.client.model.ModelHelper;
-import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -348,7 +348,7 @@ public class MachineChemicalPlantVboRenderer {
                                 @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
         BakedModel part = model.getPart(BASE);
         if (part != null) {
-            var r = GlobalMeshCache.getOrCreateRenderer("chemplant_" + BASE, part);
+            var r = MeshRenderCache.getOrCreateRenderer("chemplant_" + BASE, part);
             if (r != null) r.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);
         }
     }
@@ -357,7 +357,7 @@ public class MachineChemicalPlantVboRenderer {
                                  @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
         BakedModel part = model.getPart(FRAME);
         if (part != null) {
-            var r = GlobalMeshCache.getOrCreateRenderer("chemplant_" + FRAME, part);
+            var r = MeshRenderCache.getOrCreateRenderer("chemplant_" + FRAME, part);
             if (r != null) r.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);
         }
     }
@@ -371,9 +371,10 @@ public class MachineChemicalPlantVboRenderer {
             if (transform != null) {
                 poseStack.last().pose().mul(transform);
             }
-            var r = GlobalMeshCache.getOrCreateRenderer("chemplant_" + partName, part);
+            var r = MeshRenderCache.getOrCreateRenderer("chemplant_" + partName, part);
             if (r != null) r.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);
             poseStack.popPose();
         }
     }
 }
+

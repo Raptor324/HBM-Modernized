@@ -1,6 +1,6 @@
 package com.hbm_m.client.reload;
 
-import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.implementations.DoorRenderer;
 import com.hbm_m.client.render.implementations.MachineAdvancedAssemblerRenderer;
 import com.hbm_m.client.render.implementations.MachineAssemblerRenderer;
@@ -35,7 +35,7 @@ public final class DeferredCacheCleanupReloadListener extends SimplePreparableRe
                 DoorRenderer.clearAllCaches();
                 MachinePressRenderer.clearCaches();
                 MachineChemicalPlantRenderer.clearCaches();
-                GlobalMeshCache.clearAll();
+                MeshRenderCache.clearAll();
                 AbstractObjArmorLayer.clearAllCaches();
                 MainRegistry.LOGGER.info("VBO cache cleanup completed (deferred to render thread)");
             } catch (Exception e) {
@@ -44,4 +44,5 @@ public final class DeferredCacheCleanupReloadListener extends SimplePreparableRe
         });
     }
 }
+
 

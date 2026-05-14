@@ -17,7 +17,7 @@ import com.hbm_m.client.machine.AdvancedAssemblerClientTicker;
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.client.model.MachineAdvancedAssemblerBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
-import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.OcclusionCullingHelper;
@@ -147,7 +147,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         BakedModel part = model.getPart(partName);
         if (part == null) return null;
         String cacheKey = "assembler_" + partName;
-        PartGeometry geo = GlobalMeshCache.getOrCompilePartGeometry(cacheKey, part);
+        PartGeometry geo = MeshRenderCache.getOrCompilePartGeometry(cacheKey, part);
         if (geo.isEmpty()) return null;
         var data = geo.toVboData(partName);
         if (data == null) return null;
@@ -291,10 +291,10 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         //      themselves "in the sky" at shadow-camera coordinates.
         boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
         //? if forge {
-        boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || shadowPass);
+        boolean useIrisBatch = ShaderCompatibilityDetector.isExternalShaderActive() && (!useBatching || shadowPass);
         //?}
         //? if fabric {
-        /*boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath();
+        /*boolean useIrisBatch = ShaderCompatibilityDetector.isExternalShaderActive();
         *///?}
         if (useIrisBatch) {
             try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
@@ -552,3 +552,4 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
 
     @Override public int getViewDistance() { return RenderDistanceHelper.getStaticViewDistanceBlocks(); }
 }
+
