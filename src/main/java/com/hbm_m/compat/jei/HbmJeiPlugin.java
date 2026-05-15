@@ -5,10 +5,14 @@ import java.util.List;
 import java.util.Map;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.machines.anvils.AnvilTier;
+import com.hbm_m.inventory.gui.GUIAnvil;
 import com.hbm_m.inventory.gui.GUIMachineCentrifuge;
 import com.hbm_m.inventory.gui.GUIMachineChemicalPlant;
 import com.hbm_m.inventory.gui.GUIMachineCrucible;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.recipe.AnvilRecipe;
+import com.hbm_m.recipe.AnvilRecipeManager;
 import com.hbm_m.recipe.CrucibleAlloyingRecipe;
 import com.hbm_m.recipe.CrucibleAlloyingRecipes;
 import com.hbm_m.recipe.CrucibleMoldRecipes;
@@ -49,6 +53,7 @@ public class HbmJeiPlugin implements IModPlugin {
 
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
+        registration.addRecipeCategories(new AnvilJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new CentrifugeJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new ChemicalPlantJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new CrucibleCastingJeiCategory(registration.getJeiHelpers().getGuiHelper()));
@@ -60,6 +65,7 @@ public class HbmJeiPlugin implements IModPlugin {
     public void registerRecipes(IRecipeRegistration registration) {
         CrucibleRecipes.INSTANCE.registerDefaults();
         ensureCrucibleFallbackRecipes();
+        registration.addRecipes(AnvilJeiCategory.RECIPE_TYPE, getSteelAnvilRecipes());
         registration.addRecipes(CentrifugeJeiCategory.RECIPE_TYPE, getCentrifugeRecipes());
         registration.addRecipes(ChemicalPlantJeiCategory.RECIPE_TYPE, getChemicalPlantRecipes());
         registration.addRecipes(CrucibleCastingJeiCategory.RECIPE_TYPE, getCrucibleCastingRecipes());
@@ -69,6 +75,7 @@ public class HbmJeiPlugin implements IModPlugin {
 
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.ANVIL_STEEL.get()), AnvilJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CENTRIFUGE.get()), CentrifugeJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CHEMICAL_PLANT.get()), ChemicalPlantJeiCategory.RECIPE_TYPE);
         // Foundry basin is the primary catalyst; mold and strand caster are registered once those blocks are ported
@@ -79,6 +86,7 @@ public class HbmJeiPlugin implements IModPlugin {
 
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
+        registration.addRecipeClickArea(GUIAnvil.class, 8, 18, 98, 56, AnvilJeiCategory.RECIPE_TYPE);
         // Matches the old NEI transfer rect: new Rectangle(56, 0, 80, 38)
         registration.addRecipeClickArea(GUIMachineCentrifuge.class, 56, 0, 80, 38, CentrifugeJeiCategory.RECIPE_TYPE);
         // Chemical Plant click area around the progress bar
@@ -122,6 +130,12 @@ public class HbmJeiPlugin implements IModPlugin {
                     (output.hasTag() ? output.getTag().toString() : "");
             }
         );
+    }
+
+    private static List<AnvilRecipe> getSteelAnvilRecipes() {
+        return AnvilRecipeManager.getClientRecipes().stream()
+                .filter(recipe -> recipe.canCraftOn(AnvilTier.STEEL))
+                .toList();
     }
 
     private static List<CentrifugeJeiRecipe> getCentrifugeRecipes() {
