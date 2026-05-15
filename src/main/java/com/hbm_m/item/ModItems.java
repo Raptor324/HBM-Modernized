@@ -1085,6 +1085,9 @@ public class ModItems {
     public static final RegistryObject<Item> PLATE_FUEL_U235 = ITEMS.register("plate_fuel_u235",
             () -> new Item(new Item.Properties()));
 
+    public static final RegistryObject<Item> RBMK_FUEL_DRX = ITEMS.register("rbmk_fuel_drx",
+            () -> new RbmkFuelDrxItem(new Item.Properties()));
+
     // RAW METALS
 
     public static final RegistryObject<Item> URANIUM_RAW = ITEMS.register("uranium_raw",

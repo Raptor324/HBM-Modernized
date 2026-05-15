@@ -335,6 +335,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.PLATE_FUEL_SA326);
         simpleItem(ModItems.PLATE_FUEL_U233);
         simpleItem(ModItems.PLATE_FUEL_U235);
+        withExistingParent(ModItems.RBMK_FUEL_DRX.getId().getPath(), "item/generated")
+            .texture("layer0", modLoc("block/rbmkrods/" + ModItems.RBMK_FUEL_DRX.getId().getPath()));
 
         simpleItem(ModItems.STAMP_STONE_FLAT);
         simpleItem(ModItems.STAMP_STONE_PLATE);

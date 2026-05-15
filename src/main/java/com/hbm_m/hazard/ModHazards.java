@@ -321,6 +321,11 @@ public class ModHazards {
             new HazardEntry(HazardType.EXPLOSIVE_ON_FIRE, 4.0f)
         ));
 
+        // DRX FUEL ROD - 1.2M rads
+        HazardSystem.register(ModItems.RBMK_FUEL_DRX.get(), new HazardData(
+            new HazardEntry(HazardType.RADIATION, 1200000f)
+        ));
+
         // ТЕГИ 
         HazardSystem.register(URANIUM_INGOTS, new HazardData(
             new HazardEntry(HazardType.RADIATION, 0.35f)

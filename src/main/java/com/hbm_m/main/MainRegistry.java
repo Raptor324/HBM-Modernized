@@ -1342,6 +1342,7 @@ public class MainRegistry {
             event.accept(new ItemStack(ModItems.FLUID_VALVE.get()));
             event.accept(new ItemStack(ModItems.FLUID_PUMP.get()));
             event.accept(new ItemStack(ModItems.FLUID_EXHAUST.get()));
+            event.accept(ModItems.RBMK_FUEL_DRX);
             event.accept(new ItemStack(ModItems.CRUDE_OIL_BUCKET.get()));
             event.accept(new ItemStack(ModItems.INFINITE_WATER_500.get()));
             event.accept(new ItemStack(ModItems.INFINITE_WATER_5000.get()));
