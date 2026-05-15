@@ -244,14 +244,9 @@ public class ModBlockTagProvider extends BlockTagsProvider {
         //?}
 
         // ============ CONNECTED TEXTURES (CT) ============
-        // Steel <-> rusty steel соединяются между собой как в 1.7.10 BlockDecoCT.canConnect().
+        // Только сталь ↔ ржавая сталь как «одна семья»; остальные деко-CT — только с тем же блоком (см. ConnectedDecoBlockBakedModel).
         this.tag(ModTags.Blocks.DECO_STEEL_CONNECTABLE)
                 .add(ModBlocks.DECO_STEEL.get())
-                .add(ModBlocks.DECO_TUNGSTEN.get())
-                .add(ModBlocks.DECO_RED_COPPER.get())
-                .add(ModBlocks.DECO_ALUMINUM.get())
-                .add(ModBlocks.DECO_BERYLLIUM.get())
-                .add(ModBlocks.DECO_LEAD.get())
                 .add(ModBlocks.DECO_RUSTY_STEEL.get());
 
     }

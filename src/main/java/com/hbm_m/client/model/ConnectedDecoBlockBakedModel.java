@@ -8,7 +8,7 @@ import java.util.Map;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
-import com.hbm_m.item.tags_and_tiers.ModTags;
+import com.hbm_m.block.ModBlocks;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
@@ -24,6 +24,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.BakedModelWrapper;
@@ -38,7 +39,7 @@ import net.minecraftforge.client.model.pipeline.QuadBakingVertexConsumer;
  *
  * Важно: getQuads() не получает доступ к миру/позиции, поэтому мы используем Forge ModelData.
  */
-public class ConnectedDecoSteelBakedModel extends BakedModelWrapper<BakedModel> {
+public class ConnectedDecoBlockBakedModel extends BakedModelWrapper<BakedModel> {
 
     public static final ModelProperty<int[]> CT_INDICES = new ModelProperty<>();
 
@@ -48,7 +49,7 @@ public class ConnectedDecoSteelBakedModel extends BakedModelWrapper<BakedModel> 
     private TextureAtlasSprite ctSprite;
     private final TextureAtlasSprite fallbackSprite;
 
-    public ConnectedDecoSteelBakedModel(BakedModel original, ResourceLocation fullTex, ResourceLocation ctTex) {
+    public ConnectedDecoBlockBakedModel(BakedModel original, ResourceLocation fullTex, ResourceLocation ctTex) {
         super(original);
         this.fullTex = fullTex;
         this.ctTex = ctTex;
@@ -108,7 +109,7 @@ public class ConnectedDecoSteelBakedModel extends BakedModelWrapper<BakedModel> 
 
         int[] indices = new int[24];
         for (Direction face : Direction.values()) {
-            boolean[] cons = collectConnections(level, pos, face);
+            boolean[] cons = collectConnections(level, pos, face, state);
 
             // 0 1 2
             // 3   4
@@ -316,13 +317,29 @@ public class ConnectedDecoSteelBakedModel extends BakedModelWrapper<BakedModel> 
         return CTBits.F;
     }
 
-    private static boolean[] collectConnections(BlockAndTintGetter level, BlockPos pos, Direction face) {
+    /**
+     * CT-соседство: один и тот же блок всегда стыкуется; сталь и ржавая сталь — между собой;
+     * остальные деко-металлы только сами с собой (как DECO_TUNGSTEN только с DECO_TUNGSTEN).
+     */
+    public static boolean decoCtConnects(Block center, Block neighbor) {
+        if (center == neighbor) {
+            return true;
+        }
+        return isSteelDecoFamily(center) && isSteelDecoFamily(neighbor);
+    }
+
+    private static boolean isSteelDecoFamily(Block b) {
+        return b == ModBlocks.DECO_STEEL.get() || b == ModBlocks.DECO_RUSTY_STEEL.get();
+    }
+
+    private static boolean[] collectConnections(BlockAndTintGetter level, BlockPos pos, Direction face, BlockState centerState) {
         int[][] offsets = FaceOffsets.get(face);
         boolean[] cons = new boolean[8];
+        Block centerBlock = centerState.getBlock();
         for (int i = 0; i < 8; i++) {
             int[] o = offsets[i];
             BlockState neighbor = level.getBlockState(pos.offset(o[0], o[1], o[2]));
-            cons[i] = neighbor != null && neighbor.is(ModTags.Blocks.DECO_STEEL_CONNECTABLE);
+            cons[i] = neighbor != null && decoCtConnects(centerBlock, neighbor.getBlock());
         }
         return cons;
     }

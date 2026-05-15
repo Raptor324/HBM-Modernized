@@ -29,6 +29,7 @@ import static dev.architectury.registry.client.rendering.BlockEntityRendererRegi
 import org.jetbrains.annotations.NotNull;
 
 import com.google.common.collect.ImmutableMap;
+import dev.architectury.registry.registries.RegistrySupplier;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
@@ -42,6 +43,7 @@ import com.hbm_m.client.loader.MachineFluidTankModelLoader;
 import com.hbm_m.client.loader.MachineHydraulicFrackiningTowerModelLoader;
 import com.hbm_m.client.loader.PressModelLoader;
 import com.hbm_m.client.loader.TemplateModelLoader;
+import com.hbm_m.client.model.ConnectedDecoBlockBakedModel;
 import com.hbm_m.client.overlay.OverlayGeiger;
 import com.hbm_m.client.overlay.OverlayInfoToast;
 import com.hbm_m.client.overlay.OverlayRadiationVisuals;
@@ -165,6 +167,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
@@ -825,6 +828,37 @@ public class ClientSetup {
             models.putAll(replacements);
             MainRegistry.LOGGER.info("[HBM] Unwrapped {} Continuity model wrappers from HBM models.",
                     replacements.size());
+        }
+
+        wrapConnectedDecoCtTerrainModels(models);
+    }
+
+    /**
+     * Подменяет cube-модели деко-CT на {@link ConnectedDecoBlockBakedModel} (Forge ModelData + getQuads).
+     * Делается после снятия Continuity-обёртки, иначе CT не получает корректный пайплайн.
+     */
+    private static void wrapConnectedDecoCtTerrainModels(Map<ResourceLocation, BakedModel> models) {
+        record CtEntry(RegistrySupplier<Block> block, String textureBase) {}
+
+        CtEntry[] entries = {
+                new CtEntry(ModBlocks.DECO_STEEL, "deco_steel"),
+                new CtEntry(ModBlocks.DECO_RUSTY_STEEL, "deco_rusty_steel"),
+                new CtEntry(ModBlocks.DECO_TUNGSTEN, "deco_tungsten"),
+                new CtEntry(ModBlocks.DECO_RED_COPPER, "deco_red_copper"),
+                new CtEntry(ModBlocks.DECO_ALUMINUM, "deco_aluminum"),
+                new CtEntry(ModBlocks.DECO_BERYLLIUM, "deco_beryllium"),
+                new CtEntry(ModBlocks.DECO_LEAD, "deco_lead"),
+        };
+
+        for (CtEntry e : entries) {
+            ModelResourceLocation loc = new ModelResourceLocation(e.block.getId(), "");
+            BakedModel baked = models.get(loc);
+            if (baked == null || baked instanceof ConnectedDecoBlockBakedModel) {
+                continue;
+            }
+            ResourceLocation full = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/" + e.textureBase);
+            ResourceLocation ct = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/" + e.textureBase + "_ct");
+            models.put(loc, new ConnectedDecoBlockBakedModel(baked, full, ct));
         }
     }
 

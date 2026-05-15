@@ -30,7 +30,7 @@ public class ModTags {
 
         public static final TagKey<Block> NON_OCCLUDING = tag("non_occluding");
 
-        /** Блоки, которые соединяются CT между собой (steel ↔ rusty steel). */
+        /** Сталь и ржавая сталь — единственная пара разных блоков с общим CT; только эти два в теге. */
         public static final TagKey<Block> DECO_STEEL_CONNECTABLE = tag("deco_steel_connectable");
 
         private static TagKey<Block> tag(String name) {
