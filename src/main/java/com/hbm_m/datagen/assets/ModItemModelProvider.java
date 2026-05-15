@@ -152,7 +152,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.BLADE_TITANIUM);
         simpleItem(ModItems.BLADE_ALLOY);
         simpleItem(ModItems.BLADE_TEST);
-        simpleItem(ModItems.ALLOY_SWORD);
         simpleItem(ModItems.GEIGER_COUNTER);
         simpleItem(ModItems.DOSIMETER);
         
@@ -480,9 +479,10 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.CHEMICAL_PLANT);
         blockItemFromBlockModelMachine(ModBlocks.CRUCIBLE);
         blockItemFromBlockModelMachine(ModBlocks.FOUNDRY_BASIN);
+        blockItemFromBlockModelMachine(ModBlocks.FOUNDRY_CHANNEL, "foundry_channel_inventory");
         blockItemFromBlockModelMachine(ModBlocks.CENTRIFUGE);
         blockItemFromBlockModelMachine(ModBlocks.GAS_CENTRIFUGE);
-        blockItemFromBlockModelMachine(ModBlocks.CRYSTALLIZER);
+        blockItemFromBlockModelMachine(ModBlocks.CRYSTALLIZER, "crystallizer_item");
         blockItemFromBlockModelMachine(ModBlocks.BREEDER);
         blockItemFromBlockModelMachine(ModBlocks.LARGE_PYLON);
         blockItemFromBlockModelMachine(ModBlocks.HYDRAULIC_FRACKINING_TOWER);
@@ -497,8 +497,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.RBMK_CONSOLE);
         blockItemFromBlockModelMachine(ModBlocks.FLARE_STACK);
         blockItemFromBlockModelMachine(ModBlocks.PUMPJACK);
-        blockItemFromBlockModelMachine(ModBlocks.RADAR);
-        blockItemFromBlockModelMachine(ModBlocks.LARGE_RADAR);
+        blockItemFromBlockModelMachine(ModBlocks.RADAR, "radar_item");
+        blockItemFromBlockModelMachine(ModBlocks.LARGE_RADAR, "large_radar_item");
         blockItemFromBlockModelMachine(ModBlocks.CRACKING_TOWER);
         blockItemFromBlockModelMachine(ModBlocks.FRACTION_TOWER);
         blockItemFromBlockModelMachine(ModBlocks.MINING_DRILL);
@@ -512,21 +512,22 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelBomb(ModBlocks.NUKE_FAT_MAN);
         blockItemFromBlockModelMachine(ModBlocks.MACHINE_BATTERY_SOCKET);
         blockItemFromBlockModelMachine(ModBlocks.INDUSTRIAL_BOILER);
+        blockItemFromBlockModelMachine(ModBlocks.HEATING_OVEN);
         blockItemFromBlockModelMachine(ModBlocks.SOLAR_BOILER);
-            blockItemFromBlockModelMachine(ModBlocks.SOLAR_MIRRORS);
-            blockItemFromBlockModelMachine(ModBlocks.WATZ_POWERPLANT);
-            blockItemFromBlockModelMachine(ModBlocks.HYDROTREATER);
-            blockItemFromBlockModelMachine(ModBlocks.CATALYTIC_REFORMER);
-            blockItemFromBlockModelMachine(ModBlocks.DEUTERIUM_TOWER);
-            blockItemFromBlockModelMachine(ModBlocks.CHEMICAL_FACTORY);
-            blockItemFromBlockModelMachine(ModBlocks.STEAM_TURBINE);
-            blockItemFromBlockModelMachine(ModBlocks.LIQUEFACTOR);
-            blockItemFromBlockModelMachine(ModBlocks.CORE_EMITTER);
-            blockItemFromBlockModelMachine(ModBlocks.CORE_INJECTOR);
-            blockItemFromBlockModelMachine(ModBlocks.CORE_RECEIVER);
-            blockItemFromBlockModelMachine(ModBlocks.VACUUM_DISTILL);
-            blockItemFromBlockModelMachine(ModBlocks.TURBOFAN);
-            blockItemFromBlockModelMachine(ModBlocks.INDUSTRIAL_TURBINE);
+        blockItemFromBlockModelMachine(ModBlocks.SOLAR_MIRRORS);
+        blockItemFromBlockModelMachine(ModBlocks.WATZ_POWERPLANT);
+        blockItemFromBlockModelMachine(ModBlocks.HYDROTREATER);
+        blockItemFromBlockModelMachine(ModBlocks.CATALYTIC_REFORMER);
+        blockItemFromBlockModelMachine(ModBlocks.DEUTERIUM_TOWER);
+        blockItemFromBlockModelMachine(ModBlocks.CHEMICAL_FACTORY);
+        blockItemFromBlockModelMachine(ModBlocks.STEAM_TURBINE);
+        blockItemFromBlockModelMachine(ModBlocks.LIQUEFACTOR);
+        blockItemFromBlockModelMachine(ModBlocks.CORE_EMITTER);
+        blockItemFromBlockModelMachine(ModBlocks.CORE_INJECTOR);
+        blockItemFromBlockModelMachine(ModBlocks.CORE_RECEIVER);
+        blockItemFromBlockModelMachine(ModBlocks.VACUUM_DISTILL);
+        blockItemFromBlockModelMachine(ModBlocks.TURBOFAN);
+        blockItemFromBlockModelMachine(ModBlocks.INDUSTRIAL_TURBINE);
         blockItemFromBlockModelMachine(ModBlocks.TURBINE);
         blockItemFromBlockModelMachine(ModBlocks.SUBSTATION);
         blockItemFromBlockModel(ModBlocks.DUD_CONVENTIONAL);
@@ -536,6 +537,163 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModel(ModBlocks.FLUID_VALVE);
         blockItemFromBlockModel(ModBlocks.FLUID_PUMP);
         blockItemFromBlockModel(ModBlocks.FLUID_EXHAUST);
+
+        // Ранее: assets/.../models/item/*.json с parent = блок или простая generated/handheld-текстура
+        blockItemFromBlockModel(ModBlocks.AIRBOMB);
+        itemModelFromBlockResourcePath("airbomb_a", "block/airbomb");
+        itemModelFromBlockResourcePath("airnukebomb_a", "block/balebomb_test");
+        blockItemFromBlockModel(ModBlocks.ANTENNA_TOP);
+        blockItemFromBlockModel(ModBlocks.ASBESTOS_ORE);
+        blockItemFromBlockModel(ModBlocks.B29);
+        blockItemFromBlockModel(ModBlocks.BALEBOMB_TEST);
+        blockItemFromBlockModel(ModBlocks.BARBED_WIRE);
+        blockItemFromBlockModel(ModBlocks.BARBED_WIRE_FIRE);
+        blockItemFromBlockModel(ModBlocks.BARBED_WIRE_POISON);
+        blockItemFromBlockModel(ModBlocks.BARBED_WIRE_RAD);
+        blockItemFromBlockModel(ModBlocks.BARBED_WIRE_WITHER);
+        blockItemFromBlockModel(ModBlocks.BARREL_CORRODED);
+        blockItemFromBlockModel(ModBlocks.BARREL_IRON);
+        blockItemFromBlockModel(ModBlocks.BARREL_LOX);
+        blockItemFromBlockModel(ModBlocks.BARREL_PINK);
+        blockItemFromBlockModel(ModBlocks.BARREL_PLASTIC);
+        blockItemFromBlockModel(ModBlocks.BARREL_RED);
+        blockItemFromBlockModel(ModBlocks.BARREL_STEEL);
+        blockItemFromBlockModel(ModBlocks.BARREL_TAINT);
+        blockItemFromBlockModel(ModBlocks.BARREL_TCALLOY);
+        blockItemFromBlockModel(ModBlocks.BARREL_VITRIFIED);
+        blockItemFromBlockModel(ModBlocks.BARREL_YELLOW);
+        blockItemFromBlockModel(ModBlocks.C4);
+        blockItemFromBlockModel(ModBlocks.CAGE_LAMP);
+        blockItemFromBlockModel(ModBlocks.CINNABAR_ORE);
+        blockItemFromBlockModel(ModBlocks.COBALT_ORE);
+        blockItemFromBlockModel(ModBlocks.CRATE_CONSERVE);
+        blockItemFromBlockModel(ModBlocks.CRT_BROKEN);
+        blockItemFromBlockModel(ModBlocks.CRT_BSOD);
+        blockItemFromBlockModel(ModBlocks.CRT_CLEAN);
+        blockItemFromBlockModel(ModBlocks.DECO_STEEL_SCAFFOLD);
+        blockItemFromBlockModel(ModBlocks.DET_MINER);
+        blockItemFromBlockModel(ModBlocks.DORNIER);
+        blockItemFromBlockModel(ModBlocks.EXPLOSIVE_CHARGE);
+        blockItemFromBlockModel(ModBlocks.FILE_CABINET);
+        blockItemFromBlockModel(ModBlocks.FLOOD_LAMP);
+        itemModelFromBlockResourcePath("fluorescent_lamp", "block/fluorescent_lamp");
+        blockItemFromBlockModel(ModBlocks.FLUORITE_ORE);
+        blockItemFromBlockModel(ModBlocks.FREAKY_ALIEN_BLOCK);
+        blockItemFromBlockModel(ModBlocks.GEIGER_COUNTER_BLOCK);
+        blockItemFromBlockModel(ModBlocks.LEAD_ORE);
+        blockItemFromBlockModel(ModBlocks.LEAD_ORE_DEEPSLATE);
+        blockItemFromBlockModel(ModBlocks.LIGNITE_ORE);
+        blockItemFromBlockModel(ModBlocks.MINE_AP);
+        blockItemFromBlockModel(ModBlocks.MINE_FAT);
+        blockItemFromBlockModel(ModBlocks.NAVAL_MINE);
+        blockItemFromBlockModel(ModBlocks.NUCLEAR_CHARGE);
+        blockItemFromBlockModel(ModBlocks.PUTER);
+        blockItemFromBlockModel(ModBlocks.RAREGROUND_ORE);
+        blockItemFromBlockModel(ModBlocks.RAREGROUND_ORE_DEEPSLATE);
+        blockItemFromBlockModel(ModBlocks.REBAR);
+        blockItemFromBlockModel(ModBlocks.REFINERY);
+        blockItemFromBlockModel(ModBlocks.SHREDDER);
+        blockItemFromBlockModel(ModBlocks.SMOKE_BOMB);
+        blockItemFromBlockModel(ModBlocks.STEEL_POLE);
+        blockItemFromBlockModel(ModBlocks.SULFUR_ORE);
+        itemModelFromBlockResourcePath("switch", "block/switch_on");
+        blockItemFromBlockModel(ModBlocks.TAPE_RECORDER);
+        blockItemFromBlockModel(ModBlocks.THORIUM_ORE);
+        blockItemFromBlockModel(ModBlocks.THORIUM_ORE_DEEPSLATE);
+        blockItemFromBlockModel(ModBlocks.TITANIUM_ORE);
+        blockItemFromBlockModel(ModBlocks.TITANIUM_ORE_DEEPSLATE);
+        blockItemFromBlockModel(ModBlocks.TOASTER);
+        blockItemFromBlockModel(ModBlocks.TUNGSTEN_ORE);
+        blockItemFromBlockModel(ModBlocks.WASTE_CHARGE);
+
+        withExistingParent(ModItems.NOLO_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+
+        simpleItem(ModItems.GRENADE);
+        simpleItem(ModItems.GRENADESLIME);
+        simpleItem(ModItems.GRENADESMART);
+        simpleItem(ModItems.SULFUR);
+        simpleItem(ModItems.FLUORITE);
+        simpleItem(ModItems.LIGNITE);
+        simpleItem(ModItems.CINNABAR);
+        simpleItem(ModItems.FIREBRICK);
+        simpleItem(ModItems.FIRECLAY_BALL);
+        simpleItem(ModItems.ARMOR_BATTERY);
+        simpleItem(ModItems.ARMOR_BATTERY_MK2);
+        simpleItem(ModItems.ARMOR_BATTERY_MK3);
+        simpleItem(ModItems.RAREGROUND_ORE_CHUNK);
+        simpleItem(ModItems.WOOD_ASH_POWDER);
+        simpleItem(ModItems.URANIUM_RAW);
+        simpleItem(ModItems.LEAD_RAW);
+        simpleItem(ModItems.THORIUM_RAW);
+        simpleItem(ModItems.TITANIUM_RAW);
+        simpleItem(ModItems.TUNGSTEN_RAW);
+        simpleItemModelByName("bucket_crude_oil", "bucket_crude_oil");
+        simpleItemModelByName("iron_plate", "iron_plate");
+        simpleItemModelByName("titanium_stamp_plate", "titanium_stamp_plate");
+        withExistingParent(ModItems.BLUEPRINT_FOLDER.getId().getPath(), "item/generated")
+                .texture("layer0", modLoc("item/template_folder"));
+        blockItemFromBlockModel(ModBlocks.STRAWBERRY_BUSH);
+
+        java.util.List.of(
+                ModItems.CRYSTAL_ALUMINIUM,
+                ModItems.CRYSTAL_BERYLLIUM,
+                ModItems.CRYSTAL_CHARRED,
+                ModItems.CRYSTAL_CINNEBAR,
+                ModItems.CRYSTAL_COAL,
+                ModItems.CRYSTAL_COBALT,
+                ModItems.CRYSTAL_COPPER,
+                ModItems.CRYSTAL_DIAMOND,
+                ModItems.CRYSTAL_FLUORITE,
+                ModItems.CRYSTAL_GOLD,
+                ModItems.CRYSTAL_HARDENED,
+                ModItems.CRYSTAL_HORN,
+                ModItems.CRYSTAL_IRON,
+                ModItems.CRYSTAL_LAPIS,
+                ModItems.CRYSTAL_LEAD,
+                ModItems.CRYSTAL_LITHIUM,
+                ModItems.CRYSTAL_NITER,
+                ModItems.CRYSTAL_OSMIRIDIUM,
+                ModItems.CRYSTAL_PHOSPHORUS,
+                ModItems.CRYSTAL_PLUTONIUM,
+                ModItems.CRYSTAL_PULSAR,
+                ModItems.CRYSTAL_RARE,
+                ModItems.CRYSTAL_REDSTONE,
+                ModItems.CRYSTAL_SCHRABIDIUM,
+                ModItems.CRYSTAL_SCHRARANIUM,
+                ModItems.CRYSTAL_STARMETAL,
+                ModItems.CRYSTAL_SULFUR,
+                ModItems.CRYSTAL_THORIUM,
+                ModItems.CRYSTAL_TITANIUM,
+                ModItems.CRYSTAL_TRIXITE,
+                ModItems.CRYSTAL_TUNGSTEN,
+                ModItems.CRYSTAL_URANIUM,
+                ModItems.CRYSTAL_VIRUS,
+                ModItems.CRYSTAL_XEN
+        ).forEach(this::crystalItem);
+
+        java.util.List.of(
+                ModItems.ALLOY_SWORD,
+                ModItems.ALLOY_AXE,
+                ModItems.ALLOY_PICKAXE,
+                ModItems.ALLOY_SHOVEL,
+                ModItems.ALLOY_HOE,
+                ModItems.STEEL_SWORD,
+                ModItems.STEEL_AXE,
+                ModItems.STEEL_PICKAXE,
+                ModItems.STEEL_SHOVEL,
+                ModItems.STEEL_HOE,
+                ModItems.TITANIUM_SWORD,
+                ModItems.TITANIUM_AXE,
+                ModItems.TITANIUM_PICKAXE,
+                ModItems.TITANIUM_SHOVEL,
+                ModItems.TITANIUM_HOE,
+                ModItems.STARMETAL_SWORD,
+                ModItems.STARMETAL_AXE,
+                ModItems.STARMETAL_PICKAXE,
+                ModItems.STARMETAL_SHOVEL,
+                ModItems.STARMETAL_HOE,
+                ModItems.RANGE_DETONATOR
+        ).forEach(this::handheldItem);
     };
 
     /**
@@ -567,7 +725,31 @@ public class ModItemModelProvider extends ItemModelProvider {
     }
 
     private ItemModelBuilder blockItemFromBlockModelMachine(RegistrySupplier<Block> block) {
-        return withExistingParent(block.getId().getPath(), modLoc("block/machines/" + block.getId().getPath()));
+        return blockItemFromBlockModelMachine(block, block.getId().getPath());
+    }
+
+    private ItemModelBuilder blockItemFromBlockModelMachine(RegistrySupplier<Block> block, String machineModelFileName) {
+        return withExistingParent(block.getId().getPath(), modLoc("block/machines/" + machineModelFileName));
+    }
+
+    /** Модель предмета с parent = hbm_m:&lt;путь&gt; (без отдельного ModBlocks, если id не совпадает с блоком). */
+    private void itemModelFromBlockResourcePath(String itemModelName, String pathUnderModWithoutNamespace) {
+        withExistingParent(itemModelName, modLoc(pathUnderModWithoutNamespace));
+    }
+
+    private void handheldItem(RegistrySupplier<Item> itemObject) {
+        String name = itemObject.getId().getPath();
+        withExistingParent(name, "item/handheld").texture("layer0", modLoc("item/" + name));
+    }
+
+    private void crystalItem(RegistrySupplier<Item> itemObject) {
+        String name = itemObject.getId().getPath();
+        withExistingParent(name, "item/generated").texture("layer0", modLoc("item/crystall/" + name));
+    }
+
+    /** item/generated, текстура hbm_m:item/&lt;texturePathUnderItem&gt; */
+    private void simpleItemModelByName(String modelName, String texturePathUnderItem) {
+        withExistingParent(modelName, "item/generated").texture("layer0", modLoc("item/" + texturePathUnderItem));
     }
 
     private ItemModelBuilder blockItemFromBlockModelBomb(RegistrySupplier<Block> block) {

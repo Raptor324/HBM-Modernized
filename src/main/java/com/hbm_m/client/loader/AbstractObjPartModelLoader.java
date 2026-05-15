@@ -197,6 +197,13 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
             } else if (this.visiblePart.equalsIgnoreCase("Frame") || this.visiblePart.equalsIgnoreCase("Door")) {
                 if (parent.hasMaterial("default")) {
                     mat = parent.getMaterial("default"); // Берет текстуру "default" из JSON
+                } else {
+                    // Цистерна и др.: в OBJ может быть usemtl default без ключа default в JSON —
+                    // тогда берём текстуру по имени части (frame / door).
+                    String lowerPart = this.visiblePart.toLowerCase(java.util.Locale.ROOT);
+                    if (parent.hasMaterial(lowerPart)) {
+                        mat = parent.getMaterial(lowerPart);
+                    }
                 }
             } else {
                 // Автоматический подхват для других дверей (если имя детали совпадает с ключом текстуры в JSON)
