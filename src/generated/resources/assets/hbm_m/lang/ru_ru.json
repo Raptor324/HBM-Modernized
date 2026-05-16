@@ -529,6 +529,7 @@
   "container.hbm_m.solar_boiler": "Солнечный котел",
   "container.hbm_m.solar_mirrors": "Солнечные зеркала",
   "container.hbm_m.steam_turbine": "Паровая турбина",
+  "container.hbm_m.steam_condenser": "Паровой конденсатор",
   "container.hbm_m.substation": "Подстанция (WIP)",
   "container.hbm_m.turbine": "Турбина (WIP)",
   "container.hbm_m.turbofan": "Турбовентилятор",

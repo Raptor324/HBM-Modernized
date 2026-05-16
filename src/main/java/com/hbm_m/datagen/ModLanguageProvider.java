@@ -1627,6 +1627,7 @@ public class ModLanguageProvider extends LanguageProvider {
                     add("container.hbm_m.deuterium_tower", "Башня дейтерия");
                     add("container.hbm_m.chemical_factory", "Химический завод");
                     add("container.hbm_m.steam_turbine", "Паровая турбина");
+                    add("container.hbm_m.steam_condenser", "Паровой конденсатор");
                     add("container.hbm_m.liquefactor", "Сжижитель");
                     add("container.hbm_m.core_emitter", "Эмиттер ядра");
                     add("container.hbm_m.core_injector", "Инжектор ядра");
@@ -3471,6 +3472,7 @@ public class ModLanguageProvider extends LanguageProvider {
                     add("container.hbm_m.deuterium_tower", "Deuterium Tower");
                     add("container.hbm_m.chemical_factory", "Chemical Factory");
                     add("container.hbm_m.steam_turbine", "Steam Turbine");
+                    add("container.hbm_m.steam_condenser", "Steam Condenser");
                     add("container.hbm_m.liquefactor", "Liquefactor");
                     add("container.hbm_m.core_emitter", "Core Emitter");
                     add("container.hbm_m.core_injector", "Core Injector");

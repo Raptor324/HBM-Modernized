@@ -539,6 +539,7 @@
   "container.hbm_m.solar_boiler": "Solar Boiler",
   "container.hbm_m.solar_mirrors": "Solar Mirrors",
   "container.hbm_m.steam_turbine": "Steam Turbine",
+  "container.hbm_m.steam_condenser": "Steam Condenser",
   "container.hbm_m.substation": "Substation (WIP)",
   "container.hbm_m.turbine": "Turbine (WIP)",
   "container.hbm_m.turbofan": "Turbofan",
