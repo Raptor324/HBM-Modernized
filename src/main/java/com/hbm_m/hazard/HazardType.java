@@ -5,6 +5,8 @@ import net.minecraft.ChatFormatting;
 public enum HazardType {
 
     RADIATION("hazard.hbm_m.radiation", "hazard.hbm_m.radiation.format", ChatFormatting.GREEN, true),
+
+    DIGAMMA("hazard.hbm_m.digamma", "hazard.hbm_m.digamma.format", ChatFormatting.RED, true),
     
     HYDRO_REACTIVE("hazard.hbm_m.hydro_reactive", "hazard.hbm_m.explosion_strength.format", ChatFormatting.RED, true),
     

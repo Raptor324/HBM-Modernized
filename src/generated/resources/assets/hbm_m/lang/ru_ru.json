@@ -1783,6 +1783,7 @@
   "tooltip.hbm_m.rad_protection.value_short": "%s сопр. радиации.",
   "tooltip.hbm_m.range_detonator.desc": "Активирует совместимые блоки",
   "tooltip.hbm_m.range_detonator.hint": "по лучу до 256 блоков.",
+  "tooltip.hbm_m.rbmk_fuel_drx": "Продвинутый ядерный топливный стержень с повышенной энергоотдачей",
   "tooltip.hbm_m.requires": "Требуется",
   "tooltip.hbm_m.res.expl": "Взрывам",
   "tooltip.hbm_m.res.fall": "Падению",

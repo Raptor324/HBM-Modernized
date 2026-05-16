@@ -18,6 +18,7 @@ import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.data.recipes.SimpleCookingRecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -669,6 +670,24 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('$', ModItems.PLATE_COPPER.get())
                 .unlockedBy(getHasName(Items.PISTON), has(Items.PISTON))
                 .save(writer, recipeId("crafting/blast_furnace_extension"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.FOUNDRY_BASIN.get())
+                .pattern("% %")
+                .pattern("% %")
+                .pattern("%#%")
+                .define('%', ModItems.FIREBRICK.get())
+                .define('#', Ingredient.of(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "slabs/stone"))))
+                .unlockedBy(getHasName(ModItems.FIREBRICK.get()), has(ModItems.FIREBRICK.get()))
+                .save(writer, recipeId("crafting/foundry_basin"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.FOUNDRY_CHANNEL.get(), 4)
+                .pattern("% %")
+                .pattern(" # ")
+                .pattern("   ")
+                .define('%', ModItems.FIREBRICK.get())
+                .define('#', Ingredient.of(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "slabs/stone"))))
+                .unlockedBy(getHasName(ModItems.FIREBRICK.get()), has(ModItems.FIREBRICK.get()))
+                .save(writer, recipeId("crafting/foundry_channel"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.EXPLOSIVE_CHARGE.get())
                 .pattern("$% ")

@@ -138,6 +138,20 @@ public final class AnvilRecipeGenerator {
                 stack(Items.STONE_BRICKS, 4 ),
                 stack(ModItems.FIREBRICK, 4 ));
 
+        registerInventoryRecipe(writer, "steel", "heating_oven",
+                AnvilTier.STEEL,
+                stack(ModBlocks.HEATING_OVEN),
+                stack(Items.BRICK, 16),
+                stack(ModItems.PLATE_STEEL, 4),
+                stack(Items.COPPER_INGOT, 8));
+
+        registerInventoryRecipe(writer, "steel", "7crucible",
+                AnvilTier.STEEL,
+                stack(ModBlocks.CRUCIBLE),
+                stack(ModItems.FIREBRICK, 20),
+                stack(Items.COPPER_INGOT, 8),
+                stack(ModItems.PLATE_STEEL, 8));
+
         registerInventoryRecipe(writer, "steel", "8advanced_assemble_machine",
                 AnvilTier.STEEL,
                 stack(ModBlocks.ADVANCED_ASSEMBLY_MACHINE),
