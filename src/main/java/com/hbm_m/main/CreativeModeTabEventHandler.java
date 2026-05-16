@@ -1183,6 +1183,7 @@ public final class CreativeModeTabEventHandler {
         // Упрощенный Consumer, по умолчанию использующий PARENT_AND_SEARCH_TABS
         Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         add.accept(new ItemStack(ModItems.CREATIVE_BATTERY.get()));
+        add.accept(new ItemStack(ModItems.RBMK_FUEL_DRX.get()));
 
 
 

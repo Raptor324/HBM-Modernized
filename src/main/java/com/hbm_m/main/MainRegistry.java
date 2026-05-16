@@ -47,46 +47,6 @@ public final class MainRegistry {
         ModClothConfig.register();
     }
 
-    public MainRegistry(FMLJavaModLoadingContext context) {
-        LOGGER.info("Initializing " + RefStrings.NAME);
-
-        IEventBus modEventBus = context.getModEventBus();
-        DoorDeclRegistry.init();
-
-        MinecraftForge.EVENT_BUS.register(new CrateBreaker());
-        MinecraftForge.EVENT_BUS.register(new BombDefuser());
-        MinecraftForge.EVENT_BUS.register(new MobGearHandler());
-        ModBiomes.BIOMES.register(modEventBus);
-        ModBlocks.BLOCKS.register(modEventBus);
-        ModEntities.ENTITY_TYPES.register(modEventBus);
-        ModExplosionParticles.PARTICLE_TYPES.register(modEventBus);
-        ModItems.ITEMS.register(modEventBus);
-        com.hbm.items.ModItems.register();
-        ModMenuTypes.MENUS.register(modEventBus);
-        ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
-        ModSounds.SOUND_EVENTS.register(modEventBus);
-        ModParticleTypes.PARTICLES.register(modEventBus);
-        ModBlockEntities.register(modEventBus);
-        ModWorldGen.BIOME_MODIFIERS.register(modEventBus);
-        ModEffects.register(modEventBus);
-        ModRecipes.register(modEventBus);
-        registerCapabilities(modEventBus);
-
-        ModWorldGen.PROCESSORS.register(modEventBus);
-
-        modEventBus.addListener(this::commonSetup);
-        modEventBus.addListener(this::addCreative);
-        ModFluids.register(modEventBus);
-
-        modEventBus.register(MachineConfig.class);
-
-        MinecraftForge.EVENT_BUS.register(this);
-        MinecraftForge.EVENT_BUS.register(ChunkRadiationManager.INSTANCE);
-        MinecraftForge.EVENT_BUS.register(new PlayerHandler());
-
-        LOGGER.info("Radiation handlers registered. Using {}.", ModClothConfig.get().usePrismSystem ? "ChunkRadiationHandlerPRISM" : "ChunkRadiationHandlerSimple");
-    }
-
     public static void init() {
         LOGGER.info("Initializing {}", RefStrings.NAME);
 
