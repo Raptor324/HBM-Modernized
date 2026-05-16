@@ -14,6 +14,7 @@ import com.hbm_m.block.bomb.NukeFatManBlock;
 import com.hbm_m.block.decorations.CageLampBlock;
 import com.hbm_m.block.decorations.CrtBlock;
 import com.hbm_m.block.decorations.DoorBlock;
+import com.hbm_m.block.decorations.SteelWallBlock;
 import com.hbm_m.block.explosives.AirBombBlock;
 import com.hbm_m.block.explosives.AirNukeBombBlock;
 import com.hbm_m.block.explosives.C4Block;
@@ -913,6 +914,8 @@ public class ModBlocks {
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> DECO_STEEL_SCAFFOLD = registerBlock("deco_steel_scaffold",
             () -> new CrtBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(2.5F, 6.0F).noOcclusion()));
+    public static final RegistrySupplier<Block> STEEL_WALL = registerBlock("steel_wall",
+            () -> new SteelWallBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(2.0F, 6.0F).noOcclusion()));
 
     public static final RegistrySupplier<Block> B29 = registerBlock("b29",
             () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));

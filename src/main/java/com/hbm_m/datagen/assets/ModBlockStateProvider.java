@@ -511,6 +511,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlock(ModBlocks.TAPE_RECORDER);
         customObjBlock(ModBlocks.TOASTER);
         customObjBlock(ModBlocks.DECO_STEEL_SCAFFOLD);
+        customObjBlock(ModBlocks.STEEL_WALL);
 
         // Other
         customObjBlock(ModBlocks.AIRBOMB);

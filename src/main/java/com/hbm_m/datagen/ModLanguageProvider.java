@@ -2936,6 +2936,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.PUTER.get(), "IBM Personal Computer 300pl");
                 add(ModBlocks.DECO_STEEL_SCAFFOLD.get(), "Steel Scaffolding");
                 add(ModBlocks.REBAR.get(), "Rebar");
+                add(ModBlocks.STEEL_WALL.get(), "Antenna Wall(WIP)");
                 add(ModBlocks.BARREL_CORRODED.get(), "Corroded Barrel");
                 add(ModBlocks.BARREL_LOX.get(), "LOX Barrel");
                 add(ModBlocks.BARREL_PINK.get(), "Pink Barrel");

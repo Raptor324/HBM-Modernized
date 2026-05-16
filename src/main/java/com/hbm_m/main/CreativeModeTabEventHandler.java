@@ -1064,6 +1064,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.CRT_BSOD.get()));
         add.accept(new ItemStack(ModBlocks.TOASTER.get()));
         add.accept(new ItemStack(ModBlocks.STEEL_POLE.get()));
+        add.accept(new ItemStack(ModBlocks.STEEL_WALL.get()));
         add.accept(new ItemStack(ModBlocks.DECO_STEEL_SCAFFOLD.get()));
         add.accept(new ItemStack(ModBlocks.ANTENNA_TOP.get()));
         add.accept(new ItemStack(ModBlocks.PUTER.get()));
