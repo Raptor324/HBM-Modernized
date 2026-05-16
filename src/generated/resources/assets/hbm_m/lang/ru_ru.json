@@ -145,6 +145,7 @@
   "block.hbm_m.centrifuge": "Центрифуга (WIP)",
   "block.hbm_m.chemical_factory": "Химический завод (WIP)",
   "block.hbm_m.chemical_plant": "Химический завод (WIP)",
+  "block.hbm_m.steam_condenser": "Паровой конденсатор",
   "block.hbm_m.cinnabar_ore": "Киноварная руда",
   "block.hbm_m.cinnabar_ore_deepslate": "Глубинная киноварная руда",
   "block.hbm_m.cobalt_ore": "Кобальтовая руда",

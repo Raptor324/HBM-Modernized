@@ -540,6 +540,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // wire_coated: manual multipart blockstate + OBJ visibility (see assets/hbm_m/blockstates/wire_coated.json)
 
         blockWithItem(ModBlocks.CONVERTER_BLOCK);
+        blockWithItem(ModBlocks.STEAM_CONDENSER);
 
         orientableBlockWithItem(
                 ModBlocks.MACHINE_BATTERY,

@@ -1162,6 +1162,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.anvil_iron", "Железная наковальня");
                 add("block.hbm_m.anvil_lead", "Свинцовая наковальня");
                 add("block.hbm_m.anvil_steel", "Стальная наковальня");
+                add("block.hbm_m.steam_condenser", "Паровой конденсатор");
                 add("block.hbm_m.anvil_desh", "Наковальня из деша");
                 add("block.hbm_m.block_steel", "Стальной блок");
                 add("block.hbm_m.anvil_ferrouranium", "Наковальня из ферроурания");
