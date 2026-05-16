@@ -179,7 +179,8 @@ public class PlayerHandler {
         return 0.0F;
     }
 
-    float perItemRadiation = HazardSystem.getHazardLevelFromStack(stack, HazardType.RADIATION);
+    float perItemRadiation = HazardSystem.getHazardLevelFromStack(stack, HazardType.RADIATION)
+            + HazardSystem.getHazardLevelFromStack(stack, HazardType.DIGAMMA);
         return perItemRadiation * stack.getCount();
     }
 

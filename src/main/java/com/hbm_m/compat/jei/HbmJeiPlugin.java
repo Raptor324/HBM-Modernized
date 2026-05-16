@@ -43,6 +43,8 @@ import net.minecraft.world.item.Items;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import javax.annotation.Nonnull;
+
 @JeiPlugin
 public class HbmJeiPlugin implements IModPlugin {
 
@@ -55,7 +57,7 @@ public class HbmJeiPlugin implements IModPlugin {
     }
 
     @Override
-    public void registerCategories(IRecipeCategoryRegistration registration) {
+    public void registerCategories(@Nonnull IRecipeCategoryRegistration registration) {
         registration.addRecipeCategories(new AnvilJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new AssemblerJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new CentrifugeJeiCategory(registration.getJeiHelpers().getGuiHelper()));
@@ -66,7 +68,7 @@ public class HbmJeiPlugin implements IModPlugin {
     }
 
     @Override
-    public void registerRecipes(IRecipeRegistration registration) {
+    public void registerRecipes(@Nonnull IRecipeRegistration registration) {
         CrucibleRecipes.INSTANCE.registerDefaults();
         ensureCrucibleFallbackRecipes();
         registration.addRecipes(AnvilJeiCategory.RECIPE_TYPE, getSteelAnvilRecipes());
@@ -79,7 +81,7 @@ public class HbmJeiPlugin implements IModPlugin {
     }
 
     @Override
-    public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
+    public void registerRecipeCatalysts(@Nonnull IRecipeCatalystRegistration registration) {
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.ANVIL_STEEL.get()), AnvilJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModItems.MACHINE_ASSEMBLER.get()), AssemblerJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModItems.ADVANCED_ASSEMBLY_MACHINE.get()), AssemblerJeiCategory.RECIPE_TYPE);
@@ -92,7 +94,7 @@ public class HbmJeiPlugin implements IModPlugin {
     }
 
     @Override
-    public void registerGuiHandlers(IGuiHandlerRegistration registration) {
+    public void registerGuiHandlers(@Nonnull IGuiHandlerRegistration registration) {
         registration.addRecipeClickArea(GUIAnvil.class, 8, 18, 98, 56, AnvilJeiCategory.RECIPE_TYPE);
         // Assembler recipe click area around the progress bar
         registration.addRecipeClickArea(GUIMachineAssembler.class, 45, 82, 83, 32, AssemblerJeiCategory.RECIPE_TYPE);
@@ -110,7 +112,7 @@ public class HbmJeiPlugin implements IModPlugin {
     }
 
     @Override
-    public void registerItemSubtypes(ISubtypeRegistration registration) {
+    public void registerItemSubtypes(@Nonnull ISubtypeRegistration registration) {
         registration.registerSubtypeInterpreter(
             ModItems.FLUID_BARREL.get(),
             (stack, ctx) -> {

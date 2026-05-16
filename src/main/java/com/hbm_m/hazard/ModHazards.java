@@ -171,6 +171,11 @@ public class ModHazards {
                             new HazardEntry(HazardType.PYROPHORIC, 1.0f)
                     ));
                     break;
+                case DIGAMMA:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                        new HazardEntry(HazardType.DIGAMMA, 1.0f)
+                    ));
+                    break;
                 case URANIUM:
                     HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
                         new HazardEntry(HazardType.RADIATION, 0.35f)

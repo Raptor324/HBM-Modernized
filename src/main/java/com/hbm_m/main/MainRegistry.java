@@ -108,6 +108,7 @@ public class MainRegistry {
         ModEntities.ENTITY_TYPES.register(modEventBus);
         ModExplosionParticles.PARTICLE_TYPES.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
+        com.hbm.items.ModItems.register();
         ModMenuTypes.MENUS.register(modEventBus);
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
         ModSounds.SOUND_EVENTS.register(modEventBus);
@@ -659,6 +660,7 @@ public class MainRegistry {
             event.accept(ModItems.DOSIMETER);
             event.accept(ModItems.GEIGER_COUNTER);
             event.accept(ModBlocks.GEIGER_COUNTER_BLOCK);
+            event.accept(com.hbm.items.ModItems.DIGAMMA_DIAGNOSTIC);
 
             event.accept(ModItems.OIL_DETECTOR);
             event.accept(ModItems.DEPTH_ORES_SCANNER);

@@ -1700,6 +1700,8 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("hazard.hbm_m.radiation", "[Радиоактивный]");
                 add("hazard.hbm_m.radiation.format", "%s РАД/с");
+                add("hazard.hbm_m.digamma", "[Дигамма]");
+                add("hazard.hbm_m.digamma.format", "%s мДРХ/с");
                 add("hazard.hbm_m.hydro_reactive", "[Гидрореактивный]");
                 add("hazard.hbm_m.explosive_on_fire", "[Воспламеняющийся / Взрывоопасный]");
                 add("hazard.hbm_m.pyrophoric", "[Пирофорный / Горячий]");
@@ -3507,6 +3509,8 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("hazard.hbm_m.radiation", "[Radioactive]");
                 add("hazard.hbm_m.radiation.format", "%s RAD/s");
+                add("hazard.hbm_m.digamma", "[Digamma]");
+                add("hazard.hbm_m.digamma.format", "%s mDRX/s");
                 add("hazard.hbm_m.hydro_reactive", "[Hydro-reactive]");
                 add("hazard.hbm_m.explosive_on_fire", "[Flammable / Explosive]");
                 add("hazard.hbm_m.pyrophoric", "[Pyrophoric / Hot]");
@@ -3570,7 +3574,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("commands.hbm_m.explosion.unsupported_key", "This explosion type does not support option: %s");
                 
                 // DEATH ATTACK MESSAGES
-                add("death.attack.radiation", "Player %s died from radiation sickness");
+                add("death.attack.radiation", "Player %s die from Digamma Poisoning");
                 add("death.attack.hardlanding_smash", "%1$s was flattened by %2$s");
 
                 add("advancements.hbm_m.radiation_200.title", "Hooray, Radiation!");

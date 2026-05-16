@@ -64,7 +64,9 @@ public class CrucibleSmeltingJeiCategory implements IRecipeCategory<CrucibleSmel
     }
 
     @Override
-    public IDrawable getBackground() { return background; }
+    public IDrawable getBackground() {
+        return background;
+    }
 
     @Override
     public IDrawable getIcon() { return icon; }
