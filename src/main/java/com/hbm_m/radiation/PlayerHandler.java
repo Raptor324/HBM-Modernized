@@ -79,21 +79,18 @@ public class PlayerHandler {
      */
     public static void setPlayerRads(Player player, float rads) {
         if (player == null) return;
-        
+
         UUID uuid = player.getUUID();
-        float clamped = Math.round(Math.max(0, rads) * 10.0f) / 10.0f; // Округляем до одной цифры после запятой
+        float clamped = Math.round(Math.max(0, rads) * 10.0f) / 10.0f;
         playerRads.put(uuid, clamped);
-        
-        // Если игрок на сервере, синхронизируем данные с клиентом
+
         if (player instanceof ServerPlayer serverPlayer) {
             if (serverPlayer.connection != null) {
-                // 1. Получаем радиацию окружающей среды
                 float environmentRad = ChunkRadiationManager.getRadiation(serverPlayer.level(), serverPlayer.blockPosition().getX(), serverPlayer.blockPosition().getY(), serverPlayer.blockPosition().getZ());
-                
-                // 2. Отправляем пакет с ДВУМЯ значениями
+
                 ModPacketHandler.sendToPlayer(serverPlayer, ModPacketHandler.RADIATION_DATA,
                     new RadiationDataPacket(environmentRad, clamped));
-                
+
                 if (ModClothConfig.get().enableDebugLogging) {
                     MainRegistry.LOGGER.debug("SERVER: Sent RadiationDataPacket (from setPlayerRads) to player {} with EnvRad: {}, PlayerRad: {}", player.getName().getString(), environmentRad, clamped);
                 }

@@ -181,6 +181,11 @@ public class ModHazards {
                             new HazardEntry(HazardType.PYROPHORIC, 1.0f)
                     ));
                     break;
+                case DIGAMMA:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                        new HazardEntry(HazardType.DIGAMMA, 1.0f)
+                    ));
+                    break;
                 case URANIUM:
                     HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
                         new HazardEntry(HazardType.RADIATION, 0.35f)
@@ -329,6 +334,11 @@ public class ModHazards {
 
         HazardSystem.register(Items.TNT_MINECART, new HazardData(
             new HazardEntry(HazardType.EXPLOSIVE_ON_FIRE, 4.0f)
+        ));
+
+        // DRX FUEL ROD - 1.2M rads
+        HazardSystem.register(ModItems.RBMK_FUEL_DRX.get(), new HazardData(
+            new HazardEntry(HazardType.RADIATION, 1200000f)
         ));
 
         // ТЕГИ 

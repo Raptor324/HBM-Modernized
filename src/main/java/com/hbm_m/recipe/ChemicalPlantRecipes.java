@@ -442,6 +442,18 @@ public class ChemicalPlantRecipes {
                 List.of(new ItemStack(ModItems.PLATE_KEVLAR.get(), 4)),
                 List.of(),
                 60, 300);
+
+        register("chem.assembler", "Machine Assembler Production",
+                List.of(new ItemInput(ModItems.getIngot(ModIngots.STEEL).get(), 8),
+                        new ItemInput(ModItems.PIPE_COPPER.get(), 2),
+                        new ItemInput(ModItems.INSULATOR.get(), 16),
+                        new ItemInput(ModItems.MOTOR.get(), 2),
+                        new ItemInput(ModItems.COIL_TUNGSTEN.get(), 2),
+                        new ItemInput(ModItems.ANALOG_CIRCUIT.get(), 1)),
+                List.of(),
+                List.of(new ItemStack(ModItems.MACHINE_ASSEMBLER.get(), 1)),
+                List.of(),
+                240, 1200);
         
         /// DHC ///
         register("chem.dhc", "Deuterohydrocarbon Production",

@@ -8,6 +8,8 @@ import com.hbm_m.item.ModItems;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 
 import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -70,6 +72,15 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.PLATE_STEEL.get(), 8)
                 .addIngredient(ModItems.PLATE_COPPER.get(), 4)
                 .save(writer, "centrifuge");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.GAS_CENTRIFUGE.get(), 1), 80, 150)
+                .addIngredient(ModItems.CENTRIFUGE_ELEMENT.get(), 4)
+                .addIngredient(Ingredient.of(ItemTags.create(ResourceLocation.fromNamespaceAndPath("hbm_m", "polymer_or_bakelite_bar"))), 8)
+                .addIngredient(ModItems.getIngot(ModIngots.DESH).get(), 2)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 8)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 1)
+                .save(writer, "gas_centrifuge");
 
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.FLUID_TANK.get(), 1), 40, 100)

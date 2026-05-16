@@ -1736,6 +1736,8 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("hazard.hbm_m.radiation", "[Радиоактивный]");
                 add("hazard.hbm_m.radiation.format", "%s РАД/с");
+                add("hazard.hbm_m.digamma", "[Дигамма]");
+                add("hazard.hbm_m.digamma.format", "%s мДРХ/с");
                 add("hazard.hbm_m.hydro_reactive", "[Гидрореактивный]");
                 add("hazard.hbm_m.explosive_on_fire", "[Воспламеняющийся / Взрывоопасный]");
                 add("hazard.hbm_m.pyrophoric", "[Пирофорный / Горячий]");
@@ -1756,6 +1758,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.silk_touch", "Шёлковое касание");
                 add("tooltip.hbm_m.fortune", "Удача (%s)");
                 add("tooltip.hbm_m.right_click", "ПКМ - переключить способность");
+                add("tooltip.hbm_m.rbmk_fuel_drx", "Продвинутый ядерный топливный стержень с повышенной энергоотдачей");
                 add("tooltip.hbm_m.shift_right_click", "Shift + ПКМ - выключить всё");
 
                 add("message.hbm_m.vein_miner.enabled", "Жилковый майнер %s активирован!");
@@ -2228,6 +2231,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.QUANTUM_CHIP.get(), "Quantum Chip");
                 add(ModItems.QUANTUM_CIRCUIT.get(), "Quantum Circuit");
                 add(ModItems.QUANTUM_COMPUTER.get(), "Quantum Computer");
+                add(ModItems.RBMK_FUEL_DRX.get(), "DRX Fuel Rod");
                 add(ModItems.SILICON_CIRCUIT.get(), "Silicone Circuit");
                 add(ModItems.BISMOID_CHIP.get(), "Bismoid Chip");
                 add(ModItems.BISMOID_CIRCUIT.get(), "Bismoid Circuit");
@@ -3577,6 +3581,8 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("hazard.hbm_m.radiation", "[Radioactive]");
                 add("hazard.hbm_m.radiation.format", "%s RAD/s");
+                add("hazard.hbm_m.digamma", "[Digamma]");
+                add("hazard.hbm_m.digamma.format", "%s mDRX/s");
                 add("hazard.hbm_m.hydro_reactive", "[Hydro-reactive]");
                 add("hazard.hbm_m.explosive_on_fire", "[Flammable / Explosive]");
                 add("hazard.hbm_m.pyrophoric", "[Pyrophoric / Hot]");
@@ -3589,6 +3595,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.silk_touch", "Silk Touch");
                 add("tooltip.hbm_m.fortune", "Fortune (%s)");
                 add("tooltip.hbm_m.right_click", "Right click - toggle ability");
+                add("tooltip.hbm_m.rbmk_fuel_drx", "Advanced nuclear fuel rod with enhanced energy output");
                 add("tooltip.hbm_m.shift_right_click", "Shift + Right click - disable all");
 
                 add("message.hbm_m.vein_miner.enabled", "Vein Miner %s enabled!");
@@ -3639,7 +3646,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("commands.hbm_m.explosion.unsupported_key", "This explosion type does not support option: %s");
                 
                 // DEATH ATTACK MESSAGES
-                add("death.attack.radiation", "Player %s died from radiation sickness");
+                add("death.attack.radiation", "Player %s die from Digamma Poisoning");
                 add("death.attack.hardlanding_smash", "%1$s was flattened by %2$s");
 
                 add("advancements.hbm_m.radiation_200.title", "Hooray, Radiation!");

@@ -67,7 +67,7 @@ public class ModClothConfig implements ConfigData {
     // Игрок 
     @Category("player")
     @Gui.Tooltip
-    public float maxPlayerRad = 1000F;
+    public float maxPlayerRad = 100F;
 
     @Category("player")
     @Gui.Tooltip

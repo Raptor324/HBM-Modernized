@@ -47,9 +47,6 @@ public final class MainRegistry {
         ModClothConfig.register();
     }
 
-    private MainRegistry() {
-    }
-
     public static void init() {
         LOGGER.info("Initializing {}", RefStrings.NAME);
 
