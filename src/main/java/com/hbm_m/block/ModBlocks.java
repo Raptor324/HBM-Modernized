@@ -890,6 +890,9 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BEDROCK_OIL = registerBlock("bedrock_oil",
             () -> new Block(Block.Properties.copy(Blocks.STONE).strength(50.0F, 1200.0F).noOcclusion()));
 
+    public static final RegistrySupplier<Block> ORE_BEDROCK_OIL = registerBlock("ore_bedrock_oil",
+            () -> new Block(Block.Properties.copy(Blocks.BEDROCK)));
+
     public static final RegistrySupplier<Block> DEPTH_STONE = registerBlock("depth_stone",
             () -> new DepthOreBlock(Block.Properties.copy(Blocks.DEEPSLATE).strength(4.5F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> DEPTH_BORAX = registerBlock("depth_borax",
