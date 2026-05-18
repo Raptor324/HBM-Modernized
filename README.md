@@ -51,29 +51,44 @@ A modern reimagining of the legendary HBM's Nuclear Tech Mod for Minecraft 1.20.
 
 ## 🛠️ Development Tools
 
-### Localization Linter
-Check for unused localization keys in `ModLanguageProvider.java`:
+Helper scripts live in the [`scripts/`](scripts) and [`tools/`](tools) directories.
+For setup, build, datagen and contribution guidance see
+[`docs/development.md`](docs/development.md).
 
-**Quick Start:**
+### Localization key audit
+
+Compares the `ru_ru` and `en_us` blocks of
+`src/main/java/com/hbm_m/datagen/ModLanguageProvider.java` and reports keys
+that exist in only one language:
+
 ```bash
-# Windows
-util/check_localization.bat
-
-# Unix/Linux/Mac
-make -C util lint-console
-
-# PowerShell
-.\util\check_localization.ps1
+python scripts/compare_lang.py
 ```
 
-**IDE Integration:**
-- Run with GCC format for IDE error parsing:
-  ```bash
-  python util/localization_linter.py --format gcc
-  ```
-- Most IDEs can parse GCC-style error output
+The script edits no files — it just prints the diff to stdout. Run it before
+opening a localization PR to make sure both blocks stay in sync.
 
-📖 **Documentation:** [`util/LOCALIZATION_QUICK_START.md`](util/LOCALIZATION_QUICK_START.md)
+### Registry usage audit
+
+Verifies that every `RegistrySupplier` declared in `ModBlocks` / `ModItems` is
+registered in `MainRegistry` (and not registered more than once):
+
+```bash
+python scripts/check_registry_usage.py
+# CI-friendly variant — exits 1 on any issue
+python scripts/check_registry_usage.py --fail-on-issues
+```
+
+### Fluid duct / pipe model generator
+
+Regenerates the multipart pipe block models and blockstates under
+`src/main/resources/assets/hbm_m/`:
+
+```bash
+python tools/gen_fluid_duct_pipe_models.py
+```
+
+Re-run this whenever you add a new pipe style or change the visibility groups.
 
 ***
 
