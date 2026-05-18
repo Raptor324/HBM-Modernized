@@ -20,7 +20,7 @@ void main() {
     // night vision, darkness, and dimension tint — same as block models.
     vec3 lm = texture(Sampler2, lightmapUV).rgb;
     vec3 lit = baseColor.rgb * lm;
-    lit *= 0.6;
+    lit *= 0.8;
 
     float alpha = baseColor.a * vFadeAlpha;
     if (alpha < 0.01) {

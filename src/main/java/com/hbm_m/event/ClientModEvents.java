@@ -29,6 +29,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 //?}
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -112,12 +113,18 @@ public class ClientModEvents {
                 // we're still before outline + translucent passes.
                 IrisRenderBatch.closePersistentIfActive();
                 org.joml.Matrix4f proj = context.projectionMatrix();
-                MachineAdvancedAssemblerRenderer.flushInstancedBatches(proj);
-                MachineHydraulicFrackiningTowerRenderer.flushInstancedBatches(proj);
-                MachineAssemblerRenderer.flushInstancedBatches(proj);
-                DoorRenderer.flushInstancedBatches(proj);
-                MachinePressRenderer.flushInstancedBatches(proj);
-                MachineChemicalPlantRenderer.flushInstancedBatches(proj);
+                com.hbm_m.client.render.MdiBatchCoordinator mdiSession =
+                        com.hbm_m.client.render.MdiBatchCoordinator.beginFrame(proj);
+                try {
+                    MachineAdvancedAssemblerRenderer.flushInstancedBatches(proj);
+                    MachineHydraulicFrackiningTowerRenderer.flushInstancedBatches(proj);
+                    MachineAssemblerRenderer.flushInstancedBatches(proj);
+                    DoorRenderer.flushInstancedBatches(proj);
+                    MachinePressRenderer.flushInstancedBatches(proj);
+                    MachineChemicalPlantRenderer.flushInstancedBatches(proj);
+                } finally {
+                    if (mdiSession != null) mdiSession.endFrame();
+                }
             }
             IrisExtendedShaderAccess.tickPass();
             LightSampleCache.onFrameStart();
@@ -143,21 +150,49 @@ public class ClientModEvents {
     //? if forge {
     @SubscribeEvent
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
+            // Тот же Frustum, что LevelRenderer использует в цикле BER сразу после этого события.
+            ModClothConfig cfg = ModClothConfig.get();
+            if (!cfg.enableOcclusionCulling
+                    || cfg.cullingMode == ModClothConfig.CullingMode.LEGACY_RAYCAST
+                    || ShaderCompatibilityDetector.isExternalShaderActive()) {
+                OcclusionCullingHelper.captureBlockEntityPassFrustum(null);
+            } else {
+                OcclusionCullingHelper.captureBlockEntityPassFrustum(event.getFrustum());
+            }
+            return;
+        }
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
+            org.joml.Matrix4f proj = event.getProjectionMatrix();
             if (ModClothConfig.useInstancedBatching()) {
                 // Tear down any IrisRenderBatch opened during BER (e.g. Chemical Plant
                 // Slider/Spinner + instanced Base/Frame). flushBatchIris does its own
                 // shader.apply/clear; leaving ACTIVE set after clear() poisons the next
                 // frame with "No active program" / matrix uniform errors.
                 IrisRenderBatch.closePersistentIfActive();
-                org.joml.Matrix4f proj = event.getProjectionMatrix();
-                MachineAdvancedAssemblerRenderer.flushInstancedBatches(proj);
-                MachineHydraulicFrackiningTowerRenderer.flushInstancedBatches(proj);
-                MachineAssemblerRenderer.flushInstancedBatches(proj);
-                DoorRenderer.flushInstancedBatches(proj);
-                MachinePressRenderer.flushInstancedBatches(proj);
-                MachineChemicalPlantRenderer.flushInstancedBatches(proj);
+                // Try to open an MDI coordinator session for this flush window.
+                // Returns null when MDI/base_instance is unavailable, the
+                // config flag is off, or an Iris/Oculus shader pack is active —
+                // in those cases the renderers below take their legacy
+                // per-renderer glDrawElementsInstanced path and the
+                // coordinator does nothing.
+                com.hbm_m.client.render.MdiBatchCoordinator mdiSession =
+                        com.hbm_m.client.render.MdiBatchCoordinator.beginFrame(proj);
+                try {
+                    MachineAdvancedAssemblerRenderer.flushInstancedBatches(proj);
+                    MachineHydraulicFrackiningTowerRenderer.flushInstancedBatches(proj);
+                    MachineAssemblerRenderer.flushInstancedBatches(proj);
+                    DoorRenderer.flushInstancedBatches(proj);
+                    MachinePressRenderer.flushInstancedBatches(proj);
+                    MachineChemicalPlantRenderer.flushInstancedBatches(proj);
+                } finally {
+                    if (mdiSession != null) mdiSession.endFrame();
+                }
             }
+            // После BER (и endFrame MDI): GPU culling — иначе beginFrame в onFrameStart
+            // раньше очищал staging до dispatch и compute не видел AABB BER.
+            OcclusionCullingHelper.runGpuCullingAfterBlockEntities(
+                    proj, Minecraft.getInstance().gameRenderer.getMainCamera().getPosition());
             // Bump the per-pass shader-lookup cache in IrisExtendedShaderAccess so
             // the next frame re-resolves the shader from the (possibly rebuilt)
             // pipeline instead of returning a stale instance. Within a single
@@ -171,9 +206,9 @@ public class ClientModEvents {
             // dispatches). Saves ~17% on dense multiblock scenes by collapsing
             // 11×N redundant 6-block lookups down to N per frame.
             LightSampleCache.onFrameStart();
-            // Кэш окклюжена тоже должен жить кадр, а не тик (иначе при FPS>TPS
-            // одна и та же видимость переиспользуется несколько рендер-кадров
-            // и даёт заметный flicker на BER-only моделях).
+            // Счётчик render-кадра для окклюжена + prune LRU; сам ray-march может
+            // переиспользоваться на 1–20 тиков, пока камера почти не двигалась и
+            // не было инвалидации геометрии (см. OcclusionCullingHelper).
             OcclusionCullingHelper.onFrameStart();
         } else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
             // Safety net for the IrisRenderBatch persistent-shadow path. The normal

@@ -11,9 +11,11 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.AABB;
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -22,8 +24,8 @@ import net.fabricmc.api.Environment;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
+//?}
 //? if fabric {
 /*@Environment(EnvType.CLIENT)*///?}
 public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends BakedModel>
@@ -119,7 +121,36 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
     }
 
     protected boolean isInViewFrustum(T blockEntity) {
-        return true;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || mc.levelRenderer == null) {
+            return true;
+        }
+        Frustum frustum = mc.levelRenderer.getFrustum();
+        if (frustum == null) {
+            return true;
+        }
+        AABB box = frustumCullBounds(blockEntity);
+        return frustum.isVisible(box);
+    }
+
+    /**
+     * AABB для frustum-теста до дорогого occlusion ray-march.
+     * Forge: {@link net.minecraftforge.common.extensions.IForgeBlockEntity#getRenderBoundingBox()}.
+     * Fabric: только известные подклассы с явным методом (остальные — 1 блок + запас).
+     */
+    private static AABB frustumCullBounds(BlockEntity blockEntity) {
+        //? if forge {
+        return ((net.minecraftforge.common.extensions.IForgeBlockEntity) blockEntity).getRenderBoundingBox();
+        //?}
+        //? if fabric {
+        /*if (blockEntity instanceof com.hbm_m.block.entity.BaseMachineBlockEntity b) {
+            return b.getRenderBoundingBox();
+        }
+        if (blockEntity instanceof com.hbm_m.block.entity.doors.DoorBlockEntity d) {
+            return d.getRenderBoundingBox();
+        }
+        return new AABB(blockEntity.getBlockPos()).inflate(1.0D);*/
+        //?}
     }
 
     // -----------------------------------------------------------------------

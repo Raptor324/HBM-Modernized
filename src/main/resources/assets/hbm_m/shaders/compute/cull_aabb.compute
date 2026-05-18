@@ -1,0 +1,73 @@
+#version 430
+
+// HBM-Modernized GPU AABB frustum culling.
+// One thread per BlockEntity. Reads AABB+key from input SSBO,
+// tests against 6 frustum planes packed as vec4(nx,ny,nz,d) with
+// plane equation n.xyz * p + d >= 0 inside frustum.
+// Writes 0/1 visibility flag to output SSBO at the same index.
+
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+struct AABBEntry {
+    vec3 minPos;
+    uint flags;
+    vec3 maxPos;
+    uint instanceIndex;
+};
+
+layout(std430, binding = 0) readonly buffer InputBuffer {
+    AABBEntry entries[];
+} uInput;
+
+layout(std430, binding = 1) writeonly buffer OutputBuffer {
+    uint visible[];
+} uOutput;
+
+layout(std140, binding = 0) uniform CullParams {
+    vec4 planes[6];
+    vec4 cameraPosAndCount; // xyz = camera pos, w = entry count
+    vec4 cullDistances;     // x = nearAlwaysVisibleSq, y = maxDistSq, zw unused
+} uParams;
+
+bool aabbInsideFrustum(vec3 mn, vec3 mx) {
+    // Standard p-vertex test. For each plane pick the corner farthest along
+    // its normal; if that corner is outside, the whole AABB is outside.
+    for (int i = 0; i < 6; ++i) {
+        vec4 plane = uParams.planes[i];
+        vec3 p = vec3(
+            plane.x >= 0.0 ? mx.x : mn.x,
+            plane.y >= 0.0 ? mx.y : mn.y,
+            plane.z >= 0.0 ? mx.z : mn.z
+        );
+        if (dot(plane.xyz, p) + plane.w < 0.0) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+    uint count = uint(uParams.cameraPosAndCount.w);
+    if (id >= count) return;
+
+    AABBEntry e = uInput.entries[id];
+    vec3 mn = e.minPos;
+    vec3 mx = e.maxPos;
+
+    vec3 center = 0.5 * (mn + mx);
+    vec3 d = center - uParams.cameraPosAndCount.xyz;
+    float distSq = dot(d, d);
+
+    uint vis = 0u;
+
+    if (distSq < uParams.cullDistances.x) {
+        vis = 1u;
+    } else if (uParams.cullDistances.y > 0.0 && distSq > uParams.cullDistances.y) {
+        vis = 0u;
+    } else if (aabbInsideFrustum(mn, mx)) {
+        vis = 1u;
+    }
+
+    uOutput.visible[id] = vis;
+}

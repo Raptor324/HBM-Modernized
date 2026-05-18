@@ -293,19 +293,48 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     private static final String ADV_ASM_CLIENT_TICKER = "com.hbm_m.client.machine.AdvancedAssemblerClientTicker";
 
+    private static volatile java.lang.reflect.Method cachedAdvAsmClientTick;
+    private static volatile java.lang.reflect.Method cachedAdvAsmOnRemoved;
+    private static volatile java.lang.reflect.Method cachedAdvAsmGetRingAngle;
+    private static volatile java.lang.reflect.Method cachedAdvAsmGetPrevRingAngle;
+    private static volatile java.lang.reflect.Method cachedAdvAsmGetArms;
+    private static volatile Class<?> cachedAdvAsmArmComponentType;
+
+    private static void ensureAdvAssemblerReflectCache() {
+        if (cachedAdvAsmGetRingAngle != null) {
+            return;
+        }
+        synchronized (MachineAdvancedAssemblerBlockEntity.class) {
+            if (cachedAdvAsmGetRingAngle != null) {
+                return;
+            }
+            try {
+                Class<?> cl = Class.forName(ADV_ASM_CLIENT_TICKER);
+                cachedAdvAsmClientTick = cl.getMethod("clientTick", Level.class, BlockPos.class, BlockState.class, MachineAdvancedAssemblerBlockEntity.class);
+                cachedAdvAsmOnRemoved = cl.getMethod("onRemoved");
+                cachedAdvAsmGetRingAngle = cl.getMethod("getRingAngle");
+                cachedAdvAsmGetPrevRingAngle = cl.getMethod("getPrevRingAngle");
+                cachedAdvAsmGetArms = cl.getMethod("getArms");
+                cachedAdvAsmArmComponentType = Class.forName(ADV_ASM_CLIENT_TICKER + "$AssemblerArm");
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     private static void invokeAdvAssemblerClientTick(Object ticker, Level level, BlockPos pos, BlockState state, MachineAdvancedAssemblerBlockEntity entity) {
+        ensureAdvAssemblerReflectCache();
         try {
-            Class.forName(ADV_ASM_CLIENT_TICKER)
-                .getMethod("clientTick", Level.class, BlockPos.class, BlockState.class, MachineAdvancedAssemblerBlockEntity.class)
-                .invoke(ticker, level, pos, state, entity);
+            cachedAdvAsmClientTick.invoke(ticker, level, pos, state, entity);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
     }
 
     private static void invokeAdvAssemblerClientTickerOnRemoved(Object ticker) {
+        ensureAdvAssemblerReflectCache();
         try {
-            Class.forName(ADV_ASM_CLIENT_TICKER).getMethod("onRemoved").invoke(ticker);
+            cachedAdvAsmOnRemoved.invoke(ticker);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -837,9 +866,10 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         if (!clientTicker.isPresent()) {
             return 0f;
         }
+        ensureAdvAssemblerReflectCache();
         try {
             Object t = clientTicker.orElseThrow(IllegalStateException::new);
-            return (Float) Class.forName(ADV_ASM_CLIENT_TICKER).getMethod("getRingAngle").invoke(t);
+            return (Float) cachedAdvAsmGetRingAngle.invoke(t);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -850,9 +880,10 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         if (!clientTicker.isPresent()) {
             return 0f;
         }
+        ensureAdvAssemblerReflectCache();
         try {
             Object t = clientTicker.orElseThrow(IllegalStateException::new);
-            return (Float) Class.forName(ADV_ASM_CLIENT_TICKER).getMethod("getPrevRingAngle").invoke(t);
+            return (Float) cachedAdvAsmGetPrevRingAngle.invoke(t);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -863,21 +894,18 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         if (!clientTicker.isPresent()) {
             return emptyAssemblerArmsArray();
         }
+        ensureAdvAssemblerReflectCache();
         try {
             Object t = clientTicker.orElseThrow(IllegalStateException::new);
-            return Class.forName(ADV_ASM_CLIENT_TICKER).getMethod("getArms").invoke(t);
+            return cachedAdvAsmGetArms.invoke(t);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
     }
 
     private static Object emptyAssemblerArmsArray() {
-        try {
-            Class<?> arm = Class.forName(ADV_ASM_CLIENT_TICKER + "$AssemblerArm");
-            return java.lang.reflect.Array.newInstance(arm, 0);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        ensureAdvAssemblerReflectCache();
+        return java.lang.reflect.Array.newInstance(cachedAdvAsmArmComponentType, 0);
     }
     //?}
 

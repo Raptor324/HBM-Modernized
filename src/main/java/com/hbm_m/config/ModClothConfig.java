@@ -200,7 +200,28 @@ public class ModClothConfig implements ConfigData {
 
     @Category("rendering")
     @Gui.Tooltip
+    public boolean useGpuCulling = false;
+
+    public enum CullingMode { AUTO, CPU_FRUSTUM, GPU_COMPUTE, LEGACY_RAYCAST }
+
+    @Category("rendering")
+    @Gui.Tooltip
+    @Gui.EnumHandler(option = Gui.EnumHandler.EnumDisplayOption.BUTTON)
+    public CullingMode cullingMode = CullingMode.LEGACY_RAYCAST;
+
+    @Category("rendering")
+    @Gui.Tooltip
     public boolean useInstancedStaticRendering = true;
+
+    /**
+     * Аггрегация instanced draw call'ов в один {@code glMultiDrawElementsIndirect}.
+     * Требует GL 4.0 + ARB_base_instance (GL 4.2). На macOS (GL 4.1) и старых
+     * драйверах автоматически выключается через capability detection.
+     * Отключите при проблемах с драйвером.
+     */
+    @Category("rendering")
+    @Gui.Tooltip
+    public boolean useMultiDrawIndirect = false;
 
     @Category("rendering")
     @Gui.Tooltip

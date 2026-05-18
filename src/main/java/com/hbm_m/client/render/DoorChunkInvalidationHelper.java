@@ -61,6 +61,7 @@ public class DoorChunkInvalidationHelper {
             try {
                 BlockState state = mc.level.getBlockState(pos);
                 mc.levelRenderer.blockChanged(mc.level, pos, state, state, Block.UPDATE_CLIENTS);
+                OcclusionCullingHelper.onClientWorldGeometryMayHaveChanged();
             } catch (Exception e) {
                 MainRegistry.LOGGER.debug("Door chunk invalidation at {}: {}", pos, e.getMessage());
             }

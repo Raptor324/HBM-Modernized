@@ -704,6 +704,7 @@ public class ClientSetup {
 
     private static void clearClientCachesDeferred() {
         com.mojang.blaze3d.systems.RenderSystem.recordRenderCall(() -> {
+            com.hbm_m.client.render.MdiBatchCoordinator.discardActiveSessionNoDispatch();
             MachineAdvancedAssemblerRenderer.clearCaches();
             MachineAssemblerRenderer.clearCaches();
             MachineHydraulicFrackiningTowerRenderer.clearCaches();
@@ -711,6 +712,7 @@ public class ClientSetup {
             MachinePressRenderer.clearCaches();
             MachineChemicalPlantRenderer.clearCaches();
             MeshRenderCache.clearAll();
+            com.hbm_m.client.render.MdiGeometryAtlas.resetForResourceLifecycle();
             AbstractObjArmorLayer.clearAllCaches();
         });
     }
@@ -1232,6 +1234,7 @@ public class ClientSetup {
                 // включении шейдера - clearCaches вызывался во время render pass).
                 com.mojang.blaze3d.systems.RenderSystem.recordRenderCall(() -> {
                     try {
+                        com.hbm_m.client.render.MdiBatchCoordinator.discardActiveSessionNoDispatch();
                         MachineAdvancedAssemblerRenderer.clearCaches();
                         MachineAssemblerRenderer.clearCaches();
                         MachineHydraulicFrackiningTowerRenderer.clearCaches();
@@ -1239,6 +1242,7 @@ public class ClientSetup {
                         MachinePressRenderer.clearCaches();
                         MachineChemicalPlantRenderer.clearCaches();
                         MeshRenderCache.clearAll();
+                        com.hbm_m.client.render.MdiGeometryAtlas.resetForResourceLifecycle();
                         AbstractObjArmorLayer.clearAllCaches();
                         MainRegistry.LOGGER.info("VBO cache cleanup completed (deferred to render thread)");
                     } catch (Exception e) {

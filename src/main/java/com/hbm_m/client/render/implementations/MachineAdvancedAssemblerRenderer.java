@@ -9,6 +9,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 /*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 *///?}
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -39,7 +40,11 @@ import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
+
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
@@ -57,9 +62,9 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
     private MachineAdvancedAssemblerVboRenderer gpu;
     private MachineAdvancedAssemblerBakedModel cachedModel;
     
-    // Instanced рендереры
-    private static volatile InstancedStaticPartRenderer instancedBase;
-    private static volatile InstancedStaticPartRenderer instancedFrame;
+    // Instanced рендереры: два merged static VBO (Base / Base+Frame) + анимированные части
+    private static volatile InstancedStaticPartRenderer instancedStaticClusterBase;
+    private static volatile InstancedStaticPartRenderer instancedStaticClusterBaseFrame;
     private static volatile InstancedStaticPartRenderer instancedRing;
     private static volatile InstancedStaticPartRenderer instancedArmLower1;
     private static volatile InstancedStaticPartRenderer instancedArmUpper1;
@@ -79,6 +84,18 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
     private final Matrix4f matUpper = new Matrix4f();
     private final Matrix4f matHead = new Matrix4f();
     private final Matrix4f matSpike = new Matrix4f();
+
+    /**
+     * Снимок анимации на один кадр для текущей машины: один раз читаем BE/тикер,
+     * считаем кольцо и копируем {@link #matRing} в {@link #animMatRing}.
+     */
+    private final Matrix4f animMatRing = new Matrix4f();
+    @Nullable
+    private AdvancedAssemblerClientTicker.AssemblerArm[] animArmsSnapshot;
+
+    /** Immutable quad lists для merged static mesh (vanilla VBO fallback). */
+    private static volatile List<BakedQuad> staticClusterBaseQuads = List.of();
+    private static volatile List<BakedQuad> staticClusterBaseFrameQuads = List.of();
 
     /**
      * Multiplier turning degrees into radians as a single float multiply. Replaces
@@ -118,10 +135,32 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         try {
             MainRegistry.LOGGER.info("MachineAdvancedAssemblerRenderer: Initializing instanced renderers...");
 
-            instancedBase = createInstancedForPart(model, "Base");
-            instancedFrame = createInstancedForPart(model, "Frame");
-            
-            // Анимированные части (Frame - в BlockState/BakedModel)
+            PartGeometry geoBase = MeshRenderCache.getOrCompilePartGeometry("assembler_Base", model.getPart("Base"));
+            if (geoBase.isEmpty()) {
+                MainRegistry.LOGGER.error("MachineAdvancedAssemblerRenderer: Base geometry empty");
+                clearCaches();
+                return;
+            }
+            List<BakedQuad> baseQuads = geoBase.solidQuads();
+            staticClusterBaseQuads = baseQuads;
+
+            var merged = new ArrayList<BakedQuad>(baseQuads);
+            BakedModel framePart = model.getPart("Frame");
+            if (framePart != null) {
+                PartGeometry geoFrame = MeshRenderCache.getOrCompilePartGeometry("assembler_Frame", framePart);
+                if (!geoFrame.isEmpty()) {
+                    merged.addAll(geoFrame.solidQuads());
+                }
+            }
+            staticClusterBaseFrameQuads = List.copyOf(merged);
+
+            instancedStaticClusterBase = createInstancedFromQuads(staticClusterBaseQuads, "staticCluster_base");
+            if (merged.size() > baseQuads.size()) {
+                instancedStaticClusterBaseFrame = createInstancedFromQuads(staticClusterBaseFrameQuads, "staticCluster_base_frame");
+            } else {
+                instancedStaticClusterBaseFrame = instancedStaticClusterBase;
+            }
+
             instancedRing = createInstancedForPart(model, "Ring");
             instancedArmLower1 = createInstancedForPart(model, "ArmLower1");
             instancedArmUpper1 = createInstancedForPart(model, "ArmUpper1");
@@ -152,6 +191,17 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         var data = geo.toVboData(partName);
         if (data == null) return null;
         return new InstancedStaticPartRenderer(data, geo.solidQuads());
+    }
+
+    private static InstancedStaticPartRenderer createInstancedFromQuads(List<BakedQuad> quads, String vboLabel) {
+        if (quads == null || quads.isEmpty()) {
+            return null;
+        }
+        var data = PartGeometry.buildVboDataFromQuads(quads, vboLabel);
+        if (data == null) {
+            return null;
+        }
+        return new InstancedStaticPartRenderer(data, quads);
     }
 
     //  Wrapper с double-check locking
@@ -325,29 +375,25 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         boolean anyFading = staticFade < 0.99f || (animFade >= 0 && animFade < 0.99f);
         boolean effectiveBatching = useBatching && !anyFading;
 
-        // 1. Static parts (Base + Frame).
+        // 1. Static parts: один merged VBO (только Base или Base+Frame по BlockState).
         if (useVboPath) {
             poseStack.pushPose();
             poseStack.translate(-0.5f, 0.0f, -0.5f);
 
-            // Base
-            if (effectiveBatching && instancedBase != null && instancedBase.isInitialized()) {
-                poseStack.pushPose();
-                instancedBase.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
-                poseStack.popPose();
-            } else {
-                gpu.renderStaticBase(poseStack, dynamicLight, blockPos, be, bufferSource);
-            }
+            boolean frameVisible = blockState.hasProperty(MachineAdvancedAssemblerBlock.FRAME)
+                    && blockState.getValue(MachineAdvancedAssemblerBlock.FRAME);
+            InstancedStaticPartRenderer staticCluster = frameVisible ? instancedStaticClusterBaseFrame : instancedStaticClusterBase;
+            List<BakedQuad> staticQuads = frameVisible ? staticClusterBaseFrameQuads : staticClusterBaseQuads;
 
-            // Frame
-            if (blockState.hasProperty(MachineAdvancedAssemblerBlock.FRAME) && blockState.getValue(MachineAdvancedAssemblerBlock.FRAME)) {
-                if (effectiveBatching && instancedFrame != null && instancedFrame.isInitialized()) {
-                    poseStack.pushPose();
-                    instancedFrame.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
-                    poseStack.popPose();
-                } else {
-                    gpu.renderStaticFrame(poseStack, dynamicLight, blockPos, be, bufferSource);
-                }
+            if (effectiveBatching && staticCluster != null && staticCluster.isInitialized()) {
+                poseStack.pushPose();
+                staticCluster.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
+                poseStack.popPose();
+            } else if (!staticQuads.isEmpty()) {
+                String cacheKey = frameVisible
+                        ? MachineAdvancedAssemblerVboRenderer.STATIC_CLUSTER_CACHE_BASE_FRAME
+                        : MachineAdvancedAssemblerVboRenderer.STATIC_CLUSTER_CACHE_BASE;
+                gpu.renderStaticCluster(poseStack, dynamicLight, blockPos, be, bufferSource, staticQuads, cacheKey);
             }
             poseStack.popPose();
         }
@@ -355,6 +401,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         // 2. Animated parts: fade out at modelUpdateDistance.
         if (animFade < 0) return;
         SingleMeshVboRenderer.setFadeAlpha(Math.min(staticFade, animFade));
+        prepareAssemblerAnimation(be, partialTick);
         renderAnimated(be, partialTick, poseStack, dynamicLight, blockPos, bufferSource, effectiveBatching);
         SingleMeshVboRenderer.setFadeAlpha(staticFade);
     }
@@ -364,8 +411,10 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
      * При useInstancedBatching использует матрицы из события.
      */
     public static void flushInstancedBatches(org.joml.Matrix4f projectionMatrix) {
-        flushInstanced(projectionMatrix, instancedBase);
-        flushInstanced(projectionMatrix, instancedFrame);
+        flushInstanced(projectionMatrix, instancedStaticClusterBase);
+        if (instancedStaticClusterBaseFrame != instancedStaticClusterBase) {
+            flushInstanced(projectionMatrix, instancedStaticClusterBaseFrame);
+        }
         flushInstanced(projectionMatrix, instancedRing);
         flushInstanced(projectionMatrix, instancedArmLower1);
         flushInstanced(projectionMatrix, instancedArmUpper1);
@@ -381,8 +430,16 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
      * Очищает кэши instanced рендереров (вызывается при периодической очистке памяти)
      */
     public static void clearCaches() {
-        cleanupInstanced(instancedBase); instancedBase = null;
-        cleanupInstanced(instancedFrame); instancedFrame = null;
+        staticClusterBaseQuads = List.of();
+        staticClusterBaseFrameQuads = List.of();
+        InstancedStaticPartRenderer bf = instancedStaticClusterBaseFrame;
+        InstancedStaticPartRenderer b = instancedStaticClusterBase;
+        cleanupInstanced(b);
+        if (bf != b) {
+            cleanupInstanced(bf);
+        }
+        instancedStaticClusterBase = null;
+        instancedStaticClusterBaseFrame = null;
         cleanupInstanced(instancedRing); instancedRing = null;
         cleanupInstanced(instancedArmLower1); instancedArmLower1 = null;
         cleanupInstanced(instancedArmUpper1); instancedArmUpper1 = null;
@@ -404,28 +461,40 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         if (r != null) r.flush(projectionMatrix);
     }
 
+    /** Один проход чтения углов/рук с BE и матрицы кольца на кадр для текущей машины. */
+    private void prepareAssemblerAnimation(MachineAdvancedAssemblerBlockEntity be, float partialTick) {
+        float ringLerped = Mth.lerp(partialTick, be.getPrevRingAngle(), be.getRingAngle());
+        setRingBaseMatrix(ringLerped, getFacing(be));
+        animMatRing.set(matRing);
+        animArmsSnapshot = unpackArms(be.getArms());
+    }
+
+    @Nullable
+    private static AdvancedAssemblerClientTicker.AssemblerArm[] unpackArms(Object arms) {
+        if (arms instanceof AdvancedAssemblerClientTicker.AssemblerArm[] a) {
+            return a;
+        }
+        return null;
+    }
+
     private void renderAnimated(MachineAdvancedAssemblerBlockEntity be, float pt,
                                 PoseStack pose, int blockLight, BlockPos blockPos,
                                 MultiBufferSource bufferSource, boolean useVboPath) {
-        float ring = Mth.lerp(pt, be.getPrevRingAngle(), be.getRingAngle());
-        setRingBaseMatrix(ring, getFacing(be));
-
         // Инстансинг только когда нет стороннего шейдера (VBO путь)
         boolean useBatching = useVboPath && ModClothConfig.useInstancedBatching();
         if (useBatching && instancedRing != null && instancedRing.isInitialized()) {
             pose.pushPose();
-            pose.last().pose().mul(matRing);
+            pose.last().pose().mul(animMatRing);
             instancedRing.addInstance(pose, blockLight, blockPos, be, bufferSource);
             pose.popPose();
         } else {
-            gpu.renderAnimatedPart(pose, blockLight, "Ring", matRing, blockPos, be, bufferSource);
+            gpu.renderAnimatedPart(pose, blockLight, "Ring", animMatRing, blockPos, be, bufferSource);
         }
 
-        AdvancedAssemblerClientTicker.AssemblerArm[] arms =
-            (AdvancedAssemblerClientTicker.AssemblerArm[]) be.getArms();
+        AdvancedAssemblerClientTicker.AssemblerArm[] arms = animArmsSnapshot;
         if (arms != null && arms.length >= 2) {
-            renderArm(arms[0], false, pt, pose, blockLight, matRing, blockPos, be, bufferSource, useBatching);
-            renderArm(arms[1], true, pt, pose, blockLight, matRing, blockPos, be, bufferSource, useBatching);
+            renderArm(arms[0], false, pt, pose, blockLight, animMatRing, blockPos, be, bufferSource, useBatching);
+            renderArm(arms[1], true, pt, pose, blockLight, animMatRing, blockPos, be, bufferSource, useBatching);
         }
     }
 

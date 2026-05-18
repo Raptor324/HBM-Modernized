@@ -142,6 +142,21 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     private int instanceVboId = -1; // VBO для instance attributes
     private FloatBuffer instanceBuffer;
 
+    /**
+     * CPU-side retained copies of the vertex bytes + indices used to seed the
+     * shared {@link MdiGeometryAtlas} on first MDI-eligible flush. Held only
+     * when the renderer is unsliced (the only layout the atlas understands
+     * today). Native-allocated; freed in {@link #cleanup}.
+     * <p>
+     * Memory cost: pos(12)+normal(12)+uv(8)=32B per vertex; a typical machine
+     * part is &lt;5k vertices = &lt;160KB per renderer. With ~50 distinct part
+     * renderers across all machines that's ~8MB once-resident — acceptable
+     * for the per-frame draw call collapse we get back.
+     */
+    private java.nio.ByteBuffer atlasVertexBytesRetained;
+    private java.nio.IntBuffer atlasIndicesRetained;
+    private int atlasIndexCountRetained;
+
     private static final Cleaner CLEANER = Cleaner.create();
     private Cleaner.Cleanable instanceBufferCleanable;
 
@@ -366,6 +381,36 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
                     MainRegistry.LOGGER.error("Failed to free instanceBuffer via Cleaner", t);
                 }
             });
+
+            // Retain CPU-side copies of vertex/index data for lazy MDI atlas
+            // registration. Only unsliced renderers participate in MDI today;
+            // sliced ones use a different attribute layout and shader.
+            if (!useSlicedLight && data.byteBuffer != null && data.indices != null
+                    && data.indices.remaining() > 0) {
+                try {
+                    java.nio.ByteBuffer srcVb = data.byteBuffer.duplicate();
+                    atlasVertexBytesRetained = MemoryUtil.memAlloc(srcVb.remaining());
+                    atlasVertexBytesRetained.put(srcVb);
+                    atlasVertexBytesRetained.flip();
+
+                    java.nio.IntBuffer srcIb = data.indices.duplicate();
+                    atlasIndexCountRetained = srcIb.remaining();
+                    atlasIndicesRetained = MemoryUtil.memAllocInt(atlasIndexCountRetained);
+                    atlasIndicesRetained.put(srcIb);
+                    atlasIndicesRetained.flip();
+                } catch (Throwable t) {
+                    MainRegistry.LOGGER.warn("InstancedStaticPartRenderer: failed to retain MDI atlas copy ({}); MDI path will skip this renderer", t.toString());
+                    if (atlasVertexBytesRetained != null) {
+                        MemoryUtil.memFree(atlasVertexBytesRetained);
+                        atlasVertexBytesRetained = null;
+                    }
+                    if (atlasIndicesRetained != null) {
+                        MemoryUtil.memFree(atlasIndicesRetained);
+                        atlasIndicesRetained = null;
+                    }
+                    atlasIndexCountRetained = 0;
+                }
+            }
 
             data.close();
 
@@ -951,6 +996,52 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     }
 
     private void flushBatchVanilla(Matrix4f projectionMatrix) {
+        boolean alreadyFlipped = false;
+        // MDI fast path: if a coordinator session is active and this renderer
+        // is eligible (unsliced, has retained atlas-side geometry), defer the
+        // draw to the coordinator's single glMultiDrawElementsIndirect at the
+        // end of the global flush window. The coordinator will copy our
+        // already-flipped instanceBuffer into the shared atlas instance VBO
+        // at a per-part baseInstance offset and emit ONE GL call for ALL
+        // queued parts across ALL machines that frame.
+        //
+        // Eligibility (per InstancedStaticPartRenderer):
+        //   - useSlicedLight == false (atlas layout is the unsliced 30-float
+        //     record only; sliced renderers fall through to legacy below)
+        //   - atlas vertex/index copies retained (init succeeded)
+        //   - external shader NOT active (coordinator returns null in that
+        //     case anyway, but we check here to short-circuit cheaply)
+        //
+        // On rejection, fall through to the existing per-renderer
+        // glDrawElementsInstanced path with no behavioural change.
+        MdiBatchCoordinator coord = MdiBatchCoordinator.active();
+        if (coord != null
+                && !useSlicedLight
+                && atlasVertexBytesRetained != null
+                && atlasIndicesRetained != null
+                && atlasIndexCountRetained > 0
+                && !com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()) {
+            // Flip our instance buffer ONCE so the coordinator can stream it
+            // into the atlas instance VBO; the legacy path also flips here so
+            // the buffer state ends up identical regardless of which path
+            // accepted the batch.
+            instanceBuffer.flip();
+            alreadyFlipped = true;
+            boolean accepted = coord.submit(this, indexCount, instanceCount,
+                    instanceDataSize, instanceBuffer,
+                    atlasVertexBytesRetained, atlasIndicesRetained, atlasIndexCountRetained);
+            if (accepted) {
+                // Coordinator owns the draw now. Skip the legacy GL emission;
+                // the caller (flush) will reset instanceCount and clear the
+                // buffer as part of its normal post-flush teardown.
+                return;
+            }
+            // Coordinator rejected (atlas not ready, layout mismatch, etc.);
+            // rewind so the legacy path below sees a fresh flipped buffer.
+            // instanceBuffer was already flipped above — legacy path below
+            // expects exactly that, so no rewind needed.
+        }
+
         ShaderInstance shader = useSlicedLight ? ModShaders.getBlockLitInstancedSlicedShader()
                                                : ModShaders.getBlockLitInstancedShader();
         if (shader == null) {
@@ -963,7 +1054,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             return;
         }
 
-        instanceBuffer.flip();
+        if (!alreadyFlipped) {
+            instanceBuffer.flip();
+        }
 
         int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
@@ -1568,6 +1661,11 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         final int instanceVboToDelete = this.instanceVboId;
         final Cleaner.Cleanable bufferCleanable = this.instanceBufferCleanable;
         final IrisCompanionMesh companionToDestroy = this.irisCompanion;
+        final java.nio.ByteBuffer atlasVbToFree = this.atlasVertexBytesRetained;
+        final java.nio.IntBuffer atlasIbToFree = this.atlasIndicesRetained;
+        this.atlasVertexBytesRetained = null;
+        this.atlasIndicesRetained = null;
+        this.atlasIndexCountRetained = 0;
 
         this.instanceVboId = -1;
         this.instanceBuffer = null;
@@ -1583,8 +1681,12 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         this.uBrightness = null;
         this.uFadeAlpha = null;
 
+        final InstancedStaticPartRenderer mdiEvictTarget = this;
         RenderSystem.recordRenderCall(() -> {
             try {
+                // Снять запись из MDI-атласа до GL-delete: иначе GeoRecord живёт дольше рендерера
+                // и repack продолжает тянуть «зомби»-геометрию (см. MdiGeometryAtlas.evictRendererIfRegistered).
+                com.hbm_m.client.render.MdiGeometryAtlas.evictRendererIfRegistered(mdiEvictTarget);
                 if (instanceVboToDelete != -1) {
                     GL15.glDeleteBuffers(instanceVboToDelete);
                 }
@@ -1593,6 +1695,12 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
                 }
                 if (companionToDestroy != null) {
                     companionToDestroy.destroy();
+                }
+                if (atlasVbToFree != null) {
+                    MemoryUtil.memFree(atlasVbToFree);
+                }
+                if (atlasIbToFree != null) {
+                    MemoryUtil.memFree(atlasIbToFree);
                 }
             } catch (Exception e) {
                 MainRegistry.LOGGER.error("InstancedStaticPartRenderer.cleanup failed", e);

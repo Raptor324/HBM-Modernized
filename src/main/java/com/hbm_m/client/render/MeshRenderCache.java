@@ -171,6 +171,49 @@ public class MeshRenderCache {
         return vbo;
     }
 
+    /**
+     * Один {@link SingleMeshVboRenderer} из явного списка квадов (например merge нескольких частей).
+     * Квады копируются в immutable-список для Iris-пути; ключ должен быть уникален в рамках кэша.
+     */
+    public static SingleMeshVboRenderer getOrCreateRendererFromQuadList(String partKey, List<BakedQuad> quads) {
+        if (FAILED_RENDERER_KEYS.contains(partKey)) {
+            return null;
+        }
+        if (quads == null || quads.isEmpty()) {
+            return null;
+        }
+        return PART_RENDERERS.computeIfAbsent(partKey, key -> {
+            String partName = partNameFromKey(key);
+            final SingleMeshVboRenderer.VboData prebuiltData = PartGeometry.buildVboDataFromQuads(quads, partName);
+            if (prebuiltData == null) {
+                FAILED_RENDERER_KEYS.add(key);
+                return null;
+            }
+            final List<BakedQuad> quadsForIris = List.copyOf(quads);
+            MainRegistry.LOGGER.debug("MeshRenderCache: renderer from quad list '{}', {} quads",
+                    partName, quadsForIris.size());
+            return new SingleMeshVboRenderer() {
+                private SingleMeshVboRenderer.VboData pendingData = prebuiltData;
+
+                @Override
+                protected SingleMeshVboRenderer.VboData buildVboData() {
+                    SingleMeshVboRenderer.VboData data = pendingData;
+                    if (data == null) {
+                        throw new IllegalStateException(
+                                "buildVboData() called twice for merged part '" + partName + "'; VboData is one-shot");
+                    }
+                    pendingData = null;
+                    return data;
+                }
+
+                @Override
+                protected List<BakedQuad> getQuadsForIrisPath() {
+                    return quadsForIris;
+                }
+            };
+        });
+    }
+
     private static SingleMeshVboRenderer createRendererForPart(String partKey, BakedModel model) {
         PartGeometry geo = getOrCompilePartGeometry(partKey, model);
         if (geo.isEmpty()) {
