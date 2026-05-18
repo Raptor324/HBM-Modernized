@@ -412,8 +412,8 @@ public final class OcclusionCullingHelper {
     /**
      * После BER и (опционально) MDI: readback предыдущего compute, {@link GpuCullingPipeline#dispatch},
      * затем {@link GpuCullingPipeline#beginFrame} — иначе {@code beginFrame} очищает staging до
-     * {@code dispatch}, и compute никогда не видит AABB с BER (плюс {@link ClientRenderHandlerForge}
-     * с вызовом dispatch не был на шине).
+     * {@code dispatch}, и compute никогда не видит AABB с BER. Вызывается из
+     * {@link com.hbm_m.event.ClientModEvents} после {@code MdiBatchCoordinator.endFrame()}.
      * <p>Вызывать на render-thread до {@link #onFrameStart()}.
      */
     public static void runGpuCullingAfterBlockEntities(Matrix4f projectionMatrix, Vec3 cameraPos) {
@@ -425,6 +425,8 @@ public final class OcclusionCullingHelper {
                 return;
             }
             Matrix4f viewProj = new Matrix4f(projectionMatrix).mul(new Matrix4f(RenderSystem.getModelViewMatrix()));
+            // Актуальные плоскости для fallback {@link CpuFrustumCuller} (раньше только в неиспользуемом ClientRenderHandlerForge).
+            CpuFrustumCuller.updateFrustum(viewProj);
             if (cfg.useGpuCulling) {
                 // isSupported() до initialize() может быть true по caps при initialized==false;
                 // dispatch() требует реальной инициализации GL.

@@ -91,7 +91,9 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         if (geo.isEmpty()) return null;
         var data = geo.toVboData(partName);
         if (data == null) return null;
-        return new InstancedStaticPartRenderer(data, geo.solidQuads());
+        InstancedStaticPartRenderer r = new InstancedStaticPartRenderer(data, geo.solidQuads());
+        r.setMdiTraceTag("ChemPlant/" + partName);
+        return r;
     }
 
     private void initializeInstancedRenderers(MachineChemicalPlantBakedModel model) {

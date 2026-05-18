@@ -275,6 +275,7 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
                 if (headData != null) {
                     var headQuads = MeshRenderCache.getOrCompile("press_head", headModel);
                     InstancedStaticPartRenderer candidate = new InstancedStaticPartRenderer(headData, headQuads);
+                    candidate.setMdiTraceTag("Press/" + HEAD_PART);
                     if (candidate.isInitialized()) {
                         instancedHead = candidate;
                     } else {

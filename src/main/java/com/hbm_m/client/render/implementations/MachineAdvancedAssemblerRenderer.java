@@ -190,7 +190,9 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         if (geo.isEmpty()) return null;
         var data = geo.toVboData(partName);
         if (data == null) return null;
-        return new InstancedStaticPartRenderer(data, geo.solidQuads());
+        InstancedStaticPartRenderer r = new InstancedStaticPartRenderer(data, geo.solidQuads());
+        r.setMdiTraceTag("AdvAssembler/" + partName);
+        return r;
     }
 
     private static InstancedStaticPartRenderer createInstancedFromQuads(List<BakedQuad> quads, String vboLabel) {
@@ -201,7 +203,9 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         if (data == null) {
             return null;
         }
-        return new InstancedStaticPartRenderer(data, quads);
+        InstancedStaticPartRenderer r = new InstancedStaticPartRenderer(data, quads);
+        r.setMdiTraceTag("AdvAssembler/" + vboLabel);
+        return r;
     }
 
     //  Wrapper с double-check locking

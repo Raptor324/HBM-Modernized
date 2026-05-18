@@ -156,6 +156,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     private java.nio.ByteBuffer atlasVertexBytesRetained;
     private java.nio.IntBuffer atlasIndicesRetained;
     private int atlasIndexCountRetained;
+    /** Подпись для логов при {@link com.hbm_m.config.ModClothConfig#mdiVerboseSubdraws} — какая часть машины/двери (не влияет на рендер). */
+    @Nullable
+    private String mdiTraceTag;
 
     private static final Cleaner CLEANER = Cleaner.create();
     private Cleaner.Cleanable instanceBufferCleanable;
@@ -999,7 +1002,8 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         boolean alreadyFlipped = false;
         // MDI fast path: if a coordinator session is active and this renderer
         // is eligible (unsliced, has retained atlas-side geometry), defer the
-        // draw to the coordinator's single glMultiDrawElementsIndirect at the
+        // draw to the coordinator's indirect batch (glDrawElementsIndirect loop
+        // or optional glMultiDrawElementsIndirect) at the
         // end of the global flush window. The coordinator will copy our
         // already-flipped instanceBuffer into the shared atlas instance VBO
         // at a per-part baseInstance offset and emit ONE GL call for ALL
@@ -1080,9 +1084,8 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             }
 
             RenderSystem.setShader(() -> shader);
-            // На Fabric flush выполняется в WorldRenderEvents.AFTER_TRANSLUCENT, где Mojang модель-вью
-            // стек уже включает camera/view transform. Identity здесь приводит к неверному depth/clip
-            // и эффекту "за моделью видно землю". Поэтому используем текущую ModelView матрицу.
+            // На Fabric instanced flush вызывается из WorldRenderEvents.BEFORE_BLOCK_OUTLINE (аналог
+            // Forge AFTER_BLOCK_ENTITIES): используем текущую ModelView — identity даёт неверный clip/depth.
             applyCommonUniforms(shader, projectionMatrix, new Matrix4f(RenderSystem.getModelViewMatrix()));
 
             // Must come BEFORE apply() — see prepareBlockLitSamplers javadoc.
@@ -1652,6 +1655,16 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     @Override
     public int getInstanceCount() {
         return instanceCount;
+    }
+
+    /** Метка для логов MDI ({@link MdiRenderDiag}); не участвует в отрисовке. */
+    public void setMdiTraceTag(@Nullable String tag) {
+        this.mdiTraceTag = tag;
+    }
+
+    @Nullable
+    public String getMdiTraceTag() {
+        return mdiTraceTag;
     }
 
     @Override

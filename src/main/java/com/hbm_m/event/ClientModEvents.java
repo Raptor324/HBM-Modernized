@@ -22,6 +22,7 @@ import dev.architectury.event.events.client.ClientTooltipEvent;
 /*import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 *///?}
 //? if forge {
+import com.hbm_m.client.ClientRenderHandler;
 import com.hbm_m.lib.RefStrings;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
@@ -126,6 +127,9 @@ public class ClientModEvents {
                     if (mdiSession != null) mdiSession.endFrame();
                 }
             }
+            // После MDI: тот же порядок, что на Forge (GPU staging → beginFrame до onFrameStart).
+            OcclusionCullingHelper.runGpuCullingAfterBlockEntities(
+                    proj, Minecraft.getInstance().gameRenderer.getMainCamera().getPosition());
             IrisExtendedShaderAccess.tickPass();
             LightSampleCache.onFrameStart();
             OcclusionCullingHelper.onFrameStart();
@@ -210,6 +214,12 @@ public class ClientModEvents {
             // переиспользоваться на 1–20 тиков, пока камера почти не двигалась и
             // не было инвалидации геометрии (см. OcclusionCullingHelper).
             OcclusionCullingHelper.onFrameStart();
+            // Подсветка препятствий / фантомных частей (раньше не вызывалась на Forge — класс не был на шине).
+            Minecraft mc = Minecraft.getInstance();
+            ClientRenderHandler.onRenderWorldLate(
+                    mc.renderBuffers().bufferSource(),
+                    event.getPoseStack(),
+                    mc.gameRenderer.getMainCamera().getPosition());
         } else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
             // Safety net for the IrisRenderBatch persistent-shadow path. The normal
             // teardown happens inside the first main-pass begin() that detects the

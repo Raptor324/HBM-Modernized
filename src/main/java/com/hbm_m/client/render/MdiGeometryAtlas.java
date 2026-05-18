@@ -12,6 +12,7 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL33;
+import org.lwjgl.opengl.GL40;
 import org.lwjgl.system.MemoryUtil;
 
 import com.hbm_m.main.MainRegistry;
@@ -35,10 +36,11 @@ import net.fabricmc.api.Environment;
  *       per-part vertex bytes (pos vec3 / normal vec3 / uv vec2, stride 32).</li>
  *   <li>One index EBO ({@code GL_ELEMENT_ARRAY_BUFFER}) with the concatenated
  *       per-part {@code GL_UNSIGNED_INT} indices. Per-part draw commands use
- *       {@code baseVertex} (added to each element index) and {@code firstIndex}
- *       which per the GL spec is a <b>byte offset</b> into the bound element
- *       array buffer (not an element index). Local mesh indices are stored
- *       verbatim (0..N-1 per part).</li>
+ *       {@code baseVertex} (added to each element index) and a <b>byte offset</b>
+ *       into the EBO for {@code glDrawElementsInstancedBaseVertexBaseInstance};
+ *       для {@code DrawElementsIndirectCommand.firstIndex} в буфере indirect нужно
+ *       то же смещение в <b>элементах</b> (байты / 4). Локальные индексы частей —
+ *       как есть (0..N-1 на часть).</li>
  *   <li>One instance VBO with the unsliced 30-float instance layout (loc 3..11
  *       with divisor 1), large enough to hold the sum of all per-renderer
  *       {@code MAX_INSTANCES} budgets for a single frame.</li>
@@ -79,7 +81,7 @@ public final class MdiGeometryAtlas {
     /** Slot record returned to the coordinator. */
     public static final class Slot {
         public final int baseVertex;
-        /** Byte offset into the element array buffer (OpenGL {@code DrawElementsIndirectCommand.firstIndex}). */
+        /** Byte offset в EBO для SEQ; для indirect — {@code firstIndexBytes / 4} в поле {@code firstIndex}. */
         public final int firstIndexBytes;
         public final int indexCount;
         Slot(int baseVertex, int firstIndexBytes, int indexCount) {
@@ -118,6 +120,8 @@ public final class MdiGeometryAtlas {
     private long indexCapBytes = 0;
     private long indexUsedBytes = 0;
     private long instanceCapInstances = 0;
+    /** Размер GL_DRAW_INDIRECT_BUFFER (байты); команды пишем через {@link GL15#glBufferSubData}. */
+    private long indirectCmdCapBytes = 0L;
 
     /**
      * Per-renderer geometry cache. {@link LinkedHashMap} preserves registration order so
@@ -157,7 +161,7 @@ public final class MdiGeometryAtlas {
      */
     public static void resetForResourceLifecycle() {
         if (!RenderSystem.isOnRenderThread()) {
-            MainRegistry.LOGGER.warn("[HBM-M MDI] resetForResourceLifecycle skipped (not on render thread)");
+            RenderSystem.recordRenderCall(MdiGeometryAtlas::resetForResourceLifecycle);
             return;
         }
         synchronized (MdiGeometryAtlas.class) {
@@ -226,6 +230,7 @@ public final class MdiGeometryAtlas {
         vertexCapBytes = 0L;
         indexCapBytes = 0L;
         instanceCapInstances = 0L;
+        indirectCmdCapBytes = 0L;
         ready = false;
         MainRegistry.LOGGER.info("[HBM-M MDI] MdiGeometryAtlas reset (resource lifecycle)");
     }
@@ -311,6 +316,13 @@ public final class MdiGeometryAtlas {
             GL20.glVertexAttribPointer(11, 1, GL11.GL_FLOAT, false, stride, 116);
             GL33.glVertexAttribDivisor(11, 1);
 
+            // Indirect: один раз выделяем ёмкость; каждый кадр — только glBufferSubData (см. MdiBatchCoordinator).
+            long initialIndirectBytes = 4096L * (long) MdiBatchCoordinator.INDIRECT_CMD_STRIDE_BYTES;
+            GL15.glBindBuffer(GL40.GL_DRAW_INDIRECT_BUFFER, indirectBufId);
+            GL15.glBufferData(GL40.GL_DRAW_INDIRECT_BUFFER, initialIndirectBytes, GL15.GL_STREAM_DRAW);
+            indirectCmdCapBytes = initialIndirectBytes;
+            GL15.glBindBuffer(GL40.GL_DRAW_INDIRECT_BUFFER, 0);
+
             GL30.glBindVertexArray(0);
             // Element array binding is part of VAO state — leave it as we set it
             // inside the VAO. The vertex array buffer binding outside the VAO
@@ -330,8 +342,32 @@ public final class MdiGeometryAtlas {
 
     public int getVaoId() { return vaoId; }
     public int getIndirectBufferId() { return indirectBufId; }
+
+    /** Ёмкость {@link GL40#GL_DRAW_INDIRECT_BUFFER} (байты); для orphan перед записью команд. */
+    public long getIndirectCommandBufferCapBytes() {
+        return indirectCmdCapBytes;
+    }
+
     public int getInstanceFloatsPerInstance() { return INSTANCE_FLOATS; }
     public int getInstanceFadeFloatOffset() { return INSTANCE_FADE_FLOAT_OFFSET; }
+
+    /** Только для диагностики MDI: число зарегистрированных частей в атласе. */
+    public synchronized int getRegisteredGeometryCount() {
+        return geometryByRenderer.size();
+    }
+
+    /**
+     * Включает vertex attrib arrays 0..11 на <b>уже привязанном</b> {@link #vaoId}.
+     * После {@link ShaderInstance#apply()} / Embeddium chunk-батчей часть массивов
+     * может оказаться отключённой; без этого MDI рисует только подмножество
+     * атрибутов (типично «видна только base», створки/cogs — нет).
+     */
+    public void enableVertexAttribArraysOnBoundVao() {
+        if (!ready) return;
+        for (int i = 0; i <= 11; i++) {
+            GL20.glEnableVertexAttribArray(i);
+        }
+    }
 
     /**
      * Acceptance gate for {@link MdiBatchCoordinator#submit}: only the unsliced
@@ -413,31 +449,33 @@ public final class MdiGeometryAtlas {
                                                        int indexCount) {
         if (!ready) return null;
         GeoRecord existing = geometryByRenderer.get(renderer);
-        if (existing != null && existing.slot != null) {
-            if (vertexBytes != null && indices != null && indexCount > 0) {
+        if (existing != null) {
+            if (existing.slot != null && vertexBytes != null && indices != null && indexCount > 0) {
                 int inVertexLen = vertexBytes.remaining();
                 if (inVertexLen == existing.registeredVertexBytesLen && indexCount == existing.registeredIndexCount) {
                     return existing.slot;
                 }
             }
+            // «Битая» запись (slot null после частичного сбоя) или смена размеров — выкинуть,
+            // иначе put() перезапишет ключ без memFree старых native-копий.
             evictRendererLocked(renderer);
         }
 
         if (vertexBytes == null || indices == null || indexCount <= 0) return null;
-        long vertexBytesLen = vertexBytes.remaining();
+        ByteBuffer vertexBytesView = vertexBytes.duplicate();
+        IntBuffer indicesView = indices.duplicate();
+        long vertexBytesLen = vertexBytesView.remaining();
         long indexBytesLen = (long) indexCount * 4L;
         long vertexCount = vertexBytesLen / VERTEX_STRIDE_BYTES;
 
         // Take a copy so we can replay on growth. We dup() to capture the
         // current position/limit without disturbing the caller's view.
         ByteBuffer vbCopy = MemoryUtil.memAlloc((int) vertexBytesLen);
-        ByteBuffer src = vertexBytes.duplicate();
-        vbCopy.put(src);
+        vbCopy.put(vertexBytesView);
         vbCopy.flip();
 
         IntBuffer ibCopy = MemoryUtil.memAllocInt(indexCount);
-        IntBuffer isrc = indices.duplicate();
-        ibCopy.put(isrc);
+        ibCopy.put(indicesView);
         ibCopy.flip();
 
         GeoRecord rec = new GeoRecord(vbCopy, ibCopy, (int) vertexBytesLen, indexCount);
@@ -447,7 +485,7 @@ public final class MdiGeometryAtlas {
             ensureIndexCapacity(indexUsedBytes + indexBytesLen);
 
             int baseVertex = (int) (vertexUsedBytes / VERTEX_STRIDE_BYTES);
-            // GL DrawElementsIndirectCommand.firstIndex is a BYTE offset into the EBO, not an element index.
+            // Смещение начала куска индексов в EBO (байты). Indirect: firstIndex = firstIndexBytes / 4 (UNSIGNED_INT).
             int firstIndexBytes = (int) indexUsedBytes;
 
             // Upload at current high-water marks.
@@ -534,27 +572,42 @@ public final class MdiGeometryAtlas {
             GL30.glBindVertexArray(vaoId);
             long vOff = 0L;
             long iOff = 0L;
-            for (GeoRecord rec : geometryByRenderer.values()) {
+            for (Map.Entry<InstancedStaticPartRenderer, GeoRecord> e : geometryByRenderer.entrySet()) {
+                GeoRecord rec = e.getValue();
+                String rid = Integer.toHexString(System.identityHashCode(e.getKey()));
                 if (rec.vertexBytesCopy == null || rec.indicesCopy == null) {
                     skipped++;
+                    rec.slot = null;
+                    MainRegistry.LOGGER.warn(
+                            "[HBM-M MDI] repack skip: null native copy rid=0x{} — slot invalidated (stale offsets after buffer resize)",
+                            rid);
                     continue;
                 }
-                // Always read from position 0..capacity via fresh views so
-                // previous glBufferSubData calls (which advance position to
-                // limit) don't leave the cached copies "empty" on the next
-                // repack. Without this, every record after the first repack
-                // would see remaining()==0 and be skipped, leaving its Slot
-                // pointing at uninitialised VBO storage post-glBufferData —
-                // the root cause of the invisible / duplicated / partial
-                // model geometry observed when MDI batching is active.
+                // Явные границы по полям регистрации: duplicate().rewind() недостаточен,
+                // если limit/position на кэше когда-либо сдвинулись — получаем пропуски
+                // записей и слоты на неинициализированный VBO.
+                if (rec.registeredVertexBytesLen <= 0 || rec.registeredIndexCount <= 0) {
+                    skipped++;
+                    rec.slot = null;
+                    MainRegistry.LOGGER.warn(
+                            "[HBM-M MDI] repack skip: non-positive registered sizes rid=0x{} — slot invalidated",
+                            rid);
+                    continue;
+                }
                 ByteBuffer vbView = rec.vertexBytesCopy.duplicate();
-                vbView.rewind();
+                vbView.clear();
+                vbView.limit(rec.registeredVertexBytesLen);
                 IntBuffer ibView = rec.indicesCopy.duplicate();
-                ibView.rewind();
+                ibView.clear();
+                ibView.limit(rec.registeredIndexCount);
                 int vLen = vbView.remaining();
                 int idxCount = ibView.remaining();
-                if (vLen <= 0 || idxCount <= 0) {
+                if (vLen != rec.registeredVertexBytesLen || idxCount != rec.registeredIndexCount) {
                     skipped++;
+                    rec.slot = null;
+                    MainRegistry.LOGGER.warn(
+                            "[HBM-M MDI] repack skip: buffer view len mismatch rid=0x{} vLen={} expV={} idxCount={} expI={} — slot invalidated",
+                            rid, vLen, rec.registeredVertexBytesLen, idxCount, rec.registeredIndexCount);
                     continue;
                 }
                 long idxBytes = (long) idxCount * 4L;
@@ -610,6 +663,26 @@ public final class MdiGeometryAtlas {
         try {
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, instanceVboId);
             GL15.glBufferData(GL15.GL_ARRAY_BUFFER, instanceCapInstances * INSTANCE_FLOATS * 4L, GL15.GL_STREAM_DRAW);
+        } finally {
+            guard.restore();
+        }
+    }
+
+    /**
+     * Расширяет GL_DRAW_INDIRECT_BUFFER при необходимости (редко). Обновление команд — только SubData на стороне координатора.
+     */
+    public void ensureIndirectCommandByteCapacity(int needBytes) {
+        if (!ready || needBytes <= 0) return;
+        if (needBytes <= indirectCmdCapBytes) return;
+        long newCap = indirectCmdCapBytes <= 0L ? 65536L : indirectCmdCapBytes;
+        while (newCap < needBytes) {
+            newCap *= 2L;
+        }
+        GLCapabilitiesGuard guard = GLCapabilitiesGuard.snapshot();
+        try {
+            GL15.glBindBuffer(GL40.GL_DRAW_INDIRECT_BUFFER, indirectBufId);
+            GL15.glBufferData(GL40.GL_DRAW_INDIRECT_BUFFER, newCap, GL15.GL_STREAM_DRAW);
+            indirectCmdCapBytes = newCap;
         } finally {
             guard.restore();
         }

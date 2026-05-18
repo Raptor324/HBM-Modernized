@@ -105,7 +105,9 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         var data = ObjModelVboBuilder.buildSinglePart(part, partName);
         if (data == null) return null;
         var quads = MeshRenderCache.getOrCompile("assembler_legacy_" + partName, part);
-        return new InstancedStaticPartRenderer(data, quads);
+        InstancedStaticPartRenderer r = new InstancedStaticPartRenderer(data, quads);
+        r.setMdiTraceTag("Assembler/" + partName);
+        return r;
     }
 
     private void initializeInstancedRenderers(MachineAssemblerBakedModel model) {

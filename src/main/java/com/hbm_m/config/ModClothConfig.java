@@ -214,14 +214,40 @@ public class ModClothConfig implements ConfigData {
     public boolean useInstancedStaticRendering = true;
 
     /**
-     * Аггрегация instanced draw call'ов в один {@code glMultiDrawElementsIndirect}.
-     * Требует GL 4.0 + ARB_base_instance (GL 4.2). На macOS (GL 4.1) и старых
-     * драйверах автоматически выключается через capability detection.
-     * Отключите при проблемах с драйвером.
+     * Аггрегация instanced draw в один батч по общему атласу (indirect-команды;
+     * по умолчанию цикл {@code glDrawElementsIndirect}, см. {@link #mdiUseTrueMultiDraw}).
+     * Требует GL 4.0+ draw indirect и base instance в команде (GL 4.2+). На macOS (GL 4.1) и без
+     * возможностей путь отключается. Отключите при проблемах с драйвером.
      */
     @Category("rendering")
     @Gui.Tooltip
     public boolean useMultiDrawIndirect = false;
+
+    /** После каждого MDI-dispatch: одна строка INFO (число sub-draw, инстансов, атлас). */
+    @Category("rendering")
+    @Gui.Tooltip
+    public boolean mdiDebugLogDispatch = false;
+
+    /** Плюс по строке INFO на каждую MDI-команду (тег части, baseInstance и т.д.). */
+    @Category("rendering")
+    @Gui.Tooltip
+    public boolean mdiVerboseSubdraws = false;
+
+    /**
+     * Вместо {@code glMultiDrawElementsIndirect} — цикл {@code glDrawElementsInstancedBaseVertexBaseInstance}
+     * (тот же атлас/инстансы). Нужен OpenGL 4.2; для сравнения с «настоящим» MDI при подозрении на драйвер.
+     */
+    @Category("rendering")
+    @Gui.Tooltip
+    public boolean mdiForceSequentialDraw = false;
+
+    /**
+     * Один вызов {@code glMultiDrawElementsIndirect} вместо цикла {@code glDrawElementsIndirect} по тому же буферу команд.
+     * На части стеков (Embeddium + новые NVIDIA) multi-draw даёт пропажи частей; по умолчанию выключено.
+     */
+    @Category("rendering")
+    @Gui.Tooltip
+    public boolean mdiUseTrueMultiDraw = false;
 
     @Category("rendering")
     @Gui.Tooltip
