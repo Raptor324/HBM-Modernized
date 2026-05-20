@@ -13,6 +13,7 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.MemoryUtil;
 
+import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.IrisExtendedShaderAccess;
 import com.hbm_m.client.render.shader.IrisPhaseGuard;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
@@ -47,6 +48,12 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 //? if fabric {
 /*@Environment(EnvType.CLIENT)*///?}
 public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
+
+    /**
+     * Вершина instanced-мешей: pos(12) + normal(12) + uv(8) + int {@code bone_id} (4) = 36 байт.
+     * См. {@code block_lit.vsh} (USE_VERTEX_BONE_ID) и UBO костей в {@link InstancedStaticPartRenderer}.
+     */
+    public static final int MACHINE_PART_VERTEX_STRIDE_BYTES = 36;
 
     /** Optional companion mesh in Iris-extended {@code NEW_ENTITY} format, lazy-built. */
     @Nullable
@@ -218,18 +225,20 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             indexCount = data.indices != null ? data.indices.remaining() : 0;
             setObjBboxFrom(data);
 
+            int vs = data.bytesPerVertex;
+
             GL30.glBindVertexArray(vaoId);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
             GL15.glBufferData(GL15.GL_ARRAY_BUFFER, data.byteBuffer, GL15.GL_STATIC_DRAW);
 
             GL20.glEnableVertexAttribArray(0);
-            GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 32, 0);
+            GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, vs, 0);
 
             GL20.glEnableVertexAttribArray(1);
-            GL20.glVertexAttribPointer(1, 3, GL11.GL_FLOAT, false, 32, 12);
+            GL20.glVertexAttribPointer(1, 3, GL11.GL_FLOAT, false, vs, 12);
 
             GL20.glEnableVertexAttribArray(2);
-            GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, 32, 24);
+            GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, vs, 24);
 
             if (data.indices != null && data.indices.remaining() > 0) {
                 eboId = GL15.glGenBuffers();
@@ -726,19 +735,32 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         public final IntBuffer indices;
         /** Object-space AABB of the mesh, computed once while packing vertices. */
         public final float minX, minY, minZ, maxX, maxY, maxZ;
+        /**
+         * Stride одной вершины в {@link #byteBuffer}: pos(12) + normal(12) + uv(8) + boneId(int32) = 36.
+         * Старые 32-байтные буферы не поддерживаются для instanced-пути.
+         */
+        public final int bytesPerVertex;
         private boolean consumed = false;
 
         public VboData(ByteBuffer byteBuffer, IntBuffer indices) {
-            this(byteBuffer, indices, 0f, 0f, 0f, 0f, 0f, 0f);
+            this(byteBuffer, indices, 0f, 0f, 0f, 0f, 0f, 0f, MACHINE_PART_VERTEX_STRIDE_BYTES);
         }
 
         public VboData(ByteBuffer byteBuffer, IntBuffer indices,
                        float minX, float minY, float minZ,
                        float maxX, float maxY, float maxZ) {
+            this(byteBuffer, indices, minX, minY, minZ, maxX, maxY, maxZ, MACHINE_PART_VERTEX_STRIDE_BYTES);
+        }
+
+        public VboData(ByteBuffer byteBuffer, IntBuffer indices,
+                       float minX, float minY, float minZ,
+                       float maxX, float maxY, float maxZ,
+                       int bytesPerVertex) {
             this.byteBuffer = byteBuffer;
             this.indices = indices;
             this.minX = minX; this.minY = minY; this.minZ = minZ;
             this.maxX = maxX; this.maxY = maxY; this.maxZ = maxZ;
+            this.bytesPerVertex = bytesPerVertex;
         }
 
         public boolean isConsumed() {

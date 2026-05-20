@@ -198,30 +198,75 @@ public class ModClothConfig implements ConfigData {
     @Gui.Tooltip
     public boolean enableOcclusionCulling = true;
 
+    /**
+     * Разрешить дорогой voxel ray-march из {@link com.hbm_m.client.render.culling.OcclusionCullingHelper}
+     * при выборе {@link CullingMode#LEGACY_RAYCAST}. По умолчанию {@code false}: даже в LEGACY
+     * режиме используется только frustum (как CPU_FRUSTUM), без {@code isRayOccluded}.
+     * Включите только если осознанно нужен старый raycast.
+     */
     @Category("rendering")
     @Gui.Tooltip
-    public boolean useGpuCulling = false;
+    public boolean enableLegacyRaycastOcclusion = false;
+
+    /**
+     * Перед заливкой instance VBO вызывать {@code glBufferData(..., NULL)} того же размера —
+     * orphaning буфера, чтобы драйвер не синхронизировался с предыдущим кадром на каждом
+     * {@code glBufferSubData} (типичный AZDO-приём для STREAM).
+     */
+    @Category("rendering")
+    @Gui.Tooltip
+    public boolean instanceVboOrphanBeforeUpload = true;
+
+    /**
+     * Зарезервировано: persistent mapped instance buffer (GL 4.4+ / ARB_buffer_storage).
+     * Сейчас не используется — только переключатель для будущей реализации; безопасный default.
+     */
+    @Category("rendering")
+    @Gui.Tooltip
+    public boolean experimentalPersistentInstanceBuffer = false;
 
     public enum CullingMode { AUTO, CPU_FRUSTUM, GPU_COMPUTE, LEGACY_RAYCAST }
 
     @Category("rendering")
     @Gui.Tooltip
     @Gui.EnumHandler(option = Gui.EnumHandler.EnumDisplayOption.BUTTON)
-    public CullingMode cullingMode = CullingMode.LEGACY_RAYCAST;
+    /**
+     * CPU_FRUSTUM — только frustum. GPU_COMPUTE / AUTO — frustum + GPU depth occlusion
+     * (блоки и сущности из main depth, lag 1 кадр). LEGACY_RAYCAST — voxel ray-march (opt-in).
+     */
+    public CullingMode cullingMode = CullingMode.AUTO;
 
     @Category("rendering")
     @Gui.Tooltip
     public boolean useInstancedStaticRendering = true;
 
     /**
-     * Аггрегация instanced draw в один батч по общему атласу (indirect-команды;
-     * по умолчанию цикл {@code glDrawElementsIndirect}, см. {@link #mdiUseTrueMultiDraw}).
+     * Advanced assembler: при vanilla instanced использовать {@code addInstanceGpuBones}
+     * (матрица base×part на CPU, без PoseStack push/mul/pop на каждую часть).
+     * Под Iris/Oculus внешний шейдер — отдельный путь; этот флаг влияет только на vanilla.
+     */
+    @Category("rendering")
+    @Gui.Tooltip
+    public boolean gpuBoneSkinning = true;
+
+    /**
+     * Аггрегация instanced draw в один батч по общему атласу: один
+     * {@code glMultiDrawElementsIndirect} на flush (при наличии GL/ARB).
      * Требует GL 4.0+ draw indirect и base instance в команде (GL 4.2+). На macOS (GL 4.1) и без
      * возможностей путь отключается. Отключите при проблемах с драйвером.
      */
     @Category("rendering")
     @Gui.Tooltip
     public boolean useMultiDrawIndirect = false;
+
+    /**
+     * MDI + GPU compute: visibility bitmask остаётся на GPU, {@code compact_mdi_indirect}
+     * обнуляет {@code instanceCount} без CPU readback. Требует {@link #useMultiDrawIndirect}
+     * и режим AUTO / GPU_COMPUTE.
+     */
+    @Category("rendering")
+    @Gui.Tooltip
+    public boolean gpuDrivenMdiCulling = true;
 
     /** После каждого MDI-dispatch: одна строка INFO (число sub-draw, инстансов, атлас). */
     @Category("rendering")
@@ -234,20 +279,13 @@ public class ModClothConfig implements ConfigData {
     public boolean mdiVerboseSubdraws = false;
 
     /**
-     * Вместо {@code glMultiDrawElementsIndirect} — цикл {@code glDrawElementsInstancedBaseVertexBaseInstance}
-     * (тот же атлас/инстансы). Нужен OpenGL 4.2; для сравнения с «настоящим» MDI при подозрении на драйвер.
+     * Max instances per {@link com.hbm_m.client.render.InstancedStaticPartRenderer}
+     * (one OBJ part, e.g. ChemPlant/Base). Large machine fields need 4096+.
      */
     @Category("rendering")
     @Gui.Tooltip
-    public boolean mdiForceSequentialDraw = false;
-
-    /**
-     * Один вызов {@code glMultiDrawElementsIndirect} вместо цикла {@code glDrawElementsIndirect} по тому же буферу команд.
-     * На части стеков (Embeddium + новые NVIDIA) multi-draw даёт пропажи частей; по умолчанию выключено.
-     */
-    @Category("rendering")
-    @Gui.Tooltip
-    public boolean mdiUseTrueMultiDraw = false;
+    @BoundedDiscrete(min = 256, max = 16384)
+    public int maxInstancedInstancesPerPart = 4096;
 
     @Category("rendering")
     @Gui.Tooltip
@@ -257,11 +295,6 @@ public class ModClothConfig implements ConfigData {
     @Gui.Tooltip
     public boolean useColladaZUpConversion = true;
 
-    /** Яркость анимированной части двери (Iris/Oculus). 1.0 = без изменений, 0.85 = темнее для выравнивания с baked model. */
-    @Category("rendering")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 50, max = 100)
-    public int doorAnimatedPartBrightness = 88;
 
     @Category("rendering")
     @Gui.Tooltip

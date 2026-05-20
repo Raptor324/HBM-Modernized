@@ -33,7 +33,7 @@ import net.fabricmc.api.Environment;
  * Holds:
  * <ul>
  *   <li>One vertex VBO ({@code GL_ARRAY_BUFFER}) containing the concatenated
- *       per-part vertex bytes (pos vec3 / normal vec3 / uv vec2, stride 32).</li>
+ *       per-part vertex bytes (pos vec3 / normal vec3 / uv vec2 / int bone_id, stride 36).</li>
  *   <li>One index EBO ({@code GL_ELEMENT_ARRAY_BUFFER}) with the concatenated
  *       per-part {@code GL_UNSIGNED_INT} indices. Per-part draw commands use
  *       {@code baseVertex} (added to each element index) and a <b>byte offset</b>
@@ -41,7 +41,7 @@ import net.fabricmc.api.Environment;
  *       для {@code DrawElementsIndirectCommand.firstIndex} в буфере indirect нужно
  *       то же смещение в <b>элементах</b> (байты / 4). Локальные индексы частей —
  *       как есть (0..N-1 на часть).</li>
- *   <li>One instance VBO with the unsliced 30-float instance layout (loc 3..11
+ *   <li>One instance VBO with the unsliced 30-float instance layout (loc 4..12
  *       with divisor 1), large enough to hold the sum of all per-renderer
  *       {@code MAX_INSTANCES} budgets for a single frame.</li>
  *   <li>One indirect buffer for the {@link MdiBatchCoordinator} to stream
@@ -68,13 +68,13 @@ import net.fabricmc.api.Environment;
 /*@Environment(EnvType.CLIENT)*///?}
 public final class MdiGeometryAtlas {
 
-    /** Vertex stride in bytes — pos vec3 + normal vec3 + uv vec2 = 32. */
-    private static final int VERTEX_STRIDE_BYTES = 32;
+    /** Vertex stride in bytes — pos vec3 + normal vec3 + uv vec2 + int bone_id = 36. */
+    private static final int VERTEX_STRIDE_BYTES = SingleMeshVboRenderer.MACHINE_PART_VERTEX_STRIDE_BYTES;
 
     /** Unsliced instance layout: 30 floats per instance (see {@link InstancedStaticPartRenderer}). */
     private static final int INSTANCE_FLOATS = 30;
-    /** Byte offset of {@code InstFadeAlpha} within one instance record. */
-    private static final int INSTANCE_FADE_FLOAT_OFFSET = 29;
+    /** Float index of fade packed in {@code InstBboxSize.w}. */
+    private static final int INSTANCE_FADE_FLOAT_OFFSET = 13;
 
     private static volatile MdiGeometryAtlas INSTANCE;
 
@@ -268,52 +268,50 @@ public final class MdiGeometryAtlas {
             GL20.glVertexAttribPointer(1, 3, GL11.GL_FLOAT, false, VERTEX_STRIDE_BYTES, 12);
             GL20.glEnableVertexAttribArray(2);
             GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, VERTEX_STRIDE_BYTES, 24);
+            GL30.glEnableVertexAttribArray(3);
+            GL30.glVertexAttribIPointer(3, 1, GL11.GL_INT, VERTEX_STRIDE_BYTES, 32);
 
             // Index buffer.
             GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, indexEboId);
             GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indexCapBytes, GL15.GL_STATIC_DRAW);
 
-            // Instance VBO + per-instance attribute pointers (loc 3..11), all
+            // Instance VBO + per-instance attribute pointers (loc 4..12), all
             // with divisor 1 — must mirror the unsliced layout in
             // InstancedStaticPartRenderer EXACTLY.
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, instanceVboId);
             GL15.glBufferData(GL15.GL_ARRAY_BUFFER, instanceCapInstances * INSTANCE_FLOATS * 4L, GL15.GL_STREAM_DRAW);
             int stride = INSTANCE_FLOATS * 4;
             // InstPos vec3 @ 0
-            GL20.glEnableVertexAttribArray(3);
-            GL20.glVertexAttribPointer(3, 3, GL11.GL_FLOAT, false, stride, 0);
-            GL33.glVertexAttribDivisor(3, 1);
-            // InstRot vec4 @ 12
             GL20.glEnableVertexAttribArray(4);
-            GL20.glVertexAttribPointer(4, 4, GL11.GL_FLOAT, false, stride, 12);
+            GL20.glVertexAttribPointer(4, 3, GL11.GL_FLOAT, false, stride, 0);
             GL33.glVertexAttribDivisor(4, 1);
-            // InstBboxMin vec3 @ 28
+            // InstRot vec4 @ 12
             GL20.glEnableVertexAttribArray(5);
-            GL20.glVertexAttribPointer(5, 3, GL11.GL_FLOAT, false, stride, 28);
+            GL20.glVertexAttribPointer(5, 4, GL11.GL_FLOAT, false, stride, 12);
             GL33.glVertexAttribDivisor(5, 1);
-            // InstBboxSize vec3 @ 40
+            // InstBboxMin vec3 @ 28
             GL20.glEnableVertexAttribArray(6);
-            GL20.glVertexAttribPointer(6, 3, GL11.GL_FLOAT, false, stride, 40);
+            GL20.glVertexAttribPointer(6, 3, GL11.GL_FLOAT, false, stride, 28);
             GL33.glVertexAttribDivisor(6, 1);
-            // Light vec4 @ 52
+            // InstBboxSize vec4 (xyz + fade w) @ 40
             GL20.glEnableVertexAttribArray(7);
-            GL20.glVertexAttribPointer(7, 4, GL11.GL_FLOAT, false, stride, 52);
+            GL20.glVertexAttribPointer(7, 4, GL11.GL_FLOAT, false, stride, 40);
             GL33.glVertexAttribDivisor(7, 1);
-            // Light vec4 @ 68
+            // Light vec4 @ 56
             GL20.glEnableVertexAttribArray(8);
-            GL20.glVertexAttribPointer(8, 4, GL11.GL_FLOAT, false, stride, 68);
+            GL20.glVertexAttribPointer(8, 4, GL11.GL_FLOAT, false, stride, 56);
             GL33.glVertexAttribDivisor(8, 1);
-            // Light vec4 @ 84
+            // Light vec4 @ 72
             GL20.glEnableVertexAttribArray(9);
-            GL20.glVertexAttribPointer(9, 4, GL11.GL_FLOAT, false, stride, 84);
+            GL20.glVertexAttribPointer(9, 4, GL11.GL_FLOAT, false, stride, 72);
             GL33.glVertexAttribDivisor(9, 1);
-            // Light vec4 @ 100
+            // Light vec4 @ 88
             GL20.glEnableVertexAttribArray(10);
-            GL20.glVertexAttribPointer(10, 4, GL11.GL_FLOAT, false, stride, 100);
+            GL20.glVertexAttribPointer(10, 4, GL11.GL_FLOAT, false, stride, 88);
             GL33.glVertexAttribDivisor(10, 1);
-            // InstFadeAlpha float @ 116
+            // Light vec4 @ 104
             GL20.glEnableVertexAttribArray(11);
-            GL20.glVertexAttribPointer(11, 1, GL11.GL_FLOAT, false, stride, 116);
+            GL20.glVertexAttribPointer(11, 4, GL11.GL_FLOAT, false, stride, 104);
             GL33.glVertexAttribDivisor(11, 1);
 
             // Indirect: один раз выделяем ёмкость; каждый кадр — только glBufferSubData (см. MdiBatchCoordinator).
@@ -364,7 +362,7 @@ public final class MdiGeometryAtlas {
      */
     public void enableVertexAttribArraysOnBoundVao() {
         if (!ready) return;
-        for (int i = 0; i <= 11; i++) {
+        for (int i = 0; i <= 12; i++) {
             GL20.glEnableVertexAttribArray(i);
         }
     }

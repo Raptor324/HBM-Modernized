@@ -1,4 +1,4 @@
-package com.hbm_m.client.render;
+package com.hbm_m.client.render.culling;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
@@ -18,6 +19,7 @@ import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryUtil;
 
+import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -37,12 +39,12 @@ import net.fabricmc.api.Environment;
 *///?}
 
 /**
- * GPU-side AABB frustum culling через compute shader (GL 4.3 / ARB_compute_shader).
+ * GPU AABB culling: frustum + depth-buffer occlusion (AAA-style screen-space test).
  *
- * <p><b>Архитектура:</b> кадр N собирает AABB+key в CPU staging,
- * заливает в SSBO, диспатчит compute, ставит fence. Кадр N+1 берёт
- * результаты предыдущего кадра через {@link #isVisible(long)} (lag=1,
- * приемлемо для статичных машин).
+ * <p><b>Архитектура (multi-pass):</b> кадр N−1 после BER — {@link GpuDepthSource#capturePostBerDepthForNextFrame},
+ * {@link #dispatch} (depth lag-1), fence. Кадр N до BER — {@link #tryReadback} (bitmask, ~512 B);
+ * во время BER — {@link #submit} + {@link OcclusionCullingHelper#shouldRender} по lag-1;
+ * после BER — снова {@link #dispatch}. Машины окклюдируют друг друга с задержкой 1 кадр.
  *
  * <p><b>Ping-pong:</b> два set'а буферов (input/output/fence).
  * Активный set пишется в кадре N; пассивный набор содержит результат
@@ -61,11 +63,21 @@ import net.fabricmc.api.Environment;
 public final class GpuCullingPipeline {
 
     private static final int MAX_ENTRIES = 4096;
+    private static final int BITMASK_WORDS = (MAX_ENTRIES + 31) / 32;
     // AABBEntry: vec3 minPos + uint flags + vec3 maxPos + uint instanceIndex = 32 bytes (std430)
     private static final int ENTRY_BYTES = 32;
-    // CullParams uniform block: 6*vec4 + vec4 + vec4 = 8 vec4 = 128 bytes (std140)
-    private static final int PARAMS_BYTES = 128;
+    // std140: mat4 + 3×vec4
+    private static final int PARAMS_BYTES = 112;
     private static final int LOCAL_SIZE_X = 64;
+    private static final int DEPTH_TEXTURE_UNIT = 2;
+    /** NDC depth bias — сравнение с terrain depth (блоки/сущности, без BER). */
+    private static final float DEPTH_OCCLUSION_BIAS = 0.022f;
+    /** Сэмплов по оси в screen-rect AABB (4×4). */
+    private static final float DEPTH_SAMPLES_PER_AXIS = 4f;
+    /** Внутри этого радиуса от камеры — не depth-occlude (стабильность у объекта). */
+    /** Мин. dist² до AABB (ближайшая точка на боксе) — без depth-occlusion, только frustum. */
+    /** dist²: внутри — depth occlusion не применяется (только frustum). 144 = 12 блоков. */
+    private static final float NEAR_SKIP_OCCLUSION_SQ = 144.0f;
 
     private static volatile boolean initialized = false;
     private static volatile boolean initAttempted = false;
@@ -73,6 +85,7 @@ public final class GpuCullingPipeline {
 
     private static int program = 0;
     private static int paramsUbo = 0;
+    private static int depthSamplerLoc = -1;
 
     // Ping-pong buffers
     private static final int[] inputSsbo = new int[2];
@@ -89,10 +102,60 @@ public final class GpuCullingPipeline {
     private static ByteBuffer paramsStaging;
     private static int stagingCount = 0;
     private static final Long2IntOpenHashMap stagingKeyToIndex = new Long2IntOpenHashMap();
-    private static int[] readVisible = new int[0]; // results for the buffer we read this frame
-    private static Long2IntOpenHashMap readKeyToIndex = null;
+    /** Lag-1 readback (ключ → видимость) для {@link #shouldRender} до BER. */
+    private static int[] lagVisibleBits = new int[0];
+    private static int lagVisibleCount = 0;
+    private static Long2IntOpenHashMap lagKeyToIndex = null;
+    private static boolean lagReadbackValid = false;
+    private static long lagReadbackGeneration = 0L;
+
+    /** Same-frame readback (staging index → видимость) только для MDI. */
+    private static int[] mdiVisibleBits = new int[0];
+    private static int mdiVisibleCount = 0;
+    private static boolean mdiReadbackValid = false;
+    private static int mdiReadbackStagingEpoch = -1;
+
+    /** Увеличивается в {@link #beginFrame}; сбрасывает staging для следующего render-кадра. */
+    private static int stagingEpoch = 0;
+
+    private static long lastDispatchGeneration = 0L;
+
+    /** Same-frame MDI: output SSBO index after {@link #dispatchSameFrame} (no ping-pong toggle). */
+    private static int sameFrameOutputIdx = -1;
+    private static int sameFrameCullCount = 0;
 
     private GpuCullingPipeline() {}
+
+    /** @deprecated prefer {@link #isLagReadbackValid()} / {@link #isMdiReadbackValid()} */
+    public static long getReadbackGeneration() {
+        return lagReadbackGeneration;
+    }
+
+    public static boolean isLagReadbackValid() {
+        return lagReadbackValid;
+    }
+
+    /** True только после успешного {@link #tryReadbackSameFrame} для текущего {@link #stagingEpoch}. */
+    public static boolean isMdiReadbackValid() {
+        return mdiReadbackValid && mdiReadbackStagingEpoch == stagingEpoch;
+    }
+
+    public static int getStagingEpoch() {
+        return stagingEpoch;
+    }
+
+    public static long getLastDispatchGeneration() {
+        return lastDispatchGeneration;
+    }
+
+    /** Сброс lag-1 результатов (смена Iris/vanilla, смена пакета шейдеров). */
+    public static void clearReadback() {
+        lagKeyToIndex = null;
+        lagReadbackValid = false;
+        lagReadbackGeneration = 0L;
+        mdiReadbackValid = false;
+        mdiReadbackStagingEpoch = -1;
+    }
 
     public static boolean isSupported() {
         if (!initAttempted) {
@@ -168,7 +231,7 @@ public final class GpuCullingPipeline {
 
                 outputSsbo[i] = GL15.glGenBuffers();
                 GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, outputSsbo[i]);
-                GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, (long) MAX_ENTRIES * 4, GL15.GL_STREAM_READ);
+                GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, (long) BITMASK_WORDS * 4, GL15.GL_STREAM_READ);
 
                 fence[i] = 0L;
                 dispatchedCount[i] = 0;
@@ -185,7 +248,13 @@ public final class GpuCullingPipeline {
             String vendor = safeGlGetString(GL11.GL_VENDOR);
             String renderer = safeGlGetString(GL11.GL_RENDERER);
             String version = safeGlGetString(GL11.GL_VERSION);
-            MainRegistry.LOGGER.info("[HBM-GpuCulling] GPU compute culling enabled. vendor={} renderer={} version={}",
+            depthSamplerLoc = GL20.glGetUniformLocation(program, "uDepthTex");
+            if (depthSamplerLoc >= 0) {
+                GL20.glUseProgram(program);
+                GL20.glUniform1i(depthSamplerLoc, DEPTH_TEXTURE_UNIT);
+                GL20.glUseProgram(0);
+            }
+            MainRegistry.LOGGER.info("[HBM-GpuCulling] GPU depth occlusion culling enabled. vendor={} renderer={} version={}",
                     vendor, renderer, version);
             supported = true;
             initialized = true;
@@ -220,8 +289,14 @@ public final class GpuCullingPipeline {
 
     /** Сбрасывает CPU staging для следующего кадра после {@link #dispatch}. */
     public static void beginFrame() {
+        stagingEpoch++;
         stagingCount = 0;
         stagingKeyToIndex.clear();
+        if (stagingEntries != null) {
+            stagingEntries.clear();
+        }
+        mdiReadbackValid = false;
+        clearSameFrameResult();
     }
 
     /**
@@ -245,6 +320,29 @@ public final class GpuCullingPipeline {
         stagingKeyToIndex.put(key, idx);
     }
 
+    /** Индекс в staging / visibility bitmask; {@code -1} если ключ не зарегистрирован. */
+    public static int getStagingIndex(long key) {
+        return stagingKeyToIndex.get(key);
+    }
+
+    public static int getStagingCount() {
+        return stagingCount;
+    }
+
+    public static void clearSameFrameResult() {
+        sameFrameOutputIdx = -1;
+        sameFrameCullCount = 0;
+    }
+
+    /** SSBO bitmask после {@link #dispatchSameFrame}; {@code 0} если нет результата. */
+    public static int getSameFrameVisibilitySsbo() {
+        return sameFrameOutputIdx >= 0 ? outputSsbo[sameFrameOutputIdx] : 0;
+    }
+
+    public static int getSameFrameCullCount() {
+        return sameFrameCullCount;
+    }
+
     /** Только отладка: сколько AABB в CPU staging до {@link #dispatch}. */
     public static int debugStagingEntryCount() {
         return stagingCount;
@@ -255,36 +353,71 @@ public final class GpuCullingPipeline {
      * камерой, диспатчит compute и ставит fence. Вызывается раз в кадр в
      * render-thread (например на этапе AFTER_BLOCK_ENTITIES).
      */
-    public static void dispatch(Matrix4f viewProj, Vec3 cameraPos) {
+    /**
+     * GPU cull для текущего кадра без readback: результат остаётся в {@link #outputSsbo}
+     * для {@link GpuMdiCompaction}. Не переключает ping-pong (lag-1 readback сохраняется).
+     */
+    public static void dispatchSameFrame(Matrix4f viewProj, Vec3 cameraPos, int depthTextureId,
+                                         int viewportWidth, int viewportHeight) {
+        sameFrameOutputIdx = -1;
+        sameFrameCullCount = 0;
+        mdiReadbackValid = false;
         if (!initialized || stagingCount == 0) {
-            // Still toggle so reads stay sane.
+            return;
+        }
+        if (depthTextureId <= 0 || viewportWidth <= 0 || viewportHeight <= 0) {
+            return;
+        }
+        try {
+            int w = writeIdx;
+            runCullDispatch(w, viewProj, cameraPos, depthTextureId, viewportWidth, viewportHeight, false);
+            sameFrameOutputIdx = w;
+            sameFrameCullCount = stagingCount;
+        } catch (Throwable t) {
+            MainRegistry.LOGGER.warn("[HBM-GpuCulling] dispatchSameFrame failed", t);
+        }
+    }
+
+    public static void dispatch(Matrix4f viewProj, Vec3 cameraPos, int depthTextureId, int viewportWidth, int viewportHeight) {
+        if (!initialized || stagingCount == 0) {
+            writeIdx ^= 1;
+            return;
+        }
+        if (depthTextureId <= 0 || viewportWidth <= 0 || viewportHeight <= 0) {
             writeIdx ^= 1;
             return;
         }
         try {
             int w = writeIdx;
+            runCullDispatch(w, viewProj, cameraPos, depthTextureId, viewportWidth, viewportHeight, true);
+        } catch (Throwable t) {
+            MainRegistry.LOGGER.warn("[HBM-GpuCulling] Dispatch failed", t);
+        }
+    }
+
+    private static void runCullDispatch(int w, Matrix4f viewProj, Vec3 cameraPos, int depthTextureId,
+                                        int viewportWidth, int viewportHeight, boolean lagPingPong) {
+        try {
 
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, inputSsbo[w]);
             stagingEntries.position(0).limit(stagingCount * ENTRY_BYTES);
             GL15.glBufferSubData(GL43.GL_SHADER_STORAGE_BUFFER, 0L, stagingEntries);
-            stagingEntries.clear();
 
-            // Fill UBO (std140 layout: vec4-aligned)
             paramsStaging.clear();
-            float[] planes = extractPlanes(viewProj);
-            for (int i = 0; i < 6; i++) {
-                paramsStaging.putFloat(planes[i * 4]);
-                paramsStaging.putFloat(planes[i * 4 + 1]);
-                paramsStaging.putFloat(planes[i * 4 + 2]);
-                paramsStaging.putFloat(planes[i * 4 + 3]);
-            }
+            viewProj.get(paramsStaging);
+            paramsStaging.position(64);
             paramsStaging.putFloat((float) cameraPos.x);
             paramsStaging.putFloat((float) cameraPos.y);
             paramsStaging.putFloat((float) cameraPos.z);
             paramsStaging.putFloat((float) stagingCount);
-            paramsStaging.putFloat(16.0f); // nearAlwaysVisibleSq
-            paramsStaging.putFloat(0.0f);  // maxDistSq (0 = no far cutoff here)
+            paramsStaging.putFloat((float) viewportWidth);
+            paramsStaging.putFloat((float) viewportHeight);
+            paramsStaging.putFloat(DEPTH_OCCLUSION_BIAS);
+            paramsStaging.putFloat(DEPTH_SAMPLES_PER_AXIS);
+            paramsStaging.putFloat(NEAR_SKIP_OCCLUSION_SQ);
             paramsStaging.putFloat(0.0f);
+            // z: 1 = frustum-only в compute (Iris/Oculus depth не совпадает с vanilla viewProj)
+            paramsStaging.putFloat(ShaderCompatibilityDetector.isExternalShaderActive() ? 1.0f : 0.0f);
             paramsStaging.putFloat(0.0f);
             paramsStaging.flip();
             GL15.glBindBuffer(GL31.GL_UNIFORM_BUFFER, paramsUbo);
@@ -293,115 +426,186 @@ public final class GpuCullingPipeline {
 
             GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 0, inputSsbo[w]);
             GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 1, outputSsbo[w]);
+            GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, outputSsbo[w]);
+            int wordsToClear = (stagingCount + 31) / 32;
+            GL43.glClearBufferSubData(
+                    GL43.GL_SHADER_STORAGE_BUFFER, GL30.GL_R32UI, 0L,
+                    (long) wordsToClear * 4, GL30.GL_RED_INTEGER, GL30.GL_UNSIGNED_INT,
+                    new int[] {0});
+
+            int prevActive = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
+            GL13.glActiveTexture(GL13.GL_TEXTURE0 + DEPTH_TEXTURE_UNIT);
+            int prevTex = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, depthTextureId);
 
             GL20.glUseProgram(program);
             int groups = (stagingCount + LOCAL_SIZE_X - 1) / LOCAL_SIZE_X;
             GL43.glDispatchCompute(groups, 1, 1);
-            GL43.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT | GL43.GL_BUFFER_UPDATE_BARRIER_BIT);
+            int barrier = GL43.GL_SHADER_STORAGE_BARRIER_BIT | GL43.GL_TEXTURE_FETCH_BARRIER_BIT;
+            if (!lagPingPong) {
+                barrier |= GL43.GL_COMMAND_BARRIER_BIT;
+            }
+            GL43.glMemoryBarrier(barrier);
             GL20.glUseProgram(0);
-            // Снять привязки UBO/SSBO — иначе compute может оставить binding point 0/1 занятыми
-            // и следующий MDI/VBO код читает «чужие» буферы.
+
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, prevTex);
+            GL13.glActiveTexture(prevActive);
+
             GL30.glBindBufferBase(GL31.GL_UNIFORM_BUFFER, 0, 0);
             GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 0, 0);
             GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 1, 0);
             GL15.glBindBuffer(GL31.GL_UNIFORM_BUFFER, 0);
             GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
 
-            // Snapshot key map for this dispatch
             keyToIndex[w].clear();
             keyToIndex[w].putAll(stagingKeyToIndex);
             dispatchedCount[w] = stagingCount;
-
-            // Place fence so we can poll completion next frame.
             if (fence[w] != 0L) {
                 GL32.glDeleteSync(fence[w]);
             }
             fence[w] = GL32.glFenceSync(GL32.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-
-            // Toggle ping-pong; next frame writes into the OTHER set, this one
-            // is read-from.
-            writeIdx ^= 1;
-        } catch (Throwable t) {
-            MainRegistry.LOGGER.warn("[HBM-GpuCulling] Dispatch failed", t);
+            if (lagPingPong) {
+                lastDispatchGeneration++;
+                writeIdx ^= 1;
+            }
+        } finally {
+            GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
         }
     }
 
     /**
-     * Pulls results from previously-dispatched buffer (the one we are NOT
-     * currently writing to) if its fence completed. Non-blocking; if not
-     * ready, leaves {@link #readVisible} from the previous successful read.
-     * Call once per frame after BER, before {@link OcclusionCullingHelper#onFrameStart()} (paired with {@link #dispatch}).
+     * Readback результата dispatch прошлого кадра. Буфер для чтения — {@code writeIdx ^ 1}
+     * (активный {@link #writeIdx} указывает на set для следующей записи).
+     *
+     * @param waitNs 0 = non-blocking; иначе {@link GL32#glClientWaitSync} timeout (нс)
      */
-    public static void tryReadback() {
+    /**
+     * Readback результата {@link #dispatchSameFrame} (тот же кадр, до MDI).
+     */
+    public static void tryReadbackSameFrame(long waitNs) {
+        if (!initialized || sameFrameOutputIdx < 0 || sameFrameCullCount <= 0) {
+            return;
+        }
+        if (readbackFromBuffer(sameFrameOutputIdx, sameFrameCullCount, waitNs, true)) {
+            mdiReadbackValid = true;
+            mdiReadbackStagingEpoch = stagingEpoch;
+        }
+    }
+
+    /** Блокирующий readback для MDI, если fence ещё не готов. */
+    public static void ensureMdiReadback() {
+        if (isMdiReadbackValid()) {
+            return;
+        }
+        tryReadbackSameFrame(500_000L);
+        if (!isMdiReadbackValid()) {
+            GL11.glFinish();
+            tryReadbackSameFrame(0L);
+        }
+    }
+
+    public static void tryReadback(long waitNs) {
         if (!initialized) return;
-        int r = writeIdx; // after dispatch toggled writeIdx; this index is the older one we just wrote to last frame
-        long f = fence[r];
-        int count = dispatchedCount[r];
-        if (f == 0L || count == 0) return;
+        int r = writeIdx ^ 1;
+        if (readbackFromBuffer(r, dispatchedCount[r], waitNs, false)) {
+            lagKeyToIndex = keyToIndex[r];
+            lagReadbackValid = true;
+            lagReadbackGeneration++;
+        }
+    }
+
+    private static boolean readbackFromBuffer(int bufferIdx, int count, long waitNs, boolean forMdi) {
+        if (bufferIdx < 0 || count <= 0) {
+            return false;
+        }
+        long f = fence[bufferIdx];
+        if (f == 0L) {
+            return false;
+        }
         try {
-            int waitRes = GL32.glClientWaitSync(f, 0, 0L);
+            int flags = waitNs > 0L ? GL32.GL_SYNC_FLUSH_COMMANDS_BIT : 0;
+            int waitRes = GL32.glClientWaitSync(f, flags, waitNs);
             if (waitRes == GL32.GL_ALREADY_SIGNALED || waitRes == GL32.GL_CONDITION_SATISFIED) {
-                if (readVisible.length < count) {
-                    readVisible = new int[count];
+                int words = (count + 31) / 32;
+                int[] target = forMdi ? mdiVisibleBits : lagVisibleBits;
+                if (target.length < words) {
+                    target = new int[words];
+                    if (forMdi) {
+                        mdiVisibleBits = target;
+                    } else {
+                        lagVisibleBits = target;
+                    }
                 }
-                GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, outputSsbo[r]);
+                if (forMdi) {
+                    mdiVisibleCount = count;
+                } else {
+                    lagVisibleCount = count;
+                }
+                GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, outputSsbo[bufferIdx]);
                 ByteBuffer mapped = MemoryUtil.memByteBuffer(
                         org.lwjgl.opengl.GL30.nglMapBufferRange(
-                                GL43.GL_SHADER_STORAGE_BUFFER, 0L, (long) count * 4,
+                                GL43.GL_SHADER_STORAGE_BUFFER, 0L, (long) words * 4,
                                 GL30.GL_MAP_READ_BIT),
-                        count * 4);
+                        words * 4);
                 if (mapped != null) {
                     mapped.order(ByteOrder.nativeOrder());
-                    for (int i = 0; i < count; i++) {
-                        readVisible[i] = mapped.getInt(i * 4);
+                    for (int i = 0; i < words; i++) {
+                        target[i] = mapped.getInt(i * 4);
                     }
                     GL30.glUnmapBuffer(GL43.GL_SHADER_STORAGE_BUFFER);
                 }
                 GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
-                readKeyToIndex = keyToIndex[r];
                 GL32.glDeleteSync(f);
-                fence[r] = 0L;
+                fence[bufferIdx] = 0L;
+                return true;
             }
         } catch (Throwable t) {
             MainRegistry.LOGGER.warn("[HBM-GpuCulling] Readback failed", t);
         }
+        return false;
     }
 
-    /** Возвращает видимость по ключу из РЕЗУЛЬТАТОВ ПРЕДЫДУЩЕГО КАДРА (lag=1). */
+    /** Возвращает видимость по ключу из lag-1 readback. Нет записи в прошлом dispatch — консервативно видим. */
+    /** Per-staging-index visibility from same-frame MDI readback only. */
+    public static boolean isCullIndexVisible(int cullIndex) {
+        if (cullIndex < 0 || !isMdiReadbackValid()) {
+            return true;
+        }
+        int word = cullIndex >> 5;
+        int bit = cullIndex & 31;
+        if (word >= mdiVisibleBits.length || cullIndex >= mdiVisibleCount) {
+            return true;
+        }
+        return (mdiVisibleBits[word] & (1 << bit)) != 0;
+    }
+
     public static boolean isVisible(long key) {
-        if (!initialized || readKeyToIndex == null) return true;
-        int idx = readKeyToIndex.get(key);
-        if (idx < 0 || idx >= readVisible.length) return true; // unseen last frame -> default visible
-        return readVisible[idx] != 0;
+        if (!initialized || !lagReadbackValid || lagKeyToIndex == null) {
+            return true;
+        }
+        int idx = lagKeyToIndex.get(key);
+        if (idx < 0 || idx >= lagVisibleCount) {
+            return true;
+        }
+        int word = idx >> 5;
+        int bit = idx & 31;
+        if (word >= lagVisibleBits.length) {
+            return true;
+        }
+        return (lagVisibleBits[word] & (1 << bit)) != 0;
+    }
+
+    /** True, если для ключа есть результат последнего успешного lag-1 readback. */
+    public static boolean hasGpuVisibilityResult(long key) {
+        if (!lagReadbackValid || lagKeyToIndex == null) {
+            return false;
+        }
+        int idx = lagKeyToIndex.get(key);
+        return idx >= 0 && idx < lagVisibleCount;
     }
 
     public static boolean hasResultFor(long key) {
-        if (readKeyToIndex == null) return false;
-        return readKeyToIndex.get(key) >= 0;
-    }
-
-    private static float[] extractPlanes(Matrix4f m) {
-        float m00 = m.m00(), m01 = m.m01(), m02 = m.m02(), m03 = m.m03();
-        float m10 = m.m10(), m11 = m.m11(), m12 = m.m12(), m13 = m.m13();
-        float m20 = m.m20(), m21 = m.m21(), m22 = m.m22(), m23 = m.m23();
-        float m30 = m.m30(), m31 = m.m31(), m32 = m.m32(), m33 = m.m33();
-
-        float[] p = new float[24];
-        setP(p, 0, m03 + m00, m13 + m10, m23 + m20, m33 + m30);
-        setP(p, 1, m03 - m00, m13 - m10, m23 - m20, m33 - m30);
-        setP(p, 2, m03 + m01, m13 + m11, m23 + m21, m33 + m31);
-        setP(p, 3, m03 - m01, m13 - m11, m23 - m21, m33 - m31);
-        setP(p, 4, m03 + m02, m13 + m12, m23 + m22, m33 + m32);
-        setP(p, 5, m03 - m02, m13 - m12, m23 - m22, m33 - m32);
-        return p;
-    }
-
-    private static void setP(float[] p, int i, float a, float b, float c, float d) {
-        float invLen = 1.0f / (float) Math.sqrt(a * a + b * b + c * c);
-        p[i * 4]     = a * invLen;
-        p[i * 4 + 1] = b * invLen;
-        p[i * 4 + 2] = c * invLen;
-        p[i * 4 + 3] = d * invLen;
+        return hasGpuVisibilityResult(key);
     }
 
     public static synchronized void destroy() {

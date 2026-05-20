@@ -21,10 +21,10 @@ import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
-import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.PartGeometry;
 import com.hbm_m.client.render.RenderDistanceHelper;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
+import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
@@ -182,15 +182,26 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         }
     }
     
+    /** bone_id в VBO: 0 base/ring, 1 lower, 2 upper, 3 head, 4 spike — см. OLD/render.md */
+    private static int assemblerPartBoneId(String partName) {
+        if (partName.startsWith("ArmLower")) return 1;
+        if (partName.startsWith("ArmUpper")) return 2;
+        if (partName.startsWith("Head")) return 3;
+        if (partName.startsWith("Spike")) return 4;
+        return 0;
+    }
+
     private static InstancedStaticPartRenderer createInstancedForPart(MachineAdvancedAssemblerBakedModel model, String partName) {
         BakedModel part = model.getPart(partName);
         if (part == null) return null;
         String cacheKey = "assembler_" + partName;
         PartGeometry geo = MeshRenderCache.getOrCompilePartGeometry(cacheKey, part);
         if (geo.isEmpty()) return null;
-        var data = geo.toVboData(partName);
+        int boneId = assemblerPartBoneId(partName);
+        var data = geo.toVboData(partName, boneId);
         if (data == null) return null;
-        InstancedStaticPartRenderer r = new InstancedStaticPartRenderer(data, geo.solidQuads());
+        boolean gpuSkin = boneId >= 1 && boneId <= 4;
+        InstancedStaticPartRenderer r = new InstancedStaticPartRenderer(data, geo.solidQuads(), false, gpuSkin);
         r.setMdiTraceTag("AdvAssembler/" + partName);
         return r;
     }
@@ -508,6 +519,9 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
                            MultiBufferSource bufferSource, boolean useInstanced) {
         if (arm == null) return;
 
+        // Матрицы костей считаем на CPU (цепочка translate/rotateX). При батчинге без Iris
+        // vanilla-instanced путь: {@code addInstanceGpuBones} (матрица части на CPU), см. {@link InstancedStaticPartRenderer}.
+        // С активным shader pack (Iris) остаётся CPU-слияние pose*transform — кастомный VS там не наш.
         float a0 = Mth.lerp(pt, arm.prevAngles[0], arm.angles[0]);
         float a1 = Mth.lerp(pt, arm.prevAngles[1], arm.angles[1]);
         float a2 = Mth.lerp(pt, arm.prevAngles[2], arm.angles[2]);
@@ -550,6 +564,14 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
             String name1, String name2, Matrix4f transform, boolean inverted,
             MultiBufferSource bufferSource) {
         String partName = inverted ? name2 : name1;
+        boolean gpuBones = useInstanced && instanced != null && instanced.isInitialized()
+                && instanced.usesGpuPartBonePath()
+                && ModClothConfig.get().gpuBoneSkinning
+                && !ShaderCompatibilityDetector.isExternalShaderActive();
+        if (gpuBones) {
+            instanced.addInstanceGpuBones(pose, transform, blockLight, blockPos, be, bufferSource);
+            return;
+        }
         if (useInstanced && instanced != null && instanced.isInitialized()) {
             pose.pushPose();
             pose.last().pose().mul(transform);

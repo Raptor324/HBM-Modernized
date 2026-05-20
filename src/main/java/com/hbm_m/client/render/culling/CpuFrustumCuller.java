@@ -1,4 +1,4 @@
-package com.hbm_m.client.render;
+package com.hbm_m.client.render.culling;
 
 import org.joml.Matrix4f;
 

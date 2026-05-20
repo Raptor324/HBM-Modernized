@@ -19,7 +19,7 @@ public final class ClientRenderHandlerForge {
 
     /**
      * Не регистрируется на EVENT_BUS в текущем билде: MDI → {@code OcclusionCullingHelper.runGpuCullingAfterBlockEntities}
-     * и подсветка мира выполняются в {@link com.hbm_m.event.ClientModEvents#onRenderLevelStage}.
+     * и подсветка мира выполняются в {@link com.hbm_m.client.ClientModEvents#onRenderLevelStage}.
      * Оставлено как эталон «позднего» хука без дублирующего {@code GpuCullingPipeline.dispatch} (иначе двойной dispatch).
      */
     @SubscribeEvent

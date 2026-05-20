@@ -1,10 +1,8 @@
 #version 430
 
-// HBM-Modernized GPU AABB frustum culling.
-// One thread per BlockEntity. Reads AABB+key from input SSBO,
-// tests against 6 frustum planes packed as vec4(nx,ny,nz,d) with
-// plane equation n.xyz * p + d >= 0 inside frustum.
-// Writes 0/1 visibility flag to output SSBO at the same index.
+// HBM GPU culling: 6-plane frustum + screen-space depth occlusion (reverse-Z).
+// Output: packed visibility bitmask (32 instances / uint) — minimal CPU readback.
+// Depth: lag-1 snapshot after BER (terrain + entities + HBM VBO depth from previous frame).
 
 layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
 
@@ -19,31 +17,109 @@ layout(std430, binding = 0) readonly buffer InputBuffer {
     AABBEntry entries[];
 } uInput;
 
-layout(std430, binding = 1) writeonly buffer OutputBuffer {
-    uint visible[];
+layout(std430, binding = 1) buffer OutputBuffer {
+    uint visibleBits[];
 } uOutput;
 
 layout(std140, binding = 0) uniform CullParams {
-    vec4 planes[6];
-    vec4 cameraPosAndCount; // xyz = camera pos, w = entry count
-    vec4 cullDistances;     // x = nearAlwaysVisibleSq, y = maxDistSq, zw unused
+    mat4 viewProj;
+    vec4 cameraPosAndCount;   // xyz camera, w entry count
+    vec4 viewportAndBias;     // xy = width/height, z = depth bias, w = samples per axis (2..8)
+    vec4 cullDistances;       // x = nearSkipOcclusionSq, y = maxDistSq (0 = off), z = frustumOnly (1 = on)
 } uParams;
 
-bool aabbInsideFrustum(vec3 mn, vec3 mx) {
-    // Standard p-vertex test. For each plane pick the corner farthest along
-    // its normal; if that corner is outside, the whole AABB is outside.
-    for (int i = 0; i < 6; ++i) {
-        vec4 plane = uParams.planes[i];
-        vec3 p = vec3(
-            plane.x >= 0.0 ? mx.x : mn.x,
-            plane.y >= 0.0 ? mx.y : mn.y,
-            plane.z >= 0.0 ? mx.z : mn.z
-        );
-        if (dot(plane.xyz, p) + plane.w < 0.0) {
+layout(binding = 2) uniform sampler2D uDepthTex;
+
+const vec3 CORNER_OFFSETS[8] = vec3[8](
+    vec3(0.0, 0.0, 0.0), vec3(1.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0), vec3(1.0, 1.0, 0.0),
+    vec3(0.0, 0.0, 1.0), vec3(1.0, 0.0, 1.0), vec3(0.0, 1.0, 1.0), vec3(1.0, 1.0, 1.0)
+);
+
+// Gribb/Hartmann frustum planes from viewProj; p-vertex test per plane (same as CpuFrustumCuller).
+bool frustumVisible(vec3 mn, vec3 mx, mat4 m) {
+    for (int p = 0; p < 6; ++p) {
+        vec4 plane;
+        if (p == 0) plane = vec4(m[0][3] + m[0][0], m[1][3] + m[1][0], m[2][3] + m[2][0], m[3][3] + m[3][0]);
+        else if (p == 1) plane = vec4(m[0][3] - m[0][0], m[1][3] - m[1][0], m[2][3] - m[2][0], m[3][3] - m[3][0]);
+        else if (p == 2) plane = vec4(m[0][3] + m[0][1], m[1][3] + m[1][1], m[2][3] + m[2][1], m[3][3] + m[3][1]);
+        else if (p == 3) plane = vec4(m[0][3] - m[0][1], m[1][3] - m[1][1], m[2][3] - m[2][1], m[3][3] - m[3][1]);
+        else if (p == 4) plane = vec4(m[0][3] + m[0][2], m[1][3] + m[1][2], m[2][3] + m[2][2], m[3][3] + m[3][2]);
+        else plane = vec4(m[0][3] - m[0][2], m[1][3] - m[1][2], m[2][3] - m[2][2], m[3][3] - m[3][2]);
+
+        float a = plane.x, b = plane.y, c = plane.z, d = plane.w;
+        float invLen = inversesqrt(a * a + b * b + c * c);
+        a *= invLen; b *= invLen; c *= invLen; d *= invLen;
+
+        float px = (a >= 0.0) ? mx.x : mn.x;
+        float py = (b >= 0.0) ? mx.y : mn.y;
+        float pz = (c >= 0.0) ? mx.z : mn.z;
+        if (a * px + b * py + c * pz + d < 0.0) {
             return false;
         }
     }
     return true;
+}
+
+// Projects AABB to NDC; nearestDepth = max NDC z among corners (reverse-Z: nearer = larger).
+bool projectAabb(vec3 mn, vec3 mx, mat4 vp, out float nearestDepth,
+                 out float minNdcX, out float maxNdcX, out float minNdcY, out float maxNdcY) {
+    nearestDepth = 0.0;
+    minNdcX = 1.0; maxNdcX = -1.0;
+    minNdcY = 1.0; maxNdcY = -1.0;
+    bool any = false;
+
+    for (int i = 0; i < 8; ++i) {
+        vec3 c = mix(mn, mx, CORNER_OFFSETS[i]);
+        vec4 clip = vp * vec4(c, 1.0);
+        if (clip.w <= 0.0001) continue;
+        vec3 ndc = clip.xyz / clip.w;
+        if (abs(ndc.x) > 1.0 || abs(ndc.y) > 1.0 || ndc.z < 0.0 || ndc.z > 1.0) continue;
+        any = true;
+        nearestDepth = max(nearestDepth, ndc.z);
+        minNdcX = min(minNdcX, ndc.x);
+        maxNdcX = max(maxNdcX, ndc.x);
+        minNdcY = min(minNdcY, ndc.y);
+        maxNdcY = max(maxNdcY, ndc.y);
+    }
+    return any;
+}
+
+// Occluded when every sample shows scene depth clearly closer (reverse-Z: sceneZ > nearest + bias).
+bool depthOccluded(float nearestDepth, float minNdcX, float maxNdcX, float minNdcY, float maxNdcY) {
+    float bias = uParams.viewportAndBias.z;
+    ivec2 texSize = textureSize(uDepthTex, 0);
+    if (texSize.x <= 0 || texSize.y <= 0) return false;
+
+    float minU = clamp(minNdcX * 0.5 + 0.5, 0.0, 1.0);
+    float maxU = clamp(maxNdcX * 0.5 + 0.5, 0.0, 1.0);
+    float minV = clamp(minNdcY * 0.5 + 0.5, 0.0, 1.0);
+    float maxV = clamp(maxNdcY * 0.5 + 0.5, 0.0, 1.0);
+    if (maxU <= minU || maxV <= minV) return false;
+
+    // Adaptive grid: larger on-screen footprint → more samples (cap 8×8).
+    float screenSpan = max(maxU - minU, maxV - minV);
+    int baseAxis = clamp(int(uParams.viewportAndBias.w + 0.5), 2, 8);
+    int axis = clamp(int(float(baseAxis) * clamp(screenSpan * 4.0, 1.0, 2.0)), baseAxis, 8);
+    bool anyVisible = false;
+
+    for (int sy = 0; sy < axis; ++sy) {
+        float tv = mix(minV, maxV, (float(sy) + 0.5) / float(axis));
+        for (int sx = 0; sx < axis; ++sx) {
+            float tu = mix(minU, maxU, (float(sx) + 0.5) / float(axis));
+            ivec2 px = ivec2(tu * float(texSize.x - 1), tv * float(texSize.y - 1));
+            float sceneZ = texelFetch(uDepthTex, px, 0).r;
+            if (sceneZ <= 0.0005) {
+                anyVisible = true;
+                break;
+            }
+            if (sceneZ <= nearestDepth + bias) {
+                anyVisible = true;
+                break;
+            }
+        }
+        if (anyVisible) break;
+    }
+    return !anyVisible;
 }
 
 void main() {
@@ -54,20 +130,42 @@ void main() {
     AABBEntry e = uInput.entries[id];
     vec3 mn = e.minPos;
     vec3 mx = e.maxPos;
+    mat4 vp = uParams.viewProj;
 
-    vec3 center = 0.5 * (mn + mx);
-    vec3 d = center - uParams.cameraPosAndCount.xyz;
+    vec3 cam = uParams.cameraPosAndCount.xyz;
+    vec3 ext = mx - mn;
+    float maxExtent = max(max(ext.x, ext.y), ext.z);
+    vec3 closestOnBox = clamp(cam, mn, mx);
+    vec3 d = closestOnBox - cam;
     float distSq = dot(d, d);
+    // Large multiblocks: widen near zone and skip depth (screen rect + lag-1 depth = flicker).
+    float nearSkipSq = uParams.cullDistances.x + maxExtent * maxExtent;
 
-    uint vis = 0u;
+    bool vis = false;
 
-    if (distSq < uParams.cullDistances.x) {
-        vis = 1u;
+    if (distSq < nearSkipSq) {
+        vis = true;
     } else if (uParams.cullDistances.y > 0.0 && distSq > uParams.cullDistances.y) {
-        vis = 0u;
-    } else if (aabbInsideFrustum(mn, mx)) {
-        vis = 1u;
+        vis = false;
+    } else if (!frustumVisible(mn, mx, vp)) {
+        vis = false;
+    } else if (uParams.cullDistances.z > 0.5) {
+        vis = true;
+    } else if (maxExtent > 6.0) {
+        vis = true;
+    } else {
+        float nearestDepth;
+        float minNx, maxNx, minNy, maxNy;
+        if (!projectAabb(mn, mx, vp, nearestDepth, minNx, maxNx, minNy, maxNy)) {
+            vis = true;
+        } else if (!depthOccluded(nearestDepth, minNx, maxNx, minNy, maxNy)) {
+            vis = true;
+        }
     }
 
-    uOutput.visible[id] = vis;
+    if (vis) {
+        uint word = id >> 5u;
+        uint bit = id & 31u;
+        atomicOr(uOutput.visibleBits[word], 1u << bit);
+    }
 }
