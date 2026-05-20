@@ -258,7 +258,7 @@ public class ClientModEvents {
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
 
-            com.hbm_m.client.render.shader.IrisRenderBatch.closePersistentIfActive();
+            InstancedRenderFrame.flushDeferredPresent();
 
         }
 
@@ -268,33 +268,19 @@ public class ClientModEvents {
 
     /**
 
-     * One instanced flush per visual frame. Chunk mods may fire many
+     * Instanced flush moved to {@code AFTER_LEVEL} — the world framebuffer
 
-     * {@code AFTER_BLOCK_ENTITIES} per tick; instances accumulate until here.
+     * and depth buffer are still active there. {@code RenderTickEvent.END}
+
+     * fires after {@code GameRenderer.render()} returns and the framebuffer
+
+     * has been composited / blitted, so drawing at that point produces
+
+     * wrong depth (models visible through blocks) and missing textures
+
+     * (slot 0 polluted by GUI/overlay rendering).
 
      */
-
-    @SubscribeEvent
-
-    public static void onRenderTick(TickEvent.RenderTickEvent event) {
-
-        if (event.phase != TickEvent.Phase.END) {
-
-            return;
-
-        }
-
-        Minecraft mc = Minecraft.getInstance();
-
-        if (mc.level == null) {
-
-            return;
-
-        }
-
-        InstancedRenderFrame.flushDeferredPresent();
-
-    }
 
     //?}
 

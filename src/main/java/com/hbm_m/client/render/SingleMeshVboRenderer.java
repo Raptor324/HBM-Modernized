@@ -154,12 +154,16 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         if (shader == null) {
             return;
         }
-        // Publish the block atlas into RenderSystem.shaderTextures[0]. We rely on
-        // setShaderTexture (not bindTexture) because apply() reads from shaderTextures[].
-        RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
         // Publish the dynamic lightmap into RenderSystem.shaderTextures[2]; also
         // applies the bilinear filter Mojang expects on unit 2.
+        // MUST come BEFORE setShaderTexture(0, BLOCKS): turnOnLightLayer() calls
+        // DynamicTexture.setBlurMipmap() → AbstractTexture.bind() →
+        // RenderSystem.setShaderTexture(0, lightmapId), which overwrites slot 0.
+        // Setting the block atlas AFTER turnOnLightLayer() ensures the for-loop
+        // below reads the correct atlas id from getShaderTexture(0).
         Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();
+        // Re-publish the block atlas into shaderTextures[0] (fixes bind() pollution).
+        RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
         // Prime samplerMap for all 12 slots exactly like VertexBuffer does. apply()
         // only iterates samplerNames declared in the JSON, so extra Samplers here
         // are harmless.

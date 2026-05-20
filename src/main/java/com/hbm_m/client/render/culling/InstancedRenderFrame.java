@@ -65,10 +65,14 @@ public final class InstancedRenderFrame {
     }
 
     /**
-     * Once per client render tick (Forge {@code RenderTickEvent.Phase.END}).
+     * Once per frame, from {@code AFTER_LEVEL} (Forge) or {@code WorldRenderEvents.END}
+     * (Fabric). Must fire while the world framebuffer and depth buffer are still active;
+     * firing later (e.g. {@code RenderTickEvent.END}) draws after blit/swap and produces
+     * broken depth + missing textures.
      */
     public static void flushDeferredPresent() {
         if (!deferredPresent) {
+            IrisRenderBatch.closePersistentIfActive();
             return;
         }
         if (!RenderSystem.isOnRenderThread()) {
