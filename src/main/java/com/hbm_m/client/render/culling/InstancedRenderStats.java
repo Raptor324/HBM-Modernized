@@ -47,7 +47,7 @@ public final class InstancedRenderStats {
         }
         int overflow = InstancedStaticPartRenderer.drainOverflowAddCount();
         long ms = (System.nanoTime() - presentStartNanos) / 1_000_000L;
-        MainRegistry.LOGGER.info(
+        MainRegistry.LOGGER.debug(
                 "[HBM-M Instanced] present chunkSlices={} tookMs={} overflowAdds={} dupFlushBlocked={}",
                 chunkSlicesDeferred, ms, overflow, duplicatePresentAttempts);
     }

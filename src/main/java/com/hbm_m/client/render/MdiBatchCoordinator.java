@@ -24,10 +24,6 @@ import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryUtil;
 
-import com.hbm_m.client.render.culling.GpuCullMdiBridge;
-import com.hbm_m.client.render.culling.GpuCullVisibilityStabilizer;
-import com.hbm_m.client.render.culling.GpuCullingPipeline;
-import com.hbm_m.client.render.culling.GpuDrivenMdiPolicy;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
@@ -118,14 +114,16 @@ public final class MdiBatchCoordinator {
         final int pendingSize;
         final int droppedNoSlot;
         final long gameTime;
+        final Matrix4f projectionMatrix;
 
         DeferredDraw(List<Pending> drawList, int drawTotalInstances,
-                     int pendingSize, int droppedNoSlot, long gameTime) {
+                     int pendingSize, int droppedNoSlot, long gameTime, Matrix4f projectionMatrix) {
             this.drawList = drawList;
             this.drawTotalInstances = drawTotalInstances;
             this.pendingSize = pendingSize;
             this.droppedNoSlot = droppedNoSlot;
             this.gameTime = gameTime;
+            this.projectionMatrix = new Matrix4f(projectionMatrix);
         }
 
         void free() {
@@ -157,7 +155,6 @@ public final class MdiBatchCoordinator {
         int submitIndexCount = -1;
         int baseInstance;
         int instanceCount;
-        /** {@link GpuCullMdiBridge#NO_CULL_INDEX} — не применять GPU compaction. */
         int[] instanceCullIndices;
         long[] instanceOcclusionKeys;
         FloatBuffer instanceData;
@@ -310,14 +307,18 @@ public final class MdiBatchCoordinator {
         }
     }
 
-    public static void presentScheduledDraw() {
+    /**
+     * GL draw for the scheduled batch. Call at start of a new client render frame (first
+     * {@code AFTER_ENTITIES}), not {@code AFTER_LEVEL} — dirty texture units after level end.
+     */
+    public static void presentScheduledDraw(Matrix4f projection) {
         DeferredDraw draw = scheduledDraw;
         if (draw == null) {
             return;
         }
         scheduledDraw = null;
         try {
-            executeDeferredDraw(draw);
+            executeDeferredDraw(draw, projection);
         } catch (Throwable t) {
             MainRegistry.LOGGER.error("[HBM-M MDI] deferred present failed", t);
         } finally {
@@ -391,7 +392,8 @@ public final class MdiBatchCoordinator {
                 prepared.drawTotalInstances,
                 prepared.pendingSize,
                 prepared.droppedNoSlot,
-                gameTime);
+                gameTime,
+                projectionMatrix);
         DeferredDraw prev = scheduledDraw;
         scheduledDraw = next;
         if (prev != null) {
@@ -500,7 +502,7 @@ public final class MdiBatchCoordinator {
         return -1L;
     }
 
-    private static void executeDeferredDraw(DeferredDraw draw) {
+    private static void executeDeferredDraw(DeferredDraw draw, Matrix4f projectionOverride) {
         MdiGeometryAtlas atlas = MdiGeometryAtlas.getOrCreate();
         if (atlas == null || !atlas.isReady()) {
             return;
@@ -512,7 +514,9 @@ public final class MdiBatchCoordinator {
         if (!uploadInstancesToAtlas(draw.drawList, atlas)) {
             return;
         }
-        Matrix4f proj = new Matrix4f(RenderSystem.getProjectionMatrix());
+        Matrix4f proj = projectionOverride != null
+                ? new Matrix4f(projectionOverride)
+                : new Matrix4f(draw.projectionMatrix);
         PreparedMdi prepared = new PreparedMdi(
                 draw.drawList, draw.drawTotalInstances, draw.pendingSize, draw.droppedNoSlot);
         executeMdiGlDraw(prepared, proj, draw.gameTime);
@@ -726,16 +730,19 @@ public final class MdiBatchCoordinator {
 
             try {
                 GL30.glBindVertexArray(atlas.getVaoId());
+                atlas.enableVertexAttribArraysOnBoundVao();
+
+                var mc = Minecraft.getInstance();
+                if (mc.gameRenderer != null) {
+                    mc.gameRenderer.lightTexture().updateLightTexture(mc.getFrameTime());
+                }
 
                 RenderSystem.setShader(() -> shader);
                 applyCommonUniforms(shader, projection);
+                // РЕГРЕССИЯ-СТОП (MDI): тот же контракт block_lit, что VanillaInstancedBatchRenderer — иначе белые batch.
                 SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
                 shader.apply();
-                GL30.glBindVertexArray(atlas.getVaoId());
-                atlas.enableVertexAttribArraysOnBoundVao();
-                // apply() + VAO bind drop block atlas / lightmap bindings — re-prime like vanilla BER flush.
-                SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
-                RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
+                InstancedStaticPartRenderer.bindBlockLitTexturesBeforeDraw(shader);
 
                 float minFade = 1f;
                 int fadeOffset = atlas.getInstanceFadeFloatOffset();
@@ -893,61 +900,13 @@ public final class MdiBatchCoordinator {
         }
     }
 
-    /**
-     * Drops GPU-occluded instances when same-frame readback is ready.
-     * One MDI draw can hold instances from many block entities — per-command compaction was wrong.
-     */
-    private static boolean resolveGpuVisibleForMdi(int cullIndex, long occlusionKey) {
-        if (cullIndex < 0) {
-            return true;
-        }
-        if (GpuCullingPipeline.isMdiReadbackValid()) {
-            return GpuCullingPipeline.isCullIndexVisible(cullIndex);
-        }
-        if (occlusionKey != 0L && GpuCullingPipeline.hasGpuVisibilityResult(occlusionKey)) {
-            return GpuCullingPipeline.isVisible(occlusionKey);
-        }
-        return true;
-    }
-
+    /** Lag-1 culling at BER only; per-slice MDI compact caused {@code draws=X/13} flicker. */
     private static void compactVisibleInstances(Pending p, int floatsPerInstance) {
-        if (!GpuDrivenMdiPolicy.isActive()) {
-            return;
-        }
-        if (p.instanceCount <= 0 || p.instanceData == null) {
-            return;
-        }
-        int[] cull = p.instanceCullIndices;
-        long[] keys = p.instanceOcclusionKeys;
-        FloatBuffer buf = p.instanceData;
-        int write = 0;
-        for (int read = 0; read < p.instanceCount; read++) {
-            int ci = cull != null && read < cull.length ? cull[read] : GpuCullMdiBridge.NO_CULL_INDEX;
-            long occKey = keys != null && read < keys.length ? keys[read] : 0L;
-            boolean gpuVis = resolveGpuVisibleForMdi(ci, occKey);
-            if (!GpuCullVisibilityStabilizer.shouldRenderInstance(occKey, gpuVis)) {
-                continue;
-            }
-            if (write != read) {
-                int srcBase = read * floatsPerInstance;
-                int dstBase = write * floatsPerInstance;
-                for (int j = 0; j < floatsPerInstance; j++) {
-                    buf.put(dstBase + j, buf.get(srcBase + j));
-                }
-            }
-            write++;
-        }
-        p.instanceCount = write;
-        if (write > 0) {
-            buf.limit(write * floatsPerInstance);
-            buf.position(0);
-        }
     }
 
     private static void applyCommonUniforms(ShaderInstance shader, Matrix4f projection) {
         if (shader.PROJECTION_MATRIX != null) shader.PROJECTION_MATRIX.set(projection);
-        if (shader.MODEL_VIEW_MATRIX != null)
-            shader.MODEL_VIEW_MATRIX.set(new Matrix4f(RenderSystem.getModelViewMatrix()));
+        if (shader.MODEL_VIEW_MATRIX != null) shader.MODEL_VIEW_MATRIX.set(new Matrix4f());
         var fogStart = shader.getUniform("FogStart");
         if (fogStart != null) fogStart.set(RenderSystem.getShaderFogStart());
         var fogEnd = shader.getUniform("FogEnd");
@@ -957,8 +916,6 @@ public final class MdiBatchCoordinator {
             float[] c = RenderSystem.getShaderFogColor();
             fogColor.set(c[0], c[1], c[2], c[3]);
         }
-        var sampler0 = shader.getUniform("Sampler0");
-        if (sampler0 != null) sampler0.set(0);
         var fade = shader.getUniform("FadeAlpha");
         if (fade != null) fade.set(1.0f);
     }

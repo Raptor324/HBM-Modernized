@@ -18,6 +18,7 @@ import com.hbm_m.api.network.UniNodespace;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.FluidDuctBlock;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
+
 //? if fabric {
 /*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 *///?}
@@ -255,9 +256,9 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
             for (Direction d : Direction.values()) {
                 if (state.getValue(FluidDuctBlock.PROPERTY_BY_DIRECTION.get(d))) connectedSides++;
             }
-            org.slf4j.LoggerFactory.getLogger("FluidDuctDBG")
-                .info("[tick] pos={} fluidType={} connectedSides={} hasNode={}",
-                    pos, typeStr, connectedSides, entity.node != null && !entity.node.isExpired());
+            // org.slf4j.LoggerFactory.getLogger("FluidDuctDBG")
+            //     .info("[tick] pos={} fluidType={} connectedSides={} hasNode={}",
+            //         pos, typeStr, connectedSides, entity.node != null && !entity.node.isExpired());
         }
         // === END DEBUG ===
 
@@ -289,9 +290,9 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
 
             // === DEBUG ===
             if (shouldLogThis) {
-                org.slf4j.LoggerFactory.getLogger("FluidDuctDBG")
-                    .info("  neighbor at {} dir={} class={} hasHandler={}",
-                        neighborPos, dir, neighbor.getClass().getSimpleName(), hasFluidHandler);
+                // org.slf4j.LoggerFactory.getLogger("FluidDuctDBG")
+                //     .info("  neighbor at {} dir={} class={} hasHandler={}",
+                //         neighborPos, dir, neighbor.getClass().getSimpleName(), hasFluidHandler);
             }
             // === END DEBUG ===
 

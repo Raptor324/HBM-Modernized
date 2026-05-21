@@ -54,7 +54,6 @@ import net.fabricmc.api.Environment;
 final class VanillaInstancedBatchRenderer {
 
     private final InstancedStaticPartRenderer parent;
-    private static volatile boolean diagLogged;
 
     private ShaderInstance cachedShader = null;
     private int cachedShaderProgramId = -1;
@@ -71,7 +70,6 @@ final class VanillaInstancedBatchRenderer {
     private Uniform uFogStart;
     private Uniform uFogEnd;
     private Uniform uFogColor;
-    private Uniform uSampler0;
     Uniform uBrightness;
     Uniform uFadeAlpha;
 
@@ -97,7 +95,6 @@ final class VanillaInstancedBatchRenderer {
         this.uFogStart = shader.getUniform("FogStart");
         this.uFogEnd = shader.getUniform("FogEnd");
         this.uFogColor = shader.getUniform("FogColor");
-        this.uSampler0 = shader.getUniform("Sampler0");
         this.uBrightness = shader.getUniform("Brightness");
         this.uFadeAlpha = shader.getUniform("FadeAlpha");
     }
@@ -117,8 +114,15 @@ final class VanillaInstancedBatchRenderer {
             float[] fogColor = RenderSystem.getShaderFogColor();
             uFogColor.set(fogColor[0], fogColor[1], fogColor[2], fogColor[3]);
         }
-        if (uSampler0 != null) uSampler0.set(0);
         if (uFadeAlpha != null) uFadeAlpha.set(SingleMeshVboRenderer.getFadeAlpha());
+        // Sampler0/Sampler2: {@link SingleMeshVboRenderer#prepareBlockLitSamplers} + bindBlockLitSamplerTextures.
+    }
+
+    /** Re-enable mesh + instance attribs (chunk/MDI passes may disable UV0). */
+    void enableVertexAttribsForDraw() {
+        for (int i = 0; i <= parent.instanceAttribLast; i++) {
+            GL20.glEnableVertexAttribArray(i);
+        }
     }
 
     /**
@@ -134,7 +138,6 @@ final class VanillaInstancedBatchRenderer {
         this.uFogStart = null;
         this.uFogEnd = null;
         this.uFogColor = null;
-        this.uSampler0 = null;
         this.uBrightness = null;
         this.uFadeAlpha = null;
     }
@@ -249,12 +252,18 @@ final class VanillaInstancedBatchRenderer {
         }
 
         try (RenderStateGuard ignored = RenderStateGuard.snapshot()) {
-            RenderSystem.setShader(() -> shader);
             uploadSingleInstance(poseStack, packedLight, blockEntity);
 
-            applyCommonUniforms(shader, RenderSystem.getProjectionMatrix(), new Matrix4f(RenderSystem.getModelViewMatrix()));
+            GL30.glBindVertexArray(parent.vaoId);
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, parent.instanceVboId);
+            parent.uploadInstanceStreamToBoundVbo();
+            enableVertexAttribsForDraw();
+
+            RenderSystem.setShader(() -> shader);
+            applyCommonUniforms(shader, RenderSystem.getProjectionMatrix(), new Matrix4f());
             SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
             shader.apply();
+            SingleMeshVboRenderer.bindBlockLitSamplerTextures(shader);
 
             float fade = parent.instanceBuffer.get(parent.instanceFadeFloatOffset);
             RenderSystem.enableDepthTest();
@@ -266,12 +275,6 @@ final class VanillaInstancedBatchRenderer {
                 RenderSystem.defaultBlendFunc();
             }
 
-            GL30.glBindVertexArray(parent.vaoId);
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, parent.instanceVboId);
-            parent.uploadInstanceStreamToBoundVbo();
-            for (int i = InstancedStaticPartRenderer.INSTANCE_ATTRIB_FIRST; i <= parent.instanceAttribLast; i++)
-                GL20.glEnableVertexAttribArray(i);
-
             InstancedGlCompat.glDrawElementsInstancedCompat(GL11.GL_TRIANGLES, parent.indexCount, GL11.GL_UNSIGNED_INT, 0, 1);
         } catch (Exception e) {
             MainRegistry.LOGGER.error("VanillaInstancedBatchRenderer.renderSingleVanilla failed", e);
@@ -282,6 +285,8 @@ final class VanillaInstancedBatchRenderer {
 
     // ── Batch flush ────────────────────────────────────────────────────
 
+    // РЕГРЕССИЯ-СТОП: порядок draw — VAO → shader → identity ModelView → prepareSamplers → apply → bind → draw.
+    // НЕ менять порядок; НЕ рисовать без bindBlockLitSamplerTextures после apply (белые OBJ).
     void flushBatchVanilla(Matrix4f projectionMatrix) {
         boolean alreadyFlipped = false;
 
@@ -332,66 +337,12 @@ final class VanillaInstancedBatchRenderer {
         int prevBlendDstAlpha = GL11.glGetInteger(GL14.GL_BLEND_DST_ALPHA);
 
         try {
-            GL30.glBindVertexArray(parent.vaoId);
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, parent.instanceVboId);
-            parent.uploadInstanceStreamToBoundVbo();
-
-            for (int i = InstancedStaticPartRenderer.INSTANCE_ATTRIB_FIRST; i <= parent.instanceAttribLast; i++) {
-                GL20.glEnableVertexAttribArray(i);
-            }
-
-            RenderSystem.setShader(() -> shader);
-            applyCommonUniforms(shader, projectionMatrix, new Matrix4f(RenderSystem.getModelViewMatrix()));
-
-            SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
-            shader.apply();
-
-            // Force-rebind textures via raw GL — bypass all caching.
-            int blockAtlasId = net.minecraft.client.Minecraft.getInstance()
-                    .getTextureManager()
-                    .getTexture(net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS)
-                    .getId();
-
-            // Diagnostic: log actual GL state ONCE to find the texture bug
-            if (!diagLogged) {
-                diagLogged = true;
-                int activeProgram = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
-                org.lwjgl.opengl.GL13.glActiveTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
-                int boundTex0 = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
-                org.lwjgl.opengl.GL13.glActiveTexture(org.lwjgl.opengl.GL13.GL_TEXTURE1);
-                int boundTex1 = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
-                int sampler0Loc = GL20.glGetUniformLocation(activeProgram, "Sampler0");
-                int sampler2Loc = GL20.glGetUniformLocation(activeProgram, "Sampler2");
-                int[] sampler0Val = {-999};
-                int[] sampler2Val = {-999};
-                if (sampler0Loc >= 0) GL20.glGetUniformiv(activeProgram, sampler0Loc, sampler0Val);
-                if (sampler2Loc >= 0) GL20.glGetUniformiv(activeProgram, sampler2Loc, sampler2Val);
-                int lightmapId = RenderSystem.getShaderTexture(2);
-                MainRegistry.LOGGER.warn(
-                    "[HBM-M DIAG] flushBatchVanilla: program={} (shader.getId={}), "
-                    + "blockAtlasId={}, lightmapId={}, "
-                    + "GL_TEXTURE0.bound={}, GL_TEXTURE1.bound={}, "
-                    + "Sampler0.loc={} val={}, Sampler2.loc={} val={}, "
-                    + "instanceCount={}",
-                    activeProgram, shader.getId(),
-                    blockAtlasId, lightmapId,
-                    boundTex0, boundTex1,
-                    sampler0Loc, sampler0Val[0], sampler2Loc, sampler2Val[0],
-                    parent.instanceCount);
-            }
-
-            org.lwjgl.opengl.GL13.glActiveTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, blockAtlasId);
-            int sampler0Loc = GL20.glGetUniformLocation(shader.getId(), "Sampler0");
-            if (sampler0Loc >= 0) {
-                GL20.glUniform1i(sampler0Loc, 0);
-            }
-
             float minFade = 1f;
             for (int i = 0; i < parent.instanceCount; i++) {
                 float fa = parent.instanceBuffer.get(i * parent.instanceDataSize + parent.instanceFadeFloatOffset);
                 if (fa < minFade) minFade = fa;
             }
+
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
             RenderSystem.depthMask(true);
@@ -400,6 +351,19 @@ final class VanillaInstancedBatchRenderer {
                 RenderSystem.enableBlend();
                 RenderSystem.defaultBlendFunc();
             }
+
+            GL30.glBindVertexArray(parent.vaoId);
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, parent.instanceVboId);
+            parent.uploadInstanceStreamToBoundVbo();
+            enableVertexAttribsForDraw();
+
+            RenderSystem.setShader(() -> shader);
+            // Identity ModelView: instanced VS берёт позу из InstPos/InstRot. НЕ подставлять poseStack.last() — ломает batch.
+            applyCommonUniforms(shader, projectionMatrix, new Matrix4f());
+            // Текстуры: prepare → apply → bind (см. SingleMeshVboRenderer «РЕГРЕССИЯ-СТОП»). Только apply() = белые модели.
+            SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
+            shader.apply();
+            SingleMeshVboRenderer.bindBlockLitSamplerTextures(shader);
 
             InstancedGlCompat.glDrawElementsInstancedCompat(GL11.GL_TRIANGLES, parent.indexCount, GL11.GL_UNSIGNED_INT, 0, parent.instanceCount);
 

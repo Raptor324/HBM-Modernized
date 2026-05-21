@@ -190,21 +190,16 @@ public class MachineChemicalPlantVboRenderer {
     }
 
     /**
-     * Рендер жидкости после позы блока (caller обычно делает {@code translate(-0.5, 0, -0.5)} в VBO-рамке).
+     * Ставит рендер жидкости в очередь до {@link MachineChemicalPlantRenderer#presentDeferredFluids()}.
+     * Caller уже применил поворот блока; здесь только VBO-сдвиг {@code (-0.5, 0, -0.5)}.
      */
     public static void renderChemplantFluid(MachineChemicalPlantBlockEntity be, MachineChemicalPlantBakedModel model,
                                             float partialTick, PoseStack poseStack, MultiBufferSource bufferSource,
                                             int packedLight, int packedOverlay, FluidVisual visual) {
         poseStack.pushPose();
         poseStack.translate(-0.5f, 0f, -0.5f);
-        float anim = be.getAnim(partialTick);
-        BlockState state = be.getBlockState();
-        Direction facing = state.getValue(MachineChemicalPlantBlock.FACING);
-        // Под шейдерами (Oculus/Iris) важно, чтобы tracked shader-texture слот 0 указывал на block atlas.
-        // Иначе translucent RenderType может семплить "чужую" текстуру до первого toggle/reload шейдера.
-        RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
-        // Только правильная геометрия части "Fluid". Без swirl-fallback, чтобы не было конфликтов с batched/VBO.
-        tryRenderFluidBakedPart(model, state, facing, anim, poseStack, bufferSource, packedLight, packedOverlay, visual);
+        MachineChemicalPlantRenderer.scheduleDeferredFluid(
+            be.getBlockPos(), poseStack.last().pose(), packedLight, packedOverlay, visual);
         poseStack.popPose();
     }
 
@@ -212,20 +207,20 @@ public class MachineChemicalPlantVboRenderer {
         new ResourceLocation("hbm_m", "block/machine/chemical_plant_fluid");
 
     /**
-     * RenderType для жидкости.
-     * - Forge: используем entityTranslucent с block atlas, чтобы рендер гарантированно попал в BE-пайплайн/буфер
-     *   (terrain translucent на Forge может не флашиться на первом входе до ресурсного события).
-     * - Fabric: используем block translucent (depth write OFF), иначе жидкость может писать depth и "вырезать" корпус
-     *   при instanced/batched пути.
+     * Block translucent: depth write off (как {@code glDepthMask(false)} в 1.7.10), формат BLOCK для baked quads.
      */
-    //? if forge {
-    private static final RenderType FLUID_RENDER_TYPE = RenderType.entityTranslucent(TextureAtlas.LOCATION_BLOCKS);
-    //?} else {
-    /*private static final RenderType FLUID_RENDER_TYPE = RenderType.translucent();
-    *///?}
+    private static final RenderType FLUID_RENDER_TYPE = RenderType.translucent();
 
     //? if forge {
-    private static boolean tryRenderFluidBakedPart(MachineChemicalPlantBakedModel model, BlockState state, Direction facing, float anim,
+    /** Immediate draw used by {@link MachineChemicalPlantRenderer#presentDeferredFluids()}. */
+    public static void drawChemplantFluidBaked(MachineChemicalPlantBakedModel model, BlockState state, float anim,
+                                               PoseStack poseStack, MultiBufferSource bufferSource,
+                                               int packedLight, int packedOverlay, FluidVisual visual) {
+        RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
+        tryRenderFluidBakedPart(model, state, anim, poseStack, bufferSource, packedLight, packedOverlay, visual);
+    }
+
+    private static boolean tryRenderFluidBakedPart(MachineChemicalPlantBakedModel model, BlockState state, float anim,
                                                    PoseStack poseStack, MultiBufferSource bufferSource,
                                                    int packedLight, int packedOverlay, FluidVisual visual) {
         BakedModel fluidPart = model.getPart("Fluid");

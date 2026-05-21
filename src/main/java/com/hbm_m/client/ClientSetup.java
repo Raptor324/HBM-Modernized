@@ -712,6 +712,7 @@ public class ClientSetup {
             DoorRenderer.clearAllCaches();
             MachinePressRenderer.clearCaches();
             MachineChemicalPlantRenderer.clearCaches();
+            MachineCrystallizerRenderer.clearCaches();
             MeshRenderCache.clearAll();
             com.hbm_m.client.render.MdiGeometryAtlas.resetForResourceLifecycle();
             AbstractObjArmorLayer.clearAllCaches();
@@ -1242,6 +1243,7 @@ public class ClientSetup {
                         DoorRenderer.clearAllCaches();
                         MachinePressRenderer.clearCaches();
                         MachineChemicalPlantRenderer.clearCaches();
+                        MachineCrystallizerRenderer.clearCaches();
                         MeshRenderCache.clearAll();
                         com.hbm_m.client.render.MdiGeometryAtlas.resetForResourceLifecycle();
                         AbstractObjArmorLayer.clearAllCaches();

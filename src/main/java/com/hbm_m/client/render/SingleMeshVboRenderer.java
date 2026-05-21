@@ -15,6 +15,7 @@ import org.lwjgl.system.MemoryUtil;
 
 import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.IrisExtendedShaderAccess;
+import com.mojang.blaze3d.shaders.Uniform;
 import com.hbm_m.client.render.shader.IrisPhaseGuard;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
@@ -33,6 +34,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.core.BlockPos;
@@ -93,8 +95,84 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
     private final float[] tmpProbeUV = new float[32];
     protected boolean useSlicedLight = false;
 
+    // Cached block_lit uniform handles (per renderer instance, invalidated on shader relink).
+    private ShaderInstance cachedBlockLitShader;
+    private int cachedBlockLitProgramId = -1;
+    private long cachedBlockLitPipelineGen = -1L;
+    private Uniform cachedBboxMinU;
+    private Uniform cachedBboxSizeU;
+    private Uniform cachedLightC01;
+    private Uniform cachedLightC23;
+    private Uniform cachedLightC45;
+    private Uniform cachedLightC67;
+    private Uniform cachedLightS0C01;
+    private Uniform cachedLightS0C23;
+    private Uniform cachedLightS1C01;
+    private Uniform cachedLightS1C23;
+    private Uniform cachedLightS2C01;
+    private Uniform cachedLightS2C23;
+    private Uniform cachedLightS3C01;
+    private Uniform cachedLightS3C23;
+    private Uniform cachedFogStartU;
+    private Uniform cachedFogEndU;
+    private Uniform cachedFogColorU;
+    private Uniform cachedFadeAlphaU;
+
     public void setUseSlicedLight(boolean useSlicedLight) {
         this.useSlicedLight = useSlicedLight;
+    }
+
+    private void updateBlockLitUniformCache(ShaderInstance shader) {
+        int programId = (shader != null) ? shader.getId() : -1;
+        long pipelineGen = IrisExtendedShaderAccess.getPipelineGeneration();
+        if (cachedBlockLitShader == shader
+                && cachedBlockLitProgramId == programId
+                && cachedBlockLitPipelineGen == pipelineGen
+                && cachedBlockLitShader != null) {
+            return;
+        }
+        cachedBlockLitShader = shader;
+        cachedBlockLitProgramId = programId;
+        cachedBlockLitPipelineGen = pipelineGen;
+        if (shader == null) {
+            cachedBboxMinU = null;
+            cachedBboxSizeU = null;
+            cachedLightC01 = null;
+            cachedLightC23 = null;
+            cachedLightC45 = null;
+            cachedLightC67 = null;
+            cachedLightS0C01 = null;
+            cachedLightS0C23 = null;
+            cachedLightS1C01 = null;
+            cachedLightS1C23 = null;
+            cachedLightS2C01 = null;
+            cachedLightS2C23 = null;
+            cachedLightS3C01 = null;
+            cachedLightS3C23 = null;
+            cachedFogStartU = null;
+            cachedFogEndU = null;
+            cachedFogColorU = null;
+            cachedFadeAlphaU = null;
+            return;
+        }
+        cachedBboxMinU = shader.getUniform("BboxMin");
+        cachedBboxSizeU = shader.getUniform("BboxSize");
+        cachedLightC01 = shader.getUniform("LightC01");
+        cachedLightC23 = shader.getUniform("LightC23");
+        cachedLightC45 = shader.getUniform("LightC45");
+        cachedLightC67 = shader.getUniform("LightC67");
+        cachedLightS0C01 = shader.getUniform("LightS0C01");
+        cachedLightS0C23 = shader.getUniform("LightS0C23");
+        cachedLightS1C01 = shader.getUniform("LightS1C01");
+        cachedLightS1C23 = shader.getUniform("LightS1C23");
+        cachedLightS2C01 = shader.getUniform("LightS2C01");
+        cachedLightS2C23 = shader.getUniform("LightS2C23");
+        cachedLightS3C01 = shader.getUniform("LightS3C01");
+        cachedLightS3C23 = shader.getUniform("LightS3C23");
+        cachedFogStartU = shader.getUniform("FogStart");
+        cachedFogEndU = shader.getUniform("FogEnd");
+        cachedFogColorU = shader.getUniform("FogColor");
+        cachedFadeAlphaU = shader.getUniform("FadeAlpha");
     }
 
     protected abstract VboData buildVboData();
@@ -117,6 +195,17 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             RenderSystem.bindTexture(blockAtlas.getId());
         }
     }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // РЕГРЕССИЯ-СТОП: instanced block_lit — белые модели без текстур атласа
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Симптом: useInstancedStaticRendering=true → все OBJ белые; false → нормально.
+    // Причина A: Sampler2 uniform=0 → FS читает atlas вместо lightmap (угол ~белый).
+    // Причина B: turnOnLightLayer() при active TEXTURE0 → atlas на unit 0 затирается.
+    // Причина C: flush в AFTER_LEVEL, а не в AFTER_BLOCK_ENTITIES → слоты GL грязные.
+    // Контракт: prepareBlockLitSamplers → apply → bindBlockLitSamplerTextures → draw.
+    // НЕЛЬЗЯ: только apply(); только setSampler без GL bind; flush в конце уровня.
+    // ═══════════════════════════════════════════════════════════════════════════
 
     /**
      * Primes the shader's sampler map so that {@link ShaderInstance#apply()} binds the
@@ -154,21 +243,129 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         if (shader == null) {
             return;
         }
-        // Publish the dynamic lightmap into RenderSystem.shaderTextures[2]; also
-        // applies the bilinear filter Mojang expects on unit 2.
-        // MUST come BEFORE setShaderTexture(0, BLOCKS): turnOnLightLayer() calls
-        // DynamicTexture.setBlurMipmap() → AbstractTexture.bind() →
-        // RenderSystem.setShaderTexture(0, lightmapId), which overwrites slot 0.
-        // Setting the block atlas AFTER turnOnLightLayer() ensures the for-loop
-        // below reads the correct atlas id from getShaderTexture(0).
-        Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();
-        // Re-publish the block atlas into shaderTextures[0] (fixes bind() pollution).
+        RenderFrameLight.ensureLightTextureUpdated();
+        primeBlockLitSamplerMap(shader, Minecraft.getInstance());
+    }
+
+    /**
+     * Fills {@code samplerMap} so {@link ShaderInstance#apply()} binds atlas → unit 0 and
+     * lightmap → unit 1. Mirrors {@code LevelRenderer} / {@code VertexBuffer._drawWithShader}.
+     */
+    private static void primeBlockLitSamplerMap(ShaderInstance shader, Minecraft mc) {
+        var textureManager = mc.getTextureManager();
+
+        // НЕЛЬЗЯ вызывать turnOnLightLayer() пока active TEXTURE0 — перезапишет atlas (белые модели).
         RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
-        // Prime samplerMap for all 12 slots exactly like VertexBuffer does. apply()
-        // only iterates samplerNames declared in the JSON, so extra Samplers here
-        // are harmless.
-        for (int i = 0; i < 12; i++) {
-            shader.setSampler("Sampler" + i, RenderSystem.getShaderTexture(i));
+        RenderSystem.activeTexture(GL13.GL_TEXTURE0);
+        textureManager.bindForSetup(TextureAtlas.LOCATION_BLOCKS);
+
+        RenderSystem.activeTexture(GL13.GL_TEXTURE1);
+        mc.gameRenderer.lightTexture().turnOnLightLayer();
+
+        RenderSystem.activeTexture(GL13.GL_TEXTURE0);
+        textureManager.bindForSetup(TextureAtlas.LOCATION_BLOCKS);
+
+        AbstractTexture atlasTex = textureManager.getTexture(TextureAtlas.LOCATION_BLOCKS);
+        int lightmapGlId = resolveLightmapGlId(mc);
+        if (atlasTex != null) {
+            shader.setSampler("Sampler0", atlasTex);
+        } else {
+            int atlasGlId = resolveBlockAtlasGlId(mc);
+            if (atlasGlId > 0) {
+                shader.setSampler("Sampler0", atlasGlId);
+            }
+        }
+        // Имя "Sampler2" в JSON ≠ GL_TEXTURE2: apply() кладёт его на unit 1 (индекс j в массиве).
+        if (lightmapGlId > 0) {
+            shader.setSampler("Sampler2", lightmapGlId);
+        }
+    }
+
+    /** GL texture id for the block atlas — never trust slot 0 alone after chunk/MDI draws. */
+    private static int resolveBlockAtlasGlId(Minecraft mc) {
+        AbstractTexture atlas = mc.getTextureManager().getTexture(TextureAtlas.LOCATION_BLOCKS);
+        if (atlas != null) {
+            return atlas.getId();
+        }
+        int fromSlot = RenderSystem.getShaderTexture(0);
+        return fromSlot > 0 ? fromSlot : -1;
+    }
+
+    /**
+     * GL texture id for the dynamic lightmap. {@link LightTexture#turnOnLightLayer()} must run
+     * while {@code GL_TEXTURE1} is active (see {@link #prepareBlockLitSamplers}).
+     */
+    private static int resolveLightmapGlId(Minecraft mc) {
+        int fromSlot = RenderSystem.getShaderTexture(2);
+        if (fromSlot > 0) {
+            return fromSlot;
+        }
+        RenderSystem.activeTexture(GL13.GL_TEXTURE1);
+        int bound = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
+        RenderSystem.activeTexture(GL13.GL_TEXTURE0);
+        return bound > 0 ? bound : -1;
+    }
+
+    /**
+     * Re-binds block atlas ({@code Sampler0} → {@code GL_TEXTURE0}) and dynamic lightmap
+     * ({@code Sampler2} → {@code GL_TEXTURE1}) immediately before instanced draws.
+     * <p>
+     * {@link ShaderInstance#apply()} maps JSON sampler index {@code j} to {@code GL_TEXTURE0 + j}
+     * (so {@code Sampler2} uses unit 1, not 2). If {@code Sampler2} stays at 0, the fragment
+     * shader samples the atlas near {@code (0.97, 0.97)} and machines look solid white.
+     * VAO / instance-buffer work between {@code apply()} and the draw must not rely on
+     * {@code apply()} alone — force GL binds here.
+     */
+    /**
+     * Вызывать <b>после</b> {@link ShaderInstance#apply()} и <b>перед</b> любым instanced glDraw*.
+     * Пропуск = белые модели (см. блок «РЕГРЕССИЯ-СТОП» над {@link #prepareBlockLitSamplers}).
+     */
+    public static void bindBlockLitSamplerTextures(ShaderInstance shader) {
+        if (shader == null) {
+            return;
+        }
+        RenderSystem.assertOnRenderThread();
+        Minecraft mc = Minecraft.getInstance();
+
+        // Same unit order as prepareBlockLitSamplers(): turnOnLightLayer() binds to the
+        // *active* GL unit — never call it before TEXTURE1 is active or the atlas on unit 0
+        // gets replaced by the lightmap (Sampler0 then samples lightmap → solid white).
+        RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
+        RenderSystem.activeTexture(GL13.GL_TEXTURE0);
+        mc.getTextureManager().bindForSetup(TextureAtlas.LOCATION_BLOCKS);
+
+        RenderSystem.activeTexture(GL13.GL_TEXTURE1);
+        mc.gameRenderer.lightTexture().turnOnLightLayer();
+
+        RenderSystem.activeTexture(GL13.GL_TEXTURE0);
+        mc.getTextureManager().bindForSetup(TextureAtlas.LOCATION_BLOCKS);
+
+        int atlasGlId = resolveBlockAtlasGlId(mc);
+        int lightmapGlId = resolveLightmapGlId(mc);
+        if (atlasGlId <= 0 || lightmapGlId <= 0) {
+            MainRegistry.LOGGER.warn(
+                    "bindBlockLitSamplerTextures: invalid atlas/lightmap GL id (atlas={}, lightmap={})",
+                    atlasGlId, lightmapGlId);
+            return;
+        }
+
+        GL13.glActiveTexture(GL13.GL_TEXTURE0);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlasGlId);
+        GL13.glActiveTexture(GL13.GL_TEXTURE1);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, lightmapGlId);
+        GL13.glActiveTexture(GL13.GL_TEXTURE0);
+
+        shader.setSampler("Sampler0", atlasGlId);
+        shader.setSampler("Sampler2", lightmapGlId);
+
+        // JSON lists Sampler0 then Sampler2 → apply() uses texture units 0 and 1, not 0 and 2.
+        var uSampler0 = shader.getUniform("Sampler0");
+        if (uSampler0 != null) {
+            uSampler0.set(0);
+        }
+        var uSampler2 = shader.getUniform("Sampler2");
+        if (uSampler2 != null) {
+            uSampler2.set(1);
         }
     }
 
@@ -430,64 +627,45 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                                               tmpLocalPose, packedLight, tmpCornerUV);
             }
 
-            var bboxMinU = shader.getUniform("BboxMin");
-            if (bboxMinU != null) bboxMinU.set(objBbox[0], objBbox[1], objBbox[2]);
-            var bboxSizeU = shader.getUniform("BboxSize");
-            if (bboxSizeU != null) {
-                bboxSizeU.set(
+            updateBlockLitUniformCache(shader);
+            if (cachedBboxMinU != null) cachedBboxMinU.set(objBbox[0], objBbox[1], objBbox[2]);
+            if (cachedBboxSizeU != null) {
+                cachedBboxSizeU.set(
                     Math.max(1e-4f, objBbox[3] - objBbox[0]),
                     Math.max(1e-4f, objBbox[4] - objBbox[1]),
                     Math.max(1e-4f, objBbox[5] - objBbox[2])
                 );
             }
             if (useSlicedLight) {
-                var s0c01 = shader.getUniform("LightS0C01");
-                if (s0c01 != null) s0c01.set(tmpProbeUV[0], tmpProbeUV[1], tmpProbeUV[2], tmpProbeUV[3]);
-                var s0c23 = shader.getUniform("LightS0C23");
-                if (s0c23 != null) s0c23.set(tmpProbeUV[4], tmpProbeUV[5], tmpProbeUV[6], tmpProbeUV[7]);
-
-                var s1c01 = shader.getUniform("LightS1C01");
-                if (s1c01 != null) s1c01.set(tmpProbeUV[8], tmpProbeUV[9], tmpProbeUV[10], tmpProbeUV[11]);
-                var s1c23 = shader.getUniform("LightS1C23");
-                if (s1c23 != null) s1c23.set(tmpProbeUV[12], tmpProbeUV[13], tmpProbeUV[14], tmpProbeUV[15]);
-
-                var s2c01 = shader.getUniform("LightS2C01");
-                if (s2c01 != null) s2c01.set(tmpProbeUV[16], tmpProbeUV[17], tmpProbeUV[18], tmpProbeUV[19]);
-                var s2c23 = shader.getUniform("LightS2C23");
-                if (s2c23 != null) s2c23.set(tmpProbeUV[20], tmpProbeUV[21], tmpProbeUV[22], tmpProbeUV[23]);
-
-                var s3c01 = shader.getUniform("LightS3C01");
-                if (s3c01 != null) s3c01.set(tmpProbeUV[24], tmpProbeUV[25], tmpProbeUV[26], tmpProbeUV[27]);
-                var s3c23 = shader.getUniform("LightS3C23");
-                if (s3c23 != null) s3c23.set(tmpProbeUV[28], tmpProbeUV[29], tmpProbeUV[30], tmpProbeUV[31]);
+                if (cachedLightS0C01 != null) cachedLightS0C01.set(tmpProbeUV[0], tmpProbeUV[1], tmpProbeUV[2], tmpProbeUV[3]);
+                if (cachedLightS0C23 != null) cachedLightS0C23.set(tmpProbeUV[4], tmpProbeUV[5], tmpProbeUV[6], tmpProbeUV[7]);
+                if (cachedLightS1C01 != null) cachedLightS1C01.set(tmpProbeUV[8], tmpProbeUV[9], tmpProbeUV[10], tmpProbeUV[11]);
+                if (cachedLightS1C23 != null) cachedLightS1C23.set(tmpProbeUV[12], tmpProbeUV[13], tmpProbeUV[14], tmpProbeUV[15]);
+                if (cachedLightS2C01 != null) cachedLightS2C01.set(tmpProbeUV[16], tmpProbeUV[17], tmpProbeUV[18], tmpProbeUV[19]);
+                if (cachedLightS2C23 != null) cachedLightS2C23.set(tmpProbeUV[20], tmpProbeUV[21], tmpProbeUV[22], tmpProbeUV[23]);
+                if (cachedLightS3C01 != null) cachedLightS3C01.set(tmpProbeUV[24], tmpProbeUV[25], tmpProbeUV[26], tmpProbeUV[27]);
+                if (cachedLightS3C23 != null) cachedLightS3C23.set(tmpProbeUV[28], tmpProbeUV[29], tmpProbeUV[30], tmpProbeUV[31]);
             } else {
-                var c01 = shader.getUniform("LightC01");
-                if (c01 != null) c01.set(tmpCornerUV[0], tmpCornerUV[1], tmpCornerUV[2], tmpCornerUV[3]);
-                var c23 = shader.getUniform("LightC23");
-                if (c23 != null) c23.set(tmpCornerUV[4], tmpCornerUV[5], tmpCornerUV[6], tmpCornerUV[7]);
-                var c45 = shader.getUniform("LightC45");
-                if (c45 != null) c45.set(tmpCornerUV[8], tmpCornerUV[9], tmpCornerUV[10], tmpCornerUV[11]);
-                var c67 = shader.getUniform("LightC67");
-                if (c67 != null) c67.set(tmpCornerUV[12], tmpCornerUV[13], tmpCornerUV[14], tmpCornerUV[15]);
+                if (cachedLightC01 != null) cachedLightC01.set(tmpCornerUV[0], tmpCornerUV[1], tmpCornerUV[2], tmpCornerUV[3]);
+                if (cachedLightC23 != null) cachedLightC23.set(tmpCornerUV[4], tmpCornerUV[5], tmpCornerUV[6], tmpCornerUV[7]);
+                if (cachedLightC45 != null) cachedLightC45.set(tmpCornerUV[8], tmpCornerUV[9], tmpCornerUV[10], tmpCornerUV[11]);
+                if (cachedLightC67 != null) cachedLightC67.set(tmpCornerUV[12], tmpCornerUV[13], tmpCornerUV[14], tmpCornerUV[15]);
             }
 
-            var fogStartUniform = shader.getUniform("FogStart");
-            if (fogStartUniform != null) fogStartUniform.set(RenderSystem.getShaderFogStart());
-            var fogEndUniform = shader.getUniform("FogEnd");
-            if (fogEndUniform != null) fogEndUniform.set(RenderSystem.getShaderFogEnd());
-            var fogColorUniform = shader.getUniform("FogColor");
-            if (fogColorUniform != null) {
+            if (cachedFogStartU != null) cachedFogStartU.set(RenderSystem.getShaderFogStart());
+            if (cachedFogEndU != null) cachedFogEndU.set(RenderSystem.getShaderFogEnd());
+            if (cachedFogColorU != null) {
                 float[] fogColor = RenderSystem.getShaderFogColor();
-                fogColorUniform.set(fogColor[0], fogColor[1], fogColor[2], fogColor[3]);
+                cachedFogColorU.set(fogColor[0], fogColor[1], fogColor[2], fogColor[3]);
             }
 
-            var fadeAlphaUniform = shader.getUniform("FadeAlpha");
-            if (fadeAlphaUniform != null) fadeAlphaUniform.set(currentFadeAlpha.get());
+            if (cachedFadeAlphaU != null) cachedFadeAlphaU.set(currentFadeAlpha.get());
 
             // Must come BEFORE apply() - apply() reads samplerMap populated here and
             // does glUseProgram + glUniform1i + glBindTexture in one shot.
             prepareBlockLitSamplers(shader);
             shader.apply();
+            bindBlockLitSamplerTextures(shader);
 
             float fade = currentFadeAlpha.get();
             RenderSystem.enableDepthTest();

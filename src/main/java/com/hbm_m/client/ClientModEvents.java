@@ -156,9 +156,7 @@ public class ClientModEvents {
 
             ModClothConfig cfg = ModClothConfig.get();
 
-            if (!cfg.enableOcclusionCulling
-
-                    || cfg.cullingMode == ModClothConfig.CullingMode.LEGACY_RAYCAST) {
+            if (!cfg.enableOcclusionCulling) {
 
                 OcclusionCullingHelper.captureBlockEntityPassFrustum(null);
 
@@ -166,19 +164,18 @@ public class ClientModEvents {
 
                 OcclusionCullingHelper.captureBlockEntityPassFrustum(context.frustum());
 
-                OcclusionCullingHelper.runGpuCullingBeforeBlockEntities();
-
             }
 
         });
 
 
 
+        // РЕГРЕССИЯ-СТОП: instanced flush ТОЛЬКО здесь. END — не рисовать batch (грязные texture units).
         WorldRenderEvents.AFTER_BLOCK_ENTITIES.register(context -> {
 
             var cameraPos = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
 
-            InstancedRenderFrame.deferPresent(context.projectionMatrix(), cameraPos);
+            InstancedRenderFrame.presentAfterBlockEntities(context.projectionMatrix(), cameraPos);
 
         });
 
@@ -186,7 +183,7 @@ public class ClientModEvents {
 
         WorldRenderEvents.END.register(context -> {
 
-            InstancedRenderFrame.flushDeferredPresent(context.tickDelta());
+            InstancedRenderFrame.flushDeferredPresent();
 
         });
 
@@ -213,20 +210,11 @@ public class ClientModEvents {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
 
             ModClothConfig cfg = ModClothConfig.get();
-
-            if (!cfg.enableOcclusionCulling
-
-                    || cfg.cullingMode == ModClothConfig.CullingMode.LEGACY_RAYCAST) {
-
-                OcclusionCullingHelper.captureBlockEntityPassFrustum(null);
-
-            } else {
-
-                OcclusionCullingHelper.captureBlockEntityPassFrustum(event.getFrustum());
-
-                OcclusionCullingHelper.runGpuCullingBeforeBlockEntities();
-
-            }
+            Minecraft mc = Minecraft.getInstance();
+            var cameraPos = mc.gameRenderer.getMainCamera().getPosition();
+            var frustum = cfg.enableOcclusionCulling ? event.getFrustum() : null;
+            InstancedRenderFrame.onBeforeBlockEntities(
+                    event.getProjectionMatrix(), cameraPos, frustum);
 
             return;
 
@@ -246,11 +234,7 @@ public class ClientModEvents {
 
                     cameraPos);
 
-            if (mc.level != null) {
-
-                InstancedRenderFrame.deferPresent(event.getProjectionMatrix(), cameraPos);
-
-            }
+            InstancedRenderFrame.presentAfterBlockEntities(event.getProjectionMatrix(), cameraPos);
 
             return;
 
@@ -258,7 +242,7 @@ public class ClientModEvents {
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
 
-            InstancedRenderFrame.flushDeferredPresent();
+            InstancedRenderFrame.onRenderSliceEnd();
 
         }
 
@@ -268,17 +252,8 @@ public class ClientModEvents {
 
     /**
 
-     * Instanced flush moved to {@code AFTER_LEVEL} — the world framebuffer
-
-     * and depth buffer are still active there. {@code RenderTickEvent.END}
-
-     * fires after {@code GameRenderer.render()} returns and the framebuffer
-
-     * has been composited / blitted, so drawing at that point produces
-
-     * wrong depth (models visible through blocks) and missing textures
-
-     * (slot 0 polluted by GUI/overlay rendering).
+     * Instanced flush — только {@link com.hbm_m.client.render.culling.InstancedRenderFrame#presentAfterBlockEntities}
+     * на {@code AFTER_BLOCK_ENTITIES}. {@code RenderTickEvent.END} / отложенный flush → белые модели.
 
      */
 

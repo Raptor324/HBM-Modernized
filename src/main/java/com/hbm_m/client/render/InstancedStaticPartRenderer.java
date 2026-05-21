@@ -6,12 +6,6 @@ import java.nio.Buffer;
 import java.nio.FloatBuffer;
 import java.util.List;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.*;
-import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -23,18 +17,25 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.MemoryUtil;
 
-import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
+import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
 //?}
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
@@ -374,7 +375,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     @Override
     public void renderSingle(PoseStack poseStack, int packedLight, BlockPos blockPos,
                              @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
-        if (!initialized || vaoId <= 0 || eboId <= 0 || indexCount <= 0) return;
+        if (!initialized || vaoId <= 0 || eboId <= 0 || indexCount <= 0 || instanceVboId <= 0 || instanceBuffer == null) return;
 
         if (ShaderCompatibilityDetector.isExternalShaderActive()) {
             if (irisHelper.drawSingleWithIrisExtended(poseStack, packedLight, blockPos, blockEntity)) {
@@ -407,6 +408,17 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     @Override
     public void addInstance(PoseStack poseStack, int packedLight, BlockPos blockPos,
                             @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
+        addInstance(poseStack, packedLight, blockPos, blockEntity, bufferSource, null);
+    }
+
+    /**
+     * Like {@link #addInstance(PoseStack, int, BlockPos, BlockEntity, MultiBufferSource)} but
+     * reuses {@code sharedCornerUV8} (16 floats from {@link LightSampleCache#getOrSample8}) for all
+     * parts of one machine in the same frame — avoids repeated spatial sampling at farm scale.
+     */
+    public void addInstance(PoseStack poseStack, int packedLight, BlockPos blockPos,
+                            @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource,
+                            @Nullable float[] sharedCornerUV8) {
         if (!initialized) return;
 
         //? if fabric {
@@ -463,30 +475,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         mat.getTranslation(posTmp);
         mat.getNormalizedRotation(rotTmp);
 
-        int sampleBase = instanceCount * 2;
-        LightSampleCache.getOrSample(blockEntity, packedLight, instanceLightUV, sampleBase);
+        fillInstanceCornerLight(blockEntity, packedLight, blockPos, mat, sharedCornerUV8);
 
-        if (LightSampleCache.BASE_POSE_SET.get()) {
-            tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(mat);
-        } else {
-            var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-            tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
-            tmpLocalPose.set(tmpInvViewRot).mul(mat);
-            tmpLocalPose.m30(tmpLocalPose.m30() - (float) (blockPos.getX() - cam.x));
-            tmpLocalPose.m31(tmpLocalPose.m31() - (float) (blockPos.getY() - cam.y));
-            tmpLocalPose.m32(tmpLocalPose.m32() - (float) (blockPos.getZ() - cam.z));
-        }
-        
-        long partHash = System.identityHashCode(this);
-        if (useSlicedLight) {
-            LightSampleCache.getOrSample16(blockEntity, partHash, objBbox, blockPos, tmpLocalPose,
-                                           packedLight, tmpCornerUV);
-        } else {
-            LightSampleCache.getOrSample8(blockEntity, partHash, objBbox, blockPos, tmpLocalPose,
-                                          packedLight, tmpCornerUV);
-        }
-
-        instanceCullIndices[instanceCount] = OcclusionCullingHelper.stagingCullIndexForBlock(blockPos);
+        instanceCullIndices[instanceCount] = -1;
         instanceOcclusionKeys[instanceCount] = OcclusionCullingHelper.occlusionKeyForBlock(blockPos);
         int baseFloat = instanceCount * instanceDataSize;
         memPutInstanceRecordAtBaseFloat(baseFloat);
@@ -499,8 +490,15 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     public void addInstanceGpuBones(PoseStack baseBlockPose, Matrix4f partLocalToBlock,
                                     int packedLight, BlockPos blockPos,
                                     @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
+        addInstanceGpuBones(baseBlockPose, partLocalToBlock, packedLight, blockPos, blockEntity, bufferSource, null);
+    }
+
+    public void addInstanceGpuBones(PoseStack baseBlockPose, Matrix4f partLocalToBlock,
+                                    int packedLight, BlockPos blockPos,
+                                    @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource,
+                                    @Nullable float[] sharedCornerUV8) {
         if (!initialized || !storesPerInstancePartBone) {
-            addInstance(baseBlockPose, packedLight, blockPos, blockEntity, bufferSource);
+            addInstance(baseBlockPose, packedLight, blockPos, blockEntity, bufferSource, sharedCornerUV8);
             return;
         }
 
@@ -600,15 +598,49 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         tmpInstanceMat.getTranslation(posTmp);
         tmpInstanceMat.getNormalizedRotation(rotTmp);
 
-        int sampleBase = instanceCount * 2;
-        LightSampleCache.getOrSample(blockEntity, packedLight, instanceLightUV, sampleBase);
+        fillInstanceCornerLight(blockEntity, packedLight, blockPos, mat, sharedCornerUV8);
+
+        int slot = instanceCount;
+        int baseFloat = slot * instanceDataSize;
+        memPutInstanceRecordAtBaseFloat(baseFloat);
+        instanceCount++;
+        ((Buffer) instanceBuffer).position(instanceDataSize * instanceCount);
+    }
+
+    public boolean usesGpuPartBonePath() {
+        return storesPerInstancePartBone && isInitialized();
+    }
+
+    /**
+     * Fills {@link #tmpCornerUV} for the instanced VBO and, when Iris flush needs it,
+     * {@link #instanceLightUV} for the current slot.
+     *
+     * <p>When {@code sharedCornerUV8} is supplied (one 8-corner sample per machine per frame),
+     * vanilla path skips {@link LightSampleCache#getOrSample} and {@code tmpLocalPose} work.
+     */
+    private void fillInstanceCornerLight(@Nullable BlockEntity blockEntity, int packedLight,
+                                         BlockPos blockPos, Matrix4f worldPose,
+                                         @Nullable float[] sharedCornerUV8) {
+        boolean hasSharedCorners = sharedCornerUV8 != null && sharedCornerUV8.length >= 16;
+        boolean needsIrisInstanceLight = ShaderCompatibilityDetector.canUseIrisExtendedShader()
+                || ShaderCompatibilityDetector.isExternalShaderActive();
+
+        if (needsIrisInstanceLight) {
+            int sampleBase = instanceCount * 2;
+            LightSampleCache.getOrSample(blockEntity, packedLight, instanceLightUV, sampleBase);
+        }
+
+        if (hasSharedCorners) {
+            System.arraycopy(sharedCornerUV8, 0, tmpCornerUV, 0, 16);
+            return;
+        }
 
         if (LightSampleCache.BASE_POSE_SET.get()) {
-            tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(mat);
+            tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(worldPose);
         } else {
             var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
             tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
-            tmpLocalPose.set(tmpInvViewRot).mul(mat);
+            tmpLocalPose.set(tmpInvViewRot).mul(worldPose);
             tmpLocalPose.m30(tmpLocalPose.m30() - (float) (blockPos.getX() - cam.x));
             tmpLocalPose.m31(tmpLocalPose.m31() - (float) (blockPos.getY() - cam.y));
             tmpLocalPose.m32(tmpLocalPose.m32() - (float) (blockPos.getZ() - cam.z));
@@ -622,16 +654,6 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             LightSampleCache.getOrSample8(blockEntity, partHash, objBbox, blockPos, tmpLocalPose,
                     packedLight, tmpCornerUV);
         }
-
-        int slot = instanceCount;
-        int baseFloat = slot * instanceDataSize;
-        memPutInstanceRecordAtBaseFloat(baseFloat);
-        instanceCount++;
-        ((Buffer) instanceBuffer).position(instanceDataSize * instanceCount);
-    }
-
-    public boolean usesGpuPartBonePath() {
-        return storesPerInstancePartBone && isInitialized();
     }
 
     // ── Flush ──────────────────────────────────────────────────────────
@@ -652,13 +674,29 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     }
     *///?}
 
+    /**
+     * Обязательный re-bind atlas + lightmap после {@link ShaderInstance#apply()} и перед glDraw*.
+     * <p>
+     * <b>РЕГРЕССИЯ-СТОП:</b> без этого instanced машины белые (Sampler2 читает unit 0 = atlas).
+     * Делегат — {@link SingleMeshVboRenderer#bindBlockLitSamplerTextures}; не дублировать логику здесь.
+     */
+    static void bindBlockLitTexturesBeforeDraw(ShaderInstance shader) {
+        SingleMeshVboRenderer.bindBlockLitSamplerTextures(shader);
+    }
+
+    /**
+     * Вызывается из {@link com.hbm_m.client.render.culling.InstancedRenderFrame#presentAfterBlockEntities}
+     * в том же кадре, что addInstance — не откладывать flush на конец уровня.
+     */
     @Override
     public void flush(Matrix4f projectionMatrix) {
         if (instanceCount == 0) return;
 
-        if (!initialized || vaoId == -1 || eboId == -1) {
+        if (!initialized || vaoId <= 0 || eboId <= 0 || instanceVboId <= 0 || instanceBuffer == null) {
             instanceCount = 0;
-            instanceBuffer.clear();
+            if (instanceBuffer != null) {
+                instanceBuffer.clear();
+            }
             return;
         }
 

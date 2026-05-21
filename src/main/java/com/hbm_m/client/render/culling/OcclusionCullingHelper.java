@@ -1,13 +1,12 @@
 package com.hbm_m.client.render.culling;
 
 
+import com.hbm_m.main.MainRegistry;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
-
-import com.mojang.blaze3d.systems.RenderSystem;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 //? if fabric {
@@ -54,7 +53,7 @@ public final class OcclusionCullingHelper {
     private static final int MAX_KEEP_MANHATTAN_BLOCKS = 192;
 
     /** Жёстный предел размера карты (путешествие без prune). */
-    private static final int MAX_CACHE_ENTRIES = 4096;
+    private static final int MAX_CACHE_ENTRIES = 16384;
 
     /** Глобальный счётчик: инкремент при подсказке «мир/чанк мог измениться». */
     private static long clientGeometryStamp = 0L;
@@ -128,7 +127,7 @@ public final class OcclusionCullingHelper {
     }
 
     /**
-     * Окклюжен через ray-march (центр → углы AABB → центры граней), как в {@link ModClothConfig.CullingMode#LEGACY_RAYCAST}.
+     * Окклюжен через ray-march (центр → углы AABB → центры граней).
      * Не учитывает frustum vanilla — его добавляет вызывающий при необходимости.
      */
     private static boolean legacyRaycastVisibility(Vec3 cameraPos, Level level, AABB renderBounds) {
@@ -174,16 +173,16 @@ public final class OcclusionCullingHelper {
 
     private static final class CachedResult {
         boolean visible;
-        /** Последний {@link #currentFrame}, в котором считали или переиспользовали результат. */
         long frame;
         long checkGameTime;
         double lastCamX;
         double lastCamY;
         double lastCamZ;
         long geometryStampAtCheck;
+        String lastReason; // Для логирования
 
         CachedResult(boolean visible, long frame, long checkGameTime,
-                     double lastCamX, double lastCamY, double lastCamZ, long geometryStampAtCheck) {
+                     double lastCamX, double lastCamY, double lastCamZ, long geometryStampAtCheck, String reason) {
             this.visible = visible;
             this.frame = frame;
             this.checkGameTime = checkGameTime;
@@ -191,10 +190,11 @@ public final class OcclusionCullingHelper {
             this.lastCamY = lastCamY;
             this.lastCamZ = lastCamZ;
             this.geometryStampAtCheck = geometryStampAtCheck;
+            this.lastReason = reason;
         }
 
         void setAll(boolean visible, long frame, long checkGameTime,
-                    double lastCamX, double lastCamY, double lastCamZ, long geometryStampAtCheck) {
+                    double lastCamX, double lastCamY, double lastCamZ, long geometryStampAtCheck, String reason) {
             this.visible = visible;
             this.frame = frame;
             this.checkGameTime = checkGameTime;
@@ -202,27 +202,12 @@ public final class OcclusionCullingHelper {
             this.lastCamY = lastCamY;
             this.lastCamZ = lastCamZ;
             this.geometryStampAtCheck = geometryStampAtCheck;
+            this.lastReason = reason;
         }
     }
 
-    /**
-     * Staging index for GPU visibility bitmask after {@link #shouldRender} submitted this BE.
-     * {@link com.hbm_m.client.render.culling.GpuCullMdiBridge#NO_CULL_INDEX} if unavailable.
-     */
     public static long occlusionKeyForBlock(BlockPos pos) {
         return occlusionCacheKey(pos);
-    }
-
-    public static int stagingCullIndexForBlock(BlockPos pos) {
-        if (!ModClothConfig.get().enableOcclusionCulling) {
-            return GpuCullMdiBridge.NO_CULL_INDEX;
-        }
-        ModClothConfig.CullingMode mode = resolveEffectiveCullingMode(ModClothConfig.get().cullingMode);
-        if (!usesGpuDepthOcclusion(mode) || !GpuCullingPipeline.isSupported()) {
-            return GpuCullMdiBridge.NO_CULL_INDEX;
-        }
-        int idx = GpuCullingPipeline.getStagingIndex(occlusionCacheKey(pos));
-        return idx >= 0 ? idx : GpuCullMdiBridge.NO_CULL_INDEX;
     }
 
     public static boolean shouldRender(BlockPos pos, Level level, AABB renderBounds) {
@@ -234,101 +219,30 @@ public final class OcclusionCullingHelper {
         var mc = Minecraft.getInstance();
         Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
 
-        // 1. Уже обслуживали этот BE в этом render-кадре — тот же результат.
         if (cached != null && cached.frame == currentFrame) {
             return cached.visible;
         }
 
-        // 2. Переиспользование между кадрами: статичная сцена, камера почти не двигалась.
         if (cached != null && canReuseCrossFrame(cached, level, cameraPos)) {
             cached.frame = currentFrame;
+            logDecision(pos, cached.visible, "CROSS_FRAME_REUSE", cached);
             return cached.visible;
-        }
-
-        // Ray-march только в LEGACY_RAYCAST. Раньше Iris всегда форсил этот путь —
-        // десятки лучей на BE за кадр убивали CPU при плотных полях станков
-        // (см. render review: MDI не снимает стоимость окклюжена на процессоре).
-        ModClothConfig cfg = ModClothConfig.get();
-        ModClothConfig.CullingMode configured = cfg.cullingMode;
-        ModClothConfig.CullingMode mode = resolveEffectiveCullingMode(configured);
-        // LEGACY_RAYCAST без явного opt-in — только frustum: ray-march на каждый BE убивает CPU.
-        if (configured == ModClothConfig.CullingMode.LEGACY_RAYCAST && cfg.enableLegacyRaycastOcclusion) {
-            boolean visible = legacyRaycastVisibility(cameraPos, level, renderBounds);
-            putCache(posLong, cached, visible, cameraPos, level);
-            return visible;
-        }
-        if (configured == ModClothConfig.CullingMode.LEGACY_RAYCAST) {
-            boolean frustumOnly = aabbPassesBerPassFrustum(renderBounds);
-            putCache(posLong, cached, frustumOnly, cameraPos, level);
-            return frustumOnly;
         }
 
         boolean frustum = aabbPassesBerPassFrustum(renderBounds);
         if (!frustum) {
-            putCache(posLong, cached, false, cameraPos, level);
+            putCache(posLong, cached, false, cameraPos, level, "FRUSTUM_CULLED");
             return false;
         }
 
-        if (usesGpuDepthOcclusion(mode)) {
-            GpuCullingPipeline.initialize();
-            if (GpuCullingPipeline.isSupported()) {
-                GpuCullingPipeline.submit(posLong, renderBounds);
-                if (GpuDrivenMdiPolicy.isActive()) {
-                    putCache(posLong, cached, frustum, cameraPos, level);
-                    return frustum;
-                }
-                if (GpuCullingPipeline.isLagReadbackValid()
-                        && GpuCullingPipeline.hasGpuVisibilityResult(posLong)) {
-                    boolean gpuVis = GpuCullingPipeline.isVisible(posLong);
-                    boolean visible = GpuCullVisibilityStabilizer.shouldRenderInstance(posLong, gpuVis);
-                    putCache(posLong, cached, visible, cameraPos, level);
-                    return visible;
-                }
-                putCache(posLong, cached, frustum, cameraPos, level);
-                return frustum;
-            }
-            if (mode == ModClothConfig.CullingMode.GPU_COMPUTE) {
-                putCache(posLong, cached, frustum, cameraPos, level);
-                return frustum;
-            }
-        }
-
-        putCache(posLong, cached, frustum, cameraPos, level);
-        return frustum;
-    }
-
-    private static boolean usesGpuDepthOcclusion(ModClothConfig.CullingMode mode) {
-        return resolveEffectiveCullingMode(mode) == ModClothConfig.CullingMode.GPU_COMPUTE;
-    }
-
-    /** AUTO → GPU compute при поддержке OpenGL, иначе CPU frustum. */
-    public static ModClothConfig.CullingMode resolveEffectiveCullingMode(ModClothConfig.CullingMode mode) {
-        if (mode != ModClothConfig.CullingMode.AUTO) {
-            return mode;
-        }
-        if (GpuCullingPipeline.isSupported() || GpuCullingPipeline.initialize()) {
-            return ModClothConfig.CullingMode.GPU_COMPUTE;
-        }
-        return ModClothConfig.CullingMode.CPU_FRUSTUM;
-    }
-
-    /** Квадрат расстояния от камеры до ближайшей точки AABB (не до центра). */
-    private static double distSqToAabb(Vec3 cam, AABB box) {
-        double cx = Mth.clamp(cam.x, box.minX, box.maxX);
-        double cy = Mth.clamp(cam.y, box.minY, box.maxY);
-        double cz = Mth.clamp(cam.z, box.minZ, box.maxZ);
-        double dx = cx - cam.x;
-        double dy = cy - cam.y;
-        double dz = cz - cam.z;
-        return dx * dx + dy * dy + dz * dz;
+        boolean visible = legacyRaycastVisibility(cameraPos, level, renderBounds);
+        putCache(posLong, cached, visible, cameraPos, level, "RAYCAST_OCCLUSION");
+        return visible;
     }
 
     private static boolean canReuseCrossFrame(CachedResult c, Level level, Vec3 cameraPos) {
         if (!c.visible) return false;
-        ModClothConfig.CullingMode mode = ModClothConfig.get().cullingMode;
-        if (usesGpuDepthOcclusion(mode)) {
-            return false;
-        }
+        if (ModClothConfig.useInstancedBatching()) return false;
         if (level == null) return false;
         if (c.geometryStampAtCheck != clientGeometryStamp) return false;
         long nowTick = level.getGameTime();
@@ -341,16 +255,30 @@ public final class OcclusionCullingHelper {
     }
 
     private static void putCache(long key, @Nullable CachedResult existing, boolean visible,
-                                 Vec3 cameraPos, Level level) {
+                                 Vec3 cameraPos, Level level, String reason) {
         long tick = level == null ? 0L : level.getGameTime();
         if (existing == null) {
             occlusionCache.put(key, new CachedResult(visible, currentFrame, tick,
-                    cameraPos.x, cameraPos.y, cameraPos.z, clientGeometryStamp));
+                    cameraPos.x, cameraPos.y, cameraPos.z, clientGeometryStamp, reason));
+            logDecision(BlockPos.of(stripShadowKeyBit(key)), visible, reason, null);
         } else {
+            logDecision(BlockPos.of(stripShadowKeyBit(key)), visible, reason, existing);
             existing.setAll(visible, currentFrame, tick,
-                    cameraPos.x, cameraPos.y, cameraPos.z, clientGeometryStamp);
+                    cameraPos.x, cameraPos.y, cameraPos.z, clientGeometryStamp, reason);
         }
         trimCacheIfNeeded();
+    }
+
+    // ЛОГИРОВАНИЕ: Пишет в консоль ТОЛЬКО когда состояние видимости или причина меняются.
+    private static void logDecision(BlockPos pos, boolean visible, String reason, CachedResult cached) {
+        try {
+            if (ModClothConfig.get().mdiDebugLogDispatch) {
+                if (cached == null || cached.visible != visible || !reason.equals(cached.lastReason)) {
+                    MainRegistry.LOGGER.info("[HBM-Cull] BE at {} visibility changed to {}. Reason: {}",
+                            pos.toShortString(), visible, reason);
+                }
+            }
+        } catch (Throwable ignored) {}
     }
 
     private static void trimCacheIfNeeded() {
@@ -364,11 +292,6 @@ public final class OcclusionCullingHelper {
         }
     }
 
-    /**
-     * Быстрый Raycast (Voxel Traversal Algorithm).
-     * Идет от камеры к цели по сетке блоков.
-     * Возвращает TRUE, если луч ПЕРЕКРЫТ твердым блоком.
-     */
     private static boolean isRayOccluded(Vec3 start, double endX, double endY, double endZ, Level level, AABB renderBounds) {
         double startX = start.x;
         double startY = start.y;
@@ -376,7 +299,6 @@ public final class OcclusionCullingHelper {
 
         BlockPos.MutableBlockPos mutablePos = RAY_MARCH_SCRATCH;
 
-        // Позиция "курсора" в сетке блоков
         int currentX = Mth.floor(startX);
         int currentY = Mth.floor(startY);
         int currentZ = Mth.floor(startZ);
@@ -385,55 +307,41 @@ public final class OcclusionCullingHelper {
         int targetY = Mth.floor(endY);
         int targetZ = Mth.floor(endZ);
 
-        // Направление шага (+1 или -1)
         int stepX = Integer.signum(targetX - currentX);
         int stepY = Integer.signum(targetY - currentY);
         int stepZ = Integer.signum(targetZ - currentZ);
 
-        if (stepX == 0 && stepY == 0 && stepZ == 0) return false; // Мы уже внутри целевого блока
+        if (stepX == 0 && stepY == 0 && stepZ == 0) return false;
 
-        // Дельты (насколько нужно пройти по лучу, чтобы пересечь границу блока по оси)
         double dx = endX - startX;
         double dy = endY - startY;
         double dz = endZ - startZ;
 
-        // Избегаем деления на ноль
         double deltaX = (stepX == 0) ? Double.MAX_VALUE : Math.abs(1.0 / dx);
         double deltaY = (stepY == 0) ? Double.MAX_VALUE : Math.abs(1.0 / dy);
         double deltaZ = (stepZ == 0) ? Double.MAX_VALUE : Math.abs(1.0 / dz);
 
-        // Max (насколько далеко мы уже прошли до следующей границы)
         double maxX = (stepX == 0) ? Double.MAX_VALUE : (stepX > 0 ? (currentX + 1 - startX) * deltaX : (startX - currentX) * deltaX);
         double maxY = (stepY == 0) ? Double.MAX_VALUE : (stepY > 0 ? (currentY + 1 - startY) * deltaY : (startY - currentY) * deltaY);
         double maxZ = (stepZ == 0) ? Double.MAX_VALUE : (stepZ > 0 ? (currentZ + 1 - startZ) * deltaZ : (startZ - currentZ) * deltaZ);
 
-        // Ограничитель (чтобы не улететь в бесконечность, если что-то пойдет не так)
         int maxSteps = 100;
 
         while (maxSteps-- > 0) {
-            // Если мы пришли в целевой блок - значит препятствий не было
-            if (currentX == targetX && currentY == targetY && currentZ == targetZ) {
-                return false;
-            }
+            if (currentX == targetX && currentY == targetY && currentZ == targetZ) return false;
 
-            // Проверяем текущий блок на непрозрачность
-            // Исключаем стартовый блок (где камера), чтобы не клипаться головой
             if (currentX != Mth.floor(startX) || currentY != Mth.floor(startY) || currentZ != Mth.floor(startZ)) {
                 mutablePos.set(currentX, currentY, currentZ);
 
-                // Игнорируем блоки, которые пересекаются с AABB самой структуры!
-                // Иначе мультиблок (например, его dummy-блоки) будет перекрывать сам себя.
                 if (renderBounds != null &&
-                    currentX + 1 > renderBounds.minX && currentX < renderBounds.maxX &&
-                    currentY + 1 > renderBounds.minY && currentY < renderBounds.maxY &&
-                    currentZ + 1 > renderBounds.minZ && currentZ < renderBounds.maxZ) {
-                    // Это блок самой структуры (или внутри её AABB), пропускаем
+                        currentX + 1 > renderBounds.minX && currentX < renderBounds.maxX &&
+                        currentY + 1 > renderBounds.minY && currentY < renderBounds.maxY &&
+                        currentZ + 1 > renderBounds.minZ && currentZ < renderBounds.maxZ) {
                 } else if (isOccluder(level, mutablePos)) {
-                    return true; // Нашли стену!
+                    return true;
                 }
             }
 
-            // Шагаем к следующему блоку по оси, до границы которой ближе всего
             if (maxX < maxY) {
                 if (maxX < maxZ) {
                     currentX += stepX;
@@ -452,112 +360,19 @@ public final class OcclusionCullingHelper {
                 }
             }
         }
-
-        return false; // Дошли до лимита шагов, считаем что видно
+        return false;
     }
 
     private static boolean isOccluder(Level level, BlockPos pos) {
-        // Быстрая проверка чанка (опционально, level.getBlockState само проверит, но это может сэкономить время)
         if (!level.hasChunkAt(pos)) return false;
-
         BlockState state = level.getBlockState(pos);
         if (state.isAir()) return false;
-
         if (transparentBlocksTag != null && state.is(transparentBlocksTag)) return false;
-
-        // Основная проверка: перекрывает ли блок обзор
         return state.isSolidRender(level, pos);
-    }
-
-    /**
-     * До BER: readback lag-1 (с коротким wait на fence). Вызывать из
-     * {@code RenderLevelStageEvent.AFTER_ENTITIES}.
-     */
-    public static void runGpuCullingBeforeBlockEntities() {
-        try {
-            ModClothConfig cfg = ModClothConfig.get();
-            if (!cfg.enableOcclusionCulling
-                    || cfg.cullingMode == ModClothConfig.CullingMode.LEGACY_RAYCAST) {
-                return;
-            }
-            if (!usesGpuDepthOcclusion(cfg.cullingMode)) {
-                return;
-            }
-            if (GpuDrivenMdiPolicy.isActive()) {
-                return;
-            }
-            GpuCullingPipeline.initialize();
-            if (!GpuCullingPipeline.isSupported()) {
-                return;
-            }
-            GpuCullingPipeline.tryReadback(0L);
-            if (!GpuCullingPipeline.isLagReadbackValid()) {
-                GpuCullingPipeline.tryReadback(500_000L);
-            }
-        } catch (Throwable ignored) {
-        }
-    }
-
-    /**
-     * После BER, до MDI flush: same-frame GPU cull (lag-1 depth), без readback.
-     */
-    public static void runGpuCullDispatchBeforeMdi(org.joml.Matrix4f projectionMatrix, Vec3 cameraPos) {
-        if (!GpuDrivenMdiPolicy.isActive()) {
-            return;
-        }
-        try {
-            GpuCullingPipeline.initialize();
-            if (!GpuCullingPipeline.isSupported() || GpuCullingPipeline.getStagingCount() == 0) {
-                return;
-            }
-            org.joml.Matrix4f viewProj = new org.joml.Matrix4f(projectionMatrix)
-                    .mul(new org.joml.Matrix4f(com.mojang.blaze3d.systems.RenderSystem.getModelViewMatrix()));
-            GpuDepthSource.Snapshot depth = GpuDepthSource.takeDepthForSameFrameCull();
-            if (!depth.valid()) {
-                return;
-            }
-            GpuCullingPipeline.dispatchSameFrame(viewProj, cameraPos,
-                    depth.textureId(), depth.width(), depth.height());
-            GpuCullingPipeline.ensureMdiReadback();
-        } catch (Throwable ignored) {
-        }
-    }
-
-    /**
-     * После BER: dispatch по depth (блоки + сущности + VBO машин), {@link GpuCullingPipeline#beginFrame}.
-     * <p>Вызывать на render-thread до {@link #onFrameStart()}.
-     */
-    public static void runGpuCullingAfterBlockEntities(Matrix4f projectionMatrix, Vec3 cameraPos) {
-        try {
-            ModClothConfig cfg = ModClothConfig.get();
-            if (!cfg.enableOcclusionCulling
-                    || cfg.cullingMode == ModClothConfig.CullingMode.LEGACY_RAYCAST) {
-                return;
-            }
-            Matrix4f viewProj = new Matrix4f(projectionMatrix).mul(new Matrix4f(RenderSystem.getModelViewMatrix()));
-            CpuFrustumCuller.updateFrustum(viewProj);
-            if (!usesGpuDepthOcclusion(cfg.cullingMode)) {
-                return;
-            }
-            GpuCullingPipeline.initialize();
-            if (!GpuCullingPipeline.isSupported()) {
-                return;
-            }
-            GpuDepthSource.Snapshot depth = GpuDepthSource.takeDepthForOcclusionDispatch();
-            if (depth.valid() && GpuCullingPipeline.getStagingCount() > 0) {
-                GpuCullingPipeline.dispatch(viewProj, cameraPos,
-                        depth.textureId(), depth.width(), depth.height());
-            }
-            GpuDepthSource.capturePostBerDepthForNextFrame();
-            GpuCullingPipeline.beginFrame();
-            GpuCullMdiBridge.clearThreadCullIndex();
-        } catch (Throwable ignored) {
-        }
     }
 
     public static void onFrameStart() {
         currentFrame++;
-        GpuCullVisibilityStabilizer.onFrameStart();
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null && !occlusionCache.isEmpty()) {
@@ -573,7 +388,6 @@ public final class OcclusionCullingHelper {
             });
         }
 
-        // Резервная очистка «залипших» записей (например, без игрока в меню)
         if (currentFrame % 600L == 0L) {
             occlusionCache.long2ObjectEntrySet().removeIf(e -> currentFrame - e.getValue().frame > 600L);
         }
@@ -581,7 +395,6 @@ public final class OcclusionCullingHelper {
 
     public static void clearCache() {
         occlusionCache.clear();
-        GpuCullVisibilityStabilizer.clear();
         InstancedRenderFrame.clear();
     }
 }

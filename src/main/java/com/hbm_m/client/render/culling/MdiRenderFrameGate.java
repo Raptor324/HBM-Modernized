@@ -9,10 +9,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.fabricmc.api.Environment;
 *///?}
 
-/**
- * Monotonic id for one client render frame. {@code AFTER_BLOCK_ENTITIES} may run many
- * times per game tick; instanced present runs once per frame in {@link InstancedRenderFrame#present}.
- */
+/** Monotonic id incremented after each {@link InstancedRenderFrame#presentAfterBlockEntities}. */
 //? if forge {
 @OnlyIn(Dist.CLIENT)
 //?}

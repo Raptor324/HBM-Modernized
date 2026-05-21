@@ -196,17 +196,11 @@ public class ModClothConfig implements ConfigData {
 
     @Category("rendering")
     @Gui.Tooltip
-    public boolean enableOcclusionCulling = true;
-
     /**
-     * Разрешить дорогой voxel ray-march из {@link com.hbm_m.client.render.culling.OcclusionCullingHelper}
-     * при выборе {@link CullingMode#LEGACY_RAYCAST}. По умолчанию {@code false}: даже в LEGACY
-     * режиме используется только frustum (как CPU_FRUSTUM), без {@code isRayOccluded}.
-     * Включите только если осознанно нужен старый raycast.
+     * CPU voxel ray-march окклюзии в {@link com.hbm_m.client.render.culling.OcclusionCullingHelper}
+     * (frustum vanilla + raycast по блокам). Выключите, если модели рендерятся некорректно.
      */
-    @Category("rendering")
-    @Gui.Tooltip
-    public boolean enableLegacyRaycastOcclusion = false;
+    public boolean enableOcclusionCulling = true;
 
     /**
      * Перед заливкой instance VBO вызывать {@code glBufferData(..., NULL)} того же размера —
@@ -225,19 +219,13 @@ public class ModClothConfig implements ConfigData {
     @Gui.Tooltip
     public boolean experimentalPersistentInstanceBuffer = false;
 
-    public enum CullingMode { AUTO, CPU_FRUSTUM, GPU_COMPUTE, LEGACY_RAYCAST }
-
     @Category("rendering")
     @Gui.Tooltip
-    @Gui.EnumHandler(option = Gui.EnumHandler.EnumDisplayOption.BUTTON)
     /**
-     * CPU_FRUSTUM — только frustum. GPU_COMPUTE / AUTO — frustum + GPU depth occlusion
-     * (блоки и сущности из main depth, lag 1 кадр). LEGACY_RAYCAST — voxel ray-march (opt-in).
+     * Instanced batch для OBJ-частей. Flush только в {@code AFTER_BLOCK_ENTITIES};
+     * текстуры block_lit: {@link com.hbm_m.client.render.SingleMeshVboRenderer} «РЕГРЕССИЯ-СТОП».
+     * Нарушение контракта → белые модели при true, нормально при false.
      */
-    public CullingMode cullingMode = CullingMode.AUTO;
-
-    @Category("rendering")
-    @Gui.Tooltip
     public boolean useInstancedStaticRendering = true;
 
     /**
@@ -258,15 +246,6 @@ public class ModClothConfig implements ConfigData {
     @Category("rendering")
     @Gui.Tooltip
     public boolean useMultiDrawIndirect = false;
-
-    /**
-     * MDI + GPU compute: visibility bitmask остаётся на GPU, {@code compact_mdi_indirect}
-     * обнуляет {@code instanceCount} без CPU readback. Требует {@link #useMultiDrawIndirect}
-     * и режим AUTO / GPU_COMPUTE.
-     */
-    @Category("rendering")
-    @Gui.Tooltip
-    public boolean gpuDrivenMdiCulling = true;
 
     /** После каждого MDI-dispatch: одна строка INFO (число sub-draw, инстансов, атлас). */
     @Category("rendering")
