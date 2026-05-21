@@ -146,6 +146,8 @@ public class ClientModEvents {
 
             ShaderCompatibilityDetector.processPendingChunkInvalidation();
 
+            ClientRenderHandler.onClientTickEnd();
+
         });
 
 

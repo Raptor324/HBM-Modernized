@@ -126,7 +126,10 @@ public class MachineCoolingTowerRenderer extends AbstractPartBasedRenderer<Machi
         poseStack.popPose();
     }
 
-    @Override public boolean shouldRenderOffScreen(MachineCoolingTowerBlockEntity be) { return false; }
+    @Override
+    public boolean shouldRenderOffScreen(MachineCoolingTowerBlockEntity be) {
+        return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
+    }
 
     @Override public int getViewDistance() { return 128; }
 }

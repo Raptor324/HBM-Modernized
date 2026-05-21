@@ -822,7 +822,9 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             Minecraft.getInstance().gameRenderer.overlayTexture().setupOverlayColor();
             Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();
             TextureBinder.bindForModelIfNeeded(shader);
-            shader.apply();
+            if (!com.hbm_m.client.render.shader.IrisShaderApply.tryApply(shader)) {
+                return false;
+            }
 
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(GL11.GL_LEQUAL);

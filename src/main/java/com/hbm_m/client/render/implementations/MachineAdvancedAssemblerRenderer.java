@@ -692,7 +692,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
 
     @Override 
     public boolean shouldRenderOffScreen(MachineAdvancedAssemblerBlockEntity be) {
-        return !ShaderCompatibilityDetector.isRenderingShadowPass();
+        return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
     }
 
     @Override public int getViewDistance() { return RenderDistanceHelper.getStaticViewDistanceBlocks(); }

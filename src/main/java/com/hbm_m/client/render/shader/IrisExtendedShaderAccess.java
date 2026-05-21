@@ -150,7 +150,7 @@ public final class IrisExtendedShaderAccess {
      * invalidates all shader/uniform caches via {@link #invalidateShaderCache}
      * and {@link IrisRenderBatch#invalidateCaches}. This is the central
      * dispatch point for pipeline-rebuild detection; called once per frame
-     * from {@code RenderLevelStageEvent.AFTER_BLOCK_ENTITIES}.
+     * from {@code InstancedRenderFrame.onBeforeBlockEntities} (before BER).
      */
     public static void tickPass() {
         currentPassId.incrementAndGet();

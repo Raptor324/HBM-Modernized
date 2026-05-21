@@ -213,6 +213,13 @@ public final class OcclusionCullingHelper {
     public static boolean shouldRender(BlockPos pos, Level level, AABB renderBounds) {
         if (!ModClothConfig.get().enableOcclusionCulling) return true;
 
+        // Iris shadow pass uses the light-space frustum, not the main camera frustum
+        // captured in blockEntityPassFrustum. Culling here would drop off-screen casters
+        // whose shadows are still visible on screen.
+        if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
+            return true;
+        }
+
         long posLong = occlusionCacheKey(pos);
         CachedResult cached = occlusionCache.get(posLong);
 

@@ -21,9 +21,11 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
+import com.hbm_m.client.render.shader.IrisDerivedMatrixUniforms;
 import com.hbm_m.client.render.shader.IrisExtendedShaderAccess;
 import com.hbm_m.client.render.shader.IrisPhaseGuard;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
+import com.hbm_m.client.render.shader.IrisShaderApply;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.shaders.Uniform;
@@ -61,9 +63,10 @@ final class IrisInstancedBatchRenderer {
     private IrisCompanionMesh irisCompanion;
     private boolean irisCompanionAttempted;
 
-    private int cachedLocModelViewInverse = -1;
-    private int cachedLocNormalMat = -1;
-    boolean irisLocationsResolved = false;
+    private IrisDerivedMatrixUniforms.Locations cachedMatrixLocs = IrisDerivedMatrixUniforms.Locations.NONE;
+    private long cachedMatrixPipelineGeneration = -1L;
+    private int cachedMatrixProgramId = -1;
+    private ShaderInstance cachedMatrixShader;
 
     private final Matrix4f tmpInstanceMat = new Matrix4f();
     private final Quaternionf irisQuatTmp = new Quaternionf();
@@ -110,9 +113,25 @@ final class IrisInstancedBatchRenderer {
     }
 
     void invalidateIrisLocations() {
-        this.cachedLocModelViewInverse = -1;
-        this.cachedLocNormalMat = -1;
-        this.irisLocationsResolved = false;
+        this.cachedMatrixLocs = IrisDerivedMatrixUniforms.Locations.NONE;
+        this.cachedMatrixPipelineGeneration = -1L;
+        this.cachedMatrixProgramId = -1;
+        this.cachedMatrixShader = null;
+    }
+
+    private IrisDerivedMatrixUniforms.Locations resolveMatrixLocs(ShaderInstance shader) {
+        int programId = shader.getId();
+        long gen = IrisExtendedShaderAccess.getPipelineGeneration();
+        if (cachedMatrixProgramId == programId
+                && cachedMatrixShader == shader
+                && cachedMatrixPipelineGeneration == gen) {
+            return cachedMatrixLocs;
+        }
+        cachedMatrixProgramId = programId;
+        cachedMatrixShader = shader;
+        cachedMatrixPipelineGeneration = gen;
+        cachedMatrixLocs = IrisDerivedMatrixUniforms.resolve(shader);
+        return cachedMatrixLocs;
     }
 
     // ── Corner sampling ────────────────────────────────────────────────
@@ -195,7 +214,9 @@ final class IrisInstancedBatchRenderer {
                     parent.vanillaHelper.brightnessFromUV(irisSingleUV[0], irisSingleUV[1], Float.NaN));
 
             SingleMeshVboRenderer.TextureBinder.bindForModelIfNeeded(shader);
-            shader.apply();
+            if (!IrisShaderApply.tryApply(shader)) {
+                return false;
+            }
 
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
@@ -272,7 +293,9 @@ final class IrisInstancedBatchRenderer {
             net.minecraft.client.Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();
             SingleMeshVboRenderer.TextureBinder.bindForModelIfNeeded(shader);
 
-            shader.apply();
+            if (!IrisShaderApply.tryApply(shader)) {
+                return;
+            }
 
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
@@ -287,7 +310,6 @@ final class IrisInstancedBatchRenderer {
                 companion.prepareForShader(shader.getId());
             }
 
-            final Uniform modelViewUniform = parent.vanillaHelper.getModelViewUniform();
             final int uv2Loc = (companion != null) ? companion.getUv2Location() : -1;
             final boolean perVertexLight = companion != null
                     && (parent.useSlicedLight
@@ -321,15 +343,10 @@ final class IrisInstancedBatchRenderer {
                 companion.activatePerVertexLightmap();
             }
 
-            if (!irisLocationsResolved) {
-                int programId = shader.getId();
-                cachedLocModelViewInverse = GL20.glGetUniformLocation(programId, "iris_ModelViewMatInverse");
-                cachedLocNormalMat = GL20.glGetUniformLocation(programId, "iris_NormalMat");
-                irisLocationsResolved = true;
-            }
-            int locModelView = (modelViewUniform != null) ? modelViewUniform.getLocation() : -1;
-            int locModelViewInverse = cachedLocModelViewInverse;
-            int locNormalMat = cachedLocNormalMat;
+            IrisDerivedMatrixUniforms.Locations matrixLocs = resolveMatrixLocs(shader);
+            int locModelView = matrixLocs.modelView();
+            int locModelViewInverse = matrixLocs.modelViewInverse();
+            int locNormalMat = matrixLocs.normalMat();
 
             final float[] mvFloats = irisMvFloats;
             final float[] mvInverseFloats = irisMvInverseFloats;

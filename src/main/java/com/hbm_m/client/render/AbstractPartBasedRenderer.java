@@ -5,6 +5,7 @@ import java.lang.reflect.Field;
 
 import org.joml.Matrix4f;
 
+import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.vertex.PoseStack;
 
@@ -69,15 +70,16 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
     }
 
     @Override
+    public boolean shouldRenderOffScreen(T blockEntity) {
+        return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
+    }
+
+    @Override
     public void render(T blockEntity, float partialTick, PoseStack poseStack,
                        MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
-        // Frustum cull FIRST - every cycle spent on the matrix snapshot,
-        // model lookup, FRAPI unwrap and LegacyAnimator construction below is
-        // wasted on a BE that the camera cannot see. With dense Iris shadow
-        // dispatch this method is invoked on every visible AND every shadow-
-        // frustum-visible BE per frame, so this short-circuit is the single
-        // cheapest cull we have.
-        if (!isInViewFrustum(blockEntity)) {
+        // Frustum cull FIRST for the main pass. Shadow pass uses light-space
+        // bounds; the main-camera frustum here would drop off-screen casters.
+        if (!ShaderCompatibilityDetector.isRenderingShadowPass() && !isInViewFrustum(blockEntity)) {
             return;
         }
 
@@ -149,8 +151,8 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
         if (blockEntity instanceof com.hbm_m.block.entity.doors.DoorBlockEntity d) {
             return d.getRenderBoundingBox();
         }
-        return new AABB(blockEntity.getBlockPos()).inflate(1.0D);*/
-        //?}
+        return new AABB(blockEntity.getBlockPos()).inflate(1.0D);
+        *///?}
     }
 
     // -----------------------------------------------------------------------

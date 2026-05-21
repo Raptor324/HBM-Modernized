@@ -362,7 +362,10 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
 
 
 
-    @Override public boolean shouldRenderOffScreen(MachineFrackingTowerBlockEntity be) { return false; }
+    @Override
+    public boolean shouldRenderOffScreen(MachineFrackingTowerBlockEntity be) {
+        return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
+    }
 
 
 

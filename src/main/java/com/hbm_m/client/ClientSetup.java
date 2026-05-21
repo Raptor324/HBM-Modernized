@@ -670,25 +670,9 @@ public class ClientSetup {
     }
 
     private static void registerWorldRenderHooksCommon() {
-        // Forge: wired via Forge event subscribers (RenderLevelStageEvent) in separate classes.
-
+        // Forge: ClientModEvents.onRenderLevelStage(AFTER_BLOCK_ENTITIES)
         //? if fabric {
-        /*// Closest equivalent to "after particles" stage for our debug text:
-        // we're in world render pass and have camera + PoseStack.
-        WorldRenderEvents.AFTER_ENTITIES.register(ctx ->
-                ChunkRadiationDebugRenderer.render(ctx.matrixStack(), ctx.camera().getPosition()));
-
-        WorldRenderEvents.AFTER_ENTITIES.register(ctx -> {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc == null) return;
-            ClientRenderHandler.onRenderWorldLate(mc.renderBuffers().bufferSource(), ctx.matrixStack(), ctx.camera().getPosition());
-        });
-
-        ClientTickEvents.END_CLIENT_TICK.register(client -> ClientRenderHandler.onClientTickEnd());
-
-        // Clear radiation cache when joining/leaving worlds/dimensions.
-        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> ClientRadiationData.clearAll());
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ClientRadiationData.clearAll());
+        /*ClientRenderHandlerFabric.register();
         *///?}
     }
 

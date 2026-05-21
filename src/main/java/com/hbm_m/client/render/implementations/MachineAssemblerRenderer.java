@@ -547,7 +547,7 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
 
     @Override
     public boolean shouldRenderOffScreen(MachineAssemblerBlockEntity be) {
-        return !ShaderCompatibilityDetector.isRenderingShadowPass();
+        return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
     }
 
     @Override

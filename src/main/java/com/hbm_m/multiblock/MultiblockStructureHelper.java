@@ -643,7 +643,7 @@ public class MultiblockStructureHelper {
             if (player instanceof ServerPlayer serverPlayer) {
                 // Проверяем, включена ли опция в конфиге, перед отправкой пакета
                 if (ModClothConfig.get().obstructionHighlight.enableObstructionHighlight) {
-                    // TODO(multiloader): re-implement highlight packet sending on Fabric.
+                    HighlightBlocksPacket.sendTo(serverPlayer, obstructions);
                 }
             }
             player.displayClientMessage(Component.translatable("chat.hbm_m.structure.obstructed"), true);

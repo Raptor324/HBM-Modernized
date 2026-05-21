@@ -59,6 +59,9 @@ public final class InstancedRenderFrame {
         }
         RenderFrameLight.onFrameStart();
         ClientRenderFlags.onFrameStart();
+        // Detect Iris pipeline rebuilds before BER so cached ExtendedShader /
+        // sampler bindings are not reused with destroyed GlResources.
+        IrisExtendedShaderAccess.tickPass();
         MachineChemicalPlantRenderer.clearDeferredFluids();
         MachineCrystallizerRenderer.clearDeferredFluids();
         if (ClientRenderFlags.enableOcclusionCulling()) {
@@ -97,7 +100,6 @@ public final class InstancedRenderFrame {
                     flushAllInstanced(projection);
                 }
 
-                IrisExtendedShaderAccess.tickPass();
                 LightSampleCache.onFrameStart();
                 MdiRenderFrameGate.advanceAfterPresent();
             }

@@ -438,7 +438,7 @@ public class MachineCrystallizerRenderer implements BlockEntityRenderer<MachineC
 
     @Override
     public boolean shouldRenderOffScreen(MachineCrystallizerBlockEntity blockEntity) {
-        return !ShaderCompatibilityDetector.isRenderingShadowPass();
+        return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
     }
 
     @Override

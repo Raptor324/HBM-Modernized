@@ -131,12 +131,7 @@ public final class IrisRenderBatch implements AutoCloseable {
     private int cachedShaderProgram = -1;
     private ShaderInstance cachedShaderInstance;
     private long cachedPipelineGeneration = -1L;
-    private Uniform uModelView;
-    /** Direct uniform location for {@code ModelViewMat} - bypasses Mojang's
-     *  Uniform proxy (saves several layers of indirection per draw). */
-    private int locModelView = -1;
-    private int locModelViewInverse = -1;
-    private int locNormalMat = -1;
+    private IrisDerivedMatrixUniforms.Locations matrixLocs = IrisDerivedMatrixUniforms.Locations.NONE;
 
     /** Reusable scratch buffers - avoid alloc per draw call. */
     private final Matrix4f mvInverseTmp = new Matrix4f();
@@ -385,7 +380,9 @@ public final class IrisRenderBatch implements AutoCloseable {
         // ONE heavy apply(): GlFramebuffer.bind() + Iris CustomUniforms.push() +
         // uploadIfNotNull for every uniform. This is the single largest CPU cost
         // we can amortise across multiple draws.
-        shader.apply();
+        if (!IrisShaderApply.tryApply(shader)) {
+            throw new IllegalStateException("ExtendedShader.apply() failed (destroyed GlResource or invalid pipeline phase)");
+        }
 
         RenderSystem.enableDepthTest();
         RenderSystem.depthFunc(GL11.GL_LEQUAL);
@@ -406,15 +403,7 @@ public final class IrisRenderBatch implements AutoCloseable {
             cachedShaderProgram = programId;
             cachedShaderInstance = shader;
             cachedPipelineGeneration = currentGen;
-            uModelView = shader.getUniform("ModelViewMat");
-            // Direct uniform location for ModelViewMat - bypassing Mojang's
-            // Uniform.upload() proxy stack saves ~5% per profiler trace on the
-            // dense per-part path. Falls back to glGetUniformLocation if the
-            // uniform isn't tracked by the ShaderInstance abstraction.
-            locModelView = (uModelView != null) ? uModelView.getLocation()
-                    : GL20.glGetUniformLocation(programId, "iris_ModelViewMat");
-            locModelViewInverse = GL20.glGetUniformLocation(programId, "iris_ModelViewMatInverse");
-            locNormalMat = GL20.glGetUniformLocation(programId, "iris_NormalMat");
+            matrixLocs = IrisDerivedMatrixUniforms.resolve(shader);
         }
 
         // Reset per-draw caches: a new batch may bind a different VAO first, and
@@ -485,28 +474,20 @@ public final class IrisRenderBatch implements AutoCloseable {
         // GL20C.nglUniformMatrix4fv). Profiler attributed ~8.67% of frame time
         // to those layers in the analogous flushBatchIris loop; we get the same
         // win here.
-        if (locModelView >= 0) {
-            GL20.glUniformMatrix4fv(locModelView, false, mvSrc);
+        if (matrixLocs.modelView() >= 0) {
+            GL20.glUniformMatrix4fv(matrixLocs.modelView(), false, mvSrc);
         }
 
-        // ExtendedShader.apply() derived iris_ModelViewMatInverse and iris_NormalMat
-        // from the IDENTITY matrix we passed in; per-instance we re-derive them
-        // from the actual ModelView and upload directly. Without this, pack
-        // shaders (BSL/Complementary/RV/Solas) get wrong vertex normals and
-        // render visibly broken geometry.
-        //
-        // Optimisation: compute MV^-1 once into mvInverseTmp, then derive
-        // iris_NormalMat from it (transpose of MV^-1 upper-left 3x3) instead of
-        // recomputing the invert from scratch - saves one Matrix4f.invert() per
-        // draw, the most expensive joml call in this loop.
+        // ExtendedShader.apply() derived inverse/normal from the IDENTITY matrix
+        // we passed in setupOuter; per-instance we re-derive from the real ModelView.
         boolean haveInverse = false;
-        if (locModelViewInverse >= 0) {
+        if (matrixLocs.modelViewInverse() >= 0) {
             mvInverseTmp.set(mvSrc).invert();
             mvInverseTmp.get(mvInverseFloats);
-            GL20.glUniformMatrix4fv(locModelViewInverse, false, mvInverseFloats);
+            GL20.glUniformMatrix4fv(matrixLocs.modelViewInverse(), false, mvInverseFloats);
             haveInverse = true;
         }
-        if (locNormalMat >= 0) {
+        if (matrixLocs.normalMat() >= 0) {
             if (haveInverse) {
                 normalTmp.set(mvInverseTmp).transpose();
             } else {
@@ -516,7 +497,7 @@ public final class IrisRenderBatch implements AutoCloseable {
                          .invert().transpose();
             }
             normalTmp.get(normalMatFloats);
-            GL20.glUniformMatrix3fv(locNormalMat, false, normalMatFloats);
+            GL20.glUniformMatrix3fv(matrixLocs.normalMat(), false, normalMatFloats);
         }
 
         int uv2Loc = companion.getUv2Location();
@@ -619,18 +600,18 @@ public final class IrisRenderBatch implements AutoCloseable {
 
         float[] mvSrc = mvFloats;
 
-        if (locModelView >= 0) {
-            GL20.glUniformMatrix4fv(locModelView, false, mvSrc);
+        if (matrixLocs.modelView() >= 0) {
+            GL20.glUniformMatrix4fv(matrixLocs.modelView(), false, mvSrc);
         }
 
         boolean haveInverse = false;
-        if (locModelViewInverse >= 0) {
+        if (matrixLocs.modelViewInverse() >= 0) {
             mvInverseTmp.set(mvSrc).invert();
             mvInverseTmp.get(mvInverseFloats);
-            GL20.glUniformMatrix4fv(locModelViewInverse, false, mvInverseFloats);
+            GL20.glUniformMatrix4fv(matrixLocs.modelViewInverse(), false, mvInverseFloats);
             haveInverse = true;
         }
-        if (locNormalMat >= 0) {
+        if (matrixLocs.normalMat() >= 0) {
             if (haveInverse) {
                 normalTmp.set(mvInverseTmp).transpose();
             } else {
@@ -640,7 +621,7 @@ public final class IrisRenderBatch implements AutoCloseable {
                          .invert().transpose();
             }
             normalTmp.get(normalMatFloats);
-            GL20.glUniformMatrix3fv(locNormalMat, false, normalMatFloats);
+            GL20.glUniformMatrix3fv(matrixLocs.normalMat(), false, normalMatFloats);
         }
 
         // Hash the quantized corner UV2 into a stable key and request a slot that can
@@ -720,18 +701,18 @@ public final class IrisRenderBatch implements AutoCloseable {
 
         float[] mvSrc = mvFloats;
 
-        if (locModelView >= 0) {
-            GL20.glUniformMatrix4fv(locModelView, false, mvSrc);
+        if (matrixLocs.modelView() >= 0) {
+            GL20.glUniformMatrix4fv(matrixLocs.modelView(), false, mvSrc);
         }
 
         boolean haveInverse = false;
-        if (locModelViewInverse >= 0) {
+        if (matrixLocs.modelViewInverse() >= 0) {
             mvInverseTmp.set(mvSrc).invert();
             mvInverseTmp.get(mvInverseFloats);
-            GL20.glUniformMatrix4fv(locModelViewInverse, false, mvInverseFloats);
+            GL20.glUniformMatrix4fv(matrixLocs.modelViewInverse(), false, mvInverseFloats);
             haveInverse = true;
         }
-        if (locNormalMat >= 0) {
+        if (matrixLocs.normalMat() >= 0) {
             if (haveInverse) {
                 normalTmp.set(mvInverseTmp).transpose();
             } else {
@@ -741,7 +722,7 @@ public final class IrisRenderBatch implements AutoCloseable {
                          .invert().transpose();
             }
             normalTmp.get(normalMatFloats);
-            GL20.glUniformMatrix3fv(locNormalMat, false, normalMatFloats);
+            GL20.glUniformMatrix3fv(matrixLocs.normalMat(), false, normalMatFloats);
         }
 
         long key = 1469598103934665603L;
@@ -834,10 +815,7 @@ public final class IrisRenderBatch implements AutoCloseable {
         INSTANCE.cachedShaderProgram = -1;
         INSTANCE.cachedShaderInstance = null;
         INSTANCE.cachedPipelineGeneration = -1L;
-        INSTANCE.uModelView = null;
-        INSTANCE.locModelView = -1;
-        INSTANCE.locModelViewInverse = -1;
-        INSTANCE.locNormalMat = -1;
+        INSTANCE.matrixLocs = IrisDerivedMatrixUniforms.Locations.NONE;
         INSTANCE.lastBoundVao = -1;
         INSTANCE.lastBlockU = Integer.MIN_VALUE;
         INSTANCE.lastSkyV = Integer.MIN_VALUE;

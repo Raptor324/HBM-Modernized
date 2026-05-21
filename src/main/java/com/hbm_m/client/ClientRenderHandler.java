@@ -67,8 +67,9 @@ public class ClientRenderHandler {
 
         private CustomRenderTypes(String s, VertexFormat v, VertexFormat.Mode m, int i, boolean b, boolean b2, Runnable r, Runnable r2) { super(s, v, m, i, b, b2, r, r2); }
 
+        /** Translucent world overlay; TRANSLUCENT_TARGET required for Iris/Embeddium. */
         public static final RenderType HIGHLIGHT_BOX_FILL = create("highlight_box_fill",
-                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 256, false, true,
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 131072, false, true,
                 RenderType.CompositeState.builder()
                         .setShaderState(POSITION_COLOR_SHADER)
                         .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
@@ -76,7 +77,8 @@ public class ClientRenderHandler {
                         .setCullState(NO_CULL)
                         .setLightmapState(NO_LIGHTMAP)
                         .setWriteMaskState(COLOR_WRITE)
-                        .createCompositeState(false));
+                        .setOutputState(TRANSLUCENT_TARGET)
+                        .createCompositeState(true));
 
         /** Nuke cloud particles (NukeTorex). */
         public static final Function<ResourceLocation, RenderType> NUKE_CLOUDS = Util.memoize(
