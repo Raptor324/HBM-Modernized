@@ -1,6 +1,9 @@
 package com.hbm_m.client.render.implementations;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.joml.Matrix4f;
 
 import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
@@ -10,10 +13,10 @@ import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
-import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.PartGeometry;
 import com.hbm_m.client.render.RenderDistanceHelper;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
+import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 //? if forge {
 import com.hbm_m.client.render.shader.IrisPhaseGuard;
@@ -23,6 +26,8 @@ import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+
+import org.lwjgl.opengl.GL11;
 
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
@@ -40,6 +45,8 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 //? if forge {
 @OnlyIn(Dist.CLIENT)
@@ -53,7 +60,23 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
 
     private static volatile InstancedStaticPartRenderer instancedBase;
     private static volatile InstancedStaticPartRenderer instancedFrame;
+    private static volatile InstancedStaticPartRenderer instancedSlider;
+    private static volatile InstancedStaticPartRenderer instancedSpinner;
     private static volatile boolean instancersInitialized = false;
+
+    /**
+     * Жидкость с depth test, но без depth write (как {@code glDepthMask(false)} в 1.7.10).
+     * Рисуем после flush instanced/VBO-частей всех chemplant в кадре — иначе в depth только террейн.
+     */
+    private static final List<DeferredChemplantFluid> DEFERRED_FLUIDS = new ArrayList<>();
+
+    private record DeferredChemplantFluid(
+        BlockPos pos,
+        Matrix4f pose,
+        int packedLight,
+        int packedOverlay,
+        MachineChemicalPlantVboRenderer.FluidVisual visual
+    ) {}
 
     private final Matrix4f matSlider = new Matrix4f();
     private final Matrix4f matSpinner = new Matrix4f();
@@ -70,12 +93,81 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
 
     public MachineChemicalPlantRenderer(BlockEntityRendererProvider.Context ctx) {}
 
+    /** Сброс очереди в начале кадра (до BER). */
+    public static void clearDeferredFluids() {
+        DEFERRED_FLUIDS.clear();
+    }
+
+    /**
+     * Ставит жидкость в очередь; отрисовка — {@link #presentDeferredFluids()} после
+     * {@link #flushInstancedBatches(Matrix4f)} в {@link com.hbm_m.client.render.culling.InstancedRenderFrame}.
+     */
+    public static void scheduleDeferredFluid(BlockPos pos, Matrix4f poseInLocalSpace,
+                                             int packedLight, int packedOverlay,
+                                             MachineChemicalPlantVboRenderer.FluidVisual visual) {
+        if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
+            return;
+        }
+        DEFERRED_FLUIDS.add(new DeferredChemplantFluid(
+            pos, new Matrix4f(poseInLocalSpace), packedLight, packedOverlay, visual));
+    }
+
+    /**
+     * После всех BER и flush instanced: в depth уже все части машин, жидкость только тестирует depth.
+     */
+    public static void presentDeferredFluids() {
+        if (DEFERRED_FLUIDS.isEmpty()) {
+            return;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        var level = mc.level;
+        if (level == null) {
+            DEFERRED_FLUIDS.clear();
+            return;
+        }
+
+        float partialTick = mc.getFrameTime();
+        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        PoseStack poseStack = new PoseStack();
+        boolean depthMaskWas = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
+
+        //? if forge {
+        try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
+            RenderSystem.depthMask(false);
+            for (DeferredChemplantFluid entry : DEFERRED_FLUIDS) {
+                BlockEntity raw = level.getBlockEntity(entry.pos);
+                if (!(raw instanceof MachineChemicalPlantBlockEntity be)) {
+                    continue;
+                }
+                BakedModel rawModel = mc.getBlockRenderer().getBlockModel(be.getBlockState());
+                if (!(rawModel instanceof MachineChemicalPlantBakedModel model)) {
+                    continue;
+                }
+                float anim = be.getAnim(partialTick);
+                BlockState state = be.getBlockState();
+                poseStack.pushPose();
+                poseStack.last().pose().set(entry.pose);
+                MachineChemicalPlantVboRenderer.drawChemplantFluidBaked(
+                    model, state, anim, poseStack, buffers, entry.packedLight, entry.packedOverlay, entry.visual);
+                poseStack.popPose();
+            }
+            buffers.endBatch();
+        } finally {
+            RenderSystem.depthMask(depthMaskWas);
+        }
+        //?} else {
+        /*DEFERRED_FLUIDS.clear();*///?}
+        DEFERRED_FLUIDS.clear();
+    }
+
     private static synchronized void initializeInstancedRenderersSync(MachineChemicalPlantBakedModel model) {
         if (instancersInitialized) return;
         try {
             MainRegistry.LOGGER.info("ChemicalPlantRenderer: initializing instanced renderers...");
             instancedBase = createInstancedForPart(model, "Base");
             instancedFrame = createInstancedForPart(model, "Frame");
+            instancedSlider = createInstancedForPart(model, "Slider");
+            instancedSpinner = createInstancedForPart(model, "Spinner");
             instancersInitialized = true;
         } catch (Exception e) {
             MainRegistry.LOGGER.error("ChemicalPlantRenderer: failed to init instanced renderers", e);
@@ -131,9 +223,17 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
             && state.getValue(MachineChemicalPlantBlock.RENDER_ACTIVE);
         boolean useVboGeometry = ShaderCompatibilityDetector.useVboGeometry();
 
+        Direction facing = getFacing(be);
         var minecraft = Minecraft.getInstance();
         BlockPos blockPos = be.getBlockPos();
-        AABB renderBounds = be.getRenderBoundingBox();
+
+        AABB renderBounds;
+        if (state.getBlock() instanceof com.hbm_m.interfaces.IMultiblockController controller && controller.getStructureHelper() != null) {
+            renderBounds = controller.getStructureHelper().getRenderBoundingBox(blockPos, facing, 0.0);
+        } else {
+            renderBounds = be.getRenderBoundingBox();
+        }
+
         if (minecraft.level == null || !OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, renderBounds)) {
             return;
         }
@@ -198,8 +298,8 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         boolean useBatching = useVboPath && ModClothConfig.useInstancedBatching();
 
         // Iris batching: amortise apply()/clear() across Base + Frame + Slider + Spinner.
-        // Slider/Spinner always use SingleMeshVboRenderer (never instanced); they need
-        // IrisRenderBatch.active() so drawCompanion reuses the shared program + direct
+        // Slider/Spinner use instanced batching when effectiveBatching; IrisRenderBatch.active()
+        // still needed so drawCompanion reuses the shared program + direct
         // matrix uploads. If we only open the batch when (!batching || shadow) — like
         // machines whose animated parts are fully instanced — animated parts hit the
         // standalone apply/clear path per frame and GL spams INVALID_OPERATION / No
@@ -270,7 +370,14 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
             // VBO/instanced: как GL после facing — сдвиг вдоль локальной X позы (не хвост T(-0.5) из assembler).
             matSlider.identity().translate((float) sdx, 0f, 0f);
 
-            gpu.renderAnimatedPart(poseStack, dynamicLight, "Slider", matSlider, blockPos, be, bufferSource);
+            if (effectiveBatching && instancedSlider != null && instancedSlider.isInitialized()) {
+                poseStack.pushPose();
+                poseStack.last().pose().mul(matSlider);
+                instancedSlider.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
+                poseStack.popPose();
+            } else {
+                gpu.renderAnimatedPart(poseStack, dynamicLight, "Slider", matSlider, blockPos, be, bufferSource);
+            }
 
             float deg = (anim * 15f) % 360f;
             if (deg < 0f) deg += 360f;
@@ -279,7 +386,14 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
                 .rotateY(deg * DEG_TO_RAD)
                 .translate(-CHEMPLANT_BAKE_PIVOT_X, 0f, -CHEMPLANT_BAKE_PIVOT_Z);
 
-            gpu.renderAnimatedPart(poseStack, dynamicLight, "Spinner", matSpinner, blockPos, be, bufferSource);
+            if (effectiveBatching && instancedSpinner != null && instancedSpinner.isInitialized()) {
+                poseStack.pushPose();
+                poseStack.last().pose().mul(matSpinner);
+                instancedSpinner.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
+                poseStack.popPose();
+            } else {
+                gpu.renderAnimatedPart(poseStack, dynamicLight, "Spinner", matSpinner, blockPos, be, bufferSource);
+            }
 
             SingleMeshVboRenderer.setFadeAlpha(staticFade);
             poseStack.popPose();
@@ -290,6 +404,8 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
     public static void flushInstancedBatches(org.joml.Matrix4f projectionMatrix) {
         flushInstanced(projectionMatrix, instancedBase);
         flushInstanced(projectionMatrix, instancedFrame);
+        flushInstanced(projectionMatrix, instancedSlider);
+        flushInstanced(projectionMatrix, instancedSpinner);
     }
 
     public static void clearCaches() {
@@ -297,6 +413,10 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         instancedBase = null;
         cleanupInstanced(instancedFrame);
         instancedFrame = null;
+        cleanupInstanced(instancedSlider);
+        instancedSlider = null;
+        cleanupInstanced(instancedSpinner);
+        instancedSpinner = null;
         instancersInitialized = false;
     }
 

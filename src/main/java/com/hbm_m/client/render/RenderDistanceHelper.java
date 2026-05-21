@@ -24,6 +24,12 @@ public final class RenderDistanceHelper {
     private static final double FADE_ZONE_BLOCKS = 16.0;
 
     /**
+     * Within this many blocks of {@link #getStaticDistanceBlocks()}, 8-corner spatial
+     * light sampling runs; farther machines use flat vanilla packed light (farm LOD).
+     */
+    private static final double LIGHT_CORNER_DETAIL_MARGIN_BLOCKS = 48.0;
+
+    /**
      * Computes the squared distance from the camera to the block center.
      */
     public static double distanceSqToCamera(BlockPos blockPos) {
@@ -107,5 +113,15 @@ public final class RenderDistanceHelper {
      */
     public static int getStaticViewDistanceBlocks() {
         return ModClothConfig.get().modelStaticRenderDistance * 16;
+    }
+
+    /**
+     * Squared camera distance threshold for full 8-corner {@link LightSampleCache} sampling.
+     * Beyond this, callers should use uniform corner UV from vanilla packed light.
+     */
+    public static double getLightCornerDetailDistanceSq() {
+        double maxBlocks = getStaticDistanceBlocks();
+        double detailBlocks = Math.max(0, maxBlocks - LIGHT_CORNER_DETAIL_MARGIN_BLOCKS);
+        return detailBlocks * detailBlocks;
     }
 }

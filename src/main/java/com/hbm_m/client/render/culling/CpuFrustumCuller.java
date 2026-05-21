@@ -1,4 +1,4 @@
-package com.hbm_m.client.render;
+package com.hbm_m.client.render.culling;
 
 import org.joml.Matrix4f;
 
@@ -15,9 +15,8 @@ import net.fabricmc.api.Environment;
 *///?}
 
 /**
- * Лёгкий CPU AABB-vs-frustum культинг. Используется как fallback
- * когда GPU compute недоступен (macOS / Mesa Intel HD 4000 / GL < 4.3),
- * и как быстрый общий путь вместо тяжёлого raycast в OcclusionCullingHelper.
+ * Лёгкий CPU AABB-vs-frustum культинг. Fallback в {@link OcclusionCullingHelper},
+ * когда vanilla {@link net.minecraft.client.renderer.culling.Frustum} недоступен.
  *
  * <p>Стоимость: 6 dot-product сравнений на BE + одна квадратичная дистанция.
  * На 1000 BE это &lt;0.1 ms, против 7.8 ms у raycast-варианта.

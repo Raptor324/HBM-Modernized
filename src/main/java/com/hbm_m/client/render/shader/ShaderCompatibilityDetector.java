@@ -6,6 +6,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 
+import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -111,6 +112,7 @@ public class ShaderCompatibilityDetector {
             if (isActive != lastState) {
                 MainRegistry.LOGGER.info("Shader state changed: {}", isActive ? "Active" : "Inactive");
                 lastState = isActive;
+                OcclusionCullingHelper.clearCache();
                 // Откладываем инвалидацию - вызов из render loop ломает итерацию Sodium (wrapped is null)
                 pendingChunkInvalidation = true;
             }

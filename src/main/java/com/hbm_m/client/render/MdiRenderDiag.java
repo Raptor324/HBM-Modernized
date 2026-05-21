@@ -32,19 +32,14 @@ public final class MdiRenderDiag {
         return c != null && c.mdiVerboseSubdraws;
     }
 
-    public static boolean isForceSequentialDraw() {
-        ModClothConfig c = cfg();
-        return c != null && c.mdiForceSequentialDraw;
-    }
-
     public static void logBannerOnce() {
-        if (!isDebugEnabled() && !isVerboseEnabled() && !isForceSequentialDraw()) {
+        if (!isDebugEnabled() && !isVerboseEnabled()) {
             return;
         }
         if (!BANNER.compareAndSet(false, true)) {
             return;
         }
         MainRegistry.LOGGER.info(
-                "[HBM-M MDI] Диагностика (Cloth → rendering): mdiDebugLogDispatch, mdiVerboseSubdraws, mdiForceSequentialDraw, mdiUseTrueMultiDraw.");
+                "[HBM-M MDI] Диагностика (Cloth → rendering): mdiDebugLogDispatch, mdiVerboseSubdraws.");
     }
 }

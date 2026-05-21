@@ -467,6 +467,20 @@ public final class LightSampleCache {
     }
 
     /**
+     * Like {@link #getOrSample8} but skips expensive 8-block spatial sampling when
+     * {@code distSqToCamera} exceeds {@link RenderDistanceHelper#getLightCornerDetailDistanceSq()}.
+     */
+    public static void getOrSample8Lod(@Nullable BlockEntity be, long partIdentityHash,
+                                       float[] objBbox, BlockPos blockPos, Matrix4f localPose,
+                                       int packedLightFallback, float[] out16, double distSqToCamera) {
+        if (distSqToCamera > RenderDistanceHelper.getLightCornerDetailDistanceSq()) {
+            fillFallback8(packedLightFallback, out16);
+            return;
+        }
+        getOrSample8(be, partIdentityHash, objBbox, blockPos, localPose, packedLightFallback, out16);
+    }
+
+    /**
      * Samples lightmap UV pairs for a 2x4x2 lattice (X/Z corners across 4 Y slices).
      * Output layout: 16 probes * 2 floats = 32 floats:
      *   slice0: (x0z0, x1z0, x0z1, x1z1), then slice1, slice2, slice3;

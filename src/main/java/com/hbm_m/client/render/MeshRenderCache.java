@@ -227,7 +227,7 @@ public class MeshRenderCache {
         }
 
         MainRegistry.LOGGER.debug("MeshRenderCache: renderer for part '{}', {} vertices",
-            partName, prebuiltData.byteBuffer.remaining() / 32);
+            partName, prebuiltData.byteBuffer.remaining() / prebuiltData.bytesPerVertex);
 
         final List<BakedQuad> quadsForIris = geo.solidQuads();
         return new SingleMeshVboRenderer() {
