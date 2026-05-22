@@ -16,9 +16,9 @@ import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.ObjModelVboBuilder;
-import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.RenderDistanceHelper;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
+import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
@@ -275,6 +275,7 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
                 if (headData != null) {
                     var headQuads = MeshRenderCache.getOrCompile("press_head", headModel);
                     InstancedStaticPartRenderer candidate = new InstancedStaticPartRenderer(headData, headQuads);
+                    candidate.setMdiTraceTag("Press/" + HEAD_PART);
                     if (candidate.isInitialized()) {
                         instancedHead = candidate;
                     } else {

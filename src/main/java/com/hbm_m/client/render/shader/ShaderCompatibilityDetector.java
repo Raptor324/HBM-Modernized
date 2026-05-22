@@ -6,6 +6,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 
+import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -111,6 +112,7 @@ public class ShaderCompatibilityDetector {
             if (isActive != lastState) {
                 MainRegistry.LOGGER.info("Shader state changed: {}", isActive ? "Active" : "Inactive");
                 lastState = isActive;
+                OcclusionCullingHelper.clearCache();
                 // Откладываем инвалидацию - вызов из render loop ломает итерацию Sodium (wrapped is null)
                 pendingChunkInvalidation = true;
             }
@@ -139,7 +141,6 @@ public class ShaderCompatibilityDetector {
 
     /**
      * Проверяет, рендерится ли сейчас shadow pass Iris (для realtime shadows).
-     * Используется для пропуска рендера HBM-моделей в shadow pass - даёт ~2x FPS при включённых тенях.
      */
     public static boolean isRenderingShadowPass() {
         if (!initialized) init();
@@ -154,6 +155,16 @@ public class ShaderCompatibilityDetector {
         } catch (Throwable e) {
             return false;
         }
+    }
+
+    /**
+     * {@link net.minecraft.client.renderer.blockentity.BlockEntityRenderer#shouldRenderOffScreen}.
+     * When {@code true}, Sodium/vanilla still invoke BER even if the BE AABB is outside
+     * the main camera frustum — required so shader-pack shadow maps include off-screen
+     * casters whose shadows remain visible on screen.
+     */
+    public static boolean shouldRenderBlockEntityOffScreen() {
+        return isExternalShaderActive();
     }
 
     /**
@@ -306,6 +317,10 @@ public class ShaderCompatibilityDetector {
         } catch (Throwable e) {
             return false;
         }
+    }
+
+    public static boolean shouldRenderBlockEntityOffScreen() {
+        return isExternalShaderActive();
     }
 
     public static boolean canUseIrisExtendedShader() {

@@ -50,7 +50,7 @@ import com.hbm_m.client.overlay.OverlayRadiationVisuals;
 import com.hbm_m.client.render.EmptyEntityRenderer;
 import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.ModShaders;
-import com.hbm_m.client.render.OcclusionCullingHelper;
+import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.client.render.effect.RenderFallout;
 import com.hbm_m.client.render.implementations.AirBombProjectileEntityRenderer;
 import com.hbm_m.client.render.implementations.AirNukeBombProjectileEntityRenderer;
@@ -81,7 +81,6 @@ import com.hbm_m.client.tooltip.CrateContentsTooltipComponentRenderer;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.config.ModConfigKeybindHandler;
 import com.hbm_m.entity.ModEntities;
-import com.hbm_m.event.ClientModEvents;
 import com.hbm_m.inventory.gui.GUIAnvil;
 import com.hbm_m.inventory.gui.GUIArmorTable;
 import com.hbm_m.inventory.gui.GUIBatterySocket;
@@ -296,15 +295,15 @@ public class ClientSetup {
                 .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
                 .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
                 .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
+                .put("BoneId", new VertexFormatElement(0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.GENERIC, 1))
                 .put("InstPos", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
                 .put("InstRot", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .put("InstBboxMin", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
-                .put("InstBboxSize", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .put("InstBboxSize", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .put("InstLightC01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .put("InstLightC23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .put("InstLightC45", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .put("InstLightC67", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstFadeAlpha", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 1))
                 .build()
         );
 
@@ -313,10 +312,11 @@ public class ClientSetup {
                 .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
                 .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
                 .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
+                .put("BoneId", new VertexFormatElement(0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.GENERIC, 1))
                 .put("InstPos", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
                 .put("InstRot", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .put("InstBboxMin", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
-                .put("InstBboxSize", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .put("InstBboxSize", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .put("InstLightS0C01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .put("InstLightS0C23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .put("InstLightS1C01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
@@ -325,7 +325,6 @@ public class ClientSetup {
                 .put("InstLightS2C23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .put("InstLightS3C01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .put("InstLightS3C23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstFadeAlpha", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 1))
                 .build()
         );
 
@@ -343,7 +342,8 @@ public class ClientSetup {
 
         com.hbm_m.client.render.shader.modification.ShaderModification instancingDefine =
             com.hbm_m.client.render.shader.modification.ShaderModification.builder()
-                .define("USE_INSTANCING");
+                .define("USE_INSTANCING")
+                .define("USE_VERTEX_BONE_ID");
 
         com.hbm_m.client.render.shader.modification.ShaderModification slicedDefine =
             com.hbm_m.client.render.shader.modification.ShaderModification.builder()
@@ -352,7 +352,8 @@ public class ClientSetup {
         com.hbm_m.client.render.shader.modification.ShaderModification instancedSlicedDefine =
             com.hbm_m.client.render.shader.modification.ShaderModification.builder()
                 .define("USE_INSTANCING")
-                .define("USE_SLICED_LIGHT");
+                .define("USE_SLICED_LIGHT")
+                .define("USE_VERTEX_BONE_ID");
 
         net.minecraft.server.packs.resources.ResourceProvider instancedProvider =
             com.hbm_m.client.render.shader.modification.ShaderPreDefinitions.wrapRedirect(
@@ -669,25 +670,9 @@ public class ClientSetup {
     }
 
     private static void registerWorldRenderHooksCommon() {
-        // Forge: wired via Forge event subscribers (RenderLevelStageEvent) in separate classes.
-
+        // Forge: ClientModEvents.onRenderLevelStage(AFTER_BLOCK_ENTITIES)
         //? if fabric {
-        /*// Closest equivalent to "after particles" stage for our debug text:
-        // we're in world render pass and have camera + PoseStack.
-        WorldRenderEvents.AFTER_ENTITIES.register(ctx ->
-                ChunkRadiationDebugRenderer.render(ctx.matrixStack(), ctx.camera().getPosition()));
-
-        WorldRenderEvents.AFTER_ENTITIES.register(ctx -> {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc == null) return;
-            ClientRenderHandler.onRenderWorldLate(mc.renderBuffers().bufferSource(), ctx.matrixStack(), ctx.camera().getPosition());
-        });
-
-        ClientTickEvents.END_CLIENT_TICK.register(client -> ClientRenderHandler.onClientTickEnd());
-
-        // Clear radiation cache when joining/leaving worlds/dimensions.
-        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> ClientRadiationData.clearAll());
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ClientRadiationData.clearAll());
+        /*ClientRenderHandlerFabric.register();
         *///?}
     }
 
@@ -704,13 +689,16 @@ public class ClientSetup {
 
     private static void clearClientCachesDeferred() {
         com.mojang.blaze3d.systems.RenderSystem.recordRenderCall(() -> {
+            com.hbm_m.client.render.culling.InstancedRenderFrame.clear();
             MachineAdvancedAssemblerRenderer.clearCaches();
             MachineAssemblerRenderer.clearCaches();
             MachineHydraulicFrackiningTowerRenderer.clearCaches();
             DoorRenderer.clearAllCaches();
             MachinePressRenderer.clearCaches();
             MachineChemicalPlantRenderer.clearCaches();
+            MachineCrystallizerRenderer.clearCaches();
             MeshRenderCache.clearAll();
+            com.hbm_m.client.render.MdiGeometryAtlas.resetForResourceLifecycle();
             AbstractObjArmorLayer.clearAllCaches();
         });
     }
@@ -1232,13 +1220,16 @@ public class ClientSetup {
                 // включении шейдера - clearCaches вызывался во время render pass).
                 com.mojang.blaze3d.systems.RenderSystem.recordRenderCall(() -> {
                     try {
+                        com.hbm_m.client.render.MdiBatchCoordinator.discardActiveSessionNoDispatch();
                         MachineAdvancedAssemblerRenderer.clearCaches();
                         MachineAssemblerRenderer.clearCaches();
                         MachineHydraulicFrackiningTowerRenderer.clearCaches();
                         DoorRenderer.clearAllCaches();
                         MachinePressRenderer.clearCaches();
                         MachineChemicalPlantRenderer.clearCaches();
+                        MachineCrystallizerRenderer.clearCaches();
                         MeshRenderCache.clearAll();
+                        com.hbm_m.client.render.MdiGeometryAtlas.resetForResourceLifecycle();
                         AbstractObjArmorLayer.clearAllCaches();
                         MainRegistry.LOGGER.info("VBO cache cleanup completed (deferred to render thread)");
                     } catch (Exception e) {
@@ -1299,15 +1290,42 @@ public class ClientSetup {
                 .build()
         );
 
-        // Instanced variant: extended with InstPos/InstRot/InstBrightness attributes.
+        // Instanced variant: per-vertex BoneId + InstPos/InstRot/… (см. InstancedStaticPartRenderer VAO).
         VertexFormat blockLitInstancedFormat = new VertexFormat(
             ImmutableMap.<String, VertexFormatElement>builder()
                 .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
                 .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
                 .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
+                .put("BoneId", new VertexFormatElement(0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.GENERIC, 1))
                 .put("InstPos", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
                 .put("InstRot", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstBrightness", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 1))
+                .put("InstBboxMin", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .put("InstBboxSize", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightC01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightC23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightC45", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightC67", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .build()
+        );
+
+        VertexFormat blockLitInstancedSlicedFormat = new VertexFormat(
+            ImmutableMap.<String, VertexFormatElement>builder()
+                .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
+                .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
+                .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
+                .put("BoneId", new VertexFormatElement(0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.GENERIC, 1))
+                .put("InstPos", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .put("InstRot", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstBboxMin", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .put("InstBboxSize", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightS0C01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightS0C23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightS1C01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightS1C23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightS2C01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightS2C23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightS3C01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightS3C23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .build()
         );
 
@@ -1348,7 +1366,8 @@ public class ClientSetup {
 
         com.hbm_m.client.render.shader.modification.ShaderModification instancingDefine =
             com.hbm_m.client.render.shader.modification.ShaderModification.builder()
-                .define("USE_INSTANCING");
+                .define("USE_INSTANCING")
+                .define("USE_VERTEX_BONE_ID");
 
         com.hbm_m.client.render.shader.modification.ShaderModification slicedDefine =
             com.hbm_m.client.render.shader.modification.ShaderModification.builder()
@@ -1357,7 +1376,8 @@ public class ClientSetup {
         com.hbm_m.client.render.shader.modification.ShaderModification instancedSlicedDefine =
             com.hbm_m.client.render.shader.modification.ShaderModification.builder()
                 .define("USE_INSTANCING")
-                .define("USE_SLICED_LIGHT");
+                .define("USE_SLICED_LIGHT")
+                .define("USE_VERTEX_BONE_ID");
 
         net.minecraft.server.packs.resources.ResourceProvider instancedProvider =
             com.hbm_m.client.render.shader.modification.ShaderPreDefinitions.wrapRedirect(
@@ -1439,7 +1459,7 @@ public class ClientSetup {
         );
                 *///?} else {
                                 ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_instanced_sliced"),
-                blockLitInstancedFormat
+                blockLitInstancedSlicedFormat
             ),
             ModShaders::setBlockLitInstancedSlicedShader
         );

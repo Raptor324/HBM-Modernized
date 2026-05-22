@@ -42,7 +42,7 @@ legacyForge {
 			gameDirectory = file("run/")
 			ideName = "Forge Client (${stonecutter.active?.version})"
 			programArgument("--username=Dev")
-			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8", "-Dhbm_m.modelDebug=true", "-Dhbm_m.modelDebugFilter=fluid_tank,centrifuge,geiger_counter_block,ore_acidizer")
+			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8")
 		}
 		register("server") {
 			server()
@@ -98,12 +98,7 @@ dependencies {
 	implementation(libs.moulberry.mixinconstraints)
 	jarJar(libs.moulberry.mixinconstraints)
 
-	// Все Forge-моды (особенно сторонние) нужно подключать через mod...,
-	// чтобы ModDevGradle принудительно пропустил их через ремаппер.
-
-	// В Kotlin DSL динамические конфигурации оборачиваются в кавычки, либо вызываются через add()
 	"modImplementation"("dev.architectury:architectury-forge:${prop("deps.architectury")}")
-	// Одна версия в jarJar, иначе подтягивается 10.x и ломается сеть с 9.x
 	jarJar("dev.architectury:architectury-forge:${prop("deps.architectury")}")
 	"modImplementation"("me.shedaniel.cloth:cloth-config-forge:${prop("deps.cloth-config")}")
 
@@ -116,8 +111,8 @@ dependencies {
 	"modRuntimeOnly"("maven.modrinth:spark:1.10.53-forge")
 	"modRuntimeOnly"("curse.maven:screenshot-to-clipboard-326950:3643026")
 
-	"modRuntimeOnly"("curse.maven:xaeros-world-map-317780:7598469")
-    "modRuntimeOnly"("curse.maven:xaeros-minimap-263420:7598586")
+	// "modRuntimeOnly"("curse.maven:xaeros-world-map-317780:7598469")
+    // "modRuntimeOnly"("curse.maven:xaeros-minimap-263420:7598586")
 	"modRuntimeOnly"("curse.maven:jade-324717:6855440")
 }
 

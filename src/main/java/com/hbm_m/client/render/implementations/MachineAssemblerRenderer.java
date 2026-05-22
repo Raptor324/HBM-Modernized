@@ -1,6 +1,7 @@
 package com.hbm_m.client.render.implementations;
 
 
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 import com.hbm_m.block.entity.machines.MachineAssemblerBlockEntity;
@@ -10,10 +11,11 @@ import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
+import com.hbm_m.client.render.LightSampleCache;
 import com.hbm_m.client.render.ObjModelVboBuilder;
-import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.RenderDistanceHelper;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
+import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
@@ -69,6 +71,12 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
     /** Degrees → radians multiplier; see {@code MachineAdvancedAssemblerRenderer.DEG_TO_RAD}. */
     private static final float DEG_TO_RAD = (float) (Math.PI / 180.0);
 
+    private static final long MACHINE_LIGHT_SAMPLE_KEY = 0x48534D5F41534D42L;
+
+    private final Matrix4f tmpMachineLightPose = new Matrix4f();
+    private final float[] machineSharedLight8 = new float[16];
+    private final float[] machineLightBbox = new float[6];
+
     /**
      * Per-BE flag set inside {@link #renderParts} after the occlusion-culling
      * check passes; consumed by {@link #render} before drawing the recipe icon.
@@ -105,7 +113,9 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         var data = ObjModelVboBuilder.buildSinglePart(part, partName);
         if (data == null) return null;
         var quads = MeshRenderCache.getOrCompile("assembler_legacy_" + partName, part);
-        return new InstancedStaticPartRenderer(data, quads);
+        InstancedStaticPartRenderer r = new InstancedStaticPartRenderer(data, quads);
+        r.setMdiTraceTag("Assembler/" + partName);
+        return r;
     }
 
     private void initializeInstancedRenderers(MachineAssemblerBakedModel model) {
@@ -137,16 +147,24 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         boolean renderActive = state.hasProperty(MachineAssemblerBlock.RENDER_ACTIVE)
                 && state.getValue(MachineAssemblerBlock.RENDER_ACTIVE);
 
+        Direction facing = getFacing(be);
         BlockPos blockPos = be.getBlockPos();
         int blockLight = LightTexture.block(packedLight);
         int skyLight = LightTexture.sky(packedLight);
         int dynamicLight = LightTexture.pack(blockLight, skyLight);
 
         var minecraft = Minecraft.getInstance();
-        AABB renderBounds = be.getRenderBoundingBox();
+        AABB renderBounds;
+        if (state.getBlock() instanceof com.hbm_m.interfaces.IMultiblockController controller && controller.getStructureHelper() != null) {
+            renderBounds = controller.getStructureHelper().getRenderBoundingBox(blockPos, facing, 0.0);
+        } else {
+            renderBounds = be.getRenderBoundingBox();
+        }
+
         if (!OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, renderBounds)) {
             return;
         }
+
         // Mark visible so render() knows it's safe to draw the recipe icon.
         // visibleThisFrame is reset to false at the top of render() before
         // super.render() runs, so this only stays true when culling passes.
@@ -244,6 +262,24 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         boolean anyFading = staticFade < 0.99f || (animFade >= 0 && animFade < 0.99f);
         boolean effectiveBatching = useBatching && !anyFading;
 
+        float[] sharedLight = null;
+        if (effectiveBatching) {
+            var state = be.getBlockState();
+            Direction facing = getFacing(be);
+            AABB renderBounds;
+            if (state.getBlock() instanceof com.hbm_m.interfaces.IMultiblockController controller
+                    && controller.getStructureHelper() != null) {
+                renderBounds = controller.getStructureHelper().getRenderBoundingBox(blockPos, facing, 0.0);
+            } else {
+                renderBounds = be.getRenderBoundingBox();
+            }
+            worldBoundsToBlockLocal(renderBounds, blockPos, machineLightBbox);
+            tmpMachineLightPose.identity();
+            LightSampleCache.getOrSample8(be, MACHINE_LIGHT_SAMPLE_KEY, machineLightBbox, blockPos,
+                    tmpMachineLightPose, dynamicLight, machineSharedLight8);
+            sharedLight = machineSharedLight8;
+        }
+
         // Match legacy orientation: rotate full assembler 90 degrees clockwise.
         poseStack.pushPose();
         poseStack.translate(0.5f, 0.0f, 0.5f);
@@ -254,7 +290,7 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         poseStack.translate(-0.5f, 0.0f, -0.5f);
         if (effectiveBatching && instancedBody != null && instancedBody.isInitialized()) {
             poseStack.pushPose();
-            instancedBody.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
+            instancedBody.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource, sharedLight);
             poseStack.popPose();
         } else {
             gpu.renderStaticBody(poseStack, dynamicLight, blockPos, be, bufferSource);
@@ -263,17 +299,27 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
 
         if (animFade >= 0) {
             SingleMeshVboRenderer.setFadeAlpha(Math.min(staticFade, animFade));
-            renderAnimated(be, partialTick, poseStack, dynamicLight, blockPos, bufferSource, effectiveBatching);
+            renderAnimated(be, partialTick, poseStack, dynamicLight, blockPos, bufferSource, effectiveBatching, sharedLight);
             SingleMeshVboRenderer.setFadeAlpha(staticFade);
         }
         poseStack.popPose();
+    }
+
+    private static void worldBoundsToBlockLocal(AABB world, BlockPos origin, float[] out) {
+        out[0] = (float) (world.minX - origin.getX());
+        out[1] = (float) (world.minY - origin.getY());
+        out[2] = (float) (world.minZ - origin.getZ());
+        out[3] = (float) (world.maxX - origin.getX());
+        out[4] = (float) (world.maxY - origin.getY());
+        out[5] = (float) (world.maxZ - origin.getZ());
     }
 
     // ==================== ANIMATION ====================
 
     private void renderAnimated(MachineAssemblerBlockEntity be, float pt,
                                 PoseStack pose, int blockLight, BlockPos blockPos,
-                                MultiBufferSource bufferSource, boolean useBatching) {
+                                MultiBufferSource bufferSource, boolean useBatching,
+                                @Nullable float[] sharedLight) {
         boolean isActive = be.isCrafting();
 
         long time = System.currentTimeMillis();
@@ -303,21 +349,21 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         // Slider + Arm share the same base position
         matSlider.identity().translate(sliderX, 0, 0).translate(-0.5f, 0, -0.5f);
         addInstanceOrRender(useBatching, instancedSlider,
-                pose, blockLight, blockPos, be, "Slider", matSlider, bufferSource);
+                pose, blockLight, blockPos, be, "Slider", matSlider, bufferSource, sharedLight);
 
         matArm.identity().translate(sliderX, 0, armZ).translate(-0.5f, 0, -0.5f);
         addInstanceOrRender(useBatching, instancedArm,
-                pose, blockLight, blockPos, be, "Arm", matArm, bufferSource);
+                pose, blockLight, blockPos, be, "Arm", matArm, bufferSource, sharedLight);
 
         // 4 Cogs at specific positions
         renderCog(pose, blockLight, blockPos, be, bufferSource, useBatching,
-                -0.6f, 0.75f, 1.0625f, -cogRotation);
+                -0.6f, 0.75f, 1.0625f, -cogRotation, sharedLight);
         renderCog(pose, blockLight, blockPos, be, bufferSource, useBatching,
-                0.6f, 0.75f, 1.0625f, cogRotation);
+                0.6f, 0.75f, 1.0625f, cogRotation, sharedLight);
         renderCog(pose, blockLight, blockPos, be, bufferSource, useBatching,
-                -0.6f, 0.75f, -1.0625f, -cogRotation);
+                -0.6f, 0.75f, -1.0625f, -cogRotation, sharedLight);
         renderCog(pose, blockLight, blockPos, be, bufferSource, useBatching,
-                0.6f, 0.75f, -1.0625f, cogRotation);
+                0.6f, 0.75f, -1.0625f, cogRotation, sharedLight);
     }
 
     // Root transform from machine_assembler.json shifts model by (1,0,2); cog center is there, not at origin.
@@ -329,7 +375,8 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
     private void renderCog(PoseStack pose, int blockLight, BlockPos blockPos,
                            MachineAssemblerBlockEntity be, MultiBufferSource bufferSource,
                            boolean useBatching,
-                           float cx, float cy, float cz, float rotationDeg) {
+                           float cx, float cy, float cz, float rotationDeg,
+                           @Nullable float[] sharedLight) {
         // Compensate root transform so pivot = cog center: T(pos+offset)*R*T(-root)
         matCog.identity()
                 .translate(cx - 0.5f + VBO_COG_OFFSET_X, cy, cz - 0.5f + VBO_COG_OFFSET_Z)
@@ -337,17 +384,18 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
                 .translate(-ROOT_TX, 0f, -ROOT_TZ);
 
         addInstanceOrRender(useBatching, instancedCog,
-                pose, blockLight, blockPos, be, "Cog", matCog, bufferSource);
+                pose, blockLight, blockPos, be, "Cog", matCog, bufferSource, sharedLight);
     }
 
     private void addInstanceOrRender(boolean useInstanced, InstancedStaticPartRenderer instanced,
                                      PoseStack pose, int blockLight, BlockPos blockPos,
                                      MachineAssemblerBlockEntity be, String partName,
-                                     Matrix4f transform, MultiBufferSource bufferSource) {
+                                     Matrix4f transform, MultiBufferSource bufferSource,
+                                     @Nullable float[] sharedLight) {
         if (useInstanced && instanced != null && instanced.isInitialized()) {
             pose.pushPose();
             pose.last().pose().mul(transform);
-            instanced.addInstance(pose, blockLight, blockPos, be, bufferSource);
+            instanced.addInstance(pose, blockLight, blockPos, be, bufferSource, sharedLight);
             pose.popPose();
         } else {
             gpu.renderAnimatedPart(pose, blockLight, partName, transform, blockPos, be, bufferSource);
@@ -428,7 +476,7 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
                                         int packedLight, int packedOverlay) {
         if (shouldSkipAnimatedRender(be.getBlockPos())) return;
 
-        ItemStack icon = getRecipeOutput(be);
+        ItemStack icon = be.getClientRecipeIcon();
         if (icon.isEmpty()) return;
 
         var mc = Minecraft.getInstance();
@@ -470,15 +518,6 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         poseStack.popPose();
     }
 
-    private ItemStack getRecipeOutput(MachineAssemblerBlockEntity be) {
-        ItemStack template = be.getInventory().getStackInSlot(4);
-        if (template.isEmpty() || !(template.getItem() instanceof ItemAssemblyTemplate)) {
-            return ItemStack.EMPTY;
-        }
-
-        return ItemAssemblyTemplate.getRecipeOutput(template);
-    }
-
     // ==================== DISTANCE CHECK ====================
 
     private boolean shouldSkipAnimatedRender(BlockPos blockPos) {
@@ -508,7 +547,7 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
 
     @Override
     public boolean shouldRenderOffScreen(MachineAssemblerBlockEntity be) {
-        return !ShaderCompatibilityDetector.isRenderingShadowPass();
+        return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
     }
 
     @Override

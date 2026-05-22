@@ -1117,6 +1117,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.BLAST_FURNACE.get()));
         add.accept(new ItemStack(ModBlocks.BLAST_FURNACE_EXTENSION.get()));
         add.accept(new ItemStack(ModBlocks.HEATING_OVEN.get()));
+        add.accept(new ItemStack(ModBlocks.STEAM_CONDENSER.get()));
         add.accept(new ItemStack(ModBlocks.SHREDDER.get()));
         add.accept(new ItemStack(ModBlocks.WOOD_BURNER.get()));
         add.accept(new ItemStack(ModBlocks.CHEMICAL_PLANT.get()));

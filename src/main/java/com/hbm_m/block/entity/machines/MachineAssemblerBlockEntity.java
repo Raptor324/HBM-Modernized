@@ -10,16 +10,19 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
-import com.hbm_m.block.machines.MachineAssemblerBlock;
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.block.machines.MachineAssemblerBlock;
+//? if forge {
+import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.inventory.menu.MachineAssemblerMenu;
-import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
+import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.sound.ClientSoundBootstrap;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -37,11 +40,6 @@ import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-
-import com.hbm_m.platform.ModItemStackHandler;
-
-//? if forge {
-import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -789,7 +787,52 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
     // ==================== CLIENT ====================
 
+    //? if fabric {
+    /*@Environment(EnvType.CLIENT)
+    private ItemStack clientRecipeIconTemplate = ItemStack.EMPTY;
+
+    @Environment(EnvType.CLIENT)
+    private ItemStack clientRecipeIconCache = ItemStack.EMPTY;
+
+    @Environment(EnvType.CLIENT)
+    public ItemStack getClientRecipeIcon() {
+        ItemStack template = getInventory().getStackInSlot(TEMPLATE_SLOT);
+        if (ItemStack.matches(template, clientRecipeIconTemplate)) {
+            return clientRecipeIconCache;
+        }
+        clientRecipeIconTemplate = template.copy();
+        if (template.isEmpty() || !(template.getItem() instanceof ItemAssemblyTemplate)) {
+            clientRecipeIconCache = ItemStack.EMPTY;
+            return ItemStack.EMPTY;
+        }
+        clientRecipeIconCache = ItemAssemblyTemplate.getRecipeOutput(template);
+        return clientRecipeIconCache;
+    }
+    *///?}
+
     //? if forge {
+    @OnlyIn(Dist.CLIENT)
+    private ItemStack clientRecipeIconTemplate = ItemStack.EMPTY;
+
+    @OnlyIn(Dist.CLIENT)
+    private ItemStack clientRecipeIconCache = ItemStack.EMPTY;
+
+    /** Cached recipe output icon for BER; refreshed when assembly template slot changes. */
+    @OnlyIn(Dist.CLIENT)
+    public ItemStack getClientRecipeIcon() {
+        ItemStack template = getInventory().getStackInSlot(TEMPLATE_SLOT);
+        if (ItemStack.matches(template, clientRecipeIconTemplate)) {
+            return clientRecipeIconCache;
+        }
+        clientRecipeIconTemplate = template.copy();
+        if (template.isEmpty() || !(template.getItem() instanceof ItemAssemblyTemplate)) {
+            clientRecipeIconCache = ItemStack.EMPTY;
+            return ItemStack.EMPTY;
+        }
+        clientRecipeIconCache = ItemAssemblyTemplate.getRecipeOutput(template);
+        return clientRecipeIconCache;
+    }
+
     @OnlyIn(Dist.CLIENT)
     public void setCrafting(boolean crafting) {
         this.isCrafting = crafting;
@@ -807,6 +850,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     // facing один раз на ВЕСЬ helper и переиспользует для всех BE этого типа.
     // Inflate 1.35: 1.0 давало пограничные ложные окклюжены + мигание при
     // Iris shadow/main в одном кадре; advanced assembler использует 1.5.
+    @Override
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         BlockState state = getBlockState();
         if (!(state.getBlock() instanceof MachineAssemblerBlock block)) {

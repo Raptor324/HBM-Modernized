@@ -39,6 +39,15 @@ public class ModWorldGen {
     public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> OILCLASTER_SURROUNDED =
             FEATURES.register("oilclaster_surrounded", () -> new OilClasterSurroundedFeature(NoneFeatureConfiguration.CODEC));
 
+    public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> BEDROCK_OIL_ORE =
+            FEATURES.register("bedrock_oil_ore", () -> new BedrockOilOreFeature(NoneFeatureConfiguration.CODEC));
+
+    public static final ResourceKey<ConfiguredFeature<?, ?>> BEDROCK_OIL_ORE_CONFIGURED_KEY =
+            ResourceKey.create(Registries.CONFIGURED_FEATURE, RefStrings.resourceLocation("ore_bedrock_oil"));
+
+    public static final ResourceKey<PlacedFeature> BEDROCK_OIL_ORE_PLACED_KEY =
+            ResourceKey.create(Registries.PLACED_FEATURE, RefStrings.resourceLocation("ore_bedrock_oil_placed"));
+
     public static final ResourceKey<PlacedFeature> URANIUM_ORE_PLACED_KEY =
             ResourceKey.create(Registries.PLACED_FEATURE, RefStrings.resourceLocation("ore_uranium_placed"));
 

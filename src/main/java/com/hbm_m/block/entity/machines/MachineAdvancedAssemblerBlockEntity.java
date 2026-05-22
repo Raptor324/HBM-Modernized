@@ -17,6 +17,7 @@ import com.hbm_m.inventory.menu.MachineAdvancedAssemblerMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.module.machine.MachineModuleAdvancedAssembler;
+import com.hbm_m.multiblock.MultiblockFrameHelper;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.sound.ModSounds;
@@ -253,27 +254,15 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     @Override
     public boolean setFrameVisible(boolean visible) {
-        // MachineAdvancedAssemblerBlock хранит FRAME в BlockState (MultiblockStructureHelper обновляет напрямую)
         if (level != null && !level.isClientSide) {
-            BlockState state = getBlockState();
-            if (state.getBlock() instanceof MachineAdvancedAssemblerBlock
-                    && state.hasProperty(MachineAdvancedAssemblerBlock.FRAME)
-                    && state.getValue(MachineAdvancedAssemblerBlock.FRAME) != visible) {
-                level.setBlock(worldPosition, state.setValue(MachineAdvancedAssemblerBlock.FRAME, visible), 3);
-                return true;
-            }
+            return MultiblockFrameHelper.applyFrameToBlockState(level, worldPosition, visible);
         }
         return false;
     }
 
     @Override
     public boolean isFrameVisible() {
-        BlockState state = getBlockState();
-        if (state.getBlock() instanceof MachineAdvancedAssemblerBlock
-                && state.hasProperty(MachineAdvancedAssemblerBlock.FRAME)) {
-            return state.getValue(MachineAdvancedAssemblerBlock.FRAME);
-        }
-        return false;
+        return MultiblockFrameHelper.isFrameVisible(getBlockState());
     }
 
     // Tick-хуки
@@ -293,19 +282,48 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     private static final String ADV_ASM_CLIENT_TICKER = "com.hbm_m.client.machine.AdvancedAssemblerClientTicker";
 
+    private static volatile java.lang.reflect.Method cachedAdvAsmClientTick;
+    private static volatile java.lang.reflect.Method cachedAdvAsmOnRemoved;
+    private static volatile java.lang.reflect.Method cachedAdvAsmGetRingAngle;
+    private static volatile java.lang.reflect.Method cachedAdvAsmGetPrevRingAngle;
+    private static volatile java.lang.reflect.Method cachedAdvAsmGetArms;
+    private static volatile Class<?> cachedAdvAsmArmComponentType;
+
+    private static void ensureAdvAssemblerReflectCache() {
+        if (cachedAdvAsmGetRingAngle != null) {
+            return;
+        }
+        synchronized (MachineAdvancedAssemblerBlockEntity.class) {
+            if (cachedAdvAsmGetRingAngle != null) {
+                return;
+            }
+            try {
+                Class<?> cl = Class.forName(ADV_ASM_CLIENT_TICKER);
+                cachedAdvAsmClientTick = cl.getMethod("clientTick", Level.class, BlockPos.class, BlockState.class, MachineAdvancedAssemblerBlockEntity.class);
+                cachedAdvAsmOnRemoved = cl.getMethod("onRemoved");
+                cachedAdvAsmGetRingAngle = cl.getMethod("getRingAngle");
+                cachedAdvAsmGetPrevRingAngle = cl.getMethod("getPrevRingAngle");
+                cachedAdvAsmGetArms = cl.getMethod("getArms");
+                cachedAdvAsmArmComponentType = Class.forName(ADV_ASM_CLIENT_TICKER + "$AssemblerArm");
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     private static void invokeAdvAssemblerClientTick(Object ticker, Level level, BlockPos pos, BlockState state, MachineAdvancedAssemblerBlockEntity entity) {
+        ensureAdvAssemblerReflectCache();
         try {
-            Class.forName(ADV_ASM_CLIENT_TICKER)
-                .getMethod("clientTick", Level.class, BlockPos.class, BlockState.class, MachineAdvancedAssemblerBlockEntity.class)
-                .invoke(ticker, level, pos, state, entity);
+            cachedAdvAsmClientTick.invoke(ticker, level, pos, state, entity);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
     }
 
     private static void invokeAdvAssemblerClientTickerOnRemoved(Object ticker) {
+        ensureAdvAssemblerReflectCache();
         try {
-            Class.forName(ADV_ASM_CLIENT_TICKER).getMethod("onRemoved").invoke(ticker);
+            cachedAdvAsmOnRemoved.invoke(ticker);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -631,12 +649,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         lastUseTick = tag.getLong("last_use_tick");
         // Миграция: старые сохранения имели FrameVisible в NBT - синхронизируем в BlockState
         if (tag.contains("FrameVisible") && level != null && !level.isClientSide) {
-            boolean frameVal = tag.getBoolean("FrameVisible");
-            BlockState state = getBlockState();
-            if (state.getBlock() instanceof MachineAdvancedAssemblerBlock
-                    && state.hasProperty(MachineAdvancedAssemblerBlock.FRAME)) {
-                level.setBlock(worldPosition, state.setValue(MachineAdvancedAssemblerBlock.FRAME, frameVal), 3);
-            }
+            MultiblockFrameHelper.applyFrameToBlockState(level, worldPosition, tag.getBoolean("FrameVisible"));
         }
         clientIsCrafting = tag.getBoolean("is_crafting");
         if (tag.contains("HasRecipe") && tag.getBoolean("HasRecipe")) {
@@ -829,17 +842,83 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     public AdvancedAssemblerClientTicker.AssemblerArm[] getArms() {
         return clientTicker != null ? clientTicker.getArms() : new AdvancedAssemblerClientTicker.AssemblerArm[0];
     }
+
+    @Environment(EnvType.CLIENT)
+    @Nullable
+    private ResourceLocation clientRecipeIconCacheId;
+
+    @Environment(EnvType.CLIENT)
+    private ItemStack clientRecipeIconCache = ItemStack.EMPTY;
+
+    @Environment(EnvType.CLIENT)
+    public ItemStack getClientRecipeIcon() {
+        ResourceLocation id = selectedRecipeId;
+        if (id == null) {
+            clientRecipeIconCacheId = null;
+            clientRecipeIconCache = ItemStack.EMPTY;
+            return ItemStack.EMPTY;
+        }
+        if (id.equals(clientRecipeIconCacheId)) {
+            return clientRecipeIconCache;
+        }
+        clientRecipeIconCacheId = id;
+        Level level = getLevel();
+        if (level == null) {
+            clientRecipeIconCache = ItemStack.EMPTY;
+            return ItemStack.EMPTY;
+        }
+        clientRecipeIconCache = level.getRecipeManager()
+                .byKey(id)
+                .filter(r -> r instanceof AssemblerRecipe)
+                .map(r -> ((AssemblerRecipe) r).getResultItem(null))
+                .orElse(ItemStack.EMPTY);
+        return clientRecipeIconCache;
+    }
     *///?}
 
     //? if forge {
+    @OnlyIn(Dist.CLIENT)
+    @Nullable
+    private ResourceLocation clientRecipeIconCacheId;
+
+    @OnlyIn(Dist.CLIENT)
+    private ItemStack clientRecipeIconCache = ItemStack.EMPTY;
+
+    /** Cached recipe output icon for BER; refreshed when {@link #selectedRecipeId} changes. */
+    @OnlyIn(Dist.CLIENT)
+    public ItemStack getClientRecipeIcon() {
+        ResourceLocation id = selectedRecipeId;
+        if (id == null) {
+            clientRecipeIconCacheId = null;
+            clientRecipeIconCache = ItemStack.EMPTY;
+            return ItemStack.EMPTY;
+        }
+        if (id.equals(clientRecipeIconCacheId)) {
+            return clientRecipeIconCache;
+        }
+        clientRecipeIconCacheId = id;
+        Level level = getLevel();
+        if (level == null) {
+            clientRecipeIconCache = ItemStack.EMPTY;
+            return ItemStack.EMPTY;
+        }
+        clientRecipeIconCache = level.getRecipeManager()
+                .byKey(id)
+                .filter(r -> r instanceof AssemblerRecipe)
+                .map(r -> ((AssemblerRecipe) r).getResultItem(null))
+                .orElse(ItemStack.EMPTY);
+        return clientRecipeIconCache;
+    }
+
     @OnlyIn(Dist.CLIENT)
     public float getRingAngle() {
         if (!clientTicker.isPresent()) {
             return 0f;
         }
+        ensureAdvAssemblerReflectCache();
         try {
             Object t = clientTicker.orElseThrow(IllegalStateException::new);
-            return (Float) Class.forName(ADV_ASM_CLIENT_TICKER).getMethod("getRingAngle").invoke(t);
+            return (Float) cachedAdvAsmGetRingAngle.invoke(t);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -850,9 +929,10 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         if (!clientTicker.isPresent()) {
             return 0f;
         }
+        ensureAdvAssemblerReflectCache();
         try {
             Object t = clientTicker.orElseThrow(IllegalStateException::new);
-            return (Float) Class.forName(ADV_ASM_CLIENT_TICKER).getMethod("getPrevRingAngle").invoke(t);
+            return (Float) cachedAdvAsmGetPrevRingAngle.invoke(t);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -863,21 +943,18 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         if (!clientTicker.isPresent()) {
             return emptyAssemblerArmsArray();
         }
+        ensureAdvAssemblerReflectCache();
         try {
             Object t = clientTicker.orElseThrow(IllegalStateException::new);
-            return Class.forName(ADV_ASM_CLIENT_TICKER).getMethod("getArms").invoke(t);
+            return cachedAdvAsmGetArms.invoke(t);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
     }
 
     private static Object emptyAssemblerArmsArray() {
-        try {
-            Class<?> arm = Class.forName(ADV_ASM_CLIENT_TICKER + "$AssemblerArm");
-            return java.lang.reflect.Array.newInstance(arm, 0);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        ensureAdvAssemblerReflectCache();
+        return java.lang.reflect.Array.newInstance(cachedAdvAsmArmComponentType, 0);
     }
     //?}
 

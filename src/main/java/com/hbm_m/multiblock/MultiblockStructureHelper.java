@@ -14,10 +14,8 @@ import java.util.function.Supplier;
 // Позволяет определять структуру, проверять возможность постройки, строить и разрушать структуру,
 // а также генерировать VoxelShape для всей структуры. Ядро всей мультиблочной логики.
 import com.hbm_m.api.energy.WireBlock;
-import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.machines.UniversalMachinePartBlock;
 import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.interfaces.IFrameSupportable;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.interfaces.IMultiblockSidedIO;
@@ -645,7 +643,7 @@ public class MultiblockStructureHelper {
             if (player instanceof ServerPlayer serverPlayer) {
                 // Проверяем, включена ли опция в конфиге, перед отправкой пакета
                 if (ModClothConfig.get().obstructionHighlight.enableObstructionHighlight) {
-                    // TODO(multiloader): re-implement highlight packet sending on Fabric.
+                    HighlightBlocksPacket.sendTo(serverPlayer, obstructions);
                 }
             }
             player.displayClientMessage(Component.translatable("chat.hbm_m.structure.obstructed"), true);
@@ -771,7 +769,7 @@ public class MultiblockStructureHelper {
         // Настраиваем стороны подключения на самом контроллере, если он поддерживает sided IO.
         applyControllerSideConfig(level, controllerPos, facing);
         
-        updateFrameForController(level, controllerPos);
+        MultiblockFrameHelper.updateFrameForController(level, controllerPos);
         
         // ОДНО массовое обновление в конце вместо 156
         for (BlockPos connectorPos : energyConnectorPositions) {
@@ -846,160 +844,33 @@ public class MultiblockStructureHelper {
         } finally { IS_DESTROYING.set(false); }
     }
 
-    /**
-     * Получает максимальную Y-координату структуры (высоту верхнего пояса)
-     */
-    private int getMaxY() {
-        int maxY = Integer.MIN_VALUE;
-        for (BlockPos local : structureMap.keySet()) {
-            if (local.getY() > maxY) {
-                maxY = local.getY();
-            }
-        }
-        return maxY;
-    }
-
     public Map<BlockPos, Supplier<BlockState>> getStructureMap() {
         return structureMap;
     }
 
-    /**
-     * Проверяет, является ли данная локальная позиция частью верхнего пояса структуры
-     * @param localOffset Локальная позиция относительно контроллера (БЕЗ поворота)
-     * @return true если блок находится на максимальной высоте структуры
-     */
+    /** @see MultiblockFrameHelper#isTopRingPart */
     public boolean isTopRingPart(BlockPos localOffset) {
-        int maxY = getMaxY();
-        return localOffset.getY() == maxY;
+        return MultiblockFrameHelper.isTopRingPart(this, localOffset);
     }
 
-    /**
-     * Получает список мировых позиций всех частей верхнего пояса структуры
-     * @param controllerPos Позиция контроллера в мире
-     * @param facing Направление структуры
-     * @return Список мировых позиций блоков верхнего пояса
-     */
+    /** @see MultiblockFrameHelper#getTopRingWorldPositions */
     public List<BlockPos> getTopRingWorldPositions(BlockPos controllerPos, Direction facing) {
-        List<BlockPos> topRing = new ArrayList<>();
-        int maxY = getMaxY();
-        for (BlockPos localOffset : structureMap.keySet()) {
-            if (localOffset.getY() == maxY) {
-                BlockPos worldPos = getRotatedPos(controllerPos, localOffset, facing);
-                topRing.add(worldPos);
-            }
-        }
-        return topRing;
+        return MultiblockFrameHelper.getTopRingWorldPositions(this, controllerPos, facing);
     }
 
-
-    /**
-     * Вычисляет, должна ли рамка быть видимой для данной структуры
-     * Рамка видна, если над любой частью верхнего пояса есть непустой блок
-     */
+    /** @see MultiblockFrameHelper#computeFrameVisible */
     public boolean computeFrameVisible(Level level, BlockPos controllerPos, Direction facing) {
-        List<BlockPos> topRingWorld = getTopRingWorldPositions(controllerPos, facing);
-        for (BlockPos p : topRingWorld) {
-            BlockPos above = p.above();
-            if (!level.isEmptyBlock(above)) {
-                return true;
-            }
-        }
-        return false;
+        return MultiblockFrameHelper.computeFrameVisible(level, this, controllerPos, facing);
     }
 
-
-    /**
-     * Обновляет состояние рамки для контроллера с синхронизацией клиента
-     */
+    /** @see MultiblockFrameHelper#updateFrameForController */
     public static void updateFrameForController(Level level, BlockPos controllerPos) {
-        if (level.isClientSide()) return;
-
-        BlockState state = level.getBlockState(controllerPos);
-        Block block = state.getBlock(); // Получаем сам блок
-
-        // Проверяем, что БЛОК является контроллером
-        if (!(block instanceof IMultiblockController controller)) {
-            return;
-        }
-        
-        BlockEntity be = level.getBlockEntity(controllerPos);
-        // Проверяем, что BlockEntity поддерживает рамку
-        if (!(be instanceof IFrameSupportable frameSupportable)) {
-            return;
-        }
-        
-        if (!state.hasProperty(HorizontalDirectionalBlock.FACING)) {
-            return;
-        }
-
-        Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
-
-        // Получаем хелпер из КОНТРОЛЛЕРА (блока)
-        MultiblockStructureHelper helper = controller.getStructureHelper();
-        if (helper == null) {
-            return;
-        }
-
-        // Вычисляем видимость рамки
-        boolean visible = helper.computeFrameVisible(level, controllerPos, facing);
-
-        // MachineAdvancedAssemblerBlock: храним FRAME в BlockState для запекания в чанк (Embeddium/Sodium)
-        if (block instanceof MachineAdvancedAssemblerBlock) {
-            BlockState currentState = level.getBlockState(controllerPos);
-            if (currentState.hasProperty(MachineAdvancedAssemblerBlock.FRAME)
-                    && currentState.getValue(MachineAdvancedAssemblerBlock.FRAME) != visible) {
-                level.setBlock(controllerPos, currentState.setValue(MachineAdvancedAssemblerBlock.FRAME, visible), 3);
-            }
-            return;
-        }
-
-        // Остальные контроллеры (двери и т.д.): применяем через интерфейс BlockEntity
-        if (be instanceof IFrameSupportable fs) {
-            fs.setFrameVisible(visible);
-        }
+        MultiblockFrameHelper.updateFrameForController(level, controllerPos);
     }
 
-
-    /**
-     * Вызывается из фантомной части при изменении соседа
-     */
+    /** @see MultiblockFrameHelper#onNeighborChangedForPart */
     public static void onNeighborChangedForPart(Level level, BlockPos partPos, BlockPos changedPos) {
-        if (level.isClientSide() || level.getServer() == null) {
-            return;
-        }
-
-        BlockEntity partBe = level.getBlockEntity(partPos);
-        if (!(partBe instanceof IMultiblockPart part)) return;
-
-        BlockPos ctrlPos = part.getControllerPos();
-        if (ctrlPos == null) return;
-
-        BlockState controllerState = level.getBlockState(ctrlPos);
-        Block controllerBlock = controllerState.getBlock();
-
-        if (!(controllerBlock instanceof IMultiblockController controller)) {
-            // Эта проверка важна, если контроллер был разрушен
-            return;
-        }
-
-        // Проверяем, что изменение произошло НАД частью верхнего пояса.
-        // Эту проверку делаем сразу, чтобы не планировать лишних задач.
-        MultiblockStructureHelper helper = controller.getStructureHelper();
-        BlockPos worldOffset = partPos.subtract(ctrlPos);
-        Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
-        BlockPos localOffset = rotateBack(worldOffset, facing);
-
-        if (helper.isTopRingPart(localOffset) && changedPos.equals(partPos.above())) {
-            
-            // Вместо прямого вызова, планируем задачу на следующий тик сервера.
-            level.getServer().execute(() -> {
-                BlockEntity be = level.getBlockEntity(ctrlPos);
-                if (be != null && be.isRemoved() == false && 
-                    level.getBlockState(ctrlPos).is(controllerBlock)) {
-                    updateFrameForController(level, ctrlPos);
-                }
-            });
-        }
+        MultiblockFrameHelper.onNeighborChangedForPart(level, partPos, changedPos);
     }
 
     /**
@@ -1083,7 +954,7 @@ public class MultiblockStructureHelper {
     public AABB getRenderBoundingBox(BlockPos controllerWorldPos, Direction facing, double inflate) {
         AABB local = getLocalRenderBoundingBox(facing);
         AABB moved = local.move(controllerWorldPos.getX(), controllerWorldPos.getY(), controllerWorldPos.getZ());
-        return inflate > 0 ? moved.inflate(inflate) : moved;
+        return inflate > 0.0 ? moved.inflate(inflate) : moved;
     }
 
     public VoxelShape generateShapeFromParts(Direction facing) {

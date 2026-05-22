@@ -226,7 +226,7 @@ public class EnergyNetworkManager extends SavedData {
         EnergyNetwork network = node.getNetwork();
         if (network != null) {
             network.removeNode(node); // <--- Говорим сети, что узел удален
-            LOGGER.debug("[NETWORK] Removed node {} from network {}", pos, network.getId());
+            // LOGGER.debug("[NETWORK] Removed node {} from network {}", pos, network.getId());
         }
 
         setDirty();

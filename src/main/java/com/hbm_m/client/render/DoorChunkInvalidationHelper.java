@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.client.Minecraft;
@@ -61,6 +62,7 @@ public class DoorChunkInvalidationHelper {
             try {
                 BlockState state = mc.level.getBlockState(pos);
                 mc.levelRenderer.blockChanged(mc.level, pos, state, state, Block.UPDATE_CLIENTS);
+                OcclusionCullingHelper.onClientWorldGeometryMayHaveChanged();
             } catch (Exception e) {
                 MainRegistry.LOGGER.debug("Door chunk invalidation at {}: {}", pos, e.getMessage());
             }

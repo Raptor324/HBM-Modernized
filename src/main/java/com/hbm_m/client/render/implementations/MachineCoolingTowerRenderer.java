@@ -8,7 +8,7 @@ import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.ObjModelVboBuilder;
-import com.hbm_m.client.render.OcclusionCullingHelper;
+import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
@@ -126,7 +126,10 @@ public class MachineCoolingTowerRenderer extends AbstractPartBasedRenderer<Machi
         poseStack.popPose();
     }
 
-    @Override public boolean shouldRenderOffScreen(MachineCoolingTowerBlockEntity be) { return false; }
+    @Override
+    public boolean shouldRenderOffScreen(MachineCoolingTowerBlockEntity be) {
+        return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
+    }
 
     @Override public int getViewDistance() { return 128; }
 }

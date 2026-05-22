@@ -82,6 +82,7 @@ import com.hbm_m.block.machines.MachineSolarBoilerBlock;
 import com.hbm_m.block.machines.MachineSolarMirrorsBlock;
 import com.hbm_m.block.machines.MachineSolderingStationBlock;
 import com.hbm_m.block.machines.MachineSteamTurbineBlock;
+import com.hbm_m.block.machines.MachineSteamCondenserBlock;
 import com.hbm_m.block.machines.MachineSubstationBlock;
 import com.hbm_m.block.machines.MachineTowerSmallBlock;
 import com.hbm_m.block.machines.MachineTurbineBlock;
@@ -420,6 +421,9 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> CENTRIFUGE = registerBlockWithoutItem("centrifuge",
             () -> new MachineCentrifugeBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> STEAM_CONDENSER = registerBlock("steam_condenser",
+            () -> new MachineSteamCondenserBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(3.0f, 4.0f).sound(SoundType.METAL)));
 
     public static final RegistrySupplier<Block> UNIVERSAL_MACHINE_PART = registerBlockWithoutItem("universal_machine_part",
             () -> new UniversalMachinePartBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().isSuffocating((state, world, pos) -> false).noParticlesOnBreak()));
@@ -885,6 +889,9 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> BEDROCK_OIL = registerBlock("bedrock_oil",
             () -> new Block(Block.Properties.copy(Blocks.STONE).strength(50.0F, 1200.0F).noOcclusion()));
+
+    public static final RegistrySupplier<Block> ORE_BEDROCK_OIL = registerBlock("ore_bedrock_oil",
+            () -> new Block(Block.Properties.copy(Blocks.BEDROCK)));
 
     public static final RegistrySupplier<Block> DEPTH_STONE = registerBlock("depth_stone",
             () -> new DepthOreBlock(Block.Properties.copy(Blocks.DEEPSLATE).strength(4.5F, 6.0F).noOcclusion()));

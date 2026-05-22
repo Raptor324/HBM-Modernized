@@ -3,6 +3,8 @@ package com.hbm_m.client.render.implementations;
 
 
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,9 +23,9 @@ import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.ObjModelVboBuilder;
-import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.RenderDistanceHelper;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
+import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
@@ -90,6 +92,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
                 if (frameData != null) {
                     var frameQuads = MeshRenderCache.getOrCompile(frameKey, frameModel);
                     InstancedStaticPartRenderer frameRenderer = new InstancedStaticPartRenderer(frameData, frameQuads);
+                    frameRenderer.setMdiTraceTag("Door/frame:" + frameKey);
                     instancedFrameCache.put(frameKey, frameRenderer);
                     frameInitializationFlags.put(frameKey, true);
                     MainRegistry.LOGGER.debug("DoorRenderer: Frame instancer created for '{}' (key: {})", framePartName, frameKey);
@@ -118,6 +121,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
                 if (data != null) {
                     var partQuads = MeshRenderCache.getOrCompile(cacheKey, partModel);
                     InstancedStaticPartRenderer renderer = new InstancedStaticPartRenderer(data, partQuads);
+                    renderer.setMdiTraceTag("Door/part:" + partName + ":" + cacheKey);
                     instancedPartCache.put(cacheKey, renderer);
                     partInitializationFlags.put(cacheKey, true);
                 }
@@ -564,20 +568,26 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
             for (var e : instancedFrameCache.entrySet()) {
                 var r = e.getValue();
                 if (r != null && r.getInstanceCount() > 0) {
-                    MainRegistry.LOGGER.debug("DoorRenderer flush frame '{}': {} instances", e.getKey(), r.getInstanceCount());
+                    // MainRegistry.LOGGER.debug("DoorRenderer flush frame '{}': {} instances", e.getKey(), r.getInstanceCount());
                 }
             }
             for (var e : instancedPartCache.entrySet()) {
                 var r = e.getValue();
                 if (r != null && r.getInstanceCount() > 0) {
-                    MainRegistry.LOGGER.debug("DoorRenderer flush part '{}': {} instances", e.getKey(), r.getInstanceCount());
+                    // MainRegistry.LOGGER.debug("DoorRenderer flush part '{}': {} instances", e.getKey(), r.getInstanceCount());
                 }
             }
         }
-        for (InstancedStaticPartRenderer renderer : instancedFrameCache.values()) {
+        ArrayList<String> frameKeys = new ArrayList<>(instancedFrameCache.keySet());
+        Collections.sort(frameKeys);
+        for (String key : frameKeys) {
+            InstancedStaticPartRenderer renderer = instancedFrameCache.get(key);
             if (renderer != null) renderer.flush(projectionMatrix);
         }
-        for (InstancedStaticPartRenderer renderer : instancedPartCache.values()) {
+        ArrayList<String> partKeys = new ArrayList<>(instancedPartCache.keySet());
+        Collections.sort(partKeys);
+        for (String key : partKeys) {
+            InstancedStaticPartRenderer renderer = instancedPartCache.get(key);
             if (renderer != null) renderer.flush(projectionMatrix);
         }
     }

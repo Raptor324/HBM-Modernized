@@ -60,6 +60,7 @@ import com.hbm_m.block.entity.machines.MachineSilexBlockEntity;
 import com.hbm_m.block.entity.machines.MachineSolderingStationBlockEntity;
 import com.hbm_m.block.entity.machines.MachineSolarBoilerBlockEntity;
 import com.hbm_m.block.entity.machines.MachineSolarMirrorsBlockEntity;
+import com.hbm_m.block.entity.machines.MachineSteamCondenserBlockEntity;
 import com.hbm_m.block.entity.machines.MachineSteamTurbineBlockEntity;
 import com.hbm_m.block.entity.machines.MachineSubstationBlockEntity;
 import com.hbm_m.block.entity.machines.MachineTowerSmallBlockEntity;
@@ -355,6 +356,11 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("steam_turbine_be", () ->
                     BlockEntityType.Builder.of(MachineSteamTurbineBlockEntity::new,
                             ModBlocks.STEAM_TURBINE.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<MachineSteamCondenserBlockEntity>> STEAM_CONDENSER_BE =
+            BLOCK_ENTITIES.register("steam_condenser_be", () ->
+                    BlockEntityType.Builder.of(MachineSteamCondenserBlockEntity::new,
+                            ModBlocks.STEAM_CONDENSER.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<MachineLiquefactorBlockEntity>> LIQUEFACTOR_BE =
             BLOCK_ENTITIES.register("liquefactor_be", () ->

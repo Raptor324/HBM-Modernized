@@ -11,7 +11,10 @@ import com.hbm_m.api.fluids.IFluidUserMK2;
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
+import com.hbm_m.interfaces.IFrameSupportable;
 import com.hbm_m.interfaces.IUpgradeInfoProvider;
+import com.hbm_m.multiblock.MultiblockFrameHelper;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.inventory.UpgradeManager;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
@@ -67,7 +70,8 @@ import team.reborn.energy.api.EnergyStorage;
  * Логика крафтов - заглушка.
  */
 @SuppressWarnings("UnstableApiUsage")
-public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity implements IUpgradeInfoProvider, IFluidStandardTransceiverMK2 {
+public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
+        implements IFrameSupportable, IUpgradeInfoProvider, IFluidStandardTransceiverMK2 {
 
     private static final String CHEMICAL_PLANT_SOUND_INSTANCE = "com.hbm_m.sound.ChemicalPlantSoundInstance";
 
@@ -131,18 +135,28 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
         @Override public int getCount() { return 7; }
     };
 
-    private void updateFrameBlockState() {
-        if (level == null) return;
-        BlockState st = getBlockState();
-        if (!st.hasProperty(MachineChemicalPlantBlock.FRAME)) return;
-        boolean frame = !level.getBlockState(worldPosition.above(3)).isAir();
-        if (st.getValue(MachineChemicalPlantBlock.FRAME) != frame) {
-            level.setBlock(worldPosition, st.setValue(MachineChemicalPlantBlock.FRAME, frame), 3);
+    private void syncRenderActiveStub() {
+        // TODO: crafting progress → RENDER_ACTIVE + chunk rebuild
+    }
+
+    @Override
+    public void checkForFrame() {
+        if (level != null && !level.isClientSide) {
+            MultiblockStructureHelper.updateFrameForController(level, worldPosition);
         }
     }
 
-    private void syncRenderActiveStub() {
-        // TODO: crafting progress → RENDER_ACTIVE + chunk rebuild
+    @Override
+    public boolean setFrameVisible(boolean visible) {
+        if (level != null && !level.isClientSide) {
+            return MultiblockFrameHelper.applyFrameToBlockState(level, worldPosition, visible);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isFrameVisible() {
+        return MultiblockFrameHelper.isFrameVisible(getBlockState());
     }
 
     //? if forge {
@@ -226,7 +240,6 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
             return;
         }
 
-        entity.updateFrameBlockState();
         entity.syncRenderActiveStub();
 
         entity.ensureNetworkInitialized();
