@@ -2940,7 +2940,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.PUTER.get(), "IBM Personal Computer 300pl");
                 add(ModBlocks.DECO_STEEL_SCAFFOLD.get(), "Steel Scaffolding");
                 add(ModBlocks.REBAR.get(), "Rebar");
-                add(ModBlocks.STEEL_WALL.get(), "Antenna Wall(WIP)");
+                add(ModBlocks.STEEL_WALL.get(), "Steel Wall(WIP)");
                 add(ModBlocks.BARREL_CORRODED.get(), "Corroded Barrel");
                 add(ModBlocks.BARREL_LOX.get(), "LOX Barrel");
                 add(ModBlocks.BARREL_PINK.get(), "Pink Barrel");
@@ -3249,9 +3249,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.ARC_WELDER.get(), "Arc Welder (WIP)");
                 add(ModBlocks.SOLDERING_STATION.get(), "Soldering Station (WIP)");
                 add(ModBlocks.MIXER.get(), "Industrial Mixer (WIP)");
-                add(ModBlocks.CHEMICAL_PLANT.get(), "Chemical Plant (WIP)");
-                add(ModBlocks.CENTRIFUGE.get(), "Centrifuge (WIP)");
-                add(ModBlocks.FLUID_TANK.get(), "Tank (WIP)");
+                add(ModBlocks.CHEMICAL_PLANT.get(), "Chemical Plant");
+                add(ModBlocks.CENTRIFUGE.get(), "Centrifuge");
+                add(ModBlocks.FLUID_TANK.get(), "Tank");
                 add(ModBlocks.DERRICK.get(), "Derrick (WIP)");
                 add(ModBlocks.RBMK_CONSOLE.get(), "RBMK Console (WIP)");
                 add(ModBlocks.FLARE_STACK.get(), "Flare Stack (WIP)");
