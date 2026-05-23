@@ -5,6 +5,7 @@ import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.bomb.IBomb;
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
@@ -44,7 +45,7 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 
-public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockController {
+public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockController, IBomb {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
@@ -68,7 +69,7 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
 
             helper.placeStructure(pLevel, pPos, facing, this);
             for (BlockPos localPos : helper.getStructureMap().keySet()) {
-                if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
+                if (getPartRole(localPos) == PartRole.UNIVERSAL_CONNECTOR) {
                     BlockPos worldPos = helper.getRotatedPos(pPos, localPos, facing);
                     EnergyNetworkManager.get((ServerLevel) pLevel).addNode(worldPos);
                 }
@@ -84,7 +85,7 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
                 MultiblockStructureHelper helper = getStructureHelper();
                 Direction facing = state.getValue(FACING);
                 for (BlockPos localPos : helper.getStructureMap().keySet()) {
-                    if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
+                    if (getPartRole(localPos) == PartRole.UNIVERSAL_CONNECTOR) {
                         BlockPos worldPos = helper.getRotatedPos(pos, localPos, facing);
                         EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
                     }
@@ -107,6 +108,35 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
+    /**
+     * Триггер запуска через систему IBomb (детонаторы, командные системы).
+     * Сейчас используется только синхронно из соседних блоков на сервере.
+     */
+    @Override
+    public BombReturnCode explode(Level level, BlockPos pos) {
+        if (level.isClientSide) {
+            return BombReturnCode.UNDEFINED;
+        }
+        if (level.getBlockEntity(pos) instanceof LaunchPadBaseBlockEntity launchPad) {
+            return launchPad.triggerLaunch();
+        }
+        return BombReturnCode.UNDEFINED;
+    }
+
+    /**
+     * Реакция на изменение редстоун‑сигнала: обновляем счётчик питания у BE,
+     * а сам пуск выполняется в commonServerTick по фронту 0 → +.
+     */
+    @Override
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock,
+                                BlockPos neighborPos, boolean movedByPiston) {
+        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
+        if (!level.isClientSide
+                && level.getBlockEntity(pos) instanceof LaunchPadBaseBlockEntity launchPad) {
+            launchPad.setControllerRedstone(level.hasNeighborSignal(pos));
+        }
+    }
+
     @Override public RenderShape getRenderShape(BlockState pState) { return RenderShape.MODEL; }
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) { pBuilder.add(FACING); }
     @Nullable @Override public BlockState getStateForPlacement(BlockPlaceContext pContext) { return this.defaultBlockState().setValue(FACING, pContext.getHorizontalDirection().getOpposite()); }
@@ -115,7 +145,7 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level pLevel, BlockState pState, BlockEntityType<T> pType) {
-        return createTickerHelper(pType, ModBlockEntities.LAUNCH_PAD_BE.get(), LaunchPadBlockEntity::serverTick);
+        return createTickerHelper(pType, ModBlockEntities.LAUNCH_PAD_BE.get(), LaunchPadBlockEntity::tick);
     }
 
     @Override

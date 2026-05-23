@@ -2,10 +2,8 @@ package com.hbm_m.entity.missile;
 
 import api.hbm.entity.IRadarDetectable;
 import com.hbm_m.entity.ModEntities;
-import com.hbm_m.item.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 
 public class MissileABMEntity extends MissileBaseEntity {
@@ -16,11 +14,6 @@ public class MissileABMEntity extends MissileBaseEntity {
 
     public MissileABMEntity(Level level) {
         this(ModEntities.MISSILE_ABM.get(), level);
-    }
-
-    @Override
-    protected Item getMissileItem() {
-        return ModItems.MISSILE_ABM.get();
     }
 
     @Override

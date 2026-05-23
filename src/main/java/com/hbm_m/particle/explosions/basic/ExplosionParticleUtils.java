@@ -84,6 +84,27 @@ public class ExplosionParticleUtils {
     }
 
     /**
+     * Compact shockwave at impact epicenter; {@link WaveSmokeParticle} drives client camera shake.
+     */
+    public static void spawnImpactJoltShockwave(ServerLevel level, double x, double y, double z) {
+        SimpleParticleType type = (SimpleParticleType) ModExplosionParticles.WAVE_SMOKE.get();
+        int particleCount = 80;
+        for (int i = 0; i < particleCount; i++) {
+            double angle = (i / (double) particleCount) * 2 * Math.PI;
+            double startRadius = 1.5D + level.random.nextDouble() * 2.0D;
+            double offsetX = Math.cos(angle) * startRadius;
+            double offsetZ = Math.sin(angle) * startRadius;
+            double offsetY = (level.random.nextDouble() - 0.5D) * 1.5D;
+            double expansionSpeed = 0.85D + level.random.nextDouble() * 0.35D;
+            double xSpeed = Math.cos(angle) * expansionSpeed;
+            double zSpeed = Math.sin(angle) * expansionSpeed;
+            double ySpeed = -0.02D + level.random.nextDouble() * 0.08D;
+            ServerExplosionParticles.sendAlwaysVisible(
+                    level, type, x + offsetX, y + offsetY, z + offsetZ, xSpeed, ySpeed, zSpeed);
+        }
+    }
+
+    /**
      *  КОЛЬЦО УДАРНОЙ ВОЛНЫ
      */
     public static void spawnAirBombShockwave(ServerLevel level, double x, double y, double z) {

@@ -10,6 +10,9 @@ import net.minecraft.core.particles.SimpleParticleType;
 
 public class MissileContrailParticle extends TextureSheetParticle {
 
+    /** Set by {@link com.hbm_m.entity.missile.MissileBaseEntity} before spawning contrail particles. */
+    public static float currentSpawnScale = 1.0F;
+
     private final SpriteSet sprites;
 
     protected MissileContrailParticle(ClientLevel level, double x, double y, double z,
@@ -20,14 +23,16 @@ public class MissileContrailParticle extends TextureSheetParticle {
         this.yd = dy;
         this.zd = dz;
         this.lifetime = 60 + this.random.nextInt(20);
-        this.quadSize = 0.4F;
-        this.setSpriteFromAge(sprites);
+        this.quadSize = 0.4F * currentSpawnScale;
+        this.pickSprite(sprites);
     }
 
     @Override
     public void tick() {
         super.tick();
-        this.setSpriteFromAge(this.sprites);
+        if (!this.removed) {
+            this.setSpriteFromAge(this.sprites);
+        }
     }
 
     @Override

@@ -60,7 +60,8 @@ public class MachineCoolingTowerRenderer extends AbstractPartBasedRenderer<Machi
                 var data = ObjModelVboBuilder.buildSinglePart(part, "Cube_Cube.001");
                 var quads = MeshRenderCache.getOrCompile("cooling_tower_Cube_Cube.001", part);
                 if (data != null) {
-                    instancedMain = new InstancedStaticPartRenderer(data, quads, true);
+                    instancedMain = new InstancedStaticPartRenderer(data, quads,
+                            com.hbm_m.client.render.ClientRenderFlags.useSlicedLightForNewRenderer());
                 }
             }
             instancersInitialized = true;

@@ -1,5 +1,6 @@
 package com.hbm_m.block.entity.machines;
 
+import com.hbm_m.api.network.NodeDirPos;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.inventory.menu.LaunchPadLargeMenu;
 
@@ -14,9 +15,6 @@ import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Обычная пусковая площадка.
- *
- * Логика пуска ракет пока отсутствует - см. LaunchPadBaseBlockEntity.
- * Этот класс отвечает только за привязку к BlockEntityType и GUI/меню.
  */
 public class LaunchPadBlockEntity extends LaunchPadBaseBlockEntity {
 
@@ -28,8 +26,12 @@ public class LaunchPadBlockEntity extends LaunchPadBaseBlockEntity {
         super(type, pos, state);
     }
 
-    public static void serverTick(Level level, BlockPos pos, BlockState state, LaunchPadBlockEntity be) {
-        commonServerTick(level, pos, state, be);
+    public static void tick(Level level, BlockPos pos, BlockState state, LaunchPadBlockEntity be) {
+        if (level.isClientSide) {
+            clientLaunchPadSmokeTick(level, pos, state);
+        } else {
+            commonServerTick(level, pos, state, be);
+        }
     }
 
     @Override
@@ -50,7 +52,12 @@ public class LaunchPadBlockEntity extends LaunchPadBaseBlockEntity {
 
     @Override
     protected boolean isReadyForLaunch() {
-        // Простая версия: всегда готово, можно добавить задержку/состояния позже
-        return true;
+        // Кулдаун управляется базой через поле delay (см. commonServerTick).
+        return delay <= 0;
+    }
+
+    @Override
+    public NodeDirPos[] getConPos() {
+        return buildStandardConPos(worldPosition);
     }
 }

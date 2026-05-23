@@ -1,23 +1,20 @@
 package com.hbm_m.client.render.implementations;
 
 import com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity;
+import com.hbm_m.client.render.missile.MissileRenderData;
+import com.hbm_m.client.render.missile.MissileRenderRegistry;
 import com.hbm_m.item.missile.MissileItem;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 public class LaunchPadMissileRenderer implements BlockEntityRenderer<LaunchPadBaseBlockEntity> {
-
-    private static final double PAD_OFFSET_X = 0.5D;
-    private static final double PAD_OFFSET_Y = 0.98D;
-    private static final double PAD_OFFSET_Z = 0.5D;
-    private static final float PAD_SCALE = 1.0F;
 
     public LaunchPadMissileRenderer(BlockEntityRendererProvider.Context context) {
     }
@@ -25,31 +22,35 @@ public class LaunchPadMissileRenderer implements BlockEntityRenderer<LaunchPadBa
     @Override
     public void render(LaunchPadBaseBlockEntity be, float partialTicks, PoseStack poseStack,
                        MultiBufferSource buffer, int packedLight, int packedOverlay) {
-        ItemStack missileStack = be.getInventory().getStackInSlot(LaunchPadBaseBlockEntity.SLOT_MISSILE);
+        ItemStack missileStack = be.getMissilePreviewStack();
         if (missileStack.isEmpty() || !(missileStack.getItem() instanceof MissileItem)) {
             return;
         }
 
-        poseStack.pushPose();
-        poseStack.translate(PAD_OFFSET_X, PAD_OFFSET_Y, PAD_OFFSET_Z);
-
-        if (be.getBlockState().hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
-            float yaw = be.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING).toYRot();
-            poseStack.mulPose(Axis.YP.rotationDegrees(-yaw));
+        MissileRenderData renderData = MissileRenderRegistry.get(missileStack);
+        if (renderData == null) {
+            return;
         }
 
-        poseStack.scale(PAD_SCALE, PAD_SCALE, PAD_SCALE);
+        poseStack.pushPose();
+        poseStack.translate(0.5D, 0.0D, 0.5D);
 
-        Minecraft.getInstance().getItemRenderer().renderStatic(
-                missileStack,
-            ItemDisplayContext.FIXED,
-                packedLight,
-                packedOverlay,
-                poseStack,
-                buffer,
-                be.getLevel(),
-                (int) be.getBlockPos().asLong()
-        );
+        Direction facing = Direction.NORTH;
+        if (be.getBlockState().hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
+            facing = be.getBlockState().getValue(BlockStateProperties.HORIZONTAL_FACING);
+        }
+        switch (facing) {
+            case WEST -> poseStack.mulPose(Axis.YP.rotationDegrees(90.0F));
+            case SOUTH -> poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+            case EAST -> poseStack.mulPose(Axis.YP.rotationDegrees(270.0F));
+            default -> { }
+        }
+
+        poseStack.translate(0.0F, 1.0F, 0.0F);
+
+        RenderSystem.enableCull();
+        renderData.render(poseStack, packedLight, be.getBlockPos());
+        RenderSystem.enableCull();
 
         poseStack.popPose();
     }

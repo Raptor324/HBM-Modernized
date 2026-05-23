@@ -41,6 +41,7 @@ import com.hbm_m.client.loader.MachineBatterySocketModelLoader;
 import com.hbm_m.client.loader.MachineChemicalPlantModelLoader;
 import com.hbm_m.client.loader.MachineFluidTankModelLoader;
 import com.hbm_m.client.loader.MachineHydraulicFrackiningTowerModelLoader;
+import com.hbm_m.client.loader.MissileModelLoader;
 import com.hbm_m.client.loader.PressModelLoader;
 import com.hbm_m.client.loader.TemplateModelLoader;
 import com.hbm_m.client.model.ConnectedDecoBlockBakedModel;
@@ -60,6 +61,7 @@ import com.hbm_m.client.render.implementations.BatterySocketCreativeRenderer;
 import com.hbm_m.client.render.implementations.DoorRenderer;
 import com.hbm_m.client.render.implementations.GasCentrifugeRenderer;
 import com.hbm_m.client.render.implementations.HeatingOvenRenderer;
+import com.hbm_m.client.render.implementations.MachineFluidTankRenderer;
 import com.hbm_m.client.render.implementations.IndustrialTurbineRenderer;
 import com.hbm_m.client.render.implementations.LaunchPadMissileRenderer;
 import com.hbm_m.client.render.implementations.MachineAdvancedAssemblerRenderer;
@@ -72,8 +74,7 @@ import com.hbm_m.client.render.implementations.MachineCrystallizerRenderer;
 import com.hbm_m.client.render.implementations.MachineHydraulicFrackiningTowerRenderer;
 import com.hbm_m.client.render.implementations.MachinePressRenderer;
 import com.hbm_m.client.render.implementations.MachineRadarRenderer;
-import com.hbm_m.client.render.implementations.MissileABMEntityRenderer;
-import com.hbm_m.client.render.implementations.MissileTestEntityRenderer;
+import com.hbm_m.client.render.implementations.MissileEntityRenderer;
 import com.hbm_m.client.render.implementations.NoloEntityRenderer;
 import com.hbm_m.client.render.shader.ShaderReloadListener;
 import com.hbm_m.client.tooltip.CrateContentsTooltipComponent;
@@ -135,6 +136,7 @@ import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.particle.custom.DarkParticle;
+import com.hbm_m.particle.custom.MissileContrailParticle;
 import com.hbm_m.particle.custom.RadFogParticle;
 import com.hbm_m.particle.explosions.basic.CameraShakeHandler;
 import com.hbm_m.powerarmor.PowerArmorSounds;
@@ -484,8 +486,37 @@ public class ClientSetup {
         ModEntities.GRENADESMART_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
         ModEntities.GRENADESLIME_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
         ModEntities.GRENADE_IF_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
-        ModEntities.MISSILE_TEST.ifPresent(entityType -> EntityRenderers.register(entityType, MissileTestEntityRenderer::new));
-        ModEntities.MISSILE_ABM.ifPresent(entityType -> EntityRenderers.register(entityType, MissileABMEntityRenderer::new));
+        ModEntities.MISSILE_TEST.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_ABM.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_MICRO.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_SCHRABIDIUM.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_BHOLE.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_TAINT.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_EMP.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_GENERIC.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_INCENDIARY.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_CLUSTER.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_BUSTER.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_DECOY.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_STEALTH.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_STRONG.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_INCENDIARY_STRONG.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_CLUSTER_STRONG.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_BUSTER_STRONG.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_EMP_STRONG.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_BURST.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_INFERNO.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_RAIN.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_DRILL.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_SHUTTLE.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_NUCLEAR.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_NUCLEAR_CLUSTER.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_VOLCANO.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_DOOMSDAY.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_DOOMSDAY_RUSTED.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.CLUSTER_ROCKET.ifPresent(entityType -> EntityRenderers.register(entityType, EmptyEntityRenderer::new));
+        ModEntities.EMP_PULSE.ifPresent(entityType -> EntityRenderers.register(entityType, EmptyEntityRenderer::new));
+        ModEntities.BLACK_HOLE.ifPresent(entityType -> EntityRenderers.register(entityType, EmptyEntityRenderer::new));
 
         BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.MACHINE_ASSEMBLER_BE.get(), MachineAssemblerRenderer::new);
@@ -497,6 +528,7 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.CRYSTALLIZER.get(), MachineCrystallizerRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), IndustrialTurbineRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.BATTERY_SOCKET_BE.get(), BatterySocketCreativeRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.FLUID_TANK_BE.get(), MachineFluidTankRenderer::new);
         //?}
 
         //? if fabric {
@@ -521,9 +553,67 @@ public class ClientSetup {
         ModEntities.GRENADE_IF_PROJECTILE.ifPresent(entityType ->
                 EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
         ModEntities.MISSILE_TEST.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileTestEntityRenderer::new));
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
         ModEntities.MISSILE_ABM.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileABMEntityRenderer::new));
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_MICRO.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_SCHRABIDIUM.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_BHOLE.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_TAINT.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_EMP.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_GENERIC.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_INCENDIARY.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_CLUSTER.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_BUSTER.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_DECOY.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_STEALTH.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_STRONG.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_INCENDIARY_STRONG.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_CLUSTER_STRONG.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_BUSTER_STRONG.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_EMP_STRONG.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_BURST.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_INFERNO.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_RAIN.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_DRILL.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_SHUTTLE.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_NUCLEAR.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_NUCLEAR_CLUSTER.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_VOLCANO.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_DOOMSDAY.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_DOOMSDAY_RUSTED.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
+        ModEntities.CLUSTER_ROCKET.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, EmptyEntityRenderer::new));
+        ModEntities.EMP_PULSE.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, EmptyEntityRenderer::new));
+        ModEntities.BLACK_HOLE.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, EmptyEntityRenderer::new));
         ModEntities.NOLO.ifPresent(entityType ->
                 EntityRendererRegistry.register(entityType, NoloEntityRenderer::new));
 
@@ -562,6 +652,7 @@ public class ClientSetup {
         register(ModBlockEntities.LAUNCH_PAD_BE.get(), LaunchPadMissileRenderer::new);
         register(ModBlockEntities.LAUNCH_PAD_RUSTED_BE.get(), LaunchPadMissileRenderer::new);
         register(ModBlockEntities.CRUCIBLE_BE.get(), CrucibleRenderer::new);
+        register(ModBlockEntities.FLUID_TANK_BE.get(), MachineFluidTankRenderer::new);
         *///?}
     }
 
@@ -574,6 +665,7 @@ public class ClientSetup {
         //? if fabric {
         /*ParticleFactoryRegistry.getInstance().register(ModParticleTypes.DARK_PARTICLE.get(), DarkParticle.Provider::new);
         ParticleFactoryRegistry.getInstance().register(ModParticleTypes.RAD_FOG_PARTICLE.get(), RadFogParticle.Provider::new);
+        ParticleFactoryRegistry.getInstance().register(ModParticleTypes.MISSILE_CONTRAIL.get(), MissileContrailParticle.Provider::new);
         *///?}
     }
 
@@ -1136,6 +1228,7 @@ public class ClientSetup {
         event.register("door", new DoorModelLoader());
         event.register("template_loader", new TemplateModelLoader());
         event.register("press_loader", new PressModelLoader());
+        event.register("missile_loader", new MissileModelLoader());
         event.register("heating_oven_loader", new HeatingOvenModelLoader());
         event.register("cooling_tower_loader", new MachineCoolingTowerModelLoader());
 
@@ -1201,8 +1294,37 @@ public class ClientSetup {
         event.registerEntityRenderer(ModEntities.NUKE_FALLOUT_RAIN.get(), RenderFallout::new);
         event.registerEntityRenderer(ModEntities.NUKE_MK5.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.FALLING_SELLAFIT_ENTITY_TYPE.get(), FallingBlockRenderer::new);
-        event.registerEntityRenderer(ModEntities.MISSILE_TEST.get(), MissileTestEntityRenderer::new);
-        event.registerEntityRenderer(ModEntities.MISSILE_ABM.get(), MissileABMEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_TEST.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_ABM.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_MICRO.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_SCHRABIDIUM.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_BHOLE.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_TAINT.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_EMP.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_GENERIC.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_INCENDIARY.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_CLUSTER.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_BUSTER.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_DECOY.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_STEALTH.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_STRONG.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_INCENDIARY_STRONG.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_CLUSTER_STRONG.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_BUSTER_STRONG.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_EMP_STRONG.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_BURST.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_INFERNO.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_RAIN.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_DRILL.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_SHUTTLE.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_NUCLEAR.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_NUCLEAR_CLUSTER.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_VOLCANO.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_DOOMSDAY.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_DOOMSDAY_RUSTED.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.CLUSTER_ROCKET.get(), ctx -> new EmptyEntityRenderer<>(ctx));
+        event.registerEntityRenderer(ModEntities.EMP_PULSE.get(), ctx -> new EmptyEntityRenderer<>(ctx));
+        event.registerEntityRenderer(ModEntities.BLACK_HOLE.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.NOLO.get(), NoloEntityRenderer::new);
     }
 

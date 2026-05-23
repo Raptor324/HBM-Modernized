@@ -156,7 +156,8 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
 
                         // Tall tower: sliced light probes (2x4x2) — same as VBO fallback path.
 
-                        InstancedStaticPartRenderer r = new InstancedStaticPartRenderer(data, geo.solidQuads(), true);
+                        InstancedStaticPartRenderer r = new InstancedStaticPartRenderer(data, geo.solidQuads(),
+                                com.hbm_m.client.render.ClientRenderFlags.useSlicedLightForNewRenderer());
 
                         r.setMdiTraceTag("FrackingTower/" + MAIN_PART);
 

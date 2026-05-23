@@ -210,6 +210,8 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
                 String lowerPart = this.visiblePart.toLowerCase(java.util.Locale.ROOT);
                 if (parent.hasMaterial(lowerPart)) {
                     mat = parent.getMaterial(lowerPart);
+                } else if (parent.hasMaterial("default")) {
+                    mat = parent.getMaterial("default");
                 }
             }
 

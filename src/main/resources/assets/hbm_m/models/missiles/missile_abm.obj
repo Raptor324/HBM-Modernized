@@ -1,7 +1,8 @@
 # Blender v2.79 (sub 0) OBJ File: 'missile_abm.blend'
 # www.blender.org
-mtllib missile_abm.mtl
+mtllib missile_default.mtl
 o Circle
+usemtl default
 v -0.000000 7.000000 -0.375000
 v -0.143506 7.000000 -0.346455
 v -0.265165 7.000000 -0.265165
@@ -1364,7 +1365,6 @@ vn -0.8660 0.0000 -0.5000
 vn 0.8660 0.0000 -0.5000
 vn 0.8660 0.0000 0.5000
 s off
-usemtl default
 f 52/1/1 64/2/1 60/3/1
 f 69/4/1 101/5/1 102/6/1
 f 70/7/1 102/8/1 103/9/1
