@@ -845,6 +845,18 @@ public class ModItems {
                 }
             });
 
+    public static final RegistrySupplier<Item> GAS_EMPTY = ITEMS.register("gas_empty",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> DUCTTAPE = ITEMS.register("ducttape",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> HAZMAT_CLOTH = ITEMS.register("hazmat_cloth",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> HAZMAT_CLOTH_GREY = ITEMS.register("hazmat_cloth_grey",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> HAZMAT_CLOTH_RED = ITEMS.register("hazmat_cloth_red",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ASBESTOS_CLOTH = ITEMS.register("asbestos_cloth",
+            () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> BOLT_STEEL = ITEMS.register("bolt_steel",
             () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> BOLT_LEAD = ITEMS.register("bolt_lead",

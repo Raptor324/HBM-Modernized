@@ -2918,6 +2918,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("fluid.hbm_m.bromide", "Bromide");
                 add(ModItems.BILLET_PLUTONIUM.get(), "Plutonium Billet");
 
+                add(ModItems.GAS_EMPTY.get(), "Empty Gas Tank");
+                add(ModItems.DUCTTAPE.get(), "Duct Tape");
+                add(ModItems.HAZMAT_CLOTH.get(), "Hazmat Cloth");
+                add(ModItems.HAZMAT_CLOTH_GREY.get(), "Lead-Reinforced Hazmat Cloth");
+                add(ModItems.HAZMAT_CLOTH_RED.get(), "Advanced Hazmat Cloth");
+                add(ModItems.ASBESTOS_CLOTH.get(), "Fire Proximity Cloth");
                 add(ModItems.BLADE_TEST.get(), "Desh Blades");
                 add(ModItems.BLADE_STEEL.get(), "Steel Blades");
                 add(ModItems.BLADE_TITANIUM.get(), "Titanium Blades");
@@ -2925,6 +2931,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.BORAX.get(), "Borax");
                 add(ModItems.BALL_TNT.get(), "TNT Ball");
                 add(ModItems.BOLT_STEEL.get(), "Steel Bolt");
+                add(ModItems.BOLT_HIGHSPEED_STEEL.get(), "High-Speed Steel Bolt");
+                add(ModItems.BOLT_LEAD.get(), "Lead Bolt");
+                add(ModItems.BOLT_TUNGSTEN.get(), "Tungsten Bolt");
+                add(ModItems.SHELL_STEEL.get(), "Steel Shell");
+                add(ModItems.SHELL_TITANIUM.get(), "Titanium Shell");
+                add(ModItems.SHELL_ALUMINUM.get(), "Aluminum Shell");
+                add(ModItems.SHELL_COPPER.get(), "Copper Shell");
                 add(ModItems.ZIRCONIUM_SHARP.get(), "Zirconium Sharp");
                 add(ModBlocks.CRATE_CONSERVE.get(), "Canned Goods Crate");
                 add(ModBlocks.CAGE_LAMP.get(), "Cage Lamp");

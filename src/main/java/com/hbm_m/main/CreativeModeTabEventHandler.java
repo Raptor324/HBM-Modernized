@@ -597,6 +597,12 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.BOLT_HIGHSPEED_STEEL.get()));
         add.accept(new ItemStack(ModItems.COIL_TUNGSTEN.get()));
         add.accept(new ItemStack(ModItems.CENTRIFUGE_ELEMENT.get()));
+        add.accept(new ItemStack(ModItems.GAS_EMPTY.get()));
+        add.accept(new ItemStack(ModItems.DUCTTAPE.get()));
+        add.accept(new ItemStack(ModItems.HAZMAT_CLOTH.get()));
+        add.accept(new ItemStack(ModItems.HAZMAT_CLOTH_GREY.get()));
+        add.accept(new ItemStack(ModItems.HAZMAT_CLOTH_RED.get()));
+        add.accept(new ItemStack(ModItems.ASBESTOS_CLOTH.get()));
 
         add.accept(new ItemStack(ModItems.PLATE_IRON.get()));
         add.accept(new ItemStack(ModItems.PLATE_ALUMINUM.get()));

@@ -206,6 +206,11 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.STAMP_OBSIDIAN_PLATE.get())
                 .add(ModItems.STAMP_DESH_PLATE.get());
 
+        // Rubber Bars
+        this.tag(ModTags.Items.RUBBER_BAR)
+                .add(ModItems.getIngot(ModIngots.BIORUBBER).get())
+                .add(ModItems.getIngot(ModIngots.RUBBER).get());
+
         // Все штампы проводов
         this.tag(ModTags.Items.STAMPS_WIRE)
                 .add(ModItems.STAMP_STONE_WIRE.get())

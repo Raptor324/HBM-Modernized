@@ -372,6 +372,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.getIngot(ModIngots.EUPHEMIUM).get(), 3)
                 .withBlueprintPool("plates")
                 .save(writer, "plate_euphemium_from_ingots");
+
     }
 }
 //?}

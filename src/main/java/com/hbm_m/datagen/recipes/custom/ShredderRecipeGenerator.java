@@ -149,6 +149,17 @@ public final class ShredderRecipeGenerator {
 
         }
 
+        if (ModItems.getPowders(ModPowders.ALUMINUM) != null) {
+            ShredderRecipeBuilder.shredderRecipe((Ingredient) ModItems.ALUMINUM_RAW,
+                            new ItemStack(ModItems.getPowders(ModPowders.ALUMINUM).get(), 1))
+                    //? if fabric && < 1.21.1 {
+                    /*.save(writer, new ResourceLocation(RefStrings.MODID, "shredder/gold_ingot_to_powder"));
+                     *///?} else {
+                    .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/raw_aluminum_to_powder"));
+            //?}
+
+        }
+
         
         //  Остальные с проверками
         if (ModItems.getPowders(ModPowders.COAL) != null) {

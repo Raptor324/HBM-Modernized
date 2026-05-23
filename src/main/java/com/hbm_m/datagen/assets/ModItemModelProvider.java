@@ -243,6 +243,12 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.CAN_REDBOMB);
         simpleItem(ModItems.CAN_SMART);
 
+        simpleItem(ModItems.GAS_EMPTY);
+        simpleItem(ModItems.DUCTTAPE);
+        simpleItem(ModItems.HAZMAT_CLOTH);
+        simpleItem(ModItems.HAZMAT_CLOTH_GREY);
+        simpleItem(ModItems.HAZMAT_CLOTH_RED);
+        simpleItem(ModItems.ASBESTOS_CLOTH);
         simpleItem(ModItems.GRENADE_NUC);
         simpleItem(ModItems.GRENADE_IF_HE);
         simpleItem(ModItems.GRENADE_IF_FIRE);
