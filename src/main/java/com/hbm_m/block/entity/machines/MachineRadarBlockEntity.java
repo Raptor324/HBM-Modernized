@@ -137,6 +137,10 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             }
 
             if (scanMissiles && isMissileLike(entity)) {
+                if (entity instanceof com.hbm_m.entity.missile.MissileBaseEntity missile
+                        && !missile.canBeDetectedByRadar()) {
+                    continue;
+                }
                 int type = getTargetTypeIndex(entity);
                 nearbyMissiles.add(createContact(entity, type));
 

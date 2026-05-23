@@ -167,6 +167,13 @@
       "hbm_m:mukeexplosion"
     ]
   },
+  "missile_takeoff": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.missile_takeoff",
+    "sounds": [
+      "hbm_m:missile_takeoff"
+    ]
+  },
   "nuclear_explosion": {
     "category": "ambient",
     "subtitle": "sounds.hbm_m.nuclear_explosion",

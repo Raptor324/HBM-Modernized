@@ -201,6 +201,32 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.DESIGNATOR_MANUAL.get()));
         add.accept(new ItemStack(ModItems.MISSILE_TEST.get()));
         add.accept(new ItemStack(ModItems.MISSILE_ABM.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_MICRO.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_SCHRABIDIUM.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_BHOLE.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_TAINT.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_EMP.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_GENERIC.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_INCENDIARY.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_CLUSTER.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_BUSTER.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_DECOY.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_STEALTH.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_STRONG.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_INCENDIARY_STRONG.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_CLUSTER_STRONG.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_BUSTER_STRONG.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_EMP_STRONG.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_BURST.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_INFERNO.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_RAIN.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_DRILL.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_SHUTTLE.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_NUCLEAR.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_NUCLEAR_CLUSTER.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_VOLCANO.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_DOOMSDAY.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_DOOMSDAY_RUSTED.get()));
     }
 
     // БРОНЯ И ИНСТРУМЕНТЫ

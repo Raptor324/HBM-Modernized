@@ -80,11 +80,12 @@ final class IrisInstancedBatchRenderer {
     final float[] irisSingleUV = new float[2];
 
     /** Per-instance slot index into {@link IrisCompanionMesh}'s per-vertex lightmap VBO. */
-    private final int[] instanceLightmapSlot = new int[InstancedStaticPartRenderer.MAX_INSTANCES];
+    private final int[] instanceLightmapSlot;
     private final short[] tmpCornerShort;
 
     IrisInstancedBatchRenderer(InstancedStaticPartRenderer parent) {
         this.parent = parent;
+        this.instanceLightmapSlot = new int[parent.maxInstances];
         this.tmpCornerShort = new short[parent.lightFloatCount];
     }
 

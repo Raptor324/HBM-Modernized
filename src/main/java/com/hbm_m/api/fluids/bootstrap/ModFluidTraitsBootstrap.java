@@ -92,6 +92,7 @@ public final class ModFluidTraitsBootstrap {
         registerStructural();
         ModFluidCalculatedFuel.apply();
         registerHeatCoolChains();
+        ModFluidHazardBootstrap.registerAll();
     }
 
     private static void registerStructural() {

@@ -109,7 +109,6 @@ def multipart_for_blockstate(model_prefix: str) -> list:
     pair("arm_south", {**c, "south": "true"})
     pair("arm_north", {**c, "north": "true"})
 
-    # NEO octant conditions (!east = !pX, !west = !nX, !up = !pY, !down = !nY, !south = !pZ, !north = !nZ)
     oct_when = [
         ("ppn", {"east": "false", "up": "false", "south": "false"}),
         ("ppp", {"east": "false", "up": "false", "north": "false"}),

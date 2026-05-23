@@ -103,6 +103,7 @@ public final class MainRegistry {
         ModPacketHandler.register();
         ModHazards.registerHazards();
         DamageResistanceHandler.initArmorStats();
+        com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity.registerLaunchables();
 
         CentrifugeRecipes.registerRecipes();
 

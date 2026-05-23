@@ -960,6 +960,10 @@ public class ModBlocks {
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> BARREL_TAINT = registerBlock("barrel_taint",
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
+
+    /** Блок заражения (боеголовка MissileTaint). */
+    public static final RegistrySupplier<Block> TAINT = registerBlock("taint",
+            () -> new Block(Block.Properties.copy(Blocks.PURPLE_CONCRETE).strength(0.4F, 0.4F)));
     public static final RegistrySupplier<Block> BARREL_TCALLOY = registerBlock("barrel_tcalloy",
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> BARREL_VITRIFIED = registerBlock("barrel_vitrified",

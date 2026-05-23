@@ -1,4 +1,7 @@
 package com.hbm_m.datagen;
+import static com.hbm_m.block.ModBlocks.ENABLED_INGOT_BLOCKS;
+import static com.hbm_m.block.ModBlocks.getIngotBlock;
+
 //? if forge {
 import java.util.Arrays;
 import java.util.HashSet;
@@ -6,20 +9,17 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.hbm_m.block.ModBlocks;
-import static com.hbm_m.block.ModBlocks.ENABLED_INGOT_BLOCKS;
-import static com.hbm_m.block.ModBlocks.getIngotBlock;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
 import com.hbm_m.lib.RefStrings;
 
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.common.data.LanguageProvider;
-
-import dev.architectury.registry.registries.RegistrySupplier;
 
 public class ModLanguageProvider extends LanguageProvider {
     // 1. Создаем НАШЕ СОБСТВЕННОЕ поле для хранения языка
@@ -223,6 +223,32 @@ public class ModLanguageProvider extends LanguageProvider {
                 // ПРОТОТИП РАКЕТЫ
                 add("item.hbm_m.missile_test", "Тестовая баллистическая ракета");
                 add("item.hbm_m.missile_abm", "Противобаллистическая ракета");
+                add("item.hbm_m.missile_micro", "Микроядерная ракета");
+                add("item.hbm_m.missile_schrabidium", "Ракета со шрабидием");
+                add("item.hbm_m.missile_bhole", "Ракета с чёрной дырой");
+                add("item.hbm_m.missile_taint", "Ракета с заражением");
+                add("item.hbm_m.missile_emp", "ЭМИ-ракета");
+                add("item.hbm_m.missile_generic", "Ракета общего назначения");
+                add("item.hbm_m.missile_incendiary", "Зажигательная ракета");
+                add("item.hbm_m.missile_cluster", "Кассетная ракета");
+                add("item.hbm_m.missile_buster", "Бункерная ракета");
+                add("item.hbm_m.missile_decoy", "Ложная ракета");
+                add("item.hbm_m.missile_stealth", "Стелс-ракета");
+                add("item.hbm_m.missile_strong", "Мощная ракета");
+                add("item.hbm_m.missile_incendiary_strong", "Мощная зажигательная ракета");
+                add("item.hbm_m.missile_cluster_strong", "Мощная кассетная ракета");
+                add("item.hbm_m.missile_buster_strong", "Мощная бункерная ракета");
+                add("item.hbm_m.missile_emp_strong", "Мощная ЭМИ-ракета");
+                add("item.hbm_m.missile_burst", "Ракета Burst");
+                add("item.hbm_m.missile_inferno", "Ракета Inferno");
+                add("item.hbm_m.missile_rain", "Ракета Rain");
+                add("item.hbm_m.missile_drill", "Ракета Drill");
+                add("item.hbm_m.missile_shuttle", "Шаттл-ракета");
+                add("item.hbm_m.missile_nuclear", "Ядерная ракета Atlas");
+                add("item.hbm_m.missile_nuclear_cluster", "Кассетная ядерная ракета");
+                add("item.hbm_m.missile_volcano", "Ракета Volcano");
+                add("item.hbm_m.missile_doomsday", "Ракета Doomsday");
+                add("item.hbm_m.missile_doomsday_rusted", "Ржавая ракета Doomsday");
                 add("item.hbm_m.missile.tier.tier0", "Ракета: уровень 0");
                 add("item.hbm_m.missile.tier.tier1", "Ракета: уровень 1");
                 add("item.hbm_m.missile.tier.tier2", "Ракета: уровень 2");
@@ -238,6 +264,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.missile.fuel.jetfuel_loxy", "Реактивное топливо + жидкий кислород");
                 
                 add("gui.hbm_m.energy", "Энергия: %s/%s HE");
+                add("gui.launchPad.notReady", "Не готова");
+                add("gui.launchPad.loading", "Загрузка...");
+                add("gui.launchPad.ready", "Готова");
+                add("container.launchPad", "Пусковая площадка");
+                add("container.launchPadLarge", "Большая пусковая площадка");
+                add("container.launchPadRusted", "Ржавая пусковая площадка");
                 add("gui.hbm_m.shredder.blade_warning.title", "Нет лезвий!");
                 add("gui.hbm_m.shredder.blade_warning.desc", "Установите или отремонтируйте лезвия шреддера.");
                 // БРОНЯ
@@ -318,6 +350,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("item.hbm_m.geiger_counter", "Счетчик Гейгера");
                 add("item.hbm_m.dosimeter", "Дозиметр");
+                add(ModItems.DIGAMMA_DIAGNOSTIC.get(), "Диагностика Диггама");
                 add("item.hbm_m.battery_creative", "Бесконечная батарейка");
                 add("tooltip.hbm_m.creative_battery_desc","Предоставляет бесконечное количество энергии");
                 add("tooltip.hbm_m.creative_battery_flavor","Бесконечность - не предел!!");
@@ -1889,6 +1922,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.modelUpdateDistance", "Дистанция для рендеринга динамических частей .obj моделей");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling", "Включить куллинг моделей");
                 add("text.autoconfig.hbm_m.option.useInstancedStaticRendering", "Батчинг частей obj моделей");
+                add("text.autoconfig.hbm_m.option.useSlicedLight", "Sliced light (2×4×2 зонды)");
+                add("text.autoconfig.hbm_m.option.useMultiDrawIndirect", "Multi-draw indirect (MDI)");
                 add("text.autoconfig.hbm_m.option.useColladaDoorAnimations", "Анимации дверей из DAE (COLLADA)");
                 add("text.autoconfig.hbm_m.option.useColladaZUpConversion", "Конвертация Z-up→Y-up для DAE (Blender)");
 
@@ -1940,6 +1975,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.modelUpdateDistance.@Tooltip", "Дистанция для рендеринга динамических частей .obj моделей (в чанках)");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling.@Tooltip", "Включить куллинг моделей (выключите, если ваши модели рендерятся некорректно)");
                 add("text.autoconfig.hbm_m.option.useInstancedStaticRendering.@Tooltip", "Использовать батчинговый рендер для частей obj. Сильно повышает производительность рендеринга в бесшейдерном режиме, при проблемах отключите.");
+                add("text.autoconfig.hbm_m.option.useSlicedLight.@Tooltip", "16 зондов освещения вместо 8 углов — лучше на высоких башнях. Несовместимо с MDI: при включении части снова рисуются отдельными instanced draw. После смены — F3+T.");
+                add("text.autoconfig.hbm_m.option.useMultiDrawIndirect.@Tooltip", "Один glMultiDrawElementsIndirect на кадр вместо многих instanced draw (без shader pack). Выигрыш заметен при большом числе одинаковых машин. Не работает с sliced light и GPU bone skinning.");
                 add("text.autoconfig.hbm_m.option.useColladaDoorAnimations.@Tooltip", "Использовать анимации из DAE для transition_seal и sliding_blast_door. Отключите при проблемах - будет procedural fallback.");
                 add("text.autoconfig.hbm_m.option.useColladaZUpConversion.@Tooltip", "Конвертировать систему координат Blender (Z-up) в Minecraft (Y-up). Отключите для тестирования.");
 
@@ -1974,6 +2011,32 @@ public class ModLanguageProvider extends LanguageProvider {
                 // Missile prototype + shared missile strings
                 add("item.hbm_m.missile_test", "Test Ballistic Missile");
                 add("item.hbm_m.missile_abm", "Anti Ballistic Missile");
+                add("item.hbm_m.missile_micro", "Micro-Nuclear Missile");
+                add("item.hbm_m.missile_schrabidium", "Schrabidium Missile");
+                add("item.hbm_m.missile_bhole", "Black Hole Missile");
+                add("item.hbm_m.missile_taint", "Taint Missile");
+                add("item.hbm_m.missile_emp", "EMP Missile");
+                add("item.hbm_m.missile_generic", "Generic Missile");
+                add("item.hbm_m.missile_incendiary", "Incendiary Missile");
+                add("item.hbm_m.missile_cluster", "Cluster Missile");
+                add("item.hbm_m.missile_buster", "Bunker Buster Missile");
+                add("item.hbm_m.missile_decoy", "Decoy Missile");
+                add("item.hbm_m.missile_stealth", "Stealth Missile");
+                add("item.hbm_m.missile_strong", "Strong Missile");
+                add("item.hbm_m.missile_incendiary_strong", "Strong Incendiary Missile");
+                add("item.hbm_m.missile_cluster_strong", "Strong Cluster Missile");
+                add("item.hbm_m.missile_buster_strong", "Strong Bunker Buster Missile");
+                add("item.hbm_m.missile_emp_strong", "Strong EMP Missile");
+                add("item.hbm_m.missile_burst", "Burst Missile");
+                add("item.hbm_m.missile_inferno", "Inferno Missile");
+                add("item.hbm_m.missile_rain", "Rain Missile");
+                add("item.hbm_m.missile_drill", "Drill Missile");
+                add("item.hbm_m.missile_shuttle", "Shuttle Missile");
+                add("item.hbm_m.missile_nuclear", "Atlas Nuclear Missile");
+                add("item.hbm_m.missile_nuclear_cluster", "Nuclear Cluster Missile");
+                add("item.hbm_m.missile_volcano", "Volcano Missile");
+                add("item.hbm_m.missile_doomsday", "Doomsday Missile");
+                add("item.hbm_m.missile_doomsday_rusted", "Rusted Doomsday Missile");
                 add("item.hbm_m.missile.tier.tier0", "Missile: Tier 0");
                 add("item.hbm_m.missile.tier.tier1", "Missile: Tier 1");
                 add("item.hbm_m.missile.tier.tier2", "Missile: Tier 2");
@@ -2025,6 +2088,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.steel_shovel", "Steel Shovel");
 
                 add("gui.hbm_m.energy", "Energy: %s/%s HE");
+                add("gui.launchPad.notReady", "Not ready");
+                add("gui.launchPad.loading", "Loading...");
+                add("gui.launchPad.ready", "Ready");
+                add("container.launchPad", "Launch Pad");
+                add("container.launchPadLarge", "Large Launch Pad");
+                add("container.launchPadRusted", "Rusted Launch Pad");
                 add("gui.hbm_m.shredder.blade_warning.title", "Blades missing!");
                 add("gui.hbm_m.shredder.blade_warning.desc", "Install or repair the shredder blades.");
                 add("item.hbm_m.titanium_sword", "Titanium Sword");
@@ -2272,6 +2341,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("item.hbm_m.geiger_counter", "Geiger Counter");
                 add("item.hbm_m.dosimeter", "Dosimeter");
+                add(ModItems.DIGAMMA_DIAGNOSTIC.get(), "Digamma Diagnostic");
                 add("item.hbm_m.battery_creative", "Creative Battery");
                 add("tooltip.hbm_m.creative_battery_desc","Provides an infinite amount of power");
                 add("tooltip.hbm_m.creative_battery_flavor","To infinity... and beyond!!");
@@ -3739,6 +3809,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.modelUpdateDistance", "Distance for .obj model dynamic parts rendering");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling", "Enable model occlusion culling");
                 add("text.autoconfig.hbm_m.option.useInstancedStaticRendering", "Instanced batching for obj model parts");
+                add("text.autoconfig.hbm_m.option.useSlicedLight", "Sliced light (2×4×2 probes)");
+                add("text.autoconfig.hbm_m.option.useMultiDrawIndirect", "Multi-draw indirect (MDI)");
                 add("text.autoconfig.hbm_m.option.useColladaDoorAnimations", "Door animations from DAE (COLLADA)");
                 add("text.autoconfig.hbm_m.option.useColladaZUpConversion", "Z-up to Y-up conversion for DAE (Blender)");
 
@@ -3793,6 +3865,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.modelUpdateDistance.@Tooltip", "Distance for .obj model dynamic parts rendering (in chunks)");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling.@Tooltip", "Enable model occlusion culling (disable if your models are not rendering correctly)");
                 add("text.autoconfig.hbm_m.option.useInstancedStaticRendering.@Tooltip", "Use batch rendering for obj parts. This greatly improves rendering performance in shaderless mode. If you experience issues, disable it");
+                add("text.autoconfig.hbm_m.option.useSlicedLight.@Tooltip", "16 light probes instead of 8 corners — better on tall towers. Incompatible with MDI: parts fall back to separate instanced draws. Reload resources (F3+T) after changing.");
+                add("text.autoconfig.hbm_m.option.useMultiDrawIndirect.@Tooltip", "One glMultiDrawElementsIndirect per frame instead of many instanced draws (no shader pack). Helps with large fields of identical machines. Does not apply with sliced light or GPU bone skinning.");
                 add("text.autoconfig.hbm_m.option.useColladaDoorAnimations.@Tooltip", "Use DAE animations for transition_seal and sliding_blast_door. Disable if broken - falls back to procedural.");
                 add("text.autoconfig.hbm_m.option.useColladaZUpConversion.@Tooltip", "Convert Blender (Z-up) to Minecraft (Y-up) coordinate system. Disable for testing.");
 

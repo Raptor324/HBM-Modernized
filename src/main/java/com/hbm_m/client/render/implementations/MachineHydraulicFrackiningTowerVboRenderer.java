@@ -8,6 +8,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.client.model.MachineHydraulicFrackiningTowerBakedModel;
+import com.hbm_m.client.render.ClientRenderFlags;
 import com.hbm_m.client.render.MeshRenderCache;
 import com.mojang.blaze3d.vertex.PoseStack;
 
@@ -39,7 +40,7 @@ public class MachineHydraulicFrackiningTowerVboRenderer {
         if (part != null) {
             var r = MeshRenderCache.getOrCreateRenderer("frackining_tower_" + MAIN_PART, part);
             if (r != null) {
-                r.setUseSlicedLight(true);
+                r.setUseSlicedLight(ClientRenderFlags.useSlicedLightForNewRenderer());
                 r.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);
             }
         }

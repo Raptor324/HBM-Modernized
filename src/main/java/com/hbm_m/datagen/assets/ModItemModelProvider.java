@@ -47,6 +47,8 @@ public class ModItemModelProvider extends ItemModelProvider {
 
     @Override
     protected void registerModels() {
+        generateMissileItemModels();
+
         // ЦИКЛ ДЛЯ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
             RegistrySupplier<Item> ingotObject = ModItems.getIngot(ingot);
@@ -872,6 +874,13 @@ public class ModItemModelProvider extends ItemModelProvider {
     public void evenSimplerBlockItem(RegistrySupplier<Block> block) {
         this.withExistingParent(MainRegistry.MOD_ID + ":" + BuiltInRegistries.BLOCK.getKey(block.get()).getPath(),
                 modLoc("block/" + BuiltInRegistries.BLOCK.getKey(block.get()).getPath()));
+    }
+
+    private void generateMissileItemModels() {
+        for (MissileItemModelDefinitions.Definition definition : MissileItemModelDefinitions.all()) {
+            getBuilder(definition.itemPath())
+                    .customLoader((parent, helper) -> new MissileItemModelBuilder(parent, helper, definition));
+        }
     }
 
 }

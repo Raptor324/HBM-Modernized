@@ -61,7 +61,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         implements VanillaInstancedMeshRenderer, IrisCompanionMeshRenderer {
 
     /** Per-part instance cap (one renderer = one mesh part, e.g. ChemPlant/Base). */
-    static final int MAX_INSTANCES = 4096;
+    final int maxInstances = ClientRenderFlags.maxInstances();
     private static final java.util.concurrent.atomic.AtomicInteger OVERFLOW_ADD_COUNT =
             new java.util.concurrent.atomic.AtomicInteger();
 
@@ -93,13 +93,13 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     final int lightFloatCount;
 
     int instanceCount = 0;
-    final int[] instanceCullIndices = new int[MAX_INSTANCES];
-    final long[] instanceOcclusionKeys = new long[MAX_INSTANCES];
+    final int[] instanceCullIndices = new int[maxInstances];
+    final long[] instanceOcclusionKeys = new long[maxInstances];
     float batchSkyDarken = -1f;
     private boolean overflowLogged = false;
     static volatile boolean warnedInstancedShaderNullFlush;
 
-    final float[] instanceLightUV = new float[MAX_INSTANCES * 2];
+    final float[] instanceLightUV = new float[maxInstances * 2];
 
     final Vector3f posTmp = new Vector3f();
     final Quaternionf rotTmp = new Quaternionf();
@@ -229,7 +229,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             }
 
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, instanceVboId);
-            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, (long) MAX_INSTANCES * instanceDataSize * 4, GL15.GL_STREAM_DRAW);
+            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, (long) maxInstances * instanceDataSize * 4, GL15.GL_STREAM_DRAW);
 
             int stride = instanceDataSize * 4;
 
@@ -273,7 +273,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
 
             GL30.glBindVertexArray(0);
 
-            instanceBuffer = MemoryUtil.memAllocFloat(MAX_INSTANCES * instanceDataSize);
+            instanceBuffer = MemoryUtil.memAllocFloat(maxInstances * instanceDataSize);
             this.instanceBufferAddress = MemoryUtil.memAddress0(instanceBuffer);
             final long bufferAddress = MemoryUtil.memAddress(instanceBuffer);
             instanceBufferCleanable = CLEANER.register(this, () -> {
@@ -356,7 +356,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     void uploadInstanceStreamToBoundVbo() {
         ModClothConfig cfg = ModClothConfig.get();
         if (cfg.instanceVboOrphanBeforeUpload) {
-            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, (long) MAX_INSTANCES * instanceDataSize * 4, GL15.GL_STREAM_DRAW);
+            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, (long) maxInstances * instanceDataSize * 4, GL15.GL_STREAM_DRAW);
         }
         GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, 0, instanceBuffer);
     }
@@ -455,13 +455,13 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         }
         //?}
 
-        if (instanceCount >= MAX_INSTANCES) {
+        if (instanceCount >= maxInstances) {
             OVERFLOW_ADD_COUNT.incrementAndGet();
             if (!overflowLogged) {
                 overflowLogged = true;
                 MainRegistry.LOGGER.warn(
-                        "InstancedStaticPartRenderer overflow: MAX_INSTANCES={} reached for tag={}, skipping extra instances until next flush",
-                        MAX_INSTANCES, mdiTraceTag);
+                        "InstancedStaticPartRenderer overflow: maxInstances={} reached for tag={}, skipping extra instances until next flush",
+                        maxInstances, mdiTraceTag);
             }
             return;
         }
@@ -577,13 +577,13 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             return;
         }
 
-        if (instanceCount >= MAX_INSTANCES) {
+        if (instanceCount >= maxInstances) {
             OVERFLOW_ADD_COUNT.incrementAndGet();
             if (!overflowLogged) {
                 overflowLogged = true;
                 MainRegistry.LOGGER.warn(
-                        "InstancedStaticPartRenderer overflow: MAX_INSTANCES={} reached for tag={}, skipping extra instances until next flush",
-                        MAX_INSTANCES, mdiTraceTag);
+                        "InstancedStaticPartRenderer overflow: maxInstances={} reached for tag={}, skipping extra instances until next flush",
+                        maxInstances, mdiTraceTag);
             }
             return;
         }

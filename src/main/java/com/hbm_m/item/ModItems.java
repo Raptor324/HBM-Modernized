@@ -65,6 +65,7 @@ import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.item.liquids.InfiniteFluidItem;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.item.missile.MissileItem;
+import com.hbm_m.item.radiation_meter.ItemDigammaDiagnostic;
 import com.hbm_m.item.radiation_meter.ItemDosimeter;
 import com.hbm_m.item.radiation_meter.ItemGeigerCounter;
 import com.hbm_m.item.scanners.DepthOresScannerItem;
@@ -561,6 +562,9 @@ public class ModItems {
 
     public static final RegistrySupplier<Item> DOSIMETER = ITEMS.register("dosimeter",
             () -> new ItemDosimeter(new Item.Properties().stacksTo(1)));
+
+    public static final RegistrySupplier<Item> DIGAMMA_DIAGNOSTIC = ITEMS.register("digamma_diagnostic",
+            () -> new ItemDigammaDiagnostic(new Item.Properties()));
 
     public static final RegistrySupplier<Item> MUSIC_DISC_BUNKER = ITEMS.register("music_disc_bunker",
             () -> new RecordItem(
@@ -1497,6 +1501,70 @@ public class ModItems {
     public static final RegistrySupplier<Item> MISSILE_ABM = ITEMS.register("missile_abm",
                 () -> new MissileItem(MissileItem.MissileFormFactor.ABM, MissileItem.MissileTier.TIER1,
                                 MissileItem.MissileFuel.SOLID));
+
+    // Tier 0
+    public static final RegistrySupplier<Item> MISSILE_MICRO = ITEMS.register("missile_micro",
+            () -> new MissileItem(MissileItem.MissileFormFactor.MICRO, MissileItem.MissileTier.TIER0));
+    public static final RegistrySupplier<Item> MISSILE_SCHRABIDIUM = ITEMS.register("missile_schrabidium",
+            () -> new MissileItem(MissileItem.MissileFormFactor.MICRO, MissileItem.MissileTier.TIER0));
+    public static final RegistrySupplier<Item> MISSILE_BHOLE = ITEMS.register("missile_bhole",
+            () -> new MissileItem(MissileItem.MissileFormFactor.MICRO, MissileItem.MissileTier.TIER0));
+    public static final RegistrySupplier<Item> MISSILE_TAINT = ITEMS.register("missile_taint",
+            () -> new MissileItem(MissileItem.MissileFormFactor.MICRO, MissileItem.MissileTier.TIER0));
+    public static final RegistrySupplier<Item> MISSILE_EMP = ITEMS.register("missile_emp",
+            () -> new MissileItem(MissileItem.MissileFormFactor.MICRO, MissileItem.MissileTier.TIER0));
+
+    // Tier 1
+    public static final RegistrySupplier<Item> MISSILE_GENERIC = ITEMS.register("missile_generic",
+            () -> new MissileItem(MissileItem.MissileFormFactor.V2, MissileItem.MissileTier.TIER1));
+    public static final RegistrySupplier<Item> MISSILE_INCENDIARY = ITEMS.register("missile_incendiary",
+            () -> new MissileItem(MissileItem.MissileFormFactor.V2, MissileItem.MissileTier.TIER1));
+    public static final RegistrySupplier<Item> MISSILE_CLUSTER = ITEMS.register("missile_cluster",
+            () -> new MissileItem(MissileItem.MissileFormFactor.V2, MissileItem.MissileTier.TIER1));
+    public static final RegistrySupplier<Item> MISSILE_BUSTER = ITEMS.register("missile_buster",
+            () -> new MissileItem(MissileItem.MissileFormFactor.V2, MissileItem.MissileTier.TIER1));
+    public static final RegistrySupplier<Item> MISSILE_DECOY = ITEMS.register("missile_decoy",
+            () -> new MissileItem(MissileItem.MissileFormFactor.V2, MissileItem.MissileTier.TIER1));
+
+    public static final RegistrySupplier<Item> MISSILE_STEALTH = ITEMS.register("missile_stealth",
+            () -> new MissileItem(MissileItem.MissileFormFactor.STEALTH, MissileItem.MissileTier.TIER1));
+
+    // Tier 2
+    public static final RegistrySupplier<Item> MISSILE_STRONG = ITEMS.register("missile_strong",
+            () -> new MissileItem(MissileItem.MissileFormFactor.STRONG, MissileItem.MissileTier.TIER2));
+    public static final RegistrySupplier<Item> MISSILE_INCENDIARY_STRONG = ITEMS.register("missile_incendiary_strong",
+            () -> new MissileItem(MissileItem.MissileFormFactor.STRONG, MissileItem.MissileTier.TIER2));
+    public static final RegistrySupplier<Item> MISSILE_CLUSTER_STRONG = ITEMS.register("missile_cluster_strong",
+            () -> new MissileItem(MissileItem.MissileFormFactor.STRONG, MissileItem.MissileTier.TIER2));
+    public static final RegistrySupplier<Item> MISSILE_BUSTER_STRONG = ITEMS.register("missile_buster_strong",
+            () -> new MissileItem(MissileItem.MissileFormFactor.STRONG, MissileItem.MissileTier.TIER2));
+    public static final RegistrySupplier<Item> MISSILE_EMP_STRONG = ITEMS.register("missile_emp_strong",
+            () -> new MissileItem(MissileItem.MissileFormFactor.STRONG, MissileItem.MissileTier.TIER2));
+
+    // Tier 3
+    public static final RegistrySupplier<Item> MISSILE_BURST = ITEMS.register("missile_burst",
+            () -> new MissileItem(MissileItem.MissileFormFactor.HUGE, MissileItem.MissileTier.TIER3));
+    public static final RegistrySupplier<Item> MISSILE_INFERNO = ITEMS.register("missile_inferno",
+            () -> new MissileItem(MissileItem.MissileFormFactor.HUGE, MissileItem.MissileTier.TIER3));
+    public static final RegistrySupplier<Item> MISSILE_RAIN = ITEMS.register("missile_rain",
+            () -> new MissileItem(MissileItem.MissileFormFactor.HUGE, MissileItem.MissileTier.TIER3));
+    public static final RegistrySupplier<Item> MISSILE_DRILL = ITEMS.register("missile_drill",
+            () -> new MissileItem(MissileItem.MissileFormFactor.HUGE, MissileItem.MissileTier.TIER3));
+    public static final RegistrySupplier<Item> MISSILE_SHUTTLE = ITEMS.register("missile_shuttle",
+            () -> new MissileItem(MissileItem.MissileFormFactor.OTHER, MissileItem.MissileTier.TIER3,
+                    MissileItem.MissileFuel.KEROSENE_PEROXIDE));
+
+    // Tier 4
+    public static final RegistrySupplier<Item> MISSILE_NUCLEAR = ITEMS.register("missile_nuclear",
+            () -> new MissileItem(MissileItem.MissileFormFactor.ATLAS, MissileItem.MissileTier.TIER4));
+    public static final RegistrySupplier<Item> MISSILE_NUCLEAR_CLUSTER = ITEMS.register("missile_nuclear_cluster",
+            () -> new MissileItem(MissileItem.MissileFormFactor.ATLAS, MissileItem.MissileTier.TIER4));
+    public static final RegistrySupplier<Item> MISSILE_VOLCANO = ITEMS.register("missile_volcano",
+            () -> new MissileItem(MissileItem.MissileFormFactor.ATLAS, MissileItem.MissileTier.TIER4));
+    public static final RegistrySupplier<Item> MISSILE_DOOMSDAY = ITEMS.register("missile_doomsday",
+            () -> new MissileItem(MissileItem.MissileFormFactor.ATLAS, MissileItem.MissileTier.TIER4));
+    public static final RegistrySupplier<Item> MISSILE_DOOMSDAY_RUSTED = ITEMS.register("missile_doomsday_rusted",
+            () -> new MissileItem(MissileItem.MissileFormFactor.ATLAS, MissileItem.MissileTier.TIER4).notLaunchable());
 
     public static final RegistrySupplier<Item> DESIGNATOR = ITEMS.register("designator",
         () -> new ItemDesignator(new Item.Properties()));

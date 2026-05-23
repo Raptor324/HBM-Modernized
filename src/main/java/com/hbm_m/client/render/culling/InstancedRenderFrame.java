@@ -36,7 +36,7 @@ import net.fabricmc.api.Environment;
  *
  * <p>One client <em>render frame</em> = one {@code AFTER_BLOCK_ENTITIES} flush + present.
  * Do not defer draw to {@code Level#getGameTime()} — several render frames share one tick,
- * buffers would fill to {@link com.hbm_m.client.render.InstancedStaticPartRenderer#MAX_INSTANCES}
+ * buffers would fill to the per-part instance cap ({@link ClientRenderFlags#maxInstances()})
  * and machines would strobe (overflow warnings in log).
  *
  * <p>РЕГРЕССИЯ-СТОП: present here, not {@code AFTER_LEVEL} / {@code RenderTickEvent.END}
