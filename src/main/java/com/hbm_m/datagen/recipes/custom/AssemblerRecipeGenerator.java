@@ -83,13 +83,13 @@ public final class AssemblerRecipeGenerator {
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.FLUID_TANK.get(), 1), 40, 100)
                 .addIngredient(ModItems.PLATE_STEEL.get(), 8)
-                .addIngredient(ModItems.PLATE_STEEL.get(), 16) //TITANIUM_SHELL NEEDED, x4
+                .addIngredient(ModItems.SHELL_TITANIUM.get(), 4)
                 .save(writer, "fluid_tank");
 
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.CRYSTALLIZER.get(), 1), 40, 100)
                 .addIngredient(ModItems.PLATE_STEEL.get(), 2) //PLATE_WELDED_STEEL NEEDED
-                .addIngredient(ModItems.PLATE_TITANIUM.get(), 12) //TITANIUM_SHELL NEEDED, x3
+                .addIngredient(ModItems.SHELL_TITANIUM.get(), 3)
                 .addIngredient(ModItems.getIngot(ModIngots.DESH).get(), 4)
                 .addIngredient(ModItems.MOTOR.get(), 1)
                 .addIngredient(ModItems.INTEGRATED_CIRCUIT.get(), 2)
@@ -102,7 +102,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.PLATE_CAST_DARK.get(), 16)
                 .addIngredient(ModItems.INSULATOR.get(), 4)
                 .addIngredient(ModItems.MOTOR.get(), 4)
-                .addIngredient(ModItems.METAL_ROD.get(), 16) //Needs High Speed Steel Bolt
+                .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 16)
                 .addIngredient(Ingredient.of(Tags.Items.DYES_GREEN), 4)
                 .save(writer, "large_vehicle_door");
 
@@ -137,7 +137,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.PLATE_ADVANCED_ALLOY.get(), 4)
                 .addIngredient(ModItems.INSULATOR.get(), 8)
                 .addIngredient(ModItems.MOTOR.get(), 2)
-                .addIngredient(ModItems.BOLT_STEEL.get(), 32) //DURA-STEEL BOLT NEEDED
+                .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 32)
                 .addIngredient(Ingredient.of(Tags.Items.DYES_BLACK), 4)
                 .save(writer, "door_qe_containment");
 
@@ -146,7 +146,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.PLATE_STEEL.get(), 4)
                 .addIngredient(ModItems.INSULATOR.get(), 4)
                 .addIngredient(ModItems.MOTOR.get(), 4)
-                .addIngredient(ModItems.BOLT_STEEL.get(), 4) //DURA-STEEL BOLT NEEDED
+                .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 4)
                 .addIngredient(ModItems.FLUORITE.get(), 4)
                 .addIngredient(Items.GLASS, 4)
                 .save(writer, "door_qe_sliding");
@@ -157,7 +157,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.PLATE_ADVANCED_ALLOY.get(), 8)
                 .addIngredient(ModItems.INSULATOR.get(), 16)
                 .addIngredient(ModItems.MOTOR.get(), 4)
-                .addIngredient(ModItems.BOLT_STEEL.get(), 16) //DURA-STEEL BOLT NEEDED
+                .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 16)
                 .addIngredient(Ingredient.of(Tags.Items.DYES_GREEN), 4)
                 .save(writer, "round_airlock_door");
 
@@ -167,7 +167,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.PLATE_ADVANCED_ALLOY.get(), 16)
                 .addIngredient(ModItems.INSULATOR.get(), 8)
                 .addIngredient(ModItems.MOTOR.get(), 4)
-                .addIngredient(ModItems.BOLT_STEEL.get(), 32) //DURA-STEEL BOLT NEEDED
+                .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 32)
                 .addIngredient(Ingredient.of(Tags.Items.DYES_RED), 4)
                 .save(writer, "secure_access_door");
 
@@ -176,7 +176,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.PLATE_STEEL.get(), 16)
                 .addIngredient(ModItems.PLATE_ADVANCED_ALLOY.get(), 8)
                 .addIngredient(ModItems.MOTOR.get(), 2)
-                .addIngredient(ModItems.BOLT_STEEL.get(), 8) //DURA-STEEL BOLT NEEDED
+                .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 8)
                 .save(writer, "fire_door");
 
         AssemblerRecipeBuilder.assemblerRecipe(
@@ -185,7 +185,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.getIngot(ModIngots.DURA_STEEL).get(), 32)
                 .addIngredient(ModItems.PLATE_LEAD.get(), 8) //PLATE_CAST_LEAD NEEDED
                 .addIngredient(ModItems.MOTOR.get(), 3)
-                .addIngredient(ModItems.BOLT_STEEL.get(), 32) //DURA-STEEL BOLT NEEDED
+                .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 32)
                 .addIngredient(ModItems.getIngot(ModIngots.RUBBER).get(), 12)
                 .save(writer, "door_vault_tech");
 
@@ -194,8 +194,8 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.PLATE_STEEL.get(), 12)
                 .addIngredient(ModItems.INSULATOR.get(), 4)
                 .addIngredient(ModItems.MOTOR.get(), 2)
-                .addIngredient(ModItems.BOLT_STEEL.get(), 4) //DURA-STEEL BOLT NEEDED
-                .addIngredient(Ingredient.of(Tags.Items.DYES_GREEN), 2) // WHITE CRAYON NEEDED
+                .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 4)
+                .addIngredient(Ingredient.of(Tags.Items.DYES_WHITE), 2)
                 .save(writer, "door_sliding_seal");
     }
 

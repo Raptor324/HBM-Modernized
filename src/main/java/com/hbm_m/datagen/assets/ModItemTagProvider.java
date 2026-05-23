@@ -3,6 +3,7 @@ package com.hbm_m.datagen.assets;
 import java.util.concurrent.CompletableFuture;
 
 import com.hbm_m.item.tags_and_tiers.ModTags;
+import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.item.ModItems;
@@ -147,6 +148,47 @@ public class ModItemTagProvider extends ItemTagsProvider {
 
 
 
+        this.tag(ModTags.Items.SLABS_HARD)
+                .add(Items.STONE_SLAB)
+                .add(Items.COBBLESTONE_SLAB)
+                .add(Items.SMOOTH_STONE_SLAB)
+                .add(Items.STONE_BRICK_SLAB)
+                .add(Items.MOSSY_STONE_BRICK_SLAB)
+                .add(Items.GRANITE_SLAB)
+                .add(Items.POLISHED_GRANITE_SLAB)
+                .add(Items.DIORITE_SLAB)
+                .add(Items.POLISHED_DIORITE_SLAB)
+                .add(Items.ANDESITE_SLAB)
+                .add(Items.POLISHED_ANDESITE_SLAB)
+                .add(Items.COBBLED_DEEPSLATE_SLAB)
+                .add(Items.POLISHED_DEEPSLATE_SLAB)
+                .add(Items.DEEPSLATE_BRICK_SLAB)
+                .add(Items.DEEPSLATE_TILE_SLAB)
+                .add(Items.BRICK_SLAB)
+                .add(Items.MUD_BRICK_SLAB)
+                .add(Items.SANDSTONE_SLAB)
+                .add(Items.SMOOTH_SANDSTONE_SLAB)
+                .add(Items.CUT_STANDSTONE_SLAB)
+                .add(Items.RED_SANDSTONE_SLAB)
+                .add(Items.SMOOTH_RED_SANDSTONE_SLAB)
+                .add(Items.CUT_RED_SANDSTONE_SLAB)
+                .add(Items.PRISMARINE_BRICK_SLAB)
+                .add(Items.PRISMARINE_SLAB)
+                .add(Items.DARK_PRISMARINE_SLAB)
+                .add(Items.NETHER_BRICK_SLAB)
+                .add(Items.RED_NETHER_BRICK_SLAB)
+                .add(Items.BLACKSTONE_SLAB)
+                .add(Items.POLISHED_BLACKSTONE_SLAB)
+                .add(Items.POLISHED_BLACKSTONE_BRICK_SLAB)
+                .add(Items.END_STONE_BRICK_SLAB)
+                .add(Items.PURPUR_SLAB)
+                .add(Items.QUARTZ_SLAB)
+                .add(Items.SMOOTH_QUARTZ_SLAB)
+                .add(Items.CUT_COPPER_SLAB)
+                .add(Items.EXPOSED_CUT_COPPER_SLAB)
+                .add(Items.WEATHERED_CUT_COPPER_SLAB)
+                .add(Items.OXIDIZED_CUT_COPPER_SLAB)
+                .add(Items.MOSSY_COBBLESTONE_SLAB);
 
         this.tag(ModTags.Items.BLADES)
                 .add(ModItems.BLADE_STEEL.get())
