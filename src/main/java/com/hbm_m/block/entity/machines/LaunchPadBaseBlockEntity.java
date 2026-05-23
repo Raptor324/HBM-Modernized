@@ -156,7 +156,6 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
      */
     protected int state = STATE_MISSING;
 
-    /**
     protected int redstonePower = 0;
     protected int prevRedstonePower = 0;
 
