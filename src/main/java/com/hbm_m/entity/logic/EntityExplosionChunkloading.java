@@ -14,14 +14,14 @@ import net.minecraft.world.level.Level;
  * Базовая сущность, которая удерживает вокруг себя чанки загруженными.
  * Используется длительными эффектами вроде ядерных взрывов и fallout-дождя.
  */
-public abstract class ChunkloadingEntity extends Entity {
+public abstract class EntityExplosionChunkloading extends Entity {
 
     private static final TicketType<UUID> CHUNK_TICKET =
             TicketType.create("chunkloading_entity", Comparator.comparing(UUID::toString), 0);
 
     private ChunkPos loadedChunk;
 
-    protected ChunkloadingEntity(EntityType<?> type, Level level) {
+    protected EntityExplosionChunkloading(EntityType<?> type, Level level) {
         super(type, level);
     }
 

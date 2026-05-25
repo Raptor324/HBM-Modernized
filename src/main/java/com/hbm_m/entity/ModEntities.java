@@ -1,8 +1,8 @@
 package com.hbm_m.entity;
 
-import com.hbm_m.entity.effect.FalloutRain;
+import com.hbm_m.entity.effect.EntityFalloutRain;
 import com.hbm_m.entity.grenades.*;
-import com.hbm_m.entity.logic.NukeExplosionMK5Entity;
+import com.hbm_m.entity.logic.EntityNukeExplosionMK5;
 import com.hbm_m.entity.mob.NoloEntity;
 import com.hbm_m.entity.missile.MissileABMEntity;
 import com.hbm_m.entity.missile.MissileBaseEntity;
@@ -289,17 +289,17 @@ public class ModEntities {
     }
 
     // Длительная сущность ядерного взрыва MK5 (Fat Man и другие мощные боеприпасы)
-    public static final RegistrySupplier<EntityType<NukeExplosionMK5Entity>> NUKE_MK5 =
+    public static final RegistrySupplier<EntityType<EntityNukeExplosionMK5>> NUKE_MK5 =
             ENTITY_TYPES.register("nuke_mk5",
-                    () -> EntityType.Builder.<NukeExplosionMK5Entity>of(NukeExplosionMK5Entity::new, MobCategory.MISC)
+                    () -> EntityType.Builder.<EntityNukeExplosionMK5>of(EntityNukeExplosionMK5::new, MobCategory.MISC)
                             .sized(1.0F, 1.0F)
                             .clientTrackingRange(256)
                             .updateInterval(1)
                             .build("nuke_mk5"));
 
-    public static final RegistrySupplier<EntityType<FalloutRain>> NUKE_FALLOUT_RAIN =
+    public static final RegistrySupplier<EntityType<EntityFalloutRain>> NUKE_FALLOUT_RAIN =
             ENTITY_TYPES.register("nuke_fallout_rain",
-                    () -> EntityType.Builder.<FalloutRain>of(FalloutRain::new, MobCategory.MISC)
+                    () -> EntityType.Builder.<EntityFalloutRain>of(EntityFalloutRain::new, MobCategory.MISC)
                             .sized(1.0F, 1.0F)
                             .clientTrackingRange(3)
                             .updateInterval(2)

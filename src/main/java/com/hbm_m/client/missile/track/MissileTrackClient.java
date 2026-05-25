@@ -281,6 +281,7 @@ public final class MissileTrackClient {
             // Это должно происходить ИМЕННО в тиках для идеально ровного интервала спавна
             if (level != null) {
                 tickContrail(level);
+                tickNozzleFlare(level);
             }
         }
 
@@ -336,11 +337,15 @@ public final class MissileTrackClient {
                         level,
                         xo, yo, zo, // Строго от предыдущего тика
                         x, y, z,    // Строго к текущему
-                        yaw, pitch,
                         curr.contrailScale());
             } else {
                 hasLastContrail = true;
             }
+        }
+
+        private void tickNozzleFlare(ClientLevel level) {
+            Vec3 step = new Vec3(x - xo, y - yo, z - zo);
+            MissileNozzleFlare.spawn(level, x, y, z, pitch, yaw, step, curr.contrailScale());
         }
 
         public InterpolatedPose interpolate(float partialTick) {

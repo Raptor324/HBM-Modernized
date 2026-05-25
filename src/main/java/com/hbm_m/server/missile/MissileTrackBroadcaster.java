@@ -190,9 +190,10 @@ public final class MissileTrackBroadcaster {
                 : ResourceLocation.fromNamespaceAndPath("minecraft", "air");
 
         var motion = missile.getDeltaMovement();
+        double mult = missile.getMotionMultiplier();
         MissileTrackPose pose = new MissileTrackPose(
                 missile.getX(), missile.getY(), missile.getZ(),
-                motion.x, motion.y, motion.z,
+                motion.x * mult, motion.y * mult, motion.z * mult,
                 missile.getYRot(), missile.getXRot(),
                 missile.getLaunchFacing(),
                 entityTypeId, launchItemId,

@@ -5,6 +5,8 @@ import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.particle.custom.AgentOrangeParticle;
 import com.hbm_m.particle.custom.MissileContrailParticle;
+import com.hbm_m.particle.custom.MissileNozzleFlareParticle;
+import com.hbm_m.particle.custom.MissileVaporContrailParticle;
 import com.hbm_m.particle.custom.SmokeColumnParticle;
 import com.hbm_m.particle.explosions.basic.ExplosionFireParticle;
 import com.hbm_m.particle.explosions.basic.ExplosionFlashParticle;
@@ -94,6 +96,14 @@ public class ClientParticleHandler {
         event.registerSpriteSet(
                 ModParticleTypes.MISSILE_CONTRAIL.get(),
                 MissileContrailParticle.Provider::new);
+
+        event.registerSpriteSet(
+                ModParticleTypes.MISSILE_VAPOR_CONTRAIL.get(),
+                MissileVaporContrailParticle.Provider::new);
+
+        event.registerSpriteSet(
+                ModParticleTypes.MISSILE_NOZZLE_FLARE.get(),
+                MissileNozzleFlareParticle.Provider::new);
 
         // 🚀 Дым на пусковой площадке (smoke_column.json)
         event.registerSpriteSet(

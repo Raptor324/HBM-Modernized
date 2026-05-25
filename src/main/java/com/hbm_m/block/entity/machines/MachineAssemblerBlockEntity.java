@@ -13,7 +13,7 @@ import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.MachineAssemblerBlock;
-//? if forge {
+
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.inventory.menu.MachineAssemblerMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
@@ -40,6 +40,8 @@ import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+//? if forge {
+
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;

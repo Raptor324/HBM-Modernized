@@ -27,7 +27,7 @@ import net.minecraft.world.phys.Vec3;
  * Сущность длительного ядерного взрыва (MK5) для 1.20.1 Forge.
  * Управляет лучевым разрушением, уроном и (опционально) fallout-осадками.
  */
-public class NukeExplosionMK5Entity extends ChunkloadingEntity {
+public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 
     /** Сила взрыва (масштаб радиуса и длины лучей). */
     public int strength;
@@ -60,7 +60,7 @@ public class NukeExplosionMK5Entity extends ChunkloadingEntity {
         return falloutAdd;
     }
 
-    public NukeExplosionMK5Entity(EntityType<?> type, Level level) {
+    public EntityNukeExplosionMK5(EntityType<?> type, Level level) {
         super(type, level);
     }
 
@@ -180,7 +180,7 @@ public class NukeExplosionMK5Entity extends ChunkloadingEntity {
         int scale = (int) (this.length * 3.5 + getFalloutAdd());
         scale = scale * ModClothConfig.get().falloutRangePercent / 100;
         if (scale < 1) scale = 1;
-        com.hbm_m.entity.effect.FalloutRain fallout = new com.hbm_m.entity.effect.FalloutRain(ModEntities.NUKE_FALLOUT_RAIN.get(), level());
+        com.hbm_m.entity.effect.EntityFalloutRain fallout = new com.hbm_m.entity.effect.EntityFalloutRain(ModEntities.NUKE_FALLOUT_RAIN.get(), level());
         fallout.setPos(getX(), getY(), getZ());
         fallout.setScale(scale);
         level().addFreshEntity(fallout);
@@ -211,11 +211,11 @@ public class NukeExplosionMK5Entity extends ChunkloadingEntity {
     /**
      * Статическая фабрика для запуска взрыва MK5.
      */
-    public static NukeExplosionMK5Entity start(Level level, int strength, double x, double y, double z) {
+    public static EntityNukeExplosionMK5 start(Level level, int strength, double x, double y, double z) {
         if (strength == 0) strength = 25;
         strength *= 2;
 
-        NukeExplosionMK5Entity explosionMK5 = new NukeExplosionMK5Entity(ModEntities.NUKE_MK5.get(), level);
+        EntityNukeExplosionMK5 explosionMK5 = new EntityNukeExplosionMK5(ModEntities.NUKE_MK5.get(), level);
         explosionMK5.strength = strength;
         explosionMK5.speed = (int) Math.ceil(100000D / explosionMK5.strength);
         explosionMK5.setPos(x, y, z);

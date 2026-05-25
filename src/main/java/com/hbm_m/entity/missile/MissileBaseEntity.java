@@ -50,6 +50,9 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
     /** Радиус region ticket'а (в чанках). */
     private static final int CHUNK_TICKET_RADIUS = 3;
 
+    /** Макс. длина сегмента raycast за тик (как в 1.7.10 — один луч, но без туннелирования). */
+    private static final double MAX_COLLISION_SEGMENT = 1.0D;
+
     protected int startX;
     protected int startZ;
     protected int targetX;
@@ -119,6 +122,11 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         return this.entityData.get(DATA_LAUNCH_FACING);
     }
 
+    /** Множитель смещения за тик (1.7.10 {@code motionMult()}). */
+    public double getMotionMultiplier() {
+        return this.velocity;
+    }
+
     protected List<ItemStack> getDebris() {
         return MissileWarheadEffects.defaultDebrisForTier(debrisTierIndex());
     }
@@ -185,6 +193,12 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         this.zOld = this.getZ();
 
         if (!this.level().isClientSide) {
+            if (this.exploded) {
+                releaseChunkTicket();
+                this.discard();
+                return;
+            }
+
             this.baseTick();
             updateChunkTicket();
 
@@ -196,17 +210,15 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
             Vec3 motion = this.getDeltaMovement();
             Vec3 step = motion.scale(mult);
 
-            if (step.lengthSqr() > 0.0D) {
-                Vec3 from = this.position();
-                Vec3 to = from.add(step);
-                BlockHitResult blockHit = this.level().clip(
-                        new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
-                if (blockHit.getType() != HitResult.Type.MISS && !this.exploded) {
-                    this.onHit(blockHit);
-                }
+            BlockHitResult blockHit = raycastAlongStep(this.position(), step);
+            if (blockHit != null) {
+                Vec3 hitPos = blockHit.getLocation();
+                this.setPos(hitPos.x, hitPos.y, hitPos.z);
+                this.reapplyPosition();
+                this.onHit(blockHit);
             }
 
-            if (this.isRemoved()) {
+            if (this.isRemoved() || this.exploded) {
                 return;
             }
 
@@ -218,8 +230,38 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
             com.hbm_m.server.missile.MissileTrackBroadcaster.broadcastPoseForMissile(this);
         } else {
             clientLerpStep();
-            spawnContrail();
+            if (hasPropulsion()) {
+                spawnContrail();
+                spawnNozzleFlare();
+            }
         }
+    }
+
+    /**
+     * Сегментированный raycast вдоль шага движения (motion * velocity).
+     * Предотвращает пролёт сквозь блоки при больших шагах на финальном снижении.
+     */
+    @javax.annotation.Nullable
+    private BlockHitResult raycastAlongStep(Vec3 from, Vec3 step) {
+        if (this.exploded || step.lengthSqr() <= 0.0D) {
+            return null;
+        }
+
+        double len = step.length();
+        int segments = Math.max(1, (int) Math.ceil(len / MAX_COLLISION_SEGMENT));
+        Vec3 seg = step.scale(1.0D / segments);
+        Vec3 cursor = from;
+
+        for (int i = 0; i < segments; i++) {
+            Vec3 to = (i == segments - 1) ? from.add(step) : cursor.add(seg);
+            BlockHitResult hit = this.level().clip(
+                    new ClipContext(cursor, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+            if (hit.getType() != HitResult.Type.MISS) {
+                return hit;
+            }
+            cursor = to;
+        }
+        return null;
     }
 
     private void normalizeRotationDeltas() {
@@ -293,6 +335,22 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         spawnContrailWithOffset(0.0D, 0.0D, 0.0D);
     }
 
+    protected void spawnNozzleFlare() {
+        if (!(this.level() instanceof net.minecraft.client.multiplayer.ClientLevel clientLevel)) {
+            return;
+        }
+        if (com.hbm_m.client.missile.track.MissileTrackClient.shouldUseTrackWorldRender(this.getId())) {
+            return;
+        }
+        Vec3 step = new Vec3(this.getX() - this.xOld, this.getY() - this.yOld, this.getZ() - this.zOld);
+        com.hbm_m.client.missile.track.MissileNozzleFlare.spawn(
+                clientLevel,
+                this.getX(), this.getY(), this.getZ(),
+                this.getXRot(), this.getYRot(),
+                step,
+                getContrailScale());
+    }
+
     protected void spawnContrailWithOffset(double offsetX, double offsetY, double offsetZ) {
         if (!(this.level() instanceof net.minecraft.client.multiplayer.ClientLevel clientLevel)) {
             return;
@@ -312,36 +370,14 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         thrust = thrust.yRot(-(this.getYRot() + 90.0F) * ((float) Math.PI / 180.0F));
 
         float contrailScale = getContrailScale();
-        com.hbm_m.particle.custom.MissileContrailParticle.currentSpawnScale = contrailScale;
-        try {
-            double prevX = this.xOld + offsetX;
-            double prevY = this.yOld + offsetY;
-            double prevZ = this.zOld + offsetZ;
-            double currX = this.getX() + offsetX;
-            double currY = this.getY() + offsetY;
-            double currZ = this.getZ() + offsetZ;
-            double distance = Math.sqrt(
-                    (currX - prevX) * (currX - prevX)
-                            + (currY - prevY) * (currY - prevY)
-                            + (currZ - prevZ) * (currZ - prevZ));
-            int particleCount = Math.max(1, (int) Math.ceil(distance / 0.5D));
-            for (int i = 0; i <= particleCount; i++) {
-                double t = (double) i / particleCount;
-                double px = net.minecraft.util.Mth.lerp(t, prevX, currX);
-                double py = net.minecraft.util.Mth.lerp(t, prevY, currY);
-                double pz = net.minecraft.util.Mth.lerp(t, prevZ, currZ);
-
-                clientLevel.addParticle(
-                        com.hbm_m.particle.ModParticleTypes.MISSILE_CONTRAIL.get(),
-                        true,
-                        px, py, pz,
-                        -thrust.x * 0.1D,
-                        -thrust.y * 0.1D,
-                        -thrust.z * 0.1D);
-            }
-        } finally {
-            com.hbm_m.particle.custom.MissileContrailParticle.currentSpawnScale = 1.0F;
-        }
+        Vec3 exhaust = thrust.scale(-1.0D);
+        com.hbm_m.client.missile.track.MissileTrackContrail.spawnSegments(
+                clientLevel,
+                this.getX(), this.getY(), this.getZ(),
+                motion, len,
+                exhaust,
+                contrailScale,
+                offsetX, offsetY, offsetZ);
     }
 
     private void updateRotationFromMotion() {
@@ -402,6 +438,7 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         tag.putDouble("DecelY", this.decelY);
         tag.putDouble("AccelXZ", this.accelXZ);
         tag.putInt("Health", this.health);
+        tag.putBoolean("Exploded", this.exploded);
         tag.putString("LaunchFacing", this.getLaunchFacing().getName());
     }
 
@@ -416,6 +453,7 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         this.decelY = tag.getDouble("DecelY");
         this.accelXZ = tag.getDouble("AccelXZ");
         this.health = tag.getInt("Health");
+        this.exploded = tag.getBoolean("Exploded");
         if (tag.contains("LaunchFacing")) {
             Direction facing = Direction.byName(tag.getString("LaunchFacing"));
             this.setLaunchFacing(facing == null ? Direction.NORTH : facing);
@@ -487,8 +525,10 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
     public void onAddedToWorld() {
         super.onAddedToWorld();
         if (!this.level().isClientSide && this.level() instanceof ServerLevel server) {
-            this.loadedChunk = new ChunkPos(this.blockPosition());
-            server.getChunkSource().addRegionTicket(CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());
+            if (this.loadedChunk == null) {
+                this.loadedChunk = new ChunkPos(this.blockPosition());
+                server.getChunkSource().addRegionTicket(CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());
+            }
             com.hbm_m.server.missile.MissileTrackBroadcaster.onMissileSpawned(this);
         }
     }

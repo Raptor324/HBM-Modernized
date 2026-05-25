@@ -1,7 +1,7 @@
 package com.hbm_m.entity.effect;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.entity.logic.ChunkloadingEntity;
+import com.hbm_m.entity.logic.EntityExplosionChunkloading;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -20,9 +20,9 @@ import net.minecraft.world.level.levelgen.Heightmap;
  * Масштаб (радиус) синхронизируется с клиентом для рендера.
  * Периодически размещает блоки nuclear_fallout в радиусе.
  */
-public class FalloutRain extends ChunkloadingEntity {
+public class EntityFalloutRain extends EntityExplosionChunkloading {
 
-    private static final EntityDataAccessor<Integer> SCALE = SynchedEntityData.defineId(FalloutRain.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> SCALE = SynchedEntityData.defineId(EntityFalloutRain.class, EntityDataSerializers.INT);
 
     /** После этого времени сущность удаляется (примерно 20 минут). */
     private static final int MAX_AGE_TICKS = 20 * 60 * 20;
@@ -31,7 +31,7 @@ public class FalloutRain extends ChunkloadingEntity {
     /** За один проход - сколько случайных позиций пробуем. */
     private static final int FALLOUT_PER_TICK = 12;
 
-    public FalloutRain(EntityType<?> type, Level level) {
+    public EntityFalloutRain(EntityType<?> type, Level level) {
         super(type, level);
     }
 
@@ -96,7 +96,6 @@ public class FalloutRain extends ChunkloadingEntity {
         tag.putInt("Scale", getScale());
     }
 
-    /** Квадрат 3D-дистанции до камеры; чуть больше горизонтали рендера (~88 бл.), с запасом по Y. */
     private static final double RENDER_DISTANCE_SQ = 100.0 * 100.0;
 
     @Override

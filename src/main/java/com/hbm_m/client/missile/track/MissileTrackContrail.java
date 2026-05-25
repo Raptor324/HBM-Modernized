@@ -4,51 +4,53 @@ import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.particle.custom.MissileContrailParticle;
 
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 /**
  * Contrail segments for network-tracked missiles.
  * Must use {@code pForce=true} spawn — vanilla {@code addAlwaysVisibleParticle} still caps at 32 blocks from camera.
+ * Gray vapor is spawned later by {@link MissileContrailParticle} when each hot particle expires.
  */
-final class MissileTrackContrail {
-
-    private static final double PARTICLE_SPACING_BLOCKS = 0.5D;
+public final class MissileTrackContrail {
 
     private MissileTrackContrail() {}
 
-    static void spawn(ClientLevel level,
+    public static void spawn(ClientLevel level,
                       double fromX, double fromY, double fromZ,
                       double toX, double toY, double toZ,
-                      float yaw, float pitch, float scale) {
-        double dx = toX - fromX;
-        double dy = toY - fromY;
-        double dz = toZ - fromZ;
-        double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (distance <= 1.0E-6D) {
+                      float scale) {
+        Vec3 motion = new Vec3(toX - fromX, toY - fromY, toZ - fromZ);
+        double len = motion.length();
+        if (len <= 1.0E-6D) {
             return;
         }
+        Vec3 motionNorm = motion.normalize();
+        Vec3 exhaust = motionNorm.scale(-1.0D);
+        spawnSegments(level, toX, toY, toZ, motionNorm, len, exhaust, scale, 0.0D, 0.0D, 0.0D);
+    }
 
-        Vec3 thrust = new Vec3(0.0D, 1.0D, 0.0D);
-        thrust = thrust.xRot(-pitch * ((float) Math.PI / 180.0F));
-        thrust = thrust.yRot(-(yaw + 90.0F) * ((float) Math.PI / 180.0F));
-
-        int particleCount = Math.max(1, (int) Math.ceil(distance / PARTICLE_SPACING_BLOCKS));
+    public static void spawnSegments(ClientLevel level,
+                              double anchorX, double anchorY, double anchorZ,
+                              Vec3 motionNorm, double len,
+                              Vec3 exhaustVelocity, float scale,
+                              double offsetX, double offsetY, double offsetZ) {
+        int segmentCount = Math.max(1, Math.min((int) len, 10));
 
         MissileContrailParticle.currentSpawnScale = scale;
         try {
-            for (int i = 0; i <= particleCount; i++) {
-                double t = (double) i / particleCount;
-                double px = Mth.lerp(t, fromX, toX);
-                double py = Mth.lerp(t, fromY, toY);
-                double pz = Mth.lerp(t, fromZ, toZ);
+            for (int i = 0; i < segmentCount; i++) {
+                double j = i - len;
+                double px = anchorX - motionNorm.x * j + offsetX;
+                double py = anchorY - motionNorm.y * j + offsetY;
+                double pz = anchorZ - motionNorm.z * j + offsetZ;
+
                 level.addParticle(
                         ModParticleTypes.MISSILE_CONTRAIL.get(),
                         true,
                         px, py, pz,
-                        -thrust.x * 0.1D,
-                        -thrust.y * 0.1D,
-                        -thrust.z * 0.1D);
+                        exhaustVelocity.x,
+                        exhaustVelocity.y,
+                        exhaustVelocity.z);
             }
         } finally {
             MissileContrailParticle.currentSpawnScale = 1.0F;

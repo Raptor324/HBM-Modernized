@@ -34,8 +34,16 @@ public class ModParticleTypes {
     public static final RegistrySupplier<SimpleParticleType> RAD_FOG_PARTICLE = PARTICLES.register("rad_fog",
             () -> createParticle(true));
 
-    // Контрейл баллистической ракеты
+    // Контрейл баллистической ракеты (огненный выхлоп)
     public static final RegistrySupplier<SimpleParticleType> MISSILE_CONTRAIL = PARTICLES.register("missile_contrail",
+            () -> createParticle(true));
+
+    /** Серый конденсационный след (дольше огненного, расплывается). */
+    public static final RegistrySupplier<SimpleParticleType> MISSILE_VAPOR_CONTRAIL = PARTICLES.register("missile_vapor_contrail",
+            () -> createParticle(true));
+
+    /** Блик работающего двигателя у сопла (flash + flare). */
+    public static final RegistrySupplier<SimpleParticleType> MISSILE_NOZZLE_FLARE = PARTICLES.register("missile_nozzle_flare",
             () -> createParticle(true));
 
     public static void init() {
