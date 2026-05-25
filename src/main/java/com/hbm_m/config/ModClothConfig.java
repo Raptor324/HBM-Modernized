@@ -194,6 +194,23 @@ public class ModClothConfig implements ConfigData {
     @BoundedDiscrete(min = 1, max = 20)
     public int modelStaticRenderDistance = 8;
 
+    /**
+     * Server → client pose sync for ballistic missiles (independent of client chunk loading).
+     */
+    @Category("rendering")
+    @Gui.Tooltip
+    public boolean enableMissileNetworkTrack = true;
+
+    @Category("rendering")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 0, max = 500000)
+    public int missileTrackMaxRangeBlocks = 0;
+
+    @Category("rendering")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 1, max = 20)
+    public int missileTrackInterval = 1;
+
     @Category("rendering")
     @Gui.Tooltip
     /**

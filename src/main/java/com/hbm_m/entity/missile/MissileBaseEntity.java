@@ -4,10 +4,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
-import api.hbm.entity.IRadarDetectable;
-
 import com.hbm_m.explosion.MissileWarheadEffects;
 
+import api.hbm.entity.IRadarDetectable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -24,10 +23,10 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.projectile.Projectile;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -216,6 +215,7 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
             normalizeRotationDeltas();
 
             serverTickLogic();
+            com.hbm_m.server.missile.MissileTrackBroadcaster.broadcastPoseForMissile(this);
         } else {
             clientLerpStep();
             spawnContrail();
@@ -285,6 +285,10 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         return 1.0F;
     }
 
+    public float getContrailScaleForSync() {
+        return getContrailScale();
+    }
+
     protected void spawnContrail() {
         spawnContrailWithOffset(0.0D, 0.0D, 0.0D);
     }
@@ -293,7 +297,9 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         if (!(this.level() instanceof net.minecraft.client.multiplayer.ClientLevel clientLevel)) {
             return;
         }
-
+        if (com.hbm_m.client.missile.track.MissileTrackClient.shouldUseTrackWorldRender(this.getId())) {
+            return;
+        }
         Vec3 motion = new Vec3(this.xOld - this.getX(), this.yOld - this.getY(), this.zOld - this.getZ());
         double len = motion.length();
         if (len <= 0.0D) {
@@ -308,14 +314,26 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         float contrailScale = getContrailScale();
         com.hbm_m.particle.custom.MissileContrailParticle.currentSpawnScale = contrailScale;
         try {
-            for (int i = 0; i < Math.max(Math.min(len * 4.0D, 10.0D), 1.0D); i++) {
-                double t = i / 4.0D;
-                double px = this.getX() + motion.x * t + offsetX;
-                double py = this.getY() + motion.y * t + offsetY;
-                double pz = this.getZ() + motion.z * t + offsetZ;
+            double prevX = this.xOld + offsetX;
+            double prevY = this.yOld + offsetY;
+            double prevZ = this.zOld + offsetZ;
+            double currX = this.getX() + offsetX;
+            double currY = this.getY() + offsetY;
+            double currZ = this.getZ() + offsetZ;
+            double distance = Math.sqrt(
+                    (currX - prevX) * (currX - prevX)
+                            + (currY - prevY) * (currY - prevY)
+                            + (currZ - prevZ) * (currZ - prevZ));
+            int particleCount = Math.max(1, (int) Math.ceil(distance / 0.5D));
+            for (int i = 0; i <= particleCount; i++) {
+                double t = (double) i / particleCount;
+                double px = net.minecraft.util.Mth.lerp(t, prevX, currX);
+                double py = net.minecraft.util.Mth.lerp(t, prevY, currY);
+                double pz = net.minecraft.util.Mth.lerp(t, prevZ, currZ);
 
                 clientLevel.addParticle(
                         com.hbm_m.particle.ModParticleTypes.MISSILE_CONTRAIL.get(),
+                        true,
                         px, py, pz,
                         -thrust.x * 0.1D,
                         -thrust.y * 0.1D,
@@ -471,11 +489,15 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         if (!this.level().isClientSide && this.level() instanceof ServerLevel server) {
             this.loadedChunk = new ChunkPos(this.blockPosition());
             server.getChunkSource().addRegionTicket(CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());
+            com.hbm_m.server.missile.MissileTrackBroadcaster.onMissileSpawned(this);
         }
     }
 
     @Override
     public void onRemovedFromWorld() {
+        if (!this.level().isClientSide) {
+            com.hbm_m.server.missile.MissileTrackBroadcaster.onMissileRemoved(this);
+        }
         super.onRemovedFromWorld();
         releaseChunkTicket();
     }

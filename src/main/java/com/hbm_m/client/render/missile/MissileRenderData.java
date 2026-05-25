@@ -4,6 +4,7 @@ import com.hbm_m.client.model.MissileBakedModel;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
@@ -35,12 +36,17 @@ public final class MissileRenderData {
     }
 
     public void render(PoseStack poseStack, int packedLight, BlockPos lightPos) {
+        render(poseStack, packedLight, lightPos, null);
+    }
+
+    public void render(PoseStack poseStack, int packedLight, BlockPos lightPos,
+                       @Nullable MultiBufferSource bufferSource) {
         poseStack.pushPose();
         poseStack.scale(scale, scale, scale);
         bindAtlas();
         MissileBakedModel model = MissileRenderHelper.resolveMissileModel(itemId);
         if (model != null) {
-            MissileRenderHelper.drawVboParts(model, poseStack, packedLight, lightPos);
+            MissileRenderHelper.drawVboParts(model, poseStack, packedLight, lightPos, bufferSource);
         }
         poseStack.popPose();
     }

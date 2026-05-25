@@ -73,8 +73,8 @@ public final class MainRegistry {
         PlayerHandler.register();
         PowerArmorHandlers.register();
         LadderClimbHandler.register();
+        com.hbm_m.server.missile.MissileTrackBroadcaster.register();
 
-        
 
         // Common lifecycle hooks
         LifecycleEvent.SETUP.register(MainRegistry::commonSetup);

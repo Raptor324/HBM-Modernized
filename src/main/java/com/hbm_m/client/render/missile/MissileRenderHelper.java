@@ -7,11 +7,13 @@ import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.entity.missile.MissileBaseEntity;
 import com.hbm_m.item.missile.MissileItem;
+import com.hbm_m.missile.track.MissileTrackPose;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.resources.model.BakedModel;
@@ -50,6 +52,30 @@ public final class MissileRenderHelper {
         }
 
         poseStack.popPose();
+    }
+
+    @Nullable
+    public static MissileRenderData resolveFromTrack(MissileTrackPose pose) {
+        Item launchItem = BuiltInRegistries.ITEM.get(pose.launchItemId());
+        if (launchItem != null && launchItem != Items.AIR) {
+            MissileRenderData data = MissileRenderRegistry.get(launchItem);
+            if (data != null) {
+                return data;
+            }
+            ResourceLocation texture = MissileTextures.forItem(launchItem);
+            MissileFormFactorModels form = launchItem instanceof MissileItem missileItem
+                    ? MissileFormFactorModels.fromItem(missileItem)
+                    : MissileFormFactorModels.OTHER;
+            return new MissileRenderData(pose.launchItemId(), texture, form.getPadScale());
+        }
+        var entityType = BuiltInRegistries.ENTITY_TYPE.get(pose.entityTypeId());
+        if (entityType != null && MissileBaseEntity.class.isAssignableFrom(entityType.getBaseClass())) {
+            @SuppressWarnings("unchecked")
+            Class<? extends MissileBaseEntity> clazz = (Class<? extends MissileBaseEntity>) entityType.getBaseClass();
+            MissileFormFactorModels form = MissileFormFactorModels.fromEntity(clazz);
+            return new MissileRenderData(pose.launchItemId(), MissileTextures.PLACEHOLDER, form.getPadScale());
+        }
+        return null;
     }
 
     @Nullable
@@ -111,6 +137,12 @@ public final class MissileRenderHelper {
     /** Draw all baked OBJ parts through the VBO cache (never MultiBufferSource quads). */
     public static void drawVboParts(MissileBakedModel missileModel, PoseStack poseStack,
                                     int packedLight, BlockPos lightPos) {
+        drawVboParts(missileModel, poseStack, packedLight, lightPos, null);
+    }
+
+    public static void drawVboParts(MissileBakedModel missileModel, PoseStack poseStack,
+                                    int packedLight, BlockPos lightPos,
+                                    @Nullable MultiBufferSource bufferSource) {
         bindBlockAtlas();
         String cachePrefix = missileModel.getModelId().toString();
         boolean drewAny = false;
@@ -126,7 +158,7 @@ public final class MissileRenderHelper {
                 debugMissile("drawVboParts: MeshRenderCache returned null for {}", cacheKey);
                 continue;
             }
-            renderer.render(poseStack, packedLight, lightPos, null, null);
+            renderer.render(poseStack, packedLight, lightPos, null, bufferSource);
             drewAny = true;
         }
         if (!drewAny) {

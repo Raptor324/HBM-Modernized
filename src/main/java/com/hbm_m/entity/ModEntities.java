@@ -278,11 +278,14 @@ public class ModEntities {
                             .updateInterval(1)
                             .build("black_hole"));
 
+    /** Tracking range in chunks; server multiplies by 16 for blocks (see ChunkMap.TrackedEntity). */
+    private static final int MISSILE_TRACKING_CHUNKS = 512;
+
     private static <T extends MissileBaseEntity> EntityType.Builder<T> missileBuilder(EntityType.EntityFactory<T> factory) {
         return EntityType.Builder.of(factory, MobCategory.MISC)
                 .sized(1.5F, 1.5F)
-                .clientTrackingRange(500)
-                .updateInterval(3);
+                .clientTrackingRange(MISSILE_TRACKING_CHUNKS)
+                .updateInterval(1);
     }
 
     // Длительная сущность ядерного взрыва MK5 (Fat Man и другие мощные боеприпасы)

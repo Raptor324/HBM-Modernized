@@ -3,56 +3,33 @@ package com.hbm_m.client;
 
 
 import com.hbm_m.client.overlay.DoorAnimationDelayHelper;
-
+import com.hbm_m.client.missile.track.MissileTrackWorldRender;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
-
 import com.hbm_m.client.render.culling.InstancedRenderFrame;
-
-import com.hbm_m.client.render.culling.OcclusionCullingHelper;
-
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
-
 import com.hbm_m.config.ModClothConfig;
-
 import com.hbm_m.event.HazardTooltipHandler;
+import com.hbm_m.lib.RefStrings;
 
 import dev.architectury.event.events.client.ClientTickEvent;
-
 import dev.architectury.event.events.client.ClientTooltipEvent;
 
-
-
-import com.hbm_m.lib.RefStrings;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.ArmorItem;
 
 //? if forge {
 
 import net.minecraftforge.api.distmarker.Dist;
-
 import net.minecraftforge.client.event.RenderLevelStageEvent;
-
-import net.minecraftforge.event.TickEvent;
-
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-
 import net.minecraftforge.fml.common.Mod;
 
 //?}
-
-import net.minecraft.ChatFormatting;
-
-import net.minecraft.client.Minecraft;
-
-import net.minecraft.client.gui.screens.Screen;
-
-import net.minecraft.network.chat.Component;
-
-import net.minecraft.resources.ResourceLocation;
-
-import net.minecraft.tags.TagKey;
-
-import net.minecraft.world.item.ArmorItem;
-
-
 
 //? if forge {
 
@@ -218,8 +195,7 @@ public class ClientModEvents {
             InstancedRenderFrame.onBeforeBlockEntities(
                     event.getProjectionMatrix(), cameraPos, frustum);
 
-            return;
-
+            MissileTrackWorldRender.render(mc.getFrameTime(), event.getPoseStack());
         }
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {

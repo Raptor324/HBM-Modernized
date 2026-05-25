@@ -216,6 +216,7 @@ public class ClientSetup {
         // но на некоторых таргетах удобно иметь fallback в одном месте.
         ModConfigKeybindHandler.init();
         ClientModEvents.init();
+        com.hbm_m.client.missile.track.MissileTrackClientEvents.register();
         DarkParticleHandler.init();
         CameraShakeHandler.initClient();
         PowerArmorHardLandingCameraShakeClient.initClient();

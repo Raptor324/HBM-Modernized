@@ -64,6 +64,8 @@ public class ModPacketHandler {
     public static final ResourceLocation UPDATE_RADAR          = id("update_radar");
     public static final ResourceLocation ORPHANED_PHANTOMS     = id("orphaned_phantoms");
     public static final ResourceLocation SPAWN_PARTICLE        = id("spawn_particle");
+    public static final ResourceLocation MISSILE_TRACK        = id("missile_track");
+    public static final ResourceLocation MISSILE_TRACK_STOP   = id("missile_track_stop");
 
 
     // ══════════════════════════ Регистрация ═══════════════════════════════════
@@ -112,6 +114,15 @@ public class ModPacketHandler {
         registerS2C(SPAWN_PARTICLE,
                 SpawnAlwaysVisibleParticlePacket::decode,
                 SpawnAlwaysVisibleParticlePacket::handle);
+
+        registerS2C(MISSILE_TRACK,
+                com.hbm_m.network.missile.S2CMissileTrackPacket::decode,
+                com.hbm_m.network.missile.S2CMissileTrackPacket::handle);
+
+        registerS2C(MISSILE_TRACK_STOP,
+                com.hbm_m.network.missile.S2CMissileTrackStopPacket::decode,
+                com.hbm_m.network.missile.S2CMissileTrackStopPacket::handle);
+
     }
 
     public static void register() {

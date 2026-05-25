@@ -15,11 +15,11 @@ import org.lwjgl.system.MemoryUtil;
 
 import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.IrisExtendedShaderAccess;
-import com.mojang.blaze3d.shaders.Uniform;
 import com.hbm_m.client.render.shader.IrisPhaseGuard;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.main.MainRegistry;
+import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
@@ -74,6 +74,15 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
      * See {@code MachinePressRenderer} for the save/restore pattern.
      */
     private static final ThreadLocal<Float> currentFadeAlpha = ThreadLocal.withInitial(() -> 1.0f);
+    /**
+     * Network-tracked ballistic missiles: draw without depth (terrain occludes at horizon)
+     * and with shader fog pushed to effectively disabled.
+     */
+    private static final ThreadLocal<Boolean> worldMissileOverlayDraw = ThreadLocal.withInitial(() -> false);
+    /** Entity-pass missile mesh: bias depth vs terrain written in the solid pass (horizon z-fighting). */
+    private static final ThreadLocal<Boolean> entityMissileDepthBias = ThreadLocal.withInitial(() -> false);
+    private static final float ENTITY_MISSILE_DEPTH_FACTOR = -4.0F;
+    private static final float ENTITY_MISSILE_DEPTH_UNITS = -4.0F;
 
     public static void setFadeAlpha(float alpha) {
         currentFadeAlpha.set(alpha);
@@ -81,6 +90,31 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
 
     public static float getFadeAlpha() {
         return currentFadeAlpha.get();
+    }
+
+    public static void setWorldMissileOverlayDraw(boolean enabled) {
+        worldMissileOverlayDraw.set(enabled);
+    }
+
+    public static boolean isWorldMissileOverlayDraw() {
+        return worldMissileOverlayDraw.get();
+    }
+
+    public static void setEntityMissileDepthBias(boolean enabled) {
+        entityMissileDepthBias.set(enabled);
+    }
+
+    private static void beginEntityMissileDepthBias() {
+        if (entityMissileDepthBias.get()) {
+            RenderSystem.enablePolygonOffset();
+            RenderSystem.polygonOffset(ENTITY_MISSILE_DEPTH_FACTOR, ENTITY_MISSILE_DEPTH_UNITS);
+        }
+    }
+
+    private static void endEntityMissileDepthBias() {
+        if (entityMissileDepthBias.get()) {
+            RenderSystem.disablePolygonOffset();
+        }
     }
 
     // Scratch for 8-corner trilinear uniform upload in the non-instanced path.
@@ -652,8 +686,13 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 if (cachedLightC67 != null) cachedLightC67.set(tmpCornerUV[12], tmpCornerUV[13], tmpCornerUV[14], tmpCornerUV[15]);
             }
 
-            if (cachedFogStartU != null) cachedFogStartU.set(RenderSystem.getShaderFogStart());
-            if (cachedFogEndU != null) cachedFogEndU.set(RenderSystem.getShaderFogEnd());
+            if (worldMissileOverlayDraw.get() || entityMissileDepthBias.get()) {
+                if (cachedFogStartU != null) cachedFogStartU.set(1.0E8F);
+                if (cachedFogEndU != null) cachedFogEndU.set(1.0E8F);
+            } else {
+                if (cachedFogStartU != null) cachedFogStartU.set(RenderSystem.getShaderFogStart());
+                if (cachedFogEndU != null) cachedFogEndU.set(RenderSystem.getShaderFogEnd());
+            }
             if (cachedFogColorU != null) {
                 float[] fogColor = RenderSystem.getShaderFogColor();
                 cachedFogColorU.set(fogColor[0], fogColor[1], fogColor[2], fogColor[3]);
@@ -668,9 +707,15 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             bindBlockLitSamplerTextures(shader);
 
             float fade = currentFadeAlpha.get();
-            RenderSystem.enableDepthTest();
-            RenderSystem.depthFunc(GL11.GL_LEQUAL);
-            RenderSystem.depthMask(true);
+            boolean overlay = worldMissileOverlayDraw.get();
+            if (overlay) {
+                RenderSystem.disableDepthTest();
+                GL11.glDepthMask(false);
+            } else {
+                RenderSystem.enableDepthTest();
+                RenderSystem.depthFunc(GL11.GL_LEQUAL);
+                RenderSystem.depthMask(true);
+            }
             RenderSystem.disableCull();
             if (fade < 0.99f) {
                 RenderSystem.enableBlend();
@@ -678,7 +723,9 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             }
 
             GL30.glBindVertexArray(vaoId);
+            beginEntityMissileDepthBias();
             GL11.glDrawElements(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0);
+            endEntityMissileDepthBias();
 
             if (fade < 0.99f) {
                 RenderSystem.disableBlend();
@@ -694,6 +741,10 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 RenderSystem.enableCull();
             } else {
                 RenderSystem.disableCull();
+            }
+            if (worldMissileOverlayDraw.get()) {
+                RenderSystem.enableDepthTest();
+                GL11.glDepthMask(true);
             }
 
             RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
@@ -808,6 +859,13 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             var brightnessUniform = shader.getUniform("Brightness");
             if (brightnessUniform != null) brightnessUniform.set(calculateBrightness(packedLight));
 
+            if (worldMissileOverlayDraw.get()) {
+                var fogStart = shader.getUniform("FogStart");
+                if (fogStart != null) fogStart.set(1.0E8F);
+                var fogEnd = shader.getUniform("FogEnd");
+                if (fogEnd != null) fogEnd.set(1.0E8F);
+            }
+
             var sampler0 = shader.getUniform("Sampler0");
             if (sampler0 != null) sampler0.set(0);
 
@@ -826,9 +884,15 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 return false;
             }
 
-            RenderSystem.enableDepthTest();
-            RenderSystem.depthFunc(GL11.GL_LEQUAL);
-            RenderSystem.depthMask(true);
+            boolean overlay = worldMissileOverlayDraw.get();
+            if (overlay) {
+                RenderSystem.disableDepthTest();
+                GL11.glDepthMask(false);
+            } else {
+                RenderSystem.enableDepthTest();
+                RenderSystem.depthFunc(GL11.GL_LEQUAL);
+                RenderSystem.depthMask(true);
+            }
             RenderSystem.disableCull();
 
             GL30.glBindVertexArray(companion.getVaoId());
@@ -870,7 +934,9 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 GL30.glVertexAttribI2i(uv2Loc, blockU, skyV);
             }
 
+            beginEntityMissileDepthBias();
             GL11.glDrawElements(GL11.GL_TRIANGLES, companion.getIndexCount(), GL11.GL_UNSIGNED_INT, 0);
+            endEntityMissileDepthBias();
             shader.clear();
             return true;
         } catch (Exception e) {
@@ -879,6 +945,10 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         } finally {
             GL30.glBindVertexArray(previousVao);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
+            if (worldMissileOverlayDraw.get()) {
+                RenderSystem.enableDepthTest();
+                GL11.glDepthMask(true);
+            }
             if (previousCullFaceEnabled) RenderSystem.enableCull();
             else RenderSystem.disableCull();
             RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
