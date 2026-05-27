@@ -68,9 +68,13 @@ public final class MissileTrackClient {
             TRACKS.clear();
             return;
         }
+        Minecraft mc = Minecraft.getInstance();
+        // SP pause menu: client tick still runs; do not predict ahead of frozen server pose.
+        if (mc.isPaused()) {
+            return;
+        }
         tickStale();
 
-        Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
 
         for (TrackEntry entry : TRACKS.values()) {

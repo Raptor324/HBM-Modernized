@@ -42,6 +42,8 @@ import com.hbm_m.client.loader.MachineChemicalPlantModelLoader;
 import com.hbm_m.client.loader.MachineFluidTankModelLoader;
 import com.hbm_m.client.loader.MachineHydraulicFrackiningTowerModelLoader;
 import com.hbm_m.client.loader.MissileModelLoader;
+import com.hbm_m.client.render.missile.MissileRenderHelper;
+import com.hbm_m.datagen.assets.MissileItemModelDefinitions;
 import com.hbm_m.client.loader.PressModelLoader;
 import com.hbm_m.client.loader.TemplateModelLoader;
 import com.hbm_m.client.model.ConnectedDecoBlockBakedModel;
@@ -530,6 +532,8 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), IndustrialTurbineRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.BATTERY_SOCKET_BE.get(), BatterySocketCreativeRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.FLUID_TANK_BE.get(), MachineFluidTankRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.LAUNCH_PAD_BE.get(), LaunchPadMissileRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.LAUNCH_PAD_RUSTED_BE.get(), LaunchPadMissileRenderer::new);
         //?}
 
         //? if fabric {
@@ -1211,7 +1215,17 @@ public class ClientSetup {
                 event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_111"));
         //?}
 
-        
+
+        for (MissileItemModelDefinitions.Definition definition : MissileItemModelDefinitions.all()) {
+            ResourceLocation meshId = MissileRenderHelper.meshModelId(
+                    ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, definition.itemPath()));
+            //? if fabric && < 1.21.1 {
+            /*event.register(meshId);
+            *///?} else {
+            event.register(meshId);
+            //?}
+        }
+
         MainRegistry.LOGGER.debug("Registered door variant models for loading");
     }
 

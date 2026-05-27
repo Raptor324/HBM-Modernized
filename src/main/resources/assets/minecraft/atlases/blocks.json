@@ -14,6 +14,11 @@
       "type": "directory",
       "source": "fluid_barrel",
       "prefix": "fluid_barrel/"
+    },
+    {
+      "type": "directory",
+      "source": "models/missile",
+      "prefix": "models/missile/"
     }
   ]
 }

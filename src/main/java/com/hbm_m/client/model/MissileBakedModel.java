@@ -10,6 +10,8 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.world.item.ItemDisplayContext;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
@@ -88,58 +90,66 @@ public class MissileBakedModel extends AbstractMultipartBakedModel implements Ab
     //?}
 
     private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand) {
-        if (itemQuadsCached && cachedItemQuads != null) {
-            if (side != null) {
-                return cachedItemQuads.stream()
-                        .filter(quad -> quad.getDirection() == side)
-                        .toList();
-            }
-            return cachedItemQuads;
-        }
-        List<BakedQuad> quads = new ArrayList<>();
-        //? if forge {
-        ModelData modelData = ModelData.EMPTY;
-        RenderType renderType = RenderType.solid();
-        //?}
-        for (String partName : getItemRenderPartNames()) {
-            BakedModel part = parts.get(partName);
-            if (part == null) {
-                continue;
-            }
-            if (side != null) {
-                //? if forge {
-                quads.addAll(part.getQuads(null, side, rand, modelData, renderType));
-                //?}
-                //? if fabric {
-                /*quads.addAll(part.getQuads(null, side, rand));
-                *///?}
-            } else {
+        if (!itemQuadsCached || cachedItemQuads == null) {
+            // Кэш собираем один раз для ВСЕХ направлений + unsided, иначе первый вызов
+            // с конкретным side затравит кэш только одной стороной и getQuads(null) вернёт
+            // плоский «блин». В item-проходах vanilla перебирает все Direction.values()+null.
+            List<BakedQuad> all = new ArrayList<>();
+            //? if forge {
+            ModelData modelData = ModelData.EMPTY;
+            RenderType renderType = RenderType.solid();
+            //?}
+            for (String partName : getItemRenderPartNames()) {
+                BakedModel part = parts.get(partName);
+                if (part == null) {
+                    continue;
+                }
                 for (Direction d : Direction.values()) {
                     //? if forge {
-                    quads.addAll(part.getQuads(null, d, rand, modelData, renderType));
+                    all.addAll(part.getQuads(null, d, rand, modelData, renderType));
                     //?}
                     //? if fabric {
-                    /*quads.addAll(part.getQuads(null, d, rand));
+                    /*all.addAll(part.getQuads(null, d, rand));
                     *///?}
                 }
                 //? if forge {
-                quads.addAll(part.getQuads(null, null, rand, modelData, renderType));
+                all.addAll(part.getQuads(null, null, rand, modelData, renderType));
                 //?}
                 //? if fabric {
-                /*quads.addAll(part.getQuads(null, null, rand));
+                /*all.addAll(part.getQuads(null, null, rand));
                 *///?}
             }
+            cachedItemQuads = all;
+            itemQuadsCached = true;
         }
-        cachedItemQuads = quads;
-        itemQuadsCached = true;
         if (side != null) {
-            return quads.stream().filter(quad -> quad.getDirection() == side).toList();
+            return cachedItemQuads.stream()
+                    .filter(quad -> quad.getDirection() == side)
+                    .toList();
         }
-        return quads;
+        return cachedItemQuads;
     }
 
     @Override
     public ItemOverrides getOverrides() {
         return ItemOverrides.EMPTY;
     }
+
+    /** Item icons (GUI) and in-world item forms route through {@link com.hbm_m.client.render.item.ItemRenderMissileGeneric}. */
+    @Override
+    public boolean isCustomRenderer() {
+        return true;
+    }
+
+    /**
+     * Skip JSON {@code display} transforms — {@link com.hbm_m.client.render.item.ItemRenderMissileGeneric}
+     * applies 1.7.10 {@code ItemRenderMissileGeneric} matrices per {@link ItemDisplayContext}.
+     */
+    //? if forge {
+    @Override
+    public BakedModel applyTransform(ItemDisplayContext transformType, PoseStack poseStack,
+                                     boolean applyLeftHandTransform) {
+        return this;
+    }
+    //?}
 }

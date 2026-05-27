@@ -24,7 +24,8 @@ public enum MissileFormFactorModels {
             Set.of("Cube_Cube.001", "Cylinder", "Cylinder.001", "Cylinder.002", "Cylinder.003"),
             1.0F, 1.0F),
     ASSEMBLY("models/missiles/missile_assembly.obj", Set.of("Cube_Cube.001"), 1.0F, 1.0F),
-    DOOMSDAY("models/missiles/missile_doomsday.obj", Set.of("Cylinder_Cylinder.002"), 1.0F, 1.0F),
+    /** Same hull as {@link #ATLAS} (1.7.10 {@code missileNuclear} / {@code missile_atlas.obj}). */
+    DOOMSDAY("models/missiles/missile_atlas.obj", Set.of("Circle.002_Circle.003"), 1.0F, 1.0F),
     OTHER("models/missiles/missile_strong.obj", Set.of("Circle"), 1.0F, 1.0F);
 
     private final ResourceLocation objModel;
@@ -96,10 +97,6 @@ public enum MissileFormFactorModels {
         }
         if (com.hbm_m.entity.missile.MissileTier3.class.isAssignableFrom(entityClass)) {
             return HUGE;
-        }
-        if (com.hbm_m.entity.missile.MissileTier4.MissileDoomsday.class.isAssignableFrom(entityClass)
-                || com.hbm_m.entity.missile.MissileTier4.MissileDoomsdayRusted.class.isAssignableFrom(entityClass)) {
-            return DOOMSDAY;
         }
         if (com.hbm_m.entity.missile.MissileTier4.class.isAssignableFrom(entityClass)) {
             return ATLAS;

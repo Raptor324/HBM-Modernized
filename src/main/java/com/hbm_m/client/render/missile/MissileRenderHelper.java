@@ -11,19 +11,26 @@ import com.hbm_m.missile.track.MissileTrackPose;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.util.RandomSource;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.registries.BuiltInRegistries;
+
+import java.util.List;
 import net.minecraft.world.item.Items;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,6 +40,18 @@ public final class MissileRenderHelper {
     private static final boolean MODEL_DEBUG = Boolean.getBoolean("hbm_m.modelDebug");
 
     private MissileRenderHelper() {}
+
+    /**
+     * Model id for {@link net.minecraftforge.client.event.ModelEvent.RegisterAdditional} and
+     * {@code models/item/<path>.json} (Forge uses {@code <namespace>:<path>}, not {@code item/<path>}).
+     */
+    public static ResourceLocation meshModelId(ResourceLocation itemId) {
+        String path = itemId.getPath();
+        if (path.startsWith("item/")) {
+            return ResourceLocation.fromNamespaceAndPath(itemId.getNamespace(), path.substring("item/".length()));
+        }
+        return itemId;
+    }
 
     public static void renderInFlight(MissileBaseEntity entity, MissileFormFactorModels form, PoseStack poseStack,
                                       int packedLight, float yaw, float pitch, BlockPos lightPos) {
@@ -66,14 +85,14 @@ public final class MissileRenderHelper {
             MissileFormFactorModels form = launchItem instanceof MissileItem missileItem
                     ? MissileFormFactorModels.fromItem(missileItem)
                     : MissileFormFactorModels.OTHER;
-            return new MissileRenderData(pose.launchItemId(), texture, form.getPadScale());
+            return MissileRenderData.withPadScale(pose.launchItemId(), texture, form.getPadScale());
         }
         var entityType = BuiltInRegistries.ENTITY_TYPE.get(pose.entityTypeId());
         if (entityType != null && MissileBaseEntity.class.isAssignableFrom(entityType.getBaseClass())) {
             @SuppressWarnings("unchecked")
             Class<? extends MissileBaseEntity> clazz = (Class<? extends MissileBaseEntity>) entityType.getBaseClass();
             MissileFormFactorModels form = MissileFormFactorModels.fromEntity(clazz);
-            return new MissileRenderData(pose.launchItemId(), MissileTextures.PLACEHOLDER, form.getPadScale());
+            return MissileRenderData.withPadScale(pose.launchItemId(), MissileTextures.PLACEHOLDER, form.getPadScale());
         }
         return null;
     }
@@ -93,7 +112,7 @@ public final class MissileRenderHelper {
         if (itemId == null) {
             return null;
         }
-        return new MissileRenderData(itemId, texture, form.getPadScale());
+        return MissileRenderData.withPadScale(itemId, texture, form.getPadScale());
     }
 
     public static void applyLaunchFacingRotation(PoseStack poseStack, net.minecraft.core.Direction facing) {
@@ -131,39 +150,109 @@ public final class MissileRenderHelper {
         var modelManager = Minecraft.getInstance().getModelManager();
         BakedModel itemModel = modelManager.getModel(new ModelResourceLocation(itemId, "inventory"));
         itemModel = AbstractPartBasedRenderer.unwrapFabricForwardingModels(itemModel);
+        if (itemModel instanceof MissileBakedModel) {
+            return itemModel;
+        }
+        ResourceLocation meshId = meshModelId(itemId);
+        if (!meshId.equals(itemId)) {
+            BakedModel meshModel = modelManager.getModel(new ModelResourceLocation(meshId, "inventory"));
+            meshModel = AbstractPartBasedRenderer.unwrapFabricForwardingModels(meshModel);
+            if (meshModel instanceof MissileBakedModel) {
+                return meshModel;
+            }
+        }
         return itemModel;
     }
 
-    /** Draw all baked OBJ parts through the VBO cache (never MultiBufferSource quads). */
-    public static void drawVboParts(MissileBakedModel missileModel, PoseStack poseStack,
-                                    int packedLight, BlockPos lightPos) {
-        drawVboParts(missileModel, poseStack, packedLight, lightPos, null);
+    /**
+     * Vanilla item/GUI path: baked quads via {@link VertexConsumer#putBulkData} (no custom VBO shader).
+     */
+    public static void drawBakedQuads(PoseStack poseStack, MultiBufferSource buffer, int packedLight,
+                                      ItemStack stack) {
+        BakedModel model = resolveBakedModel(stack);
+        if (model == null) {
+            return;
+        }
+        RandomSource random = RandomSource.create(42L);
+        List<BakedQuad> quads;
+        //? if forge {
+        quads = model.getQuads(null, null, random, net.minecraftforge.client.model.data.ModelData.EMPTY,
+                RenderType.solid());
+        //?}
+        //? if fabric {
+        /*quads = model.getQuads(null, null, random);
+        *///?}
+        if (quads.isEmpty()) {
+            debugMissile("drawBakedQuads: no quads for {}", BuiltInRegistries.ITEM.getKey(stack.getItem()));
+            return;
+        }
+        VertexConsumer consumer = buffer.getBuffer(RenderType.solid());
+        PoseStack.Pose pose = poseStack.last();
+        int overlay = overlay();
+        for (BakedQuad quad : quads) {
+            //? if forge {
+            consumer.putBulkData(pose, quad, 1.0F, 1.0F, 1.0F, 1.0F, packedLight, overlay, false);
+            //?}
+            //? if fabric {
+            /*consumer.putBulkData(pose, quad, 1.0F, 1.0F, 1.0F, packedLight, overlay);
+            *///?}
+        }
     }
 
-    public static void drawVboParts(MissileBakedModel missileModel, PoseStack poseStack,
-                                    int packedLight, BlockPos lightPos,
-                                    @Nullable MultiBufferSource bufferSource) {
+    /**
+     * World / BER path: VBO or {@link com.hbm_m.client.render.IrisCompanionMesh} per part
+     * (see {@link SingleMeshVboRenderer#render}).
+     */
+    public static void drawMissileMesh(ItemStack stack, MissileBakedModel missileModel, PoseStack poseStack,
+                                       int packedLight, BlockPos lightPos,
+                                       @Nullable MultiBufferSource bufferSource) {
+        drawMissileMesh(stack, missileModel, poseStack, packedLight, lightPos, bufferSource, null);
+    }
+
+    public static void drawMissileMesh(ItemStack stack, MissileBakedModel missileModel, PoseStack poseStack,
+                                       int packedLight, BlockPos lightPos,
+                                       @Nullable MultiBufferSource bufferSource,
+                                       @Nullable BlockEntity blockEntity) {
         bindBlockAtlas();
         String cachePrefix = missileModel.getModelId().toString();
         boolean drewAny = false;
         for (String partName : missileModel.getRenderablePartNames()) {
             BakedModel part = missileModel.getPart(partName);
             if (part == null) {
-                debugMissile("drawVboParts: missing part '{}' on {}", partName, cachePrefix);
+                debugMissile("drawMissileMesh: missing part '{}' on {}", partName, cachePrefix);
                 continue;
             }
             String cacheKey = cachePrefix + ":" + partName;
             SingleMeshVboRenderer renderer = MeshRenderCache.getOrCreateRenderer(cacheKey, part);
             if (renderer == null) {
-                debugMissile("drawVboParts: MeshRenderCache returned null for {}", cacheKey);
+                debugMissile("drawMissileMesh: MeshRenderCache returned null for {}", cacheKey);
                 continue;
             }
-            renderer.render(poseStack, packedLight, lightPos, null, bufferSource);
+            renderer.render(poseStack, packedLight, lightPos, blockEntity, bufferSource);
             drewAny = true;
         }
         if (!drewAny) {
-            debugMissile("drawVboParts: no parts drawn for {}", cachePrefix);
+            debugMissile("drawMissileMesh: no parts drawn for {}", cachePrefix);
         }
+    }
+
+    /** Draw all baked OBJ parts through the VBO / Iris companion cache. */
+    public static void drawVboParts(MissileBakedModel missileModel, PoseStack poseStack,
+                                    int packedLight, BlockPos lightPos) {
+        drawVboParts(missileModel, poseStack, packedLight, lightPos, null, null);
+    }
+
+    public static void drawVboParts(MissileBakedModel missileModel, PoseStack poseStack,
+                                    int packedLight, BlockPos lightPos,
+                                    @Nullable MultiBufferSource bufferSource) {
+        drawVboParts(missileModel, poseStack, packedLight, lightPos, bufferSource, null);
+    }
+
+    public static void drawVboParts(MissileBakedModel missileModel, PoseStack poseStack,
+                                    int packedLight, BlockPos lightPos,
+                                    @Nullable MultiBufferSource bufferSource,
+                                    @Nullable BlockEntity blockEntity) {
+        drawMissileMesh(ItemStack.EMPTY, missileModel, poseStack, packedLight, lightPos, bufferSource, blockEntity);
     }
 
     public static void bindBlockAtlas() {

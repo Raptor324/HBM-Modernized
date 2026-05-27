@@ -10,7 +10,9 @@ import net.minecraft.client.particle.ParticleProvider;
 import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.client.particle.TextureSheetParticle;
+import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
@@ -77,9 +79,18 @@ public class MissileVaporContrailParticle extends TextureSheetParticle {
         return false;
     }
 
+    /** Ambient light at particle position — gray vapor should dim at night (unlike hot exhaust). */
+    private int sampleAmbientLight() {
+        BlockPos pos = BlockPos.containing(this.x, this.y, this.z);
+        if (!this.level.hasChunkAt(pos)) {
+            return LightTexture.FULL_BRIGHT;
+        }
+        return LevelRenderer.getLightColor(this.level, pos);
+    }
+
     @Override
     public int getLightColor(float partialTick) {
-        return LightTexture.FULL_BRIGHT;
+        return sampleAmbientLight();
     }
 
     @Override
@@ -128,7 +139,7 @@ public class MissileVaporContrailParticle extends TextureSheetParticle {
             float u1 = this.getU1();
             float v0 = this.getV0();
             float v1 = this.getV1();
-            int light = LightTexture.FULL_BRIGHT;
+            int light = sampleAmbientLight();
             buffer.vertex(corners[0].x(), corners[0].y(), corners[0].z()).uv(u1, v1)
                     .color(r, g, b, alpha).uv2(light).endVertex();
             buffer.vertex(corners[1].x(), corners[1].y(), corners[1].z()).uv(u1, v0)

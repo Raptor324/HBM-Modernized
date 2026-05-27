@@ -18,11 +18,11 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Atlas sprite IDs under {@code block/missile/} (PNG in {@code textures/block/missile/}).
+ * Atlas sprite IDs under {@code models/missile/} (PNG in {@code textures/models/missile/}).
  */
 public final class MissileTextures {
 
-    private static final String TEX_ROOT = "block/missile/";
+    private static final String TEX_ROOT = "models/missile/";
 
     /** Shared placeholder until per-variant PNGs are added. */
     public static final ResourceLocation PLACEHOLDER = rl("missile_micro");

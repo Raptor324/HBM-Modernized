@@ -2,7 +2,10 @@ package com.hbm_m.datagen.assets;
 //? if forge {
 import java.util.LinkedHashMap;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.client.render.missile.MissileFormFactorModels;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
@@ -20,6 +23,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.armortrim.TrimMaterial;
 import net.minecraft.world.item.armortrim.TrimMaterials;
 import net.minecraft.world.level.block.Block;
+import net.minecraftforge.client.model.generators.CustomLoaderBuilder;
 import net.minecraftforge.client.model.generators.ItemModelBuilder;
 import net.minecraftforge.client.model.generators.ItemModelProvider;
 import net.minecraftforge.client.model.generators.ModelFile;
@@ -882,10 +886,39 @@ public class ModItemModelProvider extends ItemModelProvider {
                 modLoc("block/" + BuiltInRegistries.BLOCK.getKey(block.get()).getPath()));
     }
 
+    /**
+     * {@code hbm_m:missile_loader} item model — OBJ under {@code models/missiles/}, texture under {@code models/missile/}.
+     * No {@code display} block: transforms come from {@link com.hbm_m.client.render.item.ItemRenderMissileGeneric}.
+     */
+    private void missileItemFromObjModel(String itemPath, MissileFormFactorModels hull, ResourceLocation texture) {
+        ResourceLocation objModel = hull.getObjModel();
+        String[] parts = hull.getPartNames().toArray(String[]::new);
+        getBuilder(itemPath).customLoader((parent, helper) ->
+                new CustomLoaderBuilder<ItemModelBuilder>(
+                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "missile_loader"), parent, helper) {
+                    @Override
+                    public JsonObject toJson(JsonObject json) {
+                        super.toJson(json);
+                        json.addProperty("model", objModel.toString());
+                        json.addProperty("flip_v", true);
+                        JsonArray partsArray = new JsonArray();
+                        for (String part : parts) {
+                            partsArray.add(part);
+                        }
+                        json.add("parts", partsArray);
+                        JsonObject textures = new JsonObject();
+                        String tex = texture.toString();
+                        textures.addProperty("default", tex);
+                        textures.addProperty("particle", tex);
+                        json.add("textures", textures);
+                        return json;
+                    }
+                });
+    }
+
     private void generateMissileItemModels() {
         for (MissileItemModelDefinitions.Definition definition : MissileItemModelDefinitions.all()) {
-            getBuilder(definition.itemPath())
-                    .customLoader((parent, helper) -> new MissileItemModelBuilder(parent, helper, definition));
+            missileItemFromObjModel(definition.itemPath(), definition.hull(), definition.texture());
         }
     }
 

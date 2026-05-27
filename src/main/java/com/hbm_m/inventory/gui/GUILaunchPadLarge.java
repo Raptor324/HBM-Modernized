@@ -1,8 +1,6 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity;
-import com.hbm_m.client.render.missile.MissileRenderData;
-import com.hbm_m.client.render.missile.MissileRenderRegistry;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.LaunchPadLargeMenu;
 import com.hbm_m.item.ModItems;
@@ -107,11 +105,6 @@ public class GUILaunchPadLarge extends GuiInfoScreen<LaunchPadLargeMenu> {
             return;
         }
 
-        MissileRenderData renderData = MissileRenderRegistry.get(missileStack);
-        if (renderData == null) {
-            return;
-        }
-
         float scale = resolvePreviewScale(missileItem, missileStack);
         guiGraphics.pose().pushPose();
         guiGraphics.pose().translate(this.leftPos + 70.0F, this.topPos + 120.0F, 100.0F);
@@ -125,7 +118,10 @@ public class GUILaunchPadLarge extends GuiInfoScreen<LaunchPadLargeMenu> {
         guiGraphics.pose().mulPose(Axis.YP.rotationDegrees(75.0F));
         guiGraphics.pose().popPose();
 
-        renderData.render(guiGraphics.pose(), LightTexture.FULL_BRIGHT, be.getBlockPos());
+        var bufferSource = guiGraphics.bufferSource();
+        com.hbm_m.client.render.missile.MissileRenderHelper.drawBakedQuads(
+                guiGraphics.pose(), bufferSource, LightTexture.FULL_BRIGHT, missileStack);
+        bufferSource.endBatch(net.minecraft.client.renderer.RenderType.solid());
 
         Lighting.setupFor3DItems();
         guiGraphics.pose().popPose();

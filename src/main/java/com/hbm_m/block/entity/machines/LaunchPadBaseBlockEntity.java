@@ -293,6 +293,12 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         }
     }
 
+    /** Tall missiles extend above the 1-block pad; default BE AABB would cull the BER. */
+    @Override
+    public AABB getRenderBoundingBox() {
+        return new AABB(worldPosition).inflate(1.0D, 4.0D, 1.0D);
+    }
+
     /**
      * Missile stack for BER / client preview. On client uses synced copy when GUI is closed.
      */

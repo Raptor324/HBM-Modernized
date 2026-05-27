@@ -3,6 +3,8 @@ package com.hbm_m.client.render.implementations;
 import com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity;
 import com.hbm_m.client.render.missile.MissileRenderData;
 import com.hbm_m.client.render.missile.MissileRenderRegistry;
+import com.hbm_m.client.render.shader.IrisRenderBatch;
+import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.item.missile.MissileItem;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -32,6 +34,21 @@ public class LaunchPadMissileRenderer implements BlockEntityRenderer<LaunchPadBa
             return;
         }
 
+        boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
+        //? if forge {
+        if (ShaderCompatibilityDetector.isExternalShaderActive()) {
+            try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
+                drawMissileOnPad(be, renderData, poseStack, buffer, packedLight);
+            }
+            return;
+        }
+        //?}
+
+        drawMissileOnPad(be, renderData, poseStack, buffer, packedLight);
+    }
+
+    private static void drawMissileOnPad(LaunchPadBaseBlockEntity be, MissileRenderData renderData,
+                                         PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         poseStack.pushPose();
         poseStack.translate(0.5D, 0.0D, 0.5D);
 
@@ -48,10 +65,7 @@ public class LaunchPadMissileRenderer implements BlockEntityRenderer<LaunchPadBa
 
         poseStack.translate(0.0F, 1.0F, 0.0F);
 
-        RenderSystem.enableCull();
-        renderData.render(poseStack, packedLight, be.getBlockPos());
-        RenderSystem.enableCull();
-
+        renderData.render(poseStack, packedLight, be.getBlockPos(), buffer, be);
         poseStack.popPose();
     }
 }

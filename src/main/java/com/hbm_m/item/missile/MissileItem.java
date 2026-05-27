@@ -74,7 +74,7 @@ public class MissileItem extends Item {
         consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
             @Override
             public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
-                return com.hbm_m.client.render.item.MissileItemRenderer.INSTANCE;
+                return com.hbm_m.client.render.item.ItemRenderMissileGeneric.INSTANCE;
             }
         });
     }
