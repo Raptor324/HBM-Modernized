@@ -84,6 +84,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
     private static final float ENTITY_MISSILE_DEPTH_FACTOR = -4.0F;
     private static final float ENTITY_MISSILE_DEPTH_UNITS = -4.0F;
 
+
     public static void setFadeAlpha(float alpha) {
         currentFadeAlpha.set(alpha);
     }
@@ -734,7 +735,10 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during VBO render", e);
         } finally {
-            GL30.glBindVertexArray(previousVao);
+            GL30.glBindVertexArray(0);
+            RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
+            RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
+            GlVaoSafety.bindVertexArray(previousVao);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
 
             if (previousCullFaceEnabled) {
@@ -746,9 +750,6 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 RenderSystem.enableDepthTest();
                 GL11.glDepthMask(true);
             }
-
-            RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
-            RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
         }
     }
 
@@ -880,6 +881,9 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             Minecraft.getInstance().gameRenderer.overlayTexture().setupOverlayColor();
             Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();
             TextureBinder.bindForModelIfNeeded(shader);
+
+            com.mojang.blaze3d.platform.GlStateManager._glBindVertexArray(companion.getVaoId());
+            
             if (!com.hbm_m.client.render.shader.IrisShaderApply.tryApply(shader)) {
                 return false;
             }
@@ -895,7 +899,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             }
             RenderSystem.disableCull();
 
-            GL30.glBindVertexArray(companion.getVaoId());
+            
 
             // Bind the Iris-extended attributes (iris_Entity, mc_midTexCoord,
             // at_tangent) to their linker-resolved locations on this VAO with
@@ -929,12 +933,15 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 companion.activatePerVertexLightmap();
                 companion.bindLightmapForInstance(0);
             } else if (uv2Loc != -1) {
+                companion.restoreConstantLightmap();
                 int blockU = Math.max(0, Math.min(240, packedLight & 0xFFFF));
                 int skyV   = Math.max(0, Math.min(240, (packedLight >>> 16) & 0xFFFF));
+                companion.bindVaoIfNeeded();
                 GL30.glVertexAttribI2i(uv2Loc, blockU, skyV);
             }
 
             beginEntityMissileDepthBias();
+            companion.bindVaoIfNeeded();
             GL11.glDrawElements(GL11.GL_TRIANGLES, companion.getIndexCount(), GL11.GL_UNSIGNED_INT, 0);
             endEntityMissileDepthBias();
             shader.clear();
@@ -943,7 +950,12 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             MainRegistry.LOGGER.error("SingleMeshVboRenderer.renderWithIrisExtended failed", e);
             return false;
         } finally {
-            GL30.glBindVertexArray(previousVao);
+            if (companion != null) {
+                companion.restoreConstantLightmap();
+            }
+            GL30.glBindVertexArray(0);
+            RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
+            GlVaoSafety.bindVertexArray(previousVao);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
             if (worldMissileOverlayDraw.get()) {
                 RenderSystem.enableDepthTest();

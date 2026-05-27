@@ -82,12 +82,15 @@ public final class InstancedRenderFrame {
             return;
         }
 
+        // Per-part VBO BERs open a persistent Iris batch even when instanced batching is off.
+        // Must close before outline / hand — not only inside the instanced-flush branch below.
+        IrisRenderBatch.closePersistentIfActive();
+
         try {
             if (ClientRenderFlags.useInstancedBatching()) {
                 ModClothConfig cfg = ModClothConfig.get();
                 boolean useMdi = cfg.useMultiDrawIndirect && MdiBatchCoordinator.isMdiAvailable();
 
-                IrisRenderBatch.closePersistentIfActive();
                 RenderFrameLight.ensureLightTextureUpdated();
 
                 if (useMdi) {

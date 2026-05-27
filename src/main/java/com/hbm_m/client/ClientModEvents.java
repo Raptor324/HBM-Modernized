@@ -6,6 +6,7 @@ import com.hbm_m.client.overlay.DoorAnimationDelayHelper;
 import com.hbm_m.client.missile.track.MissileTrackWorldRender;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 import com.hbm_m.client.render.culling.InstancedRenderFrame;
+import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.event.HazardTooltipHandler;
@@ -185,6 +186,16 @@ public class ClientModEvents {
     @SubscribeEvent
 
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
+        // РЕГРЕССИЯ СТОП: ПРЕДОТВРАЩЕНИЕ УТЕЧКИ SHADOW PASS:
+        // Если в системе остался активен батч теней, но сам проход теней уже завершен (мы в основном кадре),
+        // немедленно закрываем его. Это восстановит оригинальный VAO, фазу Iris и очистит шейдер до того,
+        // как начнется отрисовка неба, ландшафта, энтити, обводки блоков и руки игрока.
+        if (IrisRenderBatch.isActive()) {
+            var activeBatch = IrisRenderBatch.active();
+            if (activeBatch.isShadowPass() && !ShaderCompatibilityDetector.isRenderingShadowPass()) {
+                IrisRenderBatch.closePersistentIfActive();
+            }
+        }
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
 
@@ -199,31 +210,19 @@ public class ClientModEvents {
         }
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
-
             Minecraft mc = Minecraft.getInstance();
-
             var cameraPos = mc.gameRenderer.getMainCamera().getPosition();
-
             ClientRenderHandler.onRenderWorldLate(
-
                     mc.renderBuffers().bufferSource(),
-
                     event.getPoseStack(),
-
                     cameraPos);
-
             InstancedRenderFrame.presentAfterBlockEntities(event.getProjectionMatrix(), cameraPos);
-
             return;
-
         }
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
-
             InstancedRenderFrame.onRenderSliceEnd();
-
         }
-
     }
 
 

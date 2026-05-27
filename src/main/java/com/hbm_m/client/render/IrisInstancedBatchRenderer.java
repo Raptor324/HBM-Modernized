@@ -215,6 +215,9 @@ final class IrisInstancedBatchRenderer {
                     parent.vanillaHelper.brightnessFromUV(irisSingleUV[0], irisSingleUV[1], Float.NaN));
 
             SingleMeshVboRenderer.TextureBinder.bindForModelIfNeeded(shader);
+            
+            companion.bindVaoIfNeeded();
+            
             if (!IrisShaderApply.tryApply(shader)) {
                 return false;
             }
@@ -224,7 +227,7 @@ final class IrisInstancedBatchRenderer {
             RenderSystem.depthMask(true);
             RenderSystem.disableCull();
 
-            GL30.glBindVertexArray(companion.getVaoId());
+            
             companion.prepareForShader(shader.getId());
 
             int uv2Loc = companion.getUv2Location();
@@ -238,9 +241,11 @@ final class IrisInstancedBatchRenderer {
                 companion.restoreConstantLightmap();
                 int blockUInt = Math.max(0, Math.min(240, Math.round(irisSingleUV[0])));
                 int skyVInt   = Math.max(0, Math.min(240, Math.round(irisSingleUV[1])));
+                companion.bindVaoIfNeeded();
                 GL30.glVertexAttribI2i(uv2Loc, blockUInt, skyVInt);
             }
 
+            companion.bindVaoIfNeeded();
             GL11.glDrawElements(GL11.GL_TRIANGLES, companion.getIndexCount(), GL11.GL_UNSIGNED_INT, 0);
             shader.clear();
             return true;
@@ -294,6 +299,15 @@ final class IrisInstancedBatchRenderer {
             net.minecraft.client.Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();
             SingleMeshVboRenderer.TextureBinder.bindForModelIfNeeded(shader);
 
+            int targetVao = (companion != null) ? companion.getVaoId() : parent.vaoId;
+            int targetIndexCount = (companion != null) ? companion.getIndexCount() : parent.indexCount;
+
+            if (companion != null) {
+                companion.bindVaoIfNeeded();
+            } else {
+                com.mojang.blaze3d.platform.GlStateManager._glBindVertexArray(targetVao);
+            }
+            
             if (!IrisShaderApply.tryApply(shader)) {
                 return;
             }
@@ -302,10 +316,6 @@ final class IrisInstancedBatchRenderer {
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
             RenderSystem.depthMask(true);
             RenderSystem.disableCull();
-
-            int targetVao = (companion != null) ? companion.getVaoId() : parent.vaoId;
-            int targetIndexCount = (companion != null) ? companion.getIndexCount() : parent.indexCount;
-            GL30.glBindVertexArray(targetVao);
 
             if (companion != null) {
                 companion.prepareForShader(shader.getId());
@@ -382,17 +392,13 @@ final class IrisInstancedBatchRenderer {
 
                 boolean haveInverseFresh = false;
                 if (locModelViewInverse >= 0 && (rotChanged || posChanged)) {
-                    mvInverseTmp.set(tmpInstanceMat).invert();
+                    mvInverseTmp.set(tmpInstanceMat).invertAffine();
                     mvInverseTmp.get(mvInverseFloats);
                     GL20.glUniformMatrix4fv(locModelViewInverse, false, mvInverseFloats);
                     haveInverseFresh = true;
                 }
                 if (locNormalMat >= 0 && rotChanged) {
-                    if (haveInverseFresh) {
-                        normalTmp.set(mvInverseTmp).transpose();
-                    } else {
-                        normalTmp.set(tmpInstanceMat).invert().transpose();
-                    }
+                    normalTmp.set(tmpInstanceMat);
                     normalTmp.get(normalMatFloats);
                     GL20.glUniformMatrix3fv(locNormalMat, false, normalMatFloats);
                 }
@@ -404,6 +410,7 @@ final class IrisInstancedBatchRenderer {
                     int blockUInt = Math.max(0, Math.min(240, Math.round(parent.instanceLightUV[uvBase])));
                     int skyVInt   = Math.max(0, Math.min(240, Math.round(parent.instanceLightUV[uvBase + 1])));
                     if (blockUInt != lastBlockU || skyVInt != lastSkyV) {
+                        companion.bindVaoIfNeeded();
                         GL30.glVertexAttribI2i(uv2Loc, blockUInt, skyVInt);
                         lastBlockU = blockUInt;
                         lastSkyV = skyVInt;
@@ -414,17 +421,23 @@ final class IrisInstancedBatchRenderer {
                     parent.vanillaHelper.uFadeAlpha.set(parent.instanceBuffer.get(base + parent.instanceFadeFloatOffset));
                 }
 
+                if (companion != null) {
+                    companion.bindVaoIfNeeded();
+                }
                 GL11.glDrawElements(GL11.GL_TRIANGLES, targetIndexCount, GL11.GL_UNSIGNED_INT, 0);
 
                 lastQx = qx; lastQy = qy; lastQz = qz; lastQw = qw;
                 lastPx = px; lastPy = py; lastPz = pz;
             }
 
+            if (companion != null && perVertexLight) {
+                companion.restoreConstantLightmap();
+            }
             shader.clear();
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during instanced flush (Iris)", e);
         } finally {
-            GL30.glBindVertexArray(previousVao);
+            com.hbm_m.client.render.GlVaoSafety.bindVertexArray(previousVao);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
             RenderSystem.depthMask(depthMaskWasEnabled);
             RenderSystem.depthFunc(previousDepthFunc);

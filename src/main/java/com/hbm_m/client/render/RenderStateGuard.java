@@ -76,9 +76,6 @@ public final class RenderStateGuard implements AutoCloseable {
 
     @Override
     public void close() {
-        GL30.glBindVertexArray(previousVao);
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
-
         if (cullEnabled) {
             RenderSystem.enableCull();
         } else {
@@ -99,6 +96,7 @@ public final class RenderStateGuard implements AutoCloseable {
         }
         RenderSystem.blendFuncSeparate(blendSrcRgb, blendDstRgb, blendSrcAlpha, blendDstAlpha);
 
-        RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
+        GlVaoSafety.bindVertexArray(previousVao);
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
     }
 }

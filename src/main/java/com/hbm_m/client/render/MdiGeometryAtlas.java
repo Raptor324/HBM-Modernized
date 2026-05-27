@@ -361,7 +361,8 @@ public final class MdiGeometryAtlas {
      * атрибутов (типично «видна только base», створки/cogs — нет).
      */
     public void enableVertexAttribArraysOnBoundVao() {
-        if (!ready) return;
+        if (!ready || vaoId <= 0) return;
+        if (GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING) != vaoId) return;
         for (int i = 0; i <= 12; i++) {
             GL20.glEnableVertexAttribArray(i);
         }
