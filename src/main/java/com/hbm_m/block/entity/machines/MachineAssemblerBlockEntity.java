@@ -17,6 +17,7 @@ import com.hbm_m.block.machines.MachineAssemblerBlock;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.inventory.menu.MachineAssemblerMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
+import com.hbm_m.item.fekal_electric.ModBatteryItem;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -146,14 +147,10 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == ENERGY_SLOT) {
-            //? if forge {
-            return stack.getCapability(ForgeCapabilities.ENERGY).isPresent()
-                    || stack.getItem() instanceof ItemCreativeBattery;
-            //?}
-            //? if fabric {
-            /*return EnergyStorage.ITEM.find(stack, null) != null
-                    || stack.getItem() instanceof ItemCreativeBattery;
-            *///?}
+            if (stack.getItem() instanceof ModBatteryItem) {
+                return true;
+            }
+            return isEnergyProviderItem(stack);
         }
         if (slot == TEMPLATE_SLOT) {
             return stack.getItem() instanceof ItemAssemblyTemplate;

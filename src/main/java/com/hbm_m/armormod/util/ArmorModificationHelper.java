@@ -10,10 +10,10 @@ import java.util.UUID;
 // применение атрибутов, вычисление защиты от радиации и т.п.
 import com.google.common.collect.Multimap;
 import com.hbm_m.armormod.item.ItemArmorMod;
+import com.hbm_m.armormod.item.ItemModBattery;
 import com.hbm_m.armormod.item.ItemModRadProtection;
 import com.hbm_m.hazard.HazardSystem;
 
-import com.hbm_m.item.tags_and_tiers.ModTags;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -128,6 +128,7 @@ public class ArmorModificationHelper {
         int slot = modItem.type;
         modsTag.put(MOD_SLOT_KEY_PREFIX + slot, modTag);
         armorTag.put(MOD_COMPOUND_KEY, modsTag);
+        onPoweredArmorModsChanged(armor);
     }
 
     /**
@@ -154,6 +155,7 @@ public class ArmorModificationHelper {
         } else {
             armorTag.put(MOD_COMPOUND_KEY, modsTag);
         }
+        onPoweredArmorModsChanged(armor);
     }
 
     /**
@@ -167,7 +169,40 @@ public class ArmorModificationHelper {
         }
 
         CompoundTag armorTag = armor.getTag();
-        return armorTag != null && armorTag.contains(MOD_COMPOUND_KEY);
+        return armorTag != null && armorTag.contains(MOD_COMPOUND_KEY, Tag.TAG_COMPOUND);
+    }
+
+    /**
+     * Множитель ёмкости от установленного мода батареи (1.0 = без мода).
+     * Аналог {@code ItemModBattery.mod} в 1.7.10 {@code ArmorFSBPowered#getMaxCharge}.
+     */
+    public static double getBatteryCapacityMultiplier(ItemStack armorStack) {
+        if (armorStack.isEmpty()) {
+            return 1.0D;
+        }
+        ItemStack batteryMod = pryMod(armorStack, battery);
+        if (batteryMod.isEmpty()) {
+            return 1.0D;
+        }
+        if (batteryMod.getItem() instanceof ItemModBattery batteryItem) {
+            return batteryItem.mod;
+        }
+        return 1.0D;
+    }
+
+    /** После смены мода батареи: обновить capability и обрезать charge (как при закрытии стола). */
+    public static void onPoweredArmorModsChanged(ItemStack armorStack) {
+        if (!(armorStack.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSBPowered powered)) {
+            return;
+        }
+        //? if forge {
+        armorStack.invalidateCaps();
+        //?}
+        long newMaxCapacity = powered.getMaxCharge(armorStack);
+        long currentCharge = powered.getCharge(armorStack);
+        if (currentCharge > newMaxCapacity) {
+            powered.setCharge(armorStack, newMaxCapacity);
+        }
     }
 
     /**
@@ -248,6 +283,9 @@ public class ArmorModificationHelper {
 
 
     public static void saveTableToArmor(ItemStack armorStack, Container tableInventory, Player player) {
+        if (player != null && player.level().isClientSide) {
+            return;
+        }
         if (!(armorStack.getItem() instanceof ArmorItem armorItem)) {
             return;
         }
@@ -257,8 +295,13 @@ public class ArmorModificationHelper {
         CompoundTag modsCompound = new CompoundTag();
 
         // ШАГ 1: СОХРАНЕНИЕ КОНФИГУРАЦИИ МОДОВ В НАШ ТЕГ
+        // Слот стола — источник правды, если в нём лежит мод; иначе сохраняем уже записанный в NBT брони
+        // (applyMod пишет в NBT сразу; стол на сервере может отставать на один тик).
         for (int i = 0; i < 9; i++) {
             ItemStack modStack = tableInventory.getItem(i);
+            if (modStack.isEmpty()) {
+                modStack = pryMod(armorStack, i);
+            }
             if (!modStack.isEmpty()) {
                 modsCompound.put(MOD_SLOT_KEY_PREFIX + i, modStack.save(new CompoundTag()));
             }
@@ -301,16 +344,11 @@ public class ArmorModificationHelper {
         // 2b: Добавляем атрибуты от наших модов, устанавливая им маркер.
         for (int i = 0; i < 9; i++) {
             ItemStack modStack = tableInventory.getItem(i);
+            if (modStack.isEmpty()) {
+                modStack = pryMod(armorStack, i);
+            }
             if (modStack.getItem() instanceof ItemArmorMod mod) {
-                boolean isCompatible = switch (armorItem.getType()) {
-                    case HELMET -> modStack.is(ModTags.Items.REQUIRES_HELMET);
-                    case CHESTPLATE -> modStack.is(ModTags.Items.REQUIRES_CHESTPLATE);
-                    case LEGGINGS -> modStack.is(ModTags.Items.REQUIRES_LEGGINGS);
-                    case BOOTS -> modStack.is(ModTags.Items.REQUIRES_BOOTS);
-                    default -> false;
-                };
-
-                if (isCompatible) {
+                if (isApplicable(armorStack, modStack)) {
                     Multimap<Attribute, AttributeModifier> modModifiers = mod.getModifiers(armorStack);
                     if (modModifiers != null) {
                         for (Map.Entry<Attribute, AttributeModifier> entry : modModifiers.entries()) {
@@ -330,18 +368,15 @@ public class ArmorModificationHelper {
 
         // Заменяем старый список новым, отфильтрованным и дополненным.
         mainTag.put("AttributeModifiers", preservedModifiers);
-        if (mainTag.isEmpty()) { armorStack.setTag(null); }
 
-        // ШАГ 3: ОБРЕЗАНИЕ ЭНЕРГИИ ПО НОВОМУ МАКСИМУМУ
-        // Если броня - силовая, проверяем и корректируем уровень энергии
-        if (armorStack.getItem() instanceof com.hbm_m.powerarmor.ModPowerArmorItem powerArmor) {
-            long currentEnergy = mainTag.getLong("energy");
-            long newMaxCapacity = powerArmor.getModifiedCapacity(armorStack);
+        // ШАГ 3: ОБРЕЗАНИЕ ЗАРЯДА / capability (силовая броня)
+        onPoweredArmorModsChanged(armorStack);
+    }
 
-            // Если текущая энергия превышает новый максимум, обрезаем ее
-            if (currentEnergy > newMaxCapacity) {
-                mainTag.putLong("energy", newMaxCapacity);
-            }
+    /** Записывает моды из стола в NBT брони (вызывать перед изъятием брони или закрытием GUI). */
+    public static void flushTableToArmor(ItemStack armorStack, Container tableInventory, Player player) {
+        if (!armorStack.isEmpty() && armorStack.getItem() instanceof ArmorItem) {
+            saveTableToArmor(armorStack, tableInventory, player);
         }
     }
     /**

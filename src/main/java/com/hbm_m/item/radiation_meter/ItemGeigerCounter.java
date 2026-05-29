@@ -2,123 +2,107 @@ package com.hbm_m.item.radiation_meter;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 
-import org.jetbrains.annotations.NotNull;
-
-import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.main.MainRegistry;
-import com.hbm_m.network.ModPacketHandler;
-import com.hbm_m.network.RadiationDataPacket;
-import com.hbm_m.network.sounds.GeigerSoundPacket;
+import com.hbm_m.extprop.HbmLivingProps;
 import com.hbm_m.sound.ModSounds;
-
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
-
-// Предмет-геигер для измерения радиации в окружающей среде и на игроке.
-// Показывает уровень радиации в чате при использовании и издает звуки щелчков в зависимости от уровня радиации.
-// Используется на сервере, отправляет данные на клиент для звуков и HUD.
+import com.hbm_m.util.ContaminationUtil;
 
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-public class ItemGeigerCounter extends AbstractRadiationMeterItem {
+/**
+ * Порт {@link com.hbm.items.tool.ItemGeigerCounter} (1.7.10).
+ */
+public class ItemGeigerCounter extends Item {
 
-    private static final Random RANDOM = new Random();
-    private int soundTickCounter = 0;
+    private final Random rand = new Random();
 
-    public ItemGeigerCounter(Properties pProperties) {
-        super(pProperties);
+    public ItemGeigerCounter(Properties properties) {
+        super(properties);
     }
 
     @Override
-    protected Component createUsageMessage(RadiationData data) {
-        // Создаем цветные строки для каждого значения, ВКЛЮЧАЯ единицы измерения
-        String chunkRadStr = getRadColor(data.chunkRad()) + String.format("%.1f RAD/s", data.chunkRad());
-        String envRadStr = getRadColor(data.getTotalEnvironmentRad()) + String.format("%.1f RAD/s\n", data.getTotalEnvironmentRad());
-        String playerRadStr = getRadColor(data.playerRad()) + String.format("%.1f RAD", data.playerRad());
-        // Форматируем процент с двумя знаками после запятой (например, "99.05%")
-        String protectionPercentStr = String.format("%.2f%%", data.protectionPercent() * 100);
-        // Форматируем абсолютное значение с тремя знаками после запятой (например, "2.021")
-        String protectionAbsoluteStr = String.format("%.3f", data.protectionAbsolute());
+    public void inventoryTick(ItemStack stack, Level world, Entity entity, int slot, boolean selected) {
+        if (!(entity instanceof LivingEntity) || world.isClientSide()) {
+            return;
+        }
 
-        // 2. Собираем заголовок. §e - желтый цвет
-        String titleString = "\n§6===== ☢ " + Component.translatable("item.hbm_m.meter.geiger_counter.name").getString() + " ☢ =====\n";
-        MutableComponent message = Component.translatable("item.hbm_m.meter.title_format", titleString);
+        float x = HbmLivingProps.getRadBuf((LivingEntity) entity);
 
-        // 3. Добавляем строки данных, используя унифицированные ключи
-        message.append(Component.translatable("item.hbm_m.meter.chunk_rads", chunkRadStr));
-        message.append(Component.translatable("item.hbm_m.meter.env_rads", envRadStr));
-        message.append(Component.translatable("item.hbm_m.meter.player_rads", playerRadStr));
-        message.append(Component.translatable("item.hbm_m.meter.protection", protectionPercentStr, protectionAbsoluteStr));
+        if (world.getGameTime() % 5 == 0) {
+            if (x > 1E-5F) {
+                List<Integer> list = new ArrayList<>();
 
-        return message;
+                if (x < 1) {
+                    list.add(0);
+                }
+                if (x < 5) {
+                    list.add(0);
+                }
+                if (x < 10) {
+                    list.add(1);
+                }
+                if (x > 5 && x < 15) {
+                    list.add(2);
+                }
+                if (x > 10 && x < 20) {
+                    list.add(3);
+                }
+                if (x > 15 && x < 25) {
+                    list.add(4);
+                }
+                if (x > 20 && x < 30) {
+                    list.add(5);
+                }
+                if (x > 25) {
+                    list.add(6);
+                }
+
+                int r = list.get(rand.nextInt(list.size()));
+
+                if (r > 0) {
+                    playGeigerSound(world, entity, r);
+                }
+            } else if (rand.nextInt(50) == 0) {
+                playGeigerSound(world, entity, 1);
+            }
+        }
     }
 
     @Override
-    public void inventoryTick(@NotNull ItemStack pStack, @NotNull Level pLevel, @NotNull Entity pEntity, int pSlotId, boolean pIsSelected) {
-        if (!pLevel.isClientSide() && pEntity instanceof ServerPlayer serverPlayer && serverPlayer.isAlive()) {
-            soundTickCounter++;
-            final int SOUND_INTERVAL_TICKS = 5;
-            if (soundTickCounter >= SOUND_INTERVAL_TICKS) {
-                soundTickCounter = 0;
+    public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
 
-                RadiationData data = measureRadiation(pLevel, serverPlayer);
-                float totalEnvironmentRads = data.getTotalEnvironmentRad();
-                if (ModClothConfig.get().enableDebugLogging) {
-                    MainRegistry.LOGGER.debug("GeigerCounter: chunkRad = {}, invRad = {}, totalEnvironmentRads = {}", 
-                    data.chunkRad(), data.inventoryRad(), totalEnvironmentRads);
-                }
-
-                if (!serverPlayer.isCreative() && !serverPlayer.isSpectator()) {
-                    ModPacketHandler.sendToPlayer(serverPlayer, ModPacketHandler.RADIATION_DATA,
-                        new RadiationDataPacket(data.getTotalEnvironmentRad(), data.playerRad()));
-                }
-
-                playGeigerTickSound(serverPlayer, totalEnvironmentRads);
-            }
+        if (!world.isClientSide()) {
+            ModSounds.TOOL_TECH_BOOP.ifPresent(sound ->
+                    world.playSound(null, player.getX(), player.getY(), player.getZ(), sound, SoundSource.PLAYERS, 1.0F, 1.0F));
+            ContaminationUtil.printGeigerData(player);
         }
+
+        return InteractionResultHolder.sidedSuccess(stack, world.isClientSide());
     }
-    
-    private void playGeigerTickSound(ServerPlayer player, float radiationLevel) {
-        int soundIndex = 0;
-        List<Integer> soundOptions = new ArrayList<>();
 
-        if (radiationLevel > 0) {
-            if (radiationLevel < 10) soundOptions.add(1);
-            if (radiationLevel > 5 && radiationLevel < 15) soundOptions.add(2);
-            if (radiationLevel > 10 && radiationLevel < 20) soundOptions.add(3);
-            if (radiationLevel > 15 && radiationLevel < 25) soundOptions.add(4);
-            if (radiationLevel > 20 && radiationLevel < 30) soundOptions.add(5);
-            if (radiationLevel > 25) soundOptions.add(6);
-
-            if (!soundOptions.isEmpty()) {
-                soundIndex = soundOptions.get(RANDOM.nextInt(soundOptions.size()));
-            }
-        } else if (RANDOM.nextInt(50) == 0) {
-            soundIndex = 1; // Редкий фоновый щелчок
-        }
-
-        Optional<SoundEvent> sound = switch (soundIndex) {
-            case 1 -> Optional.of(ModSounds.GEIGER_1.get());
-            case 2 -> Optional.of(ModSounds.GEIGER_2.get());
-            case 3 -> Optional.of(ModSounds.GEIGER_3.get());
-            case 4 -> Optional.of(ModSounds.GEIGER_4.get());
-            case 5 -> Optional.of(ModSounds.GEIGER_5.get());
-            case 6 -> Optional.of(ModSounds.GEIGER_6.get());
-            default -> Optional.empty();
+    private static void playGeigerSound(Level world, Entity entity, int index) {
+        SoundEvent sound = switch (index) {
+            case 1 -> ModSounds.GEIGER_1.orElse(null);
+            case 2 -> ModSounds.GEIGER_2.orElse(null);
+            case 3 -> ModSounds.GEIGER_3.orElse(null);
+            case 4 -> ModSounds.GEIGER_4.orElse(null);
+            case 5 -> ModSounds.GEIGER_5.orElse(null);
+            case 6 -> ModSounds.GEIGER_6.orElse(null);
+            default -> null;
         };
-
-        sound.ifPresent(soundEvent -> {
-            ResourceLocation soundLocation = soundEvent.getLocation();
-            ModPacketHandler.sendToPlayer(player, ModPacketHandler.GEIGER_SOUND,
-                new GeigerSoundPacket(soundLocation, 0.4F, 1.0F));
-        });
+        if (sound != null) {
+            world.playSound(null, entity.getX(), entity.getY(), entity.getZ(), sound, SoundSource.PLAYERS, 1.0F, 1.0F);
+        }
     }
 }

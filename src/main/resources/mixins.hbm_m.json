@@ -6,7 +6,9 @@
   "refmap": "mixins.hbm_m.refmap.json",
   "mixins": [
     "SlotMixin",
-    "PlayerStepSoundMixin"
+    "PlayerStepSoundMixin",
+    "CreeperMixin",
+    "LivingEntityRadiationMixin"
   ],
   "server": [
   ],

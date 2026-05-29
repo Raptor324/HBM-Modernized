@@ -9,7 +9,6 @@ import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ModPacketHandler;
-import com.hbm_m.api.energy.ItemEnergyAccess;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -56,12 +55,7 @@ public class MachineAssemblerMenu extends AbstractContainerMenu implements ILong
             this.addSlot(new Slot(container, 0, 80, 18) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack stack) {
-                    if (ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
-                    //? if fabric {
-                    /*return EnergyStorage.ITEM.find(stack, null) != null;
-                    *///?} else {
-                    return false;
-                    //?}
+                    return container.canPlaceItem(0, stack);
                 }
             });
             // Слоты для улучшений (1, 2, 3) - без ограничений
@@ -219,11 +213,7 @@ public class MachineAssemblerMenu extends AbstractContainerMenu implements ILong
             boolean moved = false;
 
             // 1) Energy-capable items -> energy slot (index TE_INVENTORY_FIRST_SLOT_INDEX + 0)
-            if (ItemEnergyAccess.getHbmReceiver(sourceStack).isPresent()
-                    //? if fabric {
-                    /*|| EnergyStorage.ITEM.find(sourceStack, null) != null
-                    *///?}
-            ) {
+            if (blockEntity.getInventory().isItemValid(0, sourceStack)) {
                 moved = this.moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX + 0, TE_INVENTORY_FIRST_SLOT_INDEX + 1, false);
             }
 

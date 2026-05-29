@@ -10,6 +10,7 @@ public final class ParticleCreators {
 
     static {
         CREATORS.put("nuke", new NukeTorexCreator());
+        CREATORS.put("vomit", new VomitParticleCreator());
     }
 
     public static Map<String, IParticleCreator> particleCreators() {

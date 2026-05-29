@@ -4,9 +4,6 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.armormod.item.ItemModBattery;
-import com.hbm_m.armormod.item.ItemModBatteryMk2;
-import com.hbm_m.armormod.item.ItemModBatteryMk3;
 import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.util.EnergyFormatter;
 
@@ -124,19 +121,7 @@ public class ModArmorFSBPowered extends ModArmorFSB {
     }
 
     public long getMaxCharge(ItemStack stack) {
-        if (ArmorModificationHelper.hasMods(stack)) {
-            ItemStack mod = ArmorModificationHelper.pryMod(stack, ArmorModificationHelper.battery);
-            if (!mod.isEmpty()) {
-                if (mod.getItem() instanceof ItemModBatteryMk3) {
-                    return (long) (maxPower * 2.0D); // MK3: 100%
-                } else if (mod.getItem() instanceof ItemModBatteryMk2) {
-                    return (long) (maxPower * 1.5D); // MK2: 50%
-                } else if (mod.getItem() instanceof ItemModBattery battery) {
-                    return (long) (maxPower * battery.getCapacityMultiplier()); // 25%
-                }
-            }
-        }
-        return maxPower;
+        return (long) (maxPower * ArmorModificationHelper.getBatteryCapacityMultiplier(stack));
     }
 
     public long getChargeRate(ItemStack stack) {

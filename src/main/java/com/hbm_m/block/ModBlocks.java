@@ -10,6 +10,8 @@ import java.util.function.Supplier;
 import com.hbm_m.api.energy.ConverterBlock;
 import com.hbm_m.api.energy.SwitchBlock;
 import com.hbm_m.api.energy.WireBlock;
+import com.hbm_m.block.bomb.BlockTaint;
+import com.hbm_m.block.generic.BlockSlag;
 import com.hbm_m.block.bomb.NukeFatManBlock;
 import com.hbm_m.block.decorations.CageLampBlock;
 import com.hbm_m.block.decorations.CrtBlock;
@@ -32,6 +34,7 @@ import com.hbm_m.block.machines.ArmorTableBlock;
 import com.hbm_m.block.machines.BlastFurnaceBlock;
 import com.hbm_m.block.machines.BlastFurnaceExtensionBlock;
 import com.hbm_m.block.machines.FluidDuctBlock;
+import com.hbm_m.block.machines.BlockDecon;
 import com.hbm_m.block.machines.GeigerCounterBlock;
 import com.hbm_m.block.machines.HeatingOvenBlock;
 import com.hbm_m.block.machines.LaunchPadBlock;
@@ -102,6 +105,7 @@ import com.hbm_m.block.machines.crates.TungstenCrateBlock;
 import com.hbm_m.block.nature.DepthOreBlock;
 import com.hbm_m.block.nature.GeysirBlock;
 import com.hbm_m.block.nature.RadioactiveBlock;
+import com.hbm_m.block.nature.SchrabDisplayBlock;
 import com.hbm_m.block.weapons.BarbedWireBlock;
 import com.hbm_m.block.weapons.BarbedWireFireBlock;
 import com.hbm_m.block.weapons.BarbedWirePoisonBlock;
@@ -130,6 +134,11 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> GEIGER_COUNTER_BLOCK = registerBlock("geiger_counter_block",
             () -> new GeigerCounterBlock(Block.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
+
+    public static final RegistrySupplier<Block> DECON = registerBlock("decon",
+            () -> new BlockDecon(Block.Properties.copy(Blocks.IRON_BLOCK)
+                    .strength(5.0F, 10.0F)
+                    .requiresCorrectToolForDrops()));
 
     private static final BlockBehaviour.Properties TABLE_PROPERTIES =
             BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(5.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops();
@@ -181,11 +190,33 @@ public class ModBlocks {
             "australium", "dineutronium", "euphemium",
             "combine_steel", "dura_steel", "starmetal", "red_copper",
             "plutonium_fuel", "uranium_fuel", "thorium_fuel", "mox_fuel", "schrabidium_fuel",
+            "schraranium", "schrabidate", "solinium",
             "boron", "tcalloy", "cdalloy", "cadmium"
     );
 
     // 2. КАРТА БЛОКОВ
     public static final Map<ModIngots, RegistrySupplier<Block>> INGOT_BLOCKS = new EnumMap<>(ModIngots.class);
+
+    /**
+     * Слитковые блоки с {@code ExtDisplayEffect.RADFOG} в GIT ({@code BlockHazard#setDisplayEffect}, ModBlocks ~1328–1342).
+     * Только они получают {@link RadioactiveBlock} (частицы townaura); остальные радиоактивные блоки — обычный {@link Block}.
+     */
+    private static final Set<String> RADFOG_INGOT_BLOCKS = Set.of(
+            "u233", "u235", "neptunium", "plutonium", "pu238", "pu239", "pu240",
+            "mox_fuel", "plutonium_fuel");
+
+    /** GIT: {@code ExtDisplayEffect.SCHRAB} на block_schrabidium, block_schraranium, block_schrabidate, block_solinium, block_schrabidium_fuel. */
+    private static final Set<String> SCHRABFOG_INGOT_BLOCKS = Set.of(
+            "schrabidium", "schraranium", "schrabidate", "solinium", "schrabidium_fuel");
+
+    /** GIT: RADFOG на block_u233, block_u235, block_neptunium, block_plutonium, block_pu*, block_mox_fuel, block_plutonium_fuel. */
+    public static boolean hasRadFogParticles(ModIngots ingot) {
+        return RADFOG_INGOT_BLOCKS.contains(ingot.getName());
+    }
+
+    public static boolean hasSchrabFogParticles(ModIngots ingot) {
+        return SCHRABFOG_INGOT_BLOCKS.contains(ingot.getName());
+    }
 
     // 3. АВТОМАТИЧЕСКАЯ РЕГИСТРАЦИЯ
     static {
@@ -199,10 +230,13 @@ public class ModBlocks {
 
                 RegistrySupplier<Block> registeredBlock;
 
-                // Определяем свойства (радиоактивный или обычный)
-                if (isRadioactiveIngot(ingot)) {
+                // Display particles: RADFOG (townaura) / SCHRAB (schrabfog); chunk rad — через HazardRegistry
+                if (hasRadFogParticles(ingot)) {
                     registeredBlock = registerBlock(blockName,
                             () -> new RadioactiveBlock(INGOT_BLOCK_PROPERTIES));
+                } else if (hasSchrabFogParticles(ingot)) {
+                    registeredBlock = registerBlock(blockName,
+                            () -> new SchrabDisplayBlock(INGOT_BLOCK_PROPERTIES));
                 } else {
                     registeredBlock = registerBlock(blockName,
                             () -> new Block(INGOT_BLOCK_PROPERTIES));
@@ -224,42 +258,6 @@ public class ModBlocks {
         return block;
     }
 
-    // Оставляем логику определения радиоактивности без изменений
-    private static boolean isRadioactiveIngot(ModIngots ingot) {
-        String name = ingot.getName().toLowerCase();
-        return name.contains("uranium") ||
-                name.contains("plutonium") ||
-                name.contains("thorium") ||
-                name.contains("actinium") ||
-                name.contains("polonium") ||
-                name.contains("neptunium") ||
-                name.contains("americium") ||
-                name.contains("curium") ||
-                name.contains("berkelium") ||
-                name.contains("californium") ||
-                name.contains("einsteinium") ||
-                name.contains("fermium") ||
-                name.contains("mendelevium") ||
-                name.contains("nobelium") ||
-                name.contains("lawrencium") ||
-                name.contains("radium") ||
-                name.contains("radon") ||
-                name.contains("francium") ||
-                name.contains("ra226") ||
-                name.contains("co60") ||
-                name.contains("sr90") ||
-                name.contains("am241") ||
-                name.contains("am242") ||
-                name.contains("u233") ||
-                name.contains("u235") ||
-                name.contains("u238") ||
-                name.contains("th232") ||
-                name.contains("pu238") ||
-                name.contains("pu239") ||
-                name.contains("pu240") ||
-                name.contains("pu241");
-    }
-
     public static boolean hasIngotBlock(ModIngots ingot) {
         return INGOT_BLOCKS.containsKey(ingot);
     }
@@ -276,6 +274,14 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> WASTE_LEAVES = registerBlock("waste_leaves",
             () -> new LeavesBlock(BlockBehaviour.Properties.copy(Blocks.OAK_LEAVES).noOcclusion()));
+
+    /** Шлак (оригинал {@code ModBlocks.block_slag}) — оболочка volatile creeper и др. */
+    public static final RegistrySupplier<Block> BLOCK_SLAG = registerBlock("block_slag",
+            () -> new BlockSlag(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.STONE)
+                    .sound(SoundType.STONE)
+                    .strength(2.0F)
+                    .requiresCorrectToolForDrops()));
 
     public static final RegistrySupplier<Block> WIRE_COATED = registerBlock("wire_coated",
             () -> new WireBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
@@ -966,7 +972,11 @@ public class ModBlocks {
 
     /** Блок заражения (боеголовка MissileTaint). */
     public static final RegistrySupplier<Block> TAINT = registerBlock("taint",
-            () -> new Block(Block.Properties.copy(Blocks.PURPLE_CONCRETE).strength(0.4F, 0.4F)));
+            () -> new BlockTaint(Block.Properties.of()
+                    .mapColor(MapColor.COLOR_GRAY)
+                    .strength(15.0F, 10.0F)
+                    .randomTicks()
+                    .noLootTable()));
     public static final RegistrySupplier<Block> BARREL_TCALLOY = registerBlock("barrel_tcalloy",
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> BARREL_VITRIFIED = registerBlock("barrel_vitrified",
@@ -1679,6 +1689,26 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> CINNABAR_ORE_DEEPSLATE = registerBlock("cinnabar_ore_deepslate",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.DEEPSLATE).strength(5.0f, 5.0f).requiresCorrectToolForDrops()));
+
+    /** Порт {@code ore_schrabidium} (GIT ModBlocks). */
+    public static final RegistrySupplier<Block> SCHRABIDIUM_ORE = registerBlock("schrabidium_ore",
+            () -> new DropExperienceBlock(BlockBehaviour.Properties.copy(Blocks.STONE)
+                    .strength(15.0F, 600.0F).requiresCorrectToolForDrops()));
+
+    /** Порт {@code ore_nether_schrabidium}. */
+    public static final RegistrySupplier<Block> SCHRABIDIUM_ORE_NETHER = registerBlock("schrabidium_ore_nether",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.NETHERRACK)
+                    .strength(15.0F, 600.0F).requiresCorrectToolForDrops()));
+
+    /** Порт {@code ore_gneiss_schrabidium}. */
+    public static final RegistrySupplier<Block> SCHRABIDIUM_ORE_GNEISS = registerBlock("schrabidium_ore_gneiss",
+            () -> new DropExperienceBlock(BlockBehaviour.Properties.copy(Blocks.STONE)
+                    .strength(1.5F, 10.0F).requiresCorrectToolForDrops()));
+
+    /** Порт {@code block_schrabidium_cluster} ({@link com.hbm.blocks.generic.BlockRotatablePillar}). */
+    public static final RegistrySupplier<Block> BLOCK_SCHRABIDIUM_CLUSTER = registerBlock("block_schrabidium_cluster",
+            () -> new RotatedPillarBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
+                    .strength(5.0F, 60000.0F).requiresCorrectToolForDrops()));
 
     //======================= ЖИДКОСТИ ==========================================//
 

@@ -9,6 +9,7 @@ import com.hbm_m.util.MultipartFacingTransforms;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
@@ -20,7 +21,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 /**
  * Hazard diamonds on fluid tank sides (1.7.10 {@code RenderFluidTank} diamond pass).
- * Tank frame/glass uses {@link com.hbm_m.client.model.MachineFluidTankBakedModel}.
+ * Tank uses {@link com.hbm_m.client.model.MachineFluidTankBakedModel}.
  */
 public class MachineFluidTankRenderer implements BlockEntityRenderer<MachineFluidTankBlockEntity> {
 
@@ -51,20 +52,22 @@ public class MachineFluidTankRenderer implements BlockEntityRenderer<MachineFlui
         BlockState state = be.getBlockState();
         if (state.hasProperty(MachineFluidTankBlock.FACING)) {
             Direction facing = state.getValue(MachineFluidTankBlock.FACING);
-            poseStack.mulPose(Axis.YP.rotationDegrees(MultipartFacingTransforms.vanillaChunkMeshRotationY(facing)));
+            // Chunk quads (MachineFluidTankBakedModel) vs PoseStack rotate opposite conventions.
+            int chunkYaw = MultipartFacingTransforms.vanillaChunkMeshRotationY(facing);
+            poseStack.mulPose(Axis.YP.rotationDegrees(MultipartFacingTransforms.poseYawFromChunkYaw(chunkYaw)));
         }
 
         RenderSystem.disableCull();
 
         poseStack.pushPose();
-        poseStack.translate(-0.25F, 0.5F, -1.501F);
+        poseStack.translate(-0.25F, 0.5F, -0.501F);
         poseStack.mulPose(Axis.YP.rotationDegrees(90.0F));
         poseStack.scale(1.0F, 0.375F, 0.375F);
         DiamondPronter.pront(poseStack, buffer, type.poison, type.flammability, type.reactivity, type.symbol, light, packedOverlay);
         poseStack.popPose();
 
         poseStack.pushPose();
-        poseStack.translate(0.25F, 0.5F, 1.501F);
+        poseStack.translate(0.25F, 0.5F, 2.501F);
         poseStack.mulPose(Axis.YN.rotationDegrees(90.0F));
         poseStack.scale(1.0F, 0.375F, 0.375F);
         DiamondPronter.pront(poseStack, buffer, type.poison, type.flammability, type.reactivity, type.symbol, light, packedOverlay);

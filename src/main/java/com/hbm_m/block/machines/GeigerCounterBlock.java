@@ -1,22 +1,16 @@
 package com.hbm_m.block.machines;
 
-import com.hbm_m.block.entity.machines.GeigerCounterBlockEntity;
-import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.radiation.PlayerHandler;
+import com.hbm_m.block.entity.machines.GeigerCounterBlockEntity;
 import com.hbm_m.sound.ModSounds;
+import com.hbm_m.util.ContaminationUtil;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -33,151 +27,85 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraft.network.chat.Component;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Порт {@link com.hbm.blocks.machine.GeigerCounter} (1.7.10).
+ */
 public class GeigerCounterBlock extends BaseEntityBlock {
-    // Свойство для хранения направления, куда "смотрит" блок
+
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     private static final VoxelShape SHAPE = Block.box(0.0, 0.0, 0.0, 16.0, 8.0, 16.0);
 
-    public GeigerCounterBlock(Properties pProperties) {
-        super(pProperties);
-        // Устанавливаем состояние по умолчанию
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+    public GeigerCounterBlock(Properties properties) {
+        super(properties);
+        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
 
     @Override
-    public VoxelShape getShape(@NotNull BlockState pState, @NotNull BlockGetter pLevel, @NotNull BlockPos pPos, @NotNull CollisionContext pContext) {
+    public VoxelShape getShape(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos, @NotNull CollisionContext context) {
         return SHAPE;
     }
 
     @Nullable
     @Override
-    public BlockEntity newBlockEntity(@NotNull BlockPos pPos, @NotNull BlockState pState) {
-        return new GeigerCounterBlockEntity(pPos, pState);
+    public BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
+        return new GeigerCounterBlockEntity(pos, state);
     }
 
     @Override
-    public InteractionResult use(@NotNull BlockState pState, @NotNull Level pLevel, @NotNull BlockPos pPos, @NotNull Player pPlayer, @NotNull InteractionHand pHand, @NotNull BlockHitResult pHit) {
-        // Выполняем логику только на стороне сервера
-        if (!pLevel.isClientSide()) {
-            
-            // Собираем ВСЕ данные, как в ручном счетчике
-
-            // 1. Радиация окружения
-            // Радиация в точке блока (из BlockEntity для точности и консистентности)
-            float chunkRad = 0F;
-            BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
-            if (blockEntity instanceof GeigerCounterBlockEntity geiger) {
-                 chunkRad = geiger.getLastMeasuredRads();
-            }
-            // Радиация инвентаря кликнувшего игрока
-            float invRad = PlayerHandler.getInventoryRadiation(pPlayer);
-            float totalEnvironmentRad = chunkRad + invRad;
-
-            // 2. Радиация самого игрока
-            float playerRads = PlayerHandler.getPlayerRads(pPlayer);
-            
-            // 3. Защита игрока
-            float totalAbsoluteProtection = 0f;
-            for (ItemStack armorStack : pPlayer.getArmorSlots()) {
-                totalAbsoluteProtection += ArmorModificationHelper.getTotalAbsoluteRadProtection(armorStack);
-            }
-            float protectionPercent = ArmorModificationHelper.convertAbsoluteToPercent(totalAbsoluteProtection);
-
-            //Формируем сообщение
-
-            // Создаем цветные строки для каждого значения
-            String chunkRadStr = getRadColor(chunkRad) + String.format("%.1f RAD/s", chunkRad);
-            String envRadStr = getRadColor(totalEnvironmentRad) + String.format("%.1f RAD/s\n", totalEnvironmentRad);
-            String playerRadStr = getRadColor(playerRads) + String.format("%.1f RAD", playerRads);
-            String protectionPercentStr = String.format("%.2f%%", protectionPercent * 100);
-            String protectionAbsoluteStr = String.format("%.3f", totalAbsoluteProtection);
-
-            // Собираем заголовок. Используем название блока.
-            String titleString = "\n§6===== ☢ " + Component.translatable("item.hbm_m.meter.geiger_counter.name").getString() + " ☢ =====\n";
-            MutableComponent message = Component.translatable("item.hbm_m.meter.title_format", titleString);
-
-            // Добавляем строки данных, используя те же ключи локализации
-            message.append(Component.translatable("item.hbm_m.meter.chunk_rads", chunkRadStr));
-            message.append(Component.translatable("item.hbm_m.meter.env_rads", envRadStr));
-            message.append(Component.translatable("item.hbm_m.meter.player_rads", playerRadStr));
-            message.append(Component.translatable("item.hbm_m.meter.protection", protectionPercentStr, protectionAbsoluteStr));
-
-            // Отправляем собранное сообщение игроку
-            pPlayer.sendSystemMessage(message);
-
-            if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
-                SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
-                if (soundEvent != null) {
-                    ResourceLocation soundLocation = soundEvent.getLocation();
-                    if (pPlayer instanceof ServerPlayer serverPlayer) {
-                        // Loader-agnostic: проигрываем звук напрямую сервером игроку (без Forge PacketDistributor).
-                        serverPlayer.playNotifySound(soundEvent, SoundSource.PLAYERS, 1.0F, 1.0F);
-                    }
-                }
-            }
+    public InteractionResult use(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player,
+            @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
+        if (level.isClientSide()) {
+            return InteractionResult.SUCCESS;
         }
-        
-        return InteractionResult.sidedSuccess(pLevel.isClientSide());
-    }
+        if (player.isShiftKeyDown()) {
+            return InteractionResult.PASS;
+        }
 
-    // Вспомогательный метод для получения цвета
-    private static String getRadColor(float rads) {
-        if (rads < 0.01f) return "§a";
-        if (rads < 1.0f) return "§e";
-        if (rads < 10.0f) return "§6";
-        if (rads < 100.0f) return "§c";
-        if (rads < 1000.0f) return "§4";
-        return "§7";
+        ModSounds.TOOL_TECH_BOOP.ifPresent(sound ->
+                level.playSound(null, player.getX(), player.getY(), player.getZ(), sound, SoundSource.PLAYERS, 1.0F, 1.0F));
+        ContaminationUtil.printGeigerData(player);
+        return InteractionResult.SUCCESS;
     }
 
     @Nullable
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level pLevel, @NotNull BlockState pState, @NotNull BlockEntityType<T> pBlockEntityType) {
-        // Мы хотим, чтобы наш BlockEntity работал только на стороне сервера
-        if (pLevel.isClientSide()) {
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level level, @NotNull BlockState state, @NotNull BlockEntityType<T> type) {
+        if (level.isClientSide()) {
             return null;
         }
-        // Возвращаем тикер для нашего BlockEntity
-        return createTickerHelper(pBlockEntityType, ModBlockEntities.GEIGER_COUNTER_BE.get(),
-                (level, pos, state, blockEntity) -> blockEntity.tick(level, pos, state));
-    }
-
-    // Вращение блока 
-
-    @Override
-    public BlockState getStateForPlacement(@NotNull BlockPlaceContext pContext) {
-        // Устанавливаем направление блока в зависимости от того, куда смотрел игрок при установке
-        return this.defaultBlockState().setValue(FACING, pContext.getHorizontalDirection());
+        return createTickerHelper(type, ModBlockEntities.GEIGER_COUNTER_BE.get(),
+                (lvl, blockPos, blockState, blockEntity) -> blockEntity.tick(lvl, blockPos, blockState));
     }
 
     @Override
-    protected void createBlockStateDefinition(@NotNull StateDefinition.Builder<Block, BlockState> pBuilder) {
-        pBuilder.add(FACING);
+    public BlockState getStateForPlacement(@NotNull BlockPlaceContext context) {
+        return defaultBlockState().setValue(FACING, context.getHorizontalDirection());
     }
 
-    // Рендер и сигналы 
     @Override
-    public RenderShape getRenderShape(@NotNull BlockState pState) {
+    protected void createBlockStateDefinition(@NotNull StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(FACING);
+    }
+
+    @Override
+    public RenderShape getRenderShape(@NotNull BlockState state) {
         return RenderShape.MODEL;
     }
-    
-    // Как в старом моде, блок будет выдавать сигнал компаратору
+
     @Override
-    public boolean hasAnalogOutputSignal(@NotNull BlockState pState) {
+    public boolean hasAnalogOutputSignal(@NotNull BlockState state) {
         return true;
     }
 
     @Override
-    public int getAnalogOutputSignal(@NotNull BlockState pState, @NotNull Level pLevel, @NotNull BlockPos pPos) {
-        BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
+    public int getAnalogOutputSignal(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos) {
+        BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof GeigerCounterBlockEntity geiger) {
-            // Возвращаем уровень радиации, ограниченный 15 (макс. сигнал редстоуна)
-            return Math.min(15, (int) Math.ceil(geiger.getLastMeasuredRads()));
+            return Math.min((int) Math.ceil(geiger.check(level, pos) / 5F), 15);
         }
         return 0;
     }

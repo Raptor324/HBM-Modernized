@@ -16,7 +16,7 @@ import com.hbm_m.event.HazardEventHandler;
 import com.hbm_m.event.PlayerHazardHandler;
 import com.hbm_m.event.ScrewdriverInteractionHandler;
 import com.hbm_m.handler.MobGearHandler;
-import com.hbm_m.hazard.ModHazards;
+import com.hbm_m.hazard.HazardRegistry;
 import com.hbm_m.inventory.menu.ModMenuTypes;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
@@ -101,7 +101,8 @@ public final class MainRegistry {
 
     private static void commonSetup() {
         ModPacketHandler.register();
-        ModHazards.registerHazards();
+        com.hbm_m.handler.HazmatRegistry.registerHazmats();
+        HazardRegistry.registerItems();
         DamageResistanceHandler.initArmorStats();
         com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity.registerLaunchables();
 

@@ -2,7 +2,9 @@
 /*package com.hbm_m.mixin.client;
 
 import com.hbm_m.effect.RadawayEffect;
+import com.hbm_m.effect.TaintEffect;
 import com.hbm_m.effect.render.RadawayEffectRenderer;
+import com.hbm_m.effect.render.TaintEffectRenderer;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import java.util.Iterator;
@@ -63,7 +65,7 @@ public abstract class MixinGui {
             return runnable;
         }
         MobEffectInstance inst = HBM_RADAWAY_HUD_CURRENT.get();
-        if (inst == null || !(inst.getEffect() instanceof RadawayEffect)) {
+        if (inst == null || !(inst.getEffect() instanceof RadawayEffect || inst.getEffect() instanceof TaintEffect)) {
             return runnable;
         }
         return (Runnable) () -> {
@@ -100,9 +102,15 @@ public abstract class MixinGui {
             Operation<Void> original
     ) {
         MobEffectInstance inst = HBM_RADAWAY_HUD_CURRENT.get();
-        if (inst != null && inst.getEffect() instanceof RadawayEffect) {
-            RadawayEffectRenderer.renderHud(gfx, x - 2, y - 2, blitOffset, 1f);
-            return;
+        if (inst != null) {
+            if (inst.getEffect() instanceof RadawayEffect) {
+                RadawayEffectRenderer.renderIcon(gfx, x, y, blitOffset, 1f);
+                return;
+            }
+            if (inst.getEffect() instanceof TaintEffect) {
+                TaintEffectRenderer.renderIcon(gfx, x, y, blitOffset, 1f);
+                return;
+            }
         }
         original.call(gfx, x, y, blitOffset, width, height, sprite);
     }
@@ -134,9 +142,15 @@ public abstract class MixinGui {
             Operation<Void> original
     ) {
         MobEffectInstance inst = HBM_RADAWAY_HUD_CURRENT.get();
-        if (inst != null && inst.getEffect() instanceof RadawayEffect) {
-            RadawayEffectRenderer.renderHud(gfx, x - 2, y - 2, blitOffset, alpha);
-            return;
+        if (inst != null) {
+            if (inst.getEffect() instanceof RadawayEffect) {
+                RadawayEffectRenderer.renderIcon(gfx, x, y, blitOffset, alpha);
+                return;
+            }
+            if (inst.getEffect() instanceof TaintEffect) {
+                TaintEffectRenderer.renderIcon(gfx, x, y, blitOffset, alpha);
+                return;
+            }
         }
         original.call(gfx, x, y, blitOffset, width, height, sprite, red, green, blue, alpha);
     }

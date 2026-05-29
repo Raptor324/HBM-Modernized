@@ -28,27 +28,29 @@ public final class RadawayEffectRenderer {
 
     private RadawayEffectRenderer() {}
 
-    /**
-     * Рисует иконку в инвентаре.
-     * x, y — координаты фона эффекта (24×24); центрируем иконку 18×18 внутри.
-     */
-    public static void renderInventory(GuiGraphics gfx, int x, int y, int blitOffset) {
-        gfx.blit(POTIONS_SHEET,
-                x + 3, y + 3, blitOffset,
-                U, V, ICON_SIZE, ICON_SIZE,
-                TEX_W, TEX_H);
-    }
-
-    /**
-     * Рисует иконку на HUD.
-     * x, y — координаты фона (22×22); центрируем иконку 18×18 внутри.
-     */
-    public static void renderHud(GuiGraphics gfx, int x, int y, int blitOffset, float alpha) {
+    /** Левый верх 18×18 иконки (как у ванильного {@code GuiGraphics#blit(..., 18, 18, sprite)}). */
+    public static void renderIcon(GuiGraphics gfx, int x, int y, int blitOffset, float alpha) {
         gfx.setColor(1f, 1f, 1f, alpha);
         gfx.blit(POTIONS_SHEET,
-                x + 2, y + 2, blitOffset,
+                x, y, blitOffset,
                 U, V, ICON_SIZE, ICON_SIZE,
                 TEX_W, TEX_H);
         gfx.setColor(1f, 1f, 1f, 1f);
+    }
+
+    /**
+     * Инвентарь (Forge): x — уже позиция иконки, y — верх строки фона (32px).
+     * Ваниль: {@code blit(x, y + 7, …, 18, 18, sprite)}.
+     */
+    public static void renderInventory(GuiGraphics gfx, int x, int y, int blitOffset) {
+        renderIcon(gfx, x, y + 7, blitOffset, 1f);
+    }
+
+    /**
+     * HUD (Forge): x, y — левый верх фона 24×24.
+     * Ваниль: {@code blit(x + 3, y + 3, …, 18, 18, sprite)}.
+     */
+    public static void renderHud(GuiGraphics gfx, int x, int y, int blitOffset, float alpha) {
+        renderIcon(gfx, x + 3, y + 3, blitOffset, alpha);
     }
 }

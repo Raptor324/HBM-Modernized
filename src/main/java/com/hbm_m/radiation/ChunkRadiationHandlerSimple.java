@@ -1,7 +1,9 @@
 package com.hbm_m.radiation;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -10,13 +12,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.nature.RadioactiveBlock;
-
 // Этот класс реализует простую и эффективную систему симуляции радиации в чанках. Ядро всей радиационной механики мода.
 
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.hazard.HazardSystem;
-import com.hbm_m.hazard.HazardType;
+import com.hbm_m.hazard.HazardRegistry;
 import com.hbm_m.interfaces.IChunkRadiation;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ChunkRadiationDebugBatchPacket;
@@ -44,6 +44,15 @@ import net.minecraftforge.event.level.ChunkEvent;
 
 // Моя конфетка, сколько же сил и нервов я на тебя потратил!
 public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
+
+    /** {@link com.hbm.handler.radiation.ChunkRadiationHandlerSimple#handleWorldDestruction()} (1.7.10), hardcoded. */
+    private static final float WORLD_RAD_EFFECTS_THRESHOLD = 10F;
+    private static final int WORLD_RAD_BLOCK_OPS_PER_CHUNK = 10;
+    private static final int WORLD_RAD_CHUNKS_PER_TICK = 5;
+    /** {@link com.hbm.config.RadiationConfig#fogRad} */
+    private static final float CHUNK_FOG_RAD_THRESHOLD = 100F;
+    /** {@link com.hbm.config.RadiationConfig#fogCh} — 1:n раз в секунду (раз в 20 тиков). */
+    private static final int CHUNK_FOG_SPAWN_CHANCE = 20;
 
     private static final float MAX_RAD = ModClothConfig.get().maxRad;
     private final Map<ResourceLocation, Set<ChunkPos>> activeChunksByDimension = new ConcurrentHashMap<>();
@@ -176,8 +185,10 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
 
                 final float finalAmbientRad = newAmbient;
 
-                // СПАВНИМ РАДИОАКТИВНЫЙ ТУМАН
-                if (ModClothConfig.get().enableRadFogEffect && finalAmbientRad > ModClothConfig.get().radFogThreshold && level.random.nextInt(ModClothConfig.get().radFogChance) == 0) {
+                // СПАВНИМ РАДИОАКТИВНЫЙ ТУМАН (1.7.10: fogRad=100, fogCh=20; вкл/выкл — ModClothConfig.enableRadFogEffect)
+                if (ModClothConfig.get().enableRadFogEffect
+                        && finalAmbientRad > CHUNK_FOG_RAD_THRESHOLD
+                        && level.random.nextInt(CHUNK_FOG_SPAWN_CHANCE) == 0) {
                     int x = pos.getMinBlockX() + level.random.nextInt(16);
                     int z = pos.getMinBlockZ() + level.random.nextInt(16);
                     int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z);
@@ -212,10 +223,6 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                         }
                     }
                 });
-                // Проверяем, включены ли эффекты и достаточно ли радиации
-                if (ModClothConfig.get().worldRadEffects && finalAmbientRad > ModClothConfig.get().worldRadEffectsThreshold) {
-                    handleWorldDestruction(level, pos, finalAmbientRad);
-                }
             }
             activeChunksByDimension.put(dimId, nextActiveChunks);
             sendDebugPackets(level);
@@ -235,7 +242,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                             if (blockState.isAir()) {
                                 continue;
                             }
-                            float blockRad = HazardSystem.getHazardLevelFromState(blockState, HazardType.RADIATION);
+                            float blockRad = HazardSystem.getHazardLevelFromState(blockState, HazardRegistry.RADIATION);
 
                             // Если радиация есть, добавляем ее к общей сумме в чанке
                             if (blockRad > 0) {
@@ -423,90 +430,97 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
     }
 
     /**
-     * Обрабатывает эффекты разрушения мира в чанке под воздействием сильной радиации.
-     * Логика спроектирована для максимальной производительности и естественного вида эффекта.
-     *
-     * @param level            Серверный мир, в котором происходят изменения.
-     * @param pos              Позиция чанка.
-     * @param currentRadiation Текущий уровень фоновой радиации в чанке.
+     * Эффекты радиации на мир (трава → мёртвая трава, листья → waste leaves и т.д.).
+     * Порт 1:1 с {@code ChunkRadiationHandlerSimple#handleWorldDestruction()} (1.7.10):
+     * каждый серверный тик, 5 случайных чанков, 10 проходов, порог 10 RAD (hardcoded, как в 1.7.10).
      */
-    private void handleWorldDestruction(ServerLevel level, ChunkPos pos, float currentRadiation) {
-        ModClothConfig config = ModClothConfig.get();
-        int baseChecks = config.worldRadEffectsBlockChecks;
-        if (baseChecks <= 0) return;
+    @Override
+    public void handleWorldDestruction() {
+        if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads) {
+            return;
+        }
 
-        // Шаг 1: Рассчитать количество проверок в этом тике в зависимости от радиации.
-        // Чем выше радиация, тем интенсивнее эффект.
-        float normalizedRad = Mth.inverseLerp(currentRadiation, config.worldRadEffectsThreshold, config.maxRad);
-        float scalingFactor = Mth.lerp(normalizedRad, 1.0F, config.worldRadEffectsMaxScaling);
-        int actualChecks = Math.max(baseChecks, (int)(baseChecks * scalingFactor));
+        int count = WORLD_RAD_BLOCK_OPS_PER_CHUNK;
+        float threshold = WORLD_RAD_EFFECTS_THRESHOLD;
+        int chunksPerTick = WORLD_RAD_CHUNKS_PER_TICK;
 
-        // Создаем один изменяемый объект BlockPos, чтобы переиспользовать его во всех циклах.
-        // Это ключевая оптимизация, предотвращающая создание тысяч объектов.
-        BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
+        var server = dev.architectury.utils.GameInstance.getServer();
+        if (server == null) {
+            return;
+        }
 
-        // Шаг 2: Выполнить рассчитанное количество случайных проверок в чанке.
-        for (int i = 0; i < actualChecks; i++) {
-            int x = pos.getMinBlockX() + level.random.nextInt(16);
-            int z = pos.getMinBlockZ() + level.random.nextInt(16);
+        for (Map.Entry<ResourceLocation, Set<ChunkPos>> dimensionEntry : activeChunksByDimension.entrySet()) {
+            ResourceLocation dimId = dimensionEntry.getKey();
+            ResourceKey<Level> levelKey = ResourceKey.create(Registries.DIMENSION, dimId);
+            ServerLevel level = server.getLevel(levelKey);
+            if (level == null || level.isClientSide()) {
+                continue;
+            }
 
-            // Находим высоту самого верхнего блока, на который может влиять движение (трава, земля, но не листья).
-            int startY = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, x, z);
+            Set<ChunkPos> chunkSet = dimensionEntry.getValue();
+            if (chunkSet == null || chunkSet.isEmpty()) {
+                continue;
+            }
 
-            // Шаг 3: Двигаемся вниз от поверхности ("бурим"), ища первый подходящий блок для мутации.
-            for (int y = startY; y >= level.getMinBuildHeight(); y--) {
-                mutablePos.set(x, y, z);
-                BlockState currentState = level.getBlockState(mutablePos);
-
-                // 3.1: Пропускаем воздух, продолжая "бурение" вглубь.
-                if (currentState.isAir()) {
+            List<Map.Entry<ChunkPos, Float>> entries = new ArrayList<>();
+            for (ChunkPos chunkPos : chunkSet) {
+                LevelChunk chunk = level.getChunkSource().getChunk(chunkPos.x, chunkPos.z, false);
+                if (chunk == null) {
                     continue;
                 }
-
-                // 3.2: Если мы наткнулись на неразрушимый или уже измененный блок, прекращаем обработку этой колонки.
-                if (currentState.is(Blocks.BEDROCK) || currentState.getBlock() instanceof RadioactiveBlock) {
-                    break; // Выходим из внутреннего цикла (for y), переходим к следующей итерации (for i).
+                float rad = getChunkRadiationCap(chunk).map(IChunkRadiation::getAmbientRadiation).orElse(0f);
+                if (rad > 0f) {
+                    entries.add(Map.entry(chunkPos, rad));
                 }
+            }
 
-                // 3.3: Основная логика замены блоков. Используем if-else if для однозначности.
-                BlockState newState = null;
+            if (entries.isEmpty()) {
+                continue;
+            }
 
-                if (currentState.is(Blocks.GRASS_BLOCK)) {
-                    newState = ModBlocks.WASTE_GRASS.get().defaultBlockState();
-                } else if (currentState.is(BlockTags.LEAVES)) {
-                    // Листья могут либо превратиться в мертвые, либо просто исчезнуть.
-                    if (level.random.nextInt(7) <= 5) {
-                        newState = ModBlocks.WASTE_LEAVES.get().defaultBlockState();
-                    } else {
-                        newState = Blocks.AIR.defaultBlockState();
+            Map.Entry<ChunkPos, Float>[] entryArray = entries.toArray(Map.Entry[]::new);
+
+            for (int c = 0; c < chunksPerTick; c++) {
+                Map.Entry<ChunkPos, Float> randEnt = entryArray[level.random.nextInt(entryArray.length)];
+                ChunkPos coords = randEnt.getKey();
+
+                for (int i = 0; i < count; i++) {
+                    if (randEnt.getValue() < threshold) {
+                        continue;
                     }
-                } else if (currentState.is(Blocks.DIRT)) {
-                    // Раскомментируйте, когда добавите блок Waste Dirt
-                    // newState = ModBlocks.WASTE_DIRT.get().defaultBlockState();
-                }
-                // Сюда можно легко добавить другие правила:
-                // else if (currentState.is(BlockTags.SAND)) { ... }
-                // else if (currentState.is(Blocks.WATER)) { ... }
 
+                    if (!level.hasChunk(coords.x, coords.z)) {
+                        continue;
+                    }
 
-                // 3.4: Применяем изменения, если было найдено правило для замены.
-                if (newState != null) {
-                    // Используем флаг '2' для установки блока:
-                    // - Уведомляет клиентов об изменении (блок меняется визуально).
-                    // - НЕ вызывает обновление соседних блоков (предотвращает каскадные лаги).
-                    level.setBlock(mutablePos, newState, 2);
+                    for (int a = 0; a < 16; a++) {
+                        for (int b = 0; b < 16; b++) {
+                            if (level.random.nextInt(3) != 0) {
+                                continue;
+                            }
 
-                    // Дополнительный эффект: если мы заменили блок, убираем хрупкие блоки (траву, цветы) над ним.
-                    BlockPos posAbove = mutablePos.above();
-                    BlockState stateAbove = level.getBlockState(posAbove);
-                    if (stateAbove.is(Blocks.TALL_GRASS) || stateAbove.is(Blocks.GRASS) || stateAbove.is(BlockTags.FLOWERS) || stateAbove.is(Blocks.SNOW)) {
-                        level.setBlock(posAbove, Blocks.AIR.defaultBlockState(), 2);
+                            int x = coords.getMiddleBlockX() - 8 + a;
+                            int z = coords.getMiddleBlockZ() - 8 + b;
+                            int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, x, z)
+                                    - 1 - level.random.nextInt(2);
+
+                            BlockPos blockPos = new BlockPos(x, y, z);
+                            BlockState state = level.getBlockState(blockPos);
+
+                            if (state.is(Blocks.GRASS_BLOCK)) {
+                                level.setBlock(blockPos, ModBlocks.WASTE_GRASS.get().defaultBlockState(), 2);
+                            } else if (state.is(Blocks.GRASS)) {
+                                level.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 2);
+                            } else if (state.is(BlockTags.LEAVES) && !state.is(ModBlocks.WASTE_LEAVES.get())) {
+                                if (level.random.nextInt(7) <= 5) {
+                                    level.setBlock(blockPos, ModBlocks.WASTE_LEAVES.get().defaultBlockState(), 2);
+                                } else {
+                                    level.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 2);
+                                }
+                            }
+                        }
                     }
                 }
-
-                // 3.5: Вне зависимости от того, заменили мы блок или нет (например, если это был камень, для которого нет правила),
-                // мы прекращаем "бурение" в этой колонке. Это создает эффект поверхностного разложения.
-                break;
             }
         }
     }

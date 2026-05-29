@@ -22,9 +22,12 @@ public class ModParticleTypes {
          //?}
     }
 
-    // Регистрируем нашу частицу как SimpleParticleType (без доп. данных)
-    public static final RegistrySupplier<SimpleParticleType> DARK_PARTICLE = PARTICLES.register("dark_particle",
-            () -> createParticle(true)); // true означает, что она всегда будет отрисовываться
+    /** Town aura (радиоблоки, обеззараживатель). Порт {@code townaura} / {@code EntityAuraFX} (1.7.10). */
+    public static final RegistrySupplier<SimpleParticleType> TOWNAURA = PARTICLES.register("townaura",
+            () -> createParticle(true));
+    /** Schrab aura (шрабидиевые слитковые блоки). Порт {@code schrabfog} / {@code EntityAuraFX} (1.7.10). */
+    public static final RegistrySupplier<SimpleParticleType> SCHRABFOG = PARTICLES.register("schrabfog",
+            () -> createParticle(true));
     public static final RegistrySupplier<SimpleParticleType> SMOKE_COLUMN = PARTICLES.register("smoke_column",
             () -> createParticle(false));
 

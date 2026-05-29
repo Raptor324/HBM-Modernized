@@ -135,7 +135,7 @@ public class GUIArmorTable extends AbstractContainerScreen<ArmorTableMenu> {
             return;
         }
 
-        for (int i = 1; i <= 9; i++) { // Проходим по слотам модов (индексы 1-9)
+        for (int i = 0; i < ArmorTableMenu.MOD_SLOTS; i++) {
             Slot slot = this.menu.getSlot(i);
             
             // Проверяем, можно ли поместить предмет в этот слот

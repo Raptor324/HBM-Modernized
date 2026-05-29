@@ -48,7 +48,7 @@ public class ModTooltipHandler {
         tooltip.add(Component.empty());
 
         // Секция "Применяется к:"
-        tooltip.add(Component.translatable("tooltip.hbm_m.applies_to").withStyle(ChatFormatting.DARK_PURPLE));
+        tooltip.add(Component.translatable("armorMod.applicableTo").withStyle(ChatFormatting.DARK_PURPLE));
 
         boolean requiresHelmet = stack.is(ModTags.Items.REQUIRES_HELMET);
         boolean requiresChestplate = stack.is(ModTags.Items.REQUIRES_CHESTPLATE);
@@ -56,27 +56,27 @@ public class ModTooltipHandler {
         boolean requiresBoots = stack.is(ModTags.Items.REQUIRES_BOOTS);
 
         if (requiresHelmet && requiresChestplate && requiresLeggings && requiresBoots) {
-            tooltip.add(Component.literal("  ").append(Component.translatable("tooltip.hbm_m.armor.all")).withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.literal("  ").append(Component.translatable("armorMod.all")).withStyle(ChatFormatting.GRAY));
         } else {
-            if (requiresHelmet) tooltip.add(Component.literal("  ").append(Component.translatable("tooltip.hbm_m.helmet")).withStyle(ChatFormatting.GRAY));
-            if (requiresChestplate) tooltip.add(Component.literal("  ").append(Component.translatable("tooltip.hbm_m.chestplate")).withStyle(ChatFormatting.GRAY));
-            if (requiresLeggings) tooltip.add(Component.literal("  ").append(Component.translatable("tooltip.hbm_m.leggings")).withStyle(ChatFormatting.GRAY));
-            if (requiresBoots) tooltip.add(Component.literal("  ").append(Component.translatable("tooltip.hbm_m.boots")).withStyle(ChatFormatting.GRAY));
+            if (requiresHelmet) tooltip.add(Component.literal("  ").append(Component.translatable("armorMod.helmets")).withStyle(ChatFormatting.GRAY));
+            if (requiresChestplate) tooltip.add(Component.literal("  ").append(Component.translatable("armorMod.chestplates")).withStyle(ChatFormatting.GRAY));
+            if (requiresLeggings) tooltip.add(Component.literal("  ").append(Component.translatable("armorMod.leggings")).withStyle(ChatFormatting.GRAY));
+            if (requiresBoots) tooltip.add(Component.literal("  ").append(Component.translatable("armorMod.boots")).withStyle(ChatFormatting.GRAY));
         }
 
         // Секция "Slot:"
         tooltip.add(Component.translatable("tooltip.hbm_m.slot").withStyle(ChatFormatting.DARK_PURPLE));
 
         Component slotName = switch (mod.type) {
-            case 0 -> Component.translatable("tooltip.hbm_m.helmet");
-            case 1 -> Component.translatable("tooltip.hbm_m.chestplate");
-            case 2 -> Component.translatable("tooltip.hbm_m.leggings");
-            case 3 -> Component.translatable("tooltip.hbm_m.boots");
-            case 4 -> Component.translatable("tooltip.hbm_m.armor_table.servos_slot");
-            case 7 -> Component.translatable("tooltip.hbm_m.armor_table.special_slot");
-            case 6 -> Component.translatable("tooltip.hbm_m.armor_table.plating_slot");
-            case 5 -> Component.translatable("tooltip.hbm_m.armor_table.casing_slot");
-            case 8 -> Component.translatable("tooltip.hbm_m.armor_table.battery_slot");
+            case 0 -> Component.translatable("armorMod.type.helmet");
+            case 1 -> Component.translatable("armorMod.type.chestplate");
+            case 2 -> Component.translatable("armorMod.type.leggings");
+            case 3 -> Component.translatable("armorMod.type.boots");
+            case 4 -> Component.translatable("armorMod.type.servo");
+            case 5 -> Component.translatable("armorMod.type.cladding");
+            case 6 -> Component.translatable("armorMod.type.insert");
+            case 7 -> Component.translatable("armorMod.type.special");
+            case 8 -> Component.translatable("armorMod.type.battery");
             default -> Component.literal("Unknown");
         };
 

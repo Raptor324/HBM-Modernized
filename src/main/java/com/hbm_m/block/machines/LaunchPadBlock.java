@@ -249,4 +249,13 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
         }
         return PartRole.DEFAULT;
     }
+
+    @Override
+    public float getShadeBrightness(BlockState pState, BlockGetter pLevel, BlockPos pPos) {
+        return 1.0F; // Убирает тени под блоком и Ambient Occlusion
+    }
+
+    public boolean propagatesSkylightDown(BlockState pState, BlockGetter pLevel, BlockPos pPos) {
+        return true;
+    }
 }

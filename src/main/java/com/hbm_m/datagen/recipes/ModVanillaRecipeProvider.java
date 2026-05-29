@@ -158,6 +158,17 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModBlocks.WIRE_COATED.get()), has(ModBlocks.WIRE_COATED.get()))
                 .save(writer, recipeId("crafting/switch"));
 
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.DECON.get())
+                .pattern("BGB")
+                .pattern("SAS")
+                .pattern("BSB")
+                .define('B', ModItems.getIngot(ModIngots.BERYLLIUM).get())
+                .define('G', Items.IRON_BARS)
+                .define('S', ModItems.getIngot(ModIngots.STEEL).get())
+                .define('A', ModBlocks.DECO_LEAD.get())
+                .unlockedBy(getHasName(ModItems.getIngot(ModIngots.BERYLLIUM).get()), has(ModItems.getIngot(ModIngots.BERYLLIUM).get()))
+                .save(writer, recipeId("crafting/decon"));
+
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.GEIGER_COUNTER_BLOCK.get())
                 .pattern("#  ")
                 .pattern("   ")

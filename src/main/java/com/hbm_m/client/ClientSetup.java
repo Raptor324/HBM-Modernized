@@ -77,6 +77,7 @@ import com.hbm_m.client.render.implementations.MachineHydraulicFrackiningTowerRe
 import com.hbm_m.client.render.implementations.MachinePressRenderer;
 import com.hbm_m.client.render.implementations.MachineRadarRenderer;
 import com.hbm_m.client.render.implementations.MissileEntityRenderer;
+import com.hbm_m.client.render.entity.mob.RenderCreeperUniversal;
 import com.hbm_m.client.render.implementations.NoloEntityRenderer;
 import com.hbm_m.client.render.shader.ShaderReloadListener;
 import com.hbm_m.client.tooltip.CrateContentsTooltipComponent;
@@ -138,7 +139,8 @@ import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.particle.ModParticleTypes;
-import com.hbm_m.particle.custom.DarkParticle;
+import com.hbm_m.particle.custom.SchrabfogParticle;
+import com.hbm_m.particle.custom.TownauraParticle;
 import com.hbm_m.particle.custom.MissileContrailParticle;
 import com.hbm_m.particle.custom.RadFogParticle;
 import com.hbm_m.particle.explosions.basic.CameraShakeHandler;
@@ -220,7 +222,6 @@ public class ClientSetup {
         ModConfigKeybindHandler.init();
         ClientModEvents.init();
         com.hbm_m.client.missile.track.MissileTrackClientEvents.register();
-        DarkParticleHandler.init();
         CameraShakeHandler.initClient();
         PowerArmorHardLandingCameraShakeClient.initClient();
         PowerArmorSounds.register();
@@ -623,6 +624,18 @@ public class ClientSetup {
                 EntityRendererRegistry.register(entityType, EmptyEntityRenderer::new));
         ModEntities.NOLO.ifPresent(entityType ->
                 EntityRendererRegistry.register(entityType, NoloEntityRenderer::new));
+        ModEntities.ENTITY_MOB_TAINTED_CREEPER.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, RenderCreeperUniversal::tainted));
+        ModEntities.ENTITY_MOB_VOLATILE_CREEPER.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, RenderCreeperUniversal::volatileCreeper));
+        ModEntities.ENTITY_MOB_PHOSGENE_CREEPER.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, RenderCreeperUniversal::phosgene));
+        ModEntities.ENTITY_MIST.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, EmptyEntityRenderer::new));
+        ModEntities.ENTITY_MOB_GOLD_CREEPER.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, RenderCreeperUniversal::goldCreeper));
+        ModEntities.ENTITY_MOB_NUCLEAR_CREEPER.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, RenderCreeperUniversal::nuclear));
 
         // Airstrike + авиационные бомбы (иначе на Fabric entityRenderer == null → краш при рендере)
         ModEntities.AIRNUKEBOMB_PROJECTILE.ifPresent(entityType ->
@@ -670,7 +683,8 @@ public class ClientSetup {
         //?}
 
         //? if fabric {
-        /*ParticleFactoryRegistry.getInstance().register(ModParticleTypes.DARK_PARTICLE.get(), DarkParticle.Provider::new);
+        /*ParticleFactoryRegistry.getInstance().register(ModParticleTypes.TOWNAURA.get(), TownauraParticle.Provider::new);
+        ParticleFactoryRegistry.getInstance().register(ModParticleTypes.SCHRABFOG.get(), SchrabfogParticle.Provider::new);
         ParticleFactoryRegistry.getInstance().register(ModParticleTypes.RAD_FOG_PARTICLE.get(), RadFogParticle.Provider::new);
         ParticleFactoryRegistry.getInstance().register(ModParticleTypes.MISSILE_CONTRAIL.get(), MissileContrailParticle.Provider::new);
         *///?}
@@ -1343,6 +1357,12 @@ public class ClientSetup {
         event.registerEntityRenderer(ModEntities.EMP_PULSE.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.BLACK_HOLE.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.NOLO.get(), NoloEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.ENTITY_MOB_TAINTED_CREEPER.get(), RenderCreeperUniversal::tainted);
+        event.registerEntityRenderer(ModEntities.ENTITY_MOB_VOLATILE_CREEPER.get(), RenderCreeperUniversal::volatileCreeper);
+        event.registerEntityRenderer(ModEntities.ENTITY_MOB_PHOSGENE_CREEPER.get(), RenderCreeperUniversal::phosgene);
+        event.registerEntityRenderer(ModEntities.ENTITY_MIST.get(), ctx -> new EmptyEntityRenderer<>(ctx));
+        event.registerEntityRenderer(ModEntities.ENTITY_MOB_GOLD_CREEPER.get(), RenderCreeperUniversal::goldCreeper);
+        event.registerEntityRenderer(ModEntities.ENTITY_MOB_NUCLEAR_CREEPER.get(), RenderCreeperUniversal::nuclear);
     }
 
     @SubscribeEvent
@@ -1386,7 +1406,8 @@ public class ClientSetup {
     @SubscribeEvent
     public static void onRegisterParticleProviders(RegisterParticleProvidersEvent event) {
         // Связываем наш ТИП частицы с ее ФАБРИКОЙ.
-        event.registerSpriteSet(ModParticleTypes.DARK_PARTICLE.get(), DarkParticle.Provider::new);
+        event.registerSpriteSet(ModParticleTypes.TOWNAURA.get(), TownauraParticle.Provider::new);
+        event.registerSpriteSet(ModParticleTypes.SCHRABFOG.get(), SchrabfogParticle.Provider::new);
         event.registerSpriteSet(ModParticleTypes.RAD_FOG_PARTICLE.get(), RadFogParticle.Provider::new);
         MainRegistry.LOGGER.info("Registered custom particle providers.");
     }

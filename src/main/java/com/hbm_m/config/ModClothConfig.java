@@ -29,40 +29,20 @@ public class ModClothConfig implements ConfigData {
 //    @Gui.Tooltip
 //    public boolean usePrismSystem = false;
 
-     // Эффекты мира 
-    @Category("world_effects")
-    @Gui.Tooltip
-    public boolean worldRadEffects = true;
-
-    @Category("world_effects")
-    @Gui.Tooltip
-    public float worldRadEffectsThreshold = 500.0F;
-
-    @Category("world_effects")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 1, max = 100)
-    public int worldRadEffectsBlockChecks = 10;
-
-    @Category("world_effects")
-    @Gui.Tooltip
-    public float worldRadEffectsMaxScaling = 4.0F;
-
-    @Category("world_effects")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 1, max = 16)
-    public int worldRadEffectsMaxDepth = 5;
-
+    /** Частицы радиоактивного тумана в чанках (порог/шанс — {@link com.hbm_m.radiation.ChunkRadiationHandlerSimple}, как fogRad/fogCh в 1.7.10). */
     @Category("world_effects")
     @Gui.Tooltip
     public boolean enableRadFogEffect = true;
 
+    /** Как {@code RadiationConfig.worldRadEffects} (1.7.10). Пороги/частота — константы в {@link com.hbm_m.radiation.ChunkRadiationHandlerSimple}. */
     @Category("world_effects")
     @Gui.Tooltip
-    public float radFogThreshold = 50F;
+    public boolean worldRadEffects = true;
 
+    /** Следы блока taint под сущностями с эффектом порчи (ориг. ServerConfig.TAINT_TRAILS, по умолчанию выкл.). */
     @Category("world_effects")
     @Gui.Tooltip
-    public int radFogChance = 10;
+    public boolean taintTrails = false;
 
     // Игрок 
     @Category("player")
@@ -83,7 +63,7 @@ public class ModClothConfig implements ConfigData {
 
     @Category("player")
     @Gui.Tooltip
-    public int radSickness = 300;
+    public int radSickness = 200;
 
     @Category("player")
     @Gui.Tooltip
@@ -420,29 +400,7 @@ public class ModClothConfig implements ConfigData {
         ConfigData.super.validatePostLoad();
 
         // Проверяем и исправляем наше float значение
-        float minThreshold = 1.0F;
-        float maxThreshold = 100000.0F;
-
-        // Используем Mth.clamp для удобства. Он ограничивает значение между min и max.
-        float originalValue = this.worldRadEffectsThreshold;
-        this.worldRadEffectsThreshold = Mth.clamp(originalValue, minThreshold, maxThreshold);
-
-        // Если значение было исправлено, выводим предупреждение в лог.
-        // Это очень полезно для администраторов серверов.
-        if (originalValue != this.worldRadEffectsThreshold) {
-            MainRegistry.LOGGER.warn("[HBM-M Config] Значение 'worldRadEffectsThreshold' было некорректным ({}). Оно было автоматически исправлено на {}.", originalValue, this.worldRadEffectsThreshold);
-        }
-
-        float minScaling = 1.0F;
-        float maxScaling = 10.0F; // Ограничим 10-кратным увеличением, чтобы избежать проблем
-        float originalScaling = this.worldRadEffectsMaxScaling;
-        this.worldRadEffectsMaxScaling = Mth.clamp(originalScaling, minScaling, maxScaling);
-
-        if (originalScaling != this.worldRadEffectsMaxScaling) {
-            MainRegistry.LOGGER.warn("[HBM-M Config] Значение 'worldRadEffectsMaxScaling' было некорректным ({}). Оно было автоматически исправлено на {}.", originalScaling, this.worldRadEffectsMaxScaling);
-        }
-
-        originalScaling = this.radiationPixelEffect.radiationPixelEffectGreenChance;
+        float originalScaling = this.radiationPixelEffect.radiationPixelEffectGreenChance;
 
         this.radiationPixelEffect.radiationPixelEffectGreenChance = Mth.clamp(originalScaling, 0.0F, 1.0F);
         // Здесь можно добавить валидацию для других полей, если потребуется

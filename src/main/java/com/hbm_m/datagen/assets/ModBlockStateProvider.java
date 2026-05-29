@@ -508,6 +508,13 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlock(ModBlocks.ANTENNA_TOP);
         customObjBlock(ModBlocks.PUTER);
         customObjBlock(ModBlocks.GEIGER_COUNTER_BLOCK);
+
+        columnBlockWithItem(
+                ModBlocks.DECON,
+                modLoc("block/decon_side"),
+                modLoc("block/decon_top"),
+                modLoc("block/decon_side")
+        );
         customObjBlock(ModBlocks.TAPE_RECORDER);
         customObjBlock(ModBlocks.TOASTER);
         customObjBlock(ModBlocks.DECO_STEEL_SCAFFOLD);
@@ -1211,6 +1218,18 @@ public class ModBlockStateProvider extends BlockStateProvider {
         oreWithItem(ModBlocks.SULFUR_ORE);
         oreWithItem(ModBlocks.ORE_OIL);
         oreWithItem(ModBlocks.SEQUESTRUM_ORE);
+        oreWithItem(ModBlocks.SCHRABIDIUM_ORE);
+        oreWithItem(ModBlocks.SCHRABIDIUM_ORE_NETHER);
+        oreWithItem(ModBlocks.SCHRABIDIUM_ORE_GNEISS);
+
+        simpleBlockWithItem(ModBlocks.BLOCK_SCHRABIDIUM_CLUSTER.get(),
+                models().cubeBottomTop(
+                        ModBlocks.BLOCK_SCHRABIDIUM_CLUSTER.getId().getPath(),
+                        modLoc("block/block_schrabidium_cluster_side"),
+                        modLoc("block/block_schrabidium_cluster_top"),
+                        modLoc("block/block_schrabidium_cluster_top")
+                )
+        );
     }
 
     /**

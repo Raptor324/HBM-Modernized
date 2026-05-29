@@ -17,8 +17,6 @@ import net.minecraftforge.common.ForgeSpawnEggItem;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.armormod.item.ItemModBattery;
-import com.hbm_m.armormod.item.ItemModBatteryMk2;
-import com.hbm_m.armormod.item.ItemModBatteryMk3;
 import com.hbm_m.armormod.item.ItemModHealth;
 import com.hbm_m.armormod.item.ItemModRadProtection;
 // import com.hbm_m.armormod.item.ItemModCladding;
@@ -402,6 +400,26 @@ public class ModItems {
     public static final RegistrySupplier<Item> NOLO_SPAWN_EGG = ITEMS.register("nolo_spawn_egg",
             () -> new ForgeSpawnEggItem(ModEntities.NOLO, 0x8b5e3c, 0xf0d8b0, new Item.Properties()));
 
+    public static final RegistrySupplier<Item> ENTITY_MOB_TAINTED_CREEPER_SPAWN_EGG = ITEMS.register(
+            "entity_mob_tainted_creeper_spawn_egg",
+            () -> new ForgeSpawnEggItem(ModEntities.ENTITY_MOB_TAINTED_CREEPER, 0x813b9b, 0xd71fdd, new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ENTITY_MOB_VOLATILE_CREEPER_SPAWN_EGG = ITEMS.register(
+            "entity_mob_volatile_creeper_spawn_egg",
+            () -> new ForgeSpawnEggItem(ModEntities.ENTITY_MOB_VOLATILE_CREEPER, 0xC28153, 0x4D382C, new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ENTITY_MOB_PHOSGENE_CREEPER_SPAWN_EGG = ITEMS.register(
+            "entity_mob_phosgene_creeper_spawn_egg",
+            () -> new ForgeSpawnEggItem(ModEntities.ENTITY_MOB_PHOSGENE_CREEPER, 0xE3D398, 0xB8A06B, new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ENTITY_MOB_GOLD_CREEPER_SPAWN_EGG = ITEMS.register(
+            "entity_mob_gold_creeper_spawn_egg",
+            () -> new ForgeSpawnEggItem(ModEntities.ENTITY_MOB_GOLD_CREEPER, 0xECC136, 0x9E8B3E, new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ENTITY_MOB_NUCLEAR_CREEPER_SPAWN_EGG = ITEMS.register(
+            "entity_mob_nuclear_creeper_spawn_egg",
+            () -> new ForgeSpawnEggItem(ModEntities.ENTITY_MOB_NUCLEAR_CREEPER, 0x204131, 0x75CE00, new Item.Properties()));
+
     // БРОНЯ ГОРНЯКА:
     public static final RegistrySupplier<Item> ALLOY_HELMET = ITEMS.register("alloy_helmet",
             () -> new ArmorItem(ModArmorMaterials.ALLOY, ArmorItem.Type.HELMET, new Item.Properties()));
@@ -685,15 +703,15 @@ public class ModItems {
 
     // Модификаторы батареи (увеличивают заряд брони)
     public static final RegistrySupplier<Item> ARMOR_BATTERY = ITEMS.register("armor_battery",
-            () -> new ItemModBattery(new Item.Properties(), 1.25D)
+            () -> new ItemModBattery(1.25D)
     );
 
     public static final RegistrySupplier<Item> ARMOR_BATTERY_MK2 = ITEMS.register("armor_battery_mk2",
-            () -> new ItemModBatteryMk2(new Item.Properties())
+            () -> new ItemModBattery(1.5D)
     );
 
     public static final RegistrySupplier<Item> ARMOR_BATTERY_MK3 = ITEMS.register("armor_battery_mk3",
-            () -> new ItemModBatteryMk3(new Item.Properties())
+            () -> new ItemModBattery(2D)
     );
     public static final RegistrySupplier<Item> CREATIVE_BATTERY = ITEMS.register("battery_creative",
             () -> new ItemCreativeBattery(
