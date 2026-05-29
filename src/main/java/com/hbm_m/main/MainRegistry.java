@@ -71,6 +71,7 @@ public final class MainRegistry {
         ScrewdriverInteractionHandler.init();
         BombDefuser.init();
         PlayerHandler.register();
+        ModEventHandler.register();
         PowerArmorHandlers.register();
         LadderClimbHandler.register();
         com.hbm_m.server.missile.MissileTrackBroadcaster.register();
@@ -100,6 +101,7 @@ public final class MainRegistry {
     }
 
     private static void commonSetup() {
+        com.hbm_m.handler.HTTPHandler.loadStats();
         ModPacketHandler.register();
         com.hbm_m.handler.HazmatRegistry.registerHazmats();
         HazardRegistry.registerItems();

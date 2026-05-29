@@ -1840,6 +1840,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("message.hbm_m.fortune.enabled", "Удача %s активирована!");
                 add("message.hbm_m.fortune.disabled", "Удача %s деактивирована!");
                 add("message.hbm_m.disabled", "Все способности выключены!");
+                add("message.hbm_m.loaded", "Мир загружен с %s %s для Minecraft %s!");
+                add("message.hbm_m.modernized", "Hbm's Nuclear Tech Mod: Modernized");
+                add("message.hbm_m.new_version", "Доступна новая версия %s!");
+                add("message.hbm_m.download_now", "Скачать: ");
+                add("message.hbm_m.button_modrinth", "[Modrinth]");
+                add("message.hbm_m.button_curseforge", "[CurseForge]");
 
                 add("item.hbm_m.meter.rads_over_limit", ">%s RAD/s");
                 add("tooltip.hbm_m.hold_shift_for_details", "<Зажмите SHIFT для деталей>");
@@ -1880,6 +1886,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.category.general", "Общие настройки");
                 add("text.autoconfig.hbm_m.option.enableRadiation", "Включить радиацию");
                 add("text.autoconfig.hbm_m.option.enableChunkRads", "Включить радиацию в чанках");
+                add("text.autoconfig.hbm_m.option.enableMOTD", "Сообщение при входе в мир (MOTD)");
                 add("text.autoconfig.hbm_m.option.usePrismSystem", "Использовать систему PRISM (иначе Simple, WIP)");
 
                 add("text.autoconfig.hbm_m.category.world_effects", "Эффекты мира");
@@ -1950,6 +1957,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("text.autoconfig.hbm_m.option.enableRadiation.@Tooltip", "Если выключено, вся радиация отключается (чанки, предметы)");
                 add("text.autoconfig.hbm_m.option.enableChunkRads.@Tooltip", "Если выключено, радиация в чанках всегда 0");
+                add("text.autoconfig.hbm_m.option.enableMOTD.@Tooltip", "Приветствие при входе в мир и уведомление, если на Modrinth есть более новая версия мода");
                 add("text.autoconfig.hbm_m.option.usePrismSystem.@Tooltip", "Использовать систему PRISM для радиации в чанках (WIP)");
 
                 add("text.autoconfig.hbm_m.option.maxPlayerRad.@Tooltip", "Максимальная радиация, которую может накопить игрок");
@@ -3751,6 +3759,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("message.hbm_m.fortune.enabled", "Fortune %s enabled!");
                 add("message.hbm_m.fortune.disabled", "Fortune %s disabled!");
                 add("message.hbm_m.disabled", "All abilities disabled!");
+                add("message.hbm_m.loaded", "Loaded world with %s %s for Minecraft %s!");
+                add("message.hbm_m.modernized", "Hbm's Nuclear Tech Mod: Modernized");
+                add("message.hbm_m.new_version", "New version %s is available!");
+                add("message.hbm_m.download_now", "Download now: ");
+                add("message.hbm_m.button_modrinth", "[Modrinth]");
+                add("message.hbm_m.button_curseforge", "[CurseForge]");
 
                 add("geiger.title", "GEIGER COUNTER");
                 add("geiger.title.dosimeter", "DOSIMETER");
@@ -3805,6 +3819,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.category.general", "General Settings");
                 add("text.autoconfig.hbm_m.option.enableRadiation", "Enable radiation");
                 add("text.autoconfig.hbm_m.option.enableChunkRads", "Enable chunk radiation");
+                add("text.autoconfig.hbm_m.option.enableMOTD", "Join MOTD and update notice");
                 add("text.autoconfig.hbm_m.option.usePrismSystem", "Use PRISM system (otherwise Simple), WIP");
 
                 add("text.autoconfig.hbm_m.category.world_effects", "World Effects");
@@ -3884,6 +3899,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("text.autoconfig.hbm_m.option.enableRadiation.@Tooltip", "If disabled, all radiation is turned off (chunks, items)");
                 add("text.autoconfig.hbm_m.option.enableChunkRads.@Tooltip", "If disabled, chunk radiation is always 0");
+                add("text.autoconfig.hbm_m.option.enableMOTD.@Tooltip", "Welcome message on world join and a notice when a newer release is on Modrinth");
                 add("text.autoconfig.hbm_m.option.usePrismSystem.@Tooltip", "Use PRISM system for chunk radiation (WIP)");
 
                 add("text.autoconfig.hbm_m.option.maxPlayerRad.@Tooltip", "Maximum radiation the player can accumulate");

@@ -25,6 +25,11 @@ public class ModClothConfig implements ConfigData {
     @Gui.Tooltip
     public boolean enableChunkRads = true;
 
+    /** MOTD при входе в мир и уведомление о новой версии на Modrinth (ориг. GeneralConfig.enableMOTD). */
+    @Category("general")
+    @Gui.Tooltip
+    public boolean enableMOTD = true;
+
 //    @Category("general")
 //    @Gui.Tooltip
 //    public boolean usePrismSystem = false;
