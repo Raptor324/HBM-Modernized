@@ -65,12 +65,19 @@ public class T51ArmorBakedModel extends AbstractArmorBakedModel {
                 return T51_ORDER;
             }
 
-            return switch (armorType) {
-                case HELMET -> new String[]{"Helmet"};
-                case CHESTPLATE -> new String[]{"Chest", "RightArm", "LeftArm"};
-                case LEGGINGS -> new String[]{"RightLeg", "LeftLeg"};
-                case BOOTS -> new String[]{"RightBoot", "LeftBoot"};
-            };
+            if (armorType == ArmorItem.Type.HELMET) {
+                return new String[]{"Helmet"};
+            }
+            if (armorType == ArmorItem.Type.CHESTPLATE) {
+                return new String[]{"Chest", "RightArm", "LeftArm"};
+            }
+            if (armorType == ArmorItem.Type.LEGGINGS) {
+                return new String[]{"RightLeg", "LeftLeg"};
+            }
+            if (armorType == ArmorItem.Type.BOOTS) {
+                return new String[]{"RightBoot", "LeftBoot"};
+            }
+            return T51_ORDER;
         }
 
         @Override

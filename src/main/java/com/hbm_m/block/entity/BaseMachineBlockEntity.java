@@ -315,7 +315,11 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-        inventory.deserializeNBT(tag.getCompound("inventory"));
+        CompoundTag inventoryTag = tag.getCompound("inventory");
+        if (inventoryTag.contains("Size")) {
+            inventoryTag.putInt("Size", inventory.getSlots());
+        }
+        inventory.deserializeNBT(inventoryTag);
         energy = tag.getLong("energy");
         if (tag.contains("capacity")) {
             capacity = Math.max(0L, tag.getLong("capacity"));

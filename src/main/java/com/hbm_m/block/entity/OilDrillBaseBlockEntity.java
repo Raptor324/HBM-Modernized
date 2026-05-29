@@ -120,7 +120,7 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity imp
                     Block b = level.getBlockState(checkPos).getBlock();
 
                     // Если это не труба нефтяной вышки
-                    if (b != ModBlocks.FLUID_DUCT.get()) {
+                    if (b != ModBlocks.OIL_PIPE.get()) {
                         if (entity.trySuck(checkPos)) {
                             break;
                         } else {
@@ -200,7 +200,7 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity imp
         Block b = level.getBlockState(pos).getBlock();
         if (b.getExplosionResistance() < 1000) {
             onDrill(pos);
-            level.setBlockAndUpdate(pos, ModBlocks.FLUID_DUCT.get().defaultBlockState()); //TODO: ADD CRUDE OIL EXTRACTION PIPE!
+            level.setBlockAndUpdate(pos, ModBlocks.OIL_PIPE.get().defaultBlockState());
         } else {
             this.indicator = 2;
         }

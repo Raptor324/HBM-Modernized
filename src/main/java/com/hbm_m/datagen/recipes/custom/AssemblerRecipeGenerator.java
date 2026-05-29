@@ -94,6 +94,27 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.MOTOR.get(), 1)
                 .addIngredient(ModItems.INTEGRATED_CIRCUIT.get(), 2)
                 .save(writer, "ore_acidizer");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.REFINERY.get(), 1), 160, 250)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 3)
+                .addIngredient(ModItems.PLATE_COPPER.get(), 8)
+                .addIngredient(ModItems.SHELL_STEEL.get(), 4)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 12)
+                .addIngredient(ModItems.INSULATOR.get(), 8)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 3)
+                .save(writer, "refinery");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.HYDRAULIC_FRACKINING_TOWER.get(), 1), 240, 400)
+                .addIngredient(ModItems.SHELL_STEEL.get(), 24)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 12)
+                .addIngredient(Ingredient.of(ModBlocks.CONCRETE.get()), 64)
+                .addIngredient(ModItems.DRILL_TITANIUM.get(), 1)
+                .addIngredient(ModItems.MOTOR_DESH.get(), 2)
+                .addIngredient(ModItems.PLATE_DESH.get(), 24)
+                .addIngredient(ModItems.CAPACITOR.get(), 16)
+                .save(writer, "hydraulic_frackining_tower");
     }
 
     private static void registerDoorRecipes(Consumer<FinishedRecipe> writer) {

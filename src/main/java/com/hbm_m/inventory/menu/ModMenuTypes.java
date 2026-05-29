@@ -143,6 +143,9 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<MachineFrackingTowerMenu>> FRACTURING_TOWER_MENU =
             MENUS.register("fracking_tower_menu", () -> MenuRegistry.ofExtended(MachineFrackingTowerMenu::new));
 
+    public static final RegistrySupplier<MenuType<MachineRefineryMenu>> REFINERY_MENU =
+            MENUS.register("refinery_menu", () -> MenuRegistry.ofExtended(MachineRefineryMenu::new));
+
     public static final RegistrySupplier<MenuType<LaunchPadLargeMenu>> LAUNCH_PAD_LARGE_MENU =
             MENUS.register("launch_pad_large_menu", () -> MenuRegistry.ofExtended(LaunchPadLargeMenu::new));
 

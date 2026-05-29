@@ -687,6 +687,7 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.TITANIUM_SWORD,
                 ModItems.TITANIUM_AXE,
                 ModItems.TITANIUM_PICKAXE,
+                ModItems.DRILL_TITANIUM,
                 ModItems.TITANIUM_SHOVEL,
                 ModItems.TITANIUM_HOE,
                 ModItems.STARMETAL_SWORD,

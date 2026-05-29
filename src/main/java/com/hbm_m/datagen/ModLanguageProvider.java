@@ -210,6 +210,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("item.hbm_m.titanium_sword", "Титановый меч");
                 add("item.hbm_m.titanium_pickaxe", "Титановая кирка");
+                add("item.hbm_m.drill_titanium", "Титановый бур");
                 add("item.hbm_m.titanium_axe", "Титановый топор");
                 add("item.hbm_m.titanium_hoe", "Титановая мотыга");
                 add("item.hbm_m.titanium_shovel", "Титановая лопата");
@@ -1593,7 +1594,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.CRYSTALLIZER.get(), "Рудный окислитель (WIP)");
                 add(ModBlocks.BREEDER.get(), "Реактор-размножитель (WIP)");
                 add(ModBlocks.LARGE_PYLON.get(), "Большой пилон (WIP)");
-                add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Башня гидроразрыва пласта (WIP)");
+                add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Башня гидроразрыва пласта");
                 add(ModBlocks.COOLING_TOWER.get(), "Градирня (WIP)");
                 add(ModBlocks.TOWER_SMALL.get(), "Малая башня (WIP)");
                 add(ModBlocks.CYCLOTRON.get(), "Циклотрон (WIP)");
@@ -2029,6 +2030,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.shredder.blade_warning.desc", "Install or repair the shredder blades.");
                 add("item.hbm_m.titanium_sword", "Titanium Sword");
                 add("item.hbm_m.titanium_pickaxe", "Titanium Pickaxe");
+                add("item.hbm_m.drill_titanium", "Titanium Drill");
                 add("item.hbm_m.titanium_axe", "Titanium Axe");
                 add("item.hbm_m.titanium_hoe", "Titanium Hoe");
                 add("item.hbm_m.titanium_shovel", "Titanium Shovel");
@@ -3243,7 +3245,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.CRYSTALLIZER.get(), "Ore Acidizer (WIP)");
                 add(ModBlocks.BREEDER.get(), "Breeder (WIP)");
                 add(ModBlocks.LARGE_PYLON.get(), "Large Pylon (WIP)");
-                add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Hydraulic Fracking Tower (WIP)");
+                add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Hydraulic Fracking Tower");
                 add(ModBlocks.COOLING_TOWER.get(), "Cooling Tower (WIP)");
                 add(ModBlocks.TOWER_SMALL.get(), "Tower Small (WIP)");
                 add(ModBlocks.CYCLOTRON.get(), "Cyclotron (WIP)");

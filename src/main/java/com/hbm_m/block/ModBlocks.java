@@ -506,6 +506,9 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> FLUID_DUCT_SILVER = registerBlockWithoutItem("fluid_duct_silver",
             () -> new FluidDuctBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).sound(SoundType.METAL).noOcclusion(),
                     com.hbm_m.block.machines.PipeStyle.SILVER));
+    public static final RegistrySupplier<Block> OIL_PIPE = registerBlockWithoutItem("oil_pipe",
+            () -> new FluidDuctBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).sound(SoundType.METAL).noOcclusion(),
+                    com.hbm_m.block.machines.PipeStyle.NEO));
 
     public static final RegistrySupplier<Block> FLUID_VALVE = registerBlockWithoutItem("fluid_valve",
             () -> new com.hbm_m.block.machines.FluidValveBlock(

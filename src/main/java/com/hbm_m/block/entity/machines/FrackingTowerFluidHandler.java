@@ -2,6 +2,7 @@ package com.hbm_m.block.entity.machines;
 //? if forge {
 import org.jetbrains.annotations.NotNull;
 
+import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.inventory.fluid.ModFluids;
 
 import net.minecraftforge.fluids.FluidStack;
@@ -63,9 +64,9 @@ public class FrackingTowerFluidHandler implements IFluidHandler {
     @Override
     public boolean isFluidValid(int tank, @NotNull FluidStack stack) {
         return switch (tank) {
-            case 0 -> stack.getFluid().isSame(ModFluids.CRUDE_OIL.getSource());
-            case 1 -> stack.getFluid().isSame(ModFluids.GAS.getSource());
-            case 2 -> stack.getFluid().isSame(ModFluids.FRACKSOL.getSource());
+            case 0 -> VanillaFluidEquivalence.sameSubstance(stack.getFluid(), ModFluids.CRUDE_OIL.getSource());
+            case 1 -> VanillaFluidEquivalence.sameSubstance(stack.getFluid(), ModFluids.GAS.getSource());
+            case 2 -> VanillaFluidEquivalence.sameSubstance(stack.getFluid(), ModFluids.FRACKSOL.getSource());
             default -> false;
         };
     }
@@ -73,16 +74,16 @@ public class FrackingTowerFluidHandler implements IFluidHandler {
     @Override
     public int fill(FluidStack resource, FluidAction action) {
         if (resource.isEmpty()) return 0;
-        // Для новых танков в проекте mB -> int мБ; FluidTank сам использует mb
         int amountMb = resource.getAmount();
 
-        // FrackSol можно заливать в танк 2
-        if (resource.getFluid().isSame(ModFluids.FRACKSOL.getSource())) {
-            // На Forge FluidAction EXECUTE против SIMULATE: наш FluidTank использует EXECUTE/всегда исполняет.
-            // Поэтому: если SIMULATE — делаем оценку через SIMULATE на Forge storage внутри fillMb.
-            // (fillMb внутри FluidTank вызывает forgeStorage.fill(..., EXECUTE) поэтому используем EXECUTE для компиляции,
-            // но корректность симуляции не идеальна — это лучше поправить после схождения API у FluidTank.)
-            return blockEntity.getFracksolTank().fillMb(resource.getFluid(), action == FluidAction.EXECUTE ? amountMb : amountMb);
+        // Вход принимает только FrackSol.
+        if (VanillaFluidEquivalence.sameSubstance(resource.getFluid(), ModFluids.FRACKSOL.getSource())) {
+            int spaceMb = Math.max(0, blockEntity.getFracksolTank().getSpaceMb());
+            int acceptedMb = Math.min(spaceMb, amountMb);
+            if (acceptedMb > 0 && action == FluidAction.EXECUTE) {
+                blockEntity.getFracksolTank().fillMb(ModFluids.FRACKSOL.getSource(), acceptedMb);
+            }
+            return acceptedMb;
         }
 
         // Остальное нельзя заливать (выходные танки)
@@ -96,15 +97,25 @@ public class FrackingTowerFluidHandler implements IFluidHandler {
         int amountMb = resource.getAmount();
 
         // Можно выкачивать нефть из танка 0
-        if (resource.getFluid().isSame(ModFluids.CRUDE_OIL.getSource())) {
-            int drainedMb = blockEntity.getOilTank().drainMb(Math.min(amountMb, blockEntity.getOilTank().getFluidAmountMb()));
-            return drainedMb > 0 ? new FluidStack(resource.getFluid(), drainedMb) : FluidStack.EMPTY;
+        if (VanillaFluidEquivalence.sameSubstance(resource.getFluid(), ModFluids.CRUDE_OIL.getSource())) {
+            int available = blockEntity.getOilTank().getFluidAmountMb();
+            int planned = Math.min(amountMb, available);
+            if (planned <= 0) return FluidStack.EMPTY;
+            int drainedMb = action == FluidAction.EXECUTE
+                    ? blockEntity.getOilTank().drainMb(planned)
+                    : planned;
+            return drainedMb > 0 ? new FluidStack(ModFluids.CRUDE_OIL.getSource(), drainedMb) : FluidStack.EMPTY;
         }
 
         // Можно выкачивать газ из танка 1
-        if (resource.getFluid().isSame(ModFluids.GAS.getSource())) {
-            int drainedMb = blockEntity.getGasTank().drainMb(Math.min(amountMb, blockEntity.getGasTank().getFluidAmountMb()));
-            return drainedMb > 0 ? new FluidStack(resource.getFluid(), drainedMb) : FluidStack.EMPTY;
+        if (VanillaFluidEquivalence.sameSubstance(resource.getFluid(), ModFluids.GAS.getSource())) {
+            int available = blockEntity.getGasTank().getFluidAmountMb();
+            int planned = Math.min(amountMb, available);
+            if (planned <= 0) return FluidStack.EMPTY;
+            int drainedMb = action == FluidAction.EXECUTE
+                    ? blockEntity.getGasTank().drainMb(planned)
+                    : planned;
+            return drainedMb > 0 ? new FluidStack(ModFluids.GAS.getSource(), drainedMb) : FluidStack.EMPTY;
         }
 
         // FrackSol нельзя выкачивать (входной танк для потребления)
@@ -117,13 +128,19 @@ public class FrackingTowerFluidHandler implements IFluidHandler {
         int amountMb = Math.max(0, maxDrain);
 
         // Сначала пробуем нефть
-        int oilDrainedMb = blockEntity.getOilTank().drainMb(Math.min(amountMb, blockEntity.getOilTank().getFluidAmountMb()));
+        int oilPlanned = Math.min(amountMb, blockEntity.getOilTank().getFluidAmountMb());
+        int oilDrainedMb = action == FluidAction.EXECUTE
+            ? blockEntity.getOilTank().drainMb(oilPlanned)
+            : oilPlanned;
         if (oilDrainedMb > 0) {
             return new FluidStack(ModFluids.CRUDE_OIL.getSource(), oilDrainedMb);
         }
 
         // Потом газ
-        int gasDrainedMb = blockEntity.getGasTank().drainMb(Math.min(amountMb, blockEntity.getGasTank().getFluidAmountMb()));
+        int gasPlanned = Math.min(amountMb, blockEntity.getGasTank().getFluidAmountMb());
+        int gasDrainedMb = action == FluidAction.EXECUTE
+            ? blockEntity.getGasTank().drainMb(gasPlanned)
+            : gasPlanned;
         return gasDrainedMb > 0
                 ? new FluidStack(ModFluids.GAS.getSource(), gasDrainedMb)
                 : FluidStack.EMPTY;

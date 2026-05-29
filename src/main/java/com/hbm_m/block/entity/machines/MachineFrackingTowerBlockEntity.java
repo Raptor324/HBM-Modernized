@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.config.MachineConfig;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
@@ -20,6 +21,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 //? if forge {
@@ -123,14 +125,14 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
         
         // Инициализация танков
         //? if forge {
-        this.oilTank = new FluidTank(64_000) {
+        this.oilTank = new FluidTank(128_000) {
             @Override
             public boolean isFluidValid(Fluid fluid) {
                 return fluid.isSame(ModFluids.CRUDE_OIL.getSource());
             }
         };
 
-        this.gasTank = new FluidTank(64_000) {
+        this.gasTank = new FluidTank(128_000) {
             @Override
             public boolean isFluidValid(Fluid fluid) {
                 return fluid.isSame(ModFluids.GAS.getSource());
@@ -277,6 +279,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
         if (level.isClientSide) return;
 
         entity.ensureNetworkInitialized();
+        entity.chargeFromBatterySlot(SLOT_BATTERY);
         entity.updateUpgrades();
         entity.processFluidContainers();
         
@@ -382,8 +385,9 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
         // Потребление FrackSol
         if (fracksolTank.getFluidAmountMb() < solutionRequired) return;
 
-        // Поиск руды в радиусе
-        BlockPos orePos = findOilOre();
+        // Сначала бурим/прокладываем вертикальную нефтяную трубу вниз,
+        // затем работаем только с достигнутым месторождением.
+        BlockPos orePos = drillAndFindOilDepositBelow();
         if (orePos == null) {
             indicator = 2; // Нет руды
             return;
@@ -394,10 +398,11 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
         fracksolTank.drainMb(solutionRequired);
 
         // Добыча
-        String blockName = level.getBlockState(orePos).getBlock().getDescriptionId().toLowerCase();
+        Block depositBlock = level.getBlockState(orePos).getBlock();
+        boolean isBedrockDeposit = isBedrockOilDeposit(depositBlock);
         int oil, gas;
 
-        if (blockName.contains("bedrock")) {
+        if (isBedrockDeposit) {
             oil = oilPerBedrockDeposit;
             gas = gasPerBedrockDepositMin + level.random.nextInt(
                     gasPerBedrockDepositMax - gasPerBedrockDepositMin + 1);
@@ -405,9 +410,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
             oil = oilPerDeposit;
             gas = gasPerDepositMin + level.random.nextInt(
                     gasPerDepositMax - gasPerDepositMin + 1);
-            if (level.random.nextDouble() < drainChance) {
-                // TODO: заменить на истощённую руду
-            }
+            applyNormalDepositDrain(orePos);
         }
 
         if (oil > 0) oilTank.fillMb(ModFluids.CRUDE_OIL.getSource(), oil);
@@ -442,6 +445,57 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
         }
         
         return null;
+    }
+
+    /**
+     * Пробивает вертикальный ствол трубы OIL_PIPE вниз и возвращает достигнутое нефтяное месторождение.
+     */
+    @Nullable
+    protected BlockPos drillAndFindOilDepositBelow() {
+        if (level == null) return null;
+
+        int minY = level.getMinBuildHeight();
+        for (int y = worldPosition.getY() - 1; y >= minY; y--) {
+            BlockPos checkPos = new BlockPos(worldPosition.getX(), y, worldPosition.getZ());
+            Block block = level.getBlockState(checkPos).getBlock();
+
+            if (block == ModBlocks.OIL_PIPE.get()) {
+                continue;
+            }
+            if (isAnyOilDeposit(block)) {
+                return checkPos;
+            }
+
+            if (block.getExplosionResistance() >= 1000.0F) {
+                return null;
+            }
+
+            level.setBlockAndUpdate(checkPos, ModBlocks.OIL_PIPE.get().defaultBlockState());
+            return null;
+        }
+
+        return null;
+    }
+
+    protected boolean isAnyOilDeposit(Block block) {
+        return block == ModBlocks.ORE_OIL.get()
+                || block == ModBlocks.ORE_BEDROCK_OIL.get()
+                || block == ModBlocks.BEDROCK_OIL.get();
+    }
+
+    protected boolean isBedrockOilDeposit(Block block) {
+        return block == ModBlocks.ORE_BEDROCK_OIL.get() || block == ModBlocks.BEDROCK_OIL.get();
+    }
+
+    /**
+     * Обычное нефтяное месторождение постепенно истощается.
+     * Bedrock Oil не истощается (обрабатывается отдельной веткой).
+     */
+    protected void applyNormalDepositDrain(BlockPos orePos) {
+        if (level == null) return;
+        if (level.random.nextDouble() < drainChance) {
+            level.setBlockAndUpdate(orePos, Blocks.STONE.defaultBlockState());
+        }
     }
 
     /**

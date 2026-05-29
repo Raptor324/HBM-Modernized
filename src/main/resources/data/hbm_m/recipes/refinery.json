@@ -1,0 +1,14 @@
+{
+  "type": "hbm_m:assembler",
+  "ingredients": [
+    { "item": "hbm_m:plate_steel", "count": 3 },
+    { "item": "hbm_m:plate_copper", "count": 8 },
+    { "item": "hbm_m:shell_steel", "count": 4 },
+    { "item": "hbm_m:pipe_steel", "count": 12 },
+    { "item": "hbm_m:insulator", "count": 8 },
+    { "item": "hbm_m:analog_circuit", "count": 3 }
+  ],
+  "output": { "item": "hbm_m:refinery" },
+  "duration": 160,
+  "power": 250
+}

@@ -356,6 +356,8 @@ public class ModItems {
             () -> new SwordItem(ModToolTiers.TITANIUM, 3, -2, new Item.Properties()));
     public static final RegistrySupplier<Item> TITANIUM_PICKAXE = ITEMS.register("titanium_pickaxe",
             () -> new PickaxeItem(ModToolTiers.TITANIUM, 1, 1, new Item.Properties()));
+    public static final RegistrySupplier<Item> DRILL_TITANIUM = ITEMS.register("drill_titanium",
+            () -> new Item(new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> TITANIUM_SHOVEL = ITEMS.register("titanium_shovel",
             () -> new ShovelItem(ModToolTiers.TITANIUM, 0, 0, new Item.Properties()));
     public static final RegistrySupplier<Item> TITANIUM_HOE = ITEMS.register("titanium_hoe",

@@ -481,7 +481,8 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(FluidDuctBlockEntity::new,
                             ModBlocks.FLUID_DUCT.get(),
                             ModBlocks.FLUID_DUCT_COLORED.get(),
-                            ModBlocks.FLUID_DUCT_SILVER.get()).build(null));
+                            ModBlocks.FLUID_DUCT_SILVER.get(),
+                            ModBlocks.OIL_PIPE.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<FluidValveBlockEntity>> FLUID_VALVE_BE =
             BLOCK_ENTITIES.register("fluid_valve_be", () ->

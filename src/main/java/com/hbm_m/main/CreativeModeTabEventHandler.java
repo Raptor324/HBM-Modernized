@@ -366,6 +366,7 @@ public final class CreativeModeTabEventHandler {
 
         //КИРКИ
         add.accept(new ItemStack(ModItems.TITANIUM_PICKAXE.get()));
+        add.accept(new ItemStack(ModItems.DRILL_TITANIUM.get()));
         add.accept(new ItemStack(ModItems.STEEL_PICKAXE.get()));
         add.accept(new ItemStack(ModItems.ALLOY_PICKAXE.get()));
         add.accept(new ItemStack(ModItems.STARMETAL_PICKAXE.get()));

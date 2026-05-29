@@ -110,6 +110,7 @@ import com.hbm_m.inventory.gui.GUIMachineMixer;
 import com.hbm_m.inventory.gui.GUIMachineMiningDrill;
 import com.hbm_m.inventory.gui.GUIMachinePumpjack;
 import com.hbm_m.inventory.gui.GUIMachineRadar;
+import com.hbm_m.inventory.gui.GUIMachineRefinery;
 import com.hbm_m.inventory.gui.GUIMachineRbmkConsole;
 import com.hbm_m.inventory.gui.GUIMachineSilex;
 import com.hbm_m.inventory.gui.GUIMachineSolderingStation;
@@ -466,6 +467,7 @@ public class ClientSetup {
         MenuScreens.register(ModMenuTypes.FLUID_TANK_MENU.get(), GUIMachineFluidTank::new);
         MenuScreens.register(ModMenuTypes.CHEMICAL_PLANT_MENU.get(), GUIMachineChemicalPlant::new);
         MenuScreens.register(ModMenuTypes.FRACTURING_TOWER_MENU.get(), GUIMachineFrackingTower::new);
+        MenuScreens.register(ModMenuTypes.REFINERY_MENU.get(), GUIMachineRefinery::new);
         MenuScreens.register(ModMenuTypes.LAUNCH_PAD_LARGE_MENU.get(), GUILaunchPadLarge::new);
         MenuScreens.register(ModMenuTypes.LAUNCH_PAD_RUSTED_MENU.get(), GUILaunchPadRusted::new);
         MenuScreens.register(ModMenuTypes.NUKE_FAT_MAN_MENU.get(), com.hbm_m.inventory.gui.GUINukeFatMan::new);
