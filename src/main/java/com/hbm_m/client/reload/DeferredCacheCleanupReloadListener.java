@@ -1,10 +1,13 @@
 package com.hbm_m.client.reload;
 
 import com.hbm_m.client.render.MeshRenderCache;
+import com.hbm_m.client.render.MdiBatchCoordinator;
+import com.hbm_m.client.render.MdiGeometryAtlas;
 import com.hbm_m.client.render.implementations.DoorRenderer;
 import com.hbm_m.client.render.implementations.MachineAdvancedAssemblerRenderer;
 import com.hbm_m.client.render.implementations.MachineAssemblerRenderer;
 import com.hbm_m.client.render.implementations.MachineChemicalPlantRenderer;
+import com.hbm_m.client.render.implementations.MachineCrystallizerRenderer;
 import com.hbm_m.client.render.implementations.MachineHydraulicFrackiningTowerRenderer;
 import com.hbm_m.client.render.implementations.MachinePressRenderer;
 import com.hbm_m.main.MainRegistry;
@@ -29,13 +32,16 @@ public final class DeferredCacheCleanupReloadListener extends SimplePreparableRe
     protected void apply(Void prepared, ResourceManager resourceManager, ProfilerFiller profiler) {
         RenderSystem.recordRenderCall(() -> {
             try {
+                MdiBatchCoordinator.discardActiveSessionNoDispatch();
                 MachineAdvancedAssemblerRenderer.clearCaches();
                 MachineAssemblerRenderer.clearCaches();
                 MachineHydraulicFrackiningTowerRenderer.clearCaches();
                 DoorRenderer.clearAllCaches();
                 MachinePressRenderer.clearCaches();
                 MachineChemicalPlantRenderer.clearCaches();
+                MachineCrystallizerRenderer.clearCaches();
                 MeshRenderCache.clearAll();
+                MdiGeometryAtlas.resetForResourceLifecycle();
                 AbstractObjArmorLayer.clearAllCaches();
                 MainRegistry.LOGGER.info("VBO cache cleanup completed (deferred to render thread)");
             } catch (Exception e) {

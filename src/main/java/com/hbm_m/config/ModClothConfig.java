@@ -194,13 +194,104 @@ public class ModClothConfig implements ConfigData {
     @BoundedDiscrete(min = 1, max = 20)
     public int modelStaticRenderDistance = 8;
 
+    /**
+     * Server → client pose sync for ballistic missiles (independent of client chunk loading).
+     */
     @Category("rendering")
     @Gui.Tooltip
-    public boolean enableOcclusionCulling = true;
+    public boolean enableMissileNetworkTrack = true;
 
     @Category("rendering")
     @Gui.Tooltip
+    @BoundedDiscrete(min = 0, max = 500000)
+    public int missileTrackMaxRangeBlocks = 0;
+
+    @Category("rendering")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 1, max = 20)
+    public int missileTrackInterval = 1;
+
+    @Category("rendering")
+    @Gui.Tooltip
+    /**
+     * CPU voxel ray-march окклюзии в {@link com.hbm_m.client.render.culling.OcclusionCullingHelper}
+     * (frustum vanilla + raycast по блокам). Выключите, если модели рендерятся некорректно.
+     */
+    public boolean enableOcclusionCulling = false;
+
+    /**
+     * Перед заливкой instance VBO вызывать {@code glBufferData(..., NULL)} того же размера —
+     * orphaning буфера, чтобы драйвер не синхронизировался с предыдущим кадром на каждом
+     * {@code glBufferSubData} (типичный AZDO-приём для STREAM).
+     */
+    @Category("rendering")
+    @Gui.Tooltip
+    public boolean instanceVboOrphanBeforeUpload = true;
+
+    /**
+     * Зарезервировано: persistent mapped instance buffer (GL 4.4+ / ARB_buffer_storage).
+     * Сейчас не используется — только переключатель для будущей реализации; безопасный default.
+     */
+    // @Category("rendering")
+    // @Gui.Tooltip
+    // public boolean experimentalPersistentInstanceBuffer = true;
+
+    @Category("rendering")
+    @Gui.Tooltip
+    /**
+     * Instanced batch для OBJ-частей. Flush только в {@code AFTER_BLOCK_ENTITIES};
+     * текстуры block_lit: {@link com.hbm_m.client.render.SingleMeshVboRenderer} «РЕГРЕССИЯ-СТОП».
+     * Нарушение контракта → белые модели при true, нормально при false.
+     */
     public boolean useInstancedStaticRendering = true;
+
+    /**
+     * Advanced assembler: при vanilla instanced использовать {@code addInstanceGpuBones}
+     * (матрица base×part на CPU, без PoseStack push/mul/pop на каждую часть).
+     * Под Iris/Oculus внешний шейдер — отдельный путь; этот флаг влияет только на vanilla.
+     */
+    @Category("rendering")
+    @Gui.Tooltip
+    public boolean gpuBoneSkinning = true;
+
+    /**
+     * 2×4×2 sliced light probes (16 UV) вместо 8 угловых сэмплов для instanced/VBO block_lit.
+     * Улучшает освещение на высоких моделях (башня охлаждения, фрекинг), но
+     * <b>несовместимо</b> с {@link #useMultiDrawIndirect}: атлас MDI принимает только unsliced layout (30 float).
+     */
+    @Category("rendering")
+    @Gui.Tooltip
+    public boolean useSlicedLight = false;
+
+    /**
+     * Аггрегация instanced draw в один батч по общему атласу: один
+     * {@code glMultiDrawElementsIndirect} на flush (при наличии GL/ARB).
+     * Требует GL 4.0+ draw indirect и base instance в команде (GL 4.2+). На macOS (GL 4.1) и без
+     * возможностей путь отключается. Не применяется к частям с {@link #useSlicedLight} или GPU bone skinning.
+     * Отключите при проблемах с драйвером.
+     */
+    @Category("rendering")
+    @Gui.Tooltip
+    public boolean useMultiDrawIndirect = true;
+
+    /** После каждого MDI-dispatch: одна строка INFO (число sub-draw, инстансов, атлас). */
+    @Category("rendering")
+    @Gui.Tooltip
+    public boolean mdiDebugLogDispatch = false;
+
+    /** Плюс по строке INFO на каждую MDI-команду (тег части, baseInstance и т.д.). */
+    @Category("rendering")
+    @Gui.Tooltip
+    public boolean mdiVerboseSubdraws = false;
+
+    /**
+     * Max instances per {@link com.hbm_m.client.render.InstancedStaticPartRenderer}
+     * (one OBJ part, e.g. ChemPlant/Base). Large machine fields need 4096+.
+     */
+    @Category("rendering")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 256, max = 16384)
+    public int maxInstancedInstancesPerPart = 4096;
 
     @Category("rendering")
     @Gui.Tooltip
@@ -210,11 +301,6 @@ public class ModClothConfig implements ConfigData {
     @Gui.Tooltip
     public boolean useColladaZUpConversion = true;
 
-    /** Яркость анимированной части двери (Iris/Oculus). 1.0 = без изменений, 0.85 = темнее для выравнивания с baked model. */
-    @Category("rendering")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 50, max = 100)
-    public int doorAnimatedPartBrightness = 88;
 
     @Category("rendering")
     @Gui.Tooltip

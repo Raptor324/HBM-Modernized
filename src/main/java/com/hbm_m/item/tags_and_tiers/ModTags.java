@@ -63,6 +63,8 @@ public class ModTags {
         public static final TagKey<Item> STAMPS_PLATE = tag("stamps/plate");
         public static final TagKey<Item> STAMPS_WIRE = tag("stamps/wire");
         public static final TagKey<Item> STAMPS_CIRCUIT = tag("stamps/circuit");
+        public static final TagKey<Item> SLABS_HARD = tag("slabs/hard");
+        public static final TagKey<Item> RUBBER_BAR = tag("rubber_bar");
 
         private static TagKey<Item> tag(String name) {
             return TagKey.create(Registries.ITEM, modIdPath(name));

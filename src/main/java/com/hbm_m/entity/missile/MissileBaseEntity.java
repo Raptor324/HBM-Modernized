@@ -1,18 +1,31 @@
 package com.hbm_m.entity.missile;
 
-import api.hbm.entity.IRadarDetectable;
+import java.util.Comparator;
+import java.util.List;
+import java.util.UUID;
 
+import com.hbm_m.explosion.MissileWarheadEffects;
+
+import api.hbm.entity.IRadarDetectable;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
-import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
-import net.minecraft.world.item.Item;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -21,14 +34,24 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Базовая сущность баллистической ракеты.
  *
- * Основана на старом EntityMissileBaseNT, но использует API 1.20.1:
- * - Управляет баллистикой (ускорение/замедление по дуге)
- * - Сохраняет стартовую и целевую координату
- * - Делегирует конкретный взрыв в подкласс (onMissileImpact)
+ * Управляет собственной баллистикой без гравитации и сопротивления среды,
+ * как в оригинале EntityMissileBaseNT: вертикальная подача с torsion-замедлением
+ * и горизонтальный разгон к точке цели.
  *
- * Chunkloading и радар пока опущены/станут заглушками.
+ * Дополнительно держит чанк‑тикет на текущем чанке, чтобы ракета не выгружалась
+ * на больших дистанциях полёта.
  */
-public abstract class MissileBaseEntity extends ThrowableItemProjectile implements IRadarDetectable {
+public abstract class MissileBaseEntity extends Projectile implements IRadarDetectable {
+
+    /** Тикет на загрузку чанка под ракетой. */
+    private static final TicketType<UUID> CHUNK_TICKET =
+            TicketType.create("hbm_m_missile", Comparator.comparing(UUID::toString));
+
+    /** Радиус region ticket'а (в чанках). */
+    private static final int CHUNK_TICKET_RADIUS = 3;
+
+    /** Макс. длина сегмента raycast за тик (как в 1.7.10 — один луч, но без туннелирования). */
+    private static final double MAX_COLLISION_SEGMENT = 1.0D;
 
     protected int startX;
     protected int startZ;
@@ -41,7 +64,19 @@ public abstract class MissileBaseEntity extends ThrowableItemProjectile implemen
     protected int health = 50;
     protected boolean exploded = false;
 
-    protected MissileBaseEntity(EntityType<? extends ThrowableItemProjectile> type, Level level) {
+    private static final EntityDataAccessor<Direction> DATA_LAUNCH_FACING =
+            SynchedEntityData.defineId(MissileBaseEntity.class, EntityDataSerializers.DIRECTION);
+
+    private int lerpSteps;
+    private double lerpX;
+    private double lerpY;
+    private double lerpZ;
+    private double lerpYRot;
+    private double lerpXRot;
+
+    private ChunkPos loadedChunk;
+
+    protected MissileBaseEntity(EntityType<? extends MissileBaseEntity> type, Level level) {
         super(type, level);
         this.noCulling = true;
         this.startX = (int) this.getX();
@@ -55,8 +90,8 @@ public abstract class MissileBaseEntity extends ThrowableItemProjectile implemen
      */
     public void initLaunch(double x, double y, double z, int targetX, int targetZ) {
         this.setPos(x, y, z);
-        this.startX = (int) Math.floor(x);
-        this.startZ = (int) Math.floor(z);
+        this.startX = (int) this.getX();
+        this.startZ = (int) this.getZ();
         this.targetX = targetX;
         this.targetZ = targetZ;
 
@@ -78,12 +113,38 @@ public abstract class MissileBaseEntity extends ThrowableItemProjectile implemen
         this.xRotO = 0.0F;
     }
 
-    @Override
-    protected Item getDefaultItem() {
-        return getMissileItem();
+    public void setLaunchFacing(Direction facing) {
+        Direction dir = facing == null ? Direction.NORTH : facing;
+        this.entityData.set(DATA_LAUNCH_FACING, dir);
     }
 
-    protected abstract Item getMissileItem();
+    public Direction getLaunchFacing() {
+        return this.entityData.get(DATA_LAUNCH_FACING);
+    }
+
+    /** Множитель смещения за тик (1.7.10 {@code motionMult()}). */
+    public double getMotionMultiplier() {
+        return this.velocity;
+    }
+
+    protected List<ItemStack> getDebris() {
+        return MissileWarheadEffects.defaultDebrisForTier(debrisTierIndex());
+    }
+
+    @javax.annotation.Nullable
+    protected ItemStack getDebrisRareDrop() {
+        return ItemStack.EMPTY;
+    }
+
+    protected int debrisTierIndex() {
+        return switch (getTargetType()) {
+            case MISSILE_TIER4 -> 4;
+            case MISSILE_TIER3 -> 3;
+            case MISSILE_TIER2 -> 2;
+            case MISSILE_TIER1 -> 1;
+            default -> 0;
+        };
+    }
 
     @Override
     public RadarTargetType getTargetType() {
@@ -91,19 +152,127 @@ public abstract class MissileBaseEntity extends ThrowableItemProjectile implemen
     }
 
     @Override
+    public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps, boolean teleport) {
+        this.lerpX = x;
+        this.lerpY = y;
+        this.lerpZ = z;
+        this.lerpYRot = yRot;
+        this.lerpXRot = xRot;
+        this.lerpSteps = steps + 1;
+    }
+
+    public void recreateFromPacket(ClientboundAddEntityPacket packet) {
+        super.recreateFromPacket(packet);
+        this.xRotO = this.getXRot();
+        this.yRotO = this.getYRot();
+    }
+
+    private void clientLerpStep() {
+        if (this.lerpSteps > 0) {
+            float d = 1.0F / this.lerpSteps;
+            this.setPos(
+                    Mth.lerp(d, this.getX(), this.lerpX),
+                    Mth.lerp(d, this.getY(), this.lerpY),
+                    Mth.lerp(d, this.getZ(), this.lerpZ));
+            this.setYRot((float) Mth.rotLerp(d, this.getYRot(), (float) this.lerpYRot));
+            this.setXRot((float) Mth.rotLerp(d, this.getXRot(), (float) this.lerpXRot));
+            --this.lerpSteps;
+        } else {
+            this.reapplyPosition();
+        }
+    }
+
+    /**
+     * Полностью кастомный тик: мы не наследуем поведение от ThrowableProjectile,
+     * поэтому здесь нет ни гравитации, ни сопротивления воздуха.
+     */
+    @Override
     public void tick() {
         this.xOld = this.getX();
         this.yOld = this.getY();
         this.zOld = this.getZ();
 
         if (!this.level().isClientSide) {
+            if (this.exploded) {
+                releaseChunkTicket();
+                this.discard();
+                return;
+            }
+
+            this.baseTick();
+            updateChunkTicket();
+
+            if (this.isRemoved()) {
+                return;
+            }
+
+            double mult = this.velocity;
+            Vec3 motion = this.getDeltaMovement();
+            Vec3 step = motion.scale(mult);
+
+            BlockHitResult blockHit = raycastAlongStep(this.position(), step);
+            if (blockHit != null) {
+                Vec3 hitPos = blockHit.getLocation();
+                this.setPos(hitPos.x, hitPos.y, hitPos.z);
+                this.reapplyPosition();
+                this.onHit(blockHit);
+            }
+
+            if (this.isRemoved() || this.exploded) {
+                return;
+            }
+
+            this.setPos(this.getX() + step.x, this.getY() + step.y, this.getZ() + step.z);
+            updateRotationFromMotion();
+            normalizeRotationDeltas();
+
             serverTickLogic();
+            com.hbm_m.server.missile.MissileTrackBroadcaster.broadcastPoseForMissile(this);
         } else {
-            spawnContrail();
+            clientLerpStep();
+            if (hasPropulsion()) {
+                spawnContrail();
+                spawnNozzleFlare();
+            }
+        }
+    }
+
+    /**
+     * Сегментированный raycast вдоль шага движения (motion * velocity).
+     * Предотвращает пролёт сквозь блоки при больших шагах на финальном снижении.
+     */
+    @javax.annotation.Nullable
+    private BlockHitResult raycastAlongStep(Vec3 from, Vec3 step) {
+        if (this.exploded || step.lengthSqr() <= 0.0D) {
+            return null;
         }
 
-        super.tick();
-        updateRotationFromMotion();
+        double len = step.length();
+        int segments = Math.max(1, (int) Math.ceil(len / MAX_COLLISION_SEGMENT));
+        Vec3 seg = step.scale(1.0D / segments);
+        Vec3 cursor = from;
+
+        for (int i = 0; i < segments; i++) {
+            Vec3 to = (i == segments - 1) ? from.add(step) : cursor.add(seg);
+            BlockHitResult hit = this.level().clip(
+                    new ClipContext(cursor, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
+            if (hit.getType() != HitResult.Type.MISS) {
+                return hit;
+            }
+            cursor = to;
+        }
+        return null;
+    }
+
+    private void normalizeRotationDeltas() {
+        for (this.xRotO = this.getXRot(); this.getXRot() - this.xRotO < -180.0F; this.xRotO -= 360.0F) {
+        }
+        while (this.getYRot() - this.yRotO < -180.0F) {
+            this.yRotO -= 360.0F;
+        }
+        while (this.getYRot() - this.yRotO >= 180.0F) {
+            this.yRotO += 360.0F;
+        }
     }
 
     private void serverTickLogic() {
@@ -142,6 +311,7 @@ public abstract class MissileBaseEntity extends ThrowableItemProjectile implemen
 
         if (motion.y < -this.velocity && this.isCluster) {
             cluster();
+            releaseChunkTicket();
             this.discard();
             return;
         }
@@ -153,11 +323,41 @@ public abstract class MissileBaseEntity extends ThrowableItemProjectile implemen
         return true;
     }
 
+    protected float getContrailScale() {
+        return 1.0F;
+    }
+
+    public float getContrailScaleForSync() {
+        return getContrailScale();
+    }
+
     protected void spawnContrail() {
+        spawnContrailWithOffset(0.0D, 0.0D, 0.0D);
+    }
+
+    protected void spawnNozzleFlare() {
         if (!(this.level() instanceof net.minecraft.client.multiplayer.ClientLevel clientLevel)) {
             return;
         }
+        if (com.hbm_m.client.missile.track.MissileTrackClient.shouldUseTrackWorldRender(this.getId())) {
+            return;
+        }
+        Vec3 step = new Vec3(this.getX() - this.xOld, this.getY() - this.yOld, this.getZ() - this.zOld);
+        com.hbm_m.client.missile.track.MissileNozzleFlare.spawn(
+                clientLevel,
+                this.getX(), this.getY(), this.getZ(),
+                this.getXRot(), this.getYRot(),
+                step,
+                getContrailScale());
+    }
 
+    protected void spawnContrailWithOffset(double offsetX, double offsetY, double offsetZ) {
+        if (!(this.level() instanceof net.minecraft.client.multiplayer.ClientLevel clientLevel)) {
+            return;
+        }
+        if (com.hbm_m.client.missile.track.MissileTrackClient.shouldUseTrackWorldRender(this.getId())) {
+            return;
+        }
         Vec3 motion = new Vec3(this.xOld - this.getX(), this.yOld - this.getY(), this.zOld - this.getZ());
         double len = motion.length();
         if (len <= 0.0D) {
@@ -165,19 +365,19 @@ public abstract class MissileBaseEntity extends ThrowableItemProjectile implemen
         }
         motion = motion.normalize();
 
-        for (int i = 0; i < Math.max(Math.min(len * 4.0D, 10.0D), 1.0D); i++) {
-            double t = i / 4.0D;
-            double px = this.getX() + motion.x * t;
-            double py = this.getY() + motion.y * t;
-            double pz = this.getZ() + motion.z * t;
+        Vec3 thrust = new Vec3(0.0D, 1.0D, 0.0D);
+        thrust = thrust.xRot(-this.getXRot() * ((float) Math.PI / 180.0F));
+        thrust = thrust.yRot(-(this.getYRot() + 90.0F) * ((float) Math.PI / 180.0F));
 
-            clientLevel.addParticle(
-                    com.hbm_m.particle.ModParticleTypes.MISSILE_CONTRAIL.get(),
-                    px, py, pz,
-                    -motion.x * 0.1D,
-                    -motion.y * 0.1D,
-                    -motion.z * 0.1D);
-        }
+        float contrailScale = getContrailScale();
+        Vec3 exhaust = thrust.scale(-1.0D);
+        com.hbm_m.client.missile.track.MissileTrackContrail.spawnSegments(
+                clientLevel,
+                this.getX(), this.getY(), this.getZ(),
+                motion, len,
+                exhaust,
+                contrailScale,
+                offsetX, offsetY, offsetZ);
     }
 
     private void updateRotationFromMotion() {
@@ -207,14 +407,24 @@ public abstract class MissileBaseEntity extends ThrowableItemProjectile implemen
         }
 
         onMissileImpact(pos);
+        releaseChunkTicket();
         this.discard();
+    }
+
+    @Override
+    protected boolean canHitEntity(net.minecraft.world.entity.Entity entity) {
+        return false;
     }
 
     protected abstract void onMissileImpact(BlockPos pos);
 
+    public boolean canBeDetectedByRadar() {
+        return true;
+    }
+
     @Override
     protected void defineSynchedData() {
-        super.defineSynchedData();
+        this.entityData.define(DATA_LAUNCH_FACING, Direction.NORTH);
     }
 
     @Override
@@ -228,6 +438,8 @@ public abstract class MissileBaseEntity extends ThrowableItemProjectile implemen
         tag.putDouble("DecelY", this.decelY);
         tag.putDouble("AccelXZ", this.accelXZ);
         tag.putInt("Health", this.health);
+        tag.putBoolean("Exploded", this.exploded);
+        tag.putString("LaunchFacing", this.getLaunchFacing().getName());
     }
 
     @Override
@@ -241,6 +453,11 @@ public abstract class MissileBaseEntity extends ThrowableItemProjectile implemen
         this.decelY = tag.getDouble("DecelY");
         this.accelXZ = tag.getDouble("AccelXZ");
         this.health = tag.getInt("Health");
+        this.exploded = tag.getBoolean("Exploded");
+        if (tag.contains("LaunchFacing")) {
+            Direction facing = Direction.byName(tag.getString("LaunchFacing"));
+            this.setLaunchFacing(facing == null ? Direction.NORTH : facing);
+        }
     }
 
     @Override
@@ -258,14 +475,76 @@ public abstract class MissileBaseEntity extends ThrowableItemProjectile implemen
     }
 
     protected void killMissile() {
-        if (!this.isRemoved()) {
-            this.discard();
-            // TODO: добавить некритичный взрыв/обломки при уничтожении ракеты в полёте
+        if (this.isRemoved()) {
+            return;
         }
+        releaseChunkTicket();
+        if (!this.level().isClientSide && this.level() instanceof ServerLevel server) {
+            Vec3 motion = this.getDeltaMovement();
+            MissileWarheadEffects.missileDestroyed(server, this,
+                    this.getX(), this.getY(), this.getZ(),
+                    motion, getDebris(), getDebrisRareDrop());
+        }
+        this.discard();
     }
 
     protected void cluster() {
-        // Заглушка для кластерных ракет
+        if (this.level().isClientSide || this.exploded) {
+            return;
+        }
+        this.exploded = true;
+        onMissileImpact(BlockPos.containing(getX(), getY(), getZ()));
+    }
+
+    private void updateChunkTicket() {
+        if (this.level().isClientSide || !(this.level() instanceof ServerLevel server)) {
+            return;
+        }
+        ChunkPos newPos = new ChunkPos(this.blockPosition());
+        if (newPos.equals(this.loadedChunk)) {
+            return;
+        }
+        if (this.loadedChunk != null) {
+            server.getChunkSource().removeRegionTicket(CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());
+        }
+        this.loadedChunk = newPos;
+        server.getChunkSource().addRegionTicket(CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());
+    }
+
+    protected void releaseChunkTicket() {
+        if (this.loadedChunk == null) {
+            return;
+        }
+        if (this.level() instanceof ServerLevel server) {
+            server.getChunkSource().removeRegionTicket(CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());
+        }
+        this.loadedChunk = null;
+    }
+
+    @Override
+    public void onAddedToWorld() {
+        super.onAddedToWorld();
+        if (!this.level().isClientSide && this.level() instanceof ServerLevel server) {
+            if (this.loadedChunk == null) {
+                this.loadedChunk = new ChunkPos(this.blockPosition());
+                server.getChunkSource().addRegionTicket(CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());
+            }
+            com.hbm_m.server.missile.MissileTrackBroadcaster.onMissileSpawned(this);
+        }
+    }
+
+    @Override
+    public void onRemovedFromWorld() {
+        if (!this.level().isClientSide) {
+            com.hbm_m.server.missile.MissileTrackBroadcaster.onMissileRemoved(this);
+        }
+        super.onRemovedFromWorld();
+        releaseChunkTicket();
+    }
+
+    @Override
+    public boolean shouldRenderAtSqrDistance(double distance) {
+        return true;
     }
 
     @Override
@@ -273,4 +552,3 @@ public abstract class MissileBaseEntity extends ThrowableItemProjectile implemen
         return new ClientboundAddEntityPacket(this, MobCategory.MISC.ordinal());
     }
 }
-

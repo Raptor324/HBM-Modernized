@@ -49,7 +49,8 @@ public class ItemDesignatorManual extends Item implements IDesignatorItem {
 
     @Override
     public boolean isReady(Level level, ItemStack stack, int x, int y, int z) {
-        return stack.hasTag() && stack.getTag().contains("xCoord");
+        var tag = stack.getTag();
+        return tag != null && tag.contains("xCoord") && tag.contains("zCoord");
     }
 
     @Override

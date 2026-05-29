@@ -79,6 +79,28 @@ public class FluidType {
         forFluid(fluid).addTraits(trait);
     }
 
+    /** Sets NFPA hazard diamond ratings (1.7.10 {@code FluidType} ctor). */
+    public static void setHazardDiamond(Fluid fluid, int poison, int flammability, int reactivity, FluidHazardSymbol symbol) {
+        FluidType t = forFluid(fluid);
+        t.poison = poison;
+        t.flammability = flammability;
+        t.reactivity = reactivity;
+        t.symbol = symbol != null ? symbol : FluidHazardSymbol.NONE;
+    }
+
+    public FluidType setHazardDiamond(int poison, int flammability, int reactivity, FluidHazardSymbol symbol) {
+        this.poison = poison;
+        this.flammability = flammability;
+        this.reactivity = reactivity;
+        this.symbol = symbol != null ? symbol : FluidHazardSymbol.NONE;
+        return this;
+    }
+
+    /** Whether any hazard diamond segment should be drawn on tanks. */
+    public boolean hasHazardDiamond() {
+        return poison > 0 || flammability > 0 || reactivity > 0 || symbol != FluidHazardSymbol.NONE;
+    }
+
     public static <T extends FluidTrait> T getTrait(Fluid fluid, Class<T> traitClass) {
         FluidType t = TYPES.get(fluid);
         return t != null ? t.getTrait(traitClass) : null;
@@ -96,6 +118,14 @@ public class FluidType {
     private final Fluid fluid;
     /** В 1.7.10 поле {@code public int temperature}. */
     public int temperature = ROOM_TEMPERATURE;
+    /** NFPA diamond: health (poison). */
+    public int poison;
+    /** NFPA diamond: flammability (0–4, {@code 0} = no rating / W). */
+    public int flammability;
+    /** NFPA diamond: reactivity. */
+    public int reactivity;
+    /** NFPA diamond: special symbol quadrant. */
+    public FluidHazardSymbol symbol = FluidHazardSymbol.NONE;
     /** В 1.7.10 поле {@code public HashMap<Class<? extends FluidTrait>, FluidTrait> traits}. */
     public final HashMap<Class<? extends FluidTrait>, FluidTrait> traits = new HashMap<>();
 

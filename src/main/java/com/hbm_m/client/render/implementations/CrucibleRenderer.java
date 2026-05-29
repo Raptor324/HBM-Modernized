@@ -1,6 +1,7 @@
 package com.hbm_m.client.render.implementations;
 
 import com.hbm_m.block.entity.machines.MachineCrucibleBlockEntity;
+import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -87,7 +88,7 @@ public class CrucibleRenderer implements BlockEntityRenderer<MachineCrucibleBloc
 
     @Override
     public boolean shouldRenderOffScreen(MachineCrucibleBlockEntity blockEntity) {
-        return false;
+        return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
     }
 }
 

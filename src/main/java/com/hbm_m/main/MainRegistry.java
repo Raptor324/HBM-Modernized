@@ -73,8 +73,8 @@ public final class MainRegistry {
         PlayerHandler.register();
         PowerArmorHandlers.register();
         LadderClimbHandler.register();
+        com.hbm_m.server.missile.MissileTrackBroadcaster.register();
 
-        
 
         // Common lifecycle hooks
         LifecycleEvent.SETUP.register(MainRegistry::commonSetup);
@@ -103,6 +103,7 @@ public final class MainRegistry {
         ModPacketHandler.register();
         ModHazards.registerHazards();
         DamageResistanceHandler.initArmorStats();
+        com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity.registerLaunchables();
 
         CentrifugeRecipes.registerRecipes();
 

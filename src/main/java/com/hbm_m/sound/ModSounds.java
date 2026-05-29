@@ -38,6 +38,7 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> EXPLOSION_SMALL_FAR2 = registerSoundEvents("explosionsmallfar2");
     public static final RegistrySupplier<SoundEvent> MUKE_EXPLOSION = registerSoundEvents("mukeexplosion");
     public static final RegistrySupplier<SoundEvent> NUCLEAR_EXPLOSION = registerSoundEvents("nuclear_explosion");
+    public static final RegistrySupplier<SoundEvent> MISSILE_TAKEOFF = registerSoundEvents("missile_takeoff");
     public static final RegistrySupplier<SoundEvent> GRENADE_TRIGGER = registerSoundEvents("grenadetrigger");
 
     public static final RegistrySupplier<SoundEvent> RADAWAY_USE = registerSoundEvents("radaway_use");

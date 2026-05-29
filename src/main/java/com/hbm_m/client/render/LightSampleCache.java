@@ -435,6 +435,11 @@ public final class LightSampleCache {
                                     float[] objBbox, BlockPos blockPos, Matrix4f localPose,
                                     int packedLightFallback, float[] out16) {
 
+        if (com.hbm_m.client.render.SingleMeshVboRenderer.isWorldMissileOverlayDraw()) {
+            fillFallback8(packedLightFallback, out16);
+            return;
+        }
+
         // Preserve the cheap “no block light -> no spatial sampling” fast path,
         // but make it adaptive for very large machines where remote block light
         // can exist even if the controller position is dark.
@@ -467,6 +472,20 @@ public final class LightSampleCache {
     }
 
     /**
+     * Like {@link #getOrSample8} but skips expensive 8-block spatial sampling when
+     * {@code distSqToCamera} exceeds {@link RenderDistanceHelper#getLightCornerDetailDistanceSq()}.
+     */
+    public static void getOrSample8Lod(@Nullable BlockEntity be, long partIdentityHash,
+                                       float[] objBbox, BlockPos blockPos, Matrix4f localPose,
+                                       int packedLightFallback, float[] out16, double distSqToCamera) {
+        if (distSqToCamera > RenderDistanceHelper.getLightCornerDetailDistanceSq()) {
+            fillFallback8(packedLightFallback, out16);
+            return;
+        }
+        getOrSample8(be, partIdentityHash, objBbox, blockPos, localPose, packedLightFallback, out16);
+    }
+
+    /**
      * Samples lightmap UV pairs for a 2x4x2 lattice (X/Z corners across 4 Y slices).
      * Output layout: 16 probes * 2 floats = 32 floats:
      *   slice0: (x0z0, x1z0, x0z1, x1z1), then slice1, slice2, slice3;
@@ -479,6 +498,10 @@ public final class LightSampleCache {
     public static void getOrSample16(@Nullable BlockEntity be, long partIdentityHash,
                                      float[] objBbox, BlockPos blockPos, Matrix4f localPose,
                                      int packedLightFallback, float[] out32) {
+        if (com.hbm_m.client.render.SingleMeshVboRenderer.isWorldMissileOverlayDraw()) {
+            fillFallback16(packedLightFallback, out32);
+            return;
+        }
         if (shouldSkipSpatialSampling(be, packedLightFallback)) {
             fillFallback16(packedLightFallback, out32);
             return;

@@ -2,6 +2,7 @@ package com.hbm_m.datagen.recipes;
 //? if forge {
 import java.util.function.Consumer;
 
+import com.hbm_m.item.tags_and_tiers.ModTags;
 import net.minecraftforge.common.Tags;
 import org.jetbrains.annotations.NotNull;
 
@@ -201,7 +202,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('$', ModItems.PLATE_STEEL.get())
                 .define('#', ModItems.getPowder(ModIngots.ALUMINUM).get())
                 .define('%', ModItems.VACUUM_TUBE.get())
-                .define('@', Items.GLASS_PANE)
+                .define('@', Ingredient.of(Tags.Items.GLASS_PANES))
                 .unlockedBy(getHasName(ModItems.VACUUM_TUBE.get()), has(ModItems.VACUUM_TUBE.get()))
                 .save(writer, recipeId("crafting/crt_ds"));
 
@@ -229,7 +230,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("$@$")
                 .pattern("$#$")
                 .define('$', Items.OAK_PLANKS)
-                .define('%', Items.GLASS_PANE)
+                .define('%', Ingredient.of(Tags.Items.GLASS_PANES))
                 .define('#', ModItems.getIngot(ModIngots.BERYLLIUM).get())
                 .define('@', ModItems.VACUUM_TUBE.get())
                 .unlockedBy(getHasName(ModItems.VACUUM_TUBE.get()), has(ModItems.VACUUM_TUBE.get()))
@@ -301,12 +302,18 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .save(writer, recipeId("crafting/machine_battery_socket_frame"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BOLT_STEEL.get(), 16)
-                .pattern("$  ")
-                .pattern("$  ")
-                .pattern("   ")
+                .pattern("$")
+                .pattern("$")
                 .define('$', Items.IRON_INGOT)
                 .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
                 .save(writer, recipeId("crafting/bolt_steel"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BOLT_HIGHSPEED_STEEL.get(), 16)
+                .pattern("$")
+                .pattern("$")
+                .define('$', ModItems.getIngot(ModIngots.DURA_STEEL).get())
+                .unlockedBy(getHasName(ModItems.getIngot(ModIngots.DURA_STEEL).get()), has(ModItems.getIngot(ModIngots.DURA_STEEL).get()))
+                .save(writer, recipeId("crafting/bolt_highspeed_steel"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.GRENADE_IF.get())
                 .pattern(" $ ")
@@ -319,10 +326,10 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .save(writer, recipeId("crafting/grenade_if"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.VACUUM_TUBE.get())
-                .pattern("$  ")
-                .pattern("#  ")
-                .pattern("@  ")
-                .define('$', Items.GLASS_PANE)
+                .pattern("$")
+                .pattern("#")
+                .pattern("@")
+                .define('$', Ingredient.of(Tags.Items.GLASS_PANES))
                 .define('#', ModItems.WIRE_TUNGSTEN.get())
                 .define('@', ModItems.INSULATOR.get())
                 .unlockedBy(getHasName(ModItems.WIRE_TUNGSTEN.get()), has(ModItems.WIRE_TUNGSTEN.get()))
@@ -331,7 +338,6 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.CAPACITOR.get(), 2)
                 .pattern("$#$")
                 .pattern("% %")
-                .pattern("   ")
                 .define('$', ModItems.INSULATOR.get())
                 .define('%', Ingredient.of(ModItems.WIRE_COPPER.get(), ModItems.WIRE_ALUMINIUM.get()))
                 .define('#', ModItems.getPowder(ModIngots.ALUMINUM).get())
@@ -339,14 +345,24 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .save(writer, recipeId("crafting/capacitor"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.CAGE_LAMP.get(), 4)
-                .pattern(" % ")
-                .pattern(" @ ")
-                .pattern(" ! ")
-                .define('%', Items.GLASS_PANE)
+                .pattern("%")
+                .pattern("@")
+                .pattern("!")
+                .define('%', Ingredient.of(Tags.Items.GLASS_PANES))
                 .define('@', ModItems.WIRE_TUNGSTEN.get())
                 .define('!', Items.IRON_INGOT)
                 .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
                 .save(writer, recipeId("crafting/cage_lamp"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.FLOOD_LAMP.get(), 8)
+                .pattern("%")
+                .pattern("@")
+                .pattern("!")
+                .define('%', Ingredient.of(Tags.Items.GLASS_PANES))
+                .define('@', ModItems.getPowder(ModIngots.RED_COPPER).get())
+                .define('!', ModItems.PLATE_STEEL.get())
+                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .save(writer, recipeId("crafting/flood_lamp"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.BARBED_WIRE.get(), 16)
                 .pattern("$@$")
@@ -676,7 +692,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("% %")
                 .pattern("%#%")
                 .define('%', ModItems.FIREBRICK.get())
-                .define('#', Ingredient.of(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "slabs/stone"))))
+                .define('#', Ingredient.of(ModTags.Items.SLABS_HARD))
                 .unlockedBy(getHasName(ModItems.FIREBRICK.get()), has(ModItems.FIREBRICK.get()))
                 .save(writer, recipeId("crafting/foundry_basin"));
 
@@ -685,7 +701,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern(" # ")
                 .pattern("   ")
                 .define('%', ModItems.FIREBRICK.get())
-                .define('#', Ingredient.of(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "slabs/stone"))))
+                .define('#', Ingredient.of(ModTags.Items.SLABS_HARD))
                 .unlockedBy(getHasName(ModItems.FIREBRICK.get()), has(ModItems.FIREBRICK.get()))
                 .save(writer, recipeId("crafting/foundry_channel"));
 

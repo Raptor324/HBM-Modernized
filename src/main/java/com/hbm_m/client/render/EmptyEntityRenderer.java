@@ -14,7 +14,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.fabricmc.api.Environment;*///?}
 
 /**
- * Рендерер для логических/невидимых сущностей (NukeExplosionMK5Entity, AirstrikeAgentEntity и т.д.).
+ * Рендерер для логических/невидимых сущностей (EntityNukeExplosionMK5, AirstrikeAgentEntity и т.д.).
  * Ничего не рисует; нужен только чтобы EntityRenderDispatcher не получал null.
  */
 //? if forge {

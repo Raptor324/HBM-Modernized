@@ -97,6 +97,26 @@ public final class ShredderRecipeGenerator {
                     //?}
 
         }
+        if (ModItems.getPowders(ModPowders.IRON) != null) {
+            ShredderRecipeBuilder.shredderRecipe(Items.RAW_IRON,
+                            new ItemStack(ModItems.getPowders(ModPowders.IRON).get(), 1))
+                    //? if fabric && < 1.21.1 {
+                    /*.save(writer, new ResourceLocation(RefStrings.MODID, "shredder/iron_ingot_to_powder"));
+                     *///?} else {
+                    .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/raw_iron_to_powder"));
+            //?}
+
+        }
+        if (ModItems.getPowders(ModPowders.IRON) != null) {
+            ShredderRecipeBuilder.shredderRecipe(Items.RAW_IRON_BLOCK   ,
+                            new ItemStack(ModItems.getPowders(ModPowders.IRON).get(), 8))
+                    //? if fabric && < 1.21.1 {
+                    /*.save(writer, new ResourceLocation(RefStrings.MODID, "shredder/iron_ingot_to_powder"));
+                     *///?} else {
+                    .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/raw_iron_block_to_powder"));
+            //?}
+
+        }
 
         if (ModItems.getPowders(ModPowders.GOLD) != null) {
             ShredderRecipeBuilder.shredderRecipe(Items.GOLD_INGOT,
@@ -108,7 +128,39 @@ public final class ShredderRecipeGenerator {
                     //?}
 
         }
+        if (ModItems.getPowders(ModPowders.GOLD) != null) {
+            ShredderRecipeBuilder.shredderRecipe(Items.RAW_GOLD,
+                            new ItemStack(ModItems.getPowders(ModPowders.GOLD).get(), 1))
+                    //? if fabric && < 1.21.1 {
+                    /*.save(writer, new ResourceLocation(RefStrings.MODID, "shredder/gold_ingot_to_powder"));
+                     *///?} else {
+                    .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/raw_gold_to_powder"));
+            //?}
 
+        }
+        if (ModItems.getPowders(ModPowders.GOLD) != null) {
+            ShredderRecipeBuilder.shredderRecipe(Items.RAW_GOLD_BLOCK,
+                            new ItemStack(ModItems.getPowders(ModPowders.GOLD).get(), 9))
+                    //? if fabric && < 1.21.1 {
+                    /*.save(writer, new ResourceLocation(RefStrings.MODID, "shredder/gold_ingot_to_powder"));
+                     *///?} else {
+                    .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/raw_gold_block_to_powder"));
+            //?}
+
+        }
+
+        if (ModItems.getPowders(ModPowders.ALUMINUM) != null) {
+            ShredderRecipeBuilder.shredderRecipe((Ingredient) ModItems.ALUMINUM_RAW,
+                            new ItemStack(ModItems.getPowders(ModPowders.ALUMINUM).get(), 1))
+                    //? if fabric && < 1.21.1 {
+                    /*.save(writer, new ResourceLocation(RefStrings.MODID, "shredder/gold_ingot_to_powder"));
+                     *///?} else {
+                    .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/raw_aluminum_to_powder"));
+            //?}
+
+        }
+
+        
         //  Остальные с проверками
         if (ModItems.getPowders(ModPowders.COAL) != null) {
             if (ModItems.COAL_POWDER_TINY != null) {

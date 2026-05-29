@@ -17,6 +17,10 @@ public final class ClientRenderHandlerForge {
         ClientRenderHandler.onClientTickEnd();
     }
 
+    /**
+     * Не регистрируется на EVENT_BUS в текущем билде: MDI и подсветка мира
+     * выполняются в {@link com.hbm_m.client.ClientModEvents#onRenderLevelStage}.
+     */
     @SubscribeEvent
     public static void onRenderWorld(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) return;

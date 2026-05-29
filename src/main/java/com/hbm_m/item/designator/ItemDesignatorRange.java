@@ -69,12 +69,13 @@ public class ItemDesignatorRange extends Item implements IDesignatorItem {
         level.playSound(player, player.blockPosition(), ModSounds.TOOL_TECH_BLEEP.get(),
                 SoundSource.PLAYERS, 1.0F, 1.0F);
 
-        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+        return InteractionResultHolder.success(stack);
     }
 
     @Override
     public boolean isReady(Level level, ItemStack stack, int x, int y, int z) {
-        return stack.hasTag() && stack.getTag().contains("xCoord");
+        var tag = stack.getTag();
+        return tag != null && tag.contains("xCoord") && tag.contains("zCoord");
     }
 
     @Override

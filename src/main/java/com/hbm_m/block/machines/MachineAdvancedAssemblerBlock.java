@@ -76,7 +76,6 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
 
             helper.placeStructure(pLevel, pPos, facing, this);
 
-            // ИСПРАВЛЕННАЯ ЛОГИКА
             for (BlockPos localPos : helper.getStructureMap().keySet()) {
                 if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
                     BlockPos worldPos = helper.getRotatedPos(pPos, localPos, facing);

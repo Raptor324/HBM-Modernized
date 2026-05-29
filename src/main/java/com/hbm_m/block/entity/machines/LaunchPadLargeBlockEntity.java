@@ -1,5 +1,6 @@
 package com.hbm_m.block.entity.machines;
 
+import com.hbm_m.api.network.NodeDirPos;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.inventory.menu.LaunchPadLargeMenu;
 
@@ -50,7 +51,11 @@ public class LaunchPadLargeBlockEntity extends LaunchPadBaseBlockEntity {
 
     @Override
     protected boolean isReadyForLaunch() {
-        // В будущем здесь можно учесть особенности большой ракеты
-        return true;
+        return delay <= 0;
+    }
+
+    @Override
+    public NodeDirPos[] getConPos() {
+        return buildStandardConPos(worldPosition);
     }
 }

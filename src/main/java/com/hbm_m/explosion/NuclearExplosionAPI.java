@@ -2,7 +2,7 @@ package com.hbm_m.explosion;
 
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.entity.ModEntities;
-import com.hbm_m.entity.logic.NukeExplosionMK5Entity;
+import com.hbm_m.entity.logic.EntityNukeExplosionMK5;
 import com.hbm_m.explosion.command.ExplosionCommandOptions;
 import com.hbm_m.particle.helper.NukeTorexCreator;
 import com.hbm_m.util.explosions.nuclear.NuclearExplosionHelper;
@@ -25,28 +25,28 @@ public final class NuclearExplosionAPI {
     /**
      * Запускает ядерный взрыв по конфигу. Вызывать на сервере; визуал гриба на клиенте - отдельно через NukeTorexCreator.
      */
-    public static NukeExplosionMK5Entity start(Level level, Vec3 pos, NuclearExplosionConfig cfg) {
+    public static EntityNukeExplosionMK5 start(Level level, Vec3 pos, NuclearExplosionConfig cfg) {
         return start(level, pos.x, pos.y, pos.z, cfg, ExplosionCommandOptions.DEFAULT);
     }
 
     /**
      * Запускает ядерный взрыв по конфигу (координаты).
      */
-    public static NukeExplosionMK5Entity start(Level level, BlockPos pos, NuclearExplosionConfig cfg) {
+    public static EntityNukeExplosionMK5 start(Level level, BlockPos pos, NuclearExplosionConfig cfg) {
         return start(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, cfg, ExplosionCommandOptions.DEFAULT);
     }
 
     /**
      * Запускает ядерный взрыв по конфигу. Только серверная логика; клиентский гриб - через пакет/NukeTorexCreator.
      */
-    public static NukeExplosionMK5Entity start(Level level, double x, double y, double z, NuclearExplosionConfig cfg) {
+    public static EntityNukeExplosionMK5 start(Level level, double x, double y, double z, NuclearExplosionConfig cfg) {
         return start(level, x, y, z, cfg, ExplosionCommandOptions.DEFAULT);
     }
 
     /**
      * Запуск MK5 с переключателями команды / параметрами сценария.
      */
-    public static NukeExplosionMK5Entity start(Level level, double x, double y, double z,
+    public static EntityNukeExplosionMK5 start(Level level, double x, double y, double z,
                                                NuclearExplosionConfig cfg, ExplosionCommandOptions cmd) {
         if (level.isClientSide) {
             return null;
@@ -60,7 +60,7 @@ public final class NuclearExplosionAPI {
         }
         int strength = scaled * 2;
 
-        NukeExplosionMK5Entity entity = new NukeExplosionMK5Entity(ModEntities.NUKE_MK5.get(), level);
+        EntityNukeExplosionMK5 entity = new EntityNukeExplosionMK5(ModEntities.NUKE_MK5.get(), level);
         entity.strength = strength;
         entity.speed = (int) Math.ceil(100000D / entity.strength);
         entity.setPos(x, y, z);
@@ -94,18 +94,18 @@ public final class NuclearExplosionAPI {
     /**
      * Удобный запуск взрыва в стиле Fat Man: радиус из конфига мода.
      */
-    public static NukeExplosionMK5Entity startFatMan(Level level, BlockPos pos) {
+    public static EntityNukeExplosionMK5 startFatMan(Level level, BlockPos pos) {
         return startFatMan(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, ExplosionCommandOptions.DEFAULT);
     }
 
     /**
      * То же по координатам (для блоков, вызывающих explode(level, x, y, z)).
      */
-    public static NukeExplosionMK5Entity startFatMan(Level level, double x, double y, double z) {
+    public static EntityNukeExplosionMK5 startFatMan(Level level, double x, double y, double z) {
         return startFatMan(level, x, y, z, ExplosionCommandOptions.DEFAULT);
     }
 
-    public static NukeExplosionMK5Entity startFatMan(Level level, double x, double y, double z, ExplosionCommandOptions cmd) {
+    public static EntityNukeExplosionMK5 startFatMan(Level level, double x, double y, double z, ExplosionCommandOptions cmd) {
         int radius = Math.max(1, Math.round(getFatManRadius() * cmd.amplifier()));
         NuclearExplosionConfig cfg = NuclearExplosionConfig.builder(radius)
                 .fallout(cmd.fallout())

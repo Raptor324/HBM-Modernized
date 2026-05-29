@@ -79,10 +79,6 @@ import net.minecraftforge.client.event.RenderGuiEvent;
 
 /**
  * Fluid duct: multipart blockstate + Forge OBJ visibility on {@code pipe_neo.obj}. Fluid type lives in the block entity.
- * <p>
- * {@link PipeRenderShape} follows NEO pipe rules (isolated / single-axis / complex + octants). Arms use corrected mapping
- * (south → {@code pZ}, north → {@code nZ}) vs the swapped render in NEO’s {@code RenderPipe}.
- * <p>
  * Fluid identifier: normal click sets fluid on one duct; <b>sneak (Shift)</b> + click paints the connected network of the
  * same block type (depth-capped). Vanilla does not expose Ctrl on the server; use sneak for recursive mode.
  */

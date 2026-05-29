@@ -13,11 +13,13 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.MemoryUtil;
 
+import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.IrisExtendedShaderAccess;
 import com.hbm_m.client.render.shader.IrisPhaseGuard;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.main.MainRegistry;
+import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
@@ -32,6 +34,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.core.BlockPos;
@@ -47,6 +50,12 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 //? if fabric {
 /*@Environment(EnvType.CLIENT)*///?}
 public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
+
+    /**
+     * Вершина instanced-мешей: pos(12) + normal(12) + uv(8) + int {@code bone_id} (4) = 36 байт.
+     * См. {@code block_lit.vsh} (USE_VERTEX_BONE_ID) и UBO костей в {@link InstancedStaticPartRenderer}.
+     */
+    public static final int MACHINE_PART_VERTEX_STRIDE_BYTES = 36;
 
     /** Optional companion mesh in Iris-extended {@code NEW_ENTITY} format, lazy-built. */
     @Nullable
@@ -65,6 +74,16 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
      * See {@code MachinePressRenderer} for the save/restore pattern.
      */
     private static final ThreadLocal<Float> currentFadeAlpha = ThreadLocal.withInitial(() -> 1.0f);
+    /**
+     * Network-tracked ballistic missiles: draw without depth (terrain occludes at horizon)
+     * and with shader fog pushed to effectively disabled.
+     */
+    private static final ThreadLocal<Boolean> worldMissileOverlayDraw = ThreadLocal.withInitial(() -> false);
+    /** Entity-pass missile mesh: bias depth vs terrain written in the solid pass (horizon z-fighting). */
+    private static final ThreadLocal<Boolean> entityMissileDepthBias = ThreadLocal.withInitial(() -> false);
+    private static final float ENTITY_MISSILE_DEPTH_FACTOR = -4.0F;
+    private static final float ENTITY_MISSILE_DEPTH_UNITS = -4.0F;
+
 
     public static void setFadeAlpha(float alpha) {
         currentFadeAlpha.set(alpha);
@@ -72,6 +91,31 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
 
     public static float getFadeAlpha() {
         return currentFadeAlpha.get();
+    }
+
+    public static void setWorldMissileOverlayDraw(boolean enabled) {
+        worldMissileOverlayDraw.set(enabled);
+    }
+
+    public static boolean isWorldMissileOverlayDraw() {
+        return worldMissileOverlayDraw.get();
+    }
+
+    public static void setEntityMissileDepthBias(boolean enabled) {
+        entityMissileDepthBias.set(enabled);
+    }
+
+    private static void beginEntityMissileDepthBias() {
+        if (entityMissileDepthBias.get()) {
+            RenderSystem.enablePolygonOffset();
+            RenderSystem.polygonOffset(ENTITY_MISSILE_DEPTH_FACTOR, ENTITY_MISSILE_DEPTH_UNITS);
+        }
+    }
+
+    private static void endEntityMissileDepthBias() {
+        if (entityMissileDepthBias.get()) {
+            RenderSystem.disablePolygonOffset();
+        }
     }
 
     // Scratch for 8-corner trilinear uniform upload in the non-instanced path.
@@ -86,8 +130,84 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
     private final float[] tmpProbeUV = new float[32];
     protected boolean useSlicedLight = false;
 
+    // Cached block_lit uniform handles (per renderer instance, invalidated on shader relink).
+    private ShaderInstance cachedBlockLitShader;
+    private int cachedBlockLitProgramId = -1;
+    private long cachedBlockLitPipelineGen = -1L;
+    private Uniform cachedBboxMinU;
+    private Uniform cachedBboxSizeU;
+    private Uniform cachedLightC01;
+    private Uniform cachedLightC23;
+    private Uniform cachedLightC45;
+    private Uniform cachedLightC67;
+    private Uniform cachedLightS0C01;
+    private Uniform cachedLightS0C23;
+    private Uniform cachedLightS1C01;
+    private Uniform cachedLightS1C23;
+    private Uniform cachedLightS2C01;
+    private Uniform cachedLightS2C23;
+    private Uniform cachedLightS3C01;
+    private Uniform cachedLightS3C23;
+    private Uniform cachedFogStartU;
+    private Uniform cachedFogEndU;
+    private Uniform cachedFogColorU;
+    private Uniform cachedFadeAlphaU;
+
     public void setUseSlicedLight(boolean useSlicedLight) {
         this.useSlicedLight = useSlicedLight;
+    }
+
+    private void updateBlockLitUniformCache(ShaderInstance shader) {
+        int programId = (shader != null) ? shader.getId() : -1;
+        long pipelineGen = IrisExtendedShaderAccess.getPipelineGeneration();
+        if (cachedBlockLitShader == shader
+                && cachedBlockLitProgramId == programId
+                && cachedBlockLitPipelineGen == pipelineGen
+                && cachedBlockLitShader != null) {
+            return;
+        }
+        cachedBlockLitShader = shader;
+        cachedBlockLitProgramId = programId;
+        cachedBlockLitPipelineGen = pipelineGen;
+        if (shader == null) {
+            cachedBboxMinU = null;
+            cachedBboxSizeU = null;
+            cachedLightC01 = null;
+            cachedLightC23 = null;
+            cachedLightC45 = null;
+            cachedLightC67 = null;
+            cachedLightS0C01 = null;
+            cachedLightS0C23 = null;
+            cachedLightS1C01 = null;
+            cachedLightS1C23 = null;
+            cachedLightS2C01 = null;
+            cachedLightS2C23 = null;
+            cachedLightS3C01 = null;
+            cachedLightS3C23 = null;
+            cachedFogStartU = null;
+            cachedFogEndU = null;
+            cachedFogColorU = null;
+            cachedFadeAlphaU = null;
+            return;
+        }
+        cachedBboxMinU = shader.getUniform("BboxMin");
+        cachedBboxSizeU = shader.getUniform("BboxSize");
+        cachedLightC01 = shader.getUniform("LightC01");
+        cachedLightC23 = shader.getUniform("LightC23");
+        cachedLightC45 = shader.getUniform("LightC45");
+        cachedLightC67 = shader.getUniform("LightC67");
+        cachedLightS0C01 = shader.getUniform("LightS0C01");
+        cachedLightS0C23 = shader.getUniform("LightS0C23");
+        cachedLightS1C01 = shader.getUniform("LightS1C01");
+        cachedLightS1C23 = shader.getUniform("LightS1C23");
+        cachedLightS2C01 = shader.getUniform("LightS2C01");
+        cachedLightS2C23 = shader.getUniform("LightS2C23");
+        cachedLightS3C01 = shader.getUniform("LightS3C01");
+        cachedLightS3C23 = shader.getUniform("LightS3C23");
+        cachedFogStartU = shader.getUniform("FogStart");
+        cachedFogEndU = shader.getUniform("FogEnd");
+        cachedFogColorU = shader.getUniform("FogColor");
+        cachedFadeAlphaU = shader.getUniform("FadeAlpha");
     }
 
     protected abstract VboData buildVboData();
@@ -110,6 +230,17 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             RenderSystem.bindTexture(blockAtlas.getId());
         }
     }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // РЕГРЕССИЯ-СТОП: instanced block_lit — белые модели без текстур атласа
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Симптом: useInstancedStaticRendering=true → все OBJ белые; false → нормально.
+    // Причина A: Sampler2 uniform=0 → FS читает atlas вместо lightmap (угол ~белый).
+    // Причина B: turnOnLightLayer() при active TEXTURE0 → atlas на unit 0 затирается.
+    // Причина C: flush в AFTER_LEVEL, а не в AFTER_BLOCK_ENTITIES → слоты GL грязные.
+    // Контракт: prepareBlockLitSamplers → apply → bindBlockLitSamplerTextures → draw.
+    // НЕЛЬЗЯ: только apply(); только setSampler без GL bind; flush в конце уровня.
+    // ═══════════════════════════════════════════════════════════════════════════
 
     /**
      * Primes the shader's sampler map so that {@link ShaderInstance#apply()} binds the
@@ -147,17 +278,129 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         if (shader == null) {
             return;
         }
-        // Publish the block atlas into RenderSystem.shaderTextures[0]. We rely on
-        // setShaderTexture (not bindTexture) because apply() reads from shaderTextures[].
+        RenderFrameLight.ensureLightTextureUpdated();
+        primeBlockLitSamplerMap(shader, Minecraft.getInstance());
+    }
+
+    /**
+     * Fills {@code samplerMap} so {@link ShaderInstance#apply()} binds atlas → unit 0 and
+     * lightmap → unit 1. Mirrors {@code LevelRenderer} / {@code VertexBuffer._drawWithShader}.
+     */
+    private static void primeBlockLitSamplerMap(ShaderInstance shader, Minecraft mc) {
+        var textureManager = mc.getTextureManager();
+
+        // НЕЛЬЗЯ вызывать turnOnLightLayer() пока active TEXTURE0 — перезапишет atlas (белые модели).
         RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
-        // Publish the dynamic lightmap into RenderSystem.shaderTextures[2]; also
-        // applies the bilinear filter Mojang expects on unit 2.
-        Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();
-        // Prime samplerMap for all 12 slots exactly like VertexBuffer does. apply()
-        // only iterates samplerNames declared in the JSON, so extra Samplers here
-        // are harmless.
-        for (int i = 0; i < 12; i++) {
-            shader.setSampler("Sampler" + i, RenderSystem.getShaderTexture(i));
+        RenderSystem.activeTexture(GL13.GL_TEXTURE0);
+        textureManager.bindForSetup(TextureAtlas.LOCATION_BLOCKS);
+
+        RenderSystem.activeTexture(GL13.GL_TEXTURE1);
+        mc.gameRenderer.lightTexture().turnOnLightLayer();
+
+        RenderSystem.activeTexture(GL13.GL_TEXTURE0);
+        textureManager.bindForSetup(TextureAtlas.LOCATION_BLOCKS);
+
+        AbstractTexture atlasTex = textureManager.getTexture(TextureAtlas.LOCATION_BLOCKS);
+        int lightmapGlId = resolveLightmapGlId(mc);
+        if (atlasTex != null) {
+            shader.setSampler("Sampler0", atlasTex);
+        } else {
+            int atlasGlId = resolveBlockAtlasGlId(mc);
+            if (atlasGlId > 0) {
+                shader.setSampler("Sampler0", atlasGlId);
+            }
+        }
+        // Имя "Sampler2" в JSON ≠ GL_TEXTURE2: apply() кладёт его на unit 1 (индекс j в массиве).
+        if (lightmapGlId > 0) {
+            shader.setSampler("Sampler2", lightmapGlId);
+        }
+    }
+
+    /** GL texture id for the block atlas — never trust slot 0 alone after chunk/MDI draws. */
+    private static int resolveBlockAtlasGlId(Minecraft mc) {
+        AbstractTexture atlas = mc.getTextureManager().getTexture(TextureAtlas.LOCATION_BLOCKS);
+        if (atlas != null) {
+            return atlas.getId();
+        }
+        int fromSlot = RenderSystem.getShaderTexture(0);
+        return fromSlot > 0 ? fromSlot : -1;
+    }
+
+    /**
+     * GL texture id for the dynamic lightmap. {@link LightTexture#turnOnLightLayer()} must run
+     * while {@code GL_TEXTURE1} is active (see {@link #prepareBlockLitSamplers}).
+     */
+    private static int resolveLightmapGlId(Minecraft mc) {
+        int fromSlot = RenderSystem.getShaderTexture(2);
+        if (fromSlot > 0) {
+            return fromSlot;
+        }
+        RenderSystem.activeTexture(GL13.GL_TEXTURE1);
+        int bound = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
+        RenderSystem.activeTexture(GL13.GL_TEXTURE0);
+        return bound > 0 ? bound : -1;
+    }
+
+    /**
+     * Re-binds block atlas ({@code Sampler0} → {@code GL_TEXTURE0}) and dynamic lightmap
+     * ({@code Sampler2} → {@code GL_TEXTURE1}) immediately before instanced draws.
+     * <p>
+     * {@link ShaderInstance#apply()} maps JSON sampler index {@code j} to {@code GL_TEXTURE0 + j}
+     * (so {@code Sampler2} uses unit 1, not 2). If {@code Sampler2} stays at 0, the fragment
+     * shader samples the atlas near {@code (0.97, 0.97)} and machines look solid white.
+     * VAO / instance-buffer work between {@code apply()} and the draw must not rely on
+     * {@code apply()} alone — force GL binds here.
+     */
+    /**
+     * Вызывать <b>после</b> {@link ShaderInstance#apply()} и <b>перед</b> любым instanced glDraw*.
+     * Пропуск = белые модели (см. блок «РЕГРЕССИЯ-СТОП» над {@link #prepareBlockLitSamplers}).
+     */
+    public static void bindBlockLitSamplerTextures(ShaderInstance shader) {
+        if (shader == null) {
+            return;
+        }
+        RenderSystem.assertOnRenderThread();
+        Minecraft mc = Minecraft.getInstance();
+
+        // Same unit order as prepareBlockLitSamplers(): turnOnLightLayer() binds to the
+        // *active* GL unit — never call it before TEXTURE1 is active or the atlas on unit 0
+        // gets replaced by the lightmap (Sampler0 then samples lightmap → solid white).
+        RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
+        RenderSystem.activeTexture(GL13.GL_TEXTURE0);
+        mc.getTextureManager().bindForSetup(TextureAtlas.LOCATION_BLOCKS);
+
+        RenderSystem.activeTexture(GL13.GL_TEXTURE1);
+        mc.gameRenderer.lightTexture().turnOnLightLayer();
+
+        RenderSystem.activeTexture(GL13.GL_TEXTURE0);
+        mc.getTextureManager().bindForSetup(TextureAtlas.LOCATION_BLOCKS);
+
+        int atlasGlId = resolveBlockAtlasGlId(mc);
+        int lightmapGlId = resolveLightmapGlId(mc);
+        if (atlasGlId <= 0 || lightmapGlId <= 0) {
+            MainRegistry.LOGGER.warn(
+                    "bindBlockLitSamplerTextures: invalid atlas/lightmap GL id (atlas={}, lightmap={})",
+                    atlasGlId, lightmapGlId);
+            return;
+        }
+
+        GL13.glActiveTexture(GL13.GL_TEXTURE0);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlasGlId);
+        GL13.glActiveTexture(GL13.GL_TEXTURE1);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, lightmapGlId);
+        GL13.glActiveTexture(GL13.GL_TEXTURE0);
+
+        shader.setSampler("Sampler0", atlasGlId);
+        shader.setSampler("Sampler2", lightmapGlId);
+
+        // JSON lists Sampler0 then Sampler2 → apply() uses texture units 0 and 1, not 0 and 2.
+        var uSampler0 = shader.getUniform("Sampler0");
+        if (uSampler0 != null) {
+            uSampler0.set(0);
+        }
+        var uSampler2 = shader.getUniform("Sampler2");
+        if (uSampler2 != null) {
+            uSampler2.set(1);
         }
     }
 
@@ -218,18 +461,20 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             indexCount = data.indices != null ? data.indices.remaining() : 0;
             setObjBboxFrom(data);
 
+            int vs = data.bytesPerVertex;
+
             GL30.glBindVertexArray(vaoId);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
             GL15.glBufferData(GL15.GL_ARRAY_BUFFER, data.byteBuffer, GL15.GL_STATIC_DRAW);
 
             GL20.glEnableVertexAttribArray(0);
-            GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 32, 0);
+            GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, vs, 0);
 
             GL20.glEnableVertexAttribArray(1);
-            GL20.glVertexAttribPointer(1, 3, GL11.GL_FLOAT, false, 32, 12);
+            GL20.glVertexAttribPointer(1, 3, GL11.GL_FLOAT, false, vs, 12);
 
             GL20.glEnableVertexAttribArray(2);
-            GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, 32, 24);
+            GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, vs, 24);
 
             if (data.indices != null && data.indices.remaining() > 0) {
                 eboId = GL15.glGenBuffers();
@@ -417,69 +662,61 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                                               tmpLocalPose, packedLight, tmpCornerUV);
             }
 
-            var bboxMinU = shader.getUniform("BboxMin");
-            if (bboxMinU != null) bboxMinU.set(objBbox[0], objBbox[1], objBbox[2]);
-            var bboxSizeU = shader.getUniform("BboxSize");
-            if (bboxSizeU != null) {
-                bboxSizeU.set(
+            updateBlockLitUniformCache(shader);
+            if (cachedBboxMinU != null) cachedBboxMinU.set(objBbox[0], objBbox[1], objBbox[2]);
+            if (cachedBboxSizeU != null) {
+                cachedBboxSizeU.set(
                     Math.max(1e-4f, objBbox[3] - objBbox[0]),
                     Math.max(1e-4f, objBbox[4] - objBbox[1]),
                     Math.max(1e-4f, objBbox[5] - objBbox[2])
                 );
             }
             if (useSlicedLight) {
-                var s0c01 = shader.getUniform("LightS0C01");
-                if (s0c01 != null) s0c01.set(tmpProbeUV[0], tmpProbeUV[1], tmpProbeUV[2], tmpProbeUV[3]);
-                var s0c23 = shader.getUniform("LightS0C23");
-                if (s0c23 != null) s0c23.set(tmpProbeUV[4], tmpProbeUV[5], tmpProbeUV[6], tmpProbeUV[7]);
-
-                var s1c01 = shader.getUniform("LightS1C01");
-                if (s1c01 != null) s1c01.set(tmpProbeUV[8], tmpProbeUV[9], tmpProbeUV[10], tmpProbeUV[11]);
-                var s1c23 = shader.getUniform("LightS1C23");
-                if (s1c23 != null) s1c23.set(tmpProbeUV[12], tmpProbeUV[13], tmpProbeUV[14], tmpProbeUV[15]);
-
-                var s2c01 = shader.getUniform("LightS2C01");
-                if (s2c01 != null) s2c01.set(tmpProbeUV[16], tmpProbeUV[17], tmpProbeUV[18], tmpProbeUV[19]);
-                var s2c23 = shader.getUniform("LightS2C23");
-                if (s2c23 != null) s2c23.set(tmpProbeUV[20], tmpProbeUV[21], tmpProbeUV[22], tmpProbeUV[23]);
-
-                var s3c01 = shader.getUniform("LightS3C01");
-                if (s3c01 != null) s3c01.set(tmpProbeUV[24], tmpProbeUV[25], tmpProbeUV[26], tmpProbeUV[27]);
-                var s3c23 = shader.getUniform("LightS3C23");
-                if (s3c23 != null) s3c23.set(tmpProbeUV[28], tmpProbeUV[29], tmpProbeUV[30], tmpProbeUV[31]);
+                if (cachedLightS0C01 != null) cachedLightS0C01.set(tmpProbeUV[0], tmpProbeUV[1], tmpProbeUV[2], tmpProbeUV[3]);
+                if (cachedLightS0C23 != null) cachedLightS0C23.set(tmpProbeUV[4], tmpProbeUV[5], tmpProbeUV[6], tmpProbeUV[7]);
+                if (cachedLightS1C01 != null) cachedLightS1C01.set(tmpProbeUV[8], tmpProbeUV[9], tmpProbeUV[10], tmpProbeUV[11]);
+                if (cachedLightS1C23 != null) cachedLightS1C23.set(tmpProbeUV[12], tmpProbeUV[13], tmpProbeUV[14], tmpProbeUV[15]);
+                if (cachedLightS2C01 != null) cachedLightS2C01.set(tmpProbeUV[16], tmpProbeUV[17], tmpProbeUV[18], tmpProbeUV[19]);
+                if (cachedLightS2C23 != null) cachedLightS2C23.set(tmpProbeUV[20], tmpProbeUV[21], tmpProbeUV[22], tmpProbeUV[23]);
+                if (cachedLightS3C01 != null) cachedLightS3C01.set(tmpProbeUV[24], tmpProbeUV[25], tmpProbeUV[26], tmpProbeUV[27]);
+                if (cachedLightS3C23 != null) cachedLightS3C23.set(tmpProbeUV[28], tmpProbeUV[29], tmpProbeUV[30], tmpProbeUV[31]);
             } else {
-                var c01 = shader.getUniform("LightC01");
-                if (c01 != null) c01.set(tmpCornerUV[0], tmpCornerUV[1], tmpCornerUV[2], tmpCornerUV[3]);
-                var c23 = shader.getUniform("LightC23");
-                if (c23 != null) c23.set(tmpCornerUV[4], tmpCornerUV[5], tmpCornerUV[6], tmpCornerUV[7]);
-                var c45 = shader.getUniform("LightC45");
-                if (c45 != null) c45.set(tmpCornerUV[8], tmpCornerUV[9], tmpCornerUV[10], tmpCornerUV[11]);
-                var c67 = shader.getUniform("LightC67");
-                if (c67 != null) c67.set(tmpCornerUV[12], tmpCornerUV[13], tmpCornerUV[14], tmpCornerUV[15]);
+                if (cachedLightC01 != null) cachedLightC01.set(tmpCornerUV[0], tmpCornerUV[1], tmpCornerUV[2], tmpCornerUV[3]);
+                if (cachedLightC23 != null) cachedLightC23.set(tmpCornerUV[4], tmpCornerUV[5], tmpCornerUV[6], tmpCornerUV[7]);
+                if (cachedLightC45 != null) cachedLightC45.set(tmpCornerUV[8], tmpCornerUV[9], tmpCornerUV[10], tmpCornerUV[11]);
+                if (cachedLightC67 != null) cachedLightC67.set(tmpCornerUV[12], tmpCornerUV[13], tmpCornerUV[14], tmpCornerUV[15]);
             }
 
-            var fogStartUniform = shader.getUniform("FogStart");
-            if (fogStartUniform != null) fogStartUniform.set(RenderSystem.getShaderFogStart());
-            var fogEndUniform = shader.getUniform("FogEnd");
-            if (fogEndUniform != null) fogEndUniform.set(RenderSystem.getShaderFogEnd());
-            var fogColorUniform = shader.getUniform("FogColor");
-            if (fogColorUniform != null) {
+            if (worldMissileOverlayDraw.get() || entityMissileDepthBias.get()) {
+                if (cachedFogStartU != null) cachedFogStartU.set(1.0E8F);
+                if (cachedFogEndU != null) cachedFogEndU.set(1.0E8F);
+            } else {
+                if (cachedFogStartU != null) cachedFogStartU.set(RenderSystem.getShaderFogStart());
+                if (cachedFogEndU != null) cachedFogEndU.set(RenderSystem.getShaderFogEnd());
+            }
+            if (cachedFogColorU != null) {
                 float[] fogColor = RenderSystem.getShaderFogColor();
-                fogColorUniform.set(fogColor[0], fogColor[1], fogColor[2], fogColor[3]);
+                cachedFogColorU.set(fogColor[0], fogColor[1], fogColor[2], fogColor[3]);
             }
 
-            var fadeAlphaUniform = shader.getUniform("FadeAlpha");
-            if (fadeAlphaUniform != null) fadeAlphaUniform.set(currentFadeAlpha.get());
+            if (cachedFadeAlphaU != null) cachedFadeAlphaU.set(currentFadeAlpha.get());
 
             // Must come BEFORE apply() - apply() reads samplerMap populated here and
             // does glUseProgram + glUniform1i + glBindTexture in one shot.
             prepareBlockLitSamplers(shader);
             shader.apply();
+            bindBlockLitSamplerTextures(shader);
 
             float fade = currentFadeAlpha.get();
-            RenderSystem.enableDepthTest();
-            RenderSystem.depthFunc(GL11.GL_LEQUAL);
-            RenderSystem.depthMask(true);
+            boolean overlay = worldMissileOverlayDraw.get();
+            if (overlay) {
+                RenderSystem.disableDepthTest();
+                GL11.glDepthMask(false);
+            } else {
+                RenderSystem.enableDepthTest();
+                RenderSystem.depthFunc(GL11.GL_LEQUAL);
+                RenderSystem.depthMask(true);
+            }
             RenderSystem.disableCull();
             if (fade < 0.99f) {
                 RenderSystem.enableBlend();
@@ -487,7 +724,9 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             }
 
             GL30.glBindVertexArray(vaoId);
+            beginEntityMissileDepthBias();
             GL11.glDrawElements(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0);
+            endEntityMissileDepthBias();
 
             if (fade < 0.99f) {
                 RenderSystem.disableBlend();
@@ -496,7 +735,10 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during VBO render", e);
         } finally {
-            GL30.glBindVertexArray(previousVao);
+            GL30.glBindVertexArray(0);
+            RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
+            RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
+            GlVaoSafety.bindVertexArray(previousVao);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
 
             if (previousCullFaceEnabled) {
@@ -504,9 +746,10 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             } else {
                 RenderSystem.disableCull();
             }
-
-            RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
-            RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
+            if (worldMissileOverlayDraw.get()) {
+                RenderSystem.enableDepthTest();
+                GL11.glDepthMask(true);
+            }
         }
     }
 
@@ -617,6 +860,13 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             var brightnessUniform = shader.getUniform("Brightness");
             if (brightnessUniform != null) brightnessUniform.set(calculateBrightness(packedLight));
 
+            if (worldMissileOverlayDraw.get()) {
+                var fogStart = shader.getUniform("FogStart");
+                if (fogStart != null) fogStart.set(1.0E8F);
+                var fogEnd = shader.getUniform("FogEnd");
+                if (fogEnd != null) fogEnd.set(1.0E8F);
+            }
+
             var sampler0 = shader.getUniform("Sampler0");
             if (sampler0 != null) sampler0.set(0);
 
@@ -631,14 +881,25 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             Minecraft.getInstance().gameRenderer.overlayTexture().setupOverlayColor();
             Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();
             TextureBinder.bindForModelIfNeeded(shader);
-            shader.apply();
 
-            RenderSystem.enableDepthTest();
-            RenderSystem.depthFunc(GL11.GL_LEQUAL);
-            RenderSystem.depthMask(true);
+            com.mojang.blaze3d.platform.GlStateManager._glBindVertexArray(companion.getVaoId());
+            
+            if (!com.hbm_m.client.render.shader.IrisShaderApply.tryApply(shader)) {
+                return false;
+            }
+
+            boolean overlay = worldMissileOverlayDraw.get();
+            if (overlay) {
+                RenderSystem.disableDepthTest();
+                GL11.glDepthMask(false);
+            } else {
+                RenderSystem.enableDepthTest();
+                RenderSystem.depthFunc(GL11.GL_LEQUAL);
+                RenderSystem.depthMask(true);
+            }
             RenderSystem.disableCull();
 
-            GL30.glBindVertexArray(companion.getVaoId());
+            
 
             // Bind the Iris-extended attributes (iris_Entity, mc_midTexCoord,
             // at_tangent) to their linker-resolved locations on this VAO with
@@ -672,20 +933,34 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 companion.activatePerVertexLightmap();
                 companion.bindLightmapForInstance(0);
             } else if (uv2Loc != -1) {
+                companion.restoreConstantLightmap();
                 int blockU = Math.max(0, Math.min(240, packedLight & 0xFFFF));
                 int skyV   = Math.max(0, Math.min(240, (packedLight >>> 16) & 0xFFFF));
+                companion.bindVaoIfNeeded();
                 GL30.glVertexAttribI2i(uv2Loc, blockU, skyV);
             }
 
+            beginEntityMissileDepthBias();
+            companion.bindVaoIfNeeded();
             GL11.glDrawElements(GL11.GL_TRIANGLES, companion.getIndexCount(), GL11.GL_UNSIGNED_INT, 0);
+            endEntityMissileDepthBias();
             shader.clear();
             return true;
         } catch (Exception e) {
             MainRegistry.LOGGER.error("SingleMeshVboRenderer.renderWithIrisExtended failed", e);
             return false;
         } finally {
-            GL30.glBindVertexArray(previousVao);
+            if (companion != null) {
+                companion.restoreConstantLightmap();
+            }
+            GL30.glBindVertexArray(0);
+            RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
+            GlVaoSafety.bindVertexArray(previousVao);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
+            if (worldMissileOverlayDraw.get()) {
+                RenderSystem.enableDepthTest();
+                GL11.glDepthMask(true);
+            }
             if (previousCullFaceEnabled) RenderSystem.enableCull();
             else RenderSystem.disableCull();
             RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
@@ -726,19 +1001,32 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         public final IntBuffer indices;
         /** Object-space AABB of the mesh, computed once while packing vertices. */
         public final float minX, minY, minZ, maxX, maxY, maxZ;
+        /**
+         * Stride одной вершины в {@link #byteBuffer}: pos(12) + normal(12) + uv(8) + boneId(int32) = 36.
+         * Старые 32-байтные буферы не поддерживаются для instanced-пути.
+         */
+        public final int bytesPerVertex;
         private boolean consumed = false;
 
         public VboData(ByteBuffer byteBuffer, IntBuffer indices) {
-            this(byteBuffer, indices, 0f, 0f, 0f, 0f, 0f, 0f);
+            this(byteBuffer, indices, 0f, 0f, 0f, 0f, 0f, 0f, MACHINE_PART_VERTEX_STRIDE_BYTES);
         }
 
         public VboData(ByteBuffer byteBuffer, IntBuffer indices,
                        float minX, float minY, float minZ,
                        float maxX, float maxY, float maxZ) {
+            this(byteBuffer, indices, minX, minY, minZ, maxX, maxY, maxZ, MACHINE_PART_VERTEX_STRIDE_BYTES);
+        }
+
+        public VboData(ByteBuffer byteBuffer, IntBuffer indices,
+                       float minX, float minY, float minZ,
+                       float maxX, float maxY, float maxZ,
+                       int bytesPerVertex) {
             this.byteBuffer = byteBuffer;
             this.indices = indices;
             this.minX = minX; this.minY = minY; this.minZ = minZ;
             this.maxX = maxX; this.maxY = maxY; this.maxZ = maxZ;
+            this.bytesPerVertex = bytesPerVertex;
         }
 
         public boolean isConsumed() {
