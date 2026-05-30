@@ -47,6 +47,12 @@ public class ModRecipes {
     public static final RegistrySupplier<RecipeSerializer<ShredderRecipe>> SHREDDER_SERIALIZER =
             SERIALIZERS.register("shredding", () -> ShredderRecipe.Serializer.INSTANCE);
 
+    public static final RegistrySupplier<RecipeSerializer<CentrifugeRecipe>> CENTRIFUGE_SERIALIZER =
+            SERIALIZERS.register("centrifuge", () -> CentrifugeRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<CentrifugeRecipe>> CENTRIFUGE_TYPE =
+            RECIPE_TYPES.register("centrifuge", () -> CentrifugeRecipe.Type.INSTANCE);
+
     public static final RegistrySupplier<RecipeSerializer<AnvilRecipe>> ANVIL_SERIALIZER =
             SERIALIZERS.register("anvil", () -> AnvilRecipe.Serializer.INSTANCE);
 

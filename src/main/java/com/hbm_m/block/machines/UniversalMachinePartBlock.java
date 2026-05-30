@@ -9,10 +9,13 @@ import com.hbm_m.block.entity.doors.DoorBlockEntity;
 import com.hbm_m.block.entity.doors.DoorDecl;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity;
 import com.hbm_m.block.entity.machines.UniversalMachinePartBlockEntity;
 import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.interfaces.IMultiblockPart;
+import com.hbm_m.block.entity.machines.MachineRadarBlockEntity;
+import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -286,6 +289,8 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
                 if (be instanceof DoorBlockEntity doorBE) {
                     // Фантом не говорит "у меня нет сигнала", он говорит "перепроверь всю дверь"
                     doorBE.checkRedstonePower();
+                } else if (be instanceof LaunchPadBaseBlockEntity launchPadBE) {
+                    launchPadBE.checkRedstonePower();
                 }
             }
         }
@@ -511,5 +516,40 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
             }
         }
         return false;
+    }
+
+    @Override
+    public boolean isSignalSource(BlockState state) {
+        return true;
+    }
+
+    @Override
+    public int getSignal(BlockState state, BlockGetter level, BlockPos pos, Direction side) {
+        return resolveRadarRedPower(level, pos);
+    }
+
+    @Override
+    public int getDirectSignal(BlockState state, BlockGetter level, BlockPos pos, Direction side) {
+        return getSignal(state, level, pos, side);
+    }
+
+    private static int resolveRadarRedPower(BlockGetter level, BlockPos pos) {
+        if (!(level.getBlockEntity(pos) instanceof IMultiblockPart part)) {
+            return 0;
+        }
+        if (part.getPartRole() != PartRole.ENERGY_CONNECTOR) {
+            return 0;
+        }
+
+        BlockPos controllerPos = part.getControllerPos();
+        if (controllerPos == null) {
+            return 0;
+        }
+
+        BlockEntity controller = level.getBlockEntity(controllerPos);
+        if (controller instanceof MachineRadarBlockEntity radar) {
+            return radar.getRedPower();
+        }
+        return 0;
     }
 }

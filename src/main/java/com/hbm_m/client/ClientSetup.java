@@ -41,6 +41,7 @@ import com.hbm_m.client.loader.MachineBatterySocketModelLoader;
 import com.hbm_m.client.loader.MachineChemicalPlantModelLoader;
 import com.hbm_m.client.loader.MachineFluidTankModelLoader;
 import com.hbm_m.client.loader.MachineHydraulicFrackiningTowerModelLoader;
+import com.hbm_m.client.loader.MachineRadarModelLoader;
 import com.hbm_m.client.loader.MissileModelLoader;
 import com.hbm_m.client.render.missile.MissileRenderHelper;
 import com.hbm_m.datagen.assets.MissileItemModelDefinitions;
@@ -131,6 +132,7 @@ import com.hbm_m.inventory.gui.GUISteelCrate;
 import com.hbm_m.inventory.gui.GUITemplateCrate;
 import com.hbm_m.inventory.gui.GUITungstenCrate;
 import com.hbm_m.inventory.menu.ModMenuTypes;
+import com.hbm_m.item.BlockAbsorberItem;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.item.industrial.ItemBlueprintFolder;
@@ -427,6 +429,16 @@ public class ClientSetup {
 
         // Forge-only: дисконнект (на Fabric есть свой хук).
         MinecraftForge.EVENT_BUS.addListener(ClientSetup::onClientDisconnect);
+
+        event.enqueueWork(ClientSetup::registerRadAbsorberItemProperties);
+    }
+
+    private static void registerRadAbsorberItemProperties() {
+        net.minecraft.client.renderer.item.ItemProperties.register(
+                ModBlocks.RAD_ABSORBER.get().asItem(),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "tier"),
+                (stack, level, entity, seed) -> BlockAbsorberItem.readTier(stack).ordinal()
+        );
     }
     //?}
 
@@ -537,6 +549,10 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.FLUID_TANK_BE.get(), MachineFluidTankRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.LAUNCH_PAD_BE.get(), LaunchPadMissileRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.LAUNCH_PAD_RUSTED_BE.get(), LaunchPadMissileRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.COOLING_TOWER_BE.get(), MachineCoolingTowerRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.GAS_CENTRIFUGE_BE.get(), GasCentrifugeRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RADAR_BE.get(), MachineRadarRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.CRUCIBLE_BE.get(), CrucibleRenderer::new);
         //?}
 
         //? if fabric {
@@ -810,6 +826,7 @@ public class ClientSetup {
             MachinePressRenderer.clearCaches();
             MachineChemicalPlantRenderer.clearCaches();
             MachineCrystallizerRenderer.clearCaches();
+            MachineRadarRenderer.clearCaches();
             MeshRenderCache.clearAll();
             com.hbm_m.client.render.MdiGeometryAtlas.resetForResourceLifecycle();
             AbstractObjArmorLayer.clearAllCaches();
@@ -1262,8 +1279,9 @@ public class ClientSetup {
         event.register("missile_loader", new MissileModelLoader());
         event.register("heating_oven_loader", new HeatingOvenModelLoader());
         event.register("cooling_tower_loader", new MachineCoolingTowerModelLoader());
+        event.register("radar_loader", new MachineRadarModelLoader());
 
-        MainRegistry.LOGGER.info("Registered geometry loaders: advanced_assembly_machine_loader, chemical_plant_loader, machine_assembler_loader, hydraulic_frackining_tower_loader, template_loader, door, press_loader, heating_oven_loader, cooling_tower_loader");
+        MainRegistry.LOGGER.info("Registered geometry loaders: advanced_assembly_machine_loader, chemical_plant_loader, machine_assembler_loader, hydraulic_frackining_tower_loader, template_loader, door, press_loader, heating_oven_loader, cooling_tower_loader, radar_loader");
     }
 
     // Key mappings регистрируются в ModConfigKeybindHandler.init() через Architectury.
@@ -1387,6 +1405,7 @@ public class ClientSetup {
                         MachinePressRenderer.clearCaches();
                         MachineChemicalPlantRenderer.clearCaches();
                         MachineCrystallizerRenderer.clearCaches();
+            MachineRadarRenderer.clearCaches();
                         MeshRenderCache.clearAll();
                         com.hbm_m.client.render.MdiGeometryAtlas.resetForResourceLifecycle();
                         AbstractObjArmorLayer.clearAllCaches();

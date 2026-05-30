@@ -17,6 +17,8 @@ import com.hbm_m.blockentity.IRadarCommandReceiver;
 import com.hbm_m.interfaces.IEnergyConnector;
 import com.hbm_m.interfaces.IEnergyProvider;
 import com.hbm_m.interfaces.IEnergyReceiver;
+import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.missile.MissileBaseEntity;
 import com.hbm_m.explosion.MissileWarheadEffects;
@@ -598,8 +600,34 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
     // -----------------------
 
     /**
-     * Direct redstone on the controller block only (not summed across multiblock parts).
+     * Агрегирует редстоун с контроллера и всех частей мультиблока (как у дверей).
      */
+    public void checkRedstonePower() {
+        if (level == null || level.isClientSide) {
+            return;
+        }
+
+        BlockState blockState = getBlockState();
+        if (!(blockState.getBlock() instanceof IMultiblockController controller)) {
+            return;
+        }
+
+        MultiblockStructureHelper helper = controller.getStructureHelper();
+        Direction facing = blockState.getValue(HorizontalDirectionalBlock.FACING);
+
+        boolean isPowered = level.hasNeighborSignal(worldPosition);
+        if (!isPowered) {
+            for (BlockPos partPos : helper.getAllPartPositions(worldPosition, facing)) {
+                if (level.hasNeighborSignal(partPos)) {
+                    isPowered = true;
+                    break;
+                }
+            }
+        }
+
+        setControllerRedstone(isPowered);
+    }
+
     public void setControllerRedstone(boolean powered) {
         this.redstonePower = powered ? 1 : -1;
     }

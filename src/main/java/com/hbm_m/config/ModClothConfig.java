@@ -163,11 +163,13 @@ public class ModClothConfig implements ConfigData {
 
     @Category("chunk")
     @Gui.Tooltip
-    public float radSourceInfluenceFactor = 0.08F;
+    /** GIT {@link com.hbm.blocks.generic.BlockHazard}: hazard * 0.1F per second via {@code incrementRad}. */
+    public float radSourceInfluenceFactor = 0.1F;
 
     @Category("chunk")
     @Gui.Tooltip
-    public float radRandomizationFactor = 1.0F;
+    /** GIT {@code ChunkRadiationHandlerSimple} has no ambient randomization. */
+    public float radRandomizationFactor = 0.0F;
 
     @Category("rendering")
     @Gui.Tooltip

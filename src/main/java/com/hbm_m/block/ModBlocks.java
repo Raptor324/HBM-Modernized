@@ -11,6 +11,7 @@ import com.hbm_m.api.energy.ConverterBlock;
 import com.hbm_m.api.energy.SwitchBlock;
 import com.hbm_m.api.energy.WireBlock;
 import com.hbm_m.block.bomb.BlockTaint;
+import com.hbm_m.block.generic.BlockAbsorber;
 import com.hbm_m.block.generic.BlockSlag;
 import com.hbm_m.block.bomb.NukeFatManBlock;
 import com.hbm_m.block.decorations.CageLampBlock;
@@ -76,6 +77,7 @@ import com.hbm_m.block.machines.MachineMiningDrillBlock;
 import com.hbm_m.block.machines.MachineMixerBlock;
 import com.hbm_m.block.machines.MachinePressBlock;
 import com.hbm_m.block.machines.MachinePumpjackBlock;
+import com.hbm_m.block.machines.MachineLargeRadarBlock;
 import com.hbm_m.block.machines.MachineRadarBlock;
 import com.hbm_m.block.machines.MachineRbmkConsoleBlock;
 import com.hbm_m.block.machines.MachineRefineryBlock;
@@ -112,6 +114,7 @@ import com.hbm_m.block.weapons.BarbedWirePoisonBlock;
 import com.hbm_m.block.weapons.BarbedWireRadBlock;
 import com.hbm_m.block.weapons.BarbedWireWitherBlock;
 import com.hbm_m.block.weapons.FallingSellafit;
+import com.hbm_m.item.BlockAbsorberItem;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.fekal_electric.MachineBatteryBlockItem;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
@@ -137,6 +140,12 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> DECON = registerBlock("decon",
             () -> new BlockDecon(Block.Properties.copy(Blocks.IRON_BLOCK)
+                    .strength(5.0F, 10.0F)
+                    .requiresCorrectToolForDrops()));
+
+    /** Порт {@code rad_absorber} ({@link com.hbm.blocks.generic.BlockAbsorber}). */
+    public static final RegistrySupplier<Block> RAD_ABSORBER = registerRadAbsorberBlock("rad_absorber",
+            () -> new BlockAbsorber(Block.Properties.copy(Blocks.IRON_BLOCK)
                     .strength(5.0F, 10.0F)
                     .requiresCorrectToolForDrops()));
 
@@ -384,7 +393,7 @@ public class ModBlocks {
             () -> new MachineRadarBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> LARGE_RADAR = registerBlockWithoutItem("large_radar",
-            () -> new MachineRadarBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+            () -> new MachineLargeRadarBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> CRACKING_TOWER = registerBlockWithoutItem("cracking_tower",
             () -> new MachineCrackingTowerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
@@ -1725,6 +1734,13 @@ public class ModBlocks {
 
     private static RegistrySupplier<Block> registerAnvil(String name, AnvilTier tier) {
         return registerBlock(name, () -> new AnvilBlock(ANVIL_PROPERTIES, tier));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static RegistrySupplier<Block> registerRadAbsorberBlock(String name, Supplier<BlockAbsorber> block) {
+        RegistrySupplier<BlockAbsorber> toReturn = BLOCKS.register(name, block);
+        ModItems.ITEMS.register(name, () -> new BlockAbsorberItem(toReturn.get(), new Item.Properties()));
+        return (RegistrySupplier<Block>) (RegistrySupplier<?>) toReturn;
     }
 
     private static <T extends Block> RegistrySupplier<T> registerBlock(String name, Supplier<T> block) {

@@ -116,10 +116,9 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                 ChunkPos pos = entry.getKey();
                 float ambientToSpread = entry.getValue();
                 if (ambientToSpread > 1e-6f) {
-                    // Распределяем 95% радиации, 5% теряется при распространении
-                    float spreadFactor = 0.95f; 
-                    float totalToSpread = ambientToSpread * spreadFactor;
-                    
+                    // GIT ChunkRadiationHandlerSimple: 100% redistribution (center 60%, cardinal 7.5%, diagonal 2.5%)
+                    float totalToSpread = ambientToSpread;
+
                     float centerShare = totalToSpread * 0.60f;
                     float cardinalShare = totalToSpread * 0.075f; // 4 * 0.075 = 0.3
                     float diagonalShare = totalToSpread * 0.025f; // 4 * 0.025 = 0.1
@@ -159,15 +158,13 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                 // 1. Новое значение фона = то, что пришло от соседей
                 float newAmbient = writeBuffer.getOrDefault(pos, 0f);
 
-                // 2. Добавляем генерацию от блоков в этом чанке
+                // 2. Добавляем генерацию от блоков в этом чанке (GIT BlockHazard: hazard * 0.1 / sec)
                 float generation = blockReadBuffer.getOrDefault(pos, 0f);
                 if (generation > 1e-6f) {
                     newAmbient += generation * ModClothConfig.get().radSourceInfluenceFactor;
                 }
-                // Распад состоит из процентной и фиксированной части, чтобы добивать малые значения.
-                float decayPercent = 0.05f; // 5% от текущего значения
-                float decayFlat = 0.1f;    // 0.1 рад в секунду (в 20 тиков)
-                newAmbient -= (newAmbient * decayPercent + decayFlat);
+                // GIT ChunkRadiationHandlerSimple: value * 0.99F - 0.05F per spread step (once per second)
+                newAmbient = Math.max(0f, newAmbient * 0.99f - 0.05f);
 
                 float fluctuationFactor = ModClothConfig.get().radRandomizationFactor;
                 // Применяем только если включено и есть чему флуктуировать

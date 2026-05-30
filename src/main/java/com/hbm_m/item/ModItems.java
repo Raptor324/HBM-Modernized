@@ -1223,6 +1223,14 @@ public class ModItems {
     public static final RegistrySupplier<Item> WOOD_ASH_POWDER = ITEMS.register("wood_ash_powder",
             () -> new Item(new Item.Properties()));
 
+    /** Порт {@code powder_desh_mix}. */
+    public static final RegistrySupplier<Item> POWDER_DESH_MIX = ITEMS.register("powder_desh_mix",
+            () -> new Item(new Item.Properties()));
+
+    /** Порт {@code powder_nitan_mix}. */
+    public static final RegistrySupplier<Item> POWDER_NITAN_MIX = ITEMS.register("powder_nitan_mix",
+            () -> new Item(new Item.Properties()));
+
     // Additional standalone powders (not from ModIngots)
     public static final RegistrySupplier<Item> COPPER_POWDER = ITEMS.register("copper_powder",
             () -> new Item(new Item.Properties()));

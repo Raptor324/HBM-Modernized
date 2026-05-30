@@ -2,6 +2,7 @@ package com.hbm_m.datagen.assets;
 //? if forge {
 // Провайдер генерации состояний блоков и моделей для блоков мода.
 // Используется в классе DataGenerators для регистрации.
+import com.hbm_m.block.generic.BlockAbsorber;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.block.machines.BlastFurnaceBlock;
@@ -515,6 +516,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 modLoc("block/decon_top"),
                 modLoc("block/decon_side")
         );
+        registerRadAbsorber();
         customObjBlock(ModBlocks.TAPE_RECORDER);
         customObjBlock(ModBlocks.TOASTER);
         customObjBlock(ModBlocks.DECO_STEEL_SCAFFOLD);
@@ -1284,6 +1286,23 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         // 4. Создаем модель для предмета-блока
         simpleBlockItem(blockObject.get(), models().getExistingFile(modLoc("block/" + textureName)));
+    }
+
+    /**
+     * Поглотитель радиации — варианты по уровню ({@link BlockAbsorber.EnumAbsorberTier}).
+     */
+    private void registerRadAbsorber() {
+        Block block = ModBlocks.RAD_ABSORBER.get();
+        VariantBlockStateBuilder builder = getVariantBuilder(block);
+        for (BlockAbsorber.EnumAbsorberTier tier : BlockAbsorber.EnumAbsorberTier.values()) {
+            String modelName = "rad_absorber_" + tier.getSerializedName();
+            ModelFile model = models().cubeAll(modelName, modLoc("block/" + tier.textureName));
+            builder.partialState()
+                    .with(BlockAbsorber.TIER, tier)
+                    .modelForState()
+                    .modelFile(model)
+                    .addModel();
+        }
     }
 
     /**

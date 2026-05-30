@@ -83,6 +83,7 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> ASSEMBLER_STOP = registerSoundEvents("block.assembler_stop");
     public static final RegistrySupplier<SoundEvent> ASSEMBLER_STRIKE_1 = registerSoundEvents("block.assembler_strike1");
     public static final RegistrySupplier<SoundEvent> ASSEMBLER_STRIKE_2 = registerSoundEvents("block.assembler_strike2");
+    public static final RegistrySupplier<SoundEvent> SONAR_PING = registerSoundEvents("block.sonar_ping");
     public static final RegistrySupplier<SoundEvent> MOTOR = registerSoundEvents("block.motor");
     public static final RegistrySupplier<SoundEvent> METAL_BOX_OPEN = registerSoundEvents("block.metal_box_open");
     public static final RegistrySupplier<SoundEvent> METAL_BOX_CLOSE = registerSoundEvents("block.metal_box_close");

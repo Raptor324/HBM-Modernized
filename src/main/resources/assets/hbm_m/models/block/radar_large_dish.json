@@ -2,7 +2,7 @@
   "loader": "forge:obj",
   "model": "hbm_m:models/block/radar_large.obj",
   "flip_v": true,
-  "render_type": "minecraft:solid",
+  "render_type": "minecraft:cutout",
   "textures": {
     "particle": "hbm_m:block/machine/radar_dish",
     "default": "hbm_m:block/machine/radar_dish"

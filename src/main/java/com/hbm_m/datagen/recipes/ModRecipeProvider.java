@@ -11,6 +11,7 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.datagen.recipes.custom.AnvilRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.AssemblerRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.BlastFurnaceRecipeGenerator;
+import com.hbm_m.datagen.recipes.custom.CentrifugeRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.ChemicalPlantRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.PressRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.ShredderRecipeGenerator;
@@ -43,6 +44,7 @@ public class ModRecipeProvider extends RecipeProvider {
         ChemicalPlantRecipeGenerator.generate(pWriter);
         AnvilRecipeGenerator.generate(pWriter);
         ShredderRecipeGenerator.generate(pWriter, ModRecipeProvider::unlockedByItem);
+        CentrifugeRecipeGenerator.generate(pWriter);
 
         // ==================== АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ РЕЦЕПТОВ ДЛЯ БЛОКОВ СЛИТКОВ ====================
         for (ModIngots ingot : ModIngots.values()) {

@@ -8,6 +8,8 @@ import java.util.function.Consumer;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.armormod.item.ItemArmorMod;
+import com.hbm_m.block.generic.BlockAbsorber;
+import com.hbm_m.item.BlockAbsorberItem;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.client.ClientSetup;
 import com.hbm_m.config.ModClothConfig;
@@ -1221,6 +1223,9 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.WIRE_COATED.get()));
         add.accept(new ItemStack(ModBlocks.GEIGER_COUNTER_BLOCK.get()));
         add.accept(new ItemStack(ModBlocks.DECON.get()));
+        for (BlockAbsorber.EnumAbsorberTier tier : BlockAbsorber.EnumAbsorberTier.values()) {
+            add.accept(BlockAbsorberItem.forTier(ModBlocks.RAD_ABSORBER.get(), tier));
+        }
     }
 
     // ТОПЛИВО И ЭЛЕМЕНТЫ МЕХАНИЗМОВ

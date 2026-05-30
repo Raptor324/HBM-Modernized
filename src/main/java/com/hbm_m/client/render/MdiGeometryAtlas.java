@@ -178,11 +178,6 @@ public final class MdiGeometryAtlas {
     }
 
     private void destroyInternal() {
-        // #region agent log
-        int ms = geometryByRenderer.size();
-        MdiDebugNdjson.log("H2", "MdiGeometryAtlas.destroyInternal", "atlas reset begin",
-                "{\"mapSize\":" + ms + ",\"vUsed\":" + vertexUsedBytes + ",\"iUsed\":" + indexUsedBytes + "}");
-        // #endregion agent log
         for (GeoRecord rec : geometryByRenderer.values()) {
             try {
                 if (rec.vertexBytesCopy != null) {
@@ -421,10 +416,6 @@ public final class MdiGeometryAtlas {
         } catch (Throwable t) {
             MainRegistry.LOGGER.warn("[HBM-M MDI] evict GeoRecord native free: {}", t.toString());
         }
-        // #region agent log
-        MdiDebugNdjson.log("H6", "MdiGeometryAtlas.evictRendererLocked", "evicted renderer from atlas",
-                "{\"rid\":" + System.identityHashCode(renderer) + ",\"remainingMap\":" + geometryByRenderer.size() + "}");
-        // #endregion agent log
         if (geometryByRenderer.isEmpty()) {
             vertexUsedBytes = 0L;
             indexUsedBytes = 0L;
@@ -509,12 +500,6 @@ public final class MdiGeometryAtlas {
             geometryByRenderer.put(renderer, rec);
             MainRegistry.LOGGER.debug("[HBM-M MDI] Atlas registered renderer {}: verts={}, idx={}, baseVertex={}, firstIndexBytes={}",
                     System.identityHashCode(renderer), vertexCount, indexCount, baseVertex, firstIndexBytes);
-            // #region agent log
-            MdiDebugNdjson.log("H2", "MdiGeometryAtlas.registerGeometryIfAbsent", "new geo registered",
-                    "{\"rid\":" + System.identityHashCode(renderer) + ",\"bv\":" + baseVertex + ",\"fib\":"
-                            + firstIndexBytes + ",\"ic\":" + indexCount + ",\"vblen\":" + vertexBytesLen
-                            + ",\"mapSize\":" + geometryByRenderer.size() + "}");
-            // #endregion agent log
             return rec.slot;
         } catch (Throwable t) {
             MainRegistry.LOGGER.error("[HBM-M MDI] Geometry registration failed", t);
@@ -565,8 +550,6 @@ public final class MdiGeometryAtlas {
      */
     private void repackGeometryAndRefreshSlots() {
         GLCapabilitiesGuard guard = GLCapabilitiesGuard.snapshot();
-        int skipped = 0;
-        int uploaded = 0;
         try {
             GL30.glBindVertexArray(vaoId);
             long vOff = 0L;
@@ -575,7 +558,6 @@ public final class MdiGeometryAtlas {
                 GeoRecord rec = e.getValue();
                 String rid = Integer.toHexString(System.identityHashCode(e.getKey()));
                 if (rec.vertexBytesCopy == null || rec.indicesCopy == null) {
-                    skipped++;
                     rec.slot = null;
                     MainRegistry.LOGGER.warn(
                             "[HBM-M MDI] repack skip: null native copy rid=0x{} — slot invalidated (stale offsets after buffer resize)",
@@ -586,7 +568,6 @@ public final class MdiGeometryAtlas {
                 // если limit/position на кэше когда-либо сдвинулись — получаем пропуски
                 // записей и слоты на неинициализированный VBO.
                 if (rec.registeredVertexBytesLen <= 0 || rec.registeredIndexCount <= 0) {
-                    skipped++;
                     rec.slot = null;
                     MainRegistry.LOGGER.warn(
                             "[HBM-M MDI] repack skip: non-positive registered sizes rid=0x{} — slot invalidated",
@@ -602,7 +583,6 @@ public final class MdiGeometryAtlas {
                 int vLen = vbView.remaining();
                 int idxCount = ibView.remaining();
                 if (vLen != rec.registeredVertexBytesLen || idxCount != rec.registeredIndexCount) {
-                    skipped++;
                     rec.slot = null;
                     MainRegistry.LOGGER.warn(
                             "[HBM-M MDI] repack skip: buffer view len mismatch rid=0x{} vLen={} expV={} idxCount={} expI={} — slot invalidated",
@@ -617,20 +597,11 @@ public final class MdiGeometryAtlas {
                 GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, indexEboId);
                 GL15.glBufferSubData(GL15.GL_ELEMENT_ARRAY_BUFFER, iOff, ibView);
                 rec.slot = new Slot(baseVertex, firstIndexBytes, idxCount);
-                uploaded++;
                 vOff += vLen;
                 iOff += idxBytes;
             }
             vertexUsedBytes = vOff;
             indexUsedBytes = iOff;
-            // #region agent log
-            if (skipped > 0) {
-                MdiDebugNdjson.log("H3", "MdiGeometryAtlas.repackGeometryAndRefreshSlots",
-                        "repack skipped some geo records",
-                        "{\"skipped\":" + skipped + ",\"uploaded\":" + uploaded + ",\"mapSize\":"
-                                + geometryByRenderer.size() + ",\"vOff\":" + vOff + ",\"iOff\":" + iOff + "}");
-            }
-            // #endregion agent log
         } finally {
             guard.restore();
         }

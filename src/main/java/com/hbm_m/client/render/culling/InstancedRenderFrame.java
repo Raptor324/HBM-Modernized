@@ -14,6 +14,7 @@ import com.hbm_m.client.render.implementations.MachineChemicalPlantRenderer;
 import com.hbm_m.client.render.implementations.MachineCrystallizerRenderer;
 import com.hbm_m.client.render.implementations.MachineHydraulicFrackiningTowerRenderer;
 import com.hbm_m.client.render.implementations.MachinePressRenderer;
+import com.hbm_m.client.render.implementations.MachineRadarRenderer;
 import com.hbm_m.client.render.shader.IrisExtendedShaderAccess;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.config.ModClothConfig;
@@ -160,6 +161,7 @@ public final class InstancedRenderFrame {
         MachinePressRenderer.flushInstancedBatches(projection);
         MachineChemicalPlantRenderer.flushInstancedBatches(projection);
         MachineCrystallizerRenderer.flushInstancedBatches(projection);
+        MachineRadarRenderer.flushInstancedBatches(projection);
     }
 
     public static void clear() {

@@ -4,15 +4,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 import api.hbm.entity.IRadarDetectable;
+import com.hbm_m.api.energy.ItemEnergyAccess;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.inventory.menu.MachineRadarMenu;
+import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+import com.hbm_m.multiblock.PartRole;
+import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -20,22 +30,39 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+//? if forge {
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+//?}
 
 public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
 
+    /** Слоты как в {@code TileEntityMachineRadarNT}: 0 и 9 — батареи. */
+    private static final int SLOT_COUNT = 10;
+    private static final int SLOT_BATTERY_PRIMARY = 0;
+    private static final int SLOT_BATTERY_SECONDARY = 9;
+
     public static final int RADAR_RANGE = 256;
+    public static final int RADAR_LARGE_RANGE = 3_000;
     public static final int RADAR_BUFFER = 0;
     public static final int RADAR_ALTITUDE = 64;
     private static final long ENERGY_DRAIN_PER_TICK = 500L;
     private static final int MAX_CONTACTS = 64;
     private static final int DEFAULT_MAX_PROGRESS = 200;
+    private static final int SONAR_PING_INTERVAL = 80;
 
     private int progress = 0;
     private int maxProgress = DEFAULT_MAX_PROGRESS;
+    private int pingTimer = 0;
     private boolean active = false;
+
+    /** Клиентская анимация тарелки (порт {@code TileEntityMachineRadarNT}). */
+    public float prevRotation;
+    public float rotation;
 
     public boolean scanMissiles = true;
     public boolean scanPlayers = false;
@@ -48,17 +75,60 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
     public final List<int[]> nearbyMissiles = new ArrayList<>();
 
     public MachineRadarBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.RADAR_BE.get(), pos, state, 0, 250_000L, 2_500L, 0L);
+        super(ModBlockEntities.RADAR_BE.get(), pos, state, SLOT_COUNT, 250_000L, 2_500L, 0L);
+    }
+
+    public boolean isLargeRadar() {
+        return getBlockState().is(ModBlocks.LARGE_RADAR.get());
+    }
+
+    public int getRange() {
+        return isLargeRadar() ? RADAR_LARGE_RANGE : RADAR_RANGE;
+    }
+
+    @Override
+    public AABB getRenderBoundingBox() {
+        if (isLargeRadar()) {
+            // Порт TileEntityMachineRadarLarge.getRenderBoundingBox()
+            return new AABB(
+                    worldPosition.getX() - 5,
+                    worldPosition.getY(),
+                    worldPosition.getZ() - 5,
+                    worldPosition.getX() + 6,
+                    worldPosition.getY() + 10,
+                    worldPosition.getZ() + 6
+            );
+        }
+        return super.getRenderBoundingBox();
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineRadarBlockEntity blockEntity) {
-        if (!level.isClientSide) {
-            blockEntity.serverTick();
+        if (level.isClientSide) {
+            blockEntity.clientTick();
+            return;
+        }
+        blockEntity.serverTick();
+    }
+
+    private void clientTick() {
+        prevRotation = rotation;
+        if (active || getEnergyStored() > 0) {
+            rotation += 5.0F;
+            if (rotation >= 360.0F) {
+                rotation -= 360.0F;
+                prevRotation -= 360.0F;
+            }
         }
     }
 
     private void serverTick() {
         ensureNetworkInitialized();
+        chargeFromBatterySlot(SLOT_BATTERY_SECONDARY);
+        chargeFromBatterySlot(SLOT_BATTERY_PRIMARY);
+        chargeFromAdjacentBlocks();
+
+        boolean wasActive = active;
+        active = getEnergyStored() > 0;
 
         if (worldPosition.getY() < RADAR_ALTITUDE) {
             clearScanData();
@@ -66,22 +136,21 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
                 lastRedPower = 0;
                 notifyRedstoneNeighbors();
             }
-            return;
-        }
-
-        boolean wasActive = active;
-        active = getEnergyStored() > 0;
-
-        if (active) {
+        } else if (active) {
             performRadarScan();
-
-            long afterDrain = getEnergyStored() - ENERGY_DRAIN_PER_TICK;
-            setEnergyStored(Math.max(0L, afterDrain));
+            setEnergyStored(Math.max(0L, getEnergyStored() - ENERGY_DRAIN_PER_TICK));
+            active = getEnergyStored() > 0;
         } else {
             clearScanData();
         }
 
         progress = (progress + 1) % Math.max(1, maxProgress);
+
+        pingTimer++;
+        if (getEnergyStored() > 0 && pingTimer >= SONAR_PING_INTERVAL) {
+            level.playSound(null, worldPosition, ModSounds.SONAR_PING.get(), SoundSource.BLOCKS, 5.0F, 1.0F);
+            pingTimer = 0;
+        }
 
         int redPower = getRedPower();
         if (redPower != lastRedPower) {
@@ -89,10 +158,102 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             notifyRedstoneNeighbors();
         }
 
-        if (wasActive != active || active || progress == 0) {
+        if (wasActive != active || active || progress == 0 || level.getGameTime() % 20 == 0) {
             setChanged();
             sendUpdateToClient();
         }
+    }
+
+    /**
+     * Точки подключения кабеля (порт {@code TileEntityMachineRadarNT.getConPos()} /
+     * {@code TileEntityMachineRadarLarge.getConPos()}).
+     */
+    private BlockPos[] getConnectionPositions() {
+        int offset = isLargeRadar() ? 2 : 1;
+        return new BlockPos[] {
+                worldPosition.offset(offset, 0, 0),
+                worldPosition.offset(-offset, 0, 0),
+                worldPosition.offset(0, 0, offset),
+                worldPosition.offset(0, 0, -offset),
+        };
+    }
+
+    private void chargeFromAdjacentBlocks() {
+        if (level == null || !canReceive()) {
+            return;
+        }
+
+        for (Direction dir : Direction.values()) {
+            tryPullEnergyFromPos(worldPosition.relative(dir), dir.getOpposite());
+            if (!canReceive()) {
+                return;
+            }
+        }
+
+        if (level.getGameTime() % 20 != 0) {
+            return;
+        }
+
+        for (BlockPos connPos : getConnectionPositions()) {
+            for (Direction dir : Direction.values()) {
+                tryPullEnergyFromPos(connPos, dir);
+                if (!canReceive()) {
+                    return;
+                }
+            }
+        }
+    }
+
+    private void tryPullEnergyFromPos(BlockPos sourcePos, Direction side) {
+        if (level == null || !canReceive()) {
+            return;
+        }
+
+        BlockEntity source = level.getBlockEntity(sourcePos);
+        if (source == null) {
+            return;
+        }
+
+        long needed = Math.min(getMaxEnergyStored() - getEnergyStored(), getReceiveSpeed());
+        if (needed <= 0) {
+            return;
+        }
+        final long pullLimit = needed;
+
+        //? if forge {
+        source.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, side).ifPresent(provider -> {
+            if (!provider.canExtract()) {
+                return;
+            }
+            long toPull = Math.min(pullLimit, provider.getProvideSpeed());
+            long extracted = provider.extractEnergy(toPull, false);
+            if (extracted > 0) {
+                receiveEnergy(extracted, false);
+            }
+        });
+
+        if (!canReceive()) {
+            return;
+        }
+        long feNeeded = Math.min(getMaxEnergyStored() - getEnergyStored(), getReceiveSpeed());
+        if (feNeeded <= 0) {
+            return;
+        }
+        final int fePullLimit = (int) Math.min(Integer.MAX_VALUE, feNeeded);
+
+        source.getCapability(ForgeCapabilities.ENERGY, side).ifPresent(fe -> {
+            if (!fe.canExtract()) {
+                return;
+            }
+            if (fePullLimit <= 0) {
+                return;
+            }
+            int extracted = fe.extractEnergy(fePullLimit, false);
+            if (extracted > 0) {
+                receiveEnergy(extracted, false);
+            }
+        });
+        //?}
     }
 
     private void performRadarScan() {
@@ -105,12 +266,12 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         jammed = false;
 
         AABB area = new AABB(
-                worldPosition.getX() + 0.5D - RADAR_RANGE,
+                worldPosition.getX() + 0.5D - getRange(),
                 level.getMinBuildHeight(),
-                worldPosition.getZ() + 0.5D - RADAR_RANGE,
-                worldPosition.getX() + 0.5D + RADAR_RANGE,
+                worldPosition.getZ() + 0.5D - getRange(),
+                worldPosition.getX() + 0.5D + getRange(),
                 level.getMaxBuildHeight(),
-                worldPosition.getZ() + 0.5D + RADAR_RANGE
+                worldPosition.getZ() + 0.5D + getRange()
         );
 
         List<Entity> entities = level.getEntities((Entity) null, area, Entity::isAlive);
@@ -248,7 +409,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         }
 
         if (redMode) {
-            double maxRange = RADAR_RANGE * Math.sqrt(2.0D);
+            double maxRange = getRange() * Math.sqrt(2.0D);
             int powerOut = 0;
 
             for (Entity entity : trackedEntities) {
@@ -282,9 +443,28 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
     }
 
     private void notifyRedstoneNeighbors() {
-        if (level != null && !level.isClientSide) {
-            level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
-            level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
+        if (level == null || level.isClientSide) {
+            return;
+        }
+
+        BlockState state = getBlockState();
+        level.updateNeighborsAt(worldPosition, state.getBlock());
+        level.updateNeighbourForOutputSignal(worldPosition, state.getBlock());
+
+        if (!isLargeRadar() || !(state.getBlock() instanceof IMultiblockController controller)) {
+            return;
+        }
+
+        MultiblockStructureHelper helper = controller.getStructureHelper();
+        Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
+
+        for (BlockPos localPos : helper.getStructureMap().keySet()) {
+            if (helper.resolvePartRole(localPos, controller) != PartRole.ENERGY_CONNECTOR) {
+                continue;
+            }
+            BlockPos worldPos = helper.getRotatedPos(worldPosition, localPos, facing);
+            level.updateNeighborsAt(worldPos, ModBlocks.UNIVERSAL_MACHINE_PART.get());
+            level.updateNeighbourForOutputSignal(worldPos, ModBlocks.UNIVERSAL_MACHINE_PART.get());
         }
     }
 
@@ -376,7 +556,24 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return false;
+        if (slot != SLOT_BATTERY_PRIMARY && slot != SLOT_BATTERY_SECONDARY) {
+            return false;
+        }
+        if (stack.isEmpty()) {
+            return false;
+        }
+        if (stack.getItem() instanceof ItemCreativeBattery) {
+            return true;
+        }
+        if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) {
+            return true;
+        }
+        //? if forge {
+        return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+        //?}
+        //? if fabric {
+        /*return teamreborn.energy.api.EnergyStorage.ITEM.find(stack, null) != null;
+        *///?}
     }
 
     @Override

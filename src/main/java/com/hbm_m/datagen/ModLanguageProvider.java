@@ -1348,6 +1348,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.press", "Пресс");
                 add("block.hbm_m.geiger_counter_block", "Стационарный счетчик Гейгера");
                 add("block.hbm_m.decon", "Обеззараживатель игрока");
+                add("block.hbm_m.rad_absorber.base", "Поглотитель радиации");
+                add("block.hbm_m.rad_absorber.red", "Усовершенствованный поглотитель радиации");
+                add("block.hbm_m.rad_absorber.green", "Элитный поглотитель радиации");
+                add("block.hbm_m.rad_absorber.pink", "Продвинутый поглотитель радиации");
+                add("item.hbm_m.powder_desh_mix", "Смесь деш");
+                add("item.hbm_m.powder_nitan_mix", "Нитановая смесь");
                 add("block.hbm_m.freaky_alien_block", "Блок ебанутого инопланетянина");
                 add("block.hbm_m.reinforced_stone", "Уплотнённый камень");
                 add("block.hbm_m.reinforced_stone_slab", "Плита из уплотнённого камня");
@@ -3540,6 +3546,12 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("block.hbm_m.geiger_counter_block", "Geiger Counter Block");
                 add("block.hbm_m.decon", "Player Decontaminator");
+                add("block.hbm_m.rad_absorber.base", "Radiation Absorber");
+                add("block.hbm_m.rad_absorber.red", "Enhanced Radiation Absorber");
+                add("block.hbm_m.rad_absorber.green", "Advanced Radiation Absorber");
+                add("block.hbm_m.rad_absorber.pink", "Elite Radiation Absorber");
+                add("item.hbm_m.powder_desh_mix", "Desh Blend");
+                add("item.hbm_m.powder_nitan_mix", "Nitanium Blend");
                 add("block.hbm_m.wire_coated", "Red Copper Wire");
 
                 // ORES

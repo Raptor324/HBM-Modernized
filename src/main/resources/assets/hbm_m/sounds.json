@@ -373,6 +373,16 @@
       "hbm_m:block/motor"
     ]
   },
+  "block.sonar_ping": {
+    "category": "block",
+    "subtitle": "sounds.hbm_m.subtitle.sonar_ping",
+    "sounds": [
+      {
+        "name": "hbm_m:block/sonar_ping",
+        "stream": false
+      }
+    ]
+  },
   "block.chemical_plant": {
     "subtitle": "sounds.hbm_m.subtitle.chemical_plant",
     "sounds": [
