@@ -67,25 +67,25 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity {
     private static final int INPUT_CONSUMPTION_MB = 100;
 
     // Fractions from original RefineryRecipes (input is always 100 mB).
-    private static final int OIL_FRAC_HEAVY = 10;
-    private static final int OIL_FRAC_NAPH = 10;
-    private static final int OIL_FRAC_LIGHT = 10;
+    private static final int OIL_FRAC_HEAVY = 50;
+    private static final int OIL_FRAC_NAPH = 25;
+    private static final int OIL_FRAC_LIGHT = 15;
     private static final int OIL_FRAC_PETRO = 10;
 
-    private static final int CRACK_FRAC_NAPH = 18;
-    private static final int CRACK_FRAC_LIGHT = 18;
-    private static final int CRACK_FRAC_AROMA = 2;
-    private static final int CRACK_FRAC_UNSAT = 2;
+    private static final int CRACK_FRAC_NAPH = 40;
+    private static final int CRACK_FRAC_LIGHT = 30;
+    private static final int CRACK_FRAC_AROMA = 15;
+    private static final int CRACK_FRAC_UNSAT = 15;
 
-    private static final int OILDS_FRAC_HEAVY = 10;
-    private static final int OILDS_FRAC_NAPH = 10;
-    private static final int OILDS_FRAC_LIGHT = 10;
-    private static final int OILDS_FRAC_UNSAT = 10;
+    private static final int OILDS_FRAC_HEAVY = 30;
+    private static final int OILDS_FRAC_NAPH = 35;
+    private static final int OILDS_FRAC_LIGHT = 20;
+    private static final int OILDS_FRAC_UNSAT = 15;
 
-    private static final int CRACKDS_FRAC_NAPH = 18;
-    private static final int CRACKDS_FRAC_LIGHT = 18;
-    private static final int CRACKDS_FRAC_AROMA = 2;
-    private static final int CRACKDS_FRAC_UNSAT = 2;
+    private static final int CRACKDS_FRAC_NAPH = 35;
+    private static final int CRACKDS_FRAC_LIGHT = 35;
+    private static final int CRACKDS_FRAC_AROMA = 15;
+    private static final int CRACKDS_FRAC_UNSAT = 15;
 
     private final FluidTank[] tanks = new FluidTank[] {
         new FluidTank(64_000) {
@@ -196,7 +196,7 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity {
         RefineryRecipe recipe = resolveRefineryRecipe(getTank(TANK_INPUT).getTankType());
         if (recipe == null) {
             isOn = false;
-            return false;
+            return clearEmptyOutputTankTypes();
         }
 
         boolean changed = prepareOutputTypes(recipe.outputFluids());
@@ -227,6 +227,18 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity {
 
         this.energy -= ENERGY_PER_TICK;
         return true;
+    }
+
+    private boolean clearEmptyOutputTankTypes() {
+        boolean changed = false;
+        for (int i = 1; i < 5; i++) {
+            FluidTank out = getTank(i);
+            if (out.getFill() <= 0 && !VanillaFluidEquivalence.sameSubstance(out.getTankType(), ModFluids.NONE.getSource())) {
+                out.setTankType(ModFluids.NONE.getSource());
+                changed = true;
+            }
+        }
+        return changed;
     }
 
     private boolean hasOutputSpace(Fluid[] outputFluids, int[] amounts) {

@@ -8,7 +8,12 @@ import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.MachineIndustrialBoilerBlock;
+import com.hbm_m.inventory.fluid.FluidType;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
+import com.hbm_m.inventory.fluid.trait.FT_Heatable;
+import com.hbm_m.inventory.fluid.trait.FT_Heatable.HeatingStep;
+import com.hbm_m.inventory.fluid.trait.FT_Heatable.HeatingType;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -38,12 +43,12 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 *///?}
 
 /**
- * Industrial Boiler BlockEntity - converts water to steam using heat/energy.
+ * Industrial Boiler BlockEntity - converts heatable fluids to steam products.
  * 
  * Stats from screenshot:
  * - Water tank: 64,000 mB
  * - Steam tank: 6,400,000 mB
- * - TU (Thermal Units) for heat input
+ * - TU (Thermal Units) heat buffer
  */
 @SuppressWarnings("UnstableApiUsage")
 public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
@@ -61,17 +66,18 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
     private static final int WATER_CAPACITY = 64_000;      // 64,000 mB
     private static final int STEAM_CAPACITY = 6_400_000;    // 6,400,000 mB
 
-    // Conversion constants
-    private static final int ENERGY_PER_MB_WATER = 10;     // Energy cost per mB of water converted
-    private static final int STEAM_PER_WATER = 100;        // 1mB water = 100mB steam (expansion ratio)
-    private static final int WATER_CONSUMPTION_RATE = 10;  // mB of water consumed per tick when active
+    // Heat model (ported behavior)
+    private static final int MAX_HEAT = 12_800_000;
+    private static final double DIFFUSION = 0.1D;
+    private static final int MAX_ENERGY_TO_HEAT_PER_TICK = 20_000;
 
     // Fluid tanks
     private final FluidTank waterTank;
     private final FluidTank steamTank;
 
-    // Heat/thermal units (visual display)
-    private int thermalUnits = 0;
+    // Heat buffer (TU)
+    private int heat = 0;
+    private boolean isOn = false;
 
     // GUI data
     protected final ContainerData data;
@@ -101,8 +107,8 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
                     case 1 -> waterTank.getMaxFill();
                     case 2 -> steamTank.getFill();
                     case 3 -> steamTank.getMaxFill();
-                    case 4 -> thermalUnits;
-                    case 5 -> isActive() ? 1 : 0;
+                    case 4 -> heat;
+                    case 5 -> isOn ? 1 : 0;
                     case 6 -> (int) (energy & 0xFFFFFFFF);         // Lower 32 bits
                     case 7 -> (int) ((energy >> 32) & 0xFFFFFFFF); // Upper 32 bits
                     default -> 0;
@@ -111,8 +117,7 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
 
             @Override
             public void set(int index, int value) {
-                // Only thermal units can be set externally (for heat input from external sources)
-                if (index == 4) thermalUnits = value;
+                if (index == 4) heat = Math.max(0, Math.min(MAX_HEAT, value));
             }
 
             @Override
@@ -127,35 +132,33 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
 
         be.ensureNetworkInitialized();
 
-        boolean wasActive = be.isActive();
+        boolean wasActive = be.isOn;
 
-        // Process fluid containers (fill water tank, empty steam tank)
         be.processFluidContainers();
+        be.pullHeat();
+        be.setupTanks();
+        be.isOn = false;
+        be.tryConvert();
 
-        // Convert water to steam if we have enough energy
-        be.processBoiling();
-
-        // 1.7.10-стиль подписки в MK2-сеть.
-        // Steam (output): UP — наружу; Water (input): остальные стороны — внутрь.
+        // MK2 network: steam out via UP, input fluid via sides/bottom.
+        net.minecraft.world.level.material.Fluid requestedInput = be.getRequestedInputFluid();
         for (Direction dir : Direction.values()) {
             BlockPos pipePos = pos.relative(dir);
             BlockEntity pipeBe = level.getBlockEntity(pipePos);
             if (!(pipeBe instanceof com.hbm_m.api.fluids.IFluidConnectorMK2)) continue;
 
             if (dir == Direction.UP) {
-                // Steam out
                 if (be.steamTank.getFill() > 0) {
                     be.tryProvide(be.steamTank, level, pipePos, dir);
                 }
             } else {
-                // Water in (sides + bottom)
-                be.trySubscribe(Fluids.WATER, level, pipePos, dir);
+                be.trySubscribe(requestedInput, level, pipePos, dir);
             }
         }
 
         // Update visual state
-        if (wasActive != be.isActive()) {
-            level.setBlock(pos, state.setValue(MachineIndustrialBoilerBlock.LIT, be.isActive()), 3);
+        if (wasActive != be.isOn) {
+            level.setBlock(pos, state.setValue(MachineIndustrialBoilerBlock.LIT, be.isOn), 3);
         }
 
         be.setChanged();
@@ -187,10 +190,27 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
     @Override
     public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, Direction fromDir) {
         if (fromDir == null) return false;
-        // UP — только steam-out; остальное — только water-in.
-        // Так как steam ещё не отдельная жидкость (placeholder=Fluids.WATER), временно разрешаем оба
-        // на UP и !UP — реальная фильтрация и так по типу, тип здесь один и тот же.
-        return true;
+
+        if (fromDir == Direction.UP) {
+            if (steamTank.getFill() <= 0) return true;
+            return VanillaFluidEquivalence.sameSubstance(fluid, steamTank.getTankType());
+        }
+
+        if (waterTank.getFill() > 0) {
+            return VanillaFluidEquivalence.sameSubstance(fluid, waterTank.getTankType());
+        }
+        return canAcceptInputFluid(fluid);
+    }
+
+    private net.minecraft.world.level.material.Fluid getRequestedInputFluid() {
+        net.minecraft.world.level.material.Fluid type = waterTank.getTankType();
+        return FluidTank.isFluidTypeExplicitlySet(type) ? type : Fluids.WATER;
+    }
+
+    private boolean canAcceptInputFluid(net.minecraft.world.level.material.Fluid fluid) {
+        if (fluid == null || fluid == Fluids.EMPTY || fluid == ModFluids.NONE.getSource()) return false;
+        FT_Heatable trait = FluidType.getTrait(fluid, FT_Heatable.class);
+        return trait != null && trait.getEfficiency(HeatingType.BOILER) > 0 && trait.getFirstStep() != null;
     }
 
     private void processFluidContainers() {
@@ -217,68 +237,88 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
         }
     }
 
-    private void processBoiling() {
-        // Check if we can boil water
-        if (!canBoil()) {
-            thermalUnits = Math.max(0, thermalUnits - 5); // Cool down when not active
-            return;
+    private void pullHeat() {
+        int gainedHeat = 0;
+
+        if (energy > 0 && heat < MAX_HEAT) {
+            int targetPull = (int) Math.ceil((MAX_HEAT - heat) * DIFFUSION * 0.001D);
+            if (targetPull < 1) targetPull = 1;
+
+            int pull = (int) Math.min(energy, Math.min(MAX_ENERGY_TO_HEAT_PER_TICK, targetPull));
+            pull = Math.min(pull, MAX_HEAT - heat);
+
+            if (pull > 0) {
+                energy -= pull;
+                heat += pull;
+                gainedHeat = pull;
+            }
         }
 
-        // Calculate how much water we can process this tick
-        int waterAvailable = waterTank.getFill();
-        int waterToProcess = Math.min(WATER_CONSUMPTION_RATE, waterAvailable);
-
-        // Check energy requirements
-        long energyNeeded = (long) waterToProcess * ENERGY_PER_MB_WATER;
-        if (energy < energyNeeded) {
-            waterToProcess = (int) (energy / ENERGY_PER_MB_WATER);
-            energyNeeded = (long) waterToProcess * ENERGY_PER_MB_WATER;
+        if (gainedHeat == 0) {
+            heat = Math.max(heat - Math.max(heat / 1000, 1), 0);
         }
-
-        if (waterToProcess <= 0) {
-            thermalUnits = Math.max(0, thermalUnits - 5);
-            return;
-        }
-
-        // Calculate steam production
-        int steamProduced = waterToProcess * STEAM_PER_WATER;
-        int steamSpace = steamTank.getMaxFill() - steamTank.getFill();
-
-        if (steamSpace < steamProduced) {
-            // Limit by steam tank space
-            steamProduced = steamSpace;
-            waterToProcess = steamProduced / STEAM_PER_WATER;
-            energyNeeded = (long) waterToProcess * ENERGY_PER_MB_WATER;
-        }
-
-        if (waterToProcess <= 0) {
-            return;
-        }
-
-        // Consume water
-        waterTank.fill(waterTank.getFill() - waterToProcess);
-
-        // Consume energy
-        energy -= energyNeeded;
-
-        // Produce steam
-        if (steamTank.getTankType() == Fluids.EMPTY) {
-            steamTank.setTankType(Fluids.WATER); // Using water as placeholder for steam
-        }
-        steamTank.fill(steamTank.getFill() + steamProduced);
-
-        // Update thermal units (visual heat indicator)
-        thermalUnits = Math.min(1000, thermalUnits + waterToProcess);
     }
 
-    private boolean canBoil() {
-        return waterTank.getFill() > 0 && 
-               energy > ENERGY_PER_MB_WATER &&
-               steamTank.getFill() < steamTank.getMaxFill();
+    private void setupTanks() {
+        FT_Heatable trait = FluidType.getTrait(waterTank.getTankType(), FT_Heatable.class);
+        if (trait != null && trait.getEfficiency(HeatingType.BOILER) > 0) {
+            HeatingStep step = trait.getFirstStep();
+            if (step != null) {
+                if (steamTank.getFill() <= 0 || VanillaFluidEquivalence.sameSubstance(steamTank.getTankType(), step.typeProduced)) {
+                    if (!VanillaFluidEquivalence.sameSubstance(steamTank.getTankType(), step.typeProduced)) {
+                        steamTank.setTankType(step.typeProduced);
+                    }
+                }
+
+                int req = Math.max(1, step.amountReq);
+                int prod = Math.max(1, step.amountProduced);
+                int targetCap = Math.max(1, waterTank.getMaxFill() * prod / req);
+                steamTank.changeTankSize(targetCap);
+                return;
+            }
+        }
+
+        if (waterTank.getFill() <= 0) {
+            waterTank.setTankType(ModFluids.NONE.getSource());
+        }
+        if (steamTank.getFill() <= 0) {
+            steamTank.setTankType(ModFluids.NONE.getSource());
+        }
+    }
+
+    private void tryConvert() {
+        FT_Heatable trait = FluidType.getTrait(waterTank.getTankType(), FT_Heatable.class);
+        if (trait == null) return;
+
+        double eff = trait.getEfficiency(HeatingType.BOILER);
+        if (eff <= 0) return;
+
+        HeatingStep step = trait.getFirstStep();
+        if (step == null) return;
+
+        if (steamTank.getFill() > 0 && !VanillaFluidEquivalence.sameSubstance(steamTank.getTankType(), step.typeProduced)) {
+            return;
+        }
+
+        int heatReq = (int) Math.max(Math.ceil(step.heatReq / eff), 1);
+        int inputOps = waterTank.getFill() / step.amountReq;
+        int outputOps = (steamTank.getMaxFill() - steamTank.getFill()) / step.amountProduced;
+        int heatOps = heat / heatReq;
+
+        int ops = Math.min(inputOps, Math.min(outputOps, heatOps));
+        if (ops <= 0) return;
+
+        waterTank.drainMb(step.amountReq * ops);
+        if (steamTank.getFill() <= 0) {
+            steamTank.setTankType(step.typeProduced);
+        }
+        steamTank.fillMb(step.typeProduced, step.amountProduced * ops);
+        heat -= heatReq * ops;
+        isOn = true;
     }
 
     public boolean isActive() {
-        return thermalUnits > 0 && canBoil();
+        return isOn;
     }
 
     // Getters for rendering/display
@@ -286,7 +326,7 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
     public int getWaterCapacity() { return waterTank.getMaxFill(); }
     public int getSteamAmount() { return steamTank.getFill(); }
     public int getSteamCapacity() { return steamTank.getMaxFill(); }
-    public int getThermalUnits() { return thermalUnits; }
+    public int getThermalUnits() { return heat; }
 
     // --- NBT ---
     @Override
@@ -301,7 +341,9 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
         steamTank.writeToNBT(steamTag, "steam");
         tag.put("SteamTank", steamTag);
         
-        tag.putInt("ThermalUnits", thermalUnits);
+        tag.putInt("Heat", heat);
+        tag.putInt("ThermalUnits", heat);
+        tag.putBoolean("IsOn", isOn);
     }
 
     @Override
@@ -314,7 +356,12 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
         if (tag.contains("SteamTank")) {
             steamTank.readFromNBT(tag.getCompound("SteamTank"), "steam");
         }
-        thermalUnits = tag.getInt("ThermalUnits");
+        if (tag.contains("Heat")) {
+            heat = tag.getInt("Heat");
+        } else {
+            heat = tag.getInt("ThermalUnits");
+        }
+        isOn = tag.getBoolean("IsOn");
     }
 
     // --- Capabilities ---
@@ -405,19 +452,21 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
 
         @Override
         public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) {
-            return VanillaFluidEquivalence.isWater(stack.getFluid());
+            return be.canAcceptInputFluid(stack.getFluid());
         }
 
         @Override
         public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
-            if (resource.isEmpty() || !VanillaFluidEquivalence.isWater(resource.getFluid())) return 0;
+            if (resource.isEmpty() || !be.canAcceptInputFluid(resource.getFluid())) return 0;
             
             int space = be.waterTank.getMaxFill() - be.waterTank.getFill();
             int toFill = Math.min(space, resource.getAmount());
             
             if (action.execute()) {
-                be.waterTank.setTankType(Fluids.WATER);
-                be.waterTank.fill(be.waterTank.getFill() + toFill);
+                if (be.waterTank.getFill() <= 0) {
+                    be.waterTank.setTankType(resource.getFluid());
+                }
+                be.waterTank.fillMb(resource.getFluid(), toFill);
             }
             return toFill;
         }
@@ -469,7 +518,7 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
             net.minecraftforge.fluids.FluidStack drained = new net.minecraftforge.fluids.FluidStack(be.steamTank.getTankType(), toDrain);
             
             if (action.execute()) {
-                be.steamTank.fill(be.steamTank.getFill() - toDrain);
+                be.steamTank.drainMb(toDrain);
             }
             return drained;
         }
@@ -482,7 +531,7 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
             net.minecraftforge.fluids.FluidStack drained = new net.minecraftforge.fluids.FluidStack(be.steamTank.getTankType(), toDrain);
             
             if (action.execute()) {
-                be.steamTank.fill(be.steamTank.getFill() - toDrain);
+                be.steamTank.drainMb(toDrain);
             }
             return drained;
         }
