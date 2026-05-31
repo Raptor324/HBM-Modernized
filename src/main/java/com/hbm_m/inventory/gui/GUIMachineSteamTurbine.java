@@ -1,9 +1,9 @@
 package com.hbm_m.inventory.gui;
 
-import com.hbm_m.block.entity.machines.MachineTurbineBlockEntity;
+import com.hbm_m.block.entity.machines.MachineSteamTurbineBlockEntity;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
-import com.hbm_m.inventory.menu.MachineTurbineMenu;
+import com.hbm_m.inventory.menu.MachineSteamTurbineMenu;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -14,14 +14,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.material.Fluid;
 
-public class GUIMachineTurbine extends GuiInfoScreen<MachineTurbineMenu> {
+public class GUIMachineSteamTurbine extends GuiInfoScreen<MachineSteamTurbineMenu> {
 
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_turbine.png");
 
-    private final MachineTurbineBlockEntity turbine;
+    private final MachineSteamTurbineBlockEntity turbine;
 
-    public GUIMachineTurbine(MachineTurbineMenu menu, Inventory playerInventory, Component title) {
+    public GUIMachineSteamTurbine(MachineSteamTurbineMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.turbine = menu.getBlockEntity();
         this.imageWidth = 176;

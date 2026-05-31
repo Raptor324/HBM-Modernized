@@ -119,6 +119,7 @@ import com.hbm_m.inventory.gui.GUIMachineRbmkConsole;
 import com.hbm_m.inventory.gui.GUIMachineSilex;
 import com.hbm_m.inventory.gui.GUIMachineSolderingStation;
 import com.hbm_m.inventory.gui.GUIMachineSubstation;
+import com.hbm_m.inventory.gui.GUIMachineSteamTurbine;
 import com.hbm_m.inventory.gui.GUIMachineTurbine;
 import com.hbm_m.inventory.gui.GUIMachineZirnox;
 import com.hbm_m.inventory.gui.GUIIndustrialTurbine;
@@ -464,6 +465,7 @@ public class ClientSetup {
         MenuScreens.register(ModMenuTypes.GAS_CENTRIFUGE_MENU.get(), GUIMachineGasCentrifuge::new);
         MenuScreens.register(ModMenuTypes.INDUSTRIAL_TURBINE_MENU.get(), GUIIndustrialTurbine::new);
         MenuScreens.register(ModMenuTypes.TURBINE_MENU.get(), GUIMachineTurbine::new);
+        MenuScreens.register(ModMenuTypes.STEAM_TURBINE_MENU.get(), GUIMachineSteamTurbine::new);
         MenuScreens.register(ModMenuTypes.SUBSTATION_MENU.get(), GUIMachineSubstation::new);
         MenuScreens.register(ModMenuTypes.CRUCIBLE_MENU.get(), GUIMachineCrucible::new);
         MenuScreens.register(ModMenuTypes.ARMOR_TABLE_MENU.get(), GUIArmorTable::new);

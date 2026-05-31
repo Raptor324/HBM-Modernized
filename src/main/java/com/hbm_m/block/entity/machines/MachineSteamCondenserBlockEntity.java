@@ -3,8 +3,11 @@ package com.hbm_m.block.entity.machines;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
+import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.block.machines.FluidDuctBlock;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 
@@ -17,6 +20,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.capabilities.Capability;
@@ -26,52 +30,102 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 
-public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity {
+public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
 
     private static final int INVENTORY_SIZE = 0;
     private static final int INPUT_CAPACITY = 8_000;
     private static final int OUTPUT_CAPACITY = 8_000;
-    private static final int MB_PER_SECOND = 100;
-    private static final int TICKS_PER_SECOND = 20;
-
     private final FluidTank inputSteamTank;
     private final FluidTank outputWaterTank;
 
-    private final LazyOptional<IFluidHandler> lazyInputHandler;
-    private final LazyOptional<IFluidHandler> lazyOutputHandler;
+    private LazyOptional<IFluidHandler> lazyFluidHandler = LazyOptional.empty();
 
-    private int conversionTimer = 0;
+    private int age = 0;
+    private int waterTimer = 0;
+    private int throughput = 0;
 
     public MachineSteamCondenserBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.STEAM_CONDENSER_BE.get(), pos, state, INVENTORY_SIZE, 0L, 0L);
         this.inputSteamTank = new FluidTank(ModFluids.SPENTSTEAM.getSource(), INPUT_CAPACITY);
         this.outputWaterTank = new FluidTank(Fluids.WATER, OUTPUT_CAPACITY);
+    }
 
-        this.lazyInputHandler = LazyOptional.of(() -> new InputFluidHandler(this));
-        this.lazyOutputHandler = LazyOptional.of(() -> new OutputFluidHandler(this));
+    @Override
+    protected void setupFluidCapability() {
+        lazyFluidHandler = LazyOptional.of(() -> new UnifiedFluidHandler(this));
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (level != null) {
+            FluidDuctBlock.refreshAdjacentDucts(level, worldPosition);
+        }
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineSteamCondenserBlockEntity be) {
         if (level.isClientSide()) return;
 
-        be.conversionTimer++;
-        if (be.conversionTimer >= TICKS_PER_SECOND) {
-            be.conversionTimer = 0;
-            be.processCondensation();
+        if (level.getGameTime() % 20L == 0L) {
+            FluidDuctBlock.refreshAdjacentDucts(level, pos);
         }
+
+        be.age = (be.age + 1) % 2;
+        if (be.waterTimer > 0) {
+            be.waterTimer--;
+        }
+
+        for (Direction dir : Direction.values()) {
+            BlockPos pipePos = pos.relative(dir);
+            BlockEntity pipeBe = level.getBlockEntity(pipePos);
+            if (!(pipeBe instanceof com.hbm_m.api.fluids.IFluidConnectorMK2)) continue;
+
+            be.trySubscribe(ModFluids.SPENTSTEAM.getSource(), level, pipePos, dir);
+            if (be.outputWaterTank.getFill() > 0) {
+                be.tryProvide(be.outputWaterTank, level, pipePos, dir);
+            }
+        }
+
+        be.processCondensation();
     }
 
     private void processCondensation() {
-        if (inputSteamTank.getFill() < MB_PER_SECOND) return;
+        int convert = Math.min(inputSteamTank.getFill(), outputWaterTank.getMaxFill() - outputWaterTank.getFill());
+        throughput = convert;
+        if (convert <= 0) return;
 
-        int outputSpace = outputWaterTank.getMaxFill() - outputWaterTank.getFill();
-        if (outputSpace < MB_PER_SECOND) return;
-
-        inputSteamTank.fill(inputSteamTank.getFill() - MB_PER_SECOND);
-        outputWaterTank.setTankType(Fluids.WATER);
-        outputWaterTank.fill(outputWaterTank.getFill() + MB_PER_SECOND);
+        inputSteamTank.drainMb(convert);
+        outputWaterTank.fillMb(Fluids.WATER, convert);
+        waterTimer = 20;
         setChanged();
         sendUpdateToClient();
+    }
+
+    @Override
+    public FluidTank[] getSendingTanks() {
+        return outputWaterTank.getFill() > 0 ? new FluidTank[] { outputWaterTank } : FluidTank.EMPTY_ARRAY;
+    }
+
+    @Override
+    public FluidTank[] getReceivingTanks() {
+        return new FluidTank[] { inputSteamTank };
+    }
+
+    @Override
+    public FluidTank[] getAllTanks() {
+        return new FluidTank[] { inputSteamTank, outputWaterTank };
+    }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    @Override
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, Direction fromDir) {
+        if (fromDir == null) return false;
+        return VanillaFluidEquivalence.sameSubstance(fluid, ModFluids.SPENTSTEAM.getSource())
+                || VanillaFluidEquivalence.sameSubstance(fluid, Fluids.WATER);
     }
 
     @Override
@@ -100,7 +154,9 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity {
         super.saveAdditional(tag);
         inputSteamTank.writeToNBT(tag, "input_steam");
         outputWaterTank.writeToNBT(tag, "output_water");
-        tag.putInt("conversion_timer", conversionTimer);
+        tag.putInt("age", age);
+        tag.putInt("water_timer", waterTimer);
+        tag.putInt("throughput", throughput);
     }
 
     @Override
@@ -108,14 +164,15 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity {
         super.load(tag);
         inputSteamTank.readFromNBT(tag, "input_steam");
         outputWaterTank.readFromNBT(tag, "output_water");
-        conversionTimer = tag.getInt("conversion_timer");
+        age = tag.getInt("age");
+        waterTimer = tag.getInt("water_timer");
+        throughput = tag.getInt("throughput");
     }
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            if (side == Direction.UP) return lazyOutputHandler.cast();
-            return lazyInputHandler.cast();
+            return lazyFluidHandler.cast();
         }
         return super.getCapability(cap, side);
     }
@@ -123,50 +180,60 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity {
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
-        lazyInputHandler.invalidate();
-        lazyOutputHandler.invalidate();
+        lazyFluidHandler.invalidate();
     }
 
-    private static class InputFluidHandler implements IFluidHandler {
+    private static class UnifiedFluidHandler implements IFluidHandler {
         private final MachineSteamCondenserBlockEntity be;
 
-        InputFluidHandler(MachineSteamCondenserBlockEntity be) {
+        UnifiedFluidHandler(MachineSteamCondenserBlockEntity be) {
             this.be = be;
         }
 
         @Override
         public int getTanks() {
-            return 1;
+            return 2;
         }
 
         @Override
         public @NotNull FluidStack getFluidInTank(int tank) {
-            if (be.inputSteamTank.getFill() <= 0) return FluidStack.EMPTY;
-            return new FluidStack(ModFluids.SPENTSTEAM.getSource(), be.inputSteamTank.getFill());
+            if (tank == 0) {
+                if (be.inputSteamTank.getFill() <= 0) return FluidStack.EMPTY;
+                return new FluidStack(be.inputSteamTank.getTankType(), be.inputSteamTank.getFill());
+            }
+            if (tank == 1) {
+                if (be.outputWaterTank.getFill() <= 0) return FluidStack.EMPTY;
+                return new FluidStack(Fluids.WATER, be.outputWaterTank.getFill());
+            }
+            return FluidStack.EMPTY;
         }
 
         @Override
         public int getTankCapacity(int tank) {
-            return be.inputSteamTank.getMaxFill();
+            if (tank == 0) return be.inputSteamTank.getMaxFill();
+            if (tank == 1) return be.outputWaterTank.getMaxFill();
+            return 0;
         }
 
         @Override
         public boolean isFluidValid(int tank, @NotNull FluidStack stack) {
-            return stack.getFluid() == ModFluids.SPENTSTEAM.getSource();
+            return tank == 0 && VanillaFluidEquivalence.sameSubstance(stack.getFluid(), ModFluids.SPENTSTEAM.getSource());
         }
 
         @Override
         public int fill(FluidStack resource, FluidAction action) {
-            if (resource.isEmpty() || resource.getFluid() != ModFluids.SPENTSTEAM.getSource()) return 0;
+            if (resource.isEmpty() || !VanillaFluidEquivalence.sameSubstance(resource.getFluid(), ModFluids.SPENTSTEAM.getSource())) {
+                return 0;
+            }
 
             int space = be.inputSteamTank.getMaxFill() - be.inputSteamTank.getFill();
             int toFill = Math.min(space, resource.getAmount());
             if (toFill <= 0) return 0;
 
             if (action.execute()) {
-                be.inputSteamTank.setTankType(ModFluids.SPENTSTEAM.getSource());
-                be.inputSteamTank.fill(be.inputSteamTank.getFill() + toFill);
+                be.inputSteamTank.fillMb(resource.getFluid(), toFill);
                 be.setChanged();
+                be.sendUpdateToClient();
             }
 
             return toFill;
@@ -174,51 +241,10 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity {
 
         @Override
         public @NotNull FluidStack drain(FluidStack resource, FluidAction action) {
-            return FluidStack.EMPTY;
-        }
-
-        @Override
-        public @NotNull FluidStack drain(int maxDrain, FluidAction action) {
-            return FluidStack.EMPTY;
-        }
-    }
-
-    private static class OutputFluidHandler implements IFluidHandler {
-        private final MachineSteamCondenserBlockEntity be;
-
-        OutputFluidHandler(MachineSteamCondenserBlockEntity be) {
-            this.be = be;
-        }
-
-        @Override
-        public int getTanks() {
-            return 1;
-        }
-
-        @Override
-        public @NotNull FluidStack getFluidInTank(int tank) {
-            if (be.outputWaterTank.getFill() <= 0) return FluidStack.EMPTY;
-            return new FluidStack(Fluids.WATER, be.outputWaterTank.getFill());
-        }
-
-        @Override
-        public int getTankCapacity(int tank) {
-            return be.outputWaterTank.getMaxFill();
-        }
-
-        @Override
-        public boolean isFluidValid(int tank, @NotNull FluidStack stack) {
-            return false;
-        }
-
-        @Override
-        public int fill(FluidStack resource, FluidAction action) {
-            return 0;
-        }
-
-        @Override
-        public @NotNull FluidStack drain(FluidStack resource, FluidAction action) {
-            if (resource.isEmpty() || resource.getFluid() != Fluids.WATER || be.outputWaterTank.getFill() <= 0) {
+            if (resource.isEmpty() || be.outputWaterTank.getFill() <= 0) {
+                return FluidStack.EMPTY;
+            }
+            if (!VanillaFluidEquivalence.sameSubstance(resource.getFluid(), Fluids.WATER)) {
                 return FluidStack.EMPTY;
             }
 
@@ -226,8 +252,9 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity {
             FluidStack result = new FluidStack(Fluids.WATER, toDrain);
 
             if (action.execute()) {
-                be.outputWaterTank.fill(be.outputWaterTank.getFill() - toDrain);
+                be.outputWaterTank.drainMb(toDrain);
                 be.setChanged();
+                be.sendUpdateToClient();
             }
 
             return result;
@@ -241,8 +268,9 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity {
             FluidStack result = new FluidStack(Fluids.WATER, toDrain);
 
             if (action.execute()) {
-                be.outputWaterTank.fill(be.outputWaterTank.getFill() - toDrain);
+                be.outputWaterTank.drainMb(toDrain);
                 be.setChanged();
+                be.sendUpdateToClient();
             }
 
             return result;

@@ -137,6 +137,9 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<MachineTurbineMenu>> TURBINE_MENU =
             MENUS.register("turbine_menu", () -> MenuRegistry.ofExtended(MachineTurbineMenu::new));
 
+    public static final RegistrySupplier<MenuType<MachineSteamTurbineMenu>> STEAM_TURBINE_MENU =
+            MENUS.register("steam_turbine_menu", () -> MenuRegistry.ofExtended(MachineSteamTurbineMenu::new));
+
     public static final RegistrySupplier<MenuType<MachineSubstationMenu>> SUBSTATION_MENU =
             MENUS.register("substation_menu", () -> MenuRegistry.ofExtended(MachineSubstationMenu::new));
 
