@@ -18,6 +18,7 @@ import com.hbm_m.block.entity.machines.FluidDuctBlockEntity;
 import com.hbm_m.block.entity.machines.FluidExhaustBlockEntity;
 import com.hbm_m.block.entity.machines.FluidPumpBlockEntity;
 import com.hbm_m.block.entity.machines.FluidValveBlockEntity;
+import com.hbm_m.block.entity.machines.DeconBlockEntity;
 import com.hbm_m.block.entity.machines.GeigerCounterBlockEntity;
 import com.hbm_m.block.entity.machines.HeatingOvenBlockEntity;
 import com.hbm_m.block.entity.machines.LaunchPadBlockEntity;
@@ -179,6 +180,10 @@ public class ModBlockEntities {
 		BLOCK_ENTITIES.register("geiger_counter_be", () ->
 			BlockEntityType.Builder.<GeigerCounterBlockEntity>of(GeigerCounterBlockEntity::new, ModBlocks.GEIGER_COUNTER_BLOCK.get())
 				.build(null));
+
+    public static final RegistrySupplier<BlockEntityType<DeconBlockEntity>> DECON_BE =
+            BLOCK_ENTITIES.register("decon_be", () ->
+                    BlockEntityType.Builder.of(DeconBlockEntity::new, ModBlocks.DECON.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<MachineAssemblerBlockEntity>> MACHINE_ASSEMBLER_BE =
 		BLOCK_ENTITIES.register("machine_assembler_be", () ->

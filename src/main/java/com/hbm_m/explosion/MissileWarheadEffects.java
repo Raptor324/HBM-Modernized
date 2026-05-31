@@ -1,6 +1,7 @@
 package com.hbm_m.explosion;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.bomb.BlockTaint;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.effect.BlackHoleEntity;
 import com.hbm_m.entity.logic.EmpPulseEntity;
@@ -60,7 +61,7 @@ public final class MissileWarheadEffects {
             int c = level.random.nextInt(11) + center.getZ() - 5;
             BlockPos randPos = new BlockPos(a, b, c);
             BlockState state = level.getBlockState(randPos);
-            if (state.isSolidRender(level, randPos) && !state.isAir()) {
+            if (BlockTaint.canBeReplacedByTaint(level, randPos, state)) {
                 level.setBlock(randPos, ModBlocks.TAINT.get().defaultBlockState(), 3);
             }
         }

@@ -2,7 +2,9 @@
 /*package com.hbm_m.mixin.client;
 
 import com.hbm_m.effect.RadawayEffect;
+import com.hbm_m.effect.TaintEffect;
 import com.hbm_m.effect.render.RadawayEffectRenderer;
+import com.hbm_m.effect.render.TaintEffectRenderer;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import java.util.Iterator;
@@ -72,9 +74,15 @@ public abstract class MixinEffectRenderingInventoryScreen {
             Operation<Void> original
     ) {
         MobEffectInstance inst = HBM_RADAWAY_CURRENT.get();
-        if (inst != null && inst.getEffect() instanceof RadawayEffect) {
-            RadawayEffectRenderer.renderInventory(gfx, x - 3, y - 3, blitOffset);
-            return;
+        if (inst != null) {
+            if (inst.getEffect() instanceof RadawayEffect) {
+                RadawayEffectRenderer.renderIcon(gfx, x, y, blitOffset, 1f);
+                return;
+            }
+            if (inst.getEffect() instanceof TaintEffect) {
+                TaintEffectRenderer.renderIcon(gfx, x, y, blitOffset, 1f);
+                return;
+            }
         }
         original.call(gfx, x, y, blitOffset, width, height, sprite);
     }

@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.generic.BlockAbsorber;
 import com.hbm_m.client.render.missile.MissileFormFactorModels;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
@@ -85,6 +86,10 @@ public class ModItemModelProvider extends ItemModelProvider {
         // БАЗОВЫЕ ПОРОШКИ (всегда существуют)
         if (ModItems.DUST != null && ModItems.DUST.isPresent()) powderTexture(ModItems.DUST, "powders/dust");
         if (ModItems.DUST_TINY != null && ModItems.DUST_TINY.isPresent()) powderTexture(ModItems.DUST_TINY, "powders/tiny/dust_tiny");
+        powderTexture(ModItems.POWDER_DESH_MIX, "powders/powder_desh_mix");
+        powderTexture(ModItems.POWDER_NITAN_MIX, "powders/powder_nitan_mix");
+
+        registerRadAbsorberItemModels();
 
         withExistingParent("large_vehicle_door", 
             modLoc("block/doors/large_vehicle_door_modern"));
@@ -621,6 +626,11 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModel(ModBlocks.WASTE_CHARGE);
 
         withExistingParent(ModItems.NOLO_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.ENTITY_MOB_TAINTED_CREEPER_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.ENTITY_MOB_VOLATILE_CREEPER_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.ENTITY_MOB_PHOSGENE_CREEPER_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.ENTITY_MOB_GOLD_CREEPER_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.ENTITY_MOB_NUCLEAR_CREEPER_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
 
         simpleItem(ModItems.GRENADE);
         simpleItem(ModItems.GRENADESLIME);
@@ -920,6 +930,20 @@ public class ModItemModelProvider extends ItemModelProvider {
     private void generateMissileItemModels() {
         for (MissileItemModelDefinitions.Definition definition : MissileItemModelDefinitions.all()) {
             missileItemFromObjModel(definition.itemPath(), definition.hull(), definition.texture());
+        }
+    }
+
+    /** Item model overrides by {@code hbm_m:tier} (see {@link com.hbm_m.client.ClientSetup}). */
+    private void registerRadAbsorberItemModels() {
+        ItemModelBuilder builder = withExistingParent("rad_absorber", modLoc("block/rad_absorber_base"));
+        for (BlockAbsorber.EnumAbsorberTier tier : BlockAbsorber.EnumAbsorberTier.values()) {
+            if (tier == BlockAbsorber.EnumAbsorberTier.BASE) {
+                continue;
+            }
+            builder = builder.override()
+                    .model(new ModelFile.UncheckedModelFile(modLoc("block/rad_absorber_" + tier.getSerializedName())))
+                    .predicate(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "tier"), tier.ordinal())
+                    .end();
         }
     }
 

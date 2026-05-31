@@ -2,108 +2,104 @@ package com.hbm_m.block.entity.machines;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 
 import org.jetbrains.annotations.NotNull;
 
-// Блок-энтити для Гейгера, который измеряет радиацию в чанке и издает щелчки в зависимости от уровня радиации.
-// Логика звуков адаптирована из GeigerCounterItem, но с учетом того, что это блок, а не предмет.
-// Радиоактивность измеряется с помощью ChunkRadiationManager, который управляет радиацией на уровне чанков.
-// Звук издается в мире, а не игроку, и громкость/частота зависят от измеренного уровня радиации.
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
+/**
+ * Порт {@link com.hbm.tileentity.machine.TileEntityGeiger} (1.7.10).
+ */
 public class GeigerCounterBlockEntity extends BlockEntity {
 
     private static final Random RANDOM = new Random();
-    private int timer = 0;
-    private float lastMeasuredRads = 0;
 
-    public GeigerCounterBlockEntity(BlockPos pPos, BlockState pBlockState) {
-        super(ModBlockEntities.GEIGER_COUNTER_BE.get(), pPos, pBlockState);
+    private int timer = 0;
+    private float ticker = 0;
+
+    public GeigerCounterBlockEntity(BlockPos pos, BlockState blockState) {
+        super(ModBlockEntities.GEIGER_COUNTER_BE.get(), pos, blockState);
     }
 
-    // Основная логика, вызывается каждый тик на сервере благодаря тикеру, который мы настроили в классе блока
     public void tick(Level level, BlockPos pos, BlockState state) {
         timer++;
 
-        // Измеряем радиацию раз в полсекунды (10 тиков)
-        if (timer >= 10) {
+        if (timer == 10) {
             timer = 0;
-            // Используем менеджер радиации
-            this.lastMeasuredRads = ChunkRadiationManager.getRadiation(level, pos.getX(), pos.getY(), pos.getZ());
-            
-            // Важно! Уведомляем соседние блоки об изменении, чтобы компаратор обновился.
-            level.updateNeighbourForOutputSignal(pos, this.getBlockState().getBlock());
+            ticker = check(level, pos);
+            level.updateNeighbourForOutputSignal(pos, state.getBlock());
         }
 
-        // Проигрываем звуки каждые 5 тиков, как в старом моде
         if (timer % 5 == 0) {
-            playGeigerTickSound(level, pos, this.lastMeasuredRads);
-        }
-    }
-    
-    // Логика проигрывания звука, адаптированная из GeigerCounterItem
-    private void playGeigerTickSound(Level level, BlockPos pos, float radiationLevel) {
-        int soundIndex = 0;
-        List<Integer> soundOptions = new ArrayList<>();
+            if (ticker > 0) {
+                List<Integer> list = new ArrayList<>();
 
-        if (radiationLevel > 0) {
-            if (radiationLevel < 10) soundOptions.add(1);
-            if (radiationLevel > 5 && radiationLevel < 15) soundOptions.add(2);
-            if (radiationLevel > 10 && radiationLevel < 20) soundOptions.add(3);
-            if (radiationLevel > 15 && radiationLevel < 25) soundOptions.add(4);
-            if (radiationLevel > 20 && radiationLevel < 30) soundOptions.add(5);
-            if (radiationLevel > 25) soundOptions.add(6);
+                if (ticker < 1) {
+                    list.add(0);
+                }
+                if (ticker < 5) {
+                    list.add(0);
+                }
+                if (ticker < 10) {
+                    list.add(1);
+                }
+                if (ticker > 5 && ticker < 15) {
+                    list.add(2);
+                }
+                if (ticker > 10 && ticker < 20) {
+                    list.add(3);
+                }
+                if (ticker > 15 && ticker < 25) {
+                    list.add(4);
+                }
+                if (ticker > 20 && ticker < 30) {
+                    list.add(5);
+                }
+                if (ticker > 25) {
+                    list.add(6);
+                }
 
-            if (!soundOptions.isEmpty()) {
-                soundIndex = soundOptions.get(RANDOM.nextInt(soundOptions.size()));
+                int r = list.get(RANDOM.nextInt(list.size()));
+
+                if (r > 0) {
+                    playGeigerSound(level, pos, r);
+                }
+            } else if (RANDOM.nextInt(50) == 0) {
+                playGeigerSound(level, pos, 1);
             }
-        } else if (RANDOM.nextInt(50) == 0) {
-            soundIndex = 1; // Редкий фоновый щелчок
         }
+    }
 
-        Optional<SoundEvent> sound = switch (soundIndex) {
-            case 1 -> Optional.of(ModSounds.GEIGER_1.get());
-            case 2 -> Optional.of(ModSounds.GEIGER_2.get());
-            case 3 -> Optional.of(ModSounds.GEIGER_3.get());
-            case 4 -> Optional.of(ModSounds.GEIGER_4.get());
-            case 5 -> Optional.of(ModSounds.GEIGER_5.get());
-            case 6 -> Optional.of(ModSounds.GEIGER_6.get());
-            default -> Optional.empty();
+    public float check(Level level, BlockPos pos) {
+        return ChunkRadiationManager.getRadiation(level, pos.getX(), pos.getY(), pos.getZ());
+    }
+
+    public float getTicker() {
+        return ticker;
+    }
+
+    private static void playGeigerSound(Level level, BlockPos pos, int index) {
+        SoundEvent sound = switch (index) {
+            case 1 -> ModSounds.GEIGER_1.orElse(null);
+            case 2 -> ModSounds.GEIGER_2.orElse(null);
+            case 3 -> ModSounds.GEIGER_3.orElse(null);
+            case 4 -> ModSounds.GEIGER_4.orElse(null);
+            case 5 -> ModSounds.GEIGER_5.orElse(null);
+            case 6 -> ModSounds.GEIGER_6.orElse(null);
+            default -> null;
         };
-
-        // Проигрываем звук в мире
-        sound.ifPresent(event -> {
-            level.playSound(null, pos, event, SoundSource.BLOCKS, 1.0F, 1.0F);
-        });
-    }
-
-    public float getLastMeasuredRads() {
-        return lastMeasuredRads;
-    }
-    
-    // Сохранение данных при выходе из мира
-    @Override
-    protected void saveAdditional(@NotNull CompoundTag pTag) {
-        pTag.putFloat("lastMeasuredRads", this.lastMeasuredRads);
-        super.saveAdditional(pTag);
-    }
-
-    // Загрузка данных при входе в мир
-    @Override
-    public void load(@NotNull CompoundTag pTag) {
-        super.load(pTag);
-        this.lastMeasuredRads = pTag.getFloat("lastMeasuredRads");
+        if (sound != null) {
+            level.playSound(null, pos, sound, SoundSource.BLOCKS, 1.0F, 1.0F);
+        }
     }
 }

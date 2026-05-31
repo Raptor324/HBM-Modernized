@@ -8,6 +8,8 @@ import java.util.function.Consumer;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.armormod.item.ItemArmorMod;
+import com.hbm_m.block.generic.BlockAbsorber;
+import com.hbm_m.item.BlockAbsorberItem;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.client.ClientSetup;
 import com.hbm_m.config.ModClothConfig;
@@ -144,6 +146,11 @@ public final class CreativeModeTabEventHandler {
     public static void populateSpawnEggs(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
         Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         add.accept(new ItemStack(ModItems.NOLO_SPAWN_EGG.get()));
+        add.accept(new ItemStack(ModItems.ENTITY_MOB_TAINTED_CREEPER_SPAWN_EGG.get()));
+        add.accept(new ItemStack(ModItems.ENTITY_MOB_GOLD_CREEPER_SPAWN_EGG.get()));
+        add.accept(new ItemStack(ModItems.ENTITY_MOB_VOLATILE_CREEPER_SPAWN_EGG.get()));
+        add.accept(new ItemStack(ModItems.ENTITY_MOB_PHOSGENE_CREEPER_SPAWN_EGG.get()));
+        add.accept(new ItemStack(ModItems.ENTITY_MOB_NUCLEAR_CREEPER_SPAWN_EGG.get()));
     }
 
     public static void populateWeaponsTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
@@ -597,9 +604,8 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.SCREWDRIVER.get()));
 
         add.accept(new ItemStack(ModItems.DOSIMETER.get()));
+        add.accept(new ItemStack(ModItems.DIGAMMA_DIAGNOSTIC.get()));
         add.accept(new ItemStack(ModItems.GEIGER_COUNTER.get()));
-        add.accept(new ItemStack(ModBlocks.GEIGER_COUNTER_BLOCK.get()));
-
         add.accept(new ItemStack(ModItems.OIL_DETECTOR.get()));
         add.accept(new ItemStack(ModItems.DEPTH_ORES_SCANNER.get()));
 
@@ -782,6 +788,10 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.CINNABAR_ORE_DEEPSLATE.get()));
         add.accept(new ItemStack(ModBlocks.URANIUM_ORE.get()));
         add.accept(new ItemStack(ModBlocks.URANIUM_ORE_DEEPSLATE.get()));
+        add.accept(new ItemStack(ModBlocks.SCHRABIDIUM_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.SCHRABIDIUM_ORE_NETHER.get()));
+        add.accept(new ItemStack(ModBlocks.SCHRABIDIUM_ORE_GNEISS.get()));
+        add.accept(new ItemStack(ModBlocks.BLOCK_SCHRABIDIUM_CLUSTER.get()));
 
         add.accept(new ItemStack(ModBlocks.RESOURCE_ASBESTOS.get()));
         add.accept(new ItemStack(ModBlocks.RESOURCE_BAUXITE.get()));
@@ -1211,6 +1221,11 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.CONVERTER_BLOCK.get()));
         add.accept(new ItemStack(ModBlocks.SWITCH.get()));
         add.accept(new ItemStack(ModBlocks.WIRE_COATED.get()));
+        add.accept(new ItemStack(ModBlocks.GEIGER_COUNTER_BLOCK.get()));
+        add.accept(new ItemStack(ModBlocks.DECON.get()));
+        for (BlockAbsorber.EnumAbsorberTier tier : BlockAbsorber.EnumAbsorberTier.values()) {
+            add.accept(BlockAbsorberItem.forTier(ModBlocks.RAD_ABSORBER.get(), tier));
+        }
     }
 
     // ТОПЛИВО И ЭЛЕМЕНТЫ МЕХАНИЗМОВ

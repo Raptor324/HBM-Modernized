@@ -2,139 +2,92 @@ package com.hbm_m.item.radiation_meter;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 
-import org.jetbrains.annotations.NotNull;
-
-// Предмет-дозиметр для измерения радиации в окружающей среде.
-// Показывает уровень радиации в чате при использовании и издает звуки щелчков в зависимости от уровня радиации.
-
-import com.hbm_m.network.ModPacketHandler;
-import com.hbm_m.network.sounds.GeigerSoundPacket;
+import com.hbm_m.extprop.HbmLivingProps;
 import com.hbm_m.sound.ModSounds;
+import com.hbm_m.util.ContaminationUtil;
 
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
+/**
+ * Порт {@link com.hbm.items.tool.ItemDosimeter} (1.7.10).
+ */
+public class ItemDosimeter extends Item {
 
-public class ItemDosimeter extends AbstractRadiationMeterItem {
+    private final Random rand = new Random();
 
-    private static final Random RANDOM = new Random();
-    private int soundTickCounter = 0;
-
-    public ItemDosimeter(Properties pProperties) {
-        super(pProperties);
-    }
-    /** Локальный метод для получения цвета, ограниченный зеленым и желтым.
-     * @param rads Уровень радиации
-     * @return Код цвета ("§a" или "§e")
-     */
-
-    private String getDosimeterRadColor(float rads) {
-        if (rads == 0.0f) return "§a"; // Зеленый для низких значений
-        return "§6"; // Оранжевый для всех остальных
+    public ItemDosimeter(Properties properties) {
+        super(properties);
     }
 
-    /**
-     * Создает и форматирует сообщение для вывода в чат.
-     * Если радиация >= 3.6, выводит ">3.6 RAD/s".
-     * @param data Данные об измеренной радиации.
-     * @return Компонент сообщения для отправки игроку.
-     */
-
-    @NotNull
     @Override
-    protected Component createUsageMessage(RadiationData data) {
-        float totalEnvironmentRad = data.getTotalEnvironmentRad();
-        String envRadStr;
-        String colorCode = getDosimeterRadColor(totalEnvironmentRad);
-
-        // Проверяем уровень радиации
-        if (totalEnvironmentRad < 3.6f) {
-            // Если радиация в пределах нормы для прибора, показываем точное значение
-            envRadStr = colorCode + String.format("%.1f RAD/s", totalEnvironmentRad);
-        } else {
-            // Если радиация превышает порог, показываем "зашкаливание"
-            // Используем getRadColor для соответствующего цвета и ключ локализации для текста
-            envRadStr = colorCode + Component.translatable("item.hbm_m.meter.rads_over_limit", "3.6").getString();
+    public void inventoryTick(ItemStack stack, Level world, Entity entity, int slot, boolean selected) {
+        if (!(entity instanceof LivingEntity) || world.isClientSide()) {
+            return;
         }
-        
-        String titleString = "\n§6===== ☢ " + Component.translatable("item.hbm_m.meter.dosimeter.name").getString() + " ☢ =====\n";
-        MutableComponent message = Component.translatable("item.hbm_m.meter.title_format", titleString);
-        
-        // 3. Добавляем единственную строку данных. Теперь она не будет иметь лишнего отступа или "RAD/c"
-        message.append(Component.translatable("item.hbm_m.meter.env_rads", envRadStr));
 
-        return message;
-    }
+        float x = HbmLivingProps.getRadBuf((LivingEntity) entity);
 
-    /**
-     * Обработчик тиков в инвентаре для проигрывания звуков.
-     * Скопирован из GeigerCounterItem и вызывает измененный метод playDosimeterTickSound.
-     */
-    @Override
-    public void inventoryTick(@NotNull ItemStack pStack, @NotNull Level pLevel, @NotNull Entity pEntity, int pSlotId, boolean pIsSelected) {
-        if (!pLevel.isClientSide() && pEntity instanceof ServerPlayer serverPlayer && serverPlayer.isAlive()) {
-            soundTickCounter++;
-            final int SOUND_INTERVAL_TICKS = 5; // Звук проигрывается раз в 5 тиков (четверть секунды)
-            if (soundTickCounter >= SOUND_INTERVAL_TICKS) {
-                soundTickCounter = 0;
+        if (world.getGameTime() % 5 == 0) {
+            if (x > 1E-5F) {
+                List<Integer> list = new ArrayList<>();
 
-                RadiationData data = measureRadiation(pLevel, serverPlayer);
-                float totalEnvironmentRads = data.getTotalEnvironmentRad();
+                if (x < 0.5F) {
+                    list.add(0);
+                }
+                if (x < 1F) {
+                    list.add(1);
+                }
+                if (x >= 0.5F && x < 2F) {
+                    list.add(2);
+                }
+                if (x >= 1F && x >= 2F) {
+                    list.add(3);
+                }
 
-                // Вызываем специфичный для дозиметра метод проигрывания звука
-                playDosimeterTickSound(serverPlayer, totalEnvironmentRads);
+                int r = list.get(rand.nextInt(list.size()));
+
+                if (r > 0) {
+                    playGeigerSound(world, entity, r);
+                }
+            } else if (rand.nextInt(100) == 0) {
+                playGeigerSound(world, entity, 1);
             }
         }
     }
 
-    /**
-     * Проигрывает звук тика дозиметра в зависимости от уровня радиации.
-     * Логика основана на GeigerCounterItem, но ограничена звуками 1 и 2 уровня.
-     * @param player Игрок, для которого проигрывается звук.
-     * @param radiationLevel Текущий уровень радиации.
-     */
+    @Override
+    public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
 
-    private void playDosimeterTickSound(ServerPlayer player, float radiationLevel) {
-        int soundIndex = 0;
-        List<Integer> soundOptions = new ArrayList<>();
-
-        // Ограничиваем выбор звуков
-        if (radiationLevel > 0) {
-            // Всегда есть шанс проиграть базовый щелчок, если есть радиация
-            if (radiationLevel < 10) soundOptions.add(1);
-            // Более интенсивный щелчок добавляется только при радиации > 5 RAD/s
-            if (radiationLevel > 5) soundOptions.add(2);
-            if (radiationLevel > 15) soundOptions.add(3);
-
-            if (!soundOptions.isEmpty()) {
-                soundIndex = soundOptions.get(RANDOM.nextInt(soundOptions.size()));
-            }
-        } else if (RANDOM.nextInt(50) == 0) {
-            soundIndex = 1; // Редкий фоновый щелчок даже без радиации
+        if (!world.isClientSide()) {
+            ModSounds.TOOL_TECH_BOOP.ifPresent(sound ->
+                    world.playSound(null, player.getX(), player.getY(), player.getZ(), sound, SoundSource.PLAYERS, 1.0F, 1.0F));
+            ContaminationUtil.printDosimeterData(player);
         }
 
-        // Этот блок остается таким же, т.к. он универсален
-        Optional<SoundEvent> sound = switch (soundIndex) {
-            case 1 -> Optional.of(ModSounds.GEIGER_1.get());
-            case 2 -> Optional.of(ModSounds.GEIGER_2.get());
-            case 3 -> Optional.of(ModSounds.GEIGER_3.get());
-            // Остальные кейсы просто никогда не будут вызваны
-            default -> Optional.empty();
+        return InteractionResultHolder.sidedSuccess(stack, world.isClientSide());
+    }
+
+    private static void playGeigerSound(Level world, Entity entity, int index) {
+        SoundEvent sound = switch (index) {
+            case 1 -> ModSounds.GEIGER_1.orElse(null);
+            case 2 -> ModSounds.GEIGER_2.orElse(null);
+            case 3 -> ModSounds.GEIGER_3.orElse(null);
+            default -> null;
         };
-
-        sound.ifPresent(soundEvent -> {
-            ResourceLocation soundLocation = soundEvent.getLocation();
-            ModPacketHandler.sendToPlayer(player, ModPacketHandler.GEIGER_SOUND,
-                new GeigerSoundPacket(soundLocation, 0.4F, 1.0F));
-        });
+        if (sound != null) {
+            world.playSound(null, entity.getX(), entity.getY(), entity.getZ(), sound, SoundSource.PLAYERS, 1.0F, 1.0F);
+        }
     }
 }

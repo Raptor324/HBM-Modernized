@@ -1,17 +1,27 @@
 package com.hbm_m.datagen.recipes;
 //? if forge {
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.hbm_m.item.tags_and_tiers.ModTags;
 import net.minecraftforge.common.Tags;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.block.generic.BlockAbsorber;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.item.BlockAbsorberItem;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
 import com.hbm_m.lib.RefStrings;
 
+import net.minecraft.advancements.Advancement;
+import net.minecraft.advancements.CriterionTriggerInstance;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeCategory;
@@ -21,8 +31,10 @@ import net.minecraft.data.recipes.SimpleCookingRecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Blocks;
 
@@ -54,6 +66,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         registerUtilityRecipes(writer);
         registerPowderCooking(writer);
         registerOreAndRawCooking(writer);
+        registerMeteoriteSword(writer);
     }
 
     //  БЕЗОПАСНАЯ ПРОВЕРКА NULL
@@ -157,6 +170,19 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('@', Items.LEVER)
                 .unlockedBy(getHasName(ModBlocks.WIRE_COATED.get()), has(ModBlocks.WIRE_COATED.get()))
                 .save(writer, recipeId("crafting/switch"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.DECON.get())
+                .pattern("BGB")
+                .pattern("SAS")
+                .pattern("BSB")
+                .define('B', ModItems.getIngot(ModIngots.BERYLLIUM).get())
+                .define('G', Items.IRON_BARS)
+                .define('S', ModItems.getIngot(ModIngots.STEEL).get())
+                .define('A', Ingredient.of(BlockAbsorberItem.forTier(ModBlocks.RAD_ABSORBER.get(), BlockAbsorber.EnumAbsorberTier.BASE)))
+                .unlockedBy(getHasName(ModItems.getIngot(ModIngots.BERYLLIUM).get()), has(ModItems.getIngot(ModIngots.BERYLLIUM).get()))
+                .save(writer, recipeId("crafting/decon"));
+
+        registerRadAbsorberRecipes(writer);
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.GEIGER_COUNTER_BLOCK.get())
                 .pattern("#  ")
@@ -1192,6 +1218,22 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         buildBoots(writer, material, boots, name + "_boots");
     }
 
+    private void registerMeteoriteSword(Consumer<FinishedRecipe> writer) {
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.METEORITE_SWORD.get())
+                .pattern(" M ")
+                .pattern("PMP")
+                .pattern(" S ")
+                .define('M', ModItems.getIngot(ModIngots.METEORITE_FORGED).get())
+                .define('P', ModItems.PLATE_GOLD.get())
+                .define('S', Items.STICK)
+                .unlockedBy(getHasName(ModItems.getIngot(ModIngots.METEORITE_FORGED).get()),
+                        has(ModItems.getIngot(ModIngots.METEORITE_FORGED).get()))
+                .save(writer, recipeId("meteorite_sword"));
+
+        registerSmelting(writer, ModItems.METEORITE_SWORD.get(), ModItems.METEORITE_SWORD_SEARED.get(),
+                0.7F, 200, "meteorite_sword_seared");
+    }
+
     //регистрация и прочее
     private void registerSmeltingAndBlasting(Consumer<FinishedRecipe> writer, ItemLike input, ItemLike output,
                                              float smeltXp, float blastXp, String baseName) {
@@ -1211,6 +1253,122 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         SimpleCookingRecipeBuilder.blasting(Ingredient.of(input), RecipeCategory.MISC, result, xp, time)
                 .unlockedBy(getHasName(input), has(input))
                 .save(writer, recipeId(name));
+    }
+
+    private void registerRadAbsorberRecipes(Consumer<FinishedRecipe> writer) {
+        BlockAbsorber.EnumAbsorberTier base = BlockAbsorber.EnumAbsorberTier.BASE;
+        BlockAbsorber.EnumAbsorberTier red = BlockAbsorber.EnumAbsorberTier.RED;
+        BlockAbsorber.EnumAbsorberTier green = BlockAbsorber.EnumAbsorberTier.GREEN;
+        BlockAbsorber.EnumAbsorberTier pink = BlockAbsorber.EnumAbsorberTier.PINK;
+
+        ItemStack baseStack = BlockAbsorberItem.forTier(ModBlocks.RAD_ABSORBER.get(), base);
+        ItemStack redStack = BlockAbsorberItem.forTier(ModBlocks.RAD_ABSORBER.get(), red);
+        ItemStack greenStack = BlockAbsorberItem.forTier(ModBlocks.RAD_ABSORBER.get(), green);
+
+        String[] pattern = {"ICI", "CPC", "ICI"};
+
+        saveShapedStackRecipe(writer, recipeId("crafting/rad_absorber_base"), baseStack, pattern,
+                mapOf(
+                        'I', Ingredient.of(Items.COPPER_INGOT),
+                        'C', Ingredient.of(ModItems.getPowders(ModPowders.COAL).get()),
+                        'P', Ingredient.of(ModItems.getPowder(ModIngots.LEAD).get())
+                ),
+                Items.COPPER_INGOT, "has_copper");
+
+        saveShapedStackRecipe(writer, recipeId("crafting/rad_absorber_red"), redStack, pattern,
+                mapOf(
+                        'I', Ingredient.of(ModItems.getIngot(ModIngots.TITANIUM).get()),
+                        'C', Ingredient.of(ModItems.getPowders(ModPowders.COAL).get()),
+                        'P', Ingredient.of(baseStack)
+                ),
+                baseStack.getItem(), "has_rad_absorber_base");
+
+        saveShapedStackRecipe(writer, recipeId("crafting/rad_absorber_green"), greenStack, pattern,
+                mapOf(
+                        'I', Ingredient.of(
+                                ModItems.getIngot(ModIngots.BAKELITE).get(),
+                                ModItems.getIngot(ModIngots.POLYMER).get()),
+                        'C', Ingredient.of(ModItems.POWDER_DESH_MIX.get()),
+                        'P', Ingredient.of(redStack)
+                ),
+                redStack.getItem(), "has_rad_absorber_red");
+
+        saveShapedStackRecipe(writer, recipeId("crafting/rad_absorber_pink"),
+                BlockAbsorberItem.forTier(ModBlocks.RAD_ABSORBER.get(), pink), pattern,
+                mapOf(
+                        'I', Ingredient.of(ModItems.getIngot(ModIngots.SATURNITE).get()),
+                        'C', Ingredient.of(ModItems.POWDER_NITAN_MIX.get()),
+                        'P', Ingredient.of(greenStack)
+                ),
+                greenStack.getItem(), "has_rad_absorber_green");
+    }
+
+    private static Map<Character, Ingredient> mapOf(Object... entries) {
+        Map<Character, Ingredient> map = new LinkedHashMap<>();
+        for (int i = 0; i < entries.length; i += 2) {
+            map.put((Character) entries[i], (Ingredient) entries[i + 1]);
+        }
+        return map;
+    }
+
+    private void saveShapedStackRecipe(Consumer<FinishedRecipe> writer, ResourceLocation recipeId,
+            ItemStack result, String[] pattern, Map<Character, Ingredient> keys,
+            ItemLike unlockItem, String unlockCriterion) {
+        Advancement.Builder advancement = Advancement.Builder.advancement();
+        CriterionTriggerInstance criterion = has(unlockItem);
+        advancement.addCriterion(unlockCriterion, criterion);
+        ResourceLocation advancementId = recipeId.withPrefix("recipes/" + RecipeCategory.MISC.getFolderName() + "/");
+
+        writer.accept(new FinishedRecipe() {
+            @Override
+            public void serializeRecipeData(@NotNull JsonObject json) {
+                json.addProperty("type", "minecraft:crafting_shaped");
+                json.addProperty("category", "misc");
+                JsonArray patternJson = new JsonArray();
+                for (String line : pattern) {
+                    patternJson.add(line);
+                }
+                json.add("pattern", patternJson);
+                JsonObject keyJson = new JsonObject();
+                keys.forEach((symbol, ingredient) -> keyJson.add(String.valueOf(symbol), ingredient.toJson()));
+                json.add("key", keyJson);
+                json.add("result", stackToJson(result));
+            }
+
+            @Override
+            public ResourceLocation getId() {
+                return recipeId;
+            }
+
+            @Override
+            public RecipeSerializer<?> getType() {
+                return RecipeSerializer.SHAPED_RECIPE;
+            }
+
+            @Override
+            @Nullable
+            public JsonObject serializeAdvancement() {
+                return advancement.serializeToJson();
+            }
+
+            @Override
+            @Nullable
+            public ResourceLocation getAdvancementId() {
+                return advancementId;
+            }
+        });
+    }
+
+    private static JsonObject stackToJson(ItemStack stack) {
+        JsonObject json = new JsonObject();
+        json.addProperty("item", BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
+        if (stack.getCount() > 1) {
+            json.addProperty("count", stack.getCount());
+        }
+        if (stack.hasTag()) {
+            json.addProperty("nbt", stack.getTag().toString());
+        }
+        return json;
     }
 
     private ResourceLocation recipeId(String path) {

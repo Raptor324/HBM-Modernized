@@ -163,18 +163,6 @@ public class ModLanguageProvider extends LanguageProvider {
             });
         }
 
-        if ("ru_ru".equals(this.locale)) {
-            add(ModBlocks.CRUCIBLE.get(), "Тигель (WIP)");
-            add(ModBlocks.FOUNDRY_BASIN.get(), "Литейный бассейн");
-            add(ModBlocks.FOUNDRY_CHANNEL.get(), "Литейный канал");
-            add("container.hbm_m.crucible", "Тигель");
-        } else {
-            add(ModBlocks.CRUCIBLE.get(), "Crucible (WIP)");
-            add(ModBlocks.FOUNDRY_BASIN.get(), "Foundry Basin");
-            add(ModBlocks.FOUNDRY_CHANNEL.get(), "Foundry Channel");
-            add("container.hbm_m.crucible", "Crucible");
-        }
-
     // ЯВНАЯ ЛОКАЛИЗАЦИЯ ДЛЯ ОСТАЛЬНЫХ КЛЮЧЕЙ
         switch (this.locale) {
             case "ru_ru":
@@ -628,6 +616,19 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.BARREL_YELLOW.get(), "Бочка с ядерными отходами");
                 add(ModBlocks.BARREL_VITRIFIED.get(), "Бочка с остеклованными ядерными отходами");
                 add(ModBlocks.BARREL_TAINT.get(), "Бочка с говном");
+                add(ModBlocks.TAINT.get(), "Порча");
+                add("effect.hbm_m.taint", "Порча");
+                add("entity.hbm_m.entity_mob_tainted_creeper", "Заражённый порчей крипер");
+                add("item.hbm_m.entity_mob_tainted_creeper_spawn_egg", "Яйцо призыва заражённого крипера");
+                add("entity.hbm_m.entity_mob_volatile_creeper", "Возгораемый крипер");
+                add("item.hbm_m.entity_mob_volatile_creeper_spawn_egg", "Яйцо призыва возгораемого крипера");
+                add("entity.hbm_m.entity_mob_phosgene_creeper", "Фосгеновый крипер");
+                add("item.hbm_m.entity_mob_phosgene_creeper_spawn_egg", "Яйцо призыва фосгенового крипера");
+                add("entity.hbm_m.entity_mob_gold_creeper", "Золотой крипер");
+                add("item.hbm_m.entity_mob_gold_creeper_spawn_egg", "Яйцо призыва золотого крипера");
+                add("entity.hbm_m.entity_mob_nuclear_creeper", "Ядерный крипер");
+                add("item.hbm_m.entity_mob_nuclear_creeper_spawn_egg", "Яйцо призыва ядерного крипера");
+                add("death.attack.taint", "%1$s умер от невероятного количества опухолей.");
 // MULTIBLOCK DOORS
                 add(ModBlocks.LARGE_VEHICLE_DOOR.get(), "Дверь для крупногабаритного транспорта");
                 add(ModBlocks.ROUND_AIRLOCK_DOOR.get(), "Круглая воздушная дверь");
@@ -1151,17 +1152,23 @@ public class ModLanguageProvider extends LanguageProvider {
                 
                 add("sounds.hbm_m.radaway_use", "Использование антирадина");
                 
-                add("tooltip.hbm_m.mods", "Модификации:");
-                add("tooltip.hbm_m.heart_piece.effect", "+5 Здоровья");
                 
-                add("tooltip.hbm_m.applies_to", "Применяется к:");
-
-                add("tooltip.hbm_m.helmet", "Шлему");
-                add("tooltip.hbm_m.chestplate", "Нагруднику");
-                add("tooltip.hbm_m.leggings", "Поножам");
-                add("tooltip.hbm_m.boots", "Ботинкам");
-                add("tooltip.hbm_m.armor.all", "Любой броне");
-                add("tooltip.hbm_m.rad_protection.value_short", "%s сопр. радиации.");
+                add("armorMod.applicableTo", "Применяется к:");
+                add("armorMod.all", "Всему");
+                add("armorMod.helmets", "Шлему");
+                add("armorMod.chestplates", "Нагруднику");
+                add("armorMod.leggings", "Поножам");
+                add("armorMod.boots", "Ботинкам");
+                add("armorMod.insertHere", "Вставьте броню, чтобы её модифицировать...");
+                add("armorMod.type.helmet", "Шлем");
+                add("armorMod.type.chestplate", "Нагрудник");
+                add("armorMod.type.leggings", "Поножи");
+                add("armorMod.type.boots", "Ботинки");
+                add("armorMod.type.servo", "Сервоприводы");
+                add("armorMod.type.cladding", "Обшивка");
+                add("armorMod.type.insert", "Пластина");
+                add("armorMod.type.special", "Особое");
+                add("armorMod.type.battery", "Аккумулятор");
 
                 add("gui.hbm_m.blast_furnace.accepts", "Принимает предметы со стороны: %s");
                 add("direction.hbm_m.down", "Вниз");
@@ -1304,6 +1311,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.block_thorium", "Ториевый блок");
                 add("block.hbm_m.block_mox_fuel", "Блок MOX-топлива");
                 add("block.hbm_m.block_schrabidium_fuel", "Блок шрабидиевого топлива");
+                add("block.hbm_m.block_schraranium", "Шрараниевый блок");
+                add("block.hbm_m.block_schrabidate", "Шрабидатовый блок");
+                add("block.hbm_m.block_solinium", "Солиниевый блок");
+                add("block.hbm_m.block_schrabidium_cluster", "Шрабидиевый кластер");
+                add("block.hbm_m.schrabidium_ore", "Шрабидиевая руда");
+                add("block.hbm_m.schrabidium_ore_nether", "Адская шрабидиевая руда");
+                add("block.hbm_m.schrabidium_ore_gneiss", "Гнейсовая шрабидиевая руда");
                 add("block.hbm_m.block_uranium_fuel", "Блок уранового топлива");
                 add("block.hbm_m.block_thorium_fuel", "Блок ториевого топлива");
                 add("block.hbm_m.block_plutonium_fuel", "Блок плутониевого топлива");
@@ -1333,6 +1347,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.heating_oven", "Нагревательная печь");
                 add("block.hbm_m.press", "Пресс");
                 add("block.hbm_m.geiger_counter_block", "Стационарный счетчик Гейгера");
+                add("block.hbm_m.decon", "Обеззараживатель игрока");
+                add("block.hbm_m.rad_absorber.base", "Поглотитель радиации");
+                add("block.hbm_m.rad_absorber.red", "Усовершенствованный поглотитель радиации");
+                add("block.hbm_m.rad_absorber.green", "Элитный поглотитель радиации");
+                add("block.hbm_m.rad_absorber.pink", "Продвинутый поглотитель радиации");
+                add("item.hbm_m.powder_desh_mix", "Смесь деш");
+                add("item.hbm_m.powder_nitan_mix", "Нитановая смесь");
                 add("block.hbm_m.freaky_alien_block", "Блок ебанутого инопланетянина");
                 add("block.hbm_m.reinforced_stone", "Уплотнённый камень");
                 add("block.hbm_m.reinforced_stone_slab", "Плита из уплотнённого камня");
@@ -1559,7 +1580,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 // MACHINE GUI
                 
-                add("tooltip.hbm_m.armor_table.main_slot", "Вставьте броню, чтобы ее модифицировать...");
+                add("tooltip.hbm_m.armor_table.main_slot", "Вставьте броню, чтобы её модифицировать...");
                 add("tooltip.hbm_m.slot", "Слот");
                 add("tooltip.hbm_m.armor_table.helmet_slot", "Шлем");
                 add("tooltip.hbm_m.armor_table.chestplate_slot", "Нагрудник");
@@ -1612,6 +1633,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.armor_table", "Стол модификации брони");
                 add("container.hbm_m.machine_assembler", "Сборочная машина (Старая)");
                 add("container.hbm_m.advanced_assembly_machine", "Сборочная машина");
+                add(ModBlocks.CRUCIBLE.get(), "Тигель (WIP)");
+                add(ModBlocks.FOUNDRY_BASIN.get(), "Литейный бассейн");
+                add(ModBlocks.FOUNDRY_CHANNEL.get(), "Литейный канал");
+                add("container.hbm_m.crucible", "Тигель");
                 add(ModBlocks.LAUNCH_PAD.get(), "Пусковая площадка");
                 add(ModBlocks.LAUNCH_PAD_RUSTED.get(), "Ржавая пусковая площадка");
                 add(ModItems.DESIGNATOR.get(), "Целеуказатель");
@@ -1624,7 +1649,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.designator", "Ручной целеуказатель");
                 add("gui.hbm_m.designator.set_x", "Установить текущую позицию X...");
                 add("gui.hbm_m.designator.set_z", "Установить текущую позицию Z...");
-                add(ModBlocks.CRYSTALLIZER.get(), "Рудный окислитель (WIP)");
+                add(ModBlocks.CRYSTALLIZER.get(), "Рудный окислитель");
                 add(ModBlocks.BREEDER.get(), "Реактор-размножитель (WIP)");
                 add(ModBlocks.LARGE_PYLON.get(), "Большой пилон (WIP)");
                 add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Башня гидроразрыва пласта");
@@ -1646,7 +1671,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.MINING_DRILL.get(), "Large Mining Drill");
                 add(ModBlocks.FEL.get(), "FEL (WIP)");
                 add(ModBlocks.SILEX.get(), "Silex (WIP)");
-                add(ModBlocks.CHEMICAL_PLANT.get(), "Химический завод (WIP)");
+                add(ModBlocks.CHEMICAL_PLANT.get(), "Химическая установка");
                 add(ModBlocks.CENTRIFUGE.get(), "Центрифуга (WIP)");
                 add(ModBlocks.INDUSTRIAL_TURBINE.get(), "Промышленная турбина");
                 add(ModBlocks.TURBINE.get(), "Турбина (WIP)");
@@ -1654,21 +1679,21 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.wood_burner", "Дровяной генератор");
                 add("container.hbm_m.industrial_boiler", "Промышленный котел");
                 add("container.hbm_m.solar_boiler", "Солнечный котел");
-                    add("container.hbm_m.solar_mirrors", "Солнечные зеркала");
-                    add("container.hbm_m.watz_powerplant", "Электростанция Ватц");
-                    add("container.hbm_m.hydrotreater", "Гидроочиститель");
-                    add("container.hbm_m.catalytic_reformer", "Каталитический риформер");
-                    add("container.hbm_m.deuterium_tower", "Башня дейтерия");
-                    add("container.hbm_m.chemical_factory", "Химический завод");
-                    add("container.hbm_m.steam_turbine", "Паровая турбина");
-                    add("container.hbm_m.steam_condenser", "Паровой конденсатор");
-                    add("container.hbm_m.liquefactor", "Сжижитель");
-                    add("container.hbm_m.core_emitter", "Эмиттер ядра");
-                    add("container.hbm_m.core_injector", "Инжектор ядра");
-                    add("container.hbm_m.core_receiver", "Приемник ядра");
-                    add("container.hbm_m.vacuum_distill", "Вакуумная дистилляция");
-                    add("container.hbm_m.turbofan", "Турбовентилятор");
-                    add("container.hbm_m.industrial_turbine", "Промышленная турбина");
+                add("container.hbm_m.solar_mirrors", "Солнечные зеркала");
+                add("container.hbm_m.watz_powerplant", "Электростанция Ватц");
+                add("container.hbm_m.hydrotreater", "Гидроочиститель");
+                add("container.hbm_m.catalytic_reformer", "Каталитический риформер");
+                add("container.hbm_m.deuterium_tower", "Башня дейтерия");
+                add("container.hbm_m.chemical_factory", "Химический завод");
+                add("container.hbm_m.steam_turbine", "Паровая турбина");
+                add("container.hbm_m.steam_condenser", "Паровой конденсатор");
+                add("container.hbm_m.liquefactor", "Сжижитель");
+                add("container.hbm_m.core_emitter", "Эмиттер ядра");
+                add("container.hbm_m.core_injector", "Инжектор ядра");
+                add("container.hbm_m.core_receiver", "Приемник ядра");
+                add("container.hbm_m.vacuum_distill", "Вакуумная дистилляция");
+                add("container.hbm_m.turbofan", "Турбовентилятор");
+                add("container.hbm_m.industrial_turbine", "Промышленная турбина");
                 add("container.hbm_m.radar", "Радар (WIP)");
                 add("chat.radar.tolow", "Радар должен быть установлен выше!");
                 add("gui.hbm_m.radar.scan_missiles", "Сканировать ракеты");
@@ -1692,7 +1717,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.crystallizer", "Кристаллизатор");
                 add("container.hbm_m.breeder", "Бридер");
                 add("container.hbm_m.large_pylon", "Большой пилон");
-                add("container.hbm_m.chemical_plant", "Химический завод");
+                add("container.hbm_m.chemical_plant", "Химическая установка");
                 add("container.hbm_m.centrifuge", "Центрифуга");
 
                 add("gui.hbm_m.battery.priority.0", "Приоритет: Низкий");
@@ -1770,23 +1795,38 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.requires", "Требуется");
 
 
-                add("hazard.hbm_m.radiation", "[Радиоактивный]");
+                add("trait.radioactive", "Радиоактивный");
+                add("trait.asbestos", "Содержит асбест");
+                add("trait.blinding", "Ослепление");
+                add("trait.coal", "Угольная пыль");
+                add("trait.digamma", "Дигамма-радиация");
+                add("trait.explosive", "Воспламеняющийся / Взрывоопасный");
+                add("trait.hot", "Пирофорный / Горячий");
+                add("trait.hydro", "Гидрореактивный");
                 add("hazard.hbm_m.radiation.format", "%s РАД/с");
+                add("hazard.hbm_m.radiation.stack", "Стак: %s РАД/с");
                 add("hazard.hbm_m.digamma", "[Дигамма]");
                 add("hazard.hbm_m.digamma.format", "%s мДРХ/с");
+                add("hazard.hbm_m.digamma.stack", "Стак: %s мДРХ/с");
+                add("hazard.hbm_m.asbestos", "[Содержит асбест]");
+                add("hazard.hbm_m.coal", "[Угольная пыль]");
+                add("hazard.hbm_m.blinding", "[Ослепление]");
                 add("hazard.hbm_m.hydro_reactive", "[Гидрореактивный]");
                 add("hazard.hbm_m.explosive_on_fire", "[Воспламеняющийся / Взрывоопасный]");
                 add("hazard.hbm_m.pyrophoric", "[Пирофорный / Горячий]");
                 add("hazard.hbm_m.explosion_strength.format", " Сила взрыва - %s");
                 add("hazard.hbm_m.stack", "Стак: %s");
 
-                add("item.hbm_m.meter.geiger_counter.name", "СЧЁТЧИК ГЕЙГЕРА");
-                add("item.hbm_m.meter.dosimeter.name", "ДОЗИМЕТР");
-                add("item.hbm_m.meter.title_format", "%s");
-                add("hbm_m.render.shader_detected", "§e[HBM] §7Обнаружен активный шейдер. Переключение на совместимый рендер...");
-                add("hbm_m.render.shader_disabled", "§a[HBM] §7Шейдер отключен. Возврат к оптимизированному VBO рендеру.");
-                add("hbm_m.render.path_changed", "§e[HBM] §7Путь рендера установлен: %s");
-                add("hbm_m.render.status", "§e[HBM] §7Текущий путь рендера: §f%s\n§7Внешний шейдер обнаружен: §f%s");
+                add("geiger.title", "СЧЁТЧИК ГЕЙГЕРА");
+                add("geiger.title.dosimeter", "ДОЗИМЕТР");
+                add("geiger.chunkRad", "Текущий уровень радиации в чанке:");
+                add("geiger.envRad", "Общее радиационное заражение среды:");
+                add("geiger.playerRad", "Уровень радиоактивного заражения игрока:");
+                add("geiger.playerRes", "Защищённость игрока:");
+                add("digamma.title", "ДИАГНОСТИКА ДИГАММЫ");
+                add("digamma.playerDigamma", "Доза дигаммы:");
+                add("digamma.playerHealth", "Влияние дигаммы:");
+                add("digamma.playerRes", "Сопротивление к дигамме:");
 
                 add("tooltip.hbm_m.abilities", "Способности:");
                 add("tooltip.hbm_m.vein_miner", "Жилковый майнер (%s)");
@@ -1806,11 +1846,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("message.hbm_m.fortune.enabled", "Удача %s активирована!");
                 add("message.hbm_m.fortune.disabled", "Удача %s деактивирована!");
                 add("message.hbm_m.disabled", "Все способности выключены!");
-
-                add("item.hbm_m.meter.chunk_rads", "§eТекущий уровень радиации в чанке: %s\n");
-                add("item.hbm_m.meter.env_rads", "§eОбщее радиационное заражение среды: %s");
-                add("item.hbm_m.meter.player_rads", "§eУровень радиоактивного заражения игрока: %s\n");
-                add("item.hbm_m.meter.protection", "§eЗащищённость игрока: %s (%s)");
+                add("message.hbm_m.loaded", "Мир загружен с %s %s для Minecraft %s!");
+                add("message.hbm_m.modernized", "Hbm's Nuclear Tech Mod: Modernized");
+                add("message.hbm_m.new_version", "Доступна новая версия %s!");
+                add("message.hbm_m.download_now", "Скачать: ");
+                add("message.hbm_m.button_modrinth", "[Modrinth]");
+                add("message.hbm_m.button_curseforge", "[CurseForge]");
 
                 add("item.hbm_m.meter.rads_over_limit", ">%s RAD/s");
                 add("tooltip.hbm_m.hold_shift_for_details", "<Зажмите SHIFT для деталей>");
@@ -1851,32 +1892,14 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.category.general", "Общие настройки");
                 add("text.autoconfig.hbm_m.option.enableRadiation", "Включить радиацию");
                 add("text.autoconfig.hbm_m.option.enableChunkRads", "Включить радиацию в чанках");
+                add("text.autoconfig.hbm_m.option.enableMOTD", "Сообщение при входе в мир (MOTD)");
                 add("text.autoconfig.hbm_m.option.usePrismSystem", "Использовать систему PRISM (иначе Simple, WIP)");
 
                 add("text.autoconfig.hbm_m.category.world_effects", "Эффекты мира");
+                add("text.autoconfig.hbm_m.option.enableRadFogEffect", "Радиоактивный туман в чанках");
+                add("text.autoconfig.hbm_m.option.enableRadFogEffect.@Tooltip", "Частицы тумана при ≥100 RAD в чанке (1 из 20 тиков), как fogRad/fogCh в 1.7.10. Порог и частота заданы в коде.");
                 add("text.autoconfig.hbm_m.option.worldRadEffects", "Эффекты радиации на мир (изменения блоков)");
-                add("text.autoconfig.hbm_m.option.worldRadEffects.@Tooltip", "Включает/выключает эффекты разрушения мира от высокой радиации (замена блоков, гибель растительности и т.д.).");
-
-                add("text.autoconfig.hbm_m.option.worldRadEffectsThreshold", "Порог радиации для разрушения");
-                add("text.autoconfig.hbm_m.option.worldRadEffectsThreshold.@Tooltip", "Минимальный уровень фоновой радиации в чанке, при котором начинаются эффекты разрушения.");
-
-                add("text.autoconfig.hbm_m.option.worldRadEffectsBlockChecks", "Проверок блоков в тик");
-                add("text.autoconfig.hbm_m.option.worldRadEffectsBlockChecks.@Tooltip", "Количество случайных проверок блоков в затронутом чанке за один тик. Влияет на скорость разрушения. Большие значения могут повлиять на производительность.");
-
-                add("text.autoconfig.hbm_m.option.worldRadEffectsMaxScaling", "Макс. множитель разрушения");
-                add("text.autoconfig.hbm_m.option.worldRadEffectsMaxScaling.@Tooltip", "Максимальное ускорение разрушения мира при пиковой радиации. 1 = скорость не меняется, 4 = скорость может быть до 4 раз выше. Макс значение - 10х");
-
-                add("text.autoconfig.hbm_m.option.worldRadEffectsMaxDepth", "Глубина разрушения");
-                add("text.autoconfig.hbm_m.option.worldRadEffectsMaxDepth.@Tooltip", "Максимальная глубина (в блоках) от поверхности, на которую могут распространяться эффекты разрушения мира.");
-
-                add("text.autoconfig.hbm_m.option.enableRadFogEffect", "Включить эффект радиоактивного тумана");
-                add("text.autoconfig.hbm_m.option.enableRadFogEffect.@Tooltip", "Включает/выключает появление радиоактивного тумана в чанках с высоким уровнем радиации.");
-                
-                add("text.autoconfig.hbm_m.option.radFogThreshold", "Порог для появления тумана");
-                add("text.autoconfig.hbm_m.option.radFogThreshold.@Tooltip", "Минимальный уровень фоновой радиации в чанке, при котором может появиться туман.");
-                
-                add("text.autoconfig.hbm_m.option.radFogChance", "Шанс появления тумана");
-                add("text.autoconfig.hbm_m.option.radFogChance.@Tooltip", "Шанс появления частиц тумана в подходящем чанке за секунду. Рассчитывается как 1 к X. Чем меньше значение, тем чаще появляется туман.");
+                add("text.autoconfig.hbm_m.option.worldRadEffects.@Tooltip", "Как в 1.7.10 (RadiationConfig.worldRadEffects): замена травы/листьев при ≥10 RAD в чанке, 5 чанков/тик, 10 проходов. Пороги не настраиваются.");
 
                 add("text.autoconfig.hbm_m.category.player", "Игрок");
                 add("text.autoconfig.hbm_m.option.maxPlayerRad", "Максимальный уровень радиации у игрока");
@@ -1940,6 +1963,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("text.autoconfig.hbm_m.option.enableRadiation.@Tooltip", "Если выключено, вся радиация отключается (чанки, предметы)");
                 add("text.autoconfig.hbm_m.option.enableChunkRads.@Tooltip", "Если выключено, радиация в чанках всегда 0");
+                add("text.autoconfig.hbm_m.option.enableMOTD.@Tooltip", "Приветствие при входе в мир и уведомление, если на Modrinth есть более новая версия мода");
                 add("text.autoconfig.hbm_m.option.usePrismSystem.@Tooltip", "Использовать систему PRISM для радиации в чанках (WIP)");
 
                 add("text.autoconfig.hbm_m.option.maxPlayerRad.@Tooltip", "Максимальная радиация, которую может накопить игрок");
@@ -3034,6 +3058,19 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.BARREL_YELLOW.get(), "Yellow Barrel");
                 add(ModBlocks.BARREL_VITRIFIED.get(), "Vitrified Barrel");
                 add(ModBlocks.BARREL_TAINT.get(), "Tainted Barrel");
+                add(ModBlocks.TAINT.get(), "Taint");
+                add("effect.hbm_m.taint", "Tainted");
+                add("entity.hbm_m.entity_mob_tainted_creeper", "Tainted Creeper");
+                add("item.hbm_m.entity_mob_tainted_creeper_spawn_egg", "Tainted Creeper Spawn Egg");
+                add("entity.hbm_m.entity_mob_volatile_creeper", "Volatile Creeper");
+                add("item.hbm_m.entity_mob_volatile_creeper_spawn_egg", "Volatile Creeper Spawn Egg");
+                add("entity.hbm_m.entity_mob_phosgene_creeper", "Phosgene Creeper");
+                add("item.hbm_m.entity_mob_phosgene_creeper_spawn_egg", "Phosgene Creeper Spawn Egg");
+                add("entity.hbm_m.entity_mob_gold_creeper", "Golden Creeper");
+                add("item.hbm_m.entity_mob_gold_creeper_spawn_egg", "Golden Creeper Spawn Egg");
+                add("entity.hbm_m.entity_mob_nuclear_creeper", "Nuclear Creeper");
+                add("item.hbm_m.entity_mob_nuclear_creeper_spawn_egg", "Nuclear Creeper Spawn Egg");
+                add("death.attack.taint", "%1$s died from flux tumors.");
                 add(ModBlocks.BARREL_IRON.get(), "Iron Barrel");
                 add(ModBlocks.BARREL_STEEL.get(), "Steel Barrel");
                 add(ModBlocks.BARREL_TCALLOY.get(), "Iron Barrel");
@@ -3180,22 +3217,29 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.crystal_uranium", "Uranium Crystal");
                 add("item.hbm_m.crystal_virus", "Virus Crystal");
                 add("item.hbm_m.crystal_xen", "Xenon Crystal");
+                
+                add("armorMod.applicableTo", "Applicable To:");
+                add("armorMod.all", "All");
+                add("armorMod.helmets", "Helmets");
+                add("armorMod.chestplates", "Chestplates");
+                add("armorMod.leggings", "Leggings");
+                add("armorMod.boots", "Boots");
+                add("armorMod.insertHere", "Insert armor to modify...");
+                add("armorMod.type.helmet", "Helmet");
+                add("armorMod.type.chestplate", "Chestplate");
+                add("armorMod.type.leggings", "Leggings");
+                add("armorMod.type.boots", "Boots");
+                add("armorMod.type.servo", "Servos");
+                add("armorMod.type.cladding", "Cladding");
+                add("armorMod.type.insert", "Insert");
+                add("armorMod.type.special", "Special");
+                add("armorMod.type.battery", "Battery");
 
-                
-                add("tooltip.hbm_m.mods", "Modifications:");
-                add("tooltip.hbm_m.heart_piece.effect", "+5 Max Health");
-                
-                add("tooltip.hbm_m.applies_to", "Applies to:");
+                add("tooltip.hbm_m.applies_to", "Applicable To:");
 
                 // ARMOR MODIFICATION TABLE TOOLTIPS
 
-                add("tooltip.hbm_m.helmet", "Helmet");
-                add("tooltip.hbm_m.chestplate", "Chestplate");
-                add("tooltip.hbm_m.leggings", "Leggings");
-                add("tooltip.hbm_m.boots", "Boots");
-                add("tooltip.hbm_m.armor.all", "Any Armor");
-
-                add("tooltip.hbm_m.armor_table.main_slot", "Insert armor to be modified...");
+                add("tooltip.hbm_m.armor_table.main_slot", "Insert armor to modify...");
                 add("tooltip.hbm_m.slot", "Slot");
                 add("tooltip.hbm_m.armor_table.helmet_slot", "Helmet");
                 add("tooltip.hbm_m.armor_table.chestplate_slot", "Chestplate");
@@ -3203,8 +3247,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.armor_table.boots_slot", "Boots");
                 add("tooltip.hbm_m.armor_table.battery_slot", "Battery");
                 add("tooltip.hbm_m.armor_table.special_slot", "Special");
-                add("tooltip.hbm_m.armor_table.plating_slot", "Plating");
-                add("tooltip.hbm_m.armor_table.casing_slot", "Casing");
+                add("tooltip.hbm_m.armor_table.plating_slot", "Insert");
+                add("tooltip.hbm_m.armor_table.casing_slot", "Cladding");
                 add("tooltip.hbm_m.armor_table.servos_slot", "Servos");
 
                 // POWER ARMOR FSB TOOLTIPS
@@ -3325,7 +3369,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.designator", "Manual Designator");
                 add("gui.hbm_m.designator.set_x", "Set coord to current X position...");
                 add("gui.hbm_m.designator.set_z", "Set coord to current Z position...");
-                add(ModBlocks.CRYSTALLIZER.get(), "Ore Acidizer (WIP)");
+                add(ModBlocks.CRYSTALLIZER.get(), "Ore Acidizer");
                 add(ModBlocks.BREEDER.get(), "Breeder (WIP)");
                 add(ModBlocks.LARGE_PYLON.get(), "Large Pylon (WIP)");
                 add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Hydraulic Fracking Tower");
@@ -3470,6 +3514,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.block_thorium", "Thorium Block");
                 add("block.hbm_m.block_mox_fuel", "MOX Fuel Block");
                 add("block.hbm_m.block_schrabidium_fuel", "Schrabidium Fuel Block");
+                add("block.hbm_m.block_schraranium", "Schraranium Block");
+                add("block.hbm_m.block_schrabidate", "Schrabidate Block");
+                add("block.hbm_m.block_solinium", "Solinium Block");
+                add("block.hbm_m.block_schrabidium_cluster", "Schrabidium Cluster");
+                add("block.hbm_m.schrabidium_ore", "Schrabidium Ore");
+                add("block.hbm_m.schrabidium_ore_nether", "Nether Schrabidium Ore");
+                add("block.hbm_m.schrabidium_ore_gneiss", "Gneiss Schrabidium Ore");
                 add("block.hbm_m.block_uranium_fuel", "Uranium Fuel Block");
                 add("block.hbm_m.block_thorium_fuel", "Thorium Fuel Block");
                 add("block.hbm_m.block_plutonium_fuel", "Plutonium Fuel Block");
@@ -3494,6 +3545,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.airnukebomb_a", "Nuclear Bomb [Projectile]");
 
                 add("block.hbm_m.geiger_counter_block", "Geiger Counter Block");
+                add("block.hbm_m.decon", "Player Decontaminator");
+                add("block.hbm_m.rad_absorber.base", "Radiation Absorber");
+                add("block.hbm_m.rad_absorber.red", "Enhanced Radiation Absorber");
+                add("block.hbm_m.rad_absorber.green", "Advanced Radiation Absorber");
+                add("block.hbm_m.rad_absorber.pink", "Elite Radiation Absorber");
+                add("item.hbm_m.powder_desh_mix", "Desh Blend");
+                add("item.hbm_m.powder_nitan_mix", "Nitanium Blend");
                 add("block.hbm_m.wire_coated", "Red Copper Wire");
 
                 // ORES
@@ -3550,21 +3608,21 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.wood_burner", "Wood Burner Generator");
                 add("container.hbm_m.industrial_boiler", "Industrial Boiler");
                 add("container.hbm_m.solar_boiler", "Solar Boiler");
-                    add("container.hbm_m.solar_mirrors", "Solar Mirrors");
-                    add("container.hbm_m.watz_powerplant", "Watz Powerplant");
-                    add("container.hbm_m.hydrotreater", "Hydrotreater");
-                    add("container.hbm_m.catalytic_reformer", "Catalytic Reformer");
-                    add("container.hbm_m.deuterium_tower", "Deuterium Tower");
-                    add("container.hbm_m.chemical_factory", "Chemical Factory");
-                    add("container.hbm_m.steam_turbine", "Steam Turbine");
-                    add("container.hbm_m.steam_condenser", "Steam Condenser");
-                    add("container.hbm_m.liquefactor", "Liquefactor");
-                    add("container.hbm_m.core_emitter", "Core Emitter");
-                    add("container.hbm_m.core_injector", "Core Injector");
-                    add("container.hbm_m.core_receiver", "Core Receiver");
-                    add("container.hbm_m.vacuum_distill", "Vacuum Distill");
-                    add("container.hbm_m.turbofan", "Turbofan");
-                    add("container.hbm_m.industrial_turbine", "Industrial Turbine");
+                add("container.hbm_m.solar_mirrors", "Solar Mirrors");
+                add("container.hbm_m.watz_powerplant", "Watz Powerplant");
+                add("container.hbm_m.hydrotreater", "Hydrotreater");
+                add("container.hbm_m.catalytic_reformer", "Catalytic Reformer");
+                add("container.hbm_m.deuterium_tower", "Deuterium Tower");
+                add("container.hbm_m.chemical_factory", "Chemical Factory");
+                add("container.hbm_m.steam_turbine", "Steam Turbine");
+                add("container.hbm_m.steam_condenser", "Steam Condenser");
+                add("container.hbm_m.liquefactor", "Liquefactor");
+                add("container.hbm_m.core_emitter", "Core Emitter");
+                add("container.hbm_m.core_injector", "Core Injector");
+                add("container.hbm_m.core_receiver", "Core Receiver");
+                add("container.hbm_m.vacuum_distill", "Vacuum Distill");
+                add("container.hbm_m.turbofan", "Turbofan");
+                add("container.hbm_m.industrial_turbine", "Industrial Turbine");
                 add("container.hbm_m.radar", "Radar (WIP)");
                 add("chat.radar.tolow", "Radar must be placed higher up!");
                 add("gui.hbm_m.radar.scan_missiles", "Scan missiles");
@@ -3576,6 +3634,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.substation", "Substation (WIP)");
                 add("container.hbm_m.heating_oven", "Heating Oven");
                 add("container.hbm_m.advanced_assembly_machine", "Assembly Machine");
+                add(ModBlocks.CRUCIBLE.get(), "Crucible (WIP)");
+                add(ModBlocks.FOUNDRY_BASIN.get(), "Foundry Basin");
+                add(ModBlocks.FOUNDRY_CHANNEL.get(), "Foundry Channel");
+                add("container.hbm_m.crucible", "Crucible");
                 add("container.hbm_m.machine_battery", "Machine Battery");
                 add("container.hbm_m.battery_socket", "Battery Socket");
                 add("container.hbm_m.press", "Press");
@@ -3667,10 +3729,24 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 // HAZARD TOOLTIPS
 
+                add("trait.radioactive", "Radioactive");
+                add("trait.asbestos", "Asbestos");
+                add("trait.blinding", "Blinding");
+                add("trait.coal", "Coal Dust");
+                add("trait.digamma", "Digamma Radiation");
+                add("trait.explosive", "Flammable / Explosive");
+                add("trait.hot", "Pyrophoric / Hot");
+                add("trait.hydro", "Hydroreactive");
+
                 add("hazard.hbm_m.radiation", "[Radioactive]");
                 add("hazard.hbm_m.radiation.format", "%s RAD/s");
+                add("hazard.hbm_m.radiation.stack", "Stack: %s RAD/s");
                 add("hazard.hbm_m.digamma", "[Digamma]");
                 add("hazard.hbm_m.digamma.format", "%s mDRX/s");
+                add("hazard.hbm_m.digamma.stack", "Stack: %s mDRX/s");
+                add("hazard.hbm_m.asbestos", "[Asbestos]");
+                add("hazard.hbm_m.coal", "[Coal Dust]");
+                add("hazard.hbm_m.blinding", "[Blinding]");
                 add("hazard.hbm_m.hydro_reactive", "[Hydro-reactive]");
                 add("hazard.hbm_m.explosive_on_fire", "[Flammable / Explosive]");
                 add("hazard.hbm_m.pyrophoric", "[Pyrophoric / Hot]");
@@ -3695,19 +3771,23 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("message.hbm_m.fortune.enabled", "Fortune %s enabled!");
                 add("message.hbm_m.fortune.disabled", "Fortune %s disabled!");
                 add("message.hbm_m.disabled", "All abilities disabled!");
+                add("message.hbm_m.loaded", "Loaded world with %s %s for Minecraft %s!");
+                add("message.hbm_m.modernized", "Hbm's Nuclear Tech Mod: Modernized");
+                add("message.hbm_m.new_version", "New version %s is available!");
+                add("message.hbm_m.download_now", "Download now: ");
+                add("message.hbm_m.button_modrinth", "[Modrinth]");
+                add("message.hbm_m.button_curseforge", "[CurseForge]");
 
-                add("item.hbm_m.meter.geiger_counter.name", "GEIGER COUNTER");
-                add("item.hbm_m.meter.dosimeter.name", "DOSIMETER");
-                add("item.hbm_m.meter.title_format", "%s");
-                add("hbm_m.render.shader_detected", "§e[HBM] §7External shader detected. Switching to compatible renderer...");
-                add("hbm_m.render.shader_disabled", "§a[HBM] §7Shader disabled. Returning to optimized VBO renderer.");
-                add("hbm_m.render.path_changed", "§e[HBM] §7Render path set to: %s");
-                add("hbm_m.render.status", "§e[HBM] §7Current render path: §f%s\n§7External shader detected: §f%s");
-
-                add("item.hbm_m.meter.chunk_rads", "§eCurrent chunk radiation: %s\n");
-                add("item.hbm_m.meter.env_rads", "§eTotal environment contamination: %s");
-                add("item.hbm_m.meter.player_rads", "§ePlayer contamination: %s\n");
-                add("item.hbm_m.meter.protection", "§ePlayer protection: %s (%s)");
+                add("geiger.title", "GEIGER COUNTER");
+                add("geiger.title.dosimeter", "DOSIMETER");
+                add("geiger.chunkRad", "Current chunk radiation:");
+                add("geiger.envRad", "Total environmental radiation:");
+                add("geiger.playerRad", "Player contamination:");
+                add("geiger.playerRes", "Player protection:");
+                add("digamma.title", "DIGAMMA DIAGNOSTIC");
+                add("digamma.playerDigamma", "Digamma dose:");
+                add("digamma.playerHealth", "Digamma influence:");
+                add("digamma.playerRes", "Digamma resistance:");
 
                 add("item.hbm_m.meter.rads_over_limit", ">%s RAD/s");
                 add("gui.hbm_m.battery.energy.info", "%s / %s HE");
@@ -3751,28 +3831,15 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.category.general", "General Settings");
                 add("text.autoconfig.hbm_m.option.enableRadiation", "Enable radiation");
                 add("text.autoconfig.hbm_m.option.enableChunkRads", "Enable chunk radiation");
+                add("text.autoconfig.hbm_m.option.enableMOTD", "Join MOTD and update notice");
                 add("text.autoconfig.hbm_m.option.usePrismSystem", "Use PRISM system (otherwise Simple), WIP");
 
                 add("text.autoconfig.hbm_m.category.world_effects", "World Effects");
 
+                add("text.autoconfig.hbm_m.option.enableRadFogEffect", "Radioactive Chunk Fog");
+                add("text.autoconfig.hbm_m.option.enableRadFogEffect.@Tooltip", "Fog particles when chunk radiation ≥100 RAD (1 in 20 ticks), matching 1.7.10 fogRad/fogCh. Threshold and rate are fixed in code.");
                 add("text.autoconfig.hbm_m.option.worldRadEffects", "World Radiation Effects");
-                add("text.autoconfig.hbm_m.option.worldRadEffects.@Tooltip", "Enables/disables world destruction effects from high radiation (block replacement, vegetation decay, etc.).");
-
-                add("text.autoconfig.hbm_m.option.worldRadEffectsThreshold", "World Destruction Threshold");
-                add("text.autoconfig.hbm_m.option.worldRadEffectsThreshold.@Tooltip", "The minimum ambient radiation level in a chunk at which world destruction effects begin.");
-
-                add("text.autoconfig.hbm_m.option.worldRadEffectsBlockChecks", "Block Checks per Tick");
-                add("text.autoconfig.hbm_m.option.worldRadEffectsBlockChecks.@Tooltip", "The number of random block checks in an affected chunk per tick. Affects the speed of destruction. Higher values may impact performance.");
-
-                add("text.autoconfig.hbm_m.option.worldRadEffectsMaxScaling", "Max Destruction Scaler");
-                add("text.autoconfig.hbm_m.option.worldRadEffectsMaxScaling.@Tooltip", "The maximum speed multiplier for world destruction at peak radiation. 1 = no scaling, 4 = can be up to 4 times faster. Max value - 10x");
-
-                add("text.autoconfig.hbm_m.option.worldRadEffectsMaxDepth", "Destruction Depth");
-                add("text.autoconfig.hbm_m.option.worldRadEffectsMaxDepth.@Tooltip", "The maximum depth (in blocks) from the surface that world destruction effects can reach.");
-
-                add("text.autoconfig.hbm_m.option.enableRadFogEffect", "Enable Radiation Fog Effect");
-                add("text.autoconfig.hbm_m.option.radFogThreshold", "Fog Threshold");
-                add("text.autoconfig.hbm_m.option.radFogChance", "Fog Chance");
+                add("text.autoconfig.hbm_m.option.worldRadEffects.@Tooltip", "1.7.10 parity (RadiationConfig.worldRadEffects): grass/leaves mutation at ≥10 RAD/chunk, 5 chunks/tick, 10 passes. Thresholds are fixed in code.");
 
                 add("text.autoconfig.hbm_m.category.player", "Player");
 
@@ -3844,11 +3911,8 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("text.autoconfig.hbm_m.option.enableRadiation.@Tooltip", "If disabled, all radiation is turned off (chunks, items)");
                 add("text.autoconfig.hbm_m.option.enableChunkRads.@Tooltip", "If disabled, chunk radiation is always 0");
+                add("text.autoconfig.hbm_m.option.enableMOTD.@Tooltip", "Welcome message on world join and a notice when a newer release is on Modrinth");
                 add("text.autoconfig.hbm_m.option.usePrismSystem.@Tooltip", "Use PRISM system for chunk radiation (WIP)");
-
-                add("text.autoconfig.hbm_m.option.enableRadFogEffect.@Tooltip", "Enables/disables the radioactive fog particle effect in chunks with high radiation levels.");
-                add("text.autoconfig.hbm_m.option.radFogThreshold.@Tooltip", "The minimum ambient radiation level in a chunk for the fog effect to appear.");
-                add("text.autoconfig.hbm_m.option.radFogChance.@Tooltip", "The chance for fog particles to spawn in a suitable chunk per second. Calculated as 1 in X. A lower value means more frequent fog.");
 
                 add("text.autoconfig.hbm_m.option.maxPlayerRad.@Tooltip", "Maximum radiation the player can accumulate");
                 add("text.autoconfig.hbm_m.option.radDecay.@Tooltip", "How fast player radiation decays per tick");

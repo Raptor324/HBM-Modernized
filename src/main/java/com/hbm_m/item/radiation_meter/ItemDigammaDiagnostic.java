@@ -1,10 +1,8 @@
 package com.hbm_m.item.radiation_meter;
 
-import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.sound.ModSounds;
+import com.hbm_m.util.ContaminationUtil;
 
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -13,20 +11,25 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
+/**
+ * Порт {@link com.hbm.items.tool.ItemDigammaDiagnostic} (1.7.10).
+ */
 public class ItemDigammaDiagnostic extends Item {
 
-	public ItemDigammaDiagnostic(Properties properties) {
-		super(properties);
-	}
+    public ItemDigammaDiagnostic(Properties properties) {
+        super(properties);
+    }
 
-	@Override
-	public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
-		if (!level.isClientSide()) {
-			level.playSound(null, player.blockPosition(), ModSounds.CLICK.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
-			float rads = PlayerHandler.getPlayerRads(player);
-			player.sendSystemMessage(Component.literal(
-					String.format("[Digamma Diagnostic] Accumulated Radiation: %.2f mDRX", rads)).withStyle(ChatFormatting.RED));
-		}
-		return InteractionResultHolder.success(player.getItemInHand(hand));
-	}
+    @Override
+    public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
+
+        if (!world.isClientSide()) {
+            ModSounds.TOOL_TECH_BOOP.ifPresent(sound ->
+                    world.playSound(null, player.getX(), player.getY(), player.getZ(), sound, SoundSource.PLAYERS, 1.0F, 1.0F));
+            ContaminationUtil.printDiagnosticData(player);
+        }
+
+        return InteractionResultHolder.sidedSuccess(stack, world.isClientSide());
+    }
 }

@@ -2,6 +2,7 @@ package com.hbm_m.datagen.assets;
 //? if forge {
 // Провайдер генерации состояний блоков и моделей для блоков мода.
 // Используется в классе DataGenerators для регистрации.
+import com.hbm_m.block.generic.BlockAbsorber;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.block.machines.BlastFurnaceBlock;
@@ -508,6 +509,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlock(ModBlocks.ANTENNA_TOP);
         customObjBlock(ModBlocks.PUTER);
         customObjBlock(ModBlocks.GEIGER_COUNTER_BLOCK);
+
+        columnBlockWithItem(
+                ModBlocks.DECON,
+                modLoc("block/decon_side"),
+                modLoc("block/decon_top"),
+                modLoc("block/decon_side")
+        );
+        registerRadAbsorber();
         customObjBlock(ModBlocks.TAPE_RECORDER);
         customObjBlock(ModBlocks.TOASTER);
         customObjBlock(ModBlocks.DECO_STEEL_SCAFFOLD);
@@ -1211,6 +1220,18 @@ public class ModBlockStateProvider extends BlockStateProvider {
         oreWithItem(ModBlocks.SULFUR_ORE);
         oreWithItem(ModBlocks.ORE_OIL);
         oreWithItem(ModBlocks.SEQUESTRUM_ORE);
+        oreWithItem(ModBlocks.SCHRABIDIUM_ORE);
+        oreWithItem(ModBlocks.SCHRABIDIUM_ORE_NETHER);
+        oreWithItem(ModBlocks.SCHRABIDIUM_ORE_GNEISS);
+
+        simpleBlockWithItem(ModBlocks.BLOCK_SCHRABIDIUM_CLUSTER.get(),
+                models().cubeBottomTop(
+                        ModBlocks.BLOCK_SCHRABIDIUM_CLUSTER.getId().getPath(),
+                        modLoc("block/block_schrabidium_cluster_side"),
+                        modLoc("block/block_schrabidium_cluster_top"),
+                        modLoc("block/block_schrabidium_cluster_top")
+                )
+        );
     }
 
     /**
@@ -1265,6 +1286,23 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         // 4. Создаем модель для предмета-блока
         simpleBlockItem(blockObject.get(), models().getExistingFile(modLoc("block/" + textureName)));
+    }
+
+    /**
+     * Поглотитель радиации — варианты по уровню ({@link BlockAbsorber.EnumAbsorberTier}).
+     */
+    private void registerRadAbsorber() {
+        Block block = ModBlocks.RAD_ABSORBER.get();
+        VariantBlockStateBuilder builder = getVariantBuilder(block);
+        for (BlockAbsorber.EnumAbsorberTier tier : BlockAbsorber.EnumAbsorberTier.values()) {
+            String modelName = "rad_absorber_" + tier.getSerializedName();
+            ModelFile model = models().cubeAll(modelName, modLoc("block/" + tier.textureName));
+            builder.partialState()
+                    .with(BlockAbsorber.TIER, tier)
+                    .modelForState()
+                    .modelFile(model)
+                    .addModel();
+        }
     }
 
     /**

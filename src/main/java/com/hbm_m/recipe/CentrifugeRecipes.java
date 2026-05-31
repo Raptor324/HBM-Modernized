@@ -216,49 +216,56 @@ public class CentrifugeRecipes {
         addTagRecipe("forge:ores/beryllium",
             stack("hbm_m:beryllium_powder", 1),
             stack("hbm_m:beryllium_powder", 1),
-            stack("hbm_m:emerald_powder", 1),
+            new ItemStack(Items.EMERALD),
             new ItemStack(Items.GRAVEL));
 
         // Fluorite Ore
         addTagRecipe("forge:ores/fluorite",
             stack("hbm_m:fluorite", 3),
             stack("hbm_m:fluorite", 3),
-            stack("hbm_m:sodalite_gem", 1),
+            stack("hbm_m:rareground_ore_chunk", 1),
             new ItemStack(Items.GRAVEL));
 
         // Aluminum/Bauxite Ore
         addTagRecipe("forge:ores/aluminum",
-            stack("hbm_m:titanium_powder", 1),
             stack("hbm_m:aluminum_powder", 1),
-            stack("hbm_m:iron_powder", 1),
+            stack("hbm_m:aluminum_powder", 1),
+            stack("hbm_m:titanium_powder", 1),
             new ItemStack(Items.GRAVEL));
 
         // Sulfur Ore
         addTagRecipe("forge:ores/sulfur",
-            stack("hbm_m:sulfur", 3),
-            stack("hbm_m:sulfur", 3),
-            stack("hbm_m:iron_powder", 1),
+            stack("hbm_m:sulfur", 4),
+            stack("hbm_m:sulfur", 4),
+            stack("hbm_m:sulfur", 4),
             new ItemStack(Items.GRAVEL));
 
         // Lignite Ore
         addTagRecipe("forge:ores/lignite",
-            stack("hbm_m:lignite_powder", 2),
-            stack("hbm_m:lignite_powder", 2),
-            stack("hbm_m:lignite_powder", 2),
+            stack("hbm_m:lignite", 2),
+            stack("hbm_m:lignite", 2),
+            stack("hbm_m:lignite", 2),
             new ItemStack(Items.GRAVEL));
 
         // Asbestos Ore
         addTagRecipe("forge:ores/asbestos",
-            stack("hbm_m:ite_powder", 2),
-            stack("hbm_m:ite_powder", 2),
-            stack("hbm_m:calcium_powder", 1),
+            stack("hbm_m:asbestos_powder", 1),
+            stack("hbm_m:asbestos_powder", 1),
+            stack("hbm_m:asbestos_powder", 1),
             new ItemStack(Items.GRAVEL));
 
         // Cinnabar Ore
         addTagRecipe("forge:ores/cinnabar",
-            stack("hbm_m:mercury_ingot", 2),
-            stack("hbm_m:mercury_ingot", 2),
+            stack("hbm_m:cinnabar", 2),
+            stack("hbm_m:cinnabar", 2),
             stack("hbm_m:sulfur", 1),
+            new ItemStack(Items.GRAVEL));
+
+        // Rareground Ore
+        addTagRecipe("forge:ores/rareground",
+            stack("hbm_m:rareground_ore_chunk", 1),
+            stack("hbm_m:rareground_ore_chunk", 1),
+            stack("hbm_m:dust", 2),
             new ItemStack(Items.GRAVEL));
 
         // Cobalt Ore
@@ -285,8 +292,8 @@ public class CentrifugeRecipes {
         addItemRecipe("hbm_m:crystal_gold",
             stack("hbm_m:gold_powder", 2),
             stack("hbm_m:gold_powder", 2),
-            stack("hbm_m:mercury_ingot", 1),
-            stack("hbm_m:lithium_powder_tiny", 1));
+            stack("hbm_m:gold_powder", 2),
+            new ItemStack(Items.GRAVEL));
 
         addItemRecipe("hbm_m:crystal_redstone",
             new ItemStack(Items.REDSTONE, 3),

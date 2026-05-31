@@ -2,7 +2,7 @@ package com.hbm_m.radiation;
 
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.hazard.HazardSystem;
-import com.hbm_m.hazard.HazardType;
+import com.hbm_m.hazard.HazardRegistry;
 import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.core.BlockPos;
@@ -101,9 +101,9 @@ public class ChunkRadiationManager {
             if (INSTANCE.tickCounter >= 20) {
                 getProxy().updateSystem();
                 INSTANCE.tickCounter = 0;
-                if (ModClothConfig.get().worldRadEffects) {
-                    getProxy().handleWorldDestruction();
-                }
+            }
+            if (ModClothConfig.get().worldRadEffects) {
+                getProxy().handleWorldDestruction();
             }
         });
 
@@ -189,9 +189,9 @@ public class ChunkRadiationManager {
         if (tickCounter >= 20) {
             getProxy().updateSystem();
             tickCounter = 0;
-            if (ModClothConfig.get().worldRadEffects) {
-                getProxy().handleWorldDestruction();
-            }
+        }
+        if (ModClothConfig.get().worldRadEffects) {
+            getProxy().handleWorldDestruction();
         }
         getProxy().receiveWorldTick(event);
     }
@@ -211,7 +211,7 @@ public class ChunkRadiationManager {
 
         // 2. Запрашиваем уровень радиации у нашей центральной системы, передавая ей созданный ItemStack.
         // Вся старая логика с `instanceof` заменяется этой одной строкой.
-        return HazardSystem.getHazardLevelFromStack(blockAsStack, HazardType.RADIATION);
+        return HazardSystem.getHazardLevelFromStack(blockAsStack, HazardRegistry.RADIATION);
     }
 
     private void handleBlockChange(BlockState oldState, BlockState newState, LevelAccessor level, BlockPos pos) {

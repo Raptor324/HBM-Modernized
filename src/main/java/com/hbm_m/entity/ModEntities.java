@@ -1,8 +1,14 @@
 package com.hbm_m.entity;
 
 import com.hbm_m.entity.effect.EntityFalloutRain;
+import com.hbm_m.entity.effect.EntityMist;
 import com.hbm_m.entity.grenades.*;
 import com.hbm_m.entity.logic.EntityNukeExplosionMK5;
+import com.hbm_m.entity.mob.EntityCreeperGold;
+import com.hbm_m.entity.mob.EntityCreeperNuclear;
+import com.hbm_m.entity.mob.EntityCreeperPhosgene;
+import com.hbm_m.entity.mob.EntityCreeperTainted;
+import com.hbm_m.entity.mob.EntityCreeperVolatile;
 import com.hbm_m.entity.mob.NoloEntity;
 import com.hbm_m.entity.missile.MissileABMEntity;
 import com.hbm_m.entity.missile.MissileBaseEntity;
@@ -318,11 +324,65 @@ public class ModEntities {
                     .clientTrackingRange(10)
                     .build("nolo"));
 
+    public static final RegistrySupplier<EntityType<EntityCreeperTainted>> ENTITY_MOB_TAINTED_CREEPER =
+            ENTITY_TYPES.register("entity_mob_tainted_creeper",
+                    () -> EntityType.Builder.of(EntityCreeperTainted::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.7F)
+                            .clientTrackingRange(8)
+                            .build("entity_mob_tainted_creeper"));
+
+    public static final RegistrySupplier<EntityType<EntityCreeperVolatile>> ENTITY_MOB_VOLATILE_CREEPER =
+            ENTITY_TYPES.register("entity_mob_volatile_creeper",
+                    () -> EntityType.Builder.of(EntityCreeperVolatile::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.7F)
+                            .clientTrackingRange(8)
+                            .build("entity_mob_volatile_creeper"));
+
+    public static final RegistrySupplier<EntityType<EntityCreeperGold>> ENTITY_MOB_GOLD_CREEPER =
+            ENTITY_TYPES.register("entity_mob_gold_creeper",
+                    () -> EntityType.Builder.of(EntityCreeperGold::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.7F)
+                            .clientTrackingRange(8)
+                            .build("entity_mob_gold_creeper"));
+
+    public static final RegistrySupplier<EntityType<EntityCreeperNuclear>> ENTITY_MOB_NUCLEAR_CREEPER =
+            ENTITY_TYPES.register("entity_mob_nuclear_creeper",
+                    () -> EntityType.Builder.of(EntityCreeperNuclear::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.7F)
+                            .clientTrackingRange(8)
+                            .build("entity_mob_nuclear_creeper"));
+
+    public static final RegistrySupplier<EntityType<EntityCreeperPhosgene>> ENTITY_MOB_PHOSGENE_CREEPER =
+            ENTITY_TYPES.register("entity_mob_phosgene_creeper",
+                    () -> EntityType.Builder.of(EntityCreeperPhosgene::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.7F)
+                            .clientTrackingRange(8)
+                            .build("entity_mob_phosgene_creeper"));
+
+    public static final RegistrySupplier<EntityType<EntityMist>> ENTITY_MIST =
+            ENTITY_TYPES.register("entity_mist",
+                    () -> EntityType.Builder.<EntityMist>of(EntityMist::new, MobCategory.MISC)
+                            .sized(0.1F, 0.1F)
+                            .fireImmune()
+                            .clientTrackingRange(64)
+                            .updateInterval(1)
+                            .build("entity_mist"));
+
     public static void init() {
         ENTITY_TYPES.register();
         //? if fabric {
         /*net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
                 NOLO.get(), NoloEntity.createAttributes());
+        net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
+                ENTITY_MOB_TAINTED_CREEPER.get(), EntityCreeperTainted.createAttributes());
+        net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
+                ENTITY_MOB_VOLATILE_CREEPER.get(), EntityCreeperVolatile.createAttributes());
+        net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
+                ENTITY_MOB_PHOSGENE_CREEPER.get(), EntityCreeperPhosgene.createAttributes());
+        net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
+                ENTITY_MOB_GOLD_CREEPER.get(), EntityCreeperGold.createAttributes());
+        net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry.register(
+                ENTITY_MOB_NUCLEAR_CREEPER.get(), EntityCreeperNuclear.createAttributes());
         net.minecraft.world.entity.SpawnRestriction.register(
                 NOLO.get(),
                 net.minecraft.world.entity.SpawnPlacements.Type.ON_GROUND,

@@ -11,6 +11,7 @@ import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.event.HazardTooltipHandler;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.particle.helper.ParticleEffectClient;
 
 import dev.architectury.event.events.client.ClientTickEvent;
 import dev.architectury.event.events.client.ClientTooltipEvent;
@@ -66,7 +67,7 @@ public class ClientModEvents {
 
 
 
-            HazardTooltipHandler.appendHazardTooltips(stack, lines);
+            HazardTooltipHandler.appendHazardTooltips(stack, Minecraft.getInstance().player, lines);
 
 
 
@@ -125,6 +126,10 @@ public class ClientModEvents {
             ShaderCompatibilityDetector.processPendingChunkInvalidation();
 
             ClientRenderHandler.onClientTickEnd();
+
+            if (client.player != null) {
+                ParticleEffectClient.tickRadiationAura(client.player);
+            }
 
         });
 

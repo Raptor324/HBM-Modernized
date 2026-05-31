@@ -17,6 +17,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 /*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;*///?}
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -44,6 +45,8 @@ public class OverlayInfoToast {
     public static final int ID_VATS    = 2002;
     public static final int ID_THERMAL = 2003;
     public static final int ID_FLUID_IDENTIFIER_SWAP = 2004;
+    /** Режимы кирки / топора / лопаты (аналог ID_TOOLABILITY в 1.7.10). */
+    public static final int ID_TOOL_MODE = 2005;
 
     // Стиль оригинала: один общий фон 0.25/0.5.
     private static final int BG_COLOR = 0x7F3F3F3F;
@@ -89,6 +92,24 @@ public class OverlayInfoToast {
 
     public static void show(Component text, int ticks, int id) {
         show(text, ticks, id, 0xFFFFFF);
+    }
+
+    public static int rgbFromFormatting(ChatFormatting formatting) {
+        if (formatting == null) {
+            return 0xFFFFFF;
+        }
+        return switch (formatting) {
+            case RED -> 0xFF5555;
+            case YELLOW -> 0xFFFF55;
+            case GREEN -> 0x55FF55;
+            case GOLD -> 0xFFAA00;
+            default -> 0xFFFFFF;
+        };
+    }
+
+    /** Сообщение о переключении режима инструмента (60 тиков, один слот по id). */
+    public static void showToolMode(Component text, ChatFormatting formatting) {
+        show(text, 60, ID_TOOL_MODE, rgbFromFormatting(formatting));
     }
 
     //? if forge {

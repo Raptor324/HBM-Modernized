@@ -5,6 +5,7 @@ import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.MachineRadarBlockEntity;
@@ -15,6 +16,7 @@ import com.hbm_m.multiblock.PartRole;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -48,10 +50,10 @@ public class MachineRadarBlock extends BaseEntityBlock implements IMultiblockCon
     public MachineRadarBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-        this.structureHelper = defineStructure();
+        this.structureHelper = createStructureHelper();
     }
 
-    private static MultiblockStructureHelper defineStructure() {
+    protected MultiblockStructureHelper createStructureHelper() {
         String[] layer0 = { "C" };
 
         Map<Character, PartRole> roleMap = Map.of('C', PartRole.CONTROLLER);
@@ -94,6 +96,7 @@ public class MachineRadarBlock extends BaseEntityBlock implements IMultiblockCon
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
             structureHelper.placeStructure(level, pos, state.getValue(FACING), this);
+            EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
         }
     }
 
@@ -101,6 +104,7 @@ public class MachineRadarBlock extends BaseEntityBlock implements IMultiblockCon
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide()) {
             structureHelper.destroyStructure(level, pos, state.getValue(FACING));
+            EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }
@@ -164,5 +168,31 @@ public class MachineRadarBlock extends BaseEntityBlock implements IMultiblockCon
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return Shapes.block();
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return Shapes.block();
+    }
+
+    @Override
+    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
+        // Не полный куб для света/соседних граней — иначе чёрные стороны у OBJ-модели.
+        return Shapes.empty();
+    }
+
+    @Override
+    public float getShadeBrightness(BlockState state, BlockGetter level, BlockPos pos) {
+        return 1.0F;
+    }
+
+    @Override
+    public boolean propagatesSkylightDown(BlockState state, BlockGetter level, BlockPos pos) {
+        return true;
+    }
+
+    @Override
+    public int getLightBlock(BlockState state, BlockGetter level, BlockPos pos) {
+        return 0;
     }
 }

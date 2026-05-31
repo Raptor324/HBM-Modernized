@@ -2,6 +2,7 @@ package com.hbm_m.powerarmor.resist;
 
 import java.util.HashMap;
 
+import com.hbm_m.entity.mob.EntityCreeperNuclear;
 import com.hbm_m.interfaces.IResistanceProvider;
 import com.hbm_m.item.ModItems;
 
@@ -364,6 +365,9 @@ public class DamageResistanceHandler {
      * Call this from FMLCommonSetupEvent or similar
      */
     public static void initArmorStats() {
+        registerEntity(EntityCreeperNuclear.class,
+                new ResistanceStats().addCategory(CATEGORY_EXPLOSION, 5F, 0.35F));
+
         // ========== T-51 POWER ARMOR ==========
         registerSet(ModItems.T51_HELMET.get(), ModItems.T51_CHESTPLATE.get(),
                 ModItems.T51_LEGGINGS.get(), ModItems.T51_BOOTS.get(),

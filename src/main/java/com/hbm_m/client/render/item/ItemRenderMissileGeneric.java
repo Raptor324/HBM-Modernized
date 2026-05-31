@@ -16,7 +16,7 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Missile item BEWLR — transforms from NEO {@code ItemRenderMissileGeneric} (1.20.1 OBJ/VBO port),
+ * Missile item BEWLR - (1.20.1 OBJ/VBO port),
  * with {@link RenderMissileType} per item matching 1.7.10 {@code ClientProxy} registration.
  * JSON {@code display} is omitted in datagen; {@link com.hbm_m.client.model.MissileBakedModel#applyTransform} is a no-op.
  */

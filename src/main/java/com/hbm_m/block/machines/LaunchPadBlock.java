@@ -11,6 +11,7 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity;
 import com.hbm_m.block.entity.machines.LaunchPadBlockEntity;
+import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -45,7 +46,16 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 
-public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockController, IBomb {
+public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockController, IBomb, IDetonatable {
+
+    @Override
+    public boolean onDetonate(Level level, BlockPos pos, BlockState state, Player player) {
+        if (level.isClientSide) {
+            return false;
+        }
+        BombReturnCode result = explode(level, pos);
+        return result != null && result.wasSuccessful();
+    }
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
@@ -133,7 +143,7 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
         super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
         if (!level.isClientSide
                 && level.getBlockEntity(pos) instanceof LaunchPadBaseBlockEntity launchPad) {
-            launchPad.setControllerRedstone(level.hasNeighborSignal(pos));
+            launchPad.checkRedstonePower();
         }
     }
 
@@ -248,5 +258,14 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
             return structureHelper.resolvePartRole(localOffset, this);
         }
         return PartRole.DEFAULT;
+    }
+
+    @Override
+    public float getShadeBrightness(BlockState pState, BlockGetter pLevel, BlockPos pPos) {
+        return 1.0F; // Убирает тени под блоком и Ambient Occlusion
+    }
+
+    public boolean propagatesSkylightDown(BlockState pState, BlockGetter pLevel, BlockPos pPos) {
+        return true;
     }
 }

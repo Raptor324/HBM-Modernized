@@ -195,6 +195,12 @@
       "hbm_m:item/radaway"
     ]
   },
+  "player.vomit": {
+    "category": "player",
+    "sounds": [
+      "hbm_m:player/vomit"
+    ]
+  },
   "tool.repair1": {
     "subtitle": "sounds.hbm_m.subtitle.repair",
     "sounds": [
@@ -365,6 +371,16 @@
     "subtitle": "sounds.hbm_m.subtitle.motor",
     "sounds": [
       "hbm_m:block/motor"
+    ]
+  },
+  "block.sonar_ping": {
+    "category": "block",
+    "subtitle": "sounds.hbm_m.subtitle.sonar_ping",
+    "sounds": [
+      {
+        "name": "hbm_m:block/sonar_ping",
+        "stream": false
+      }
     ]
   },
   "block.chemical_plant": {

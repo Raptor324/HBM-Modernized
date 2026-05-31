@@ -42,6 +42,7 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> GRENADE_TRIGGER = registerSoundEvents("grenadetrigger");
 
     public static final RegistrySupplier<SoundEvent> RADAWAY_USE = registerSoundEvents("radaway_use");
+    public static final RegistrySupplier<SoundEvent> PLAYER_VOMIT = registerSoundEvents("player.vomit");
     public static final RegistrySupplier<SoundEvent> CRATEBREAK5 = registerSoundEvents("block.cratebreak5");
     public static final RegistrySupplier<SoundEvent> CRATEBREAK4 = registerSoundEvents("block.cratebreak4");
     public static final RegistrySupplier<SoundEvent> CRATEBREAK3 = registerSoundEvents("block.cratebreak3");
@@ -82,6 +83,7 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> ASSEMBLER_STOP = registerSoundEvents("block.assembler_stop");
     public static final RegistrySupplier<SoundEvent> ASSEMBLER_STRIKE_1 = registerSoundEvents("block.assembler_strike1");
     public static final RegistrySupplier<SoundEvent> ASSEMBLER_STRIKE_2 = registerSoundEvents("block.assembler_strike2");
+    public static final RegistrySupplier<SoundEvent> SONAR_PING = registerSoundEvents("block.sonar_ping");
     public static final RegistrySupplier<SoundEvent> MOTOR = registerSoundEvents("block.motor");
     public static final RegistrySupplier<SoundEvent> METAL_BOX_OPEN = registerSoundEvents("block.metal_box_open");
     public static final RegistrySupplier<SoundEvent> METAL_BOX_CLOSE = registerSoundEvents("block.metal_box_close");

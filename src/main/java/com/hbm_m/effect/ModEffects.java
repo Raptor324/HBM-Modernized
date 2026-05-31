@@ -21,6 +21,9 @@ public class ModEffects {
     public static final RegistrySupplier<MobEffect> RADAWAY = EFFECTS.register("radaway",
             () -> new RadawayEffect(MobEffectCategory.BENEFICIAL, 0xBB4B00));
 
+    public static final RegistrySupplier<MobEffect> TAINT = EFFECTS.register("taint",
+            () -> new TaintEffect());
+
     public static void init() {
         EFFECTS.register();
     }

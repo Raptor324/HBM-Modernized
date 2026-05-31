@@ -1,62 +1,36 @@
 package com.hbm_m.event;
 
 import com.hbm_m.hazard.HazardSystem;
-import com.hbm_m.hazard.HazardType;
 
+import dev.architectury.event.events.common.TickEvent;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
-import dev.architectury.event.events.common.TickEvent;
-
 /**
- * Обработчик для применения эффектов опасностей (радиация, пирофорность) к игроку на основе его инвентаря.
- * Эффекты применяются каждый тик на сервере, если игрок не в креативе или режиме наблюдателя.
+ * Применение опасностей инвентаря игрока. Порт {@link com.hbm.hazard.HazardSystem#updatePlayerInventory} (1.7.10).
  */
 public class PlayerHazardHandler {
 
-    /**
-     * Регистрация обработчика события.
-     * Вызывается один раз при инициализации мода.
-     */
     public static void init() {
         TickEvent.PLAYER_POST.register(PlayerHazardHandler::onPlayerTick);
     }
 
     private static void onPlayerTick(Player player) {
-        // Выполняем только на сервере
-        if (player.level().isClientSide) {
+        if (player.level().isClientSide || player.isCreative() || player.isSpectator()) {
             return;
         }
 
-        // Не применяем эффекты в креативе или режиме наблюдателя
-        if (player.isCreative() || player.isSpectator()) {
-            return;
-        }
-
-        // Инициализируем суммарные уровни опасностей 
-        float totalRadiation = 0;
-        float totalIgnition = 0;
-
-        // Сканируем основной инвентарь, броню и предмет во второй руке
-        for (ItemStack stack : player.getInventory().items) {
+        for (int i = 0; i < player.getInventory().items.size(); i++) {
+            ItemStack stack = player.getInventory().items.get(i);
             if (!stack.isEmpty()) {
-                totalRadiation += HazardSystem.getHazardLevelFromStack(stack, HazardType.RADIATION) * stack.getCount();
-                totalIgnition += HazardSystem.getHazardLevelFromStack(stack, HazardType.PYROPHORIC) * stack.getCount();
+                HazardSystem.applyHazards(stack, player);
             }
         }
 
-        // Применяем накопленные эффекты 
-
-        // Применение радиации (когда будет система здоровья/радиации)
-        if (totalRadiation > 0) {
-            // ContaminationUtil.contaminate(player, ..., totalRadiation / 20f);
-            // MainRegistry.LOGGER.debug("Player " + player.getName().getString() + " is being irradiated with " + totalRadiation + " RAD/s");
-        }
-
-        // Применение поджога
-        if (totalIgnition > 0) {
-            // Устанавливаем время горения игрока. Уровень опасности используется как длительность в секундах.
-            player.setSecondsOnFire((int) totalIgnition);
+        for (ItemStack stack : player.getArmorSlots()) {
+            if (!stack.isEmpty()) {
+                HazardSystem.applyHazards(stack, player);
+            }
         }
     }
 }

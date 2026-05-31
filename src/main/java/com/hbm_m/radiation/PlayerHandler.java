@@ -1,11 +1,11 @@
 package com.hbm_m.radiation;
 
-import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.explosion.command.HbmExplosionCommands;
+import com.hbm_m.extprop.HbmLivingProps;
 import com.hbm_m.hazard.HazardSystem;
-import com.hbm_m.hazard.HazardType;
+import com.hbm_m.hazard.HazardRegistry;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ModPacketHandler;
@@ -86,7 +86,7 @@ public class PlayerHandler {
 
         if (player instanceof ServerPlayer serverPlayer) {
             if (serverPlayer.connection != null) {
-                float environmentRad = ChunkRadiationManager.getRadiation(serverPlayer.level(), serverPlayer.blockPosition().getX(), serverPlayer.blockPosition().getY(), serverPlayer.blockPosition().getZ());
+                float environmentRad = getIncomingEnvironmentRad(serverPlayer);
 
                 ModPacketHandler.sendToPlayer(serverPlayer, ModPacketHandler.RADIATION_DATA,
                     new RadiationDataPacket(environmentRad, clamped));
@@ -192,44 +192,8 @@ public class PlayerHandler {
         if (counter < 20) return;
         tickCounters.put(uuid, 0);
 
-        float totalRad = 0f;
-
         if (!player.isCreative() && !player.isSpectator()) {
-            float chunkRad = 0F;
-            float invRad = 0F;
-
-            if (ModClothConfig.get().enableChunkRads) {
-                chunkRad = ChunkRadiationManager.getRadiation(
-                        player.level(),
-                        player.blockPosition().getX(),
-                        player.blockPosition().getY(),
-                        player.blockPosition().getZ()
-                );
-            }
-            if (ModClothConfig.get().enableRadiation) {
-                invRad = getInventoryRadiation(player);
-            }
-
-            totalRad = chunkRad + invRad;
-
-            // Расчёт защиты брони
-            float totalAbsoluteProtection = 0f;
-            for (ItemStack armorStack : player.getArmorSlots()) {
-                totalAbsoluteProtection += ArmorModificationHelper.getTotalAbsoluteRadProtection(armorStack);
-            }
-            float protectionPercent = ArmorModificationHelper.convertAbsoluteToPercent(totalAbsoluteProtection);
-            float resultingRad = totalRad * (1.0f - protectionPercent);
-
-            if (resultingRad > 0) {
-                incrementPlayerRads(player, resultingRad);
-                if (ModClothConfig.get().enableDebugLogging) {
-                    MainRegistry.LOGGER.debug(
-                            "Add total radiation to player {}: chunk={} inv={} total={} prot={} final={}",
-                            player.getName().getString(), chunkRad, invRad, totalRad,
-                            String.format("%.2f%%", protectionPercent * 100), resultingRad);
-                }
-            }
-
+            // Накопление дозы: чанк (EntityEffectHandler) + инвентарь (PlayerHazardHandler) через contaminate → radEnv/radBuf.
             decrementPlayerRads(player, ModClothConfig.get().radDecay);
             applyRadiationEffects(player);
         }
@@ -237,13 +201,14 @@ public class PlayerHandler {
         // Отправляем пакет ВСЕМ игрокам (клиент сам решит, показывать ли эффект в креативе)
         if (player instanceof ServerPlayer serverPlayer) {
             float currentAccumulatedRads = getPlayerRads(player);
+            float incomingEnvironmentRad = getIncomingEnvironmentRad(player);
             ModPacketHandler.sendToPlayer(serverPlayer, ModPacketHandler.RADIATION_DATA,
-                    new RadiationDataPacket(totalRad, currentAccumulatedRads));
+                    new RadiationDataPacket(incomingEnvironmentRad, currentAccumulatedRads));
 
             if (ModClothConfig.get().enableDebugLogging) {
                 MainRegistry.LOGGER.debug(
                         "SERVER: Sending periodic RadiationDataPacket to player {}. EnvRad (Incoming): {}, PlayerRad (Accumulated): {}",
-                        player.getName().getString(), totalRad, currentAccumulatedRads);
+                        player.getName().getString(), incomingEnvironmentRad, currentAccumulatedRads);
             }
         }
     }
@@ -251,7 +216,18 @@ public class PlayerHandler {
     // ═══════════════════════════════════════════
     // Вспомогательные методы
     // ═══════════════════════════════════════════
-    
+
+    /**
+     * Входящая доза среды для HUD/пакета. Как {@code HbmLivingProps.getRadBuf} на гейгере в 1.7.10
+     * (сумма чанка + инвентаря за последнюю секунду через {@code radEnv}).
+     */
+    public static float getIncomingEnvironmentRad(Player player) {
+        if (player == null || !ModClothConfig.get().enableRadiation) {
+            return 0F;
+        }
+        return HbmLivingProps.getRadBuf(player);
+    }
+
     /**
      * Возвращает радиацию от всех радиоактивных предметов в инвентаре игрока (за тик)
      */
@@ -270,7 +246,7 @@ public class PlayerHandler {
 
     private static float getRadiationFromItemStack(ItemStack stack) {
         if (stack.isEmpty()) return 0.0F;
-        float perItemRadiation = HazardSystem.getHazardLevelFromStack(stack, HazardType.RADIATION);
+        float perItemRadiation = HazardSystem.getHazardLevelFromStack(stack, HazardRegistry.RADIATION);
         return perItemRadiation * stack.getCount();
     }
     
@@ -340,7 +316,7 @@ public class PlayerHandler {
             }
         }
 
-        // Летальный порог
+        // Летальный порог (конфиг maxPlayerRad; у мобов в EntityEffectHandler — 1000 RAD как в 1.7.10)
         if (rads >= ModClothConfig.get().maxPlayerRad) {
             MainRegistry.LOGGER.debug(
                     "SERVER: Player {} radiation ({}) reached maxPlayerRad ({}). Killing player and resetting radiation.",
@@ -357,12 +333,15 @@ public class PlayerHandler {
             player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 220, 0));
         }
         if (rads > ModClothConfig.get().radConfusion) {
-            player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 220, 0));
+            // Тошнота (CONFUSION): усиленный порог, как confusion 5*30 у мобов при eRad >= 400
+            player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 150, 0));
         }
         if (rads > ModClothConfig.get().radWater) {
             player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 220, 2));
         }
         if (rads > ModClothConfig.get().radSickness) {
+            // radSickness = порог тошноты (CONFUSION в MC); hunger/poison — доп. симптомы
+            player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 100, 0));
             player.addEffect(new MobEffectInstance(MobEffects.HUNGER, 220, 0));
             player.addEffect(new MobEffectInstance(MobEffects.POISON, 220, 0));
         }

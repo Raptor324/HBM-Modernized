@@ -256,13 +256,6 @@ public final class MdiBatchCoordinator {
         cancelScheduledDraw();
         MdiBatchCoordinator s = ACTIVE.get();
         if (s != null) {
-            // #region agent log
-            int psz = s.pending.size();
-            if (psz > 0) {
-                MdiDebugNdjson.log("H4", "MdiBatchCoordinator.discardActiveSessionNoDispatch",
-                        "discarding non-empty mdi session", "{\"pending\":" + psz + "}");
-            }
-            // #endregion agent log
             for (Pending p : s.pending) {
                 if (p.instanceDataNativeOwned && p.instanceData != null) {
                     MemoryUtil.memFree(p.instanceData);
@@ -556,12 +549,6 @@ public final class MdiBatchCoordinator {
                     || p.submitFirstIndexBytes != slot.firstIndexBytes
                     || p.submitIndexCount != slot.indexCount;
             if (slotDrift) {
-                MdiDebugNdjson.log("H1", "MdiBatchCoordinator.prepareMdiDraw",
-                        "slot drift submit vs atlas",
-                        "{\"rid\":" + System.identityHashCode(p.renderer)
-                                + ",\"sbv\":" + p.submitBaseVertex + ",\"sfi\":" + p.submitFirstIndexBytes
-                                + ",\"sic\":" + p.submitIndexCount + ",\"abv\":" + slot.baseVertex
-                                + ",\"afi\":" + slot.firstIndexBytes + ",\"aic\":" + slot.indexCount + "}");
                 if (MdiRenderDiag.isDebugEnabled() || MdiRenderDiag.isVerboseEnabled()) {
                     String tag = p.renderer.getMdiTraceTag();
                     MainRegistry.LOGGER.warn(
@@ -657,11 +644,6 @@ public final class MdiBatchCoordinator {
             }
             int floats = p.instanceCount * instanceFloatsPerInstance;
             if (p.instanceData == null || p.instanceData.remaining() < floats) {
-                MdiDebugNdjson.log("H5", "MdiBatchCoordinator.uploadInstancesToAtlas",
-                        "instance buffer remaining insufficient; abort mdi",
-                        "{\"rid\":" + System.identityHashCode(p.renderer)
-                                + ",\"needFloats\":" + floats + ",\"rem\":" + (p.instanceData == null ? -1 : p.instanceData.remaining())
-                                + ",\"ic\":" + p.instanceCount + "}");
                 return false;
             }
             atlas.uploadInstanceWindow(offsetFloats, p.instanceData, floats);

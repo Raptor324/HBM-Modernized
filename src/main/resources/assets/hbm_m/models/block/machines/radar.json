@@ -1,28 +1,16 @@
 {
+  "loader": "hbm_m:radar_loader",
+  "model": "hbm_m:models/block/radar.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "parts": ["Base", "Dish"],
   "textures": {
-    "particle": "hbm_m:block/machine/radar_base"
-  },
-  "loader": "forge:composite",
-  "children": {
-    "radar_base": {
-      "loader": "forge:obj",
-      "model": "hbm_m:models/block/radar.obj",
-      "flip_v": true,
-      "render_type": "minecraft:solid",
-      "textures": {
-        "particle": "hbm_m:block/machine/radar_base",
-        "default": "hbm_m:block/machine/radar_base"
-      },
-      "visibility": {
-        "Dish": false,
-        "Base": true
-      }
-    }
+    "particle": "hbm_m:block/machine/radar_base",
+    "default": "hbm_m:block/machine/radar_base",
+    "dish": "hbm_m:block/machine/radar_dish"
   },
   "transform": {
-    "translation": [0, 0, 0],
-    "rotation": [0, 0, 0],
-    "scale": 1.0
+    "translation": [0.5, 0, 0.5]
   },
   "display": {
     "gui": {
