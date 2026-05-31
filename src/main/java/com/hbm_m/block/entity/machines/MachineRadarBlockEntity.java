@@ -15,6 +15,7 @@ import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.sound.ModSounds;
+import com.hbm_m.entity.missile.MissileBaseEntity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -297,6 +298,12 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
                 continue;
             }
 
+            if (scanPlayers && isTrackableMob(entity)) {
+                nearbyMissiles.add(createContact(entity, IRadarDetectable.RadarTargetType.PLAYER.ordinal(), true));
+                trackedEntities.add(entity);
+                continue;
+            }
+
             if (scanMissiles && isMissileLike(entity)) {
                 if (entity instanceof com.hbm_m.entity.missile.MissileBaseEntity missile
                         && !missile.canBeDetectedByRadar()) {
@@ -318,6 +325,12 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
     }
 
     private boolean isMissileLike(Entity entity) {
+        if (entity instanceof MissileBaseEntity) {
+            return true;
+        }
+        if (entity instanceof IRadarDetectable detectable) {
+            return detectable.getTargetType() != IRadarDetectable.RadarTargetType.PLAYER;
+        }
         String name = entity.getType().toString().toLowerCase();
         return name.contains("missile")
                 || name.contains("rocket")
@@ -339,13 +352,22 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
                 || displayName.contains("jam");
     }
 
+    private boolean isTrackableMob(Entity entity) {
+        return entity instanceof LivingEntity && !(entity instanceof Player);
+    }
+
     private int[] createContact(Entity entity, int type) {
+        return createContact(entity, type, false);
+    }
+
+    private int[] createContact(Entity entity, int type, boolean mobContact) {
         return new int[] {
                 (int) entity.getX(),
                 (int) entity.getY(),
                 (int) entity.getZ(),
                 getVelocity(entity),
-                type
+                type,
+                mobContact ? 1 : 0
         };
     }
 
@@ -510,6 +532,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             contactTag.putInt("z", entry[2]);
             contactTag.putInt("v", entry[3]);
             contactTag.putInt("t", entry[4]);
+            contactTag.putInt("m", entry.length >= 6 ? entry[5] : 0);
             contacts.add(contactTag);
         }
         tag.put("contacts", contacts);
@@ -539,7 +562,8 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
                     contactTag.getInt("y"),
                     contactTag.getInt("z"),
                     contactTag.getInt("v"),
-                    contactTag.getInt("t")
+                    contactTag.getInt("t"),
+                    contactTag.getInt("m")
             });
         }
     }

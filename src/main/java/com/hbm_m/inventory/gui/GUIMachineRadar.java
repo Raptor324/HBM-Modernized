@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
@@ -15,7 +16,11 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.phys.AABB;
 
 public class GUIMachineRadar extends GuiInfoScreen<MachineRadarMenu> {
 
@@ -170,7 +175,7 @@ public class GUIMachineRadar extends GuiInfoScreen<MachineRadarMenu> {
             int distanceH = (int) Math.sqrt(relX * relX + relZ * relZ);
 
             List<Component> text = new ArrayList<>();
-            text.add(Component.literal(radar.getTargetTypeName(contact[4])));
+            text.add(getContactTypeLabel(contact));
             text.add(Component.translatable("gui.hbm_m.radar.contact.velocity", contact[3]));
             text.add(Component.translatable("gui.hbm_m.radar.contact.distance", distance));
             text.add(Component.translatable("gui.hbm_m.radar.contact.distance_h", distanceH));
@@ -178,6 +183,39 @@ public class GUIMachineRadar extends GuiInfoScreen<MachineRadarMenu> {
             guiGraphics.renderComponentTooltip(this.font, text, x, z);
             return;
         }
+    }
+
+    private Component getContactTypeLabel(int[] contact) {
+        boolean mobContact = contact.length >= 6 && contact[5] == 1;
+        if (!mobContact) {
+            return Component.literal(radar.getTargetTypeName(contact[4]));
+        }
+        if (!radar.isLargeRadar()) {
+            return Component.literal("Mob");
+        }
+        return resolveLargeRadarMobType(contact);
+    }
+
+    private Component resolveLargeRadarMobType(int[] contact) {
+        if (minecraft == null || minecraft.level == null) {
+            return Component.literal("Mob");
+        }
+
+        AABB lookupBox = new AABB(
+                contact[0] - 1.5D, contact[1] - 2.0D, contact[2] - 1.5D,
+                contact[0] + 1.5D, contact[1] + 2.0D, contact[2] + 1.5D
+        );
+
+        Entity closest = minecraft.level.getEntities((Entity) null, lookupBox,
+                        entity -> entity instanceof LivingEntity && !(entity instanceof Player) && entity.isAlive())
+                .stream()
+                .min(Comparator.comparingDouble(entity -> entity.distanceToSqr(contact[0], contact[1], contact[2])))
+                .orElse(null);
+
+        if (closest == null) {
+            return Component.literal("Mob");
+        }
+        return closest.getType().getDescription();
     }
 
     @Override
