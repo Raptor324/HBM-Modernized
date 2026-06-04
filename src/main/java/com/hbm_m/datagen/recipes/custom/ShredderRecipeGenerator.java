@@ -80,6 +80,9 @@ public final class ShredderRecipeGenerator {
         ShredderRecipeBuilder.shredderRecipe(Items.BRICK,
                         new ItemStack(Items.CLAY_BALL, 1))
                 .save(writer, "brick_to_clay");
+        ShredderRecipeBuilder.shredderRecipe(ModItems.ALUMINUM_RAW.get(),
+                        new ItemStack(ModItems.getPowders(ModPowders.ALUMINUM).get(), 1))
+                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/raw_aluminum_to_powder"));
         ShredderRecipeBuilder.shredderRecipe(ModItems.LIMESTONE.get(),
                         new ItemStack(ModItems.getPowders(ModPowders.LIMESTONE).get(), 1))
                 .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/limestone_to_powder"));
@@ -149,16 +152,6 @@ public final class ShredderRecipeGenerator {
 
         }
 
-        if (ModItems.getPowders(ModPowders.ALUMINUM) != null) {
-            ShredderRecipeBuilder.shredderRecipe((Ingredient) ModItems.ALUMINUM_RAW,
-                            new ItemStack(ModItems.getPowders(ModPowders.ALUMINUM).get(), 1))
-                    //? if fabric && < 1.21.1 {
-                    /*.save(writer, new ResourceLocation(RefStrings.MODID, "shredder/gold_ingot_to_powder"));
-                     *///?} else {
-                    .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/raw_aluminum_to_powder"));
-            //?}
-
-        }
 
         
         //  Остальные с проверками
