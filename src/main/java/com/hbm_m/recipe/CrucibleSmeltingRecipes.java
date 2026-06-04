@@ -1,46 +1,84 @@
 package com.hbm_m.recipe;
 
+import com.hbm_m.inventory.material.MaterialStack;
+import com.hbm_m.inventory.material.MaterialType;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Ingredient;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-/**
- * Registry for crucible smelting recipes.
- * Each entry maps a single input ItemStack to a list of output ItemStacks.
- *
- * Once AStack / RecipesCommon is ported, replace ItemStack key with AStack
- * so wildcard/ore-dict matching is supported.
- *
- * Legacy equivalent: CrucibleRecipes.getSmeltingRecipes()
- */
 public class CrucibleSmeltingRecipes {
 
-    // LinkedHashMap preserves insertion order (matches legacy recipeOrderedList behaviour)
-    private static final Map<ItemStack, List<ItemStack>> RECIPES = new LinkedHashMap<>();
+    public record SmeltingEntry(Ingredient input, MaterialType output, int amountMb) {}
 
-    /**
-     * Register a smelting recipe.
-     *
-     * @param input   the item to smelt
-     * @param outputs one or more output ItemStacks
-     */
-    public static void register(ItemStack input, List<ItemStack> outputs) {
-        RECIPES.put(input.copy(), new ArrayList<>(outputs));
+    private static final List<SmeltingEntry> RECIPES = new ArrayList<>();
+
+    public static void register(Ingredient input, MaterialType mat, int mb) {
+        RECIPES.add(new SmeltingEntry(input, mat, mb));
     }
 
-    /** Convenience overload for a single output. */
-    public static void register(ItemStack input, ItemStack output) {
-        register(input, List.of(output));
+    private static void ingotTag(String forgeTag, MaterialType mat) {
+        TagKey<Item> key = TagKey.create(Registries.ITEM,
+                ResourceLocation.fromNamespaceAndPath("forge", forgeTag));
+        register(Ingredient.of(key), mat, MaterialStack.MB_PER_INGOT);
     }
 
-    /**
-     * Returns an unmodifiable view of all smelting recipes as input → outputs pairs.
-     */
-    public static Map<ItemStack, List<ItemStack>> getRecipes() {
-        return Collections.unmodifiableMap(RECIPES);
+    private static void dustTag(String forgeTag, MaterialType mat, int mb) {
+        TagKey<Item> key = TagKey.create(Registries.ITEM,
+                ResourceLocation.fromNamespaceAndPath("forge", forgeTag));
+        register(Ingredient.of(key), mat, mb);
+    }
+
+    public static void registerDefaults() {
+        RECIPES.clear();
+
+        ingotTag("ingots/iron",         MaterialType.IRON);
+        ingotTag("ingots/gold",         MaterialType.GOLD);
+        ingotTag("ingots/copper",       MaterialType.COPPER);
+        ingotTag("ingots/titanium",     MaterialType.TITANIUM);
+        ingotTag("ingots/aluminum",     MaterialType.ALUMINIUM);
+        ingotTag("ingots/aluminium",    MaterialType.ALUMINIUM);
+        ingotTag("ingots/tungsten",     MaterialType.TUNGSTEN);
+        ingotTag("ingots/zirconium",    MaterialType.ZIRCONIUM);
+        ingotTag("ingots/osmiridium",   MaterialType.OSMIRIDIUM);
+        ingotTag("ingots/steel",        MaterialType.STEEL);
+        ingotTag("ingots/alloy",        MaterialType.ALLOY);
+        ingotTag("ingots/dura_steel",   MaterialType.DURA_STEEL);
+        ingotTag("ingots/desh",         MaterialType.DESH);
+        ingotTag("ingots/star_metal",   MaterialType.STAR_METAL);
+        ingotTag("ingots/tcalloy",      MaterialType.TCALLOY);
+        ingotTag("ingots/cdalloy",      MaterialType.CDALLOY);
+        ingotTag("ingots/cmb",          MaterialType.CMB);
+        ingotTag("ingots/schrabidium",  MaterialType.SCHRABIDIUM);
+        ingotTag("ingots/bbronze",      MaterialType.BBRONZE);
+        ingotTag("ingots/abronze",      MaterialType.ABRONZE);
+        ingotTag("ingots/saturnite",    MaterialType.SATURNITE);
+        ingotTag("ingots/lead",         MaterialType.LEAD);
+        ingotTag("ingots/bismuth",      MaterialType.BISMUTH);
+        ingotTag("ingots/beryllium",    MaterialType.BERYLLIUM);
+        ingotTag("ingots/cobalt",       MaterialType.COBALT);
+        ingotTag("ingots/nickel",       MaterialType.NICKEL);
+
+        dustTag("ores/iron",    MaterialType.IRON,    MaterialStack.MB_PER_INGOT * 2);
+        dustTag("ores/copper",  MaterialType.COPPER,  MaterialStack.MB_PER_INGOT * 2);
+        dustTag("ores/gold",    MaterialType.GOLD,    MaterialStack.MB_PER_INGOT * 2);
+        dustTag("ores/titanium",MaterialType.TITANIUM,MaterialStack.MB_PER_INGOT * 2);
+    }
+
+    public static List<SmeltingEntry> getRecipes() {
+        return Collections.unmodifiableList(RECIPES);
+    }
+
+    public static MaterialStack smelt(ItemStack input) {
+        for (SmeltingEntry e : RECIPES) {
+            if (e.input().test(input)) {
+                return new MaterialStack(e.output(), e.amountMb() * input.getCount());
+            }
+        }
+        return null;
     }
 }

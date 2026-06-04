@@ -45,6 +45,10 @@ public class MultiblockStructureHelper {
     // ThreadLocal флаг для предотвращения рекурсии при разрушении структуры
     private static final ThreadLocal<Boolean> IS_DESTROYING = ThreadLocal.withInitial(() -> false);
 
+    public static boolean isDestroying() {
+        return IS_DESTROYING.get();
+    }
+
     private final Map<BlockPos, Supplier<BlockState>> structureMap;
     private final Supplier<BlockState> phantomBlockState;
     // Карта символов на роли для рецептоподобного определения структуры

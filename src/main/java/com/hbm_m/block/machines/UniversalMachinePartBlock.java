@@ -392,13 +392,15 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
                     BlockState controllerState = pLevel.getBlockState(controllerPos);
                     // Проверяем, что контроллер ещё существует
                     if (controllerState.getBlock() instanceof IMultiblockController controller) {
-                        // Вызываем разрушение структуры
-                        if (controllerState.hasProperty(HorizontalDirectionalBlock.FACING)) {
-                            Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
-                            controller.getStructureHelper().destroyStructure(pLevel, controllerPos, facing);
+                        if (!MultiblockStructureHelper.isDestroying() && controller.shouldDestroyOnPartRemoved()) {
+                            // Вызываем разрушение структуры
+                            if (controllerState.hasProperty(HorizontalDirectionalBlock.FACING)) {
+                                Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
+                                controller.getStructureHelper().destroyStructure(pLevel, controllerPos, facing);
+                            }
+                            // Ломаем контроллер
+                            pLevel.destroyBlock(controllerPos, true);
                         }
-                        // Ломаем контроллер
-                        pLevel.destroyBlock(controllerPos, true);
                     }
                 }
             }

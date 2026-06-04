@@ -55,17 +55,8 @@ public class CrucibleRecipes {
             .inputs(new ItemStack(Items.IRON_INGOT), new ItemStack(Items.COAL))
             .outputs(new ItemStack(Items.IRON_NUGGET, 3)));
 
-        CrucibleSmeltingRecipes.register(
-            new ItemStack(Items.IRON_ORE),
-            List.of(new ItemStack(Items.IRON_INGOT), new ItemStack(Items.STONE)));
-
-        CrucibleSmeltingRecipes.register(
-            new ItemStack(Items.IRON_INGOT),
-            List.of(new ItemStack(Items.IRON_INGOT)));
-
-        CrucibleSmeltingRecipes.register(
-            new ItemStack(Items.COPPER_INGOT),
-            List.of(new ItemStack(Items.COPPER_INGOT)));
+        // CrucibleSmeltingRecipes is now populated by CrucibleSmeltingRecipes.registerDefaults()
+        // which is called separately from MainRegistry.
 
         CrucibleMoldRecipes.register(
             new ItemStack(Items.CLAY_BALL),
@@ -145,7 +136,7 @@ public class CrucibleRecipes {
      *
      * <p>TODO: replace ItemStack keys with AStack/OreDict keys once RecipesCommon is ported.
      */
-    public static Map<ItemStack, List<ItemStack>> getSmeltingRecipes() {
+    public static List<CrucibleSmeltingRecipes.SmeltingEntry> getSmeltingRecipes() {
         return CrucibleSmeltingRecipes.getRecipes();
     }
 

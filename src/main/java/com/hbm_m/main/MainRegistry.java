@@ -16,6 +16,7 @@ import com.hbm_m.event.HazardEventHandler;
 import com.hbm_m.event.PlayerHazardHandler;
 import com.hbm_m.event.ScrewdriverInteractionHandler;
 import com.hbm_m.handler.MobGearHandler;
+import com.hbm_m.handler.rbmk.NeutronNodeWorld;
 import com.hbm_m.hazard.HazardRegistry;
 import com.hbm_m.inventory.menu.ModMenuTypes;
 import com.hbm_m.item.ModItems;
@@ -29,6 +30,7 @@ import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.recipe.CentrifugeRecipes;
 import com.hbm_m.recipe.ChemicalPlantRecipes;
+import com.hbm_m.recipe.CyclotronRecipes;
 import com.hbm_m.recipe.ModRecipes;
 import com.hbm_m.recipe.CrystallizerRecipes;
 import com.hbm_m.sound.ModSounds;
@@ -81,9 +83,12 @@ public final class MainRegistry {
         LifecycleEvent.SETUP.register(MainRegistry::commonSetup);
 
         TickEvent.SERVER_POST.register(server -> {
-            ServerLevel level = server.overworld();
-            EnergyNetworkManager.get(level).tick();
+            EnergyNetworkManager.get(server.overworld()).tick();
             com.hbm_m.api.network.UniNodespace.updateNodespace(server);
+            // Process RBMK neutron streams for every loaded server level
+            for (ServerLevel level : server.getAllLevels()) {
+                NeutronNodeWorld.tick(level);
+            }
         });
 
         LifecycleEvent.SERVER_LEVEL_LOAD.register((ServerLevel level) -> {
@@ -109,6 +114,10 @@ public final class MainRegistry {
         com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity.registerLaunchables();
 
         CentrifugeRecipes.registerRecipes();
+        CyclotronRecipes.registerRecipes();
+        com.hbm_m.inventory.recipes.ArcWelderRecipes.registerDefaults();
+        com.hbm_m.recipe.CrucibleSmeltingRecipes.registerDefaults();
+        com.hbm_m.inventory.recipes.SolderingRecipes.registerDefaults();
 
         // На Fabric DeferredRegister жидкостей ещё не заполнил BuiltInRegistries на момент SETUP
         // (см. FabricEntrypoint#registerFluidDependentSetupWhenReady).

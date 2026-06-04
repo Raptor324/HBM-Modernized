@@ -1,0 +1,12 @@
+﻿{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "down":  "hbm_m:block/rbmk/rbmk_display",
+    "up":    "hbm_m:block/rbmk/rbmk_display",
+    "north": "hbm_m:block/rbmk/rbmk_display",
+    "south": "hbm_m:block/rbmk/rbmk_display",
+    "east":  "hbm_m:block/rbmk/rbmk_display",
+    "west":  "hbm_m:block/rbmk/rbmk_display",
+    "particle": "hbm_m:block/rbmk/rbmk_display"
+  }
+}

@@ -20,6 +20,7 @@ import com.hbm_m.entity.missile.MissileTier1;
 import com.hbm_m.entity.missile.MissileTier2;
 import com.hbm_m.entity.missile.MissileTier3;
 import com.hbm_m.entity.missile.MissileTier4;
+import com.hbm_m.entity.projectile.ZirnoxDebrisEntity;
 import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.world.entity.EntityType;
@@ -367,6 +368,14 @@ public class ModEntities {
                             .clientTrackingRange(64)
                             .updateInterval(1)
                             .build("entity_mist"));
+
+    public static final RegistrySupplier<EntityType<ZirnoxDebrisEntity>> ZIRNOX_DEBRIS =
+            ENTITY_TYPES.register("zirnox_debris",
+                    () -> EntityType.Builder.<ZirnoxDebrisEntity>of(ZirnoxDebrisEntity::new, MobCategory.MISC)
+                            .sized(0.75F, 0.5F)
+                            .clientTrackingRange(10)
+                            .updateInterval(3)
+                            .build("zirnox_debris"));
 
     public static void init() {
         ENTITY_TYPES.register();

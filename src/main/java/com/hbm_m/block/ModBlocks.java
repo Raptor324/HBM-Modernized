@@ -96,7 +96,26 @@ import com.hbm_m.block.machines.MachineVacuumDistillBlock;
 import com.hbm_m.block.machines.MachineWatzPowerplantBlock;
 import com.hbm_m.block.machines.MachineWoodBurnerBlock;
 import com.hbm_m.block.machines.MachineZirnoxBlock;
+import com.hbm_m.block.machines.MachineZirnoxDestroyedBlock;
 import com.hbm_m.block.machines.UniversalMachinePartBlock;
+import com.hbm_m.block.machines.rbmk.RBMKRodBlock;
+import com.hbm_m.block.machines.rbmk.RBMKControlManualBlock;
+import com.hbm_m.block.machines.rbmk.RBMKControlAutoBlock;
+import com.hbm_m.block.machines.rbmk.RBMKModeratorBlock;
+import com.hbm_m.block.machines.rbmk.RBMKAbsorberBlock;
+import com.hbm_m.block.machines.rbmk.RBMKReflectorBlock;
+import com.hbm_m.block.machines.rbmk.RBMKCoolerBlock;
+import com.hbm_m.block.machines.rbmk.RBMKBoilerBlock;
+import com.hbm_m.block.machines.rbmk.RBMKHeaterBlock;
+import com.hbm_m.block.machines.rbmk.RBMKOutgasserBlock;
+import com.hbm_m.block.machines.rbmk.RBMKStorageBlock;
+import com.hbm_m.block.machines.rbmk.RBMKBlankBlock;
+import com.hbm_m.block.machines.rbmk.RBMKSteamInletBlock;
+import com.hbm_m.block.machines.rbmk.RBMKSteamOutletBlock;
+import com.hbm_m.block.machines.rbmk.RBMKLoaderBlock;
+import com.hbm_m.block.machines.rbmk.RBMKAutoloaderBlock;
+import com.hbm_m.block.machines.rbmk.RBMKCraneConsoleBlock;
+import com.hbm_m.block.machines.rbmk.RBMKPanelBlock;
 import com.hbm_m.block.machines.anvils.AnvilBlock;
 import com.hbm_m.block.machines.anvils.AnvilTier;
 import com.hbm_m.block.machines.crates.DeshCrateBlock;
@@ -368,6 +387,15 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> ZIRNOX = registerBlockWithoutItem("zirnox",
             () -> new MachineZirnoxBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
+    public static final RegistrySupplier<Block> ZIRNOX_DESTROYED = registerBlockWithoutItem("zirnox_destroyed",
+            () -> new MachineZirnoxDestroyedBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(100.0f, 800.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> ZIRNOX_DEB_BLANK     = registerBlockWithoutItem("zirnox_deb_blank",     () -> new Block(BlockBehaviour.Properties.of().strength(-1F, Float.MAX_VALUE).noOcclusion()));
+    public static final RegistrySupplier<Block> ZIRNOX_DEB_ELEMENT   = registerBlockWithoutItem("zirnox_deb_element",   () -> new Block(BlockBehaviour.Properties.of().strength(-1F, Float.MAX_VALUE).noOcclusion()));
+    public static final RegistrySupplier<Block> ZIRNOX_DEB_SHRAPNEL  = registerBlockWithoutItem("zirnox_deb_shrapnel",  () -> new Block(BlockBehaviour.Properties.of().strength(-1F, Float.MAX_VALUE).noOcclusion()));
+    public static final RegistrySupplier<Block> ZIRNOX_DEB_CONCRETE  = registerBlockWithoutItem("zirnox_deb_concrete",  () -> new Block(BlockBehaviour.Properties.of().strength(-1F, Float.MAX_VALUE).noOcclusion()));
+    public static final RegistrySupplier<Block> ZIRNOX_DEB_EXCHANGER = registerBlockWithoutItem("zirnox_deb_exchanger", () -> new Block(BlockBehaviour.Properties.of().strength(-1F, Float.MAX_VALUE).noOcclusion()));
+
     public static final RegistrySupplier<Block> ARC_WELDER = registerBlockWithoutItem("arc_welder",
             () -> new MachineArcWelderBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
@@ -430,6 +458,13 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> FOUNDRY_CHANNEL = registerBlock("foundry_channel",
             () -> new MachineFoundryChannelBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f, 2.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> FOUNDRY_OUTLET = registerBlock("foundry_outlet",
+            () -> new com.hbm_m.block.machines.MachineFoundryOutletBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(3.0f, 3.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    // ─── Trophies ─────────────────────────────────────────────────────────────
+    public static final RegistrySupplier<Block> SU47_TROPHY = registerBlock("su47_trophy",
+            () -> new com.hbm_m.block.machines.SU47TrophyBlock(BlockBehaviour.Properties.of().strength(2f).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> GAS_CENTRIFUGE = registerBlockWithoutItem("gas_centrifuge",
             () -> new MachineGasCentrifugeBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
@@ -1742,6 +1777,65 @@ public class ModBlocks {
         ModItems.ITEMS.register(name, () -> new BlockAbsorberItem(toReturn.get(), new Item.Properties()));
         return (RegistrySupplier<Block>) (RegistrySupplier<?>) toReturn;
     }
+
+    // ─── RBMK Columns ────────────────────────────────────────────────────────
+
+    private static BlockBehaviour.Properties rbmkProps() {
+        return BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion()
+                .isSuffocating((s, w, p) -> false);
+    }
+
+    // ── Fuel Channels ──────────────────────────────────────────────────────────
+    public static final RegistrySupplier<Block> RBMK_ROD          = registerBlock("rbmk_element",      () -> new RBMKRodBlock(false, rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_ROD_MOD      = registerBlock("rbmk_element_mod",  () -> new RBMKRodBlock(true,  rbmkProps()));
+
+    // ── Control Rods ────────────────────────────────────────────────────────
+    public static final RegistrySupplier<Block> RBMK_CONTROL               = registerBlock("rbmk_control",               () -> new RBMKControlManualBlock(false, rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_CONTROL_BLUE          = registerBlock("rbmk_control_blue",          () -> new RBMKControlManualBlock(false, rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_CONTROL_GREEN         = registerBlock("rbmk_control_green",         () -> new RBMKControlManualBlock(false, rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_CONTROL_YELLOW        = registerBlock("rbmk_control_yellow",        () -> new RBMKControlManualBlock(false, rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_CONTROL_PURPLE        = registerBlock("rbmk_control_purple",        () -> new RBMKControlManualBlock(false, rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_CONTROL_MOD           = registerBlock("rbmk_control_mod",           () -> new RBMKControlManualBlock(true,  rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_CONTROL_AUTO          = registerBlock("rbmk_control_auto",          () -> new RBMKControlAutoBlock(false, rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_CONTROL_MOD_AUTO      = registerBlock("rbmk_control_mod_auto",      () -> new RBMKControlAutoBlock(true,  rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_CONTROL_REASIM        = registerBlock("rbmk_control_reasim",        () -> new RBMKControlManualBlock(false, rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_CONTROL_REASIM_AUTO   = registerBlock("rbmk_control_reasim_auto",   () -> new RBMKControlAutoBlock(false,  rbmkProps()));
+
+    // ── Passive Columns ─────────────────────────────────────────────────────
+    public static final RegistrySupplier<Block> RBMK_MODERATOR    = registerBlock("rbmk_moderator",    () -> new RBMKModeratorBlock(rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_ABSORBER     = registerBlock("rbmk_absorber",     () -> new RBMKAbsorberBlock(rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_REFLECTOR    = registerBlock("rbmk_reflector",    () -> new RBMKReflectorBlock(rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_COOLER       = registerBlock("rbmk_cooler",       () -> new RBMKCoolerBlock(rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_BOILER       = registerBlock("rbmk_boiler",       () -> new RBMKBoilerBlock(rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_HEATER       = registerBlock("rbmk_heater",       () -> new RBMKHeaterBlock(rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_OUTGASSER    = registerBlock("rbmk_outgasser",    () -> new RBMKOutgasserBlock(rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_STORAGE      = registerBlock("rbmk_storage",      () -> new RBMKStorageBlock(rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_BLANK        = registerBlock("rbmk_blank",        () -> new RBMKBlankBlock(rbmkProps()));
+
+    // ── Fluid Connection ────────────────────────────────────────────────────
+    public static final RegistrySupplier<Block> RBMK_STEAM_INLET  = registerBlock("rbmk_steam_inlet",  () -> new RBMKSteamInletBlock(rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_STEAM_OUTLET = registerBlock("rbmk_steam_outlet", () -> new RBMKSteamOutletBlock(rbmkProps()));
+
+    // ── Crane / Loader ──────────────────────────────────────────────────────
+    public static final RegistrySupplier<Block> RBMK_LOADER       = registerBlock("rbmk_loader",       () -> new RBMKLoaderBlock(rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_AUTOLOADER   = registerBlock("rbmk_autoloader",   () -> new RBMKAutoloaderBlock(rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_CRANE_CONSOLE= registerBlock("rbmk_crane_console",() -> new RBMKCraneConsoleBlock(rbmkProps()));
+
+    // ── Debris ──────────────────────────────────────────────────────────────
+    public static final RegistrySupplier<Block> RBMK_DEBRIS            = registerBlock("rbmk_debris",            () -> new Block(BlockBehaviour.Properties.copy(Blocks.GRAVEL).strength(0.5f)));
+    public static final RegistrySupplier<Block> RBMK_DEBRIS_BURNING    = registerBlock("rbmk_debris_burning",    () -> new Block(BlockBehaviour.Properties.copy(Blocks.GRAVEL).strength(0.5f).lightLevel(s -> 10)));
+    public static final RegistrySupplier<Block> RBMK_DEBRIS_DIGAMMA    = registerBlock("rbmk_debris_digamma",    () -> new Block(BlockBehaviour.Properties.copy(Blocks.GRAVEL).strength(0.5f).lightLevel(s -> 8)));
+    public static final RegistrySupplier<Block> RBMK_DEBRIS_RADIATING  = registerBlock("rbmk_debris_radiating",  () -> new Block(BlockBehaviour.Properties.copy(Blocks.GRAVEL).strength(0.5f).lightLevel(s -> 4)));
+
+    // ── Panel / Display Blocks ──────────────────────────────────────────────
+    public static final RegistrySupplier<Block> RBMK_DISPLAY   = registerBlock("rbmk_display",   () -> new RBMKPanelBlock(rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_GAUGE     = registerBlock("rbmk_gauge",     () -> new RBMKPanelBlock(rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_INDICATOR = registerBlock("rbmk_indicator", () -> new RBMKPanelBlock(rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_LEVER     = registerBlock("rbmk_lever",     () -> new RBMKPanelBlock(rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_NUMITRON  = registerBlock("rbmk_numitron",  () -> new RBMKPanelBlock(rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_GRAPH     = registerBlock("rbmk_graph",     () -> new RBMKPanelBlock(rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_TERMINAL  = registerBlock("rbmk_terminal",  () -> new RBMKPanelBlock(rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_KEYPAD    = registerBlock("rbmk_keypad",    () -> new RBMKPanelBlock(rbmkProps()));
 
     private static <T extends Block> RegistrySupplier<T> registerBlock(String name, Supplier<T> block) {
         RegistrySupplier<T> toReturn = BLOCKS.register(name, block);

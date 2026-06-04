@@ -161,6 +161,23 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<HeatingOvenMenu>> HEATING_OVEN_MENU =
             MENUS.register("heating_oven_menu", () -> MenuRegistry.ofExtended(HeatingOvenMenu::new));
 
+    // ─── RBMK Column Menus ───────────────────────────────────────────────────
+
+    public static final RegistrySupplier<MenuType<RBMKRodMenu>> RBMK_ROD_MENU =
+            MENUS.register("rbmk_rod_menu", () -> MenuRegistry.ofExtended(RBMKRodMenu::new));
+
+    public static final RegistrySupplier<MenuType<RBMKControlMenu>> RBMK_CONTROL_MENU =
+            MENUS.register("rbmk_control_menu", () -> MenuRegistry.ofExtended(RBMKControlMenu::new));
+
+    public static final RegistrySupplier<MenuType<RBMKBoilerMenu>> RBMK_BOILER_MENU =
+            MENUS.register("rbmk_boiler_menu", () -> MenuRegistry.ofExtended(RBMKBoilerMenu::new));
+
+    public static final RegistrySupplier<MenuType<RBMKStorageMenu>> RBMK_STORAGE_MENU =
+            MENUS.register("rbmk_storage_menu", () -> MenuRegistry.ofExtended(RBMKStorageMenu::new));
+
+    public static final RegistrySupplier<MenuType<RBMKOutgasserMenu>> RBMK_OUTGASSER_MENU =
+            MENUS.register("rbmk_outgasser_menu", () -> MenuRegistry.ofExtended(RBMKOutgasserMenu::new));
+
     public static void init() {
         MENUS.register();
     }

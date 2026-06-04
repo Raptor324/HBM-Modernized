@@ -74,7 +74,7 @@ public class MachineZirnoxBlock extends BaseEntityBlock implements IMultiblockCo
         };
 
         Map<Character, PartRole> roleMap = Map.of(
-            'O', PartRole.DEFAULT,
+            'O', PartRole.FLUID_CONNECTOR,
             'C', PartRole.CONTROLLER
         );
 
@@ -140,6 +140,39 @@ public class MachineZirnoxBlock extends BaseEntityBlock implements IMultiblockCo
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
             getStructureHelper().placeStructure(level, pos, state.getValue(FACING), this);
         }
+    }
+
+    @Override
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
+        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
+        if (level.isClientSide) {
+            return;
+        }
+
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (!(blockEntity instanceof MachineZirnoxBlockEntity zirnox)) {
+            return;
+        }
+
+        boolean powered = false;
+        for (int dx = -2; dx <= 2 && !powered; dx++) {
+            for (int dy = 0; dy <= 4 && !powered; dy++) {
+                for (int dz = -2; dz <= 2 && !powered; dz++) {
+                    boolean isSurface = dx == -2 || dx == 2 || dy == 0 || dy == 4 || dz == -2 || dz == 2;
+                    if (!isSurface) {
+                        continue;
+                    }
+
+                    BlockPos scanPos = pos.offset(dx, dy, dz);
+                    if (level.hasNeighborSignal(scanPos) || level.getBestNeighborSignal(scanPos) > 0) {
+                        powered = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        zirnox.setRedstonePowered(powered);
     }
 
     @Override

@@ -3,15 +3,13 @@ package com.hbm_m.inventory.gui;
 import com.hbm_m.block.entity.machines.MachineZirnoxBlockEntity;
 import com.hbm_m.inventory.menu.MachineZirnoxMenu;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.network.ZirnoxControlPacket;
 import com.mojang.blaze3d.systems.RenderSystem;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
 
 public class GUIMachineZirnox extends GuiInfoScreen<MachineZirnoxMenu> {
@@ -66,7 +64,7 @@ public class GUIMachineZirnox extends GuiInfoScreen<MachineZirnoxMenu> {
         this.drawInfoPanel(guiGraphics, -16, 36, PanelType.LARGE_BLUE_INFO);
         this.drawInfoPanel(guiGraphics, -16, 52, PanelType.LARGE_BLUE_INFO);
 
-        if (zirnox.water <= 0) {
+        if (zirnox.waterTank.getFill() <= 0) {
             this.drawInfoPanel(guiGraphics, -16, 68, PanelType.LARGE_RED_EXCLAMATION);
         }
 
@@ -88,31 +86,63 @@ public class GUIMachineZirnox extends GuiInfoScreen<MachineZirnoxMenu> {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
         drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                this.leftPos + 160, this.topPos + 33, 18, 17,
+                160, 33, 18, 17,
                 this.leftPos + 180, this.topPos + 33,
                 Component.literal("Temperature:"),
-                Component.literal("   " + Math.round((zirnox.heat) * 0.00001 * 780 + 20) + " C"));
+                Component.literal("   " + Math.round((zirnox.heat) * 0.00001 * 780 + 20) + "°C"));
 
         drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                this.leftPos + 178, this.topPos + 33, 18, 17,
+                178, 33, 18, 17,
                 this.leftPos + 200, this.topPos + 33,
                 Component.literal("Pressure:"),
                 Component.literal("   " + Math.round((zirnox.pressure) * 0.00001 * 30) + " bar"));
 
         drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                this.leftPos + 160, this.topPos + 108, 18, 12,
+                -16, 36, 16, 16,
+                this.leftPos - 8, this.topPos + 52,
+                Component.literal("Coolant:"),
+                Component.literal("   Fill and maintain the coolant loops."),
+                Component.literal("   Steam, CO2 and water levels are critical."));
+
+        drawCustomInfoStat(guiGraphics, mouseX, mouseY,
+                -16, 52, 16, 16,
+                this.leftPos - 8, this.topPos + 68,
+                Component.literal("Pressure:"),
+                Component.literal("   High pressure increases reactor risk."),
+                Component.literal("   Use the vent when pressure spikes."));
+
+        drawCustomInfoStat(guiGraphics, mouseX, mouseY,
+                160, 108, 18, 12,
                 this.leftPos + 180, this.topPos + 108,
-                Component.literal("Steam: " + zirnox.steam + "/" + MachineZirnoxBlockEntity.TANK_MAX));
+                Component.literal("Superheated Steam: " + zirnox.steamTank.getFill() + "/" + MachineZirnoxBlockEntity.STEAM_MAX + " mB"));
 
         drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                this.leftPos + 142, this.topPos + 108, 18, 12,
+                142, 108, 18, 12,
                 this.leftPos + 160, this.topPos + 108,
-                Component.literal("CO2: " + zirnox.carbonDioxide + "/" + MachineZirnoxBlockEntity.TANK_MAX));
+                Component.literal("CO2: " + zirnox.carbonDioxide + "/" + MachineZirnoxBlockEntity.CO2_MAX));
 
         drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                this.leftPos + 178, this.topPos + 108, 18, 12,
+                178, 108, 18, 12,
                 this.leftPos + 200, this.topPos + 108,
-                Component.literal("Water: " + zirnox.water + "/" + MachineZirnoxBlockEntity.TANK_MAX));
+                Component.literal("Water: " + zirnox.waterTank.getFill() + "/" + MachineZirnoxBlockEntity.WATER_MAX + " mB"));
+
+        if (zirnox.waterTank.getFill() <= 0) {
+            drawCustomInfoStat(guiGraphics, mouseX, mouseY,
+                    -16, 68, 16, 16,
+                    this.leftPos - 8, this.topPos + 84,
+                    Component.literal("Warning:"),
+                    Component.literal("   Coolant water depleted."),
+                    Component.literal("   Reactor damage risk is rising."));
+        }
+
+        if (zirnox.carbonDioxide < 4000) {
+            drawCustomInfoStat(guiGraphics, mouseX, mouseY,
+                    -16, 84, 16, 16,
+                    this.leftPos - 8, this.topPos + 100,
+                    Component.literal("Warning:"),
+                    Component.literal("   CO2 buffer critically low."),
+                    Component.literal("   Refill before continuing operation."));
+        }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
@@ -120,12 +150,14 @@ public class GUIMachineZirnox extends GuiInfoScreen<MachineZirnoxMenu> {
     @Override
     public boolean mouseClicked(double x, double y, int button) {
         if (this.leftPos + 144 <= x && this.leftPos + 158 > x && this.topPos + 35 < y && this.topPos + 49 >= y) {
-            Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            ZirnoxControlPacket.sendToServer(zirnox.getBlockPos(), ZirnoxControlPacket.ACTION_CONTROL);
+            playClickSound();
             return true;
         }
 
         if (this.leftPos + 151 <= x && this.leftPos + 187 > x && this.topPos + 51 < y && this.topPos + 87 >= y) {
-            Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            ZirnoxControlPacket.sendToServer(zirnox.getBlockPos(), ZirnoxControlPacket.ACTION_VENT);
+            playClickSound();
             return true;
         }
 

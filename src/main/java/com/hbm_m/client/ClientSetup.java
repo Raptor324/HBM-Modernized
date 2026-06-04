@@ -57,6 +57,7 @@ import com.hbm_m.client.render.ModShaders;
 import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.client.render.effect.RenderFallout;
 import com.hbm_m.client.render.implementations.AirBombProjectileEntityRenderer;
+import com.hbm_m.client.render.implementations.ZirnoxDebrisRenderer;
 import com.hbm_m.client.render.implementations.AirNukeBombProjectileEntityRenderer;
 import com.hbm_m.client.render.implementations.AirstrikeEntityRenderer;
 import com.hbm_m.client.render.implementations.AirstrikeNukeEntityRenderer;
@@ -77,6 +78,7 @@ import com.hbm_m.client.render.implementations.MachineCrystallizerRenderer;
 import com.hbm_m.client.render.implementations.MachineHydraulicFrackiningTowerRenderer;
 import com.hbm_m.client.render.implementations.MachinePressRenderer;
 import com.hbm_m.client.render.implementations.MachineRadarRenderer;
+import com.hbm_m.client.render.implementations.RBMKColumnRenderer;
 import com.hbm_m.client.render.implementations.MissileEntityRenderer;
 import com.hbm_m.client.render.entity.mob.RenderCreeperUniversal;
 import com.hbm_m.client.render.implementations.NoloEntityRenderer;
@@ -116,6 +118,11 @@ import com.hbm_m.inventory.gui.GUIMachinePumpjack;
 import com.hbm_m.inventory.gui.GUIMachineRadar;
 import com.hbm_m.inventory.gui.GUIMachineRefinery;
 import com.hbm_m.inventory.gui.GUIMachineRbmkConsole;
+import com.hbm_m.inventory.gui.GUIRBMKRod;
+import com.hbm_m.inventory.gui.GUIRBMKControl;
+import com.hbm_m.inventory.gui.GUIRBMKBoiler;
+import com.hbm_m.inventory.gui.GUIRBMKStorage;
+import com.hbm_m.inventory.gui.GUIRBMKOutgasser;
 import com.hbm_m.inventory.gui.GUIMachineSilex;
 import com.hbm_m.inventory.gui.GUIMachineSolderingStation;
 import com.hbm_m.inventory.gui.GUIMachineSubstation;
@@ -454,6 +461,11 @@ public class ClientSetup {
         MenuScreens.register(ModMenuTypes.MIXER_MENU.get(), GUIMachineMixer::new);
         MenuScreens.register(ModMenuTypes.DERRICK_MENU.get(), GUIMachineDerrick::new);
         MenuScreens.register(ModMenuTypes.RBMK_CONSOLE_MENU.get(), GUIMachineRbmkConsole::new);
+        MenuScreens.register(ModMenuTypes.RBMK_ROD_MENU.get(), GUIRBMKRod::new);
+        MenuScreens.register(ModMenuTypes.RBMK_CONTROL_MENU.get(), GUIRBMKControl::new);
+        MenuScreens.register(ModMenuTypes.RBMK_BOILER_MENU.get(), GUIRBMKBoiler::new);
+        MenuScreens.register(ModMenuTypes.RBMK_STORAGE_MENU.get(), GUIRBMKStorage::new);
+        MenuScreens.register(ModMenuTypes.RBMK_OUTGASSER_MENU.get(), GUIRBMKOutgasser::new);
         MenuScreens.register(ModMenuTypes.FLARE_STACK_MENU.get(), GUIMachineFlareStack::new);
         MenuScreens.register(ModMenuTypes.PUMPJACK_MENU.get(), GUIMachinePumpjack::new);
         MenuScreens.register(ModMenuTypes.RADAR_MENU.get(), GUIMachineRadar::new);
@@ -496,6 +508,7 @@ public class ClientSetup {
 
     private static void registerRenderersCommon() {
         //? if forge {
+        ModEntities.ZIRNOX_DEBRIS.ifPresent(entityType -> EntityRenderers.register(entityType, ZirnoxDebrisRenderer::new));
         ModEntities.GRENADE_NUC_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
         ModEntities.GRENADE_IF_FIRE_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
         ModEntities.GRENADE_IF_SLIME_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
@@ -555,6 +568,26 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.GAS_CENTRIFUGE_BE.get(), GasCentrifugeRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RADAR_BE.get(), MachineRadarRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.CRUCIBLE_BE.get(), CrucibleRenderer::new);
+        // ─── RBMK column renderers (all use the same generic column renderer) ─────
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_ROD_BE.get(),          RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.SU47_TROPHY_BE.get(),
+                com.hbm_m.client.render.implementations.SU47TrophyRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_BLANK_BE.get(),        RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_ABSORBER_BE.get(),     RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_REFLECTOR_BE.get(),    RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_COOLER_BE.get(),       RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_BOILER_BE.get(),       RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_HEATER_BE.get(),       RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_MODERATOR_BE.get(),    RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_OUTGASSER_BE.get(),    RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_STORAGE_BE.get(),      RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_CONTROL_BE.get(),      RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_CONTROL_AUTO_BE.get(), RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_LOADER_BE.get(),        RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_AUTOLOADER_BE.get(),    RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_CRANE_CONSOLE_BE.get(), RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_PANEL_BE.get(),         RBMKColumnRenderer::new);
+        // Steam inlet/outlet are floor blocks (not columns) — rendered via MODEL + JSON
         //?}
 
         //? if fabric {

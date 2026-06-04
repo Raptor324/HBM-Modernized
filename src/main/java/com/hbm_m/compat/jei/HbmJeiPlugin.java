@@ -11,7 +11,13 @@ import com.hbm_m.inventory.gui.GUIMachineAdvancedAssembler;
 import com.hbm_m.inventory.gui.GUIMachineAssembler;
 import com.hbm_m.inventory.gui.GUIMachineCentrifuge;
 import com.hbm_m.inventory.gui.GUIMachineChemicalPlant;
+import com.hbm_m.inventory.gui.GUIMachineCyclotron;
 import com.hbm_m.inventory.gui.GUIMachineCrucible;
+import com.hbm_m.inventory.gui.GUIMachineArcWelder;
+import com.hbm_m.inventory.gui.GUIMachineSolderingStation;
+import com.hbm_m.inventory.gui.GUIMachineCrystallizer;
+import com.hbm_m.inventory.recipes.ArcWelderRecipes;
+import com.hbm_m.inventory.recipes.SolderingRecipes;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.recipe.AnvilRecipe;
 import com.hbm_m.recipe.AnvilRecipeManager;
@@ -28,6 +34,7 @@ import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.CentrifugeRecipes;
 import com.hbm_m.recipe.CentrifugeRecipes.RecipeInput;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
+import com.hbm_m.recipe.CyclotronRecipes;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.client.Minecraft;
@@ -68,9 +75,13 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCategories(new AssemblerJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new CentrifugeJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new ChemicalPlantJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new CyclotronJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new CrucibleCastingJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new CrucibleAlloyingJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new CrucibleSmeltingJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new ArcWelderJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new SolderingStationJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new CrystallizerJeiCategory(registration.getJeiHelpers().getGuiHelper()));
     }
 
     @Override
@@ -81,9 +92,13 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipes(AssemblerJeiCategory.RECIPE_TYPE, getAssemblerRecipes());
         registration.addRecipes(CentrifugeJeiCategory.RECIPE_TYPE, getCentrifugeRecipes());
         registration.addRecipes(ChemicalPlantJeiCategory.RECIPE_TYPE, getChemicalPlantRecipes());
+        registration.addRecipes(CyclotronJeiCategory.RECIPE_TYPE, getCyclotronRecipes());
         registration.addRecipes(CrucibleCastingJeiCategory.RECIPE_TYPE, getCrucibleCastingRecipes());
         registration.addRecipes(CrucibleAlloyingJeiCategory.RECIPE_TYPE, getCrucibleAlloyingRecipes());
         registration.addRecipes(CrucibleSmeltingJeiCategory.RECIPE_TYPE, getCrucibleSmeltingRecipes());
+        registration.addRecipes(ArcWelderJeiCategory.RECIPE_TYPE, ArcWelderJeiRecipe.fromRecipes());
+        registration.addRecipes(SolderingStationJeiCategory.RECIPE_TYPE, SolderingStationJeiRecipe.fromRecipes());
+        registration.addRecipes(CrystallizerJeiCategory.RECIPE_TYPE, CrystallizerJeiRecipe.fromAll());
     }
 
     @Override
@@ -93,10 +108,14 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCatalyst(new ItemStack(ModItems.ADVANCED_ASSEMBLY_MACHINE.get()), AssemblerJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CENTRIFUGE.get()), CentrifugeJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CHEMICAL_PLANT.get()), ChemicalPlantJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.CYCLOTRON.get()), CyclotronJeiCategory.RECIPE_TYPE);
         // Foundry basin is the primary catalyst; mold and strand caster are registered once those blocks are ported
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.FOUNDRY_BASIN.get()), CrucibleCastingJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CRUCIBLE.get()), CrucibleAlloyingJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CRUCIBLE.get()), CrucibleSmeltingJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.ARC_WELDER.get()), ArcWelderJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.SOLDERING_STATION.get()), SolderingStationJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.CRYSTALLIZER.get()), CrystallizerJeiCategory.RECIPE_TYPE);
     }
 
     @Override
@@ -109,12 +128,17 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeClickArea(GUIMachineCentrifuge.class, 56, 0, 80, 38, CentrifugeJeiCategory.RECIPE_TYPE);
         // Chemical Plant click area around the progress bar
         registration.addRecipeClickArea(GUIMachineChemicalPlant.class, 62, 126, 70, 16, ChemicalPlantJeiCategory.RECIPE_TYPE);
+        // Cyclotron click area around the main accelerator progress
+        registration.addRecipeClickArea(GUIMachineCyclotron.class, 48, 27, 79, 34, CyclotronJeiCategory.RECIPE_TYPE);
         // Crucible casting — matches the legacy NEI transfer rect: new Rectangle(65, 23, 36, 18)
         registration.addRecipeClickArea(GUIMachineCrucible.class, 65, 23, 36, 18, CrucibleCastingJeiCategory.RECIPE_TYPE);
         // Crucible alloying — same click zone on the crucible GUI
         registration.addRecipeClickArea(GUIMachineCrucible.class, 65, 23, 36, 18, CrucibleAlloyingJeiCategory.RECIPE_TYPE);
         // Crucible smelting — same click zone on the crucible GUI
         registration.addRecipeClickArea(GUIMachineCrucible.class, 65, 23, 36, 18, CrucibleSmeltingJeiCategory.RECIPE_TYPE);
+        registration.addRecipeClickArea(GUIMachineArcWelder.class, 72, 37, 33, 14, ArcWelderJeiCategory.RECIPE_TYPE);
+        registration.addRecipeClickArea(GUIMachineSolderingStation.class, 72, 28, 33, 14, SolderingStationJeiCategory.RECIPE_TYPE);
+        registration.addRecipeClickArea(GUIMachineCrystallizer.class, 80, 39, 33, 14, CrystallizerJeiCategory.RECIPE_TYPE);
     }
 
     @Override
@@ -202,6 +226,26 @@ public class HbmJeiPlugin implements IModPlugin {
         return recipes;
     }
 
+    private static List<CyclotronJeiRecipe> getCyclotronRecipes() {
+        CyclotronRecipes.registerRecipes();
+        List<CyclotronJeiRecipe> recipes = new ArrayList<>();
+        for (CyclotronRecipes.JeiRecipe recipe : CyclotronRecipes.getJeiRecipes()) {
+            ItemStack output = recipe.output();
+            if (output.isEmpty()) {
+                continue;
+            }
+
+            ItemStack[] targets = recipe.target().getItems();
+            ItemStack[] inputs = recipe.input().getItems();
+            if (targets.length == 0 || inputs.length == 0) {
+                continue;
+            }
+
+            recipes.add(CyclotronJeiRecipe.of(recipe.target(), recipe.input(), output, recipe.amatProduced()));
+        }
+        return recipes;
+    }
+
     private static List<CrucibleCastingJeiRecipe> getCrucibleCastingRecipes() {
         List<CrucibleCastingJeiRecipe> recipes = new ArrayList<>();
         for (ItemStack[] r : CrucibleMoldRecipes.getMoldRecipes()) {
@@ -220,17 +264,21 @@ public class HbmJeiPlugin implements IModPlugin {
     }
 
     private static List<CrucibleSmeltingJeiRecipe> getCrucibleSmeltingRecipes() {
-        List<CrucibleSmeltingJeiRecipe> recipes = new ArrayList<>();
-        for (var entry : CrucibleSmeltingRecipes.getRecipes().entrySet()) {
-            recipes.add(new CrucibleSmeltingJeiRecipe(entry.getKey(), entry.getValue()));
+        List<CrucibleSmeltingJeiRecipe> result = new ArrayList<>();
+        for (CrucibleSmeltingRecipes.SmeltingEntry e : CrucibleSmeltingRecipes.getRecipes()) {
+            // Show ingredient items → material name as a pseudo-output via cast plate if available
+            List<ItemStack> inputs = List.of(e.input().getItems());
+            var plate = e.output().hasCastPlate() ? e.output().getCastPlate(1) : null;
+            List<ItemStack> outputs = plate != null ? List.of(plate) : List.of();
+            result.add(new CrucibleSmeltingJeiRecipe(
+                    inputs.isEmpty() ? ItemStack.EMPTY : inputs.get(0), outputs));
         }
-        return recipes;
+        return result;
     }
 
     private static void ensureCrucibleFallbackRecipes() {
         if (CrucibleSmeltingRecipes.getRecipes().isEmpty()) {
-            CrucibleSmeltingRecipes.register(new ItemStack(Items.IRON_INGOT), new ItemStack(Items.IRON_INGOT));
-            CrucibleSmeltingRecipes.register(new ItemStack(Items.COPPER_INGOT), new ItemStack(Items.COPPER_INGOT));
+            CrucibleSmeltingRecipes.registerDefaults();
         }
         if (CrucibleAlloyingRecipes.getRecipes().isEmpty()) {
             CrucibleAlloyingRecipes.register(new CrucibleAlloyingRecipe("crucible.jei_fallback")

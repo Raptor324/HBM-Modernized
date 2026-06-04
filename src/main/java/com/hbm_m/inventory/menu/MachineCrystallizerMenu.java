@@ -21,6 +21,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
+import com.hbm_m.item.industrial.ItemMachineUpgrade;
 
 public class MachineCrystallizerMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
@@ -107,19 +108,13 @@ public class MachineCrystallizerMenu extends AbstractContainerMenu implements IL
                 return false;
             }
         });
-        // Слоты 5-6 — апгрейды. Пока класса ItemMachineUpgrade нет — блокируем вручную.
-        // TODO: вернуть проверку через canPlaceItem когда ItemMachineUpgrade появится.
         this.addSlot(new Slot(machineInventory, SLOT_UPGRADE_1, 80, 18) {
             @Override
-            public boolean mayPlace(ItemStack stack) {
-                return false;
-            }
+            public boolean mayPlace(ItemStack stack) { return stack.getItem() instanceof ItemMachineUpgrade; }
         });
         this.addSlot(new Slot(machineInventory, SLOT_UPGRADE_2, 98, 18) {
             @Override
-            public boolean mayPlace(ItemStack stack) {
-                return false;
-            }
+            public boolean mayPlace(ItemStack stack) { return stack.getItem() instanceof ItemMachineUpgrade; }
         });
         this.addSlot(new Slot(machineInventory, SLOT_FLUID_ID, 35, 72) {
             @Override
@@ -263,8 +258,12 @@ public class MachineCrystallizerMenu extends AbstractContainerMenu implements IL
                 if (!moveItemStackTo(stack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {
                     return ItemStack.EMPTY;
                 }
+            } else if (stack.getItem() instanceof ItemMachineUpgrade) {
+                // Upgrades → slots 5-6
+                if (!moveItemStackTo(stack, SLOT_UPGRADE_1, SLOT_UPGRADE_2 + 1, false)) {
+                    return ItemStack.EMPTY;
+                }
             } else if (machineInventory.canPlaceItem(SLOT_FLUID_ID, stack)) {
-                // Жидкостный идентификатор → слот 7.
                 if (!moveItemStackTo(stack, SLOT_FLUID_ID, SLOT_FLUID_ID + 1, false)) {
                     return ItemStack.EMPTY;
                 }

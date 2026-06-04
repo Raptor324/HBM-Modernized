@@ -1,0 +1,16 @@
+{
+  "replace": false,
+  "values": [
+    "hbm_m:rod_zirnox_les_fuel",
+    "hbm_m:rod_zirnox_lithium",
+    "hbm_m:rod_zirnox_mox_fuel",
+    "hbm_m:rod_zirnox_natural_uranium_fuel",
+    "hbm_m:rod_zirnox_plutonium_fuel",
+    "hbm_m:rod_zirnox_th232",
+    "hbm_m:rod_zirnox_thorium_fuel",
+    "hbm_m:rod_zirnox_u233_fuel",
+    "hbm_m:rod_zirnox_u235_fuel",
+    "hbm_m:rod_zirnox_uranium_fuel",
+    "hbm_m:rod_zirnox_zfb_mox"
+  ]
+}

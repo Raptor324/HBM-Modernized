@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "top": "hbm_m:block/crucible/foundry_channel_top",
+    "front": "hbm_m:block/crucible/foundry_basin_side",
+    "side": "hbm_m:block/crucible/foundry_channel_side",
+    "particle": "hbm_m:block/crucible/foundry_channel_side"
+  }
+}

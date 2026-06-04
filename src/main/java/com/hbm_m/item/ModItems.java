@@ -50,6 +50,11 @@ import com.hbm_m.item.grenades_and_activators.GrenadeItem;
 import com.hbm_m.item.grenades_and_activators.GrenadeNucItem;
 import com.hbm_m.item.grenades_and_activators.MultiDetonatorItem;
 import com.hbm_m.item.grenades_and_activators.RangeDetonatorItem;
+import com.hbm_m.item.rbmk.RBMKLidItem;
+import com.hbm_m.item.rbmk.RBMKPelletItem;
+import com.hbm_m.item.rbmk.RBMKRodItem;
+import com.hbm_m.item.rbmk.RBMKRodItem.EnumBurnFunc;
+import com.hbm_m.block.entity.machines.rbmk.IRBMKFluxReceiver.NType;
 import com.hbm_m.item.industrial.FuelItem;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.item.industrial.ItemBlades;
@@ -57,6 +62,7 @@ import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.industrial.ItemStamp;
 import com.hbm_m.item.industrial.ItemTemplateFolder;
+import com.hbm_m.item.industrial.ZirnoxRodItem;
 import com.hbm_m.item.liquids.FluidBarrelItem;
 import com.hbm_m.item.liquids.FluidDuctItem;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
@@ -1175,6 +1181,69 @@ public class ModItems {
     public static final RegistrySupplier<Item> RBMK_FUEL_DRX = ITEMS.register("rbmk_fuel_drx",
             () -> new RbmkFuelDrxItem(new Item.Properties()));
 
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_EMPTY = ITEMS.register("rod_zirnox_empty",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_LES_FUEL = ITEMS.register("rod_zirnox_les_fuel",
+            () -> new ZirnoxRodItem(new Item.Properties(), 150_000, 150, false));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_LES_FUEL_DEPLETED = ITEMS.register("rod_zirnox_les_fuel_depleted",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_LITHIUM = ITEMS.register("rod_zirnox_lithium",
+            () -> new ZirnoxRodItem(new Item.Properties(), 20_000, 0, true));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_MOX_FUEL = ITEMS.register("rod_zirnox_mox_fuel",
+            () -> new ZirnoxRodItem(new Item.Properties(), 165_000, 75, false));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_MOX_FUEL_DEPLETED = ITEMS.register("rod_zirnox_mox_fuel_depleted",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_NATURAL_URANIUM_FUEL = ITEMS.register("rod_zirnox_natural_uranium_fuel",
+            () -> new ZirnoxRodItem(new Item.Properties(), 250_000, 30, false));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_PLUTONIUM_FUEL = ITEMS.register("rod_zirnox_plutonium_fuel",
+            () -> new ZirnoxRodItem(new Item.Properties(), 175_000, 65, false));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_PLUTONIUM_FUEL_DEPLETED = ITEMS.register("rod_zirnox_plutonium_fuel_depleted",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_TH232 = ITEMS.register("rod_zirnox_th232",
+            () -> new ZirnoxRodItem(new Item.Properties(), 20_000, 0, true));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_THORIUM_FUEL = ITEMS.register("rod_zirnox_thorium_fuel",
+            () -> new ZirnoxRodItem(new Item.Properties(), 200_000, 40, false));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_THORIUM_FUEL_DEPLETED = ITEMS.register("rod_zirnox_thorium_fuel_depleted",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_TRITIUM = ITEMS.register("rod_zirnox_tritium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_U233_FUEL = ITEMS.register("rod_zirnox_u233_fuel",
+            () -> new ZirnoxRodItem(new Item.Properties(), 150_000, 100, false));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_U233_FUEL_DEPLETED = ITEMS.register("rod_zirnox_u233_fuel_depleted",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_U235_FUEL = ITEMS.register("rod_zirnox_u235_fuel",
+            () -> new ZirnoxRodItem(new Item.Properties(), 165_000, 85, false));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_U235_FUEL_DEPLETED = ITEMS.register("rod_zirnox_u235_fuel_depleted",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_URANIUM_FUEL = ITEMS.register("rod_zirnox_uranium_fuel",
+            () -> new ZirnoxRodItem(new Item.Properties(), 200_000, 50, false));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_URANIUM_FUEL_DEPLETED = ITEMS.register("rod_zirnox_uranium_fuel_depleted",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_ZFB_MOX = ITEMS.register("rod_zirnox_zfb_mox",
+            () -> new ZirnoxRodItem(new Item.Properties(), 50_000, 35, false));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_ZFB_MOX_DEPLETED = ITEMS.register("rod_zirnox_zfb_mox_depleted",
+            () -> new Item(new Item.Properties()));
+
     // RAW METALS
 
     public static final RegistrySupplier<Item> URANIUM_RAW = ITEMS.register("uranium_raw",
@@ -1392,6 +1461,124 @@ public class ModItems {
 
 	public static final RegistrySupplier<Item> CYCLOTRON = ITEMS.register("cyclotron",
         () -> new MultiblockBlockItem(ModBlocks.CYCLOTRON.get(), new Item.Properties()));
+
+    // ─── Cyclotron particle parts ─────────────────────────────────────────────
+    /** Lithium ion — accelerated in the cyclotron as a low-energy particle. */
+    public static final RegistrySupplier<Item> PART_LITHIUM    = ITEMS.register("part_lithium",    () -> new Item(new Item.Properties().stacksTo(16)));
+    /** Beryllium particle — medium-energy cyclotron projectile. */
+    public static final RegistrySupplier<Item> PART_BERYLLIUM  = ITEMS.register("part_beryllium",  () -> new Item(new Item.Properties().stacksTo(16)));
+    /** Carbon (coal-derived) particle — low-energy cyclotron projectile. */
+    public static final RegistrySupplier<Item> PART_CARBON     = ITEMS.register("part_carbon",     () -> new Item(new Item.Properties().stacksTo(16)));
+    /** Copper ion — medium-energy cyclotron projectile. */
+    public static final RegistrySupplier<Item> PART_COPPER     = ITEMS.register("part_copper",     () -> new Item(new Item.Properties().stacksTo(16)));
+    /** Plutonium nucleus — high-energy cyclotron projectile, produces australium. */
+    public static final RegistrySupplier<Item> PART_PLUTONIUM  = ITEMS.register("part_plutonium",  () -> new Item(new Item.Properties().stacksTo(16)));
+
+    // ─── Cast Molds ───────────────────────────────────────────────────────────
+    public static final RegistrySupplier<Item> MOLD_BARREL_HEAVY = ITEMS.register("mold_barrel_heavy",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.BARREL_HEAVY, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_BARREL_LIGHT = ITEMS.register("mold_barrel_light",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.BARREL_LIGHT, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_BASE = ITEMS.register("mold_base",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.BASE, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_BILLET = ITEMS.register("mold_billet",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.BILLET, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_BLADE = ITEMS.register("mold_blade",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.BLADE, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_BLADES = ITEMS.register("mold_blades",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.BLADES, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_BLOCK = ITEMS.register("mold_block",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.BLOCK, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_C357 = ITEMS.register("mold_c357",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.C357, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_CBUCKSHOT = ITEMS.register("mold_cbuckshot",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.CBUCKSHOT, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_GEM = ITEMS.register("mold_gem",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.GEM, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_GRIP = ITEMS.register("mold_grip",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.GRIP, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_HULL_BIG = ITEMS.register("mold_hull_big",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.HULL_BIG, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_HULL_SMALL = ITEMS.register("mold_hull_small",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.HULL_SMALL, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_INGOT = ITEMS.register("mold_ingot",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.INGOT, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_INGOTS = ITEMS.register("mold_ingots",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.INGOTS, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_MECHANISM = ITEMS.register("mold_mechanism",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.MECHANISM, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_MOGUS = ITEMS.register("mold_mogus",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.MOGUS, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_NUGGET = ITEMS.register("mold_nugget",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.NUGGET, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_PIPE = ITEMS.register("mold_pipe",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.PIPE, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_PIPES = ITEMS.register("mold_pipes",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.PIPES, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_PLATE = ITEMS.register("mold_plate",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.PLATE, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_PLATE_CAST = ITEMS.register("mold_plate_cast",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.PLATE_CAST, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_PLATES = ITEMS.register("mold_plates",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.PLATES, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_PLATES_CAST = ITEMS.register("mold_plates_cast",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.PLATES_CAST, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_RECEIVER_HEAVY = ITEMS.register("mold_receiver_heavy",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.RECEIVER_HEAVY, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_RECEIVER_LIGHT = ITEMS.register("mold_receiver_light",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.RECEIVER_LIGHT, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_SHELL = ITEMS.register("mold_shell",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.SHELL, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_STAMP = ITEMS.register("mold_stamp",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.STAMP, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_STEEL_BASE = ITEMS.register("mold_steel_base",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.STEEL_BASE, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_STOCK = ITEMS.register("mold_stock",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.STOCK, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_WIRE = ITEMS.register("mold_wire",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.WIRE, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_WIRE_DENSE = ITEMS.register("mold_wire_dense",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.WIRE_DENSE, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_WIRES_DENSE = ITEMS.register("mold_wires_dense",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.WIRES_DENSE, new Item.Properties()));
+
+    // ─── Cast Plates (plate_cast_<material>) ─────────────────────────────────
+    // Port of the original metadata-based plate_cast item. Each material is a
+    // separate registration in the modern system.
+    public static final RegistrySupplier<Item> PLATE_CAST_IRON        = ITEMS.register("plate_cast_iron",        () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_STEEL       = ITEMS.register("plate_cast_steel",       () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_COPPER      = ITEMS.register("plate_cast_copper",      () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_GOLD        = ITEMS.register("plate_cast_gold",        () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_TITANIUM    = ITEMS.register("plate_cast_titanium",    () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_ALUMINIUM   = ITEMS.register("plate_cast_aluminium",   () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_TUNGSTEN    = ITEMS.register("plate_cast_tungsten",    () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_ZIRCONIUM   = ITEMS.register("plate_cast_zirconium",   () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_OSMIRIDIUM  = ITEMS.register("plate_cast_osmiridium",  () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_ALLOY       = ITEMS.register("plate_cast_alloy",       () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_DURA_STEEL  = ITEMS.register("plate_cast_dura_steel",  () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_DESH        = ITEMS.register("plate_cast_desh",        () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_STAR_METAL  = ITEMS.register("plate_cast_star_metal",  () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_TCALLOY     = ITEMS.register("plate_cast_tcalloy",     () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_CDALLOY     = ITEMS.register("plate_cast_cdalloy",     () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_CMB         = ITEMS.register("plate_cast_cmb",         () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_SCHRABIDIUM = ITEMS.register("plate_cast_schrabidium", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_BBRONZE     = ITEMS.register("plate_cast_bbronze",     () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_ABRONZE     = ITEMS.register("plate_cast_abronze",     () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_SATURNITE   = ITEMS.register("plate_cast_saturnite",   () -> new Item(new Item.Properties()));
+
+    // ─── Welded Plates (plate_welded_<material>) ─────────────────────────────
+    // Produced by the Arc Welder from 2× cast plates of the same material.
+    public static final RegistrySupplier<Item> PLATE_WELDED_IRON       = ITEMS.register("plate_welded_iron",       () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_WELDED_STEEL      = ITEMS.register("plate_welded_steel",      () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_WELDED_COPPER     = ITEMS.register("plate_welded_copper",     () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_WELDED_TITANIUM   = ITEMS.register("plate_welded_titanium",   () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_WELDED_ALUMINIUM  = ITEMS.register("plate_welded_aluminium",  () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_WELDED_TUNGSTEN   = ITEMS.register("plate_welded_tungsten",   () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_WELDED_ZIRCONIUM  = ITEMS.register("plate_welded_zirconium",  () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_WELDED_OSMIRIDIUM = ITEMS.register("plate_welded_osmiridium", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_WELDED_TCALLOY    = ITEMS.register("plate_welded_tcalloy",    () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_WELDED_CDALLOY    = ITEMS.register("plate_welded_cdalloy",    () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_WELDED_CMB        = ITEMS.register("plate_welded_cmb",        () -> new Item(new Item.Properties()));
 
 	public static final RegistrySupplier<Item> ZIRNOX = ITEMS.register("zirnox",
         () -> new MultiblockBlockItem(ModBlocks.ZIRNOX.get(), new Item.Properties()));
@@ -2061,6 +2248,72 @@ public class ModItems {
 //                            .craftRemainder(Items.BUCKET)
 //                            .stacksTo(1)));
 
+
+    // ─── RBMK Items ──────────────────────────────────────────────────────────
+
+    public static final RegistrySupplier<Item> RBMK_LID = ITEMS.register("rbmk_lid",
+            () -> new RBMKLidItem(1, new Item.Properties()));
+
+    public static final RegistrySupplier<Item> RBMK_LID_GLASS = ITEMS.register("rbmk_lid_glass",
+            () -> new RBMKLidItem(2, new Item.Properties()));
+
+    // Pellets
+    public static final RegistrySupplier<Item> RBMK_PELLET_LEU235 = ITEMS.register("rbmk_pellet_leu235",
+            () -> new RBMKPelletItem(new Item.Properties())
+                    .setFullName("Low-Enriched Uranium-235").setYield(250_000).setReactivity(80)
+                    .setHeat(1.8).setMeltingPoint(1000).setTint(0x4a6a1a));
+
+    public static final RegistrySupplier<Item> RBMK_PELLET_HEU235 = ITEMS.register("rbmk_pellet_heu235",
+            () -> new RBMKPelletItem(new Item.Properties())
+                    .setFullName("High-Enriched Uranium-235").setYield(125_000).setReactivity(200)
+                    .setHeat(2.0).setMeltingPoint(1000).setTint(0x6e901e));
+
+    public static final RegistrySupplier<Item> RBMK_PELLET_LEP = ITEMS.register("rbmk_pellet_lep",
+            () -> new RBMKPelletItem(new Item.Properties())
+                    .setFullName("Low-Enriched Plutonium").setYield(225_000).setReactivity(100)
+                    .setHeat(2.2).setMeltingPoint(975).setTint(0x7c2a12)
+                    .setNeutronTypes(NType.FAST, NType.FAST));
+
+    public static final RegistrySupplier<Item> RBMK_PELLET_HEP = ITEMS.register("rbmk_pellet_hep239",
+            () -> new RBMKPelletItem(new Item.Properties())
+                    .setFullName("High-Enriched Plutonium-239").setYield(100_000).setReactivity(225)
+                    .setHeat(2.5).setMeltingPoint(975).setTint(0xa03318)
+                    .setNeutronTypes(NType.FAST, NType.FAST));
+
+    public static final RegistrySupplier<Item> RBMK_PELLET_MOX = ITEMS.register("rbmk_pellet_mox",
+            () -> new RBMKPelletItem(new Item.Properties())
+                    .setFullName("Mixed Oxide Fuel").setYield(200_000).setReactivity(130)
+                    .setHeat(2.1).setMeltingPoint(1000).setTint(0x604018)
+                    .setNeutronTypes(NType.ANY, NType.FAST));
+
+    // Fuel Rods (assembled from pellets)
+    public static final RegistrySupplier<Item> RBMK_FUEL_LEU235 = ITEMS.register("rbmk_fuel_leu235",
+            () -> new RBMKRodItem("Low-Enriched Uranium-235 Rod", new Item.Properties())
+                    .setYield(250_000).setStats(80).setHeat(1.8).setMeltingPoint(1000)
+                    .setDiffusion(0.02).setTint(0x4a6a1a));
+
+    public static final RegistrySupplier<Item> RBMK_FUEL_HEU235 = ITEMS.register("rbmk_fuel_heu235",
+            () -> new RBMKRodItem("High-Enriched Uranium-235 Rod", new Item.Properties())
+                    .setYield(125_000).setStats(200).setHeat(2.0).setMeltingPoint(1100)
+                    .setDiffusion(0.025).setTint(0x6e901e));
+
+    public static final RegistrySupplier<Item> RBMK_FUEL_LEP = ITEMS.register("rbmk_fuel_lep",
+            () -> new RBMKRodItem("Low-Enriched Plutonium Rod", new Item.Properties())
+                    .setYield(225_000).setStats(100).setHeat(2.2).setMeltingPoint(975)
+                    .setDiffusion(0.02).setTint(0x7c2a12).setNeutronTypes(NType.FAST, NType.FAST));
+
+    public static final RegistrySupplier<Item> RBMK_FUEL_HEP = ITEMS.register("rbmk_fuel_hep239",
+            () -> new RBMKRodItem("High-Enriched Plutonium-239 Rod", new Item.Properties())
+                    .setYield(100_000).setStats(225).setHeat(2.5).setMeltingPoint(975)
+                    .setDiffusion(0.025).setTint(0xa03318).setNeutronTypes(NType.FAST, NType.FAST));
+
+    public static final RegistrySupplier<Item> RBMK_FUEL_MOX = ITEMS.register("rbmk_fuel_mox",
+            () -> new RBMKRodItem("Mixed Oxide Fuel Rod", new Item.Properties())
+                    .setYield(200_000).setStats(130).setHeat(2.1).setMeltingPoint(1000)
+                    .setDiffusion(0.02).setTint(0x604018).setNeutronTypes(NType.ANY, NType.FAST));
+
+    public static final RegistrySupplier<Item> RBMK_FUEL_EMPTY = ITEMS.register("rbmk_fuel_empty",
+            () -> new Item(new Item.Properties()));
 
     public static void init() {
         ITEMS.register();

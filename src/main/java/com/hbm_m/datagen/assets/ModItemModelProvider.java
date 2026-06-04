@@ -335,6 +335,27 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.BATTLE_COUNTER);
         simpleItem(ModItems.BATTLE_MODULE);
         simpleItem(ModItems.METAL_ROD);
+        simpleItem(ModItems.ROD_ZIRNOX_EMPTY);
+        simpleItem(ModItems.ROD_ZIRNOX_LES_FUEL);
+        simpleItem(ModItems.ROD_ZIRNOX_LES_FUEL_DEPLETED);
+        simpleItem(ModItems.ROD_ZIRNOX_LITHIUM);
+        simpleItem(ModItems.ROD_ZIRNOX_MOX_FUEL);
+        simpleItem(ModItems.ROD_ZIRNOX_MOX_FUEL_DEPLETED);
+        simpleItem(ModItems.ROD_ZIRNOX_NATURAL_URANIUM_FUEL);
+        simpleItem(ModItems.ROD_ZIRNOX_PLUTONIUM_FUEL);
+        simpleItem(ModItems.ROD_ZIRNOX_PLUTONIUM_FUEL_DEPLETED);
+        simpleItem(ModItems.ROD_ZIRNOX_TH232);
+        simpleItem(ModItems.ROD_ZIRNOX_THORIUM_FUEL);
+        simpleItem(ModItems.ROD_ZIRNOX_THORIUM_FUEL_DEPLETED);
+        simpleItem(ModItems.ROD_ZIRNOX_TRITIUM);
+        simpleItem(ModItems.ROD_ZIRNOX_U233_FUEL);
+        simpleItem(ModItems.ROD_ZIRNOX_U233_FUEL_DEPLETED);
+        simpleItem(ModItems.ROD_ZIRNOX_U235_FUEL);
+        simpleItem(ModItems.ROD_ZIRNOX_U235_FUEL_DEPLETED);
+        simpleItem(ModItems.ROD_ZIRNOX_URANIUM_FUEL);
+        simpleItem(ModItems.ROD_ZIRNOX_URANIUM_FUEL_DEPLETED);
+        simpleItem(ModItems.ROD_ZIRNOX_ZFB_MOX);
+        simpleItem(ModItems.ROD_ZIRNOX_ZFB_MOX_DEPLETED);
 
         simpleItem(ModItems.PLATE_IRON);
         simpleItem(ModItems.PLATE_STEEL);
@@ -379,6 +400,44 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.PLATE_FUEL_U235);
         withExistingParent(ModItems.RBMK_FUEL_DRX.getId().getPath(), "item/generated")
             .texture("layer0", modLoc("block/rbmkrods/" + ModItems.RBMK_FUEL_DRX.getId().getPath()));
+
+        // RBMK fuel rods
+        withExistingParent(ModItems.RBMK_FUEL_EMPTY.getId().getPath(), "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_element_inner"));
+        withExistingParent(ModItems.RBMK_FUEL_LEU235.getId().getPath(), "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_fuel"));
+        withExistingParent(ModItems.RBMK_FUEL_HEU235.getId().getPath(), "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_fuel"));
+        withExistingParent(ModItems.RBMK_FUEL_LEP.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_fuel"));
+        withExistingParent(ModItems.RBMK_FUEL_HEP.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_fuel"));
+        withExistingParent(ModItems.RBMK_FUEL_MOX.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_fuel"));
+        // RBMK pellets
+        withExistingParent(ModItems.RBMK_PELLET_LEU235.getId().getPath(), "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_element_inner"));
+        withExistingParent(ModItems.RBMK_PELLET_HEU235.getId().getPath(), "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_element_inner"));
+        withExistingParent(ModItems.RBMK_PELLET_LEP.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_element_inner"));
+        withExistingParent(ModItems.RBMK_PELLET_HEP.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_element_inner"));
+        withExistingParent(ModItems.RBMK_PELLET_MOX.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_element_inner"));
+        // RBMK lids
+        withExistingParent(ModItems.RBMK_LID.getId().getPath(),       "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_blank_cover_top"));
+        withExistingParent(ModItems.RBMK_LID_GLASS.getId().getPath(), "item/generated").texture("layer0", modLoc("block/rbmk/rbmk_blank_glass_top"));
+
+        // RBMK block items — parent points to block/rbmk/ not block/machines/
+        java.util.List<dev.architectury.registry.registries.RegistrySupplier<net.minecraft.world.level.block.Block>> rbmkBlocks = java.util.List.of(
+            ModBlocks.RBMK_ROD, ModBlocks.RBMK_ROD_MOD, ModBlocks.RBMK_CONTROL,
+            ModBlocks.RBMK_CONTROL_BLUE, ModBlocks.RBMK_CONTROL_GREEN, ModBlocks.RBMK_CONTROL_YELLOW,
+            ModBlocks.RBMK_CONTROL_PURPLE, ModBlocks.RBMK_CONTROL_MOD, ModBlocks.RBMK_CONTROL_MOD_AUTO,
+            ModBlocks.RBMK_CONTROL_AUTO, ModBlocks.RBMK_CONTROL_REASIM, ModBlocks.RBMK_CONTROL_REASIM_AUTO,
+            ModBlocks.RBMK_MODERATOR, ModBlocks.RBMK_ABSORBER, ModBlocks.RBMK_REFLECTOR,
+            ModBlocks.RBMK_COOLER, ModBlocks.RBMK_BOILER, ModBlocks.RBMK_HEATER,
+            ModBlocks.RBMK_OUTGASSER, ModBlocks.RBMK_STORAGE, ModBlocks.RBMK_BLANK,
+            ModBlocks.RBMK_STEAM_INLET, ModBlocks.RBMK_STEAM_OUTLET,
+            ModBlocks.RBMK_LOADER, ModBlocks.RBMK_AUTOLOADER, ModBlocks.RBMK_CRANE_CONSOLE,
+            ModBlocks.RBMK_DISPLAY, ModBlocks.RBMK_GAUGE, ModBlocks.RBMK_INDICATOR,
+            ModBlocks.RBMK_LEVER, ModBlocks.RBMK_NUMITRON, ModBlocks.RBMK_GRAPH,
+            ModBlocks.RBMK_TERMINAL, ModBlocks.RBMK_KEYPAD,
+            ModBlocks.RBMK_DEBRIS, ModBlocks.RBMK_DEBRIS_BURNING,
+            ModBlocks.RBMK_DEBRIS_DIGAMMA, ModBlocks.RBMK_DEBRIS_RADIATING
+        );
+        for (var rb : rbmkBlocks) {
+            withExistingParent(rb.getId().getPath(), modLoc("block/rbmk/" + rb.getId().getPath()));
+        }
 
         simpleItem(ModItems.STAMP_STONE_FLAT);
         simpleItem(ModItems.STAMP_STONE_PLATE);
@@ -508,6 +567,45 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.COOLING_TOWER);
         blockItemFromBlockModelMachine(ModBlocks.TOWER_SMALL);
         blockItemFromBlockModelMachine(ModBlocks.CYCLOTRON);
+
+        // ─── Cast / Welded Plates ─────────────────────────────────────────────
+        withExistingParent(ModItems.PLATE_CAST_IRON.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
+        withExistingParent(ModItems.PLATE_CAST_STEEL.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
+        withExistingParent(ModItems.PLATE_CAST_COPPER.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
+        withExistingParent(ModItems.PLATE_CAST_GOLD.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
+        withExistingParent(ModItems.PLATE_CAST_TITANIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
+        withExistingParent(ModItems.PLATE_CAST_ALUMINIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
+        withExistingParent(ModItems.PLATE_CAST_TUNGSTEN.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
+        withExistingParent(ModItems.PLATE_CAST_ZIRCONIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
+        withExistingParent(ModItems.PLATE_CAST_OSMIRIDIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
+        withExistingParent(ModItems.PLATE_CAST_ALLOY.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
+        withExistingParent(ModItems.PLATE_CAST_DURA_STEEL.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
+        withExistingParent(ModItems.PLATE_CAST_DESH.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
+        withExistingParent(ModItems.PLATE_CAST_STAR_METAL.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
+        withExistingParent(ModItems.PLATE_CAST_TCALLOY.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
+        withExistingParent(ModItems.PLATE_CAST_CDALLOY.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
+        withExistingParent(ModItems.PLATE_CAST_CMB.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
+        withExistingParent(ModItems.PLATE_CAST_SCHRABIDIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
+        withExistingParent(ModItems.PLATE_CAST_BBRONZE.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
+        withExistingParent(ModItems.PLATE_CAST_ABRONZE.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
+        withExistingParent(ModItems.PLATE_CAST_SATURNITE.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
+        withExistingParent(ModItems.PLATE_WELDED_IRON.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
+        withExistingParent(ModItems.PLATE_WELDED_STEEL.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
+        withExistingParent(ModItems.PLATE_WELDED_COPPER.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
+        withExistingParent(ModItems.PLATE_WELDED_TITANIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
+        withExistingParent(ModItems.PLATE_WELDED_ALUMINIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
+        withExistingParent(ModItems.PLATE_WELDED_TUNGSTEN.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
+        withExistingParent(ModItems.PLATE_WELDED_ZIRCONIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
+        withExistingParent(ModItems.PLATE_WELDED_OSMIRIDIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
+        withExistingParent(ModItems.PLATE_WELDED_TCALLOY.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
+        withExistingParent(ModItems.PLATE_WELDED_CDALLOY.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
+        withExistingParent(ModItems.PLATE_WELDED_CMB.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
+        // Cyclotron particle parts
+        withExistingParent(ModItems.PART_LITHIUM.getId().getPath(),   "item/generated").texture("layer0", modLoc("item/part_lithium"));
+        withExistingParent(ModItems.PART_BERYLLIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("item/part_beryllium"));
+        withExistingParent(ModItems.PART_CARBON.getId().getPath(),    "item/generated").texture("layer0", modLoc("item/part_carbon"));
+        withExistingParent(ModItems.PART_COPPER.getId().getPath(),    "item/generated").texture("layer0", modLoc("item/part_copper"));
+        withExistingParent(ModItems.PART_PLUTONIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("item/part_plutonium"));
         blockItemFromBlockModelMachine(ModBlocks.ZIRNOX);
         blockItemFromBlockModelMachine(ModBlocks.ARC_WELDER);
         blockItemFromBlockModelMachine(ModBlocks.SOLDERING_STATION);

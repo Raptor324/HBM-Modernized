@@ -211,6 +211,20 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.getIngot(ModIngots.BIORUBBER).get())
                 .add(ModItems.getIngot(ModIngots.RUBBER).get());
 
+        this.tag(ZIRNOX_RODS)
+                .add(ModItems.ROD_ZIRNOX_LES_FUEL.get())
+                .add(ModItems.ROD_ZIRNOX_LITHIUM.get())
+                .add(ModItems.ROD_ZIRNOX_MOX_FUEL.get())
+                .add(ModItems.ROD_ZIRNOX_NATURAL_URANIUM_FUEL.get())
+                .add(ModItems.ROD_ZIRNOX_PLUTONIUM_FUEL.get())
+                .add(ModItems.ROD_ZIRNOX_TH232.get())
+                .add(ModItems.ROD_ZIRNOX_THORIUM_FUEL.get())
+                .add(ModItems.ROD_ZIRNOX_U233_FUEL.get())
+                .add(ModItems.ROD_ZIRNOX_U235_FUEL.get())
+                .add(ModItems.ROD_ZIRNOX_URANIUM_FUEL.get())
+                .add(ModItems.ROD_ZIRNOX_ZFB_MOX.get())
+                ;
+
         // Все штампы проводов
         this.tag(ModTags.Items.STAMPS_WIRE)
                 .add(ModItems.STAMP_STONE_WIRE.get())

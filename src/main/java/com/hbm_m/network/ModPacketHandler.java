@@ -63,6 +63,9 @@ public class ModPacketHandler {
     public static final ResourceLocation FLUID_IDENTIFIER_CTRL = id("fluid_identifier_ctrl");
     public static final ResourceLocation ITEM_DESIGNATOR       = id("item_designator");
     public static final ResourceLocation UPDATE_RADAR          = id("update_radar");
+        public static final ResourceLocation ZIRNOX_CONTROL        = id("zirnox_control");
+    public static final ResourceLocation RBMK_CONSOLE_CONTROL        = id("rbmk_console_control");
+    public static final ResourceLocation SOLDERING_STATION_CONTROL   = id("soldering_station_control");
     public static final ResourceLocation ORPHANED_PHANTOMS     = id("orphaned_phantoms");
     public static final ResourceLocation SPAWN_PARTICLE        = id("spawn_particle");
     public static final ResourceLocation MISSILE_TRACK        = id("missile_track");
@@ -199,6 +202,18 @@ public class ModPacketHandler {
         registerC2S(UPDATE_RADAR,
                 UpdateRadarC2SPacket::decode,
                 UpdateRadarC2SPacket::handle);
+
+        registerC2S(ZIRNOX_CONTROL,
+                ZirnoxControlPacket::decode,
+                ZirnoxControlPacket::handle);
+
+        registerC2S(RBMK_CONSOLE_CONTROL,
+                RBMKConsoleControlPacket::decode,
+                RBMKConsoleControlPacket::handle);
+
+        registerC2S(SOLDERING_STATION_CONTROL,
+                SolderingStationControlPacket::decode,
+                SolderingStationControlPacket::handle);
     }
 
     // ══════════════════════ Вспомогательные методы ════════════════════════════

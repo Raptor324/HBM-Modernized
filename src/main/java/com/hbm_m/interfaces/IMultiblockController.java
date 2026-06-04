@@ -44,4 +44,12 @@ public interface IMultiblockController {
         // Это сигнал для системы: "У меня нет кастомной формы, генерируй стандартную".
         return null;
     }
+
+    /**
+     * Returns whether this controller should be destroyed when one of its machine parts is removed.
+     * Override to return false for "permanent" destroyed/ruin states that should never auto-collapse.
+     */
+    default boolean shouldDestroyOnPartRemoved() {
+        return true;
+    }
 }

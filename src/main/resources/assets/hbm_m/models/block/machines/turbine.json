@@ -1,8 +1,8 @@
 {
+  "loader": "forge:composite",
   "textures": {
     "particle": "hbm_m:block/machine/turbine"
   },
-  "loader": "forge:composite",
   "children": {
     "turbine_model": {
       "loader": "forge:obj",
