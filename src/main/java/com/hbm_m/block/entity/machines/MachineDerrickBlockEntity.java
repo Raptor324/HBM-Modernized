@@ -1,12 +1,15 @@
 package com.hbm_m.block.entity.machines;
 
-import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.block.entity.OilDrillBaseBlockEntity;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.menu.MachineDerrickMenu;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -14,75 +17,59 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class MachineDerrickBlockEntity extends BaseMachineBlockEntity {
+public class MachineDerrickBlockEntity extends OilDrillBaseBlockEntity {
 
-    private static final int DEFAULT_MAX_PROGRESS = 200;
+    private static final long MAX_POWER     = 100_000L;
+    private static final int  CONSUMPTION   = 100;
+    private static final int  DELAY         = 50;
 
-    private int progress = 0;
-    private int maxProgress = DEFAULT_MAX_PROGRESS;
-    private boolean active = false;
+    private static final int OIL_PER_DEPOSIT     = 1000;
+    private static final int GAS_PER_DEPOSIT_MIN = 100;
+    private static final int GAS_PER_DEPOSIT_MAX = 500;
 
     public MachineDerrickBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.DERRICK_BE.get(), pos, state, 0, 0L, 0L, 0L);
+        super(ModBlockEntities.DERRICK_BE.get(), pos, state);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineDerrickBlockEntity blockEntity) {
-        if (!level.isClientSide) {
-            blockEntity.serverTick();
-        }
-    }
-
-    private void serverTick() {
-        if (active) {
-            progress++;
-            if (progress >= maxProgress) {
-                progress = 0;
-            }
-            setChanged();
-        }
-    }
-
-    public int getProgressScaled(int scale) {
-        if (maxProgress <= 0) {
-            return 0;
-        }
-        return progress * scale / maxProgress;
-    }
-
-    public int getProgress() {
-        return progress;
-    }
-
-    public int getMaxProgress() {
-        return maxProgress;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-        setChanged();
+        OilDrillBaseBlockEntity.tick(level, pos, state, blockEntity);
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.putInt("progress", progress);
-        tag.putInt("max_progress", maxProgress);
-        tag.putBoolean("active", active);
+    public int getPowerReq() {
+        return CONSUMPTION;
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        progress = tag.getInt("progress");
-        maxProgress = tag.getInt("max_progress");
-        if (maxProgress <= 0) {
-            maxProgress = DEFAULT_MAX_PROGRESS;
-        }
-        active = tag.getBoolean("active");
+    public int getDelay() {
+        return DELAY;
+    }
+
+    @Override
+    public long getMaxPower() {
+        return MAX_POWER;
+    }
+
+    @Override
+    public void onSuck(BlockPos pos) {
+        level.playSound(null, worldPosition, SoundEvents.GENERIC_SPLASH, SoundSource.BLOCKS, 2.0F, 0.5F);
+
+        int gas = GAS_PER_DEPOSIT_MIN + level.getRandom().nextInt(GAS_PER_DEPOSIT_MAX - GAS_PER_DEPOSIT_MIN + 1);
+        tanks[0].fillMb(ModFluids.CRUDE_OIL.getSource(), OIL_PER_DEPOSIT);
+        tanks[1].fillMb(ModFluids.GAS.getSource(), gas);
+
+        // one pump exhausts the deposit completely
+        level.setBlockAndUpdate(pos, com.hbm_m.block.ModBlocks.ORE_OIL_EMPTY.get().defaultBlockState());
+    }
+
+    @Override
+    public Direction[] getConPos() {
+        return new Direction[]{Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST};
+    }
+
+    @Override
+    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
+        return true;
     }
 
     @Override
@@ -93,11 +80,6 @@ public class MachineDerrickBlockEntity extends BaseMachineBlockEntity {
     @Override
     public Component getDisplayName() {
         return getDefaultName();
-    }
-
-    @Override
-    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return false;
     }
 
     @Override

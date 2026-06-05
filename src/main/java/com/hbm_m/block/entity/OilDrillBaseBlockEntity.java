@@ -39,11 +39,18 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity imp
     protected Set<BlockPos> trace = new HashSet<>();
 
     public OilDrillBaseBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
-        super(type, pos, state, 8, 0, 0, 0); // maxEnergy и consumption переопределяются в getPowerReq
+        // capacity = Long.MAX_VALUE so chargeFromBatterySlot sees available headroom;
+        // actual energy cap is enforced by getMaxPower() in tick and getMaxEnergyStored().
+        super(type, pos, state, 8, Long.MAX_VALUE, Long.MAX_VALUE, 0);
 
         tanks = new FluidTank[2];
         tanks[0] = new FluidTank(ModFluids.CRUDE_OIL.getSource(), 64_000);
         tanks[1] = new FluidTank(ModFluids.GAS.getSource(), 64_000);
+    }
+
+    @Override
+    public long getMaxEnergyStored() {
+        return getMaxPower();
     }
 
     @Override
@@ -113,24 +120,34 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity imp
             entity.energy -= entity.getPowerReqEff();
 
             if (level.getGameTime() % entity.getDelayEff() == 0) {
-                entity.indicator = 0;
 
+                // Only drill/suck if ORE_OIL actually exists somewhere in the column
+                boolean oilInColumn = false;
                 for (int y = pos.getY() - 1; y >= entity.getDrillDepth(); y--) {
-                    BlockPos checkPos = new BlockPos(pos.getX(), y, pos.getZ());
-                    Block b = level.getBlockState(checkPos).getBlock();
-
-                    // Если это не труба нефтяной вышки
-                    if (b != ModBlocks.OIL_PIPE.get()) {
-                        if (entity.trySuck(checkPos)) {
-                            break;
-                        } else {
-                            entity.tryDrill(checkPos);
-                            break;
-                        }
+                    Block b = level.getBlockState(new BlockPos(pos.getX(), y, pos.getZ())).getBlock();
+                    if (b == ModBlocks.ORE_OIL.get()) {
+                        oilInColumn = true;
+                        break;
                     }
+                }
 
-                    if (y == entity.getDrillDepth()) {
-                        entity.indicator = 1;
+                if (!oilInColumn) {
+                    entity.indicator = 1; // reached bottom / no oil
+                } else {
+                    entity.indicator = 0;
+
+                    for (int y = pos.getY() - 1; y >= entity.getDrillDepth(); y--) {
+                        BlockPos checkPos = new BlockPos(pos.getX(), y, pos.getZ());
+                        Block b = level.getBlockState(checkPos).getBlock();
+
+                        if (b != ModBlocks.OIL_PIPE.get()) {
+                            if (entity.trySuck(checkPos)) {
+                                break;
+                            } else {
+                                entity.tryDrill(checkPos);
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -219,7 +236,7 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity imp
     }
 
     public boolean canSuckBlock(Block b) {
-        return b == ModBlocks.ORE_OIL.get() || b == ModBlocks.ORE_OIL.get();//TODO: CHANGE 2ND TO OIL_EMPTY
+        return b == ModBlocks.ORE_OIL.get() || b == ModBlocks.ORE_OIL_EMPTY.get();
     }
 
     public boolean suckRec(BlockPos pos, int layer) {

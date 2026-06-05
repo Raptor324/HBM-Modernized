@@ -940,6 +940,9 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> ORE_OIL = registerBlock("ore_oil",
             () -> new Block(Block.Properties.copy(Blocks.STONE).strength(3.0F, 3.0F).noOcclusion()));
 
+    public static final RegistrySupplier<Block> ORE_OIL_EMPTY = registerBlock("ore_oil_empty",
+            () -> new Block(Block.Properties.copy(Blocks.STONE).strength(3.0F, 3.0F).noOcclusion()));
+
     public static final RegistrySupplier<Block> BEDROCK_OIL = registerBlock("bedrock_oil",
             () -> new Block(Block.Properties.copy(Blocks.STONE).strength(50.0F, 1200.0F).noOcclusion()));
 
