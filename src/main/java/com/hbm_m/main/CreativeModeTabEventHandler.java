@@ -184,6 +184,12 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.MINE_AP.get()));
         add.accept(new ItemStack(ModBlocks.MINE_FAT.get()));
         add.accept(new ItemStack(ModBlocks.NUKE_FAT_MAN.get()));
+        add.accept(new ItemStack(ModItems.NUKE_PROTOTYPE.get()));
+        add.accept(new ItemStack(ModItems.IGNITER.get()));
+        add.accept(new ItemStack(ModItems.CELL_SAS3.get()));
+        add.accept(new ItemStack(ModItems.ROD_QUAD_LEAD.get()));
+        add.accept(new ItemStack(ModItems.ROD_QUAD_NP237.get()));
+        add.accept(new ItemStack(ModItems.ROD_QUAD_URANIUM.get()));
         add.accept(new ItemStack(ModItems.FAT_MAN_EXPLOSIVE.get()));
         add.accept(new ItemStack(ModItems.FAT_MAN_IGNITER.get()));
         add.accept(new ItemStack(ModItems.FAT_MAN_CORE.get()));

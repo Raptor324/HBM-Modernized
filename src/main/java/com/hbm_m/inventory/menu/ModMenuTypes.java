@@ -158,6 +158,9 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<NukeFatManMenu>> NUKE_FAT_MAN_MENU =
             MENUS.register("nuke_fat_man_menu", () -> MenuRegistry.ofExtended(NukeFatManMenu::new));
 
+    public static final RegistrySupplier<MenuType<NukePrototypeMenu>> NUKE_PROTOTYPE_MENU =
+            MENUS.register("nuke_prototype_menu", () -> MenuRegistry.ofExtended(NukePrototypeMenu::new));
+
     public static final RegistrySupplier<MenuType<HeatingOvenMenu>> HEATING_OVEN_MENU =
             MENUS.register("heating_oven_menu", () -> MenuRegistry.ofExtended(HeatingOvenMenu::new));
 

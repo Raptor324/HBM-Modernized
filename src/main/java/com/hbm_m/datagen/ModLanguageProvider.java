@@ -649,6 +649,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.DUD_CONVENTIONAL.get(), "Неразорвавшаяся фугасная бомба");
                 add(ModBlocks.MINE_FAT.get(), "Мина 'Толстяк'");
                 add(ModBlocks.NUKE_FAT_MAN.get(), "Ядерная бомба 'Толстяк'");
+                add(ModItems.NUKE_PROTOTYPE.get(), "Прототип атомной бомбы");
+                add("container.hbm_m.nuke_prototype", "Прототип");
+                add(ModItems.IGNITER.get(), "Детонатор");
+                add(ModItems.CELL_SAS3.get(), "Топливная ячейка СА-С3");
+                add(ModItems.ROD_QUAD_LEAD.get(), "Четырёхкратный свинцовый стержень");
+                add(ModItems.ROD_QUAD_NP237.get(), "Четырёхкратный стержень Нп-237");
+                add(ModItems.ROD_QUAD_URANIUM.get(), "Четырёхкратный урановый стержень");
                 add(ModItems.FAT_MAN_EXPLOSIVE.get(), "Ранние взрывные линзы");
                 add(ModItems.FAT_MAN_IGNITER.get(), "Воспламенитель 'Толстяк'");
                 add(ModItems.FAT_MAN_CORE.get(), "Плутониевое ядро");
@@ -2134,6 +2141,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("itemGroup.hbm_m.ntm_building_tab", "NTM Building Blocks");
 
                 add(ModBlocks.NUKE_FAT_MAN.get(), "Fat Man");
+                add(ModItems.NUKE_PROTOTYPE.get(), "Prototype");
+                add("container.hbm_m.nuke_prototype", "Prototype");
+                add(ModItems.IGNITER.get(), "Igniter");
+                add(ModItems.CELL_SAS3.get(), "SA-S3 Fuel Cell");
+                add(ModItems.ROD_QUAD_LEAD.get(), "Quad Lead Rod");
+                add(ModItems.ROD_QUAD_NP237.get(), "Quad Np-237 Rod");
+                add(ModItems.ROD_QUAD_URANIUM.get(), "Quad Uranium Rod");
                 add(ModItems.FAT_MAN_EXPLOSIVE.get(), "Early Explosive Lenses");
                 add(ModItems.FAT_MAN_IGNITER.get(), "Fat Man Igniter");
                 add(ModItems.FAT_MAN_CORE.get(), "Plutonium Core");

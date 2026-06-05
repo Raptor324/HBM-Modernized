@@ -246,6 +246,11 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(NukeFatManBlockEntity::new, ModBlocks.NUKE_FAT_MAN.get())
                             .build(null));
 
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.block.entity.bomb.NukePrototypeBlockEntity>> NUKE_PROTOTYPE_BE =
+            BLOCK_ENTITIES.register("nuke_prototype_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.block.entity.bomb.NukePrototypeBlockEntity::new, ModBlocks.NUKE_PROTOTYPE.get())
+                            .build(null));
+
     public static final RegistrySupplier<BlockEntityType<MachineShredderBlockEntity>> SHREDDER =
             BLOCK_ENTITIES.register("shredder", () ->
                     BlockEntityType.Builder.of(MachineShredderBlockEntity::new,

@@ -504,6 +504,7 @@ public class ClientSetup {
         MenuScreens.register(ModMenuTypes.LAUNCH_PAD_LARGE_MENU.get(), GUILaunchPadLarge::new);
         MenuScreens.register(ModMenuTypes.LAUNCH_PAD_RUSTED_MENU.get(), GUILaunchPadRusted::new);
         MenuScreens.register(ModMenuTypes.NUKE_FAT_MAN_MENU.get(), com.hbm_m.inventory.gui.GUINukeFatMan::new);
+        MenuScreens.register(ModMenuTypes.NUKE_PROTOTYPE_MENU.get(), com.hbm_m.inventory.gui.GUINukePrototype::new);
     }
 
     private static void registerRenderersCommon() {

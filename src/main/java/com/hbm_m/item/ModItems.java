@@ -831,7 +831,19 @@ public class ModItems {
     public static final RegistrySupplier<Item> FAT_MAN_IGNITER = ITEMS.register("fat_man_igniter",
             () -> new Item(new Item.Properties()));
 
+    public static final RegistrySupplier<Item> IGNITER = ITEMS.register("igniter",
+            () -> new Item(new Item.Properties()));
+
     public static final RegistrySupplier<Item> FAT_MAN_CORE = ITEMS.register("fat_man_core",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> CELL_SAS3 = ITEMS.register("cell_sas3",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ROD_QUAD_LEAD = ITEMS.register("rod_quad_lead",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ROD_QUAD_NP237 = ITEMS.register("rod_quad_np237",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ROD_QUAD_URANIUM = ITEMS.register("rod_quad_uranium",
             () -> new Item(new Item.Properties()));
 
     public static final RegistrySupplier<Item> CROWBAR = ITEMS.register("crowbar",
@@ -1719,6 +1731,9 @@ public class ModItems {
 
 	public static final RegistrySupplier<Item> NUKE_FAT_MAN = ITEMS.register("nuke_fat_man",
         () -> new MultiblockBlockItem(ModBlocks.NUKE_FAT_MAN.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> NUKE_PROTOTYPE = ITEMS.register("nuke_prototype",
+        () -> new net.minecraft.world.item.BlockItem(com.hbm_m.block.ModBlocks.NUKE_PROTOTYPE.get(), new Item.Properties()));
 
     // ПРОТОТИП РАКЕТЫ (TIER 0, MICRO)
     public static final RegistrySupplier<Item> MISSILE_TEST = ITEMS.register("missile_test",

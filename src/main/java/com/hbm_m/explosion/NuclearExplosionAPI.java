@@ -122,4 +122,5 @@ public final class NuclearExplosionAPI {
             return DEFAULT_FAT_MAN_RADIUS;
         }
     }
+
 }

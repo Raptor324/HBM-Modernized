@@ -989,6 +989,9 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> NUKE_FAT_MAN = registerBlockWithoutItem("nuke_fat_man",
             () -> new NukeFatManBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
 
+    public static final RegistrySupplier<Block> NUKE_PROTOTYPE = registerBlockWithoutItem("nuke_prototype",
+            () -> new com.hbm_m.block.bomb.NukePrototypeBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+
     public static final RegistrySupplier<Block> MINE_AP = registerBlock("mine_ap",
             () -> new MineBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
 
