@@ -121,13 +121,20 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity imp
 
             if (level.getGameTime() % entity.getDelayEff() == 0) {
 
-                // Only drill/suck if ORE_OIL actually exists somewhere in the column
+                // Only drill/suck if ORE_OIL actually exists somewhere in the column or adjacent to it
                 boolean oilInColumn = false;
+                outer:
                 for (int y = pos.getY() - 1; y >= entity.getDrillDepth(); y--) {
-                    Block b = level.getBlockState(new BlockPos(pos.getX(), y, pos.getZ())).getBlock();
-                    if (b == ModBlocks.ORE_OIL.get()) {
+                    BlockPos colPos = new BlockPos(pos.getX(), y, pos.getZ());
+                    if (level.getBlockState(colPos).getBlock() == ModBlocks.ORE_OIL.get()) {
                         oilInColumn = true;
                         break;
+                    }
+                    for (Direction hDir : Direction.Plane.HORIZONTAL) {
+                        if (level.getBlockState(colPos.relative(hDir)).getBlock() == ModBlocks.ORE_OIL.get()) {
+                            oilInColumn = true;
+                            break outer;
+                        }
                     }
                 }
 
@@ -140,7 +147,17 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity imp
                         BlockPos checkPos = new BlockPos(pos.getX(), y, pos.getZ());
                         Block b = level.getBlockState(checkPos).getBlock();
 
-                        if (b != ModBlocks.OIL_PIPE.get()) {
+                        if (b == ModBlocks.OIL_PIPE.get()) {
+                            // Pipe already drilled — check horizontal neighbors for accessible oil
+                            boolean sucked = false;
+                            for (Direction hDir : Direction.Plane.HORIZONTAL) {
+                                if (entity.trySuck(checkPos.relative(hDir))) {
+                                    sucked = true;
+                                    break;
+                                }
+                            }
+                            if (sucked) break;
+                        } else {
                             if (entity.trySuck(checkPos)) {
                                 break;
                             } else {
