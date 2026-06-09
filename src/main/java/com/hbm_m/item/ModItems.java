@@ -124,6 +124,7 @@ public class ModItems {
     public static final Map<ModPowders, RegistrySupplier<Item>> POWDERS = new EnumMap<>(ModPowders.class);
     public static final Map<ModIngots, RegistrySupplier<Item>> INGOT_POWDERS = new EnumMap<>(ModIngots.class);
     public static final Map<ModIngots, RegistrySupplier<Item>> INGOT_POWDERS_TINY = new EnumMap<>(ModIngots.class);
+    public static final Map<ModIngots, RegistrySupplier<Item>> WIRE_DENSE = new EnumMap<>(ModIngots.class);
 
     private static final Set<String> POWDER_TINY_NAMES = Set.of(
             "actinium", "boron", "cerium", "cobalt", "cs137", "i131",
@@ -163,7 +164,14 @@ public class ModItems {
             INGOTS.put(ingot, registeredItem);
         }
 
-        // 2. ModPowders (ТОЛЬКО ИЗ ENABLED_MODPOWDERS)  ИСПРАВЛЕНО!
+        // 2. WIRE_DENSE (ДЛЯ ВСЕХ СЛИТКОВ)
+        for (ModIngots ingot : ModIngots.values()) {
+            String id = "wire_dense_" + ingot.getName();
+            RegistrySupplier<Item> wireDenseItem = ITEMS.register(id, () -> new Item(new Item.Properties()));
+            WIRE_DENSE.put(ingot, wireDenseItem);
+        }
+
+        // 3. ModPowders (ТОЛЬКО ИЗ ENABLED_MODPOWDERS)  ИСПРАВЛЕНО!
         for (ModPowders powder : ModPowders.values()) {
             String baseName = powder.getName(); // use getName() to get lowercase name
             if (ENABLED_MODPOWDERS.contains(baseName)) {
@@ -202,6 +210,10 @@ public class ModItems {
     // УДОБНЫЙ МЕТОД ДЛЯ ПОЛУЧЕНИЯ СЛИТКА
     public static RegistrySupplier<Item> getIngot(ModIngots ingot) {
         return INGOTS.get(ingot);
+    }
+
+    public static RegistrySupplier<Item> getWireDense(ModIngots ingot) {
+        return WIRE_DENSE.get(ingot);
     }
 
     public static RegistrySupplier<Item> getPowders(ModPowders powders) {return POWDERS.get(powders);}

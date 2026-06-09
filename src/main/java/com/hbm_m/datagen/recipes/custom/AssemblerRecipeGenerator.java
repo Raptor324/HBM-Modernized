@@ -25,6 +25,7 @@ public final class AssemblerRecipeGenerator {
         registerMainRecipes(writer);
         registerElectronics(writer);
         registerPlateRecipes(writer);
+        registerCastPlateRecipes(writer);
         registerDoorRecipes(writer);
     }
 
@@ -276,6 +277,49 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.PLATE_TITANIUM.get(), 4)
                 .addIngredient(ModItems.MOTOR.get(), 1)
                 .save(writer, "centrifuge_element");
+    }
+
+    private static void registerCastPlateRecipes(Consumer<FinishedRecipe> writer) {
+        // 2 regular plates → 1 cast plate (pressing / pouring into mold)
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.PLATE_CAST_IRON.get(), 1), 60, 100)
+                .addIngredient(ModItems.PLATE_IRON.get(), 2)
+                .save(writer, "plate_cast_iron_from_plates");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.PLATE_CAST_STEEL.get(), 1), 60, 100)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 2)
+                .save(writer, "plate_cast_steel_from_plates");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.PLATE_CAST_COPPER.get(), 1), 60, 100)
+                .addIngredient(ModItems.PLATE_COPPER.get(), 2)
+                .save(writer, "plate_cast_copper_from_plates");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.PLATE_CAST_GOLD.get(), 1), 60, 100)
+                .addIngredient(ModItems.PLATE_GOLD.get(), 2)
+                .save(writer, "plate_cast_gold_from_plates");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.PLATE_CAST_TITANIUM.get(), 1), 80, 150)
+                .addIngredient(ModItems.PLATE_TITANIUM.get(), 2)
+                .save(writer, "plate_cast_titanium_from_plates");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.PLATE_CAST_ALUMINIUM.get(), 1), 60, 100)
+                .addIngredient(ModItems.PLATE_ALUMINUM.get(), 2)
+                .save(writer, "plate_cast_aluminium_from_plates");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.PLATE_CAST_DURA_STEEL.get(), 1), 100, 200)
+                .addIngredient(ModItems.PLATE_DURA_STEEL.get(), 2)
+                .save(writer, "plate_cast_dura_steel_from_plates");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.PLATE_CAST_DESH.get(), 1), 100, 200)
+                .addIngredient(ModItems.PLATE_DESH.get(), 2)
+                .save(writer, "plate_cast_desh_from_plates");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.PLATE_CAST_SCHRABIDIUM.get(), 1), 120, 300)
+                .addIngredient(ModItems.PLATE_SCHRABIDIUM.get(), 2)
+                .save(writer, "plate_cast_schrabidium_from_plates");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.PLATE_CAST_SATURNITE.get(), 1), 80, 150)
+                .addIngredient(ModItems.PLATE_SATURNITE.get(), 2)
+                .save(writer, "plate_cast_saturnite_from_plates");
     }
 
     private static void registerPlateRecipes(Consumer<FinishedRecipe> writer) {

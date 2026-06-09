@@ -34,7 +34,6 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.network.NetworkHooks;
 
@@ -44,6 +43,13 @@ public class MachineTurbineBlock extends BaseEntityBlock implements IMultiblockC
 
     private final MultiblockStructureHelper structureHelper;
 
+    // Bounds from turbine.obj + transform translation [0.5,0,0.5] (block units):
+    // X[-1.125,2.125], Y[0,2.5], Z[-2.0,3.0].
+    // EW = facing EAST/WEST (long axis along world Z).
+    // NS = facing NORTH/SOUTH (90° Y rotation swaps axes).
+    private static final VoxelShape SHAPE_EW = Block.box(-18, 0, -32, 34, 40, 48);
+    private static final VoxelShape SHAPE_NS = Block.box(-32, 0, -18, 48, 40, 34);
+
     public MachineTurbineBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
@@ -51,18 +57,44 @@ public class MachineTurbineBlock extends BaseEntityBlock implements IMultiblockC
     }
 
     private static MultiblockStructureHelper defineStructure() {
-        String[] layer0 = { "C" };
+        // Canonical NORTH orientation. Phantom blocks fill every block position the
+        // OBJ model occupies. When facing EAST (blockstate y=0) the structure covers:
+        //   worldX[-1..2], worldY[0..2], worldZ[-2..2]  (4 wide × 3 tall × 5 deep)
+        //
+        // Layout: 4 rows (depth) × 5 cols (width), controller 'C' at row 2 col 2.
+        //   centerX = (5-1)/2 = 2, centerZ = (4-1)/2 = 1
+        //   ctrlOffset = (relX=0, 0, relZ=1)  →  local offsets: X[-2..2], Z[-2..1]
+        String[] base = {
+            "OOOOO",   // localZ = -2
+            "OOOOO",   // localZ = -1
+            "OOCOO",   // localZ =  0  (controller at center)
+            "OOOOO"    // localZ =  1
+        };
+        String[] middle = {
+            "OOOOO",
+            "OOOOO",
+            "OOOOO",
+            "OOOOO"
+        };
+        String[] top = {
+            "OOOOO",
+            "OOOOO",
+            "OOOOO",
+            "OOOOO"
+        };
 
-        Map<Character, PartRole> roleMap = Map.of('C', PartRole.CONTROLLER);
-        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
+        Map<Character, PartRole> roleMap = Map.of(
+            'C', PartRole.CONTROLLER,
+            'O', PartRole.DEFAULT
+        );
 
         return MultiblockStructureHelper.createFromLayersWithRoles(
-                new String[][] { layer0 },
-                symbolMap,
-                () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-                roleMap,
-                null,
-                null
+            new String[][] { base, middle, top },
+            Map.of(),
+            () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
+            roleMap,
+            null,
+            null
         );
     }
 
@@ -74,6 +106,15 @@ public class MachineTurbineBlock extends BaseEntityBlock implements IMultiblockC
     @Override
     public PartRole getPartRole(BlockPos localOffset) {
         return structureHelper.resolvePartRole(localOffset, this);
+    }
+
+    // Phantom blocks call this for outline + collision; controller uses it for getShape/getCollisionShape.
+    @Override
+    public VoxelShape getCustomMasterVoxelShape(BlockState state) {
+        return switch (state.getValue(FACING)) {
+            case EAST, WEST -> SHAPE_EW;
+            default         -> SHAPE_NS;
+        };
     }
 
     @Nullable
@@ -132,6 +173,11 @@ public class MachineTurbineBlock extends BaseEntityBlock implements IMultiblockC
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return Shapes.block();
+        return getCustomMasterVoxelShape(state);
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return getCustomMasterVoxelShape(state);
     }
 }

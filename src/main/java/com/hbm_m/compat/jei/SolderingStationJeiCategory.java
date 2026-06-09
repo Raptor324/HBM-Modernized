@@ -29,7 +29,7 @@ public class SolderingStationJeiCategory implements IRecipeCategory<SolderingSta
     private final IDrawable icon;
 
     public SolderingStationJeiCategory(IGuiHelper guiHelper) {
-        this.background = guiHelper.createDrawable(TEXTURE, 0, 0, 176, 80);
+        this.background = guiHelper.createDrawable(TEXTURE, 0, 0, 176, 90);
         this.icon = guiHelper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(ModBlocks.SOLDERING_STATION.get()));
     }
 
@@ -54,14 +54,16 @@ public class SolderingStationJeiCategory implements IRecipeCategory<SolderingSta
     private static void addRow(IRecipeLayoutBuilder b, List<List<ItemStack>> list, int y) {
         int[] xs = {17, 35, 53};
         for (int i = 0; i < Math.min(xs.length, list.size()); i++) {
-            if (!list.get(i).isEmpty())
-                b.addSlot(RecipeIngredientRole.INPUT, xs[i], y).addItemStacks(list.get(i));
+            var stacks = list.get(i).stream().filter(s -> !s.isEmpty()).toList();
+            if (!stacks.isEmpty())
+                b.addSlot(RecipeIngredientRole.INPUT, xs[i], y).addItemStacks(stacks);
         }
     }
 
     private static void addSlotAt(IRecipeLayoutBuilder b, List<ItemStack> items, int x, int y) {
-        if (!items.isEmpty())
-            b.addSlot(RecipeIngredientRole.INPUT, x, y).addItemStacks(items);
+        var stacks = items.stream().filter(s -> !s.isEmpty()).toList();
+        if (!stacks.isEmpty())
+            b.addSlot(RecipeIngredientRole.INPUT, x, y).addItemStacks(stacks);
     }
 }
 //?} else {

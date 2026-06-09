@@ -27,7 +27,7 @@ public class ArcWelderJeiCategory implements IRecipeCategory<ArcWelderJeiRecipe>
     private final IDrawable icon;
 
     public ArcWelderJeiCategory(IGuiHelper guiHelper) {
-        this.background = guiHelper.createDrawable(TEXTURE, 0, 0, 176, 80);
+        this.background = guiHelper.createDrawable(TEXTURE, 0, 0, 176, 100);
         this.icon = guiHelper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(ModBlocks.ARC_WELDER.get()));
     }
 
@@ -41,9 +41,10 @@ public class ArcWelderJeiCategory implements IRecipeCategory<ArcWelderJeiRecipe>
         var inputs = recipe.getInputs();
         int[] xs = {17, 35, 53};
         for (int i = 0; i < Math.min(3, inputs.size()); i++) {
-            if (!inputs.get(i).isEmpty())
+            var stacks = inputs.get(i).stream().filter(s -> !s.isEmpty()).toList();
+            if (!stacks.isEmpty())
                 builder.addSlot(RecipeIngredientRole.INPUT, xs[i], 36)
-                        .addItemStacks(inputs.get(i));
+                        .addItemStacks(stacks);
         }
         builder.addSlot(RecipeIngredientRole.OUTPUT, 107, 36)
                 .addItemStack(recipe.getOutput());

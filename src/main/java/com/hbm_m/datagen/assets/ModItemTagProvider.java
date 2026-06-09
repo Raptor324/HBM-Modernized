@@ -389,6 +389,9 @@ public class ModItemTagProvider extends ItemTagsProvider {
         // Vanilla jukebox accepts only items in this tag (1.20.1)
         this.tag(ItemTags.MUSIC_DISCS)
                 .add(ModItems.MUSIC_DISC_BUNKER.get());
+
+        this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "wires_fine/lead")))
+                .add(ModItems.WIRE_CARBON.get());
     }
 }
 //?}

@@ -62,6 +62,16 @@ public class ModItemModelProvider extends ItemModelProvider {
             }
         }
 
+        // ЦИКЛ ДЛЯ WIRE_DENSE
+        for (ModIngots ingot : ModIngots.values()) {
+            RegistrySupplier<Item> wireDense = ModItems.getWireDense(ingot);
+            if (wireDense != null && wireDense.isPresent()) {
+                String name = ingot.getName();
+                withExistingParent("wire_dense_" + name, "item/generated")
+                        .texture("layer0", modLoc("item/wire_dense/wire_dense_" + name));
+            }
+        }
+
         // ЦИКЛ ДЛЯ ModPowders
         for (ModPowders powder : ModPowders.values()) {
             RegistrySupplier<Item> powderObject = ModItems.getPowders(powder);
@@ -569,43 +579,43 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.CYCLOTRON);
 
         // ─── Cast / Welded Plates ─────────────────────────────────────────────
-        withExistingParent(ModItems.PLATE_CAST_IRON.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
-        withExistingParent(ModItems.PLATE_CAST_STEEL.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
-        withExistingParent(ModItems.PLATE_CAST_COPPER.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
-        withExistingParent(ModItems.PLATE_CAST_GOLD.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
-        withExistingParent(ModItems.PLATE_CAST_TITANIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
-        withExistingParent(ModItems.PLATE_CAST_ALUMINIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
-        withExistingParent(ModItems.PLATE_CAST_TUNGSTEN.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
-        withExistingParent(ModItems.PLATE_CAST_ZIRCONIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
-        withExistingParent(ModItems.PLATE_CAST_OSMIRIDIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
-        withExistingParent(ModItems.PLATE_CAST_ALLOY.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
-        withExistingParent(ModItems.PLATE_CAST_DURA_STEEL.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
-        withExistingParent(ModItems.PLATE_CAST_DESH.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
-        withExistingParent(ModItems.PLATE_CAST_STAR_METAL.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
-        withExistingParent(ModItems.PLATE_CAST_TCALLOY.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
-        withExistingParent(ModItems.PLATE_CAST_CDALLOY.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
-        withExistingParent(ModItems.PLATE_CAST_CMB.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
-        withExistingParent(ModItems.PLATE_CAST_SCHRABIDIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
-        withExistingParent(ModItems.PLATE_CAST_BBRONZE.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
-        withExistingParent(ModItems.PLATE_CAST_ABRONZE.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
-        withExistingParent(ModItems.PLATE_CAST_SATURNITE.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast"));
-        withExistingParent(ModItems.PLATE_WELDED_IRON.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
-        withExistingParent(ModItems.PLATE_WELDED_STEEL.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
-        withExistingParent(ModItems.PLATE_WELDED_COPPER.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
-        withExistingParent(ModItems.PLATE_WELDED_TITANIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
-        withExistingParent(ModItems.PLATE_WELDED_ALUMINIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
-        withExistingParent(ModItems.PLATE_WELDED_TUNGSTEN.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
-        withExistingParent(ModItems.PLATE_WELDED_ZIRCONIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
-        withExistingParent(ModItems.PLATE_WELDED_OSMIRIDIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
-        withExistingParent(ModItems.PLATE_WELDED_TCALLOY.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
-        withExistingParent(ModItems.PLATE_WELDED_CDALLOY.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
-        withExistingParent(ModItems.PLATE_WELDED_CMB.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
+        withExistingParent(ModItems.PLATE_CAST_IRON.getId().getPath(),       "item/generated").texture("layer0", modLoc("block/plate_cast_iron"));
+        withExistingParent(ModItems.PLATE_CAST_STEEL.getId().getPath(),      "item/generated").texture("layer0", modLoc("block/plate_cast_steel"));
+        withExistingParent(ModItems.PLATE_CAST_COPPER.getId().getPath(),     "item/generated").texture("layer0", modLoc("block/plate_cast_copper"));
+        withExistingParent(ModItems.PLATE_CAST_GOLD.getId().getPath(),       "item/generated").texture("layer0", modLoc("block/plate_cast_gold"));
+        withExistingParent(ModItems.PLATE_CAST_TITANIUM.getId().getPath(),   "item/generated").texture("layer0", modLoc("block/plate_cast_titanium"));
+        withExistingParent(ModItems.PLATE_CAST_ALUMINIUM.getId().getPath(),  "item/generated").texture("layer0", modLoc("block/plate_cast_aluminium"));
+        withExistingParent(ModItems.PLATE_CAST_TUNGSTEN.getId().getPath(),   "item/generated").texture("layer0", modLoc("block/plate_cast_tungsten"));
+        withExistingParent(ModItems.PLATE_CAST_ZIRCONIUM.getId().getPath(),  "item/generated").texture("layer0", modLoc("block/plate_cast_zirconium"));
+        withExistingParent(ModItems.PLATE_CAST_OSMIRIDIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast_osmiridium"));
+        withExistingParent(ModItems.PLATE_CAST_ALLOY.getId().getPath(),      "item/generated").texture("layer0", modLoc("block/plate_cast_alloy"));
+        withExistingParent(ModItems.PLATE_CAST_DURA_STEEL.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast_dura_steel"));
+        withExistingParent(ModItems.PLATE_CAST_DESH.getId().getPath(),       "item/generated").texture("layer0", modLoc("block/plate_cast_desh"));
+        withExistingParent(ModItems.PLATE_CAST_STAR_METAL.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast_star_metal"));
+        withExistingParent(ModItems.PLATE_CAST_TCALLOY.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/plate_cast_tcalloy"));
+        withExistingParent(ModItems.PLATE_CAST_CDALLOY.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/plate_cast_cdalloy"));
+        withExistingParent(ModItems.PLATE_CAST_CMB.getId().getPath(),        "item/generated").texture("layer0", modLoc("block/plate_cast_cmb"));
+        withExistingParent(ModItems.PLATE_CAST_SCHRABIDIUM.getId().getPath(),"item/generated").texture("layer0", modLoc("block/plate_cast_schrabidium"));
+        withExistingParent(ModItems.PLATE_CAST_BBRONZE.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/plate_cast_bbronze"));
+        withExistingParent(ModItems.PLATE_CAST_ABRONZE.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/plate_cast_abronze"));
+        withExistingParent(ModItems.PLATE_CAST_SATURNITE.getId().getPath(),  "item/generated").texture("layer0", modLoc("block/plate_cast_saturnite"));
+        withExistingParent(ModItems.PLATE_WELDED_IRON.getId().getPath(),       "item/generated").texture("layer0", modLoc("block/plate_welded_iron"));
+        withExistingParent(ModItems.PLATE_WELDED_STEEL.getId().getPath(),      "item/generated").texture("layer0", modLoc("block/plate_welded_steel"));
+        withExistingParent(ModItems.PLATE_WELDED_COPPER.getId().getPath(),     "item/generated").texture("layer0", modLoc("block/plate_welded_copper"));
+        withExistingParent(ModItems.PLATE_WELDED_TITANIUM.getId().getPath(),   "item/generated").texture("layer0", modLoc("block/plate_welded_titanium"));
+        withExistingParent(ModItems.PLATE_WELDED_ALUMINIUM.getId().getPath(),  "item/generated").texture("layer0", modLoc("block/plate_welded_aluminium"));
+        withExistingParent(ModItems.PLATE_WELDED_TUNGSTEN.getId().getPath(),   "item/generated").texture("layer0", modLoc("block/plate_welded_tungsten"));
+        withExistingParent(ModItems.PLATE_WELDED_ZIRCONIUM.getId().getPath(),  "item/generated").texture("layer0", modLoc("block/plate_welded_zirconium"));
+        withExistingParent(ModItems.PLATE_WELDED_OSMIRIDIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded_osmiridium"));
+        withExistingParent(ModItems.PLATE_WELDED_TCALLOY.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/plate_welded_tcalloy"));
+        withExistingParent(ModItems.PLATE_WELDED_CDALLOY.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/plate_welded_cdalloy"));
+        withExistingParent(ModItems.PLATE_WELDED_CMB.getId().getPath(),        "item/generated").texture("layer0", modLoc("block/plate_welded_cmb"));
         // Cyclotron particle parts
-        withExistingParent(ModItems.PART_LITHIUM.getId().getPath(),   "item/generated").texture("layer0", modLoc("item/part_lithium"));
-        withExistingParent(ModItems.PART_BERYLLIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("item/part_beryllium"));
-        withExistingParent(ModItems.PART_CARBON.getId().getPath(),    "item/generated").texture("layer0", modLoc("item/part_carbon"));
-        withExistingParent(ModItems.PART_COPPER.getId().getPath(),    "item/generated").texture("layer0", modLoc("item/part_copper"));
-        withExistingParent(ModItems.PART_PLUTONIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("item/part_plutonium"));
+        withExistingParent(ModItems.PART_LITHIUM.getId().getPath(),   "item/generated").texture("layer0", modLoc("item/ingot/part_lithium"));
+        withExistingParent(ModItems.PART_BERYLLIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("item/ingot/part_beryllium"));
+        withExistingParent(ModItems.PART_CARBON.getId().getPath(),    "item/generated").texture("layer0", modLoc("item/ingot/part_carbon"));
+        withExistingParent(ModItems.PART_COPPER.getId().getPath(),    "item/generated").texture("layer0", modLoc("item/ingot/part_copper"));
+        withExistingParent(ModItems.PART_PLUTONIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("item/ingot/part_plutonium"));
         blockItemFromBlockModelMachine(ModBlocks.ZIRNOX);
         blockItemFromBlockModelMachine(ModBlocks.ARC_WELDER);
         blockItemFromBlockModelMachine(ModBlocks.SOLDERING_STATION);

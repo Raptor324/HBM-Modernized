@@ -110,7 +110,8 @@ dependencies {
 	"modRuntimeOnly"("curse.maven:smooth-boot-reloaded-633412:5016280")
 	"modRuntimeOnly"("maven.modrinth:spark:1.10.53-forge")
 	"modRuntimeOnly"("curse.maven:screenshot-to-clipboard-326950:3643026")
-
+	"modRuntimeOnly"("curse.maven:konkrete-410295:5028413")
+	"modRuntimeOnly"("curse.maven:just-zoom-561885:6290336")
 	// "modCompileOnly"("maven.modrinth:distanthorizons:lcyL2Fq3")
 	// "modRuntimeOnly"("maven.modrinth:distanthorizons:lcyL2Fq3")
 
