@@ -58,7 +58,16 @@ public class ArcWelderRecipes {
                 item(new ItemStack(ModItems.SAT_HEAD_LASER.get())),
                 item(new ItemStack(ModItems.SAT_BASE.get()))));
 
+        recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.SAT_RADAR.get()), 200, 10_000L,
+                item(new ItemStack(ModItems.SAT_HEAD_RADAR.get())),
+                item(new ItemStack(ModItems.SAT_BASE.get()))));
+
         // ── Missiles ──────────────────────────────────────────────────────────
+        recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.MISSILE_STRONG.get()), 100, 5_000L,
+                item(new ItemStack(ModItems.THRUSTER_MEDIUM.get())),
+                item(new ItemStack(ModItems.FUEL_TANK_MEDIUM.get())),
+                item(new ItemStack(ModItems.WARHEAD_GENERIC_MEDIUM.get()))));
+
         recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.MISSILE_NUCLEAR.get()), 200, 50_000L,
                 item(new ItemStack(ModItems.THRUSTER_LARGE.get(), 3)),
                 item(new ItemStack(ModItems.FUEL_TANK_LARGE.get())),

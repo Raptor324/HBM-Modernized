@@ -142,7 +142,7 @@ public class ModItems {
             "sr90", "steel", "xe135");
     private static final Map<String, RegistrySupplier<Item>> POWDER_ITEMS_BY_ID = new HashMap<>();
 
-        private static final Set<String> ENABLED_MODPOWDERS = Set.of("iron", "gold", "coal", "cement", "limestone"); // Только ModPowders!
+        private static final Set<String> ENABLED_MODPOWDERS = Set.of("iron", "gold", "coal", "cement", "limestone", "aluminum"); // Только ModPowders!
     private static final Set<String> ENABLED_INGOT_POWDERS = Set.of(
             "uranium", "plutonium",
             "actinium", "steel", "advanced_alloy", "aluminum", "schrabidium", "lead",
@@ -2211,10 +2211,17 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> SAT_LASER = ITEMS.register("sat_laser",
             () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAT_HEAD_RADAR = ITEMS.register("sat_head_radar",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAT_RADAR = ITEMS.register("sat_radar",
+            () -> new Item(new Item.Properties()));
 
-    public static final RegistrySupplier<Item> THRUSTER_LARGE  = ITEMS.register("thruster_large",  () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> FUEL_TANK_LARGE = ITEMS.register("fuel_tank_large", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> WARHEAD_NUCLEAR = ITEMS.register("warhead_nuclear", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> THRUSTER_LARGE         = ITEMS.register("thruster_large",         () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> FUEL_TANK_LARGE        = ITEMS.register("fuel_tank_large",        () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WARHEAD_NUCLEAR        = ITEMS.register("warhead_nuclear",        () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> THRUSTER_MEDIUM        = ITEMS.register("thruster_medium",        () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> FUEL_TANK_MEDIUM       = ITEMS.register("fuel_tank_medium",       () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WARHEAD_GENERIC_MEDIUM = ITEMS.register("warhead_generic_medium", () -> new Item(new Item.Properties()));
 
     public static final RegistrySupplier<Item> SCREWDRIVER = ITEMS.register("screwdriver",
             () -> new ScrewdriverItem(new Item.Properties().stacksTo(1)));

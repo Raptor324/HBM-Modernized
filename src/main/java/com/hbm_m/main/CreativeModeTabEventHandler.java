@@ -768,8 +768,13 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.SAT_BASE.get()));
         add.accept(new ItemStack(ModItems.SAT_HEAD_LASER.get()));
         add.accept(new ItemStack(ModItems.SAT_LASER.get()));
+        add.accept(new ItemStack(ModItems.SAT_HEAD_RADAR.get()));
+        add.accept(new ItemStack(ModItems.SAT_RADAR.get()));
 
         // Missile Parts
+        add.accept(new ItemStack(ModItems.THRUSTER_MEDIUM.get()));
+        add.accept(new ItemStack(ModItems.FUEL_TANK_MEDIUM.get()));
+        add.accept(new ItemStack(ModItems.WARHEAD_GENERIC_MEDIUM.get()));
         add.accept(new ItemStack(ModItems.THRUSTER_LARGE.get()));
         add.accept(new ItemStack(ModItems.FUEL_TANK_LARGE.get()));
         add.accept(new ItemStack(ModItems.WARHEAD_NUCLEAR.get()));
