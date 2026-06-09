@@ -6,7 +6,6 @@ import com.hbm_m.hazard.HazardRegistry;
 import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Blocks;
@@ -109,12 +108,7 @@ public class ChunkRadiationManager {
 
         BlockEvent.PLACE.register((level, pos, state, placer) -> {
             if (!level.isClientSide()) {
-                // В Fabric/Architectury не передается предыдущий блок при Place Event.
-                // Поэтому мы форсируем пересчет радиации в этом чанке, чтобы учесть новый радиоактивный блок
-                LevelChunk chunk = level.getChunkSource().getChunk(pos.getX() >> 4, pos.getZ() >> 4, false);
-                if (chunk != null) {
-                    getProxy().recalculateChunkRadiation(chunk);
-                }
+                INSTANCE.handleBlockChange(Blocks.AIR.defaultBlockState(), state, level, pos);
             }
             return dev.architectury.event.EventResult.pass();
         });
@@ -199,32 +193,16 @@ public class ChunkRadiationManager {
 
     // ОБРАБОТЧИКИ СОБЫТИЙ ИЗМЕНЕНИЯ БЛОКОВ 
 
-    private float getRadFromState(BlockState state) {
-        // Простая проверка для оптимизации: воздушные блоки не могут быть радиоактивными.
-        if (state.isAir()) {
-            return 0f;
-        }
-
-        // 1. Создаем временный ItemStack, представляющий этот блок.
-        // Это ключевой шаг для связи мира блоков с нашей предметно-ориентированной HazardSystem.
-        ItemStack blockAsStack = new ItemStack(state.getBlock().asItem());
-
-        // 2. Запрашиваем уровень радиации у нашей центральной системы, передавая ей созданный ItemStack.
-        // Вся старая логика с `instanceof` заменяется этой одной строкой.
-        return HazardSystem.getHazardLevelFromStack(blockAsStack, HazardRegistry.RADIATION);
-    }
-
     private void handleBlockChange(BlockState oldState, BlockState newState, LevelAccessor level, BlockPos pos) {
         if (level.isClientSide() || !(level instanceof Level world)) {
             return;
         }
 
-        float oldRad = getRadFromState(oldState);
-        float newRad = getRadFromState(newState);
+        float oldRad = HazardSystem.getHazardLevelFromState(oldState, HazardRegistry.RADIATION);
+        float newRad = HazardSystem.getHazardLevelFromState(newState, HazardRegistry.RADIATION);
         float diff = newRad - oldRad;
 
-        // Если произошло реальное изменение радиации, сообщаем симулятору.
-        // Это единственный вызов, который должен быть здесь.
+        // Только явные изменения блоков игроком/взрывом — как BlockHazard onBlockAdded/updateTick в 1.7.10.
         if (Math.abs(diff) > 1e-6f) {
             getProxy().incrementBlockRadiation(world, pos, diff);
         }

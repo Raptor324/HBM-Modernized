@@ -40,6 +40,7 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 //? if forge {
 import net.minecraftforge.event.level.ChunkEvent;
+import net.minecraftforge.event.level.LevelEvent;
 //?}
 
 // Моя конфетка, сколько же сил и нервов я на тебя потратил!
@@ -70,159 +71,148 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
 
     @Override
     public void updateSystem() {
-    
         if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads) {
-        return;
-    }
-
-    // Итерация по всем измерениям, где есть активные чанки
-    for (Map.Entry<ResourceLocation, Set<ChunkPos>> dimensionEntry : activeChunksByDimension.entrySet()) {
-        
-        ResourceLocation dimId = dimensionEntry.getKey();
-        ResourceKey<Level> levelKey = ResourceKey.create(Registries.DIMENSION, dimId);
+            return;
+        }
 
         var server = dev.architectury.utils.GameInstance.getServer();
-        if (server == null) continue;
-        ServerLevel level = server.getLevel(levelKey);
-        if (level == null || level.isClientSide()) continue;
-
-        Set<ChunkPos> currentActiveChunks = dimensionEntry.getValue();
-        if (currentActiveChunks == null || currentActiveChunks.isEmpty()) {
-            continue;
+        if (server == null) {
+            return;
         }
 
-        // Буферы для данных
-        Map<ChunkPos, Float> ambientReadBuffer = new HashMap<>();
-        Map<ChunkPos, Float> blockReadBuffer = new HashMap<>();
+        // Итерация по всем измерениям, где есть активные чанки
+        for (Map.Entry<ResourceLocation, Set<ChunkPos>> dimensionEntry : activeChunksByDimension.entrySet()) {
+            ResourceLocation dimId = dimensionEntry.getKey();
+            ResourceKey<Level> levelKey = ResourceKey.create(Registries.DIMENSION, dimId);
 
-        // ФАЗА 1: ЧТЕНИЕ 
-        // Считываем состояние всех активных чанков, чтобы избежать гонки потоков
-        for (ChunkPos pos : new HashSet<>(currentActiveChunks)) {
-            LevelChunk chunk = level.getChunkSource().getChunk(pos.x, pos.z, false);
-            if (chunk != null) {
+            ServerLevel level = server.getLevel(levelKey);
+            if (level == null || level.isClientSide()) {
+                continue;
+            }
+
+            Set<ChunkPos> currentActiveChunks = dimensionEntry.getValue();
+            if (currentActiveChunks == null || currentActiveChunks.isEmpty()) {
+                continue;
+            }
+
+            // GIT ChunkRadiationHandlerSimple#updateSystem: buff = текущие значения, затем полный пересчёт spread+decay.
+            // BlockHazard (1.7.10) добавляет hazard*0.1 в ambient раз в секунду — эквивалент blockRad * radSourceInfluenceFactor.
+            Map<ChunkPos, Float> buff = new HashMap<>();
+            for (ChunkPos pos : new HashSet<>(currentActiveChunks)) {
+                LevelChunk chunk = level.getChunkSource().getChunk(pos.x, pos.z, false);
+                if (chunk == null) {
+                    continue;
+                }
                 getChunkRadiationCap(chunk).ifPresent(cap -> {
-                    ambientReadBuffer.put(pos, cap.getAmbientRadiation());
-                    blockReadBuffer.put(pos, cap.getBlockRadiation());
+                    float spreadValue = cap.getAmbientRadiation()
+                            + cap.getBlockRadiation() * ModClothConfig.get().radSourceInfluenceFactor;
+                    if (spreadValue > 1e-6f) {
+                        buff.put(pos, spreadValue);
+                    }
                 });
             }
-        }
 
-        // Буфер для записи результатов распространения
-        Map<ChunkPos, Float> writeBuffer = new HashMap<>();
+            if (buff.isEmpty()) {
+                activeChunksByDimension.put(dimId, ConcurrentHashMap.newKeySet());
+                continue;
+            }
 
-        // ФАЗА 2: РАСЧЕТ РАСПРОСТРАНЕНИЯ 
-        // Корректное распространение радиации: только чтение из ambientReadBuffer, запись в writeBuffer с merge
-        for (Map.Entry<ChunkPos, Float> entry : ambientReadBuffer.entrySet()) {
-                ChunkPos pos = entry.getKey();
-                float ambientToSpread = entry.getValue();
-                if (ambientToSpread > 1e-6f) {
-                    // GIT ChunkRadiationHandlerSimple: 100% redistribution (center 60%, cardinal 7.5%, diagonal 2.5%)
-                    float totalToSpread = ambientToSpread;
+            Map<ChunkPos, Float> radiation = new HashMap<>();
+            Set<ChunkPos> nextActiveChunks = ConcurrentHashMap.newKeySet();
 
-                    float centerShare = totalToSpread * 0.60f;
-                    float cardinalShare = totalToSpread * 0.075f; // 4 * 0.075 = 0.3
-                    float diagonalShare = totalToSpread * 0.025f; // 4 * 0.025 = 0.1
+            for (Map.Entry<ChunkPos, Float> chunkEntry : buff.entrySet()) {
+                if (chunkEntry.getValue() == 0f) {
+                    continue;
+                }
 
-                    if (centerShare > 0) {
-                        writeBuffer.merge(pos, centerShare, Float::sum);
-                    }
+                ChunkPos coord = chunkEntry.getKey();
+                float sourceValue = chunkEntry.getValue();
 
-                    for (int dx = -1; dx <= 1; dx++) {
-                        for (int dz = -1; dz <= 1; dz++) {
-                            if (dx == 0 && dz == 0) continue;
-                            
-                            float share = (Math.abs(dx) + Math.abs(dz) == 1) ? cardinalShare : diagonalShare;
+                for (int dx = -1; dx <= 1; dx++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        int type = Math.abs(dx) + Math.abs(dz);
+                        float percent = type == 0 ? 0.6F : type == 1 ? 0.075F : 0.025F;
+                        ChunkPos newCoord = new ChunkPos(coord.x + dx, coord.z + dz);
 
-                            // Добавляем порог для распространения
-                            // Это предотвратит распространение незначительных значений
-                            if (share > 0.1f) {
-                                ChunkPos neighbor = new ChunkPos(pos.x + dx, pos.z + dz);
-                                writeBuffer.merge(neighbor, share, Float::sum);
-                            }
+                        if (buff.containsKey(newCoord)) {
+                            float rad = radiation.getOrDefault(newCoord, 0f);
+                            float newRad = rad + sourceValue * percent;
+                            newRad = Mth.clamp(newRad * 0.99f - 0.05f, 0f, MAX_RAD);
+                            radiation.put(newCoord, newRad);
+                        } else {
+                            radiation.put(newCoord, sourceValue * percent);
+                        }
+
+                        float rad = radiation.get(newCoord);
+                        if (ModClothConfig.get().enableRadFogEffect
+                                && rad > CHUNK_FOG_RAD_THRESHOLD
+                                && level.random.nextInt(CHUNK_FOG_SPAWN_CHANCE) == 0
+                                && level.hasChunk(coord.x, coord.z)) {
+                            int x = coord.getMinBlockX() + level.random.nextInt(16);
+                            int z = coord.getMinBlockZ() + level.random.nextInt(16);
+                            int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z);
+
+                            level.sendParticles(
+                                    ModParticleTypes.RAD_FOG_PARTICLE.get(),
+                                    x + 0.5, y + 1.0, z + 0.5,
+                                    7,
+                                    1.5, 0.5, 1.5,
+                                    0.01
+                            );
                         }
                     }
                 }
             }
 
-        // ФАЗА 3: ПРИМЕНЕНИЕ И ОБНОВЛЕНИЕ 
-        Set<ChunkPos> chunksToProcess = new HashSet<>(currentActiveChunks);
-            chunksToProcess.addAll(writeBuffer.keySet());
-            Set<ChunkPos> nextActiveChunks = ConcurrentHashMap.newKeySet();
+            Set<ChunkPos> chunksToProcess = new HashSet<>(currentActiveChunks);
+            chunksToProcess.addAll(radiation.keySet());
 
             for (ChunkPos pos : chunksToProcess) {
                 LevelChunk chunk = level.getChunkSource().getChunk(pos.x, pos.z, false);
-                if (chunk == null) continue;
-
-                float oldAmbient = ambientReadBuffer.getOrDefault(pos, 0f);
-                
-                // 1. Новое значение фона = то, что пришло от соседей
-                float newAmbient = writeBuffer.getOrDefault(pos, 0f);
-
-                // 2. Добавляем генерацию от блоков в этом чанке (GIT BlockHazard: hazard * 0.1 / sec)
-                float generation = blockReadBuffer.getOrDefault(pos, 0f);
-                if (generation > 1e-6f) {
-                    newAmbient += generation * ModClothConfig.get().radSourceInfluenceFactor;
+                if (chunk == null) {
+                    continue;
                 }
-                // GIT ChunkRadiationHandlerSimple: value * 0.99F - 0.05F per spread step (once per second)
-                newAmbient = Math.max(0f, newAmbient * 0.99f - 0.05f);
+
+                float newAmbient = radiation.getOrDefault(pos, 0f);
 
                 float fluctuationFactor = ModClothConfig.get().radRandomizationFactor;
-                // Применяем только если включено и есть чему флуктуировать
-                if (fluctuationFactor > 0 && newAmbient > 0.1f) { 
+                if (fluctuationFactor > 0 && newAmbient > 0.1f) {
                     newAmbient *= (1.0f + (level.random.nextFloat() - 0.5f) * fluctuationFactor);
                 }
 
-                // 4. Ограничения и очистка
-                float clearThreshold = 0.01f;
-                if (newAmbient < clearThreshold) {
+                if (newAmbient < 0.01f) {
                     newAmbient = 0f;
                 }
 
                 newAmbient = Mth.clamp(newAmbient, 0f, MAX_RAD);
-
                 final float finalAmbientRad = newAmbient;
-
-                // СПАВНИМ РАДИОАКТИВНЫЙ ТУМАН (1.7.10: fogRad=100, fogCh=20; вкл/выкл — ModClothConfig.enableRadFogEffect)
-                if (ModClothConfig.get().enableRadFogEffect
-                        && finalAmbientRad > CHUNK_FOG_RAD_THRESHOLD
-                        && level.random.nextInt(CHUNK_FOG_SPAWN_CHANCE) == 0) {
-                    int x = pos.getMinBlockX() + level.random.nextInt(16);
-                    int z = pos.getMinBlockZ() + level.random.nextInt(16);
-                    int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z);
-
-                    // Спавним несколько частиц, чтобы создать эффект облака
-                    level.sendParticles(
-                        ModParticleTypes.RAD_FOG_PARTICLE.get(),
-                        x + 0.5, y + 1.0, z + 0.5,
-                        7, // Количество частиц
-                        1.5, 0.5, 1.5, // Разброс по осям
-                        0.01 // Скорость/дельта
-                    );
-                }
 
                 getChunkRadiationCap(chunk).ifPresent(cap -> {
                     if (Math.abs(cap.getAmbientRadiation() - finalAmbientRad) > 1e-6f) {
                         cap.setAmbientRadiation(finalAmbientRad);
                         chunk.setUnsaved(true);
-                        
+
                         if (ModClothConfig.get().enableDebugLogging) {
-                        MainRegistry.LOGGER.debug("[RadSim] Tick update for chunk [{}, {}]: OldAmb: {}, SpreadIn: {}, Gen: {}, NewAmb: {}",
-                            pos.x, pos.z, oldAmbient, writeBuffer.getOrDefault(pos, 0f), generation, finalAmbientRad);
+                            MainRegistry.LOGGER.debug("[RadSim] Tick update for chunk [{}, {}]: NewAmb: {}, BlockRad: {}",
+                                    pos.x, pos.z, finalAmbientRad, cap.getBlockRadiation());
                         }
                     }
 
-                    // Чанк остается активным, если в нем есть хоть какая-то радиация (фоновая или от блоков)
                     if (finalAmbientRad > 1e-6f || cap.getBlockRadiation() > 1e-6f) {
                         nextActiveChunks.add(pos);
-                    } else if (currentActiveChunks.contains(pos)) {
-                        if (ModClothConfig.get().enableDebugLogging) {
-                            MainRegistry.LOGGER.debug("[RadSim] Chunk {} REMOVED from active list (all radiation gone)", pos);
-                        }
+                    } else if (ModClothConfig.get().enableDebugLogging && currentActiveChunks.contains(pos)) {
+                        MainRegistry.LOGGER.debug("[RadSim] Chunk {} REMOVED from active list (all radiation gone)", pos);
                     }
                 });
             }
+
             activeChunksByDimension.put(dimId, nextActiveChunks);
-            sendDebugPackets(level);
+        }
+
+        if (ModClothConfig.get().enableDebugRender) {
+            for (ServerLevel level : server.getAllLevels()) {
+                sendDebugPackets(level);
+            }
         }
     }
 
@@ -258,18 +248,29 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                 cap.setBlockRadiation(finalTotalBlockRadiation);
                 chunk.setUnsaved(true);
             }
-            // Активируем чанк если в нем есть любой вид радиации
+            ResourceLocation dimId = chunk.getLevel().dimension().location();
             if (cap.getAmbientRadiation() > 1e-6f || finalTotalBlockRadiation > 1e-6f) {
-                activeChunksByDimension.computeIfAbsent(chunk.getLevel().dimension()
-                    .location(), k -> ConcurrentHashMap.newKeySet()).add(chunk.getPos());
+                activeChunksByDimension.computeIfAbsent(dimId, k -> ConcurrentHashMap.newKeySet()).add(chunk.getPos());
+            } else {
+                Set<ChunkPos> active = activeChunksByDimension.get(dimId);
+                if (active != null) {
+                    active.remove(chunk.getPos());
+                }
             }
         });
     }
 
     @Override
     public void receiveChunkLoad(LevelChunk chunk) {
-        // Пересчет нужен только при загрузке, чтобы инициализировать состояние
-        recalculateChunkRadiation(chunk); 
+        // GIT ChunkRadiationHandlerSimple#receiveChunkLoad: только persisted ambient из NBT capability.
+        // Не сканируем блоки — hazard registry (руда и т.д.) != источник chunk rad в Simple режиме.
+        getChunkRadiationCap(chunk).ifPresent(cap -> {
+            cap.setBlockRadiation(0f);
+            if (cap.getAmbientRadiation() > 1e-6f) {
+                activeChunksByDimension.computeIfAbsent(chunk.getLevel().dimension().location(),
+                        k -> ConcurrentHashMap.newKeySet()).add(chunk.getPos());
+            }
+        });
     }
 
     //? if forge {
@@ -341,16 +342,21 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
         getChunkRadiationCap(chunk).ifPresent(cap -> {
             float oldBlockRad = cap.getBlockRadiation();
             float newBlockRad = Math.max(0, oldBlockRad + diff);
-            
+
             cap.setBlockRadiation(newBlockRad);
             chunk.setUnsaved(true);
             if (ModClothConfig.get().enableDebugLogging) {
                 MainRegistry.LOGGER.debug("[RadSim] Updated block radiation for chunk {}: {} -> {} (diff: {})", chunkPos, oldBlockRad, newBlockRad, diff);
             }
-            // "Пробуждаем" симуляцию для этого чанка, если он еще не активен
+
+            ResourceLocation dimId = level.dimension().location();
             if (newBlockRad > 1e-6f || cap.getAmbientRadiation() > 1e-6f) {
-                activeChunksByDimension.computeIfAbsent(level.dimension().location(), k -> ConcurrentHashMap.newKeySet())
-                                       .add(chunkPos);
+                activeChunksByDimension.computeIfAbsent(dimId, k -> ConcurrentHashMap.newKeySet()).add(chunkPos);
+            } else {
+                Set<ChunkPos> active = activeChunksByDimension.get(dimId);
+                if (active != null) {
+                    active.remove(chunkPos);
+                }
             }
         });
     }
@@ -523,6 +529,27 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
     }
 
 
-    // Пустые реализации
-    @Override public void clearSystem(Level level) {}
+    @Override
+    public void clearSystem(Level level) {
+        if (level == null || level.isClientSide()) {
+            return;
+        }
+        activeChunksByDimension.remove(level.dimension().location());
+    }
+
+    //? if forge {
+    @Override
+    public void receiveWorldLoad(LevelEvent.Load event) {
+        if (event.getLevel() instanceof Level level && !level.isClientSide()) {
+            activeChunksByDimension.remove(level.dimension().location());
+        }
+    }
+
+    @Override
+    public void receiveWorldUnload(LevelEvent.Unload event) {
+        if (event.getLevel() instanceof Level level && !level.isClientSide()) {
+            activeChunksByDimension.remove(level.dimension().location());
+        }
+    }
+    //?}
 }
