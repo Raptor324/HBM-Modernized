@@ -2,8 +2,6 @@ package com.hbm_m.config;
 // Конфигурация мода с использованием AutoConfig и Cloth Config.
 // Включает валидацию значений после загрузки для обеспечения корректных настроек
 
-import com.hbm_m.main.MainRegistry;
-
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
@@ -52,7 +50,7 @@ public class ModClothConfig implements ConfigData {
     // Игрок 
     @Category("player")
     @Gui.Tooltip
-    public float maxPlayerRad = 100F;
+    public float maxPlayerRad = 1000F;
 
     @Category("player")
     @Gui.Tooltip
