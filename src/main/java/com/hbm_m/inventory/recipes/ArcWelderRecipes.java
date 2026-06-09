@@ -48,10 +48,21 @@ public class ArcWelderRecipes {
                 item(new ItemStack(ModItems.COIL_COPPER_TORUS.get())),
                 item(new ItemStack(ModItems.PLATE_IRON.get(), 2))));
 
+        recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.MOTOR.get(), 4), 200, 2_000L,
+                item(new ItemStack(ModItems.PLATE_STEEL.get(), 2)),
+                item(new ItemStack(ModItems.WIRE_DENSE_ADVANCED_ALLOY.get())),
+                item(new ItemStack(ModItems.WIRE_DENSE_COPPER.get()))));
+
         // ── Satellite Parts ────────────────────────────────────────────────────
         recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.SAT_LASER.get()), 200, 10_000L,
                 item(new ItemStack(ModItems.SAT_HEAD_LASER.get())),
                 item(new ItemStack(ModItems.SAT_BASE.get()))));
+
+        // ── Missiles ──────────────────────────────────────────────────────────
+        recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.MISSILE_NUCLEAR.get()), 200, 50_000L,
+                item(new ItemStack(ModItems.THRUSTER_LARGE.get(), 3)),
+                item(new ItemStack(ModItems.FUEL_TANK_LARGE.get())),
+                item(new ItemStack(ModItems.WARHEAD_NUCLEAR.get()))));
 
         // TODO: neutron_reflector, motor parts, dense wires once items are ported
         // recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.NEUTRON_REFLECTOR.get(), 2), 400, 50_000L,

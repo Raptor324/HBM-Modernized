@@ -768,6 +768,11 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.SAT_BASE.get()));
         add.accept(new ItemStack(ModItems.SAT_HEAD_LASER.get()));
         add.accept(new ItemStack(ModItems.SAT_LASER.get()));
+
+        // Missile Parts
+        add.accept(new ItemStack(ModItems.THRUSTER_LARGE.get()));
+        add.accept(new ItemStack(ModItems.FUEL_TANK_LARGE.get()));
+        add.accept(new ItemStack(ModItems.WARHEAD_NUCLEAR.get()));
     }
     // РУДЫ
     public static void populateOresTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {

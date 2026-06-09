@@ -2212,6 +2212,10 @@ public class ModItems {
     public static final RegistrySupplier<Item> SAT_LASER = ITEMS.register("sat_laser",
             () -> new Item(new Item.Properties()));
 
+    public static final RegistrySupplier<Item> THRUSTER_LARGE  = ITEMS.register("thruster_large",  () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> FUEL_TANK_LARGE = ITEMS.register("fuel_tank_large", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WARHEAD_NUCLEAR = ITEMS.register("warhead_nuclear", () -> new Item(new Item.Properties()));
+
     public static final RegistrySupplier<Item> SCREWDRIVER = ITEMS.register("screwdriver",
             () -> new ScrewdriverItem(new Item.Properties().stacksTo(1)));
 
