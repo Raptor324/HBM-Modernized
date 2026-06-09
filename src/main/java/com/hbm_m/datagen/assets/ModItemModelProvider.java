@@ -62,14 +62,10 @@ public class ModItemModelProvider extends ItemModelProvider {
             }
         }
 
-        // ЦИКЛ ДЛЯ WIRE_DENSE
-        for (ModIngots ingot : ModIngots.values()) {
-            RegistrySupplier<Item> wireDense = ModItems.getWireDense(ingot);
-            if (wireDense != null && wireDense.isPresent()) {
-                String name = ingot.getName();
-                withExistingParent("wire_dense_" + name, "item/generated")
-                        .texture("layer0", modLoc("item/wire_dense/wire_dense_" + name));
-            }
+        // Wire Dense — 11 specific materials
+        for (String name : new String[]{"iron","aluminium","titanium","lead","copper","steel","gold","advanced_alloy","schrabidium","saturnite","combine_steel"}) {
+            withExistingParent("wire_dense_" + name, "item/generated")
+                    .texture("layer0", modLoc("item/wire_dense/wire_dense_" + name));
         }
 
         // ЦИКЛ ДЛЯ ModPowders

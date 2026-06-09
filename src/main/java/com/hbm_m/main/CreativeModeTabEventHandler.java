@@ -678,6 +678,19 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.WIRE_MAGNETIZED_TUNGSTEN.get()));
         add.accept(new ItemStack(ModItems.WIRE_SCHRABIDIUM.get()));
 
+        // Dense Wires
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_IRON.get()));
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_ALUMINIUM.get()));
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_TITANIUM.get()));
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_LEAD.get()));
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_COPPER.get()));
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_STEEL.get()));
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_GOLD.get()));
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_ADVANCED_ALLOY.get()));
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_SCHRABIDIUM.get()));
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_SATURNITE.get()));
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_COMBINE_STEEL.get()));
+
         add.accept(new ItemStack(ModItems.COIL_COPPER.get()));
         add.accept(new ItemStack(ModItems.COIL_ADVANCED_ALLOY.get()));
         add.accept(new ItemStack(ModItems.COIL_GOLD.get()));
@@ -750,6 +763,11 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.BATTLE_COUNTER.get()));
         add.accept(new ItemStack(ModItems.BATTLE_MODULE.get()));
         add.accept(new ItemStack(ModItems.METAL_ROD.get()));
+
+        // Satellite Parts
+        add.accept(new ItemStack(ModItems.SAT_BASE.get()));
+        add.accept(new ItemStack(ModItems.SAT_HEAD_LASER.get()));
+        add.accept(new ItemStack(ModItems.SAT_LASER.get()));
     }
     // РУДЫ
     public static void populateOresTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
@@ -1300,6 +1318,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.WIRE_COATED.get()));
         add.accept(new ItemStack(ModBlocks.GEIGER_COUNTER_BLOCK.get()));
         add.accept(new ItemStack(ModBlocks.DECON.get()));
+        add.accept(new ItemStack(ModBlocks.EMP.get()));
         for (BlockAbsorber.EnumAbsorberTier tier : BlockAbsorber.EnumAbsorberTier.values()) {
             add.accept(BlockAbsorberItem.forTier(ModBlocks.RAD_ABSORBER.get(), tier));
         }

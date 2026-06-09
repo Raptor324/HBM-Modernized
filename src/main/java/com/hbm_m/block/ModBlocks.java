@@ -337,6 +337,12 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> CONVERTER_BLOCK = registerBlock("converter_block",
             () -> new ConverterBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
 
+    public static final RegistrySupplier<Block> EMP = registerBlock("emp",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
+                    .strength(3.0F, 6.0F)
+                    .sound(SoundType.METAL)
+                    .requiresCorrectToolForDrops()));
+
     public static final RegistrySupplier<Block> BLAST_FURNACE = registerBlock("blast_furnace",
             () -> new BlastFurnaceBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
                     .strength(4.0f, 4.0f)

@@ -124,7 +124,17 @@ public class ModItems {
     public static final Map<ModPowders, RegistrySupplier<Item>> POWDERS = new EnumMap<>(ModPowders.class);
     public static final Map<ModIngots, RegistrySupplier<Item>> INGOT_POWDERS = new EnumMap<>(ModIngots.class);
     public static final Map<ModIngots, RegistrySupplier<Item>> INGOT_POWDERS_TINY = new EnumMap<>(ModIngots.class);
-    public static final Map<ModIngots, RegistrySupplier<Item>> WIRE_DENSE = new EnumMap<>(ModIngots.class);
+    public static final RegistrySupplier<Item> WIRE_DENSE_IRON          = ITEMS.register("wire_dense_iron",          () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_DENSE_ALUMINIUM     = ITEMS.register("wire_dense_aluminium",     () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_DENSE_TITANIUM      = ITEMS.register("wire_dense_titanium",      () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_DENSE_LEAD          = ITEMS.register("wire_dense_lead",          () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_DENSE_COPPER        = ITEMS.register("wire_dense_copper",        () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_DENSE_STEEL         = ITEMS.register("wire_dense_steel",         () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_DENSE_GOLD          = ITEMS.register("wire_dense_gold",          () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_DENSE_ADVANCED_ALLOY= ITEMS.register("wire_dense_advanced_alloy",() -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_DENSE_SCHRABIDIUM   = ITEMS.register("wire_dense_schrabidium",   () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_DENSE_SATURNITE     = ITEMS.register("wire_dense_saturnite",     () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_DENSE_COMBINE_STEEL = ITEMS.register("wire_dense_combine_steel", () -> new Item(new Item.Properties()));
 
     private static final Set<String> POWDER_TINY_NAMES = Set.of(
             "actinium", "boron", "cerium", "cobalt", "cs137", "i131",
@@ -164,14 +174,7 @@ public class ModItems {
             INGOTS.put(ingot, registeredItem);
         }
 
-        // 2. WIRE_DENSE (ДЛЯ ВСЕХ СЛИТКОВ)
-        for (ModIngots ingot : ModIngots.values()) {
-            String id = "wire_dense_" + ingot.getName();
-            RegistrySupplier<Item> wireDenseItem = ITEMS.register(id, () -> new Item(new Item.Properties()));
-            WIRE_DENSE.put(ingot, wireDenseItem);
-        }
-
-        // 3. ModPowders (ТОЛЬКО ИЗ ENABLED_MODPOWDERS)  ИСПРАВЛЕНО!
+        // 2. ModPowders (ТОЛЬКО ИЗ ENABLED_MODPOWDERS)  ИСПРАВЛЕНО!
         for (ModPowders powder : ModPowders.values()) {
             String baseName = powder.getName(); // use getName() to get lowercase name
             if (ENABLED_MODPOWDERS.contains(baseName)) {
@@ -210,10 +213,6 @@ public class ModItems {
     // УДОБНЫЙ МЕТОД ДЛЯ ПОЛУЧЕНИЯ СЛИТКА
     public static RegistrySupplier<Item> getIngot(ModIngots ingot) {
         return INGOTS.get(ingot);
-    }
-
-    public static RegistrySupplier<Item> getWireDense(ModIngots ingot) {
-        return WIRE_DENSE.get(ingot);
     }
 
     public static RegistrySupplier<Item> getPowders(ModPowders powders) {return POWDERS.get(powders);}
@@ -2204,6 +2203,13 @@ public class ModItems {
     public static final RegistrySupplier<Item> WIRE_SCHRABIDIUM = ITEMS.register("wire_schrabidium",
             () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> WIRE_TUNGSTEN = ITEMS.register("wire_tungsten",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> SAT_HEAD_LASER = ITEMS.register("sat_head_laser",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAT_BASE = ITEMS.register("sat_base",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAT_LASER = ITEMS.register("sat_laser",
             () -> new Item(new Item.Properties()));
 
     public static final RegistrySupplier<Item> SCREWDRIVER = ITEMS.register("screwdriver",

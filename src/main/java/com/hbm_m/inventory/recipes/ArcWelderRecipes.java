@@ -44,8 +44,14 @@ public class ArcWelderRecipes {
 
         // ── Machine Parts ──────────────────────────────────────────────────────
         recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.MOTOR.get(), 2), 100, 400L,
-                tag("plates/steel", 2),
-                tag("wires_dense/mingrade", 2)));
+                item(new ItemStack(ModItems.COIL_COPPER.get())),
+                item(new ItemStack(ModItems.COIL_COPPER_TORUS.get())),
+                item(new ItemStack(ModItems.PLATE_IRON.get(), 2))));
+
+        // ── Satellite Parts ────────────────────────────────────────────────────
+        recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.SAT_LASER.get()), 200, 10_000L,
+                item(new ItemStack(ModItems.SAT_HEAD_LASER.get())),
+                item(new ItemStack(ModItems.SAT_BASE.get()))));
 
         // TODO: neutron_reflector, motor parts, dense wires once items are ported
         // recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.NEUTRON_REFLECTOR.get(), 2), 400, 50_000L,
