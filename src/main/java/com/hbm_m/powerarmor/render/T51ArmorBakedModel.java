@@ -11,6 +11,7 @@ import com.hbm_m.powerarmor.T51Armor;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -35,13 +36,13 @@ public class T51ArmorBakedModel extends AbstractArmorBakedModel {
 
     private static final T51ModelConfig CONFIG = new T51ModelConfig();
 
-    public T51ArmorBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms) {
-        super(parts, transforms, CONFIG);
+    public T51ArmorBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms, @org.jetbrains.annotations.Nullable ArmorItem.Type itemArmorType) {
+        super(parts, transforms, CONFIG, itemArmorType);
     }
 
     @Override
     public T51ArmorBakedModel withTransforms(ItemTransforms newTransforms) {
-        return new T51ArmorBakedModel(this.parts, newTransforms);
+        return new T51ArmorBakedModel(this.parts, newTransforms, this.itemArmorType);
     }
 
     /**

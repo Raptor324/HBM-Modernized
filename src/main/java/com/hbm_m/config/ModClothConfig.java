@@ -48,6 +48,16 @@ public class ModClothConfig implements ConfigData {
     public boolean taintTrails = false;
 
     // Игрок 
+    /** Спавн сингулярностей/чёрных дыр при падении предмета ({@code WeaponConfig.dropSing}). */
+    @Category("weapons")
+    @Gui.Tooltip
+    public boolean dropSingularity = true;
+
+    /** Взрыв антиматерии при падении ячейки/пеллета ({@code WeaponConfig.dropCell}). */
+    @Category("weapons")
+    @Gui.Tooltip
+    public boolean dropCell = true;
+
     @Category("player")
     @Gui.Tooltip
     public float maxPlayerRad = 1000F;
@@ -359,12 +369,27 @@ public class ModClothConfig implements ConfigData {
 
     @Category("explosions")
     @Gui.Tooltip
+    @BoundedDiscrete(min = 0, max = 20)
+    public int falloutDelay = 4;
+
+    @Category("explosions")
+    @Gui.Tooltip
     public boolean enableCraterBiomes = true;
+
+    /** Целевая ambient-радиация чанка в {@code inner_crater} (Гейгер, RAD/s). */
+    @Category("explosions")
+    @Gui.Tooltip
+    public float craterBiomeInnerChunkRad = 30F;
+
+    /** Целевая ambient-радиация чанка в {@code outer_crater} (Гейгер, RAD/s). */
+    @Category("explosions")
+    @Gui.Tooltip
+    public float craterBiomeOuterChunkRad = 10F;
 
     @Category("explosions")
     @Gui.Tooltip
     @BoundedDiscrete(min = 10, max = 200)
-    public int fatManRadius = 50;
+    public int fatManRadius = 35;
 
     /** Радиус Fleija-взрыва шрабидиевой ракеты (ориг. {@code BombConfig.aSchrabRadius}). */
     @Category("explosions")

@@ -46,9 +46,11 @@ public class ModLanguageProvider extends LanguageProvider {
         if ("ru_ru".equals(this.locale)) {
             add(ModItems.DUST.get(), "Пыль");
             add(ModItems.DUST_TINY.get(), "Малая кучка пыли");
+            add(ModItems.FALLOUT.get(), "Куча радиоактивных осадков");
         } else {
             add(ModItems.DUST.get(), "Dust");
             add(ModItems.DUST_TINY.get(), "Tiny Dust");
+            add(ModItems.FALLOUT.get(), "Pile of Fallout");
         }
     }
 
@@ -215,6 +217,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.missile_micro", "Микроядерная ракета");
                 add("item.hbm_m.missile_schrabidium", "Ракета со шрабидием");
                 add("item.hbm_m.missile_bhole", "Ракета с чёрной дырой");
+                add(ModItems.BLACK_HOLE.get(), "Миниатюрная чёрная дыра");
+                add(ModItems.PELLET_ANTIMATTER.get(), "Антиматериальный пеллет");
+                add(ModItems.FLAME_PONY.get(), "Пламя пони");
+                add("death.attack.black_hole", "%1$s превратился в спагетти.");
                 add("item.hbm_m.missile_taint", "Ракета с заражением");
                 add("item.hbm_m.missile_emp", "ЭМИ-ракета");
                 add("item.hbm_m.missile_generic", "Ракета общего назначения");
@@ -666,7 +672,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.FAT_MAN_IGNITER.get(), "Воспламенитель 'Толстяк'");
                 add(ModItems.FAT_MAN_CORE.get(), "Плутониевое ядро");
                 add("container.hbm_m.nuke_fat_man", "Ядерная бомба 'Толстяк'");
-                add("gui.hbm_m.nuke_fat_man.desc", "Установите 4 ранние взрывные линзы, воспламенитель и плутониевое ядро.");
+                add("gui.hbm_m.nuke_fat_man.desc", "Установите 4 ранние взрывные линзы, воспламенитель и плутониевое ядро. Активируется редстоуном или детонатором.");
                 add(ModBlocks.MINE_AP.get(), "Противопехотная мина");
                 add(ModItems.GRENADE_NUC.get(), "Ядерная граната");
                 add(ModItems.GRENADE_IF_HE.get(), "IF-Граната: фугасная");
@@ -914,6 +920,15 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.SELLAFIELD_SLAKED1.get(), "Погашенный селлафит I");
                 add(ModBlocks.SELLAFIELD_SLAKED2.get(), "Погашенный селлафит II");
                 add(ModBlocks.SELLAFIELD_SLAKED3.get(), "Погашенный селлафит III");
+                add(ModBlocks.SELLAFIELD_BEDROCK.get(), "Селлафитовая коренная порода");
+                add(ModBlocks.ORE_SELLAFIELD_DIAMOND.get(), "Sellafite алмазная руда");
+                add(ModBlocks.ORE_SELLAFIELD_EMERALD.get(), "Sellafite изумрудная руда");
+                add(ModBlocks.ORE_SELLAFIELD_URANIUM_SCORCHED.get(), "Sellafite обожжённая урановая руда");
+                add(ModBlocks.ORE_SELLAFIELD_SCHRABIDIUM.get(), "Sellafite шрабидиевая руда");
+                add(ModBlocks.ORE_SELLAFIELD_RADGEM.get(), "Sellafite радиоактивная руда");
+                add(ModBlocks.WASTE_TRINITITE.get(), "Тринититовый песок");
+                add(ModBlocks.WASTE_TRINITITE_RED.get(), "Красный тринититовый песок");
+                add(ModBlocks.WASTE_MYCELIUM.get(), "Радиоактивный мицелий");
                 add(ModItems.COIL_MAGNETIZED_TUNGSTEN_TORUS.get(), "Кольцевая катушка из намагниченного вольфрама");
                 add(ModItems.COIL_MAGNETIZED_TUNGSTEN.get(), "Катушка из намагниченного вольфрама");
                 add(ModItems.COIL_ADVANCED_ALLOY_TORUS.get(), "Кольцевая катушка из продвинутого сплава");
@@ -924,6 +939,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.COIL_GOLD.get(), "Медная катушка");
                 add(ModItems.DUST.get(), "Кучка пыли");
                 add(ModItems.DUST_TINY.get(), "Маленькая кучка пыли");
+                add(ModItems.FALLOUT.get(), "Куча радиоактивных осадков");
                 add(ModItems.COAL_POWDER_TINY.get(), "Маленькая кучка угольной пыли");
                 add(ModItems.SCRAP.get(), "Мусор");
                 add(ModItems.BILLET_PLUTONIUM.get(), "Заготовка плутония");
@@ -999,7 +1015,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.CANNED_ASS.get(), "Консервированная задница");
                 add(ModItems.CANNED_BARK.get(), "Консервированная кора");
                 add(ModItems.CANNED_BEEF.get(), "Консервированная говядина");
-                add(ModItems.CANNED_BHOLE.get(), "Консервированная черная дыра");
+                add(ModItems.CANNED_BHOLE.get(), "Консервированная чёрная дыра");
+                add("item.hbm_m.canned_bhole.desc", "Сделано из настоящих сингулярностей. Нет, правда.");
                 add(ModItems.CANNED_CHEESE.get(), "Консервированный сыр");
                 add(ModItems.CANNED_CHINESE.get(), "Консервированное китайское блюдо");
                 add(ModItems.CANNED_DIESEL.get(), "Консервированный дизель");
@@ -1289,7 +1306,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.ore_oil", "Нефтеносная руда");
                 add("block.hbm_m.geysir_dirt", "Гейзерный грунт");
                 add("block.hbm_m.geysir_stone", "Гейзерный камень");
-                add("block.hbm_m.nuclear_fallout", "Радиоактивные осадки");
+                add("block.hbm_m.nuclear_fallout", "Радиоактивный осадок");
+                add("block.hbm_m.block_fallout", "Блок радиоактивных осадков");
                 add("block.hbm_m.dead_dirt", "Мёртвая земля");
                 add("block.hbm_m.block_u233", "Блок урана-233");
                 add("block.hbm_m.block_u235", "Блок урана-235");
@@ -1863,6 +1881,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("trait.explosive", "Воспламеняющийся / Взрывоопасный");
                 add("trait.hot", "Пирофорный / Горячий");
                 add("trait.hydro", "Гидрореактивный");
+                add("trait.drop", "Опасно выкидывать");
+                add("sounds.hbm_m.subtitle.debris", "Обломки падают");
                 add("hazard.hbm_m.radiation.format", "%s РАД/с");
                 add("hazard.hbm_m.radiation.stack", "Стак: %s РАД/с");
                 add("hazard.hbm_m.digamma", "[Дигамма]");
@@ -2107,6 +2127,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.missile_micro", "Micro-Nuclear Missile");
                 add("item.hbm_m.missile_schrabidium", "Schrabidium Missile");
                 add("item.hbm_m.missile_bhole", "Black Hole Missile");
+                add(ModItems.BLACK_HOLE.get(), "Miniature Black Hole");
+                add(ModItems.PELLET_ANTIMATTER.get(), "Antimatter Pellet");
+                add(ModItems.FLAME_PONY.get(), "Flame Pony");
+                add("death.attack.black_hole", "%1$s was spaghettified.");
                 add("item.hbm_m.missile_taint", "Taint Missile");
                 add("item.hbm_m.missile_emp", "EMP Missile");
                 add("item.hbm_m.missile_generic", "Generic Missile");
@@ -2171,7 +2195,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.FAT_MAN_IGNITER.get(), "Fat Man Igniter");
                 add(ModItems.FAT_MAN_CORE.get(), "Plutonium Core");
                 add("container.hbm_m.nuke_fat_man", "Fat Man");
-                add("gui.hbm_m.nuke_fat_man.desc", "Place 4 Early Explosive Lenses, Fat Man Igniter and Fat Man Core. Activated by redstone.");
+                add("gui.hbm_m.nuke_fat_man.desc", "Place 4 Early Explosive Lenses, Fat Man Igniter and Fat Man Core. Activated by redstone or detonator.");
                 // EQUIPMENT
                 add("item.hbm_m.alloy_sword", "Alloy Sword");
                 add("item.hbm_m.alloy_pickaxe", "Alloy Pickaxe");
@@ -2295,6 +2319,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.CANNED_BARK.get(), "Canned Bark");
                 add(ModItems.CANNED_BEEF.get(), "Canned Beef");
                 add(ModItems.CANNED_BHOLE.get(), "Canned Black Hole");
+                add("item.hbm_m.canned_bhole.desc", "Made from actual singularities. No, really.");
                 add(ModItems.CANNED_CHEESE.get(), "Canned Cheese");
                 add(ModItems.CANNED_CHINESE.get(), "Canned Chinese");
                 add(ModItems.CANNED_DIESEL.get(), "Canned Diesel");
@@ -2668,6 +2693,15 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.SELLAFIELD_SLAKED1.get(), "Slaked Sellafield I");
                 add(ModBlocks.SELLAFIELD_SLAKED2.get(), "Slaked Sellafield II");
                 add(ModBlocks.SELLAFIELD_SLAKED3.get(), "Slaked Sellafield III");
+                add(ModBlocks.SELLAFIELD_BEDROCK.get(), "Sellafield Bedrock");
+                add(ModBlocks.ORE_SELLAFIELD_DIAMOND.get(), "Sellafite Diamond Ore");
+                add(ModBlocks.ORE_SELLAFIELD_EMERALD.get(), "Sellafite Emerald Ore");
+                add(ModBlocks.ORE_SELLAFIELD_URANIUM_SCORCHED.get(), "Sellafite Scorched Uranium Ore");
+                add(ModBlocks.ORE_SELLAFIELD_SCHRABIDIUM.get(), "Sellafite Schrabidium Ore");
+                add(ModBlocks.ORE_SELLAFIELD_RADGEM.get(), "Sellafite Radgem Ore");
+                add(ModBlocks.WASTE_TRINITITE.get(), "Trinitite Sand");
+                add(ModBlocks.WASTE_TRINITITE_RED.get(), "Red Trinitite Sand");
+                add(ModBlocks.WASTE_MYCELIUM.get(), "Irradiated Mycelium");
                 add(ModItems.MOTOR_BISMUTH.get(), "Bismuth Motor");
                 add(ModItems.MOTOR_DESH.get(), "Desh Motor");
                 add(ModItems.MOTOR.get(), "Motor");
@@ -2865,6 +2899,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add(ModItems.DUST.get(), "Dust");
                 add(ModItems.DUST_TINY.get(), "Tiny Pile of Dust");
+                add(ModItems.FALLOUT.get(), "Pile of Fallout");
                 add(ModItems.COAL_POWDER_TINY.get(), "Tiny Pile of Coal Powder");
                 add(ModItems.SCRAP.get(), "Scrap");
                 add("item.hbm_m.copper_powder", "Copper Powder");
@@ -3617,7 +3652,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.ore_oil", "Oil Ore");
                 add("block.hbm_m.geysir_dirt", "Geysir Dirt");
                 add("block.hbm_m.geysir_stone", "Geysir Stone");
-                add("block.hbm_m.nuclear_fallout", "Radioactive Fallout");
+                add("block.hbm_m.nuclear_fallout", "Fallout");
+                add("block.hbm_m.block_fallout", "Block of Fallout");
                 add("block.hbm_m.dead_dirt", "Dead Dirt");
                 add("block.hbm_m.block_u233", "Uranium-233 Block");
                 add("block.hbm_m.block_u235", "Uranium-235 Block");
@@ -3880,6 +3916,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("trait.explosive", "Flammable / Explosive");
                 add("trait.hot", "Pyrophoric / Hot");
                 add("trait.hydro", "Hydroreactive");
+                add("trait.drop", "Dangerous Drop");
+                add("sounds.hbm_m.subtitle.debris", "Debris falling");
 
                 add("hazard.hbm_m.radiation", "[Radioactive]");
                 add("hazard.hbm_m.radiation.format", "%s RAD/s");

@@ -4,19 +4,19 @@ import java.util.List;
 
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.entity.ModEntities;
-import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.explosion.ExplosionNukeGeneric;
+import com.hbm_m.util.ContaminationUtil;
+import com.hbm_m.util.ContaminationUtil.ContaminationType;
+import com.hbm_m.util.ContaminationUtil.HazardType;
 import com.hbm_m.explosion.IExplosionRay;
 import com.hbm_m.explosion.NoOpExplosionRay;
 import com.hbm_m.explosion.NukeMk5ChunkEater;
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.util.explosions.nuclear.CraterBiomeHelper;
-
+import com.hbm_m.util.WorldUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -62,6 +62,14 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 
     public EntityNukeExplosionMK5(EntityType<?> type, Level level) {
         super(type, level);
+    }
+
+    @Override
+    protected int getChunkLoadRadius() {
+        if (this.length <= 0) {
+            return super.getChunkLoadRadius();
+        }
+        return Math.min(12, Math.max(super.getChunkLoadRadius(), (this.length + 15) >> 4) + 1);
     }
 
     @Override
@@ -124,6 +132,11 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 
             // Fallout будет реализован отдельной задачей (FalloutRain + RenderFallout)
             // Здесь оставляем точку расширения.
+            if (applyInstantPlayerRads) {
+                // Всплеск ambient в эпицентре (как раньше от sellafite+spread), затем затухание к фону кратера.
+                ExplosionNukeGeneric.incrementRad(level(), getX(), getY(), getZ(), this.length * 2.0F);
+            }
+
             if (fallout) {
                 spawnFallout();
             }
@@ -165,10 +178,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
             eRads /= res;
             eRads /= (float) (len * len);
 
-            if (e instanceof Player player) {
-                PlayerHandler.incrementPlayerRads(player, eRads);
-            }
-            // (ContaminationUtil на любом LivingEntity) при появлении системы контаминации сущностей можно применить eRads и к не-игрокам.
+            ContaminationUtil.contaminate(e, HazardType.RADIATION, ContaminationType.RAD_BYPASS, eRads);
         }
     }
 
@@ -177,24 +187,19 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
      * Реальная реализация будет добавлена при портировании FalloutRain.
      */
     private void spawnFallout() {
-        int scale = (int) (this.length * 3.5 + getFalloutAdd());
+        int scale = (int) (this.length * 2.5 + getFalloutAdd());
         scale = scale * ModClothConfig.get().falloutRangePercent / 100;
         if (scale < 1) scale = 1;
         com.hbm_m.entity.effect.EntityFalloutRain fallout = new com.hbm_m.entity.effect.EntityFalloutRain(ModEntities.NUKE_FALLOUT_RAIN.get(), level());
         fallout.setPos(getX(), getY(), getZ());
         fallout.setScale(scale);
-        level().addFreshEntity(fallout);
-
-        if (applyCraterBiomes && ModClothConfig.get().enableCraterBiomes && level() instanceof ServerLevel serverLevel) {
-            BlockPos center = BlockPos.containing(getX(), getY(), getZ());
-            double innerRadius = Math.min(15, scale * 0.1);
-            CraterBiomeHelper.applyBiomesAsync(serverLevel, center, innerRadius, (double) scale);
-        }
+        WorldUtil.loadAndSpawnEntityInWorld(fallout);
     }
 
     @Override
     public void remove(RemovalReason reason) {
         if (explosion != null) explosion.cancel();
+        clearChunkTicket();
         super.remove(reason);
     }
 
@@ -220,7 +225,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
         explosionMK5.speed = (int) Math.ceil(100000D / explosionMK5.strength);
         explosionMK5.setPos(x, y, z);
         explosionMK5.length = explosionMK5.strength / 2;
-        level.addFreshEntity(explosionMK5);
+        WorldUtil.loadAndSpawnEntityInWorld(explosionMK5);
         return explosionMK5;
     }
 }

@@ -44,6 +44,7 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> RADAWAY_USE = registerSoundEvents("radaway_use");
     public static final RegistrySupplier<SoundEvent> PLAYER_VOMIT = registerSoundEvents("player.vomit");
     public static final RegistrySupplier<SoundEvent> CRATEBREAK5 = registerSoundEvents("block.cratebreak5");
+    public static final RegistrySupplier<SoundEvent> DEBRIS = registerSoundEvents("block.debris");
     public static final RegistrySupplier<SoundEvent> CRATEBREAK4 = registerSoundEvents("block.cratebreak4");
     public static final RegistrySupplier<SoundEvent> CRATEBREAK3 = registerSoundEvents("block.cratebreak3");
     public static final RegistrySupplier<SoundEvent> CRATEBREAK2 = registerSoundEvents("block.cratebreak2");

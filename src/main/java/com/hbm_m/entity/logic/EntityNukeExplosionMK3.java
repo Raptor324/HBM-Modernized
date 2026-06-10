@@ -29,6 +29,14 @@ public class EntityNukeExplosionMK3 extends EntityExplosionChunkloading {
     }
 
     @Override
+    protected int getChunkLoadRadius() {
+        if (this.destructionRange <= 0) {
+            return super.getChunkLoadRadius();
+        }
+        return Math.min(12, Math.max(super.getChunkLoadRadius(), (this.destructionRange + 15) >> 4) + 1);
+    }
+
+    @Override
     protected void defineSynchedData() {
     }
 

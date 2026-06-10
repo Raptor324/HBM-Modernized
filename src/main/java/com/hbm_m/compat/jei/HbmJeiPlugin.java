@@ -15,6 +15,7 @@ import com.hbm_m.inventory.gui.GUIMachineCrucible;
 import com.hbm_m.inventory.gui.GUIMachineArcWelder;
 import com.hbm_m.inventory.gui.GUIMachineSolderingStation;
 import com.hbm_m.inventory.gui.GUIMachineCrystallizer;
+import com.hbm_m.inventory.gui.GUIMachinePress;
 import com.hbm_m.inventory.recipes.ArcWelderRecipes;
 import com.hbm_m.inventory.recipes.SolderingRecipes;
 import com.hbm_m.item.ModItems;
@@ -34,6 +35,7 @@ import com.hbm_m.recipe.CentrifugeRecipes;
 import com.hbm_m.recipe.CentrifugeRecipes.RecipeInput;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
 import com.hbm_m.recipe.CyclotronRecipes;
+import com.hbm_m.recipe.PressRecipe;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.client.Minecraft;
@@ -81,6 +83,7 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCategories(new ArcWelderJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new SolderingStationJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new CrystallizerJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new PressJeiCategory(registration.getJeiHelpers().getGuiHelper()));
     }
 
     @Override
@@ -98,6 +101,7 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipes(ArcWelderJeiCategory.RECIPE_TYPE, ArcWelderJeiRecipe.fromRecipes());
         registration.addRecipes(SolderingStationJeiCategory.RECIPE_TYPE, SolderingStationJeiRecipe.fromRecipes());
         registration.addRecipes(CrystallizerJeiCategory.RECIPE_TYPE, CrystallizerJeiRecipe.fromAll());
+        registration.addRecipes(PressJeiCategory.RECIPE_TYPE, getPressRecipes());
     }
 
     @Override
@@ -118,6 +122,7 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.ARC_WELDER.get()), ArcWelderJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.SOLDERING_STATION.get()), SolderingStationJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CRYSTALLIZER.get()), CrystallizerJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModItems.PRESS.get()), PressJeiCategory.RECIPE_TYPE);
     }
 
     @Override
@@ -143,6 +148,8 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeClickArea(GUIMachineArcWelder.class, 72, 37, 33, 14, ArcWelderJeiCategory.RECIPE_TYPE);
         registration.addRecipeClickArea(GUIMachineSolderingStation.class, 72, 28, 33, 14, SolderingStationJeiCategory.RECIPE_TYPE);
         registration.addRecipeClickArea(GUIMachineCrystallizer.class, 80, 39, 33, 14, CrystallizerJeiCategory.RECIPE_TYPE);
+        // Press — matches legacy NEI transfer rect: new Rectangle(74 + 6 + 18, 23, 24, 18)
+        registration.addRecipeClickArea(GUIMachinePress.class, 98, 23, 24, 18, PressJeiCategory.RECIPE_TYPE);
     }
 
     @Override
@@ -189,6 +196,15 @@ public class HbmJeiPlugin implements IModPlugin {
 
         return net.minecraft.client.Minecraft.getInstance().level.getRecipeManager()
                 .getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
+    }
+
+    private static List<PressRecipe> getPressRecipes() {
+        if (net.minecraft.client.Minecraft.getInstance().level == null) {
+            return List.of();
+        }
+
+        return net.minecraft.client.Minecraft.getInstance().level.getRecipeManager()
+                .getAllRecipesFor(PressRecipe.Type.INSTANCE);
     }
 
     private static List<CentrifugeJeiCategory.Recipe> getCentrifugeRecipes() {

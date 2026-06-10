@@ -954,6 +954,9 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> DUST_TINY = ITEMS.register("dust_tiny",
             () -> new Item(new Item.Properties()));
+    /** 1.7.10 ModItems.fallout — кучка осадков. */
+    public static final RegistrySupplier<Item> FALLOUT = ITEMS.register("fallout",
+            () -> new Item(new Item.Properties()));
 
     public static final RegistrySupplier<Item> LITHIUM_POWDER_TINY = ITEMS.register("lithium_powder_tiny",
             () -> new Item(new Item.Properties()));
@@ -1765,6 +1768,14 @@ public class ModItems {
     public static final RegistrySupplier<Item> MISSILE_ABM = ITEMS.register("missile_abm",
                 () -> new MissileItem(MissileItem.MissileFormFactor.ABM, MissileItem.MissileTier.TIER1,
                                 MissileItem.MissileFuel.SOLID));
+
+  /** Сингулярности / опасные дропы (1.7.10 {@code ModItems.black_hole}, {@code pellet_antimatter}, {@code flame_pony}). */
+    public static final RegistrySupplier<Item> BLACK_HOLE = ITEMS.register("black_hole",
+            () -> new com.hbm_m.item.special.ItemDrop(new Item.Properties().stacksTo(1)));
+    public static final RegistrySupplier<Item> PELLET_ANTIMATTER = ITEMS.register("pellet_antimatter",
+            () -> new com.hbm_m.item.special.ItemDrop(new Item.Properties().stacksTo(1)));
+    public static final RegistrySupplier<Item> FLAME_PONY = ITEMS.register("flame_pony",
+            () -> new Item(new Item.Properties()));
 
     // Tier 0
     public static final RegistrySupplier<Item> MISSILE_MICRO = ITEMS.register("missile_micro",

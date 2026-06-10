@@ -520,6 +520,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.BORAX.get()));
         add.accept(new ItemStack(ModItems.DUST.get()));
         add.accept(new ItemStack(ModItems.DUST_TINY.get()));
+        add.accept(new ItemStack(ModItems.FALLOUT.get()));
         add.accept(new ItemStack(ModItems.CINNABAR.get()));
         add.accept(new ItemStack(ModItems.FIRECLAY_BALL.get()));
         add.accept(new ItemStack(ModItems.SULFUR.get()));
@@ -971,10 +972,20 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.GEYSIR_STONE.get()));
 
         add.accept(new ItemStack(ModBlocks.NUCLEAR_FALLOUT.get()));
+        add.accept(new ItemStack(ModBlocks.BLOCK_FALLOUT.get()));
         add.accept(new ItemStack(ModBlocks.SELLAFIELD_SLAKED.get()));
         add.accept(new ItemStack(ModBlocks.SELLAFIELD_SLAKED1.get()));
         add.accept(new ItemStack(ModBlocks.SELLAFIELD_SLAKED2.get()));
         add.accept(new ItemStack(ModBlocks.SELLAFIELD_SLAKED3.get()));
+        add.accept(new ItemStack(ModBlocks.SELLAFIELD_BEDROCK.get()));
+        add.accept(new ItemStack(ModBlocks.ORE_SELLAFIELD_DIAMOND.get()));
+        add.accept(new ItemStack(ModBlocks.ORE_SELLAFIELD_EMERALD.get()));
+        add.accept(new ItemStack(ModBlocks.ORE_SELLAFIELD_URANIUM_SCORCHED.get()));
+        add.accept(new ItemStack(ModBlocks.ORE_SELLAFIELD_SCHRABIDIUM.get()));
+        add.accept(new ItemStack(ModBlocks.ORE_SELLAFIELD_RADGEM.get()));
+        add.accept(new ItemStack(ModBlocks.WASTE_TRINITITE.get()));
+        add.accept(new ItemStack(ModBlocks.WASTE_TRINITITE_RED.get()));
+        add.accept(new ItemStack(ModBlocks.WASTE_MYCELIUM.get()));
         add.accept(new ItemStack(ModBlocks.WASTE_LOG.get()));
         add.accept(new ItemStack(ModBlocks.WASTE_PLANKS.get()));
         add.accept(new ItemStack(ModBlocks.WASTE_GRASS.get()));
@@ -1279,8 +1290,8 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.SILO_HATCH.get()));
         add.accept(new ItemStack(ModBlocks.SILO_HATCH_LARGE.get()));
         add.accept(new ItemStack(ModBlocks.VAULT_DOOR.get()));
-        add.accept(new ItemStack(ModBlocks.TRANSITION_SEAL.get()));
-        add.accept(new ItemStack(ModBlocks.SLIDE_DOOR.get()));
+        // add.accept(new ItemStack(ModBlocks.TRANSITION_SEAL.get()));
+        // add.accept(new ItemStack(ModBlocks.SLIDE_DOOR.get()));
     }
 
     // СТАНКИ
@@ -1404,7 +1415,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.PART_PLUTONIUM.get()));
         add.accept(new ItemStack(ModBlocks.ZIRNOX.get()));
         add.accept(new ItemStack(ModBlocks.ARC_WELDER.get()));
-        // add.accept(new ItemStack(ModBlocks.SOLDERING_STATION.get()));
+        add.accept(new ItemStack(ModBlocks.SOLDERING_STATION.get()));
         // add.accept(new ItemStack(ModBlocks.MIXER.get()));
         add.accept(new ItemStack(ModBlocks.DERRICK.get()));
         // add.accept(new ItemStack(ModBlocks.RBMK_CONSOLE.get()));
@@ -1457,6 +1468,9 @@ public final class CreativeModeTabEventHandler {
     public static void populateFuelTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
         // Упрощенный Consumer, по умолчанию использующий PARENT_AND_SEARCH_TABS
         Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        add.accept(new ItemStack(ModItems.BLACK_HOLE.get()));
+        add.accept(new ItemStack(ModItems.PELLET_ANTIMATTER.get()));
+        add.accept(new ItemStack(ModItems.FLAME_PONY.get()));
         add.accept(new ItemStack(ModItems.CREATIVE_BATTERY.get()));
         add.accept(new ItemStack(ModItems.RBMK_FUEL_DRX.get()));
 

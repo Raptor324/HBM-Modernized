@@ -235,7 +235,6 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
             }
 
             handlePowerArmorGeiger(stack, world, player);
-            handleHardLandingNoFallDamage(world, player);
         }
 
         super.onArmorTick(stack, world, player);
@@ -256,48 +255,8 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
             removePassiveEffects(player, specs.passiveEffects);
         }
         handlePowerArmorGeiger(stack, world, player);
-        handleHardLandingNoFallDamage(world, player);
     }
     *///?}
-
-    private static final String TAG_HL_MAX_FALL = "hbm_hl_max_fall";
-    private static final String TAG_HL_LANDED = "hbm_hl_landed";
-
-    /**
-     * HardLanding perk: полностью убирает урон от падения.
-     *
-     * Без миксинов/Forge-ивентов: сохраняем максимум fallDistance для визуальных эффектов,
-     * но обнуляем {@link Player#fallDistance} каждый тик, чтобы ванильный урон всегда был 0.
-     */
-    private void handleHardLandingNoFallDamage(Level level, Player player) {
-        if (!specs.hasHardLanding) return;
-        if (player.isFallFlying()) return;
-        if (player.isSpectator()) return;
-
-        CompoundTag data = PlayerPersistentData.get(player);
-
-        if (!player.onGround()) {
-            float cur = player.fallDistance;
-            float prevMax = data.getFloat(TAG_HL_MAX_FALL);
-            if (cur > prevMax) {
-                data.putFloat(TAG_HL_MAX_FALL, cur);
-            }
-
-            // Ключевая строка: не даём ваниле насчитать падение.
-            player.fallDistance = 0.0F;
-            data.putBoolean(TAG_HL_LANDED, false);
-            return;
-        }
-
-        float maxFall = data.getFloat(TAG_HL_MAX_FALL);
-        if (maxFall > 0.0F && !data.getBoolean(TAG_HL_LANDED)) {
-            // Совместимость с существующими хендлерами/звуками.
-            data.putBoolean("hbm_hard_landing_occured", maxFall > 1.5F);
-            data.putBoolean(TAG_HL_LANDED, true);
-        }
-
-        data.putFloat(TAG_HL_MAX_FALL, 0.0F);
-    }
 
     private void applyPassiveEffects(Player player, List<MobEffectInstance> effects) {
         for (var effect : effects) {

@@ -116,6 +116,7 @@ public final class MainRegistry {
         ModPacketHandler.register();
         com.hbm_m.handler.HazmatRegistry.registerHazmats();
         HazardRegistry.registerItems();
+        com.hbm_m.config.FalloutConfigJSON.initialize();
         DamageResistanceHandler.initArmorStats();
         com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity.registerLaunchables();
 

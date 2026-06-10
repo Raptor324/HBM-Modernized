@@ -44,10 +44,12 @@ public final class MissileWarheadEffects {
         level.addFreshEntity(emp);
     }
 
+    /** 1.7.10 {@code EntityMissileBHole#onMissileImpact}: взрыв 1.5 + чёрная дыра 1.5. */
     public static void blackHole(Level level, double x, double y, double z) {
-        level.explode(null, x, y, z, 5.0F, Level.ExplosionInteraction.BLOCK);
+        level.explode(null, x, y, z, 1.5F, true, Level.ExplosionInteraction.BLOCK);
         BlackHoleEntity hole = new BlackHoleEntity(ModEntities.BLACK_HOLE.get(), level);
         hole.setPos(x, y, z);
+        hole.setSize(1.5F);
         level.addFreshEntity(hole);
     }
 

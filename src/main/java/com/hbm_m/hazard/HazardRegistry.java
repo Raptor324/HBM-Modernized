@@ -151,19 +151,23 @@ public class HazardRegistry {
         registerIngotStorageBlocks();
 
         HazardSystem.register(ModBlocks.NUCLEAR_FALLOUT.get(), new HazardData(
-                new HazardEntry(RADIATION, 0.5f)));
+                new HazardEntry(RADIATION, 60f)));
+        HazardSystem.register(ModBlocks.BLOCK_FALLOUT.get(), new HazardData(
+                new HazardEntry(RADIATION, 10.5f)));
+        HazardSystem.register(ModItems.FALLOUT.get(), new HazardData(
+                new HazardEntry(RADIATION, 30f)));
         HazardSystem.register(ModBlocks.POLONIUM210_BLOCK.get(), new HazardData(
                 new HazardEntry(RADIATION, 750f),
                 new HazardEntry(HOT, 3f)));
 
-        HazardSystem.register(ModBlocks.SELLAFIELD_SLAKED.get(), new HazardData(
-                new HazardEntry(RADIATION, 0.1f)));
-        HazardSystem.register(ModBlocks.SELLAFIELD_SLAKED1.get(), new HazardData(
-                new HazardEntry(RADIATION, 0.1f)));
-        HazardSystem.register(ModBlocks.SELLAFIELD_SLAKED2.get(), new HazardData(
-                new HazardEntry(RADIATION, 0.1f)));
-        HazardSystem.register(ModBlocks.SELLAFIELD_SLAKED3.get(), new HazardData(
-                new HazardEntry(RADIATION, 0.1f)));
+        HazardSystem.register(ModBlocks.ORE_SELLAFIELD_RADGEM.get(), new HazardData(
+                new HazardEntry(RADIATION, 25f)));
+        HazardSystem.register(ModBlocks.WASTE_TRINITITE.get(), new HazardData(
+                new HazardEntry(RADIATION, 0.5f)));
+        HazardSystem.register(ModBlocks.WASTE_TRINITITE_RED.get(), new HazardData(
+                new HazardEntry(RADIATION, 0.5f)));
+        HazardSystem.register(ModBlocks.WASTE_MYCELIUM.get(), new HazardData(
+                new HazardEntry(RADIATION, 0.25f)));
 
         HazardSystem.register(ModBlocks.BARREL_YELLOW.get(), new HazardData(
                 new HazardEntry(RADIATION, 150f)));

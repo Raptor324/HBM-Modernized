@@ -4,9 +4,9 @@ import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.projectile.ClusterRocketEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.phys.Vec3;
 
 /**
  * Вспомогательные эффекты взрывов (поджог, кластер) по образцу {@code com.hbm.explosion.ExplosionChaos}.
@@ -69,23 +69,32 @@ public final class ExplosionChaos {
         }
     }
 
-    /** Разбрасывает суббоеприпасы {@link ClusterRocketEntity}. */
-    public static void cluster(Level level, double x, double y, double z, int count) {
-        for (int i = 0; i < count; i++) {
-            double d1 = level.random.nextDouble();
-            double d2 = level.random.nextDouble();
-            double d3 = level.random.nextDouble();
+    /**
+     * Разбрасывает суббоеприпасы по направлению полёта ракеты
+     * (аналог {@code ExplosionChaos.cluster} + {@code EntityBulletBaseMK4} в 1.7.10).
+     */
+    public static void cluster(Level level, double x, double y, double z, int count,
+                               float yaw, float pitch, float yawRand, float pitchRand, float speed) {
+        if (level.isClientSide) {
+            return;
+        }
 
-            if (level.random.nextInt(2) == 0) {
-                d1 *= -1;
-            }
-            if (level.random.nextInt(2) == 0) {
-                d3 *= -1;
-            }
+        for (int i = 0; i < count; i++) {
+            float yawRad = yaw + (float) (yawRand * level.random.nextGaussian());
+            float pitchRad = pitch + (float) (pitchRand * level.random.nextGaussian());
+
+            float yawDeg = yawRad * 180.0F / (float) Math.PI;
+            float pitchDeg = -pitchRad * 180.0F / (float) Math.PI;
+
+            double motionX = -Mth.sin(yawDeg * ((float) Math.PI / 180.0F))
+                    * Mth.cos(pitchDeg * ((float) Math.PI / 180.0F));
+            double motionZ = Mth.cos(yawDeg * ((float) Math.PI / 180.0F))
+                    * Mth.cos(pitchDeg * ((float) Math.PI / 180.0F));
+            double motionY = -Mth.sin(pitchDeg * ((float) Math.PI / 180.0F));
 
             ClusterRocketEntity fragment = new ClusterRocketEntity(ModEntities.CLUSTER_ROCKET.get(), level);
-            fragment.setPos(x + 0.5D, y + 0.5D, z + 0.5D);
-            fragment.setDeltaMovement(new Vec3(d1, d2, d3));
+            fragment.setPos(x, y, z);
+            fragment.setDeltaMovement(motionX * speed, motionY * speed, motionZ * speed);
             level.addFreshEntity(fragment);
         }
     }

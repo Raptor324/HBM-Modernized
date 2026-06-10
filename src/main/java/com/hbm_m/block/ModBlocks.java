@@ -12,7 +12,11 @@ import com.hbm_m.api.energy.SwitchBlock;
 import com.hbm_m.api.energy.WireBlock;
 import com.hbm_m.block.bomb.BlockTaint;
 import com.hbm_m.block.generic.BlockAbsorber;
+import com.hbm_m.block.generic.BlockOre;
+import com.hbm_m.block.generic.BlockSellafieldOre;
+import com.hbm_m.block.generic.BlockSellafieldSlaked;
 import com.hbm_m.block.generic.BlockSlag;
+import com.hbm_m.block.generic.WasteEarth;
 import com.hbm_m.block.bomb.NukeFatManBlock;
 import com.hbm_m.block.decorations.CageLampBlock;
 import com.hbm_m.block.decorations.CrtBlock;
@@ -921,13 +925,18 @@ public class ModBlocks {
                     .sound(SoundType.STONE)
                     .requiresCorrectToolForDrops()));
 
-    //  ДОБАВЛЕНО: Ядерные осадки (как снег)
+    // Ковёр fallout (1.7.10: ModBlocks.fallout / BlockFallout)
     public static final RegistrySupplier<Block> NUCLEAR_FALLOUT = registerBlock("nuclear_fallout",
-            () -> new SnowLayerBlock(BlockBehaviour.Properties.copy(Blocks.SNOW)
+            () -> new com.hbm_m.block.generic.BlockFallout(BlockBehaviour.Properties.copy(Blocks.SAND)
                     .strength(0.1F)
-                    // Тут можно добавить .lightLevel() если он должен светиться,
-                    // .emissiveRendering() и так далее
-            ));
+                    .sound(SoundType.GRAVEL)
+                    .noOcclusion()));
+
+    // Блок fallout (1.7.10: ModBlocks.block_fallout / BlockHazardFalling)
+    public static final RegistrySupplier<Block> BLOCK_FALLOUT = registerBlock("block_fallout",
+            () -> new com.hbm_m.block.generic.BlockHazardFalling(BlockBehaviour.Properties.copy(Blocks.GRAVEL)
+                    .strength(0.2F)
+                    .sound(SoundType.GRAVEL)));
 
     public static final RegistrySupplier<Block> DOOR_BUNKER = registerBlock("door_bunker",
             () -> new net.minecraft.world.level.block.DoorBlock(BlockBehaviour.Properties.copy(Blocks.NETHERITE_BLOCK).sound(SoundType.NETHERITE_BLOCK).noOcclusion(), BlockSetType.STONE));
@@ -1075,16 +1084,53 @@ public class ModBlocks {
 
 
     public static final RegistrySupplier<Block> SELLAFIELD_SLAKED  = registerBlock("sellafield_slaked",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+            () -> new BlockSellafieldSlaked(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 
     public static final RegistrySupplier<Block> SELLAFIELD_SLAKED1  = registerBlock("sellafield_slaked1",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+            () -> new BlockSellafieldSlaked(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 
     public static final RegistrySupplier<Block> SELLAFIELD_SLAKED2  = registerBlock("sellafield_slaked2",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+            () -> new BlockSellafieldSlaked(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 
     public static final RegistrySupplier<Block> SELLAFIELD_SLAKED3  = registerBlock("sellafield_slaked3",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+            () -> new BlockSellafieldSlaked(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+
+    public static final RegistrySupplier<Block> SELLAFIELD_BEDROCK = registerBlock("sellafield_bedrock",
+            () -> new BlockSellafieldSlaked(BlockBehaviour.Properties.copy(Blocks.BEDROCK)
+                    .strength(-1.0F, 3600000.0F)
+                    .isValidSpawn((state, level, pos, type) -> false)));
+
+    public static final RegistrySupplier<Block> ORE_SELLAFIELD_DIAMOND = registerBlock("ore_sellafield_diamond",
+            () -> BlockSellafieldOre.diamondOre(BlockBehaviour.Properties.copy(Blocks.STONE)
+                    .strength(5.0F, 10.0F).requiresCorrectToolForDrops()));
+
+    public static final RegistrySupplier<Block> ORE_SELLAFIELD_EMERALD = registerBlock("ore_sellafield_emerald",
+            () -> BlockSellafieldOre.emeraldOre(BlockBehaviour.Properties.copy(Blocks.STONE)
+                    .strength(5.0F, 10.0F).requiresCorrectToolForDrops()));
+
+    public static final RegistrySupplier<Block> ORE_SELLAFIELD_URANIUM_SCORCHED = registerBlock("ore_sellafield_uranium_scorched",
+            () -> BlockSellafieldOre.sellafiteOre(BlockBehaviour.Properties.copy(Blocks.STONE)
+                    .strength(5.0F, 10.0F).requiresCorrectToolForDrops()));
+
+    public static final RegistrySupplier<Block> ORE_SELLAFIELD_SCHRABIDIUM = registerBlock("ore_sellafield_schrabidium",
+            () -> BlockSellafieldOre.sellafiteOre(BlockBehaviour.Properties.copy(Blocks.STONE)
+                    .strength(5.0F, 10.0F).requiresCorrectToolForDrops()));
+
+    public static final RegistrySupplier<Block> ORE_SELLAFIELD_RADGEM = registerBlock("ore_sellafield_radgem",
+            () -> BlockSellafieldOre.radgemOre(BlockBehaviour.Properties.copy(Blocks.STONE)
+                    .strength(5.0F, 10.0F).requiresCorrectToolForDrops()));
+
+    public static final RegistrySupplier<Block> WASTE_TRINITITE = registerBlock("waste_trinitite",
+            () -> new BlockOre(BlockBehaviour.Properties.copy(Blocks.SAND).strength(0.5F, 2.5F)));
+
+    public static final RegistrySupplier<Block> WASTE_TRINITITE_RED = registerBlock("waste_trinitite_red",
+            () -> new BlockOre(BlockBehaviour.Properties.copy(Blocks.SAND).strength(0.5F, 2.5F)));
+
+    public static final RegistrySupplier<Block> WASTE_MYCELIUM = registerBlock("waste_mycelium",
+            () -> new WasteEarth(BlockBehaviour.Properties.copy(Blocks.MYCELIUM)
+                    .strength(0.6F)
+                    .lightLevel(state -> 1)
+                    .randomTicks()));
 
     // ГРАВИТИРУЮЩИЕ ВЕРСИИ СЕЛЛАФИТА (NEW!)
 

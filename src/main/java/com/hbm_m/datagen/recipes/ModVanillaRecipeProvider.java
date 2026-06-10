@@ -242,25 +242,53 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
                 .save(writer, recipeId("crafting/defuser"));
 
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.DESIGNATOR.get())
+                .pattern("  A")
+                .pattern("#B#")
+                .pattern("#B#")
+                .define('#', Ingredient.of(
+                        ModItems.getIngot(ModIngots.POLYMER).get(),
+                        ModItems.getIngot(ModIngots.BAKELITE).get()))
+                .define('A', ModItems.PLATE_STEEL.get())
+                .define('B', ModItems.ANALOG_CIRCUIT.get())
+                .unlockedBy(getHasName(ModItems.ANALOG_CIRCUIT.get()), has(ModItems.ANALOG_CIRCUIT.get()))
+                .save(writer, recipeId("crafting/designator"));
+
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.DESIGNATOR_MANUAL.get())
-                .pattern("  #")
-                .pattern("$G$")
-                .pattern("$G$")
-                .define('$', ModItems.PLATE_IRON.get()) // TODO Replace iron with bakelite/polymer
-                .define('#', ModItems.PLATE_STEEL.get())
-				.define('G', ModItems.INTEGRATED_CIRCUIT.get())
-                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .pattern("  A")
+                .pattern("#C#")
+                .pattern("#B#")
+                .define('#', Ingredient.of(
+                        ModItems.getIngot(ModIngots.POLYMER).get(),
+                        ModItems.getIngot(ModIngots.BAKELITE).get()))
+                .define('A', ModItems.PLATE_LEAD.get())
+                .define('B', ModItems.ADVANCED_CIRCUIT.get())
+                .define('C', ModItems.DESIGNATOR.get())
+                .unlockedBy(getHasName(ModItems.DESIGNATOR.get()), has(ModItems.DESIGNATOR.get()))
                 .save(writer, recipeId("crafting/designator_manual"));
-		
-		ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.DESIGNATOR_RANGE.get())
-                .pattern("#@ ")
-                .pattern("!  ")
-                .pattern("   ")
-                .define('#', ModItems.RANGE_DETONATOR.get()) 
-                .define('@', ModItems.DESIGNATOR_MANUAL.get())
-				.define('!', ModItems.PLATE_IRON.get()) // TODO Replace iron with bakelite/polymer
-                .unlockedBy(getHasName(ModItems.RANGE_DETONATOR.get()), has(ModItems.RANGE_DETONATOR.get()))
+
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.DESIGNATOR_RANGE.get())
+                .requires(ModItems.RANGEFINDER.get())
+                .requires(ModItems.DESIGNATOR.get())
+                .requires(Ingredient.of(
+                        ModItems.getIngot(ModIngots.POLYMER).get(),
+                        ModItems.getIngot(ModIngots.BAKELITE).get()))
+                .unlockedBy(getHasName(ModItems.RANGEFINDER.get()), has(ModItems.RANGEFINDER.get()))
                 .save(writer, recipeId("crafting/designator_range"));
+
+        // TODO: временная заглушка — заменить на литьё из плутония, когда переработка будет портирована
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.BILLET_PLUTONIUM.get())
+                .requires(ModItems.getIngot(ModIngots.URANIUM).get(), 6)
+                .requires(ModItems.getIngot(ModIngots.LEAD).get(), 3)
+                .unlockedBy(getHasName(ModItems.getIngot(ModIngots.URANIUM).get()), has(ModItems.getIngot(ModIngots.URANIUM).get()))
+                .save(writer, recipeId("crafting/billet_plutonium_stub"));
+
+        // TODO: временная заглушка — заменить на ass.mancore в сборочной машине
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.FAT_MAN_CORE.get())
+                .requires(ModItems.BILLET_PLUTONIUM.get(), 1)
+                .requires(ModItems.getIngot(ModIngots.BERYLLIUM).get(), 2)
+                .unlockedBy(getHasName(ModItems.BILLET_PLUTONIUM.get()), has(ModItems.BILLET_PLUTONIUM.get()))
+                .save(writer, recipeId("crafting/fat_man_core_stub"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.CRT_DISPLAY.get(), 4)
                 .pattern(" # ")

@@ -14,6 +14,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -214,7 +215,7 @@ public class NukeMk5ChunkEater implements IExplosionRay {
                 }
                 inChunk = true;
 
-                if (!state.isAir()) {
+                if (shouldClearBlock(state)) {
                     BlockPos pos = new BlockPos(x0, y0, z0);
                     if (x0 == tipX && y0 == tipY && z0 == tipZ) {
                         toRemTips.add(pos);
@@ -228,16 +229,109 @@ public class NukeMk5ChunkEater implements IExplosionRay {
             if (toRemTips.contains(pos)) {
                 handleTip(pos.getX(), pos.getY(), pos.getZ());
             } else {
-                level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+                clearBlock(pos);
             }
         }
+
+        clearFluidsInChunkColumn(chunkX, chunkZ);
 
         perChunk.remove(coord);
         orderedChunks.remove(0);
     }
 
+    /** Удаляет жидкости в колонке чанка внутри радиуса кратера (1.20: иначе остаются полоски воды). */
+    private void clearFluidsInChunkColumn(int chunkX, int chunkZ) {
+        int minX = chunkX << 4;
+        int maxX = minX + 15;
+        int minZ = chunkZ << 4;
+        int maxZ = minZ + 15;
+        int maxR = this.length;
+        BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
+
+        for (int x = minX; x <= maxX; x++) {
+            for (int z = minZ; z <= maxZ; z++) {
+                double dx = x + 0.5D - posX;
+                double dz = z + 0.5D - posZ;
+                if (dx * dx + dz * dz > (double) maxR * maxR) {
+                    continue;
+                }
+                int surfaceY = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
+                int maxY = Math.min(level.getMaxBuildHeight(), surfaceY + 16);
+                for (int y = level.getMinBuildHeight(); y < maxY; y++) {
+                    mutablePos.set(x, y, z);
+                    BlockState state = level.getBlockState(mutablePos);
+                    if (!state.getFluidState().isEmpty()) {
+                        clearBlock(mutablePos);
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean fluidsCleared = false;
+    private boolean fluidClearInProgress = false;
+    private int fluidClearCursorX;
+
+    /** Финальный проход по сфере — убирает воду, просочившуюся между тиками обработки чанков. */
+    public void clearRemainingFluidsInCrater(int budgetMs) {
+        if (fluidsCleared) {
+            return;
+        }
+
+        int maxR = this.length;
+        if (!fluidClearInProgress) {
+            fluidClearInProgress = true;
+            fluidClearCursorX = posX - maxR;
+        }
+
+        long deadline = System.currentTimeMillis() + budgetMs;
+        BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
+
+        outer:
+        for (; fluidClearCursorX <= posX + maxR; fluidClearCursorX++) {
+            for (int z = posZ - maxR; z <= posZ + maxR; z++) {
+                if (System.currentTimeMillis() >= deadline) {
+                    break outer;
+                }
+
+                double dx = fluidClearCursorX + 0.5D - posX;
+                double dz = z + 0.5D - posZ;
+                if (dx * dx + dz * dz > (double) maxR * maxR) {
+                    continue;
+                }
+
+                int surfaceY = level.getHeight(Heightmap.Types.WORLD_SURFACE, fluidClearCursorX, z);
+                int maxY = Math.min(level.getMaxBuildHeight(), surfaceY + 16);
+                for (int y = level.getMinBuildHeight(); y < maxY; y++) {
+                    mutablePos.set(fluidClearCursorX, y, z);
+                    if (!level.getBlockState(mutablePos).getFluidState().isEmpty()) {
+                        clearBlock(mutablePos);
+                    }
+                }
+            }
+        }
+
+        if (fluidClearCursorX > posX + maxR) {
+            fluidsCleared = true;
+        }
+    }
+
     protected void handleTip(int x, int y, int z) {
-        level.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState(), 3);
+        clearBlock(new BlockPos(x, y, z));
+    }
+
+    /** Удаляет блок/жидкость вдоль луча (1.20: вода иначе даёт полоски между чанками). */
+    private void clearBlock(BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        if (state.isAir() && state.getFluidState().isEmpty()) return;
+        level.removeBlock(pos, false);
+        if (!level.getBlockState(pos).getFluidState().isEmpty()) {
+            level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+        }
+    }
+
+    private static boolean shouldClearBlock(BlockState state) {
+        return !state.isAir() || !state.getFluidState().isEmpty();
     }
 
     @Override
@@ -258,6 +352,9 @@ public class NukeMk5ChunkEater implements IExplosionRay {
         long start = System.currentTimeMillis();
         while (!perChunk.isEmpty() && System.currentTimeMillis() < start + processTimeMs) {
             processChunk();
+        }
+        if (isAusf3Complete && perChunk.isEmpty()) {
+            clearRemainingFluidsInCrater(processTimeMs);
         }
     }
 

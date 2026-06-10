@@ -22,8 +22,10 @@ import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ChunkRadiationDebugBatchPacket;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.particle.ModParticleTypes;
+import com.hbm_m.world.biome.ModBiomes;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -33,6 +35,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
@@ -104,8 +107,12 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                     continue;
                 }
                 getChunkRadiationCap(chunk).ifPresent(cap -> {
-                    float spreadValue = cap.getAmbientRadiation()
-                            + cap.getBlockRadiation() * ModClothConfig.get().radSourceInfluenceFactor;
+                    float spreadValue = cap.getAmbientRadiation();
+                    // В кратерах ambient = фон биома (30/10). Sellafite даёт hazard на блоках,
+                    // но не должен бесконечно подпитывать chunk ambient (в 1.7.10 sellafite не BlockHazard).
+                    if (getCraterBiomeBaseline(level, pos) <= 0f) {
+                        spreadValue += cap.getBlockRadiation() * ModClothConfig.get().radSourceInfluenceFactor;
+                    }
                     if (spreadValue > 1e-6f) {
                         buff.put(pos, spreadValue);
                     }
@@ -140,7 +147,8 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                             newRad = Mth.clamp(newRad * 0.99f - 0.05f, 0f, MAX_RAD);
                             radiation.put(newCoord, newRad);
                         } else {
-                            radiation.put(newCoord, sourceValue * percent);
+                            float leaked = Mth.clamp(sourceValue * percent * 0.99f - 0.05f, 0f, MAX_RAD);
+                            radiation.put(newCoord, leaked);
                         }
 
                         float rad = radiation.get(newCoord);
@@ -183,6 +191,8 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                 if (newAmbient < 0.01f) {
                     newAmbient = 0f;
                 }
+
+                newAmbient = applyCraterBiomeEquilibrium(level, pos, newAmbient);
 
                 newAmbient = Mth.clamp(newAmbient, 0f, MAX_RAD);
                 final float finalAmbientRad = newAmbient;
@@ -262,11 +272,12 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
 
     @Override
     public void receiveChunkLoad(LevelChunk chunk) {
-        // GIT ChunkRadiationHandlerSimple#receiveChunkLoad: только persisted ambient из NBT capability.
-        // Не сканируем блоки — hazard registry (руда и т.д.) != источник chunk rad в Simple режиме.
         getChunkRadiationCap(chunk).ifPresent(cap -> {
-            cap.setBlockRadiation(0f);
-            if (cap.getAmbientRadiation() > 1e-6f) {
+            if (cap.getBlockRadiation() < 1e-6f && cap.getAmbientRadiation() > WORLD_RAD_EFFECTS_THRESHOLD) {
+                recalculateChunkRadiation(chunk);
+            }
+
+            if (cap.getAmbientRadiation() > 1e-6f || cap.getBlockRadiation() > 1e-6f) {
                 activeChunksByDimension.computeIfAbsent(chunk.getLevel().dimension().location(),
                         k -> ConcurrentHashMap.newKeySet()).add(chunk.getPos());
             }
@@ -465,62 +476,46 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                 continue;
             }
 
-            List<Map.Entry<ChunkPos, Float>> entries = new ArrayList<>();
-            for (ChunkPos chunkPos : chunkSet) {
-                LevelChunk chunk = level.getChunkSource().getChunk(chunkPos.x, chunkPos.z, false);
+            ChunkPos[] chunkArray = chunkSet.toArray(ChunkPos[]::new);
+
+            for (int c = 0; c < chunksPerTick; c++) {
+                ChunkPos coords = chunkArray[level.random.nextInt(chunkArray.length)];
+
+                if (!level.hasChunk(coords.x, coords.z)) {
+                    continue;
+                }
+
+                LevelChunk chunk = level.getChunkSource().getChunk(coords.x, coords.z, false);
                 if (chunk == null) {
                     continue;
                 }
+
                 float rad = getChunkRadiationCap(chunk).map(IChunkRadiation::getAmbientRadiation).orElse(0f);
-                if (rad > 0f) {
-                    entries.add(Map.entry(chunkPos, rad));
+                if (rad < threshold) {
+                    continue;
                 }
-            }
 
-            if (entries.isEmpty()) {
-                continue;
-            }
-
-            Map.Entry<ChunkPos, Float>[] entryArray = entries.toArray(Map.Entry[]::new);
-
-            for (int c = 0; c < chunksPerTick; c++) {
-                Map.Entry<ChunkPos, Float> randEnt = entryArray[level.random.nextInt(entryArray.length)];
-                ChunkPos coords = randEnt.getKey();
+                int minX = coords.getMinBlockX();
+                int minZ = coords.getMinBlockZ();
 
                 for (int i = 0; i < count; i++) {
-                    if (randEnt.getValue() < threshold) {
-                        continue;
-                    }
+                    int x = minX + level.random.nextInt(16);
+                    int z = minZ + level.random.nextInt(16);
+                    int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, x, z)
+                            - 1 - level.random.nextInt(2);
 
-                    if (!level.hasChunk(coords.x, coords.z)) {
-                        continue;
-                    }
+                    BlockPos blockPos = new BlockPos(x, y, z);
+                    BlockState state = level.getBlockState(blockPos);
 
-                    for (int a = 0; a < 16; a++) {
-                        for (int b = 0; b < 16; b++) {
-                            if (level.random.nextInt(3) != 0) {
-                                continue;
-                            }
-
-                            int x = coords.getMiddleBlockX() - 8 + a;
-                            int z = coords.getMiddleBlockZ() - 8 + b;
-                            int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, x, z)
-                                    - 1 - level.random.nextInt(2);
-
-                            BlockPos blockPos = new BlockPos(x, y, z);
-                            BlockState state = level.getBlockState(blockPos);
-
-                            if (state.is(Blocks.GRASS_BLOCK)) {
-                                level.setBlock(blockPos, ModBlocks.WASTE_GRASS.get().defaultBlockState(), 2);
-                            } else if (state.is(Blocks.GRASS)) {
-                                level.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 2);
-                            } else if (state.is(BlockTags.LEAVES) && !state.is(ModBlocks.WASTE_LEAVES.get())) {
-                                if (level.random.nextInt(7) <= 5) {
-                                    level.setBlock(blockPos, ModBlocks.WASTE_LEAVES.get().defaultBlockState(), 2);
-                                } else {
-                                    level.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 2);
-                                }
-                            }
+                    if (state.is(Blocks.GRASS_BLOCK)) {
+                        level.setBlock(blockPos, ModBlocks.WASTE_GRASS.get().defaultBlockState(), 2);
+                    } else if (state.is(Blocks.GRASS)) {
+                        level.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 2);
+                    } else if (state.is(BlockTags.LEAVES) && !state.is(ModBlocks.WASTE_LEAVES.get())) {
+                        if (level.random.nextInt(7) <= 5) {
+                            level.setBlock(blockPos, ModBlocks.WASTE_LEAVES.get().defaultBlockState(), 2);
+                        } else {
+                            level.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 2);
                         }
                     }
                 }
@@ -552,4 +547,47 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
         }
     }
     //?}
+
+    /**
+     * В биомах кратера ambient стремится к конфигурируемому фону (30 / 10 RAD/s).
+     * Всплески после взрыва сохраняются, но со временем затухают до baseline.
+     */
+    private static float applyCraterBiomeEquilibrium(ServerLevel level, ChunkPos pos, float ambient) {
+        float baseline = getCraterBiomeBaseline(level, pos);
+        if (baseline <= 0f) {
+            return ambient;
+        }
+
+        if (ambient > baseline) {
+            float excess = ambient - baseline;
+            excess = excess * 0.88f - 1.0f;
+            if (excess < 0.5f) {
+                excess = 0f;
+            }
+            return baseline + excess;
+        }
+
+        if (ambient < baseline) {
+            return ambient + (baseline - ambient) * 0.12f;
+        }
+
+        return ambient;
+    }
+
+    private static float getCraterBiomeBaseline(ServerLevel level, ChunkPos pos) {
+        if (!ModClothConfig.get().enableCraterBiomes) {
+            return 0f;
+        }
+
+        BlockPos sample = new BlockPos(pos.getMinBlockX() + 8, level.getSeaLevel(), pos.getMinBlockZ() + 8);
+        Holder<Biome> biome = level.getBiome(sample);
+
+        if (biome.is(ModBiomes.INNER_CRATER_KEY)) {
+            return ModClothConfig.get().craterBiomeInnerChunkRad;
+        }
+        if (biome.is(ModBiomes.OUTER_CRATER_KEY)) {
+            return ModClothConfig.get().craterBiomeOuterChunkRad;
+        }
+        return 0f;
+    }
 }

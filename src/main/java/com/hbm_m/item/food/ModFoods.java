@@ -27,8 +27,7 @@ public class ModFoods {
             .build();
 
     public static final FoodProperties CANNED_BHOLE = new FoodProperties.Builder()
-            .nutrition(4).saturationMod(0.4F)
-            .effect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200), 0.3F) // устойчивость к урону
+            .nutrition(10).saturationMod(1.0F)
             .build();
 
     public static final FoodProperties CANNED_CHEESE = new FoodProperties.Builder()

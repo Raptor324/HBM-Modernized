@@ -92,6 +92,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         // БАЗОВЫЕ ПОРОШКИ (всегда существуют)
         if (ModItems.DUST != null && ModItems.DUST.isPresent()) powderTexture(ModItems.DUST, "powders/dust");
         if (ModItems.DUST_TINY != null && ModItems.DUST_TINY.isPresent()) powderTexture(ModItems.DUST_TINY, "powders/tiny/dust_tiny");
+        generatedItemIfTextureExists(ModItems.FALLOUT, "fallout");
         powderTexture(ModItems.POWDER_DESH_MIX, "powders/powder_desh_mix");
         powderTexture(ModItems.POWDER_NITAN_MIX, "powders/powder_nitan_mix");
 
@@ -164,6 +165,9 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.DESIGNATOR_RANGE);
         simpleItem(ModItems.DESIGNATOR_MANUAL);
         simpleItem(ModItems.SCRAP);
+        simpleItem(ModItems.BLACK_HOLE);
+        simpleItem(ModItems.PELLET_ANTIMATTER);
+        simpleItem(ModItems.FLAME_PONY);
         simpleItem(ModItems.CRT_DISPLAY);
         simpleItem(ModItems.MAGNETRON);
         simpleItem(ModItems.TURBINE_TITANIUM);
@@ -671,6 +675,9 @@ public class ModItemModelProvider extends ItemModelProvider {
         itemModelFromBlockResourcePath("airbomb_a", "block/bomb/airbomb");
         itemModelFromBlockResourcePath("airnukebomb_a", "block/bomb/balebomb_test");
         blockItemFromBlockModelBomb(ModBlocks.BALEBOMB_TEST);
+        blockItemFromBlockModel(ModBlocks.NUCLEAR_FALLOUT);
+        blockItemFromBlockModel(ModBlocks.BLOCK_FALLOUT);
+
         blockItemFromBlockModel(ModBlocks.ANTENNA_TOP);
         blockItemFromBlockModel(ModBlocks.ASBESTOS_ORE);
         blockItemFromBlockModel(ModBlocks.B29);

@@ -213,6 +213,15 @@
       "hbm_m:tool/repair2"
     ]
   },
+  "block.debris": {
+    "category": "block",
+    "subtitle": "sounds.hbm_m.subtitle.debris",
+    "sounds": [
+      "hbm_m:block/debris1",
+      "hbm_m:block/debris2",
+      "hbm_m:block/debris3"
+    ]
+  },
   "block.cratebreak1": {
     "subtitle": "sounds.hbm_m.subtitle.cratebreak1",
     "sounds": [

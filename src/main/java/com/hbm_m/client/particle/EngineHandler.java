@@ -5,6 +5,7 @@ import com.hbm_m.lib.RefStrings;
 import com.hbm_m.particle.nt.ParticleEngineNT;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
@@ -26,6 +27,8 @@ public class EngineHandler {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_WEATHER) return;
 
         MultiBufferSource.BufferSource buffer = Minecraft.getInstance().renderBuffers().bufferSource();
+
+        FogRenderer.setupNoFog();
 
         // ── Фаза 1: все облака/cloudlets ──
         ParticleEngineNT.INSTANCE.render(buffer, event.getCamera(), event.getPartialTick(), event.getPoseStack());
