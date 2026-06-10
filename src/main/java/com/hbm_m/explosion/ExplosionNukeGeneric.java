@@ -4,6 +4,8 @@ import java.util.List;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.damagesource.ModDamageSources;
+import com.hbm_m.entity.effect.EntityCloudFleija;
+import com.hbm_m.entity.logic.EntityExplosionChunkloading;
 import com.hbm_m.interfaces.IEnergyReceiver;
 import com.hbm_m.radiation.ChunkRadiationManager;
 
@@ -116,6 +118,8 @@ public class ExplosionNukeGeneric {
 
     private static boolean isExplosionExempt(Entity entity) {
         if (entity instanceof Ocelot) return true;
+        if (entity instanceof EntityCloudFleija) return true;
+        if (entity instanceof EntityExplosionChunkloading) return true;
 
         if (entity instanceof Player player && player.isCreative()) {
             return true;

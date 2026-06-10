@@ -59,10 +59,12 @@ public class EntityNukeExplosionMK3 extends EntityExplosionChunkloading {
             }
         }
 
-        level().playSound(null, getX(), getY(), getZ(),
-                SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.BLOCKS,
-                10000.0F, 0.8F + level().random.nextFloat() * 0.2F);
-        ExplosionNukeGeneric.dealDamage(level(), getX(), getY(), getZ(), this.destructionRange * 2.0);
+        if (!level().isClientSide) {
+            level().playSound(null, getX(), getY(), getZ(),
+                    SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.BLOCKS,
+                    10000.0F, 0.8F + level().random.nextFloat() * 0.2F);
+            ExplosionNukeGeneric.dealDamage(level(), getX(), getY(), getZ(), this.destructionRange * 2.0);
+        }
     }
 
     @Override

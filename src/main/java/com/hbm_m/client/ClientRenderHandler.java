@@ -121,6 +121,21 @@ public class ClientRenderHandler {
                                 .setOutputState(TRANSLUCENT_TARGET)
                                 .createCompositeState(false)));
 
+        /** Fleija cloud — untextured sphere, full-bright color (порт RenderCloudFleija). */
+        public static final RenderType FLEIJA_SPHERE = create("fleija_sphere",
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 262144, false, true,
+                RenderType.CompositeState.builder()
+                        .setShaderState(POSITION_COLOR_SHADER)
+                        .setTransparencyState(ADDITIVE_BLEND)
+                        .setCullState(NO_CULL)
+                        .setLightmapState(NO_LIGHTMAP)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .setOutputState(TRANSLUCENT_TARGET)
+                        .createCompositeState(false));
+
+        /** Fleija outer shells / shockwave — additive glow. */
+        public static final RenderType FLEIJA_SPHERE_ADDITIVE = FLEIJA_SPHERE;
+
         /** Fallout rain (RenderFallout): entity translucent, NO_CULL, CLOUDS_TARGET, 7/7/1/0 blend. */
         public static final Function<ResourceLocation, RenderType> ENTITY_SMOOTH = Util.memoize(
                 texture -> create("entity_smooth", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, true, true,

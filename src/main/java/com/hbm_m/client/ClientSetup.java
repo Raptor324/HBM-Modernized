@@ -55,6 +55,8 @@ import com.hbm_m.client.render.EmptyEntityRenderer;
 import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.ModShaders;
 import com.hbm_m.client.render.culling.OcclusionCullingHelper;
+import com.hbm_m.client.render.effect.FleijaSphereMesh;
+import com.hbm_m.client.render.effect.RenderCloudFleija;
 import com.hbm_m.client.render.effect.RenderFallout;
 import com.hbm_m.client.render.implementations.AirBombProjectileEntityRenderer;
 import com.hbm_m.client.render.implementations.ZirnoxDebrisRenderer;
@@ -705,6 +707,8 @@ public class ClientSetup {
                 EntityRendererRegistry.register(entityType, RenderFallout::new));
         ModEntities.NUKE_MK3.ifPresent(entityType ->
                 EntityRendererRegistry.register(entityType, ctx -> new EmptyEntityRenderer<>(ctx)));
+        ModEntities.CLOUD_FLEIJA.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, RenderCloudFleija::new));
         ModEntities.NUKE_MK5.ifPresent(entityType ->
                 EntityRendererRegistry.register(entityType, ctx -> new EmptyEntityRenderer<>(ctx)));
         ModEntities.FALLING_SELLAFIT_ENTITY_TYPE.ifPresent(entityType ->
@@ -1391,6 +1395,7 @@ public class ClientSetup {
         event.registerEntityRenderer(ModEntities.AIRSTRIKE_AGENT_ENTITY.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.NUKE_FALLOUT_RAIN.get(), RenderFallout::new);
         event.registerEntityRenderer(ModEntities.NUKE_MK3.get(), ctx -> new EmptyEntityRenderer<>(ctx));
+        event.registerEntityRenderer(ModEntities.CLOUD_FLEIJA.get(), RenderCloudFleija::new);
         event.registerEntityRenderer(ModEntities.NUKE_MK5.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.FALLING_SELLAFIT_ENTITY_TYPE.get(), FallingBlockRenderer::new);
         event.registerEntityRenderer(ModEntities.MISSILE_TEST.get(), MissileEntityRenderer::new);
@@ -1442,6 +1447,7 @@ public class ClientSetup {
                 preparationsProfiler, reloadProfiler,
                 backgroundExecutor, gameExecutor) -> {
             return preparationBarrier.wait(null).thenRunAsync(() -> {
+                FleijaSphereMesh.reload(resourceManager);
                 // КРИТИЧНО: Откладываем очистку кэшей на render thread, чтобы избежать
                 // race condition с активным рендером (EXCEPTION_ACCESS_VIOLATION при
                 // включении шейдера - clearCaches вызывался во время render pass).

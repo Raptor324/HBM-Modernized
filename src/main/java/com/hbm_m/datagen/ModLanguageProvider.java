@@ -3672,11 +3672,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.block_cdalloy", "CDalloy Block");
                 add(ModBlocks.DECO_STEEL.get(), "Steel Deco Block");
                 add(ModBlocks.DECO_RUSTY_STEEL.get(), "Rusty Steel Deco Block");
-                add(ModBlocks.DECO_TUNGSTEN.get(), "Tungsten deco Block");
-                add(ModBlocks.DECO_ALUMINUM.get(), "Aluminum deco Block");
-                add(ModBlocks.DECO_RED_COPPER.get(), "Red Copper deco Block");
-                add(ModBlocks.DECO_BERYLLIUM.get(), "Beryllium deco Block");
-                add(ModBlocks.DECO_LEAD.get(), "Lead deco Block");
+                add(ModBlocks.DECO_TUNGSTEN.get(), "Tungsten Deco Block");
+                add(ModBlocks.DECO_ALUMINUM.get(), "Aluminum Deco Block");
+                add(ModBlocks.DECO_RED_COPPER.get(), "Red Copper Deco Block");
+                add(ModBlocks.DECO_BERYLLIUM.get(), "Beryllium Deco Block");
+                add(ModBlocks.DECO_LEAD.get(), "Lead Deco Block");
                 add("block.hbm_m.depth_stone_slab", "Depth Stone Slab");
                 add("block.hbm_m.depth_stone_nether_slab", "Nether Depth Stone Slab");
                 add("block.hbm_m.depth_stone_stairs", "Depth Stone Stairs");

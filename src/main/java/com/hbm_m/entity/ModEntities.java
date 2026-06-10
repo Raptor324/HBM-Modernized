@@ -1,5 +1,6 @@
 package com.hbm_m.entity;
 
+import com.hbm_m.entity.effect.EntityCloudFleija;
 import com.hbm_m.entity.effect.EntityFalloutRain;
 import com.hbm_m.entity.effect.EntityMist;
 import com.hbm_m.entity.grenades.*;
@@ -313,6 +314,14 @@ public class ModEntities {
                             .clientTrackingRange(256)
                             .updateInterval(1)
                             .build("nuke_mk5"));
+
+    public static final RegistrySupplier<EntityType<EntityCloudFleija>> CLOUD_FLEIJA =
+            ENTITY_TYPES.register("cloud_fleija",
+                    () -> EntityType.Builder.<EntityCloudFleija>of(EntityCloudFleija::new, MobCategory.MISC)
+                            .sized(1.0F, 1.0F)
+                            .clientTrackingRange(512)
+                            .updateInterval(1)
+                            .build("cloud_fleija"));
 
     public static final RegistrySupplier<EntityType<EntityFalloutRain>> NUKE_FALLOUT_RAIN =
             ENTITY_TYPES.register("nuke_fallout_rain",

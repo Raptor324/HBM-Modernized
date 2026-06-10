@@ -1,8 +1,9 @@
 package com.hbm_m.explosion;
 
 import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.entity.ModEntities;
+import com.hbm_m.entity.effect.EntityCloudFleija;
 import com.hbm_m.entity.logic.EntityNukeExplosionMK3;
-import com.hbm_m.particle.helper.CloudCreator;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
@@ -29,7 +30,9 @@ public final class FleijaExplosionAPI {
         EntityNukeExplosionMK3 explosion = EntityNukeExplosionMK3.statFacFleija(level, x, y, z, radius);
         if (!explosion.isRemoved()) {
             level.addFreshEntity(explosion);
-            CloudCreator.composeEffect(level, x, y, z, radius);
+            EntityCloudFleija cloud = new EntityCloudFleija(ModEntities.CLOUD_FLEIJA.get(), level, radius);
+            cloud.setPos(x, y, z);
+            level.addFreshEntity(cloud);
         }
         return explosion;
     }
