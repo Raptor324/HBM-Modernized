@@ -22,6 +22,10 @@ public class HTTPHandler {
 	public static final String MODRINTH_PROJECT_SLUG = "hbms-nuclear-tech-modernized";
 	public static final String CURSEFORGE_PROJECT_SLUG = "hbms-nuclear-tech-modernized";
 
+	public static final String BOOSTY_URL = "https://boosty.to/hbmmodernized";
+	public static final String SUPPORT_PAGE_URL =
+			"https://github.com/Raptor324/HBM-Modernized/blob/main/SUPPORT.md";
+
 	public static List<String> capsule = new ArrayList<>();
 	public static List<String> tipOfTheDay = new ArrayList<>();
 

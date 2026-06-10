@@ -148,7 +148,7 @@ public class GUIMachineFrackingTower extends AbstractContainerScreen<MachineFrac
         
         // Название инвентаря игрока
         graphics.drawString(this.font, 
-                Component.translatable("container.inventory"), 
+                this.playerInventoryTitle, 
                 8, this.imageHeight - 96 + 2, 0x404040, false);
     }
 

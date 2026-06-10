@@ -4,21 +4,22 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.hbm_m.item.tags_and_tiers.ModTags;
-import net.minecraftforge.common.Tags;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.generic.BlockAbsorber;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.generic.BlockAbsorber;
 import com.hbm_m.item.BlockAbsorberItem;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
+import com.hbm_m.item.tags_and_tiers.ModTags;
 import com.hbm_m.lib.RefStrings;
+import net.minecraftforge.common.Tags;
 
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.CriterionTriggerInstance;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -29,7 +30,6 @@ import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.data.recipes.SimpleCookingRecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -37,8 +37,6 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Blocks;
-
-import dev.architectury.registry.registries.RegistrySupplier;
 
 public class ModVanillaRecipeProvider extends RecipeProvider {
 
@@ -124,7 +122,18 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('#', ModItems.COIL_COPPER.get())
                 .define('@', ModItems.COIL_COPPER_TORUS.get())
                 .unlockedBy(getHasName(ModItems.COIL_COPPER_TORUS.get()), has(ModItems.COIL_COPPER_TORUS.get()))
-                .save(writer, recipeId("crafting/motor"));
+                .save(writer, recipeId("crafting/motor1"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.MOTOR.get(), 2)
+                .pattern(" $ ")
+                .pattern("%#%")
+                .pattern(" @ ")
+                .define('%', ModItems.PLATE_STEEL.get())
+                .define('$', ModItems.WIRE_RED_COPPER.get())
+                .define('#', ModItems.COIL_COPPER.get())
+                .define('@', ModItems.COIL_COPPER_TORUS.get())
+                .unlockedBy(getHasName(ModItems.COIL_COPPER_TORUS.get()), has(ModItems.COIL_COPPER_TORUS.get()))
+                .save(writer, recipeId("crafting/motor2"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.MOTOR_DESH.get(), 2)
                 .pattern("@$@")
@@ -220,6 +229,26 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('#', ModItems.PLATE_STEEL.get())
                 .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
                 .save(writer, recipeId("crafting/defuser"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.DESIGNATOR_MANUAL.get())
+                .pattern("  #")
+                .pattern("$G$")
+                .pattern("$G$")
+                .define('$', ModItems.PLATE_IRON.get()) // TODO Replace iron with bakelite/polymer
+                .define('#', ModItems.PLATE_STEEL.get())
+				.define('G', ModItems.INTEGRATED_CIRCUIT.get())
+                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .save(writer, recipeId("crafting/designator_manual"));
+		
+		ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.DESIGNATOR_RANGE.get())
+                .pattern("#@ ")
+                .pattern("!  ")
+                .pattern("   ")
+                .define('#', ModItems.RANGE_DETONATOR.get()) 
+                .define('@', ModItems.DESIGNATOR_MANUAL.get())
+				.define('!', ModItems.PLATE_IRON.get()) // TODO Replace iron with bakelite/polymer
+                .unlockedBy(getHasName(ModItems.RANGE_DETONATOR.get()), has(ModItems.RANGE_DETONATOR.get()))
+                .save(writer, recipeId("crafting/designator_range"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.CRT_DISPLAY.get(), 4)
                 .pattern(" # ")
@@ -467,6 +496,16 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('@', ModItems.BILLET_PLUTONIUM.get())
                 .unlockedBy(getHasName(ModItems.BILLET_PLUTONIUM.get()), has(ModItems.BILLET_PLUTONIUM.get()))
                 .save(writer, recipeId("crafting/mine_fat"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.RANGEFINDER.get())
+                .pattern("GRC")
+                .pattern("  S")
+                .define('G', Ingredient.of(Tags.Items.GLASS_PANES))
+                .define('R', Items.REDSTONE)
+                .define('C', ModItems.INTEGRATED_CIRCUIT.get())
+                .define('S', ModItems.PLATE_STEEL.get())
+                .unlockedBy(getHasName(ModItems.INTEGRATED_CIRCUIT.get()), has(ModItems.INTEGRATED_CIRCUIT.get()))
+                .save(writer, recipeId("crafting/rangefinder"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.RANGE_DETONATOR.get())
                 .pattern("##$")

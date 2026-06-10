@@ -67,13 +67,13 @@ public class GUILaunchPadLarge extends GuiInfoScreen<LaunchPadLargeMenu> {
         } else if (oxidizer == -1) {
             guiGraphics.blit(TEXTURE, this.leftPos + 148, this.topPos + 23, 198, 0, 6, 8);
         }
+        long energy = menu.getEnergyLong();
+        long maxEnergy = menu.getMaxEnergyLong();
+
         if (be.isMissileValid()) {
-            int iconU = be.getEnergyStored() >= 75_000L ? 192 : 198;
+            int iconU = energy >= 75_000L ? 192 : 198;
             guiGraphics.blit(TEXTURE, this.leftPos + 112, this.topPos + 23, iconU, 0, 6, 8);
         }
-
-        long energy = be.getEnergyStored();
-        long maxEnergy = be.getMaxEnergyStored();
         if (maxEnergy > 0 && energy > 0) {
             int height = (int) (energy * TANK_H / maxEnergy);
             if (height > 0) {
@@ -199,7 +199,7 @@ public class GUILaunchPadLarge extends GuiInfoScreen<LaunchPadLargeMenu> {
         if (be != null) {
             drawElectricityInfo(guiGraphics, mouseX, mouseY,
                     this.leftPos + ENERGY_TANK_X, this.topPos + TANK_TOP_Y, TANK_W, TANK_H,
-                    be.getEnergyStored(), be.getMaxEnergyStored());
+                    menu.getEnergyLong(), menu.getMaxEnergyLong());
 
             FluidTank[] tanks = be.getTanks();
             tanks[0].renderTankInfo(guiGraphics, this.font, mouseX, mouseY,

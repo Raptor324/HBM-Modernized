@@ -3,11 +3,13 @@ package com.hbm_m.client.model;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
@@ -237,7 +239,23 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
     public ItemTransforms getTransforms() {
         return this.transforms;
     }
-    
+
+    /**
+     * BEWLR items ({@link #isCustomRenderer}) apply {@code display} in {@code renderByItem}.
+     * Forge {@code IForgeBakedModel#applyTransform} must stay a no-op for them.
+     */
+    //? if forge {
+    @Override
+    public BakedModel applyTransform(ItemDisplayContext transformType, PoseStack poseStack,
+                                     boolean applyLeftHandTransform) {
+        if (isCustomRenderer()) {
+            return this;
+        }
+        getTransforms().getTransform(transformType).apply(applyLeftHandTransform, poseStack);
+        return this;
+    }
+    //?}
+
     public void clearCaches() {
         cachedParticleIcon = null;
     }

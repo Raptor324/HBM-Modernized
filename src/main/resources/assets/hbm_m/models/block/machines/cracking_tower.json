@@ -6,7 +6,7 @@
   "children": {
     "cracking_tower_model": {
       "loader": "forge:obj",
-      "model": "hbm_m:models/block/cracking_tower.obj",
+      "model": "hbm_m:models/block/machines/cracking_tower.obj",
       "flip_v": true,
       "render_type": "minecraft:solid",
       "textures": {

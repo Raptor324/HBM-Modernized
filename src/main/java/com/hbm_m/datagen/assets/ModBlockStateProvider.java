@@ -1,27 +1,29 @@
 package com.hbm_m.datagen.assets;
 //? if forge {
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.decorations.DoorBlock;
 // Провайдер генерации состояний блоков и моделей для блоков мода.
 // Используется в классе DataGenerators для регистрации.
 import com.hbm_m.block.generic.BlockAbsorber;
-import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.block.machines.BlastFurnaceBlock;
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.machines.MachineAssemblerBlock;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.block.machines.MachineWoodBurnerBlock;
-import com.hbm_m.client.model.MachineChemicalPlantBakedModel;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.multiblock.PartRole;
 
-import com.hbm_m.util.MultipartFacingTransforms;
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.Direction;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
-import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SlabBlock;
+import net.minecraft.world.level.block.SnowLayerBlock;
+import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraftforge.client.model.generators.BlockStateProvider;
@@ -29,7 +31,6 @@ import net.minecraftforge.client.model.generators.ModelFile;
 import net.minecraftforge.client.model.generators.VariantBlockStateBuilder;
 import net.minecraftforge.common.data.ExistingFileHelper;
 
-import dev.architectury.registry.registries.RegistrySupplier;
 public class ModBlockStateProvider extends BlockStateProvider {
 
     private final ExistingFileHelper existingFileHelper;
@@ -428,7 +429,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         // Machines
         customMachineBlock(ModBlocks.CRYSTALLIZER);
-        customMachineBlock(ModBlocks.CHEMICAL_PLANT);
+        registerChemicalPlantBlock(ModBlocks.CHEMICAL_PLANT);
+        customMachineBlock(ModBlocks.CHEMICAL_FACTORY);
+        customMachineBlock(ModBlocks.CATALYTIC_REFORMER);
+        customMachineBlock(ModBlocks.LIQUEFACTOR);
         customMachineBlock(ModBlocks.HYDRAULIC_FRACKINING_TOWER);
         customMachineBlock(ModBlocks.COOLING_TOWER);
         customMachineBlock(ModBlocks.TOWER_SMALL);
@@ -523,8 +527,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlock(ModBlocks.STEEL_WALL);
 
         // Other
-        customObjBlock(ModBlocks.AIRBOMB);
-        customObjBlock(ModBlocks.BALEBOMB_TEST);
+        customBombBlock(ModBlocks.AIRBOMB);
+        customBombBlock(ModBlocks.BALEBOMB_TEST);
         customObjBlock(ModBlocks.BARREL_CORRODED);
         customObjBlock(ModBlocks.BARREL_IRON);
         customObjBlock(ModBlocks.BARREL_LOX);
@@ -536,12 +540,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlock(ModBlocks.BARREL_TCALLOY);
         customObjBlock(ModBlocks.BARREL_VITRIFIED);
         customObjBlock(ModBlocks.BARREL_YELLOW);
-        customObjBlock(ModBlocks.DUD_CONVENTIONAL);
-        customObjBlock(ModBlocks.DUD_NUKE);
-        customObjBlock(ModBlocks.DUD_SALTED);
-        simpleBlockWithItem(ModBlocks.MINE_AP.get(), models().getExistingFile(modLoc("block/mine_ap")));
-        simpleBlockWithItem(ModBlocks.MINE_FAT.get(), models().getExistingFile(modLoc("block/mine_fat")));
-        customObjBlock(ModBlocks.NAVAL_MINE);
+        customBombBlock(ModBlocks.DUD_CONVENTIONAL);
+        customBombBlock(ModBlocks.DUD_NUKE);
+        customBombBlock(ModBlocks.DUD_SALTED);
+        simpleBlockWithItem(ModBlocks.MINE_AP.get(), models().getExistingFile(modLoc("block/bomb/mine_ap")));
+        simpleBlockWithItem(ModBlocks.MINE_FAT.get(), models().getExistingFile(modLoc("block/bomb/mine_fat")));
+        customBombBlock(ModBlocks.NAVAL_MINE);
         customObjBlock(ModBlocks.CRATE_CONSERVE);
         customObjBlock(ModBlocks.FILE_CABINET);
 

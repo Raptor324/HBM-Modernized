@@ -130,7 +130,10 @@ public class BlockTaint extends Block {
             }
         }
 
-        if (!level.isClientSide && entity.getClass() == Creeper.class) {
+        if (!level.isClientSide
+                && entity.isAlive()
+                && !entity.isRemoved()
+                && entity.getClass() == Creeper.class) {
             EntityCreeperTainted.convertFromCreeper((Creeper) entity);
         }
     }

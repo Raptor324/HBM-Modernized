@@ -6,7 +6,7 @@
   "children": {
     "mixer_model": {
       "loader": "forge:obj",
-      "model": "hbm_m:models/block/mixer.obj",
+      "model": "hbm_m:models/block/machines/mixer.obj",
       "flip_v": true,
       "render_type": "minecraft:solid",
       "textures": {

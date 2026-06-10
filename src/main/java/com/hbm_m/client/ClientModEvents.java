@@ -3,6 +3,7 @@ package com.hbm_m.client;
 
 
 import com.hbm_m.client.overlay.DoorAnimationDelayHelper;
+import com.hbm_m.client.missile.track.MissileTrackClient;
 import com.hbm_m.client.missile.track.MissileTrackWorldRender;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 import com.hbm_m.client.render.culling.InstancedRenderFrame;
@@ -200,6 +201,10 @@ public class ClientModEvents {
             if (activeBatch.isShadowPass() && !ShaderCompatibilityDetector.isRenderingShadowPass()) {
                 IrisRenderBatch.closePersistentIfActive();
             }
+        }
+
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SKY) {
+            MissileTrackClient.beginRenderFrame();
         }
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_ENTITIES) {

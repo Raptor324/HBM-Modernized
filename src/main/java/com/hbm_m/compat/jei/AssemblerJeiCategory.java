@@ -1,34 +1,34 @@
 package com.hbm_m.compat.jei;
 
+import java.util.List;
+
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.AssemblerRecipe;
+import com.hbm_m.recipe.AssemblerRecipe.AssemblerInputSlot;
 
-import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
-import mezz.jei.api.gui.drawable.IDrawable;
+import mezz.jei.api.gui.builder.IRecipeSlotBuilder;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
-import mezz.jei.api.recipe.category.IRecipeCategory;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
-public class AssemblerJeiCategory implements IRecipeCategory<AssemblerRecipe> {
+/**
+ * JEI port of {@code AssemblyMachineRecipeHandler} (extends {@code NEIGenericRecipeHandler}).
+ */
+public class AssemblerJeiCategory extends JeiGenericRecipeCategory<AssemblerRecipe> {
 
     public static final RecipeType<AssemblerRecipe> RECIPE_TYPE =
             RecipeType.create(RefStrings.MODID, "assembler", AssemblerRecipe.class);
 
-    private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_assembler.png");
-
-    private final IDrawable background;
-    private final IDrawable icon;
-
     public AssemblerJeiCategory(IGuiHelper guiHelper) {
-        this.background = guiHelper.createDrawable(TEXTURE, 0, 0, 176, 144);
-        this.icon = guiHelper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(ModItems.ADVANCED_ASSEMBLY_MACHINE.get()));
+        super(guiHelper, new ItemStack[]{
+                new ItemStack(ModItems.ADVANCED_ASSEMBLY_MACHINE.get())
+        });
     }
 
     @Override
@@ -41,32 +41,87 @@ public class AssemblerJeiCategory implements IRecipeCategory<AssemblerRecipe> {
         return Component.translatable("container.hbm_m.advanced_assembly_machine");
     }
 
-    @Override
-    public IDrawable getBackground() {
-        return background;
+    private static List<AssemblerInputSlot> getInputSlots(AssemblerRecipe recipe) {
+        List<AssemblerInputSlot> slots = recipe.getInputDisplaySlots();
+        if (!slots.isEmpty()) {
+            return slots;
+        }
+        return AssemblerJeiInputs.fallbackFromExpanded(recipe.getIngredients());
     }
 
     @Override
-    public IDrawable getIcon() {
-        return icon;
+    protected int getInputCount(AssemblerRecipe recipe) {
+        return getInputSlots(recipe).size();
     }
 
     @Override
-    public void setRecipe(IRecipeLayoutBuilder builder, AssemblerRecipe recipe, mezz.jei.api.recipe.IFocusGroup focuses) {
-        int slot = 0;
+    protected int getOutputCount(AssemblerRecipe recipe) {
+        return 1;
+    }
 
-        // 4x3 input grid aligned with the machine GUI.
-        for (var ingredient : recipe.getIngredients()) {
-            int x = 8 + (slot % 3) * 18;
-            int y = 18 + (slot / 3) * 18;
-            builder.addSlot(RecipeIngredientRole.INPUT, x, y).addIngredients(ingredient);
-            slot++;
-            if (slot >= 12) {
-                break;
-            }
+    @Override
+    protected boolean hasBlueprintTemplate(AssemblerRecipe recipe) {
+        return recipe.requiresBlueprint();
+    }
+
+    @Override
+    protected int getInputXOffset(AssemblerRecipe recipe, int inputCount) {
+        if (inputCount > 12) return -9;
+        if (inputCount > 9) return 18;
+        return 0;
+    }
+
+    @Override
+    protected int getOutputXOffset(AssemblerRecipe recipe, int outputCount) {
+        return getOffset(recipe);
+    }
+
+    @Override
+    protected int getMachineXOffset(AssemblerRecipe recipe) {
+        return getOffset(recipe);
+    }
+
+    private static int getOffset(AssemblerRecipe recipe) {
+        int length = getInputSlots(recipe).size();
+        if (length > 12) return 27;
+        if (length > 9) return 18;
+        return 0;
+    }
+
+    @Override
+    protected void addInputSlots(IRecipeLayoutBuilder builder, AssemblerRecipe recipe, int inputXOffset) {
+        List<AssemblerInputSlot> inputs = getInputSlots(recipe);
+        int[][] positions = JeiNeiLayout.getGenericInputSlotPositions(inputs.size());
+
+        for (int i = 0; i < inputs.size() && i < positions.length; i++) {
+            AssemblerInputSlot slot = inputs.get(i);
+            IRecipeSlotBuilder jeiSlot = addItemSlot(builder, RecipeIngredientRole.INPUT,
+                    positions[i][0] + inputXOffset, positions[i][1]);
+            JeiIngredientSlots.addCountedIngredient(jeiSlot, slot.ingredient(), slot.count());
+        }
+    }
+
+    @Override
+    protected void addOutputSlots(IRecipeLayoutBuilder builder, AssemblerRecipe recipe, int outputXOffset) {
+        int[][] positions = JeiNeiLayout.getGenericOutputSlotPositions(1);
+        addItemSlot(builder, RecipeIngredientRole.OUTPUT, positions[0][0] + outputXOffset, positions[0][1])
+                .addItemStack(recipe.getResultItem(null));
+    }
+
+    @Override
+    protected void addBlueprintSlot(IRecipeLayoutBuilder builder, AssemblerRecipe recipe, int machineXOffset) {
+        if (!recipe.requiresBlueprint()) {
+            return;
         }
 
-        builder.addSlot(RecipeIngredientRole.OUTPUT, 98, 45)
-                .addItemStack(recipe.getResultItem(null));
+        ItemStack folder = new ItemStack(ModItems.BLUEPRINT_FOLDER.get());
+        ItemBlueprintFolder.writeBlueprintPool(folder, recipe.getBlueprintPool());
+        addUnframedSlot(builder, RecipeIngredientRole.RENDER_ONLY, 75 + machineXOffset, 10)
+                .addItemStack(folder);
+    }
+
+    @Override
+    protected void drawRecipeExtras(AssemblerRecipe recipe, GuiGraphics graphics) {
+        JeiNeiRendering.drawGenericRecipeExtras(graphics, recipe.getDuration(), recipe.getPowerConsumption());
     }
 }

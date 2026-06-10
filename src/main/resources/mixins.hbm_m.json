@@ -8,6 +8,7 @@
     "SlotMixin",
     "PlayerStepSoundMixin",
     "CreeperMixin",
+    "CreeperAccessor",
     "LivingEntityRadiationMixin"
   ],
   "server": [
@@ -16,7 +17,8 @@
     "GameRendererMixin",
     "LightTextureMixin",
     "ModelBlockRendererMixin",
-    "LivingEntityRendererInvoker"
+    "LivingEntityRendererInvoker",
+    "client.MixinItemRendererTemplatePreview"
   ],
   "injectors": {
     "defaultRequire": 1

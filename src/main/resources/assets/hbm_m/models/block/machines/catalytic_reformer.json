@@ -6,7 +6,7 @@
 "children": {
 "catalytic_reformer_model": {
 "loader": "forge:obj",
-"model": "hbm_m:models/block/catalytic_reformer.obj",
+"model": "hbm_m:models/block/machines/catalytic_reformer.obj",
 "flip_v": true,
 "textures": {
 "default": "hbm_m:block/machine/catalytic_reformer"

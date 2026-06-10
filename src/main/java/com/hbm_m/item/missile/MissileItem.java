@@ -65,6 +65,10 @@ public class MissileItem extends Item {
                         .append(String.valueOf(this.fuelCap))
                         .append("mB"));
             }
+            if (this.fuel != MissileFuel.SOLID) {
+                tooltip.add(Component.translatable("item.hbm_m.missile.desc.fluidNotRequiredWip")
+                        .withStyle(ChatFormatting.YELLOW));
+            }
         }
     }
 

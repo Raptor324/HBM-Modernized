@@ -23,6 +23,7 @@ import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.minecraftforge.common.Tags;
 import net.minecraftforge.common.data.ExistingFileHelper;
 
 import static com.hbm_m.item.tags_and_tiers.ModTags.Items.*;
@@ -389,6 +390,12 @@ public class ModItemTagProvider extends ItemTagsProvider {
         // Vanilla jukebox accepts only items in this tag (1.20.1)
         this.tag(ItemTags.MUSIC_DISCS)
                 .add(ModItems.MUSIC_DISC_BUNKER.get());
+
+        // Forge dye tags used by assembler recipes (JEI + crafting)
+        this.tag(Tags.Items.DYES_GREEN).add(Items.GREEN_DYE);
+        this.tag(Tags.Items.DYES_RED).add(Items.RED_DYE);
+        this.tag(Tags.Items.DYES_BLACK).add(Items.BLACK_DYE);
+        this.tag(Tags.Items.DYES_WHITE).add(Items.WHITE_DYE);
     }
 }
 //?}

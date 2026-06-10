@@ -1,5 +1,6 @@
 package com.hbm_m.client.missile.track;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,6 +26,14 @@ public final class MissileTrackClient {
     private static final Map<Integer, TrackEntry> TRACKS = new ConcurrentHashMap<>();
     /** Drop track if no packet for this long (ms). Must exceed brief network stalls. */
     private static final long STALE_MS = 15_000L;
+    /** Squared distance above which entity sync is too stale vs track pose — use track mesh only. */
+    private static final double ENTITY_TRACK_DIVERGENCE_SQ = 4.0D;
+    /** Max client ticks to extrapolate between server pose packets (TPS spike guard). */
+    private static final int MAX_EXTRAPOLATE_TICKS_FACTOR = 4;
+
+    private static int renderFrameId;
+    private static int lockedRenderFrameId = -1;
+    private static final Map<Integer, Boolean> frameUseTrack = new HashMap<>();
 
     private MissileTrackClient() {}
 
@@ -57,10 +66,21 @@ public final class MissileTrackClient {
 
     public static void onStop(int entityId) {
         TRACKS.remove(entityId);
+        frameUseTrack.remove(entityId);
     }
 
     public static void clear() {
         TRACKS.clear();
+        frameUseTrack.clear();
+        lockedRenderFrameId = -1;
+    }
+
+    /**
+     * Lock entity vs track render choice for the current frame (before entity pass).
+     * Prevents the same missile drawing twice when packets arrive mid-frame during lag.
+     */
+    public static void beginRenderFrame() {
+        renderFrameId++;
     }
 
     public static void tick() {
@@ -123,6 +143,22 @@ public final class MissileTrackClient {
         if (entry == null || entry.curr == null) {
             return false;
         }
+        if (lockedRenderFrameId != renderFrameId) {
+            lockedRenderFrameId = renderFrameId;
+            frameUseTrack.clear();
+            for (TrackEntry track : TRACKS.values()) {
+                if (track.curr != null) {
+                    frameUseTrack.put(track.entityId, resolveUseTrackWorldRender(track));
+                }
+            }
+        }
+        return frameUseTrack.getOrDefault(entityId, resolveUseTrackWorldRender(entry));
+    }
+
+    private static boolean resolveUseTrackWorldRender(TrackEntry entry) {
+        if (entry.wasTrackWorldRender && entry.crossedChunkBoundary && !entry.isLaunchPhase()) {
+            return true;
+        }
         return !shouldPreferVanillaEntityRender(entry);
     }
 
@@ -143,6 +179,12 @@ public final class MissileTrackClient {
             return false;
         }
         if (!entry.crossedChunkBoundary) {
+            double dx = entity.getX() - entry.curr.x();
+            double dy = entity.getY() - entry.curr.y();
+            double dz = entity.getZ() - entry.curr.z();
+            if (dx * dx + dy * dy + dz * dz > ENTITY_TRACK_DIVERGENCE_SQ) {
+                return false;
+            }
             return true;
         }
         if (!entry.isLaunchPhase()) {
@@ -243,10 +285,13 @@ public final class MissileTrackClient {
 
             clientTicksSinceUpdate++;
 
+            int interval = Math.max(1, ModClothConfig.get().missileTrackInterval);
+            int extrapTicks = Math.min(clientTicksSinceUpdate, interval * MAX_EXTRAPOLATE_TICKS_FACTOR);
+
             // 1. Предсказываем ГДЕ ракета должна быть прямо сейчас на сервере (Цель)
-            double targetX = curr.x() + curr.vx() * clientTicksSinceUpdate;
-            double targetY = curr.y() + curr.vy() * clientTicksSinceUpdate;
-            double targetZ = curr.z() + curr.vz() * clientTicksSinceUpdate;
+            double targetX = curr.x() + curr.vx() * extrapTicks;
+            double targetY = curr.y() + curr.vy() * extrapTicks;
+            double targetZ = curr.z() + curr.vz() * extrapTicks;
 
             // 2. Добавляем базовую скорость к нашим текущим визуальным координатам
             x += curr.vx();
@@ -267,12 +312,11 @@ public final class MissileTrackClient {
             float pitchVel = 0;
 
             if (prev != null) {
-                int interval = Math.max(1, ModClothConfig.get().missileTrackInterval);
                 yawVel = Mth.wrapDegrees(curr.yaw() - prev.yaw()) / interval;
                 pitchVel = (curr.pitch() - prev.pitch()) / interval;
 
-                targetYaw += yawVel * clientTicksSinceUpdate;
-                targetPitch += pitchVel * clientTicksSinceUpdate;
+                targetYaw += yawVel * extrapTicks;
+                targetPitch += pitchVel * extrapTicks;
             }
 
             yaw += yawVel;

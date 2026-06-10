@@ -154,6 +154,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.FAT_MAN_IGNITER);
         simpleItem(ModItems.FAT_MAN_CORE);
         simpleItem(ModItems.DESIGNATOR);
+        simpleItem(ModItems.RANGEFINDER);
         simpleItem(ModItems.DESIGNATOR_RANGE);
         simpleItem(ModItems.DESIGNATOR_MANUAL);
         simpleItem(ModItems.SCRAP);
@@ -165,6 +166,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.BLADE_TEST);
         simpleItem(ModItems.GEIGER_COUNTER);
         simpleItem(ModItems.DOSIMETER);
+        simpleItem(ModItems.DIGAMMA_DIAGNOSTIC);
         
         // Music disc
         withExistingParent(ModItems.MUSIC_DISC_BUNKER.getId().getPath(), "item/generated")
@@ -600,12 +602,12 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent(ModItems.PLATE_WELDED_TCALLOY.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
         withExistingParent(ModItems.PLATE_WELDED_CDALLOY.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
         withExistingParent(ModItems.PLATE_WELDED_CMB.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded"));
-        // Cyclotron particle parts
-        withExistingParent(ModItems.PART_LITHIUM.getId().getPath(),   "item/generated").texture("layer0", modLoc("item/part_lithium"));
-        withExistingParent(ModItems.PART_BERYLLIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("item/part_beryllium"));
-        withExistingParent(ModItems.PART_CARBON.getId().getPath(),    "item/generated").texture("layer0", modLoc("item/part_carbon"));
-        withExistingParent(ModItems.PART_COPPER.getId().getPath(),    "item/generated").texture("layer0", modLoc("item/part_copper"));
-        withExistingParent(ModItems.PART_PLUTONIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("item/part_plutonium"));
+        // Cyclotron particle parts (textures may be absent until ported from 1.7.10)
+        generatedItemIfTextureExists(ModItems.PART_LITHIUM, "part_lithium");
+        generatedItemIfTextureExists(ModItems.PART_BERYLLIUM, "part_beryllium");
+        generatedItemIfTextureExists(ModItems.PART_CARBON, "part_carbon");
+        generatedItemIfTextureExists(ModItems.PART_COPPER, "part_copper");
+        generatedItemIfTextureExists(ModItems.PART_PLUTONIUM, "part_plutonium");
         blockItemFromBlockModelMachine(ModBlocks.ZIRNOX);
         blockItemFromBlockModelMachine(ModBlocks.ARC_WELDER);
         blockItemFromBlockModelMachine(ModBlocks.SOLDERING_STATION);
@@ -647,22 +649,22 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.INDUSTRIAL_TURBINE);
         blockItemFromBlockModelMachine(ModBlocks.TURBINE);
         blockItemFromBlockModelMachine(ModBlocks.SUBSTATION);
-        blockItemFromBlockModel(ModBlocks.DUD_CONVENTIONAL);
-        blockItemFromBlockModel(ModBlocks.DUD_NUKE);
-        blockItemFromBlockModel(ModBlocks.DUD_SALTED);
+        blockItemFromBlockModelBomb(ModBlocks.DUD_CONVENTIONAL);
+        blockItemFromBlockModelBomb(ModBlocks.DUD_NUKE);
+        blockItemFromBlockModelBomb(ModBlocks.DUD_SALTED);
 
         blockItemFromBlockModel(ModBlocks.FLUID_VALVE);
         blockItemFromBlockModel(ModBlocks.FLUID_PUMP);
         blockItemFromBlockModel(ModBlocks.FLUID_EXHAUST);
 
         // Ранее: assets/.../models/item/*.json с parent = блок или простая generated/handheld-текстура
-        blockItemFromBlockModel(ModBlocks.AIRBOMB);
-        itemModelFromBlockResourcePath("airbomb_a", "block/airbomb");
-        itemModelFromBlockResourcePath("airnukebomb_a", "block/balebomb_test");
+        blockItemFromBlockModelBomb(ModBlocks.AIRBOMB);
+        itemModelFromBlockResourcePath("airbomb_a", "block/bomb/airbomb");
+        itemModelFromBlockResourcePath("airnukebomb_a", "block/bomb/balebomb_test");
+        blockItemFromBlockModelBomb(ModBlocks.BALEBOMB_TEST);
         blockItemFromBlockModel(ModBlocks.ANTENNA_TOP);
         blockItemFromBlockModel(ModBlocks.ASBESTOS_ORE);
         blockItemFromBlockModel(ModBlocks.B29);
-        blockItemFromBlockModel(ModBlocks.BALEBOMB_TEST);
         blockItemFromBlockModel(ModBlocks.BARBED_WIRE);
         blockItemFromBlockModel(ModBlocks.BARBED_WIRE_FIRE);
         blockItemFromBlockModel(ModBlocks.BARBED_WIRE_POISON);
@@ -700,9 +702,9 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModel(ModBlocks.LEAD_ORE);
         blockItemFromBlockModel(ModBlocks.LEAD_ORE_DEEPSLATE);
         blockItemFromBlockModel(ModBlocks.LIGNITE_ORE);
-        blockItemFromBlockModel(ModBlocks.MINE_AP);
-        blockItemFromBlockModel(ModBlocks.MINE_FAT);
-        blockItemFromBlockModel(ModBlocks.NAVAL_MINE);
+        blockItemFromBlockModelBomb(ModBlocks.MINE_AP);
+        blockItemFromBlockModelBomb(ModBlocks.MINE_FAT);
+        blockItemFromBlockModelBomb(ModBlocks.NAVAL_MINE);
         blockItemFromBlockModel(ModBlocks.NUCLEAR_CHARGE);
         blockItemFromBlockModel(ModBlocks.PUTER);
         blockItemFromBlockModel(ModBlocks.RAREGROUND_ORE);
@@ -814,8 +816,7 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.STARMETAL_AXE,
                 ModItems.STARMETAL_PICKAXE,
                 ModItems.STARMETAL_SHOVEL,
-                ModItems.STARMETAL_HOE,
-                ModItems.RANGE_DETONATOR
+                ModItems.STARMETAL_HOE
         ).forEach(this::handheldItem);
     };
 
@@ -921,6 +922,15 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .texture("layer0", modLoc("item/" + texturePath));
     }
 
+    private void generatedItemIfTextureExists(RegistrySupplier<Item> item, String texturePath) {
+        ResourceLocation texture = modLoc("textures/item/" + texturePath + ".png");
+        if (!existingFileHelper.exists(texture, PackType.CLIENT_RESOURCES)) {
+            return;
+        }
+        withExistingParent(item.getId().getPath(), "item/generated")
+                .texture("layer0", modLoc("item/" + texturePath));
+    }
+
     private boolean powderTextureExists(String baseName) {
         ResourceLocation texture = modLoc("textures/item/powders/powder_" + baseName + ".png");
         return existingFileHelper.exists(texture, PackType.CLIENT_RESOURCES);
@@ -1000,8 +1010,14 @@ public class ModItemModelProvider extends ItemModelProvider {
      * No {@code display} block: transforms come from {@link com.hbm_m.client.render.item.ItemRenderMissileGeneric}.
      */
     private void missileItemFromObjModel(String itemPath, MissileFormFactorModels hull, ResourceLocation texture) {
-        ResourceLocation objModel = hull.getObjModel();
-        String[] parts = hull.getPartNames().toArray(String[]::new);
+        objPartItemModel(itemPath, hull.getObjModel(), texture, hull.getPartNames().toArray(String[]::new));
+    }
+
+    /**
+     * OBJ item model via {@code hbm_m:missile_loader}; texture under {@code textures/models/missile/} (block atlas).
+     * BEWLR applies transforms — no {@code display} block (see missiles / range detonator).
+     */
+    private void objPartItemModel(String itemPath, ResourceLocation objModel, ResourceLocation texture, String... parts) {
         getBuilder(itemPath).customLoader((parent, helper) ->
                 new CustomLoaderBuilder<ItemModelBuilder>(
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "missile_loader"), parent, helper) {

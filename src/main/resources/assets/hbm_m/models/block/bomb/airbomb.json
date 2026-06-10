@@ -1,28 +1,28 @@
 {
   "loader": "forge:composite",
   "textures": {
-    "particle": "hbm_m:block/dud_nuke"
+    "particle": "hbm_m:block/airbomb"
   },
   "children": {
-    "dud_nuke_model": {
+    "airbomb_model": {
       "loader": "forge:obj",
-      "model": "hbm_m:models/block/dud_nuke.obj",
+      "model": "hbm_m:models/block/bomb/airbomb.obj",
       "flip_v": true,
       "textures": {
-        "default": "hbm_m:block/dud_nuke"
+        "default": "hbm_m:block/airbomb"
       }
     }
   },
   "transform": {
-    "translation": [0.50, -2, 1],
-    "rotation": [65, 0, 0],
-    "scale": 1.0
+    "translation": [0.15, -1.4, 0.1],
+    "rotation": [90, 0, 0],
+    "scale": 0.65
   },
   "display": {
     "gui": {
-      "rotation": [ 30, 45, 0 ],
-      "translation": [ 1, -1, 0 ],
-      "scale": [ 0.15, 0.15, 0.15 ]
+      "rotation": [ 30, 225, 0 ],
+      "translation": [ 0, 0, 1.2 ],
+      "scale": [ 0.6, 0.6, 0.6 ]
     },
     "ground": {
       "rotation": [ 0, 0, 0 ],
@@ -37,12 +37,12 @@
     "thirdperson_righthand": {
       "rotation": [ 75, 180, 0 ],
       "translation": [ 0, 2.5, 0 ],
-      "scale": [ 0.1, 0.1, 0.1 ]
+      "scale": [ 0.375, 0.375, 0.375 ]
     },
     "firstperson_righthand": {
       "rotation": [ 0, 180, 0 ],
       "translation": [ 2, -1, 0 ],
-      "scale": [ 0.1, 0.1, 0.1 ]
+      "scale": [ 0.4, 0.4, 0.4 ]
     },
     "head": {
       "rotation": [ 0, 180, 0 ],

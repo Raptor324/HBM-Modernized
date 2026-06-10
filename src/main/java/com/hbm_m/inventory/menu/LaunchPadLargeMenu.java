@@ -2,10 +2,14 @@ package com.hbm_m.inventory.menu;
 
 import com.hbm_m.api.item.IDesignatorItem;
 import com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity;
+import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.network.packet.PacketSyncEnergy;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -13,6 +17,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import com.hbm_m.platform.ModItemStackHandler;
 
@@ -26,7 +31,7 @@ import com.hbm_m.platform.ModItemStackHandler;
  * Логика сортировки/переноса предметов (shift‑клик) упрощена и не
  * повторяет в точности поведение 1.7.10, но достаточно для базового UX.
  */
-public class LaunchPadLargeMenu extends AbstractContainerMenu {
+public class LaunchPadLargeMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
     private static final int SLOT_MISSILE = 0;
     private static final int SLOT_DESIGNATOR = 1;
@@ -38,6 +43,10 @@ public class LaunchPadLargeMenu extends AbstractContainerMenu {
     private static final int MACHINE_SLOTS = 7;
 
     private final LaunchPadBaseBlockEntity blockEntity;
+    private final Level level;
+    private final Player player;
+    private long clientEnergy;
+    private long clientMaxEnergy;
 
     public LaunchPadLargeMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
         this(id, inv, getBlockEntity(inv, extraData));
@@ -46,6 +55,8 @@ public class LaunchPadLargeMenu extends AbstractContainerMenu {
     public LaunchPadLargeMenu(int id, Inventory inv, LaunchPadBaseBlockEntity blockEntity) {
         super(getMenuType(), id);
         this.blockEntity = blockEntity;
+        this.level = inv.player.level();
+        this.player = inv.player;
 
         Container machineContainer = new HandlerContainer(blockEntity.getInventory());
 
@@ -111,6 +122,50 @@ public class LaunchPadLargeMenu extends AbstractContainerMenu {
 
     public LaunchPadBaseBlockEntity getBlockEntity() {
         return blockEntity;
+    }
+
+    @Override
+    public void setEnergy(long energy, long maxEnergy, long delta) {
+        this.clientEnergy = energy;
+        this.clientMaxEnergy = maxEnergy;
+    }
+
+    @Override
+    public long getEnergyStatic() {
+        return blockEntity.getEnergyStored();
+    }
+
+    @Override
+    public long getMaxEnergyStatic() {
+        return blockEntity.getMaxEnergyStored();
+    }
+
+    @Override
+    public long getEnergyDeltaStatic() {
+        return 0L;
+    }
+
+    public long getEnergyLong() {
+        if (blockEntity != null && !level.isClientSide) {
+            return blockEntity.getEnergyStored();
+        }
+        return clientEnergy;
+    }
+
+    public long getMaxEnergyLong() {
+        if (blockEntity != null && !level.isClientSide) {
+            return blockEntity.getMaxEnergyStored();
+        }
+        return clientMaxEnergy;
+    }
+
+    @Override
+    public void broadcastChanges() {
+        super.broadcastChanges();
+        if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
+            ModPacketHandler.sendToPlayer((ServerPlayer) player, ModPacketHandler.SYNC_ENERGY,
+                    new PacketSyncEnergy(containerId, blockEntity.getEnergyStored(), blockEntity.getMaxEnergyStored(), 0L));
+        }
     }
 
     @Override

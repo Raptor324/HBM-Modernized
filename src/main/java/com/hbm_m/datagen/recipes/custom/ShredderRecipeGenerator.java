@@ -1,10 +1,12 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
 import com.hbm_m.lib.RefStrings;
+import dev.architectury.registry.registries.RegistrySupplier;
+import net.minecraft.world.item.Item;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
@@ -24,7 +26,6 @@ import java.util.function.Function;
  */
 public final class ShredderRecipeGenerator {
 
-    //  ВАШ СПИСОК Порошков!
     private static final Set<String> ENABLED_POWDERS = Set.of(
             "uranium", "u233", "u235", "u238", "th232", "plutonium", "pu238", "pu239", "pu240", "pu241",
             "actinium", "steel", "advanced_alloy", "aluminum", "schrabidium", "saturnite", "lead",
@@ -50,6 +51,7 @@ public final class ShredderRecipeGenerator {
                                 Function<ItemLike, InventoryChangeTrigger.TriggerInstance> hasItem) {
         registerBasicConversions(writer);
         registerMetalPowders(writer);
+        registerModRawOreRecipes(writer);
         generatePowderProcessing(writer, hasItem);
     }
 
@@ -57,9 +59,6 @@ public final class ShredderRecipeGenerator {
         ShredderRecipeBuilder.shredderRecipe(Items.STONE,
                         new ItemStack(Items.GRAVEL, 1))
                 .save(writer, "stone_to_gravel");
-        ShredderRecipeBuilder.shredderRecipe(Items.COAL,
-                        new ItemStack(ModItems.getPowders(ModPowders.COAL).get(), 1))
-                .save(writer, "coal_to_powder");
         ShredderRecipeBuilder.shredderRecipe(Items.COBBLESTONE,
                         new ItemStack(Items.GRAVEL, 1))
                 .save(writer, "cobblestone_to_gravel");
@@ -80,12 +79,11 @@ public final class ShredderRecipeGenerator {
         ShredderRecipeBuilder.shredderRecipe(Items.BRICK,
                         new ItemStack(Items.CLAY_BALL, 1))
                 .save(writer, "brick_to_clay");
-        ShredderRecipeBuilder.shredderRecipe(ModItems.ALUMINUM_RAW.get(),
-                        new ItemStack(ModItems.getPowders(ModPowders.ALUMINUM).get(), 1))
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/raw_aluminum_to_powder"));
-        ShredderRecipeBuilder.shredderRecipe(ModItems.LIMESTONE.get(),
-                        new ItemStack(ModItems.getPowders(ModPowders.LIMESTONE).get(), 1))
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/limestone_to_powder"));
+        if (ModItems.getPowders(ModPowders.LIMESTONE) != null) {
+            ShredderRecipeBuilder.shredderRecipe(ModItems.LIMESTONE.get(),
+                            new ItemStack(ModItems.getPowders(ModPowders.LIMESTONE).get(), 1))
+                    .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/limestone_to_powder"));
+        }
     }
 
     private static void registerMetalPowders(Consumer<FinishedRecipe> writer) {
@@ -152,8 +150,15 @@ public final class ShredderRecipeGenerator {
 
         }
 
+        if (ModItems.COPPER_POWDER != null) {
+            ShredderRecipeBuilder.shredderRecipe(Items.RAW_COPPER,
+                            new ItemStack(ModItems.COPPER_POWDER.get(), 1))
+                    .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/raw_copper_to_powder"));
+            ShredderRecipeBuilder.shredderRecipe(Items.RAW_COPPER_BLOCK,
+                            new ItemStack(ModItems.COPPER_POWDER.get(), 9))
+                    .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/raw_copper_block_to_powder"));
+        }
 
-        
         //  Остальные с проверками
         if (ModItems.getPowders(ModPowders.COAL) != null) {
             if (ModItems.COAL_POWDER_TINY != null) {
@@ -175,6 +180,32 @@ public final class ShredderRecipeGenerator {
                     //?}
 
         }
+    }
+
+    /**
+     * Raw mod ores → matching powder (1.7.10 auto-generated these from ore-dict "ore*" entries).
+     */
+    private static void registerModRawOreRecipes(Consumer<FinishedRecipe> writer) {
+        registerRawToPowder(writer, ModItems.URANIUM_RAW, ModIngots.URANIUM);
+        registerRawToPowder(writer, ModItems.LEAD_RAW, ModIngots.LEAD);
+        registerRawToPowder(writer, ModItems.BERYLLIUM_RAW, ModIngots.BERYLLIUM);
+        registerRawToPowder(writer, ModItems.ALUMINUM_RAW, ModIngots.ALUMINUM);
+        registerRawToPowder(writer, ModItems.TITANIUM_RAW, ModIngots.TITANIUM);
+        registerRawToPowder(writer, ModItems.THORIUM_RAW, ModIngots.THORIUM);
+        registerRawToPowder(writer, ModItems.COBALT_RAW, ModIngots.COBALT);
+        registerRawToPowder(writer, ModItems.TUNGSTEN_RAW, ModIngots.TUNGSTEN);
+    }
+
+    private static void registerRawToPowder(Consumer<FinishedRecipe> writer,
+                                            RegistrySupplier<Item> raw,
+                                            ModIngots ingot) {
+        var powderRegistry = ModItems.getPowder(ingot);
+        if (raw == null || powderRegistry == null) {
+            return;
+        }
+        String name = ingot.getName();
+        ShredderRecipeBuilder.shredderRecipe(raw.get(), new ItemStack(powderRegistry.get(), 1))
+                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/raw_" + name + "_to_powder"));
     }
 
     private static void generatePowderProcessing(Consumer<FinishedRecipe> writer,

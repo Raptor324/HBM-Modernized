@@ -10,8 +10,6 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.world.item.ItemDisplayContext;
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
@@ -39,6 +37,20 @@ public class MissileBakedModel extends AbstractMultipartBakedModel implements Ab
 
     public ResourceLocation getModelId() {
         return modelId;
+    }
+
+    /**
+     * Items whose BEWLR applies JSON {@code display} (e.g. range detonator). Forge / Embeddium may call
+     * {@link #getTransforms()} before BEWLR; those callers must see identity transforms so display is not doubled.
+     */
+    public boolean usesJsonDisplayInBewlr() {
+        String path = modelId.getPath();
+        return path.contains("detonator") || path.contains("range_detonator");
+    }
+
+    /** Baked JSON {@code display} for BEWLR — not exposed via {@link #getTransforms()} when {@link #usesJsonDisplayInBewlr()}. */
+    public ItemTransforms getBewlrDisplayTransforms() {
+        return transforms;
     }
 
     /** OBJ parts from the baked item model (excludes empty fallback {@code Base}). */
@@ -141,15 +153,12 @@ public class MissileBakedModel extends AbstractMultipartBakedModel implements Ab
         return true;
     }
 
-    /**
-     * Skip JSON {@code display} transforms — {@link com.hbm_m.client.render.item.ItemRenderMissileGeneric}
-     * applies 1.7.10 {@code ItemRenderMissileGeneric} matrices per {@link ItemDisplayContext}.
-     */
-    //? if forge {
     @Override
-    public BakedModel applyTransform(ItemDisplayContext transformType, PoseStack poseStack,
-                                     boolean applyLeftHandTransform) {
-        return this;
+    public ItemTransforms getTransforms() {
+        if (usesJsonDisplayInBewlr()) {
+            return ItemTransforms.NO_TRANSFORMS;
+        }
+        return super.getTransforms();
     }
-    //?}
+
 }

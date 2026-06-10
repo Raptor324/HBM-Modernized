@@ -3,6 +3,9 @@ package com.hbm_m.recipe;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hbm_m.lib.RefStrings;
@@ -26,6 +29,8 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
     private final ResourceLocation id;
     private final ItemStack output;
     private final NonNullList<Ingredient> recipeItems;
+    /** Logical input slots for JEI / NEI-style display (ingredient + count per JSON entry). */
+    private final List<AssemblerInputSlot> inputDisplaySlots;
     private final int duration;
     private final int powerConsumption;
     
@@ -33,20 +38,31 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
     @Nullable
     private final String blueprintPool;
 
-    public AssemblerRecipe(ResourceLocation id, ItemStack output, NonNullList<Ingredient> recipeItems, 
+    public AssemblerRecipe(ResourceLocation id, ItemStack output, NonNullList<Ingredient> recipeItems,
                            int duration, int power) {
-        this(id, output, recipeItems, duration, power, null);
+        this(id, output, recipeItems, null, duration, power, null);
     }
 
-    // НОВОЕ: Конструктор с blueprint pool
-    public AssemblerRecipe(ResourceLocation id, ItemStack output, NonNullList<Ingredient> recipeItems, 
+    public AssemblerRecipe(ResourceLocation id, ItemStack output, NonNullList<Ingredient> recipeItems,
                            int duration, int power, @Nullable String blueprintPool) {
+        this(id, output, recipeItems, null, duration, power, blueprintPool);
+    }
+
+    public AssemblerRecipe(ResourceLocation id, ItemStack output, NonNullList<Ingredient> recipeItems,
+                           @Nullable List<AssemblerInputSlot> inputDisplaySlots, int duration, int power,
+                           @Nullable String blueprintPool) {
         this.id = id;
         this.output = output;
         this.recipeItems = recipeItems;
+        this.inputDisplaySlots = inputDisplaySlots != null
+                ? List.copyOf(inputDisplaySlots)
+                : List.of();
         this.duration = duration;
         this.powerConsumption = power;
         this.blueprintPool = blueprintPool;
+    }
+
+    public record AssemblerInputSlot(Ingredient ingredient, int count) {
     }
 
     @Override
@@ -83,6 +99,10 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
     @Override
     public NonNullList<Ingredient> getIngredients() {
         return this.recipeItems;
+    }
+
+    public List<AssemblerInputSlot> getInputDisplaySlots() {
+        return inputDisplaySlots;
     }
 
     public int getDuration() { return this.duration; }
@@ -134,6 +154,7 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
             JsonArray ingredientsJson = GsonHelper.getAsJsonArray(pSerializedRecipe, "ingredients");
             
             NonNullList<Ingredient> inputs = NonNullList.create();
+            List<AssemblerInputSlot> displaySlots = new ArrayList<>();
             for (int i = 0; i < ingredientsJson.size(); i++) {
                 JsonObject ingredientObject = ingredientsJson.get(i).getAsJsonObject();
                 Ingredient ingredient = Ingredient.fromJson(ingredientObject);
@@ -141,40 +162,46 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
                 for (int j = 0; j < count; j++) {
                     inputs.add(ingredient);
                 }
+                displaySlots.add(new AssemblerInputSlot(ingredient, count));
             }
 
             int duration = GsonHelper.getAsInt(pSerializedRecipe, "duration", 100);
             int power = GsonHelper.getAsInt(pSerializedRecipe, "power", 1000);
             
-            // НОВОЕ: Читаем blueprint_pool (опционально)
             String blueprintPool = GsonHelper.getAsString(pSerializedRecipe, "blueprint_pool", null);
             
-            return new AssemblerRecipe(pRecipeId, output, inputs, duration, power, blueprintPool);
+            return new AssemblerRecipe(pRecipeId, output, inputs, displaySlots, duration, power, blueprintPool);
         }
 
         @Override
         public @Nullable AssemblerRecipe fromNetwork(@NotNull ResourceLocation pRecipeId, @NotNull FriendlyByteBuf pBuffer) {
-            int ingredientCount = pBuffer.readVarInt();
-            NonNullList<Ingredient> inputs = NonNullList.withSize(ingredientCount, Ingredient.EMPTY);
-            for(int i = 0; i < ingredientCount; i++) {
-                inputs.set(i, Ingredient.fromNetwork(pBuffer));
+            int displayCount = pBuffer.readVarInt();
+            List<AssemblerInputSlot> displaySlots = new ArrayList<>(displayCount);
+            NonNullList<Ingredient> inputs = NonNullList.create();
+            for (int i = 0; i < displayCount; i++) {
+                Ingredient ingredient = Ingredient.fromNetwork(pBuffer);
+                int count = pBuffer.readVarInt();
+                displaySlots.add(new AssemblerInputSlot(ingredient, count));
+                for (int j = 0; j < count; j++) {
+                    inputs.add(ingredient);
+                }
             }
 
             ItemStack output = pBuffer.readItem();
             int duration = pBuffer.readInt();
             int power = pBuffer.readInt();
             
-            // НОВОЕ: Читаем blueprint_pool из сети
             String blueprintPool = pBuffer.readBoolean() ? pBuffer.readUtf() : null;
             
-            return new AssemblerRecipe(pRecipeId, output, inputs, duration, power, blueprintPool);
+            return new AssemblerRecipe(pRecipeId, output, inputs, displaySlots, duration, power, blueprintPool);
         }
 
         @Override
         public void toNetwork(@NotNull FriendlyByteBuf pBuffer, @NotNull AssemblerRecipe pRecipe) {
-            pBuffer.writeVarInt(pRecipe.recipeItems.size());
-            for (Ingredient ing : pRecipe.recipeItems) {
-                ing.toNetwork(pBuffer);
+            pBuffer.writeVarInt(pRecipe.inputDisplaySlots.size());
+            for (AssemblerInputSlot slot : pRecipe.inputDisplaySlots) {
+                slot.ingredient().toNetwork(pBuffer);
+                pBuffer.writeVarInt(slot.count());
             }
 
             pBuffer.writeItem(pRecipe.getResultItem(null));

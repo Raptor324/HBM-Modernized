@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import net.minecraftforge.common.ForgeSpawnEggItem;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.armormod.item.ItemModBattery;
@@ -26,6 +25,7 @@ import com.hbm_m.armormod.item.ItemModRadProtection;
 // import com.hbm_m.armormod.item.ItemModRadProtection;
 // import com.hbm_m.armormod.item.ItemModServos;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.entity.machines.rbmk.IRBMKFluxReceiver.NType;
 import com.hbm_m.block.machines.crates.CrateType;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
@@ -50,11 +50,7 @@ import com.hbm_m.item.grenades_and_activators.GrenadeItem;
 import com.hbm_m.item.grenades_and_activators.GrenadeNucItem;
 import com.hbm_m.item.grenades_and_activators.MultiDetonatorItem;
 import com.hbm_m.item.grenades_and_activators.RangeDetonatorItem;
-import com.hbm_m.item.rbmk.RBMKLidItem;
-import com.hbm_m.item.rbmk.RBMKPelletItem;
-import com.hbm_m.item.rbmk.RBMKRodItem;
-import com.hbm_m.item.rbmk.RBMKRodItem.EnumBurnFunc;
-import com.hbm_m.block.entity.machines.rbmk.IRBMKFluxReceiver.NType;
+import com.hbm_m.item.tool.RangefinderItem;
 import com.hbm_m.item.industrial.FuelItem;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.item.industrial.ItemBlades;
@@ -67,11 +63,13 @@ import com.hbm_m.item.liquids.FluidBarrelItem;
 import com.hbm_m.item.liquids.FluidDuctItem;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.item.liquids.InfiniteFluidItem;
-import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.item.missile.MissileItem;
 import com.hbm_m.item.radiation_meter.ItemDigammaDiagnostic;
 import com.hbm_m.item.radiation_meter.ItemDosimeter;
 import com.hbm_m.item.radiation_meter.ItemGeigerCounter;
+import com.hbm_m.item.rbmk.RBMKLidItem;
+import com.hbm_m.item.rbmk.RBMKPelletItem;
+import com.hbm_m.item.rbmk.RBMKRodItem;
 import com.hbm_m.item.scanners.DepthOresScannerItem;
 import com.hbm_m.item.scanners.OilDetectorItem;
 import com.hbm_m.item.tags_and_tiers.ItemSimpleConsumable;
@@ -93,13 +91,16 @@ import com.hbm_m.powerarmor.DNTArmor;
 import com.hbm_m.powerarmor.T51Armor;
 import com.hbm_m.sound.ModSounds;
 
+import dev.architectury.registry.registries.DeferredRegister;
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.AxeItem;
-import net.minecraft.world.item.HoeItem;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.HoeItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.PickaxeItem;
@@ -109,9 +110,7 @@ import net.minecraft.world.item.ShovelItem;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import dev.architectury.registry.registries.DeferredRegister;
-import net.minecraft.core.registries.Registries;
-import dev.architectury.registry.registries.RegistrySupplier;
+import net.minecraftforge.common.ForgeSpawnEggItem;
 
 
 public class ModItems {
@@ -131,7 +130,7 @@ public class ModItems {
             "sr90", "steel", "xe135");
     private static final Map<String, RegistrySupplier<Item>> POWDER_ITEMS_BY_ID = new HashMap<>();
 
-        private static final Set<String> ENABLED_MODPOWDERS = Set.of("iron", "gold", "coal", "cement", "limestone"); // Только ModPowders!
+        private static final Set<String> ENABLED_MODPOWDERS = Set.of("iron", "gold", "coal", "cement", "aluminum", "limestone"); // Только ModPowders!
     private static final Set<String> ENABLED_INGOT_POWDERS = Set.of(
             "uranium", "plutonium",
             "actinium", "steel", "advanced_alloy", "aluminum", "schrabidium", "lead",
@@ -812,6 +811,9 @@ public class ModItems {
 
     public static final RegistrySupplier<Item> DEPTH_ORES_SCANNER = ITEMS.register("depth_ores_scanner",
             () -> new DepthOresScannerItem(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> RANGEFINDER = ITEMS.register("rangefinder",
+            () -> new RangefinderItem(new Item.Properties()));
 
     public static final RegistrySupplier<Item> RANGE_DETONATOR = ITEMS.register("range_detonator",
             () -> new RangeDetonatorItem(new Item.Properties()));

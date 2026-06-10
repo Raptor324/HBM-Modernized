@@ -3,9 +3,9 @@ package com.hbm_m.entity.mob;
 import com.hbm_m.block.bomb.BlockTaint;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.entity.ModEntities;
+import com.hbm_m.mixin.CreeperAccessor;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.AreaEffectCloud;
@@ -17,8 +17,6 @@ import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
 import java.util.Collection;
 
 /**
@@ -28,21 +26,6 @@ import java.util.Collection;
  * <p>Взрыв перехватывается в {@link com.hbm_m.mixin.CreeperMixin} (private {@code explodeCreeper()}).</p>
  */
 public class EntityCreeperTainted extends Creeper {
-
-    private static final EntityDataAccessor<Boolean> DATA_IS_POWERED;
-
-    static {
-        try {
-            var creeperLookup = MethodHandles.privateLookupIn(Creeper.class, MethodHandles.lookup());
-            @SuppressWarnings("unchecked")
-            EntityDataAccessor<Boolean> powered = (EntityDataAccessor<Boolean>) creeperLookup
-                    .findStaticVarHandle(Creeper.class, "DATA_IS_POWERED", EntityDataAccessor.class)
-                    .get();
-            DATA_IS_POWERED = powered;
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
 
     public EntityCreeperTainted(EntityType<? extends Creeper> type, Level level) {
         super(type, level);
@@ -129,21 +112,37 @@ public class EntityCreeperTainted extends Creeper {
         }
     }
 
-    /** Замена обычного крипера при контакте с блоком taint (сервер). */
+    /**
+     * Замена обычного крипера при контакте с блоком taint (сервер).
+     * {@link com.hbm_m.block.bomb.BlockTaint#entityInside} вызывается для каждого
+     * пересекающегося блока за тик — discard сразу после снятия состояния, иначе 1→N.
+     */
     public static void convertFromCreeper(Creeper creeper) {
-        if (creeper.level().isClientSide || creeper instanceof EntityCreeperTainted) {
+        if (creeper.level().isClientSide
+                || creeper instanceof EntityCreeperTainted
+                || !creeper.isAlive()
+                || creeper.isRemoved()) {
             return;
         }
+
         Level level = creeper.level();
+        double x = creeper.getX();
+        double y = creeper.getY();
+        double z = creeper.getZ();
+        float yRot = creeper.getYRot();
+        float xRot = creeper.getXRot();
+        boolean powered = creeper.isPowered();
+
+        creeper.discard();
+
         EntityCreeperTainted tainted = ModEntities.ENTITY_MOB_TAINTED_CREEPER.get().create(level);
         if (tainted == null) {
             return;
         }
-        tainted.moveTo(creeper.getX(), creeper.getY(), creeper.getZ(), creeper.getYRot(), creeper.getXRot());
-        if (creeper.isPowered()) {
-            tainted.getEntityData().set(DATA_IS_POWERED, true);
+        tainted.moveTo(x, y, z, yRot, xRot);
+        if (powered) {
+            tainted.getEntityData().set(CreeperAccessor.hbm_m$getDataIsPowered(), true);
         }
-        creeper.discard();
         level.addFreshEntity(tainted);
     }
 }

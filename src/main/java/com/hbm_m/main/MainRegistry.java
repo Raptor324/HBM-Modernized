@@ -39,11 +39,17 @@ import com.mojang.logging.LogUtils;
 
 import dev.architectury.event.events.common.LifecycleEvent;
 import dev.architectury.event.events.common.TickEvent;
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.CreativeModeTab;
 
 public final class MainRegistry {
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final String MOD_ID = RefStrings.MODID;
+
+    /** Порт {@code MainRegistry.missileTab} / {@code MainRegistry.nukeTab} (1.7.10). */
+    public static final RegistrySupplier<CreativeModeTab> missileTab = ModCreativeTabs.NTM_MISSILES_TAB;
+    public static final RegistrySupplier<CreativeModeTab> nukeTab = ModCreativeTabs.NTM_BOMBS_TAB;
 
     static {
         ModClothConfig.register();

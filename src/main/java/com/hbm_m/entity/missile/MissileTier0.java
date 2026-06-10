@@ -4,6 +4,8 @@ package com.hbm_m.entity.missile;
 
 import api.hbm.entity.IRadarDetectable;
 
+import com.hbm_m.explosion.ExplosionNukeGeneric;
+
 import com.hbm_m.explosion.MissileWarheadEffects;
 
 import com.hbm_m.explosion.NuclearExplosionAPI;
@@ -113,8 +115,6 @@ public abstract class MissileTier0 extends MissileBaseEntity {
 
             super(type, level);
 
-            this.isCluster = true;
-
         }
 
 
@@ -129,29 +129,7 @@ public abstract class MissileTier0 extends MissileBaseEntity {
 
             }
 
-            MissileWarheadEffects.empPulse(level(), getX(), getY(), getZ());
-
-        }
-
-
-
-        @Override
-
-        protected void cluster() {
-
-            if (level().isClientSide || this.exploded) {
-
-                return;
-
-            }
-
-            this.exploded = true;
-
-            onMissileImpact(BlockPos.containing(getX(), getY(), getZ()));
-
-            releaseChunkTicket();
-
-            this.discard();
+            ExplosionNukeGeneric.empBlast(level(), (int) getX(), (int) getY(), (int) getZ(), 50);
 
         }
 

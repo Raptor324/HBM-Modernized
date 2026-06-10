@@ -40,7 +40,9 @@ public class GUINukeFatMan extends GuiInfoScreen<NukeFatManMenu> {
 
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        renderBackground(guiGraphics);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+        
         this.renderTooltip(guiGraphics, mouseX, mouseY);
 
         List<Component> text = new ArrayList<>();

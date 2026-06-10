@@ -246,6 +246,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.missile.desc.notLaunchable", "Нельзя запустить с пусковой площадки");
                 add("item.hbm_m.missile.desc.fuel", "Топливо");
                 add("item.hbm_m.missile.desc.fuelCapacity", "Запас топлива");
+                add("item.hbm_m.missile.desc.fluidNotRequiredWip", "Топливо из баков временно не требуется для пуска (WIP)");
                 add("item.hbm_m.missile.fuel.solid.prefueled", "Твёрдое топливо (заправлена)");
                 add("item.hbm_m.missile.fuel.ethanol_peroxide", "Этанол + пероксид");
                 add("item.hbm_m.missile.fuel.kerosene_peroxide", "Керосин + пероксид");
@@ -259,6 +260,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.launchPad", "Пусковая площадка");
                 add("container.launchPadLarge", "Большая пусковая площадка");
                 add("container.launchPadRusted", "Ржавая пусковая площадка");
+                add("container.hbm_m.shredder", "Измельчитель");
                 add("gui.hbm_m.shredder.blade_warning.title", "Нет лезвий!");
                 add("gui.hbm_m.shredder.blade_warning.desc", "Установите или отремонтируйте лезвия шреддера.");
                 // БРОНЯ
@@ -569,6 +571,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.range_detonator.hint", "по лучу до 256 блоков.");
                 add("message.hbm_m.range_detonator.pos_not_loaded", "Позиция несовместима или не прогружена");
                 add("message.hbm_m.range_detonator.activated", "Успешно активировано");
+                add("message.hbm_m.detonator.saved", "Позиция сохранена: %d, %d, %d");
+                add("message.hbm_m.detonator.pos_not_compatible", "Позиция несовместима или не прогружена");
+                add("message.hbm_m.detonator.activated", "Успешно активировано");
 
                 add("tooltip.hbm_m.grenade_nuc.line1", "Ядерное оружие!");
                 add("tooltip.hbm_m.grenade_nuc.line2", "Зона поражения: 25 метров");
@@ -667,6 +672,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.GRENADE_IF_FIRE.get(), "IF-Граната: зажигательная");
                 add(ModItems.GRENADE_IF_SLIME.get(), "IF-Граната: прыгучая");
                 add(ModItems.MULTI_DETONATOR.get(), "Мульти-детонатор");
+                add(ModItems.RANGEFINDER.get(), "Дальномер");
                 add(ModItems.RANGE_DETONATOR.get(), "Детонатор дальнего действия");
                 add(ModItems.DETONATOR.get(), "Детонатор");
                 add(ModBlocks.BARBED_WIRE_POISON.get(), "Колючая проволока (яд)");
@@ -1636,7 +1642,6 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("tooltip.hbm_m.rad_protection.value", "Сопротивление радиации: %s");
 
-                add("container.inventory", "Инвентарь");
                 add("container.hbm_m.armor_table", "Стол модификации брони");
                 add("container.hbm_m.machine_assembler", "Сборочная машина (Старая)");
                 add("container.hbm_m.advanced_assembly_machine", "Сборочная машина");
@@ -1902,6 +1907,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("message.hbm_m.download_now", "Скачать: ");
                 add("message.hbm_m.button_modrinth", "[Modrinth]");
                 add("message.hbm_m.button_curseforge", "[CurseForge]");
+                add("message.hbm_m.support_pitch", "Нравится мод? Поддержите команду:");
+                add("message.hbm_m.button_boosty", "[Boosty]");
+                add("message.hbm_m.button_crypto", "[Crypto]");
 
                 add("item.hbm_m.meter.rads_over_limit", ">%s RAD/s");
                 add("tooltip.hbm_m.hold_shift_for_details", "<Зажмите SHIFT для деталей>");
@@ -1950,6 +1958,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.enableRadFogEffect.@Tooltip", "Частицы тумана при ≥100 RAD в чанке (1 из 20 тиков), как fogRad/fogCh в 1.7.10. Порог и частота заданы в коде.");
                 add("text.autoconfig.hbm_m.option.worldRadEffects", "Эффекты радиации на мир (изменения блоков)");
                 add("text.autoconfig.hbm_m.option.worldRadEffects.@Tooltip", "Как в 1.7.10 (RadiationConfig.worldRadEffects): замена травы/листьев при ≥10 RAD в чанке, 5 чанков/тик, 10 проходов. Пороги не настраиваются.");
+                add("text.autoconfig.hbm_m.option.taintTrails","Следы заражения");
+                add("text.autoconfig.hbm_m.option.taintTrails.@Tooltip","При заражении игрок оставляет следы заражения под собой.");
 
                 add("text.autoconfig.hbm_m.category.player", "Игрок");
                 add("text.autoconfig.hbm_m.option.maxPlayerRad", "Максимальный уровень радиации у игрока");
@@ -1994,6 +2004,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.category.rendering", "Рендеринг");
 
                 add("text.autoconfig.hbm_m.option.modelUpdateDistance", "Дистанция для рендеринга динамических частей .obj моделей");
+                add("text.autoconfig.hbm_m.option.modelStaticRenderDistance", "Дистанция для рендеринга статических частей .obj моделей");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling", "Включить куллинг моделей");
                 add("text.autoconfig.hbm_m.option.useInstancedStaticRendering", "Батчинг частей obj моделей");
                 add("text.autoconfig.hbm_m.option.useSlicedLight", "Sliced light (2×4×2 зонды)");
@@ -2048,6 +2059,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radRandomizationFactor.@Tooltip", "Фактор рандомизации радиации в чанке");
 
                 add("text.autoconfig.hbm_m.option.modelUpdateDistance.@Tooltip", "Дистанция для рендеринга динамических частей .obj моделей (в чанках)");
+                add("text.autoconfig.hbm_m.option.modelStaticRenderDistance.@Tooltip", "Дистанция для рендеринга статических частей .obj моделей (в чанках)");
+                add("text.autoconfig.hbm_m.option.enableMissileNetworkTrack.@Tooltip", "Включите это, если хотите чтобы сервер отсылал всем клиентам пакеты с местоположением баллистических ракет, чтобы их было видно ЗА ванильной дальностью прорисовки.");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling.@Tooltip", "Включить куллинг моделей (выключите, если ваши модели рендерятся некорректно)");
                 add("text.autoconfig.hbm_m.option.useInstancedStaticRendering.@Tooltip", "Использовать батчинговый рендер для частей obj. Сильно повышает производительность рендеринга в бесшейдерном режиме, при проблемах отключите.");
                 add("text.autoconfig.hbm_m.option.useSlicedLight.@Tooltip", "16 зондов освещения вместо 8 углов — лучше на высоких башнях. Несовместимо с MDI: при включении части снова рисуются отдельными instanced draw. После смены — F3+T.");
@@ -2120,6 +2133,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.missile.desc.notLaunchable", "Cannot be launched from pad");
                 add("item.hbm_m.missile.desc.fuel", "Fuel");
                 add("item.hbm_m.missile.desc.fuelCapacity", "Fuel capacity");
+                add("item.hbm_m.missile.desc.fluidNotRequiredWip", "Pad fluid tanks are temporarily not required for launch (WIP)");
                 add("item.hbm_m.missile.fuel.solid.prefueled", "Solid fuel (pre-fueled)");
                 add("item.hbm_m.missile.fuel.ethanol_peroxide", "Ethanol + peroxide");
                 add("item.hbm_m.missile.fuel.kerosene_peroxide", "Kerosene + peroxide");
@@ -2176,6 +2190,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.launchPad", "Launch Pad");
                 add("container.launchPadLarge", "Large Launch Pad");
                 add("container.launchPadRusted", "Rusted Launch Pad");
+                add("container.hbm_m.shredder", "Shredder");
                 add("gui.hbm_m.shredder.blade_warning.title", "Blades missing!");
                 add("gui.hbm_m.shredder.blade_warning.desc", "Install or repair the shredder blades.");
                 add("item.hbm_m.titanium_sword", "Titanium Sword");
@@ -2590,6 +2605,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("message.hbm_m.multi_detonator.activated", "%s activated!");
                 add("message.hbm_m.multi_detonator.activation_error", "Activation error!");
                 add("message.hbm_m.multi_detonator.incompatible_block", "Block incompatible!");
+
+                add("message.hbm_m.detonator.saved", "Position saved: %d, %d, %d");
+                add("message.hbm_m.detonator.pos_not_compatible", "Position incompatible or not loaded");
+                add("message.hbm_m.detonator.activated", "Activated!");
 // RANGE DETONATOR
                 add("tooltip.hbm_m.range_detonator.desc", "Activates compatible blocks");
                 add("tooltip.hbm_m.range_detonator.hint", "along a ray up to 256 blocks.");
@@ -3159,6 +3178,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.GRENADE_IF_FIRE.get(), "IF Grenade: Incendiary");
                 add(ModItems.GRENADE_IF_SLIME.get(), "IF Grenade: Bouncy");
                 add(ModItems.MULTI_DETONATOR.get(), "Multi Detonator");
+                add(ModItems.RANGEFINDER.get(), "Rangefinder");
                 add(ModItems.RANGE_DETONATOR.get(), "Range Detonator");
                 add(ModItems.DETONATOR.get(), "Detonator");
                 add(ModBlocks.BARBED_WIRE_POISON.get(), "Poison Barbed Wire");
@@ -3714,8 +3734,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.rad_protection.value_short", "%s rad-resistance");
 
                 // MACHINE GUI
-
-                add("container.inventory", "Inventory");
                 add("container.hbm_m.armor_table", "Armor Modification Table");
                 add("container.hbm_m.machine_assembler", "Assembly Machine");
                 add("container.hbm_m.wood_burner", "Wood Burner Generator");
@@ -3892,6 +3910,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("message.hbm_m.download_now", "Download now: ");
                 add("message.hbm_m.button_modrinth", "[Modrinth]");
                 add("message.hbm_m.button_curseforge", "[CurseForge]");
+                add("message.hbm_m.support_pitch", "Enjoying the mod? Support the team:");
+                add("message.hbm_m.button_boosty", "[Boosty]");
+                add("message.hbm_m.button_crypto", "[Crypto]");
 
                 add("geiger.title", "GEIGER COUNTER");
                 add("geiger.title.dosimeter", "DOSIMETER");
@@ -3955,6 +3976,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.enableRadFogEffect.@Tooltip", "Fog particles when chunk radiation ≥100 RAD (1 in 20 ticks), matching 1.7.10 fogRad/fogCh. Threshold and rate are fixed in code.");
                 add("text.autoconfig.hbm_m.option.worldRadEffects", "World Radiation Effects");
                 add("text.autoconfig.hbm_m.option.worldRadEffects.@Tooltip", "1.7.10 parity (RadiationConfig.worldRadEffects): grass/leaves mutation at ≥10 RAD/chunk, 5 chunks/tick, 10 passes. Thresholds are fixed in code.");
+                add("text.autoconfig.hbm_m.option.taintTrails","Taint Trails");
+                add("text.autoconfig.hbm_m.option.taintTrails.@Tooltip","When infected, the player leaves behind taint traces.");
 
                 add("text.autoconfig.hbm_m.category.player", "Player");
 
@@ -4003,7 +4026,8 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("text.autoconfig.hbm_m.category.rendering", "Rendering");
 
-                add("text.autoconfig.hbm_m.option.modelUpdateDistance", "Distance for .obj model dynamic parts rendering");
+                add("text.autoconfig.hbm_m.option.modelUpdateDistance", "Distance for .obj model animated parts rendering");
+                add("text.autoconfig.hbm_m.option.modelStaticRenderDistance", "Distance for .obj model static parts rendering");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling", "Enable model occlusion culling");
                 add("text.autoconfig.hbm_m.option.useInstancedStaticRendering", "Instanced batching for obj model parts");
                 add("text.autoconfig.hbm_m.option.useSlicedLight", "Sliced light (2×4×2 probes)");
@@ -4056,7 +4080,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radSourceInfluenceFactor.@Tooltip", "Influence of radioactive blocks in chunk");
                 add("text.autoconfig.hbm_m.option.radRandomizationFactor.@Tooltip", "Randomization factor for chunk radiation");
 
-                add("text.autoconfig.hbm_m.option.modelUpdateDistance.@Tooltip", "Distance for .obj model dynamic parts rendering (in chunks)");
+                add("text.autoconfig.hbm_m.option.modelUpdateDistance.@Tooltip", "Distance for .obj model animated parts rendering (in chunks)");
+                add("text.autoconfig.hbm_m.option.modelStaticRenderDistance.@Tooltip", "Distance for .obj model static parts rendering (in chunks)");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling.@Tooltip", "Enable model occlusion culling (disable if your models are not rendering correctly)");
                 add("text.autoconfig.hbm_m.option.useInstancedStaticRendering.@Tooltip", "Use batch rendering for obj parts. This greatly improves rendering performance in shaderless mode. If you experience issues, disable it");
                 add("text.autoconfig.hbm_m.option.useSlicedLight.@Tooltip", "16 light probes instead of 8 corners — better on tall towers. Incompatible with MDI: parts fall back to separate instanced draws. Reload resources (F3+T) after changing.");

@@ -26,6 +26,7 @@ import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.missile.MissileItem;
 
 import net.minecraft.core.BlockPos;
@@ -242,11 +243,9 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         }
 
         // 0. Подзарядка из батарейки в слоте 2 (как в оригинале Library.chargeTEFromItems).
-        be.chargeFromBatterySlot(SLOT_BATTERY);
+        be.chargeLaunchPadBattery();
 
-        ItemStack[] slotArray = be.inventorySlotArray();
-        be.tanks[0].loadTank(SLOT_FUEL_IN, SLOT_FUEL_OUT, slotArray);
-        be.tanks[1].loadTank(SLOT_OXIDIZER_IN, SLOT_OXIDIZER_OUT, slotArray);
+        boolean fluidsChanged = be.transferFluidContainers();
 
         boolean tanksChanged = false;
         if (be.isMissileValid()) {
@@ -286,19 +285,52 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         if (missileChanged) {
             be.lastSyncedMissile = missileNow.copy();
         }
-        if (missileChanged || tanksChanged) {
+        if (missileChanged || tanksChanged || fluidsChanged) {
             be.setChanged();
-            level.sendBlockUpdated(pos, state, state, 3);
+            be.sendUpdateToClient();
         } else if (level.getGameTime() % 10 == 0) {
             be.setChanged();
-            level.sendBlockUpdated(pos, state, state, 3);
+            be.sendUpdateToClient();
         }
+    }
+
+    /** Креативная батарея мгновенно заполняет буфер; обычные — через {@link #chargeFromBatterySlot}. */
+    protected void chargeLaunchPadBattery() {
+        ItemStack batteryStack = inventory.getStackInSlot(SLOT_BATTERY);
+        if (!batteryStack.isEmpty() && batteryStack.getItem() instanceof ItemCreativeBattery) {
+            setEnergyStored(getMaxEnergyStored());
+            return;
+        }
+        chargeFromBatterySlot(SLOT_BATTERY);
+    }
+
+    /**
+     * Заливка бочек в баки. Мутации слотов пишутся обратно в инвентарь
+     * (как в {@link MachineChemicalPlantBlockEntity#transferFluidsFromItems}).
+     */
+    protected boolean transferFluidContainers() {
+        ItemStack[] slots = new ItemStack[SLOT_COUNT];
+        for (int i = 0; i < SLOT_COUNT; i++) {
+            slots[i] = inventory.getStackInSlot(i);
+        }
+        boolean changed = false;
+        if (tanks[0].loadTank(SLOT_FUEL_IN, SLOT_FUEL_OUT, slots)) {
+            inventory.setStackInSlot(SLOT_FUEL_IN, slots[SLOT_FUEL_IN]);
+            inventory.setStackInSlot(SLOT_FUEL_OUT, slots[SLOT_FUEL_OUT]);
+            changed = true;
+        }
+        if (tanks[1].loadTank(SLOT_OXIDIZER_IN, SLOT_OXIDIZER_OUT, slots)) {
+            inventory.setStackInSlot(SLOT_OXIDIZER_IN, slots[SLOT_OXIDIZER_IN]);
+            inventory.setStackInSlot(SLOT_OXIDIZER_OUT, slots[SLOT_OXIDIZER_OUT]);
+            changed = true;
+        }
+        return changed;
     }
 
     /** Tall missiles extend above the 1-block pad; default BE AABB would cull the BER. */
     @Override
     public AABB getRenderBoundingBox() {
-        return new AABB(worldPosition).inflate(1.0D, 4.0D, 1.0D);
+        return new AABB(worldPosition).inflate(1.0D, 7.0D, 1.0D);
     }
 
     /**
@@ -315,14 +347,6 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
             }
         }
         return missile;
-    }
-
-    private ItemStack[] inventorySlotArray() {
-        ItemStack[] slots = new ItemStack[SLOT_COUNT];
-        for (int i = 0; i < SLOT_COUNT; i++) {
-            slots[i] = inventory.getStackInSlot(i);
-        }
-        return slots;
     }
 
     /**
@@ -402,7 +426,9 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         if (missile.fuel == MissileItem.MissileFuel.SOLID) {
             return true;
         }
-        return tanks[0].getFill() >= missile.fuelCap && tanks[1].getFill() >= missile.fuelCap;
+        // WIP: проверка заполнения баков временно отключена — для пуска достаточно ракеты, энергии и цели.
+        // return tanks[0].getFill() >= missile.fuelCap && tanks[1].getFill() >= missile.fuelCap;
+        return true;
     }
 
     public boolean isMissileValid() {
@@ -567,13 +593,16 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         this.energy = Math.max(0, this.energy - 75_000L);
 
         ItemStack stack = inventory.getStackInSlot(SLOT_MISSILE);
+        // WIP: расход топлива из баков временно отключён.
+        /*
         if (stack.getItem() instanceof MissileItem missileItem
                 && missileItem.fuel != MissileItem.MissileFuel.SOLID) {
             tanks[0].setFill(tanks[0].getFill() - missileItem.fuelCap);
             tanks[1].setFill(tanks[1].getFill() - missileItem.fuelCap);
         }
+        */
         stack.shrink(1);
-        // Кулдаун до следующего пуска — как в оригинальном LaunchPadBlockEntity.
+        // Кулдаун до следующего пуска
         this.delay = 100;
         setChanged();
     }

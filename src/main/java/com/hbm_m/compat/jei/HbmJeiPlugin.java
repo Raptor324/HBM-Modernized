@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.machines.anvils.AnvilTier;
 import com.hbm_m.inventory.gui.GUIAnvil;
 import com.hbm_m.inventory.gui.GUIMachineAdvancedAssembler;
 import com.hbm_m.inventory.gui.GUIMachineAssembler;
@@ -88,7 +87,7 @@ public class HbmJeiPlugin implements IModPlugin {
     public void registerRecipes(@Nonnull IRecipeRegistration registration) {
         CrucibleRecipes.INSTANCE.registerDefaults();
         ensureCrucibleFallbackRecipes();
-        registration.addRecipes(AnvilJeiCategory.RECIPE_TYPE, getSteelAnvilRecipes());
+        registration.addRecipes(AnvilJeiCategory.RECIPE_TYPE, getAnvilRecipes());
         registration.addRecipes(AssemblerJeiCategory.RECIPE_TYPE, getAssemblerRecipes());
         registration.addRecipes(CentrifugeJeiCategory.RECIPE_TYPE, getCentrifugeRecipes());
         registration.addRecipes(ChemicalPlantJeiCategory.RECIPE_TYPE, getChemicalPlantRecipes());
@@ -103,11 +102,14 @@ public class HbmJeiPlugin implements IModPlugin {
 
     @Override
     public void registerRecipeCatalysts(@Nonnull IRecipeCatalystRegistration registration) {
-        registration.addRecipeCatalyst(new ItemStack(ModBlocks.ANVIL_STEEL.get()), AnvilJeiCategory.RECIPE_TYPE);
+        for (var anvil : ModBlocks.getAnvilBlocks()) {
+            registration.addRecipeCatalyst(new ItemStack(anvil.get()), AnvilJeiCategory.RECIPE_TYPE);
+        }
         registration.addRecipeCatalyst(new ItemStack(ModItems.MACHINE_ASSEMBLER.get()), AssemblerJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModItems.ADVANCED_ASSEMBLY_MACHINE.get()), AssemblerJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CENTRIFUGE.get()), CentrifugeJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CHEMICAL_PLANT.get()), ChemicalPlantJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.CHEMICAL_FACTORY.get()), ChemicalPlantJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CYCLOTRON.get()), CyclotronJeiCategory.RECIPE_TYPE);
         // Foundry basin is the primary catalyst; mold and strand caster are registered once those blocks are ported
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.FOUNDRY_BASIN.get()), CrucibleCastingJeiCategory.RECIPE_TYPE);
@@ -120,9 +122,11 @@ public class HbmJeiPlugin implements IModPlugin {
 
     @Override
     public void registerGuiHandlers(@Nonnull IGuiHandlerRegistration registration) {
-        registration.addRecipeClickArea(GUIAnvil.class, 8, 18, 98, 56, AnvilJeiCategory.RECIPE_TYPE);
+        registration.addRecipeClickArea(GUIAnvil.class, 11, 42, 36, 18, AnvilJeiCategory.RECIPE_TYPE);
+        registration.addRecipeClickArea(GUIAnvil.class, 65, 42, 36, 18, AnvilJeiCategory.RECIPE_TYPE);
         // Assembler recipe click area around the progress bar
         registration.addRecipeClickArea(GUIMachineAssembler.class, 45, 82, 83, 32, AssemblerJeiCategory.RECIPE_TYPE);
+        // Advanced assembler: JEI on progress arrow only (7,125 is recipe selector → GUIScreenRecipeSelector)
         registration.addRecipeClickArea(GUIMachineAdvancedAssembler.class, 62, 126, 70, 16, AssemblerJeiCategory.RECIPE_TYPE);
         // Matches the old NEI transfer rect: new Rectangle(56, 0, 80, 38)
         registration.addRecipeClickArea(GUIMachineCentrifuge.class, 56, 0, 80, 38, CentrifugeJeiCategory.RECIPE_TYPE);
@@ -174,10 +178,8 @@ public class HbmJeiPlugin implements IModPlugin {
         );
     }
 
-    private static List<AnvilRecipe> getSteelAnvilRecipes() {
-        return AnvilRecipeManager.getClientRecipes().stream()
-                .filter(recipe -> recipe.canCraftOn(AnvilTier.STEEL))
-                .toList();
+    private static List<AnvilRecipe> getAnvilRecipes() {
+        return AnvilRecipeManager.getClientRecipes();
     }
 
     private static List<AssemblerRecipe> getAssemblerRecipes() {
@@ -186,44 +188,30 @@ public class HbmJeiPlugin implements IModPlugin {
         }
 
         return net.minecraft.client.Minecraft.getInstance().level.getRecipeManager()
-                .getAllRecipesFor(AssemblerRecipe.Type.INSTANCE).stream()
-                .filter(recipe -> {
-                    ItemStack output = recipe.getResultItem(null);
-                    return output.is(ModItems.GAS_CENTRIFUGE.get()) || output.is(ModItems.CHEMICAL_PLANT.get());
-                })
-                .toList();
+                .getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
     }
 
-    private static List<CentrifugeJeiRecipe> getCentrifugeRecipes() {
-        List<CentrifugeJeiRecipe> recipes = new ArrayList<>();
-        
+    private static List<CentrifugeJeiCategory.Recipe> getCentrifugeRecipes() {
+        List<CentrifugeJeiCategory.Recipe> recipes = new ArrayList<>();
+
         Map<RecipeInput, ItemStack[]> allRecipes = CentrifugeRecipes.getAllRecipes();
-        
+
         for (Map.Entry<RecipeInput, ItemStack[]> entry : allRecipes.entrySet()) {
             RecipeInput input = entry.getKey();
-            ItemStack[] outputs = entry.getValue();
-            
-            List<ItemStack> inputStacks = input.getDisplayStacks();
-            if (!inputStacks.isEmpty()) {
-                recipes.add(new CentrifugeJeiRecipe(inputStacks, outputs));
+            if (!input.getDisplayStacks().isEmpty()) {
+                recipes.add(new CentrifugeJeiCategory.Recipe(input, entry.getValue()));
             }
         }
-        
+
         return recipes;
     }
 
-    private static List<ChemicalPlantJeiRecipe> getChemicalPlantRecipes() {
-        List<ChemicalPlantJeiRecipe> recipes = new ArrayList<>();
-
-        // Datapack recipes (hbm_m:chemical_plant)
+    private static List<ChemicalPlantRecipe> getChemicalPlantRecipes() {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) return recipes;
-        List<ChemicalPlantRecipe> all = mc.level.getRecipeManager().getAllRecipesFor(ChemicalPlantRecipe.Type.INSTANCE);
-        for (ChemicalPlantRecipe recipe : all) {
-            recipes.add(new ChemicalPlantJeiRecipe(recipe));
+        if (mc.level == null) {
+            return List.of();
         }
-
-        return recipes;
+        return mc.level.getRecipeManager().getAllRecipesFor(ChemicalPlantRecipe.Type.INSTANCE);
     }
 
     private static List<CyclotronJeiRecipe> getCyclotronRecipes() {

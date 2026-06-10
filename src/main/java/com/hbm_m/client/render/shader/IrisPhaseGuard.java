@@ -16,8 +16,8 @@ import net.minecraftforge.fml.ModList;
 //? if fabric {
 /*import dev.architectury.platform.Platform;
 import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*/
-//?}
+import net.fabricmc.api.Environment;
+*///?}
 
 /**
  * Try-with-resources scope helper that calls
@@ -159,8 +159,8 @@ public final class IrisPhaseGuard implements AutoCloseable {
         //? if fabric {
         /*if (!Platform.isModLoaded("iris") && !Platform.isModLoaded("oculus")) {
             return;
-        }*/
-        //?}
+        }
+        *///?}
 
         try {
             Class<?> irisClass = Class.forName("net.irisshaders.iris.Iris");

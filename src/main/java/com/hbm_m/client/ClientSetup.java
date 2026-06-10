@@ -954,6 +954,16 @@ public class ClientSetup {
      * Решение: в LOWEST-приоритете (после Continuity) разворачиваем обёртки обратно
      * для всех моделей нашего мода, чтобы terrain-рендер использовал vanilla/Forge-путь.
      */
+    /**
+     * After bake (and after Item Transform Helper, if present): install Forge-safe display wrappers for
+     * {@code isCustomRenderer} {@code hbm_m} item models so JSON {@code display} matches with/without ITH.
+     */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onBakingCompletedDisplayGuards(ModelEvent.BakingCompleted event) {
+        com.hbm_m.client.compat.ItemTransformHelperCompat.installDisplayTransformGuards(
+                event.getModelBakery().getBakedTopLevelModels());
+    }
+
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onModelBakeUnwrapContinuity(ModelEvent.ModifyBakingResult event) {
         Map<ResourceLocation, BakedModel> models = event.getModels();
@@ -985,6 +995,7 @@ public class ClientSetup {
         }
 
         wrapConnectedDecoCtTerrainModels(models);
+        com.hbm_m.client.compat.ItemTransformHelperCompat.installDisplayTransformGuards(models);
     }
 
     /**

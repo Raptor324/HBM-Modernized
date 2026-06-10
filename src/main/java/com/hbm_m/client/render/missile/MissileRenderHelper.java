@@ -127,9 +127,16 @@ public final class MissileRenderHelper {
     @Nullable
     public static MissileBakedModel resolveMissileModel(ResourceLocation itemId) {
         BakedModel model = resolveBakedModel(itemId);
-        if (model instanceof MissileBakedModel missileModel) {
+        //? if forge {
+        MissileBakedModel missileModel = com.hbm_m.client.compat.ItemTransformHelperCompat.unwrapMissileDelegate(model);
+        if (missileModel != null) {
             return missileModel;
         }
+        //?} else {
+        /*if (model instanceof MissileBakedModel missileModel) {
+            return missileModel;
+        }
+        *///?}
         debugMissile("resolveMissileModel: {} is not MissileBakedModel", itemId);
         return null;
     }
@@ -139,6 +146,15 @@ public final class MissileRenderHelper {
         if (stack.isEmpty()) {
             return null;
         }
+        //? if forge {
+        BakedModel shaperModel = Minecraft.getInstance().getItemRenderer()
+                .getItemModelShaper()
+                .getItemModel(stack);
+        if (shaperModel != null
+                && shaperModel != Minecraft.getInstance().getModelManager().getMissingModel()) {
+            return AbstractPartBasedRenderer.unwrapFabricForwardingModels(shaperModel);
+        }
+        //?}
         return resolveBakedModel(BuiltInRegistries.ITEM.getKey(stack.getItem()));
     }
 
@@ -150,16 +166,28 @@ public final class MissileRenderHelper {
         var modelManager = Minecraft.getInstance().getModelManager();
         BakedModel itemModel = modelManager.getModel(new ModelResourceLocation(itemId, "inventory"));
         itemModel = AbstractPartBasedRenderer.unwrapFabricForwardingModels(itemModel);
-        if (itemModel instanceof MissileBakedModel) {
+        //? if forge {
+        if (com.hbm_m.client.compat.ItemTransformHelperCompat.unwrapMissileDelegate(itemModel) != null) {
             return itemModel;
         }
+        //?} else {
+        /*if (itemModel instanceof MissileBakedModel) {
+            return itemModel;
+        }
+        *///?}
         ResourceLocation meshId = meshModelId(itemId);
         if (!meshId.equals(itemId)) {
             BakedModel meshModel = modelManager.getModel(new ModelResourceLocation(meshId, "inventory"));
             meshModel = AbstractPartBasedRenderer.unwrapFabricForwardingModels(meshModel);
-            if (meshModel instanceof MissileBakedModel) {
+            //? if forge {
+            if (com.hbm_m.client.compat.ItemTransformHelperCompat.unwrapMissileDelegate(meshModel) != null) {
                 return meshModel;
             }
+            //?} else {
+            /*if (meshModel instanceof MissileBakedModel) {
+                return meshModel;
+            }
+            *///?}
         }
         return itemModel;
     }

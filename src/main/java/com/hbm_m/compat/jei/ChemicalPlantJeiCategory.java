@@ -1,54 +1,51 @@
 package com.hbm_m.compat.jei;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.item.ModItems;
+import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.recipe.ChemicalPlantRecipe;
+import com.hbm_m.recipe.ChemicalPlantRecipe.CountedIngredient;
+import com.hbm_m.recipe.ChemicalPlantRecipe.FluidIngredient;
 
 import dev.architectury.fluid.FluidStack;
-import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemStack;
-
-/**
- * JEI category for Chemical Plant recipes.
- */
-//? if forge {
 import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
-import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.forge.ForgeTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
-import mezz.jei.api.gui.drawable.IDrawable;
+import mezz.jei.api.gui.builder.IRecipeSlotBuilder;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
-import mezz.jei.api.recipe.category.IRecipeCategory;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 
-public class ChemicalPlantJeiCategory implements IRecipeCategory<ChemicalPlantJeiRecipe> {
+/**
+ * JEI port of {@code ChemicalPlantRecipeHandler} (extends {@code NEIGenericRecipeHandler}).
+ */
+//? if forge {
+public class ChemicalPlantJeiCategory extends JeiGenericRecipeCategory<ChemicalPlantRecipe> {
 
-    public static final RecipeType<ChemicalPlantJeiRecipe> RECIPE_TYPE =
-            RecipeType.create(RefStrings.MODID, "chemical_plant", ChemicalPlantJeiRecipe.class);
+    public static final RecipeType<ChemicalPlantRecipe> RECIPE_TYPE =
+            RecipeType.create(RefStrings.MODID, "chemical_plant", ChemicalPlantRecipe.class);
 
-    private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/processing/gui_chemplant.png");
-            *///?} else {
-                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_chemplant.png");
-            //?}
-
-
-    private final IDrawable background;
-    private final IDrawable icon;
+    private static final int FLUID_RENDERER_CAPACITY = 24_000;
 
     public ChemicalPlantJeiCategory(IGuiHelper guiHelper) {
-        // Use a portion of the machine GUI texture as JEI background
-        // Showing the input/output area (slots 4-9 and tanks)
-        this.background = guiHelper.createDrawable(TEXTURE, 0, 45, 140, 85);
-        this.icon = guiHelper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(ModBlocks.CHEMICAL_PLANT.get()));
+        super(guiHelper, new ItemStack[]{
+                new ItemStack(ModBlocks.CHEMICAL_PLANT.get()),
+                new ItemStack(ModBlocks.CHEMICAL_FACTORY.get())
+        });
     }
 
     @Override
-    public RecipeType<ChemicalPlantJeiRecipe> getRecipeType() {
+    public RecipeType<ChemicalPlantRecipe> getRecipeType() {
         return RECIPE_TYPE;
     }
 
@@ -58,65 +55,163 @@ public class ChemicalPlantJeiCategory implements IRecipeCategory<ChemicalPlantJe
     }
 
     @Override
-    public IDrawable getBackground() {
-        return background;
+    protected int getInputCount(ChemicalPlantRecipe recipe) {
+        return countItemInputs(recipe) + countFluidInputs(recipe);
     }
 
     @Override
-    public IDrawable getIcon() {
-        return icon;
+    protected int getOutputCount(ChemicalPlantRecipe recipe) {
+        return countItemOutputs(recipe) + countFluidOutputs(recipe);
     }
 
     @Override
-    public void setRecipe(IRecipeLayoutBuilder builder, ChemicalPlantJeiRecipe recipe, mezz.jei.api.recipe.IFocusGroup focuses) {
-        // GUI background is extracted from y=45, so we need to adjust positions
-        // Original positions in GUI:
-        // - Item inputs: (8, 99), (26, 99), (44, 99) -> adjusted: (8, 54), (26, 54), (44, 54)
-        // - Item outputs: (80, 99), (98, 99), (116, 99) -> adjusted: (80, 54), (98, 54), (116, 54)
-        // - Fluid input tanks: (8, 52), (26, 52), (44, 52) -> adjusted: (8, 7), (26, 7), (44, 7)
-        // - Fluid output tanks: (80, 52), (98, 52), (116, 52) -> adjusted: (80, 7), (98, 7), (116, 7)
+    protected boolean hasBlueprintTemplate(ChemicalPlantRecipe recipe) {
+        return recipe.requiresBlueprint();
+    }
 
-        // Add item inputs
-        List<List<ItemStack>> itemInputs = recipe.getItemInputStacks();
-        for (int i = 0; i < 3 && i < itemInputs.size(); i++) {
-            List<ItemStack> inputVariants = itemInputs.get(i);
-            if (!inputVariants.isEmpty() && !inputVariants.get(0).isEmpty()) {
-                builder.addSlot(RecipeIngredientRole.INPUT, 8 + i * 18, 54)
-                        .addItemStacks(inputVariants);
+    @Override
+    protected int getInputXOffset(ChemicalPlantRecipe recipe, int inputCount) {
+        if (inputCount > 12) return -9;
+        if (inputCount > 9) return 18;
+        return 0;
+    }
+
+    @Override
+    protected int getOutputXOffset(ChemicalPlantRecipe recipe, int outputCount) {
+        return getOffset(getInputCount(recipe));
+    }
+
+    @Override
+    protected int getMachineXOffset(ChemicalPlantRecipe recipe) {
+        return getOffset(getInputCount(recipe));
+    }
+
+    private static int getOffset(int inputCount) {
+        if (inputCount > 12) return 27;
+        if (inputCount > 9) return 18;
+        return 0;
+    }
+
+    @Override
+    protected void addInputSlots(IRecipeLayoutBuilder builder, ChemicalPlantRecipe recipe, int inputXOffset) {
+        int inputCount = getInputCount(recipe);
+        int[][] positions = JeiNeiLayout.getGenericInputSlotPositions(inputCount);
+        int slotIndex = 0;
+
+        for (CountedIngredient input : recipe.getItemInputs()) {
+            if (input.ingredient().isEmpty()) {
+                continue;
             }
+            IRecipeSlotBuilder jeiSlot = addItemSlot(builder, RecipeIngredientRole.INPUT,
+                    positions[slotIndex][0] + inputXOffset, positions[slotIndex][1]);
+            JeiIngredientSlots.addCountedIngredient(jeiSlot, input.ingredient(), input.count());
+            slotIndex++;
         }
 
-        // Add fluid inputs
-        List<FluidStack> fluidInputs = recipe.getFluidInputs();
-        for (int i = 0; i < 3 && i < fluidInputs.size(); i++) {
-            FluidStack fluid = fluidInputs.get(i);
-            if (!fluid.isEmpty()) {
-                builder.addSlot(RecipeIngredientRole.INPUT, 8 + i * 18, 7)
-                        .setFluidRenderer(24000, false, 16, 34)
-                        .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
+        for (FluidIngredient fluidInput : recipe.getFluidInputs()) {
+            FluidStack fluid = toFluidStack(fluidInput);
+            if (fluid.isEmpty()) {
+                continue;
             }
+            addItemSlot(builder, RecipeIngredientRole.INPUT,
+                    positions[slotIndex][0] + inputXOffset, positions[slotIndex][1])
+                    .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
+                    .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
+            slotIndex++;
+        }
+    }
+
+    @Override
+    protected void addOutputSlots(IRecipeLayoutBuilder builder, ChemicalPlantRecipe recipe, int outputXOffset) {
+        int outputCount = getOutputCount(recipe);
+        int[][] positions = JeiNeiLayout.getGenericOutputSlotPositions(outputCount);
+        int slotIndex = 0;
+
+        for (ItemStack output : recipe.getItemOutputs()) {
+            if (output.isEmpty()) {
+                continue;
+            }
+            addItemSlot(builder, RecipeIngredientRole.OUTPUT,
+                    positions[slotIndex][0] + outputXOffset, positions[slotIndex][1])
+                    .addItemStack(output);
+            slotIndex++;
         }
 
-        // Add item outputs
-        List<ItemStack> itemOutputs = recipe.getItemOutputs();
-        for (int i = 0; i < 3 && i < itemOutputs.size(); i++) {
-            ItemStack output = itemOutputs.get(i);
+        for (FluidStack fluid : recipe.getFluidOutputs()) {
+            if (fluid.isEmpty()) {
+                continue;
+            }
+            addItemSlot(builder, RecipeIngredientRole.OUTPUT,
+                    positions[slotIndex][0] + outputXOffset, positions[slotIndex][1])
+                    .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
+                    .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
+            slotIndex++;
+        }
+    }
+
+    @Override
+    protected void addBlueprintSlot(IRecipeLayoutBuilder builder, ChemicalPlantRecipe recipe, int machineXOffset) {
+        if (!recipe.requiresBlueprint()) {
+            return;
+        }
+
+        ItemStack folder = new ItemStack(ModItems.BLUEPRINT_FOLDER.get());
+        ItemBlueprintFolder.writeBlueprintPool(folder, recipe.getBlueprintPool());
+        addUnframedSlot(builder, RecipeIngredientRole.RENDER_ONLY, 75 + machineXOffset, 10)
+                .addItemStack(folder);
+    }
+
+    @Override
+    protected void drawRecipeExtras(ChemicalPlantRecipe recipe, GuiGraphics graphics) {
+        JeiNeiRendering.drawGenericRecipeExtras(graphics, recipe.getDuration(), recipe.getPowerConsumption());
+    }
+
+    private static int countItemInputs(ChemicalPlantRecipe recipe) {
+        int count = 0;
+        for (CountedIngredient input : recipe.getItemInputs()) {
+            if (!input.ingredient().isEmpty()) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private static int countFluidInputs(ChemicalPlantRecipe recipe) {
+        int count = 0;
+        for (FluidIngredient fluidInput : recipe.getFluidInputs()) {
+            if (!toFluidStack(fluidInput).isEmpty()) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private static int countItemOutputs(ChemicalPlantRecipe recipe) {
+        int count = 0;
+        for (ItemStack output : recipe.getItemOutputs()) {
             if (!output.isEmpty()) {
-                builder.addSlot(RecipeIngredientRole.OUTPUT, 80 + i * 18, 54)
-                        .addItemStack(output);
+                count++;
             }
         }
+        return count;
+    }
 
-        // Add fluid outputs
-        List<FluidStack> fluidOutputs = recipe.getFluidOutputs();
-        for (int i = 0; i < 3 && i < fluidOutputs.size(); i++) {
-            FluidStack fluid = fluidOutputs.get(i);
+    private static int countFluidOutputs(ChemicalPlantRecipe recipe) {
+        int count = 0;
+        for (FluidStack fluid : recipe.getFluidOutputs()) {
             if (!fluid.isEmpty()) {
-                builder.addSlot(RecipeIngredientRole.OUTPUT, 80 + i * 18, 7)
-                        .setFluidRenderer(24000, false, 16, 34)
-                        .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
+                count++;
             }
         }
+        return count;
+    }
+
+    private static FluidStack toFluidStack(FluidIngredient fluidInput) {
+        Fluid fluid = BuiltInRegistries.FLUID.get(fluidInput.fluidId());
+        if (fluid == null || fluid == Fluids.EMPTY) {
+            return FluidStack.empty();
+        }
+        return FluidStack.create(fluid, fluidInput.amount());
     }
 }
 //?} else {

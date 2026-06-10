@@ -67,6 +67,18 @@ public class ClientRenderHandler {
 
         private CustomRenderTypes(String s, VertexFormat v, VertexFormat.Mode m, int i, boolean b, boolean b2, Runnable r, Runnable r2) { super(s, v, m, i, b, b2, r, r2); }
 
+        /** Жёлтая синусоида на лазерном детонаторе — additive + depth test (не HIGHLIGHT_BOX_FILL). */
+        public static final RenderType DETONATOR_LASER_GLOW = create("hbm_m_detonator_laser_glow",
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 256, false, true,
+                RenderType.CompositeState.builder()
+                        .setShaderState(POSITION_COLOR_SHADER)
+                        .setTransparencyState(ADDITIVE_BLEND)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST)
+                        .setCullState(NO_CULL)
+                        .setLightmapState(NO_LIGHTMAP)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .createCompositeState(false));
+
         /** Translucent world overlay; TRANSLUCENT_TARGET required for Iris/Embeddium. */
         public static final RenderType HIGHLIGHT_BOX_FILL = create("highlight_box_fill",
                 DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 131072, false, true,

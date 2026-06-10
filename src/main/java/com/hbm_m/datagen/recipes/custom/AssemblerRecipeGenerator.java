@@ -26,6 +26,7 @@ public final class AssemblerRecipeGenerator {
         registerElectronics(writer);
         registerPlateRecipes(writer);
         registerDoorRecipes(writer);
+        registerMissileRecipes(writer);
     }
 
 
@@ -394,6 +395,237 @@ public final class AssemblerRecipeGenerator {
                 .withBlueprintPool("plates")
                 .save(writer, "plate_euphemium_from_ingots");
 
+    }
+
+    private static void registerMissileRecipes(Consumer<FinishedRecipe> writer) { // TODO: WIP RECIPES, NEEDS REWORK WHEN FULL PROCESSING IS PORTED
+        // Tier 0 — micro / ABM (cheap test crafts)
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_TEST.get(), 1), 60, 100)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 2)
+                .addIngredient(Items.IRON_INGOT, 4)
+                .addIngredient(Items.REDSTONE, 2)
+                .addIngredient(Items.GUNPOWDER, 4)
+                .save(writer, "missile_test");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_ABM.get(), 1), 60, 100)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 3)
+                .addIngredient(Items.IRON_INGOT, 4)
+                .addIngredient(Items.REDSTONE, 4)
+                .addIngredient(Items.GUNPOWDER, 2)
+                .save(writer, "missile_abm");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_MICRO.get(), 1), 60, 100)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 2)
+                .addIngredient(ModItems.BILLET_PLUTONIUM.get(), 1)
+                .addIngredient(Items.IRON_INGOT, 2)
+                .addIngredient(Items.GUNPOWDER, 4)
+                .save(writer, "missile_micro");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_SCHRABIDIUM.get(), 1), 60, 100)
+                .addIngredient(ModItems.PLATE_SCHRABIDIUM.get(), 2)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 2)
+                .addIngredient(Items.REDSTONE, 4)
+                .addIngredient(Items.GUNPOWDER, 4)
+                .save(writer, "missile_schrabidium");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_BHOLE.get(), 1), 60, 100)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 4)
+                .addIngredient(Items.OBSIDIAN, 4)
+                .addIngredient(Items.IRON_INGOT, 4)
+                .addIngredient(Items.ENDER_PEARL, 2)
+                .save(writer, "missile_bhole");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_TAINT.get(), 1), 60, 100)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 2)
+                .addIngredient(Items.ROTTEN_FLESH, 8)
+                .addIngredient(Items.GUNPOWDER, 4)
+                .addIngredient(Items.REDSTONE, 2)
+                .save(writer, "missile_taint");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_EMP.get(), 1), 60, 100)
+                .addIngredient(ModItems.PLATE_COPPER.get(), 4)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 2)
+                .addIngredient(Items.REDSTONE, 8)
+                .addIngredient(ModItems.CAPACITOR.get(), 2)
+                .save(writer, "missile_emp");
+
+        // Tier 1 — V2 / stealth
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_GENERIC.get(), 1), 80, 150)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 4)
+                .addIngredient(Items.GUNPOWDER, 8)
+                .addIngredient(ModItems.MOTOR.get(), 1)
+                .addIngredient(Items.IRON_INGOT, 4)
+                .save(writer, "missile_generic");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_INCENDIARY.get(), 1), 80, 150)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 4)
+                .addIngredient(Items.BLAZE_POWDER, 4)
+                .addIngredient(Items.GUNPOWDER, 6)
+                .addIngredient(Items.FIRE_CHARGE, 4)
+                .save(writer, "missile_incendiary");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_CLUSTER.get(), 1), 80, 150)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 4)
+                .addIngredient(ModItems.GRENADE.get(), 2)
+                .addIngredient(Items.GUNPOWDER, 4)
+                .addIngredient(Items.IRON_INGOT, 2)
+                .save(writer, "missile_cluster");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_BUSTER.get(), 1), 80, 150)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 6)
+                .addIngredient(Items.IRON_BLOCK, 2)
+                .addIngredient(Items.GUNPOWDER, 8)
+                .addIngredient(ModItems.MOTOR.get(), 1)
+                .save(writer, "missile_buster");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_DECOY.get(), 1), 80, 150)
+                .addIngredient(ModItems.PLATE_ALUMINUM.get(), 4)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 2)
+                .addIngredient(Items.REDSTONE, 4)
+                .addIngredient(Items.PAPER, 4)
+                .save(writer, "missile_decoy");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_STEALTH.get(), 1), 80, 150)
+                .addIngredient(ModItems.PLATE_ADVANCED_ALLOY.get(), 2)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 4)
+                .addIngredient(Items.COAL, 8)
+                .addIngredient(Items.GUNPOWDER, 4)
+                .save(writer, "missile_stealth");
+
+        // Tier 2 — strong
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_STRONG.get(), 1), 100, 200)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 6)
+                .addIngredient(ModItems.PLATE_TITANIUM.get(), 4)
+                .addIngredient(Items.GUNPOWDER, 12)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .save(writer, "missile_strong");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_INCENDIARY_STRONG.get(), 1), 100, 200)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 4)
+                .addIngredient(ModItems.PLATE_TITANIUM.get(), 2)
+                .addIngredient(Items.BLAZE_POWDER, 8)
+                .addIngredient(Items.GUNPOWDER, 8)
+                .save(writer, "missile_incendiary_strong");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_CLUSTER_STRONG.get(), 1), 100, 200)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 4)
+                .addIngredient(ModItems.PLATE_TITANIUM.get(), 2)
+                .addIngredient(ModItems.GRENADEHE.get(), 2)
+                .addIngredient(Items.GUNPOWDER, 6)
+                .save(writer, "missile_cluster_strong");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_BUSTER_STRONG.get(), 1), 100, 200)
+                .addIngredient(ModItems.PLATE_TITANIUM.get(), 6)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 4)
+                .addIngredient(Items.IRON_BLOCK, 4)
+                .addIngredient(Items.GUNPOWDER, 12)
+                .save(writer, "missile_buster_strong");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_EMP_STRONG.get(), 1), 100, 200)
+                .addIngredient(ModItems.PLATE_TITANIUM.get(), 4)
+                .addIngredient(ModItems.PLATE_COPPER.get(), 4)
+                .addIngredient(Items.REDSTONE, 16)
+                .addIngredient(ModItems.CAPACITOR.get(), 4)
+                .save(writer, "missile_emp_strong");
+
+        // Tier 3 — huge / shuttle
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_BURST.get(), 1), 120, 250)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 8)
+                .addIngredient(ModItems.PLATE_DESH.get(), 2)
+                .addIngredient(ModItems.BALL_TNT.get(), 2)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .save(writer, "missile_burst");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_INFERNO.get(), 1), 120, 250)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 6)
+                .addIngredient(ModItems.PLATE_DESH.get(), 2)
+                .addIngredient(Items.BLAZE_POWDER, 16)
+                .addIngredient(Items.GUNPOWDER, 8)
+                .save(writer, "missile_inferno");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_RAIN.get(), 1), 120, 250)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 6)
+                .addIngredient(ModItems.PLATE_DESH.get(), 2)
+                .addIngredient(ModItems.GRENADE.get(), 4)
+                .addIngredient(Items.GUNPOWDER, 8)
+                .save(writer, "missile_rain");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_DRILL.get(), 1), 120, 250)
+                .addIngredient(ModItems.PLATE_TITANIUM.get(), 8)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 4)
+                .addIngredient(ModItems.DRILL_TITANIUM.get(), 1)
+                .addIngredient(Items.GUNPOWDER, 8)
+                .save(writer, "missile_drill");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_SHUTTLE.get(), 1), 120, 250)
+                .addIngredient(ModItems.PLATE_ALUMINUM.get(), 8)
+                .addIngredient(ModItems.PLATE_TITANIUM.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 2)
+                .save(writer, "missile_shuttle");
+
+        // Tier 4 — atlas / doomsday
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_NUCLEAR.get(), 1), 160, 300)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 8)
+                .addIngredient(ModItems.BILLET_PLUTONIUM.get(), 2)
+                .addIngredient(ModItems.BALL_TNT.get(), 4)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 1)
+                .save(writer, "missile_nuclear");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_NUCLEAR_CLUSTER.get(), 1), 160, 300)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 6)
+                .addIngredient(ModItems.BILLET_PLUTONIUM.get(), 2)
+                .addIngredient(ModItems.GRENADE_NUC.get(), 1)
+                .addIngredient(Items.GUNPOWDER, 8)
+                .save(writer, "missile_nuclear_cluster");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_VOLCANO.get(), 1), 160, 300)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 8)
+                .addIngredient(ModItems.PLATE_TITANIUM.get(), 4)
+                .addIngredient(Items.MAGMA_BLOCK, 4)
+                .addIngredient(ModItems.BALL_TNT.get(), 4)
+                .save(writer, "missile_volcano");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_DOOMSDAY.get(), 1), 160, 300)
+                .addIngredient(ModItems.BILLET_PLUTONIUM.get(), 4)
+                .addIngredient(ModItems.PLATE_SCHRABIDIUM.get(), 4)
+                .addIngredient(ModItems.BALL_TNT.get(), 8)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 2)
+                .save(writer, "missile_doomsday");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_DOOMSDAY_RUSTED.get(), 1), 160, 300)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 8)
+                .addIngredient(ModItems.BILLET_PLUTONIUM.get(), 2)
+                .addIngredient(Items.IRON_NUGGET, 16)
+                .addIngredient(ModItems.BALL_TNT.get(), 2)
+                .save(writer, "missile_doomsday_rusted");
     }
 }
 //?}

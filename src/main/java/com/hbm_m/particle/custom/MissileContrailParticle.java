@@ -19,6 +19,8 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
+import java.util.Random;
+
 /**
  * Port of 1.7.10 {@code ParticleRocketFlame} (missileContrail effect): orange exhaust,
  * motion damping, multi-layer billboard, particle atlas alpha blend (FX layer 1).
@@ -29,9 +31,29 @@ public class MissileContrailParticle extends TextureSheetParticle {
     public static float currentSpawnScale = 1.0F;
 
     private static final int SUB_QUADS = 10;
+    private static final int FULL_BRIGHT = LightTexture.FULL_BRIGHT;
+
     private final SpriteSet sprites;
-    private final long renderSeed;
     private boolean vaporSpawned;
+
+    private final float[] layerAdd = new float[SUB_QUADS];
+    private final float[] layerScaleRand = new float[SUB_QUADS];
+    /** Pre-offset gaussian: {@code (nextGaussian() - 1.0) * axisSpread}. */
+    private final float[] layerGaussX = new float[SUB_QUADS];
+    private final float[] layerGaussY = new float[SUB_QUADS];
+    private final float[] layerGaussZ = new float[SUB_QUADS];
+    private final Vector3f[] cornerScratch = new Vector3f[]{
+            new Vector3f(), new Vector3f(), new Vector3f(), new Vector3f()
+    };
+
+    private float cachedU0;
+    private float cachedU1;
+    private float cachedV0;
+    private float cachedV1;
+    private float cachedDark = 1.0F;
+    private float cachedAgeRatio;
+    /** {@code (pow(ageRatio * 4, 1.5) + 1) * quadSize} — screen scale applied in render. */
+    private float cachedSpreadBase;
 
     protected MissileContrailParticle(ClientLevel level, double x, double y, double z,
                                       double dx, double dy, double dz, SpriteSet sprites) {
@@ -42,12 +64,31 @@ public class MissileContrailParticle extends TextureSheetParticle {
         this.zd = dz;
         this.lifetime = 60 + this.random.nextInt(20);
         this.quadSize = currentSpawnScale;
-        this.renderSeed = this.random.nextLong();
         this.pickSprite(sprites);
         this.rCol = 1.0F;
         this.gCol = 0.6F;
         this.bCol = 0.0F;
         this.alpha = 0.75F;
+        this.cacheSpriteUv();
+        this.precomputeRenderLayers(new Random(this.random.nextLong()));
+        this.updateColorFromAge();
+    }
+
+    private void cacheSpriteUv() {
+        this.cachedU0 = this.getU0();
+        this.cachedU1 = this.getU1();
+        this.cachedV0 = this.getV0();
+        this.cachedV1 = this.getV1();
+    }
+
+    private void precomputeRenderLayers(Random subRand) {
+        for (int layer = 0; layer < SUB_QUADS; layer++) {
+            this.layerAdd[layer] = subRand.nextFloat() * 0.3F;
+            this.layerScaleRand[layer] = subRand.nextFloat();
+            this.layerGaussX[layer] = (float) ((subRand.nextGaussian() - 1.0D) * 0.2D);
+            this.layerGaussY[layer] = (float) ((subRand.nextGaussian() - 1.0D) * 0.5D);
+            this.layerGaussZ[layer] = (float) ((subRand.nextGaussian() - 1.0D) * 0.2D);
+        }
     }
 
     @Override
@@ -89,12 +130,13 @@ public class MissileContrailParticle extends TextureSheetParticle {
 
     /** 1.7.10 {@code ParticleRocketFlame}: orange flame early, darkens with age. */
     private void updateColorFromAge() {
-        float dark = 1.0F - Math.min((float) this.age / (this.lifetime * 0.25F), 1.0F);
-        this.rCol = dark;
-        this.gCol = 0.6F * dark;
+        this.cachedDark = 1.0F - Math.min((float) this.age / (this.lifetime * 0.25F), 1.0F);
+        this.rCol = this.cachedDark;
+        this.gCol = 0.6F * this.cachedDark;
         this.bCol = 0.0F;
-        float ageRatio = Math.min((float) this.age / (float) this.lifetime, 1.0F);
-        this.alpha = (float) (Math.pow(1.0F - ageRatio, 0.5) * 0.75F);
+        this.cachedAgeRatio = Math.min((float) this.age / (float) this.lifetime, 1.0F);
+        this.alpha = (float) (Math.pow(1.0F - this.cachedAgeRatio, 0.5) * 0.75F);
+        this.cachedSpreadBase = (float) (Math.pow(this.cachedAgeRatio * 4.0F, 1.5D) + 1.0F) * this.quadSize;
     }
 
     /**
@@ -112,7 +154,7 @@ public class MissileContrailParticle extends TextureSheetParticle {
 
     @Override
     public int getLightColor(float partialTick) {
-        return LightTexture.FULL_BRIGHT;
+        return FULL_BRIGHT;
     }
 
     @Override
@@ -127,50 +169,41 @@ public class MissileContrailParticle extends TextureSheetParticle {
         float relX = (float) virtual.relX();
         float relY = (float) virtual.relY();
         float relZ = (float) virtual.relZ();
-
-        java.util.Random subRand = new java.util.Random(this.renderSeed);
-        float ageRatio = Math.min((float) this.age / (float) this.lifetime, 1.0F);
-        float dark = 1.0F - Math.min(this.age / (this.lifetime * 0.25F), 1.0F);
-        float alpha = (float) (Math.pow(1.0F - ageRatio, 0.5) * 0.75F);
-        float spread = (float) (Math.pow(ageRatio * 4.0F, 1.5) + 1.0F) * this.quadSize * virtual.screenScale();
-
+        float screenScale = virtual.screenScale();
+        float spread = this.cachedSpreadBase * screenScale;
+        float dark = this.cachedDark;
+        float ageRatio = this.cachedAgeRatio;
+        float alpha = this.alpha;
         Quaternionf rotation = camera.rotation();
 
         for (int layer = 0; layer < SUB_QUADS; layer++) {
-            float add = subRand.nextFloat() * 0.3F;
+            float add = this.layerAdd[layer];
             float r = Math.min(1.0F, dark + add);
             float g = Math.min(1.0F, 0.6F * dark + add);
             float b = add;
 
-            float scale = (subRand.nextFloat() * 0.5F + 0.1F + ageRatio * 2.0F) * this.quadSize * virtual.screenScale();
-            float px = relX + (float) ((subRand.nextGaussian() - 1.0D) * 0.2F * spread);
-            float py = relY + (float) ((subRand.nextGaussian() - 1.0D) * 0.5F * spread);
-            float pz = relZ + (float) ((subRand.nextGaussian() - 1.0D) * 0.2F * spread);
+            float scale = (this.layerScaleRand[layer] * 0.5F + 0.1F + ageRatio * 2.0F) * this.quadSize * screenScale;
+            float px = relX + this.layerGaussX[layer] * spread;
+            float py = relY + this.layerGaussY[layer] * spread;
+            float pz = relZ + this.layerGaussZ[layer] * spread;
 
-            Vector3f[] corners = new Vector3f[]{
-                    new Vector3f(-scale, -scale, 0.0F),
-                    new Vector3f(-scale, scale, 0.0F),
-                    new Vector3f(scale, scale, 0.0F),
-                    new Vector3f(scale, -scale, 0.0F)
-            };
-            for (Vector3f corner : corners) {
+            this.cornerScratch[0].set(-scale, -scale, 0.0F);
+            this.cornerScratch[1].set(-scale, scale, 0.0F);
+            this.cornerScratch[2].set(scale, scale, 0.0F);
+            this.cornerScratch[3].set(scale, -scale, 0.0F);
+            for (Vector3f corner : this.cornerScratch) {
                 corner.rotate(rotation);
                 corner.add(px, py, pz);
             }
 
-            float u0 = this.getU0();
-            float u1 = this.getU1();
-            float v0 = this.getV0();
-            float v1 = this.getV1();
-            int light = LightTexture.FULL_BRIGHT;
-            buffer.vertex(corners[0].x(), corners[0].y(), corners[0].z()).uv(u1, v1)
-                    .color(r, g, b, alpha).uv2(light).endVertex();
-            buffer.vertex(corners[1].x(), corners[1].y(), corners[1].z()).uv(u1, v0)
-                    .color(r, g, b, alpha).uv2(light).endVertex();
-            buffer.vertex(corners[2].x(), corners[2].y(), corners[2].z()).uv(u0, v0)
-                    .color(r, g, b, alpha).uv2(light).endVertex();
-            buffer.vertex(corners[3].x(), corners[3].y(), corners[3].z()).uv(u0, v1)
-                    .color(r, g, b, alpha).uv2(light).endVertex();
+            buffer.vertex(this.cornerScratch[0].x(), this.cornerScratch[0].y(), this.cornerScratch[0].z())
+                    .uv(this.cachedU1, this.cachedV1).color(r, g, b, alpha).uv2(FULL_BRIGHT).endVertex();
+            buffer.vertex(this.cornerScratch[1].x(), this.cornerScratch[1].y(), this.cornerScratch[1].z())
+                    .uv(this.cachedU1, this.cachedV0).color(r, g, b, alpha).uv2(FULL_BRIGHT).endVertex();
+            buffer.vertex(this.cornerScratch[2].x(), this.cornerScratch[2].y(), this.cornerScratch[2].z())
+                    .uv(this.cachedU0, this.cachedV0).color(r, g, b, alpha).uv2(FULL_BRIGHT).endVertex();
+            buffer.vertex(this.cornerScratch[3].x(), this.cornerScratch[3].y(), this.cornerScratch[3].z())
+                    .uv(this.cachedU0, this.cachedV1).color(r, g, b, alpha).uv2(FULL_BRIGHT).endVertex();
         }
     }
 

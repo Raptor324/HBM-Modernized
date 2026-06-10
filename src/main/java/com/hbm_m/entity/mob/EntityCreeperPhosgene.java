@@ -2,6 +2,7 @@ package com.hbm_m.entity.mob;
 
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.effect.EntityMist;
+import com.hbm_m.mixin.CreeperAccessor;
 import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.ModFluids;
 
@@ -16,9 +17,6 @@ import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
-
 /**
  * Фосгеновый крипер — быстрый поджиг, взрыв и облако фосгена.
  * Порт {@link com.hbm.entity.mob.EntityCreeperPhosgene} (1.7.10).
@@ -27,20 +25,9 @@ import java.lang.invoke.VarHandle;
  */
 public class EntityCreeperPhosgene extends Creeper {
 
-    private static final VarHandle MAX_SWELL;
-
-    static {
-        try {
-            var creeperLookup = MethodHandles.privateLookupIn(Creeper.class, MethodHandles.lookup());
-            MAX_SWELL = creeperLookup.findVarHandle(Creeper.class, "maxSwell", int.class);
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
-
     public EntityCreeperPhosgene(EntityType<? extends Creeper> type, Level level) {
         super(type, level);
-        MAX_SWELL.set(this, 20);
+        ((CreeperAccessor) this).hbm_m$setMaxSwell(20);
     }
 
     public static AttributeSupplier.Builder createAttributes() {

@@ -82,7 +82,7 @@ public class GUIMachineCrucible extends GuiInfoScreen<MachineCrucibleMenu> {
     @Override
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
         g.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 0xFFFFFF, false);
-        g.drawString(this.font, Component.translatable("container.inventory"),
+        g.drawString(this.font, this.playerInventoryTitle,
                 8, this.imageHeight - 96 + 2, 4210752, false);
     }
 

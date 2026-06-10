@@ -1,6 +1,7 @@
 package com.hbm_m.entity.mob;
 
 import com.hbm_m.damagesource.ModDamageTypes;
+import com.hbm_m.mixin.CreeperAccessor;
 import com.hbm_m.entity.logic.EntityNukeExplosionMK5;
 import com.hbm_m.explosion.ExplosionNukeGeneric;
 import com.hbm_m.explosion.MissileWarheadEffects;
@@ -28,9 +29,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
-
 /**
  * Ядерный крипер — радиационная аура, мини-ядерный / полный взрыв при детонации.
  * Порт {@link com.hbm.entity.mob.EntityCreeperNuclear} (1.7.10).
@@ -39,20 +37,9 @@ import java.lang.invoke.VarHandle;
  */
 public class EntityCreeperNuclear extends Creeper {
 
-    private static final VarHandle MAX_SWELL;
-
-    static {
-        try {
-            var creeperLookup = MethodHandles.privateLookupIn(Creeper.class, MethodHandles.lookup());
-            MAX_SWELL = creeperLookup.findVarHandle(Creeper.class, "maxSwell", int.class);
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
-
     public EntityCreeperNuclear(EntityType<? extends Creeper> type, Level level) {
         super(type, level);
-        MAX_SWELL.set(this, 75);
+        ((CreeperAccessor) this).hbm_m$setMaxSwell(75);
     }
 
     public static AttributeSupplier.Builder createAttributes() {

@@ -122,8 +122,6 @@ public class HazardRegistry {
                         new HazardEntry(HOT, 1.0f)));
                 case DIGAMMA -> HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
                         new HazardEntry(DIGAMMA, 1.0f)));
-                case URANIUM -> HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
-                        new HazardEntry(RADIATION, 0.35f)));
                 case URANIUM233 -> HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
                         new HazardEntry(RADIATION, 5.0f)));
                 case URANIUM235 -> HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(

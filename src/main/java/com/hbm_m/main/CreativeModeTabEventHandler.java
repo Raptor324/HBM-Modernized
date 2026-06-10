@@ -11,6 +11,7 @@ import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.generic.BlockAbsorber;
 import com.hbm_m.item.BlockAbsorberItem;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.creativetabs.MissileTab;
 import com.hbm_m.client.ClientSetup;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.inventory.fluid.ModFluids;
@@ -50,6 +51,18 @@ public final class CreativeModeTabEventHandler {
     //? if forge {
     public static void onBuildCreativeModeTabContents(BuildCreativeModeTabContentsEvent event) {
         MainRegistry.LOGGER.info("Building creative tab contents for: " + event.getTabKey());
+        
+        if (event.getTab() == ModCreativeTabs.NTM_RESOURCES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
+            populateResourceTab((stack, vis) -> event.accept(stack, vis));
+        }
+
+        if (event.getTab() == ModCreativeTabs.NTM_FUEL_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
+            populateFuelTab((stack, vis) -> event.accept(stack, vis));
+        }
+
+        if (event.getTab() == ModCreativeTabs.NTM_TEMPLATES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
+            populateTemplatesTab((stack, vis) -> event.accept(stack, vis));
+        }
 
         if (event.getTab() == ModCreativeTabs.NTM_WEAPONS_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
             populateWeaponsTab((stack, vis) -> event.accept(stack, vis));
@@ -66,10 +79,6 @@ public final class CreativeModeTabEventHandler {
 
         if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS || event.getTabKey() == CreativeModeTabs.SEARCH) {
             populateSpawnEggs((stack, vis) -> event.accept(stack, vis));
-        }
-
-        if (event.getTab() == ModCreativeTabs.NTM_RESOURCES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateResourceTab((stack, vis) -> event.accept(stack, vis));
         }
 
         if (event.getTab() == ModCreativeTabs.NTM_CONSUMABLES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
@@ -92,12 +101,12 @@ public final class CreativeModeTabEventHandler {
             populateMachinesTab((stack, vis) -> event.accept(stack, vis));
         }
 
-        if (event.getTab() == ModCreativeTabs.NTM_FUEL_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateFuelTab((stack, vis) -> event.accept(stack, vis));
+        if (event.getTab() == ModCreativeTabs.NTM_BOMBS_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
+            populateNukeTab((stack, vis) -> event.accept(stack, vis));
         }
 
-        if (event.getTab() == ModCreativeTabs.NTM_TEMPLATES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateTemplatesTab((stack, vis) -> event.accept(stack, vis));
+        if (event.getTab() == ModCreativeTabs.NTM_MISSILES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
+            populateMissilesTab((stack, vis) -> event.accept(stack, vis));
         }
 
     }
@@ -138,6 +147,8 @@ public final class CreativeModeTabEventHandler {
             populateMachinesTab((stack, vis) -> entries.accept(stack, vis));
             populateFuelTab((stack, vis) -> entries.accept(stack, vis));
             populateTemplatesTab((stack, vis) -> entries.accept(stack, vis));
+            populateNukeTab((stack, vis) -> entries.accept(stack, vis));
+            populateMissilesTab((stack, vis) -> entries.accept(stack, vis));
         });
     }
     *///?}
@@ -153,24 +164,140 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.ENTITY_MOB_NUCLEAR_CREEPER_SPAWN_EGG.get()));
     }
 
+    /** Ракеты и спутники (порядок из GIT {@code MainRegistry.missileTab}). */
+    public static void populateMissilesTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
+        Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+
+        add.accept(new ItemStack(ModBlocks.LAUNCH_PAD.get()));
+        add.accept(new ItemStack(ModBlocks.LAUNCH_PAD_RUSTED.get()));
+        add.accept(new ItemStack(ModBlocks.CRATE_CONSERVE.get()));
+        add.accept(new ItemStack(ModBlocks.RADAR.get()));
+        add.accept(new ItemStack(ModBlocks.LARGE_RADAR.get()));
+        add.accept(new ItemStack(ModItems.RANGEFINDER.get()));
+        add.accept(new ItemStack(ModItems.DESIGNATOR.get()));
+        add.accept(new ItemStack(ModItems.DESIGNATOR_RANGE.get()));
+        add.accept(new ItemStack(ModItems.DESIGNATOR_MANUAL.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_GENERIC.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_ABM.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_INCENDIARY.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_CLUSTER.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_BUSTER.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_DECOY.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_STRONG.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_INCENDIARY_STRONG.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_CLUSTER_STRONG.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_BUSTER_STRONG.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_EMP_STRONG.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_BURST.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_INFERNO.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_RAIN.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_DRILL.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_NUCLEAR.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_NUCLEAR_CLUSTER.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_VOLCANO.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_DOOMSDAY.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_DOOMSDAY_RUSTED.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_TAINT.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_MICRO.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_BHOLE.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_SCHRABIDIUM.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_EMP.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_SHUTTLE.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_STEALTH.get()));
+
+        MissileTab.appendExtraItems(add);
+    }
+
+    /** Бомбы (порядок из GIT {@code MainRegistry.nukeTab}). */
+    public static void populateNukeTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
+        Set<String> seen = new HashSet<>();
+        Consumer<ItemStack> add = stack -> {
+            if (stack == null || stack.isEmpty()) {
+                return;
+            }
+            String itemId = String.valueOf(BuiltInRegistries.ITEM.getKey(stack.getItem()));
+            String tag = stack.getTag() == null ? "" : stack.getTag().toString();
+            if (!seen.add(itemId + "|" + tag)) {
+                return;
+            }
+            acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        };
+
+        add.accept(new ItemStack(ModBlocks.NUKE_FAT_MAN.get()));
+        // add.accept(new ItemStack(ModBlocks.NUKE_PROTOTYPE.get()));
+        add.accept(new ItemStack(ModBlocks.DUD_CONVENTIONAL.get()));
+        add.accept(new ItemStack(ModBlocks.DUD_NUKE.get()));
+        add.accept(new ItemStack(ModBlocks.DUD_SALTED.get()));
+        add.accept(new ItemStack(ModBlocks.C4.get()));
+        add.accept(new ItemStack(ModBlocks.MINE_AP.get()));
+        add.accept(new ItemStack(ModBlocks.MINE_FAT.get()));
+        add.accept(new ItemStack(ModBlocks.NAVAL_MINE.get()));
+        add.accept(new ItemStack(ModBlocks.EXPLOSIVE_CHARGE.get()));
+        add.accept(new ItemStack(ModBlocks.NUCLEAR_CHARGE.get()));
+        add.accept(new ItemStack(ModBlocks.DET_MINER.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_RED.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_PINK.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_LOX.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_VITRIFIED.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_TAINT.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_YELLOW.get()));
+        List<RegistrySupplier<Item>> batteriesToAdd = List.of(
+            ModItems.BATTERY_SPARK,
+            ModItems.BATTERY_TRIXITE,
+        );
+
+        // 2. Проходимся по списку и добавляем 2 версии каждой
+        for (RegistrySupplier<Item> batteryRegObj : batteriesToAdd) {
+            Item item = batteryRegObj.get();
+
+            // Проверка, что это ModBatteryItem
+            if (item instanceof ModBatteryItem batteryItem) {
+                // Добавляем пустую батарею
+                ItemStack emptyStack = new ItemStack(batteryItem);
+                add.accept(emptyStack);
+
+                // Создаем заряженную батарею
+                ItemStack chargedStack = new ItemStack(batteryItem);
+                ModBatteryItem.setEnergy(chargedStack, batteryItem.getCapacity());
+                add.accept(chargedStack);
+
+                if (ModClothConfig.get().enableDebugLogging) {
+                    MainRegistry.LOGGER.debug("Added empty and charged variants of {} to creative tab",
+                            batteryRegObj.getId());
+                }
+            } else {
+                // На всякий случай, если в списке что-то не ModBatteryItem
+                add.accept(new ItemStack(item));
+                MainRegistry.LOGGER.warn("Item {} is not a ModBatteryItem, added as regular item",
+                        batteryRegObj.getId());
+            }
+        }
+
+        if (ModClothConfig.get().enableDebugLogging) {
+            MainRegistry.LOGGER.info("Added {} battery variants to NTM Bomb tab", batteriesToAdd.size() * 2);
+        }
+
+        add.accept(new ItemStack(ModItems.FAT_MAN_EXPLOSIVE.get()));
+
+        add.accept(new ItemStack(ModItems.FAT_MAN_IGNITER.get()));
+        add.accept(new ItemStack(ModItems.FAT_MAN_CORE.get()));
+        
+        // add.accept(new ItemStack(ModItems.IGNITER.get()));
+        add.accept(new ItemStack(ModItems.DETONATOR.get()));
+        add.accept(new ItemStack(ModItems.MULTI_DETONATOR.get()));
+        add.accept(new ItemStack(ModItems.RANGE_DETONATOR.get()));
+        add.accept(new ItemStack(ModItems.DEFUSER.get()));
+    }
+
     public static void populateWeaponsTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
         // Упрощенный Consumer, по умолчанию использующий PARENT_AND_SEARCH_TABS
         Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
 
-        add.accept(new ItemStack(ModBlocks.BARREL_RED.get()));
-        add.accept(new ItemStack(ModBlocks.BARREL_PINK.get()));
-        add.accept(new ItemStack(ModBlocks.BARREL_TAINT.get()));
-        add.accept(new ItemStack(ModBlocks.BARREL_LOX.get()));
-        add.accept(new ItemStack(ModBlocks.BARREL_YELLOW.get()));
-        add.accept(new ItemStack(ModBlocks.BARREL_VITRIFIED.get()));
         add.accept(new ItemStack(ModBlocks.BARBED_WIRE_FIRE.get()));
         add.accept(new ItemStack(ModBlocks.BARBED_WIRE_POISON.get()));
         add.accept(new ItemStack(ModBlocks.BARBED_WIRE_RAD.get()));
         add.accept(new ItemStack(ModBlocks.BARBED_WIRE_WITHER.get()));
         add.accept(new ItemStack(ModBlocks.BARBED_WIRE.get()));
-        add.accept(new ItemStack(ModItems.DETONATOR.get()));
-        add.accept(new ItemStack(ModItems.MULTI_DETONATOR.get()));
-        add.accept(new ItemStack(ModItems.RANGE_DETONATOR.get()));
         add.accept(new ItemStack(ModItems.GRENADE.get()));
         add.accept(new ItemStack(ModItems.GRENADEHE.get()));
         add.accept(new ItemStack(ModItems.GRENADEFIRE.get()));
@@ -181,65 +308,23 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.GRENADE_IF_SLIME.get()));
         add.accept(new ItemStack(ModItems.GRENADE_IF_FIRE.get()));
         add.accept(new ItemStack(ModItems.GRENADE_NUC.get()));
-        add.accept(new ItemStack(ModBlocks.MINE_AP.get()));
-        add.accept(new ItemStack(ModBlocks.MINE_FAT.get()));
-        add.accept(new ItemStack(ModBlocks.NUKE_FAT_MAN.get()));
-        add.accept(new ItemStack(ModItems.NUKE_PROTOTYPE.get()));
-        add.accept(new ItemStack(ModItems.IGNITER.get()));
-        add.accept(new ItemStack(ModItems.CELL_SAS3.get()));
-        add.accept(new ItemStack(ModItems.ROD_QUAD_LEAD.get()));
-        add.accept(new ItemStack(ModItems.ROD_QUAD_NP237.get()));
-        add.accept(new ItemStack(ModItems.ROD_QUAD_URANIUM.get()));
-        add.accept(new ItemStack(ModItems.FAT_MAN_EXPLOSIVE.get()));
-        add.accept(new ItemStack(ModItems.FAT_MAN_IGNITER.get()));
-        add.accept(new ItemStack(ModItems.FAT_MAN_CORE.get()));
+        // add.accept(new ItemStack(ModItems.CELL_SAS3.get()));
+        // add.accept(new ItemStack(ModItems.ROD_QUAD_LEAD.get()));
+        // add.accept(new ItemStack(ModItems.ROD_QUAD_NP237.get()));
+        // add.accept(new ItemStack(ModItems.ROD_QUAD_URANIUM.get()));
         add.accept(new ItemStack(ModBlocks.AIRBOMB.get()));
         add.accept(new ItemStack(ModItems.AIRBOMB_A.get()));
         add.accept(new ItemStack(ModBlocks.BALEBOMB_TEST.get()));
         add.accept(new ItemStack(ModItems.AIRNUKEBOMB_A.get()));
-        add.accept(new ItemStack(ModBlocks.DET_MINER.get()));
         add.accept(new ItemStack(ModBlocks.GIGA_DET.get()));
         add.accept(new ItemStack(ModBlocks.WASTE_CHARGE.get()));
         add.accept(new ItemStack(ModBlocks.SMOKE_BOMB.get()));
         add.accept(new ItemStack(ModBlocks.EXPLOSIVE_CHARGE.get()));
         add.accept(new ItemStack(ModBlocks.NUCLEAR_CHARGE.get()));
-        add.accept(new ItemStack(ModBlocks.C4.get()));
         add.accept(new ItemStack(ModBlocks.DUD_CONVENTIONAL.get()));
         add.accept(new ItemStack(ModBlocks.DUD_NUKE.get()));
         add.accept(new ItemStack(ModBlocks.DUD_SALTED.get()));
-        add.accept(new ItemStack(ModBlocks.LAUNCH_PAD.get()));
-        add.accept(new ItemStack(ModBlocks.LAUNCH_PAD_RUSTED.get()));
-        add.accept(new ItemStack(ModItems.DESIGNATOR.get()));
-        add.accept(new ItemStack(ModItems.DESIGNATOR_RANGE.get()));
-        add.accept(new ItemStack(ModItems.DESIGNATOR_MANUAL.get()));
         add.accept(new ItemStack(ModItems.MISSILE_TEST.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_ABM.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_MICRO.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_SCHRABIDIUM.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_BHOLE.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_TAINT.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_EMP.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_GENERIC.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_INCENDIARY.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_CLUSTER.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_BUSTER.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_DECOY.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_STEALTH.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_STRONG.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_INCENDIARY_STRONG.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_CLUSTER_STRONG.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_BUSTER_STRONG.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_EMP_STRONG.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_BURST.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_INFERNO.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_RAIN.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_DRILL.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_SHUTTLE.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_NUCLEAR.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_NUCLEAR_CLUSTER.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_VOLCANO.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_DOOMSDAY.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_DOOMSDAY_RUSTED.get()));
     }
 
     // БРОНЯ И ИНСТРУМЕНТЫ
@@ -605,7 +690,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.CAN_REDBOMB.get()));
         add.accept(new ItemStack(ModItems.CAN_SMART.get()));
 
-        add.accept(new ItemStack(ModItems.DEFUSER.get()));
         add.accept(new ItemStack(ModItems.CROWBAR.get()));
         add.accept(new ItemStack(ModItems.SCREWDRIVER.get()));
 
@@ -1573,4 +1657,3 @@ public final class CreativeModeTabEventHandler {
     }
 
 }
-

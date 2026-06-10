@@ -16,9 +16,10 @@ public final class MissileTrackClientEvents {
         ClientTickEvent.CLIENT_POST.register(client -> MissileTrackClient.tick());
 
         //? if fabric {
-        /*WorldRenderEvents.AFTER_ENTITIES.register(context ->
+        /*WorldRenderEvents.START.register(context -> MissileTrackClient.beginRenderFrame());
+        WorldRenderEvents.AFTER_ENTITIES.register(context ->
                 MissileTrackWorldRender.render(context.tickDelta(), context.matrixStack()));
         *///?}
-        // Forge: {@link com.hbm_m.client.ClientModEvents#onRenderLevelStage} AFTER_ENTITIES
+        // Forge: {@link com.hbm_m.client.ClientModEvents#onRenderLevelStage} AFTER_SKY + AFTER_ENTITIES
     }
 }
