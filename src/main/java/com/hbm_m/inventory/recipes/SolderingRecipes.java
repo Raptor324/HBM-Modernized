@@ -4,6 +4,7 @@ import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
@@ -66,14 +67,14 @@ public class SolderingRecipes {
                 new SolderingIngredient[]{tag("wires_fine/lead", 4)});
 
         addRecipe(new ItemStack(ModItems.INTEGRATED_CIRCUIT.get()), 200, 250, null,
-                new SolderingIngredient[]{item(chip, 4)},
+                new SolderingIngredient[]{item(ModItems.MICROCHIP.get(), 4)},
                 new SolderingIngredient[]{item(pcbItem, 4)},
                 new SolderingIngredient[]{tag("wires_fine/lead", 4)});
 
         addRecipe(new ItemStack(ModItems.ADVANCED_CIRCUIT.get()), 300, 1_000,
                 fluid(ft(ModFluids.SULFURIC_ACID), 1_000),
-                new SolderingIngredient[]{item(chip, 16), item(cap, 4)},
-                new SolderingIngredient[]{item(pcbItem, 8), tag("ingots/rubber", 2)},
+                new SolderingIngredient[]{item(ModItems.MICROCHIP.get(), 16), item(cap, 4)},
+                new SolderingIngredient[]{item(pcbItem, 8), item(ModItems.getIngot(ModIngots.RUBBER).get(), 2)},
                 new SolderingIngredient[]{tag("wires_fine/lead", 8)});
 
         addRecipe(new ItemStack(ModItems.CAPACITOR_BOARD.get()), 200, 300,

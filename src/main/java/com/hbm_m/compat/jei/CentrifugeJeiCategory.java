@@ -63,12 +63,12 @@ public class CentrifugeJeiCategory implements IRecipeCategory<CentrifugeJeiRecip
     public void setRecipe(IRecipeLayoutBuilder builder, CentrifugeJeiRecipe recipe, mezz.jei.api.recipe.IFocusGroup focuses) {
         // Slot coordinates are aligned to the in-game GUI for consistency.
         List<ItemStack> inputs = recipe.getInputStacks();
-        builder.addSlot(RecipeIngredientRole.INPUT, 44, 35)
+        builder.addSlot(RecipeIngredientRole.INPUT, 36, 50)
             .addItemStacks(inputs);
 
         var outs = recipe.getOutputs();
-        int baseX = 65;
-        int y = 54;
+        int baseX = 63;
+        int y = 50;
         int step = 20;
         for (int i = 0; i < 4 && i < outs.size(); i++) {
             ItemStack out = outs.get(i);

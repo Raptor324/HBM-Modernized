@@ -677,6 +677,11 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.WIRE_ADVANCED_ALLOY.get()));
         add.accept(new ItemStack(ModItems.WIRE_MAGNETIZED_TUNGSTEN.get()));
         add.accept(new ItemStack(ModItems.WIRE_SCHRABIDIUM.get()));
+        add.accept(new ItemStack(ModItems.WIRE_IRON.get()));
+        add.accept(new ItemStack(ModItems.WIRE_STEEL.get()));
+        add.accept(new ItemStack(ModItems.WIRE_TITANIUM.get()));
+        add.accept(new ItemStack(ModItems.WIRE_SATURNITE.get()));
+        add.accept(new ItemStack(ModItems.WIRE_COMBINE_STEEL.get()));
 
         // Dense Wires
         add.accept(new ItemStack(ModItems.WIRE_DENSE_IRON.get()));
@@ -770,11 +775,36 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.SAT_LASER.get()));
         add.accept(new ItemStack(ModItems.SAT_HEAD_RADAR.get()));
         add.accept(new ItemStack(ModItems.SAT_RADAR.get()));
+        add.accept(new ItemStack(ModItems.SAT_HEAD_MAPPER.get()));
+        add.accept(new ItemStack(ModItems.SAT_MAPPER.get()));
+        add.accept(new ItemStack(ModItems.SAT_HEAD_RESONATOR.get()));
+        add.accept(new ItemStack(ModItems.SAT_RESONATOR.get()));
+
+        add.accept(new ItemStack(ModItems.LOW_DENSITY_ELEMENT.get()));
+
+        add.accept(new ItemStack(ModItems.INGOT_TUNGSTEN_CARBIDE.get()));
+        add.accept(new ItemStack(ModItems.INGOT_HIGHSPEED_STEEL.get()));
+        add.accept(new ItemStack(ModItems.NEUTRON_REFLECTOR.get()));
+        add.accept(new ItemStack(ModItems.WARHEAD_GENERIC_SMALL.get()));
+        add.accept(new ItemStack(ModItems.WARHEAD_CLUSTER_LARGE.get()));
+        add.accept(new ItemStack(ModItems.WARHEAD_INCENDIARY_MEDIUM.get()));
+        add.accept(new ItemStack(ModItems.WARHEAD_BUSTER_SMALL.get()));
 
         // Missile Parts
+        add.accept(new ItemStack(ModItems.MISSILE_ASSEMBLY.get()));
+        add.accept(new ItemStack(ModItems.THRUSTER_SMALL.get()));
+        add.accept(new ItemStack(ModItems.FUEL_TANK_SMALL.get()));
+        add.accept(new ItemStack(ModItems.WARHEAD_CLUSTER_SMALL.get()));
+        add.accept(new ItemStack(ModItems.WARHEAD_INCENDIARY_SMALL.get()));
         add.accept(new ItemStack(ModItems.THRUSTER_MEDIUM.get()));
         add.accept(new ItemStack(ModItems.FUEL_TANK_MEDIUM.get()));
         add.accept(new ItemStack(ModItems.WARHEAD_GENERIC_MEDIUM.get()));
+        add.accept(new ItemStack(ModItems.WARHEAD_GENERIC_LARGE.get()));
+        add.accept(new ItemStack(ModItems.WARHEAD_BUSTER_LARGE.get()));
+        add.accept(new ItemStack(ModItems.WARHEAD_MIRV.get()));
+        add.accept(new ItemStack(ModItems.WARHEAD_VOLCANO.get()));
+        add.accept(new ItemStack(ModItems.WARHEAD_BUSTER_MEDIUM.get()));
+        add.accept(new ItemStack(ModItems.WARHEAD_CLUSTER_MEDIUM.get()));
         add.accept(new ItemStack(ModItems.THRUSTER_LARGE.get()));
         add.accept(new ItemStack(ModItems.FUEL_TANK_LARGE.get()));
         add.accept(new ItemStack(ModItems.WARHEAD_NUCLEAR.get()));
