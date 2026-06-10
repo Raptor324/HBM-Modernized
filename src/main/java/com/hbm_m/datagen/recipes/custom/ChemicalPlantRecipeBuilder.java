@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
 
 import net.minecraft.advancements.Advancement;
@@ -185,9 +186,7 @@ public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
 
             JsonArray itemInputs = new JsonArray();
             for (CountedIngredient ci : builder.itemInputs) {
-                JsonObject ing = ci.ingredient().toJson().getAsJsonObject();
-                ing.addProperty("count", ci.count());
-                itemInputs.add(ing);
+                itemInputs.add(AssemblerRecipe.toCountedIngredientJson(ci.ingredient(), ci.count()));
             }
             json.add("item_inputs", itemInputs);
 

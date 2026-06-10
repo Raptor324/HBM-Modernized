@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.hbm_m.lib.RefStrings;
 
@@ -156,13 +157,11 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
             NonNullList<Ingredient> inputs = NonNullList.create();
             List<AssemblerInputSlot> displaySlots = new ArrayList<>();
             for (int i = 0; i < ingredientsJson.size(); i++) {
-                JsonObject ingredientObject = ingredientsJson.get(i).getAsJsonObject();
-                Ingredient ingredient = Ingredient.fromJson(ingredientObject);
-                int count = GsonHelper.getAsInt(ingredientObject, "count", 1);
-                for (int j = 0; j < count; j++) {
-                    inputs.add(ingredient);
+                AssemblerInputSlot slot = fromCountedIngredientJson(ingredientsJson.get(i).getAsJsonObject());
+                for (int j = 0; j < slot.count(); j++) {
+                    inputs.add(slot.ingredient());
                 }
-                displaySlots.add(new AssemblerInputSlot(ingredient, count));
+                displaySlots.add(slot);
             }
 
             int duration = GsonHelper.getAsInt(pSerializedRecipe, "duration", 100);
@@ -216,5 +215,31 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
                 pBuffer.writeBoolean(false);
             }
         }
+    }
+
+    public static JsonObject toCountedIngredientJson(Ingredient ingredient, int count) {
+        JsonElement element = ingredient.toJson();
+        JsonObject result;
+        if (element.isJsonArray()) {
+            result = new JsonObject();
+            result.add("items", element);
+        } else {
+            result = element.getAsJsonObject().deepCopy();
+        }
+        result.addProperty("count", count);
+        return result;
+    }
+
+    private static AssemblerInputSlot fromCountedIngredientJson(JsonObject ingredientObject) {
+        int count = GsonHelper.getAsInt(ingredientObject, "count", 1);
+        Ingredient ingredient;
+        if (ingredientObject.has("items")) {
+            ingredient = Ingredient.fromJson(ingredientObject.get("items"));
+        } else {
+            JsonObject clone = ingredientObject.deepCopy();
+            clone.remove("count");
+            ingredient = Ingredient.fromJson(clone);
+        }
+        return new AssemblerInputSlot(ingredient, count);
     }
 }

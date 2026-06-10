@@ -389,8 +389,15 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
             List<CountedIngredient> result = new ArrayList<>(arr.size());
             for (JsonElement el : arr) {
                 JsonObject obj = el.getAsJsonObject();
-                Ingredient ing = Ingredient.fromJson(obj);
                 int count = GsonHelper.getAsInt(obj, "count", 1);
+                Ingredient ing;
+                if (obj.has("items")) {
+                    ing = Ingredient.fromJson(obj.get("items"));
+                } else {
+                    JsonObject clone = obj.deepCopy();
+                    clone.remove("count");
+                    ing = Ingredient.fromJson(clone);
+                }
                 result.add(new CountedIngredient(ing, count));
             }
             return result;

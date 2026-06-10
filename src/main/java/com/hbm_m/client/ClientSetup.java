@@ -703,6 +703,8 @@ public class ClientSetup {
 
         ModEntities.NUKE_FALLOUT_RAIN.ifPresent(entityType ->
                 EntityRendererRegistry.register(entityType, RenderFallout::new));
+        ModEntities.NUKE_MK3.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, ctx -> new EmptyEntityRenderer<>(ctx)));
         ModEntities.NUKE_MK5.ifPresent(entityType ->
                 EntityRendererRegistry.register(entityType, ctx -> new EmptyEntityRenderer<>(ctx)));
         ModEntities.FALLING_SELLAFIT_ENTITY_TYPE.ifPresent(entityType ->
@@ -768,7 +770,7 @@ public class ClientSetup {
             return 0xFFFFFF;
         }, ModItems.PIPE_IRON.get(), ModItems.PIPE_COPPER.get(), ModItems.PIPE_GOLD.get(),
            ModItems.PIPE_LEAD.get(), ModItems.PIPE_STEEL.get(), ModItems.PIPE_TUNGSTEN.get(),
-           ModItems.PIPE_TITANIUM.get(), ModItems.PIPE_ALUMINUM.get());
+           ModItems.PIPE_TITANIUM.get(), ModItems.PIPE_ALUMINUM.get(), ModItems.PIPE_DURA_STEEL.get());
 
         ColorProviderRegistry.BLOCK.register((state, level, pos, tintIndex) -> {
             if (tintIndex == 0) return 0xFFFFFF;
@@ -1356,7 +1358,7 @@ public class ClientSetup {
             return 0xFFFFFF;
         }, ModItems.PIPE_IRON.get(), ModItems.PIPE_COPPER.get(), ModItems.PIPE_GOLD.get(),
            ModItems.PIPE_LEAD.get(), ModItems.PIPE_STEEL.get(), ModItems.PIPE_TUNGSTEN.get(),
-           ModItems.PIPE_TITANIUM.get(), ModItems.PIPE_ALUMINUM.get());
+           ModItems.PIPE_TITANIUM.get(), ModItems.PIPE_ALUMINUM.get(), ModItems.PIPE_DURA_STEEL.get());
     }
 
     @SubscribeEvent
@@ -1388,6 +1390,7 @@ public class ClientSetup {
         event.registerEntityRenderer(ModEntities.AIRSTRIKE_ENTITY.get(), AirstrikeEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.AIRSTRIKE_AGENT_ENTITY.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.NUKE_FALLOUT_RAIN.get(), RenderFallout::new);
+        event.registerEntityRenderer(ModEntities.NUKE_MK3.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.NUKE_MK5.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.FALLING_SELLAFIT_ENTITY_TYPE.get(), FallingBlockRenderer::new);
         event.registerEntityRenderer(ModEntities.MISSILE_TEST.get(), MissileEntityRenderer::new);

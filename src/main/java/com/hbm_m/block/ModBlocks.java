@@ -28,6 +28,7 @@ import com.hbm_m.block.explosives.ExplosiveChargeBlock;
 import com.hbm_m.block.explosives.GigaDetBlock;
 import com.hbm_m.block.explosives.MineBlock;
 import com.hbm_m.block.explosives.MineNukeBlock;
+import com.hbm_m.block.explosives.NavalMineBlock;
 import com.hbm_m.block.explosives.NuclearChargeBlock;
 import com.hbm_m.block.explosives.SmokeBombBlock;
 import com.hbm_m.block.explosives.WasteChargeBlock;
@@ -336,6 +337,12 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> CONVERTER_BLOCK = registerBlock("converter_block",
             () -> new ConverterBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
+
+    public static final RegistrySupplier<Block> EMP = registerBlock("emp",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
+                    .strength(3.0F, 6.0F)
+                    .sound(SoundType.METAL)
+                    .requiresCorrectToolForDrops()));
 
     public static final RegistrySupplier<Block> BLAST_FURNACE = registerBlock("blast_furnace",
             () -> new BlastFurnaceBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
@@ -996,7 +1003,7 @@ public class ModBlocks {
             () -> new MineBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
 
     public static final RegistrySupplier<Block> NAVAL_MINE = registerBlock("naval_mine",
-            () -> new CrtBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(5, 6.0F).noOcclusion()));
+            () -> new NavalMineBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(5, 6.0F).noOcclusion()));
 
     public static final RegistrySupplier<Block> CRATE_CONSERVE = registerBlock("crate_conserve",
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));

@@ -396,6 +396,8 @@ public class ModItemTagProvider extends ItemTagsProvider {
         this.tag(Tags.Items.DYES_RED).add(Items.RED_DYE);
         this.tag(Tags.Items.DYES_BLACK).add(Items.BLACK_DYE);
         this.tag(Tags.Items.DYES_WHITE).add(Items.WHITE_DYE);
+        this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "wires_fine/lead")))
+                .add(ModItems.WIRE_CARBON.get());
     }
 }
 //?}

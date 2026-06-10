@@ -52,21 +52,13 @@ public class MachineArcWelderBlock extends BaseEntityBlock implements IMultibloc
 
     private static MultiblockStructureHelper defineStructure() {
         String[] layerBase = {
-                "OOO",
                 "OCO",
                 "OOO"
         };
 
-        String[] layerMid = {
-                "OOO",
-                "O.O",
-                "OOO"
-        };
-
         String[] layerTop = {
-                ".O.",
                 "OOO",
-                ".O."
+                "OOO"
         };
 
         Map<Character, PartRole> roleMap = Map.of(
@@ -77,7 +69,7 @@ public class MachineArcWelderBlock extends BaseEntityBlock implements IMultibloc
         Map<Character, Supplier<BlockState>> symbolMap = Map.of();
 
         return MultiblockStructureHelper.createFromLayersWithRoles(
-                new String[][] { layerBase, layerMid, layerTop },
+                new String[][] { layerBase, layerTop },
                 symbolMap,
                 () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
                 roleMap,

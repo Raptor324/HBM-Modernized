@@ -108,11 +108,8 @@ public class AssemblerRecipeBuilder implements RecipeBuilder {
             JsonArray jsonIngredients = new JsonArray();
 
             for (CountableIngredient countableIng : this.builder.ingredients) {
-                // Преобразуем наш Ingredient в JSON
-                JsonObject ingredientJson = countableIng.ingredient().toJson().getAsJsonObject();
-                // Добавляем к нему поле "count"
-                ingredientJson.addProperty("count", countableIng.count());
-                jsonIngredients.add(ingredientJson);
+                jsonIngredients.add(AssemblerRecipe.toCountedIngredientJson(
+                        countableIng.ingredient(), countableIng.count()));
             }
             pJson.add("ingredients", jsonIngredients);
 

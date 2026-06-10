@@ -366,6 +366,24 @@ public class ModClothConfig implements ConfigData {
     @BoundedDiscrete(min = 10, max = 200)
     public int fatManRadius = 50;
 
+    /** Радиус Fleija-взрыва шрабидиевой ракеты (ориг. {@code BombConfig.aSchrabRadius}). */
+    @Category("explosions")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 5, max = 200)
+    public int aSchrabRadius = 20;
+
+    /** Скорость расширения MK3-взрывов (ориг. {@code BombConfig.blastSpeed}). */
+    @Category("explosions")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 1, max = 4096)
+    public int blastSpeed = 1024;
+
+    /** Лимит жизни невыгруженного взрыва в секундах; 0 = без лимита (ориг. {@code BombConfig.limitExplosionLifespan}). */
+    @Category("explosions")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 0, max = 3600)
+    public int limitExplosionLifespan = 0;
+
     // Тепловизор
     @Category("rendering")
     @Gui.Tooltip

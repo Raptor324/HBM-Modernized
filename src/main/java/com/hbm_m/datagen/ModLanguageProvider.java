@@ -507,6 +507,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.mine_nuke.line3", "Может быть обезврежена");
 
                 add("tooltip.hbm_m.mine.line1", "Может быть обезврежена");
+                add("tooltip.hbm_m.naval_mine.line1", "Взрывается при контакте с игроком");
 
 // ДЕТОНАТОР
                 add("tooltip.hbm_m.detonator.target", "Цель: ");
@@ -695,6 +696,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.LEAD_CLADDING.get(), "Свинцовая обшивка");
                 add(ModItems.PAINT_CLADDING.get(), "Свинцовая краска");
                 add(ModItems.CRT_DISPLAY.get(), "Электро-лучевая трубка");
+                add(ModItems.MAGNETRON.get(), "Магнетрон");
+                add(ModItems.TURBINE_TITANIUM.get(), "Титановая турбина");
                 add(ModItems.GRENADESMART.get(), "УМная отскок граната");
                 add(ModItems.GRENADESLIME.get(), "Отскок-отскок граната");
                 add(ModItems.GRENADE.get(), "Отскок граната");
@@ -935,6 +938,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PIPE_TUNGSTEN.get(), "Вольфрамовая труба");
                 add(ModItems.PIPE_TITANIUM.get(), "Титановая труба");
                 add(ModItems.PIPE_ALUMINUM.get(), "Алюминиевая труба");
+                add(ModItems.PIPE_DURA_STEEL.get(), "Труба из прочной стали");
                 add("item.hbm_m.fluid_identifier", "Мульти-жидкостный идентификатор: %s");
                 add("item.hbm_m.fluid_identifier.none", "Мульти-жидкостный идентификатор");
                 add("item.hbm_m.fluid_identifier.info", "Жидкостный идентификатор для:");
@@ -1052,6 +1056,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PCB.get(), "Печатная плата");
                 add(ModItems.INSULATOR.get(), "Изолятор");
                 add(ModItems.NUGGET_SILICON.get(), "Самородок кремния");
+                add(ModItems.NUGGET_TANTALIUM.get(), "Самородок тантала");
                 add(ModItems.BILLET_SILICON.get(), "Заготовка кремния");
 
                 add(ModItems.BATTLE_GEARS.get(), "Боевые детали");
@@ -2522,6 +2527,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.defuser.line1", "Device for disarming mines and bombs");
                 add("tooltip.hbm_m.defuser.line2", "RMB on a compatible device to disarm");
                 add("tooltip.hbm_m.mine.line1", "Can be defused");
+                add("tooltip.hbm_m.naval_mine.line1", "Explodes on contact with a player");
                 add("tooltip.hbm_m.gigadet.line1", "Was made for fun");
                 
 
@@ -2644,6 +2650,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.depthstone.line4", "Use Det Miner to safe-mine depth ores");
 
                 add(ModItems.CRT_DISPLAY.get(), "CRT");
+                add(ModItems.MAGNETRON.get(), "Magnetron");
+                add(ModItems.TURBINE_TITANIUM.get(), "Titanium Turbine");
                 add(ModBlocks.DEPTH_STONE.get(), "Depth Stone");
                 add(ModBlocks.DEPTH_CINNABAR.get(), "Deep Cinnabar Ore");
                 add(ModBlocks.DEPTH_IRON.get(), "Deep Iron Ore");
@@ -2875,6 +2883,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PIPE_TUNGSTEN.get(), "Tungsten Pipe");
                 add(ModItems.PIPE_TITANIUM.get(), "Titanium Pipe");
                 add(ModItems.PIPE_ALUMINUM.get(), "Aluminum Pipe");
+                add(ModItems.PIPE_DURA_STEEL.get(), "Dura Steel Pipe");
                 add("item.hbm_m.fluid_identifier", "Multi Fluid Identifier: %s");
                 add("item.hbm_m.fluid_identifier.none", "Multi Fluid Identifier");
                 add("item.hbm_m.fluid_identifier.info", "Universal fluid identifier for:");
@@ -3198,6 +3207,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add(ModBlocks.SMOKE_BOMB.get(), "Semtex");
                 add(ModItems.NUGGET_SILICON.get(), "Silicon Nugget");
+                add(ModItems.NUGGET_TANTALIUM.get(), "Tantalium Nugget");
                 add(ModItems.BILLET_SILICON.get(), "Silicon Billet");
                 add(ModItems.PLATE_GOLD.get(), "Golden Plate");
                 add(ModItems.PLATE_GUNMETAL.get(), "Gunmetal Plate");

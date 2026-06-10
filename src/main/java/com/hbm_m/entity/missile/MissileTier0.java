@@ -6,11 +6,11 @@ import api.hbm.entity.IRadarDetectable;
 
 import com.hbm_m.explosion.ExplosionNukeGeneric;
 
+import com.hbm_m.explosion.FleijaExplosionAPI;
+
 import com.hbm_m.explosion.MissileWarheadEffects;
 
 import com.hbm_m.explosion.NuclearExplosionAPI;
-
-import com.hbm_m.util.explosions.nuclear.NuclearExplosionHelper;
 
 import net.minecraft.core.BlockPos;
 
@@ -101,7 +101,7 @@ public abstract class MissileTier0 extends MissileBaseEntity {
 
             }
 
-            NuclearExplosionHelper.explodeStandardNuke(level(), pos);
+            FleijaExplosionAPI.start(level(), pos);
 
         }
 

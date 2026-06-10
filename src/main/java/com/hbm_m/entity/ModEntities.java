@@ -3,6 +3,7 @@ package com.hbm_m.entity;
 import com.hbm_m.entity.effect.EntityFalloutRain;
 import com.hbm_m.entity.effect.EntityMist;
 import com.hbm_m.entity.grenades.*;
+import com.hbm_m.entity.logic.EntityNukeExplosionMK3;
 import com.hbm_m.entity.logic.EntityNukeExplosionMK5;
 import com.hbm_m.entity.mob.EntityCreeperGold;
 import com.hbm_m.entity.mob.EntityCreeperNuclear;
@@ -294,6 +295,15 @@ public class ModEntities {
                 .clientTrackingRange(MISSILE_TRACKING_CHUNKS)
                 .updateInterval(1);
     }
+
+    // Длительный Fleija-взрыв MK3 (шрабидиевая ракета, анти-шрабидиевые ячейки)
+    public static final RegistrySupplier<EntityType<EntityNukeExplosionMK3>> NUKE_MK3 =
+            ENTITY_TYPES.register("nuke_mk3",
+                    () -> EntityType.Builder.<EntityNukeExplosionMK3>of(EntityNukeExplosionMK3::new, MobCategory.MISC)
+                            .sized(1.0F, 1.0F)
+                            .clientTrackingRange(256)
+                            .updateInterval(1)
+                            .build("nuke_mk3"));
 
     // Длительная сущность ядерного взрыва MK5 (Fat Man и другие мощные боеприпасы)
     public static final RegistrySupplier<EntityType<EntityNukeExplosionMK5>> NUKE_MK5 =
