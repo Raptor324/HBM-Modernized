@@ -21,6 +21,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
@@ -29,9 +30,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 public class ClientRenderHandler {
 
@@ -67,11 +65,28 @@ public class ClientRenderHandler {
                     RenderSystem.defaultBlendFunc();
                     RenderSystem.disableBlend();
                 });
+        private static final RenderStateShard.ShaderStateShard BHOLE_TEX_COLOR_SHADER =
+                new RenderStateShard.ShaderStateShard(GameRenderer::getPositionTexColorShader);
+        /** Самосветящиеся облака/вспышки взрыва — без lightmap (как RenderTorex 1.7.10). */
+        private static final RenderStateShard.ShaderStateShard NUKE_TEX_COLOR_SHADER = BHOLE_TEX_COLOR_SHADER;
 
         private CustomRenderTypes(String s, VertexFormat v, VertexFormat.Mode m, int i, boolean b, boolean b2, Runnable r, Runnable r2) { super(s, v, m, i, b, b2, r, r2); }
 
-        public static final RenderType HIGHLIGHT_BOX_FILL = create("highlight_box_fill",
+        /** Жёлтая синусоида на лазерном детонаторе — additive + depth test (не HIGHLIGHT_BOX_FILL). */
+        public static final RenderType DETONATOR_LASER_GLOW = create("hbm_m_detonator_laser_glow",
                 DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 256, false, true,
+                RenderType.CompositeState.builder()
+                        .setShaderState(POSITION_COLOR_SHADER)
+                        .setTransparencyState(ADDITIVE_BLEND)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST)
+                        .setCullState(NO_CULL)
+                        .setLightmapState(NO_LIGHTMAP)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .createCompositeState(false));
+
+        /** Translucent world overlay; TRANSLUCENT_TARGET required for Iris/Embeddium. */
+        public static final RenderType HIGHLIGHT_BOX_FILL = create("highlight_box_fill",
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 131072, false, true,
                 RenderType.CompositeState.builder()
                         .setShaderState(POSITION_COLOR_SHADER)
                         .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
@@ -79,47 +94,113 @@ public class ClientRenderHandler {
                         .setCullState(NO_CULL)
                         .setLightmapState(NO_LIGHTMAP)
                         .setWriteMaskState(COLOR_WRITE)
-                        .createCompositeState(false));
+                        .setOutputState(TRANSLUCENT_TARGET)
+                        .createCompositeState(true));
 
-        /** Nuke cloud particles (NukeTorex). */
+        /** Nuke cloud particles (NukeTorex) — vertex color × texture, без lightmap. */
         public static final Function<ResourceLocation, RenderType> NUKE_CLOUDS = Util.memoize(
-                texture -> create("nuke_clouds", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 239120, true, true,
+                texture -> create("nuke_clouds", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 239120, true, true,
                         RenderType.CompositeState.builder()
-                                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+                                .setShaderState(NUKE_TEX_COLOR_SHADER)
                                 .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
                                 .setTransparencyState(SEVEN_SEVEN10)
                                 .setCullState(NO_CULL)
-                                .setLightmapState(LIGHTMAP)
-                                .setOverlayState(NO_OVERLAY)
+                                .setLightmapState(NO_LIGHTMAP)
                                 .setWriteMaskState(COLOR_WRITE)
                                 .setOutputState(TRANSLUCENT_TARGET)
                                 .createCompositeState(false)));
 
         /** Nuke flash (NukeTorex) - без depth test, чтобы рендерился поверх всего. */
         public static final Function<ResourceLocation, RenderType> NUKE_FLASH = Util.memoize(
-                texture -> create("nuke_flash", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 545234, true, true,
+                texture -> create("nuke_flash", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 545234, true, true,
                         RenderType.CompositeState.builder()
-                                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+                                .setShaderState(NUKE_TEX_COLOR_SHADER)
                                 .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
                                 .setTransparencyState(ADDITIVE_BLEND)
                                 .setDepthTestState(NO_DEPTH_TEST)
                                 .setCullState(NO_CULL)
-                                .setLightmapState(LIGHTMAP)
-                                .setOverlayState(NO_OVERLAY)
+                                .setLightmapState(NO_LIGHTMAP)
                                 .setWriteMaskState(COLOR_WRITE)
                                 .setOutputState(TRANSLUCENT_TARGET)
                                 .createCompositeState(false)));
 
-        /** Fallout rain (RenderFallout): entity translucent, NO_CULL, CLOUDS_TARGET, 7/7/1/0 blend. */
-        public static final Function<ResourceLocation, RenderType> ENTITY_SMOOTH = Util.memoize(
-                texture -> create("entity_smooth", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, true, true,
+        /** Fleija cloud — untextured sphere, full-bright color (порт RenderCloudFleija). */
+        public static final RenderType FLEIJA_SPHERE = create("fleija_sphere",
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 262144, false, true,
+                RenderType.CompositeState.builder()
+                        .setShaderState(POSITION_COLOR_SHADER)
+                        .setTransparencyState(ADDITIVE_BLEND)
+                        .setCullState(NO_CULL)
+                        .setLightmapState(NO_LIGHTMAP)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .setOutputState(TRANSLUCENT_TARGET)
+                        .createCompositeState(false));
+
+        /** Fleija outer shells / shockwave — additive glow. */
+        public static final RenderType FLEIJA_SPHERE_ADDITIVE = FLEIJA_SPHERE;
+
+        /** Black hole event horizon — opaque black, writes depth (порт RenderBlackHole sphere). */
+        public static final RenderType BHOLE_SPHERE = create("bhole_sphere",
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 262144, false, true,
+                RenderType.CompositeState.builder()
+                        .setShaderState(POSITION_COLOR_SHADER)
+                        .setTransparencyState(NO_TRANSPARENCY)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST)
+                        .setCullState(NO_CULL)
+                        .setLightmapState(NO_LIGHTMAP)
+                        .setWriteMaskState(COLOR_DEPTH_WRITE)
+                        .createCompositeState(false));
+
+        /** Accretion disc / swirl — vertex color × texture (1.7.10 glColor × bindTexture). */
+        public static final Function<ResourceLocation, RenderType> BHOLE_DISC = Util.memoize(
+                texture -> create("bhole_disc", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 8192, false, true,
                         RenderType.CompositeState.builder()
-                                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+                                .setShaderState(BHOLE_TEX_COLOR_SHADER)
+                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                                .setTransparencyState(SEVEN_SEVEN10)
+                                .setDepthTestState(LEQUAL_DEPTH_TEST)
+                                .setCullState(NO_CULL)
+                                .setLightmapState(NO_LIGHTMAP)
+                                .setWriteMaskState(COLOR_WRITE)
+                                .setOutputState(TRANSLUCENT_TARGET)
+                                .createCompositeState(false)));
+
+        /** Second pass of disc/swirl — additive white glow (1.7.10 GL_SRC_ALPHA, GL_ONE). */
+        public static final Function<ResourceLocation, RenderType> BHOLE_DISC_ADDITIVE = Util.memoize(
+                texture -> create("bhole_disc_add", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 8192, false, true,
+                        RenderType.CompositeState.builder()
+                                .setShaderState(BHOLE_TEX_COLOR_SHADER)
+                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                                .setTransparencyState(ADDITIVE_BLEND)
+                                .setDepthTestState(LEQUAL_DEPTH_TEST)
+                                .setCullState(NO_CULL)
+                                .setLightmapState(NO_LIGHTMAP)
+                                .setWriteMaskState(COLOR_WRITE)
+                                .setOutputState(TRANSLUCENT_TARGET)
+                                .createCompositeState(false)));
+
+        /** Polar jets — additive, no depth write. */
+        public static final RenderType BHOLE_JETS = create("bhole_jets",
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 512, false, true,
+                RenderType.CompositeState.builder()
+                        .setShaderState(POSITION_COLOR_SHADER)
+                        .setTransparencyState(ADDITIVE_BLEND)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST)
+                        .setCullState(NO_CULL)
+                        .setLightmapState(NO_LIGHTMAP)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .setOutputState(TRANSLUCENT_TARGET)
+                        .createCompositeState(false));
+
+        /** Fallout rain (RenderFallout): tex × vertex color, без lightmap. */
+        public static final Function<ResourceLocation, RenderType> ENTITY_SMOOTH = Util.memoize(
+                texture -> create("entity_smooth", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 256, true, true,
+                        RenderType.CompositeState.builder()
+                                .setShaderState(NUKE_TEX_COLOR_SHADER)
                                 .setTextureState(new RenderStateShard.TextureStateShard(texture, false, true))
                                 .setTransparencyState(SEVEN_SEVEN10)
                                 .setCullState(NO_CULL)
-                                .setLightmapState(LIGHTMAP)
-                                .setOverlayState(OVERLAY)
+                                .setLightmapState(NO_LIGHTMAP)
                                 .setWriteMaskState(COLOR_DEPTH_WRITE)
                                 .setOutputState(CLOUDS_TARGET)
                                 .createCompositeState(false)));
@@ -181,14 +262,10 @@ public class ClientRenderHandler {
 
     /**
      * Автоматически сканирует область вокруг игрока и находит осиротевшие фантомные блоки.
-     * Вызывается из клиентского тика.
+     * Вызывается из клиентского тика (platform hook).
      * Оптимизировано: проверяет только загруженные чанки в небольшом радиусе.
      */
-    @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) {
-            return;
-        }
+    public static void onClientTickEnd() {
 
         // Проверяем раз в 3 секунды (60 тиков) для оптимизации производительности
         tickCounter++;
@@ -281,19 +358,17 @@ public class ClientRenderHandler {
         });
     }
 
-    @SubscribeEvent
-    public static void onRenderWorldLast(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
-            return;
-        }
-
+    /**
+     * Platform hook: render highlight boxes in world.
+     *
+     * Forge: call from RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES
+     * Fabric: call from a late WorldRenderEvents stage (e.g. AFTER_ENTITIES).
+     */
+    public static void onRenderWorldLate(net.minecraft.client.renderer.MultiBufferSource.BufferSource ignored, com.mojang.blaze3d.vertex.PoseStack poseStack, Vec3 cameraPos) {
         Minecraft mc = Minecraft.getInstance();
-        var camera = mc.gameRenderer.getMainCamera();
-        Vec3 cameraPos = camera.getPosition();
         long currentTime = System.currentTimeMillis();
         VertexConsumer fillConsumer = mc.renderBuffers().bufferSource().getBuffer(CustomRenderTypes.HIGHLIGHT_BOX_FILL);
         float alpha = ModClothConfig.get().obstructionHighlight.obstructionHighlightAlpha / 100.0f;
-        var poseStack = event.getPoseStack();
 
         poseStack.pushPose();
         poseStack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);

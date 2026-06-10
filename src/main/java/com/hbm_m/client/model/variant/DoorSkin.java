@@ -7,6 +7,7 @@ import java.util.Map;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.hbm_m.lib.RefStrings;
+
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
@@ -71,12 +72,12 @@ public class DoorSkin {
         
         ResourceLocation texturePath = null;
         if (json.has("texture")) {
-            texturePath = ResourceLocation.parse(json.get("texture").getAsString());
+            texturePath = ResourceLocation.tryParse(json.get("texture").getAsString());
         }
         
         ResourceLocation modelPath = null;
         if (json.has("model")) {
-            modelPath = ResourceLocation.parse(json.get("model").getAsString());
+            modelPath = ResourceLocation.tryParse(json.get("model").getAsString());
         }
 
         // Парсинг словаря текстур
@@ -84,7 +85,7 @@ public class DoorSkin {
         if (json.has("textures")) {
             JsonObject texturesObj = json.getAsJsonObject("textures");
             for (Map.Entry<String, JsonElement> entry : texturesObj.entrySet()) {
-                textureMap.put(entry.getKey(), ResourceLocation.parse(entry.getValue().getAsString()));
+                textureMap.put(entry.getKey(), ResourceLocation.tryParse(entry.getValue().getAsString()));
             }
         }
         
@@ -96,7 +97,7 @@ public class DoorSkin {
     }
     
     public static DoorSkin of(String id, String texturePath) {
-        return new DoorSkin(id, texturePath != null ? ResourceLocation.parse(texturePath) : null, null, Collections.emptyMap());
+        return new DoorSkin(id, texturePath != null ? ResourceLocation.tryParse(texturePath) : null, null, Collections.emptyMap());
     }
     
     @Override

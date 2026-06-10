@@ -10,7 +10,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.ChatFormatting;
+import com.hbm_m.network.ModPacketHandler;
 
 /**
  * GUI для мульти-детонатора
@@ -114,8 +114,9 @@ public class GUIMultiDetonator extends Screen {
                     detonatorItem.setPointName(detonatorStack, finalI, name);
 
                     // ⭐ ГЛАВНОЕ: Отправляем пакет на сервер с ПОЛНЫМИ данными
-                    ModPacketHandler.INSTANCE.sendToServer(
-                            new SyncPointPacket(finalI, name, finalX, finalY, finalZ, finalHasTarget)
+                    ModPacketHandler.sendToServer(
+                        ModPacketHandler.SYNC_POINT,
+                        new SyncPointPacket(finalI, name, finalX, finalY, finalZ, finalHasTarget)
                     );
                 }
             });
@@ -156,7 +157,7 @@ public class GUIMultiDetonator extends Screen {
         detonatorItem.setActivePoint(detonatorStack, pointIndex);
 
         // ⭐ КРИТИЧНО: Отправляем пакет на сервер для синхронизации
-        ModPacketHandler.INSTANCE.sendToServer(new SetActivePointPacket(pointIndex));
+        ModPacketHandler.sendToServer(ModPacketHandler.SET_ACTIVE_POINT, new SetActivePointPacket(pointIndex));
 
         this.init();
     }
@@ -166,7 +167,7 @@ public class GUIMultiDetonator extends Screen {
         detonatorItem.clearPoint(detonatorStack, pointIndex);
 
         // ⭐ КРИТИЧНО: Отправляем пакет на сервер для синхронизации
-        ModPacketHandler.INSTANCE.sendToServer(new ClearPointPacket(pointIndex));
+        ModPacketHandler.sendToServer(ModPacketHandler.CLEAR_POINT, new ClearPointPacket(pointIndex));
 
         // Обновляем GUI без изменения текущего состояния
         this.init();
@@ -185,7 +186,7 @@ public class GUIMultiDetonator extends Screen {
         if (stack.isEmpty() || !(stack.getItem() instanceof MultiDetonatorItem)) return;
 
         // Отправка пакета на сервер
-        ModPacketHandler.INSTANCE.sendToServer(new DetonateAllPacket());
+        ModPacketHandler.sendToServer(ModPacketHandler.DETONATE_ALL, new DetonateAllPacket());
         this.minecraft.setScreen(null); // закрыть GUI
     }
 

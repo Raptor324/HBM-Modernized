@@ -1,0 +1,41 @@
+{
+  "loader": "hbm_m:radar_loader",
+  "model": "hbm_m:models/block/radar_large.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "parts": ["Radar", "Dish"],
+  "textures": {
+    "particle": "hbm_m:block/machine/radar_large",
+    "default": "hbm_m:block/machine/radar_large",
+    "dish": "hbm_m:block/machine/radar_large"
+  },
+  "transform": {
+    "translation": [0.5, 0, 0.5]
+  },
+  "display": {
+    "gui": {
+      "rotation": [30, 225, 0],
+      "translation": [0, -2.5, 0],
+      "scale": [0.10, 0.10, 0.10]
+    },
+    "fixed": {
+      "rotation": [0, 180, 0],
+      "translation": [0, 0, 0],
+      "scale": [0.18, 0.18, 0.18]
+    },
+    "ground": {
+      "translation": [0, 3, 0],
+      "scale": [0.12, 0.12, 0.12]
+    },
+    "thirdperson_righthand": {
+      "rotation": [75, 45, 0],
+      "translation": [0, 2.5, 0],
+      "scale": [0.12, 0.12, 0.12]
+    },
+    "firstperson_righthand": {
+      "rotation": [0, 45, 0],
+      "translation": [0.75, 1, 0],
+      "scale": [0.12, 0.12, 0.12]
+    }
+  }
+}

@@ -1,14 +1,13 @@
 package com.hbm_m.particle.explosions.nuclear.small;
 
-import com.hbm_m.particle.ModExplosionParticles;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.hbm_m.particle.ModExplosionParticles;
+import com.hbm_m.particle.explosions.ServerExplosionParticles;
+
+import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.server.level.ServerLevel;
 
 /**
  *  РАСШИРЕНИЯ ДЛЯ ЯДЕРНЫХ ЭФФЕКТОВ
@@ -35,53 +34,29 @@ public class NuclearExplosionExtensions {
      */
     public static void spawnCustomNuclearSpark(ServerLevel level, double x, double y, double z,
             double xSpeed, double ySpeed, double zSpeed) {
-        
-        level.getServer().execute(() -> {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-                ClientLevel clientLevel = Minecraft.getInstance().level;
-                if (clientLevel == null) return;
-
-                clientLevel.addAlwaysVisibleParticle(
-                    (SimpleParticleType) ModExplosionParticles.LARGE_EXPLOSION_SPARK.get(),
-                    true,
-                    x, y, z,
-                    xSpeed, ySpeed, zSpeed
-                );
-            });
-        });
+        SimpleParticleType type = (SimpleParticleType) ModExplosionParticles.LARGE_EXPLOSION_SPARK.get();
+        ServerExplosionParticles.sendAlwaysVisible(level, type, x, y, z, xSpeed, ySpeed, zSpeed);
     }
 
     /**
      *  Спавн множества УВЕЛИЧЕННЫХ искр со сферическим распределением
      */
     public static void spawnLargeExplosionSparks(ServerLevel level, double x, double y, double z, int particleCount) {
-        
-        level.getServer().execute(() -> {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-                ClientLevel clientLevel = Minecraft.getInstance().level;
-                if (clientLevel == null) return;
+        SimpleParticleType type = (SimpleParticleType) ModExplosionParticles.LARGE_EXPLOSION_SPARK.get();
+        for (int i = 0; i < particleCount; i++) {
+            double theta = level.random.nextDouble() * 2 * Math.PI;
+            double phi = level.random.nextDouble() * Math.PI;
+            double dirX = Math.sin(phi) * Math.cos(theta);
+            double dirY = Math.cos(phi);
+            double dirZ = Math.sin(phi) * Math.sin(theta);
 
-                for (int i = 0; i < particleCount; i++) {
-                    double theta = level.random.nextDouble() * 2 * Math.PI;
-                    double phi = level.random.nextDouble() * Math.PI;
-                    double dirX = Math.sin(phi) * Math.cos(theta);
-                    double dirY = Math.cos(phi);
-                    double dirZ = Math.sin(phi) * Math.sin(theta);
-                    
-                    double speed = 0.6 + level.random.nextDouble() * 0.6; // Мощнее обычных
-                    double xSpeed = dirX * speed;
-                    double ySpeed = dirY * speed;
-                    double zSpeed = dirZ * speed;
+            double speed = 0.6 + level.random.nextDouble() * 0.6;
+            double xSpeed = dirX * speed;
+            double ySpeed = dirY * speed;
+            double zSpeed = dirZ * speed;
 
-                    clientLevel.addAlwaysVisibleParticle(
-                        (SimpleParticleType) ModExplosionParticles.LARGE_EXPLOSION_SPARK.get(),
-                        true,
-                        x, y, z,
-                        xSpeed, ySpeed, zSpeed
-                    );
-                }
-            });
-        });
+            ServerExplosionParticles.sendAlwaysVisible(level, type, x, y, z, xSpeed, ySpeed, zSpeed);
+        }
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -93,55 +68,32 @@ public class NuclearExplosionExtensions {
      */
     public static void spawnCustomNuclearSmoke(ServerLevel level, double x, double y, double z,
             double xSpeed, double ySpeed, double zSpeed) {
-        
-        level.getServer().execute(() -> {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-                ClientLevel clientLevel = Minecraft.getInstance().level;
-                if (clientLevel == null) return;
-
-                clientLevel.addAlwaysVisibleParticle(
-                    (SimpleParticleType) ModExplosionParticles.LARGE_DARK_SMOKE.get(),
-                    true,
-                    x, y, z,
-                    xSpeed, ySpeed, zSpeed
-                );
-            });
-        });
+        SimpleParticleType type = (SimpleParticleType) ModExplosionParticles.LARGE_DARK_SMOKE.get();
+        ServerExplosionParticles.sendAlwaysVisible(level, type, x, y, z, xSpeed, ySpeed, zSpeed);
     }
 
     /**
      *  Спавн множества УВЕЛИЧЕННОГО дыма со сферическим распределением
      */
     public static void spawnLargeDarkSmokes(ServerLevel level, double x, double y, double z, int particleCount) {
-        
-        level.getServer().execute(() -> {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-                ClientLevel clientLevel = Minecraft.getInstance().level;
-                if (clientLevel == null) return;
+        SimpleParticleType type = (SimpleParticleType) ModExplosionParticles.LARGE_DARK_SMOKE.get();
+        for (int i = 0; i < particleCount; i++) {
+            double theta = level.random.nextDouble() * 2 * Math.PI;
+            double phi = level.random.nextDouble() * Math.PI;
+            double radius = level.random.nextDouble() * 3.0;
 
-                for (int i = 0; i < particleCount; i++) {
-                    double theta = level.random.nextDouble() * 2 * Math.PI;
-                    double phi = level.random.nextDouble() * Math.PI;
-                    double radius = level.random.nextDouble() * 3.0;
-                    
-                    double offsetX = radius * Math.sin(phi) * Math.cos(theta);
-                    double offsetY = radius * Math.sin(phi) * Math.sin(theta);
-                    double offsetZ = radius * Math.cos(phi);
-                    
-                    double expansionSpeed = 0.3 + level.random.nextDouble() * 0.2;
-                    double xSpeed = (offsetX / Math.max(radius, 0.1)) * expansionSpeed;
-                    double ySpeed = (offsetY / Math.max(radius, 0.1)) * expansionSpeed;
-                    double zSpeed = (offsetZ / Math.max(radius, 0.1)) * expansionSpeed;
+            double offsetX = radius * Math.sin(phi) * Math.cos(theta);
+            double offsetY = radius * Math.sin(phi) * Math.sin(theta);
+            double offsetZ = radius * Math.cos(phi);
 
-                    clientLevel.addAlwaysVisibleParticle(
-                        (SimpleParticleType) ModExplosionParticles.LARGE_DARK_SMOKE.get(),
-                        true,
-                        x + offsetX, y + offsetY, z + offsetZ,
-                        xSpeed, ySpeed, zSpeed
-                    );
-                }
-            });
-        });
+            double expansionSpeed = 0.3 + level.random.nextDouble() * 0.2;
+            double xSpeed = (offsetX / Math.max(radius, 0.1)) * expansionSpeed;
+            double ySpeed = (offsetY / Math.max(radius, 0.1)) * expansionSpeed;
+            double zSpeed = (offsetZ / Math.max(radius, 0.1)) * expansionSpeed;
+
+            ServerExplosionParticles.sendAlwaysVisible(
+                    level, type, x + offsetX, y + offsetY, z + offsetZ, xSpeed, ySpeed, zSpeed);
+        }
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -178,36 +130,25 @@ public class NuclearExplosionExtensions {
      * Используется после грибного облака для усиления эффекта
      */
     public static void spawnEnhancedShockwave(ServerLevel level, double x, double y, double z) {
-        
-        level.getServer().execute(() -> {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-                ClientLevel clientLevel = Minecraft.getInstance().level;
-                if (clientLevel == null) return;
+        SimpleParticleType type = (SimpleParticleType) ModExplosionParticles.WAVE_SMOKE.get();
+        int particleCount = 800;
 
-                int particleCount = 800; // Больше частиц для мощной волны
-                
-                for (int i = 0; i < particleCount; i++) {
-                    double angle = (i / (double) particleCount) * 2 * Math.PI;
-                    double startRadius = 8.0 + level.random.nextDouble() * 3.0;
-                    
-                    double offsetX = Math.cos(angle) * startRadius;
-                    double offsetZ = Math.sin(angle) * startRadius;
-                    double offsetY = (level.random.nextDouble() - 0.5) * 3.0;
-                    
-                    double expansionSpeed = 0.8 + level.random.nextDouble() * 0.3;
-                    double xSpeed = Math.cos(angle) * expansionSpeed;
-                    double zSpeed = Math.sin(angle) * expansionSpeed;
-                    double ySpeed = -0.05 + level.random.nextDouble() * 0.15;
+        for (int i = 0; i < particleCount; i++) {
+            double angle = (i / (double) particleCount) * 2 * Math.PI;
+            double startRadius = 8.0 + level.random.nextDouble() * 3.0;
 
-                    clientLevel.addAlwaysVisibleParticle(
-                        (SimpleParticleType) ModExplosionParticles.WAVE_SMOKE.get(),
-                        true,
-                        x + offsetX, y + offsetY, z + offsetZ,
-                        xSpeed, ySpeed, zSpeed
-                    );
-                }
-            });
-        });
+            double offsetX = Math.cos(angle) * startRadius;
+            double offsetZ = Math.sin(angle) * startRadius;
+            double offsetY = (level.random.nextDouble() - 0.5) * 3.0;
+
+            double expansionSpeed = 0.8 + level.random.nextDouble() * 0.3;
+            double xSpeed = Math.cos(angle) * expansionSpeed;
+            double zSpeed = Math.sin(angle) * expansionSpeed;
+            double ySpeed = -0.05 + level.random.nextDouble() * 0.15;
+
+            ServerExplosionParticles.sendAlwaysVisible(
+                    level, type, x + offsetX, y + offsetY, z + offsetZ, xSpeed, ySpeed, zSpeed);
+        }
     }
 
     /**

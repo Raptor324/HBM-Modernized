@@ -1,17 +1,5 @@
 package com.hbm_m.client.render.shader;
 
-import com.hbm_m.client.render.IrisCompanionMesh;
-import com.hbm_m.main.MainRegistry;
-import com.mojang.blaze3d.shaders.Uniform;
-import com.mojang.blaze3d.systems.RenderSystem;
-
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraft.client.renderer.texture.TextureAtlas;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
@@ -19,41 +7,26 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
-/**
- * Per-block-entity batching session for the Iris {@code ExtendedShader} render path.
- * <p>
- * Without this class, every part of every machine triggers its own
- * {@code shader.apply()} (framebuffer bind + Iris CustomUniforms push + every uniform
- * upload) and {@code shader.clear()} (framebuffer rebind). For an Assembler with 9
- * animated parts and N visible machines, that is {@code 9 * N * 2} (main + shadow
- * pass) heavy GL state changes per frame - easily 50-60% of frame time at moderate
- * machine counts.
- * <p>
- * With this class, a renderer opens one batch session per BlockEntity (or per any
- * group of related draws), then issues lightweight {@link #drawCompanion} calls for
- * each part. The session pays the heavy {@code apply}/{@code clear} cost ONCE; per-draw
- * work is reduced to a single VAO bind, a {@code ModelViewMat} upload, and the actual
- * {@code glDrawElements}. This is the same optimization
- * {@code InstancedStaticPartRenderer.flushBatchIris} already applies when batching is
- * enabled - generalized so the per-part path benefits from it too.
- * <p>
- * Usage pattern (try-with-resources guarantees {@link #close} is called):
- * <pre>{@code
- * try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, projectionMatrix)) {
- *     if (batch != null) {
- *         renderer1.renderInBatch(...);
- *         renderer2.renderInBatch(...);
- *     } else {
- *         // shader pack didn't expose a usable shader - fall back to per-call path
- *     }
- * }
- * }</pre>
- * <p>
- * The session is a singleton; nested {@link #begin} calls return the outer session
- * unchanged so callers can compose sessions safely. Only the OUTER {@link #close} call
- * actually emits {@code shader.clear()}.
- */
+import com.hbm_m.client.render.GlVaoSafety;
+import com.hbm_m.client.render.IrisCompanionMesh;
+import com.hbm_m.main.MainRegistry;
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.shaders.Uniform;
+import com.mojang.blaze3d.systems.RenderSystem;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+@Environment(EnvType.CLIENT)*///?}
 public final class IrisRenderBatch implements AutoCloseable {
 
     private static final IrisRenderBatch INSTANCE = new IrisRenderBatch();
@@ -122,12 +95,7 @@ public final class IrisRenderBatch implements AutoCloseable {
     private int cachedShaderProgram = -1;
     private ShaderInstance cachedShaderInstance;
     private long cachedPipelineGeneration = -1L;
-    private Uniform uModelView;
-    /** Direct uniform location for {@code ModelViewMat} - bypasses Mojang's
-     *  Uniform proxy (saves several layers of indirection per draw). */
-    private int locModelView = -1;
-    private int locModelViewInverse = -1;
-    private int locNormalMat = -1;
+    private IrisDerivedMatrixUniforms.Locations matrixLocs = IrisDerivedMatrixUniforms.Locations.NONE;
 
     /** Reusable scratch buffers - avoid alloc per draw call. */
     private final Matrix4f mvInverseTmp = new Matrix4f();
@@ -206,6 +174,7 @@ public final class IrisRenderBatch implements AutoCloseable {
      * @param projectionMatrix  projection matrix to upload once into the shader
      */
     public static IrisRenderBatch begin(boolean shadowPass, Matrix4f projectionMatrix) {
+        //? if forge {
         // Pass-change detection: if the active batch's pass differs from the
         // requested one, tear it down before opening the new one. The previous
         // batch's framebuffer/shader bindings are already invalidated by Iris's
@@ -246,6 +215,49 @@ public final class IrisRenderBatch implements AutoCloseable {
             INSTANCE.isShadowPass = false;
             return null;
         }
+        //?}
+
+        //? if fabric {
+        /*// On Fabric there is no AFTER_BLOCK_ENTITIES event. The persistent
+        // batch model used on Forge keeps shader.apply() bound across all BEs
+        // in one pass — but the eventual shader.clear() fires at
+        // AFTER_TRANSLUCENT, by which point Iris has already moved past the
+        // block entity phase, swapped framebuffers, and unbound the program.
+        // The deferred clear() then corrupts Iris's pipeline state, causing
+        // "No active program" errors and models drawn to screen-space.
+        //
+        // Fix: use non-persistent per-BE batches on Fabric. Each BER's
+        // try-with-resources opens its own apply()/clear() pair that closes
+        // while Iris still has the correct phase active. Nested calls within
+        // one BER return NOOP_NESTED to avoid redundant apply()/clear().
+        // Cost: one apply()/clear() per BE instead of one per frame. This is
+        // acceptable because Fabric block entity dispatch is synchronous and
+        // Iris's apply() is fast when the framebuffer is already bound.
+
+        // Nested call — a parent BER already holds the active batch.
+        if (ACTIVE != null) {
+            return NOOP_NESTED;
+        }
+
+        ShaderInstance shader = IrisExtendedShaderAccess.getBlockShader(shadowPass);
+        if (shader == null) {
+            return null;
+        }
+        try {
+            INSTANCE.setupOuter(shader, projectionMatrix);
+            INSTANCE.isPersistent = false;
+            INSTANCE.isShadowPass = shadowPass;
+            ACTIVE = INSTANCE;
+            return INSTANCE;
+        } catch (Throwable t) {
+            MainRegistry.LOGGER.warn("IrisRenderBatch.begin ({}) failed ({}), falling back to per-call path",
+                    shadowPass ? "shadow" : "main", t.toString());
+            INSTANCE.tryRestoreState();
+            INSTANCE.isPersistent = false;
+            INSTANCE.isShadowPass = false;
+            return null;
+        }
+        *///?}
     }
 
     /**
@@ -280,8 +292,11 @@ public final class IrisRenderBatch implements AutoCloseable {
         this.isOuter = true;
         this.shader = shader;
 
-        // One-shot state snapshot: the per-call path used to do this on EVERY draw.
-        // Doing it once per batch trims tens of forced GL pipeline flushes per frame.
+        // Snapshot the VAO/array-buffer Iris/vanilla had before this batch. Must be
+        // captured BEFORE any glBindVertexArray — binding VAO 0 here and storing it
+        // as previousVao leaves core-profile GL without an active array object after
+        // teardown; Iris HandRenderer then hits GL_INVALID_OPERATION ("Array object is
+        // not active") and the first-person hand vanishes.
         this.previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         this.previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
         this.previousCullEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
@@ -328,11 +343,12 @@ public final class IrisRenderBatch implements AutoCloseable {
                 .getTexture(TextureAtlas.LOCATION_BLOCKS);
         com.mojang.blaze3d.systems.RenderSystem.activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
         com.mojang.blaze3d.systems.RenderSystem.bindTexture(blockAtlas.getId());
-
         // ONE heavy apply(): GlFramebuffer.bind() + Iris CustomUniforms.push() +
         // uploadIfNotNull for every uniform. This is the single largest CPU cost
         // we can amortise across multiple draws.
-        shader.apply();
+        if (!IrisShaderApply.tryApply(shader)) {
+            throw new IllegalStateException("ExtendedShader.apply() failed (destroyed GlResource or invalid pipeline phase)");
+        }
 
         RenderSystem.enableDepthTest();
         RenderSystem.depthFunc(GL11.GL_LEQUAL);
@@ -353,15 +369,7 @@ public final class IrisRenderBatch implements AutoCloseable {
             cachedShaderProgram = programId;
             cachedShaderInstance = shader;
             cachedPipelineGeneration = currentGen;
-            uModelView = shader.getUniform("ModelViewMat");
-            // Direct uniform location for ModelViewMat - bypassing Mojang's
-            // Uniform.upload() proxy stack saves ~5% per profiler trace on the
-            // dense per-part path. Falls back to glGetUniformLocation if the
-            // uniform isn't tracked by the ShaderInstance abstraction.
-            locModelView = (uModelView != null) ? uModelView.getLocation()
-                    : GL20.glGetUniformLocation(programId, "iris_ModelViewMat");
-            locModelViewInverse = GL20.glGetUniformLocation(programId, "iris_ModelViewMatInverse");
-            locNormalMat = GL20.glGetUniformLocation(programId, "iris_NormalMat");
+            matrixLocs = IrisDerivedMatrixUniforms.resolve(shader);
         }
 
         // Reset per-draw caches: a new batch may bind a different VAO first, and
@@ -376,6 +384,63 @@ public final class IrisRenderBatch implements AutoCloseable {
      * real per-instance matrix is uploaded inside {@link #drawCompanion}.
      */
     private static final Matrix4f IDENTITY = new Matrix4f();
+
+    /**
+     * Binds the companion VAO and resolves Iris-extended attribute pointers.
+     * The CPU {@link #lastBoundVao} cache can diverge from the real GL binding
+     * when Embeddium/Iris rebind VAO 0 between draws in the same batch.
+     */
+    private void bindCompanionVao(IrisCompanionMesh companion, int targetVao) {
+        if (shader == null || !companion.isBuilt()) return;
+        GlStateManager._glBindVertexArray(targetVao);
+        companion.prepareForShader(shader.getId());
+        lastBoundVao = targetVao;
+    }
+
+    /**
+     * Detaches the companion VAO after a draw so intermediate vanilla/Iris work
+     * (outline, chunk uploads) does not inherit our vertex layout. Restores the
+     * VAO captured in {@link #setupOuter()} (including {@code 0} = unbind).
+     * Do not substitute an empty dummy VAO here — that leaves {@code drawElements}
+     * with no valid vertex state and can crash the GL driver.
+     */
+    private void releaseCompanionVaoAfterDraw(IrisCompanionMesh companion) {
+        if (companion != null) {
+            companion.restoreConstantLightmap();
+        }
+        GlVaoSafety.bindVertexArray(previousVao);
+        lastBoundVao = -1;
+    }
+
+    /**
+     * Runs a short vanilla draw (recipe icon, item BER overlay) while a persistent
+     * Iris batch is open. Re-applies the batch shader afterward so the next
+     * {@link #drawCompanion} still hits the correct program.
+     */
+    public static void runVanillaOverlay(Runnable draw) {
+        IrisRenderBatch batch = ACTIVE;
+        if (batch == null || !batch.isOuter || batch.shader == null) {
+            draw.run();
+            return;
+        }
+        batch.runVanillaOverlayInner(draw);
+    }
+
+    private void runVanillaOverlayInner(Runnable draw) {
+        int vaoBeforeOverlay = GlVaoSafety.currentBinding();
+        try {
+            GlVaoSafety.bindVertexArray(0);
+            RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
+            draw.run();
+        } finally {
+            RenderSystem.setShader(() -> shader);
+            if (!IrisShaderApply.tryApply(shader)) {
+                MainRegistry.LOGGER.warn("IrisRenderBatch.runVanillaOverlay: ExtendedShader.apply() failed");
+            }
+            GlVaoSafety.bindVertexArray(vaoBeforeOverlay);
+            lastBoundVao = -1;
+        }
+    }
 
     /**
      * Issues a single draw using the active batch shader. Updates only the per-instance
@@ -412,17 +477,8 @@ public final class IrisRenderBatch implements AutoCloseable {
         // avoiding repeated Matrix4f.get() calls.
         modelView.get(mvFloats);
 
-        // VAO bind cache: adjacent draws of the same companion mesh elide the
-        // bind + prepareForShader resolve. Cheap one-int compare on miss.
-        if (lastBoundVao != targetVao) {
-            GL30.glBindVertexArray(targetVao);
-            // prepareForShader has its own program-id ring buffer cache, so this
-            // call is nearly free for repeat program IDs (which is every frame
-            // after the first); the real work happens once per (programId, mesh)
-            // pair across the entire game session.
-            companion.prepareForShader(shader.getId());
-            lastBoundVao = targetVao;
-        }
+        bindCompanionVao(companion, targetVao);
+        companion.restoreConstantLightmap();
 
         float[] mvSrc = mvFloats;
 
@@ -432,28 +488,20 @@ public final class IrisRenderBatch implements AutoCloseable {
         // GL20C.nglUniformMatrix4fv). Profiler attributed ~8.67% of frame time
         // to those layers in the analogous flushBatchIris loop; we get the same
         // win here.
-        if (locModelView >= 0) {
-            GL20.glUniformMatrix4fv(locModelView, false, mvSrc);
+        if (matrixLocs.modelView() >= 0) {
+            GL20.glUniformMatrix4fv(matrixLocs.modelView(), false, mvSrc);
         }
 
-        // ExtendedShader.apply() derived iris_ModelViewMatInverse and iris_NormalMat
-        // from the IDENTITY matrix we passed in; per-instance we re-derive them
-        // from the actual ModelView and upload directly. Without this, pack
-        // shaders (BSL/Complementary/RV/Solas) get wrong vertex normals and
-        // render visibly broken geometry.
-        //
-        // Optimisation: compute MV^-1 once into mvInverseTmp, then derive
-        // iris_NormalMat from it (transpose of MV^-1 upper-left 3x3) instead of
-        // recomputing the invert from scratch - saves one Matrix4f.invert() per
-        // draw, the most expensive joml call in this loop.
+        // ExtendedShader.apply() derived inverse/normal from the IDENTITY matrix
+        // we passed in setupOuter; per-instance we re-derive from the real ModelView.
         boolean haveInverse = false;
-        if (locModelViewInverse >= 0) {
+        if (matrixLocs.modelViewInverse() >= 0) {
             mvInverseTmp.set(mvSrc).invert();
             mvInverseTmp.get(mvInverseFloats);
-            GL20.glUniformMatrix4fv(locModelViewInverse, false, mvInverseFloats);
+            GL20.glUniformMatrix4fv(matrixLocs.modelViewInverse(), false, mvInverseFloats);
             haveInverse = true;
         }
-        if (locNormalMat >= 0) {
+        if (matrixLocs.normalMat() >= 0) {
             if (haveInverse) {
                 normalTmp.set(mvInverseTmp).transpose();
             } else {
@@ -463,7 +511,7 @@ public final class IrisRenderBatch implements AutoCloseable {
                          .invert().transpose();
             }
             normalTmp.get(normalMatFloats);
-            GL20.glUniformMatrix3fv(locNormalMat, false, normalMatFloats);
+            GL20.glUniformMatrix3fv(matrixLocs.normalMat(), false, normalMatFloats);
         }
 
         int uv2Loc = companion.getUv2Location();
@@ -477,13 +525,16 @@ public final class IrisRenderBatch implements AutoCloseable {
             // Plant. LightSampleCache already collapses cross-part lookups, so
             // the cache hit rate here is essentially 100% within one BE.
             if (blockU != lastBlockU || skyV != lastSkyV) {
+                companion.bindVaoIfNeeded();
                 GL30.glVertexAttribI2i(uv2Loc, blockU, skyV);
                 lastBlockU = blockU;
                 lastSkyV = skyV;
             }
         }
 
+        companion.bindVaoIfNeeded();
         GL11.glDrawElements(GL11.GL_TRIANGLES, targetIndexCount, GL11.GL_UNSIGNED_INT, 0);
+        releaseCompanionVaoAfterDraw(companion);
     }
 
     /**
@@ -558,26 +609,22 @@ public final class IrisRenderBatch implements AutoCloseable {
 
         modelView.get(mvFloats);
 
-        if (lastBoundVao != targetVao) {
-            GL30.glBindVertexArray(targetVao);
-            companion.prepareForShader(shader.getId());
-            lastBoundVao = targetVao;
-        }
+        bindCompanionVao(companion, targetVao);
 
         float[] mvSrc = mvFloats;
 
-        if (locModelView >= 0) {
-            GL20.glUniformMatrix4fv(locModelView, false, mvSrc);
+        if (matrixLocs.modelView() >= 0) {
+            GL20.glUniformMatrix4fv(matrixLocs.modelView(), false, mvSrc);
         }
 
         boolean haveInverse = false;
-        if (locModelViewInverse >= 0) {
+        if (matrixLocs.modelViewInverse() >= 0) {
             mvInverseTmp.set(mvSrc).invert();
             mvInverseTmp.get(mvInverseFloats);
-            GL20.glUniformMatrix4fv(locModelViewInverse, false, mvInverseFloats);
+            GL20.glUniformMatrix4fv(matrixLocs.modelViewInverse(), false, mvInverseFloats);
             haveInverse = true;
         }
-        if (locNormalMat >= 0) {
+        if (matrixLocs.normalMat() >= 0) {
             if (haveInverse) {
                 normalTmp.set(mvInverseTmp).transpose();
             } else {
@@ -587,7 +634,7 @@ public final class IrisRenderBatch implements AutoCloseable {
                          .invert().transpose();
             }
             normalTmp.get(normalMatFloats);
-            GL20.glUniformMatrix3fv(locNormalMat, false, normalMatFloats);
+            GL20.glUniformMatrix3fv(matrixLocs.normalMat(), false, normalMatFloats);
         }
 
         // Hash the quantized corner UV2 into a stable key and request a slot that can
@@ -621,6 +668,7 @@ public final class IrisRenderBatch implements AutoCloseable {
         lastSkyV = Integer.MIN_VALUE;
 
         GL11.glDrawElements(GL11.GL_TRIANGLES, targetIndexCount, GL11.GL_UNSIGNED_INT, 0);
+        releaseCompanionVaoAfterDraw(companion);
     }
 
     /**
@@ -659,26 +707,22 @@ public final class IrisRenderBatch implements AutoCloseable {
 
         modelView.get(mvFloats);
 
-        if (lastBoundVao != targetVao) {
-            GL30.glBindVertexArray(targetVao);
-            companion.prepareForShader(shader.getId());
-            lastBoundVao = targetVao;
-        }
+        bindCompanionVao(companion, targetVao);
 
         float[] mvSrc = mvFloats;
 
-        if (locModelView >= 0) {
-            GL20.glUniformMatrix4fv(locModelView, false, mvSrc);
+        if (matrixLocs.modelView() >= 0) {
+            GL20.glUniformMatrix4fv(matrixLocs.modelView(), false, mvSrc);
         }
 
         boolean haveInverse = false;
-        if (locModelViewInverse >= 0) {
+        if (matrixLocs.modelViewInverse() >= 0) {
             mvInverseTmp.set(mvSrc).invert();
             mvInverseTmp.get(mvInverseFloats);
-            GL20.glUniformMatrix4fv(locModelViewInverse, false, mvInverseFloats);
+            GL20.glUniformMatrix4fv(matrixLocs.modelViewInverse(), false, mvInverseFloats);
             haveInverse = true;
         }
-        if (locNormalMat >= 0) {
+        if (matrixLocs.normalMat() >= 0) {
             if (haveInverse) {
                 normalTmp.set(mvInverseTmp).transpose();
             } else {
@@ -688,7 +732,7 @@ public final class IrisRenderBatch implements AutoCloseable {
                          .invert().transpose();
             }
             normalTmp.get(normalMatFloats);
-            GL20.glUniformMatrix3fv(locNormalMat, false, normalMatFloats);
+            GL20.glUniformMatrix3fv(matrixLocs.normalMat(), false, normalMatFloats);
         }
 
         long key = 1469598103934665603L;
@@ -715,6 +759,7 @@ public final class IrisRenderBatch implements AutoCloseable {
         lastSkyV = Integer.MIN_VALUE;
 
         GL11.glDrawElements(GL11.GL_TRIANGLES, targetIndexCount, GL11.GL_UNSIGNED_INT, 0);
+        releaseCompanionVaoAfterDraw(companion);
     }
 
     @Override
@@ -752,11 +797,14 @@ public final class IrisRenderBatch implements AutoCloseable {
 
     private void tryRestoreState() {
         try {
-            GL30.glBindVertexArray(previousVao);
+            RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
+            GlVaoSafety.bindVertexArray(previousVao);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
+            lastBoundVao = -1;
+
             if (previousCullEnabled) RenderSystem.enableCull();
             else RenderSystem.disableCull();
-            RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
+
             RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
             IrisExtendedShaderAccess.restoreCurrentRenderedBlockEntity(previousBlockEntityId);
             if (phaseGuard != null) {
@@ -781,10 +829,7 @@ public final class IrisRenderBatch implements AutoCloseable {
         INSTANCE.cachedShaderProgram = -1;
         INSTANCE.cachedShaderInstance = null;
         INSTANCE.cachedPipelineGeneration = -1L;
-        INSTANCE.uModelView = null;
-        INSTANCE.locModelView = -1;
-        INSTANCE.locModelViewInverse = -1;
-        INSTANCE.locNormalMat = -1;
+        INSTANCE.matrixLocs = IrisDerivedMatrixUniforms.Locations.NONE;
         INSTANCE.lastBoundVao = -1;
         INSTANCE.lastBlockU = Integer.MIN_VALUE;
         INSTANCE.lastSkyV = Integer.MIN_VALUE;

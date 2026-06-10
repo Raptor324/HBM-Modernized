@@ -16,12 +16,10 @@ public class MachineAdvancedAssemblerModelLoader extends AbstractObjPartModelLoa
         "ArmLower2", "ArmUpper2", "Head2", "Spike2"
     );
 
-    @Override
     protected Set<String> getPartNames(JsonObject jsonObject) {
         return PART_NAMES;
     }
 
-    @Override
     protected MachineAdvancedAssemblerBakedModel createBakedModel(HashMap<String, BakedModel> bakedParts, ItemTransforms transforms, ResourceLocation modelLocation) {
         return new MachineAdvancedAssemblerBakedModel(bakedParts, transforms);
     }

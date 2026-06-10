@@ -120,7 +120,7 @@ public class PressRecipe implements Recipe<SimpleContainer> {
 
         @Override
         public @Nullable PressRecipe fromNetwork(ResourceLocation recipeId, FriendlyByteBuf buffer) {
-            NonNullList<Ingredient> inputs = NonNullList.withSize(buffer.readInt(), Ingredient.EMPTY);
+            NonNullList<Ingredient> inputs = NonNullList.withSize(buffer.readVarInt(), Ingredient.EMPTY);
 
             for(int i = 0; i < inputs.size(); i++) {
                 inputs.set(i, Ingredient.fromNetwork(buffer));
@@ -132,13 +132,14 @@ public class PressRecipe implements Recipe<SimpleContainer> {
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, PressRecipe recipe) {
-            buffer.writeInt(recipe.inputItems.size());
+            buffer.writeVarInt(recipe.getIngredients().size());
 
             for (Ingredient ingredient : recipe.getIngredients()) {
                 ingredient.toNetwork(buffer);
             }
 
-            buffer.writeItemStack(recipe.getResultItem(null), false);
+            // Заменяем writeItemStack(stack, false) на ванильный writeItem(stack)
+            buffer.writeItem(recipe.getResultItem(null));
         }
     }
 }

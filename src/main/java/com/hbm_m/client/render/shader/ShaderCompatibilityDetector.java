@@ -1,3 +1,4 @@
+//? if forge {
 package com.hbm_m.client.render.shader;
 
 import java.lang.invoke.MethodHandle;
@@ -5,7 +6,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 
-import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -111,6 +112,7 @@ public class ShaderCompatibilityDetector {
             if (isActive != lastState) {
                 MainRegistry.LOGGER.info("Shader state changed: {}", isActive ? "Active" : "Inactive");
                 lastState = isActive;
+                OcclusionCullingHelper.clearCache();
                 // Откладываем инвалидацию - вызов из render loop ломает итерацию Sodium (wrapped is null)
                 pendingChunkInvalidation = true;
             }
@@ -139,7 +141,6 @@ public class ShaderCompatibilityDetector {
 
     /**
      * Проверяет, рендерится ли сейчас shadow pass Iris (для realtime shadows).
-     * Используется для пропуска рендера HBM-моделей в shadow pass - даёт ~2x FPS при включённых тенях.
      */
     public static boolean isRenderingShadowPass() {
         if (!initialized) init();
@@ -157,6 +158,16 @@ public class ShaderCompatibilityDetector {
     }
 
     /**
+     * {@link net.minecraft.client.renderer.blockentity.BlockEntityRenderer#shouldRenderOffScreen}.
+     * When {@code true}, Sodium/vanilla still invoke BER even if the BE AABB is outside
+     * the main camera frustum — required so shader-pack shadow maps include off-screen
+     * casters whose shadows remain visible on screen.
+     */
+    public static boolean shouldRenderBlockEntityOffScreen() {
+        return isExternalShaderActive();
+    }
+
+    /**
      * True when an active Iris pipeline can hand out an {@code ExtendedShader} for our raw-GL
      * draws. When false, callers should fall back to the vanilla shader path or to
      * {@code bufferSource.putBulkData} delegation.
@@ -166,27 +177,158 @@ public class ShaderCompatibilityDetector {
     }
 
     /**
-     * True если статическая геометрия машин должна предоставляться нашей VBO/инстанс-системой
-     * (а не baked-моделью). Иначе baked-model заполняет статику в чанк-меш, а BER рисует
-     * только подвижные части через putBulkData.
-     *
-     * Логика:
-     *  - шейдеры выключены → всегда true (классический VBO путь);
-     *  - шейдеры включены + конфиг {@code useIrisExtendedShaderPath} включён → true (новый Iris ExtendedShader путь);
-     *  - шейдеры включены + конфиг выключен → false (старый baked + putBulkData путь, дефолт).
-     *
-     * Этот метод - единственная точка истины для разветвления и в рендерерах, и в baked-моделях.
-     * Если они расходятся, статика рисуется дважды или не рисуется вовсе.
+     * Статическая геометрия машин/дверей всегда предоставляется BER/VBO системой.
+     * Baked world quads для этих моделей не используются.
      */
     public static boolean useVboGeometry() {
-        return !isExternalShaderActive() || ModClothConfig.useIrisExtendedShaderPath();
-    }
-
-    /**
-     * True если сейчас активен шейдер-пак И при этом по конфигу мы должны идти через нашу VBO/Iris-систему
-     * вместо старого baked + putBulkData. Удобный сахар для условий «под шейдерами, но через новый путь».
-     */
-    public static boolean useNewIrisVboPath() {
-        return isExternalShaderActive() && ModClothConfig.useIrisExtendedShaderPath();
+        return true;
     }
 }
+//?}
+
+//? if fabric {
+/*package com.hbm_m.client.render.shader;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.Method;
+
+import com.hbm_m.main.MainRegistry;
+import com.mojang.blaze3d.systems.RenderSystem;
+
+import dev.architectury.platform.Platform;
+import net.minecraft.client.Minecraft;
+
+/^*
+ * Fabric Iris/Oculus integration.
+ * Detects Iris shader state via reflection so the VBO render pipeline
+ * correctly routes draws through the Iris ExtendedShader path instead
+ * of attempting raw GL draws against a vanilla shader that Iris has
+ * replaced (which produces "GL No active program" errors).
+ ^/
+public class ShaderCompatibilityDetector {
+
+    private ShaderCompatibilityDetector() {}
+
+    private static boolean initialized = false;
+    private static Object irisApiInstance = null;
+    private static MethodHandle irisIsShaderPackInUseMH = null;
+    private static MethodHandle irisIsRenderingShadowPassMH = null;
+    private static Method irisIsShaderPackInUse = null;
+    private static Method irisIsRenderingShadowPass = null;
+
+    private static boolean lastState = false;
+    private static volatile boolean cachedShaderActive = false;
+    private static volatile boolean pendingChunkInvalidation = false;
+
+    private static void init() {
+        if (initialized) return;
+
+        if (Platform.isModLoaded("iris") || Platform.isModLoaded("oculus")) {
+            try {
+                Class<?> irisApiClass = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
+                Method getInstanceMethod = irisApiClass.getMethod("getInstance");
+                irisApiInstance = getInstanceMethod.invoke(null);
+                irisIsShaderPackInUse = irisApiClass.getMethod("isShaderPackInUse");
+                irisIsRenderingShadowPass = irisApiClass.getMethod("isRenderingShadowPass");
+
+                try {
+                    MethodHandles.Lookup lookup = MethodHandles.lookup();
+                    irisIsShaderPackInUse.setAccessible(true);
+                    irisIsRenderingShadowPass.setAccessible(true);
+                    irisIsShaderPackInUseMH = lookup.unreflect(irisIsShaderPackInUse)
+                            .asType(MethodType.methodType(boolean.class, Object.class));
+                    irisIsRenderingShadowPassMH = lookup.unreflect(irisIsRenderingShadowPass)
+                            .asType(MethodType.methodType(boolean.class, Object.class));
+                } catch (Throwable mhFail) {
+                    MainRegistry.LOGGER.warn("ShaderCompatibilityDetector: MethodHandle binding failed ({}), using Method.invoke", mhFail.toString());
+                    irisIsShaderPackInUseMH = null;
+                    irisIsRenderingShadowPassMH = null;
+                }
+
+                MainRegistry.LOGGER.info("ShaderCompatibilityDetector: Iris API found and cached (MH={}).",
+                        irisIsShaderPackInUseMH != null);
+            } catch (Exception e) {
+                MainRegistry.LOGGER.error("ShaderCompatibilityDetector: Failed to cache Iris API", e);
+            }
+        }
+        initialized = true;
+    }
+
+    public static boolean isExternalShaderActive() {
+        if (!RenderSystem.isOnRenderThread()) {
+            return cachedShaderActive;
+        }
+
+        if (!initialized) {
+            init();
+        }
+
+        if (irisApiInstance == null || (irisIsShaderPackInUseMH == null && irisIsShaderPackInUse == null)) {
+            return false;
+        }
+
+        try {
+            boolean isActive;
+            if (irisIsShaderPackInUseMH != null) {
+                isActive = (boolean) irisIsShaderPackInUseMH.invokeExact((Object) irisApiInstance);
+            } else {
+                Boolean inUse = (Boolean) irisIsShaderPackInUse.invoke(irisApiInstance);
+                isActive = inUse != null && inUse;
+            }
+
+            cachedShaderActive = isActive;
+
+            if (isActive != lastState) {
+                MainRegistry.LOGGER.info("Shader state changed: {}", isActive ? "Active" : "Inactive");
+                lastState = isActive;
+                pendingChunkInvalidation = true;
+            }
+            return isActive;
+        } catch (Throwable e) {
+            return false;
+        }
+    }
+
+    public static void processPendingChunkInvalidation() {
+        if (!pendingChunkInvalidation) return;
+        pendingChunkInvalidation = false;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level != null && mc.levelRenderer != null) {
+            try {
+                mc.levelRenderer.allChanged();
+            } catch (Exception e) {
+                MainRegistry.LOGGER.debug("Chunk invalidation on shader change: {}", e.getMessage());
+            }
+        }
+    }
+
+    public static boolean isRenderingShadowPass() {
+        if (!initialized) init();
+        if (irisApiInstance == null) return false;
+        try {
+            if (irisIsRenderingShadowPassMH != null) {
+                return (boolean) irisIsRenderingShadowPassMH.invokeExact((Object) irisApiInstance);
+            }
+            if (irisIsRenderingShadowPass == null) return false;
+            Boolean result = (Boolean) irisIsRenderingShadowPass.invoke(irisApiInstance);
+            return result != null && result;
+        } catch (Throwable e) {
+            return false;
+        }
+    }
+
+    public static boolean shouldRenderBlockEntityOffScreen() {
+        return isExternalShaderActive();
+    }
+
+    public static boolean canUseIrisExtendedShader() {
+        return isExternalShaderActive() && IrisExtendedShaderAccess.isReflectionAvailable();
+    }
+
+    public static boolean useVboGeometry() {
+        return true;
+    }
+}
+*///?}

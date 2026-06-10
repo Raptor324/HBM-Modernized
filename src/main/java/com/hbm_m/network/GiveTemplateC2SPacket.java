@@ -2,20 +2,21 @@ package com.hbm_m.network;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
+import com.hbm_m.network.C2SPacket;
 import com.hbm_m.util.TemplateCraftingCosts;
+
+import dev.architectury.networking.NetworkManager.PacketContext;
 
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraftforge.network.NetworkEvent;
 
-public class GiveTemplateC2SPacket {
+public class GiveTemplateC2SPacket implements C2SPacket {
 
     private final ItemStack recipeOutput;
 
@@ -23,113 +24,78 @@ public class GiveTemplateC2SPacket {
         this.recipeOutput = recipeOutput;
     }
 
-    public GiveTemplateC2SPacket(FriendlyByteBuf buf) {
-        this.recipeOutput = buf.readItem();
-    }
-
-    public static void encode(GiveTemplateC2SPacket packet, FriendlyByteBuf buf) {
-        buf.writeItem(packet.recipeOutput);
-    }
+    // ── Serialization ─────────────────────────────────────────────────────────
 
     public static GiveTemplateC2SPacket decode(FriendlyByteBuf buf) {
-        return new GiveTemplateC2SPacket(buf);
+        return new GiveTemplateC2SPacket(buf.readItem());
     }
 
-    public boolean handle(Supplier<NetworkEvent.Context> supplier) {
-        NetworkEvent.Context context = supplier.get();
-        context.enqueueWork(() -> {
-            ServerPlayer player = context.getSender();
-            if (player == null) return;
+    @Override
+    public void write(FriendlyByteBuf buf) {
+        buf.writeItem(recipeOutput);
+    }
 
-            if (player.isCreative()) {
-                // ЛОГИКА ДЛЯ КРЕАТИВА
-                handleCreativeMode(player);
-            } else {
-                // ЛОГИКА ДЛЯ ВЫЖИВАНИЯ
-                handleSurvivalMode(player);
-            }
+    // ── Handler ───────────────────────────────────────────────────────────────
+
+    public static void handle(GiveTemplateC2SPacket msg, PacketContext context) {
+        context.queue(() -> {
+            if (!(context.getPlayer() instanceof ServerPlayer player)) return;
+
+            if (player.isCreative()) handleCreativeMode(player, msg.recipeOutput);
+            else                     handleSurvivalMode(player, msg.recipeOutput);
         });
-        return true;
     }
 
-    private void handleCreativeMode(ServerPlayer player) {
-        // Проверяем, является ли это штампом
-        if (isStamp(this.recipeOutput)) {
-            // В креативе просто выдаем штамп
-            player.getInventory().add(this.recipeOutput.copy());
+    // ── Логика креатива ───────────────────────────────────────────────────────
+
+    private static void handleCreativeMode(ServerPlayer player, ItemStack recipeOutput) {
+        if (isStamp(recipeOutput)) {
+            player.getInventory().add(recipeOutput.copy());
         } else {
-            // Обычная логика для шаблонов
             ItemStack newTemplate = new ItemStack(ModItems.ASSEMBLY_TEMPLATE.get());
-            ItemAssemblyTemplate.writeRecipeOutput(newTemplate, this.recipeOutput);
+            ItemAssemblyTemplate.writeRecipeOutput(newTemplate, recipeOutput);
             player.getInventory().add(newTemplate);
         }
     }
 
-    private void handleSurvivalMode(ServerPlayer player) {
-        // Проверяем, является ли это штампом
-        if (isStamp(this.recipeOutput)) {
-            // Логика для штампов - требуется плоский штамп
-            handleStampCrafting(player);
-        } else {
-            // Обычная логика для шаблонов с проверкой ресурсов
-            handleTemplateCrafting(player);
-        }
+    // ── Логика выживания ──────────────────────────────────────────────────────
+
+    private static void handleSurvivalMode(ServerPlayer player, ItemStack recipeOutput) {
+        if (isStamp(recipeOutput)) handleStampCrafting(player, recipeOutput);
+        else                       handleTemplateCrafting(player, recipeOutput);
     }
 
-    private void handleStampCrafting(ServerPlayer player) {
-        // Получаем стоимость штампа из TemplateCraftingCosts
-        NonNullList<Ingredient> cost = TemplateCraftingCosts.getCostForStamp(this.recipeOutput);
-        if (cost == null) return; // Если стоимость не определена - ничего не делаем
+    private static void handleStampCrafting(ServerPlayer player, ItemStack recipeOutput) {
+        NonNullList<Ingredient> cost = TemplateCraftingCosts.getCostForStamp(recipeOutput);
+        if (cost == null) return;
 
-        // Этап 1: Проверка наличия ресурсов (плоского штампа)
-        List<ItemStack> simulatedInventory = new ArrayList<>();
-        for (ItemStack stack : player.getInventory().items) {
-            simulatedInventory.add(stack.copy());
-        }
-
-        boolean canCraft = true;
-        ingredientLoop:
-        for (Ingredient ingredient : cost) {
-            for (ItemStack stackInSlot : simulatedInventory) {
-                if (ingredient.test(stackInSlot)) {
-                    stackInSlot.shrink(1);
-                    continue ingredientLoop;
-                }
-            }
-            canCraft = false;
-            break;
-        }
-
-        // Этап 2: Списание плоского штампа и выдача нужного штампа
-        if (canCraft) {
-            for (Ingredient ingredient : cost) {
-                for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-                    ItemStack stackInSlot = player.getInventory().getItem(i);
-                    if (ingredient.test(stackInSlot)) {
-                        stackInSlot.shrink(1);
-                        break;
-                    }
-                }
-            }
-
-            // Выдаем нужный штамп
-            ItemStack resultStamp = this.recipeOutput.copy();
+        if (tryConsume(player, cost)) {
+            ItemStack resultStamp = recipeOutput.copy();
             resultStamp.setCount(1);
             player.getInventory().add(resultStamp);
         }
     }
 
-    private void handleTemplateCrafting(ServerPlayer player) {
-        NonNullList<Ingredient> cost = TemplateCraftingCosts.getCostForTemplate(this.recipeOutput);
-        if (cost == null) return; // Если стоимость не найдена - ничего не делаем
+    private static void handleTemplateCrafting(ServerPlayer player, ItemStack recipeOutput) {
+        NonNullList<Ingredient> cost = TemplateCraftingCosts.getCostForTemplate(recipeOutput);
+        if (cost == null) return;
 
-        // Этап 1: Проверка наличия ресурсов
+        if (tryConsume(player, cost)) {
+            ItemStack newTemplate = new ItemStack(ModItems.ASSEMBLY_TEMPLATE.get());
+            ItemAssemblyTemplate.writeRecipeOutput(newTemplate, recipeOutput);
+            player.getInventory().add(newTemplate);
+        }
+    }
+
+    // ── Вспомогательные методы ────────────────────────────────────────────────
+
+    private static boolean tryConsume(ServerPlayer player, NonNullList<Ingredient> cost) {
         List<ItemStack> simulatedInventory = new ArrayList<>();
         for (ItemStack stack : player.getInventory().items) {
             simulatedInventory.add(stack.copy());
         }
 
-        boolean canCraft = true;
+        // Симуляция
         ingredientLoop:
         for (Ingredient ingredient : cost) {
             for (ItemStack stackInSlot : simulatedInventory) {
@@ -138,32 +104,30 @@ public class GiveTemplateC2SPacket {
                     continue ingredientLoop;
                 }
             }
-            canCraft = false;
-            break;
+            return false; // Не хватает ресурсов
         }
 
-        // Этап 2: Списание и выдача
-        if (canCraft) {
-            for (Ingredient ingredient : cost) {
-                for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-                    ItemStack stackInSlot = player.getInventory().getItem(i);
-                    if (ingredient.test(stackInSlot)) {
-                        stackInSlot.shrink(1);
-                        break;
-                    }
+        // Реальное списание
+        for (Ingredient ingredient : cost) {
+            for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+                ItemStack stackInSlot = player.getInventory().getItem(i);
+                if (ingredient.test(stackInSlot)) {
+                    stackInSlot.shrink(1);
+                    break;
                 }
             }
-
-            ItemStack newTemplate = new ItemStack(ModItems.ASSEMBLY_TEMPLATE.get());
-            ItemAssemblyTemplate.writeRecipeOutput(newTemplate, this.recipeOutput);
-            player.getInventory().add(newTemplate);
         }
+        return true;
     }
 
-    /**
-     * Проверяет, является ли предмет штампом пресса
-     */
-    private boolean isStamp(ItemStack stack) {
+    private static boolean isStamp(ItemStack stack) {
         return TemplateCraftingCosts.isStamp(stack);
+    }
+
+    // ── Send helper ───────────────────────────────────────────────────────────
+
+    public static void sendToServer(ItemStack recipeOutput) {
+        ModPacketHandler.sendToServer(ModPacketHandler.GIVE_TEMPLATE,
+                new GiveTemplateC2SPacket(recipeOutput));
     }
 }

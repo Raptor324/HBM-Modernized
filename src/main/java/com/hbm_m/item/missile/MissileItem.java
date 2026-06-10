@@ -1,6 +1,7 @@
 package com.hbm_m.item.missile;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -64,13 +65,30 @@ public class MissileItem extends Item {
                         .append(String.valueOf(this.fuelCap))
                         .append("mB"));
             }
+            if (this.fuel != MissileFuel.SOLID) {
+                tooltip.add(Component.translatable("item.hbm_m.missile.desc.fluidNotRequiredWip")
+                        .withStyle(ChatFormatting.YELLOW));
+            }
         }
     }
+
+    //? if forge {
+    @Override
+    public void initializeClient(Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.render.item.ItemRenderMissileGeneric.INSTANCE;
+            }
+        });
+    }
+    //?}
 
     public enum MissileFormFactor {
         ABM(MissileFuel.SOLID),
         MICRO(MissileFuel.SOLID),
         V2(MissileFuel.ETHANOL_PEROXIDE),
+        STEALTH(MissileFuel.KEROSENE_PEROXIDE),
         STRONG(MissileFuel.KEROSENE_PEROXIDE),
         HUGE(MissileFuel.KEROSENE_LOXY),
         ATLAS(MissileFuel.JETFUEL_LOXY),

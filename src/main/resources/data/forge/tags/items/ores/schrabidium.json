@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "hbm_m:schrabidium_ore",
+    "hbm_m:schrabidium_ore_nether",
+    "hbm_m:schrabidium_ore_gneiss"
+  ]
+}

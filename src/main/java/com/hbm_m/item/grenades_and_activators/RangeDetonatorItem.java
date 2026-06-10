@@ -4,7 +4,7 @@ import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.InteractionHand;
@@ -18,6 +18,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -31,15 +32,32 @@ public class RangeDetonatorItem extends Item {
         super(properties.stacksTo(1));
     }
 
+    //? if forge {
+    @Override
+    public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.render.item.ItemRenderDetonatorLaser.INSTANCE;
+            }
+        });
+    }
+    //?}
+
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        BlockHitResult hitResult = (BlockHitResult) player.pick(MAX_RANGE, 1.0F, false);
+        Vec3 target = hitResult.getType() == HitResult.Type.BLOCK
+                ? Vec3.atCenterOf(hitResult.getBlockPos())
+                : hitResult.getLocation();
 
-        if (!level.isClientSide) {
-            // Используем встроенную функцию игрока для трассировки луча
-            BlockHitResult hitResult = (BlockHitResult) player.pick(MAX_RANGE, 1.0F, false);
+        if (level.isClientSide) {
+            spawnLaserBeam(level, player, target);
+            return InteractionResultHolder.sidedSuccess(stack, true);
+        }
 
-            if (hitResult.getType() == HitResult.Type.BLOCK) {
+        if (hitResult.getType() == HitResult.Type.BLOCK) {
                 BlockPos targetPos = hitResult.getBlockPos();
 
                 // Проверяем, загружен ли чанк
@@ -51,9 +69,6 @@ public class RangeDetonatorItem extends Item {
                     );
                     return InteractionResultHolder.fail(stack);
                 }
-
-                // Спавним частицу (лазерная точка)
-                spawnRedstoneParticles(level, targetPos);
 
                 BlockState state = level.getBlockState(targetPos);
                 Block block = state.getBlock();
@@ -100,28 +115,32 @@ public class RangeDetonatorItem extends Item {
                     }
                     return InteractionResultHolder.fail(stack);
                 }
-            }
         }
 
         return InteractionResultHolder.pass(stack);
     }
 
-    /**
-     * Спавнит облако частиц красного камня на целевой позиции
-     */
-    private void spawnRedstoneParticles(Level level, BlockPos pos) {
-        for (int i = 0; i < 8; i++) {
-            double offsetX = (Math.random() - 0.5) * 0.2;
-            double offsetY = (Math.random() - 0.5) * 0.2;
-            double offsetZ = (Math.random() - 0.5) * 0.2;
+    /** Луч redstone dust — 1.7.10 {@code ItemLaserDetonator} / {@code reddust}, только на клиенте. */
+    private static void spawnLaserBeam(Level level, Player player, Vec3 target) {
+        Vec3 vec = new Vec3(
+                target.x - player.getX(),
+                target.y - player.getEyeY(),
+                target.z - player.getZ());
+        double len = Math.min(vec.length(), 15.0D);
+        if (len < 1.0E-4D) {
+            return;
+        }
+        vec = vec.scale(1.0D / len);
 
+        DustParticleOptions dust = new DustParticleOptions(DustParticleOptions.REDSTONE_PARTICLE_COLOR, 1.0F);
+        for (int i = 0; i < len; i++) {
+            double rand = level.random.nextDouble() * len + 3.0D;
             level.addParticle(
-                    ParticleTypes.FLASH,
-                    pos.getX() + 0.5 + offsetX,
-                    pos.getY() + 0.5 + offsetY,
-                    pos.getZ() + 0.5 + offsetZ,
-                    0.0, 0.0, 0.0
-            );
+                    dust,
+                    player.getX() + vec.x * rand,
+                    player.getEyeY() + vec.y * rand,
+                    player.getZ() + vec.z * rand,
+                    0.0D, 0.0D, 0.0D);
         }
     }
 

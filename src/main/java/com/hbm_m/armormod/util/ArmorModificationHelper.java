@@ -1,29 +1,29 @@
 package com.hbm_m.armormod.util;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 // Хелпер для управления модификациями брони: сохранение/загрузка из NBT,
 // применение атрибутов, вычисление защиты от радиации и т.п.
 import com.google.common.collect.Multimap;
 import com.hbm_m.armormod.item.ItemArmorMod;
+import com.hbm_m.armormod.item.ItemModBattery;
 import com.hbm_m.armormod.item.ItemModRadProtection;
-import com.hbm_m.datagen.assets.ModItemTagProvider;
 import com.hbm_m.hazard.HazardSystem;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraft.world.entity.player.Player;
-
-import java.util.UUID;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import net.minecraft.world.Container;
 
 public class ArmorModificationHelper {
 
@@ -128,6 +128,7 @@ public class ArmorModificationHelper {
         int slot = modItem.type;
         modsTag.put(MOD_SLOT_KEY_PREFIX + slot, modTag);
         armorTag.put(MOD_COMPOUND_KEY, modsTag);
+        onPoweredArmorModsChanged(armor);
     }
 
     /**
@@ -154,6 +155,7 @@ public class ArmorModificationHelper {
         } else {
             armorTag.put(MOD_COMPOUND_KEY, modsTag);
         }
+        onPoweredArmorModsChanged(armor);
     }
 
     /**
@@ -167,7 +169,40 @@ public class ArmorModificationHelper {
         }
 
         CompoundTag armorTag = armor.getTag();
-        return armorTag != null && armorTag.contains(MOD_COMPOUND_KEY);
+        return armorTag != null && armorTag.contains(MOD_COMPOUND_KEY, Tag.TAG_COMPOUND);
+    }
+
+    /**
+     * Множитель ёмкости от установленного мода батареи (1.0 = без мода).
+     * Аналог {@code ItemModBattery.mod} в 1.7.10 {@code ArmorFSBPowered#getMaxCharge}.
+     */
+    public static double getBatteryCapacityMultiplier(ItemStack armorStack) {
+        if (armorStack.isEmpty()) {
+            return 1.0D;
+        }
+        ItemStack batteryMod = pryMod(armorStack, battery);
+        if (batteryMod.isEmpty()) {
+            return 1.0D;
+        }
+        if (batteryMod.getItem() instanceof ItemModBattery batteryItem) {
+            return batteryItem.mod;
+        }
+        return 1.0D;
+    }
+
+    /** После смены мода батареи: обновить capability и обрезать charge (как при закрытии стола). */
+    public static void onPoweredArmorModsChanged(ItemStack armorStack) {
+        if (!(armorStack.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSBPowered powered)) {
+            return;
+        }
+        //? if forge {
+        armorStack.invalidateCaps();
+        //?}
+        long newMaxCapacity = powered.getMaxCharge(armorStack);
+        long currentCharge = powered.getCharge(armorStack);
+        if (currentCharge > newMaxCapacity) {
+            powered.setCharge(armorStack, newMaxCapacity);
+        }
     }
 
     /**
@@ -225,28 +260,32 @@ public class ArmorModificationHelper {
         return ItemStack.EMPTY;
     }
 
-    public static void loadModsIntoTable(ItemStack armorStack, IItemHandler tableInventory) {
+    public static void loadModsIntoTable(ItemStack armorStack, Container tableInventory) {
         // Очищаем стол перед загрузкой
-        for (int i = 0; i < tableInventory.getSlots(); i++) {
-            tableInventory.extractItem(i, tableInventory.getStackInSlot(i).getCount(), false);
+        for (int i = 0; i < tableInventory.getContainerSize(); i++) {
+            tableInventory.setItem(i, ItemStack.EMPTY);
         }
 
-        if (!armorStack.hasTag() || !armorStack.getTag().contains(MOD_COMPOUND_KEY)) {
+        CompoundTag armorTagForMods = armorStack.getTag();
+        if (armorTagForMods == null || !armorTagForMods.contains(MOD_COMPOUND_KEY)) {
             return;
         }
 
-        CompoundTag mods = armorStack.getTag().getCompound(MOD_COMPOUND_KEY);
+        CompoundTag mods = armorTagForMods.getCompound(MOD_COMPOUND_KEY);
         for (int i = 0; i < 9; i++) { // 9 слотов модов
             String key = MOD_SLOT_KEY_PREFIX + i;
             if (mods.contains(key)) {
                 ItemStack modStack = ItemStack.of(mods.getCompound(key));
-                tableInventory.insertItem(i, modStack, false);
+                tableInventory.setItem(i, modStack);
             }
         }
     }
 
 
-    public static void saveTableToArmor(ItemStack armorStack, IItemHandler tableInventory, Player player) {
+    public static void saveTableToArmor(ItemStack armorStack, Container tableInventory, Player player) {
+        if (player != null && player.level().isClientSide) {
+            return;
+        }
         if (!(armorStack.getItem() instanceof ArmorItem armorItem)) {
             return;
         }
@@ -256,8 +295,13 @@ public class ArmorModificationHelper {
         CompoundTag modsCompound = new CompoundTag();
 
         // ШАГ 1: СОХРАНЕНИЕ КОНФИГУРАЦИИ МОДОВ В НАШ ТЕГ
+        // Слот стола — источник правды, если в нём лежит мод; иначе сохраняем уже записанный в NBT брони
+        // (applyMod пишет в NBT сразу; стол на сервере может отставать на один тик).
         for (int i = 0; i < 9; i++) {
-            ItemStack modStack = tableInventory.getStackInSlot(i);
+            ItemStack modStack = tableInventory.getItem(i);
+            if (modStack.isEmpty()) {
+                modStack = pryMod(armorStack, i);
+            }
             if (!modStack.isEmpty()) {
                 modsCompound.put(MOD_SLOT_KEY_PREFIX + i, modStack.save(new CompoundTag()));
             }
@@ -289,7 +333,9 @@ public class ArmorModificationHelper {
             Multimap<Attribute, AttributeModifier> defaultModifiers = armorItem.getDefaultAttributeModifiers(armorItem.getEquipmentSlot());
             for (Map.Entry<Attribute, AttributeModifier> entry : defaultModifiers.entries()) {
                 CompoundTag modifierTag = entry.getValue().save();
-                modifierTag.putString("AttributeName", ForgeRegistries.ATTRIBUTES.getKey(entry.getKey()).toString());
+                var key = BuiltInRegistries.ATTRIBUTE.getKey(entry.getKey());
+                if (key == null) continue;
+                modifierTag.putString("AttributeName", key.toString());
                 modifierTag.putString("Slot", armorItem.getEquipmentSlot().getName());
                 preservedModifiers.add(modifierTag);
             }
@@ -297,22 +343,19 @@ public class ArmorModificationHelper {
 
         // 2b: Добавляем атрибуты от наших модов, устанавливая им маркер.
         for (int i = 0; i < 9; i++) {
-            ItemStack modStack = tableInventory.getStackInSlot(i);
+            ItemStack modStack = tableInventory.getItem(i);
+            if (modStack.isEmpty()) {
+                modStack = pryMod(armorStack, i);
+            }
             if (modStack.getItem() instanceof ItemArmorMod mod) {
-                boolean isCompatible = switch (armorItem.getType()) {
-                    case HELMET -> modStack.is(ModItemTagProvider.REQUIRES_HELMET);
-                    case CHESTPLATE -> modStack.is(ModItemTagProvider.REQUIRES_CHESTPLATE);
-                    case LEGGINGS -> modStack.is(ModItemTagProvider.REQUIRES_LEGGINGS);
-                    case BOOTS -> modStack.is(ModItemTagProvider.REQUIRES_BOOTS);
-                    default -> false;
-                };
-
-                if (isCompatible) {
+                if (isApplicable(armorStack, modStack)) {
                     Multimap<Attribute, AttributeModifier> modModifiers = mod.getModifiers(armorStack);
                     if (modModifiers != null) {
                         for (Map.Entry<Attribute, AttributeModifier> entry : modModifiers.entries()) {
                             CompoundTag modifierTag = entry.getValue().save();
-                            modifierTag.putString("AttributeName", ForgeRegistries.ATTRIBUTES.getKey(entry.getKey()).toString());
+                            var key = BuiltInRegistries.ATTRIBUTE.getKey(entry.getKey());
+                            if (key == null) continue;
+                            modifierTag.putString("AttributeName", key.toString());
                             modifierTag.putString("Slot", armorItem.getEquipmentSlot().getName());
                             // ВАЖНО: Добавляем наш маркер, чтобы идентифицировать этот атрибут в будущем.
                             modifierTag.putBoolean(MODIFIER_MARKER_KEY, true);
@@ -325,18 +368,15 @@ public class ArmorModificationHelper {
 
         // Заменяем старый список новым, отфильтрованным и дополненным.
         mainTag.put("AttributeModifiers", preservedModifiers);
-        if (mainTag.isEmpty()) { armorStack.setTag(null); }
 
-        // ШАГ 3: ОБРЕЗАНИЕ ЭНЕРГИИ ПО НОВОМУ МАКСИМУМУ
-        // Если броня - силовая, проверяем и корректируем уровень энергии
-        if (armorStack.getItem() instanceof com.hbm_m.powerarmor.ModPowerArmorItem powerArmor) {
-            long currentEnergy = mainTag.getLong("energy");
-            long newMaxCapacity = powerArmor.getModifiedCapacity(armorStack);
+        // ШАГ 3: ОБРЕЗАНИЕ ЗАРЯДА / capability (силовая броня)
+        onPoweredArmorModsChanged(armorStack);
+    }
 
-            // Если текущая энергия превышает новый максимум, обрезаем ее
-            if (currentEnergy > newMaxCapacity) {
-                mainTag.putLong("energy", newMaxCapacity);
-            }
+    /** Записывает моды из стола в NBT брони (вызывать перед изъятием брони или закрытием GUI). */
+    public static void flushTableToArmor(ItemStack armorStack, Container tableInventory, Player player) {
+        if (!armorStack.isEmpty() && armorStack.getItem() instanceof ArmorItem) {
+            saveTableToArmor(armorStack, tableInventory, player);
         }
     }
     /**
@@ -345,11 +385,12 @@ public class ArmorModificationHelper {
      * @return Список ItemStack'ов модов или пустой список, если модов нет.
      */
     public static List<ItemStack> getModsFromArmor(ItemStack armorStack) {
-        if (!armorStack.hasTag() || !armorStack.getTag().contains(MOD_COMPOUND_KEY, 10)) {
+        CompoundTag armorTagForList = armorStack.getTag();
+        if (armorTagForList == null || !armorTagForList.contains(MOD_COMPOUND_KEY, 10)) {
             return Collections.emptyList();
         }
 
-        CompoundTag modsCompound = armorStack.getTag().getCompound(MOD_COMPOUND_KEY);
+        CompoundTag modsCompound = armorTagForList.getCompound(MOD_COMPOUND_KEY);
         if (modsCompound.isEmpty()) {
             return Collections.emptyList();
         }

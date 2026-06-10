@@ -1,19 +1,27 @@
 package com.hbm_m.client.render.shader;
 
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.hbm_m.client.render.ModShaders;
 import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.client.renderer.ShaderInstance;
+import dev.architectury.platform.Platform;
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.ModList;
+//?}
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;*///?}
+
 
 /**
  * Reflective bridge to Iris/Oculus internals that exposes the
@@ -30,7 +38,11 @@ import net.minecraftforge.fml.ModList;
  * If Iris is not loaded, lookup fails, or any exception occurs, this class returns
  * the vanilla simple block_lit shader so the renderer still produces output.
  */
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public final class IrisExtendedShaderAccess {
 
     private IrisExtendedShaderAccess() {}
@@ -85,7 +97,7 @@ public final class IrisExtendedShaderAccess {
      * fires once per render frame, so within a single frame all draws see the cached
      * value, and pipeline rebuilds (F3+T, shader pack swap) recover within one frame.
      */
-    private static volatile long currentPassId = 0L;
+    private static final AtomicLong currentPassId = new AtomicLong(0L);
     private static volatile long cachedMainPassId = -1L;
     private static volatile long cachedShadowPassId = -1L;
     private static volatile ShaderInstance cachedMainShader = null;
@@ -113,7 +125,7 @@ public final class IrisExtendedShaderAccess {
      * at that integer location. Identity-comparison via this generation
      * counter is bullet-proof against ID recycling.
      */
-    private static volatile long pipelineGeneration = 0L;
+    private static final AtomicLong pipelineGeneration = new AtomicLong(0L);
 
     /**
      * Identity of the last-seen {@code WorldRenderingPipeline} object. Stored
@@ -125,7 +137,7 @@ public final class IrisExtendedShaderAccess {
 
     /** @return current pipeline generation; consumers compare against a stored value. */
     public static long getPipelineGeneration() {
-        return pipelineGeneration;
+        return pipelineGeneration.get();
     }
 
     /**
@@ -138,10 +150,10 @@ public final class IrisExtendedShaderAccess {
      * invalidates all shader/uniform caches via {@link #invalidateShaderCache}
      * and {@link IrisRenderBatch#invalidateCaches}. This is the central
      * dispatch point for pipeline-rebuild detection; called once per frame
-     * from {@code RenderLevelStageEvent.AFTER_BLOCK_ENTITIES}.
+     * from {@code InstancedRenderFrame.onBeforeBlockEntities} (before BER).
      */
     public static void tickPass() {
-        currentPassId++;
+        currentPassId.incrementAndGet();
 
         // Cheap pipeline-identity check. Skips allocation when reflection is
         // unavailable (Iris not loaded) - no-op in that case. The reflective
@@ -161,11 +173,11 @@ public final class IrisExtendedShaderAccess {
             // cached program IDs from the previous state.
             if (pipeline != lastSeenPipelineIdentity) {
                 lastSeenPipelineIdentity = pipeline;
-                pipelineGeneration++;
+                long gen = pipelineGeneration.incrementAndGet();
                 invalidateShaderCache();
                 IrisRenderBatch.invalidateCaches();
                 MainRegistry.LOGGER.debug("IrisExtendedShaderAccess: pipeline identity changed, generation bumped to {}",
-                        pipelineGeneration);
+                        gen);
             }
         } catch (Throwable ignored) {
             // Silent: reflection failure here just means we miss a rebuild
@@ -220,7 +232,7 @@ public final class IrisExtendedShaderAccess {
         // A shader pipeline is stable for the duration of a render frame; the
         // tickPass() bump from RenderLevelStageEvent handles invalidation between
         // frames so pipeline rebuilds (F3+T, pack swap) recover within one frame.
-        long pass = currentPassId;
+        long pass = currentPassId.get();
         if (shadowPass) {
             ShaderInstance cached = cachedShadowShader;
             if (cached != null && cachedShadowPassId == pass) {
@@ -445,7 +457,7 @@ public final class IrisExtendedShaderAccess {
         if (reflectionInitialized) return;
         reflectionInitialized = true;
 
-        if (!ModList.get().isLoaded("oculus") && !ModList.get().isLoaded("iris")) {
+        if (!Platform.isModLoaded("oculus") && !Platform.isModLoaded("iris")) {
             return;
         }
         // Iris/Oculus has shuffled package layout across versions. Try a few well-known names.

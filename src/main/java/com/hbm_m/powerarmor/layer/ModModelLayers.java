@@ -12,5 +12,10 @@ public class ModModelLayers {
      * Actual power armor geometry is rendered via OBJ layers (see powerarmor package).
      */
     public static final ModelLayerLocation POWER_ARMOR = new ModelLayerLocation(
-            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "power_armor"), "main");
+            //? if fabric && < 1.21.1 {
+            /*new ResourceLocation(MainRegistry.MOD_ID, "power_armor"), "main");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "power_armor"), "main");
+            //?}
+
 }

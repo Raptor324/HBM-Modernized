@@ -1,7 +1,9 @@
 package com.hbm_m.radiation;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -10,21 +12,20 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.nature.RadioactiveBlock;
-
 // Этот класс реализует простую и эффективную систему симуляции радиации в чанках. Ядро всей радиационной механики мода.
 
-import com.hbm_m.capability.ChunkRadiationProvider;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.hazard.HazardSystem;
-import com.hbm_m.hazard.HazardType;
+import com.hbm_m.hazard.HazardRegistry;
 import com.hbm_m.interfaces.IChunkRadiation;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ChunkRadiationDebugBatchPacket;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.particle.ModParticleTypes;
+import com.hbm_m.world.biome.ModBiomes;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -34,24 +35,35 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
+//? if forge {
 import net.minecraftforge.event.level.ChunkEvent;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.minecraftforge.event.level.LevelEvent;
+//?}
 
 // Моя конфетка, сколько же сил и нервов я на тебя потратил!
 public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
+
+    /** {@link com.hbm.handler.radiation.ChunkRadiationHandlerSimple#handleWorldDestruction()} (1.7.10), hardcoded. */
+    private static final float WORLD_RAD_EFFECTS_THRESHOLD = 10F;
+    private static final int WORLD_RAD_BLOCK_OPS_PER_CHUNK = 10;
+    private static final int WORLD_RAD_CHUNKS_PER_TICK = 5;
+    /** {@link com.hbm.config.RadiationConfig#fogRad} */
+    private static final float CHUNK_FOG_RAD_THRESHOLD = 100F;
+    /** {@link com.hbm.config.RadiationConfig#fogCh} — 1:n раз в секунду (раз в 20 тиков). */
+    private static final int CHUNK_FOG_SPAWN_CHANCE = 20;
 
     private static final float MAX_RAD = ModClothConfig.get().maxRad;
     private final Map<ResourceLocation, Set<ChunkPos>> activeChunksByDimension = new ConcurrentHashMap<>();
     private final Map<UUID, Map<ChunkPos, Float>> lastSentDebugValues = new ConcurrentHashMap<>();
 
     public static Optional<IChunkRadiation> getChunkRadiationCap(LevelChunk chunk) {
-        return chunk.getCapability(ChunkRadiationProvider.CHUNK_RADIATION_CAPABILITY).resolve();
+        return ChunkRadiationAccess.get(chunk);
     }
 
     @Override
@@ -62,162 +74,155 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
 
     @Override
     public void updateSystem() {
-    
         if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads) {
-        return;
-    }
-
-    // Итерация по всем измерениям, где есть активные чанки
-    for (Map.Entry<ResourceLocation, Set<ChunkPos>> dimensionEntry : activeChunksByDimension.entrySet()) {
-        
-        ResourceLocation dimId = dimensionEntry.getKey();
-        ResourceKey<Level> levelKey = ResourceKey.create(Registries.DIMENSION, dimId);
-        
-        ServerLevel level = ServerLifecycleHooks.getCurrentServer().getLevel(levelKey);
-        if (level == null || level.isClientSide()) continue;
-
-        Set<ChunkPos> currentActiveChunks = dimensionEntry.getValue();
-        if (currentActiveChunks == null || currentActiveChunks.isEmpty()) {
-            continue;
+            return;
         }
 
-        // Буферы для данных
-        Map<ChunkPos, Float> ambientReadBuffer = new HashMap<>();
-        Map<ChunkPos, Float> blockReadBuffer = new HashMap<>();
+        var server = dev.architectury.utils.GameInstance.getServer();
+        if (server == null) {
+            return;
+        }
 
-        // ФАЗА 1: ЧТЕНИЕ 
-        // Считываем состояние всех активных чанков, чтобы избежать гонки потоков
-        for (ChunkPos pos : new HashSet<>(currentActiveChunks)) {
-            LevelChunk chunk = level.getChunkSource().getChunk(pos.x, pos.z, false);
-            if (chunk != null) {
+        // Итерация по всем измерениям, где есть активные чанки
+        for (Map.Entry<ResourceLocation, Set<ChunkPos>> dimensionEntry : activeChunksByDimension.entrySet()) {
+            ResourceLocation dimId = dimensionEntry.getKey();
+            ResourceKey<Level> levelKey = ResourceKey.create(Registries.DIMENSION, dimId);
+
+            ServerLevel level = server.getLevel(levelKey);
+            if (level == null || level.isClientSide()) {
+                continue;
+            }
+
+            Set<ChunkPos> currentActiveChunks = dimensionEntry.getValue();
+            if (currentActiveChunks == null || currentActiveChunks.isEmpty()) {
+                continue;
+            }
+
+            // GIT ChunkRadiationHandlerSimple#updateSystem: buff = текущие значения, затем полный пересчёт spread+decay.
+            // BlockHazard (1.7.10) добавляет hazard*0.1 в ambient раз в секунду — эквивалент blockRad * radSourceInfluenceFactor.
+            Map<ChunkPos, Float> buff = new HashMap<>();
+            for (ChunkPos pos : new HashSet<>(currentActiveChunks)) {
+                LevelChunk chunk = level.getChunkSource().getChunk(pos.x, pos.z, false);
+                if (chunk == null) {
+                    continue;
+                }
                 getChunkRadiationCap(chunk).ifPresent(cap -> {
-                    ambientReadBuffer.put(pos, cap.getAmbientRadiation());
-                    blockReadBuffer.put(pos, cap.getBlockRadiation());
+                    float spreadValue = cap.getAmbientRadiation();
+                    // В кратерах ambient = фон биома (30/10). Sellafite даёт hazard на блоках,
+                    // но не должен бесконечно подпитывать chunk ambient (в 1.7.10 sellafite не BlockHazard).
+                    if (getCraterBiomeBaseline(level, pos) <= 0f) {
+                        spreadValue += cap.getBlockRadiation() * ModClothConfig.get().radSourceInfluenceFactor;
+                    }
+                    if (spreadValue > 1e-6f) {
+                        buff.put(pos, spreadValue);
+                    }
                 });
             }
-        }
 
-        // Буфер для записи результатов распространения
-        Map<ChunkPos, Float> writeBuffer = new HashMap<>();
+            if (buff.isEmpty()) {
+                activeChunksByDimension.put(dimId, ConcurrentHashMap.newKeySet());
+                continue;
+            }
 
-        // ФАЗА 2: РАСЧЕТ РАСПРОСТРАНЕНИЯ 
-        // Корректное распространение радиации: только чтение из ambientReadBuffer, запись в writeBuffer с merge
-        for (Map.Entry<ChunkPos, Float> entry : ambientReadBuffer.entrySet()) {
-                ChunkPos pos = entry.getKey();
-                float ambientToSpread = entry.getValue();
-                if (ambientToSpread > 1e-6f) {
-                    // Распределяем 95% радиации, 5% теряется при распространении
-                    float spreadFactor = 0.95f; 
-                    float totalToSpread = ambientToSpread * spreadFactor;
-                    
-                    float centerShare = totalToSpread * 0.60f;
-                    float cardinalShare = totalToSpread * 0.075f; // 4 * 0.075 = 0.3
-                    float diagonalShare = totalToSpread * 0.025f; // 4 * 0.025 = 0.1
+            Map<ChunkPos, Float> radiation = new HashMap<>();
+            Set<ChunkPos> nextActiveChunks = ConcurrentHashMap.newKeySet();
 
-                    if (centerShare > 0) {
-                        writeBuffer.merge(pos, centerShare, Float::sum);
-                    }
+            for (Map.Entry<ChunkPos, Float> chunkEntry : buff.entrySet()) {
+                if (chunkEntry.getValue() == 0f) {
+                    continue;
+                }
 
-                    for (int dx = -1; dx <= 1; dx++) {
-                        for (int dz = -1; dz <= 1; dz++) {
-                            if (dx == 0 && dz == 0) continue;
-                            
-                            float share = (Math.abs(dx) + Math.abs(dz) == 1) ? cardinalShare : diagonalShare;
+                ChunkPos coord = chunkEntry.getKey();
+                float sourceValue = chunkEntry.getValue();
 
-                            // Добавляем порог для распространения
-                            // Это предотвратит распространение незначительных значений
-                            if (share > 0.1f) {
-                                ChunkPos neighbor = new ChunkPos(pos.x + dx, pos.z + dz);
-                                writeBuffer.merge(neighbor, share, Float::sum);
-                            }
+                for (int dx = -1; dx <= 1; dx++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        int type = Math.abs(dx) + Math.abs(dz);
+                        float percent = type == 0 ? 0.6F : type == 1 ? 0.075F : 0.025F;
+                        ChunkPos newCoord = new ChunkPos(coord.x + dx, coord.z + dz);
+
+                        if (buff.containsKey(newCoord)) {
+                            float rad = radiation.getOrDefault(newCoord, 0f);
+                            float newRad = rad + sourceValue * percent;
+                            newRad = Mth.clamp(newRad * 0.99f - 0.05f, 0f, MAX_RAD);
+                            radiation.put(newCoord, newRad);
+                        } else {
+                            float leaked = Mth.clamp(sourceValue * percent * 0.99f - 0.05f, 0f, MAX_RAD);
+                            radiation.put(newCoord, leaked);
+                        }
+
+                        float rad = radiation.get(newCoord);
+                        if (ModClothConfig.get().enableRadFogEffect
+                                && rad > CHUNK_FOG_RAD_THRESHOLD
+                                && level.random.nextInt(CHUNK_FOG_SPAWN_CHANCE) == 0
+                                && level.hasChunk(coord.x, coord.z)) {
+                            int x = coord.getMinBlockX() + level.random.nextInt(16);
+                            int z = coord.getMinBlockZ() + level.random.nextInt(16);
+                            int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z);
+
+                            level.sendParticles(
+                                    ModParticleTypes.RAD_FOG_PARTICLE.get(),
+                                    x + 0.5, y + 1.0, z + 0.5,
+                                    7,
+                                    1.5, 0.5, 1.5,
+                                    0.01
+                            );
                         }
                     }
                 }
             }
 
-        // ФАЗА 3: ПРИМЕНЕНИЕ И ОБНОВЛЕНИЕ 
-        Set<ChunkPos> chunksToProcess = new HashSet<>(currentActiveChunks);
-            chunksToProcess.addAll(writeBuffer.keySet());
-            Set<ChunkPos> nextActiveChunks = ConcurrentHashMap.newKeySet();
+            Set<ChunkPos> chunksToProcess = new HashSet<>(currentActiveChunks);
+            chunksToProcess.addAll(radiation.keySet());
 
             for (ChunkPos pos : chunksToProcess) {
                 LevelChunk chunk = level.getChunkSource().getChunk(pos.x, pos.z, false);
-                if (chunk == null) continue;
-
-                float oldAmbient = ambientReadBuffer.getOrDefault(pos, 0f);
-                
-                // 1. Новое значение фона = то, что пришло от соседей
-                float newAmbient = writeBuffer.getOrDefault(pos, 0f);
-
-                // 2. Добавляем генерацию от блоков в этом чанке
-                float generation = blockReadBuffer.getOrDefault(pos, 0f);
-                if (generation > 1e-6f) {
-                    newAmbient += generation * ModClothConfig.get().radSourceInfluenceFactor;
+                if (chunk == null) {
+                    continue;
                 }
-                // Распад состоит из процентной и фиксированной части, чтобы добивать малые значения.
-                float decayPercent = 0.05f; // 5% от текущего значения
-                float decayFlat = 0.1f;    // 0.1 рад в секунду (в 20 тиков)
-                newAmbient -= (newAmbient * decayPercent + decayFlat);
+
+                float newAmbient = radiation.getOrDefault(pos, 0f);
 
                 float fluctuationFactor = ModClothConfig.get().radRandomizationFactor;
-                // Применяем только если включено и есть чему флуктуировать
-                if (fluctuationFactor > 0 && newAmbient > 0.1f) { 
+                if (fluctuationFactor > 0 && newAmbient > 0.1f) {
                     newAmbient *= (1.0f + (level.random.nextFloat() - 0.5f) * fluctuationFactor);
                 }
 
-                // 4. Ограничения и очистка
-                float clearThreshold = 0.01f;
-                if (newAmbient < clearThreshold) {
+                if (newAmbient < 0.01f) {
                     newAmbient = 0f;
                 }
 
+                newAmbient = applyCraterBiomeEquilibrium(level, pos, newAmbient);
+
                 newAmbient = Mth.clamp(newAmbient, 0f, MAX_RAD);
-
                 final float finalAmbientRad = newAmbient;
-
-                // СПАВНИМ РАДИОАКТИВНЫЙ ТУМАН
-                if (ModClothConfig.get().enableRadFogEffect && finalAmbientRad > ModClothConfig.get().radFogThreshold && level.random.nextInt(ModClothConfig.get().radFogChance) == 0) {
-                    int x = pos.getMinBlockX() + level.random.nextInt(16);
-                    int z = pos.getMinBlockZ() + level.random.nextInt(16);
-                    int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z);
-
-                    // Спавним несколько частиц, чтобы создать эффект облака
-                    level.sendParticles(
-                        ModParticleTypes.RAD_FOG_PARTICLE.get(),
-                        x + 0.5, y + 1.0, z + 0.5,
-                        7, // Количество частиц
-                        1.5, 0.5, 1.5, // Разброс по осям
-                        0.01 // Скорость/дельта
-                    );
-                }
 
                 getChunkRadiationCap(chunk).ifPresent(cap -> {
                     if (Math.abs(cap.getAmbientRadiation() - finalAmbientRad) > 1e-6f) {
                         cap.setAmbientRadiation(finalAmbientRad);
                         chunk.setUnsaved(true);
-                        
+
                         if (ModClothConfig.get().enableDebugLogging) {
-                        MainRegistry.LOGGER.debug("[RadSim] Tick update for chunk [{}, {}]: OldAmb: {}, SpreadIn: {}, Gen: {}, NewAmb: {}",
-                            pos.x, pos.z, oldAmbient, writeBuffer.getOrDefault(pos, 0f), generation, finalAmbientRad);
+                            MainRegistry.LOGGER.debug("[RadSim] Tick update for chunk [{}, {}]: NewAmb: {}, BlockRad: {}",
+                                    pos.x, pos.z, finalAmbientRad, cap.getBlockRadiation());
                         }
                     }
 
-                    // Чанк остается активным, если в нем есть хоть какая-то радиация (фоновая или от блоков)
                     if (finalAmbientRad > 1e-6f || cap.getBlockRadiation() > 1e-6f) {
                         nextActiveChunks.add(pos);
-                    } else if (currentActiveChunks.contains(pos)) {
-                        if (ModClothConfig.get().enableDebugLogging) {
-                            MainRegistry.LOGGER.debug("[RadSim] Chunk {} REMOVED from active list (all radiation gone)", pos);
-                        }
+                    } else if (ModClothConfig.get().enableDebugLogging && currentActiveChunks.contains(pos)) {
+                        MainRegistry.LOGGER.debug("[RadSim] Chunk {} REMOVED from active list (all radiation gone)", pos);
                     }
                 });
-                // Проверяем, включены ли эффекты и достаточно ли радиации
-                if (ModClothConfig.get().worldRadEffects && finalAmbientRad > ModClothConfig.get().worldRadEffectsThreshold) {
-                    handleWorldDestruction(level, pos, finalAmbientRad);
-                }
             }
+
             activeChunksByDimension.put(dimId, nextActiveChunks);
-            sendDebugPackets(level);
+        }
+
+        if (ModClothConfig.get().enableDebugRender) {
+            for (ServerLevel level : server.getAllLevels()) {
+                sendDebugPackets(level);
+            }
         }
     }
 
@@ -234,7 +239,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                             if (blockState.isAir()) {
                                 continue;
                             }
-                            float blockRad = HazardSystem.getHazardLevelFromState(blockState, HazardType.RADIATION);
+                            float blockRad = HazardSystem.getHazardLevelFromState(blockState, HazardRegistry.RADIATION);
 
                             // Если радиация есть, добавляем ее к общей сумме в чанке
                             if (blockRad > 0) {
@@ -253,20 +258,33 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                 cap.setBlockRadiation(finalTotalBlockRadiation);
                 chunk.setUnsaved(true);
             }
-            // Активируем чанк если в нем есть любой вид радиации
+            ResourceLocation dimId = chunk.getLevel().dimension().location();
             if (cap.getAmbientRadiation() > 1e-6f || finalTotalBlockRadiation > 1e-6f) {
-                activeChunksByDimension.computeIfAbsent(chunk.getLevel().dimension()
-                    .location(), k -> ConcurrentHashMap.newKeySet()).add(chunk.getPos());
+                activeChunksByDimension.computeIfAbsent(dimId, k -> ConcurrentHashMap.newKeySet()).add(chunk.getPos());
+            } else {
+                Set<ChunkPos> active = activeChunksByDimension.get(dimId);
+                if (active != null) {
+                    active.remove(chunk.getPos());
+                }
             }
         });
     }
 
     @Override
     public void receiveChunkLoad(LevelChunk chunk) {
-        // Пересчет нужен только при загрузке, чтобы инициализировать состояние
-        recalculateChunkRadiation(chunk); 
+        getChunkRadiationCap(chunk).ifPresent(cap -> {
+            if (cap.getBlockRadiation() < 1e-6f && cap.getAmbientRadiation() > WORLD_RAD_EFFECTS_THRESHOLD) {
+                recalculateChunkRadiation(chunk);
+            }
+
+            if (cap.getAmbientRadiation() > 1e-6f || cap.getBlockRadiation() > 1e-6f) {
+                activeChunksByDimension.computeIfAbsent(chunk.getLevel().dimension().location(),
+                        k -> ConcurrentHashMap.newKeySet()).add(chunk.getPos());
+            }
+        });
     }
 
+    //? if forge {
     @Override
     public void receiveChunkUnload(ChunkEvent.Unload event) {
         if (event.getChunk() instanceof LevelChunk chunk && !chunk.getLevel().isClientSide()) {
@@ -274,6 +292,17 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
             .location())).ifPresent(set -> set.remove(chunk.getPos()));
         }
     }
+    //?}
+
+    // FABRIC АЛЬТЕРНАТИВА ВЫЗЫВАЕТСЯ ИЗ МЕНЕДЖЕРА
+    //? if fabric {
+    /*public void receiveChunkUnloadFabric(LevelChunk chunk) {
+        if (!chunk.getLevel().isClientSide()) {
+            Optional.ofNullable(activeChunksByDimension.get(chunk.getLevel().dimension()
+                    .location())).ifPresent(set -> set.remove(chunk.getPos()));
+        }
+    }
+    *///?}
 
     @Override
     public float getRadiation(Level level, int x, int y, int z) {
@@ -324,16 +353,21 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
         getChunkRadiationCap(chunk).ifPresent(cap -> {
             float oldBlockRad = cap.getBlockRadiation();
             float newBlockRad = Math.max(0, oldBlockRad + diff);
-            
+
             cap.setBlockRadiation(newBlockRad);
             chunk.setUnsaved(true);
             if (ModClothConfig.get().enableDebugLogging) {
                 MainRegistry.LOGGER.debug("[RadSim] Updated block radiation for chunk {}: {} -> {} (diff: {})", chunkPos, oldBlockRad, newBlockRad, diff);
             }
-            // "Пробуждаем" симуляцию для этого чанка, если он еще не активен
+
+            ResourceLocation dimId = level.dimension().location();
             if (newBlockRad > 1e-6f || cap.getAmbientRadiation() > 1e-6f) {
-                activeChunksByDimension.computeIfAbsent(level.dimension().location(), k -> ConcurrentHashMap.newKeySet())
-                                       .add(chunkPos);
+                activeChunksByDimension.computeIfAbsent(dimId, k -> ConcurrentHashMap.newKeySet()).add(chunkPos);
+            } else {
+                Set<ChunkPos> active = activeChunksByDimension.get(dimId);
+                if (active != null) {
+                    active.remove(chunkPos);
+                }
             }
         });
     }
@@ -395,8 +429,8 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
             });
 
             if (!updatesForPlayer.isEmpty()) {
-                ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player),
-                        new ChunkRadiationDebugBatchPacket(updatesForPlayer, level.dimension().location()));
+                ModPacketHandler.sendToPlayer(player, ModPacketHandler.CHUNK_RAD_DEBUG_BATCH,
+                    new ChunkRadiationDebugBatchPacket(updatesForPlayer, level.dimension().location()));
             }
         }
     }
@@ -410,95 +444,150 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
     }
 
     /**
-     * Обрабатывает эффекты разрушения мира в чанке под воздействием сильной радиации.
-     * Логика спроектирована для максимальной производительности и естественного вида эффекта.
-     *
-     * @param level            Серверный мир, в котором происходят изменения.
-     * @param pos              Позиция чанка.
-     * @param currentRadiation Текущий уровень фоновой радиации в чанке.
+     * Эффекты радиации на мир (трава → мёртвая трава, листья → waste leaves и т.д.).
+     * Порт 1:1 с {@code ChunkRadiationHandlerSimple#handleWorldDestruction()} (1.7.10):
+     * каждый серверный тик, 5 случайных чанков, 10 проходов, порог 10 RAD (hardcoded, как в 1.7.10).
      */
-    private void handleWorldDestruction(ServerLevel level, ChunkPos pos, float currentRadiation) {
-        ModClothConfig config = ModClothConfig.get();
-        int baseChecks = config.worldRadEffectsBlockChecks;
-        if (baseChecks <= 0) return;
+    @Override
+    public void handleWorldDestruction() {
+        if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads) {
+            return;
+        }
 
-        // Шаг 1: Рассчитать количество проверок в этом тике в зависимости от радиации.
-        // Чем выше радиация, тем интенсивнее эффект.
-        float normalizedRad = Mth.inverseLerp(currentRadiation, config.worldRadEffectsThreshold, config.maxRad);
-        float scalingFactor = Mth.lerp(normalizedRad, 1.0F, config.worldRadEffectsMaxScaling);
-        int actualChecks = Math.max(baseChecks, (int)(baseChecks * scalingFactor));
+        int count = WORLD_RAD_BLOCK_OPS_PER_CHUNK;
+        float threshold = WORLD_RAD_EFFECTS_THRESHOLD;
+        int chunksPerTick = WORLD_RAD_CHUNKS_PER_TICK;
 
-        // Создаем один изменяемый объект BlockPos, чтобы переиспользовать его во всех циклах.
-        // Это ключевая оптимизация, предотвращающая создание тысяч объектов.
-        BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
+        var server = dev.architectury.utils.GameInstance.getServer();
+        if (server == null) {
+            return;
+        }
 
-        // Шаг 2: Выполнить рассчитанное количество случайных проверок в чанке.
-        for (int i = 0; i < actualChecks; i++) {
-            int x = pos.getMinBlockX() + level.random.nextInt(16);
-            int z = pos.getMinBlockZ() + level.random.nextInt(16);
+        for (Map.Entry<ResourceLocation, Set<ChunkPos>> dimensionEntry : activeChunksByDimension.entrySet()) {
+            ResourceLocation dimId = dimensionEntry.getKey();
+            ResourceKey<Level> levelKey = ResourceKey.create(Registries.DIMENSION, dimId);
+            ServerLevel level = server.getLevel(levelKey);
+            if (level == null || level.isClientSide()) {
+                continue;
+            }
 
-            // Находим высоту самого верхнего блока, на который может влиять движение (трава, земля, но не листья).
-            int startY = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, x, z);
+            Set<ChunkPos> chunkSet = dimensionEntry.getValue();
+            if (chunkSet == null || chunkSet.isEmpty()) {
+                continue;
+            }
 
-            // Шаг 3: Двигаемся вниз от поверхности ("бурим"), ища первый подходящий блок для мутации.
-            for (int y = startY; y >= level.getMinBuildHeight(); y--) {
-                mutablePos.set(x, y, z);
-                BlockState currentState = level.getBlockState(mutablePos);
+            ChunkPos[] chunkArray = chunkSet.toArray(ChunkPos[]::new);
 
-                // 3.1: Пропускаем воздух, продолжая "бурение" вглубь.
-                if (currentState.isAir()) {
+            for (int c = 0; c < chunksPerTick; c++) {
+                ChunkPos coords = chunkArray[level.random.nextInt(chunkArray.length)];
+
+                if (!level.hasChunk(coords.x, coords.z)) {
                     continue;
                 }
 
-                // 3.2: Если мы наткнулись на неразрушимый или уже измененный блок, прекращаем обработку этой колонки.
-                if (currentState.is(Blocks.BEDROCK) || currentState.getBlock() instanceof RadioactiveBlock) {
-                    break; // Выходим из внутреннего цикла (for y), переходим к следующей итерации (for i).
+                LevelChunk chunk = level.getChunkSource().getChunk(coords.x, coords.z, false);
+                if (chunk == null) {
+                    continue;
                 }
 
-                // 3.3: Основная логика замены блоков. Используем if-else if для однозначности.
-                BlockState newState = null;
-
-                if (currentState.is(Blocks.GRASS_BLOCK)) {
-                    newState = ModBlocks.WASTE_GRASS.get().defaultBlockState();
-                } else if (currentState.is(BlockTags.LEAVES)) {
-                    // Листья могут либо превратиться в мертвые, либо просто исчезнуть.
-                    if (level.random.nextInt(7) <= 5) {
-                        newState = ModBlocks.WASTE_LEAVES.get().defaultBlockState();
-                    } else {
-                        newState = Blocks.AIR.defaultBlockState();
-                    }
-                } else if (currentState.is(Blocks.DIRT)) {
-                    // Раскомментируйте, когда добавите блок Waste Dirt
-                    // newState = ModBlocks.WASTE_DIRT.get().defaultBlockState();
+                float rad = getChunkRadiationCap(chunk).map(IChunkRadiation::getAmbientRadiation).orElse(0f);
+                if (rad < threshold) {
+                    continue;
                 }
-                // Сюда можно легко добавить другие правила:
-                // else if (currentState.is(BlockTags.SAND)) { ... }
-                // else if (currentState.is(Blocks.WATER)) { ... }
 
+                int minX = coords.getMinBlockX();
+                int minZ = coords.getMinBlockZ();
 
-                // 3.4: Применяем изменения, если было найдено правило для замены.
-                if (newState != null) {
-                    // Используем флаг '2' для установки блока:
-                    // - Уведомляет клиентов об изменении (блок меняется визуально).
-                    // - НЕ вызывает обновление соседних блоков (предотвращает каскадные лаги).
-                    level.setBlock(mutablePos, newState, 2);
+                for (int i = 0; i < count; i++) {
+                    int x = minX + level.random.nextInt(16);
+                    int z = minZ + level.random.nextInt(16);
+                    int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING, x, z)
+                            - 1 - level.random.nextInt(2);
 
-                    // Дополнительный эффект: если мы заменили блок, убираем хрупкие блоки (траву, цветы) над ним.
-                    BlockPos posAbove = mutablePos.above();
-                    BlockState stateAbove = level.getBlockState(posAbove);
-                    if (stateAbove.is(Blocks.TALL_GRASS) || stateAbove.is(Blocks.GRASS) || stateAbove.is(BlockTags.FLOWERS) || stateAbove.is(Blocks.SNOW)) {
-                        level.setBlock(posAbove, Blocks.AIR.defaultBlockState(), 2);
+                    BlockPos blockPos = new BlockPos(x, y, z);
+                    BlockState state = level.getBlockState(blockPos);
+
+                    if (state.is(Blocks.GRASS_BLOCK)) {
+                        level.setBlock(blockPos, ModBlocks.WASTE_GRASS.get().defaultBlockState(), 2);
+                    } else if (state.is(Blocks.GRASS)) {
+                        level.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 2);
+                    } else if (state.is(BlockTags.LEAVES) && !state.is(ModBlocks.WASTE_LEAVES.get())) {
+                        if (level.random.nextInt(7) <= 5) {
+                            level.setBlock(blockPos, ModBlocks.WASTE_LEAVES.get().defaultBlockState(), 2);
+                        } else {
+                            level.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 2);
+                        }
                     }
                 }
-
-                // 3.5: Вне зависимости от того, заменили мы блок или нет (например, если это был камень, для которого нет правила),
-                // мы прекращаем "бурение" в этой колонке. Это создает эффект поверхностного разложения.
-                break;
             }
         }
     }
 
 
-    // Пустые реализации
-    @Override public void clearSystem(Level level) {}
+    @Override
+    public void clearSystem(Level level) {
+        if (level == null || level.isClientSide()) {
+            return;
+        }
+        activeChunksByDimension.remove(level.dimension().location());
+    }
+
+    //? if forge {
+    @Override
+    public void receiveWorldLoad(LevelEvent.Load event) {
+        if (event.getLevel() instanceof Level level && !level.isClientSide()) {
+            activeChunksByDimension.remove(level.dimension().location());
+        }
+    }
+
+    @Override
+    public void receiveWorldUnload(LevelEvent.Unload event) {
+        if (event.getLevel() instanceof Level level && !level.isClientSide()) {
+            activeChunksByDimension.remove(level.dimension().location());
+        }
+    }
+    //?}
+
+    /**
+     * В биомах кратера ambient стремится к конфигурируемому фону (30 / 10 RAD/s).
+     * Всплески после взрыва сохраняются, но со временем затухают до baseline.
+     */
+    private static float applyCraterBiomeEquilibrium(ServerLevel level, ChunkPos pos, float ambient) {
+        float baseline = getCraterBiomeBaseline(level, pos);
+        if (baseline <= 0f) {
+            return ambient;
+        }
+
+        if (ambient > baseline) {
+            float excess = ambient - baseline;
+            excess = excess * 0.88f - 1.0f;
+            if (excess < 0.5f) {
+                excess = 0f;
+            }
+            return baseline + excess;
+        }
+
+        if (ambient < baseline) {
+            return ambient + (baseline - ambient) * 0.12f;
+        }
+
+        return ambient;
+    }
+
+    private static float getCraterBiomeBaseline(ServerLevel level, ChunkPos pos) {
+        if (!ModClothConfig.get().enableCraterBiomes) {
+            return 0f;
+        }
+
+        BlockPos sample = new BlockPos(pos.getMinBlockX() + 8, level.getSeaLevel(), pos.getMinBlockZ() + 8);
+        Holder<Biome> biome = level.getBiome(sample);
+
+        if (biome.is(ModBiomes.INNER_CRATER_KEY)) {
+            return ModClothConfig.get().craterBiomeInnerChunkRad;
+        }
+        if (biome.is(ModBiomes.OUTER_CRATER_KEY)) {
+            return ModClothConfig.get().craterBiomeOuterChunkRad;
+        }
+        return 0f;
+    }
 }

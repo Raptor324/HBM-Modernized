@@ -13,7 +13,7 @@ public class FuelItem extends Item {
         this.burnTime = burnTime;
     }
 
-    @Override
+    // Forge/NeoForge: IForgeItem/IItemExtension; на Fabric у Item нет этого метода.
     public int getBurnTime(ItemStack itemStack, @Nullable RecipeType<?> recipeType) {
         return this.burnTime;
     }

@@ -1,15 +1,20 @@
 package com.hbm_m.datagen;
-
+//? if forge {
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.advancements.critereon.EnchantmentPredicate;
 import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.advancements.critereon.MinMaxBounds;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.loot.BlockLootSubProvider;
+import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
@@ -27,8 +32,6 @@ import net.minecraft.world.level.storage.loot.predicates.MatchTool;
 import net.minecraft.world.level.storage.loot.providers.nbt.ContextNbtProvider;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
 
 public class ModBlockLootTableProvider extends BlockLootSubProvider {
 
@@ -40,14 +43,18 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         // 1) Базовые лут-таблицы для всех блоков:
         // - если есть обычный BlockItem -> dropSelf
         // - если BlockItem нет (registerBlockWithoutItem) -> пробуем дропнуть item с тем же id
-        for (RegistryObject<Block> entry : ModBlocks.BLOCKS.getEntries()) {
+        for (RegistrySupplier<Block> entry : ModBlocks.BLOCKS) {
             Block block = entry.get();
+            // noLootTable() → minecraft:empty; datagen must not register loot for those blocks
+            if (block.getLootTable() == BuiltInLootTables.EMPTY) {
+                continue;
+            }
             if (block.asItem() != Items.AIR) {
                 this.dropSelf(block);
                 continue;
             }
 
-            Item mappedItem = ForgeRegistries.ITEMS.getValue(entry.getId());
+            Item mappedItem = BuiltInRegistries.ITEM.get(entry.getId());
             if (mappedItem != null && mappedItem != Items.AIR) {
                 dropMappedItem(block, mappedItem);
             } else {
@@ -94,6 +101,21 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModBlocks.URANIUM_ORE_DEEPSLATE.get(),
                 ModBlocks.URANIUM_ORE_DEEPSLATE.get(),
                 ModItems.URANIUM_RAW.get()
+        );
+        dropOreType1(
+                ModBlocks.SCHRABIDIUM_ORE.get(),
+                ModBlocks.SCHRABIDIUM_ORE.get(),
+                ModItems.CRYSTAL_SCHRABIDIUM.get()
+        );
+        dropOreType1(
+                ModBlocks.SCHRABIDIUM_ORE_NETHER.get(),
+                ModBlocks.SCHRABIDIUM_ORE_NETHER.get(),
+                ModItems.CRYSTAL_SCHRABIDIUM.get()
+        );
+        dropOreType1(
+                ModBlocks.SCHRABIDIUM_ORE_GNEISS.get(),
+                ModBlocks.SCHRABIDIUM_ORE_GNEISS.get(),
+                ModItems.CRYSTAL_SCHRABIDIUM.get()
         );
         dropOreType1(
                 ModBlocks.COBALT_ORE.get(),
@@ -286,14 +308,12 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModItems.SEQUESTRUM.get(),
                 1.0f, 3.0f
         );
-
-
-        // Если DEPTH_STONE должен вести себя как обычный блок,
-        // отдельный вызов dropSelfType не нужен - его уже обработал цикл выше.
-        // Если нужна особая логика - добавь здесь нужный метод.
     }
 
     private void dropEmptyTable(Block block) {
+        if (block.getLootTable() == BuiltInLootTables.EMPTY) {
+            return;
+        }
         LootTable.Builder emptyTable = LootTable.lootTable()
                 .withPool(LootPool.lootPool()
                         .setRolls(ConstantValue.exactly(1))
@@ -415,12 +435,11 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
     @Override
     protected Iterable<Block> getKnownBlocks() {
         // Генерируем для всех зарегистрированных блоков мода
-        return ModBlocks.BLOCKS.getEntries()
-                .stream()
-                .flatMap(RegistryObject::stream)
-                .toList();
+        List<Block> list = new ArrayList<>();
+        for (RegistrySupplier<Block> entry : ModBlocks.BLOCKS) {
+            list.add(entry.get());
+        }
+        return list;
     }
-
-
-
 }
+//?}

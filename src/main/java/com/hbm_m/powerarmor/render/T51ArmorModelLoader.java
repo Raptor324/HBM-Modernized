@@ -1,3 +1,4 @@
+//? if forge {
 package com.hbm_m.powerarmor.render;
 
 import com.google.gson.JsonObject;
@@ -33,7 +34,7 @@ public class T51ArmorModelLoader extends AbstractObjPartModelLoader<T51ArmorBake
     protected T51ArmorBakedModel createBakedModel(HashMap<String, BakedModel> bakedParts,
                                                   ItemTransforms transforms,
                                                   ResourceLocation modelLocation) {
-        return new T51ArmorBakedModel(bakedParts, transforms);
+        return new T51ArmorBakedModel(bakedParts, transforms, AbstractArmorBakedModel.resolveItemArmorType(modelLocation));
     }
 
     @Override
@@ -47,3 +48,4 @@ public class T51ArmorModelLoader extends AbstractObjPartModelLoader<T51ArmorBake
     // Кастомный атлас не используется, так как при entity рендеринге Material создается
     // заново с BLOCK_ATLAS в T51PowerArmorLayer.T51Config
 }
+//?}

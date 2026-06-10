@@ -5,20 +5,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.hbm_m.item.ModItems;
-
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.Registries;
 
 /**
  * Centrifuge recipe registry - adapted from 1.7.10 HBM.
- * Uses direct HashMap lookup for reliable recipe matching.
+ * Uses direct HashMap lookup for reliable recipe matching. Code made by TRFFuchs
  */
 public class CentrifugeRecipes {
 
@@ -69,7 +68,7 @@ public class CentrifugeRecipes {
         private final TagKey<Item> tag;
 
         public TagInput(String tagName) {
-            this.tag = ItemTags.create(ResourceLocation.tryParse(tagName));
+            this.tag = TagKey.create(Registries.ITEM, new ResourceLocation(tagName));
         }
 
         public TagInput(TagKey<Item> tag) {
@@ -84,7 +83,7 @@ public class CentrifugeRecipes {
         @Override
         public List<ItemStack> getDisplayStacks() {
             List<ItemStack> stacks = new ArrayList<>();
-            ForgeRegistries.ITEMS.tags().getTag(tag).forEach(item -> {
+            BuiltInRegistries.ITEM.getTagOrEmpty(tag).forEach(item -> {
                 stacks.add(new ItemStack(item));
             });
             return stacks.isEmpty() ? List.of(ItemStack.EMPTY) : stacks;
@@ -217,49 +216,56 @@ public class CentrifugeRecipes {
         addTagRecipe("forge:ores/beryllium",
             stack("hbm_m:beryllium_powder", 1),
             stack("hbm_m:beryllium_powder", 1),
-            stack("hbm_m:emerald_powder", 1),
+            new ItemStack(Items.EMERALD),
             new ItemStack(Items.GRAVEL));
 
         // Fluorite Ore
         addTagRecipe("forge:ores/fluorite",
             stack("hbm_m:fluorite", 3),
             stack("hbm_m:fluorite", 3),
-            stack("hbm_m:sodalite_gem", 1),
+            stack("hbm_m:rareground_ore_chunk", 1),
             new ItemStack(Items.GRAVEL));
 
         // Aluminum/Bauxite Ore
         addTagRecipe("forge:ores/aluminum",
-            stack("hbm_m:titanium_powder", 1),
             stack("hbm_m:aluminum_powder", 1),
-            stack("hbm_m:iron_powder", 1),
+            stack("hbm_m:aluminum_powder", 1),
+            stack("hbm_m:titanium_powder", 1),
             new ItemStack(Items.GRAVEL));
 
         // Sulfur Ore
         addTagRecipe("forge:ores/sulfur",
-            stack("hbm_m:sulfur", 3),
-            stack("hbm_m:sulfur", 3),
-            stack("hbm_m:iron_powder", 1),
+            stack("hbm_m:sulfur", 4),
+            stack("hbm_m:sulfur", 4),
+            stack("hbm_m:sulfur", 4),
             new ItemStack(Items.GRAVEL));
 
         // Lignite Ore
         addTagRecipe("forge:ores/lignite",
-            stack("hbm_m:lignite_powder", 2),
-            stack("hbm_m:lignite_powder", 2),
-            stack("hbm_m:lignite_powder", 2),
+            stack("hbm_m:lignite", 2),
+            stack("hbm_m:lignite", 2),
+            stack("hbm_m:lignite", 2),
             new ItemStack(Items.GRAVEL));
 
         // Asbestos Ore
         addTagRecipe("forge:ores/asbestos",
-            stack("hbm_m:ite_powder", 2),
-            stack("hbm_m:ite_powder", 2),
-            stack("hbm_m:calcium_powder", 1),
+            stack("hbm_m:asbestos_powder", 1),
+            stack("hbm_m:asbestos_powder", 1),
+            stack("hbm_m:asbestos_powder", 1),
             new ItemStack(Items.GRAVEL));
 
         // Cinnabar Ore
         addTagRecipe("forge:ores/cinnabar",
-            stack("hbm_m:mercury_ingot", 2),
-            stack("hbm_m:mercury_ingot", 2),
+            stack("hbm_m:cinnabar", 2),
+            stack("hbm_m:cinnabar", 2),
             stack("hbm_m:sulfur", 1),
+            new ItemStack(Items.GRAVEL));
+
+        // Rareground Ore
+        addTagRecipe("forge:ores/rareground",
+            stack("hbm_m:rareground_ore_chunk", 1),
+            stack("hbm_m:rareground_ore_chunk", 1),
+            stack("hbm_m:dust", 2),
             new ItemStack(Items.GRAVEL));
 
         // Cobalt Ore
@@ -286,8 +292,8 @@ public class CentrifugeRecipes {
         addItemRecipe("hbm_m:crystal_gold",
             stack("hbm_m:gold_powder", 2),
             stack("hbm_m:gold_powder", 2),
-            stack("hbm_m:mercury_ingot", 1),
-            stack("hbm_m:lithium_powder_tiny", 1));
+            stack("hbm_m:gold_powder", 2),
+            new ItemStack(Items.GRAVEL));
 
         addItemRecipe("hbm_m:crystal_redstone",
             new ItemStack(Items.REDSTONE, 3),
@@ -405,7 +411,7 @@ public class CentrifugeRecipes {
     private static ItemStack stack(String itemId, int count) {
         ResourceLocation loc = ResourceLocation.tryParse(itemId);
         if (loc == null) return ItemStack.EMPTY;
-        Item item = ForgeRegistries.ITEMS.getValue(loc);
+        Item item = BuiltInRegistries.ITEM.get(loc);
         if (item == null || item == Items.AIR) return ItemStack.EMPTY;
         return new ItemStack(item, count);
     }
@@ -418,7 +424,7 @@ public class CentrifugeRecipes {
     public static void addItemRecipe(String itemId, ItemStack... outputs) {
         ResourceLocation loc = ResourceLocation.tryParse(itemId);
         if (loc == null) return;
-        Item item = ForgeRegistries.ITEMS.getValue(loc);
+        Item item = BuiltInRegistries.ITEM.get(loc);
         if (item == null || item == Items.AIR) return;
         addItemRecipe(item, outputs);
     }

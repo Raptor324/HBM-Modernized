@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "hbm_m:pvc_ingot",
+    "hbm_m:pc_ingot"
+  ]
+}

@@ -3,7 +3,7 @@ package com.hbm_m.interfaces;
 // Интерфейс для главного блока-контроллера мультиблочной структуры.
 // Он нужен, чтобы обработчик событий мог найти контроллер, наведясь на любую часть.
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -43,5 +43,13 @@ public interface IMultiblockController {
         // По умолчанию возвращаем ПУСТУЮ форму.
         // Это сигнал для системы: "У меня нет кастомной формы, генерируй стандартную".
         return null;
+    }
+
+    /**
+     * Returns whether this controller should be destroyed when one of its machine parts is removed.
+     * Override to return false for "permanent" destroyed/ruin states that should never auto-collapse.
+     */
+    default boolean shouldDestroyOnPartRemoved() {
+        return true;
     }
 }

@@ -1,24 +1,43 @@
 package com.hbm_m.client.render.implementations;
 
-import org.joml.Matrix3f;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import org.joml.Matrix4f;
 
-import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
+import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.client.model.MachineChemicalPlantBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
-import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
-import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.PartGeometry;
+import com.hbm_m.client.render.RenderDistanceHelper;
+import com.hbm_m.client.render.SingleMeshVboRenderer;
+import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
+//? if forge {
+import com.hbm_m.client.render.shader.IrisPhaseGuard;
+//?}
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
+import org.lwjgl.opengl.GL11;
+
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?}
+
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+*///?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -26,25 +45,14 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
-import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.registries.ForgeRegistries;
-
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.renderer.RenderType;
-import com.hbm_m.recipe.ChemicalPlantRecipe;
-
-import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Optional;
-
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChemicalPlantBlockEntity, MachineChemicalPlantBakedModel> {
 
     private MachineChemicalPlantVboRenderer gpu;
@@ -52,7 +60,23 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
 
     private static volatile InstancedStaticPartRenderer instancedBase;
     private static volatile InstancedStaticPartRenderer instancedFrame;
+    private static volatile InstancedStaticPartRenderer instancedSlider;
+    private static volatile InstancedStaticPartRenderer instancedSpinner;
     private static volatile boolean instancersInitialized = false;
+
+    /**
+     * Жидкость с depth test, но без depth write (как {@code glDepthMask(false)} в 1.7.10).
+     * Рисуем после flush instanced/VBO-частей всех chemplant в кадре — иначе в depth только террейн.
+     */
+    private static final List<DeferredChemplantFluid> DEFERRED_FLUIDS = new ArrayList<>();
+
+    private record DeferredChemplantFluid(
+        BlockPos pos,
+        Matrix4f pose,
+        int packedLight,
+        int packedOverlay,
+        MachineChemicalPlantVboRenderer.FluidVisual visual
+    ) {}
 
     private final Matrix4f matSlider = new Matrix4f();
     private final Matrix4f matSpinner = new Matrix4f();
@@ -60,7 +84,81 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
     /** Degrees → radians multiplier; see {@code MachineAdvancedAssemblerRenderer.DEG_TO_RAD}. */
     private static final float DEG_TO_RAD = (float) (Math.PI / 180.0);
 
+    /**
+     * Пивот вращения спиннера в пространстве уже запечённых VBO-вершин.
+     * В OBJ это {@code (0.5, 0, 0.5)}; JSON root translation {@code [-0.5, 0, 0.5]} сдвигает его в {@code (0, 0, 1)} — не менять JSON, только эти константы под VBO/Batch.
+     */
+    private static final float CHEMPLANT_BAKE_PIVOT_X = 0.0f;
+    private static final float CHEMPLANT_BAKE_PIVOT_Z = 1.0f;
+
     public MachineChemicalPlantRenderer(BlockEntityRendererProvider.Context ctx) {}
+
+    /** Сброс очереди в начале кадра (до BER). */
+    public static void clearDeferredFluids() {
+        DEFERRED_FLUIDS.clear();
+    }
+
+    /**
+     * Ставит жидкость в очередь; отрисовка — {@link #presentDeferredFluids()} после
+     * {@link #flushInstancedBatches(Matrix4f)} в {@link com.hbm_m.client.render.culling.InstancedRenderFrame}.
+     */
+    public static void scheduleDeferredFluid(BlockPos pos, Matrix4f poseInLocalSpace,
+                                             int packedLight, int packedOverlay,
+                                             MachineChemicalPlantVboRenderer.FluidVisual visual) {
+        if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
+            return;
+        }
+        DEFERRED_FLUIDS.add(new DeferredChemplantFluid(
+            pos, new Matrix4f(poseInLocalSpace), packedLight, packedOverlay, visual));
+    }
+
+    /**
+     * После всех BER и flush instanced: в depth уже все части машин, жидкость только тестирует depth.
+     */
+    public static void presentDeferredFluids() {
+        if (DEFERRED_FLUIDS.isEmpty()) {
+            return;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        var level = mc.level;
+        if (level == null) {
+            DEFERRED_FLUIDS.clear();
+            return;
+        }
+
+        float partialTick = mc.getFrameTime();
+        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        PoseStack poseStack = new PoseStack();
+        boolean depthMaskWas = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
+
+        //? if forge {
+        try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
+            RenderSystem.depthMask(false);
+            for (DeferredChemplantFluid entry : DEFERRED_FLUIDS) {
+                BlockEntity raw = level.getBlockEntity(entry.pos);
+                if (!(raw instanceof MachineChemicalPlantBlockEntity be)) {
+                    continue;
+                }
+                BakedModel rawModel = mc.getBlockRenderer().getBlockModel(be.getBlockState());
+                if (!(rawModel instanceof MachineChemicalPlantBakedModel model)) {
+                    continue;
+                }
+                float anim = be.getAnim(partialTick);
+                BlockState state = be.getBlockState();
+                poseStack.pushPose();
+                poseStack.last().pose().set(entry.pose);
+                MachineChemicalPlantVboRenderer.drawChemplantFluidBaked(
+                    model, state, anim, poseStack, buffers, entry.packedLight, entry.packedOverlay, entry.visual);
+                poseStack.popPose();
+            }
+            buffers.endBatch();
+        } finally {
+            RenderSystem.depthMask(depthMaskWas);
+        }
+        //?} else {
+        /*DEFERRED_FLUIDS.clear();*///?}
+        DEFERRED_FLUIDS.clear();
+    }
 
     private static synchronized void initializeInstancedRenderersSync(MachineChemicalPlantBakedModel model) {
         if (instancersInitialized) return;
@@ -68,6 +166,8 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
             MainRegistry.LOGGER.info("ChemicalPlantRenderer: initializing instanced renderers...");
             instancedBase = createInstancedForPart(model, "Base");
             instancedFrame = createInstancedForPart(model, "Frame");
+            instancedSlider = createInstancedForPart(model, "Slider");
+            instancedSpinner = createInstancedForPart(model, "Spinner");
             instancersInitialized = true;
         } catch (Exception e) {
             MainRegistry.LOGGER.error("ChemicalPlantRenderer: failed to init instanced renderers", e);
@@ -79,11 +179,13 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         BakedModel part = model.getPart(partName);
         if (part == null) return null;
         String cacheKey = "chemplant_" + partName;
-        PartGeometry geo = GlobalMeshCache.getOrCompilePartGeometry(cacheKey, part);
+        PartGeometry geo = MeshRenderCache.getOrCompilePartGeometry(cacheKey, part);
         if (geo.isEmpty()) return null;
         var data = geo.toVboData(partName);
         if (data == null) return null;
-        return new InstancedStaticPartRenderer(data, geo.solidQuads());
+        InstancedStaticPartRenderer r = new InstancedStaticPartRenderer(data, geo.solidQuads());
+        r.setMdiTraceTag("ChemPlant/" + partName);
+        return r;
     }
 
     private void initializeInstancedRenderers(MachineChemicalPlantBakedModel model) {
@@ -121,20 +223,38 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
             && state.getValue(MachineChemicalPlantBlock.RENDER_ACTIVE);
         boolean useVboGeometry = ShaderCompatibilityDetector.useVboGeometry();
 
+        Direction facing = getFacing(be);
         var minecraft = Minecraft.getInstance();
         BlockPos blockPos = be.getBlockPos();
-        AABB renderBounds = be.getRenderBoundingBox();
+
+        AABB renderBounds;
+        if (state.getBlock() instanceof com.hbm_m.interfaces.IMultiblockController controller && controller.getStructureHelper() != null) {
+            renderBounds = controller.getStructureHelper().getRenderBoundingBox(blockPos, facing, 0.0);
+        } else {
+            renderBounds = be.getRenderBoundingBox();
+        }
+
         if (minecraft.level == null || !OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, renderBounds)) {
             return;
         }
 
-        ChemicalPlantRecipeVisual visual = getRecipeVisual(be);
+        float staticFade = RenderDistanceHelper.computeStaticFade(blockPos);
+        if (staticFade < 0) return;
+        SingleMeshVboRenderer.setFadeAlpha(staticFade);
+
+        MachineChemicalPlantVboRenderer.FluidVisual visual = MachineChemicalPlantVboRenderer.getRecipeVisual(be);
 
         // Старый baked-путь под шейдерами + простой: статика и idle-подвижные в baked; BER только жидкость/эффекты.
         // Под новым VBO путём (useVboGeometry==true) baked пуст и нам нужно рендерить всё самим.
         if (!useVboGeometry && !renderActive) {
             if (visual != null) {
-                renderSwirl(be, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
+                //? if forge {
+                try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
+                    MachineChemicalPlantVboRenderer.renderChemplantFluid(be, model, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
+                }
+                //?} else {
+                /*MachineChemicalPlantVboRenderer.renderChemplantFluid(be, model, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
+                *///?}
             }
             return;
         }
@@ -146,7 +266,13 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         renderWithVBO(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource, renderActive);
 
         if (visual != null) {
-            renderSwirl(be, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
+            //? if forge {
+            try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
+                MachineChemicalPlantVboRenderer.renderChemplantFluid(be, model, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
+            }
+            //?} else {
+            /*MachineChemicalPlantVboRenderer.renderChemplantFluid(be, model, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
+            *///?}
         }
     }
 
@@ -172,8 +298,8 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         boolean useBatching = useVboPath && ModClothConfig.useInstancedBatching();
 
         // Iris batching: amortise apply()/clear() across Base + Frame + Slider + Spinner.
-        // Slider/Spinner always use SingleMeshVboRenderer (never instanced); they need
-        // IrisRenderBatch.active() so drawCompanion reuses the shared program + direct
+        // Slider/Spinner use instanced batching when effectiveBatching; IrisRenderBatch.active()
+        // still needed so drawCompanion reuses the shared program + direct
         // matrix uploads. If we only open the batch when (!batching || shadow) — like
         // machines whose animated parts are fully instanced — animated parts hit the
         // standalone apply/clear path per frame and GL spams INVALID_OPERATION / No
@@ -182,7 +308,7 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         // ClientModEvents closes any persistent batch before those flushes so ACTIVE
         // is not left stale after shader.clear().
         boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
-        boolean useIrisBatch = useVboPath && ShaderCompatibilityDetector.useNewIrisVboPath();
+        boolean useIrisBatch = useVboPath && ShaderCompatibilityDetector.isExternalShaderActive();
         if (useIrisBatch) {
             try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
                 renderChemicalPlantPartsInternal(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useVboPath, useBatching, renderActive);
@@ -204,18 +330,17 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
                                                   boolean renderActive) {
         var blockState = be.getBlockState();
 
-        /*
-         * Статика (Base/Frame) и подвижные части должны быть в одном фрейме: после setupBlockTransform
-         * нужен translate(-0.5,0,-0.5), чтобы совпасть с ModelHelper.transformQuadsByFacing / Iris chunk
-         * (T(+0.5)*R*T(-0.5) относительно геометрии части). Раньше Slider/Spinner вызывались после popPose()
-         * и обходили этот сдвиг - «поворот как будто верный», но меш визуально расходился с baked.
-         */
+        float staticFade = SingleMeshVboRenderer.getFadeAlpha();
+        float animFade = RenderDistanceHelper.computeAnimatedFade(blockPos);
+        boolean anyFading = staticFade < 0.99f || (animFade >= 0 && animFade < 0.99f);
+        boolean effectiveBatching = useBatching && !anyFading;
+
         if (useVboPath || renderActive) {
             poseStack.pushPose();
             poseStack.translate(-0.5f, 0.0f, -0.5f);
 
             if (useVboPath) {
-                if (useBatching && instancedBase != null && instancedBase.isInitialized()) {
+                if (effectiveBatching && instancedBase != null && instancedBase.isInitialized()) {
                     poseStack.pushPose();
                     instancedBase.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
                     poseStack.popPose();
@@ -224,7 +349,7 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
                 }
 
                 if (blockState.hasProperty(MachineChemicalPlantBlock.FRAME) && blockState.getValue(MachineChemicalPlantBlock.FRAME)) {
-                    if (useBatching && instancedFrame != null && instancedFrame.isInitialized()) {
+                    if (effectiveBatching && instancedFrame != null && instancedFrame.isInitialized()) {
                         poseStack.pushPose();
                         instancedFrame.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
                         poseStack.popPose();
@@ -234,43 +359,53 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
                 }
             }
 
-            boolean skipAnimation = shouldSkipAnimationUpdate(blockPos);
-            float anim = skipAnimation ? 0f : be.getAnim(partialTick);
+            if (animFade < 0) {
+                poseStack.popPose();
+                return;
+            }
+            SingleMeshVboRenderer.setFadeAlpha(Math.min(staticFade, animFade));
+            float anim = be.getAnim(partialTick);
 
             double sdx = chemicalSps(anim * 0.125) * 0.375;
-            // Как 1.7.10: после поворота facing только сдвиг по локальной X, без лишнего T(-0.5) на матрице части.
+            // VBO/instanced: как GL после facing — сдвиг вдоль локальной X позы (не хвост T(-0.5) из assembler).
             matSlider.identity().translate((float) sdx, 0f, 0f);
 
-            gpu.renderAnimatedPart(poseStack, dynamicLight, "Slider", matSlider, blockPos, be, bufferSource);
+            if (effectiveBatching && instancedSlider != null && instancedSlider.isInitialized()) {
+                poseStack.pushPose();
+                poseStack.last().pose().mul(matSlider);
+                instancedSlider.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
+                poseStack.popPose();
+            } else {
+                gpu.renderAnimatedPart(poseStack, dynamicLight, "Slider", matSlider, blockPos, be, bufferSource);
+            }
 
             float deg = (anim * 15f) % 360f;
+            if (deg < 0f) deg += 360f;
             matSpinner.identity()
-                .translate(0.5f, 0f, 0.5f)
+                .translate(CHEMPLANT_BAKE_PIVOT_X, 0f, CHEMPLANT_BAKE_PIVOT_Z)
                 .rotateY(deg * DEG_TO_RAD)
-                .translate(-0.5f, 0f, -0.5f);
+                .translate(-CHEMPLANT_BAKE_PIVOT_X, 0f, -CHEMPLANT_BAKE_PIVOT_Z);
 
-            gpu.renderAnimatedPart(poseStack, dynamicLight, "Spinner", matSpinner, blockPos, be, bufferSource);
+            if (effectiveBatching && instancedSpinner != null && instancedSpinner.isInitialized()) {
+                poseStack.pushPose();
+                poseStack.last().pose().mul(matSpinner);
+                instancedSpinner.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
+                poseStack.popPose();
+            } else {
+                gpu.renderAnimatedPart(poseStack, dynamicLight, "Spinner", matSpinner, blockPos, be, bufferSource);
+            }
 
+            SingleMeshVboRenderer.setFadeAlpha(staticFade);
             poseStack.popPose();
         }
     }
 
-    private boolean shouldSkipAnimationUpdate(BlockPos blockPos) {
-        var minecraft = Minecraft.getInstance();
-        var camera = minecraft.gameRenderer.getMainCamera();
-        var cameraPos = camera.getPosition();
-        double dx = blockPos.getX() + 0.5 - cameraPos.x;
-        double dy = blockPos.getY() + 0.5 - cameraPos.y;
-        double dz = blockPos.getZ() + 0.5 - cameraPos.z;
-        double distanceSquared = dx * dx + dy * dy + dz * dz;
-        int thresholdChunks = ModClothConfig.get().modelUpdateDistance;
-        double thresholdBlocks = thresholdChunks * 16.0;
-        return distanceSquared > thresholdBlocks * thresholdBlocks;
-    }
 
-    public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
-        flushInstanced(event, instancedBase);
-        flushInstanced(event, instancedFrame);
+    public static void flushInstancedBatches(org.joml.Matrix4f projectionMatrix) {
+        flushInstanced(projectionMatrix, instancedBase);
+        flushInstanced(projectionMatrix, instancedFrame);
+        flushInstanced(projectionMatrix, instancedSlider);
+        flushInstanced(projectionMatrix, instancedSpinner);
     }
 
     public static void clearCaches() {
@@ -278,6 +413,10 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         instancedBase = null;
         cleanupInstanced(instancedFrame);
         instancedFrame = null;
+        cleanupInstanced(instancedSlider);
+        instancedSlider = null;
+        cleanupInstanced(instancedSpinner);
+        instancedSpinner = null;
         instancersInitialized = false;
     }
 
@@ -285,161 +424,10 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         if (r != null) r.cleanup();
     }
 
-    private static void flushInstanced(net.minecraftforge.client.event.RenderLevelStageEvent event,
+    private static void flushInstanced(org.joml.Matrix4f projectionMatrix,
                                        InstancedStaticPartRenderer r) {
-        if (r != null) r.flush(event);
+        if (r != null) r.flush(projectionMatrix);
     }
-
-    private record ChemicalPlantRecipeVisual(FluidStack textureFluid, float r, float g, float b) {}
-
-    @Nullable
-    private static ChemicalPlantRecipeVisual getRecipeVisual(MachineChemicalPlantBlockEntity be) {
-        if (!be.getDidProcess()) return null;
-        if (Minecraft.getInstance().level == null) return null;
-        ResourceLocation id = be.getSelectedRecipeId();
-        if (id == null) return null;
-
-        Optional<ChemicalPlantRecipe> recipeOpt = Minecraft.getInstance().level.getRecipeManager()
-                .byKey(id)
-                .filter(r -> r instanceof ChemicalPlantRecipe)
-                .map(r -> (ChemicalPlantRecipe) r);
-        if (recipeOpt.isEmpty()) return null;
-
-        ChemicalPlantRecipe recipe = recipeOpt.get();
-
-        // Как 1.7.10: цвет = средний по output fluids, иначе по input fluids.
-        List<FluidStack> colorFluids = !recipe.getFluidOutputs().isEmpty()
-                ? recipe.getFluidOutputs()
-                : List.of();
-        if (colorFluids.isEmpty() && !recipe.getFluidInputs().isEmpty()) {
-            List<FluidStack> tmp = new java.util.ArrayList<>();
-            for (var fin : recipe.getFluidInputs()) {
-                var fluid = ForgeRegistries.FLUIDS.getValue(fin.fluidId());
-                if (fluid == null) continue;
-                tmp.add(new FluidStack(fluid, fin.amount()));
-            }
-            colorFluids = tmp;
-        }
-        if (colorFluids.isEmpty()) return null;
-
-        int colors = 0;
-        float rr = 0, gg = 0, bb = 0;
-        for (FluidStack fs : colorFluids) {
-            if (fs.isEmpty()) continue;
-            int tint = IClientFluidTypeExtensions.of(fs.getFluid()).getTintColor(fs);
-            rr += ((tint >> 16) & 0xFF) / 255.0F;
-            gg += ((tint >> 8) & 0xFF) / 255.0F;
-            bb += (tint & 0xFF) / 255.0F;
-            colors++;
-        }
-        if (colors <= 0) return null;
-        rr /= colors;
-        gg /= colors;
-        bb /= colors;
-
-        // Текстура: первая output fluid, иначе первая input fluid.
-        FluidStack texFluid = null;
-        for (FluidStack out : recipe.getFluidOutputs()) {
-            if (!out.isEmpty()) { texFluid = out; break; }
-        }
-        if (texFluid == null) {
-            for (var fin : recipe.getFluidInputs()) {
-                var fluid = ForgeRegistries.FLUIDS.getValue(fin.fluidId());
-                if (fluid == null) continue;
-                texFluid = new FluidStack(fluid, fin.amount());
-                break;
-            }
-        }
-        if (texFluid == null || texFluid.isEmpty()) return null;
-        return new ChemicalPlantRecipeVisual(texFluid, rr, gg, bb);
-    }
-
-    /** Полупрозрачный «swirl» как 1.7.10: только BER {@link RenderType#translucent}. */
-    private static void renderSwirl(MachineChemicalPlantBlockEntity blockEntity, float partialTick, PoseStack poseStack,
-                                    MultiBufferSource buffer, int packedLight, int packedOverlay, ChemicalPlantRecipeVisual visual) {
-        FluidStack fluid = visual.textureFluid();
-        IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid.getFluid());
-        var stillTexture = ext.getStillTexture(fluid);
-        if (stillTexture == null) {
-            return;
-        }
-
-        var sprite = Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(stillTexture);
-        float red = visual.r();
-        float green = visual.g();
-        float blue = visual.b();
-        float alpha = 0.85F;
-        float fill = 1.0F;
-
-        boolean scrollActive = blockEntity.getDidProcess();
-        long time = blockEntity.getLevel() != null ? blockEntity.getLevel().getGameTime() : 0L;
-        float t = (time + partialTick) * 0.02F;
-        float scroll = t - (float) Mth.floor(t);
-
-        float uMin = sprite.getU0();
-        float uMax = sprite.getU1();
-        float vMin = sprite.getV0();
-        float vMax = sprite.getV1();
-
-        float du = scrollActive ? (uMax - uMin) * scroll : 0f;
-        float dv = scrollActive ? (vMax - vMin) * scroll : 0f;
-
-        float x0 = 0.20F;
-        float z0 = 0.20F;
-        float x1 = 0.80F;
-        float z1 = 0.80F;
-        float y0 = 0.10F;
-        float y1 = y0 + 0.60F * fill;
-
-        VertexConsumer vc = buffer.getBuffer(RenderType.translucent());
-
-        poseStack.pushPose();
-        PoseStack.Pose pose = poseStack.last();
-        Matrix4f poseMat = pose.pose();
-        Matrix3f normalMat = pose.normal();
-
-        addVertex(vc, poseMat, normalMat, x0, y1, z0, red, green, blue, alpha, uMin + du, vMin + dv, packedOverlay, packedLight, 0, 1, 0);
-        addVertex(vc, poseMat, normalMat, x0, y1, z1, red, green, blue, alpha, uMin + du, vMax + dv, packedOverlay, packedLight, 0, 1, 0);
-        addVertex(vc, poseMat, normalMat, x1, y1, z1, red, green, blue, alpha, uMax + du, vMax + dv, packedOverlay, packedLight, 0, 1, 0);
-        addVertex(vc, poseMat, normalMat, x1, y1, z0, red, green, blue, alpha, uMax + du, vMin + dv, packedOverlay, packedLight, 0, 1, 0);
-
-        addVertex(vc, poseMat, normalMat, x0, y0, z0, red, green, blue, alpha, uMin + du, vMax + dv, packedOverlay, packedLight, 0, 0, -1);
-        addVertex(vc, poseMat, normalMat, x1, y0, z0, red, green, blue, alpha, uMax + du, vMax + dv, packedOverlay, packedLight, 0, 0, -1);
-        addVertex(vc, poseMat, normalMat, x1, y1, z0, red, green, blue, alpha, uMax + du, vMin + dv, packedOverlay, packedLight, 0, 0, -1);
-        addVertex(vc, poseMat, normalMat, x0, y1, z0, red, green, blue, alpha, uMin + du, vMin + dv, packedOverlay, packedLight, 0, 0, -1);
-
-        addVertex(vc, poseMat, normalMat, x0, y0, z1, red, green, blue, alpha, uMin + du, vMax + dv, packedOverlay, packedLight, 0, 0, 1);
-        addVertex(vc, poseMat, normalMat, x0, y1, z1, red, green, blue, alpha, uMin + du, vMin + dv, packedOverlay, packedLight, 0, 0, 1);
-        addVertex(vc, poseMat, normalMat, x1, y1, z1, red, green, blue, alpha, uMax + du, vMin + dv, packedOverlay, packedLight, 0, 0, 1);
-        addVertex(vc, poseMat, normalMat, x1, y0, z1, red, green, blue, alpha, uMax + du, vMax + dv, packedOverlay, packedLight, 0, 0, 1);
-
-        addVertex(vc, poseMat, normalMat, x0, y0, z0, red, green, blue, alpha, uMin + du, vMax + dv, packedOverlay, packedLight, -1, 0, 0);
-        addVertex(vc, poseMat, normalMat, x0, y1, z0, red, green, blue, alpha, uMin + du, vMin + dv, packedOverlay, packedLight, -1, 0, 0);
-        addVertex(vc, poseMat, normalMat, x0, y1, z1, red, green, blue, alpha, uMax + du, vMin + dv, packedOverlay, packedLight, -1, 0, 0);
-        addVertex(vc, poseMat, normalMat, x0, y0, z1, red, green, blue, alpha, uMax + du, vMax + dv, packedOverlay, packedLight, -1, 0, 0);
-
-        addVertex(vc, poseMat, normalMat, x1, y0, z0, red, green, blue, alpha, uMin + du, vMax + dv, packedOverlay, packedLight, 1, 0, 0);
-        addVertex(vc, poseMat, normalMat, x1, y0, z1, red, green, blue, alpha, uMax + du, vMax + dv, packedOverlay, packedLight, 1, 0, 0);
-        addVertex(vc, poseMat, normalMat, x1, y1, z1, red, green, blue, alpha, uMax + du, vMin + dv, packedOverlay, packedLight, 1, 0, 0);
-        addVertex(vc, poseMat, normalMat, x1, y1, z0, red, green, blue, alpha, uMin + du, vMin + dv, packedOverlay, packedLight, 1, 0, 0);
-
-        poseStack.popPose();
-    }
-
-    private static void addVertex(VertexConsumer vc, Matrix4f poseMat, Matrix3f normalMat,
-                                 float x, float y, float z,
-                                 float r, float g, float b, float a,
-                                 float u, float v,
-                                 int overlay, int light,
-                                 float nx, float ny, float nz) {
-        vc.vertex(poseMat, x, y, z)
-            .color(r, g, b, a)
-            .uv(u, v)
-            .overlayCoords(overlay)
-            .uv2(light)
-            .normal(normalMat, nx, ny, nz)
-            .endVertex();
-    }
-
-    @Override public int getViewDistance() { return 128; }
+    @Override public int getViewDistance() { return RenderDistanceHelper.getStaticViewDistanceBlocks(); }
 }
+

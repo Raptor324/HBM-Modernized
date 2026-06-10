@@ -2,9 +2,10 @@ package com.hbm_m.block.entity.machines;
 
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Objects;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.FluidNet;
 import com.hbm_m.api.fluids.FluidNetProvider;
@@ -12,13 +13,18 @@ import com.hbm_m.api.fluids.FluidNode;
 import com.hbm_m.api.fluids.ForgeFluidHandlerAdapter;
 import com.hbm_m.api.fluids.IFluidConnectorMK2;
 import com.hbm_m.api.fluids.IFluidPipeMK2;
+import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.api.network.UniNodespace;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.FluidDuctBlock;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 
+//? if fabric {
+/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -31,11 +37,18 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+//? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.registries.ForgeRegistries;
+ //?}
 
 /**
  * BlockEntity трубы. Хранит тип жидкости и управляет MK2 узлом в UniNodespace.
+ * <p>
+ * Визуал оверлея (neo / colored / silver): в Forge OBJ MTL задаётся {@code forge_TintIndex 1} для слоя
+ * «skin»; на Fabric {@link com.hbm_m.client.model.loading.MtlData} читает это поле, JSON {@code mtl_override}
+ * подставляет MTL для bake (base / overlay), а блоки труб зарегистрированы в {@code BlockRenderLayerMap}
+ * как {@code cutout} в {@link com.hbm_m.client.ClientSetup}, чтобы оверлей с альфой и tint из
+ * {@code ColorProviderRegistry.BLOCK} отображался как на Forge (multipart solid + cutout).
  *
  * Логика передачи жидкостей:
  *  - Узел (FluidNode) создаётся при загрузке блока/смене типа и разрушается при выгрузке.
@@ -44,6 +57,7 @@ import net.minecraftforge.registries.ForgeRegistries;
  *    и регистрирует их как providers/receivers в сети трубы.
  *  - Фактический перенос жидкостей выполняется FluidNet.update() (в UniNodespace.updateNodespace()).
  */
+@SuppressWarnings("UnstableApiUsage")
 public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
 
     private static final String NBT_FLUID_TYPE = "FluidType";
@@ -53,6 +67,13 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
     /** Текущий узел в UniNodespace. null до первого onLoad или если тип не задан. */
     @Nullable
     private FluidNode node;
+
+    /**
+     * Клиентский отложенный refresh визуальных соединений после загрузки чанка.
+     * На первом onLoad соседний UniversalMachinePartBlockEntity/контроллер может ещё не иметь
+     * актуального NBT на клиенте, поэтому пересчитываем трубу несколько тиков подряд.
+     */
+    private int clientVisualRefreshTicks = 0;
 
     /**
      * Кэш адаптеров для соседних Forge-машин.
@@ -75,7 +96,7 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
 
     @Override
     public boolean canConnect(Fluid fluid, Direction fromDir) {
-        return fromDir != null && fluid == this.fluidType;
+        return fromDir != null && VanillaFluidEquivalence.sameSubstance(fluid, this.fluidType);
     }
 
     // =====================================================================================
@@ -144,13 +165,42 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
         }
     }
 
+    //? if forge {
     @Override
     public void onLoad() {
         super.onLoad();
         if (level instanceof ServerLevel serverLevel) {
             ensureNode(serverLevel);
+
+            if (getBlockState().getBlock() instanceof FluidDuctBlock duct) {
+                BlockState current = getBlockState();
+                BlockState updated = duct.getConnectionState(serverLevel, worldPosition);
+                if (updated != current) {
+                    serverLevel.setBlock(worldPosition, updated, Block.UPDATE_CLIENTS | Block.UPDATE_NEIGHBORS);
+                } else {
+                    serverLevel.sendBlockUpdated(worldPosition, current, current, Block.UPDATE_CLIENTS);
+                }
+                // Ещё один пересчёт через пару тиков: соседние BE мультиблоков могут загрузиться позже трубы.
+                serverLevel.scheduleTick(worldPosition, current.getBlock(), 2);
+            }
+        }
+
+        if (level != null && level.isClientSide && getBlockState().getBlock() instanceof FluidDuctBlock) {
+            clientVisualRefreshTicks = 40;
+            FluidDuctBlock.refreshAdjacentDucts(level, worldPosition);
         }
     }
+    //?}
+
+    //? if fabric {
+    /*@Override
+    public void setLevel(Level level) {
+        super.setLevel(level);
+        if (level instanceof ServerLevel serverLevel) {
+            ensureNode(serverLevel);
+        }
+    }
+    *///?}
 
     @Override
     public void setRemoved() {
@@ -162,19 +212,56 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
         super.setRemoved();
     }
 
+    //? if forge {
     @Override
     public void onChunkUnloaded() {
-        // Помечаем узел expired при выгрузке чанка, чтобы сеть перестроила связи
-        if (node != null) node.expired = true;
+        if (level instanceof ServerLevel serverLevel && node != null && !node.isExpired()) {
+            UniNodespace.destroyNode(serverLevel, node);
+        }
+        node = null;
+        adapterCache.clear();
         super.onChunkUnloaded();
     }
+    //?}
 
     // =====================================================================================
     // Tick — регистрация Forge-машин в сети
     // =====================================================================================
 
+    private void clientTick(Level level, BlockPos pos) {
+        if (clientVisualRefreshTicks <= 0) {
+            return;
+        }
+
+        clientVisualRefreshTicks--;
+        // Не каждый кадр, чтобы не спамить пересборкой чанка, но достаточно долго после входа в мир.
+        if ((level.getGameTime() & 1L) == 0L) {
+            FluidDuctBlock.refreshAdjacentDucts(level, pos);
+        }
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, FluidDuctBlockEntity entity) {
-        if (level.isClientSide || !(level instanceof ServerLevel serverLevel)) return;
+        if (level.isClientSide) {
+            entity.clientTick(level, pos);
+            return;
+        }
+        if (!(level instanceof ServerLevel serverLevel)) return;
+
+        // === DEBUG: статус трубы раз в 2 секунды (удалить после отладки) ===
+        if (level.getGameTime() % 40 == 0) {
+            String typeStr = entity.fluidType == net.minecraft.world.level.material.Fluids.EMPTY
+                ? "EMPTY (труба не покрашена идентификатором!)"
+                : net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(entity.fluidType).toString();
+            int connectedSides = 0;
+            for (Direction d : Direction.values()) {
+                if (state.getValue(FluidDuctBlock.PROPERTY_BY_DIRECTION.get(d))) connectedSides++;
+            }
+            // org.slf4j.LoggerFactory.getLogger("FluidDuctDBG")
+            //     .info("[tick] pos={} fluidType={} connectedSides={} hasNode={}",
+            //         pos, typeStr, connectedSides, entity.node != null && !entity.node.isExpired());
+        }
+        // === END DEBUG ===
+
         if (entity.fluidType == Fluids.EMPTY) return;
 
         // Восстановить узел, если потерялся
@@ -188,6 +275,10 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
             BlockPos neighborPos = pos.relative(dir);
             BlockEntity neighbor = level.getBlockEntity(neighborPos);
 
+            // === DEBUG (удалить после отладки) ===
+            boolean shouldLogThis = level.getGameTime() % 40 == 0;
+            // === END DEBUG ===
+
             // Пропускаем другие трубы (они сами обслуживают свои узлы)
             if (neighbor == null || neighbor instanceof FluidDuctBlockEntity) continue;
             // Пропускаем машины, реализующие MK2 напрямую (они вызывают trySubscribe/tryProvide сами)
@@ -195,23 +286,45 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
 
             // Проверяем, что у соседа есть IFluidHandler на нашей стороне
             Direction sideOfNeighborFacingDuct = dir.getOpposite();
-            if (!neighbor.getCapability(ForgeCapabilities.FLUID_HANDLER, sideOfNeighborFacingDuct).isPresent()) {
+            boolean hasFluidHandler = checkNeighborFluidHandler(level, neighbor, sideOfNeighborFacingDuct);
+
+            // === DEBUG ===
+            if (shouldLogThis) {
+                // org.slf4j.LoggerFactory.getLogger("FluidDuctDBG")
+                //     .info("  neighbor at {} dir={} class={} hasHandler={}",
+                //         neighborPos, dir, neighbor.getClass().getSimpleName(), hasFluidHandler);
+            }
+            // === END DEBUG ===
+
+            if (!hasFluidHandler) {
                 entity.adapterCache.remove(dir);
                 continue;
             }
 
-            // Инвалидируем кэшированный адаптер при смене типа жидкости
             ForgeFluidHandlerAdapter adapter = entity.adapterCache.get(dir);
             if (adapter == null) {
                 adapter = new ForgeFluidHandlerAdapter(level, neighborPos, sideOfNeighborFacingDuct, entity.fluidType);
                 entity.adapterCache.put(dir, adapter);
             }
 
-            // Регистрируем как поставщика и получателя в сети
-            // Передаём позицию трубы и направление от машины к трубе
             adapter.trySubscribe(entity.fluidType, serverLevel, pos, dir.getOpposite());
             adapter.tryProvide(entity.fluidType, serverLevel, pos, dir.getOpposite());
         }
+    }
+
+
+    /**
+     * Проверяет наличие fluid handler у соседнего BlockEntity.
+     * На Forge — через ForgeCapabilities.FLUID_HANDLER,
+     * на Fabric — через Fabric Transfer API FluidStorage.SIDED.
+     */
+    private static boolean checkNeighborFluidHandler(Level level, BlockEntity neighbor, Direction side) {
+        //? if forge {
+        return neighbor.getCapability(ForgeCapabilities.FLUID_HANDLER, side).isPresent();
+         //?}
+        //? if fabric {
+        /*return FluidStorage.SIDED.find(level, neighbor.getBlockPos(), neighbor.getBlockState(), neighbor, side) != null;
+        *///?}
     }
 
     // =====================================================================================
@@ -235,24 +348,24 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
     // =====================================================================================
 
     @Override
-    protected void saveAdditional(@Nonnull CompoundTag tag) {
+    protected void saveAdditional(@NotNull CompoundTag tag) {
         super.saveAdditional(tag);
-        ResourceLocation loc = ForgeRegistries.FLUIDS.getKey(fluidType);
+        ResourceLocation loc = BuiltInRegistries.FLUID.getKey(fluidType);
         if (loc != null) {
             tag.putString(NBT_FLUID_TYPE, loc.toString());
         }
     }
 
     @Override
-    public void load(@Nonnull CompoundTag tag) {
+    public void load(@NotNull CompoundTag tag) {
         Fluid before = this.fluidType;
         super.load(tag);
         if (tag.contains(NBT_FLUID_TYPE)) {
-            Fluid f = ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse(tag.getString(NBT_FLUID_TYPE)));
+            Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(tag.getString(NBT_FLUID_TYPE)));
             this.fluidType = f != null ? f : Fluids.EMPTY;
         }
         adapterCache.clear();
-        if (level != null && level.isClientSide && before != this.fluidType) {
+        if (level != null && level.isClientSide && !Objects.equals(before, this.fluidType)) {
             refreshClientTintMesh();
         }
     }
@@ -279,7 +392,9 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
      */
     private void refreshClientTintMesh() {
         if (level == null || !level.isClientSide) return;
+        //? if forge {
         requestModelDataUpdate();
+         //?}
         level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_IMMEDIATE);
         DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
     }

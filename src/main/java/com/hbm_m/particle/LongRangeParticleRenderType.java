@@ -1,5 +1,6 @@
 package com.hbm_m.particle;
 
+import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -7,6 +8,7 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureManager;
 
@@ -16,6 +18,13 @@ import net.minecraft.client.renderer.texture.TextureManager;
 public class LongRangeParticleRenderType implements ParticleRenderType {
 
     public static final LongRangeParticleRenderType INSTANCE = new LongRangeParticleRenderType();
+
+    /** Push fog past any virtualized contrail depth (see MissileTrackWorldRender / SingleMeshVboRenderer). */
+    private static final float NO_FOG_START = 1.0E8F;
+    private static final float NO_FOG_END = 1.0E9F;
+
+    private float savedFogStart;
+    private float savedFogEnd;
 
     private LongRangeParticleRenderType() {
     }
@@ -27,6 +36,9 @@ public class LongRangeParticleRenderType implements ParticleRenderType {
 
     @Override
     public void begin(BufferBuilder buffer, TextureManager textureManager) {
+        savedFogStart = RenderSystem.getShaderFogStart();
+        savedFogEnd = RenderSystem.getShaderFogEnd();
+
         //  Включаем прозрачность (альфа-блендинг)
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -41,6 +53,11 @@ public class LongRangeParticleRenderType implements ParticleRenderType {
         //  ОБЯЗАТЕЛЬНО привязываем текстуру частиц
         // Без этого будут фиолетовые квадраты
         RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_PARTICLES);
+
+        // Long-range contrails are drawn at virtualized camera-relative depth (~render distance).
+        // Vanilla particle fog still blends toward sky color at that depth — white wash on trails.
+        // Missile mesh renderers disable/extend fog the same way (MissileTrackWorldRender).
+        disableParticleFog();
 
         //  Включаем тест глубины (depth test)
         RenderSystem.enableDepthTest();
@@ -58,6 +75,24 @@ public class LongRangeParticleRenderType implements ParticleRenderType {
         buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.PARTICLE);
     }
 
+    private static void disableParticleFog() {
+        RenderSystem.setShaderFogStart(NO_FOG_START);
+        RenderSystem.setShaderFogEnd(NO_FOG_END);
+
+        ShaderInstance shader = RenderSystem.getShader();
+        if (shader == null) {
+            return;
+        }
+        Uniform fogStart = shader.getUniform("FogStart");
+        if (fogStart != null) {
+            fogStart.set(NO_FOG_START);
+        }
+        Uniform fogEnd = shader.getUniform("FogEnd");
+        if (fogEnd != null) {
+            fogEnd.set(NO_FOG_END);
+        }
+    }
+
     @Override
     public void end(Tesselator tesselator) {
         //  Отправляем все вершины на рендер
@@ -68,5 +103,7 @@ public class LongRangeParticleRenderType implements ParticleRenderType {
         RenderSystem.depthMask(true);        // Включаем запись в depth buffer
         RenderSystem.disableBlend();         // Отключаем альфа-блендинг
         RenderSystem.depthFunc(515);         // Возвращаем стандартную функцию глубины
+        RenderSystem.setShaderFogStart(savedFogStart);
+        RenderSystem.setShaderFogEnd(savedFogEnd);
     }
 }

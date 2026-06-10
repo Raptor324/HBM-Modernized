@@ -39,7 +39,7 @@ public class FluidNet extends NodeNet<IFluidReceiverMK2, IFluidProviderMK2, Flui
     public List<Pair<IFluidProviderMK2, Long>>[] providers =
             (List<Pair<IFluidProviderMK2, Long>>[]) new ArrayList[PRESSURE_LEVELS];
 
-    public long[][] fluidDemand        = new long[PRESSURE_LEVELS][PRESSURE_LEVELS];
+    public long[][] fluidDemand        = new long[PRESSURE_LEVELS][PRIORITY_LEVELS];
     @SuppressWarnings("unchecked")
     public List<Pair<IFluidReceiverMK2, Long>>[][] receivers =
             (List<Pair<IFluidReceiverMK2, Long>>[][]) new ArrayList[PRESSURE_LEVELS][PRIORITY_LEVELS];
@@ -69,6 +69,41 @@ public class FluidNet extends NodeNet<IFluidReceiverMK2, IFluidProviderMK2, Flui
 
         setupFluidProviders();
         setupFluidReceivers();
+
+        // --- Infinite bypass mode ---
+        // Если в сети есть участник, который одновременно provider+receiver и помечен как "infinite",
+        // то балансировка должна быть обойдена: за один тик заполняем/осушаем ВСЮ сеть.
+        // При этом требуем, чтобы участник реально мог отдавать/принимать сейчас:
+        // - для source: available > 0 (если машина не может отдавать в сеть — трогаем только её саму)
+        // - для sink: demand > 0
+        boolean infiniteSource = false;
+        for (IFluidProviderMK2 p : providerEntries.keySet()) {
+            if (!receiverEntries.containsKey(p)) continue; // интересуют только трансиверы (например цистерна)
+            if (!p.isInfiniteNetworkSource(type)) continue;
+            if (p.getFluidAvailable(type, 0) <= 0) continue;
+            infiniteSource = true;
+            break;
+        }
+        if (infiniteSource) {
+            forceFillAllReceivers();
+            cleanUp();
+            return;
+        }
+
+        boolean infiniteSink = false;
+        for (IFluidReceiverMK2 r : receiverEntries.keySet()) {
+            if (!(r instanceof IFluidProviderMK2)) continue;
+            if (!r.isInfiniteNetworkSink(type)) continue;
+            if (r.getDemand(type, 0) <= 0) continue;
+            infiniteSink = true;
+            break;
+        }
+        if (infiniteSink) {
+            forceDrainAllProviders();
+            cleanUp();
+            return;
+        }
+
         transferFluid();
         cleanUp();
     }
@@ -94,6 +129,7 @@ public class FluidNet extends NodeNet<IFluidReceiverMK2, IFluidProviderMK2, Flui
     }
 
     public void setupFluidReceivers() {
+        // Совпадает с 1.7.10 FluidNetMK2.setupFluidReceivers(): полный необрезанный спрос ресивера.
         Iterator<Map.Entry<IFluidReceiverMK2, Long>> it = receiverEntries.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<IFluidReceiverMK2, Long> entry = it.next();
@@ -104,10 +140,10 @@ public class FluidNet extends NodeNet<IFluidReceiverMK2, IFluidProviderMK2, Flui
             IFluidReceiverMK2 receiver = entry.getKey();
             int[] range = receiver.getReceivingPressureRange(type);
             for (int p = range[0]; p <= range[1]; p++) {
-                long demand = Math.min(receiver.getDemand(type, p), receiver.getReceiverSpeed(type, p));
+                long required = Math.min(receiver.getDemand(type, p), receiver.getReceiverSpeed(type, p));
                 int priority = receiver.getFluidPriority().ordinal();
-                receivers[p][priority].add(Pair.of(receiver, demand));
-                fluidDemand[p][priority] += demand;
+                receivers[p][priority].add(Pair.of(receiver, required));
+                fluidDemand[p][priority] += required;
             }
         }
     }
@@ -115,87 +151,52 @@ public class FluidNet extends NodeNet<IFluidReceiverMK2, IFluidProviderMK2, Flui
     // --- Transfer (parity port of FluidNetMK2.transferFluid) ---
 
     public void transferFluid() {
-        long[] received        = new long[PRESSURE_LEVELS];
-        long[] notAccountedFor = new long[PRESSURE_LEVELS];
+        // Порт FluidNetMK2.transferFluid (1.7.10): ресиверы — долями от общего объёма;
+        // списание с провайдеров — строго пропорционально доле в суммарном available + добор случайными итерациями.
+        long[] received           = new long[PRESSURE_LEVELS];
+        long[] notAccountedFor    = new long[PRESSURE_LEVELS];
 
         for (int p = 0; p < PRESSURE_LEVELS; p++) {
             long totalAvailable = fluidAvailable[p];
 
-            // От высокого приоритета к низкому
             for (int i = PRIORITY_LEVELS - 1; i >= 0; i--) {
                 long toTransfer = Math.min(fluidDemand[p][i], totalAvailable);
                 if (toTransfer <= 0) continue;
 
                 long priorityDemand = fluidDemand[p][i];
-                long receivedThisPriority = 0;
 
-                List<Pair<IFluidReceiverMK2, Long>> recList = receivers[p][i];
-                int nRec = recList.size();
-                if (nRec > 0) {
-                    long[] recvShares = new long[nRec];
-                    long recvSum = 0;
-                    for (int k = 0; k < nRec; k++) {
-                        double weight = priorityDemand > 0
-                                ? (double) recList.get(k).getSecond() / priorityDemand
-                                : 0.0;
-                        recvShares[k] = (long) Math.floor(toTransfer * weight);
-                        recvSum += recvShares[k];
-                    }
-                    long recvRem = toTransfer - recvSum;
-                    for (int k = 0; recvRem > 0 && k < nRec; k++) {
-                        recvShares[k]++;
-                        recvRem--;
-                    }
-                    for (int k = 0; k < nRec; k++) {
-                        if (recvShares[k] <= 0) continue;
-                        long toSend = recvShares[k];
-                        toSend -= recList.get(k).getFirst().transferFluid(type, p, toSend);
-                        received[p] += toSend;
-                        receivedThisPriority += toSend;
-                        fluidTracker += toSend;
-                    }
+                for (Pair<IFluidReceiverMK2, Long> entry : receivers[p][i]) {
+                    double weight = (double) entry.getSecond() / (double) priorityDemand;
+                    long toSend   = (long) Math.max(toTransfer * weight, 0D);
+                    toSend -= entry.getFirst().transferFluid(type, p, toSend);
+                    received[p] += toSend;
+                    fluidTracker += toSend;
                 }
 
-                // Списываем только объём текущего приоритета (накопленный received[p] — за все приоритеты)
-                totalAvailable -= receivedThisPriority;
+                totalAvailable -= received[p];
             }
 
             notAccountedFor[p] = received[p];
         }
 
-        // Списать с провайдеров пропорционально их доле (с добором остатка от округления)
         for (int p = 0; p < PRESSURE_LEVELS; p++) {
             if (fluidAvailable[p] <= 0) continue;
-            List<Pair<IFluidProviderMK2, Long>> provList = providers[p];
-            int nProv = provList.size();
-            if (nProv == 0) continue;
-            long[] provShares = new long[nProv];
-            long provSum = 0;
-            for (int k = 0; k < nProv; k++) {
-                double weight = (double) provList.get(k).getSecond() / fluidAvailable[p];
-                provShares[k] = (long) Math.floor(received[p] * weight);
-                provSum += provShares[k];
-            }
-            long provRem = received[p] - provSum;
-            for (int k = 0; provRem > 0 && k < nProv; k++) {
-                provShares[k]++;
-                provRem--;
-            }
-            for (int k = 0; k < nProv; k++) {
-                if (provShares[k] <= 0) continue;
-                provList.get(k).getFirst().useUpFluid(type, p, provShares[k]);
-                notAccountedFor[p] -= provShares[k];
+
+            for (Pair<IFluidProviderMK2, Long> entry : providers[p]) {
+                double weight = (double) entry.getSecond() / (double) fluidAvailable[p];
+                long toUse      = (long) Math.max(received[p] * weight, 0D);
+                entry.getFirst().useUpFluid(type, p, toUse);
+                notAccountedFor[p] -= toUse;
             }
         }
 
-        // Добрать остаток округления (до 100 итераций случайными провайдерами)
         for (int p = 0; p < PRESSURE_LEVELS; p++) {
-            int iter = 100;
-            while (iter > 0 && notAccountedFor[p] > 0 && !providers[p].isEmpty()) {
-                iter--;
-                Pair<IFluidProviderMK2, Long> sel = providers[p].get(NodeNet.RAND.nextInt(providers[p].size()));
-                long toUse = Math.min(notAccountedFor[p], sel.getFirst().getFluidAvailable(type, p));
-                sel.getFirst().useUpFluid(type, p, toUse);
+            int iterationsLeft = 100;
+            while (iterationsLeft > 0 && notAccountedFor[p] > 0 && !providers[p].isEmpty()) {
+                iterationsLeft--;
+                Pair<IFluidProviderMK2, Long> selected = providers[p].get(RAND.nextInt(providers[p].size()));
+                long toUse = Math.min(notAccountedFor[p], selected.getFirst().getFluidAvailable(type, p));
+                selected.getFirst().useUpFluid(type, p, toUse);
                 notAccountedFor[p] -= toUse;
             }
         }
@@ -210,6 +211,44 @@ public class FluidNet extends NodeNet<IFluidReceiverMK2, IFluidProviderMK2, Flui
             for (int pr = 0; pr < PRIORITY_LEVELS; pr++) {
                 fluidDemand[p][pr] = 0;
                 receivers[p][pr].clear();
+            }
+        }
+    }
+
+    /**
+     * "Мгновенная" заливка: за один тик заполнить всех получателей, которые вообще могут принять жидкость.
+     * Используется для бесконечных бочек/источников, чтобы не зависеть от балансировщика/анти-осцилляции.
+     *
+     * Важно: намеренно игнорирует provider/receiver speed и приоритеты — работает как "infinite source".
+     */
+    public void forceFillAllReceivers() {
+        if (receiverEntries.isEmpty()) return;
+        for (IFluidReceiverMK2 receiver : new ArrayList<>(receiverEntries.keySet())) {
+            if (isBadLink(receiver)) continue;
+            int[] range = receiver.getReceivingPressureRange(type);
+            for (int p = range[0]; p <= range[1]; p++) {
+                long demand = receiver.getDemand(type, p);
+                if (demand <= 0) continue;
+                receiver.transferFluid(type, p, demand);
+            }
+        }
+    }
+
+    /**
+     * "Мгновенный" слив: за один тик опустошить всех провайдеров, которые вообще могут отдавать жидкость.
+     * Используется для бесконечных бочек-утилизаторов (void sink), чтобы не зависеть от балансировщика.
+     *
+     * Важно: намеренно игнорирует speed и приоритеты — работает как "void".
+     */
+    public void forceDrainAllProviders() {
+        if (providerEntries.isEmpty()) return;
+        for (IFluidProviderMK2 provider : new ArrayList<>(providerEntries.keySet())) {
+            if (isBadLink(provider)) continue;
+            int[] range = provider.getProvidingPressureRange(type);
+            for (int p = range[0]; p <= range[1]; p++) {
+                long avail = provider.getFluidAvailable(type, p);
+                if (avail <= 0) continue;
+                provider.useUpFluid(type, p, avail);
             }
         }
     }

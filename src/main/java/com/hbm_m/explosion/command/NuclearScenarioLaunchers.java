@@ -1,5 +1,6 @@
 package com.hbm_m.explosion.command;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -37,6 +38,80 @@ public final class NuclearScenarioLaunchers {
     private static final Random RANDOM = new Random();
 
     private NuclearScenarioLaunchers() {}
+
+    // --- Prototype atomic bomb ---
+    private static final int PROTOTYPE_SPHERE_RADIUS = 300;
+
+    public static void launchPrototype(ServerLevel level, BlockPos pos, ExplosionCommandOptions opt) {
+        double x = pos.getX() + 0.5;
+        double y = pos.getY() + 0.5;
+        double z = pos.getZ() + 0.5;
+
+        if (opt.sound()) {
+            NuclearExplosionHelper.playStandardDetonationSound(level, x, y, z);
+        }
+        if (opt.particles()) {
+            scheduleAnimatedNuclearExplosion(level, x, y, z);
+        }
+        // Pure sphere removal — no sellafield, no radiation, no fallout
+        MinecraftServer server = level.getServer();
+        if (server != null && opt.crater()) {
+            int r = Math.round(PROTOTYPE_SPHERE_RADIUS * opt.amplifier());
+            server.tell(new TickTask(server.getTickCount() + 40, () ->
+                    excavateSphere(level, pos, r)));
+        }
+    }
+
+    private static final int COLUMNS_PER_TICK = 2000;
+
+    private static void excavateSphere(ServerLevel level, BlockPos center, int radius) {
+        int cx = center.getX();
+        int cy = center.getY();
+        int cz = center.getZ();
+        long rSq = (long) radius * radius;
+
+        // Build column list: for each (dx,dz) inside the circle, store the Y half-height.
+        // ~π*r² entries vs ~(4/3)π*r³ block objects — vastly less memory.
+        List<int[]> columns = new ArrayList<>();
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                long dxzSq = (long) dx*dx + (long) dz*dz;
+                if (dxzSq <= rSq) {
+                    int dyMax = (int) Math.sqrt(rSq - dxzSq);
+                    columns.add(new int[]{dx, dz, dyMax});
+                }
+            }
+        }
+
+        MinecraftServer server = level.getServer();
+        if (server == null) return;
+
+        int baseTick = server.getTickCount() + 40;
+        int totalBatches = (columns.size() + COLUMNS_PER_TICK - 1) / COLUMNS_PER_TICK;
+
+        for (int b = 0; b < totalBatches; b++) {
+            final int start = b * COLUMNS_PER_TICK;
+            final int end   = Math.min(start + COLUMNS_PER_TICK, columns.size());
+            final List<int[]> batch = columns.subList(start, end);
+
+            server.tell(new TickTask(baseTick + b, () -> {
+                for (int[] col : batch) {
+                    int x = cx + col[0];
+                    int z = cz + col[1];
+                    int dyMax = col[2];
+                    for (int dy = -dyMax; dy <= dyMax; dy++) {
+                        int worldY = cy + dy;
+                        if (worldY < level.getMinBuildHeight() || worldY >= level.getMaxBuildHeight()) continue;
+                        BlockPos p = new BlockPos(x, worldY, z);
+                        if (!level.getBlockState(p).isAir()
+                                && !level.getBlockState(p).is(net.minecraft.tags.BlockTags.FEATURES_CANNOT_REPLACE)) {
+                            level.setBlock(p, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+                        }
+                    }
+                }
+            }));
+        }
+    }
 
     // --- Nuclear charge (animated) ---
     private static final float CHARGE_EXPLOSION_POWER = 25.0F;

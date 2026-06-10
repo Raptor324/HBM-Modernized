@@ -2,6 +2,7 @@ package com.hbm_m.inventory.menu;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machines.MachinePressBlockEntity;
+import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.item.industrial.ItemStamp;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.main.MainRegistry;
@@ -11,9 +12,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.SlotItemHandler;
 
 public class MachinePressMenu extends AbstractContainerMenu {
 
@@ -35,12 +35,12 @@ public class MachinePressMenu extends AbstractContainerMenu {
         addPlayerInventory(inv);
         addPlayerHotbar(inv);
 
-        this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(iItemHandler -> {
-            this.addSlot(new FuelSlot(iItemHandler, 0, 26, 53));
-            this.addSlot(new StampSlot(iItemHandler, 1, 80, 17));
-            this.addSlot(new MaterialSlot(iItemHandler, 2, 80, 53));
-            this.addSlot(new OutputSlot(iItemHandler, 3, 139, 34));
-        });
+        var handler = this.blockEntity.getInventory();
+        var container = new ModItemStackHandlerContainer(handler, this.blockEntity::setChanged);
+        this.addSlot(new FuelSlot(container, 0, 26, 53));
+        this.addSlot(new StampSlot(container, 1, 80, 17));
+        this.addSlot(new MaterialSlot(container, 2, 80, 53));
+        this.addSlot(new OutputSlot(container, 3, 139, 34));
 
         addDataSlots(data);
     }
@@ -157,8 +157,8 @@ public class MachinePressMenu extends AbstractContainerMenu {
     }
 
     // Слоты с ограничениями
-    private static class FuelSlot extends SlotItemHandler {
-        public FuelSlot(net.minecraftforge.items.IItemHandler itemHandler, int index, int xPosition, int yPosition) {
+    private static class FuelSlot extends Slot {
+        public FuelSlot(net.minecraft.world.Container itemHandler, int index, int xPosition, int yPosition) {
             super(itemHandler, index, xPosition, yPosition);
         }
 
@@ -168,13 +168,13 @@ public class MachinePressMenu extends AbstractContainerMenu {
             // Разрешаем кастомное топливо
             if (item == ModItems.LIGNITE.get()) return true;
 
-            // Используем встроенную систему Forge для определения ванильного топлива
-            return net.minecraftforge.common.ForgeHooks.getBurnTime(stack, null) > 0;
+            // Ванильная таблица топлива (кросс-лоадер)
+            return AbstractFurnaceBlockEntity.getFuel().getOrDefault(item, 0) > 0;
         }
     }
 
-    private static class StampSlot extends SlotItemHandler {
-        public StampSlot(net.minecraftforge.items.IItemHandler itemHandler, int index, int xPosition, int yPosition) {
+    private static class StampSlot extends Slot {
+        public StampSlot(net.minecraft.world.Container itemHandler, int index, int xPosition, int yPosition) {
             super(itemHandler, index, xPosition, yPosition);
         }
 
@@ -189,8 +189,8 @@ public class MachinePressMenu extends AbstractContainerMenu {
         }
     }
 
-    private static class MaterialSlot extends SlotItemHandler {
-        public MaterialSlot(net.minecraftforge.items.IItemHandler itemHandler, int index, int xPosition, int yPosition) {
+    private static class MaterialSlot extends Slot {
+        public MaterialSlot(net.minecraft.world.Container itemHandler, int index, int xPosition, int yPosition) {
             super(itemHandler, index, xPosition, yPosition);
         }
 
@@ -201,8 +201,8 @@ public class MachinePressMenu extends AbstractContainerMenu {
         }
     }
 
-    private static class OutputSlot extends SlotItemHandler {
-        public OutputSlot(net.minecraftforge.items.IItemHandler itemHandler, int index, int xPosition, int yPosition) {
+    private static class OutputSlot extends Slot {
+        public OutputSlot(net.minecraft.world.Container itemHandler, int index, int xPosition, int yPosition) {
             super(itemHandler, index, xPosition, yPosition);
         }
 

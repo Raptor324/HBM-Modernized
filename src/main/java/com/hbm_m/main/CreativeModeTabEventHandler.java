@@ -1,0 +1,1737 @@
+package com.hbm_m.main;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+
+import com.hbm_m.api.fluids.HbmFluidRegistry;
+import com.hbm_m.armormod.item.ItemArmorMod;
+import com.hbm_m.block.generic.BlockAbsorber;
+import com.hbm_m.item.BlockAbsorberItem;
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.creativetabs.MissileTab;
+import com.hbm_m.client.ClientSetup;
+import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.inventory.fluid.ModFluids;
+import com.hbm_m.item.ModItems;
+import com.hbm_m.item.fekal_electric.ModBatteryItem;
+import com.hbm_m.item.liquids.FluidBarrelItem;
+import com.hbm_m.item.liquids.FluidIdentifierItem;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.tags_and_tiers.ModPowders;
+
+import dev.architectury.registry.registries.RegistrySupplier;
+import dev.architectury.utils.Env;
+import dev.architectury.utils.EnvExecutor;
+//? if fabric {
+/*import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+*///?}
+//? if forge {
+import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
+//?}
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+
+
+/**
+ * Наполнение креативных вкладок (логика из старого Forge {@code MainRegistry#addCreative}).
+ */
+@SuppressWarnings("UnstableApiUsage")
+public final class CreativeModeTabEventHandler {
+
+    private CreativeModeTabEventHandler() {
+    }
+
+    //? if forge {
+    public static void onBuildCreativeModeTabContents(BuildCreativeModeTabContentsEvent event) {
+        MainRegistry.LOGGER.info("Building creative tab contents for: " + event.getTabKey());
+        
+        if (event.getTab() == ModCreativeTabs.NTM_RESOURCES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
+            populateResourceTab((stack, vis) -> event.accept(stack, vis));
+        }
+
+        if (event.getTab() == ModCreativeTabs.NTM_FUEL_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
+            populateFuelTab((stack, vis) -> event.accept(stack, vis));
+        }
+
+        if (event.getTab() == ModCreativeTabs.NTM_TEMPLATES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
+            populateTemplatesTab((stack, vis) -> event.accept(stack, vis));
+        }
+
+        if (event.getTab() == ModCreativeTabs.NTM_WEAPONS_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
+            populateWeaponsTab((stack, vis) -> event.accept(stack, vis));
+        }
+
+        if (event.getTabKey() == CreativeModeTabs.COMBAT) {
+            populateCombatTab((stack, vis) -> event.accept(stack, vis));
+        }
+
+        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
+            event.accept(new ItemStack(ModItems.MUSIC_DISC_BUNKER.get()),
+                    CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        }
+
+        if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS || event.getTabKey() == CreativeModeTabs.SEARCH) {
+            populateSpawnEggs((stack, vis) -> event.accept(stack, vis));
+        }
+
+        if (event.getTab() == ModCreativeTabs.NTM_CONSUMABLES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
+            populateConsumablesTab((stack, vis) -> event.accept(stack, vis));
+        }
+
+        if (event.getTab() == ModCreativeTabs.NTM_SPAREPARTS_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
+            populateSparepartsTab((stack, vis) -> event.accept(stack, vis));
+        }
+
+        if (event.getTab() == ModCreativeTabs.NTM_ORES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
+            populateOresTab((stack, vis) -> event.accept(stack, vis));
+        }
+
+        if (event.getTab() == ModCreativeTabs.NTM_BUILDING_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
+            populateBuildingTab((stack, vis) -> event.accept(stack, vis));
+        }
+
+        if (event.getTab() == ModCreativeTabs.NTM_MACHINES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
+            populateMachinesTab((stack, vis) -> event.accept(stack, vis));
+        }
+
+        if (event.getTab() == ModCreativeTabs.NTM_BOMBS_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
+            populateNukeTab((stack, vis) -> event.accept(stack, vis));
+        }
+
+        if (event.getTab() == ModCreativeTabs.NTM_MISSILES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
+            populateMissilesTab((stack, vis) -> event.accept(stack, vis));
+        }
+
+    }
+    //?}
+
+    //? if fabric {
+    /*public static void initFabric() {
+        // Кастомные вкладки наполняются через `CreativeModeTab#displayItems` при их регистрации.
+        // На Fabric добавляем только в ванильные вкладки через точечные хуки по ключу вкладки,
+        // чтобы не зависеть от типов аргументов колбэка (tab key vs tab instance).
+        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.COMBAT).register(entries ->
+                populateCombatTab((stack, vis) -> entries.accept(stack, vis)));
+
+        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(entries ->
+                entries.accept(new ItemStack(ModItems.MUSIC_DISC_BUNKER.get()),
+                        CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS));
+
+        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.SPAWN_EGGS).register(entries ->
+                populateSpawnEggs((stack, vis) -> entries.accept(stack, vis)));
+
+        // На Forge мы добавляем почти всё в SEARCH для удобства поиска.
+        // На Fabric ванильный SEARCH не подхватывает наши кастомные вкладки автоматически,
+        // поэтому зеркалим поведение.
+        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.SEARCH).register(entries -> {
+            populateWeaponsTab((stack, vis) -> entries.accept(stack, vis));
+            populateCombatTab((stack, vis) -> entries.accept(stack, vis));
+
+            entries.accept(new ItemStack(ModItems.MUSIC_DISC_BUNKER.get()),
+                    CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+
+            populateSpawnEggs((stack, vis) -> entries.accept(stack, vis));
+
+            populateResourceTab((stack, vis) -> entries.accept(stack, vis));
+            populateConsumablesTab((stack, vis) -> entries.accept(stack, vis));
+            populateSparepartsTab((stack, vis) -> entries.accept(stack, vis));
+            populateOresTab((stack, vis) -> entries.accept(stack, vis));
+            populateBuildingTab((stack, vis) -> entries.accept(stack, vis));
+            populateMachinesTab((stack, vis) -> entries.accept(stack, vis));
+            populateFuelTab((stack, vis) -> entries.accept(stack, vis));
+            populateTemplatesTab((stack, vis) -> entries.accept(stack, vis));
+            populateNukeTab((stack, vis) -> entries.accept(stack, vis));
+            populateMissilesTab((stack, vis) -> entries.accept(stack, vis));
+        });
+    }
+    *///?}
+
+    /** Яйца призыва и связанное (ванильная вкладка + поиск на Fabric). */
+    public static void populateSpawnEggs(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
+        Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        add.accept(new ItemStack(ModItems.NOLO_SPAWN_EGG.get()));
+        add.accept(new ItemStack(ModItems.ENTITY_MOB_TAINTED_CREEPER_SPAWN_EGG.get()));
+        add.accept(new ItemStack(ModItems.ENTITY_MOB_GOLD_CREEPER_SPAWN_EGG.get()));
+        add.accept(new ItemStack(ModItems.ENTITY_MOB_VOLATILE_CREEPER_SPAWN_EGG.get()));
+        add.accept(new ItemStack(ModItems.ENTITY_MOB_PHOSGENE_CREEPER_SPAWN_EGG.get()));
+        add.accept(new ItemStack(ModItems.ENTITY_MOB_NUCLEAR_CREEPER_SPAWN_EGG.get()));
+    }
+
+    /** Ракеты и спутники (порядок из GIT {@code MainRegistry.missileTab}). */
+    public static void populateMissilesTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
+        Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+
+        add.accept(new ItemStack(ModBlocks.LAUNCH_PAD.get()));
+        add.accept(new ItemStack(ModBlocks.LAUNCH_PAD_RUSTED.get()));
+        add.accept(new ItemStack(ModBlocks.CRATE_CONSERVE.get()));
+        add.accept(new ItemStack(ModBlocks.RADAR.get()));
+        add.accept(new ItemStack(ModBlocks.LARGE_RADAR.get()));
+        add.accept(new ItemStack(ModItems.RANGEFINDER.get()));
+        add.accept(new ItemStack(ModItems.DESIGNATOR.get()));
+        add.accept(new ItemStack(ModItems.DESIGNATOR_RANGE.get()));
+        add.accept(new ItemStack(ModItems.DESIGNATOR_MANUAL.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_GENERIC.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_ABM.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_INCENDIARY.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_CLUSTER.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_BUSTER.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_DECOY.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_STRONG.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_INCENDIARY_STRONG.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_CLUSTER_STRONG.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_BUSTER_STRONG.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_EMP_STRONG.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_BURST.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_INFERNO.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_RAIN.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_DRILL.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_NUCLEAR.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_NUCLEAR_CLUSTER.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_VOLCANO.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_DOOMSDAY.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_DOOMSDAY_RUSTED.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_TAINT.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_MICRO.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_BHOLE.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_SCHRABIDIUM.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_EMP.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_SHUTTLE.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_STEALTH.get()));
+
+        MissileTab.appendExtraItems(add);
+    }
+
+    /** Бомбы (порядок из GIT {@code MainRegistry.nukeTab}). */
+    public static void populateNukeTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
+        Set<String> seen = new HashSet<>();
+        Consumer<ItemStack> add = stack -> {
+            if (stack == null || stack.isEmpty()) {
+                return;
+            }
+            String itemId = String.valueOf(BuiltInRegistries.ITEM.getKey(stack.getItem()));
+            String tag = stack.getTag() == null ? "" : stack.getTag().toString();
+            if (!seen.add(itemId + "|" + tag)) {
+                return;
+            }
+            acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        };
+
+        add.accept(new ItemStack(ModBlocks.NUKE_FAT_MAN.get()));
+        // add.accept(new ItemStack(ModBlocks.NUKE_PROTOTYPE.get()));
+        add.accept(new ItemStack(ModBlocks.DUD_CONVENTIONAL.get()));
+        add.accept(new ItemStack(ModBlocks.DUD_NUKE.get()));
+        add.accept(new ItemStack(ModBlocks.DUD_SALTED.get()));
+        add.accept(new ItemStack(ModBlocks.C4.get()));
+        add.accept(new ItemStack(ModBlocks.MINE_AP.get()));
+        add.accept(new ItemStack(ModBlocks.MINE_FAT.get()));
+        add.accept(new ItemStack(ModBlocks.NAVAL_MINE.get()));
+        add.accept(new ItemStack(ModBlocks.EXPLOSIVE_CHARGE.get()));
+        add.accept(new ItemStack(ModBlocks.NUCLEAR_CHARGE.get()));
+        add.accept(new ItemStack(ModBlocks.DET_MINER.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_RED.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_PINK.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_LOX.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_VITRIFIED.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_TAINT.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_YELLOW.get()));
+        
+        List<RegistrySupplier<Item>> batteriesToAdd = List.of(
+            ModItems.BATTERY_SPARK,
+            ModItems.BATTERY_TRIXITE
+        );
+
+        // 2. Проходимся по списку и добавляем 2 версии каждой
+        for (RegistrySupplier<Item> batteryRegObj : batteriesToAdd) {
+            Item item = batteryRegObj.get();
+
+            // Проверка, что это ModBatteryItem
+            if (item instanceof ModBatteryItem batteryItem) {
+                // Добавляем пустую батарею
+                ItemStack emptyStack = new ItemStack(batteryItem);
+                add.accept(emptyStack);
+
+                // Создаем заряженную батарею
+                ItemStack chargedStack = new ItemStack(batteryItem);
+                ModBatteryItem.setEnergy(chargedStack, batteryItem.getCapacity());
+                add.accept(chargedStack);
+
+                if (ModClothConfig.get().enableDebugLogging) {
+                    MainRegistry.LOGGER.debug("Added empty and charged variants of {} to creative tab",
+                            batteryRegObj.getId());
+                }
+            } else {
+                // На всякий случай, если в списке что-то не ModBatteryItem
+                add.accept(new ItemStack(item));
+                MainRegistry.LOGGER.warn("Item {} is not a ModBatteryItem, added as regular item",
+                        batteryRegObj.getId());
+            }
+        }
+
+        if (ModClothConfig.get().enableDebugLogging) {
+            MainRegistry.LOGGER.info("Added {} battery variants to NTM Bomb tab", batteriesToAdd.size() * 2);
+        }
+
+        add.accept(new ItemStack(ModItems.FAT_MAN_EXPLOSIVE.get()));
+
+        add.accept(new ItemStack(ModItems.FAT_MAN_IGNITER.get()));
+        add.accept(new ItemStack(ModItems.FAT_MAN_CORE.get()));
+        
+        // add.accept(new ItemStack(ModItems.IGNITER.get()));
+        add.accept(new ItemStack(ModItems.DETONATOR.get()));
+        add.accept(new ItemStack(ModItems.MULTI_DETONATOR.get()));
+        add.accept(new ItemStack(ModItems.RANGE_DETONATOR.get()));
+        add.accept(new ItemStack(ModItems.DEFUSER.get()));
+    }
+
+    public static void populateWeaponsTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
+        // Упрощенный Consumer, по умолчанию использующий PARENT_AND_SEARCH_TABS
+        Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+
+        add.accept(new ItemStack(ModBlocks.BARBED_WIRE_FIRE.get()));
+        add.accept(new ItemStack(ModBlocks.BARBED_WIRE_POISON.get()));
+        add.accept(new ItemStack(ModBlocks.BARBED_WIRE_RAD.get()));
+        add.accept(new ItemStack(ModBlocks.BARBED_WIRE_WITHER.get()));
+        add.accept(new ItemStack(ModBlocks.BARBED_WIRE.get()));
+        add.accept(new ItemStack(ModItems.GRENADE.get()));
+        add.accept(new ItemStack(ModItems.GRENADEHE.get()));
+        add.accept(new ItemStack(ModItems.GRENADEFIRE.get()));
+        add.accept(new ItemStack(ModItems.GRENADESMART.get()));
+        add.accept(new ItemStack(ModItems.GRENADESLIME.get()));
+        add.accept(new ItemStack(ModItems.GRENADE_IF.get()));
+        add.accept(new ItemStack(ModItems.GRENADE_IF_HE.get()));
+        add.accept(new ItemStack(ModItems.GRENADE_IF_SLIME.get()));
+        add.accept(new ItemStack(ModItems.GRENADE_IF_FIRE.get()));
+        add.accept(new ItemStack(ModItems.GRENADE_NUC.get()));
+        // add.accept(new ItemStack(ModItems.CELL_SAS3.get()));
+        // add.accept(new ItemStack(ModItems.ROD_QUAD_LEAD.get()));
+        // add.accept(new ItemStack(ModItems.ROD_QUAD_NP237.get()));
+        // add.accept(new ItemStack(ModItems.ROD_QUAD_URANIUM.get()));
+        add.accept(new ItemStack(ModBlocks.AIRBOMB.get()));
+        add.accept(new ItemStack(ModItems.AIRBOMB_A.get()));
+        add.accept(new ItemStack(ModBlocks.BALEBOMB_TEST.get()));
+        add.accept(new ItemStack(ModItems.AIRNUKEBOMB_A.get()));
+        add.accept(new ItemStack(ModBlocks.GIGA_DET.get()));
+        add.accept(new ItemStack(ModBlocks.WASTE_CHARGE.get()));
+        add.accept(new ItemStack(ModBlocks.SMOKE_BOMB.get()));
+        add.accept(new ItemStack(ModBlocks.EXPLOSIVE_CHARGE.get()));
+        add.accept(new ItemStack(ModBlocks.NUCLEAR_CHARGE.get()));
+        add.accept(new ItemStack(ModBlocks.DUD_CONVENTIONAL.get()));
+        add.accept(new ItemStack(ModBlocks.DUD_NUKE.get()));
+        add.accept(new ItemStack(ModBlocks.DUD_SALTED.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_TEST.get()));
+    }
+
+    // БРОНЯ И ИНСТРУМЕНТЫ
+    public static void populateCombatTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
+        // Упрощенный Consumer, по умолчанию использующий PARENT_AND_SEARCH_TABS
+        Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+
+        add.accept(new ItemStack(ModItems.ALLOY_SWORD.get()));
+        add.accept(new ItemStack(ModItems.ALLOY_AXE.get()));
+        add.accept(new ItemStack(ModItems.ALLOY_PICKAXE.get()));
+        add.accept(new ItemStack(ModItems.ALLOY_HOE.get()));
+        add.accept(new ItemStack(ModItems.ALLOY_SHOVEL.get()));
+        add.accept(new ItemStack(ModItems.STEEL_SWORD.get()));
+        add.accept(new ItemStack(ModItems.STEEL_AXE.get()));
+        add.accept(new ItemStack(ModItems.STEEL_PICKAXE.get()));
+        add.accept(new ItemStack(ModItems.STEEL_HOE.get()));
+        add.accept(new ItemStack(ModItems.STEEL_SHOVEL.get()));
+        add.accept(new ItemStack(ModItems.TITANIUM_SWORD.get()));
+        add.accept(new ItemStack(ModItems.TITANIUM_AXE.get()));
+        add.accept(new ItemStack(ModItems.TITANIUM_PICKAXE.get()));
+        add.accept(new ItemStack(ModItems.TITANIUM_HOE.get()));
+        add.accept(new ItemStack(ModItems.TITANIUM_SHOVEL.get()));
+        add.accept(new ItemStack(ModItems.STARMETAL_SWORD.get()));
+        add.accept(new ItemStack(ModItems.STARMETAL_AXE.get()));
+        add.accept(new ItemStack(ModItems.STARMETAL_PICKAXE.get()));
+        add.accept(new ItemStack(ModItems.STARMETAL_HOE.get()));
+        add.accept(new ItemStack(ModItems.STARMETAL_SHOVEL.get()));
+        add.accept(new ItemStack(ModItems.METEORITE_SWORD.get()));
+        add.accept(new ItemStack(ModItems.METEORITE_SWORD_SEARED.get()));
+
+        // Силовая броня добавляется полностью заряженной
+        add.accept(createChargedArmorStack(ModItems.T51_HELMET.get()));
+        add.accept(createChargedArmorStack(ModItems.T51_CHESTPLATE.get()));
+        add.accept(createChargedArmorStack(ModItems.T51_LEGGINGS.get()));
+        add.accept(createChargedArmorStack(ModItems.T51_BOOTS.get()));
+
+        add.accept(createChargedArmorStack(ModItems.AJR_HELMET.get()));
+        add.accept(createChargedArmorStack(ModItems.AJR_CHESTPLATE.get()));
+        add.accept(createChargedArmorStack(ModItems.AJR_LEGGINGS.get()));
+        add.accept(createChargedArmorStack(ModItems.AJR_BOOTS.get()));
+
+        add.accept(createChargedArmorStack(ModItems.AJRO_HELMET.get()));
+        add.accept(createChargedArmorStack(ModItems.AJRO_CHESTPLATE.get()));
+        add.accept(createChargedArmorStack(ModItems.AJRO_LEGGINGS.get()));
+        add.accept(createChargedArmorStack(ModItems.AJRO_BOOTS.get()));
+
+        add.accept(createChargedArmorStack(ModItems.BISMUTH_HELMET.get()));
+        add.accept(createChargedArmorStack(ModItems.BISMUTH_CHESTPLATE.get()));
+        add.accept(createChargedArmorStack(ModItems.BISMUTH_LEGGINGS.get()));
+        add.accept(createChargedArmorStack(ModItems.BISMUTH_BOOTS.get()));
+
+        add.accept(createChargedArmorStack(ModItems.DNT_HELMET.get()));
+        add.accept(createChargedArmorStack(ModItems.DNT_CHESTPLATE.get()));
+        add.accept(createChargedArmorStack(ModItems.DNT_LEGGINGS.get()));
+        add.accept(createChargedArmorStack(ModItems.DNT_BOOTS.get()));
+
+        add.accept(new ItemStack(ModItems.ALLOY_HELMET.get()));
+        add.accept(new ItemStack(ModItems.ALLOY_CHESTPLATE.get()));
+        add.accept(new ItemStack(ModItems.ALLOY_LEGGINGS.get()));
+        add.accept(new ItemStack(ModItems.ALLOY_BOOTS.get()));
+        add.accept(new ItemStack(ModItems.COBALT_HELMET.get()));
+        add.accept(new ItemStack(ModItems.COBALT_CHESTPLATE.get()));
+        add.accept(new ItemStack(ModItems.COBALT_LEGGINGS.get()));
+        add.accept(new ItemStack(ModItems.COBALT_BOOTS.get()));
+        add.accept(new ItemStack(ModItems.TITANIUM_HELMET.get()));
+        add.accept(new ItemStack(ModItems.TITANIUM_CHESTPLATE.get()));
+        add.accept(new ItemStack(ModItems.TITANIUM_LEGGINGS.get()));
+        add.accept(new ItemStack(ModItems.TITANIUM_BOOTS.get()));
+        add.accept(new ItemStack(ModItems.SECURITY_HELMET.get()));
+        add.accept(new ItemStack(ModItems.SECURITY_CHESTPLATE.get()));
+        add.accept(new ItemStack(ModItems.SECURITY_LEGGINGS.get()));
+        add.accept(new ItemStack(ModItems.SECURITY_BOOTS.get()));
+
+        add.accept(new ItemStack(ModItems.STEEL_HELMET.get()));
+        add.accept(new ItemStack(ModItems.STEEL_CHESTPLATE.get()));
+        add.accept(new ItemStack(ModItems.STEEL_LEGGINGS.get()));
+        add.accept(new ItemStack(ModItems.STEEL_BOOTS.get()));
+        add.accept(new ItemStack(ModItems.ASBESTOS_HELMET.get()));
+        add.accept(new ItemStack(ModItems.ASBESTOS_CHESTPLATE.get()));
+        add.accept(new ItemStack(ModItems.ASBESTOS_LEGGINGS.get()));
+        add.accept(new ItemStack(ModItems.ASBESTOS_BOOTS.get()));
+        add.accept(new ItemStack(ModItems.HAZMAT_HELMET.get()));
+        add.accept(new ItemStack(ModItems.HAZMAT_CHESTPLATE.get()));
+        add.accept(new ItemStack(ModItems.HAZMAT_LEGGINGS.get()));
+        add.accept(new ItemStack(ModItems.HAZMAT_BOOTS.get()));
+        add.accept(new ItemStack(ModItems.LIQUIDATOR_HELMET.get()));
+        add.accept(new ItemStack(ModItems.LIQUIDATOR_CHESTPLATE.get()));
+        add.accept(new ItemStack(ModItems.LIQUIDATOR_LEGGINGS.get()));
+        add.accept(new ItemStack(ModItems.LIQUIDATOR_BOOTS.get()));
+        add.accept(new ItemStack(ModItems.PAA_HELMET.get()));
+        add.accept(new ItemStack(ModItems.PAA_CHESTPLATE.get()));
+        add.accept(new ItemStack(ModItems.PAA_LEGGINGS.get()));
+        add.accept(new ItemStack(ModItems.PAA_BOOTS.get()));
+        add.accept(new ItemStack(ModItems.STARMETAL_HELMET.get()));
+        add.accept(new ItemStack(ModItems.STARMETAL_CHESTPLATE.get()));
+        add.accept(new ItemStack(ModItems.STARMETAL_LEGGINGS.get()));
+        add.accept(new ItemStack(ModItems.STARMETAL_BOOTS.get()));
+
+        // БРОНЯ
+        add.accept(new ItemStack(ModItems.TITANIUM_HELMET.get()));
+        add.accept(new ItemStack(ModItems.TITANIUM_CHESTPLATE.get()));
+        add.accept(new ItemStack(ModItems.TITANIUM_LEGGINGS.get()));
+        add.accept(new ItemStack(ModItems.TITANIUM_BOOTS.get()));
+
+        add.accept(new ItemStack(ModItems.COBALT_HELMET.get()));
+        add.accept(new ItemStack(ModItems.COBALT_CHESTPLATE.get()));
+        add.accept(new ItemStack(ModItems.COBALT_LEGGINGS.get()));
+        add.accept(new ItemStack(ModItems.COBALT_BOOTS.get()));
+
+        add.accept(new ItemStack(ModItems.STEEL_HELMET.get()));
+        add.accept(new ItemStack(ModItems.STEEL_CHESTPLATE.get()));
+        add.accept(new ItemStack(ModItems.STEEL_LEGGINGS.get()));
+        add.accept(new ItemStack(ModItems.STEEL_BOOTS.get()));
+
+        add.accept(new ItemStack(ModItems.ALLOY_HELMET.get()));
+        add.accept(new ItemStack(ModItems.ALLOY_CHESTPLATE.get()));
+        add.accept(new ItemStack(ModItems.ALLOY_LEGGINGS.get()));
+        add.accept(new ItemStack(ModItems.ALLOY_BOOTS.get()));
+
+        add.accept(new ItemStack(ModItems.STARMETAL_HELMET.get()));
+        add.accept(new ItemStack(ModItems.STARMETAL_CHESTPLATE.get()));
+        add.accept(new ItemStack(ModItems.STARMETAL_LEGGINGS.get()));
+        add.accept(new ItemStack(ModItems.STARMETAL_BOOTS.get()));
+
+        //СПЕЦ БРОНЯ
+        add.accept(new ItemStack(ModItems.SECURITY_HELMET.get()));
+        add.accept(new ItemStack(ModItems.SECURITY_CHESTPLATE.get()));
+        add.accept(new ItemStack(ModItems.SECURITY_LEGGINGS.get()));
+        add.accept(new ItemStack(ModItems.SECURITY_BOOTS.get()));
+
+        add.accept(new ItemStack(ModItems.ASBESTOS_HELMET.get()));
+        add.accept(new ItemStack(ModItems.ASBESTOS_CHESTPLATE.get()));
+        add.accept(new ItemStack(ModItems.ASBESTOS_LEGGINGS.get()));
+        add.accept(new ItemStack(ModItems.ASBESTOS_BOOTS.get()));
+
+        add.accept(new ItemStack(ModItems.HAZMAT_HELMET.get()));
+        add.accept(new ItemStack(ModItems.HAZMAT_CHESTPLATE.get()));
+        add.accept(new ItemStack(ModItems.HAZMAT_LEGGINGS.get()));
+        add.accept(new ItemStack(ModItems.HAZMAT_BOOTS.get()));
+
+        add.accept(new ItemStack(ModItems.PAA_HELMET.get()));
+        add.accept(new ItemStack(ModItems.PAA_CHESTPLATE.get()));
+        add.accept(new ItemStack(ModItems.PAA_LEGGINGS.get()));
+        add.accept(new ItemStack(ModItems.PAA_BOOTS.get()));
+
+        add.accept(new ItemStack(ModItems.LIQUIDATOR_HELMET.get()));
+        add.accept(new ItemStack(ModItems.LIQUIDATOR_CHESTPLATE.get()));
+        add.accept(new ItemStack(ModItems.LIQUIDATOR_LEGGINGS.get()));
+        add.accept(new ItemStack(ModItems.LIQUIDATOR_BOOTS.get()));
+
+
+        //МЕЧИ
+        add.accept(new ItemStack(ModItems.TITANIUM_SWORD.get()));
+        add.accept(new ItemStack(ModItems.STEEL_SWORD.get()));
+        add.accept(new ItemStack(ModItems.ALLOY_SWORD.get()));
+        add.accept(new ItemStack(ModItems.STARMETAL_SWORD.get()));
+
+        //ТОПОРЫ
+        add.accept(new ItemStack(ModItems.TITANIUM_AXE.get()));
+        add.accept(new ItemStack(ModItems.STEEL_AXE.get()));
+        add.accept(new ItemStack(ModItems.ALLOY_AXE.get()));
+        add.accept(new ItemStack(ModItems.STARMETAL_AXE.get()));
+
+        //КИРКИ
+        add.accept(new ItemStack(ModItems.TITANIUM_PICKAXE.get()));
+        add.accept(new ItemStack(ModItems.DRILL_TITANIUM.get()));
+        add.accept(new ItemStack(ModItems.STEEL_PICKAXE.get()));
+        add.accept(new ItemStack(ModItems.ALLOY_PICKAXE.get()));
+        add.accept(new ItemStack(ModItems.STARMETAL_PICKAXE.get()));
+
+        //ЛОПАТЫ
+        add.accept(new ItemStack(ModItems.TITANIUM_SHOVEL.get()));
+        add.accept(new ItemStack(ModItems.STEEL_SHOVEL.get()));
+        add.accept(new ItemStack(ModItems.ALLOY_SHOVEL.get()));
+        add.accept(new ItemStack(ModItems.STARMETAL_SHOVEL.get()));
+
+        //МОТЫГИ
+        add.accept(new ItemStack(ModItems.TITANIUM_HOE.get()));
+        add.accept(new ItemStack(ModItems.STEEL_HOE.get()));
+        add.accept(new ItemStack(ModItems.ALLOY_HOE.get()));
+        add.accept(new ItemStack(ModItems.STARMETAL_HOE.get()));
+    }
+
+    // СЛИТКИ И РЕСУРСЫ
+    public static void populateResourceTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
+        // Упрощенный Consumer, по умолчанию использующий PARENT_AND_SEARCH_TABS
+        Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+
+        // БАЗОВЫЕ ПРЕДМЕТЫ (все с ItemStack!)
+        add.accept(new ItemStack(ModItems.BALL_TNT.get()));
+        add.accept(new ItemStack(ModItems.ZIRCONIUM_SHARP.get()));
+        add.accept(new ItemStack(ModItems.BORAX.get()));
+        add.accept(new ItemStack(ModItems.DUST.get()));
+        add.accept(new ItemStack(ModItems.DUST_TINY.get()));
+        add.accept(new ItemStack(ModItems.FALLOUT.get()));
+        add.accept(new ItemStack(ModItems.CINNABAR.get()));
+        add.accept(new ItemStack(ModItems.FIRECLAY_BALL.get()));
+        add.accept(new ItemStack(ModItems.SULFUR.get()));
+        add.accept(new ItemStack(ModItems.SEQUESTRUM.get()));
+        add.accept(new ItemStack(ModItems.LIGNITE.get()));
+        add.accept(new ItemStack(ModItems.FLUORITE.get()));
+        add.accept(new ItemStack(ModItems.RAREGROUND_ORE_CHUNK.get()));
+        add.accept(new ItemStack(ModItems.FIREBRICK.get()));
+        add.accept(new ItemStack(ModItems.WOOD_ASH_POWDER.get()));
+        add.accept(new ItemStack(ModItems.SCRAP.get()));
+        add.accept(new ItemStack(ModItems.NUGGET_SILICON.get()));
+        add.accept(new ItemStack(ModItems.NUGGET_TANTALIUM.get()));
+        add.accept(new ItemStack(ModItems.BILLET_SILICON.get()));
+        add.accept(new ItemStack(ModItems.BILLET_PLUTONIUM.get()));
+
+
+
+        // Crystals (textures/crystall/*.png)
+        add.accept(new ItemStack(ModItems.CRYSTAL_ALUMINIUM.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_BERYLLIUM.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_CHARRED.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_CINNEBAR.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_COAL.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_COBALT.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_COPPER.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_DIAMOND.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_FLUORITE.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_GOLD.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_HARDENED.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_HORN.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_IRON.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_LAPIS.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_LEAD.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_LITHIUM.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_NITER.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_OSMIRIDIUM.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_PHOSPHORUS.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_PLUTONIUM.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_PULSAR.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_RARE.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_REDSTONE.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_SCHRABIDIUM.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_SCHRARANIUM.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_STARMETAL.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_SULFUR.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_THORIUM.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_TITANIUM.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_TRIXITE.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_TUNGSTEN.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_URANIUM.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_VIRUS.get()));
+        add.accept(new ItemStack(ModItems.CRYSTAL_XEN.get()));
+
+
+        // СЛИТКИ
+        for (ModIngots ingot : ModIngots.values()) {
+            RegistrySupplier<Item> ingotItem = ModItems.getIngot(ingot);
+            if (ingotItem != null && ingotItem.isPresent()) {
+                add.accept(new ItemStack(ingotItem.get()));
+            }
+
+        }
+
+        // Standalone tiny powders
+        add.accept(new ItemStack(ModItems.LITHIUM_POWDER_TINY.get()));
+        add.accept(new ItemStack(ModItems.CS137_POWDER_TINY.get()));
+        add.accept(new ItemStack(ModItems.I131_POWDER_TINY.get()));
+        add.accept(new ItemStack(ModItems.XE135_POWDER_TINY.get()));
+        add.accept(new ItemStack(ModItems.PALEOGENITE_POWDER_TINY.get()));
+        add.accept(new ItemStack(ModItems.NUCLEAR_WASTE_TINY.get()));
+        add.accept(new ItemStack(ModItems.NUCLEAR_WASTE_LONG_TINY.get()));
+        add.accept(new ItemStack(ModItems.NUCLEAR_WASTE_LONG_DEPLETED_TINY.get()));
+        add.accept(new ItemStack(ModItems.NUCLEAR_WASTE_SHORT_TINY.get()));
+        add.accept(new ItemStack(ModItems.NUCLEAR_WASTE_SHORT_DEPLETED_TINY.get()));
+        add.accept(new ItemStack(ModItems.NUCLEAR_WASTE_VITRIFIED_TINY.get()));
+        add.accept(new ItemStack(ModItems.NUGGET_MERCURY_TINY.get()));
+        add.accept(new ItemStack(ModItems.COAL_POWDER_TINY.get()));
+
+        // Standalone powders
+        add.accept(new ItemStack(ModItems.COPPER_POWDER.get()));
+        add.accept(new ItemStack(ModItems.DIAMOND_POWDER.get()));
+        add.accept(new ItemStack(ModItems.EMERALD_POWDER.get()));
+        add.accept(new ItemStack(ModItems.LAPIS_POWDER.get()));
+        add.accept(new ItemStack(ModItems.QUARTZ_POWDER.get()));
+        add.accept(new ItemStack(ModItems.LIGNITE_POWDER.get()));
+        add.accept(new ItemStack(ModItems.FIRE_POWDER.get()));
+        add.accept(new ItemStack(ModItems.LITHIUM_POWDER.get()));
+
+        // ModPowders
+        for (ModPowders powder : ModPowders.values()) {
+            RegistrySupplier<Item> powderItem = ModItems.getPowders(powder);
+            if (powderItem != null && powderItem.isPresent()) {
+                add.accept(new ItemStack(powderItem.get()));
+            }
+        }
+
+        // ОДИН ЦИКЛ ДЛЯ ВСЕХ ПОРОШКОВ ИЗ СЛИТКОВ (обычные + маленькие)
+        for (ModIngots ingot : ModIngots.values()) {
+            // Обычный порошок
+            RegistrySupplier<Item> powder = ModItems.getPowder(ingot);
+            if (powder != null && powder.isPresent()) {
+                add.accept(new ItemStack(powder.get()));
+            }
+
+            // Маленький порошок
+            ModItems.getTinyPowder(ingot).ifPresent(tiny -> {
+                if (tiny != null && tiny.isPresent()) {
+                    add.accept(new ItemStack(tiny.get()));
+                }
+            });
+        }
+    }
+
+    // РАСХОДНИКИ И МОДИФИКАТОРЫ
+    public static void populateConsumablesTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
+        // Упрощенный Consumer, по умолчанию использующий PARENT_AND_SEARCH_TABS
+        Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        add.accept(new ItemStack(ModBlocks.ARMOR_TABLE.get()));
+        // АВТОМАТИЧЕСКОЕ ДОБАВЛЕНИЕ ВСЕХ МОДИФИКАТОРОВ
+        // 1. Получаем все зарегистрированные предметы
+        for (RegistrySupplier<Item> itemObject : ModItems.ITEMS) {
+            if (!itemObject.isPresent()) {
+                continue;
+            }
+            Item item = itemObject.get();
+            if (item instanceof ItemArmorMod) {
+                add.accept(new ItemStack(item));
+                if (ModClothConfig.get().enableDebugLogging) {
+                    MainRegistry.LOGGER.info("Automatically added Armor Mod [{}] to NTM Consumables tab", itemObject.getId());
+                }
+            }
+        }
+        add.accept(new ItemStack(ModItems.RADAWAY.get()));
+        add.accept(new ItemStack(ModItems.CAN_KEY.get()));
+        add.accept(new ItemStack(ModItems.CAN_EMPTY.get()));
+        add.accept(new ItemStack(ModItems.CANNED_ASBESTOS.get()));
+        add.accept(new ItemStack(ModItems.CANNED_ASS.get()));
+        add.accept(new ItemStack(ModItems.CANNED_BARK.get()));
+        add.accept(new ItemStack(ModItems.CANNED_BEEF.get()));
+        add.accept(new ItemStack(ModItems.CANNED_BHOLE.get()));
+        add.accept(new ItemStack(ModItems.CANNED_CHEESE.get()));
+        add.accept(new ItemStack(ModItems.CANNED_CHINESE.get()));
+        add.accept(new ItemStack(ModItems.CANNED_DIESEL.get()));
+        add.accept(new ItemStack(ModItems.CANNED_FIST.get()));
+        add.accept(new ItemStack(ModItems.CANNED_FRIED.get()));
+        add.accept(new ItemStack(ModItems.CANNED_HOTDOGS.get()));
+        add.accept(new ItemStack(ModItems.CANNED_JIZZ.get()));
+        add.accept(new ItemStack(ModItems.CANNED_KEROSENE.get()));
+        add.accept(new ItemStack(ModItems.CANNED_LEFTOVERS.get()));
+        add.accept(new ItemStack(ModItems.CANNED_MILK.get()));
+        add.accept(new ItemStack(ModItems.CANNED_MYSTERY.get()));
+        add.accept(new ItemStack(ModItems.CANNED_NAPALM.get()));
+        add.accept(new ItemStack(ModItems.CANNED_OIL.get()));
+        add.accept(new ItemStack(ModItems.CANNED_PASHTET.get()));
+        add.accept(new ItemStack(ModItems.CANNED_PIZZA.get()));
+        add.accept(new ItemStack(ModItems.CANNED_RECURSION.get()));
+        add.accept(new ItemStack(ModItems.CANNED_SPAM.get()));
+        add.accept(new ItemStack(ModItems.CANNED_STEW.get()));
+        add.accept(new ItemStack(ModItems.CANNED_TOMATO.get()));
+        add.accept(new ItemStack(ModItems.CANNED_TUNA.get()));
+        add.accept(new ItemStack(ModItems.CANNED_TUBE.get()));
+        add.accept(new ItemStack(ModItems.CANNED_YOGURT.get()));
+        add.accept(new ItemStack(ModItems.CAN_BEPIS.get()));
+        add.accept(new ItemStack(ModItems.CAN_BREEN.get()));
+        add.accept(new ItemStack(ModItems.CAN_CREATURE.get()));
+        add.accept(new ItemStack(ModItems.CAN_LUNA.get()));
+        add.accept(new ItemStack(ModItems.CAN_MRSUGAR.get()));
+        add.accept(new ItemStack(ModItems.CAN_MUG.get()));
+        add.accept(new ItemStack(ModItems.CAN_OVERCHARGE.get()));
+        add.accept(new ItemStack(ModItems.CAN_REDBOMB.get()));
+        add.accept(new ItemStack(ModItems.CAN_SMART.get()));
+
+        add.accept(new ItemStack(ModItems.CROWBAR.get()));
+        add.accept(new ItemStack(ModItems.SCREWDRIVER.get()));
+
+        add.accept(new ItemStack(ModItems.DOSIMETER.get()));
+        add.accept(new ItemStack(ModItems.DIGAMMA_DIAGNOSTIC.get()));
+        add.accept(new ItemStack(ModItems.GEIGER_COUNTER.get()));
+        add.accept(new ItemStack(ModItems.OIL_DETECTOR.get()));
+        add.accept(new ItemStack(ModItems.DEPTH_ORES_SCANNER.get()));
+
+        add.accept(new ItemStack(ModItems.AIRSTRIKE_TEST.get()));
+        add.accept(new ItemStack(ModItems.AIRSTRIKE_HEAVY.get()));
+        add.accept(new ItemStack(ModItems.AIRSTRIKE_AGENT.get()));
+        add.accept(new ItemStack(ModItems.AIRSTRIKE_NUKE.get()));
+    }
+
+    // ЗАПЧАСТИ
+    public static void populateSparepartsTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
+        // Упрощенный Consumer, по умолчанию использующий PARENT_AND_SEARCH_TABS
+        Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        add.accept(new ItemStack(ModItems.SHELL_STEEL.get()));
+        add.accept(new ItemStack(ModItems.SHELL_COPPER.get()));
+        add.accept(new ItemStack(ModItems.SHELL_ALUMINUM.get()));
+        add.accept(new ItemStack(ModItems.SHELL_TITANIUM.get()));
+
+        add.accept(new ItemStack(ModItems.BOLT_STEEL.get()));
+        add.accept(new ItemStack(ModItems.BOLT_LEAD.get()));
+        add.accept(new ItemStack(ModItems.BOLT_TUNGSTEN.get()));
+        add.accept(new ItemStack(ModItems.BOLT_HIGHSPEED_STEEL.get()));
+        add.accept(new ItemStack(ModItems.COIL_TUNGSTEN.get()));
+        add.accept(new ItemStack(ModItems.CENTRIFUGE_ELEMENT.get()));
+        add.accept(new ItemStack(ModItems.GAS_EMPTY.get()));
+        add.accept(new ItemStack(ModItems.DUCTTAPE.get()));
+        add.accept(new ItemStack(ModItems.HAZMAT_CLOTH.get()));
+        add.accept(new ItemStack(ModItems.HAZMAT_CLOTH_GREY.get()));
+        add.accept(new ItemStack(ModItems.HAZMAT_CLOTH_RED.get()));
+        add.accept(new ItemStack(ModItems.ASBESTOS_CLOTH.get()));
+
+        add.accept(new ItemStack(ModItems.PLATE_IRON.get()));
+        add.accept(new ItemStack(ModItems.PLATE_ALUMINUM.get()));
+        add.accept(new ItemStack(ModItems.PLATE_TITANIUM.get()));
+        add.accept(new ItemStack(ModItems.PLATE_LEAD.get()));
+        add.accept(new ItemStack(ModItems.PLATE_COPPER.get()));
+        add.accept(new ItemStack(ModItems.PLATE_STEEL.get()));
+        add.accept(new ItemStack(ModItems.PLATE_GOLD.get()));
+        add.accept(new ItemStack(ModItems.PLATE_ADVANCED_ALLOY.get()));
+        add.accept(new ItemStack(ModItems.PLATE_GUNMETAL.get()));
+        add.accept(new ItemStack(ModItems.PLATE_GUNSTEEL.get()));
+        add.accept(new ItemStack(ModItems.PLATE_DURA_STEEL.get()));
+        add.accept(new ItemStack(ModItems.PLATE_KEVLAR.get()));
+        add.accept(new ItemStack(ModItems.PLATE_PAA.get()));
+        add.accept(new ItemStack(ModItems.PLATE_SCHRABIDIUM.get()));
+        add.accept(new ItemStack(ModItems.PLATE_SATURNITE.get()));
+        add.accept(new ItemStack(ModItems.PLATE_COMBINE_STEEL.get()));
+        add.accept(new ItemStack(ModItems.PLATE_FUEL_MOX.get()));
+        add.accept(new ItemStack(ModItems.PLATE_FUEL_PU238BE.get()));
+        add.accept(new ItemStack(ModItems.PLATE_FUEL_PU239.get()));
+        add.accept(new ItemStack(ModItems.PLATE_FUEL_RA226BE.get()));
+        add.accept(new ItemStack(ModItems.PLATE_FUEL_SA326.get()));
+        add.accept(new ItemStack(ModItems.PLATE_FUEL_U233.get()));
+        add.accept(new ItemStack(ModItems.PLATE_FUEL_U235.get()));
+
+        add.accept(new ItemStack(ModItems.WIRE_FINE.get()));
+        add.accept(new ItemStack(ModItems.WIRE_ALUMINIUM.get()));
+        add.accept(new ItemStack(ModItems.WIRE_CARBON.get()));
+        add.accept(new ItemStack(ModItems.WIRE_TUNGSTEN.get()));
+        add.accept(new ItemStack(ModItems.WIRE_GOLD.get()));
+        add.accept(new ItemStack(ModItems.WIRE_COPPER.get()));
+        add.accept(new ItemStack(ModItems.WIRE_RED_COPPER.get()));
+        add.accept(new ItemStack(ModItems.WIRE_ADVANCED_ALLOY.get()));
+        add.accept(new ItemStack(ModItems.WIRE_MAGNETIZED_TUNGSTEN.get()));
+        add.accept(new ItemStack(ModItems.WIRE_SCHRABIDIUM.get()));
+        add.accept(new ItemStack(ModItems.WIRE_IRON.get()));
+        add.accept(new ItemStack(ModItems.WIRE_STEEL.get()));
+        add.accept(new ItemStack(ModItems.WIRE_TITANIUM.get()));
+        add.accept(new ItemStack(ModItems.WIRE_SATURNITE.get()));
+        add.accept(new ItemStack(ModItems.WIRE_COMBINE_STEEL.get()));
+
+        // Dense Wires
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_IRON.get()));
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_ALUMINIUM.get()));
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_TITANIUM.get()));
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_LEAD.get()));
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_COPPER.get()));
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_STEEL.get()));
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_GOLD.get()));
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_ADVANCED_ALLOY.get()));
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_SCHRABIDIUM.get()));
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_SATURNITE.get()));
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_COMBINE_STEEL.get()));
+
+        add.accept(new ItemStack(ModItems.COIL_COPPER.get()));
+        add.accept(new ItemStack(ModItems.COIL_ADVANCED_ALLOY.get()));
+        add.accept(new ItemStack(ModItems.COIL_GOLD.get()));
+        add.accept(new ItemStack(ModItems.COIL_MAGNETIZED_TUNGSTEN.get()));
+        add.accept(new ItemStack(ModItems.COIL_COPPER_TORUS.get()));
+        add.accept(new ItemStack(ModItems.COIL_ADVANCED_ALLOY_TORUS.get()));
+        add.accept(new ItemStack(ModItems.COIL_GOLD_TORUS.get()));
+        add.accept(new ItemStack(ModItems.COIL_MAGNETIZED_TUNGSTEN_TORUS.get()));
+
+        // Mineral Pipes
+        add.accept(new ItemStack(ModItems.PIPE_IRON.get()));
+        add.accept(new ItemStack(ModItems.PIPE_COPPER.get()));
+        add.accept(new ItemStack(ModItems.PIPE_GOLD.get()));
+        add.accept(new ItemStack(ModItems.PIPE_LEAD.get()));
+        add.accept(new ItemStack(ModItems.PIPE_STEEL.get()));
+        add.accept(new ItemStack(ModItems.PIPE_TUNGSTEN.get()));
+        add.accept(new ItemStack(ModItems.PIPE_TITANIUM.get()));
+        add.accept(new ItemStack(ModItems.PIPE_ALUMINUM.get()));
+        add.accept(new ItemStack(ModItems.PIPE_DURA_STEEL.get()));
+
+        add.accept(new ItemStack(ModItems.PLATE_ARMOR_TITANIUM.get()));
+        add.accept(new ItemStack(ModItems.PLATE_ARMOR_AJR.get()));
+        add.accept(new ItemStack(ModItems.PLATE_ARMOR_LUNAR.get()));
+        add.accept(new ItemStack(ModItems.PLATE_ARMOR_HEV.get()));
+        add.accept(new ItemStack(ModItems.PLATE_ARMOR_DNT.get()));
+        add.accept(new ItemStack(ModItems.PLATE_ARMOR_DNT_RUSTED.get()));
+        add.accept(new ItemStack(ModItems.PLATE_ARMOR_FAU.get()));
+
+        add.accept(new ItemStack(ModItems.PLATE_MIXED.get()));
+        add.accept(new ItemStack(ModItems.PLATE_DALEKANIUM.get()));
+        add.accept(new ItemStack(ModItems.PLATE_DESH.get()));
+        add.accept(new ItemStack(ModItems.PLATE_BISMUTH.get()));
+        add.accept(new ItemStack(ModItems.PLATE_EUPHEMIUM.get()));
+        add.accept(new ItemStack(ModItems.PLATE_DINEUTRONIUM.get()));
+
+        add.accept(new ItemStack(ModItems.PLATE_CAST.get()));
+        add.accept(new ItemStack(ModItems.PLATE_CAST_ALT.get()));
+        add.accept(new ItemStack(ModItems.PLATE_CAST_BISMUTH.get()));
+        add.accept(new ItemStack(ModItems.PLATE_CAST_DARK.get()));
+
+        add.accept(new ItemStack(ModItems.MOTOR.get()));
+        add.accept(new ItemStack(ModItems.MOTOR_DESH.get()));
+        add.accept(new ItemStack(ModItems.MOTOR_BISMUTH.get()));
+
+        add.accept(new ItemStack(ModItems.INSULATOR.get()));
+        add.accept(new ItemStack(ModItems.SILICON_CIRCUIT.get()));
+        add.accept(new ItemStack(ModItems.PCB.get()));
+        add.accept(new ItemStack(ModItems.CRT_DISPLAY.get()));
+        add.accept(new ItemStack(ModItems.MAGNETRON.get()));
+        add.accept(new ItemStack(ModItems.TURBINE_TITANIUM.get()));
+        add.accept(new ItemStack(ModItems.VACUUM_TUBE.get()));
+        add.accept(new ItemStack(ModItems.CAPACITOR.get()));
+        add.accept(new ItemStack(ModItems.MICROCHIP.get()));
+        add.accept(new ItemStack(ModItems.ANALOG_CIRCUIT.get()));
+        add.accept(new ItemStack(ModItems.INTEGRATED_CIRCUIT.get()));
+        add.accept(new ItemStack(ModItems.ADVANCED_CIRCUIT.get()));
+        add.accept(new ItemStack(ModItems.CAPACITOR_BOARD.get()));
+
+        add.accept(new ItemStack(ModItems.CONTROLLER_CHASSIS.get()));
+        add.accept(new ItemStack(ModItems.CONTROLLER.get()));
+        add.accept(new ItemStack(ModItems.CONTROLLER_ADVANCED.get()));
+        add.accept(new ItemStack(ModItems.CAPACITOR_TANTALUM.get()));
+        add.accept(new ItemStack(ModItems.BISMOID_CHIP.get()));
+        add.accept(new ItemStack(ModItems.BISMOID_CIRCUIT.get()));
+        add.accept(new ItemStack(ModItems.ATOMIC_CLOCK.get()));
+        add.accept(new ItemStack(ModItems.QUANTUM_CHIP.get()));
+        add.accept(new ItemStack(ModItems.QUANTUM_CIRCUIT.get()));
+        add.accept(new ItemStack(ModItems.QUANTUM_COMPUTER.get()));
+
+        add.accept(new ItemStack(ModItems.BATTLE_GEARS.get()));
+        add.accept(new ItemStack(ModItems.BATTLE_SENSOR.get()));
+        add.accept(new ItemStack(ModItems.BATTLE_CASING.get()));
+        add.accept(new ItemStack(ModItems.BATTLE_COUNTER.get()));
+        add.accept(new ItemStack(ModItems.BATTLE_MODULE.get()));
+        add.accept(new ItemStack(ModItems.METAL_ROD.get()));
+
+        // Satellite Parts
+        // add.accept(new ItemStack(ModItems.SAT_BASE.get()));
+        // add.accept(new ItemStack(ModItems.SAT_HEAD_LASER.get()));
+        // add.accept(new ItemStack(ModItems.SAT_LASER.get()));
+        // add.accept(new ItemStack(ModItems.SAT_HEAD_RADAR.get()));
+        // add.accept(new ItemStack(ModItems.SAT_RADAR.get()));
+        // add.accept(new ItemStack(ModItems.SAT_HEAD_MAPPER.get()));
+        // add.accept(new ItemStack(ModItems.SAT_MAPPER.get()));
+        // add.accept(new ItemStack(ModItems.SAT_HEAD_RESONATOR.get()));
+        // add.accept(new ItemStack(ModItems.SAT_RESONATOR.get()));
+
+        // add.accept(new ItemStack(ModItems.LOW_DENSITY_ELEMENT.get()));
+
+        // add.accept(new ItemStack(ModItems.INGOT_TUNGSTEN_CARBIDE.get()));
+        // add.accept(new ItemStack(ModItems.INGOT_HIGHSPEED_STEEL.get()));
+        // add.accept(new ItemStack(ModItems.NEUTRON_REFLECTOR.get()));
+        // add.accept(new ItemStack(ModItems.WARHEAD_GENERIC_SMALL.get()));
+        // add.accept(new ItemStack(ModItems.WARHEAD_CLUSTER_LARGE.get()));
+        // add.accept(new ItemStack(ModItems.WARHEAD_INCENDIARY_MEDIUM.get()));
+        // add.accept(new ItemStack(ModItems.WARHEAD_BUSTER_SMALL.get()));
+
+        // // Missile Parts
+        // add.accept(new ItemStack(ModItems.MISSILE_ASSEMBLY.get()));
+        // add.accept(new ItemStack(ModItems.THRUSTER_SMALL.get()));
+        // add.accept(new ItemStack(ModItems.FUEL_TANK_SMALL.get()));
+        // add.accept(new ItemStack(ModItems.WARHEAD_CLUSTER_SMALL.get()));
+        // add.accept(new ItemStack(ModItems.WARHEAD_INCENDIARY_SMALL.get()));
+        // add.accept(new ItemStack(ModItems.THRUSTER_MEDIUM.get()));
+        // add.accept(new ItemStack(ModItems.FUEL_TANK_MEDIUM.get()));
+        // add.accept(new ItemStack(ModItems.WARHEAD_GENERIC_MEDIUM.get()));
+        // add.accept(new ItemStack(ModItems.WARHEAD_GENERIC_LARGE.get()));
+        // add.accept(new ItemStack(ModItems.WARHEAD_BUSTER_LARGE.get()));
+        // add.accept(new ItemStack(ModItems.WARHEAD_MIRV.get()));
+        // add.accept(new ItemStack(ModItems.WARHEAD_VOLCANO.get()));
+        // add.accept(new ItemStack(ModItems.WARHEAD_BUSTER_MEDIUM.get()));
+        // add.accept(new ItemStack(ModItems.WARHEAD_CLUSTER_MEDIUM.get()));
+        // add.accept(new ItemStack(ModItems.THRUSTER_LARGE.get()));
+        // add.accept(new ItemStack(ModItems.FUEL_TANK_LARGE.get()));
+        // add.accept(new ItemStack(ModItems.WARHEAD_NUCLEAR.get()));
+    }
+    // РУДЫ
+    public static void populateOresTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
+        // Упрощенный Consumer, по умолчанию использующий PARENT_AND_SEARCH_TABS
+        Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+
+        add.accept(new ItemStack(ModBlocks.DEPTH_STONE.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_STONE_NETHER.get()));
+
+        add.accept(new ItemStack(ModBlocks.DEPTH_BORAX.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_IRON.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_TITANIUM.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_TUNGSTEN.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_CINNABAR.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_ZIRCONIUM.get()));
+        add.accept(new ItemStack(ModBlocks.BEDROCK_OIL.get()));
+
+        add.accept(new ItemStack(ModBlocks.ORE_OIL.get()));
+        add.accept(new ItemStack(ModBlocks.GNEISS_STONE.get()));
+        add.accept(new ItemStack(ModBlocks.FLUORITE_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.LIGNITE_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.TUNGSTEN_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.ASBESTOS_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.SULFUR_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.SEQUESTRUM_ORE.get()));
+
+        add.accept(new ItemStack(ModBlocks.ALUMINUM_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.ALUMINUM_ORE_DEEPSLATE.get()));
+        add.accept(new ItemStack(ModBlocks.TITANIUM_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.TITANIUM_ORE_DEEPSLATE.get()));
+        add.accept(new ItemStack(ModBlocks.COBALT_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.COBALT_ORE_DEEPSLATE.get()));
+        add.accept(new ItemStack(ModBlocks.THORIUM_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.THORIUM_ORE_DEEPSLATE.get()));
+        add.accept(new ItemStack(ModBlocks.RAREGROUND_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.RAREGROUND_ORE_DEEPSLATE.get()));
+        add.accept(new ItemStack(ModBlocks.BERYLLIUM_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.BERYLLIUM_ORE_DEEPSLATE.get()));
+        add.accept(new ItemStack(ModBlocks.LEAD_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.LEAD_ORE_DEEPSLATE.get()));
+        add.accept(new ItemStack(ModBlocks.CINNABAR_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.CINNABAR_ORE_DEEPSLATE.get()));
+        add.accept(new ItemStack(ModBlocks.URANIUM_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.URANIUM_ORE_DEEPSLATE.get()));
+        add.accept(new ItemStack(ModBlocks.SCHRABIDIUM_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.SCHRABIDIUM_ORE_NETHER.get()));
+        add.accept(new ItemStack(ModBlocks.SCHRABIDIUM_ORE_GNEISS.get()));
+        add.accept(new ItemStack(ModBlocks.BLOCK_SCHRABIDIUM_CLUSTER.get()));
+
+        add.accept(new ItemStack(ModBlocks.RESOURCE_ASBESTOS.get()));
+        add.accept(new ItemStack(ModBlocks.RESOURCE_BAUXITE.get()));
+        add.accept(new ItemStack(ModBlocks.RESOURCE_HEMATITE.get()));
+        add.accept(new ItemStack(ModBlocks.RESOURCE_LIMESTONE.get()));
+        add.accept(new ItemStack(ModBlocks.RESOURCE_MALACHITE.get()));
+        add.accept(new ItemStack(ModBlocks.RESOURCE_SULFUR.get()));
+
+        add.accept(new ItemStack(ModItems.ALUMINUM_RAW.get()));
+        add.accept(new ItemStack(ModItems.BERYLLIUM_RAW.get()));
+        add.accept(new ItemStack(ModItems.COBALT_RAW.get()));
+        add.accept(new ItemStack(ModItems.LEAD_RAW.get()));
+        add.accept(new ItemStack(ModItems.THORIUM_RAW.get()));
+        add.accept(new ItemStack(ModItems.TITANIUM_RAW.get()));
+        add.accept(new ItemStack(ModItems.TUNGSTEN_RAW.get()));
+        add.accept(new ItemStack(ModItems.URANIUM_RAW.get()));
+
+        add.accept(new ItemStack(ModBlocks.METEOR.get()));
+        add.accept(new ItemStack(ModBlocks.METEOR_COBBLE.get()));
+        add.accept(new ItemStack(ModBlocks.METEOR_CRUSHED.get()));
+        add.accept(new ItemStack(ModBlocks.METEOR_TREASURE.get()));
+
+        add.accept(new ItemStack(ModBlocks.GEYSIR_DIRT.get()));
+        add.accept(new ItemStack(ModBlocks.GEYSIR_STONE.get()));
+
+        add.accept(new ItemStack(ModBlocks.NUCLEAR_FALLOUT.get()));
+        add.accept(new ItemStack(ModBlocks.BLOCK_FALLOUT.get()));
+        add.accept(new ItemStack(ModBlocks.SELLAFIELD_SLAKED.get()));
+        add.accept(new ItemStack(ModBlocks.SELLAFIELD_SLAKED1.get()));
+        add.accept(new ItemStack(ModBlocks.SELLAFIELD_SLAKED2.get()));
+        add.accept(new ItemStack(ModBlocks.SELLAFIELD_SLAKED3.get()));
+        add.accept(new ItemStack(ModBlocks.SELLAFIELD_BEDROCK.get()));
+        add.accept(new ItemStack(ModBlocks.ORE_SELLAFIELD_DIAMOND.get()));
+        add.accept(new ItemStack(ModBlocks.ORE_SELLAFIELD_EMERALD.get()));
+        add.accept(new ItemStack(ModBlocks.ORE_SELLAFIELD_URANIUM_SCORCHED.get()));
+        add.accept(new ItemStack(ModBlocks.ORE_SELLAFIELD_SCHRABIDIUM.get()));
+        add.accept(new ItemStack(ModBlocks.ORE_SELLAFIELD_RADGEM.get()));
+        add.accept(new ItemStack(ModBlocks.WASTE_TRINITITE.get()));
+        add.accept(new ItemStack(ModBlocks.WASTE_TRINITITE_RED.get()));
+        add.accept(new ItemStack(ModBlocks.WASTE_MYCELIUM.get()));
+        add.accept(new ItemStack(ModBlocks.WASTE_LOG.get()));
+        add.accept(new ItemStack(ModBlocks.WASTE_PLANKS.get()));
+        add.accept(new ItemStack(ModBlocks.WASTE_GRASS.get()));
+        add.accept(new ItemStack(ModBlocks.BURNED_GRASS.get()));
+        add.accept(new ItemStack(ModBlocks.DEAD_DIRT.get()));
+        add.accept(new ItemStack(ModBlocks.WASTE_LEAVES.get()));
+
+        add.accept(new ItemStack(ModItems.STRAWBERRY.get()));
+        add.accept(new ItemStack(ModBlocks.STRAWBERRY_BUSH.get()));
+
+        add.accept(new ItemStack(ModBlocks.POLONIUM210_BLOCK.get()));
+
+        // АВТОМАТИЧЕСКОЕ ДОБАВЛЕНИЕ ВСЕХ БЛОКОВ СЛИТКОВ
+        for (ModIngots ingot : ModIngots.values()) {
+
+            if (ModBlocks.hasIngotBlock(ingot)) {
+
+                RegistrySupplier<Block> ingotBlock = ModBlocks.getIngotBlock(ingot);
+                if (ingotBlock != null) {
+                    add.accept(new ItemStack(ingotBlock.get()));
+                    if (ModClothConfig.get().enableDebugLogging) {
+                        MainRegistry.LOGGER.info("Added {} block to NTM Ores tab", ingotBlock.getId());
+                    }
+                }
+            }
+        }
+        add.accept(new ItemStack(ModBlocks.URANIUM_BLOCK.get()));
+        add.accept(new ItemStack(ModBlocks.PLUTONIUM_BLOCK.get()));
+        add.accept(new ItemStack(ModBlocks.PLUTONIUM_FUEL_BLOCK.get()));
+    }
+
+
+    // СТРОИТЕЛЬНЫЕ БЛОКИ
+    public static void populateBuildingTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
+        // Упрощенный Consumer, по умолчанию использующий PARENT_AND_SEARCH_TABS
+        Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+
+        add.accept(new ItemStack(ModBlocks.DECO_STEEL.get()));
+        add.accept(new ItemStack(ModBlocks.DECO_RUSTY_STEEL.get()));
+        add.accept(new ItemStack(ModBlocks.DECO_TUNGSTEN.get()));
+        add.accept(new ItemStack(ModBlocks.DECO_RED_COPPER.get()));
+        add.accept(new ItemStack(ModBlocks.DECO_BERYLLIUM.get()));
+        add.accept(new ItemStack(ModBlocks.DECO_ALUMINUM.get()));
+        add.accept(new ItemStack(ModBlocks.DECO_LEAD.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_ASBESTOS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_COLORED_SAND.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_BLACK.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_BLUE.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_BROWN.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_COLORED_INDIGO.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_COLORED_PINK.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_COLORED_PURPLE.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_CYAN.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_GRAY.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_GREEN.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_LIGHT_BLUE.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_LIME.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_MAGENTA.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_ORANGE.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_PINK.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_PURPLE.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_RED.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_YELLOW.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_HAZARD.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_SILVER.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_WHITE.get()));
+
+        add.accept(new ItemStack(ModBlocks.CONCRETE_SUPER.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_SUPER_M0.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_SUPER_M1.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_SUPER_M2.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_SUPER_M3.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_SUPER_BROKEN.get()));
+
+        add.accept(new ItemStack(ModBlocks.CONCRETE_REBAR.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_REBAR_ALT.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_FLAT.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_TILE.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_VENT.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_FAN.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_TILE_TREFOIL.get()));
+
+        add.accept(new ItemStack(ModBlocks.CONCRETE_MOSSY.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_CRACKED.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_MARKED.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_CONCRETE.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_CONCRETE_MOSSY.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_CONCRETE_CRACKED.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_CONCRETE_BROKEN.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_CONCRETE_MARKED.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_PILLAR.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_COLORED_MACHINE.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_COLORED_MACHINE_STRIPE.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_COLORED_BRONZE.get()));
+
+
+        // Метеоритные блоки
+        add.accept(new ItemStack(ModBlocks.METEOR_POLISHED.get()));
+        add.accept(new ItemStack(ModBlocks.METEOR_BRICK.get()));
+        add.accept(new ItemStack(ModBlocks.METEOR_BRICK_CRACKED.get()));
+        add.accept(new ItemStack(ModBlocks.METEOR_BRICK_MOSSY.get()));
+        add.accept(new ItemStack(ModBlocks.METEOR_BRICK_CHISELED.get()));
+        add.accept(new ItemStack(ModBlocks.METEOR_PILLAR.get()));
+
+        add.accept(new ItemStack(ModBlocks.DEPTH_BRICK.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_TILES.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_NETHER_BRICK.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_NETHER_TILES.get()));
+        add.accept(new ItemStack(ModBlocks.GNEISS_TILE.get()));
+        add.accept(new ItemStack(ModBlocks.GNEISS_BRICK.get()));
+        add.accept(new ItemStack(ModBlocks.GNEISS_CHISELED.get()));
+
+        add.accept(new ItemStack(ModBlocks.BRICK_BASE.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_LIGHT.get()));
+        add.accept(new ItemStack(ModBlocks.BARRICADE.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_FIRE.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_OBSIDIAN.get()));
+
+        add.accept(new ItemStack(ModBlocks.VINYL_TILE.get()));
+        add.accept(new ItemStack(ModBlocks.VINYL_TILE_SMALL.get()));
+        add.accept(new ItemStack(ModBlocks.REINFORCED_STONE.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_DUCRETE.get()));
+        add.accept(new ItemStack(ModBlocks.ASPHALT.get()));
+        add.accept(new ItemStack(ModBlocks.BASALT_POLISHED.get()));
+        add.accept(new ItemStack(ModBlocks.BASALT_BRICK.get()));
+
+        //ПОЛУБЛОКИ
+        add.accept(new ItemStack(ModBlocks.CONCRETE_HAZARD_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_ASBESTOS_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_BLACK_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_BLUE_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_BROWN_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_STONE_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_COLORED_BRONZE_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_COLORED_INDIGO_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_COLORED_MACHINE_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_COLORED_PINK_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_COLORED_PURPLE_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_COLORED_SAND_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_CYAN_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_GRAY_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_GREEN_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_LIGHT_BLUE_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_LIME_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_MAGENTA_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_ORANGE_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_PINK_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_PURPLE_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_RED_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_SILVER_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_WHITE_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_YELLOW_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_SUPER_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_SUPER_M0_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_SUPER_M1_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_SUPER_M2_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_SUPER_M3_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_SUPER_BROKEN_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_REBAR_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_FLAT_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_TILE_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_BRICK_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_TILES_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_STONE_NETHER_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_NETHER_BRICK_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_NETHER_TILES_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.GNEISS_TILE_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.GNEISS_BRICK_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_BASE_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_LIGHT_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_FIRE_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_OBSIDIAN_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.VINYL_TILE_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.VINYL_TILE_SMALL_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_DUCRETE_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.ASPHALT_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.BASALT_POLISHED_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.BASALT_BRICK_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.METEOR_POLISHED_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.METEOR_BRICK_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.METEOR_BRICK_CRACKED_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.METEOR_BRICK_MOSSY_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.METEOR_CRUSHED_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.REINFORCED_STONE_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_CONCRETE_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_CONCRETE_CRACKED_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_CONCRETE_BROKEN_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_CONCRETE_MOSSY_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_MOSSY_SLAB.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_CRACKED_SLAB.get()));
+
+        //СТУПЕНИ
+        add.accept(new ItemStack(ModBlocks.CONCRETE_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_ASBESTOS_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_MOSSY_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_CRACKED_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_HAZARD_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_CONCRETE_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_CONCRETE_MOSSY_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_CONCRETE_CRACKED_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_CONCRETE_BROKEN_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_BLACK_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_BLUE_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_BROWN_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_COLORED_BRONZE_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_COLORED_INDIGO_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_COLORED_MACHINE_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_COLORED_PINK_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_COLORED_PURPLE_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_COLORED_SAND_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_CYAN_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_GRAY_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_GREEN_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_LIGHT_BLUE_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_LIME_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_MAGENTA_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_ORANGE_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_PINK_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_PURPLE_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_RED_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_SILVER_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_WHITE_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_YELLOW_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_SUPER_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_SUPER_M0_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_SUPER_M1_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_SUPER_M2_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_SUPER_M3_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_SUPER_BROKEN_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_REBAR_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_FLAT_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.CONCRETE_TILE_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_BRICK_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_STONE_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_TILES_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_NETHER_BRICK_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_NETHER_TILES_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.GNEISS_TILE_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.GNEISS_BRICK_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_BASE_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_LIGHT_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_FIRE_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_OBSIDIAN_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.VINYL_TILE_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.VINYL_TILE_SMALL_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.BRICK_DUCRETE_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.ASPHALT_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.BASALT_POLISHED_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.BASALT_BRICK_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.METEOR_POLISHED_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.METEOR_BRICK_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.METEOR_BRICK_CRACKED_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.METEOR_BRICK_MOSSY_STAIRS.get()));
+        add.accept(new ItemStack(ModBlocks.METEOR_CRUSHED_STAIRS.get()));
+
+
+        add.accept(new ItemStack(ModBlocks.REINFORCED_STONE_STAIRS.get()));
+
+        //СТЕКЛО
+        add.accept(new ItemStack(ModBlocks.REINFORCED_GLASS.get()));
+
+        //ЯЩИКИ
+        add.accept(new ItemStack(ModBlocks.FREAKY_ALIEN_BLOCK.get()));
+        add.accept(new ItemStack(ModBlocks.CRATE.get()));
+        add.accept(new ItemStack(ModBlocks.CRATE_LEAD.get()));
+        add.accept(new ItemStack(ModBlocks.CRATE_METAL.get()));
+        add.accept(new ItemStack(ModBlocks.CRATE_WEAPON.get()));
+        add.accept(new ItemStack(ModBlocks.CRATE_CONSERVE.get()));
+
+        //ОСВЕЩЕНИЕ
+        add.accept(new ItemStack(ModBlocks.CAGE_LAMP.get()));
+        add.accept(new ItemStack(ModBlocks.FLOOD_LAMP.get()));
+
+        //OBJ-ДЕКОР
+        add.accept(new ItemStack(ModBlocks.B29.get()));
+        add.accept(new ItemStack(ModBlocks.DORNIER.get()));
+        add.accept(new ItemStack(ModBlocks.FILE_CABINET.get()));
+        add.accept(new ItemStack(ModBlocks.TAPE_RECORDER.get()));
+        add.accept(new ItemStack(ModBlocks.CRT_BROKEN.get()));
+        add.accept(new ItemStack(ModBlocks.CRT_CLEAN.get()));
+        add.accept(new ItemStack(ModBlocks.CRT_BSOD.get()));
+        add.accept(new ItemStack(ModBlocks.TOASTER.get()));
+        add.accept(new ItemStack(ModBlocks.STEEL_POLE.get()));
+        add.accept(new ItemStack(ModBlocks.STEEL_WALL.get()));
+        add.accept(new ItemStack(ModBlocks.DECO_STEEL_SCAFFOLD.get()));
+        add.accept(new ItemStack(ModBlocks.ANTENNA_TOP.get()));
+        add.accept(new ItemStack(ModBlocks.PUTER.get()));
+
+        add.accept(new ItemStack(ModBlocks.DOOR_OFFICE.get()));
+        add.accept(new ItemStack(ModBlocks.DOOR_BUNKER.get()));
+        add.accept(new ItemStack(ModBlocks.METAL_DOOR.get()));
+        add.accept(new ItemStack(ModBlocks.LARGE_VEHICLE_DOOR.get()));
+        add.accept(new ItemStack(ModBlocks.ROUND_AIRLOCK_DOOR.get()));
+        add.accept(new ItemStack(ModBlocks.FIRE_DOOR.get()));
+        add.accept(new ItemStack(ModBlocks.SLIDING_SEAL_DOOR.get()));
+        add.accept(new ItemStack(ModBlocks.SECURE_ACCESS_DOOR.get()));
+        add.accept(new ItemStack(ModBlocks.QE_CONTAINMENT.get()));
+        add.accept(new ItemStack(ModBlocks.QE_SLIDING.get()));
+        add.accept(new ItemStack(ModBlocks.WATER_DOOR.get()));
+        add.accept(new ItemStack(ModBlocks.SILO_HATCH.get()));
+        add.accept(new ItemStack(ModBlocks.SILO_HATCH_LARGE.get()));
+        add.accept(new ItemStack(ModBlocks.VAULT_DOOR.get()));
+        // add.accept(new ItemStack(ModBlocks.TRANSITION_SEAL.get()));
+        // add.accept(new ItemStack(ModBlocks.SLIDE_DOOR.get()));
+    }
+
+    // СТАНКИ
+    public static void populateMachinesTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
+        // Упрощенный Consumer, по умолчанию использующий PARENT_AND_SEARCH_TABS
+        Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        add.accept(new ItemStack(ModBlocks.CRATE_IRON.get()));
+        add.accept(new ItemStack(ModBlocks.CRATE_STEEL.get()));
+        add.accept(new ItemStack(ModBlocks.CRATE_TUNGSTEN.get()));
+        add.accept(new ItemStack(ModBlocks.CRATE_DESH.get()));
+        add.accept(new ItemStack(ModBlocks.CRATE_TEMPLATE.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_CORRODED.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_IRON.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_STEEL.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_TCALLOY.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_PLASTIC.get()));
+        add.accept(new ItemStack(ModBlocks.ANVIL_IRON.get()));
+        add.accept(new ItemStack(ModBlocks.ANVIL_LEAD.get()));
+        add.accept(new ItemStack(ModBlocks.ANVIL_STEEL.get()));
+        add.accept(new ItemStack(ModBlocks.ANVIL_DESH.get()));
+        add.accept(new ItemStack(ModBlocks.ANVIL_FERROURANIUM.get()));
+        add.accept(new ItemStack(ModBlocks.ANVIL_SATURNITE.get()));
+        add.accept(new ItemStack(ModBlocks.ANVIL_BISMUTH_BRONZE.get()));
+        add.accept(new ItemStack(ModBlocks.ANVIL_ARSENIC_BRONZE.get()));
+        add.accept(new ItemStack(ModBlocks.ANVIL_SCHRABIDATE.get()));
+        add.accept(new ItemStack(ModBlocks.ANVIL_DNT.get()));
+        add.accept(new ItemStack(ModBlocks.ANVIL_OSMIRIDIUM.get()));
+        add.accept(new ItemStack(ModBlocks.ANVIL_MURKY.get()));
+        add.accept(new ItemStack(ModBlocks.PRESS.get()));
+        add.accept(new ItemStack(ModBlocks.BLAST_FURNACE.get()));
+        add.accept(new ItemStack(ModBlocks.BLAST_FURNACE_EXTENSION.get()));
+        // add.accept(new ItemStack(ModBlocks.HEATING_OVEN.get()));
+        add.accept(new ItemStack(ModBlocks.STEAM_CONDENSER.get()));
+        add.accept(new ItemStack(ModBlocks.SHREDDER.get()));
+        add.accept(new ItemStack(ModBlocks.WOOD_BURNER.get()));
+        add.accept(new ItemStack(ModBlocks.CHEMICAL_PLANT.get()));
+        // add.accept(new ItemStack(ModBlocks.CRUCIBLE.get()));
+        // add.accept(new ItemStack(ModBlocks.FOUNDRY_BASIN.get()));
+        // add.accept(new ItemStack(ModBlocks.FOUNDRY_CHANNEL.get()));
+        // add.accept(new ItemStack(ModBlocks.FOUNDRY_OUTLET.get()));
+        // add.accept(new ItemStack(ModBlocks.FOUNDRY_CHANNEL.get()));
+        // add.accept(new ItemStack(ModBlocks.GAS_CENTRIFUGE.get()));
+        add.accept(new ItemStack(ModBlocks.CENTRIFUGE.get()));
+        add.accept(new ItemStack(ModBlocks.CRYSTALLIZER.get()));
+        // add.accept(new ItemStack(ModBlocks.BREEDER.get()));
+        // add.accept(new ItemStack(ModBlocks.LARGE_PYLON.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_ASSEMBLER.get()));
+        add.accept(new ItemStack(ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get()));
+        add.accept(new ItemStack(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get()));
+        // add.accept(new ItemStack(ModBlocks.COOLING_TOWER.get()));
+        // add.accept(new ItemStack(ModBlocks.TOWER_SMALL.get()));
+        // add.accept(new ItemStack(ModBlocks.CYCLOTRON.get()));
+        add.accept(new ItemStack(ModItems.PLATE_CAST_IRON.get()));
+        add.accept(new ItemStack(ModItems.PLATE_CAST_STEEL.get()));
+        add.accept(new ItemStack(ModItems.PLATE_CAST_COPPER.get()));
+        add.accept(new ItemStack(ModItems.PLATE_CAST_GOLD.get()));
+        add.accept(new ItemStack(ModItems.PLATE_CAST_TITANIUM.get()));
+        add.accept(new ItemStack(ModItems.PLATE_CAST_ALUMINIUM.get()));
+        add.accept(new ItemStack(ModItems.PLATE_CAST_TUNGSTEN.get()));
+        add.accept(new ItemStack(ModItems.PLATE_CAST_ZIRCONIUM.get()));
+        add.accept(new ItemStack(ModItems.PLATE_CAST_OSMIRIDIUM.get()));
+        add.accept(new ItemStack(ModItems.PLATE_CAST_ALLOY.get()));
+        add.accept(new ItemStack(ModItems.PLATE_CAST_DURA_STEEL.get()));
+        add.accept(new ItemStack(ModItems.PLATE_CAST_DESH.get()));
+        add.accept(new ItemStack(ModItems.PLATE_CAST_STAR_METAL.get()));
+        add.accept(new ItemStack(ModItems.PLATE_CAST_TCALLOY.get()));
+        add.accept(new ItemStack(ModItems.PLATE_CAST_CDALLOY.get()));
+        add.accept(new ItemStack(ModItems.PLATE_CAST_CMB.get()));
+        add.accept(new ItemStack(ModItems.PLATE_CAST_SCHRABIDIUM.get()));
+        add.accept(new ItemStack(ModItems.PLATE_CAST_BBRONZE.get()));
+        add.accept(new ItemStack(ModItems.PLATE_CAST_ABRONZE.get()));
+        add.accept(new ItemStack(ModItems.PLATE_CAST_SATURNITE.get()));
+        add.accept(new ItemStack(ModItems.PLATE_WELDED_IRON.get()));
+        add.accept(new ItemStack(ModItems.PLATE_WELDED_STEEL.get()));
+        add.accept(new ItemStack(ModItems.PLATE_WELDED_COPPER.get()));
+        add.accept(new ItemStack(ModItems.PLATE_WELDED_TITANIUM.get()));
+        add.accept(new ItemStack(ModItems.PLATE_WELDED_ALUMINIUM.get()));
+        add.accept(new ItemStack(ModItems.PLATE_WELDED_TUNGSTEN.get()));
+        add.accept(new ItemStack(ModItems.PLATE_WELDED_ZIRCONIUM.get()));
+        add.accept(new ItemStack(ModItems.PLATE_WELDED_OSMIRIDIUM.get()));
+        add.accept(new ItemStack(ModItems.PLATE_WELDED_TCALLOY.get()));
+        add.accept(new ItemStack(ModItems.PLATE_WELDED_CDALLOY.get()));
+        add.accept(new ItemStack(ModItems.PLATE_WELDED_CMB.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_BARREL_HEAVY.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_BARREL_LIGHT.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_BASE.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_BILLET.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_BLADE.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_BLADES.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_BLOCK.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_C357.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_CBUCKSHOT.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_GEM.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_GRIP.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_HULL_BIG.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_HULL_SMALL.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_INGOT.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_INGOTS.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_MECHANISM.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_MOGUS.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_NUGGET.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_PIPE.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_PIPES.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_PLATE.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_PLATE_CAST.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_PLATES.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_PLATES_CAST.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_RECEIVER_HEAVY.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_RECEIVER_LIGHT.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_SHELL.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_STAMP.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_STEEL_BASE.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_STOCK.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_WIRE.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_WIRE_DENSE.get()));
+        // add.accept(new ItemStack(ModItems.MOLD_WIRES_DENSE.get()));
+        add.accept(new ItemStack(ModItems.PART_LITHIUM.get()));
+        add.accept(new ItemStack(ModItems.PART_BERYLLIUM.get()));
+        add.accept(new ItemStack(ModItems.PART_CARBON.get()));
+        add.accept(new ItemStack(ModItems.PART_COPPER.get()));
+        add.accept(new ItemStack(ModItems.PART_PLUTONIUM.get()));
+        add.accept(new ItemStack(ModBlocks.ZIRNOX.get()));
+        add.accept(new ItemStack(ModBlocks.ARC_WELDER.get()));
+        add.accept(new ItemStack(ModBlocks.SOLDERING_STATION.get()));
+        // add.accept(new ItemStack(ModBlocks.MIXER.get()));
+        add.accept(new ItemStack(ModBlocks.DERRICK.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_CONSOLE.get()));
+        // add.accept(new ItemStack(ModBlocks.FLARE_STACK.get()));
+        // add.accept(new ItemStack(ModBlocks.PUMPJACK.get()));
+        add.accept(new ItemStack(ModBlocks.RADAR.get()));
+        add.accept(new ItemStack(ModBlocks.LARGE_RADAR.get()));
+        // add.accept(new ItemStack(ModBlocks.CRACKING_TOWER.get()));
+        add.accept(new ItemStack(ModBlocks.FRACTION_TOWER.get()));
+        // add.accept(new ItemStack(ModBlocks.MINING_DRILL.get()));
+        // add.accept(new ItemStack(ModBlocks.FEL.get()));
+        // add.accept(new ItemStack(ModBlocks.SILEX.get()));
+        add.accept(new ItemStack(ModBlocks.FLUID_TANK.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_BATTERY_SOCKET.get()));
+        // add.accept(new ItemStack(ModBlocks.INDUSTRIAL_BOILER.get()));
+        // add.accept(new ItemStack(ModBlocks.SOLAR_BOILER.get()));
+        // add.accept(new ItemStack(ModBlocks.SOLAR_MIRRORS.get()));
+        // add.accept(new ItemStack(ModBlocks.WATZ_POWERPLANT.get()));
+        // add.accept(new ItemStack(ModBlocks.HYDROTREATER.get()));
+        // add.accept(new ItemStack(ModBlocks.CATALYTIC_REFORMER.get()));
+        // add.accept(new ItemStack(ModBlocks.DEUTERIUM_TOWER.get()));
+        // add.accept(new ItemStack(ModBlocks.CHEMICAL_FACTORY.get()));
+        add.accept(new ItemStack(ModBlocks.STEAM_TURBINE.get()));
+        // add.accept(new ItemStack(ModBlocks.LIQUEFACTOR.get()));
+        // add.accept(new ItemStack(ModBlocks.CORE_EMITTER.get()));
+        // add.accept(new ItemStack(ModBlocks.CORE_INJECTOR.get()));
+        // add.accept(new ItemStack(ModBlocks.CORE_RECEIVER.get()));
+        // add.accept(new ItemStack(ModBlocks.VACUUM_DISTILL.get()));
+        // add.accept(new ItemStack(ModBlocks.TURBOFAN.get()));
+        add.accept(new ItemStack(ModBlocks.INDUSTRIAL_TURBINE.get()));
+        add.accept(new ItemStack(ModBlocks.TURBINE.get()));
+        // add.accept(new ItemStack(ModBlocks.SUBSTATION.get()));
+        add.accept(new ItemStack(ModBlocks.REFINERY.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_BATTERY.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_BATTERY_LITHIUM.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM.get()));
+        add.accept(new ItemStack(ModBlocks.CONVERTER_BLOCK.get()));
+        add.accept(new ItemStack(ModBlocks.SWITCH.get()));
+        add.accept(new ItemStack(ModBlocks.WIRE_COATED.get()));
+        add.accept(new ItemStack(ModBlocks.GEIGER_COUNTER_BLOCK.get()));
+        add.accept(new ItemStack(ModBlocks.DECON.get()));
+        add.accept(new ItemStack(ModBlocks.EMP.get()));
+        for (BlockAbsorber.EnumAbsorberTier tier : BlockAbsorber.EnumAbsorberTier.values()) {
+            add.accept(BlockAbsorberItem.forTier(ModBlocks.RAD_ABSORBER.get(), tier));
+        }
+    }
+
+    // ТОПЛИВО И ЭЛЕМЕНТЫ МЕХАНИЗМОВ
+    public static void populateFuelTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
+        // Упрощенный Consumer, по умолчанию использующий PARENT_AND_SEARCH_TABS
+        Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        add.accept(new ItemStack(ModItems.BLACK_HOLE.get()));
+        add.accept(new ItemStack(ModItems.PELLET_ANTIMATTER.get()));
+        add.accept(new ItemStack(ModItems.FLAME_PONY.get()));
+        add.accept(new ItemStack(ModItems.CREATIVE_BATTERY.get()));
+        add.accept(new ItemStack(ModItems.RBMK_FUEL_DRX.get()));
+
+        // RBMK blocks
+        // add.accept(new ItemStack(ModBlocks.RBMK_ROD.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_ROD_MOD.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_CONTROL.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_BLUE.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_GREEN.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_YELLOW.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_PURPLE.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_MOD.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_MOD_AUTO.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_AUTO.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_REASIM.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_REASIM_AUTO.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_MODERATOR.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_ABSORBER.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_REFLECTOR.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_COOLER.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_BOILER.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_HEATER.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_OUTGASSER.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_STORAGE.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_BLANK.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_STEAM_INLET.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_STEAM_OUTLET.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_LOADER.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_AUTOLOADER.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_CRANE_CONSOLE.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_DISPLAY.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_GAUGE.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_INDICATOR.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_LEVER.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_NUMITRON.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_GRAPH.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_TERMINAL.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_KEYPAD.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_DEBRIS.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_DEBRIS_BURNING.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_DEBRIS_DIGAMMA.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_DEBRIS_RADIATING.get()));
+
+        // // RBMK items
+        // add.accept(new ItemStack(ModItems.RBMK_LID.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_LID_GLASS.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_FUEL_EMPTY.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_FUEL_LEU235.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_FUEL_HEU235.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_FUEL_LEP.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_FUEL_HEP.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_FUEL_MOX.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_PELLET_LEU235.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_PELLET_HEU235.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_PELLET_LEP.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_PELLET_HEP.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_PELLET_MOX.get()));
+
+
+
+// 1. Создаем список всех батареек
+        List<RegistrySupplier<Item>> batteriesToAdd = List.of(
+                ModItems.BATTERY_POTATO,
+                ModItems.BATTERY,
+                ModItems.BATTERY_RED_CELL,
+                ModItems.BATTERY_RED_CELL_6,
+                ModItems.BATTERY_RED_CELL_24,
+                ModItems.BATTERY_ADVANCED,
+                ModItems.BATTERY_ADVANCED_CELL,
+                ModItems.BATTERY_ADVANCED_CELL_4,
+                ModItems.BATTERY_ADVANCED_CELL_12,
+                ModItems.BATTERY_LITHIUM,
+                ModItems.BATTERY_LITHIUM_CELL,
+                ModItems.BATTERY_LITHIUM_CELL_3,
+                ModItems.BATTERY_LITHIUM_CELL_6,
+                ModItems.BATTERY_SCHRABIDIUM,
+                ModItems.BATTERY_SCHRABIDIUM_CELL,
+                ModItems.BATTERY_SCHRABIDIUM_CELL_2,
+                ModItems.BATTERY_SCHRABIDIUM_CELL_4,
+                ModItems.BATTERY_SPARK,
+                ModItems.BATTERY_TRIXITE,
+                ModItems.BATTERY_SPARK_CELL_6,
+                ModItems.BATTERY_SPARK_CELL_25,
+                ModItems.BATTERY_SPARK_CELL_100,
+                ModItems.BATTERY_SPARK_CELL_1000,
+                ModItems.BATTERY_SPARK_CELL_2500,
+                ModItems.BATTERY_SPARK_CELL_10000,
+                ModItems.BATTERY_SPARK_CELL_POWER
+        );
+
+// 2. Проходимся по списку и добавляем 2 версии каждой
+        for (RegistrySupplier<Item> batteryRegObj : batteriesToAdd) {
+            Item item = batteryRegObj.get();
+
+            // Проверка, что это ModBatteryItem
+            if (item instanceof ModBatteryItem batteryItem) {
+                // Добавляем пустую батарею
+                ItemStack emptyStack = new ItemStack(batteryItem);
+                add.accept(emptyStack);
+
+                // Создаем заряженную батарею
+                ItemStack chargedStack = new ItemStack(batteryItem);
+                ModBatteryItem.setEnergy(chargedStack, batteryItem.getCapacity());
+                add.accept(chargedStack);
+
+                if (ModClothConfig.get().enableDebugLogging) {
+                    MainRegistry.LOGGER.debug("Added empty and charged variants of {} to creative tab",
+                            batteryRegObj.getId());
+                }
+            } else {
+                // На всякий случай, если в списке что-то не ModBatteryItem
+                add.accept(new ItemStack(item));
+                MainRegistry.LOGGER.warn("Item {} is not a ModBatteryItem, added as regular item",
+                        batteryRegObj.getId());
+            }
+        }
+
+        if (ModClothConfig.get().enableDebugLogging) {
+            MainRegistry.LOGGER.info("Added {} battery variants to NTM Fuel tab", batteriesToAdd.size() * 2);
+        }
+
+        add.accept(new ItemStack(ModItems.ROD_ZIRNOX_EMPTY.get()));
+        add.accept(new ItemStack(ModItems.ROD_ZIRNOX_LITHIUM.get()));
+        add.accept(new ItemStack(ModItems.ROD_ZIRNOX_TRITIUM.get()));
+        add.accept(new ItemStack(ModItems.ROD_ZIRNOX_TH232.get()));
+        add.accept(new ItemStack(ModItems.ROD_ZIRNOX_LES_FUEL.get()));
+        add.accept(new ItemStack(ModItems.ROD_ZIRNOX_LES_FUEL_DEPLETED.get()));
+        add.accept(new ItemStack(ModItems.ROD_ZIRNOX_MOX_FUEL.get()));
+        add.accept(new ItemStack(ModItems.ROD_ZIRNOX_MOX_FUEL_DEPLETED.get()));
+        add.accept(new ItemStack(ModItems.ROD_ZIRNOX_NATURAL_URANIUM_FUEL.get()));
+        add.accept(new ItemStack(ModItems.ROD_ZIRNOX_PLUTONIUM_FUEL.get()));
+        add.accept(new ItemStack(ModItems.ROD_ZIRNOX_PLUTONIUM_FUEL_DEPLETED.get()));
+        add.accept(new ItemStack(ModItems.ROD_ZIRNOX_THORIUM_FUEL.get()));
+        add.accept(new ItemStack(ModItems.ROD_ZIRNOX_THORIUM_FUEL_DEPLETED.get()));
+        add.accept(new ItemStack(ModItems.ROD_ZIRNOX_U233_FUEL.get()));
+        add.accept(new ItemStack(ModItems.ROD_ZIRNOX_U233_FUEL_DEPLETED.get()));
+        add.accept(new ItemStack(ModItems.ROD_ZIRNOX_U235_FUEL.get()));
+        add.accept(new ItemStack(ModItems.ROD_ZIRNOX_U235_FUEL_DEPLETED.get()));
+        add.accept(new ItemStack(ModItems.ROD_ZIRNOX_URANIUM_FUEL.get()));
+        add.accept(new ItemStack(ModItems.ROD_ZIRNOX_URANIUM_FUEL_DEPLETED.get()));
+        add.accept(new ItemStack(ModItems.ROD_ZIRNOX_ZFB_MOX.get()));
+        add.accept(new ItemStack(ModItems.ROD_ZIRNOX_ZFB_MOX_DEPLETED.get()));
+
+        add.accept(new ItemStack(ModItems.FLUID_BARREL.get()));
+        for (ModFluids.FluidEntry entry : HbmFluidRegistry.getOrderedFluids()) {
+            ItemStack filledBarrel = new ItemStack(ModItems.FLUID_BARREL.get());
+            dev.architectury.fluid.FluidStack archFluidStack = dev.architectury.fluid.FluidStack.create(entry.getSource(), FluidBarrelItem.getPlatformCapacity());
+            FluidBarrelItem.setFluid(filledBarrel, archFluidStack);
+            add.accept(filledBarrel);
+        }
+        // Fluid Ducts - one per fluid type (neo / colored / silver styles)
+        for (ModFluids.FluidEntry entry : HbmFluidRegistry.getOrderedFluids()) {
+            add.accept(com.hbm_m.item.liquids.FluidDuctItem.createStack(ModItems.FLUID_DUCT.get(), entry));
+            add.accept(com.hbm_m.item.liquids.FluidDuctItem.createStack(ModItems.FLUID_DUCT_COLORED.get(), entry));
+            add.accept(com.hbm_m.item.liquids.FluidDuctItem.createStack(ModItems.FLUID_DUCT_SILVER.get(), entry));
+        }
+        // add.accept(new ItemStack(ModItems.FLUID_VALVE.get()));
+        // add.accept(new ItemStack(ModItems.FLUID_PUMP.get()));
+        // add.accept(new ItemStack(ModItems.FLUID_EXHAUST.get()));
+//        add.accept(new ItemStack(ModItems.CRUDE_OIL_BUCKET.get()));
+        add.accept(new ItemStack(ModItems.INFINITE_WATER_500.get()));
+        add.accept(new ItemStack(ModItems.INFINITE_WATER_5000.get()));
+        add.accept(new ItemStack(ModItems.FLUID_BARREL_INFINITE.get()));
+    }
+
+    public static void populateTemplatesTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
+        // Упрощенный Consumer, по умолчанию использующий PARENT_AND_SEARCH_TABS.
+        // В 1.20.1 игра падает, если один и тот же ItemStack (item+tag) добавить в вкладку дважды.
+        Set<String> seen = new HashSet<>();
+        Consumer<ItemStack> add = stack -> {
+            if (stack == null || stack.isEmpty()) return;
+            String itemId = String.valueOf(BuiltInRegistries.ITEM.getKey(stack.getItem()));
+            String tag = stack.getTag() == null ? "" : stack.getTag().toString();
+            if (!seen.add(itemId + "|" + tag)) return;
+            acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        };
+
+        add.accept(new ItemStack(ModItems.BLADE_STEEL.get()));
+        add.accept(new ItemStack(ModItems.BLADE_TITANIUM.get()));
+        add.accept(new ItemStack(ModItems.BLADE_ALLOY.get()));
+        add.accept(new ItemStack(ModItems.BLADE_TEST.get()));
+        add.accept(new ItemStack(ModItems.STAMP_STONE_FLAT.get()));
+        add.accept(new ItemStack(ModItems.STAMP_STONE_PLATE.get()));
+        add.accept(new ItemStack(ModItems.STAMP_STONE_WIRE.get()));
+        add.accept(new ItemStack(ModItems.STAMP_STONE_CIRCUIT.get()));
+        add.accept(new ItemStack(ModItems.STAMP_IRON_FLAT.get()));
+        add.accept(new ItemStack(ModItems.STAMP_IRON_PLATE.get()));
+        add.accept(new ItemStack(ModItems.STAMP_IRON_WIRE.get()));
+        add.accept(new ItemStack(ModItems.STAMP_IRON_CIRCUIT.get()));
+        add.accept(new ItemStack(ModItems.STAMP_IRON_9.get()));
+        add.accept(new ItemStack(ModItems.STAMP_IRON_44.get()));
+        add.accept(new ItemStack(ModItems.STAMP_IRON_50.get()));
+        add.accept(new ItemStack(ModItems.STAMP_IRON_357.get()));
+        add.accept(new ItemStack(ModItems.STAMP_STEEL_FLAT.get()));
+        add.accept(new ItemStack(ModItems.STAMP_STEEL_PLATE.get()));
+        add.accept(new ItemStack(ModItems.STAMP_STEEL_WIRE.get()));
+        add.accept(new ItemStack(ModItems.STAMP_STEEL_CIRCUIT.get()));
+        add.accept(new ItemStack(ModItems.STAMP_TITANIUM_FLAT.get()));
+        add.accept(new ItemStack(ModItems.STAMP_TITANIUM_PLATE.get()));
+        add.accept(new ItemStack(ModItems.STAMP_TITANIUM_WIRE.get()));
+        add.accept(new ItemStack(ModItems.STAMP_TITANIUM_CIRCUIT.get()));
+        add.accept(new ItemStack(ModItems.STAMP_OBSIDIAN_FLAT.get()));
+        add.accept(new ItemStack(ModItems.STAMP_OBSIDIAN_PLATE.get()));
+        add.accept(new ItemStack(ModItems.STAMP_OBSIDIAN_WIRE.get()));
+        add.accept(new ItemStack(ModItems.STAMP_OBSIDIAN_CIRCUIT.get()));
+        add.accept(new ItemStack(ModItems.STAMP_DESH_FLAT.get()));
+        add.accept(new ItemStack(ModItems.STAMP_DESH_PLATE.get()));
+        add.accept(new ItemStack(ModItems.STAMP_DESH_WIRE.get()));
+        add.accept(new ItemStack(ModItems.STAMP_DESH_CIRCUIT.get()));
+        add.accept(new ItemStack(ModItems.STAMP_DESH_9.get()));
+        add.accept(new ItemStack(ModItems.STAMP_DESH_44.get()));
+        add.accept(new ItemStack(ModItems.STAMP_DESH_50.get()));
+        add.accept(new ItemStack(ModItems.STAMP_DESH_357.get()));
+
+        add.accept(new ItemStack(ModItems.TEMPLATE_FOLDER.get()));
+
+        // Machine Upgrades
+        add.accept(new ItemStack(ModItems.UPGRADE_SPEED_1.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_SPEED_2.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_SPEED_3.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_EFFECT_1.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_EFFECT_2.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_EFFECT_3.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_POWER_1.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_POWER_2.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_POWER_3.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_FORTUNE_1.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_FORTUNE_2.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_FORTUNE_3.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_AFTERBURN_1.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_AFTERBURN_2.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_AFTERBURN_3.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_OVERDRIVE_1.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_OVERDRIVE_2.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_OVERDRIVE_3.get()));
+
+        EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
+            ClientSetup.addTemplatesClient(add);
+        });
+
+        for (ModFluids.FluidEntry entry : HbmFluidRegistry.getOrderedFluids()) {
+            ItemStack idStack = new ItemStack(ModItems.FLUID_IDENTIFIER.get());
+            FluidIdentifierItem.setType(idStack, HbmFluidRegistry.getFluidName(entry.getSource()), true);
+            add.accept(idStack);
+        }
+    }
+
+    /**
+     * Создает ItemStack с максимальным зарядом для силовой брони
+     */
+    private static ItemStack createChargedArmorStack(Item item) {
+        ItemStack stack = new ItemStack(item);
+
+        // Проверяем, является ли предмет силовой броней
+        if (item instanceof com.hbm_m.powerarmor.ModArmorFSBPowered powerArmor) {
+            // Получаем максимальную емкость и устанавливаем полный заряд
+            long maxCapacity = powerArmor.getMaxCharge(stack);
+            stack.getOrCreateTag().putLong("charge", maxCapacity);
+        }
+
+        return stack;
+    }
+
+}

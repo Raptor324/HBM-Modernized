@@ -1,5 +1,9 @@
 package com.hbm_m.datagen.recipes;
 
+import java.util.function.Consumer;
+
+import org.jetbrains.annotations.NotNull;
+
 // Провайдер генерации рецептов крафта для мода.
 // Здесь мы определяем, как создаются наши предметы в игре.
 
@@ -7,11 +11,13 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.datagen.recipes.custom.AnvilRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.AssemblerRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.BlastFurnaceRecipeGenerator;
+import com.hbm_m.datagen.recipes.custom.CentrifugeRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.ChemicalPlantRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.PressRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.ShredderRecipeGenerator;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
+
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.recipes.FinishedRecipe;
@@ -19,10 +25,6 @@ import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.data.recipes.ShapelessRecipeBuilder;
 import net.minecraft.world.level.ItemLike;
-
-import java.util.function.Consumer;
-
-import javax.annotation.Nonnull;
 
 public class ModRecipeProvider extends RecipeProvider {
 
@@ -34,7 +36,7 @@ public class ModRecipeProvider extends RecipeProvider {
     }
 
     @Override
-    protected void buildRecipes(@Nonnull Consumer<FinishedRecipe> pWriter) {
+    protected void buildRecipes(@NotNull Consumer<FinishedRecipe> pWriter) {
 
         BlastFurnaceRecipeGenerator.generate(pWriter);
         PressRecipeGenerator.generate(pWriter);
@@ -42,6 +44,7 @@ public class ModRecipeProvider extends RecipeProvider {
         ChemicalPlantRecipeGenerator.generate(pWriter);
         AnvilRecipeGenerator.generate(pWriter);
         ShredderRecipeGenerator.generate(pWriter, ModRecipeProvider::unlockedByItem);
+        CentrifugeRecipeGenerator.generate(pWriter);
 
         // ==================== АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ РЕЦЕПТОВ ДЛЯ БЛОКОВ СЛИТКОВ ====================
         for (ModIngots ingot : ModIngots.values()) {
@@ -76,6 +79,26 @@ public class ModRecipeProvider extends RecipeProvider {
                         .save(pWriter, ingotName + "_ingots_from_block");
             }
         }
+
+        // Fallout (1.7.10 MineralRecipes: block_fallout ↔ fallout, ковёр из 2 pile)
+        ShapedRecipeBuilder.shaped(net.minecraft.data.recipes.RecipeCategory.MISC, ModBlocks.BLOCK_FALLOUT.get())
+                .pattern("###")
+                .pattern("###")
+                .pattern("###")
+                .define('#', ModItems.FALLOUT.get())
+                .unlockedBy("has_fallout", has(ModItems.FALLOUT.get()))
+                .save(pWriter, "block_fallout_from_fallout");
+
+        ShapelessRecipeBuilder.shapeless(net.minecraft.data.recipes.RecipeCategory.MISC, ModItems.FALLOUT.get(), 9)
+                .requires(ModBlocks.BLOCK_FALLOUT.get())
+                .unlockedBy("has_block_fallout", has(ModBlocks.BLOCK_FALLOUT.get()))
+                .save(pWriter, "fallout_from_block_fallout");
+
+        ShapedRecipeBuilder.shaped(net.minecraft.data.recipes.RecipeCategory.MISC, ModBlocks.NUCLEAR_FALLOUT.get(), 2)
+                .pattern("##")
+                .define('#', ModItems.FALLOUT.get())
+                .unlockedBy("has_fallout", has(ModItems.FALLOUT.get()))
+                .save(pWriter, "nuclear_fallout_from_fallout");
 
         // Delegate vanilla-style recipes so they share a single RecipeProvider registration.
         new ModVanillaRecipeProvider(this.packOutput).registerVanillaRecipes(pWriter);

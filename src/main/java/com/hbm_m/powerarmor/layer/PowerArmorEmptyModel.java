@@ -1,15 +1,16 @@
 package com.hbm_m.powerarmor.layer;
 
+import org.jetbrains.annotations.NotNull;
+
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.builders.CubeDeformation;
 import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.world.entity.LivingEntity;
-
-import javax.annotation.Nonnull;
 
 /**
  * A "no-op" armor model.
@@ -29,7 +30,7 @@ public class PowerArmorEmptyModel extends HumanoidModel<LivingEntity> {
     }
 
     @Override
-    public void renderToBuffer(@Nonnull PoseStack poseStack, @Nonnull VertexConsumer buffer, int packedLight,
+    public void renderToBuffer(@NotNull PoseStack poseStack, @NotNull VertexConsumer buffer, int packedLight,
                                int packedOverlay, float red, float green, float blue, float alpha) {
         // Do nothing. The actual model is rendered via AbstractObjArmorLayer to use Forge's OBJ loader.
     }

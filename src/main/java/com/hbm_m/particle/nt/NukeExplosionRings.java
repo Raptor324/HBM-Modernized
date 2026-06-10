@@ -7,6 +7,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import com.hbm_m.client.ClientRenderHandler;
+import com.hbm_m.client.render.ImmediateVertexWriter;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -14,9 +15,9 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
@@ -28,9 +29,24 @@ import net.minecraft.world.phys.Vec3;
  */
 public class NukeExplosionRings extends ParticleNT {
 
-    private static final ResourceLocation TEXTURE_FLARE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/nuke_explosion_flare.png");
-    private static final ResourceLocation TEXTURE_FIRE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/nuke_explosion.png");
-    private static final ResourceLocation TEXTURE_SMOKE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/nuke_explosion_smoke.png");
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation TEXTURE_FLARE = new ResourceLocation(RefStrings.MODID, "textures/particle/nuke_explosion_flare.png");
+    *///?} else {
+        private static final ResourceLocation TEXTURE_FLARE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/nuke_explosion_flare.png");
+    //?}
+
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation TEXTURE_FIRE = new ResourceLocation(RefStrings.MODID, "textures/particle/nuke_explosion.png");
+    *///?} else {
+        private static final ResourceLocation TEXTURE_FIRE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/nuke_explosion.png");
+    //?}
+
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation TEXTURE_SMOKE = new ResourceLocation(RefStrings.MODID, "textures/particle/nuke_explosion_smoke.png");
+    *///?} else {
+        private static final ResourceLocation TEXTURE_SMOKE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/nuke_explosion_smoke.png");
+    //?}
+
 
     private static final int MAX_SUB_PARTICLES = 1_500;
     private static final int FLARE_LIFETIME_MUL = 4;
@@ -144,6 +160,7 @@ public class NukeExplosionRings extends ParticleNT {
     public void render(VertexConsumer ignored, Camera camera, float partialTicks, PoseStack levelPoseStack) {
         if (!initialized) return;
 
+        FogRenderer.setupNoFog();
         Vec3 camPos = camera.getPosition();
         PoseStack localPose = new PoseStack();
         localPose.translate(this.x - camPos.x, this.y - camPos.y, this.z - camPos.z);
@@ -159,8 +176,6 @@ public class NukeExplosionRings extends ParticleNT {
     private void renderRings(VertexConsumer consumer, Matrix4f matrix, Camera camera, float partialTicks, RingType type) {
         Vector3f leftV = camera.getLeftVector();
         Vector3f upV = camera.getUpVector();
-        int light = 240;
-        int overlay = OverlayTexture.NO_OVERLAY;
 
         for (Ring r : rings) {
             if (r.type != type) continue;
@@ -187,10 +202,8 @@ public class NukeExplosionRings extends ParticleNT {
                 rCol = gCol = bCol = 0.85f;
             }
 
-            consumer.vertex(matrix, posX - l.x - u.x, posY - l.y - u.y, posZ - l.z - u.z).color(rCol, gCol, bCol, alpha).uv(1, 1).overlayCoords(overlay).uv2(light).normal(0, 1, 0).endVertex();
-            consumer.vertex(matrix, posX - l.x + u.x, posY - l.y + u.y, posZ - l.z + u.z).color(rCol, gCol, bCol, alpha).uv(1, 0).overlayCoords(overlay).uv2(light).normal(0, 1, 0).endVertex();
-            consumer.vertex(matrix, posX + l.x + u.x, posY + l.y + u.y, posZ + l.z + u.z).color(rCol, gCol, bCol, alpha).uv(0, 0).overlayCoords(overlay).uv2(light).normal(0, 1, 0).endVertex();
-            consumer.vertex(matrix, posX + l.x - u.x, posY + l.y - u.y, posZ + l.z - u.z).color(rCol, gCol, bCol, alpha).uv(0, 1).overlayCoords(overlay).uv2(light).normal(0, 1, 0).endVertex();
+            ImmediateVertexWriter.billboardQuad(consumer, matrix, posX, posY, posZ, l, u,
+                    rCol, gCol, bCol, alpha, 0, 0, 1, 1);
         }
     }
 

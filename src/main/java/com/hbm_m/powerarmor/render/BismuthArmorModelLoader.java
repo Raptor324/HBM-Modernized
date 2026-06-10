@@ -1,3 +1,4 @@
+//? if forge {
 package com.hbm_m.powerarmor.render;
 
 import com.google.gson.JsonObject;
@@ -36,7 +37,7 @@ public class BismuthArmorModelLoader extends AbstractObjPartModelLoader<BismuthA
     protected BismuthArmorBakedModel createBakedModel(HashMap<String, BakedModel> bakedParts,
                                                       ItemTransforms transforms,
                                                       ResourceLocation modelLocation) {
-        return new BismuthArmorBakedModel(bakedParts, transforms);
+        return new BismuthArmorBakedModel(bakedParts, transforms, AbstractArmorBakedModel.resolveItemArmorType(modelLocation));
     }
 
     @Override
@@ -45,4 +46,5 @@ public class BismuthArmorModelLoader extends AbstractObjPartModelLoader<BismuthA
         return true;
     }
 }
+//?}
 

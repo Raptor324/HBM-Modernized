@@ -1,18 +1,28 @@
 package com.hbm_m.sound;
 
+
+
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundSource;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Звук, воспроизводимый Шреддером во время работы.
  * Использует кастомный звук из мода (как Advanced Assembler использует MOTOR).
  * Использует AbstractTickableSoundInstance для управления воспроизведением и остановкой звука.
  */
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?}
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+@Environment(EnvType.CLIENT)*///?}
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
 public class ShredderSoundInstance extends AbstractTickableSoundInstance {
 
     public ShredderSoundInstance(BlockPos pos) {

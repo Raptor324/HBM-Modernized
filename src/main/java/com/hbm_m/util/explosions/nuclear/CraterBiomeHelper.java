@@ -8,12 +8,10 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.chunk.PalettedContainer;
-import net.minecraftforge.server.ServerLifecycleHooks;
 
 import java.util.*;
 
@@ -34,7 +32,7 @@ public class CraterBiomeHelper {
     private static final double GRADIENT_MULTIPLIER = 1.15;  // 15% soft transition
 
     public static void applyBiomesAsync(ServerLevel level, BlockPos center, double zone3Radius, double zone4Radius) {
-        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        MinecraftServer server = level.getServer();
         if (server == null) {
             System.err.println("[CraterBiomeHelper] ERROR: No MinecraftServer!");
             return;

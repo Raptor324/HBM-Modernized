@@ -3,16 +3,21 @@ package com.hbm_m.client.model;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
+//? if forge {
 import net.minecraftforge.client.model.data.ModelData;
+//?}
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +66,20 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
     }
 
     @Override
+    @Deprecated
+    public TextureAtlasSprite getParticleIcon() {
+        if (cachedParticleIcon == null) {
+            if (!parts.isEmpty()) {
+                cachedParticleIcon = parts.values().iterator().next().getParticleIcon();
+            } else {
+                cachedParticleIcon = Minecraft.getInstance().getModelManager().getMissingModel().getParticleIcon();
+            }
+        }
+        return cachedParticleIcon;
+    }
+
+    //? if forge {
+    @Override
     public TextureAtlasSprite getParticleIcon(ModelData data) {
         if (cachedParticleIcon == null) {
             // Используем getPartNamesInternal() для получения приоритетного порядка
@@ -101,18 +120,28 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
         return cachedParticleIcon;
     }
 
+    protected List<BakedQuad> getQuadsForModelData(
+        @Nullable BlockState state,
+        @Nullable Direction side,
+        RandomSource rand,
+        ModelData modelData,
+        @Nullable RenderType renderType
+    ) {
+        // Дефолтная реализация: просто собираем квады из всех частей без ModelData-логики.
+        // Подклассы (например MachineFluidTankBakedModel) переопределяют для динамических текстур.
+        List<BakedQuad> quads = new ArrayList<>();
+        for (BakedModel part : parts.values()) {
+            quads.addAll(part.getQuads(state, side, rand, modelData, renderType));
+        }
+        return quads;
+    }
+
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                    RandomSource rand, ModelData modelData, @Nullable RenderType renderType) {
-        
-        // WORLD RENDER: state != null означает запрос от chunk mesh
-        if (shouldSkipWorldRendering(state)) {
-            return Collections.emptyList();
-        }
-        
-        // ITEM RENDER: state == null означает запрос для item/GUI рендера
-        return Collections.emptyList();
+        return getQuadsForModelData(state, side, rand, modelData, renderType);
     }
+
 
     /**
      * Vanilla BakedModel legacy methods (still required by the interface).
@@ -124,11 +153,27 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
         return getQuads(state, side, rand, ModelData.EMPTY, null);
     }
 
-    @Override
-    @Deprecated
-    public TextureAtlasSprite getParticleIcon() {
-        return getParticleIcon(ModelData.EMPTY);
+    //?}
+
+    //? if fabric {
+    /*@Override
+    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
+        return getQuadsForModelDataFabric(state, side, rand);
     }
+
+    /^* Fabric: без Forge ModelData — делегируем частям vanilla getQuads. ^/
+    protected List<BakedQuad> getQuadsForModelDataFabric(
+            @Nullable BlockState state,
+            @Nullable Direction side,
+            RandomSource rand
+    ) {
+        List<BakedQuad> quads = new ArrayList<>();
+        for (BakedModel part : parts.values()) {
+            quads.addAll(part.getQuads(state, side, rand));
+        }
+        return quads;
+    }
+    *///?}
 
     protected abstract boolean shouldSkipWorldRendering(@Nullable BlockState state);
 
@@ -194,7 +239,23 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
     public ItemTransforms getTransforms() {
         return this.transforms;
     }
-    
+
+    /**
+     * BEWLR items ({@link #isCustomRenderer}) apply {@code display} in {@code renderByItem}.
+     * Forge {@code IForgeBakedModel#applyTransform} must stay a no-op for them.
+     */
+    //? if forge {
+    @Override
+    public BakedModel applyTransform(ItemDisplayContext transformType, PoseStack poseStack,
+                                     boolean applyLeftHandTransform) {
+        if (isCustomRenderer()) {
+            return this;
+        }
+        getTransforms().getTransform(transformType).apply(applyLeftHandTransform, poseStack);
+        return this;
+    }
+    //?}
+
     public void clearCaches() {
         cachedParticleIcon = null;
     }

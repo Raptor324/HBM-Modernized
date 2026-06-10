@@ -6,7 +6,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.powerarmor.ModEventHandlerClient;
+import com.hbm_m.powerarmor.PowerArmorClientState;
 
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.world.entity.LivingEntity;
@@ -21,7 +21,7 @@ public class GameRendererMixin {
     @Inject(method = "getNightVisionScale(Lnet/minecraft/world/entity/LivingEntity;F)F",
             at = @At("RETURN"), cancellable = true)
     private static void hbm_m$getNightVisionScale(LivingEntity pLivingEntity, float pNanoTime, CallbackInfoReturnable<Float> cir) {
-        if (!ModEventHandlerClient.isThermalActive()) {
+        if (!PowerArmorClientState.isThermalActive()) {
             return;
         }
         if (ModClothConfig.get().thermalRenderMode != ModClothConfig.ThermalRenderMode.ORIGINAL_FALLBACK) {

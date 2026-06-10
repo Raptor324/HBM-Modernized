@@ -23,4 +23,14 @@ public interface IFluidProviderMK2 extends IFluidUserMK2 {
     default int[] getProvidingPressureRange(Fluid fluid) {
         return IFluidUserMK2.DEFAULT_PRESSURE_RANGE;
     }
+
+    /**
+     * Флаг для сетевого обхода балансировщика: этот провайдер должен рассматриваться как "бесконечный источник"
+     * для данного типа жидкости. Сеть может использовать это, чтобы заполнить всех получателей за один тик.
+     *
+     * По умолчанию выключено.
+     */
+    default boolean isInfiniteNetworkSource(Fluid fluid) {
+        return false;
+    }
 }

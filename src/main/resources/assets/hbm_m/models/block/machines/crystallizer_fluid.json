@@ -1,0 +1,19 @@
+{
+	"loader": "forge:obj",
+	"model": "hbm_m:models/block/machines/crystallizer_fluid_tiled.obj",
+	"flip_v": true,
+	"render_type": "minecraft:translucent",
+	"textures": {
+		"default": "hbm_m:block/fluids/sulfuric_acid",
+		"particle": "hbm_m:block/fluids/sulfuric_acid"
+	},
+	"visibility": {
+		"Fluid": true
+	},
+
+	"transform": {
+		"translation": [0.5, 0, 0.5],
+		"rotation": [0, 0, 0],
+		"scale": 1.0
+	}
+}

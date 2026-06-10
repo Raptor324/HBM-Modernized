@@ -1,21 +1,34 @@
 package com.hbm_m.client.render;
 
-import com.hbm_m.main.MainRegistry;
-import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
-import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.core.Direction;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-
-import org.joml.Matrix4f;
 
 import java.lang.reflect.Field;
 
+import org.joml.Matrix4f;
+
+import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
+import com.hbm_m.main.MainRegistry;
+import com.mojang.blaze3d.vertex.PoseStack;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
+import net.minecraft.client.renderer.culling.Frustum;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.AABB;
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+*///?}
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends BakedModel>
         implements BlockEntityRenderer<T> {
 
@@ -57,15 +70,16 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
     }
 
     @Override
+    public boolean shouldRenderOffScreen(T blockEntity) {
+        return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
+    }
+
+    @Override
     public void render(T blockEntity, float partialTick, PoseStack poseStack,
                        MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
-        // Frustum cull FIRST - every cycle spent on the matrix snapshot,
-        // model lookup, FRAPI unwrap and LegacyAnimator construction below is
-        // wasted on a BE that the camera cannot see. With dense Iris shadow
-        // dispatch this method is invoked on every visible AND every shadow-
-        // frustum-visible BE per frame, so this short-circuit is the single
-        // cheapest cull we have.
-        if (!isInViewFrustum(blockEntity)) {
+        // Frustum cull FIRST for the main pass. Shadow pass uses light-space
+        // bounds; the main-camera frustum here would drop off-screen casters.
+        if (!ShaderCompatibilityDetector.isRenderingShadowPass() && !isInViewFrustum(blockEntity)) {
             return;
         }
 
@@ -109,7 +123,36 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
     }
 
     protected boolean isInViewFrustum(T blockEntity) {
-        return true;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || mc.levelRenderer == null) {
+            return true;
+        }
+        Frustum frustum = mc.levelRenderer.getFrustum();
+        if (frustum == null) {
+            return true;
+        }
+        AABB box = frustumCullBounds(blockEntity);
+        return frustum.isVisible(box);
+    }
+
+    /**
+     * AABB для frustum-теста до дорогого occlusion ray-march.
+     * Forge: {@link net.minecraftforge.common.extensions.IForgeBlockEntity#getRenderBoundingBox()}.
+     * Fabric: только известные подклассы с явным методом (остальные — 1 блок + запас).
+     */
+    private static AABB frustumCullBounds(BlockEntity blockEntity) {
+        //? if forge {
+        return ((net.minecraftforge.common.extensions.IForgeBlockEntity) blockEntity).getRenderBoundingBox();
+        //?}
+        //? if fabric {
+        /*if (blockEntity instanceof com.hbm_m.block.entity.BaseMachineBlockEntity b) {
+            return b.getRenderBoundingBox();
+        }
+        if (blockEntity instanceof com.hbm_m.block.entity.doors.DoorBlockEntity d) {
+            return d.getRenderBoundingBox();
+        }
+        return new AABB(blockEntity.getBlockPos()).inflate(1.0D);
+        *///?}
     }
 
     // -----------------------------------------------------------------------

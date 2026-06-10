@@ -1,14 +1,24 @@
 package com.hbm_m.hazard;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import com.hbm_m.handler.HazmatRegistry;
+import com.hbm_m.block.generic.BlockSellafieldSlaked;
+import com.hbm_m.hazard.modifier.HazardModifier;
+import com.hbm_m.hazard.type.HazardTypeBase;
+
 import net.minecraft.tags.TagKey;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Централизованная система для определения опасностей, исходящих от предметов.
@@ -29,8 +39,6 @@ public final class HazardSystem {
     private static final Map<TagKey<Item>, HazardData> TAG_RULES = new ConcurrentHashMap<>();
     // Правила для конкретных предметов (самый высокий приоритет)
     private static final Map<Item, HazardData> ITEM_RULES = new ConcurrentHashMap<>();
-    // Хранилище защиты от радиации для брони
-    private static final Map<Item, Float> ARMOR_PROTECTION_RULES = new ConcurrentHashMap<>();
     // Кэш для уже вычисленных результатов. Ключ - Item, Значение - финальный список опасностей.
     private static final Map<Item, List<HazardEntry>> HAZARD_CACHE = new ConcurrentHashMap<>();
 
@@ -65,14 +73,6 @@ public final class HazardSystem {
     public static void register(Block block, HazardData data) {
         register(block.asItem(), data);
     }
-
-    /**
-     * Регистрирует абсолютное значение защиты от радиации для предмета брони.
-     */
-    public static void registerArmorProtection(Item armorItem, float absoluteProtection) {
-        ARMOR_PROTECTION_RULES.put(armorItem, absoluteProtection);
-    }
-
 
     // ПУБЛИЧНЫЕ МЕТОДЫ ПОЛУЧЕНИЯ ДАННЫХ 
 
@@ -141,7 +141,7 @@ public final class HazardSystem {
      * @return Уровень опасности или 0.0f, если не найдено.
      */
     
-     public static float getHazardLevelFromStack(ItemStack stack, HazardType type) {
+    public static float getHazardLevelFromStack(ItemStack stack, HazardTypeBase hazard) {
         // Получаем список опасностей и дополнительно защищаемся от возможного null
         List<HazardEntry> entries = getHazardsFromStack(stack);
         if (entries == null || entries.isEmpty()) {
@@ -150,30 +150,54 @@ public final class HazardSystem {
     
         // Обычный цикл без stream, чуть быстрее и без лишных объектов
         for (HazardEntry entry : entries) {
-            if (entry.type == type) {
-                // В будущем здесь можно будет применить модификаторы
-                return entry.baseLevel;
+            if (entry.type == hazard) {
+                return HazardModifier.evalAllModifiers(stack, null, entry.baseLevel, entry.mods);
             }
         }
     
         return 0.0f;
     }
 
-    public static float getHazardLevelFromState(BlockState state, HazardType type) {
-        // Блоки без предмета (как огонь) не могут иметь опасности в этой системе
+    public static void applyHazards(ItemStack stack, LivingEntity entity) {
+        for (HazardEntry hazardEntry : getHazardsFromStack(stack)) {
+            hazardEntry.applyHazard(stack, entity);
+        }
+    }
+
+    public static float getHazardLevelFromState(BlockState state, HazardTypeBase hazard) {
         if (state.isAir() || state.getBlock().asItem() == Items.AIR) {
             return 0.0f;
         }
-        // Создаем временный пустой стак, чтобы передать его в основной метод.
-        // С кэшированием это будет быстро.
-        return getHazardLevelFromStack(new ItemStack(state.getBlock()), type);
+        float fromItem = getHazardLevelFromStack(new ItemStack(state.getBlock()), hazard);
+        if (fromItem > 0.0f) {
+            return fromItem;
+        }
+        if (hazard == HazardRegistry.RADIATION && state.hasProperty(BlockSellafieldSlaked.COLOR_LEVEL)) {
+            return sellafiteRadiationForLevel(state.getValue(BlockSellafieldSlaked.COLOR_LEVEL));
+        }
+        return 0.0f;
+    }
+
+    /** GIT HazardRegistry sellafield meta 0–5; уровни 6–10 — горячий центр кратера (fallout color_level). */
+    public static float sellafiteRadiationForLevel(int level) {
+        level = Mth.clamp(level, 0, 10);
+        if (level <= 5) {
+            return switch (level) {
+                case 0 -> 0.5f;
+                case 1 -> 1.0f;
+                case 2 -> 2.5f;
+                case 3 -> 4.0f;
+                case 4 -> 5.0f;
+                default -> 10.0f;
+            };
+        }
+        return 10.0f + (level - 5) * 5.0f;
     }
 
     /**
-     * Получает абсолютное значение защиты от радиации для стака брони.
+     * Сопротивление брони (как {@link HazmatRegistry#getResistance(ItemStack)}).
      */
     public static float getArmorProtection(ItemStack armorStack) {
-        if (armorStack.isEmpty()) return 0.0f;
-        return ARMOR_PROTECTION_RULES.getOrDefault(armorStack.getItem(), 0.0f);
+        return (float) HazmatRegistry.getResistance(armorStack);
     }
 }

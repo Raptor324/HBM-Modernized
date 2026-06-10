@@ -1,0 +1,21 @@
+{
+	"loader": "forge:obj",
+	"model": "hbm_m:models/block/machines/crystallizer.obj",
+	"flip_v": true,
+	"render_type": "minecraft:cutout",
+	"textures": {
+		"default": "hbm_m:block/machine/acidizer",
+		"particle": "hbm_m:block/machine/acidizer"
+	},
+	"visibility": {
+		"Body": false,
+		"Spinner": true,
+		"Fluid": false
+	},
+
+	"transform": {
+		"translation": [0.5, 0, 0.5],
+		"rotation": [0, 0, 0],
+		"scale": 1.0
+	}
+}

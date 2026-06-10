@@ -2,7 +2,7 @@ package com.hbm_m.api.energy;
 
 import java.util.Map;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import org.slf4j.Logger;
 
@@ -34,7 +34,15 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+//? if forge {
+import com.hbm_m.capability.ModCapabilities;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
+//?}
+
+//? if fabric {
+/*import com.hbm_m.capability.ModCapabilities;
+*///?}
 
 public class WireBlock extends BaseEntityBlock {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -163,20 +171,22 @@ public class WireBlock extends BaseEntityBlock {
             return false;
         }
 
-        LazyOptional<IEnergyConnector> hbmCap = be.getCapability(ModCapabilities.HBM_ENERGY_CONNECTOR, sideFromNeighbor);
-        if (hbmCap.isPresent()) {
-            return hbmCap.resolve().map(c -> c.canConnectEnergy(sideFromNeighbor)).orElse(false);
+        if (be instanceof IEnergyConnector connector) {
+            return connector.canConnectEnergy(sideFromNeighbor);
         }
 
-        if (be.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, sideFromNeighbor).isPresent()) {
-            return true;
-        }
+        //? if forge {
+        // Forge: дополнительная проверка через Capability для совместимости со сторонними модами
+        if (be.getCapability(ModCapabilities.HBM_ENERGY_CONNECTOR, sideFromNeighbor).isPresent()) return true;
+        if (be.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, sideFromNeighbor).isPresent()) return true;
+        if (be.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER, sideFromNeighbor).isPresent()) return true;
+        return be.getCapability(ForgeCapabilities.ENERGY, sideFromNeighbor).isPresent();
+        //?}
 
-        if (be.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER, sideFromNeighbor).isPresent()) {
-            return true;
-        }
-
-        return be.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY, sideFromNeighbor).isPresent();
+        //? if fabric {
+        /*// Fabric: проверяем через cardinal-components
+        return ModCapabilities.hasEnergyComponent(be);
+        *///?}
     }
 
     public static BooleanProperty getProperty(Direction direction) {

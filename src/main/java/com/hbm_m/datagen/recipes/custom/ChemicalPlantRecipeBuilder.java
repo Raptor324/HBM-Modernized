@@ -1,18 +1,20 @@
 package com.hbm_m.datagen.recipes.custom;
-
+//? if forge {
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
 
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.CriterionTriggerInstance;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
@@ -21,7 +23,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.registries.ForgeRegistries;
 
 /**
  * Datagen builder for {@link ChemicalPlantRecipe}.
@@ -44,6 +45,12 @@ public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
     private final List<FluidAmount> fluidInputs = new ArrayList<>();
     private final List<ItemStack> itemOutputs = new ArrayList<>();
     private final List<FluidAmount> fluidOutputs = new ArrayList<>();
+
+    @Nullable
+    private ItemStack iconItem;
+
+    @Nullable
+    private Fluid iconFluid;
 
     @Nullable
     private String blueprintPool;
@@ -83,6 +90,20 @@ public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
         return this;
     }
 
+    public ChemicalPlantRecipeBuilder withIconItem(ItemStack stack) {
+        this.iconItem = (stack == null || stack.isEmpty()) ? null : stack.copy();
+        return this;
+    }
+
+    public ChemicalPlantRecipeBuilder withIconItem(Item item) {
+        return withIconItem(new ItemStack(item));
+    }
+
+    public ChemicalPlantRecipeBuilder withIconFluid(Fluid fluid) {
+        this.iconFluid = fluid;
+        return this;
+    }
+
     public ChemicalPlantRecipeBuilder withBlueprintPool(String pool) {
         this.blueprintPool = pool;
         return this;
@@ -93,7 +114,7 @@ public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
     private record FluidAmount(Fluid fluid, int amount) {}
 
     @Override
-    public RecipeBuilder unlockedBy(@Nonnull String name, @Nonnull CriterionTriggerInstance criterion) {
+    public RecipeBuilder unlockedBy(@NotNull String name, @NotNull CriterionTriggerInstance criterion) {
         this.advancement.addCriterion(name, criterion);
         return this;
     }
@@ -113,12 +134,17 @@ public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
     }
 
     @Override
-    public void save(@Nonnull Consumer<FinishedRecipe> writer, @Nonnull ResourceLocation recipeId) {
+    public void save(@NotNull Consumer<FinishedRecipe> writer, @NotNull ResourceLocation recipeId) {
         writer.accept(new Result(recipeId, this));
     }
 
-    public void save(@Nonnull Consumer<FinishedRecipe> writer, @Nonnull String path) {
-        save(writer, ResourceLocation.fromNamespaceAndPath("hbm_m", path));
+    public void save(@NotNull Consumer<FinishedRecipe> writer, @NotNull String path) {
+        //? if fabric && < 1.21.1 {
+        /*save(writer, new ResourceLocation("hbm_m", path));
+        *///?} else {
+                save(writer, ResourceLocation.fromNamespaceAndPath("hbm_m", path));
+        //?}
+
     }
 
     private static final class Result implements FinishedRecipe {
@@ -131,7 +157,7 @@ public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
         }
 
         @Override
-        public void serializeRecipeData(@Nonnull JsonObject json) {
+        public void serializeRecipeData(@NotNull JsonObject json) {
             json.addProperty("duration", builder.duration);
             json.addProperty("power", builder.power);
 
@@ -139,17 +165,34 @@ public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
                 json.addProperty("blueprint_pool", builder.blueprintPool);
             }
 
+            if (builder.iconItem != null && !builder.iconItem.isEmpty()) {
+                JsonObject o = new JsonObject();
+                ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(builder.iconItem.getItem());
+                if (itemId != null) {
+                    o.addProperty("item", itemId.toString());
+                    if (builder.iconItem.getCount() > 1) {
+                        o.addProperty("count", builder.iconItem.getCount());
+                    }
+                    json.add("icon_item", o);
+                }
+            }
+
+            if (builder.iconFluid != null) {
+                ResourceLocation fluidId = BuiltInRegistries.FLUID.getKey(builder.iconFluid);
+                if (fluidId != null) {
+                    json.addProperty("icon_fluid", fluidId.toString());
+                }
+            }
+
             JsonArray itemInputs = new JsonArray();
             for (CountedIngredient ci : builder.itemInputs) {
-                JsonObject ing = ci.ingredient().toJson().getAsJsonObject();
-                ing.addProperty("count", ci.count());
-                itemInputs.add(ing);
+                itemInputs.add(AssemblerRecipe.toCountedIngredientJson(ci.ingredient(), ci.count()));
             }
             json.add("item_inputs", itemInputs);
 
             JsonArray fluidInputs = new JsonArray();
             for (FluidAmount fa : builder.fluidInputs) {
-                ResourceLocation fluidId = ForgeRegistries.FLUIDS.getKey(fa.fluid());
+                ResourceLocation fluidId = BuiltInRegistries.FLUID.getKey(fa.fluid());
                 if (fluidId == null) continue;
                 JsonObject obj = new JsonObject();
                 obj.addProperty("fluid", fluidId.toString());
@@ -161,7 +204,7 @@ public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
             JsonArray itemOutputs = new JsonArray();
             for (ItemStack out : builder.itemOutputs) {
                 JsonObject o = new JsonObject();
-                ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(out.getItem());
+                ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(out.getItem());
                 if (itemId == null) continue;
                 o.addProperty("item", itemId.toString());
                 if (out.getCount() > 1) {
@@ -173,7 +216,7 @@ public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
 
             JsonArray fluidOutputs = new JsonArray();
             for (FluidAmount fa : builder.fluidOutputs) {
-                ResourceLocation fluidId = ForgeRegistries.FLUIDS.getKey(fa.fluid());
+                ResourceLocation fluidId = BuiltInRegistries.FLUID.getKey(fa.fluid());
                 if (fluidId == null) continue;
                 JsonObject obj = new JsonObject();
                 obj.addProperty("fluid", fluidId.toString());
@@ -206,4 +249,4 @@ public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
         }
     }
 }
-
+//?}

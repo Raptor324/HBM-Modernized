@@ -6,12 +6,14 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
-import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.block.entity.machines.FluidDuctBlockEntity;
 import com.hbm_m.block.machines.FluidDuctBlock;
+import com.hbm_m.inventory.fluid.ModFluids;
 
+import dev.architectury.fluid.FluidStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
@@ -26,8 +28,6 @@ import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.registries.ForgeRegistries;
 
 /**
  * Fluid Duct — places the matching {@link FluidDuctBlock} style; fluid type in NBT for tint/transport.
@@ -54,7 +54,7 @@ public class FluidDuctItem extends Item {
         if (fluid.isEmpty()) {
             return Component.translatable(translationEmpty);
         }
-        return Component.translatable(translationWithFluid, fluid.getDisplayName());
+        return Component.translatable(translationWithFluid, fluid.getName());
     }
 
     @Override
@@ -112,16 +112,16 @@ public class FluidDuctItem extends Item {
     public static FluidStack getFluidType(ItemStack stack) {
         if (stack.hasTag() && stack.getTag().contains(NBT_FLUID_TYPE)) {
             String fluidName = stack.getTag().getString(NBT_FLUID_TYPE);
-            Fluid fluid = ForgeRegistries.FLUIDS.getValue(new ResourceLocation(fluidName));
+            Fluid fluid = BuiltInRegistries.FLUID.get(new ResourceLocation(fluidName));
             if (fluid != null && fluid != net.minecraft.world.level.material.Fluids.EMPTY) {
-                return new FluidStack(fluid, 1);
+                return FluidStack.create(fluid, 1);
             }
         }
-        return FluidStack.EMPTY;
+        return FluidStack.empty();
     }
 
     public static void setFluidType(ItemStack stack, Fluid fluid) {
-        ResourceLocation loc = ForgeRegistries.FLUIDS.getKey(fluid);
+        ResourceLocation loc = BuiltInRegistries.FLUID.getKey(fluid);
         if (loc != null) {
             stack.getOrCreateTag().putString(NBT_FLUID_TYPE, loc.toString());
         }

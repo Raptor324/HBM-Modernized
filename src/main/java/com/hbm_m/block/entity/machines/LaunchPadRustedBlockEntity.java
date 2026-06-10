@@ -1,5 +1,6 @@
 package com.hbm_m.block.entity.machines;
 
+import com.hbm_m.api.network.NodeDirPos;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.inventory.menu.LaunchPadRustedMenu;
 
@@ -19,12 +20,23 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public class LaunchPadRustedBlockEntity extends LaunchPadBaseBlockEntity {
 
+    private static final int RUSTED_SLOT_DESIGNATOR = 3;
+
+    @Override
+    public int getDesignatorSlot() {
+        return RUSTED_SLOT_DESIGNATOR;
+    }
+
     public LaunchPadRustedBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.LAUNCH_PAD_RUSTED_BE.get(), pos, state);
     }
 
-    public static void serverTick(Level level, BlockPos pos, BlockState state, LaunchPadRustedBlockEntity be) {
-        commonServerTick(level, pos, state, be);
+    public static void tick(Level level, BlockPos pos, BlockState state, LaunchPadRustedBlockEntity be) {
+        if (level.isClientSide) {
+            clientLaunchPadSmokeTick(level, pos, state);
+        } else {
+            commonServerTick(level, pos, state, be);
+        }
     }
 
     @Override
@@ -45,8 +57,12 @@ public class LaunchPadRustedBlockEntity extends LaunchPadBaseBlockEntity {
 
     @Override
     protected boolean isReadyForLaunch() {
-        // Ржавая площадка может требовать отдельных условий; пока считаем, что готова
-        return true;
+        return delay <= 0;
+    }
+
+    @Override
+    public NodeDirPos[] getConPos() {
+        return buildStandardConPos(worldPosition);
     }
 }
 

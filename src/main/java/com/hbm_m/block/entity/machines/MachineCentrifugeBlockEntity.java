@@ -2,7 +2,7 @@ package com.hbm_m.block.entity.machines;
 
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.inventory.menu.MachineCentrifugeMenu;
 import com.hbm_m.recipe.CentrifugeRecipes;
 import net.minecraft.core.BlockPos;
@@ -16,7 +16,6 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -80,15 +79,7 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
             return false;
         }
         if (slot == BATTERY_SLOT) {
-            boolean hasHbmEnergy = stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
-                    .map(provider -> provider.canExtract())
-                    .orElse(false);
-            if (hasHbmEnergy) {
-                return true;
-            }
-            return stack.getCapability(ForgeCapabilities.ENERGY)
-                    .map(storage -> storage.canExtract())
-                    .orElse(false);
+            return isEnergyProviderItem(stack);
         }
         return true;
     }
@@ -215,56 +206,6 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
     }
 
     private void chargeFromBattery() {
-        ItemStack batteryStack = inventory.getStackInSlot(BATTERY_SLOT);
-        if (batteryStack.isEmpty()) {
-            return;
-        }
-
-        boolean transferred = batteryStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).map(itemEnergy -> {
-            if (!itemEnergy.canExtract()) {
-                return false;
-            }
-
-            long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
-            if (energyNeeded <= 0) {
-                return false;
-            }
-
-            long energyToTransfer = Math.min(energyNeeded, this.getReceiveSpeed());
-            long extracted = itemEnergy.extractEnergy(energyToTransfer, false);
-
-            if (extracted > 0) {
-                this.setEnergyStored(this.getEnergyStored() + extracted);
-                setChanged();
-                return true;
-            }
-            return false;
-        }).orElse(false);
-
-        if (transferred) {
-            return;
-        }
-
-        batteryStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
-            if (!itemEnergy.canExtract()) {
-                return;
-            }
-
-            long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
-            if (energyNeeded <= 0) {
-                return;
-            }
-
-            int maxTransfer = (int) Math.min(Integer.MAX_VALUE, Math.min(energyNeeded, this.getReceiveSpeed()));
-            if (maxTransfer <= 0) {
-                return;
-            }
-
-            int extracted = itemEnergy.extractEnergy(maxTransfer, false);
-            if (extracted > 0) {
-                this.setEnergyStored(this.getEnergyStored() + extracted);
-                setChanged();
-            }
-        });
+        chargeFromBatterySlot(BATTERY_SLOT);
     }
 }

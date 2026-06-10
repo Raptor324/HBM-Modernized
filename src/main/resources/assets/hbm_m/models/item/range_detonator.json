@@ -1,6 +1,55 @@
 {
-	"parent": "item/handheld",
-	"textures": {
-		"layer0": "hbm_m:item/range_detonator"
-	}
+  "flip_v": true,
+  "loader": "hbm_m:missile_loader",
+  "model": "hbm_m:models/weapons/detonator_laser.obj",
+  "parts": [
+    "Main",
+    "Lights"
+  ],
+  "textures": {
+    "default": "hbm_m:models/missile/detonator_laser",
+    "particle": "hbm_m:models/missile/detonator_laser"
+  },
+"display": {
+    "thirdperson_righthand": {
+        "rotation": [ 0, 90, 0 ],
+        "translation": [ 0.00, 0.00, 0.00 ],
+        "scale": [ 1.00, 1.00, 1.00 ]
+    },
+    "thirdperson_lefthand": {
+        "rotation": [ 0, 90, 0 ],
+        "translation": [ 0.00, 0.00, 0.00 ],
+        "scale": [ 1.00, 1.00, 1.00 ]
+    },
+    "firstperson_righthand": {
+        "rotation": [ 0, 180, 0 ],
+        "translation": [ -1.00, 1.00, -1.25 ],
+        "scale": [ 1.10, 1.10, 1.10 ]
+    },
+    "firstperson_lefthand": {
+        "rotation": [ 0, 0, 0 ],
+        "translation": [ 0.00, 0.00, 0.00 ],
+        "scale": [ 1.00, 1.00, 1.00 ]
+    },
+    "gui": {
+        "rotation": [ 300, 300, 300 ],
+        "translation": [ -1.5, -1.5, 0.25 ],
+        "scale": [ 1.7, 1.7, 1.7 ]
+    },
+    "head": {
+        "rotation": [ 0, 0, 0 ],
+        "translation": [ 0.00, 0.00, 0.00 ],
+        "scale": [ 1.00, 1.00, 1.00 ]
+    },
+    "fixed": {
+        "rotation": [ 0, 0, 0 ],
+        "translation": [ 0.00, 0.00, 0.00 ],
+        "scale": [ 1.00, 1.00, 1.00 ]
+    },
+    "ground": {
+        "rotation": [ 0, 0, 0 ],
+        "translation": [ 0.00, 0.00, 0.00 ],
+        "scale": [ 1.10, 1.10, 1.10 ]
+    }
+}
 }

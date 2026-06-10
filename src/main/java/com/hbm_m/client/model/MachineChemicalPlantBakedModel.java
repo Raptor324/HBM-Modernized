@@ -18,8 +18,10 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
+//? if forge {
 import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
+//?}
 
 /**
  * Iris/chunk mesh: при {@code render_active=false} - Base, Frame, Slider и Spinner (idle).
@@ -80,16 +82,54 @@ public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel 
     /**
      * Только cutout: совпадает с {@code chemical_plant.json} и исключает попытки запекать translucent в terrain.
      */
+    //? if forge {
     @Override
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
         return ChunkRenderTypeSet.of(RenderType.cutout());
     }
+    //?}
 
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
+        //? if forge {
         return getQuads(state, side, rand, ModelData.EMPTY, null);
+        //?}
+
+        //? if fabric {
+        /*if (state == null) {
+            return getItemQuads(side, rand);
+        }
+        if (ShaderCompatibilityDetector.useVboGeometry()) {
+            return List.of();
+        }
+
+        List<BakedQuad> result = new ArrayList<>();
+        int rotationY = getRotationYForFacing(state);
+        boolean renderActive = state.hasProperty(MachineChemicalPlantBlock.RENDER_ACTIVE)
+            && state.getValue(MachineChemicalPlantBlock.RENDER_ACTIVE);
+
+        BakedModel basePart = parts.get("Base");
+        if (basePart != null) {
+            result.addAll(ModelHelper.transformQuadsByFacing(
+                basePart.getQuads(state, side, rand), rotationY));
+        }
+
+        if (state.hasProperty(MachineChemicalPlantBlock.FRAME) && state.getValue(MachineChemicalPlantBlock.FRAME)) {
+            BakedModel framePart = parts.get("Frame");
+            if (framePart != null) {
+                result.addAll(ModelHelper.transformQuadsByFacing(
+                    framePart.getQuads(state, side, rand), rotationY));
+            }
+        }
+
+        if (!renderActive) {
+            addIdleSliderAndSpinner(state, side, rand, rotationY, result);
+        }
+        return result;
+        *///?}
     }
 
+    //? if forge {
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                     RandomSource rand, ModelData modelData, @Nullable net.minecraft.client.renderer.RenderType renderType) {
@@ -126,12 +166,14 @@ public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel 
 
         return result;
     }
+    //?}
 
     /** Soft peak sine (BobMathUtil.sps); при anim=0 даёт 1.0. */
     private static double chemicalSps(double x) {
         return Math.sin(Math.PI / 2.0 * Math.cos(x));
     }
 
+    //? if forge {
     private void addIdleSliderAndSpinner(BlockState state, @Nullable Direction side, RandomSource rand,
                                         ModelData modelData, @Nullable net.minecraft.client.renderer.RenderType renderType,
                                         int rotationY, List<BakedQuad> result) {
@@ -162,7 +204,34 @@ public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel 
             result.addAll(ModelHelper.transformQuadsByFacing(spq, rotationY));
         }
     }
+    //?}
 
+    //? if fabric {
+    /*private void addIdleSliderAndSpinner(BlockState state, @Nullable Direction side, RandomSource rand,
+                                        int rotationY, List<BakedQuad> result) {
+        double sdx = chemicalSps(0) * 0.375;
+
+        float slideRad = (float) Math.toRadians(rotationY);
+        float slideTx = (float) (sdx * Math.cos(slideRad));
+        float slideTz = (float) (sdx * Math.sin(slideRad));
+
+        BakedModel sliderPart = parts.get("Slider");
+        if (sliderPart != null) {
+            List<BakedQuad> sq = sliderPart.getQuads(state, side, rand);
+            sq = ModelHelper.transformQuadsByFacing(sq, rotationY);
+            sq = ModelHelper.translateQuads(sq, slideTx, 0f, slideTz);
+            result.addAll(sq);
+        }
+
+        BakedModel spinnerPart = parts.get("Spinner");
+        if (spinnerPart != null) {
+            List<BakedQuad> spq = spinnerPart.getQuads(state, side, rand);
+            result.addAll(ModelHelper.transformQuadsByFacing(spq, rotationY));
+        }
+    }
+    *///?}
+
+    //? if forge {
     private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand,
                                         ModelData modelData, @Nullable net.minecraft.client.renderer.RenderType renderType) {
         if (!itemQuadsCached) {
@@ -190,6 +259,36 @@ public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel 
         }
         this.cachedItemQuads = allQuads;
     }
+    //?}
+
+    //? if fabric {
+    /*private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand) {
+        if (!itemQuadsCached) {
+            buildItemQuads(rand);
+            itemQuadsCached = true;
+        }
+        if (side != null) {
+            return cachedItemQuads.stream()
+                .filter(quad -> quad.getDirection() == side)
+                .toList();
+        }
+        return cachedItemQuads;
+    }
+
+    private void buildItemQuads(RandomSource rand) {
+        List<BakedQuad> allQuads = new ArrayList<>();
+        for (String partName : new String[] { "Base", "Slider", "Spinner" }) {
+            BakedModel part = parts.get(partName);
+            if (part != null) {
+                for (Direction dir : Direction.values()) {
+                    allQuads.addAll(part.getQuads(null, dir, rand));
+                }
+                allQuads.addAll(part.getQuads(null, null, rand));
+            }
+        }
+        this.cachedItemQuads = allQuads;
+    }
+    *///?}
 
     @Override
     protected List<String> getItemRenderPartNames() {
@@ -198,7 +297,13 @@ public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel 
 
     @Override
     public TextureAtlasSprite getParticleIcon() {
+        //? if forge {
         return getParticleIcon(ModelData.EMPTY);
+        //?}
+
+        //? if fabric {
+        /*return super.getParticleIcon();
+        *///?}
     }
 
     @Override

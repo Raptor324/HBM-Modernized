@@ -1,5 +1,6 @@
 package com.hbm_m.item.tools_and_armor;
 
+import com.hbm_m.client.overlay.OverlayInfoToast;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -14,21 +15,26 @@ import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Tier;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
 public class ModAxeItem extends AxeItem {
     private static final String NBT_VEIN_MINER = "VeinMinerEnabled";
     private static final String NBT_SILK_TOUCH = "SilkTouchEnabled";
+    private static final String NBT_PRE_SILK = "PreModeSilk";
 
     private static final Set<Block> EXCLUDED_BLOCKS = Set.of(
             Blocks.STONE, Blocks.ANDESITE, Blocks.DIORITE, Blocks.GRANITE,
@@ -84,57 +90,62 @@ public class ModAxeItem extends AxeItem {
 
     @Override
     public boolean isFoil(ItemStack stack) {
-        return isVeinMinerEnabled(stack) || isSilkTouchEnabled(stack);
+        return super.isFoil(stack) || isVeinMinerEnabled(stack) || isSilkTouchEnabled(stack);
     }
+
+    private record ModeFeedback(Component text, ChatFormatting color) {}
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        boolean apply = !level.isClientSide();
 
-        if (!level.isClientSide()) {
-            if (player.isShiftKeyDown()) {
-                // Shift + ПКМ = выключить всё
-                disableAllAbilities(stack, player);
-            } else {
-                // Обычный ПКМ = переключить на следующую способность
-                cycleAbilities(stack, player);
-            }
-            return InteractionResultHolder.success(stack);
+        ModeFeedback feedback = player.isShiftKeyDown()
+                ? disableAllAbilities(stack, player, apply)
+                : cycleAbilities(stack, player, apply);
+
+        if (level.isClientSide() && feedback != null) {
+            OverlayInfoToast.showToolMode(feedback.text(), feedback.color());
         }
 
-        return InteractionResultHolder.pass(stack);
+        return level.isClientSide()
+                ? InteractionResultHolder.sidedSuccess(stack, true)
+                : InteractionResultHolder.success(stack);
     }
 
-    private void cycleAbilities(ItemStack stack, Player player) {
+    private ModeFeedback cycleAbilities(ItemStack stack, Player player, boolean apply) {
+        ModeFeedback feedback = null;
         boolean anyActive = isVeinMinerEnabled(stack) || isSilkTouchEnabled(stack);
 
         if (!anyActive) {
-            // Включаем первую доступную способность
             if (veinMinerLevel > 0) {
-                toggleVeinMiner(stack, player, true);
+                feedback = toggleVeinMiner(stack, player, true, apply);
             } else if (silkTouchLevel > 0) {
-                toggleSilkTouch(stack, player, true);
+                feedback = toggleSilkTouch(stack, player, true, apply);
             }
         } else if (isVeinMinerEnabled(stack)) {
-            toggleVeinMiner(stack, player, false);
+            feedback = toggleVeinMiner(stack, player, false, apply);
             if (silkTouchLevel > 0) {
-                toggleSilkTouch(stack, player, true);
+                feedback = toggleSilkTouch(stack, player, true, apply);
             } else {
-                disableAllAbilities(stack, player);
+                feedback = disableAllAbilities(stack, player, apply);
             }
         } else if (isSilkTouchEnabled(stack)) {
-            disableAllAbilities(stack, player);
+            feedback = disableAllAbilities(stack, player, apply);
         }
+        return feedback;
     }
 
-    private void disableAllAbilities(ItemStack stack, Player player) {
-        stack.getOrCreateTag().putBoolean(NBT_VEIN_MINER, false);
-        stack.getOrCreateTag().putBoolean(NBT_SILK_TOUCH, false);
-        removeAllEnchantments(stack);
-        playToggleSound(player, false);
-        player.displayClientMessage(
+    private ModeFeedback disableAllAbilities(ItemStack stack, Player player, boolean apply) {
+        if (apply) {
+            stack.getOrCreateTag().putBoolean(NBT_VEIN_MINER, false);
+            stack.getOrCreateTag().putBoolean(NBT_SILK_TOUCH, false);
+            clearModeSilkTouch(stack);
+            playToggleSound(player, false);
+        }
+        return new ModeFeedback(
                 Component.translatable("message.hbm_m.disabled").withStyle(ChatFormatting.RED),
-                true
+                ChatFormatting.RED
         );
     }
 
@@ -154,44 +165,78 @@ public class ModAxeItem extends AxeItem {
         return result;
     }
 
-    private void toggleVeinMiner(ItemStack stack, Player player, boolean enable) {
-        stack.getOrCreateTag().putBoolean(NBT_VEIN_MINER, enable);
-        if (enable) {
-            stack.getOrCreateTag().putBoolean(NBT_SILK_TOUCH, false);
-            removeAllEnchantments(stack);
+    private ModeFeedback toggleVeinMiner(ItemStack stack, Player player, boolean enable, boolean apply) {
+        if (apply) {
+            stack.getOrCreateTag().putBoolean(NBT_VEIN_MINER, enable);
+            if (enable) {
+                stack.getOrCreateTag().putBoolean(NBT_SILK_TOUCH, false);
+                clearModeSilkTouch(stack);
+            }
+            playToggleSound(player, enable);
         }
-        playToggleSound(player, enable);
-        player.displayClientMessage(
+        ChatFormatting color = enable ? ChatFormatting.YELLOW : ChatFormatting.RED;
+        return new ModeFeedback(
                 Component.translatable(
                         enable ? "message.hbm_m.vein_miner.enabled" : "message.hbm_m.vein_miner.disabled",
                         veinMinerLevel
-                ).withStyle(enable ? ChatFormatting.YELLOW : ChatFormatting.RED),
-                true
+                ).withStyle(color),
+                color
         );
     }
 
-    private void toggleSilkTouch(ItemStack stack, Player player, boolean enable) {
-        stack.getOrCreateTag().putBoolean(NBT_SILK_TOUCH, enable);
-        if (enable) {
-            stack.getOrCreateTag().putBoolean(NBT_VEIN_MINER, false);
-            removeAllEnchantments(stack);
-            stack.enchant(Enchantments.SILK_TOUCH, 1);
-        } else {
-            removeAllEnchantments(stack);
+    private ModeFeedback toggleSilkTouch(ItemStack stack, Player player, boolean enable, boolean apply) {
+        if (apply) {
+            stack.getOrCreateTag().putBoolean(NBT_SILK_TOUCH, enable);
+            if (enable) {
+                stack.getOrCreateTag().putBoolean(NBT_VEIN_MINER, false);
+                applyModeSilkTouch(stack);
+            } else {
+                clearModeSilkTouch(stack);
+            }
+            playToggleSound(player, enable);
         }
-        playToggleSound(player, enable);
-        player.displayClientMessage(
+        ChatFormatting color = enable ? ChatFormatting.YELLOW : ChatFormatting.RED;
+        return new ModeFeedback(
                 Component.translatable(
                         enable ? "message.hbm_m.silk_touch.enabled" : "message.hbm_m.silk_touch.disabled"
-                ).withStyle(enable ? ChatFormatting.YELLOW : ChatFormatting.RED),
-                true
+                ).withStyle(color),
+                color
         );
     }
 
-    private void removeAllEnchantments(ItemStack stack) {
-        if (stack.hasTag() && stack.getTag().contains("Enchantments")) {
-            stack.getTag().remove("Enchantments");
+    private void applyModeSilkTouch(ItemStack stack) {
+        int vanilla = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SILK_TOUCH, stack);
+        stack.getOrCreateTag().putInt(NBT_PRE_SILK, vanilla);
+        Map<Enchantment, Integer> enchants = new HashMap<>(EnchantmentHelper.getEnchantments(stack));
+        enchants.put(Enchantments.SILK_TOUCH, Math.max(vanilla, 1));
+        EnchantmentHelper.setEnchantments(enchants, stack);
+    }
+
+    private void clearModeSilkTouch(ItemStack stack) {
+        if (!stack.hasTag() || !stack.getTag().contains(NBT_PRE_SILK)) {
+            return;
         }
+        int vanilla = stack.getTag().getInt(NBT_PRE_SILK);
+        Map<Enchantment, Integer> enchants = new HashMap<>(EnchantmentHelper.getEnchantments(stack));
+        if (vanilla > 0) {
+            enchants.put(Enchantments.SILK_TOUCH, vanilla);
+        } else {
+            enchants.remove(Enchantments.SILK_TOUCH);
+        }
+        EnchantmentHelper.setEnchantments(enchants, stack);
+        stack.getTag().remove(NBT_PRE_SILK);
+    }
+
+    private ItemStack getToolForDrops(ItemStack stack) {
+        ItemStack tool = stack.copy();
+        if (!isSilkTouchEnabled(stack)) {
+            return tool;
+        }
+        Map<Enchantment, Integer> enchants = new HashMap<>(EnchantmentHelper.getEnchantments(stack));
+        int silk = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SILK_TOUCH, stack);
+        enchants.put(Enchantments.SILK_TOUCH, Math.max(silk, 1));
+        EnchantmentHelper.setEnchantments(enchants, tool);
+        return tool;
     }
 
     private void playToggleSound(Player player, boolean enable) {
@@ -266,7 +311,7 @@ public class ModAxeItem extends AxeItem {
         if (!stack.isCorrectToolForDrops(blockState)) return;
 
         if (level instanceof ServerLevel serverLevel) {
-            Block.dropResources(blockState, level, pos, level.getBlockEntity(pos), entity, stack);
+            Block.dropResources(blockState, level, pos, level.getBlockEntity(pos), entity, getToolForDrops(stack));
             level.removeBlock(pos, false);
         }
 

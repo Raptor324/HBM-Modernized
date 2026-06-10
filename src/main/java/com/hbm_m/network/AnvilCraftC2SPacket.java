@@ -3,13 +3,12 @@ package com.hbm_m.network;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
-
-import java.util.function.Supplier;
 
 import com.hbm_m.inventory.menu.AnvilMenu;
 
-public class AnvilCraftC2SPacket {
+import dev.architectury.networking.NetworkManager.PacketContext;
+
+public class AnvilCraftC2SPacket implements C2SPacket {
     private final BlockPos pos;
     private final boolean craftAll;
 
@@ -18,23 +17,21 @@ public class AnvilCraftC2SPacket {
         this.craftAll = craftAll;
     }
 
-    public AnvilCraftC2SPacket(FriendlyByteBuf buffer) {
-        this(buffer.readBlockPos(), buffer.readBoolean());
-    }
-
-    public static void encode(AnvilCraftC2SPacket packet, FriendlyByteBuf buffer) {
-        buffer.writeBlockPos(packet.pos);
-        buffer.writeBoolean(packet.craftAll);
-    }
-
     public static AnvilCraftC2SPacket decode(FriendlyByteBuf buffer) {
-        return new AnvilCraftC2SPacket(buffer);
+        BlockPos pos = buffer.readBlockPos();
+        boolean craftAll = buffer.readBoolean();
+        return new AnvilCraftC2SPacket(pos, craftAll);
     }
 
-    public static void handle(AnvilCraftC2SPacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        context.enqueueWork(() -> {
-            ServerPlayer player = context.getSender();
+    @Override
+    public void write(FriendlyByteBuf buffer) {
+        buffer.writeBlockPos(this.pos);
+        buffer.writeBoolean(this.craftAll);
+    }
+
+    public static void handle(AnvilCraftC2SPacket packet, PacketContext context) {
+        context.queue(() -> {
+            ServerPlayer player = (ServerPlayer) context.getPlayer();
             if (player == null) {
                 return;
             }
@@ -43,7 +40,5 @@ public class AnvilCraftC2SPacket {
                 menu.tryCraft(player, packet.craftAll);
             }
         });
-        context.setPacketHandled(true);
     }
 }
-

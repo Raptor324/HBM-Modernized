@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "${id}",
+  "version": "${version}",
+  "name": "${name}",
+  "description": "${description}",
+  "authors": [
+    "${mod_authors}"
+  ],
+  "contact": {
+    "homepage": "${homepage_url}",
+    "sources": "${sources_url}",
+    "issues": "${issues_url}"
+  },
+  "license": "${license}",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.hbm_m.main.FabricEntrypoint"
+    ],
+    "client": [
+      "com.hbm_m.main.FabricClientEntrypoint"
+    ],
+    "cardinal-components-chunk": [
+      "com.hbm_m.capability.FabricChunkComponents"
+    ],
+    "cardinal-components-entity": [
+      "com.hbm_m.capability.FabricPlayerComponents"
+    ]
+  },
+  "mixins": [
+    "${mixin_config}",
+    "mixins.hbm_m.fabric.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.14.0",
+    "minecraft": "${minecraft}"
+  },
+  "custom": {
+    "cardinal-components": [
+      "hbm_m:chunk_radiation",
+      "hbm_m:player_radiation",
+      "hbm_m:player_persistent_data"
+    ]
+  }
+}
+

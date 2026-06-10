@@ -20,7 +20,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.items.ItemStackHandler;
+import com.hbm_m.platform.ModItemStackHandler;
 
 /**
  * Базовый Item для ящиков HBM с отображением содержимого в тултипе.
@@ -79,7 +79,10 @@ public class CrateItem extends BlockItem {
         if (!beTag.contains("inventory")) return null;
 
         CompoundTag inventoryTag = beTag.getCompound("inventory");
-        ItemStackHandler handler = new ItemStackHandler(totalSlots);
+        ModItemStackHandler handler = new ModItemStackHandler(totalSlots) {
+            @Override
+            protected void onContentsChanged(int slot) {}
+        };
         handler.deserializeNBT(inventoryTag);
 
         Map<String, GroupData> groups = new LinkedHashMap<>();

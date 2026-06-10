@@ -1,0 +1,18 @@
+{
+  "textures": {
+    "particle": "hbm_m:block/machine/zirnox",
+    "default": "hbm_m:block/machine/zirnox"
+  },
+  "loader": "forge:composite",
+  "children": {
+    "model": {
+      "loader": "forge:obj",
+      "model": "hbm_m:models/block/zirnox/deb_exchanger.obj",
+      "flip_v": true,
+      "render_type": "minecraft:solid",
+      "textures": {
+        "default": "hbm_m:block/machine/zirnox"
+      }
+    }
+  }
+}

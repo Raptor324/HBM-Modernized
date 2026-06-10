@@ -1,5 +1,14 @@
 package com.hbm_m.client.render;
 
+
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?}
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;*///?}
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
@@ -19,6 +28,7 @@ import org.lwjgl.opengl.GL44;
 import org.lwjgl.system.MemoryUtil;
 
 import com.hbm_m.main.MainRegistry;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -29,8 +39,6 @@ import com.mojang.blaze3d.vertex.VertexFormatElement;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Lazy-built companion VBO+VAO that holds geometry in a vertex format compatible
@@ -47,8 +55,21 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  * is marked failed and the calling code is expected to fall back to vanilla
  * paths.
  */
+//? if forge {
 @OnlyIn(Dist.CLIENT)
-public final class IrisCompanionMesh {
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
+public final class IrisCompanionMesh implements IrisCompanionMeshResource {
+
+    /**
+     * Linker-resolved locations forced by Oculus {@code ProgramCreator} for every
+     * Iris pack program — independent of the element's index in
+     * {@code IrisVertexFormats.ENTITY}.
+     */
+    private static final int IRIS_ATTRIB_ENTITY = 11;
+    private static final int IRIS_ATTRIB_MID_TEX = 12;
+    private static final int IRIS_ATTRIB_TANGENT = 13;
 
     private final List<BakedQuad> quads;
     private int vaoId = -1;
@@ -253,6 +274,15 @@ public final class IrisCompanionMesh {
      */
     private long cachedProgramPipelineGeneration = -1L;
 
+    /**
+     * Set when {@link #primeIrisExtendedVertexAttributes(int)} baked iris_Entity /
+     * mc_midTexCoord / at_tangent into this VAO at build time. Draw paths then
+     * skip {@code glEnableVertexAttribArray} entirely (the source of
+     * {@code Array object is not active} spam when Embeddium leaves VAO 0 bound
+     * between our bind check and the enable call).
+     */
+    private boolean irisExtendedAttrsPrimedInVao = false;
+
     {
         for (int i = 0; i < CACHED_PROGRAM_SLOTS; i++) cachedProgramIds[i] = -1;
     }
@@ -302,11 +332,18 @@ public final class IrisCompanionMesh {
             // approximates the brightness of the baked-model path closely enough.
             final int fullBrightLight = LightTexture.pack(15, 15);
             for (BakedQuad quad : quads) {
+                //? if forge {
                 builder.putBulkData(neutralPose, quad,
                         1.0F, 1.0F, 1.0F, 1.0F,
                         fullBrightLight,
                         OverlayTexture.NO_OVERLAY,
                         false);
+                //?} else {
+                /*builder.putBulkData(neutralPose, quad,
+                        1.0F, 1.0F, 1.0F,
+                        fullBrightLight,
+                        OverlayTexture.NO_OVERLAY);
+                *///?}
             }
 
             BufferBuilder.RenderedBuffer rendered = builder.end();
@@ -320,17 +357,21 @@ public final class IrisCompanionMesh {
             // prepareForShader() can hand the linker-resolved locations a
             // pointer to real per-vertex data populated by Iris's
             // MixinBufferBuilder.iris$beforeNext (iris_Entity / mc_midTexCoord
-            // / at_tangent). The element-mapping ImmutableMap iterates in the
-            // same order as getElements() - that's what Mojang's VertexFormat
-            // constructor guarantees - so a running offset over its entrySet()
-            // matches the per-element layout in the VBO byte stream.
+            // / at_tangent). Имена и порядок — из getElementAttributeNames() /
+            // getElements(); смещения накапливаем по getByteSize() (как раньше
+            // по entrySet getElementMapping), без getElementName/getOffset(Element),
+            // которых нет на 1.20.1 Forge.
             elementOffsets.clear();
             elementByName.clear();
+            var elements = actualFormat.getElements();
+            var names = actualFormat.getElementAttributeNames();
             int runningOffset = 0;
-            for (Map.Entry<String, VertexFormatElement> entry : actualFormat.getElementMapping().entrySet()) {
-                elementOffsets.put(entry.getKey(), runningOffset);
-                elementByName.put(entry.getKey(), entry.getValue());
-                runningOffset += entry.getValue().getByteSize();
+            for (int i = 0; i < elements.size(); i++) {
+                String name = names.get(i);
+                VertexFormatElement el = elements.get(i);
+                elementOffsets.put(name, runningOffset);
+                elementByName.put(name, el);
+                runningOffset += el.getByteSize();
             }
 
             this.vaoId = GL30.glGenVertexArrays();
@@ -339,7 +380,7 @@ public final class IrisCompanionMesh {
                 throw new IllegalStateException("Failed to generate companion VAO/VBO");
             }
 
-            GL30.glBindVertexArray(vaoId);
+            GlStateManager._glBindVertexArray(vaoId);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
             GL15.glBufferData(GL15.GL_ARRAY_BUFFER, vertexBytes, GL15.GL_STATIC_DRAW);
 
@@ -429,6 +470,11 @@ public final class IrisCompanionMesh {
             GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indices, GL15.GL_STATIC_DRAW);
             this.indexCount = indices.length;
 
+            // Bake Iris extended attribs into the VAO while it is still bound.
+            // Doing this at draw time races Embeddium/Iris rebinding VAO 0 and
+            // triggers GL_INVALID_OPERATION on glEnableVertexAttribArray.
+            primeIrisExtendedVertexAttributes(stride);
+
             rendered.release();
             built = true;
             MainRegistry.LOGGER.debug(
@@ -442,7 +488,28 @@ public final class IrisCompanionMesh {
             destroy();
             return false;
         } finally {
-            GL30.glBindVertexArray(previousVao);
+            GlStateManager._glBindVertexArray(previousVao);
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
+        }
+    }
+
+    /**
+     * Binds iris_Entity / mc_midTexCoord / at_tangent at the fixed Oculus
+     * locations (11/12/13). Caller must already have {@link #vaoId} bound.
+     */
+    private void primeIrisExtendedVertexAttributes(int stride) {
+        if (!elementOffsets.containsKey("iris_Entity")) {
+            irisExtendedAttrsPrimedInVao = false;
+            return;
+        }
+        int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
+        try {
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
+            bindIrisVertexAttributeAtLocation(IRIS_ATTRIB_ENTITY, "iris_Entity", stride);
+            bindIrisVertexAttributeAtLocation(IRIS_ATTRIB_MID_TEX, "mc_midTexCoord", stride);
+            bindIrisVertexAttributeAtLocation(IRIS_ATTRIB_TANGENT, "at_tangent", stride);
+            irisExtendedAttrsPrimedInVao = true;
+        } finally {
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
         }
     }
@@ -1041,6 +1108,7 @@ public final class IrisCompanionMesh {
         if (!supportsPerVertexLightmap()) return;
         if (lightmapVboId == -1) return;
         if (perVertexLightmapActive) return;
+        if (!ensureCompanionVaoBound()) return;
 
         int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
         try {
@@ -1073,6 +1141,7 @@ public final class IrisCompanionMesh {
         if (!perVertexLightmapActive) return;
         if (slotIndex == lightmapCurrentSlot) return;
         if (slotIndex < 0 || slotIndex >= lightmapInstanceCapacity) return;
+        if (!ensureCompanionVaoBound()) return;
 
         long byteOffset = (long) slotIndex * vertexCount * 4L;
 
@@ -1099,7 +1168,7 @@ public final class IrisCompanionMesh {
      */
     public void restoreConstantLightmap() {
         if (!perVertexLightmapActive) return;
-        if (uv2Location != -1) {
+        if (ensureCompanionVaoBound() && uv2Location != -1) {
             GL20.glDisableVertexAttribArray(uv2Location);
         }
         perVertexLightmapActive = false;
@@ -1168,13 +1237,8 @@ public final class IrisCompanionMesh {
     public void prepareForShader(int programId) {
         if (programId <= 0) return;
         if (actualFormat == null) return;
+        if (!built || vaoId <= 0) return;
 
-        // Generation gate: if Iris rebuilt the pipeline since we last filled
-        // this cache, every entry is potentially stale (GL recycles program
-        // IDs across glDeleteProgram→glLinkProgram cycles, so a raw-int match
-        // below would let us skip attribute rebinding against a structurally
-        // different program). Wipe the ring buffer so every distinct program
-        // in the new generation pays the resolve cost once, then caches.
         long currentGen = com.hbm_m.client.render.shader.IrisExtendedShaderAccess.getPipelineGeneration();
         if (cachedProgramPipelineGeneration != currentGen) {
             for (int i = 0; i < CACHED_PROGRAM_SLOTS; i++) cachedProgramIds[i] = -1;
@@ -1182,28 +1246,26 @@ public final class IrisCompanionMesh {
             cachedProgramPipelineGeneration = currentGen;
         }
 
-        // Fast path: scan the small cache for a hit. A linear scan over 4 ints is
-        // dramatically faster than the alternative - re-running the
-        // glGetAttribLocation + glVertexAttrib*Pointer + glEnableVertexAttribArray
-        // sequence three times.
         for (int i = 0; i < CACHED_PROGRAM_SLOTS; i++) {
             if (cachedProgramIds[i] == programId) return;
         }
 
-        int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
-        try {
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
-            int stride = actualFormat.getVertexSize();
-            bindIrisAttribute(programId, "iris_Entity", stride);
-            bindIrisAttribute(programId, "mc_midTexCoord", stride);
-            bindIrisAttribute(programId, "at_tangent", stride);
-        } finally {
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
+        // Attrib pointers live in the VAO (primed at build). Only touch GL when
+        // the mesh was built without Iris extended elements (rare fallback).
+        if (!irisExtendedAttrsPrimedInVao) {
+            if (!ensureCompanionVaoBound()) return;
+            int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
+            try {
+                GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
+                int stride = actualFormat.getVertexSize();
+                bindIrisAttribute(programId, "iris_Entity", stride);
+                bindIrisAttribute(programId, "mc_midTexCoord", stride);
+                bindIrisAttribute(programId, "at_tangent", stride);
+            } finally {
+                GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
+            }
         }
 
-        // Insert into the ring buffer; oldest entry is evicted. Done AFTER the
-        // bind so a thrown exception above doesn't leave us with a stale "cached"
-        // claim that skips re-binding next time.
         cachedProgramIds[nextCacheSlot] = programId;
         nextCacheSlot = (nextCacheSlot + 1) % CACHED_PROGRAM_SLOTS;
     }
@@ -1221,23 +1283,44 @@ public final class IrisCompanionMesh {
      * (linker returned -1, e.g. shader pack does not use it) or the format
      * does not contain that element (Iris not loaded, vanilla NEW_ENTITY).
      */
+    /**
+     * Core-profile GL stores vertex attrib enables/pointers in the bound VAO.
+     * {@code glVertexAttrib*Pointer} / {@code glEnableVertexAttribArray} on
+     * VAO 0 emit {@code GL_INVALID_OPERATION: Array object is not active} and
+     * can break the next vanilla draw (first-person hand). Callers may skip
+     * {@code glBindVertexArray} when a CPU-side cache says the VAO is already
+     * bound; Embeddium/Iris can rebind in between, so we always verify the
+     * actual GL binding here.
+     */
+    private boolean ensureCompanionVaoBound() {
+        if (!built || vaoId <= 0) return false;
+        GlStateManager._glBindVertexArray(vaoId);
+        return GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING) == vaoId;
+    }
+
     private void bindIrisAttribute(int programId, String attributeName, int stride) {
+        if (!built || vaoId <= 0) return;
+        if (!ensureCompanionVaoBound()) return;
         int location = GL20.glGetAttribLocation(programId, attributeName);
+        if (location < 0) return;
+        bindIrisVertexAttributeAtLocation(location, attributeName, stride);
+    }
+
+    /**
+     * Configures one Iris-extended attribute on the <b>currently bound</b> VAO.
+     * Used from {@link #primeIrisExtendedVertexAttributes(int)} (build time) and
+     * from {@link #bindIrisAttribute} (non-standard packs fallback).
+     */
+    private void bindIrisVertexAttributeAtLocation(int location, String attributeName, int stride) {
         Integer offsetBoxed = elementOffsets.get(attributeName);
         VertexFormatElement element = elementByName.get(attributeName);
-        if (location < 0) return;
         if (offsetBoxed == null || element == null) return;
         int offset = offsetBoxed;
         int glType = element.getType().getGlType();
         int count = element.getCount();
         if (isIntegerGlType(glType)) {
-            // ivec*/uvec* attributes - read from the INTEGER bank, no
-            // normalisation. iris_Entity is the canonical case (USHORT × 3
-            // → ivec3 in shader).
             GL30.glVertexAttribIPointer(location, count, glType, stride, offset);
         } else {
-            // Float attributes - mc_midTexCoord (FLOAT × 2 → vec2),
-            // at_tangent (BYTE × 4 → vec4 normalised).
             boolean normalize = shouldNormalizeForLinkerBind(attributeName, element);
             GL20.glVertexAttribPointer(location, count, glType, normalize, stride, offset);
         }
@@ -1296,6 +1379,17 @@ public final class IrisCompanionMesh {
         return uv2Location;
     }
 
+    /**
+     * Binds this mesh's VAO if it is not already active. Safe to call before
+     * {@code glDrawElements} when Embeddium/Iris may have rebound VAO 0 between
+     * setup and draw (instanced flush loop).
+     */
+    public void bindVaoIfNeeded() {
+        if (!ensureCompanionVaoBound()) {
+            MainRegistry.LOGGER.warn("IrisCompanionMesh: failed to bind VAO {}", vaoId);
+        }
+    }
+
     public int getVertexCount() {
         return vertexCount;
     }
@@ -1324,6 +1418,7 @@ public final class IrisCompanionMesh {
         this.indexCount = 0;
         this.vertexCount = 0;
         this.built = false;
+        this.irisExtendedAttrsPrimedInVao = false;
 
         Runnable deleter = () -> {
             try {

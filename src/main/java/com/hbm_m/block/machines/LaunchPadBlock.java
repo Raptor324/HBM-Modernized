@@ -3,16 +3,20 @@ package com.hbm_m.block.machines;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.bomb.IBomb;
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity;
 import com.hbm_m.block.entity.machines.LaunchPadBlockEntity;
+import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -40,9 +44,18 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
 
-public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockController {
+
+public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockController, IBomb, IDetonatable {
+
+    @Override
+    public boolean onDetonate(Level level, BlockPos pos, BlockState state, Player player) {
+        if (level.isClientSide) {
+            return false;
+        }
+        BombReturnCode result = explode(level, pos);
+        return result != null && result.wasSuccessful();
+    }
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
@@ -66,7 +79,7 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
 
             helper.placeStructure(pLevel, pPos, facing, this);
             for (BlockPos localPos : helper.getStructureMap().keySet()) {
-                if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
+                if (getPartRole(localPos) == PartRole.UNIVERSAL_CONNECTOR) {
                     BlockPos worldPos = helper.getRotatedPos(pPos, localPos, facing);
                     EnergyNetworkManager.get((ServerLevel) pLevel).addNode(worldPos);
                 }
@@ -82,7 +95,7 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
                 MultiblockStructureHelper helper = getStructureHelper();
                 Direction facing = state.getValue(FACING);
                 for (BlockPos localPos : helper.getStructureMap().keySet()) {
-                    if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
+                    if (getPartRole(localPos) == PartRole.UNIVERSAL_CONNECTOR) {
                         BlockPos worldPos = helper.getRotatedPos(pos, localPos, facing);
                         EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
                     }
@@ -105,6 +118,35 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
+    /**
+     * Триггер запуска через систему IBomb (детонаторы, командные системы).
+     * Сейчас используется только синхронно из соседних блоков на сервере.
+     */
+    @Override
+    public BombReturnCode explode(Level level, BlockPos pos) {
+        if (level.isClientSide) {
+            return BombReturnCode.UNDEFINED;
+        }
+        if (level.getBlockEntity(pos) instanceof LaunchPadBaseBlockEntity launchPad) {
+            return launchPad.triggerLaunch();
+        }
+        return BombReturnCode.UNDEFINED;
+    }
+
+    /**
+     * Реакция на изменение редстоун‑сигнала: обновляем счётчик питания у BE,
+     * а сам пуск выполняется в commonServerTick по фронту 0 → +.
+     */
+    @Override
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock,
+                                BlockPos neighborPos, boolean movedByPiston) {
+        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
+        if (!level.isClientSide
+                && level.getBlockEntity(pos) instanceof LaunchPadBaseBlockEntity launchPad) {
+            launchPad.checkRedstonePower();
+        }
+    }
+
     @Override public RenderShape getRenderShape(BlockState pState) { return RenderShape.MODEL; }
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) { pBuilder.add(FACING); }
     @Nullable @Override public BlockState getStateForPlacement(BlockPlaceContext pContext) { return this.defaultBlockState().setValue(FACING, pContext.getHorizontalDirection().getOpposite()); }
@@ -113,14 +155,14 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level pLevel, BlockState pState, BlockEntityType<T> pType) {
-        return createTickerHelper(pType, ModBlockEntities.LAUNCH_PAD_BE.get(), LaunchPadBlockEntity::serverTick);
+        return createTickerHelper(pType, ModBlockEntities.LAUNCH_PAD_BE.get(), LaunchPadBlockEntity::tick);
     }
 
     @Override
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (!pLevel.isClientSide()) {
             if (pLevel.getBlockEntity(pPos) instanceof MenuProvider provider) {
-                NetworkHooks.openScreen((ServerPlayer) pPlayer, provider, pPos);
+                MenuRegistry.openExtendedMenu((ServerPlayer) pPlayer, provider, buf -> buf.writeBlockPos(pPos));
             }
         }
         return InteractionResult.sidedSuccess(pLevel.isClientSide());
@@ -216,5 +258,14 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
             return structureHelper.resolvePartRole(localOffset, this);
         }
         return PartRole.DEFAULT;
+    }
+
+    @Override
+    public float getShadeBrightness(BlockState pState, BlockGetter pLevel, BlockPos pPos) {
+        return 1.0F; // Убирает тени под блоком и Ambient Occlusion
+    }
+
+    public boolean propagatesSkylightDown(BlockState pState, BlockGetter pLevel, BlockPos pPos) {
+        return true;
     }
 }

@@ -1,4 +1,15 @@
 package com.hbm_m.client;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?}
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+*///?}
 /**
  * Этот класс существует ТОЛЬКО НА КЛИЕНТЕ.
  * Он отвечает за хранение данных о радиации, полученных от сервера,
@@ -6,13 +17,11 @@ package com.hbm_m.client;
  */
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public class ClientRadiationData {
     
     // Очищает все клиентские данные о радиации (например, при смене мира или измерения).

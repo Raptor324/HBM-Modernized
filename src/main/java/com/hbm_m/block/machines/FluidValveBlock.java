@@ -1,6 +1,6 @@
 package com.hbm_m.block.machines;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.machines.FluidValveBlockEntity;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
@@ -68,7 +68,7 @@ public class FluidValveBlock extends BaseEntityBlock {
             if (!level.isClientSide) {
                 Fluid fluid = idItem.getType(level, pos, stack);
                 if (fluid != null) {
-                    if (fluid == com.hbm_m.api.fluids.ModFluids.NONE.getSource()) fluid = Fluids.EMPTY;
+                    if (fluid == com.hbm_m.inventory.fluid.ModFluids.NONE.getSource()) fluid = Fluids.EMPTY;
                     BlockEntity be = level.getBlockEntity(pos);
                     if (be instanceof FluidValveBlockEntity valve) {
                         valve.setFluidType(fluid);

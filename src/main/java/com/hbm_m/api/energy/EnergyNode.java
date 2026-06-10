@@ -44,9 +44,8 @@ public class EnergyNode {
         // Если чанк загружен, но TileEntity нет - значит блок сломали, удаляем узел.
         if (be == null) return false;
 
-        return be.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent() ||
-                be.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).isPresent() ||
-                be.getCapability(ModCapabilities.HBM_ENERGY_CONNECTOR).isPresent();
+        // Forge/NeoForge: через capabilities, Fabric: через instanceof интерфейсы.
+        return ModCapabilities.hasEnergyComponent(be);
     }
 
     @Override

@@ -5,16 +5,20 @@ package com.hbm_m.util;
 
 import com.hbm_m.item.ModItems;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraftforge.common.Tags;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class TemplateCraftingCosts {
+
+    private static final TagKey<Item> VANILLA_DYES = TagKey.create(Registries.ITEM, new ResourceLocation("minecraft", "dyes"));
 
     // Карта: Предмет-результат -> Список ингредиентов для создания его шаблона
     private static final Map<Item, NonNullList<Ingredient>> TEMPLATE_COSTS = new HashMap<>();
@@ -28,7 +32,7 @@ public class TemplateCraftingCosts {
         registerTemplateCost(ModItems.ASSEMBLY_TEMPLATE.get(),
                 NonNullList.of(Ingredient.EMPTY,
                         Ingredient.of(Items.PAPER),
-                        Ingredient.of(Tags.Items.DYES)
+                        Ingredient.of(VANILLA_DYES)
                 ));
 
         // СТОИМОСТЬ ДЛЯ ШТАМПОВ ПРЕССА
@@ -90,7 +94,7 @@ public class TemplateCraftingCosts {
         // registerTemplateCost(ModItems.IDENTIFIER_TEMPLATE.get(),
         //              NonNullList.of(Ingredient.EMPTY,
         //                             Ingredient.of(ModItems.IRON_PLATE.get()),
-        //                             Ingredient.of(Tags.Items.DYES)
+        //                             Ingredient.of(VANILLA_DYES)
         //              ));
     }
 

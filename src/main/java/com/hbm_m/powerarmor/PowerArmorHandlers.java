@@ -5,9 +5,10 @@ import java.util.List;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packets.PowerArmorDashPacket;
-import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
+import com.hbm_m.platform.PlayerPersistentData;
 import com.hbm_m.sound.ModSounds;
 
+import dev.architectury.event.events.common.TickEvent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
@@ -25,18 +26,21 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.TickEvent;
+
+//? if forge {
+import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
+import net.minecraftforge.event.entity.living.LivingFallEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.network.PacketDistributor;
+//?}
 
 /**
  * Combined handler for Power Armor events.
@@ -47,7 +51,8 @@ import net.minecraftforge.network.PacketDistributor;
  * - Ванильная защита отключена через getDefense() = 0
  * - Все расчеты через централизованную систему DT+DR
  */
-@Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+//? if forge {
+@Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)//?}
 public final class PowerArmorHandlers {
 
     private static final String TAG_DASH_COOLDOWN = "hbm_power_armor_dash_cooldown";
@@ -55,7 +60,17 @@ public final class PowerArmorHandlers {
     private static final long DASH_ENERGY_COST = 5000; // 5к энергии за деш
 
     private PowerArmorHandlers() {}
-    private static final ThreadLocal<Float> DAMAGE_CACHE = ThreadLocal.withInitial(() -> null);
+
+    /**
+     * Регистрация общих (multiloader) обработчиков.
+     * Forge-only события остаются в forge-ветке (через EventBusSubscriber).
+     */
+    public static void register() {
+        // Аналог TickEvent.PlayerTickEvent(START): кулдаун дэша и step height в начале тика.
+        TickEvent.PLAYER_PRE.register(PowerArmorHandlers::onPlayerTickPre);
+        // Hard landing: трекинг fallDistance после travel(), когда значение актуально.
+        TickEvent.PLAYER_POST.register(PowerArmorHandlers::onPlayerTickPost);
+    }
 
     // ========== DAMAGE HANDLING ==========
     
@@ -63,6 +78,7 @@ public final class PowerArmorHandlers {
      * HIGHEST priority - перехватываем урон ДО ванильной обработки
      * и рассчитываем урон через DamageResistanceHandler
      */
+    //? if forge {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onLivingAttack(LivingAttackEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
@@ -95,61 +111,66 @@ public final class PowerArmorHandlers {
             0F  // pierceDR
         );
         
-        // Кэшируем результат в ThreadLocal (безопасно для многопоточности)
         if (calculatedDamage < event.getAmount()) {
-            DAMAGE_CACHE.set(calculatedDamage);
+            // Пишем в "персистентные" данные игрока, чтобы прочитать на LOWEST фазе.
+            CompoundTag data = PlayerPersistentData.get(player);
+            data.putFloat("hbm_power_armor_damage", calculatedDamage);
         }
     }
+    //?}
 
     /**
      * LOWEST priority - применяем наш урон ПОСЛЕ всей ванильной обработки
      */
+    //? if forge {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onLivingHurt(LivingHurtEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
         if (player.level().isClientSide) return;
         if (player.getAbilities().instabuild || player.isSpectator()) return;
         
-        CompoundTag data = player.getPersistentData();
+        CompoundTag data = PlayerPersistentData.get(player);
         if (data.contains("hbm_power_armor_damage")) {
             float calculated = data.getFloat("hbm_power_armor_damage");
             event.setAmount(calculated);
             data.remove("hbm_power_armor_damage");
         }
     }
+    //?}
 
     // ========== MOVEMENT HANDLING ==========
-    
-    @SubscribeEvent
-    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.phase != TickEvent.Phase.START) return;
-        Player player = event.player;
-        
-        // Обработка кулдауна даша
-        CompoundTag tag = player.getPersistentData();
+
+    private static void onPlayerTickPre(Player player) {
+        if (player.level().isClientSide()) return;
+
+        CompoundTag tag = PlayerPersistentData.get(player);
         int cooldown = tag.getInt(TAG_DASH_COOLDOWN);
         if (cooldown > 0) {
             tag.putInt(TAG_DASH_COOLDOWN, cooldown - 1);
         }
-        
-        if (player instanceof ServerPlayer sp) {
-            handleHardLanding(sp);
-        }
-        
+
         if (!ModPowerArmorItem.hasFSBArmor(player)) {
             if (player.maxUpStep() > 0.6F) {
                 player.setMaxUpStep(0.6F);
             }
             return;
         }
-        
+
         var chestplate = player.getItemBySlot(EquipmentSlot.CHEST);
         if (!(chestplate.getItem() instanceof ModPowerArmorItem armorItem)) return;
-        
+
         var specs = armorItem.getSpecs();
         float stepHeight = specs.stepHeight;
         if (stepHeight > 0) {
             player.setMaxUpStep(Math.max(0.6F, stepHeight));
+        }
+    }
+
+    private static void onPlayerTickPost(Player player) {
+        if (player.level().isClientSide()) return;
+
+        if (player instanceof ServerPlayer sp) {
+            handleHardLanding(sp);
         }
     }
 
@@ -164,7 +185,7 @@ public final class PowerArmorHandlers {
         if (specs.dashCount <= 0) return;
         
         // Проверка кулдауна
-        CompoundTag tag = player.getPersistentData();
+        CompoundTag tag = PlayerPersistentData.get(player);
         int cooldown = tag.getInt(TAG_DASH_COOLDOWN);
         if (cooldown > 0) return;
         
@@ -185,10 +206,9 @@ public final class PowerArmorHandlers {
         tag.putInt(TAG_DASH_COOLDOWN, DASH_COOLDOWN_TICKS);
         
         // Отправка визуального эффекта другим игрокам
-        ModPacketHandler.INSTANCE.send(
-            PacketDistributor.TRACKING_ENTITY.with(() -> player),
-            new PowerArmorDashPacket(player.getId(), dashVelocity)
-        );
+        ModPacketHandler.sendToPlayersNear(serverPlayer.serverLevel(), serverPlayer.position(), 128.0D,
+            ModPacketHandler.POWER_ARMOR_DASH,
+            new PowerArmorDashPacket(player.getId(), dashVelocity));
         
         // Синхронизация энергии клиенту
         ((ModArmorFSBPowered) armorItem).syncEnergyToClient(player, chestStack, player.level(), EquipmentSlot.CHEST);
@@ -206,7 +226,12 @@ public final class PowerArmorHandlers {
     private static final String TAG_SMASH_FALLDIST = "hbm_smash_falldist";
     
     private static final TagKey<net.minecraft.world.level.block.Block> HBM_HARDLANDING_BREAKABLE =
-            TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "hardlanding_breakable"));
+            //? if fabric && < 1.21.1 {
+            /*TagKey.create(Registries.BLOCK, new ResourceLocation(MainRegistry.MOD_ID, "hardlanding_breakable"));
+            *///?} else {
+                        TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "hardlanding_breakable"));
+            //?}
+
 
     private static void handleHardLanding(ServerPlayer player) {
         if (player.isSpectator()) return;
@@ -218,13 +243,13 @@ public final class PowerArmorHandlers {
         PowerArmorSpecs specs = armorItem.getSpecs();
         if (!specs.hasHardLanding) return;
         
-        CompoundTag tag = player.getPersistentData();
+        CompoundTag tag = PlayerPersistentData.get(player);
         boolean onGround = player.onGround();
         boolean wasInAir = tag.getBoolean(TAG_WAS_IN_AIR);
         boolean smashingSoft = tag.getBoolean(TAG_SMASHING_SOFT);
         
         // Любая растекающаяся жидкость отменяет эффект (в т.ч. модовая)
-        if (player.isInFluidType() || !player.level().getFluidState(player.blockPosition()).isEmpty()) {
+        if (player.isInWaterOrBubble() || player.isInLava() || !player.level().getFluidState(player.blockPosition()).isEmpty()) {
             tag.putBoolean(TAG_WAS_IN_AIR, false);
             tag.putFloat(TAG_MAX_FALL, 0.0F);
             tag.putBoolean(TAG_SMASHING_SOFT, false);
@@ -306,14 +331,14 @@ public final class PowerArmorHandlers {
         float fallDist = tag.getFloat(TAG_MAX_FALL);
         tag.putBoolean(TAG_WAS_IN_AIR, false);
         tag.putFloat(TAG_MAX_FALL, 0.0F);
-        
+
         if (fallDist <= MACE_MIN_FALL) return;
         if (player.isFallFlying()) return;
-        
+
         // Старт "проваливания" только если именно упали НА мягкий блок (а не просто зашли на него пешком)
         BlockPos belowPos = player.blockPosition().below();
         BlockState belowState = level.getBlockState(belowPos);
-        
+
         if (isSoftBreakableForHardLanding(level, belowPos, belowState)) {
             tag.putBoolean(TAG_SMASHING_SOFT, true);
             tag.putFloat(TAG_SMASH_FALLDIST, fallDist);
@@ -321,9 +346,11 @@ public final class PowerArmorHandlers {
             breakSoftBlocksUnderPlayer(level, player);
             return;
         }
-        
+
         // Обычная "жёсткая посадка" на твёрдый блок
         if (belowState.isAir() || !belowState.getFluidState().isEmpty()) return;
+
+        PlayerPersistentData.get(player).putBoolean("hbm_hard_landing_occured", true);
         
         var sound = fallDist > MACE_HEAVY_FALL
                 ? ModSounds.MACE_SMASH_GROUND_HEAVY.get()
@@ -348,8 +375,31 @@ public final class PowerArmorHandlers {
         
         if (fallDist < HBM_AOE_MIN_FALL) return;
         applyHardLandingAOE(level, player);
-        player.getPersistentData().putBoolean("hbmhardlandingoccured", true);
+        PlayerPersistentData.get(player).putBoolean("hbm_hard_landing_occured", true);
     }
+
+    /**
+     * Hard Landing: полная защита от урона падения (перк сета с hasHardLanding).
+     * LivingFallEvent срабатывает после travel(), до causeFallDamage().
+     */
+    //? if forge {
+    @SubscribeEvent
+    public static void onLivingFall(LivingFallEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        if (player.level().isClientSide) return;
+        if (player.isSpectator()) return;
+        if (player.isFallFlying()) return;
+        if (!ModArmorFSB.hasFSBArmorIgnoreCharge(player)) return;
+
+        ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);
+        if (!(chestStack.getItem() instanceof ModPowerArmorItem armorItem)) return;
+        if (!armorItem.getSpecs().hasHardLanding) return;
+
+        event.setDistance(0.0F);
+        event.setDamageMultiplier(0.0F);
+        event.setCanceled(true);
+    }
+    //?}
 
     private static void applyHardLandingAOE(ServerLevel level, Player player) {
         AABB box = player.getBoundingBox().inflate(HBM_RADIUS, 0.0D, HBM_RADIUS);
@@ -434,26 +484,4 @@ public final class PowerArmorHandlers {
         
         return brokeAny;
     }
-
-    // @SubscribeEvent
-    // public static void onLivingFall(LivingFallEvent event) {
-    //     if (!(event.getEntity() instanceof Player player)) return;
-    //     if (player.level().isClientSide) return;
-    //     if (!ModArmorFSB.hasFSBArmor(player)) return;
-        
-    //     ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);
-    //     if (!(chestStack.getItem() instanceof ModPowerArmorItem armorItem)) return;
-        
-    //     PowerArmorSpecs specs = armorItem.getSpecs();
-    //     float fallDist = event.getDistance();
-        
-    //     // ЗАЩИТА ОТ УРОНА (В самом конце)
-    //     if (fallDist > 2.0F) {
-    //         // Если полная защита от падения через DT/DR
-    //         if (specs.drFall >= 1.0F || specs.dtFall > 1000) {
-    //             event.setDistance(0);
-    //             event.setCanceled(true);
-    //         }
-    //     }
-    // }
 }

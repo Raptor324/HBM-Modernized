@@ -1,7 +1,6 @@
 package com.hbm_m.api.energy;
 
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.interfaces.IEnergyConnector;
 
 import net.minecraft.core.BlockPos;
@@ -10,10 +9,14 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+
+//? if forge {
+import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 import org.jetbrains.annotations.NotNull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
+//?}
 
 /**
  * BlockEntity для провода.
@@ -21,7 +24,9 @@ import javax.annotation.Nullable;
  */
 public class WireBlockEntity extends BlockEntity implements IEnergyConnector {
 
+    //? if forge {
     private final LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
+     //?}
 
     public WireBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.WIRE_BE.get(), pos, state);
@@ -52,6 +57,7 @@ public class WireBlockEntity extends BlockEntity implements IEnergyConnector {
     }
 
     // --- Capabilities ---
+    //? if forge {
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ModCapabilities.HBM_ENERGY_CONNECTOR) {
@@ -67,21 +73,25 @@ public class WireBlockEntity extends BlockEntity implements IEnergyConnector {
     }
 
     @Override
-    public void setRemoved() {
-        super.setRemoved();
-        // [ВАЖНО!] Сообщаем сети, что мы удалены
-        if (this.level != null && !this.level.isClientSide) {
-            EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
-        }
-    }
-
-    @Override
     public void onChunkUnloaded() {
         super.onChunkUnloaded();
         // [ВАЖНО!] Также сообщаем при выгрузке чанка
         if (this.level != null && !this.level.isClientSide) {
             EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
         }
+    }
+    //?}
+
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        // [ВАЖНО!] Сообщаем сети, что мы удалены
+        if (this.level != null && !this.level.isClientSide) {
+            EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
+        }
+        //? if forge {
+        hbmConnector.invalidate();
+         //?}
     }
 
     // И при загрузке/установке блока:

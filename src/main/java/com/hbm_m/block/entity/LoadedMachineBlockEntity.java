@@ -31,7 +31,7 @@ public abstract class LoadedMachineBlockEntity extends BlockEntity {
         super.setRemoved();
         this.isLoaded = false;
     }
-    
+    //? if forge {
     @Override
     public void onChunkUnloaded() {
         super.onChunkUnloaded();
@@ -43,6 +43,7 @@ public abstract class LoadedMachineBlockEntity extends BlockEntity {
         super.onLoad();
         this.isLoaded = true;
     }
+    //?}
     
     public boolean isMuffled() {
         return muffled;

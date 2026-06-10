@@ -17,7 +17,12 @@ import net.minecraft.world.entity.player.Inventory;
 public class GUIMachineCentrifuge extends GuiInfoScreen<MachineCentrifugeMenu> {
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_centrifuge.png");
+            //? if fabric && < 1.21.1 {
+            /*new ResourceLocation(RefStrings.MODID, "textures/gui/processing/gui_centrifuge.png");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_centrifuge.png");
+            //?}
+
 
     public GUIMachineCentrifuge(MachineCentrifugeMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);

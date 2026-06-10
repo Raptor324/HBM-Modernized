@@ -1,9 +1,0 @@
-{
-  "replace": false,
-  "values": [
-    "minecraft:stone",
-    "hbm_m:polonium210_block",
-    "hbm_m:plutonium_block",
-    "hbm_m:plutonium_fuel_block"
-  ]
-}

@@ -25,9 +25,9 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.server.ServerLifecycleHooks;
+
+import dev.architectury.platform.Platform;
+import dev.architectury.utils.Env;
 
 /**
  * Crater Generator v21.0 - BIOME SYNC FIX
@@ -119,6 +119,8 @@ public class CraterGenerator {
     }
 
     private static class RayTerminationData {
+        /** Отдельный мьютекс: не синхронизируемся на `this` (аргумент метода для инспекций). */
+        private final Object maxDistanceLock = new Object();
         double maxDistance = 0;
         Set<BlockPos> terminationPoints = Collections.synchronizedSet(new HashSet<>());
     }
@@ -154,7 +156,7 @@ public class CraterGenerator {
         BlockPos groundCenterPos = centerPos;
         RandomSource random = level.random;
         Block[] selafitBlocks = {sellafit1, sellafit2, sellafit3, sellafit4};
-        Set<BlockPos> craterBlocksSet = Collections.synchronizedSet(new HashSet<>());
+        Set<BlockPos> craterBlocksSet = ConcurrentHashMap.newKeySet();
         List<Set<BlockPos>> rings = new ArrayList<>();
         RayTerminationData terminationData = new RayTerminationData();
         rayDebugData.clear();
@@ -190,7 +192,7 @@ public class CraterGenerator {
                     selafitBlocks, random,
                     wasteLogBlock, wastePlanksBlock, burnedGrassBlock, startTime);
 
-            MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+            MinecraftServer server = level.getServer();
             if (server != null) {
                 server.tell(new TickTask(5, () -> {
                     System.out.println("\n[CRATER_GENERATOR] Step 1.5: Cleaning center sphere...");
@@ -229,10 +231,11 @@ public class CraterGenerator {
         return allRays;
     }
 
+    /** Debug ray visualization is client-only; never enable on dedicated server. */
     private static boolean isDebugScreenEnabled() {
-	if (FMLEnvironment.dist != Dist.CLIENT) {
-	    return false;
-	}
+        if (Platform.getEnvironment() != Env.CLIENT) {
+            return false;
+        }
         try {
             Minecraft mc = Minecraft.getInstance();
             return mc != null && mc.options.renderDebug;
@@ -314,7 +317,7 @@ public class CraterGenerator {
             List<RayData> debugRays,
             Runnable onComplete) {
 
-        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        MinecraftServer server = level.getServer();
         if (server == null) {
             onComplete.run();
             return;
@@ -521,7 +524,7 @@ public class CraterGenerator {
                             Math.pow(lastBlockPos.getZ() - centerPos.getZ(), 2)
             );
 
-            synchronized (terminationData) {
+            synchronized (terminationData.maxDistanceLock) {
                 if (distance > terminationData.maxDistance) {
                     terminationData.maxDistance = distance;
                 }
@@ -554,11 +557,8 @@ public class CraterGenerator {
         // Раньше мы могли возвращать 0 или малую величину, не добавляя их в craterBlocksSet.
         if (!state.getFluidState().isEmpty()) {
             // Добавляем жидкость в список уничтожения
-            synchronized (craterBlocksSet) {
-                if (!craterBlocksSet.contains(pos)) {
-                    craterBlocksSet.add(pos);
-                    distributeBlockToRings(centerPos, pos, (int) MAX_RAY_DISTANCE, rings);
-                }
+            if (craterBlocksSet.add(pos)) {
+                distributeBlockToRings(centerPos, pos, (int) MAX_RAY_DISTANCE, rings);
             }
             // Жидкость почти не гасит луч (как воздух или чуть плотнее)
             return 0.2;
@@ -567,11 +567,8 @@ public class CraterGenerator {
         // Пропускаем "прозрачные" для коллизии блоки (трава, цветы), но удаляем их
         // (Они имеют resistance ~0, но лучше явно обработать)
         if (state.canBeReplaced() || state.getCollisionShape(level, pos).isEmpty()) {
-            synchronized (craterBlocksSet) {
-                if (!craterBlocksSet.contains(pos)) {
-                    craterBlocksSet.add(pos);
-                    distributeBlockToRings(centerPos, pos, (int) MAX_RAY_DISTANCE, rings);
-                }
+            if (craterBlocksSet.add(pos)) {
+                distributeBlockToRings(centerPos, pos, (int) MAX_RAY_DISTANCE, rings);
             }
             return 0.1;
         }
@@ -580,11 +577,8 @@ public class CraterGenerator {
         float defense = BlockExplosionDefense.getBlockDefenseValue(level, pos, state);
 
         if (defense < 10_000) {
-            synchronized (craterBlocksSet) {
-                if (!craterBlocksSet.contains(pos)) {
-                    craterBlocksSet.add(pos);
-                    distributeBlockToRings(centerPos, pos, (int) MAX_RAY_DISTANCE, rings);
-                }
+            if (craterBlocksSet.add(pos)) {
+                distributeBlockToRings(centerPos, pos, (int) MAX_RAY_DISTANCE, rings);
             }
             return defense;
         }
@@ -640,7 +634,7 @@ public class CraterGenerator {
             Block wastePlanks,
             Block burnedGrass) {
 
-        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        MinecraftServer server = level.getServer();
         if (server == null) return;
 
         List<BlockPos> allBlocksList = new ArrayList<>(allCraterBlocks);

@@ -167,6 +167,13 @@
       "hbm_m:mukeexplosion"
     ]
   },
+  "missile_takeoff": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.missile_takeoff",
+    "sounds": [
+      "hbm_m:missile_takeoff"
+    ]
+  },
   "nuclear_explosion": {
     "category": "ambient",
     "subtitle": "sounds.hbm_m.nuclear_explosion",
@@ -188,6 +195,12 @@
       "hbm_m:item/radaway"
     ]
   },
+  "player.vomit": {
+    "category": "player",
+    "sounds": [
+      "hbm_m:player/vomit"
+    ]
+  },
   "tool.repair1": {
     "subtitle": "sounds.hbm_m.subtitle.repair",
     "sounds": [
@@ -198,6 +211,15 @@
     "subtitle": "sounds.hbm_m.subtitle.repair",
     "sounds": [
       "hbm_m:tool/repair2"
+    ]
+  },
+  "block.debris": {
+    "category": "block",
+    "subtitle": "sounds.hbm_m.subtitle.debris",
+    "sounds": [
+      "hbm_m:block/debris1",
+      "hbm_m:block/debris2",
+      "hbm_m:block/debris3"
     ]
   },
   "block.cratebreak1": {
@@ -358,6 +380,16 @@
     "subtitle": "sounds.hbm_m.subtitle.motor",
     "sounds": [
       "hbm_m:block/motor"
+    ]
+  },
+  "block.sonar_ping": {
+    "category": "block",
+    "subtitle": "sounds.hbm_m.subtitle.sonar_ping",
+    "sounds": [
+      {
+        "name": "hbm_m:block/sonar_ping",
+        "stream": false
+      }
     ]
   },
   "block.chemical_plant": {
@@ -565,6 +597,13 @@
     "subtitle": "sounds.hbm_m.thermal_vision_off",
     "sounds": [
       "hbm_m:tool/nvg_off"
+    ]
+  },
+  "music_disc.bunker": {
+    "category": "record",
+    "subtitle": "item.hbm_m.music_disc_bunker.desc",
+    "sounds": [
+      "hbm_m:messages/bunker"
     ]
   }
 }

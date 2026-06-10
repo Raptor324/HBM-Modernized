@@ -9,12 +9,14 @@ import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
+import com.hbm_m.interfaces.IFrameSupportable;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.interfaces.IMultiblockSidedIO;
 import com.hbm_m.multiblock.MultiblockSideTuples;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -40,12 +42,12 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
+
 
 public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMultiblockController, IMultiblockSidedIO {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
-    /** Рама: блок на y+3 от контроллера (1.7.10). В BlockState для Iris/chunk mesh. */
+    /** Рама видима, когда над верхним поясом мультиблока есть блоки. В BlockState для Iris/chunk mesh. */
     public static final BooleanProperty FRAME = BooleanProperty.create("frame");
     /**
      * true - идёт «работа» (крафт); animated части только в BER, в baked только Base+Frame.
@@ -98,8 +100,8 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
         );
 
         Map<Character, boolean[]> fluidSideMap = Map.of(
-            'C', MultiblockSideTuples.fluid(true, true, true, true, true, false),
-            'F', MultiblockSideTuples.fluid(true, true, true, true, true, false)
+            'C', MultiblockSideTuples.fluid(true, true, true, true, false, false),
+            'F', MultiblockSideTuples.fluid(true, true, true, true, false, false)
         );
 
         Map<Character, boolean[]> energySideMap = Map.of(
@@ -137,6 +139,10 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
                     EnergyNetworkManager.get((ServerLevel) level).addNode(worldPos);
                 }
             }
+
+            if (level.getBlockEntity(pos) instanceof IFrameSupportable frameSupportable) {
+                frameSupportable.checkForFrame();
+            }
         }
     }
 
@@ -173,7 +179,7 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider menuProvider) {
-                NetworkHooks.openScreen((ServerPlayer) player, menuProvider, pos);
+                MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide());

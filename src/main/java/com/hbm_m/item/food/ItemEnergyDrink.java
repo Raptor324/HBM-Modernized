@@ -21,56 +21,56 @@ public class ItemEnergyDrink extends Item {
 
     public static final FoodProperties CAN_BEPIS = new FoodProperties.Builder()
             .nutrition(4).saturationMod(0.4F)
-            .effect(() -> new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 450), 1F)
+            .effect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 450), 1F)
             .alwaysEat()
             .build();
 
     public static final FoodProperties CAN_BREEN = new FoodProperties.Builder()
             .nutrition(3).saturationMod(0.3F)
-            .effect(() -> new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 300), 1F)
+            .effect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 300), 1F)
             .alwaysEat()
             .build();
 
     public static final FoodProperties CAN_CREATURE = new FoodProperties.Builder()
             .nutrition(5).saturationMod(0.5F)
-            .effect(() -> new MobEffectInstance(MobEffects.REGENERATION, 225), 1F)
-            .effect(() -> new MobEffectInstance(MobEffects.ABSORPTION, 225), 1F)
+            .effect(new MobEffectInstance(MobEffects.REGENERATION, 225), 1F)
+            .effect(new MobEffectInstance(MobEffects.ABSORPTION, 225), 1F)
             .alwaysEat()
             .build();
 
     public static final FoodProperties CAN_LUNA = new FoodProperties.Builder()
             .nutrition(6).saturationMod(0.6F)
-            .effect(() -> new MobEffectInstance(MobEffects.NIGHT_VISION, 225), 1F)
+            .effect(new MobEffectInstance(MobEffects.NIGHT_VISION, 225), 1F)
             .alwaysEat()
             .build();
 
     public static final FoodProperties CAN_MRSUGAR = new FoodProperties.Builder()
             .nutrition(4).saturationMod(0.3F)
-            .effect(() -> new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 180), 1F)
+            .effect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 180), 1F)
             .alwaysEat()
             .build();
 
     public static final FoodProperties CAN_MUG = new FoodProperties.Builder()
             .nutrition(3).saturationMod(0.35F)
-            .effect(() -> new MobEffectInstance(MobEffects.DIG_SPEED, 225), 1F)
+            .effect(new MobEffectInstance(MobEffects.DIG_SPEED, 225), 1F)
             .alwaysEat()
             .build();
 
     public static final FoodProperties CAN_OVERCHARGE = new FoodProperties.Builder()
             .nutrition(7).saturationMod(0.7F)
-            .effect(() -> new MobEffectInstance(MobEffects.DAMAGE_BOOST, 180), 1F)
+            .effect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 180), 1F)
             .alwaysEat()
             .build();
 
     public static final FoodProperties CAN_REDBOMB = new FoodProperties.Builder()
             .nutrition(5).saturationMod(0.5F)
-            .effect(() -> new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 225), 1F)
+            .effect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 225), 1F)
             .alwaysEat()
             .build();
 
     public static final FoodProperties CAN_SMART = new FoodProperties.Builder()
             .nutrition(4).saturationMod(0.35F)
-            .effect(() -> new MobEffectInstance(MobEffects.JUMP, 270), 1F)
+            .effect(new MobEffectInstance(MobEffects.JUMP, 270), 1F)
             .alwaysEat()
             .build();
 

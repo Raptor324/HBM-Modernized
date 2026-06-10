@@ -1,9 +1,11 @@
+//? if forge {
 package com.hbm_m.client.particle;
 
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.particle.nt.ParticleEngineNT;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
@@ -26,6 +28,8 @@ public class EngineHandler {
 
         MultiBufferSource.BufferSource buffer = Minecraft.getInstance().renderBuffers().bufferSource();
 
+        FogRenderer.setupNoFog();
+
         // ── Фаза 1: все облака/cloudlets ──
         ParticleEngineNT.INSTANCE.render(buffer, event.getCamera(), event.getPartialTick(), event.getPoseStack());
         buffer.endBatch();   // ← GPU draw: облака уже на экране
@@ -42,3 +46,14 @@ public class EngineHandler {
         }
     }
 }
+//?}
+
+//? if fabric {
+/*package com.hbm_m.client.particle;
+
+/^*
+ * Fabric: Forge event subscriber isn't available here yet.
+ * This is a stub to keep compilation working across loaders.
+ ^/
+public class EngineHandler { }
+*///?}

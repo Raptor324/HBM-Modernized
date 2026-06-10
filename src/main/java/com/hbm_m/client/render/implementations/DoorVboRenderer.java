@@ -1,17 +1,20 @@
 package com.hbm_m.client.render.implementations;
 
+
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+*///?}
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.doors.DoorDecl;
 import com.hbm_m.client.model.DoorBakedModel;
 import com.hbm_m.client.model.variant.DoorModelSelection;
-import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.ObjModelVboBuilder;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
-import com.hbm_m.client.render.SingleMeshVboRenderer.VboData;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -19,10 +22,14 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
+
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public class DoorVboRenderer extends SingleMeshVboRenderer {
 
     private final DoorBakedModel model;
@@ -108,7 +115,7 @@ public class DoorVboRenderer extends SingleMeshVboRenderer {
     protected List<BakedQuad> getQuadsForIrisPath() {
         BakedModel partModel = model.getPart(partName);
         if (partModel == null) return null;
-        return GlobalMeshCache.getOrCompile(quadCacheKey, partModel);
+        return MeshRenderCache.getOrCompile(quadCacheKey, partModel);
     }
 
     // Рендер геометрии в текущей позе.
@@ -142,3 +149,4 @@ public class DoorVboRenderer extends SingleMeshVboRenderer {
         rotationBuffer.remove();
     }
 }
+

@@ -1,18 +1,19 @@
 package com.hbm_m.particle.custom;
 
+
+import org.jetbrains.annotations.NotNull;
+
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.particle.Particle;
+import net.minecraft.client.particle.ParticleProvider;
+import net.minecraft.client.particle.ParticleRenderType;
+import net.minecraft.client.particle.SpriteSet;
+import net.minecraft.client.particle.TextureSheetParticle;
+import net.minecraft.core.particles.SimpleParticleType;
 // Частица радиационного тумана.
 // Используется для создания эффекта радиационного тумана в зонах с высокой радиацией.
 // Частица медленно увеличивается в размере и плавно исчезает, создавая атмосферный эффект.
 
-import javax.annotation.Nonnull;
-
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.particle.*;
-import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-
-@OnlyIn(Dist.CLIENT)
 public class RadFogParticle extends TextureSheetParticle {
 
     // Конструктор частицы
@@ -62,8 +63,6 @@ public class RadFogParticle extends TextureSheetParticle {
         // что частицы прозрачные и их нужно пытаться сортировать.
         return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
     }
-
-    @OnlyIn(Dist.CLIENT)
     public static class Provider implements ParticleProvider<SimpleParticleType> {
         private final SpriteSet sprites;
 
@@ -71,8 +70,8 @@ public class RadFogParticle extends TextureSheetParticle {
             this.sprites = spriteSet;
         }
 
-        @Nonnull
-        public Particle createParticle(@Nonnull SimpleParticleType particleType, @Nonnull ClientLevel level,
+        @NotNull
+        public Particle createParticle(@NotNull SimpleParticleType particleType, @NotNull ClientLevel level,
                                        double x, double y, double z,
                                        double dx, double dy, double dz) {
             return new RadFogParticle(level, x, y, z, dx, dy, dz, this.sprites);

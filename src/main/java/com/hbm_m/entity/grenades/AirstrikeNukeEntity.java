@@ -3,7 +3,7 @@ package com.hbm_m.entity.grenades;
 import java.util.Random;
 import java.util.UUID;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.sound.ModSounds;
@@ -22,7 +22,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.NetworkHooks;
+
 
 public class AirstrikeNukeEntity extends Entity {
 
@@ -303,10 +303,10 @@ public class AirstrikeNukeEntity extends Entity {
         tag.putInt("BombsDropped", bombsDropped);  // 🆕 Сохранение счётчика
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return NetworkHooks.getEntitySpawningPacket(this);
+        return new net.minecraft.network.protocol.game.ClientboundAddEntityPacket(this);
     }
 
     @Override public boolean isPickable() { return false; }

@@ -2,20 +2,14 @@ package com.hbm_m.block.entity.crates;
 
 import com.hbm_m.block.machines.crates.CrateValidation;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemStackHandler;
+import com.hbm_m.platform.ModItemStackHandler;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Базовый BlockEntity для всех ящиков HBM.
@@ -23,12 +17,11 @@ import org.jetbrains.annotations.Nullable;
  */
 public abstract class BaseCrateBlockEntity extends BlockEntity implements MenuProvider {
 
-    protected final ItemStackHandler itemHandler;
-    private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
+    protected final ModItemStackHandler itemHandler;
 
     protected BaseCrateBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, int slots) {
         super(type, pos, state);
-        this.itemHandler = new ItemStackHandler(slots) {
+        this.itemHandler = new ModItemStackHandler(slots) {
             @Override
             protected void onContentsChanged(int slot) {
                 setChanged();
@@ -41,25 +34,7 @@ public abstract class BaseCrateBlockEntity extends BlockEntity implements MenuPr
         };
     }
 
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.ITEM_HANDLER) {
-            return lazyItemHandler.cast();
-        }
-        return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void onLoad() {
-        super.onLoad();
-        lazyItemHandler = LazyOptional.of(() -> itemHandler);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        lazyItemHandler.invalidate();
-    }
+    // Forge item handler capabilities removed for Fabric compilation.
 
     @Override
     protected void saveAdditional(CompoundTag tag) {
@@ -92,7 +67,7 @@ public abstract class BaseCrateBlockEntity extends BlockEntity implements MenuPr
         }
     }
 
-    public ItemStackHandler getItemHandler() {
+    public ModItemStackHandler getItemHandler() {
         return itemHandler;
     }
 

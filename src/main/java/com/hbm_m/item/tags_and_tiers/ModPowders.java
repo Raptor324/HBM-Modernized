@@ -24,7 +24,19 @@ public enum ModPowders {
 
     GOLD("gold",
             "ru_ru", "Золотой порошок",
-            "en_us", "Golden Powder");
+            "en_us", "Golden Powder"),
+
+    CEMENT("cement",
+            "ru_ru", "Цемент",
+            "en_us", "Cement"),
+
+    LIMESTONE("limestone",
+            "ru_ru", "Известняковый порошок",
+            "en_us", "Limestone Powder"),
+
+    ALUMINUM("aluminum",
+                      "ru_ru", "",
+                      "en_us", "Aluminum Powder");
 
 
 

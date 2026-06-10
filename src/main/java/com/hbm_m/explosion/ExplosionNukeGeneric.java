@@ -4,6 +4,9 @@ import java.util.List;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.damagesource.ModDamageSources;
+import com.hbm_m.entity.effect.EntityCloudFleija;
+import com.hbm_m.entity.logic.EntityExplosionChunkloading;
+import com.hbm_m.interfaces.IEnergyReceiver;
 import com.hbm_m.radiation.ChunkRadiationManager;
 
 import net.minecraft.core.BlockPos;
@@ -15,6 +18,7 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
@@ -27,9 +31,38 @@ import net.minecraft.world.phys.Vec3;
 public class ExplosionNukeGeneric {
 
     /**
-     * Увеличивает радиацию в окрестных чанках вокруг эпицентра.
-     * Использует систему ChunkRadiationManager из Modernized.
+     * Одноразовый EMP-взрыв в сфере (порт {@code ExplosionNukeGeneric.empBlast}).
+     * Используется микро-ракетой EMP и гранатами; не создаёт долгоживущую сущность.
      */
+    public static void empBlast(Level level, int x, int y, int z, int bombStartStrength) {
+        if (level.isClientSide) {
+            return;
+        }
+        int r = bombStartStrength;
+        int r2 = r * r;
+        int r22 = r2 / 2;
+        for (int xx = -r; xx < r; xx++) {
+            int blockX = xx + x;
+            int xx2 = xx * xx;
+            for (int yy = -r; yy < r; yy++) {
+                int blockY = yy + y;
+                int xy2 = xx2 + yy * yy;
+                for (int zz = -r; zz < r; zz++) {
+                    if (xy2 + zz * zz < r22) {
+                        emp(level, blockX, blockY, zz + z);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void emp(Level level, int x, int y, int z) {
+        BlockEntity be = level.getBlockEntity(new BlockPos(x, y, z));
+        if (be instanceof IEnergyReceiver receiver) {
+            receiver.setEnergyStored(0);
+        }
+    }
+
     public static void incrementRad(Level level, double posX, double posY, double posZ, float mult) {
         for (int i = -2; i <= 2; i++) {
             for (int j = -2; j <= 2; j++) {
@@ -85,6 +118,8 @@ public class ExplosionNukeGeneric {
 
     private static boolean isExplosionExempt(Entity entity) {
         if (entity instanceof Ocelot) return true;
+        if (entity instanceof EntityCloudFleija) return true;
+        if (entity instanceof EntityExplosionChunkloading) return true;
 
         if (entity instanceof Player player && player.isCreative()) {
             return true;

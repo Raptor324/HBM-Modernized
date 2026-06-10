@@ -6,13 +6,19 @@
   "refmap": "mixins.hbm_m.refmap.json",
   "mixins": [
     "SlotMixin",
-    "PlayerStepSoundMixin"
+    "PlayerStepSoundMixin",
+    "CreeperMixin",
+    "CreeperAccessor",
+    "LivingEntityRadiationMixin"
   ],
   "server": [
   ],
   "client": [
     "GameRendererMixin",
-    "LightTextureMixin"
+    "LightTextureMixin",
+    "ModelBlockRendererMixin",
+    "LivingEntityRendererInvoker",
+    "client.MixinItemRendererTemplatePreview"
   ],
   "injectors": {
     "defaultRequire": 1

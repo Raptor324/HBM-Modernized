@@ -1,0 +1,6 @@
+newmtl default
+Ka 1.0000 1.0000 1.0000
+Kd 1.0000 1.0000 1.0000
+d 1.0000
+illum 2
+map_Kd #default

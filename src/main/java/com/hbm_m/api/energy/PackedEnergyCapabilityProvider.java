@@ -1,10 +1,11 @@
+//? if forge {
 package com.hbm_m.api.energy;
 
 import net.minecraft.core.Direction;
 import net.minecraftforge.common.capabilities.*;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.interfaces.IEnergyConnector;
 
@@ -61,3 +62,24 @@ public final class PackedEnergyCapabilityProvider {
         feHigh.invalidate();
     }
 }
+//?}
+
+//? if fabric {
+/*package com.hbm_m.api.energy;
+
+import org.jetbrains.annotations.Nullable;
+
+import com.hbm_m.interfaces.IEnergyConnector;
+
+/^*
+ * Fabric stub: Forge Energy capability отсутствует, но общий код ожидает провайдер.
+ * Реальная интеграция энергии для Fabric делается через TR Energy API в FabricEntrypoint.
+ ^/
+public final class PackedEnergyCapabilityProvider {
+    public PackedEnergyCapabilityProvider(IEnergyConnector handler) {
+    }
+
+    public void invalidate() {
+    }
+}
+*///?}

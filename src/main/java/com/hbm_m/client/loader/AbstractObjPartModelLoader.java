@@ -1,3 +1,4 @@
+//? if forge {
 package com.hbm_m.client.loader;
 
 import java.util.HashMap;
@@ -48,7 +49,7 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
     public ObjPartGeometry<T> read(JsonObject jsonObject, JsonDeserializationContext deserializationContext) {
         String modelStr = GsonHelper.getAsString(jsonObject, "model");
         MainRegistry.LOGGER.debug("{}: model string='{}'", this.getClass().getSimpleName(), modelStr);
-        ResourceLocation model = ResourceLocation.parse(modelStr);
+        ResourceLocation model = ResourceLocation.tryParse(modelStr);
         Set<String> partNames = getPartNames(jsonObject);
         boolean flipV = GsonHelper.getAsBoolean(jsonObject, "flip_v", true);
         return new ObjPartGeometry<>(model, partNames, flipV, this);
@@ -196,12 +197,21 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
             } else if (this.visiblePart.equalsIgnoreCase("Frame") || this.visiblePart.equalsIgnoreCase("Door")) {
                 if (parent.hasMaterial("default")) {
                     mat = parent.getMaterial("default"); // Берет текстуру "default" из JSON
+                } else {
+                    // Цистерна и др.: в OBJ может быть usemtl default без ключа default в JSON —
+                    // тогда берём текстуру по имени части (frame / door).
+                    String lowerPart = this.visiblePart.toLowerCase(java.util.Locale.ROOT);
+                    if (parent.hasMaterial(lowerPart)) {
+                        mat = parent.getMaterial(lowerPart);
+                    }
                 }
             } else {
                 // Автоматический подхват для других дверей (если имя детали совпадает с ключом текстуры в JSON)
                 String lowerPart = this.visiblePart.toLowerCase(java.util.Locale.ROOT);
                 if (parent.hasMaterial(lowerPart)) {
                     mat = parent.getMaterial(lowerPart);
+                } else if (parent.hasMaterial("default")) {
+                    mat = parent.getMaterial("default");
                 }
             }
 
@@ -227,3 +237,21 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
 
     }
 }
+//?}
+
+//? if fabric {
+/*package com.hbm_m.client.loader;
+
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonObject;
+
+/^*
+ * Fabric: Forge geometry/OBJ pipeline isn't available.
+ * This class exists as a stub to keep common code compiling across loaders.
+ ^/
+public abstract class AbstractObjPartModelLoader<T> {
+    public Object read(JsonObject jsonObject, JsonDeserializationContext deserializationContext) {
+        throw new UnsupportedOperationException("OBJ part model loader is not implemented on Fabric yet.");
+    }
+}
+*///?}

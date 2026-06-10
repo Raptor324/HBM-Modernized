@@ -3,24 +3,29 @@ package com.hbm_m.powerarmor;
 // import java.util.Random;
 
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.platform.PlayerPersistentData;
+
+import dev.architectury.event.events.common.TickEvent;
 
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.event.entity.living.LivingEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class PowerArmorSounds {
 
     private PowerArmorSounds() {} 
 
-    @SubscribeEvent
-    public static void onLivingUpdate(LivingEvent.LivingTickEvent event) {
-        if (!(event.getEntity() instanceof Player player)) return;
-        if (!player.level().isClientSide) return;
+    private static boolean INITIALIZED = false;
+
+    public static void register() {
+        if (INITIALIZED) return;
+        INITIALIZED = true;
+        TickEvent.PLAYER_POST.register(PowerArmorSounds::onPlayerTickClient);
+    }
+
+    private static void onPlayerTickClient(Player player) {
+        if (!player.level().isClientSide) return; // client-only sounds
 
         if (!ModPowerArmorItem.hasFSBArmor(player)) return;
 
@@ -29,38 +34,38 @@ public final class PowerArmorSounds {
 
         var specs = armorItem.getSpecs();
         
+        var pdata = PlayerPersistentData.get(player);
+
+        // 0. Jump Sound Logic (multiloader, client tick based)
+        // Jump is: wasOnGround -> !onGround with positive Y velocity.
+        // This filters out "walked off a ledge" (usually yVel <= 0 at the transition).
+        boolean wasOnGround = pdata.getBoolean("hbm_was_on_ground");
+        boolean onGround = player.onGround();
+        if (wasOnGround && !onGround && player.getDeltaMovement().y > 0.0D) {
+            if (specs.jumpSound != null) {
+                playJumpSound(player, specs.jumpSound);
+            }
+        }
+        pdata.putBoolean("hbm_was_on_ground", onGround);
+
         // 1. Landing Sound Logic
-        boolean wasInAir = player.getPersistentData().getBoolean("wasInAir");
+        boolean wasInAir = pdata.getBoolean("wasInAir");
         boolean isGround = player.onGround();
         boolean justLanded = wasInAir && isGround;
         
-        player.getPersistentData().putBoolean("wasInAir", !isGround);
+        pdata.putBoolean("wasInAir", !isGround);
 
         if (justLanded && specs.fallSound != null) {
-            if (player.getPersistentData().getBoolean("hbm_hard_landing_occured")) {
-                player.getPersistentData().putBoolean("hbm_hard_landing_occured", false);
+            if (pdata.getBoolean("hbm_hard_landing_occured")) {
+                pdata.putBoolean("hbm_hard_landing_occured", false);
             } else {
                 playFallSound(player, specs.fallSound);
             }
         }
     }
 
-    @SubscribeEvent
-    public static void onPlayerJump(net.minecraftforge.event.entity.living.LivingEvent.LivingJumpEvent event) {
-        if (!(event.getEntity() instanceof Player player)) return;
-        if (!player.level().isClientSide) return;
-
-        if (!ModPowerArmorItem.hasFSBArmor(player)) return;
-
-        var chestStack = player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
-        if (!(chestStack.getItem() instanceof ModPowerArmorItem armorItem)) return;
-
-        var specs = armorItem.getSpecs();
-
-        if (specs.jumpSound != null) {
-            playJumpSound(player, specs.jumpSound);
-        }
-    }
+    // Jump sound: Forge event existed, but for multiloader this needs a dedicated hook.
+    // TODO: if needed, replicate via client input/tick detection (jump key + onGround transition).
 
     // ========== UTILITIES ==========
 

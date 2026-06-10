@@ -2,11 +2,11 @@ package com.hbm_m.item.industrial;
 
 import java.util.List;
 
-import javax.annotation.Nonnull;
-
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.recipe.AssemblerRecipe;
+import com.hbm_m.recipe.ChemicalPlantRecipe;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -39,7 +39,7 @@ public class ItemBlueprintFolder extends Item {
     }
 
     @Override
-    public Component getName(@Nonnull ItemStack stack) {
+    public Component getName(@NotNull ItemStack stack) {
         String pool = getBlueprintPool(stack);
         if (!pool.isEmpty()) {
             // Формат: "Папка шаблонов машин: <название группы>"
@@ -51,8 +51,8 @@ public class ItemBlueprintFolder extends Item {
     }
 
     @Override
-    public void appendHoverText(@Nonnull ItemStack stack, @Nullable Level level,
-                            @Nonnull List<Component> tooltip, @Nonnull TooltipFlag flag) {
+    public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level,
+                            @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
         String pool = getBlueprintPool(stack);
         
         // Если NBT пустой - показываем "пустой шаблон"
@@ -65,35 +65,48 @@ public class ItemBlueprintFolder extends Item {
         tooltip.add(Component.translatable("item.hbm_m.blueprint_folder.desc")
             .withStyle(ChatFormatting.GRAY));
         
-        // Проверяем, есть ли рецепты в этой группе
+        // Проверяем, есть ли рецепты в этой группе (сборщик + химзавод используют один NBT pool)
         if (level != null && level.getRecipeManager() != null) {
-            List<AssemblerRecipe> recipes = level.getRecipeManager()
+            List<AssemblerRecipe> assemblerRecipes = level.getRecipeManager()
                 .getAllRecipesFor(AssemblerRecipe.Type.INSTANCE)
                 .stream()
                 .filter(r -> pool.equals(r.getBlueprintPool()))
                 .toList();
-            
-            // ИСПРАВЛЕНО: Если рецептов нет - показываем "пустой шаблон"
-            if (recipes.isEmpty()) {
+            List<ChemicalPlantRecipe> chemicalRecipes = level.getRecipeManager()
+                .getAllRecipesFor(ChemicalPlantRecipe.Type.INSTANCE)
+                .stream()
+                .filter(r -> pool.equals(r.getBlueprintPool()))
+                .toList();
+
+            if (assemblerRecipes.isEmpty() && chemicalRecipes.isEmpty()) {
                 tooltip.add(Component.empty());
                 tooltip.add(Component.translatable("item.hbm_m.blueprint_folder.obsolete")
                     .withStyle(ChatFormatting.RED));
                 return;
             }
-            
-            // Рецепты есть - показываем их список
+
             tooltip.add(Component.empty());
             tooltip.add(Component.translatable("item.hbm_m.blueprint_folder.recipes")
                 .withStyle(ChatFormatting.GOLD));
-            
+
             int count = 0;
-            for (AssemblerRecipe recipe : recipes) {
+            for (AssemblerRecipe recipe : assemblerRecipes) {
                 if (count >= 10) {
                     tooltip.add(Component.literal(" ...")
                         .withStyle(ChatFormatting.DARK_GRAY));
-                    break;
+                    return;
                 }
-                
+                tooltip.add(Component.literal(" • ")
+                    .append(recipe.getResultItem(level.registryAccess()).getHoverName())
+                    .withStyle(ChatFormatting.YELLOW));
+                count++;
+            }
+            for (ChemicalPlantRecipe recipe : chemicalRecipes) {
+                if (count >= 10) {
+                    tooltip.add(Component.literal(" ...")
+                        .withStyle(ChatFormatting.DARK_GRAY));
+                    return;
+                }
                 tooltip.add(Component.literal(" • ")
                     .append(recipe.getResultItem(level.registryAccess()).getHoverName())
                     .withStyle(ChatFormatting.YELLOW));

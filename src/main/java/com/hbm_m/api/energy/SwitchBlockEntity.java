@@ -10,16 +10,25 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+//? if forge {
+import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
-import org.jetbrains.annotations.NotNull;
-import javax.annotation.Nullable;
+//?}
+
+//? if fabric {
+/*import dev.onyxstudios.cca.api.v3.component.ComponentKey;
+import dev.onyxstudios.cca.api.v3.component.ComponentProvider;
+*///?}
 
 public class SwitchBlockEntity extends BlockEntity implements IEnergyConnector {
 
     // Capability всегда "живая", но доступ к ней регулируется через getCapability
+    //? if forge {
     private final LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
-
+     //?}
     public SwitchBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.SWITCH_BE.get(), pos, state);
     }
@@ -38,18 +47,6 @@ public class SwitchBlockEntity extends BlockEntity implements IEnergyConnector {
         }
     }
 
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ModCapabilities.HBM_ENERGY_CONNECTOR) {
-            // [ВАЖНО] Проверяем валидность здесь. Если isValidSide вернет false (например, выключен),
-            // мы вернем super (empty). Это заставит EnergyNetworkManager считать узел невалидным.
-            if (isValidSide(side)) {
-                return hbmConnector.cast();
-            }
-        }
-        return super.getCapability(cap, side);
-    }
-
     private boolean isValidSide(@Nullable Direction side) {
         // [ИСПРАВЛЕНО] Добавлена проверка POWERED.
         // Теперь, если рубильник выключен, он не отдает Capability.
@@ -64,11 +61,31 @@ public class SwitchBlockEntity extends BlockEntity implements IEnergyConnector {
         return side == facing || side == facing.getOpposite();
     }
 
+    //? if forge {
+    @Override
+    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+        if (cap == ModCapabilities.HBM_ENERGY_CONNECTOR) {
+            if (isValidSide(side)) {
+                return hbmConnector.cast();
+            }
+        }
+        return super.getCapability(cap, side);
+    }
+
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
         hbmConnector.invalidate();
     }
+
+    @Override
+    public void onChunkUnloaded() {
+        super.onChunkUnloaded();
+        if (this.level != null && !this.level.isClientSide) {
+            EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
+        }
+    }
+    //?}
 
     @Override
     public boolean canConnectEnergy(Direction side) {
@@ -87,14 +104,8 @@ public class SwitchBlockEntity extends BlockEntity implements IEnergyConnector {
         if (this.level != null && !this.level.isClientSide) {
             EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
         }
+        //? if forge {
         hbmConnector.invalidate();
-    }
-
-    @Override
-    public void onChunkUnloaded() {
-        super.onChunkUnloaded();
-        if (this.level != null && !this.level.isClientSide) {
-            EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
-        }
+         //?}
     }
 }

@@ -1,12 +1,30 @@
 package com.hbm_m.block.entity.machines;
 
-import com.hbm_m.recipe.PressRecipe;
-import com.hbm_m.sound.ModSounds;
+
+import java.util.Optional;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachinePressMenu;
+import com.hbm_m.recipe.PressRecipe;
+import com.hbm_m.sound.ModSounds;
 
+//? if forge {
+import com.hbm_m.capability.ModCapabilities;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.LazyOptional;
+//?}
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;*///?}
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
@@ -21,13 +39,10 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.Optional;
+import net.minecraft.world.item.crafting.RecipeType;
 
 public class MachinePressBlockEntity extends BaseMachineBlockEntity {
     
@@ -94,12 +109,30 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
     };
 
     public MachinePressBlockEntity(BlockPos pos, BlockState state) {
-        // ИСПРАВЬ: добавь capacity и transferRate
         super(ModBlockEntities.PRESS_BE.get(), pos, state,
                 SLOT_COUNT,   // inventorySize
-                50_000L,      // capacity (энергия)
-                1000L);       // transferRate (скорость приёма/отдачи)
+                0L,           // capacity (пресс не использует энергию)
+                0L);          // receiveRate (не должен заряжаться)
     }
+
+    @Override
+    public boolean canConnectEnergy(Direction side) {
+        return false;
+    }
+
+    //? if forge {
+    @Override
+    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+        // Пресс НЕ является частью энергетической сети и не должен цепляться проводами/заряжаться.
+        if (cap == ModCapabilities.HBM_ENERGY_PROVIDER
+                || cap == ModCapabilities.HBM_ENERGY_RECEIVER
+                || cap == ModCapabilities.HBM_ENERGY_CONNECTOR
+                || cap == ForgeCapabilities.ENERGY) {
+            return LazyOptional.empty();
+        }
+        return super.getCapability(cap, side);
+    }
+    //?}
 
 
     
@@ -231,8 +264,11 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
             sendUpdateToClient();
         }
     }
-
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+@OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
     private void clientTick() {
         float target = convertPressToProgress();
         if (!clientPressInitialized) {
@@ -243,8 +279,11 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         prevVisualPressPosition = visualPressPosition;
         visualPressPosition = Mth.lerp(0.25F, visualPressPosition, target);
     }
-
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+@OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
     public float getPressAnimationProgress(float partialTick) {
         float interpolated = Mth.lerp(partialTick, prevVisualPressPosition, visualPressPosition);
         return Mth.clamp(interpolated, 0.0F, 1.0F);
@@ -261,6 +300,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
             worldPosition.getZ() + 1
         );
     }
+
     
     private void craftItem() {
         Optional<PressRecipe> recipe = getCurrentRecipe();
@@ -323,20 +363,25 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         for (int i = 0; i < inventory.getSlots(); i++) {
             container.setItem(i, inventory.getStackInSlot(i));
         }
-        
-        return level.getRecipeManager().getRecipeFor(PressRecipe.Type.INSTANCE, container, level);
+
+        // getRecipeFor() иногда не сходится по дженерикам в зависимости от маппингов,
+        // поэтому берём список рецептов и матчим вручную.
+        @SuppressWarnings("rawtypes")
+        RecipeType type = (RecipeType) PressRecipe.Type.INSTANCE;
+        for (Object holderObj : level.getRecipeManager().getAllRecipesFor(type)) {
+            if (holderObj instanceof PressRecipe recipe && recipe.matches(container, level)) {
+                return Optional.of(recipe);
+            }
+        }
+        return Optional.empty();
     }
     
     // ==================== UTILITY ====================
     
     public int getBurnTime(Item item) {
-        ItemStack stack = new ItemStack(item);
-        // Получаем ванильное время горения в тиках
-        int vanillaBurnTime = net.minecraftforge.common.ForgeHooks.getBurnTime(stack, null);
-        if (vanillaBurnTime <= 0) return 0;
-        
-        // Конвертируем тики в секунды (делим на 20)
-        return (vanillaBurnTime / 20);
+        int vanillaBurnTimeTicks = AbstractFurnaceBlockEntity.getFuel().getOrDefault(item, 0);
+        if (vanillaBurnTimeTicks <= 0) return 0;
+        return vanillaBurnTimeTicks / 20;
     }
     
     public int getHeatState() {

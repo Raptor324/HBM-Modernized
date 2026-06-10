@@ -1,10 +1,18 @@
 package com.hbm_m.client.render.implementations;
 
+
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?}
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;*///?}
+
 import org.joml.Matrix4f;
 
 import com.hbm_m.client.model.PressBakedModel;
-import com.hbm_m.client.render.GlobalMeshCache;
-import com.hbm_m.client.render.SingleMeshVboRenderer;
+import com.hbm_m.client.render.MeshRenderCache;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -13,10 +21,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 import org.jetbrains.annotations.Nullable;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public class MachinePressVboRenderer {
 
     private static final String HEAD = "Head";
@@ -41,9 +50,10 @@ public class MachinePressVboRenderer {
         if (transform != null) {
             poseStack.last().pose().mul(transform);
         }
-        var r = GlobalMeshCache.getOrCreateRenderer("press_" + HEAD, part);
+        var r = MeshRenderCache.getOrCreateRenderer("press_" + HEAD, part);
         if (r != null) r.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);
         poseStack.popPose();
     }
 }
+
 

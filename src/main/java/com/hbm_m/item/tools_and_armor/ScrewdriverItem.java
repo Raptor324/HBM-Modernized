@@ -8,6 +8,8 @@ import com.hbm_m.block.entity.doors.DoorBlockEntity;
 import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.lib.RefStrings;
 
+import dev.architectury.utils.Env;
+import dev.architectury.utils.EnvExecutor;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -19,8 +21,6 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
 
 /**
  * Отвертка для настройки дверей и конвертера энергии.
@@ -48,7 +48,7 @@ public class ScrewdriverItem extends Item {
         if (doorEntity == null) return InteractionResult.PASS;
 
         if (level.isClientSide) {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () ->
+            EnvExecutor.runInEnv(Env.CLIENT, () -> () ->
                     com.hbm_m.client.overlay.DoorSelectionClientHooks.openSelectionMenu(doorEntity));
         }
         // CONSUME явно помечает взаимодействие как обработанное - блок use() не вызывается

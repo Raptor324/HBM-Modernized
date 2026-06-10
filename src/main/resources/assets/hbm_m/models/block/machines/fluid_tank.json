@@ -3,7 +3,9 @@
 	"model": "hbm_m:models/block/machines/fluid_tank.obj",
 	"flip_v": true,
 	"textures": {
-        "particle": "hbm_m:block/tank/tank_none"
+        "particle": "hbm_m:block/tank/tank_none",
+		"frame": "hbm_m:block/tank/tank_frame",
+		"tank": "hbm_m:block/tank/tank_none"
     },
 	"transform": {
 		"translation": [ -2.5, 0, -1.5 ],

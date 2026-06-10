@@ -16,12 +16,10 @@ public class MachineHydraulicFrackiningTowerModelLoader extends AbstractObjPartM
     // Если в OBJ есть группы, можно добавить их имена сюда.
     private static final Set<String> PART_NAMES = Set.of("Cube_Cube.001");
 
-    @Override
     protected Set<String> getPartNames(JsonObject jsonObject) {
         return PART_NAMES;
     }
 
-    @Override
     protected MachineHydraulicFrackiningTowerBakedModel createBakedModel(HashMap<String, BakedModel> bakedParts, ItemTransforms transforms, ResourceLocation modelLocation) {
         return new MachineHydraulicFrackiningTowerBakedModel(bakedParts, transforms);
     }

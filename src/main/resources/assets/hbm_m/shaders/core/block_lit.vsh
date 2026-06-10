@@ -5,6 +5,31 @@ layout(location = 1) in vec3 Normal;
 layout(location = 2) in vec2 UV0;
 
 #ifdef USE_INSTANCING
+// int bone_id: резерв под merged mesh / документация иерархии (см. OLD/render.md).
+// Полный pose части задаётся в InstPos/InstRot (CPU), UBO/SSBO в VS не используем — совместимость с Oculus/Iris.
+#ifdef USE_VERTEX_BONE_ID
+layout(location = 3) in int BoneId;
+layout(location = 4) in vec3 InstPos;
+layout(location = 5) in vec4 InstRot;
+layout(location = 6) in vec3 InstBboxMin;
+// xyz = bbox extent; w = per-instance fade (keeps attrib count <= 16 with BoneId + sliced lights).
+layout(location = 7) in vec4 InstBboxSize;
+#ifdef USE_SLICED_LIGHT
+layout(location = 8)  in vec4 InstLightS0C01;
+layout(location = 9)  in vec4 InstLightS0C23;
+layout(location = 10) in vec4 InstLightS1C01;
+layout(location = 11) in vec4 InstLightS1C23;
+layout(location = 12) in vec4 InstLightS2C01;
+layout(location = 13) in vec4 InstLightS2C23;
+layout(location = 14) in vec4 InstLightS3C01;
+layout(location = 15) in vec4 InstLightS3C23;
+#else
+layout(location = 8)  in vec4 InstLightC01;  // corner0.uv, corner1.uv
+layout(location = 9)  in vec4 InstLightC23;
+layout(location = 10) in vec4 InstLightC45;
+layout(location = 11) in vec4 InstLightC67;
+#endif
+#else
 layout(location = 3)  in vec3 InstPos;
 layout(location = 4)  in vec4 InstRot;
 layout(location = 5)  in vec3 InstBboxMin;
@@ -18,16 +43,20 @@ layout(location = 11) in vec4 InstLightS2C01;
 layout(location = 12) in vec4 InstLightS2C23;
 layout(location = 13) in vec4 InstLightS3C01;
 layout(location = 14) in vec4 InstLightS3C23;
+layout(location = 15) in float InstFadeAlpha;
 #else
 layout(location = 7)  in vec4 InstLightC01;  // corner0.uv, corner1.uv
 layout(location = 8)  in vec4 InstLightC23;
 layout(location = 9)  in vec4 InstLightC45;
 layout(location = 10) in vec4 InstLightC67;
+layout(location = 11) in float InstFadeAlpha;
+#endif
 #endif
 #endif
 
 uniform mat4 ModelViewMat;
 uniform mat4 ProjMat;
+uniform float FadeAlpha;
 
 // 8-corner trilinear lightmap uniforms (used by the non-instanced path).
 // Corner index encoding matches LightSampleCache.getOrSample8:
@@ -57,6 +86,8 @@ out vec2 texCoord;
 out vec2 lightmapUV;
 out float vertexDistance;
 out vec3 fragNormal;
+// Per-vertex fade: InstBboxSize.w when instancing (batched flush reads stale uniform otherwise).
+out float vFadeAlpha;
 
 #ifdef USE_INSTANCING
 mat4 quatToMat4(vec4 q) {
@@ -127,10 +158,10 @@ void main() {
     mat4 rotMatrix = quatToMat4(InstRot);
     mat4 translation = mat4(1.0);
     translation[3] = vec4(InstPos, 1.0);
-
-    modelView = translation * rotMatrix;
+    mat4 instBase = translation * rotMatrix;
+    modelView = instBase;
     bboxMin = InstBboxMin;
-    bboxSize = InstBboxSize;
+    bboxSize = InstBboxSize.xyz;
 #ifndef USE_SLICED_LIGHT
     lc01 = InstLightC01;
     lc23 = InstLightC23;
@@ -138,7 +169,7 @@ void main() {
     lc67 = InstLightC67;
 #endif
 
-    fragNormal = mat3(rotMatrix) * Normal;
+    fragNormal = mat3(modelView) * Normal;
 #else
     modelView = ModelViewMat;
     bboxMin = BboxMin;
@@ -204,4 +235,10 @@ void main() {
     // Center within the 16×16 lightmap cell like vanilla block UV2 → texcoord.
     lightmapUV = (uvLm + vec2(8.0)) / 256.0;
     vertexDistance = length(viewPos.xyz);
+
+#ifdef USE_INSTANCING
+    vFadeAlpha = InstBboxSize.w;
+#else
+    vFadeAlpha = FadeAlpha;
+#endif
 }

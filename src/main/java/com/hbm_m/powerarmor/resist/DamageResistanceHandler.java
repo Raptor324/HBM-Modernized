@@ -2,6 +2,7 @@ package com.hbm_m.powerarmor.resist;
 
 import java.util.HashMap;
 
+import com.hbm_m.entity.mob.EntityCreeperNuclear;
 import com.hbm_m.interfaces.IResistanceProvider;
 import com.hbm_m.item.ModItems;
 
@@ -11,7 +12,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fml.common.Mod;
 
 /**
  * Damage Resistance Handler for HBM Modernized
@@ -24,7 +24,6 @@ import net.minecraftforge.fml.common.Mod;
  * 
  * @author hbm (ported to 1.20.1)
  */
-@Mod.EventBusSubscriber(modid = com.hbm_m.main.MainRegistry.MOD_ID)
 public class DamageResistanceHandler {
     
     /** Currently cached DT reduction */
@@ -366,6 +365,9 @@ public class DamageResistanceHandler {
      * Call this from FMLCommonSetupEvent or similar
      */
     public static void initArmorStats() {
+        registerEntity(EntityCreeperNuclear.class,
+                new ResistanceStats().addCategory(CATEGORY_EXPLOSION, 5F, 0.35F));
+
         // ========== T-51 POWER ARMOR ==========
         registerSet(ModItems.T51_HELMET.get(), ModItems.T51_CHESTPLATE.get(),
                 ModItems.T51_LEGGINGS.get(), ModItems.T51_BOOTS.get(),

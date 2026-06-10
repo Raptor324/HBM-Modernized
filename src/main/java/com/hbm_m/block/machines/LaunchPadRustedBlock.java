@@ -3,17 +3,20 @@ package com.hbm_m.block.machines;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.bomb.IBomb;
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity;
 import com.hbm_m.block.entity.machines.LaunchPadRustedBlockEntity;
+import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -41,7 +44,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
+
 
 /**
  * Ржавая пусковая площадка.
@@ -49,7 +52,16 @@ import net.minecraftforge.network.NetworkHooks;
  * Поведение мультиблока и энергетики повторяет обычную LaunchPadBlock,
  * но использует LaunchPadRustedBlockEntity и отдельный GUI.
  */
-public class LaunchPadRustedBlock extends BaseEntityBlock implements IMultiblockController {
+public class LaunchPadRustedBlock extends BaseEntityBlock implements IMultiblockController, IBomb, IDetonatable {
+
+    @Override
+    public boolean onDetonate(Level level, BlockPos pos, BlockState state, Player player) {
+        if (level.isClientSide) {
+            return false;
+        }
+        BombReturnCode result = explode(level, pos);
+        return result != null && result.wasSuccessful();
+    }
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
@@ -70,7 +82,7 @@ public class LaunchPadRustedBlock extends BaseEntityBlock implements IMultiblock
 
             helper.placeStructure(level, pos, facing, this);
             for (BlockPos localPos : helper.getStructureMap().keySet()) {
-                if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
+                if (getPartRole(localPos) == PartRole.UNIVERSAL_CONNECTOR) {
                     BlockPos worldPos = helper.getRotatedPos(pos, localPos, facing);
                     EnergyNetworkManager.get((ServerLevel) level).addNode(worldPos);
                 }
@@ -85,7 +97,7 @@ public class LaunchPadRustedBlock extends BaseEntityBlock implements IMultiblock
                 MultiblockStructureHelper helper = getStructureHelper();
                 Direction facing = state.getValue(FACING);
                 for (BlockPos localPos : helper.getStructureMap().keySet()) {
-                    if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
+                    if (getPartRole(localPos) == PartRole.UNIVERSAL_CONNECTOR) {
                         BlockPos worldPos = helper.getRotatedPos(pos, localPos, facing);
                         EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
                     }
@@ -106,6 +118,27 @@ public class LaunchPadRustedBlock extends BaseEntityBlock implements IMultiblock
             }
         }
         super.onRemove(state, level, pos, newState, isMoving);
+    }
+
+    @Override
+    public BombReturnCode explode(Level level, BlockPos pos) {
+        if (level.isClientSide) {
+            return BombReturnCode.UNDEFINED;
+        }
+        if (level.getBlockEntity(pos) instanceof LaunchPadBaseBlockEntity launchPad) {
+            return launchPad.triggerLaunch();
+        }
+        return BombReturnCode.UNDEFINED;
+    }
+
+    @Override
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock,
+                                BlockPos neighborPos, boolean movedByPiston) {
+        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
+        if (!level.isClientSide
+                && level.getBlockEntity(pos) instanceof LaunchPadBaseBlockEntity launchPad) {
+            launchPad.checkRedstonePower();
+        }
     }
 
     @Override
@@ -133,14 +166,14 @@ public class LaunchPadRustedBlock extends BaseEntityBlock implements IMultiblock
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return createTickerHelper(type, ModBlockEntities.LAUNCH_PAD_RUSTED_BE.get(), LaunchPadRustedBlockEntity::serverTick);
+        return createTickerHelper(type, ModBlockEntities.LAUNCH_PAD_RUSTED_BE.get(), LaunchPadRustedBlockEntity::tick);
     }
 
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide()) {
             if (level.getBlockEntity(pos) instanceof MenuProvider provider) {
-                NetworkHooks.openScreen((ServerPlayer) player, provider, pos);
+                MenuRegistry.openExtendedMenu((ServerPlayer) player, provider, buf -> buf.writeBlockPos(pos));
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
@@ -219,6 +252,15 @@ public class LaunchPadRustedBlock extends BaseEntityBlock implements IMultiblock
             return structureHelper.resolvePartRole(localOffset, this);
         }
         return PartRole.DEFAULT;
+    }
+
+    @Override
+    public float getShadeBrightness(BlockState pState, BlockGetter pLevel, BlockPos pPos) {
+        return 1.0F; // Убирает тени под блоком и Ambient Occlusion
+    }
+
+    public boolean propagatesSkylightDown(BlockState pState, BlockGetter pLevel, BlockPos pPos) {
+        return true;
     }
 }
 

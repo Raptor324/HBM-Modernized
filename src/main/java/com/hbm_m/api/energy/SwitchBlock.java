@@ -21,7 +21,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public class SwitchBlock extends BaseEntityBlock {
 

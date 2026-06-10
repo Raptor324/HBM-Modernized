@@ -28,7 +28,10 @@ public final class MultiblockSideTuples {
     }
 
     /**
-     * @param north south west east up down - локально к схеме (как у {@link MultiblockStructureHelper}).
+     * Кортеж для {@link com.hbm_m.multiblock.MultiblockStructureHelper#createFromLayersWithRolesAndSides}
+     * ({@code fluidSideMap}): порядок локальных сторон схемы до поворота FACING —
+     * north, south, west, east, up, down. Для символа контроллера задаёт, с каких граней блока контроллера
+     * разрешён приём/отдача жидкости через sided API; все {@code false} — закрыть все грани (пустой набор после поворота в мир).
      */
     public static boolean[] fluid(boolean north, boolean south, boolean west, boolean east, boolean up, boolean down) {
         return new boolean[] { north, south, west, east, up, down };

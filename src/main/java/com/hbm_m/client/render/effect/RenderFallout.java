@@ -1,7 +1,8 @@
 package com.hbm_m.client.render.effect;
 
 import com.hbm_m.client.ClientRenderHandler;
-import com.hbm_m.entity.effect.FalloutRain;
+import com.hbm_m.client.render.ImmediateVertexWriter;
+import com.hbm_m.entity.effect.EntityFalloutRain;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -9,22 +10,24 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.GraphicsStatus;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
 
-public class RenderFallout extends EntityRenderer<FalloutRain> {
+public class RenderFallout extends EntityRenderer<EntityFalloutRain> {
 
-    private static final ResourceLocation FALLOUT = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/entity/fallout.png");
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation FALLOUT = new ResourceLocation(RefStrings.MODID, "textures/entity/fallout.png");
+    *///?} else {
+        private static final ResourceLocation FALLOUT = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/entity/fallout.png");
+    //?}
+
 
     /** Максимальный радиус рендера fallout-колонн (в блоках). */
     private static final int MAX_RENDER_RADIUS = 40;
@@ -49,7 +52,6 @@ public class RenderFallout extends EntityRenderer<FalloutRain> {
     /** Кэш данных по колонне fallout. Привязан к центру и игровому тику. */
     private static final class FalloutColumnCacheEntry {
         int height;
-        int light;
         int lastUpdateTick;
         int centerX;
         int centerZ;
@@ -65,7 +67,7 @@ public class RenderFallout extends EntityRenderer<FalloutRain> {
     }
 
     @Override
-    public void render(FalloutRain entity, float entityYaw, float partialTick,
+    public void render(EntityFalloutRain entity, float entityYaw, float partialTick,
                     PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
         Minecraft mc = Minecraft.getInstance();
         LivingEntity camera = mc.player;
@@ -93,18 +95,18 @@ public class RenderFallout extends EntityRenderer<FalloutRain> {
     }
 
     @Override
-    public ResourceLocation getTextureLocation(FalloutRain entity) {
+    public ResourceLocation getTextureLocation(EntityFalloutRain entity) {
         return FALLOUT;
     }
 
     @Override
-    public boolean shouldRender(FalloutRain entity, Frustum frustum, double camX, double camY, double camZ) {
+    public boolean shouldRender(EntityFalloutRain entity, Frustum frustum, double camX, double camY, double camZ) {
         double dx = camX - entity.getX();
         double dz = camZ - entity.getZ();
         return dx * dx + dz * dz <= MAX_EPICENTER_CAMERA_HORIZONTAL_DIST_SQ;
     }
 
-    private void renderRainSnow(FalloutRain entity, float interp, PoseStack pose, MultiBufferSource buffers, ClientLevel level, LivingEntity camera) {
+    private void renderRainSnow(EntityFalloutRain entity, float interp, PoseStack pose, MultiBufferSource buffers, ClientLevel level, LivingEntity camera) {
         int timer = camera.tickCount;
         float intensity = 1.0F;
 
@@ -146,7 +148,6 @@ public class RenderFallout extends EntityRenderer<FalloutRain> {
 
         ResourceLocation texture = FALLOUT;
         VertexConsumer consumer = buffers.getBuffer(ClientRenderHandler.CustomRenderTypes.ENTITY_SMOOTH.apply(texture));
-        int overlay = OverlayTexture.NO_OVERLAY;
         var matrix = pose.last().pose();
 
         int currentTick = camera.tickCount;
@@ -181,19 +182,7 @@ public class RenderFallout extends EntityRenderer<FalloutRain> {
                         entry.height == 0;
 
                 if (needsUpdate) {
-                    int rainHeight = level.getHeight(Heightmap.Types.MOTION_BLOCKING, layerX, layerZ);
-                    int minHeightForCache = rainHeight;
-                    int maxHeightForCache = Math.min(level.getMaxBuildHeight(), minHeightForCache + MAX_VISUAL_HEIGHT_ABOVE_SURFACE + verticalLayers);
-                    if (maxHeightForCache <= minHeightForCache) {
-                        maxHeightForCache = minHeightForCache + verticalLayers;
-                    }
-                    if (minHeightForCache != maxHeightForCache) {
-                        entry.height = rainHeight;
-                        entry.light = getLightColor(level, layerX + 0.5, minHeightForCache, layerZ + 0.5);
-                    } else {
-                        entry.height = rainHeight;
-                        entry.light = 0;
-                    }
+                    entry.height = level.getHeight(Heightmap.Types.MOTION_BLOCKING, layerX, layerZ);
                     entry.centerX = centerX;
                     entry.centerZ = centerZ;
                     entry.lastUpdateTick = currentTick;
@@ -233,19 +222,12 @@ public class RenderFallout extends EntityRenderer<FalloutRain> {
                 float vx1 = (float) (layerX + rainCoordX + 0.5);
                 float vz1 = (float) (layerZ + rainCoordY + 0.5);
 
-                int light = entry.light;
-
-                consumer.vertex(matrix, vx0, minHeight, vz0).color(colorMod, colorMod, colorMod, alpha).uv(u0, vMin).overlayCoords(overlay).uv2(light).normal(0, 1, 0).endVertex();
-                consumer.vertex(matrix, vx1, minHeight, vz1).color(colorMod, colorMod, colorMod, alpha).uv(u1, vMin).overlayCoords(overlay).uv2(light).normal(0, 1, 0).endVertex();
-                consumer.vertex(matrix, vx1, maxHeight, vz1).color(colorMod, colorMod, colorMod, alpha).uv(u1, vMax).overlayCoords(overlay).uv2(light).normal(0, 1, 0).endVertex();
-                consumer.vertex(matrix, vx0, maxHeight, vz0).color(colorMod, colorMod, colorMod, alpha).uv(u0, vMax).overlayCoords(overlay).uv2(light).normal(0, 1, 0).endVertex();
+                ImmediateVertexWriter.texColor(consumer, matrix, vx0, minHeight, vz0, colorMod, colorMod, colorMod, alpha, u0, vMin);
+                ImmediateVertexWriter.texColor(consumer, matrix, vx1, minHeight, vz1, colorMod, colorMod, colorMod, alpha, u1, vMin);
+                ImmediateVertexWriter.texColor(consumer, matrix, vx1, maxHeight, vz1, colorMod, colorMod, colorMod, alpha, u1, vMax);
+                ImmediateVertexWriter.texColor(consumer, matrix, vx0, maxHeight, vz0, colorMod, colorMod, colorMod, alpha, u0, vMax);
             }
         }
-    }
-
-    private static int getLightColor(Level level, double x, double y, double z) {
-        BlockPos blockpos = BlockPos.containing(x, y, z);
-        return level.isLoaded(blockpos) ? LevelRenderer.getLightColor(level, blockpos) : 0;
     }
 
     private static int columnHash(int x, int z) {

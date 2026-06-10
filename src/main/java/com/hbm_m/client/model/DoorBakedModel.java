@@ -5,6 +5,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import com.hbm_m.client.model.variant.DoorModelProperties;
+import com.hbm_m.client.model.variant.DoorModelRegistry;
+import net.minecraft.client.renderer.RenderType;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
@@ -12,35 +15,33 @@ import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.block.entity.doors.DoorDecl;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
 import com.hbm_m.client.loader.ColladaAnimationData;
-import com.hbm_m.client.model.variant.DoorModelProperties;
-import com.hbm_m.client.model.variant.DoorModelRegistry;
 import com.hbm_m.client.model.variant.DoorModelSelection;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.util.MultipartFacingTransforms;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
+//? if forge {
 import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
+//?}
 
 public class DoorBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
     
     private final String[] cachedPartNames;
     private final ResourceLocation doorId;
+
+    // Должно быть доступно и на Fabric (не внутри forge-only блоков).
+    private static final String[] STATIC_PART_NAMES = {"frame", "Frame", "DoorFrame", "Base", "base"};
     
     // Кэш квадов для item рендера
     private List<BakedQuad> cachedItemQuads;
@@ -66,16 +67,22 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
     
     @Override
     protected boolean shouldSkipWorldRendering(@Nullable BlockState state) {
-        // Пропускаем world рендер когда геометрия предоставляется BER/VBO путём
-        // (нет шейдера ИЛИ включён useIrisExtendedShaderPath под шейдерами).
-        return state != null && ShaderCompatibilityDetector.useVboGeometry();
+        // Геометрия всегда предоставляется BER/VBO системой.
+        return state != null;
     }
     
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
+        //? if forge {
         return getQuads(state, side, rand, ModelData.EMPTY, null);
+        //?}
+
+        //? if fabric {
+        /*return getQuadsFabric(state, side, rand, FabricRenderDataBridge.get());
+        *///?}
     }
     
+    //? if forge {
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                      RandomSource rand, ModelData modelData, 
@@ -85,25 +92,8 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
             return getItemQuads(side, rand, modelData, renderType);
         }
         
-        // WORLD RENDER - переключение по источнику геометрии.
-        // useVboGeometry() == true → модель пустая, всё рендерит BER (VBO/Iris путь).
-        // useVboGeometry() == false → baked путь под шейдерами: рендерим всё кроме анимированных частей
-        // (движущаяся дверь дорисовывается BER через putBulkData).
-        if (ShaderCompatibilityDetector.useVboGeometry()) {
-            return Collections.emptyList();
-        }
-        
-        // Движется ли дверь: BlockState обновляется первым (при block update), ModelData - при packet BlockEntity
-        boolean isMoving = state.hasProperty(DoorBlock.DOOR_MOVING) && state.getValue(DoorBlock.DOOR_MOVING);
-        Boolean movingFromData = modelData.get(DoorModelProperties.DOOR_MOVING_PROPERTY);
-        if (movingFromData != null) isMoving = movingFromData;
-        Boolean isOverlap = modelData.get(DoorModelProperties.OVERLAP_PROPERTY);
-        // Период overlap: дверь в open/closed, baked model и BER наслаиваются - устраняет моргание
-        if (Boolean.TRUE.equals(isOverlap) || !isMoving) {
-            return getAllPartQuads(state, side, rand, modelData, renderType);
-        }
-        // Дверь реально анимируется (state 2/3) - только frame, створки рисует BER
-        return getStaticPartQuads(state, side, rand, modelData, renderType);
+        // WORLD RENDER: геометрия всегда предоставляется BER/VBO системой.
+        return Collections.emptyList();
     }
     
     /**
@@ -165,8 +155,6 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         return result;
     }
     
-    private static final String[] STATIC_PART_NAMES = {"frame", "Frame", "DoorFrame", "Base", "base"};
-
     /**
      * Возвращает квады всех частей для Iris-пути при статичной двери.
      * Створка (анимированные части) трансформируется в позицию open/closed.
@@ -227,6 +215,155 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         }
         return allQuads;
     }
+    //?}
+
+    //? if fabric {
+    /*public List<BakedQuad> getQuadsFabric(@Nullable BlockState state, @Nullable Direction side,
+                                          RandomSource rand, @Nullable Object renderData) {
+        if (state == null) {
+            return getItemQuads(side, rand);
+        }
+        // Геометрия всегда предоставляется BER/VBO системой.
+        return Collections.emptyList();
+    }
+
+    private List<BakedQuad> getStaticPartQuadsFabric(@Nullable BlockState state, @Nullable Direction side,
+                                                     RandomSource rand, Map<String, BakedModel> partsToUse) {
+        List<BakedQuad> result = new ArrayList<>();
+        int rotationY = getRotationYForFacing(state);
+
+        for (String partName : STATIC_PART_NAMES) {
+            BakedModel part = partsToUse.get(partName);
+            if (part == null) continue;
+
+            List<BakedQuad> partQuads = new ArrayList<>();
+            for (Direction d : Direction.values()) {
+                partQuads.addAll(part.getQuads(state, d, rand));
+            }
+            partQuads.addAll(part.getQuads(state, null, rand));
+
+            if (!partQuads.isEmpty()) {
+                List<BakedQuad> translated = ModelHelper.translateQuads(partQuads, 0.5f, 0f, 0.5f);
+                List<BakedQuad> rotated = ModelHelper.transformQuadsByFacing(translated, rotationY);
+                if (side != null) {
+                    for (BakedQuad q : rotated) {
+                        if (q.getDirection() == side) result.add(q);
+                    }
+                } else {
+                    result.addAll(rotated);
+                }
+            }
+        }
+        return result;
+    }
+
+    private List<BakedQuad> getAllPartQuads(@Nullable BlockState state, @Nullable Direction side,
+                                          RandomSource rand) {
+        return getAllPartQuadsFabric(state, side, rand, null, parts);
+    }
+
+    private List<BakedQuad> getAllPartQuadsFabric(@Nullable BlockState state, @Nullable Direction side,
+                                                 RandomSource rand,
+                                                 @Nullable com.hbm_m.block.entity.doors.DoorBlockEntity.DoorRenderData data,
+                                                 Map<String, BakedModel> partsToUse) {
+        if (state == null) return Collections.emptyList();
+
+        DoorDecl doorDecl = DoorDeclRegistry.getById(extractDoorTypeFromPath(doorId.getPath()));
+        if (doorDecl == null) return Collections.emptyList();
+
+        boolean isOpen = state.hasProperty(DoorBlock.OPEN) && state.getValue(DoorBlock.OPEN);
+        if (data != null) isOpen = data.open();
+        float openTicks = isOpen ? doorDecl.getOpenTime() : 0f;
+
+        int rotationY = getRotationYForFacing(state);
+
+        ColladaAnimationData animData = null;
+        if (ModClothConfig.get().useColladaDoorAnimations && doorDecl.getColladaAnimationSource() != null) {
+            var mc = Minecraft.getInstance();
+            if (mc.getResourceManager() != null) {
+                animData = ColladaAnimationData.getOrLoad(mc.getResourceManager(), doorDecl.getColladaAnimationSource());
+            }
+        }
+
+        DoorModelSelection selection = data != null ? data.selection() : null;
+        String[] partNamesToUse = partsToUse.keySet().toArray(new String[0]);
+
+        List<BakedQuad> allQuads = new ArrayList<>();
+        java.util.Map<String, Matrix4f> transformCache = new java.util.HashMap<>();
+        for (String partName : partNamesToUse) {
+            BakedModel part = partsToUse.get(partName);
+            if (part == null) continue;
+
+            List<BakedQuad> partQuads = new ArrayList<>();
+            for (Direction d : Direction.values()) {
+                partQuads.addAll(part.getQuads(state, d, rand));
+            }
+            partQuads.addAll(part.getQuads(state, null, rand));
+            if (partQuads.isEmpty()) continue;
+
+            if (isStaticPart(partName)) {
+                List<BakedQuad> translated = ModelHelper.translateQuads(partQuads, 0.5f, 0f, 0.5f);
+                allQuads.addAll(ModelHelper.transformQuadsByFacing(translated, rotationY));
+            } else {
+                Matrix4f transform = buildPartTransformWithParent(doorDecl, partName, openTicks, animData, partNamesToUse, transformCache, selection);
+                if (transform != null) {
+                    partQuads = ModelHelper.transformQuadsByMatrix(partQuads, transform);
+                }
+                List<BakedQuad> translated = ModelHelper.translateQuads(partQuads, 0.5f, 0f, 0.5f);
+                allQuads.addAll(ModelHelper.transformQuadsByFacing(translated, rotationY));
+            }
+        }
+        return allQuads;
+    }
+
+    private Map<String, BakedModel> getPartsForSelection(@Nullable DoorModelSelection selection) {
+        if (selection == null || selection.equals(DoorModelSelection.DEFAULT)) return parts;
+
+        String doorType = extractDoorTypeFromPath(doorId.getPath());
+        DoorModelRegistry registry = DoorModelRegistry.getInstance();
+        if (!registry.isRegistered(doorType)) return parts;
+
+        ResourceLocation modelPath = registry.getModelPath(doorType, selection);
+        if (modelPath == null) return parts;
+
+        BakedModel selectionModel = Minecraft.getInstance().getModelManager().getModel(modelPath);
+        if (selectionModel == null || selectionModel == Minecraft.getInstance().getModelManager().getMissingModel()) {
+            return parts;
+        }
+        if (selectionModel instanceof DoorBakedModel doorModel) {
+            return doorModel.getParts();
+        }
+        return parts;
+    }
+
+    private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand) {
+        if (!itemQuadsCached) {
+            buildItemQuads(rand);
+            itemQuadsCached = true;
+        }
+        if (side != null) {
+            return cachedItemQuads.stream()
+                .filter(quad -> quad.getDirection() == side)
+                .toList();
+        }
+        return cachedItemQuads;
+    }
+
+    private void buildItemQuads(RandomSource rand) {
+        List<BakedQuad> allQuads = new ArrayList<>();
+        List<String> itemRenderParts = getItemRenderPartNames();
+        for (String partName : itemRenderParts) {
+            BakedModel part = parts.get(partName);
+            if (part != null) {
+                for (Direction dir : Direction.values()) {
+                    allQuads.addAll(part.getQuads(null, dir, rand));
+                }
+                allQuads.addAll(part.getQuads(null, null, rand));
+            }
+        }
+        this.cachedItemQuads = allQuads;
+    }
+    *///?}
 
     private static boolean isStaticPart(String partName) {
         for (String s : STATIC_PART_NAMES) {
@@ -330,6 +467,8 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         return mat;
     }
     
+    //? if forge {
+    
     private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand,
                                           ModelData modelData, 
                                           @Nullable net.minecraft.client.renderer.RenderType renderType) {
@@ -374,63 +513,32 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         this.cachedItemQuads = allQuads;
     }
     
+    //?}
+    
     @Override
     public ItemOverrides getOverrides() {
-        return DoorItemOverrides.INSTANCE;
+        return ItemOverrides.EMPTY;
     }
 
-    /**
-     * ItemOverrides для превью в GUI выбора модели двери.
-     * Если в NBT стека есть "hbm_m:door_preview" с modelType и skin - возвращаем модель из реестра.
-     * Иначе - исходная модель. Используется renderFakeItem для корректного порядка рендера частей.
-     */
-    private static final class DoorItemOverrides extends ItemOverrides {
-        static final DoorItemOverrides INSTANCE = new DoorItemOverrides();
+    // В 1.20+ ItemOverrides имеет приватный конструктор, поэтому кастомные overrides недоступны.
 
-        private DoorItemOverrides() {
-            super();
-        }
-
-        @Override
-        @Nullable
-        public BakedModel resolve(BakedModel model, ItemStack stack, @Nullable ClientLevel level,
-                                 @Nullable LivingEntity entity, int seed) {
-            CompoundTag tag = stack.getTag();
-            if (tag == null || !tag.contains("hbm_m:door_preview")) {
-                return model;
-            }
-            CompoundTag preview = tag.getCompound("hbm_m:door_preview");
-            if (!preview.contains("modelType")) {
-                return model;
-            }
-            String doorId = preview.contains("doorId") ? preview.getString("doorId")
-                : net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem()).getPath();
-            DoorModelSelection selection = DoorModelSelection.load(preview);
-            DoorModelRegistry registry = DoorModelRegistry.getInstance();
-            if (!registry.isRegistered(doorId)) {
-                return model;
-            }
-            ResourceLocation modelPath = registry.getModelPath(doorId, selection);
-            if (modelPath == null) {
-                return model;
-            }
-            BakedModel override = Minecraft.getInstance().getModelManager().getModel(modelPath);
-            if (override == null || override == Minecraft.getInstance().getModelManager().getMissingModel()) {
-                return model;
-            }
-            return override;
-        }
-    }
-
+    //? if forge {
     @Override
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
         // cutoutMipped для прозрачных текстур (стекло, решётки и т.д.)
         return ChunkRenderTypeSet.of(RenderType.cutoutMipped());
     }
+    //?}
 
     @Override
     public TextureAtlasSprite getParticleIcon() {
+        //? if forge {
         return getParticleIcon(ModelData.EMPTY);
+        //?}
+
+        //? if fabric {
+        /*return super.getParticleIcon();
+        *///?}
     }
     
     @Override

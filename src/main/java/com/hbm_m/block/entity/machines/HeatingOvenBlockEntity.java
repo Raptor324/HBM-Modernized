@@ -1,5 +1,10 @@
 package com.hbm_m.block.entity.machines;
 
+import java.util.Optional;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.inventory.menu.HeatingOvenMenu;
@@ -14,17 +19,12 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.SmeltingRecipe;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.SmeltingRecipe;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.Nullable;
-import javax.annotation.Nonnull;
-
-import java.util.Optional;
 
 /**
  * Heating Oven block entity - a furnace-like device with animated door.
@@ -41,6 +41,8 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
     // Constants
     private static final int MAX_BURN_TIME = 400;
     private static final int COOK_TIME = 200;
+    private static final long ENERGY_CAPACITY = 20_000L;
+    private static final long TU_GENERATION_PER_TICK = 500L;
 
     // State variables
     private int burnTime = 0;
@@ -88,7 +90,8 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
     };
 
     public HeatingOvenBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.HEATING_OVEN_BE.get(), pos, state, SLOT_COUNT, 0, 0);
+        super(ModBlockEntities.HEATING_OVEN_BE.get(), pos, state, SLOT_COUNT,
+                ENERGY_CAPACITY, 0L, TU_GENERATION_PER_TICK);
     }
 
     @Override
@@ -107,17 +110,18 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
             return false; // Output slot can't have items inserted
         }
         if (slot == FUEL_SLOT) {
-            return net.minecraftforge.common.ForgeHooks.getBurnTime(stack, null) > 0;
+            return AbstractFurnaceBlockEntity.getFuel().getOrDefault(stack.getItem(), 0) > 0;
         }
         return true; // Input slot accepts anything
     }
 
     @Override
-    public @Nullable AbstractContainerMenu createMenu(int containerId, @Nonnull Inventory playerInventory, @Nonnull Player player) {
+    public @Nullable AbstractContainerMenu createMenu(int containerId, @NotNull Inventory playerInventory, @NotNull Player player) {
         return new HeatingOvenMenu(containerId, playerInventory, this, this.data);
     }
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, HeatingOvenBlockEntity blockEntity) {
+        blockEntity.ensureNetworkInitialized();
         boolean wasOnBefore = blockEntity.isOn;
 
         // Update door animation
@@ -131,7 +135,7 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
             // Try to consume fuel
             ItemStack fuelStack = blockEntity.inventory.getStackInSlot(FUEL_SLOT);
             if (!fuelStack.isEmpty()) {
-                int fuelValue = net.minecraftforge.common.ForgeHooks.getBurnTime(fuelStack, null);
+                int fuelValue = AbstractFurnaceBlockEntity.getFuel().getOrDefault(fuelStack.getItem(), 0);
                 if (fuelValue > 0) {
                     blockEntity.burnTime = fuelValue;
                     fuelStack.shrink(1);
@@ -141,6 +145,12 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
             } else {
                 blockEntity.isOn = false;
             }
+        }
+
+        // Generate TU whenever the oven is burning fuel.
+        if (blockEntity.isOn) {
+            blockEntity.setEnergyStored(Math.min(blockEntity.getMaxEnergyStored(),
+                    blockEntity.getEnergyStored() + TU_GENERATION_PER_TICK));
         }
 
         // Process cooking if burning
@@ -252,14 +262,16 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
         return tag;
     }
 
+    //? if forge {
     @Override
     public void handleUpdateTag(CompoundTag tag) {
-        super.handleUpdateTag(tag);
+        // Forge-only hook; на Fabric используется стандартная синхронизация через load()
         wasOn = tag.getBoolean("isOn");
         doorAngle = tag.getFloat("doorAngle");
         prevDoorAngle = doorAngle;
         doorOpen = tag.getBoolean("doorOpen");
     }
+    //?}
 
     @Override
     public AABB getRenderBoundingBox() {
@@ -267,22 +279,18 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
     }
 
     // Client-side getters for renderer
-    @OnlyIn(Dist.CLIENT)
     public float getDoorAngle() {
         return doorAngle;
     }
 
-    @OnlyIn(Dist.CLIENT)
     public float getPrevDoorAngle() {
         return prevDoorAngle;
     }
 
-    @OnlyIn(Dist.CLIENT)
     public float getInterpolatedDoorAngle(float partialTick) {
         return Mth.lerp(partialTick, prevDoorAngle, doorAngle);
     }
 
-    @OnlyIn(Dist.CLIENT)
     public boolean isOvenOn() {
         return wasOn;
     }
@@ -294,7 +302,7 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
     // Energy methods - heating oven doesn't use energy
     @Override
     public boolean canConnectEnergy(Direction side) {
-        return false;
+        return true;
     }
 
     @Override

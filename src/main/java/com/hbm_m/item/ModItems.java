@@ -15,10 +15,7 @@ import java.util.Set;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.armormod.item.ItemModBattery;
-import com.hbm_m.armormod.item.ItemModBatteryMk2;
-import com.hbm_m.armormod.item.ItemModBatteryMk3;
 import com.hbm_m.armormod.item.ItemModHealth;
 import com.hbm_m.armormod.item.ItemModRadProtection;
 // import com.hbm_m.armormod.item.ItemModCladding;
@@ -28,6 +25,7 @@ import com.hbm_m.armormod.item.ItemModRadProtection;
 // import com.hbm_m.armormod.item.ItemModRadProtection;
 // import com.hbm_m.armormod.item.ItemModServos;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.entity.machines.rbmk.IRBMKFluxReceiver.NType;
 import com.hbm_m.block.machines.crates.CrateType;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
@@ -52,20 +50,26 @@ import com.hbm_m.item.grenades_and_activators.GrenadeItem;
 import com.hbm_m.item.grenades_and_activators.GrenadeNucItem;
 import com.hbm_m.item.grenades_and_activators.MultiDetonatorItem;
 import com.hbm_m.item.grenades_and_activators.RangeDetonatorItem;
+import com.hbm_m.item.tool.RangefinderItem;
 import com.hbm_m.item.industrial.FuelItem;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.item.industrial.ItemBlades;
 import com.hbm_m.item.industrial.ItemBlueprintFolder;
+import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.industrial.ItemStamp;
 import com.hbm_m.item.industrial.ItemTemplateFolder;
+import com.hbm_m.item.industrial.ZirnoxRodItem;
 import com.hbm_m.item.liquids.FluidBarrelItem;
 import com.hbm_m.item.liquids.FluidDuctItem;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.item.liquids.InfiniteFluidItem;
-import com.hbm_m.item.liquids.InfiniteWaterItem;
 import com.hbm_m.item.missile.MissileItem;
+import com.hbm_m.item.radiation_meter.ItemDigammaDiagnostic;
 import com.hbm_m.item.radiation_meter.ItemDosimeter;
 import com.hbm_m.item.radiation_meter.ItemGeigerCounter;
+import com.hbm_m.item.rbmk.RBMKLidItem;
+import com.hbm_m.item.rbmk.RBMKPelletItem;
+import com.hbm_m.item.rbmk.RBMKRodItem;
 import com.hbm_m.item.scanners.DepthOresScannerItem;
 import com.hbm_m.item.scanners.OilDetectorItem;
 import com.hbm_m.item.tags_and_tiers.ItemSimpleConsumable;
@@ -87,46 +91,57 @@ import com.hbm_m.powerarmor.DNTArmor;
 import com.hbm_m.powerarmor.T51Armor;
 import com.hbm_m.sound.ModSounds;
 
+import dev.architectury.registry.registries.DeferredRegister;
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.AxeItem;
-import net.minecraft.world.item.BucketItem;
-import net.minecraft.world.item.HoeItem;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.HoeItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.PickaxeItem;
+import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.RecordItem;
 import net.minecraft.world.item.ShovelItem;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.minecraftforge.common.ForgeSpawnEggItem;
 
 
 public class ModItems {
     // Создаем отложенный регистратор для предметов.
     // Это стандартный способ регистрации объектов в Forge.
     public static final DeferredRegister<Item> ITEMS =
-            DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
+            DeferredRegister.create(MODID, Registries.ITEM);
 
-    public static final Map<ModIngots, RegistryObject<Item>> INGOTS = new EnumMap<>(ModIngots.class);
-    public static final Map<ModPowders, RegistryObject<Item>> POWDERS = new EnumMap<>(ModPowders.class);
-    public static final Map<ModIngots, RegistryObject<Item>> INGOT_POWDERS = new EnumMap<>(ModIngots.class);
-    public static final Map<ModIngots, RegistryObject<Item>> INGOT_POWDERS_TINY = new EnumMap<>(ModIngots.class);
+    public static final Map<ModIngots, RegistrySupplier<Item>> INGOTS = new EnumMap<>(ModIngots.class);
+    public static final Map<ModPowders, RegistrySupplier<Item>> POWDERS = new EnumMap<>(ModPowders.class);
+    public static final Map<ModIngots, RegistrySupplier<Item>> INGOT_POWDERS = new EnumMap<>(ModIngots.class);
+    public static final Map<ModIngots, RegistrySupplier<Item>> INGOT_POWDERS_TINY = new EnumMap<>(ModIngots.class);
+    public static final RegistrySupplier<Item> WIRE_DENSE_IRON          = ITEMS.register("wire_dense_iron",          () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_DENSE_ALUMINIUM     = ITEMS.register("wire_dense_aluminium",     () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_DENSE_TITANIUM      = ITEMS.register("wire_dense_titanium",      () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_DENSE_LEAD          = ITEMS.register("wire_dense_lead",          () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_DENSE_COPPER        = ITEMS.register("wire_dense_copper",        () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_DENSE_STEEL         = ITEMS.register("wire_dense_steel",         () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_DENSE_GOLD          = ITEMS.register("wire_dense_gold",          () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_DENSE_ADVANCED_ALLOY= ITEMS.register("wire_dense_advanced_alloy",() -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_DENSE_SCHRABIDIUM   = ITEMS.register("wire_dense_schrabidium",   () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_DENSE_SATURNITE     = ITEMS.register("wire_dense_saturnite",     () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_DENSE_COMBINE_STEEL = ITEMS.register("wire_dense_combine_steel", () -> new Item(new Item.Properties()));
 
     private static final Set<String> POWDER_TINY_NAMES = Set.of(
             "actinium", "boron", "cerium", "cobalt", "cs137", "i131",
             "lanthanium", "lithium", "meteorite", "neodymium", "niobium",
             "sr90", "steel", "xe135");
-    private static final Map<String, RegistryObject<Item>> POWDER_ITEMS_BY_ID = new HashMap<>();
+    private static final Map<String, RegistrySupplier<Item>> POWDER_ITEMS_BY_ID = new HashMap<>();
 
-    private static final Set<String> ENABLED_MODPOWDERS = Set.of("iron", "gold", "coal"); // Только ModPowders!
+        private static final Set<String> ENABLED_MODPOWDERS = Set.of("iron", "gold", "coal", "cement", "aluminum", "limestone"); // Только ModPowders!
     private static final Set<String> ENABLED_INGOT_POWDERS = Set.of(
             "uranium", "plutonium",
             "actinium", "steel", "advanced_alloy", "aluminum", "schrabidium", "lead",
@@ -149,7 +164,7 @@ public class ModItems {
     static {
         // 1. СЛИТКИ (ВСЕГДА)  OK
         for (ModIngots ingot : ModIngots.values()) {
-            RegistryObject<Item> registeredItem;
+            RegistrySupplier<Item> registeredItem;
             if (ingot == ModIngots.URANIUM) {
                 registeredItem = ITEMS.register(ingot.getName() + "_ingot", () -> new RadioactiveItem(new Item.Properties()));
             } else {
@@ -163,7 +178,7 @@ public class ModItems {
             String baseName = powder.getName(); // use getName() to get lowercase name
             if (ENABLED_MODPOWDERS.contains(baseName)) {
                 String powderId = baseName + "_powder";
-                RegistryObject<Item> powderItem = ITEMS.register(powderId,
+                RegistrySupplier<Item> powderItem = ITEMS.register(powderId,
                         () -> powder == ModPowders.IRON ? new RadioactiveItem(new Item.Properties()) : new Item(new Item.Properties()));
                 POWDERS.put(powder, powderItem);
                 POWDER_ITEMS_BY_ID.put(powderId, powderItem);
@@ -177,7 +192,7 @@ public class ModItems {
             // Основной порошок
             if (ENABLED_INGOT_POWDERS.contains(baseName)) {
                 String powderId = baseName + "_powder";
-                RegistryObject<Item> powderItem = POWDER_ITEMS_BY_ID.get(powderId);
+                RegistrySupplier<Item> powderItem = POWDER_ITEMS_BY_ID.get(powderId);
                 if (powderItem == null) {
                     powderItem = ITEMS.register(powderId, () -> new Item(new Item.Properties()));
                     POWDER_ITEMS_BY_ID.put(powderId, powderItem);
@@ -188,20 +203,20 @@ public class ModItems {
             // Маленький порошок  OK
             if (POWDER_TINY_NAMES.contains(baseName) && ENABLED_TINY_POWDERS.contains(baseName)) {
                 String tinyId = baseName + "_powder_tiny";
-                RegistryObject<Item> tinyItem = ITEMS.register(tinyId, () -> new Item(new Item.Properties()));
+                RegistrySupplier<Item> tinyItem = ITEMS.register(tinyId, () -> new Item(new Item.Properties()));
                 INGOT_POWDERS_TINY.put(ingot, tinyItem);
             }
         }
     }
 
     // УДОБНЫЙ МЕТОД ДЛЯ ПОЛУЧЕНИЯ СЛИТКА
-    public static RegistryObject<Item> getIngot(ModIngots ingot) {
+    public static RegistrySupplier<Item> getIngot(ModIngots ingot) {
         return INGOTS.get(ingot);
     }
 
-    public static RegistryObject<Item> getPowders(ModPowders powders) {return POWDERS.get(powders);}
-    public static RegistryObject<Item> getPowder(ModIngots ingot) { return INGOT_POWDERS.get(ingot); }
-    public static Optional<RegistryObject<Item>> getTinyPowder(ModIngots ingot) {
+    public static RegistrySupplier<Item> getPowders(ModPowders powders) {return POWDERS.get(powders);}
+    public static RegistrySupplier<Item> getPowder(ModIngots ingot) { return INGOT_POWDERS.get(ingot); }
+    public static Optional<RegistrySupplier<Item>> getTinyPowder(ModIngots ingot) {
         return Optional.ofNullable(INGOT_POWDERS_TINY.get(ingot));
     }
     
@@ -225,388 +240,423 @@ public class ModItems {
     public static final int BATTERY_CAPACITY = 1_000_000;
 
 // ХАВЧИК:
-    public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry",
+    public static final RegistrySupplier<Item> STRAWBERRY = ITEMS.register("strawberry",
             () -> new Item(new Item.Properties().food(ModFoods.STRAWBERRY)));
-    public static final RegistryObject<Item> CANNED_ASBESTOS = ITEMS.register("canned_asbestos",
+    public static final RegistrySupplier<Item> CANNED_ASBESTOS = ITEMS.register("canned_asbestos",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_ASBESTOS)));
-    public static final RegistryObject<Item> CANNED_ASS = ITEMS.register("canned_ass",
+    public static final RegistrySupplier<Item> CANNED_ASS = ITEMS.register("canned_ass",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_ASS)));
-    public static final RegistryObject<Item> CANNED_BARK = ITEMS.register("canned_bark",
+    public static final RegistrySupplier<Item> CANNED_BARK = ITEMS.register("canned_bark",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_BARK)));
-    public static final RegistryObject<Item> CANNED_BEEF = ITEMS.register("canned_beef",
+    public static final RegistrySupplier<Item> CANNED_BEEF = ITEMS.register("canned_beef",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_BEEF)));
-    public static final RegistryObject<Item> CANNED_BHOLE = ITEMS.register("canned_bhole",
+    public static final RegistrySupplier<Item> CANNED_BHOLE = ITEMS.register("canned_bhole",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_BHOLE)));
-    public static final RegistryObject<Item> CANNED_CHEESE = ITEMS.register("canned_cheese",
+    public static final RegistrySupplier<Item> CANNED_CHEESE = ITEMS.register("canned_cheese",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_CHEESE)));
-    public static final RegistryObject<Item> CANNED_CHINESE = ITEMS.register("canned_chinese",
+    public static final RegistrySupplier<Item> CANNED_CHINESE = ITEMS.register("canned_chinese",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_CHINESE)));
-    public static final RegistryObject<Item> CANNED_DIESEL = ITEMS.register("canned_diesel",
+    public static final RegistrySupplier<Item> CANNED_DIESEL = ITEMS.register("canned_diesel",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_DIESEL)));
-    public static final RegistryObject<Item> CANNED_FIST = ITEMS.register("canned_fist",
+    public static final RegistrySupplier<Item> CANNED_FIST = ITEMS.register("canned_fist",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_FIST)));
-    public static final RegistryObject<Item> CANNED_FRIED = ITEMS.register("canned_fried",
+    public static final RegistrySupplier<Item> CANNED_FRIED = ITEMS.register("canned_fried",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_FRIED)));
-    public static final RegistryObject<Item> CANNED_HOTDOGS = ITEMS.register("canned_hotdogs",
+    public static final RegistrySupplier<Item> CANNED_HOTDOGS = ITEMS.register("canned_hotdogs",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_HOTDOGS)));
-    public static final RegistryObject<Item> CANNED_JIZZ = ITEMS.register("canned_jizz",
+    public static final RegistrySupplier<Item> CANNED_JIZZ = ITEMS.register("canned_jizz",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_JIZZ)));
-    public static final RegistryObject<Item> CANNED_KEROSENE = ITEMS.register("canned_kerosene",
+    public static final RegistrySupplier<Item> CANNED_KEROSENE = ITEMS.register("canned_kerosene",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_KEROSENE)));
-    public static final RegistryObject<Item> CANNED_LEFTOVERS = ITEMS.register("canned_leftovers",
+    public static final RegistrySupplier<Item> CANNED_LEFTOVERS = ITEMS.register("canned_leftovers",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_LEFTOVERS)));
-    public static final RegistryObject<Item> CANNED_MILK = ITEMS.register("canned_milk",
+    public static final RegistrySupplier<Item> CANNED_MILK = ITEMS.register("canned_milk",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_MILK)));
-    public static final RegistryObject<Item> CANNED_MYSTERY = ITEMS.register("canned_mystery",
+    public static final RegistrySupplier<Item> CANNED_MYSTERY = ITEMS.register("canned_mystery",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_MYSTERY)));
-    public static final RegistryObject<Item> CANNED_NAPALM = ITEMS.register("canned_napalm",
+    public static final RegistrySupplier<Item> CANNED_NAPALM = ITEMS.register("canned_napalm",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_NAPALM)));
-    public static final RegistryObject<Item> CANNED_OIL = ITEMS.register("canned_oil",
+    public static final RegistrySupplier<Item> CANNED_OIL = ITEMS.register("canned_oil",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_OIL)));
-    public static final RegistryObject<Item> CANNED_PASHTET = ITEMS.register("canned_pashtet",
+    public static final RegistrySupplier<Item> CANNED_PASHTET = ITEMS.register("canned_pashtet",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_PASHTET)));
-    public static final RegistryObject<Item> CANNED_PIZZA = ITEMS.register("canned_pizza",
+    public static final RegistrySupplier<Item> CANNED_PIZZA = ITEMS.register("canned_pizza",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_PIZZA)));
-    public static final RegistryObject<Item> CANNED_RECURSION = ITEMS.register("canned_recursion",
+    public static final RegistrySupplier<Item> CANNED_RECURSION = ITEMS.register("canned_recursion",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_RECURSION)));
-    public static final RegistryObject<Item> CANNED_SPAM = ITEMS.register("canned_spam",
+    public static final RegistrySupplier<Item> CANNED_SPAM = ITEMS.register("canned_spam",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_SPAM)));
-    public static final RegistryObject<Item> CANNED_STEW = ITEMS.register("canned_stew",
+    public static final RegistrySupplier<Item> CANNED_STEW = ITEMS.register("canned_stew",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_STEW)));
-    public static final RegistryObject<Item> CANNED_TOMATO = ITEMS.register("canned_tomato",
+    public static final RegistrySupplier<Item> CANNED_TOMATO = ITEMS.register("canned_tomato",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_TOMATO)));
-    public static final RegistryObject<Item> CANNED_TUNA = ITEMS.register("canned_tuna",
+    public static final RegistrySupplier<Item> CANNED_TUNA = ITEMS.register("canned_tuna",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_TUNA)));
-    public static final RegistryObject<Item> CANNED_TUBE = ITEMS.register("canned_tube",
+    public static final RegistrySupplier<Item> CANNED_TUBE = ITEMS.register("canned_tube",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_TUBE)));
-    public static final RegistryObject<Item> CANNED_YOGURT = ITEMS.register("canned_yogurt",
+    public static final RegistrySupplier<Item> CANNED_YOGURT = ITEMS.register("canned_yogurt",
             () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_YOGURT)));
 
 
-    public static final RegistryObject<Item> CAN_BEPIS = ITEMS.register("can_bepis",
+    public static final RegistrySupplier<Item> CAN_BEPIS = ITEMS.register("can_bepis",
             () -> new ItemEnergyDrink(new Item.Properties().food(ItemEnergyDrink.CAN_BEPIS)));
-    public static final RegistryObject<Item> CAN_BREEN = ITEMS.register("can_breen",
+    public static final RegistrySupplier<Item> CAN_BREEN = ITEMS.register("can_breen",
             () -> new ItemEnergyDrink(new Item.Properties().food(ItemEnergyDrink.CAN_BREEN)));
-    public static final RegistryObject<Item> CAN_CREATURE = ITEMS.register("can_creature",
+    public static final RegistrySupplier<Item> CAN_CREATURE = ITEMS.register("can_creature",
             () -> new ItemEnergyDrink(new Item.Properties().food(ItemEnergyDrink.CAN_CREATURE)));
-    public static final RegistryObject<Item> CAN_EMPTY = ITEMS.register("can_empty",
+    public static final RegistrySupplier<Item> CAN_EMPTY = ITEMS.register("can_empty",
             () -> new Item(new Item.Properties())); // Пустая банка без эффекта
-    public static final RegistryObject<Item> CAN_LUNA = ITEMS.register("can_luna",
+    public static final RegistrySupplier<Item> CAN_LUNA = ITEMS.register("can_luna",
             () -> new ItemEnergyDrink(new Item.Properties().food(ItemEnergyDrink.CAN_LUNA)));
-    public static final RegistryObject<Item> CAN_MRSUGAR = ITEMS.register("can_mrsugar",
+    public static final RegistrySupplier<Item> CAN_MRSUGAR = ITEMS.register("can_mrsugar",
             () -> new ItemEnergyDrink(new Item.Properties().food(ItemEnergyDrink.CAN_MRSUGAR)));
-    public static final RegistryObject<Item> CAN_MUG = ITEMS.register("can_mug",
+    public static final RegistrySupplier<Item> CAN_MUG = ITEMS.register("can_mug",
             () -> new ItemEnergyDrink(new Item.Properties().food(ItemEnergyDrink.CAN_MUG)));
-    public static final RegistryObject<Item> CAN_OVERCHARGE = ITEMS.register("can_overcharge",
+    public static final RegistrySupplier<Item> CAN_OVERCHARGE = ITEMS.register("can_overcharge",
             () -> new ItemEnergyDrink(new Item.Properties().food(ItemEnergyDrink.CAN_OVERCHARGE)));
-    public static final RegistryObject<Item> CAN_REDBOMB = ITEMS.register("can_redbomb",
+    public static final RegistrySupplier<Item> CAN_REDBOMB = ITEMS.register("can_redbomb",
             () -> new ItemEnergyDrink(new Item.Properties().food(ItemEnergyDrink.CAN_REDBOMB)));
-    public static final RegistryObject<Item> CAN_SMART = ITEMS.register("can_smart",
+    public static final RegistrySupplier<Item> CAN_SMART = ITEMS.register("can_smart",
             () -> new ItemEnergyDrink(new Item.Properties().food(ItemEnergyDrink.CAN_SMART)));
 
 
 
     // ИНСТРУМЕНТЫ ГОРНЯКА:
-    public static final RegistryObject<Item> STARMETAL_SWORD = ITEMS.register("starmetal_sword",
+    public static final RegistrySupplier<Item> STARMETAL_SWORD = ITEMS.register("starmetal_sword",
             () -> new SwordItem(ModToolTiers.STARMETAL, 7, -2, new Item.Properties()));
-    public static final RegistryObject<Item> STARMETAL_AXE = ITEMS.register("starmetal_axe",
+    public static final RegistrySupplier<Item> STARMETAL_AXE = ITEMS.register("starmetal_axe",
             () -> new ModAxeItem(ModToolTiers.STARMETAL, 15, 1, new Item.Properties()));
-    public static final RegistryObject<Item> STARMETAL_PICKAXE = ITEMS.register("starmetal_pickaxe",
+    public static final RegistrySupplier<Item> STARMETAL_PICKAXE = ITEMS.register("starmetal_pickaxe",
             () -> new ModPickaxeItem(ModToolTiers.STARMETAL, 3, 1, new Item.Properties(), 6, 3, 1, 5));
-    public static final RegistryObject<Item> STARMETAL_SHOVEL = ITEMS.register("starmetal_shovel",
+    public static final RegistrySupplier<Item> STARMETAL_SHOVEL = ITEMS.register("starmetal_shovel",
             () -> new ShovelItem(ModToolTiers.STARMETAL, 0, 0, new Item.Properties()));
-    public static final RegistryObject<Item> STARMETAL_HOE = ITEMS.register("starmetal_hoe",
+    public static final RegistrySupplier<Item> STARMETAL_HOE = ITEMS.register("starmetal_hoe",
             () -> new HoeItem(ModToolTiers.STARMETAL, 0, 0f, new Item.Properties()));
 
-    public static final RegistryObject<Item> ALLOY_SWORD = ITEMS.register("alloy_sword",
+    public static final RegistrySupplier<Item> ALLOY_SWORD = ITEMS.register("alloy_sword",
         () -> new SwordItem(ModToolTiers.ALLOY, 5, 2, new Item.Properties()));
 
-    public static final RegistryObject<Item> ALLOY_AXE = ITEMS.register("alloy_axe",
+    public static final RegistrySupplier<Item> ALLOY_AXE = ITEMS.register("alloy_axe",
             () -> new ModAxeItem(ModToolTiers.ALLOY, 9, 1, new Item.Properties(), 3, 1));
 
-    public static final RegistryObject<Item> ALLOY_PICKAXE = ITEMS.register("alloy_pickaxe",
+    public static final RegistrySupplier<Item> ALLOY_PICKAXE = ITEMS.register("alloy_pickaxe",
             () -> new ModPickaxeItem(ModToolTiers.ALLOY, 2, 1, new Item.Properties(), 3, 0, 0, 0));
 
-    public static final RegistryObject<Item> ALLOY_SHOVEL = ITEMS.register("alloy_shovel",
+    public static final RegistrySupplier<Item> ALLOY_SHOVEL = ITEMS.register("alloy_shovel",
             () -> new ModShovelItem(ModToolTiers.ALLOY, 0, 0, new Item.Properties(), 3, 0, 2));
 
-    public static final RegistryObject<Item> ALLOY_HOE = ITEMS.register("alloy_hoe",
+    public static final RegistrySupplier<Item> ALLOY_HOE = ITEMS.register("alloy_hoe",
             () -> new HoeItem(ModToolTiers.ALLOY, 0, 0f, new Item.Properties()));
 
-    public static final RegistryObject<Item> STEEL_SWORD = ITEMS.register("steel_sword",
+    public static final RegistrySupplier<Item> STEEL_SWORD = ITEMS.register("steel_sword",
             () -> new SwordItem(ModToolTiers.STEEL, 4, 2, new Item.Properties()));
-    public static final RegistryObject<Item> STEEL_AXE = ITEMS.register("steel_axe",
+    public static final RegistrySupplier<Item> STEEL_AXE = ITEMS.register("steel_axe",
             () -> new AxeItem(ModToolTiers.STEEL, 7, 1, new Item.Properties()));
-    public static final RegistryObject<Item> STEEL_PICKAXE = ITEMS.register("steel_pickaxe",
+    public static final RegistrySupplier<Item> STEEL_PICKAXE = ITEMS.register("steel_pickaxe",
             () -> new PickaxeItem(ModToolTiers.STEEL, 1, 1, new Item.Properties()));
-    public static final RegistryObject<Item> STEEL_SHOVEL = ITEMS.register("steel_shovel",
+    public static final RegistrySupplier<Item> STEEL_SHOVEL = ITEMS.register("steel_shovel",
             () -> new ShovelItem(ModToolTiers.STEEL, 0, 0, new Item.Properties()));
-    public static final RegistryObject<Item> STEEL_HOE = ITEMS.register("steel_hoe",
+    public static final RegistrySupplier<Item> STEEL_HOE = ITEMS.register("steel_hoe",
             () -> new HoeItem(ModToolTiers.STEEL, 0, 0, new Item.Properties()));
 
-    public static final RegistryObject<Item> TITANIUM_SWORD = ITEMS.register("titanium_sword",
+    public static final RegistrySupplier<Item> TITANIUM_SWORD = ITEMS.register("titanium_sword",
             () -> new SwordItem(ModToolTiers.TITANIUM, 2, 3, new Item.Properties()));
-    public static final RegistryObject<Item> TITANIUM_AXE = ITEMS.register("titanium_axe",
+    public static final RegistrySupplier<Item> TITANIUM_AXE = ITEMS.register("titanium_axe",
             () -> new AxeItem(ModToolTiers.TITANIUM, 8, 1, new Item.Properties()));
 
     // Meteorite swords (registered so recipes can produce them)
-    public static final RegistryObject<Item> METEORITE_SWORD = ITEMS.register("meteorite_sword",
+    public static final RegistrySupplier<Item> METEORITE_SWORD = ITEMS.register("meteorite_sword",
             () -> new SwordItem(ModToolTiers.TITANIUM, 3, -2, new Item.Properties()));
-    public static final RegistryObject<Item> METEORITE_SWORD_SEARED = ITEMS.register("meteorite_sword_seared",
+    public static final RegistrySupplier<Item> METEORITE_SWORD_SEARED = ITEMS.register("meteorite_sword_seared",
             () -> new SwordItem(ModToolTiers.TITANIUM, 3, -2, new Item.Properties()));
-    public static final RegistryObject<Item> TITANIUM_PICKAXE = ITEMS.register("titanium_pickaxe",
+    public static final RegistrySupplier<Item> TITANIUM_PICKAXE = ITEMS.register("titanium_pickaxe",
             () -> new PickaxeItem(ModToolTiers.TITANIUM, 1, 1, new Item.Properties()));
-    public static final RegistryObject<Item> TITANIUM_SHOVEL = ITEMS.register("titanium_shovel",
+    public static final RegistrySupplier<Item> DRILL_TITANIUM = ITEMS.register("drill_titanium",
+            () -> new Item(new Item.Properties().stacksTo(1)));
+    public static final RegistrySupplier<Item> TITANIUM_SHOVEL = ITEMS.register("titanium_shovel",
             () -> new ShovelItem(ModToolTiers.TITANIUM, 0, 0, new Item.Properties()));
-    public static final RegistryObject<Item> TITANIUM_HOE = ITEMS.register("titanium_hoe",
+    public static final RegistrySupplier<Item> TITANIUM_HOE = ITEMS.register("titanium_hoe",
             () -> new HoeItem(ModToolTiers.TITANIUM, 0, 0, new Item.Properties()));
 
 
-    public static final RegistryObject<Item> GRENADE = ITEMS.register("grenade",
+    public static final RegistrySupplier<Item> GRENADE = ITEMS.register("grenade",
         () -> new GrenadeItem(new Item.Properties(), GrenadeType.STANDARD, ModEntities.GRENADE_PROJECTILE));
 
-    public static final RegistryObject<Item> GRENADEHE = ITEMS.register("grenadehe",
+    public static final RegistrySupplier<Item> GRENADEHE = ITEMS.register("grenadehe",
         () -> new GrenadeItem(new Item.Properties(), GrenadeType.HE, ModEntities.GRENADEHE_PROJECTILE));
 
-    public static final RegistryObject<Item> GRENADEFIRE = ITEMS.register("grenadefire",
+    public static final RegistrySupplier<Item> GRENADEFIRE = ITEMS.register("grenadefire",
         () -> new GrenadeItem(new Item.Properties(), GrenadeType.FIRE, ModEntities.GRENADEFIRE_PROJECTILE));
 
-    public static final RegistryObject<Item> GRENADESLIME = ITEMS.register("grenadeslime",
+    public static final RegistrySupplier<Item> GRENADESLIME = ITEMS.register("grenadeslime",
         () -> new GrenadeItem(new Item.Properties(), GrenadeType.SLIME, ModEntities.GRENADESLIME_PROJECTILE));
 
-    public static final RegistryObject<Item> GRENADESMART = ITEMS.register("grenadesmart",
+    public static final RegistrySupplier<Item> GRENADESMART = ITEMS.register("grenadesmart",
         () -> new GrenadeItem(new Item.Properties(), GrenadeType.SMART, ModEntities.GRENADESMART_PROJECTILE));
 
-    public static final RegistryObject<Item> GRENADE_IF = ITEMS.register("grenade_if",
+    public static final RegistrySupplier<Item> GRENADE_IF = ITEMS.register("grenade_if",
             () -> new GrenadeIfItem(new Item.Properties(), GrenadeIfType.GRENADE_IF, ModEntities.GRENADE_IF_PROJECTILE));
 
-    public static final RegistryObject<Item> GRENADE_IF_HE = ITEMS.register("grenade_if_he",
+    public static final RegistrySupplier<Item> GRENADE_IF_HE = ITEMS.register("grenade_if_he",
             () -> new GrenadeIfItem(new Item.Properties(), GrenadeIfType.GRENADE_IF_HE, ModEntities.GRENADE_IF_HE_PROJECTILE));
 
-    public static final RegistryObject<Item> GRENADE_IF_SLIME = ITEMS.register("grenade_if_slime",
+    public static final RegistrySupplier<Item> GRENADE_IF_SLIME = ITEMS.register("grenade_if_slime",
             () -> new GrenadeIfItem(new Item.Properties(), GrenadeIfType.GRENADE_IF_SLIME, ModEntities.GRENADE_IF_SLIME_PROJECTILE));
 
-    public static final RegistryObject<Item> GRENADE_IF_FIRE = ITEMS.register("grenade_if_fire",
+    public static final RegistrySupplier<Item> GRENADE_IF_FIRE = ITEMS.register("grenade_if_fire",
             () -> new GrenadeIfItem(new Item.Properties(), GrenadeIfType.GRENADE_IF_FIRE, ModEntities.GRENADE_IF_FIRE_PROJECTILE));
 
-    public static final RegistryObject<Item> GRENADE_NUC = ITEMS.register("grenade_nuc",
+    public static final RegistrySupplier<Item> GRENADE_NUC = ITEMS.register("grenade_nuc",
             () -> new GrenadeNucItem(new Item.Properties(), ModEntities.GRENADE_NUC_PROJECTILE));
 
-    public static final RegistryObject<Item> AIRBOMB_A = ITEMS.register("airbomb_a",
+    public static final RegistrySupplier<Item> AIRBOMB_A = ITEMS.register("airbomb_a",
             () -> new AirBombItem(new Item.Properties(), ModEntities.AIRBOMB_PROJECTILE));
-    public static final RegistryObject<Item> AIRNUKEBOMB_A = ITEMS.register("airnukebomb_a",
+    public static final RegistrySupplier<Item> AIRNUKEBOMB_A = ITEMS.register("airnukebomb_a",
             () -> new AirNukeBombItem(new Item.Properties(), ModEntities.AIRNUKEBOMB_PROJECTILE));
+    public static final RegistrySupplier<Item> NOLO_SPAWN_EGG = ITEMS.register("nolo_spawn_egg",
+            () -> new ForgeSpawnEggItem(ModEntities.NOLO, 0x8b5e3c, 0xf0d8b0, new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ENTITY_MOB_TAINTED_CREEPER_SPAWN_EGG = ITEMS.register(
+            "entity_mob_tainted_creeper_spawn_egg",
+            () -> new ForgeSpawnEggItem(ModEntities.ENTITY_MOB_TAINTED_CREEPER, 0x813b9b, 0xd71fdd, new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ENTITY_MOB_VOLATILE_CREEPER_SPAWN_EGG = ITEMS.register(
+            "entity_mob_volatile_creeper_spawn_egg",
+            () -> new ForgeSpawnEggItem(ModEntities.ENTITY_MOB_VOLATILE_CREEPER, 0xC28153, 0x4D382C, new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ENTITY_MOB_PHOSGENE_CREEPER_SPAWN_EGG = ITEMS.register(
+            "entity_mob_phosgene_creeper_spawn_egg",
+            () -> new ForgeSpawnEggItem(ModEntities.ENTITY_MOB_PHOSGENE_CREEPER, 0xE3D398, 0xB8A06B, new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ENTITY_MOB_GOLD_CREEPER_SPAWN_EGG = ITEMS.register(
+            "entity_mob_gold_creeper_spawn_egg",
+            () -> new ForgeSpawnEggItem(ModEntities.ENTITY_MOB_GOLD_CREEPER, 0xECC136, 0x9E8B3E, new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ENTITY_MOB_NUCLEAR_CREEPER_SPAWN_EGG = ITEMS.register(
+            "entity_mob_nuclear_creeper_spawn_egg",
+            () -> new ForgeSpawnEggItem(ModEntities.ENTITY_MOB_NUCLEAR_CREEPER, 0x204131, 0x75CE00, new Item.Properties()));
 
     // БРОНЯ ГОРНЯКА:
-    public static final RegistryObject<Item> ALLOY_HELMET = ITEMS.register("alloy_helmet",
+    public static final RegistrySupplier<Item> ALLOY_HELMET = ITEMS.register("alloy_helmet",
             () -> new ArmorItem(ModArmorMaterials.ALLOY, ArmorItem.Type.HELMET, new Item.Properties()));
-    public static final RegistryObject<Item> ALLOY_CHESTPLATE = ITEMS.register("alloy_chestplate",
+    public static final RegistrySupplier<Item> ALLOY_CHESTPLATE = ITEMS.register("alloy_chestplate",
             () -> new ArmorItem(ModArmorMaterials.ALLOY, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
-    public static final RegistryObject<Item> ALLOY_LEGGINGS = ITEMS.register("alloy_leggings",
+    public static final RegistrySupplier<Item> ALLOY_LEGGINGS = ITEMS.register("alloy_leggings",
             () -> new ArmorItem(ModArmorMaterials.ALLOY, ArmorItem.Type.LEGGINGS, new Item.Properties()));
-    public static final RegistryObject<Item> ALLOY_BOOTS = ITEMS.register("alloy_boots",
+    public static final RegistrySupplier<Item> ALLOY_BOOTS = ITEMS.register("alloy_boots",
             () -> new ArmorItem(ModArmorMaterials.ALLOY, ArmorItem.Type.BOOTS, new Item.Properties()));
 
-    public static final RegistryObject<Item> TITANIUM_HELMET = ITEMS.register("titanium_helmet",
+    public static final RegistrySupplier<Item> TITANIUM_HELMET = ITEMS.register("titanium_helmet",
             () -> new ArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.HELMET, new Item.Properties()));
-    public static final RegistryObject<Item> TITANIUM_CHESTPLATE = ITEMS.register("titanium_chestplate",
+    public static final RegistrySupplier<Item> TITANIUM_CHESTPLATE = ITEMS.register("titanium_chestplate",
             () -> new ArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
-    public static final RegistryObject<Item> TITANIUM_LEGGINGS = ITEMS.register("titanium_leggings",
+    public static final RegistrySupplier<Item> TITANIUM_LEGGINGS = ITEMS.register("titanium_leggings",
             () -> new ArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.LEGGINGS, new Item.Properties()));
-    public static final RegistryObject<Item> TITANIUM_BOOTS = ITEMS.register("titanium_boots",
+    public static final RegistrySupplier<Item> TITANIUM_BOOTS = ITEMS.register("titanium_boots",
             () -> new ArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.BOOTS, new Item.Properties()));
 
-    public static final RegistryObject<Item> STEEL_HELMET = ITEMS.register("steel_helmet",
+    public static final RegistrySupplier<Item> STEEL_HELMET = ITEMS.register("steel_helmet",
             () -> new ArmorItem(ModArmorMaterials.STEEL, ArmorItem.Type.HELMET, new Item.Properties()));
-    public static final RegistryObject<Item> STEEL_CHESTPLATE = ITEMS.register("steel_chestplate",
+    public static final RegistrySupplier<Item> STEEL_CHESTPLATE = ITEMS.register("steel_chestplate",
             () -> new ArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
-    public static final RegistryObject<Item> STEEL_LEGGINGS = ITEMS.register("steel_leggings",
+    public static final RegistrySupplier<Item> STEEL_LEGGINGS = ITEMS.register("steel_leggings",
             () -> new ArmorItem(ModArmorMaterials.STEEL, ArmorItem.Type.LEGGINGS, new Item.Properties()));
-    public static final RegistryObject<Item> STEEL_BOOTS = ITEMS.register("steel_boots",
+    public static final RegistrySupplier<Item> STEEL_BOOTS = ITEMS.register("steel_boots",
             () -> new ArmorItem(ModArmorMaterials.STEEL, ArmorItem.Type.BOOTS, new Item.Properties()));
 
-    public static final RegistryObject<Item> COBALT_HELMET = ITEMS.register("cobalt_helmet",
+    public static final RegistrySupplier<Item> COBALT_HELMET = ITEMS.register("cobalt_helmet",
             () -> new ArmorItem(ModArmorMaterials.COBALT, ArmorItem.Type.HELMET, new Item.Properties()));
-    public static final RegistryObject<Item> COBALT_CHESTPLATE = ITEMS.register("cobalt_chestplate",
+    public static final RegistrySupplier<Item> COBALT_CHESTPLATE = ITEMS.register("cobalt_chestplate",
             () -> new ArmorItem(ModArmorMaterials.COBALT, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
-    public static final RegistryObject<Item> COBALT_LEGGINGS = ITEMS.register("cobalt_leggings",
+    public static final RegistrySupplier<Item> COBALT_LEGGINGS = ITEMS.register("cobalt_leggings",
             () -> new ArmorItem(ModArmorMaterials.COBALT, ArmorItem.Type.LEGGINGS, new Item.Properties()));
-    public static final RegistryObject<Item> COBALT_BOOTS = ITEMS.register("cobalt_boots",
+    public static final RegistrySupplier<Item> COBALT_BOOTS = ITEMS.register("cobalt_boots",
             () -> new ArmorItem(ModArmorMaterials.COBALT, ArmorItem.Type.BOOTS, new Item.Properties()));
 
-    public static final RegistryObject<Item> SECURITY_HELMET = ITEMS.register("security_helmet",
+    public static final RegistrySupplier<Item> SECURITY_HELMET = ITEMS.register("security_helmet",
             () -> new ArmorItem(ModArmorMaterials.SECURITY, ArmorItem.Type.HELMET, new Item.Properties()));
-    public static final RegistryObject<Item> SECURITY_CHESTPLATE = ITEMS.register("security_chestplate",
+    public static final RegistrySupplier<Item> SECURITY_CHESTPLATE = ITEMS.register("security_chestplate",
             () -> new ArmorItem(ModArmorMaterials.SECURITY, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
-    public static final RegistryObject<Item> SECURITY_LEGGINGS = ITEMS.register("security_leggings",
+    public static final RegistrySupplier<Item> SECURITY_LEGGINGS = ITEMS.register("security_leggings",
             () -> new ArmorItem(ModArmorMaterials.SECURITY, ArmorItem.Type.LEGGINGS, new Item.Properties()));
-    public static final RegistryObject<Item> SECURITY_BOOTS = ITEMS.register("security_boots",
+    public static final RegistrySupplier<Item> SECURITY_BOOTS = ITEMS.register("security_boots",
             () -> new ArmorItem(ModArmorMaterials.SECURITY, ArmorItem.Type.BOOTS, new Item.Properties()));
 
-    public static final RegistryObject<Item> ASBESTOS_HELMET = ITEMS.register("asbestos_helmet",
+    public static final RegistrySupplier<Item> ASBESTOS_HELMET = ITEMS.register("asbestos_helmet",
             () -> new ArmorItem(ModArmorMaterials.ASBESTOS, ArmorItem.Type.HELMET, new Item.Properties()));
-    public static final RegistryObject<Item> ASBESTOS_CHESTPLATE = ITEMS.register("asbestos_chestplate",
+    public static final RegistrySupplier<Item> ASBESTOS_CHESTPLATE = ITEMS.register("asbestos_chestplate",
             () -> new ArmorItem(ModArmorMaterials.ASBESTOS, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
-    public static final RegistryObject<Item> ASBESTOS_LEGGINGS = ITEMS.register("asbestos_leggings",
+    public static final RegistrySupplier<Item> ASBESTOS_LEGGINGS = ITEMS.register("asbestos_leggings",
             () -> new ArmorItem(ModArmorMaterials.ASBESTOS, ArmorItem.Type.LEGGINGS, new Item.Properties()));
-    public static final RegistryObject<Item> ASBESTOS_BOOTS = ITEMS.register("asbestos_boots",
+    public static final RegistrySupplier<Item> ASBESTOS_BOOTS = ITEMS.register("asbestos_boots",
             () -> new ArmorItem(ModArmorMaterials.ASBESTOS, ArmorItem.Type.BOOTS, new Item.Properties()));
 
-    public static final RegistryObject<Item> HAZMAT_HELMET = ITEMS.register("hazmat_helmet",
+    public static final RegistrySupplier<Item> HAZMAT_HELMET = ITEMS.register("hazmat_helmet",
             () -> new ArmorItem(ModArmorMaterials.HAZMAT, ArmorItem.Type.HELMET, new Item.Properties()));
-    public static final RegistryObject<Item> HAZMAT_CHESTPLATE = ITEMS.register("hazmat_chestplate",
+    public static final RegistrySupplier<Item> HAZMAT_CHESTPLATE = ITEMS.register("hazmat_chestplate",
             () -> new ArmorItem(ModArmorMaterials.HAZMAT, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
-    public static final RegistryObject<Item> HAZMAT_LEGGINGS = ITEMS.register("hazmat_leggings",
+    public static final RegistrySupplier<Item> HAZMAT_LEGGINGS = ITEMS.register("hazmat_leggings",
             () -> new ArmorItem(ModArmorMaterials.HAZMAT, ArmorItem.Type.LEGGINGS, new Item.Properties()));
-    public static final RegistryObject<Item> HAZMAT_BOOTS = ITEMS.register("hazmat_boots",
+    public static final RegistrySupplier<Item> HAZMAT_BOOTS = ITEMS.register("hazmat_boots",
             () -> new ArmorItem(ModArmorMaterials.HAZMAT, ArmorItem.Type.BOOTS, new Item.Properties()));
 
-    public static final RegistryObject<Item> LIQUIDATOR_HELMET = ITEMS.register("liquidator_helmet",
+    public static final RegistrySupplier<Item> LIQUIDATOR_HELMET = ITEMS.register("liquidator_helmet",
             () -> new ArmorItem(ModArmorMaterials.LIQUIDATOR, ArmorItem.Type.HELMET, new Item.Properties()));
-    public static final RegistryObject<Item> LIQUIDATOR_CHESTPLATE = ITEMS.register("liquidator_chestplate",
+    public static final RegistrySupplier<Item> LIQUIDATOR_CHESTPLATE = ITEMS.register("liquidator_chestplate",
             () -> new ArmorItem(ModArmorMaterials.LIQUIDATOR, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
-    public static final RegistryObject<Item> LIQUIDATOR_LEGGINGS = ITEMS.register("liquidator_leggings",
+    public static final RegistrySupplier<Item> LIQUIDATOR_LEGGINGS = ITEMS.register("liquidator_leggings",
             () -> new ArmorItem(ModArmorMaterials.LIQUIDATOR, ArmorItem.Type.LEGGINGS, new Item.Properties()));
-    public static final RegistryObject<Item> LIQUIDATOR_BOOTS = ITEMS.register("liquidator_boots",
+    public static final RegistrySupplier<Item> LIQUIDATOR_BOOTS = ITEMS.register("liquidator_boots",
             () -> new ArmorItem(ModArmorMaterials.LIQUIDATOR, ArmorItem.Type.BOOTS, new Item.Properties()));
 
-    public static final RegistryObject<Item> PAA_HELMET = ITEMS.register("paa_helmet",
+    public static final RegistrySupplier<Item> PAA_HELMET = ITEMS.register("paa_helmet",
             () -> new ArmorItem(ModArmorMaterials.PAA, ArmorItem.Type.HELMET, new Item.Properties()));
-    public static final RegistryObject<Item> PAA_CHESTPLATE = ITEMS.register("paa_chestplate",
+    public static final RegistrySupplier<Item> PAA_CHESTPLATE = ITEMS.register("paa_chestplate",
             () -> new ArmorItem(ModArmorMaterials.PAA, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
-    public static final RegistryObject<Item> PAA_LEGGINGS = ITEMS.register("paa_leggings",
+    public static final RegistrySupplier<Item> PAA_LEGGINGS = ITEMS.register("paa_leggings",
             () -> new ArmorItem(ModArmorMaterials.PAA, ArmorItem.Type.LEGGINGS, new Item.Properties()));
-    public static final RegistryObject<Item> PAA_BOOTS = ITEMS.register("paa_boots",
+    public static final RegistrySupplier<Item> PAA_BOOTS = ITEMS.register("paa_boots",
             () -> new ArmorItem(ModArmorMaterials.PAA, ArmorItem.Type.BOOTS, new Item.Properties()));
 
-    public static final RegistryObject<Item> STARMETAL_HELMET = ITEMS.register("starmetal_helmet",
+    public static final RegistrySupplier<Item> STARMETAL_HELMET = ITEMS.register("starmetal_helmet",
             () -> new ArmorItem(ModArmorMaterials.STARMETAL, ArmorItem.Type.HELMET, new Item.Properties()));
-    public static final RegistryObject<Item> STARMETAL_CHESTPLATE = ITEMS.register("starmetal_chestplate",
+    public static final RegistrySupplier<Item> STARMETAL_CHESTPLATE = ITEMS.register("starmetal_chestplate",
             () -> new ArmorItem(ModArmorMaterials.STARMETAL, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
-    public static final RegistryObject<Item> STARMETAL_LEGGINGS = ITEMS.register("starmetal_leggings",
+    public static final RegistrySupplier<Item> STARMETAL_LEGGINGS = ITEMS.register("starmetal_leggings",
             () -> new ArmorItem(ModArmorMaterials.STARMETAL, ArmorItem.Type.LEGGINGS, new Item.Properties()));
-    public static final RegistryObject<Item> STARMETAL_BOOTS = ITEMS.register("starmetal_boots",
+    public static final RegistrySupplier<Item> STARMETAL_BOOTS = ITEMS.register("starmetal_boots",
             () -> new ArmorItem(ModArmorMaterials.STARMETAL, ArmorItem.Type.BOOTS, new Item.Properties()));
 
 
     //-----------------------POWER ARMOR ----------------------------------
 
-    public static final RegistryObject<Item> T51_HELMET = ITEMS.register("t51_helmet",
+    public static final RegistrySupplier<Item> T51_HELMET = ITEMS.register("t51_helmet",
             () -> new T51Armor(ModArmorMaterials.TITANIUM, ArmorItem.Type.HELMET, new Item.Properties()));
 
-    public static final RegistryObject<Item> T51_CHESTPLATE = ITEMS.register("t51_chestplate",
+    public static final RegistrySupplier<Item> T51_CHESTPLATE = ITEMS.register("t51_chestplate",
             () -> new T51Armor(ModArmorMaterials.TITANIUM, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
 
-    public static final RegistryObject<Item> T51_LEGGINGS = ITEMS.register("t51_leggings",
+    public static final RegistrySupplier<Item> T51_LEGGINGS = ITEMS.register("t51_leggings",
             () -> new T51Armor(ModArmorMaterials.TITANIUM, ArmorItem.Type.LEGGINGS, new Item.Properties()));
 
-    public static final RegistryObject<Item> T51_BOOTS = ITEMS.register("t51_boots",
+    public static final RegistrySupplier<Item> T51_BOOTS = ITEMS.register("t51_boots",
             () -> new T51Armor(ModArmorMaterials.TITANIUM, ArmorItem.Type.BOOTS, new Item.Properties()));
 
-    public static final RegistryObject<Item> AJR_HELMET = ITEMS.register("ajr_helmet",
+    public static final RegistrySupplier<Item> AJR_HELMET = ITEMS.register("ajr_helmet",
             () -> new AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.HELMET, new Item.Properties()));
 
-    public static final RegistryObject<Item> AJR_CHESTPLATE = ITEMS.register("ajr_chestplate",
+    public static final RegistrySupplier<Item> AJR_CHESTPLATE = ITEMS.register("ajr_chestplate",
             () -> new AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
 
-    public static final RegistryObject<Item> AJR_LEGGINGS = ITEMS.register("ajr_leggings",
+    public static final RegistrySupplier<Item> AJR_LEGGINGS = ITEMS.register("ajr_leggings",
             () -> new AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.LEGGINGS, new Item.Properties()));
 
-    public static final RegistryObject<Item> AJR_BOOTS = ITEMS.register("ajr_boots",
+    public static final RegistrySupplier<Item> AJR_BOOTS = ITEMS.register("ajr_boots",
             () -> new AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.BOOTS, new Item.Properties()));
 
-	public static final RegistryObject<Item> AJRO_HELMET = ITEMS.register("ajro_helmet",
+	public static final RegistrySupplier<Item> AJRO_HELMET = ITEMS.register("ajro_helmet",
             () -> new AJROArmor(ModArmorMaterials.AJR, ArmorItem.Type.HELMET, new Item.Properties()));
 
-    public static final RegistryObject<Item> AJRO_CHESTPLATE = ITEMS.register("ajro_chestplate",
+    public static final RegistrySupplier<Item> AJRO_CHESTPLATE = ITEMS.register("ajro_chestplate",
             () -> new AJROArmor(ModArmorMaterials.AJR, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
 
-    public static final RegistryObject<Item> AJRO_LEGGINGS = ITEMS.register("ajro_leggings",
+    public static final RegistrySupplier<Item> AJRO_LEGGINGS = ITEMS.register("ajro_leggings",
             () -> new AJROArmor(ModArmorMaterials.AJR, ArmorItem.Type.LEGGINGS, new Item.Properties()));
 			
-    public static final RegistryObject<Item> AJRO_BOOTS = ITEMS.register("ajro_boots",
+    public static final RegistrySupplier<Item> AJRO_BOOTS = ITEMS.register("ajro_boots",
             () -> new AJROArmor(ModArmorMaterials.AJR, ArmorItem.Type.BOOTS, new Item.Properties()));
 
-    public static final RegistryObject<Item> DNT_HELMET = ITEMS.register("dnt_helmet",
+    public static final RegistrySupplier<Item> DNT_HELMET = ITEMS.register("dnt_helmet",
             () -> new DNTArmor(ModArmorMaterials.STARMETAL, ArmorItem.Type.HELMET, new Item.Properties()));
 
-    public static final RegistryObject<Item> DNT_CHESTPLATE = ITEMS.register("dnt_chestplate",
+    public static final RegistrySupplier<Item> DNT_CHESTPLATE = ITEMS.register("dnt_chestplate",
             () -> new DNTArmor(ModArmorMaterials.STARMETAL, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
 
-    public static final RegistryObject<Item> DNT_LEGGINGS = ITEMS.register("dnt_leggings",
+    public static final RegistrySupplier<Item> DNT_LEGGINGS = ITEMS.register("dnt_leggings",
             () -> new DNTArmor(ModArmorMaterials.STARMETAL, ArmorItem.Type.LEGGINGS, new Item.Properties()));
 
-    public static final RegistryObject<Item> DNT_BOOTS = ITEMS.register("dnt_boots",
+    public static final RegistrySupplier<Item> DNT_BOOTS = ITEMS.register("dnt_boots",
             () -> new DNTArmor(ModArmorMaterials.STARMETAL, ArmorItem.Type.BOOTS, new Item.Properties()));
 
-    public static final RegistryObject<Item> BISMUTH_HELMET = ITEMS.register("bismuth_helmet",
+    public static final RegistrySupplier<Item> BISMUTH_HELMET = ITEMS.register("bismuth_helmet",
             () -> new BismuthArmor(ModArmorMaterials.BISMUTH, ArmorItem.Type.HELMET, new Item.Properties()));
 
-    public static final RegistryObject<Item> BISMUTH_CHESTPLATE = ITEMS.register("bismuth_chestplate",
+    public static final RegistrySupplier<Item> BISMUTH_CHESTPLATE = ITEMS.register("bismuth_chestplate",
             () -> new BismuthArmor(ModArmorMaterials.BISMUTH, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
 
-    public static final RegistryObject<Item> BISMUTH_LEGGINGS = ITEMS.register("bismuth_leggings",
+    public static final RegistrySupplier<Item> BISMUTH_LEGGINGS = ITEMS.register("bismuth_leggings",
             () -> new BismuthArmor(ModArmorMaterials.BISMUTH, ArmorItem.Type.LEGGINGS, new Item.Properties()));
 
-    public static final RegistryObject<Item> BISMUTH_BOOTS = ITEMS.register("bismuth_boots",
+    public static final RegistrySupplier<Item> BISMUTH_BOOTS = ITEMS.register("bismuth_boots",
             () -> new BismuthArmor(ModArmorMaterials.BISMUTH, ArmorItem.Type.BOOTS, new Item.Properties()));
 
 
 
     // Инструменты
-    public static final RegistryObject<Item> GEIGER_COUNTER = ITEMS.register("geiger_counter",
+    public static final RegistrySupplier<Item> GEIGER_COUNTER = ITEMS.register("geiger_counter",
             () -> new ItemGeigerCounter(new Item.Properties().stacksTo(1)));
 
-    public static final RegistryObject<Item> DOSIMETER = ITEMS.register("dosimeter",
+    public static final RegistrySupplier<Item> DOSIMETER = ITEMS.register("dosimeter",
             () -> new ItemDosimeter(new Item.Properties().stacksTo(1)));
 
+    public static final RegistrySupplier<Item> DIGAMMA_DIAGNOSTIC = ITEMS.register("digamma_diagnostic",
+            () -> new ItemDigammaDiagnostic(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> MUSIC_DISC_BUNKER = ITEMS.register("music_disc_bunker",
+            () -> new RecordItem(
+                    1,
+                    ModSounds.MUSIC_DISC_BUNKER.get(),
+                    new Item.Properties().stacksTo(1).rarity(Rarity.RARE),
+                    20 * 120
+            ));
 
 
 
-    public static final RegistryObject<Item> CRATE_IRON = ITEMS.register("crate_iron",
+
+    public static final RegistrySupplier<Item> CRATE_IRON = ITEMS.register("crate_iron",
             () -> new CrateItem(ModBlocks.CRATE_IRON.get(), new Item.Properties(), CrateType.IRON.getSlotCount()));
-    public static final RegistryObject<Item> CRATE_STEEL = ITEMS.register("crate_steel",
+    public static final RegistrySupplier<Item> CRATE_STEEL = ITEMS.register("crate_steel",
             () -> new CrateItem(ModBlocks.CRATE_STEEL.get(), new Item.Properties(), CrateType.STEEL.getSlotCount()));
-    public static final RegistryObject<Item> CRATE_DESH = ITEMS.register("crate_desh",
+    public static final RegistrySupplier<Item> CRATE_DESH = ITEMS.register("crate_desh",
             () -> new CrateItem(ModBlocks.CRATE_DESH.get(), new Item.Properties(), CrateType.DESH.getSlotCount()));
-    public static final RegistryObject<Item> CRATE_TUNGSTEN = ITEMS.register("crate_tungsten",
+    public static final RegistrySupplier<Item> CRATE_TUNGSTEN = ITEMS.register("crate_tungsten",
             () -> new CrateItem(ModBlocks.CRATE_TUNGSTEN.get(), new Item.Properties(), CrateType.TUNGSTEN.getSlotCount()));
-    public static final RegistryObject<Item> CRATE_TEMPLATE = ITEMS.register("crate_template",
+    public static final RegistrySupplier<Item> CRATE_TEMPLATE = ITEMS.register("crate_template",
             () -> new CrateItem(ModBlocks.CRATE_TEMPLATE.get(), new Item.Properties(), CrateType.TEMPLATE.getSlotCount()));
 
 
 
 
     // Модификаторы брони
-    public static final RegistryObject<Item> HEART_PIECE = ITEMS.register("heart_piece",
+    public static final RegistrySupplier<Item> HEART_PIECE = ITEMS.register("heart_piece",
             () -> new ItemModHealth(
                     new Item.Properties(),
                     SLOT_SPECIAL,
                     5.0
             )
     );
-    public static final RegistryObject<Item> HEART_CONTAINER = ITEMS.register("heart_container",
+    public static final RegistrySupplier<Item> HEART_CONTAINER = ITEMS.register("heart_container",
             () -> new ItemModHealth(
                     new Item.Properties(),
                     SLOT_SPECIAL,
                     20.0
             )
     );
-    public static final RegistryObject<Item> HEART_BOOSTER = ITEMS.register("heart_booster",
+    public static final RegistrySupplier<Item> HEART_BOOSTER = ITEMS.register("heart_booster",
             () -> new ItemModHealth(
                     new Item.Properties(),
                     SLOT_SPECIAL,
                     40.0
             )
     );
-    public static final RegistryObject<Item> HEART_FAB = ITEMS.register("heart_fab",
+    public static final RegistrySupplier<Item> HEART_FAB = ITEMS.register("heart_fab",
             () -> new ItemModHealth(
                     new Item.Properties(),
                     SLOT_SPECIAL,
                     60.0
             )
     );
-    public static final RegistryObject<Item> BLACK_DIAMOND = ITEMS.register("black_diamond",
+    public static final RegistrySupplier<Item> BLACK_DIAMOND = ITEMS.register("black_diamond",
             () -> new ItemModHealth(
                     new Item.Properties(),
                     SLOT_SPECIAL,
@@ -614,35 +664,35 @@ public class ModItems {
             )
     );
 
-    public static final RegistryObject<Item> GHIORSIUM_CLADDING = ITEMS.register("cladding_ghiorsium",
+    public static final RegistrySupplier<Item> GHIORSIUM_CLADDING = ITEMS.register("cladding_ghiorsium",
             () -> new ItemModRadProtection(
                     new Item.Properties(),
                     SLOT_CLADDING,
                     0.5f
             )
     );
-    public static final RegistryObject<Item> DESH_CLADDING = ITEMS.register("cladding_desh",
+    public static final RegistrySupplier<Item> DESH_CLADDING = ITEMS.register("cladding_desh",
             () -> new ItemModRadProtection(
                     new Item.Properties(),
                     SLOT_CLADDING,
                     0.2f
             )
     );
-    public static final RegistryObject<Item> LEAD_CLADDING = ITEMS.register("cladding_lead",
+    public static final RegistrySupplier<Item> LEAD_CLADDING = ITEMS.register("cladding_lead",
             () -> new ItemModRadProtection(
                     new Item.Properties(),
                     SLOT_CLADDING,
                     0.1f
             )
     );
-    public static final RegistryObject<Item> RUBBER_CLADDING = ITEMS.register("cladding_rubber",
+    public static final RegistrySupplier<Item> RUBBER_CLADDING = ITEMS.register("cladding_rubber",
             () -> new ItemModRadProtection(
                     new Item.Properties(),
                     SLOT_CLADDING,
                     0.005f
             )
     );
-    public static final RegistryObject<Item> PAINT_CLADDING = ITEMS.register("cladding_paint",
+    public static final RegistrySupplier<Item> PAINT_CLADDING = ITEMS.register("cladding_paint",
             () -> new ItemModRadProtection(
                     new Item.Properties(),
                     SLOT_CLADDING,
@@ -651,57 +701,102 @@ public class ModItems {
     );
 
     // Новые модификации брони
-//     public static final RegistryObject<Item> ARMOR_MOD_SERVOS = ITEMS.register("armor_mod_servos",
+//     public static final RegistrySupplier<Item> ARMOR_MOD_SERVOS = ITEMS.register("armor_mod_servos",
 //             () -> new ItemModServos(new Item.Properties())
 //     );
 
-//     public static final RegistryObject<Item> ARMOR_MOD_CLADDING = ITEMS.register("armor_mod_cladding",
+//     public static final RegistrySupplier<Item> ARMOR_MOD_CLADDING = ITEMS.register("armor_mod_cladding",
 //             () -> new ItemModCladding(new Item.Properties())
 //     );
 
-//     public static final RegistryObject<Item> ARMOR_MOD_KEVLAR = ITEMS.register("armor_mod_kevlar",
+//     public static final RegistrySupplier<Item> ARMOR_MOD_KEVLAR = ITEMS.register("armor_mod_kevlar",
 //             () -> new ItemModKevlar(new Item.Properties())
 //     );
 
-//     public static final RegistryObject<Item> ARMOR_MOD_EXTRA = ITEMS.register("armor_mod_extra",
+//     public static final RegistrySupplier<Item> ARMOR_MOD_EXTRA = ITEMS.register("armor_mod_extra",
 //             () -> new ItemModExtra(new Item.Properties())
 //     );
 
     // Модификаторы батареи (увеличивают заряд брони)
-    public static final RegistryObject<Item> ARMOR_BATTERY = ITEMS.register("armor_battery",
-            () -> new ItemModBattery(new Item.Properties(), 1.25D)
+    public static final RegistrySupplier<Item> ARMOR_BATTERY = ITEMS.register("armor_battery",
+            () -> new ItemModBattery(1.25D)
     );
 
-    public static final RegistryObject<Item> ARMOR_BATTERY_MK2 = ITEMS.register("armor_battery_mk2",
-            () -> new ItemModBatteryMk2(new Item.Properties())
+    public static final RegistrySupplier<Item> ARMOR_BATTERY_MK2 = ITEMS.register("armor_battery_mk2",
+            () -> new ItemModBattery(1.5D)
     );
 
-    public static final RegistryObject<Item> ARMOR_BATTERY_MK3 = ITEMS.register("armor_battery_mk3",
-            () -> new ItemModBatteryMk3(new Item.Properties())
+    public static final RegistrySupplier<Item> ARMOR_BATTERY_MK3 = ITEMS.register("armor_battery_mk3",
+            () -> new ItemModBattery(2D)
     );
-    public static final RegistryObject<Item> CREATIVE_BATTERY = ITEMS.register("battery_creative",
+    public static final RegistrySupplier<Item> CREATIVE_BATTERY = ITEMS.register("battery_creative",
             () -> new ItemCreativeBattery(
                     new Item.Properties()
             )
     );
-    public static final RegistryObject<Item> ASSEMBLY_TEMPLATE = ITEMS.register("assembly_template",
+    public static final RegistrySupplier<Item> ASSEMBLY_TEMPLATE = ITEMS.register("assembly_template",
             () -> new ItemAssemblyTemplate(
                     new Item.Properties().stacksTo(1)
             )
     );
-    public static final RegistryObject<Item> TEMPLATE_FOLDER = ITEMS.register("template_folder",
+    public static final RegistrySupplier<Item> TEMPLATE_FOLDER = ITEMS.register("template_folder",
             () -> new ItemTemplateFolder(
                     new Item.Properties().stacksTo(1)
             )
     );
-    public static final RegistryObject<Item> BLUEPRINT_FOLDER = ITEMS.register("blueprint_folder",
+    public static final RegistrySupplier<Item> BLUEPRINT_FOLDER = ITEMS.register("blueprint_folder",
         () -> new ItemBlueprintFolder(
                 new Item.Properties().stacksTo(1)
         )
     );
 
+    // ═══════════════════ MACHINE UPGRADES ═══════════════════
 
-    public static final RegistryObject<Item> RADAWAY = ITEMS.register("radaway",
+    public static final RegistrySupplier<Item> UPGRADE_SPEED_1 = ITEMS.register("upgrade_speed_1",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.SPEED, 1));
+    public static final RegistrySupplier<Item> UPGRADE_SPEED_2 = ITEMS.register("upgrade_speed_2",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.SPEED, 2));
+    public static final RegistrySupplier<Item> UPGRADE_SPEED_3 = ITEMS.register("upgrade_speed_3",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.SPEED, 3));
+
+    public static final RegistrySupplier<Item> UPGRADE_EFFECT_1 = ITEMS.register("upgrade_effect_1",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.EFFECT, 1));
+    public static final RegistrySupplier<Item> UPGRADE_EFFECT_2 = ITEMS.register("upgrade_effect_2",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.EFFECT, 2));
+    public static final RegistrySupplier<Item> UPGRADE_EFFECT_3 = ITEMS.register("upgrade_effect_3",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.EFFECT, 3));
+
+    public static final RegistrySupplier<Item> UPGRADE_POWER_1 = ITEMS.register("upgrade_power_1",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.POWER, 1));
+    public static final RegistrySupplier<Item> UPGRADE_POWER_2 = ITEMS.register("upgrade_power_2",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.POWER, 2));
+    public static final RegistrySupplier<Item> UPGRADE_POWER_3 = ITEMS.register("upgrade_power_3",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.POWER, 3));
+
+    public static final RegistrySupplier<Item> UPGRADE_FORTUNE_1 = ITEMS.register("upgrade_fortune_1",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.FORTUNE, 1));
+    public static final RegistrySupplier<Item> UPGRADE_FORTUNE_2 = ITEMS.register("upgrade_fortune_2",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.FORTUNE, 2));
+    public static final RegistrySupplier<Item> UPGRADE_FORTUNE_3 = ITEMS.register("upgrade_fortune_3",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.FORTUNE, 3));
+
+    public static final RegistrySupplier<Item> UPGRADE_AFTERBURN_1 = ITEMS.register("upgrade_afterburn_1",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.AFTERBURN, 1));
+    public static final RegistrySupplier<Item> UPGRADE_AFTERBURN_2 = ITEMS.register("upgrade_afterburn_2",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.AFTERBURN, 2));
+    public static final RegistrySupplier<Item> UPGRADE_AFTERBURN_3 = ITEMS.register("upgrade_afterburn_3",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.AFTERBURN, 3));
+
+    public static final RegistrySupplier<Item> UPGRADE_OVERDRIVE_1 = ITEMS.register("upgrade_overdrive_1",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.OVERDRIVE, 1));
+    public static final RegistrySupplier<Item> UPGRADE_OVERDRIVE_2 = ITEMS.register("upgrade_overdrive_2",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.OVERDRIVE, 2));
+    public static final RegistrySupplier<Item> UPGRADE_OVERDRIVE_3 = ITEMS.register("upgrade_overdrive_3",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.OVERDRIVE, 3));
+
+    // ═══════════════════ END MACHINE UPGRADES ═══════════════════
+
+    public static final RegistrySupplier<Item> RADAWAY = ITEMS.register("radaway",
             () -> new ItemSimpleConsumable(new Item.Properties(), (player, stack) -> {
                 // Это лямбда-выражение определяет, что произойдет при использовании предмета.
                 
@@ -722,34 +817,49 @@ public class ModItems {
                 }
             })
     );
-    public static final RegistryObject<Item> OIL_DETECTOR = ITEMS.register("oil_detector",
+    public static final RegistrySupplier<Item> OIL_DETECTOR = ITEMS.register("oil_detector",
             () -> new OilDetectorItem(new Item.Properties()));
 
-    public static final RegistryObject<Item> DEPTH_ORES_SCANNER = ITEMS.register("depth_ores_scanner",
+    public static final RegistrySupplier<Item> DEPTH_ORES_SCANNER = ITEMS.register("depth_ores_scanner",
             () -> new DepthOresScannerItem(new Item.Properties()));
 
-    public static final RegistryObject<Item> RANGE_DETONATOR = ITEMS.register("range_detonator",
+    public static final RegistrySupplier<Item> RANGEFINDER = ITEMS.register("rangefinder",
+            () -> new RangefinderItem(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> RANGE_DETONATOR = ITEMS.register("range_detonator",
             () -> new RangeDetonatorItem(new Item.Properties()));
 
-    public static final RegistryObject<Item> MULTI_DETONATOR = ITEMS.register("multi_detonator",
+    public static final RegistrySupplier<Item> MULTI_DETONATOR = ITEMS.register("multi_detonator",
             () -> new MultiDetonatorItem(new Item.Properties()));
 
-    public static final RegistryObject<Item> DETONATOR = ITEMS.register("detonator",
+    public static final RegistrySupplier<Item> DETONATOR = ITEMS.register("detonator",
             () -> new DetonatorItem(new Item.Properties()));
 
-    public static final RegistryObject<Item> BILLET_PLUTONIUM = ITEMS.register("billet_plutonium",
+    public static final RegistrySupplier<Item> BILLET_PLUTONIUM = ITEMS.register("billet_plutonium",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> BALL_TNT = ITEMS.register("ball_tnt",
+    public static final RegistrySupplier<Item> BALL_TNT = ITEMS.register("ball_tnt",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> FAT_MAN_EXPLOSIVE = ITEMS.register("fat_man_explosive",
+    public static final RegistrySupplier<Item> FAT_MAN_EXPLOSIVE = ITEMS.register("fat_man_explosive",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> FAT_MAN_IGNITER = ITEMS.register("fat_man_igniter",
-            () -> new Item(new Item.Properties()));
-
-    public static final RegistryObject<Item> FAT_MAN_CORE = ITEMS.register("fat_man_core",
+    public static final RegistrySupplier<Item> FAT_MAN_IGNITER = ITEMS.register("fat_man_igniter",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CROWBAR = ITEMS.register("crowbar",
+    public static final RegistrySupplier<Item> IGNITER = ITEMS.register("igniter",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> FAT_MAN_CORE = ITEMS.register("fat_man_core",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> CELL_SAS3 = ITEMS.register("cell_sas3",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ROD_QUAD_LEAD = ITEMS.register("rod_quad_lead",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ROD_QUAD_NP237 = ITEMS.register("rod_quad_np237",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ROD_QUAD_URANIUM = ITEMS.register("rod_quad_uranium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> CROWBAR = ITEMS.register("crowbar",
             () -> new Item(new Item.Properties()) {
                 @Override
                 public void appendHoverText(ItemStack stack, @Nullable Level level,
@@ -764,13 +874,21 @@ public class ModItems {
             });
 
 
-    public static final RegistryObject<Item> MALACHITE_CHUNK = ITEMS.register("malachite_chunk",
+    public static final RegistrySupplier<Item> MALACHITE_CHUNK = ITEMS.register("malachite_chunk",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> LIMESTONE = ITEMS.register("limestone",
+    public static final RegistrySupplier<Item> LIMESTONE = ITEMS.register("limestone",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> CAN_KEY = ITEMS.register("can_key",
+    public static final RegistrySupplier<Item> SHELL_STEEL = ITEMS.register("shell_steel",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> DEFUSER = ITEMS.register("defuser",
+    public static final RegistrySupplier<Item> SHELL_COPPER = ITEMS.register("shell_copper",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> SHELL_ALUMINUM = ITEMS.register("shell_aluminum",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> SHELL_TITANIUM = ITEMS.register("shell_titanium",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> CAN_KEY = ITEMS.register("can_key",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> DEFUSER = ITEMS.register("defuser",
             () -> new Item(new Item.Properties()) {
                 @Override
                 public void appendHoverText(ItemStack stack, @Nullable Level level,
@@ -782,473 +900,580 @@ public class ModItems {
                 }
             });
 
-    public static final RegistryObject<Item> BOLT_STEEL = ITEMS.register("bolt_steel",
+    public static final RegistrySupplier<Item> GAS_EMPTY = ITEMS.register("gas_empty",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> ZIRCONIUM_SHARP = ITEMS.register("zirconium_sharp",
+    public static final RegistrySupplier<Item> DUCTTAPE = ITEMS.register("ducttape",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> COIL_TUNGSTEN = ITEMS.register("coil_tungsten",
+    public static final RegistrySupplier<Item> HAZMAT_CLOTH = ITEMS.register("hazmat_cloth",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> COIL_GOLD_TORUS = ITEMS.register("coil_gold_torus",
+    public static final RegistrySupplier<Item> HAZMAT_CLOTH_GREY = ITEMS.register("hazmat_cloth_grey",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> COIL_GOLD = ITEMS.register("coil_gold",
+    public static final RegistrySupplier<Item> HAZMAT_CLOTH_RED = ITEMS.register("hazmat_cloth_red",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> COIL_MAGNETIZED_TUNGSTEN_TORUS = ITEMS.register("coil_magnetized_tungsten_torus",
+    public static final RegistrySupplier<Item> ASBESTOS_CLOTH = ITEMS.register("asbestos_cloth",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> COIL_MAGNETIZED_TUNGSTEN = ITEMS.register("coil_magnetized_tungsten",
+    public static final RegistrySupplier<Item> BOLT_STEEL = ITEMS.register("bolt_steel",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> COIL_COPPER_TORUS = ITEMS.register("coil_copper_torus",
+    public static final RegistrySupplier<Item> BOLT_LEAD = ITEMS.register("bolt_lead",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> COIL_COPPER = ITEMS.register("coil_copper",
+    public static final RegistrySupplier<Item> BOLT_TUNGSTEN = ITEMS.register("bolt_tungsten",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> COIL_ADVANCED_ALLOY_TORUS = ITEMS.register("coil_advanced_alloy_torus",
+    public static final RegistrySupplier<Item> BOLT_HIGHSPEED_STEEL = ITEMS.register("bolt_highspeed_steel",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> COIL_ADVANCED_ALLOY = ITEMS.register("coil_advanced_alloy",
+    public static final RegistrySupplier<Item> ZIRCONIUM_SHARP = ITEMS.register("zirconium_sharp",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> MOTOR_DESH = ITEMS.register("motor_desh",
+    public static final RegistrySupplier<Item> COIL_TUNGSTEN = ITEMS.register("coil_tungsten",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> MOTOR_BISMUTH = ITEMS.register("motor_bismuth",
+    public static final RegistrySupplier<Item> COIL_GOLD_TORUS = ITEMS.register("coil_gold_torus",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> MOTOR = ITEMS.register("motor",
+    public static final RegistrySupplier<Item> COIL_GOLD = ITEMS.register("coil_gold",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> BORAX = ITEMS.register("borax",
+    public static final RegistrySupplier<Item> COIL_MAGNETIZED_TUNGSTEN_TORUS = ITEMS.register("coil_magnetized_tungsten_torus",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> SCRAP = ITEMS.register("scrap",
+    public static final RegistrySupplier<Item> COIL_MAGNETIZED_TUNGSTEN = ITEMS.register("coil_magnetized_tungsten",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> DUST = ITEMS.register("dust",
+    public static final RegistrySupplier<Item> COIL_COPPER_TORUS = ITEMS.register("coil_copper_torus",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> DUST_TINY = ITEMS.register("dust_tiny",
+    public static final RegistrySupplier<Item> COIL_COPPER = ITEMS.register("coil_copper",
             () -> new Item(new Item.Properties()));
-
-    public static final RegistryObject<Item> LITHIUM_POWDER_TINY = ITEMS.register("lithium_powder_tiny",
+    public static final RegistrySupplier<Item> COIL_ADVANCED_ALLOY_TORUS = ITEMS.register("coil_advanced_alloy_torus",
             () -> new Item(new Item.Properties()));
-
-    public static final RegistryObject<Item> CS137_POWDER_TINY = ITEMS.register("cs137_powder_tiny",
+    public static final RegistrySupplier<Item> COIL_ADVANCED_ALLOY = ITEMS.register("coil_advanced_alloy",
             () -> new Item(new Item.Properties()));
-
-    public static final RegistryObject<Item> I131_POWDER_TINY = ITEMS.register("i131_powder_tiny",
+    public static final RegistrySupplier<Item> MOTOR_DESH = ITEMS.register("motor_desh",
             () -> new Item(new Item.Properties()));
-
-    public static final RegistryObject<Item> XE135_POWDER_TINY = ITEMS.register("xe135_powder_tiny",
+    public static final RegistrySupplier<Item> MOTOR_BISMUTH = ITEMS.register("motor_bismuth",
             () -> new Item(new Item.Properties()));
-
-    public static final RegistryObject<Item> COAL_POWDER_TINY = ITEMS.register("coal_powder_tiny",
+    public static final RegistrySupplier<Item> MOTOR = ITEMS.register("motor",
             () -> new Item(new Item.Properties()));
-
-    public static final RegistryObject<Item> PALEOGENITE_POWDER_TINY = ITEMS.register("paleogenite_powder_tiny",
+    public static final RegistrySupplier<Item> BORAX = ITEMS.register("borax",
             () -> new Item(new Item.Properties()));
-
-    public static final RegistryObject<Item> NUCLEAR_WASTE_TINY = ITEMS.register("nuclear_waste_tiny",
+    public static final RegistrySupplier<Item> SCRAP = ITEMS.register("scrap",
             () -> new Item(new Item.Properties()));
-
-    public static final RegistryObject<Item> NUCLEAR_WASTE_LONG_TINY = ITEMS.register("nuclear_waste_long_tiny",
+    public static final RegistrySupplier<Item> DUST = ITEMS.register("dust",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> DUST_TINY = ITEMS.register("dust_tiny",
+            () -> new Item(new Item.Properties()));
+    /** 1.7.10 ModItems.fallout — кучка осадков. */
+    public static final RegistrySupplier<Item> FALLOUT = ITEMS.register("fallout",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> NUCLEAR_WASTE_LONG_DEPLETED_TINY = ITEMS.register("nuclear_waste_long_depleted_tiny",
+    public static final RegistrySupplier<Item> LITHIUM_POWDER_TINY = ITEMS.register("lithium_powder_tiny",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> NUCLEAR_WASTE_SHORT_TINY = ITEMS.register("nuclear_waste_short_tiny",
+    public static final RegistrySupplier<Item> CS137_POWDER_TINY = ITEMS.register("cs137_powder_tiny",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> NUCLEAR_WASTE_SHORT_DEPLETED_TINY = ITEMS.register("nuclear_waste_short_depleted_tiny",
+    public static final RegistrySupplier<Item> I131_POWDER_TINY = ITEMS.register("i131_powder_tiny",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> NUCLEAR_WASTE_VITRIFIED_TINY = ITEMS.register("nuclear_waste_vitrified_tiny",
+    public static final RegistrySupplier<Item> XE135_POWDER_TINY = ITEMS.register("xe135_powder_tiny",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> NUGGET_MERCURY_TINY = ITEMS.register("nugget_mercury_tiny",
+    public static final RegistrySupplier<Item> COAL_POWDER_TINY = ITEMS.register("coal_powder_tiny",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> NUGGET_SILICON = ITEMS.register("nugget_silicon",
+    public static final RegistrySupplier<Item> PALEOGENITE_POWDER_TINY = ITEMS.register("paleogenite_powder_tiny",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> BILLET_SILICON = ITEMS.register("billet_silicon",
+    public static final RegistrySupplier<Item> NUCLEAR_WASTE_TINY = ITEMS.register("nuclear_waste_tiny",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> SILICON_CIRCUIT = ITEMS.register("silicon_circuit",
+    public static final RegistrySupplier<Item> NUCLEAR_WASTE_LONG_TINY = ITEMS.register("nuclear_waste_long_tiny",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> BISMOID_CIRCUIT = ITEMS.register("bismoid_circuit",
+    public static final RegistrySupplier<Item> NUCLEAR_WASTE_LONG_DEPLETED_TINY = ITEMS.register("nuclear_waste_long_depleted_tiny",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> QUANTUM_CHIP = ITEMS.register("quantum_chip",
+    public static final RegistrySupplier<Item> NUCLEAR_WASTE_SHORT_TINY = ITEMS.register("nuclear_waste_short_tiny",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CAPACITOR_BOARD = ITEMS.register("capacitor_board",
+    public static final RegistrySupplier<Item> NUCLEAR_WASTE_SHORT_DEPLETED_TINY = ITEMS.register("nuclear_waste_short_depleted_tiny",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CAPACITOR_TANTALUM = ITEMS.register("capacitor_tantalum",
+    public static final RegistrySupplier<Item> NUCLEAR_WASTE_VITRIFIED_TINY = ITEMS.register("nuclear_waste_vitrified_tiny",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> BISMOID_CHIP = ITEMS.register("bismoid_chip",
+    public static final RegistrySupplier<Item> NUGGET_MERCURY_TINY = ITEMS.register("nugget_mercury_tiny",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CONTROLLER_CHASSIS = ITEMS.register("controller_chassis",
+    public static final RegistrySupplier<Item> NUGGET_SILICON = ITEMS.register("nugget_silicon",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CONTROLLER = ITEMS.register("controller",
+    public static final RegistrySupplier<Item> NUGGET_TANTALIUM = ITEMS.register("nugget_tantalium",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CONTROLLER_ADVANCED = ITEMS.register("controller_advanced",
+    public static final RegistrySupplier<Item> BILLET_SILICON = ITEMS.register("billet_silicon",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> QUANTUM_COMPUTER = ITEMS.register("quantum_computer",
+    public static final RegistrySupplier<Item> SILICON_CIRCUIT = ITEMS.register("silicon_circuit",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> QUANTUM_CIRCUIT = ITEMS.register("quantum_circuit",
+    public static final RegistrySupplier<Item> BISMOID_CIRCUIT = ITEMS.register("bismoid_circuit",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> ANALOG_CIRCUIT = ITEMS.register("analog_circuit",
+    public static final RegistrySupplier<Item> QUANTUM_CHIP = ITEMS.register("quantum_chip",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> INTEGRATED_CIRCUIT = ITEMS.register("integrated_circuit",
+    public static final RegistrySupplier<Item> CAPACITOR_BOARD = ITEMS.register("capacitor_board",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> ADVANCED_CIRCUIT = ITEMS.register("advanced_circuit",
+    public static final RegistrySupplier<Item> CAPACITOR_TANTALUM = ITEMS.register("capacitor_tantalum",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> VACUUM_TUBE = ITEMS.register("vacuum_tube",
+    public static final RegistrySupplier<Item> BISMOID_CHIP = ITEMS.register("bismoid_chip",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CAPACITOR = ITEMS.register("capacitor",
+    public static final RegistrySupplier<Item> CONTROLLER_CHASSIS = ITEMS.register("controller_chassis",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> MICROCHIP = ITEMS.register("microchip",
+    public static final RegistrySupplier<Item> CONTROLLER = ITEMS.register("controller",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> ATOMIC_CLOCK = ITEMS.register("atomic_clock",
+    public static final RegistrySupplier<Item> CONTROLLER_ADVANCED = ITEMS.register("controller_advanced",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PCB = ITEMS.register("pcb",
+    public static final RegistrySupplier<Item> QUANTUM_COMPUTER = ITEMS.register("quantum_computer",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> METAL_ROD = ITEMS.register("metal_rod",
+    public static final RegistrySupplier<Item> QUANTUM_CIRCUIT = ITEMS.register("quantum_circuit",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> BATTLE_MODULE = ITEMS.register("battle_module",
-            () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> BATTLE_GEARS = ITEMS.register("battle_gears",
+    public static final RegistrySupplier<Item> ANALOG_CIRCUIT = ITEMS.register("analog_circuit",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> BATTLE_CASING = ITEMS.register("battle_casing",
+    public static final RegistrySupplier<Item> INTEGRATED_CIRCUIT = ITEMS.register("integrated_circuit",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> BATTLE_SENSOR = ITEMS.register("battle_sensor",
+    public static final RegistrySupplier<Item> ADVANCED_CIRCUIT = ITEMS.register("advanced_circuit",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> BATTLE_COUNTER = ITEMS.register("battle_counter",
+    public static final RegistrySupplier<Item> VACUUM_TUBE = ITEMS.register("vacuum_tube",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRT_DISPLAY = ITEMS.register("crt_display",
+    public static final RegistrySupplier<Item> CAPACITOR = ITEMS.register("capacitor",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_IRON = ITEMS.register("plate_iron",
+    public static final RegistrySupplier<Item> CENTRIFUGE_ELEMENT = ITEMS.register("centrifuge_element",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_STEEL = ITEMS.register("plate_steel",
+    public static final RegistrySupplier<Item> MICROCHIP = ITEMS.register("microchip",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_GOLD = ITEMS.register("plate_gold",
+    public static final RegistrySupplier<Item> ATOMIC_CLOCK = ITEMS.register("atomic_clock",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_GUNMETAL = ITEMS.register("plate_gunmetal",
+    public static final RegistrySupplier<Item> PCB = ITEMS.register("pcb",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_GUNSTEEL = ITEMS.register("plate_gunsteel",
+    public static final RegistrySupplier<Item> METAL_ROD = ITEMS.register("metal_rod",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> BATTLE_MODULE = ITEMS.register("battle_module",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> BATTLE_GEARS = ITEMS.register("battle_gears",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> BATTLE_CASING = ITEMS.register("battle_casing",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> BATTLE_SENSOR = ITEMS.register("battle_sensor",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> BATTLE_COUNTER = ITEMS.register("battle_counter",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> CRT_DISPLAY = ITEMS.register("crt_display",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> MAGNETRON = ITEMS.register("magnetron",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> TURBINE_TITANIUM = ITEMS.register("turbine_titanium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> PLATE_IRON = ITEMS.register("plate_iron",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> PLATE_STEEL = ITEMS.register("plate_steel",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> PLATE_GOLD = ITEMS.register("plate_gold",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> PLATE_GUNMETAL = ITEMS.register("plate_gunmetal",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> PLATE_GUNSTEEL = ITEMS.register("plate_gunsteel",
             () -> new Item(new Item.Properties()));
             
-    public static final RegistryObject<Item> PLATE_TITANIUM = ITEMS.register("plate_titanium",
+    public static final RegistrySupplier<Item> PLATE_TITANIUM = ITEMS.register("plate_titanium",
             () -> new Item(new Item.Properties())); 
 
-    public static final RegistryObject<Item> PLATE_KEVLAR = ITEMS.register("plate_kevlar",
+    public static final RegistrySupplier<Item> PLATE_KEVLAR = ITEMS.register("plate_kevlar",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_LEAD = ITEMS.register("plate_lead",
+    public static final RegistrySupplier<Item> PLATE_LEAD = ITEMS.register("plate_lead",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_MIXED = ITEMS.register("plate_mixed",
+    public static final RegistrySupplier<Item> PLATE_MIXED = ITEMS.register("plate_mixed",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_PAA = ITEMS.register("plate_paa",
+    public static final RegistrySupplier<Item> PLATE_PAA = ITEMS.register("plate_paa",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> INSULATOR = ITEMS.register("insulator",
+    public static final RegistrySupplier<Item> INSULATOR = ITEMS.register("insulator",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_SATURNITE = ITEMS.register("plate_saturnite",
+    public static final RegistrySupplier<Item> PLATE_SATURNITE = ITEMS.register("plate_saturnite",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_SCHRABIDIUM = ITEMS.register("plate_schrabidium",
+    public static final RegistrySupplier<Item> PLATE_SCHRABIDIUM = ITEMS.register("plate_schrabidium",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_COPPER = ITEMS.register("plate_copper",
+    public static final RegistrySupplier<Item> PLATE_COPPER = ITEMS.register("plate_copper",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_ALUMINUM = ITEMS.register("plate_aluminum",
+    public static final RegistrySupplier<Item> PLATE_ALUMINUM = ITEMS.register("plate_aluminum",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_ADVANCED_ALLOY = ITEMS.register("plate_advanced_alloy",
+    public static final RegistrySupplier<Item> PLATE_ADVANCED_ALLOY = ITEMS.register("plate_advanced_alloy",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_BISMUTH = ITEMS.register("plate_bismuth",
+    public static final RegistrySupplier<Item> PLATE_BISMUTH = ITEMS.register("plate_bismuth",
         () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_ARMOR_AJR = ITEMS.register("plate_armor_ajr",
+    public static final RegistrySupplier<Item> PLATE_ARMOR_AJR = ITEMS.register("plate_armor_ajr",
         () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_ARMOR_DNT = ITEMS.register("plate_armor_dnt",
+    public static final RegistrySupplier<Item> PLATE_ARMOR_DNT = ITEMS.register("plate_armor_dnt",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_ARMOR_DNT_RUSTED = ITEMS.register("plate_armor_dnt_rusted",
+    public static final RegistrySupplier<Item> PLATE_ARMOR_DNT_RUSTED = ITEMS.register("plate_armor_dnt_rusted",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_ARMOR_FAU = ITEMS.register("plate_armor_fau",
+    public static final RegistrySupplier<Item> PLATE_ARMOR_FAU = ITEMS.register("plate_armor_fau",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_ARMOR_HEV = ITEMS.register("plate_armor_hev",
+    public static final RegistrySupplier<Item> PLATE_ARMOR_HEV = ITEMS.register("plate_armor_hev",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_ARMOR_LUNAR = ITEMS.register("plate_armor_lunar",
+    public static final RegistrySupplier<Item> PLATE_ARMOR_LUNAR = ITEMS.register("plate_armor_lunar",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_ARMOR_TITANIUM = ITEMS.register("plate_armor_titanium",
+    public static final RegistrySupplier<Item> PLATE_ARMOR_TITANIUM = ITEMS.register("plate_armor_titanium",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_CAST = ITEMS.register("plate_cast",
+    public static final RegistrySupplier<Item> PLATE_CAST = ITEMS.register("plate_cast",
         () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_CAST_ALT = ITEMS.register("plate_cast_alt",
+    public static final RegistrySupplier<Item> PLATE_CAST_ALT = ITEMS.register("plate_cast_alt",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_CAST_BISMUTH = ITEMS.register("plate_cast_bismuth",
+    public static final RegistrySupplier<Item> PLATE_CAST_BISMUTH = ITEMS.register("plate_cast_bismuth",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_CAST_DARK = ITEMS.register("plate_cast_dark",
+    public static final RegistrySupplier<Item> PLATE_CAST_DARK = ITEMS.register("plate_cast_dark",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_COMBINE_STEEL = ITEMS.register("plate_combine_steel",
+    public static final RegistrySupplier<Item> PLATE_COMBINE_STEEL = ITEMS.register("plate_combine_steel",
         () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_DURA_STEEL = ITEMS.register("plate_dura_steel",
+    public static final RegistrySupplier<Item> PLATE_DURA_STEEL = ITEMS.register("plate_dura_steel",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_DALEKANIUM = ITEMS.register("plate_dalekanium",
+    public static final RegistrySupplier<Item> PLATE_DALEKANIUM = ITEMS.register("plate_dalekanium",
         () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_DESH = ITEMS.register("plate_desh",
+    public static final RegistrySupplier<Item> PLATE_DESH = ITEMS.register("plate_desh",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_DINEUTRONIUM = ITEMS.register("plate_dineutronium",
+    public static final RegistrySupplier<Item> PLATE_DINEUTRONIUM = ITEMS.register("plate_dineutronium",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_EUPHEMIUM = ITEMS.register("plate_euphemium",
+    public static final RegistrySupplier<Item> PLATE_EUPHEMIUM = ITEMS.register("plate_euphemium",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_FUEL_MOX = ITEMS.register("plate_fuel_mox",
+    public static final RegistrySupplier<Item> PLATE_FUEL_MOX = ITEMS.register("plate_fuel_mox",
         () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_FUEL_PU238BE = ITEMS.register("plate_fuel_pu238be",
+    public static final RegistrySupplier<Item> PLATE_FUEL_PU238BE = ITEMS.register("plate_fuel_pu238be",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_FUEL_PU239 = ITEMS.register("plate_fuel_pu239",
+    public static final RegistrySupplier<Item> PLATE_FUEL_PU239 = ITEMS.register("plate_fuel_pu239",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_FUEL_RA226BE = ITEMS.register("plate_fuel_ra226be",
+    public static final RegistrySupplier<Item> PLATE_FUEL_RA226BE = ITEMS.register("plate_fuel_ra226be",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_FUEL_SA326 = ITEMS.register("plate_fuel_sa326",
+    public static final RegistrySupplier<Item> PLATE_FUEL_SA326 = ITEMS.register("plate_fuel_sa326",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_FUEL_U233 = ITEMS.register("plate_fuel_u233",
+    public static final RegistrySupplier<Item> PLATE_FUEL_U233 = ITEMS.register("plate_fuel_u233",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_FUEL_U235 = ITEMS.register("plate_fuel_u235",
+    public static final RegistrySupplier<Item> PLATE_FUEL_U235 = ITEMS.register("plate_fuel_u235",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> RBMK_FUEL_DRX = ITEMS.register("rbmk_fuel_drx",
+            () -> new RbmkFuelDrxItem(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_EMPTY = ITEMS.register("rod_zirnox_empty",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_LES_FUEL = ITEMS.register("rod_zirnox_les_fuel",
+            () -> new ZirnoxRodItem(new Item.Properties(), 150_000, 150, false));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_LES_FUEL_DEPLETED = ITEMS.register("rod_zirnox_les_fuel_depleted",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_LITHIUM = ITEMS.register("rod_zirnox_lithium",
+            () -> new ZirnoxRodItem(new Item.Properties(), 20_000, 0, true));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_MOX_FUEL = ITEMS.register("rod_zirnox_mox_fuel",
+            () -> new ZirnoxRodItem(new Item.Properties(), 165_000, 75, false));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_MOX_FUEL_DEPLETED = ITEMS.register("rod_zirnox_mox_fuel_depleted",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_NATURAL_URANIUM_FUEL = ITEMS.register("rod_zirnox_natural_uranium_fuel",
+            () -> new ZirnoxRodItem(new Item.Properties(), 250_000, 30, false));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_PLUTONIUM_FUEL = ITEMS.register("rod_zirnox_plutonium_fuel",
+            () -> new ZirnoxRodItem(new Item.Properties(), 175_000, 65, false));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_PLUTONIUM_FUEL_DEPLETED = ITEMS.register("rod_zirnox_plutonium_fuel_depleted",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_TH232 = ITEMS.register("rod_zirnox_th232",
+            () -> new ZirnoxRodItem(new Item.Properties(), 20_000, 0, true));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_THORIUM_FUEL = ITEMS.register("rod_zirnox_thorium_fuel",
+            () -> new ZirnoxRodItem(new Item.Properties(), 200_000, 40, false));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_THORIUM_FUEL_DEPLETED = ITEMS.register("rod_zirnox_thorium_fuel_depleted",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_TRITIUM = ITEMS.register("rod_zirnox_tritium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_U233_FUEL = ITEMS.register("rod_zirnox_u233_fuel",
+            () -> new ZirnoxRodItem(new Item.Properties(), 150_000, 100, false));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_U233_FUEL_DEPLETED = ITEMS.register("rod_zirnox_u233_fuel_depleted",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_U235_FUEL = ITEMS.register("rod_zirnox_u235_fuel",
+            () -> new ZirnoxRodItem(new Item.Properties(), 165_000, 85, false));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_U235_FUEL_DEPLETED = ITEMS.register("rod_zirnox_u235_fuel_depleted",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_URANIUM_FUEL = ITEMS.register("rod_zirnox_uranium_fuel",
+            () -> new ZirnoxRodItem(new Item.Properties(), 200_000, 50, false));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_URANIUM_FUEL_DEPLETED = ITEMS.register("rod_zirnox_uranium_fuel_depleted",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_ZFB_MOX = ITEMS.register("rod_zirnox_zfb_mox",
+            () -> new ZirnoxRodItem(new Item.Properties(), 50_000, 35, false));
+
+    public static final RegistrySupplier<Item> ROD_ZIRNOX_ZFB_MOX_DEPLETED = ITEMS.register("rod_zirnox_zfb_mox_depleted",
             () -> new Item(new Item.Properties()));
 
     // RAW METALS
 
-    public static final RegistryObject<Item> URANIUM_RAW = ITEMS.register("uranium_raw",
+    public static final RegistrySupplier<Item> URANIUM_RAW = ITEMS.register("uranium_raw",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> LEAD_RAW = ITEMS.register("lead_raw",
+    public static final RegistrySupplier<Item> LEAD_RAW = ITEMS.register("lead_raw",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> BERYLLIUM_RAW = ITEMS.register("beryllium_raw",
+    public static final RegistrySupplier<Item> BERYLLIUM_RAW = ITEMS.register("beryllium_raw",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> ALUMINUM_RAW = ITEMS.register("aluminum_raw",
+    public static final RegistrySupplier<Item> ALUMINUM_RAW = ITEMS.register("aluminum_raw",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> TITANIUM_RAW = ITEMS.register("titanium_raw",
+    public static final RegistrySupplier<Item> TITANIUM_RAW = ITEMS.register("titanium_raw",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> THORIUM_RAW = ITEMS.register("thorium_raw",
+    public static final RegistrySupplier<Item> THORIUM_RAW = ITEMS.register("thorium_raw",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> COBALT_RAW = ITEMS.register("cobalt_raw",
+    public static final RegistrySupplier<Item> COBALT_RAW = ITEMS.register("cobalt_raw",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> TUNGSTEN_RAW = ITEMS.register("tungsten_raw",
+    public static final RegistrySupplier<Item> TUNGSTEN_RAW = ITEMS.register("tungsten_raw",
             () -> new Item(new Item.Properties()));
 
 
 
 
     // Материалы
-    public static final RegistryObject<Item> SULFUR = ITEMS.register("sulfur",
+    public static final RegistrySupplier<Item> SULFUR = ITEMS.register("sulfur",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> SEQUESTRUM = ITEMS.register("sequestrum",
+    public static final RegistrySupplier<Item> SEQUESTRUM = ITEMS.register("sequestrum",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> FLUORITE = ITEMS.register("fluorite",
+    public static final RegistrySupplier<Item> FLUORITE = ITEMS.register("fluorite",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> RAREGROUND_ORE_CHUNK = ITEMS.register("rareground_ore_chunk",
+    public static final RegistrySupplier<Item> RAREGROUND_ORE_CHUNK = ITEMS.register("rareground_ore_chunk",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> FIRECLAY_BALL = ITEMS.register("fireclay_ball",
+    public static final RegistrySupplier<Item> FIRECLAY_BALL = ITEMS.register("fireclay_ball",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> WOOD_ASH_POWDER = ITEMS.register("wood_ash_powder",
+    public static final RegistrySupplier<Item> WOOD_ASH_POWDER = ITEMS.register("wood_ash_powder",
+            () -> new Item(new Item.Properties()));
+
+    /** Порт {@code powder_desh_mix}. */
+    public static final RegistrySupplier<Item> POWDER_DESH_MIX = ITEMS.register("powder_desh_mix",
+            () -> new Item(new Item.Properties()));
+
+    /** Порт {@code powder_nitan_mix}. */
+    public static final RegistrySupplier<Item> POWDER_NITAN_MIX = ITEMS.register("powder_nitan_mix",
             () -> new Item(new Item.Properties()));
 
     // Additional standalone powders (not from ModIngots)
-    public static final RegistryObject<Item> COPPER_POWDER = ITEMS.register("copper_powder",
+    public static final RegistrySupplier<Item> COPPER_POWDER = ITEMS.register("copper_powder",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> DIAMOND_POWDER = ITEMS.register("diamond_powder",
+    public static final RegistrySupplier<Item> DIAMOND_POWDER = ITEMS.register("diamond_powder",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> EMERALD_POWDER = ITEMS.register("emerald_powder",
+    public static final RegistrySupplier<Item> EMERALD_POWDER = ITEMS.register("emerald_powder",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> LAPIS_POWDER = ITEMS.register("lapis_powder",
+    public static final RegistrySupplier<Item> LAPIS_POWDER = ITEMS.register("lapis_powder",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> QUARTZ_POWDER = ITEMS.register("quartz_powder",
+    public static final RegistrySupplier<Item> QUARTZ_POWDER = ITEMS.register("quartz_powder",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> LIGNITE_POWDER = ITEMS.register("lignite_powder",
+    public static final RegistrySupplier<Item> LIGNITE_POWDER = ITEMS.register("lignite_powder",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> FIRE_POWDER = ITEMS.register("fire_powder",
+    public static final RegistrySupplier<Item> FIRE_POWDER = ITEMS.register("fire_powder",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> LITHIUM_POWDER = ITEMS.register("lithium_powder",
+    public static final RegistrySupplier<Item> LITHIUM_POWDER = ITEMS.register("lithium_powder",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> FIREBRICK = ITEMS.register("firebrick",
+    public static final RegistrySupplier<Item> FIREBRICK = ITEMS.register("firebrick",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> LIGNITE = ITEMS.register("lignite",
+    public static final RegistrySupplier<Item> LIGNITE = ITEMS.register("lignite",
             () -> new FuelItem(new Item.Properties(), 1000));
 
-    public static final RegistryObject<Item> CINNABAR = ITEMS.register("cinnabar",
+    public static final RegistrySupplier<Item> CINNABAR = ITEMS.register("cinnabar",
             () -> new Item(new Item.Properties()));
 
 
 
     // Crystals (auto-generated from textures/crystall/*.png)
-    public static final RegistryObject<Item> CRYSTAL_ALUMINIUM = ITEMS.register("crystal_aluminium",
+    public static final RegistrySupplier<Item> CRYSTAL_ALUMINIUM = ITEMS.register("crystal_aluminium",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_BERYLLIUM = ITEMS.register("crystal_beryllium",
+    public static final RegistrySupplier<Item> CRYSTAL_BERYLLIUM = ITEMS.register("crystal_beryllium",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_CHARRED = ITEMS.register("crystal_charred",
+    public static final RegistrySupplier<Item> CRYSTAL_CHARRED = ITEMS.register("crystal_charred",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_CINNEBAR = ITEMS.register("crystal_cinnebar",
+    public static final RegistrySupplier<Item> CRYSTAL_CINNEBAR = ITEMS.register("crystal_cinnebar",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_COAL = ITEMS.register("crystal_coal",
+    public static final RegistrySupplier<Item> CRYSTAL_COAL = ITEMS.register("crystal_coal",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_COBALT = ITEMS.register("crystal_cobalt",
+    public static final RegistrySupplier<Item> CRYSTAL_COBALT = ITEMS.register("crystal_cobalt",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_COPPER = ITEMS.register("crystal_copper",
+    public static final RegistrySupplier<Item> CRYSTAL_COPPER = ITEMS.register("crystal_copper",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_DIAMOND = ITEMS.register("crystal_diamond",
+    public static final RegistrySupplier<Item> CRYSTAL_DIAMOND = ITEMS.register("crystal_diamond",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_FLUORITE = ITEMS.register("crystal_fluorite",
+    public static final RegistrySupplier<Item> CRYSTAL_FLUORITE = ITEMS.register("crystal_fluorite",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_GOLD = ITEMS.register("crystal_gold",
+    public static final RegistrySupplier<Item> CRYSTAL_GOLD = ITEMS.register("crystal_gold",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_HARDENED = ITEMS.register("crystal_hardened",
+    public static final RegistrySupplier<Item> CRYSTAL_HARDENED = ITEMS.register("crystal_hardened",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_HORN = ITEMS.register("crystal_horn",
+    public static final RegistrySupplier<Item> CRYSTAL_HORN = ITEMS.register("crystal_horn",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_IRON = ITEMS.register("crystal_iron",
+    public static final RegistrySupplier<Item> CRYSTAL_IRON = ITEMS.register("crystal_iron",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_LAPIS = ITEMS.register("crystal_lapis",
+    public static final RegistrySupplier<Item> CRYSTAL_LAPIS = ITEMS.register("crystal_lapis",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_LEAD = ITEMS.register("crystal_lead",
+    public static final RegistrySupplier<Item> CRYSTAL_LEAD = ITEMS.register("crystal_lead",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_LITHIUM = ITEMS.register("crystal_lithium",
+    public static final RegistrySupplier<Item> CRYSTAL_LITHIUM = ITEMS.register("crystal_lithium",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_NITER = ITEMS.register("crystal_niter",
+    public static final RegistrySupplier<Item> CRYSTAL_NITER = ITEMS.register("crystal_niter",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_OSMIRIDIUM = ITEMS.register("crystal_osmiridium",
+    public static final RegistrySupplier<Item> CRYSTAL_OSMIRIDIUM = ITEMS.register("crystal_osmiridium",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_PHOSPHORUS = ITEMS.register("crystal_phosphorus",
+    public static final RegistrySupplier<Item> CRYSTAL_PHOSPHORUS = ITEMS.register("crystal_phosphorus",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_PLUTONIUM = ITEMS.register("crystal_plutonium",
+    public static final RegistrySupplier<Item> CRYSTAL_PLUTONIUM = ITEMS.register("crystal_plutonium",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_PULSAR = ITEMS.register("crystal_pulsar",
+    public static final RegistrySupplier<Item> CRYSTAL_PULSAR = ITEMS.register("crystal_pulsar",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_RARE = ITEMS.register("crystal_rare",
+    public static final RegistrySupplier<Item> CRYSTAL_RARE = ITEMS.register("crystal_rare",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_REDSTONE = ITEMS.register("crystal_redstone",
+    public static final RegistrySupplier<Item> CRYSTAL_REDSTONE = ITEMS.register("crystal_redstone",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_SCHRABIDIUM = ITEMS.register("crystal_schrabidium",
+    public static final RegistrySupplier<Item> CRYSTAL_SCHRABIDIUM = ITEMS.register("crystal_schrabidium",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_SCHRARANIUM = ITEMS.register("crystal_schraranium",
+    public static final RegistrySupplier<Item> CRYSTAL_SCHRARANIUM = ITEMS.register("crystal_schraranium",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_STARMETAL = ITEMS.register("crystal_starmetal",
+    public static final RegistrySupplier<Item> CRYSTAL_STARMETAL = ITEMS.register("crystal_starmetal",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_SULFUR = ITEMS.register("crystal_sulfur",
+    public static final RegistrySupplier<Item> CRYSTAL_SULFUR = ITEMS.register("crystal_sulfur",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_THORIUM = ITEMS.register("crystal_thorium",
+    public static final RegistrySupplier<Item> CRYSTAL_THORIUM = ITEMS.register("crystal_thorium",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_TITANIUM = ITEMS.register("crystal_titanium",
+    public static final RegistrySupplier<Item> CRYSTAL_TITANIUM = ITEMS.register("crystal_titanium",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_TRIXITE = ITEMS.register("crystal_trixite",
+    public static final RegistrySupplier<Item> CRYSTAL_TRIXITE = ITEMS.register("crystal_trixite",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_TUNGSTEN = ITEMS.register("crystal_tungsten",
+    public static final RegistrySupplier<Item> CRYSTAL_TUNGSTEN = ITEMS.register("crystal_tungsten",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_URANIUM = ITEMS.register("crystal_uranium",
+    public static final RegistrySupplier<Item> CRYSTAL_URANIUM = ITEMS.register("crystal_uranium",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_VIRUS = ITEMS.register("crystal_virus",
+    public static final RegistrySupplier<Item> CRYSTAL_VIRUS = ITEMS.register("crystal_virus",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> CRYSTAL_XEN = ITEMS.register("crystal_xen",
+    public static final RegistrySupplier<Item> CRYSTAL_XEN = ITEMS.register("crystal_xen",
             () -> new Item(new Item.Properties()));
 
 
@@ -1256,200 +1481,508 @@ public class ModItems {
 
     // Здесь мы регистрируем мультиблочные структуры для того, чтобы MultiblockBlockItem при установке мог обрабатывать их на наличие препятствующих блоков.
 
-    public static final RegistryObject<Item> MACHINE_ASSEMBLER = ITEMS.register("machine_assembler",
+    public static final RegistrySupplier<Item> MACHINE_ASSEMBLER = ITEMS.register("machine_assembler",
         () -> new MultiblockBlockItem(ModBlocks.MACHINE_ASSEMBLER.get(), new Item.Properties()));
             
-    public static final RegistryObject<Item> ADVANCED_ASSEMBLY_MACHINE = ITEMS.register("advanced_assembly_machine",
+    public static final RegistrySupplier<Item> ADVANCED_ASSEMBLY_MACHINE = ITEMS.register("advanced_assembly_machine",
         () -> new MultiblockBlockItem(ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get(), new Item.Properties()));
 
-    public static final RegistryObject<Item> HYDRAULIC_FRACKINING_TOWER = ITEMS.register("hydraulic_frackining_tower",
+    public static final RegistrySupplier<Item> HYDRAULIC_FRACKINING_TOWER = ITEMS.register("hydraulic_frackining_tower",
         () -> new MultiblockBlockItem(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), new Item.Properties()));
 
-	public static final RegistryObject<Item> CHEMICAL_PLANT = ITEMS.register("chemical_plant",
+    public static final RegistrySupplier<Item> COOLING_TOWER = ITEMS.register("cooling_tower",
+        () -> new MultiblockBlockItem(ModBlocks.COOLING_TOWER.get(), new Item.Properties()));
+
+	public static final RegistrySupplier<Item> TOWER_SMALL = ITEMS.register("tower_small",
+        () -> new MultiblockBlockItem(ModBlocks.TOWER_SMALL.get(), new Item.Properties()));
+
+	public static final RegistrySupplier<Item> CYCLOTRON = ITEMS.register("cyclotron",
+        () -> new MultiblockBlockItem(ModBlocks.CYCLOTRON.get(), new Item.Properties()));
+
+    // ─── Cyclotron particle parts ─────────────────────────────────────────────
+    /** Lithium ion — accelerated in the cyclotron as a low-energy particle. */
+    public static final RegistrySupplier<Item> PART_LITHIUM    = ITEMS.register("part_lithium",    () -> new Item(new Item.Properties().stacksTo(16)));
+    /** Beryllium particle — medium-energy cyclotron projectile. */
+    public static final RegistrySupplier<Item> PART_BERYLLIUM  = ITEMS.register("part_beryllium",  () -> new Item(new Item.Properties().stacksTo(16)));
+    /** Carbon (coal-derived) particle — low-energy cyclotron projectile. */
+    public static final RegistrySupplier<Item> PART_CARBON     = ITEMS.register("part_carbon",     () -> new Item(new Item.Properties().stacksTo(16)));
+    /** Copper ion — medium-energy cyclotron projectile. */
+    public static final RegistrySupplier<Item> PART_COPPER     = ITEMS.register("part_copper",     () -> new Item(new Item.Properties().stacksTo(16)));
+    /** Plutonium nucleus — high-energy cyclotron projectile, produces australium. */
+    public static final RegistrySupplier<Item> PART_PLUTONIUM  = ITEMS.register("part_plutonium",  () -> new Item(new Item.Properties().stacksTo(16)));
+
+    // ─── Cast Molds ───────────────────────────────────────────────────────────
+    public static final RegistrySupplier<Item> MOLD_BARREL_HEAVY = ITEMS.register("mold_barrel_heavy",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.BARREL_HEAVY, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_BARREL_LIGHT = ITEMS.register("mold_barrel_light",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.BARREL_LIGHT, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_BASE = ITEMS.register("mold_base",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.BASE, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_BILLET = ITEMS.register("mold_billet",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.BILLET, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_BLADE = ITEMS.register("mold_blade",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.BLADE, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_BLADES = ITEMS.register("mold_blades",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.BLADES, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_BLOCK = ITEMS.register("mold_block",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.BLOCK, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_C357 = ITEMS.register("mold_c357",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.C357, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_CBUCKSHOT = ITEMS.register("mold_cbuckshot",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.CBUCKSHOT, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_GEM = ITEMS.register("mold_gem",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.GEM, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_GRIP = ITEMS.register("mold_grip",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.GRIP, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_HULL_BIG = ITEMS.register("mold_hull_big",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.HULL_BIG, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_HULL_SMALL = ITEMS.register("mold_hull_small",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.HULL_SMALL, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_INGOT = ITEMS.register("mold_ingot",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.INGOT, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_INGOTS = ITEMS.register("mold_ingots",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.INGOTS, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_MECHANISM = ITEMS.register("mold_mechanism",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.MECHANISM, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_MOGUS = ITEMS.register("mold_mogus",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.MOGUS, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_NUGGET = ITEMS.register("mold_nugget",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.NUGGET, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_PIPE = ITEMS.register("mold_pipe",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.PIPE, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_PIPES = ITEMS.register("mold_pipes",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.PIPES, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_PLATE = ITEMS.register("mold_plate",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.PLATE, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_PLATE_CAST = ITEMS.register("mold_plate_cast",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.PLATE_CAST, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_PLATES = ITEMS.register("mold_plates",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.PLATES, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_PLATES_CAST = ITEMS.register("mold_plates_cast",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.PLATES_CAST, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_RECEIVER_HEAVY = ITEMS.register("mold_receiver_heavy",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.RECEIVER_HEAVY, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_RECEIVER_LIGHT = ITEMS.register("mold_receiver_light",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.RECEIVER_LIGHT, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_SHELL = ITEMS.register("mold_shell",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.SHELL, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_STAMP = ITEMS.register("mold_stamp",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.STAMP, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_STEEL_BASE = ITEMS.register("mold_steel_base",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.STEEL_BASE, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_STOCK = ITEMS.register("mold_stock",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.STOCK, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_WIRE = ITEMS.register("mold_wire",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.WIRE, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_WIRE_DENSE = ITEMS.register("mold_wire_dense",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.WIRE_DENSE, new Item.Properties()));
+    public static final RegistrySupplier<Item> MOLD_WIRES_DENSE = ITEMS.register("mold_wires_dense",
+            () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.WIRES_DENSE, new Item.Properties()));
+
+    // ─── Cast Plates (plate_cast_<material>) ─────────────────────────────────
+    // Port of the original metadata-based plate_cast item. Each material is a
+    // separate registration in the modern system.
+    public static final RegistrySupplier<Item> PLATE_CAST_IRON        = ITEMS.register("plate_cast_iron",        () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_STEEL       = ITEMS.register("plate_cast_steel",       () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_COPPER      = ITEMS.register("plate_cast_copper",      () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_GOLD        = ITEMS.register("plate_cast_gold",        () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_TITANIUM    = ITEMS.register("plate_cast_titanium",    () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_ALUMINIUM   = ITEMS.register("plate_cast_aluminium",   () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_TUNGSTEN    = ITEMS.register("plate_cast_tungsten",    () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_ZIRCONIUM   = ITEMS.register("plate_cast_zirconium",   () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_OSMIRIDIUM  = ITEMS.register("plate_cast_osmiridium",  () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_ALLOY       = ITEMS.register("plate_cast_alloy",       () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_DURA_STEEL  = ITEMS.register("plate_cast_dura_steel",  () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_DESH        = ITEMS.register("plate_cast_desh",        () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_STAR_METAL  = ITEMS.register("plate_cast_star_metal",  () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_TCALLOY     = ITEMS.register("plate_cast_tcalloy",     () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_CDALLOY     = ITEMS.register("plate_cast_cdalloy",     () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_CMB         = ITEMS.register("plate_cast_cmb",         () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_SCHRABIDIUM = ITEMS.register("plate_cast_schrabidium", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_BBRONZE     = ITEMS.register("plate_cast_bbronze",     () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_ABRONZE     = ITEMS.register("plate_cast_abronze",     () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_CAST_SATURNITE   = ITEMS.register("plate_cast_saturnite",   () -> new Item(new Item.Properties()));
+
+    // ─── Welded Plates (plate_welded_<material>) ─────────────────────────────
+    // Produced by the Arc Welder from 2× cast plates of the same material.
+    public static final RegistrySupplier<Item> PLATE_WELDED_IRON       = ITEMS.register("plate_welded_iron",       () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_WELDED_STEEL      = ITEMS.register("plate_welded_steel",      () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_WELDED_COPPER     = ITEMS.register("plate_welded_copper",     () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_WELDED_TITANIUM   = ITEMS.register("plate_welded_titanium",   () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_WELDED_ALUMINIUM  = ITEMS.register("plate_welded_aluminium",  () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_WELDED_TUNGSTEN   = ITEMS.register("plate_welded_tungsten",   () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_WELDED_ZIRCONIUM  = ITEMS.register("plate_welded_zirconium",  () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_WELDED_OSMIRIDIUM = ITEMS.register("plate_welded_osmiridium", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_WELDED_TCALLOY    = ITEMS.register("plate_welded_tcalloy",    () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_WELDED_CDALLOY    = ITEMS.register("plate_welded_cdalloy",    () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PLATE_WELDED_CMB        = ITEMS.register("plate_welded_cmb",        () -> new Item(new Item.Properties()));
+
+	public static final RegistrySupplier<Item> ZIRNOX = ITEMS.register("zirnox",
+        () -> new MultiblockBlockItem(ModBlocks.ZIRNOX.get(), new Item.Properties()));
+
+	public static final RegistrySupplier<Item> ARC_WELDER = ITEMS.register("arc_welder",
+        () -> new MultiblockBlockItem(ModBlocks.ARC_WELDER.get(), new Item.Properties()));
+
+	public static final RegistrySupplier<Item> SOLDERING_STATION = ITEMS.register("soldering_station",
+        () -> new MultiblockBlockItem(ModBlocks.SOLDERING_STATION.get(), new Item.Properties()));
+
+	public static final RegistrySupplier<Item> MIXER = ITEMS.register("mixer",
+        () -> new MultiblockBlockItem(ModBlocks.MIXER.get(), new Item.Properties()));
+
+	public static final RegistrySupplier<Item> DERRICK = ITEMS.register("derrick",
+        () -> new MultiblockBlockItem(ModBlocks.DERRICK.get(), new Item.Properties()));
+
+	public static final RegistrySupplier<Item> RBMK_CONSOLE = ITEMS.register("rbmk_console",
+        () -> new MultiblockBlockItem(ModBlocks.RBMK_CONSOLE.get(), new Item.Properties()));
+
+	public static final RegistrySupplier<Item> FLARE_STACK = ITEMS.register("flare_stack",
+        () -> new MultiblockBlockItem(ModBlocks.FLARE_STACK.get(), new Item.Properties()));
+
+	public static final RegistrySupplier<Item> PUMPJACK = ITEMS.register("pumpjack",
+        () -> new MultiblockBlockItem(ModBlocks.PUMPJACK.get(), new Item.Properties()));
+
+	public static final RegistrySupplier<Item> RADAR = ITEMS.register("radar",
+        () -> new MultiblockBlockItem(ModBlocks.RADAR.get(), new Item.Properties()));
+
+	public static final RegistrySupplier<Item> LARGE_RADAR = ITEMS.register("large_radar",
+        () -> new MultiblockBlockItem(ModBlocks.LARGE_RADAR.get(), new Item.Properties()));
+
+	public static final RegistrySupplier<Item> CRACKING_TOWER = ITEMS.register("cracking_tower",
+        () -> new MultiblockBlockItem(ModBlocks.CRACKING_TOWER.get(), new Item.Properties()));
+
+	public static final RegistrySupplier<Item> FRACTION_TOWER = ITEMS.register("fraction_tower",
+        () -> new MultiblockBlockItem(ModBlocks.FRACTION_TOWER.get(), new Item.Properties()));
+
+	public static final RegistrySupplier<Item> MINING_DRILL = ITEMS.register("mining_drill",
+        () -> new MultiblockBlockItem(ModBlocks.MINING_DRILL.get(), new Item.Properties()));
+
+	public static final RegistrySupplier<Item> FEL = ITEMS.register("fel",
+        () -> new MultiblockBlockItem(ModBlocks.FEL.get(), new Item.Properties()));
+
+	public static final RegistrySupplier<Item> SILEX = ITEMS.register("silex",
+        () -> new MultiblockBlockItem(ModBlocks.SILEX.get(), new Item.Properties()));
+
+	public static final RegistrySupplier<Item> CHEMICAL_PLANT = ITEMS.register("chemical_plant",
         () -> new MultiblockBlockItem(ModBlocks.CHEMICAL_PLANT.get(), new Item.Properties()));
 
-	public static final RegistryObject<Item> CRYSTALLIZER = ITEMS.register("crystallizer",
+	public static final RegistrySupplier<Item> GAS_CENTRIFUGE = ITEMS.register("gas_centrifuge",
+        () -> new MultiblockBlockItem(ModBlocks.GAS_CENTRIFUGE.get(), new Item.Properties()));
+
+	public static final RegistrySupplier<Item> CRYSTALLIZER = ITEMS.register("crystallizer",
         () -> new MultiblockBlockItem(ModBlocks.CRYSTALLIZER.get(), new Item.Properties()));
 
-	public static final RegistryObject<Item> CENTRIFUGE = ITEMS.register("centrifuge",
+	public static final RegistrySupplier<Item> BREEDER = ITEMS.register("breeder",
+        () -> new MultiblockBlockItem(ModBlocks.BREEDER.get(), new Item.Properties()));
+
+	public static final RegistrySupplier<Item> LARGE_PYLON = ITEMS.register("large_pylon",
+        () -> new MultiblockBlockItem(ModBlocks.LARGE_PYLON.get(), new Item.Properties()));
+
+	public static final RegistrySupplier<Item> CENTRIFUGE = ITEMS.register("centrifuge",
         () -> new MultiblockBlockItem(ModBlocks.CENTRIFUGE.get(), new Item.Properties()));
 
-	public static final RegistryObject<Item> FLUID_TANK = ITEMS.register("fluid_tank",
+	public static final RegistrySupplier<Item> FLUID_TANK = ITEMS.register("fluid_tank",
         () -> new MultiblockBlockItem(ModBlocks.FLUID_TANK.get(), new Item.Properties()));
 
-    public static final RegistryObject<Item> MACHINE_BATTERY_SOCKET = ITEMS.register("machine_battery_socket",
+    public static final RegistrySupplier<Item> MACHINE_BATTERY_SOCKET = ITEMS.register("machine_battery_socket",
         () -> new MultiblockBlockItem(ModBlocks.MACHINE_BATTERY_SOCKET.get(), new Item.Properties()));
 
-    public static final RegistryObject<Item> PRESS = ITEMS.register("press",
+    public static final RegistrySupplier<Item> PRESS = ITEMS.register("press",
         () -> new MultiblockBlockItem(ModBlocks.PRESS.get(), new Item.Properties()));
 
-    public static final RegistryObject<Item> WOOD_BURNER = ITEMS.register("wood_burner",
+    public static final RegistrySupplier<Item> WOOD_BURNER = ITEMS.register("wood_burner",
         () -> new MultiblockBlockItem(ModBlocks.WOOD_BURNER.get(), new Item.Properties()));
 
-    public static final RegistryObject<Item> INDUSTRIAL_BOILER = ITEMS.register("industrial_boiler",
+    public static final RegistrySupplier<Item> INDUSTRIAL_BOILER = ITEMS.register("industrial_boiler",
         () -> new MultiblockBlockItem(ModBlocks.INDUSTRIAL_BOILER.get(), new Item.Properties()));
 
-    public static final RegistryObject<Item> INDUSTRIAL_TURBINE = ITEMS.register("industrial_turbine",
+    public static final RegistrySupplier<Item> SOLAR_BOILER = ITEMS.register("solar_boiler",
+        () -> new MultiblockBlockItem(ModBlocks.SOLAR_BOILER.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> SOLAR_MIRRORS = ITEMS.register("solar_mirrors",
+        () -> new MultiblockBlockItem(ModBlocks.SOLAR_MIRRORS.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> WATZ_POWERPLANT = ITEMS.register("watz_powerplant",
+        () -> new MultiblockBlockItem(ModBlocks.WATZ_POWERPLANT.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> HYDROTREATER = ITEMS.register("hydrotreater",
+        () -> new MultiblockBlockItem(ModBlocks.HYDROTREATER.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> CATALYTIC_REFORMER = ITEMS.register("catalytic_reformer",
+        () -> new MultiblockBlockItem(ModBlocks.CATALYTIC_REFORMER.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> DEUTERIUM_TOWER = ITEMS.register("deuterium_tower",
+        () -> new MultiblockBlockItem(ModBlocks.DEUTERIUM_TOWER.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> CHEMICAL_FACTORY = ITEMS.register("chemical_factory",
+        () -> new MultiblockBlockItem(ModBlocks.CHEMICAL_FACTORY.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> STEAM_TURBINE = ITEMS.register("steam_turbine",
+        () -> new MultiblockBlockItem(ModBlocks.STEAM_TURBINE.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> LIQUEFACTOR = ITEMS.register("liquefactor",
+        () -> new MultiblockBlockItem(ModBlocks.LIQUEFACTOR.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> CORE_EMITTER = ITEMS.register("core_emitter",
+        () -> new MultiblockBlockItem(ModBlocks.CORE_EMITTER.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> CORE_INJECTOR = ITEMS.register("core_injector",
+        () -> new MultiblockBlockItem(ModBlocks.CORE_INJECTOR.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> CORE_RECEIVER = ITEMS.register("core_receiver",
+        () -> new MultiblockBlockItem(ModBlocks.CORE_RECEIVER.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> VACUUM_DISTILL = ITEMS.register("vacuum_distill",
+        () -> new MultiblockBlockItem(ModBlocks.VACUUM_DISTILL.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> TURBOFAN = ITEMS.register("turbofan",
+        () -> new MultiblockBlockItem(ModBlocks.TURBOFAN.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> INDUSTRIAL_TURBINE = ITEMS.register("industrial_turbine",
         () -> new MultiblockBlockItem(ModBlocks.INDUSTRIAL_TURBINE.get(), new Item.Properties()));
 
-    public static final RegistryObject<Item> REFINERY = ITEMS.register("refinery",
+    public static final RegistrySupplier<Item> TURBINE = ITEMS.register("turbine",
+        () -> new MultiblockBlockItem(ModBlocks.TURBINE.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> SUBSTATION = ITEMS.register("substation",
+        () -> new MultiblockBlockItem(ModBlocks.SUBSTATION.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> REFINERY = ITEMS.register("refinery",
         () -> new MultiblockBlockItem(ModBlocks.REFINERY.get(), new Item.Properties()));
-	public static final RegistryObject<Item> LAUNCH_PAD = ITEMS.register("launch_pad",
+	public static final RegistrySupplier<Item> LAUNCH_PAD = ITEMS.register("launch_pad",
         () -> new MultiblockBlockItem(ModBlocks.LAUNCH_PAD.get(), new Item.Properties()));
 
-	public static final RegistryObject<Item> LAUNCH_PAD_RUSTED = ITEMS.register("launch_pad_rusted",
+	public static final RegistrySupplier<Item> LAUNCH_PAD_RUSTED = ITEMS.register("launch_pad_rusted",
         () -> new MultiblockBlockItem(ModBlocks.LAUNCH_PAD_RUSTED.get(), new Item.Properties()));
 
-	public static final RegistryObject<Item> NUKE_FAT_MAN = ITEMS.register("nuke_fat_man",
+	public static final RegistrySupplier<Item> NUKE_FAT_MAN = ITEMS.register("nuke_fat_man",
         () -> new MultiblockBlockItem(ModBlocks.NUKE_FAT_MAN.get(), new Item.Properties()));
 
+    public static final RegistrySupplier<Item> NUKE_PROTOTYPE = ITEMS.register("nuke_prototype",
+        () -> new net.minecraft.world.item.BlockItem(com.hbm_m.block.ModBlocks.NUKE_PROTOTYPE.get(), new Item.Properties()));
+
     // ПРОТОТИП РАКЕТЫ (TIER 0, MICRO)
-    public static final RegistryObject<Item> MISSILE_TEST = ITEMS.register("missile_test",
+    public static final RegistrySupplier<Item> MISSILE_TEST = ITEMS.register("missile_test",
         () -> new MissileItem(MissileItem.MissileFormFactor.MICRO, MissileItem.MissileTier.TIER0,
                 MissileItem.MissileFuel.SOLID));
 
-    public static final RegistryObject<Item> DESIGNATOR = ITEMS.register("designator",
+    public static final RegistrySupplier<Item> MISSILE_ABM = ITEMS.register("missile_abm",
+                () -> new MissileItem(MissileItem.MissileFormFactor.ABM, MissileItem.MissileTier.TIER1,
+                                MissileItem.MissileFuel.SOLID));
+
+  /** Сингулярности / опасные дропы (1.7.10 {@code ModItems.black_hole}, {@code pellet_antimatter}, {@code flame_pony}). */
+    public static final RegistrySupplier<Item> BLACK_HOLE = ITEMS.register("black_hole",
+            () -> new com.hbm_m.item.special.ItemDrop(new Item.Properties().stacksTo(1)));
+    public static final RegistrySupplier<Item> PELLET_ANTIMATTER = ITEMS.register("pellet_antimatter",
+            () -> new com.hbm_m.item.special.ItemDrop(new Item.Properties().stacksTo(1)));
+    public static final RegistrySupplier<Item> FLAME_PONY = ITEMS.register("flame_pony",
+            () -> new Item(new Item.Properties()));
+
+    // Tier 0
+    public static final RegistrySupplier<Item> MISSILE_MICRO = ITEMS.register("missile_micro",
+            () -> new MissileItem(MissileItem.MissileFormFactor.MICRO, MissileItem.MissileTier.TIER0));
+    public static final RegistrySupplier<Item> MISSILE_SCHRABIDIUM = ITEMS.register("missile_schrabidium",
+            () -> new MissileItem(MissileItem.MissileFormFactor.MICRO, MissileItem.MissileTier.TIER0));
+    public static final RegistrySupplier<Item> MISSILE_BHOLE = ITEMS.register("missile_bhole",
+            () -> new MissileItem(MissileItem.MissileFormFactor.MICRO, MissileItem.MissileTier.TIER0));
+    public static final RegistrySupplier<Item> MISSILE_TAINT = ITEMS.register("missile_taint",
+            () -> new MissileItem(MissileItem.MissileFormFactor.MICRO, MissileItem.MissileTier.TIER0));
+    public static final RegistrySupplier<Item> MISSILE_EMP = ITEMS.register("missile_emp",
+            () -> new MissileItem(MissileItem.MissileFormFactor.MICRO, MissileItem.MissileTier.TIER0));
+
+    // Tier 1
+    public static final RegistrySupplier<Item> MISSILE_GENERIC = ITEMS.register("missile_generic",
+            () -> new MissileItem(MissileItem.MissileFormFactor.V2, MissileItem.MissileTier.TIER1));
+    public static final RegistrySupplier<Item> MISSILE_INCENDIARY = ITEMS.register("missile_incendiary",
+            () -> new MissileItem(MissileItem.MissileFormFactor.V2, MissileItem.MissileTier.TIER1));
+    public static final RegistrySupplier<Item> MISSILE_CLUSTER = ITEMS.register("missile_cluster",
+            () -> new MissileItem(MissileItem.MissileFormFactor.V2, MissileItem.MissileTier.TIER1));
+    public static final RegistrySupplier<Item> MISSILE_BUSTER = ITEMS.register("missile_buster",
+            () -> new MissileItem(MissileItem.MissileFormFactor.V2, MissileItem.MissileTier.TIER1));
+    public static final RegistrySupplier<Item> MISSILE_DECOY = ITEMS.register("missile_decoy",
+            () -> new MissileItem(MissileItem.MissileFormFactor.V2, MissileItem.MissileTier.TIER1));
+
+    public static final RegistrySupplier<Item> MISSILE_STEALTH = ITEMS.register("missile_stealth",
+            () -> new MissileItem(MissileItem.MissileFormFactor.STEALTH, MissileItem.MissileTier.TIER1));
+
+    // Tier 2
+    public static final RegistrySupplier<Item> MISSILE_STRONG = ITEMS.register("missile_strong",
+            () -> new MissileItem(MissileItem.MissileFormFactor.STRONG, MissileItem.MissileTier.TIER2));
+    public static final RegistrySupplier<Item> MISSILE_INCENDIARY_STRONG = ITEMS.register("missile_incendiary_strong",
+            () -> new MissileItem(MissileItem.MissileFormFactor.STRONG, MissileItem.MissileTier.TIER2));
+    public static final RegistrySupplier<Item> MISSILE_CLUSTER_STRONG = ITEMS.register("missile_cluster_strong",
+            () -> new MissileItem(MissileItem.MissileFormFactor.STRONG, MissileItem.MissileTier.TIER2));
+    public static final RegistrySupplier<Item> MISSILE_BUSTER_STRONG = ITEMS.register("missile_buster_strong",
+            () -> new MissileItem(MissileItem.MissileFormFactor.STRONG, MissileItem.MissileTier.TIER2));
+    public static final RegistrySupplier<Item> MISSILE_EMP_STRONG = ITEMS.register("missile_emp_strong",
+            () -> new MissileItem(MissileItem.MissileFormFactor.STRONG, MissileItem.MissileTier.TIER2));
+
+    // Tier 3
+    public static final RegistrySupplier<Item> MISSILE_BURST = ITEMS.register("missile_burst",
+            () -> new MissileItem(MissileItem.MissileFormFactor.HUGE, MissileItem.MissileTier.TIER3));
+    public static final RegistrySupplier<Item> MISSILE_INFERNO = ITEMS.register("missile_inferno",
+            () -> new MissileItem(MissileItem.MissileFormFactor.HUGE, MissileItem.MissileTier.TIER3));
+    public static final RegistrySupplier<Item> MISSILE_RAIN = ITEMS.register("missile_rain",
+            () -> new MissileItem(MissileItem.MissileFormFactor.HUGE, MissileItem.MissileTier.TIER3));
+    public static final RegistrySupplier<Item> MISSILE_DRILL = ITEMS.register("missile_drill",
+            () -> new MissileItem(MissileItem.MissileFormFactor.HUGE, MissileItem.MissileTier.TIER3));
+    public static final RegistrySupplier<Item> MISSILE_SHUTTLE = ITEMS.register("missile_shuttle",
+            () -> new MissileItem(MissileItem.MissileFormFactor.OTHER, MissileItem.MissileTier.TIER3,
+                    MissileItem.MissileFuel.KEROSENE_PEROXIDE));
+
+    // Tier 4
+    public static final RegistrySupplier<Item> MISSILE_NUCLEAR = ITEMS.register("missile_nuclear",
+            () -> new MissileItem(MissileItem.MissileFormFactor.ATLAS, MissileItem.MissileTier.TIER4));
+    public static final RegistrySupplier<Item> MISSILE_NUCLEAR_CLUSTER = ITEMS.register("missile_nuclear_cluster",
+            () -> new MissileItem(MissileItem.MissileFormFactor.ATLAS, MissileItem.MissileTier.TIER4));
+    public static final RegistrySupplier<Item> MISSILE_VOLCANO = ITEMS.register("missile_volcano",
+            () -> new MissileItem(MissileItem.MissileFormFactor.ATLAS, MissileItem.MissileTier.TIER4));
+    public static final RegistrySupplier<Item> MISSILE_DOOMSDAY = ITEMS.register("missile_doomsday",
+            () -> new MissileItem(MissileItem.MissileFormFactor.ATLAS, MissileItem.MissileTier.TIER4));
+    public static final RegistrySupplier<Item> MISSILE_DOOMSDAY_RUSTED = ITEMS.register("missile_doomsday_rusted",
+            () -> new MissileItem(MissileItem.MissileFormFactor.ATLAS, MissileItem.MissileTier.TIER4).notLaunchable());
+
+    public static final RegistrySupplier<Item> DESIGNATOR = ITEMS.register("designator",
         () -> new ItemDesignator(new Item.Properties()));
-    public static final RegistryObject<Item> DESIGNATOR_RANGE = ITEMS.register("designator_range",
+    public static final RegistrySupplier<Item> DESIGNATOR_RANGE = ITEMS.register("designator_range",
         () -> new ItemDesignatorRange(new Item.Properties()));
-    public static final RegistryObject<Item> DESIGNATOR_MANUAL = ITEMS.register("designator_manual",
+    public static final RegistrySupplier<Item> DESIGNATOR_MANUAL = ITEMS.register("designator_manual",
         () -> new ItemDesignatorManual(new Item.Properties()));
 
 	// MULTIBLOCK DOORS
 
-    public static final RegistryObject<Item> LARGE_VEHICLE_DOOR = ITEMS.register("large_vehicle_door",
+    public static final RegistrySupplier<Item> LARGE_VEHICLE_DOOR = ITEMS.register("large_vehicle_door",
         () -> new DoorBlockItem(ModBlocks.LARGE_VEHICLE_DOOR.get(), new Item.Properties()));
 
-    public static final RegistryObject<Item> ROUND_AIRLOCK_DOOR = ITEMS.register("round_airlock_door",
+    public static final RegistrySupplier<Item> ROUND_AIRLOCK_DOOR = ITEMS.register("round_airlock_door",
         () -> new DoorBlockItem(ModBlocks.ROUND_AIRLOCK_DOOR.get(), new Item.Properties()));
 
-    public static final RegistryObject<Item> TRANSITION_SEAL = ITEMS.register("transition_seal",
+    public static final RegistrySupplier<Item> TRANSITION_SEAL = ITEMS.register("transition_seal",
         () -> new DoorBlockItem(ModBlocks.TRANSITION_SEAL.get(), new Item.Properties()));
 
-    public static final RegistryObject<Item> SILO_HATCH = ITEMS.register("silo_hatch",
+    public static final RegistrySupplier<Item> SILO_HATCH = ITEMS.register("silo_hatch",
         () -> new DoorBlockItem(ModBlocks.SILO_HATCH.get(), new Item.Properties()));
 
-    public static final RegistryObject<Item> SILO_HATCH_LARGE = ITEMS.register("silo_hatch_large",
+    public static final RegistrySupplier<Item> SILO_HATCH_LARGE = ITEMS.register("silo_hatch_large",
         () -> new DoorBlockItem(ModBlocks.SILO_HATCH_LARGE.get(), new Item.Properties()));
 
-    public static final RegistryObject<Item> QE_CONTAINMENT = ITEMS.register("qe_containment_door",
+    public static final RegistrySupplier<Item> QE_CONTAINMENT = ITEMS.register("qe_containment_door",
         () -> new DoorBlockItem(ModBlocks.QE_CONTAINMENT.get(), new Item.Properties()));
 
-    public static final RegistryObject<Item> WATER_DOOR = ITEMS.register("water_door",
+    public static final RegistrySupplier<Item> WATER_DOOR = ITEMS.register("water_door",
         () -> new DoorBlockItem(ModBlocks.WATER_DOOR.get(), new Item.Properties()));
 
-    public static final RegistryObject<Item> FIRE_DOOR = ITEMS.register("fire_door",
+    public static final RegistrySupplier<Item> FIRE_DOOR = ITEMS.register("fire_door",
         () -> new DoorBlockItem(ModBlocks.FIRE_DOOR.get(), new Item.Properties()));
 
-    public static final RegistryObject<Item> SLIDE_DOOR = ITEMS.register("sliding_blast_door",
+    public static final RegistrySupplier<Item> SLIDE_DOOR = ITEMS.register("sliding_blast_door",
         () -> new DoorBlockItem(ModBlocks.SLIDE_DOOR.get(), new Item.Properties()));
         
-    public static final RegistryObject<Item> SLIDING_SEAL_DOOR = ITEMS.register("sliding_seal_door",
+    public static final RegistrySupplier<Item> SLIDING_SEAL_DOOR = ITEMS.register("sliding_seal_door",
         () -> new DoorBlockItem(ModBlocks.SLIDING_SEAL_DOOR.get(), new Item.Properties()));
 
-    public static final RegistryObject<Item> SECURE_ACCESS_DOOR = ITEMS.register("secure_access_door",
+    public static final RegistrySupplier<Item> SECURE_ACCESS_DOOR = ITEMS.register("secure_access_door",
         () -> new DoorBlockItem(ModBlocks.SECURE_ACCESS_DOOR.get(), new Item.Properties()));
 
-    public static final RegistryObject<Item> QE_SLIDING = ITEMS.register("qe_sliding_door",
+    public static final RegistrySupplier<Item> QE_SLIDING = ITEMS.register("qe_sliding_door",
         () -> new DoorBlockItem(ModBlocks.QE_SLIDING.get(), new Item.Properties()));
 
-    public static final RegistryObject<Item> VAULT_DOOR = ITEMS.register("vault_door",
+    public static final RegistrySupplier<Item> VAULT_DOOR = ITEMS.register("vault_door",
         () -> new DoorBlockItem(ModBlocks.VAULT_DOOR.get(), new Item.Properties()));
 
 
 
-    public static final RegistryObject<Item> STAMP_STONE_FLAT = ITEMS.register("stamp_stone_flat",
+    public static final RegistrySupplier<Item> STAMP_STONE_FLAT = ITEMS.register("stamp_stone_flat",
             () -> new ItemStamp(new Item.Properties(), 32));
-    public static final RegistryObject<Item> STAMP_STONE_PLATE = ITEMS.register("stamp_stone_plate",
+    public static final RegistrySupplier<Item> STAMP_STONE_PLATE = ITEMS.register("stamp_stone_plate",
             () -> new ItemStamp(new Item.Properties(), 32));
-    public static final RegistryObject<Item> STAMP_STONE_WIRE = ITEMS.register("stamp_stone_wire",
+    public static final RegistrySupplier<Item> STAMP_STONE_WIRE = ITEMS.register("stamp_stone_wire",
             () -> new ItemStamp(new Item.Properties(), 32));
-    public static final RegistryObject<Item> STAMP_STONE_CIRCUIT = ITEMS.register("stamp_stone_circuit",
+    public static final RegistrySupplier<Item> STAMP_STONE_CIRCUIT = ITEMS.register("stamp_stone_circuit",
             () -> new ItemStamp(new Item.Properties(), 32));
 
 
-    public static final RegistryObject<Item> BLADE_TEST = ITEMS.register("blade_test",
+    public static final RegistrySupplier<Item> BLADE_TEST = ITEMS.register("blade_test",
             () -> new ItemBlades(new Item.Properties()));
 
-    public static final RegistryObject<Item> BLADE_STEEL = ITEMS.register("blade_steel",
+    public static final RegistrySupplier<Item> BLADE_STEEL = ITEMS.register("blade_steel",
             () -> new ItemBlades(new Item.Properties(), 200));
 
-    public static final RegistryObject<Item> BLADE_TITANIUM = ITEMS.register("blade_titanium",
+    public static final RegistrySupplier<Item> BLADE_TITANIUM = ITEMS.register("blade_titanium",
             () -> new ItemBlades(new Item.Properties(), 350));
 
-    public static final RegistryObject<Item> BLADE_ALLOY = ITEMS.register("blade_alloy",
+    public static final RegistrySupplier<Item> BLADE_ALLOY = ITEMS.register("blade_alloy",
             () -> new ItemBlades(new Item.Properties(), 700));
 
     // Железные штампы (48 использований)
-    public static final RegistryObject<Item> STAMP_IRON_FLAT = ITEMS.register("stamp_iron_flat",
+    public static final RegistrySupplier<Item> STAMP_IRON_FLAT = ITEMS.register("stamp_iron_flat",
             () -> new ItemStamp(new Item.Properties(), 48));
-    public static final RegistryObject<Item> STAMP_IRON_PLATE = ITEMS.register("stamp_iron_plate",
+    public static final RegistrySupplier<Item> STAMP_IRON_PLATE = ITEMS.register("stamp_iron_plate",
             () -> new ItemStamp(new Item.Properties(), 48));
-    public static final RegistryObject<Item> STAMP_IRON_WIRE = ITEMS.register("stamp_iron_wire",
+    public static final RegistrySupplier<Item> STAMP_IRON_WIRE = ITEMS.register("stamp_iron_wire",
             () -> new ItemStamp(new Item.Properties(), 48));
-    public static final RegistryObject<Item> STAMP_IRON_CIRCUIT = ITEMS.register("stamp_iron_circuit",
+    public static final RegistrySupplier<Item> STAMP_IRON_CIRCUIT = ITEMS.register("stamp_iron_circuit",
             () -> new ItemStamp(new Item.Properties(), 48));
-    public static final RegistryObject<Item> STAMP_IRON_9 = ITEMS.register("stamp_iron_9",
+    public static final RegistrySupplier<Item> STAMP_IRON_9 = ITEMS.register("stamp_iron_9",
             () -> new ItemStamp(new Item.Properties(), 48));
-    public static final RegistryObject<Item> STAMP_IRON_44 = ITEMS.register("stamp_iron_44",
+    public static final RegistrySupplier<Item> STAMP_IRON_44 = ITEMS.register("stamp_iron_44",
             () -> new ItemStamp(new Item.Properties(), 48));
-    public static final RegistryObject<Item> STAMP_IRON_50 = ITEMS.register("stamp_iron_50",
+    public static final RegistrySupplier<Item> STAMP_IRON_50 = ITEMS.register("stamp_iron_50",
             () -> new ItemStamp(new Item.Properties(), 48));
-    public static final RegistryObject<Item> STAMP_IRON_357 = ITEMS.register("stamp_iron_357",
+    public static final RegistrySupplier<Item> STAMP_IRON_357 = ITEMS.register("stamp_iron_357",
             () -> new ItemStamp(new Item.Properties(), 48));
 
     // Стальные штампы (64 использования)
-    public static final RegistryObject<Item> STAMP_STEEL_FLAT = ITEMS.register("stamp_steel_flat",
+    public static final RegistrySupplier<Item> STAMP_STEEL_FLAT = ITEMS.register("stamp_steel_flat",
             () -> new ItemStamp(new Item.Properties(), 64));
-    public static final RegistryObject<Item> STAMP_STEEL_PLATE = ITEMS.register("stamp_steel_plate",
+    public static final RegistrySupplier<Item> STAMP_STEEL_PLATE = ITEMS.register("stamp_steel_plate",
             () -> new ItemStamp(new Item.Properties(), 64));
-    public static final RegistryObject<Item> STAMP_STEEL_WIRE = ITEMS.register("stamp_steel_wire",
+    public static final RegistrySupplier<Item> STAMP_STEEL_WIRE = ITEMS.register("stamp_steel_wire",
             () -> new ItemStamp(new Item.Properties(), 64));
-    public static final RegistryObject<Item> STAMP_STEEL_CIRCUIT = ITEMS.register("stamp_steel_circuit",
+    public static final RegistrySupplier<Item> STAMP_STEEL_CIRCUIT = ITEMS.register("stamp_steel_circuit",
             () -> new ItemStamp(new Item.Properties(), 64));
 
     // Титановые штампы (80 использований)
-    public static final RegistryObject<Item> STAMP_TITANIUM_FLAT = ITEMS.register("stamp_titanium_flat",
+    public static final RegistrySupplier<Item> STAMP_TITANIUM_FLAT = ITEMS.register("stamp_titanium_flat",
             () -> new ItemStamp(new Item.Properties(), 80));
-    public static final RegistryObject<Item> STAMP_TITANIUM_PLATE = ITEMS.register("stamp_titanium_plate",
+    public static final RegistrySupplier<Item> STAMP_TITANIUM_PLATE = ITEMS.register("stamp_titanium_plate",
             () -> new ItemStamp(new Item.Properties(), 80));
-    public static final RegistryObject<Item> STAMP_TITANIUM_WIRE = ITEMS.register("stamp_titanium_wire",
+    public static final RegistrySupplier<Item> STAMP_TITANIUM_WIRE = ITEMS.register("stamp_titanium_wire",
             () -> new ItemStamp(new Item.Properties(), 80));
-    public static final RegistryObject<Item> STAMP_TITANIUM_CIRCUIT = ITEMS.register("stamp_titanium_circuit",
+    public static final RegistrySupplier<Item> STAMP_TITANIUM_CIRCUIT = ITEMS.register("stamp_titanium_circuit",
             () -> new ItemStamp(new Item.Properties(), 80));
 
     // Обсидиановые штампы (96 использований)
-    public static final RegistryObject<Item> STAMP_OBSIDIAN_FLAT = ITEMS.register("stamp_obsidian_flat",
+    public static final RegistrySupplier<Item> STAMP_OBSIDIAN_FLAT = ITEMS.register("stamp_obsidian_flat",
             () -> new ItemStamp(new Item.Properties(), 96));
-    public static final RegistryObject<Item> STAMP_OBSIDIAN_PLATE = ITEMS.register("stamp_obsidian_plate",
+    public static final RegistrySupplier<Item> STAMP_OBSIDIAN_PLATE = ITEMS.register("stamp_obsidian_plate",
             () -> new ItemStamp(new Item.Properties(), 96));
-    public static final RegistryObject<Item> STAMP_OBSIDIAN_WIRE = ITEMS.register("stamp_obsidian_wire",
+    public static final RegistrySupplier<Item> STAMP_OBSIDIAN_WIRE = ITEMS.register("stamp_obsidian_wire",
             () -> new ItemStamp(new Item.Properties(), 96));
-    public static final RegistryObject<Item> STAMP_OBSIDIAN_CIRCUIT = ITEMS.register("stamp_obsidian_circuit",
+    public static final RegistrySupplier<Item> STAMP_OBSIDIAN_CIRCUIT = ITEMS.register("stamp_obsidian_circuit",
             () -> new ItemStamp(new Item.Properties(), 96));
 
     // Desh штампы (бесконечная прочность)
-    public static final RegistryObject<Item> STAMP_DESH_FLAT = ITEMS.register("stamp_desh_flat",
+    public static final RegistrySupplier<Item> STAMP_DESH_FLAT = ITEMS.register("stamp_desh_flat",
             () -> new ItemStamp(new Item.Properties()));
-    public static final RegistryObject<Item> STAMP_DESH_PLATE = ITEMS.register("stamp_desh_plate",
+    public static final RegistrySupplier<Item> STAMP_DESH_PLATE = ITEMS.register("stamp_desh_plate",
             () -> new ItemStamp(new Item.Properties()));
-    public static final RegistryObject<Item> STAMP_DESH_WIRE = ITEMS.register("stamp_desh_wire",
+    public static final RegistrySupplier<Item> STAMP_DESH_WIRE = ITEMS.register("stamp_desh_wire",
             () -> new ItemStamp(new Item.Properties()));
-    public static final RegistryObject<Item> STAMP_DESH_CIRCUIT = ITEMS.register("stamp_desh_circuit",
+    public static final RegistrySupplier<Item> STAMP_DESH_CIRCUIT = ITEMS.register("stamp_desh_circuit",
             () -> new ItemStamp(new Item.Properties()));
-    public static final RegistryObject<Item> STAMP_DESH_9 = ITEMS.register("stamp_desh_9",
+    public static final RegistrySupplier<Item> STAMP_DESH_9 = ITEMS.register("stamp_desh_9",
             () -> new ItemStamp(new Item.Properties()));
-    public static final RegistryObject<Item> STAMP_DESH_44 = ITEMS.register("stamp_desh_44",
+    public static final RegistrySupplier<Item> STAMP_DESH_44 = ITEMS.register("stamp_desh_44",
             () -> new ItemStamp(new Item.Properties()));
-    public static final RegistryObject<Item> STAMP_DESH_50 = ITEMS.register("stamp_desh_50",
+    public static final RegistrySupplier<Item> STAMP_DESH_50 = ITEMS.register("stamp_desh_50",
             () -> new ItemStamp(new Item.Properties()));
-    public static final RegistryObject<Item> STAMP_DESH_357 = ITEMS.register("stamp_desh_357",
+    public static final RegistrySupplier<Item> STAMP_DESH_357 = ITEMS.register("stamp_desh_357",
             () -> new ItemStamp(new Item.Properties()));
 
 
     //батарейки
 
-    public static final RegistryObject<Item> BATTERY_SCHRABIDIUM = ITEMS.register("battery_schrabidium",
+    public static final RegistrySupplier<Item> BATTERY_SCHRABIDIUM = ITEMS.register("battery_schrabidium",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     1000000,
@@ -1458,7 +1991,7 @@ public class ModItems {
             ));
 
     // ========== КАРТОФЕЛЬНАЯ И БАЗОВЫЕ ==========
-    public static final RegistryObject<Item> BATTERY_POTATO = ITEMS.register("battery_potato",
+    public static final RegistrySupplier<Item> BATTERY_POTATO = ITEMS.register("battery_potato",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     1_000,
@@ -1466,7 +1999,7 @@ public class ModItems {
                     100
             ));
 
-    public static final RegistryObject<Item> BATTERY = ITEMS.register("battery",
+    public static final RegistrySupplier<Item> BATTERY = ITEMS.register("battery",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     5000,
@@ -1475,7 +2008,7 @@ public class ModItems {
             ));
 
     // ========== КРАСНЫЕ БАТАРЕЙКИ (RED CELL) ==========
-    public static final RegistryObject<Item> BATTERY_RED_CELL = ITEMS.register("battery_red_cell",
+    public static final RegistrySupplier<Item> BATTERY_RED_CELL = ITEMS.register("battery_red_cell",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     15000,
@@ -1483,7 +2016,7 @@ public class ModItems {
                     100
             ));
 
-    public static final RegistryObject<Item> BATTERY_RED_CELL_6 = ITEMS.register("battery_red_cell_6",
+    public static final RegistrySupplier<Item> BATTERY_RED_CELL_6 = ITEMS.register("battery_red_cell_6",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     90000,
@@ -1491,7 +2024,7 @@ public class ModItems {
                     100
             ));
 
-    public static final RegistryObject<Item> BATTERY_RED_CELL_24 = ITEMS.register("battery_red_cell_24",
+    public static final RegistrySupplier<Item> BATTERY_RED_CELL_24 = ITEMS.register("battery_red_cell_24",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     240000,
@@ -1500,7 +2033,7 @@ public class ModItems {
             ));
 
     // ========== ПРОДВИНУТЫЕ БАТАРЕЙКИ (ADVANCED) ==========
-    public static final RegistryObject<Item> BATTERY_ADVANCED = ITEMS.register("battery_advanced",
+    public static final RegistrySupplier<Item> BATTERY_ADVANCED = ITEMS.register("battery_advanced",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     20000,
@@ -1508,7 +2041,7 @@ public class ModItems {
                     500
             ));
 
-    public static final RegistryObject<Item> BATTERY_ADVANCED_CELL = ITEMS.register("battery_advanced_cell",
+    public static final RegistrySupplier<Item> BATTERY_ADVANCED_CELL = ITEMS.register("battery_advanced_cell",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     60000,
@@ -1516,7 +2049,7 @@ public class ModItems {
                     500
             ));
 
-    public static final RegistryObject<Item> BATTERY_ADVANCED_CELL_4 = ITEMS.register("battery_advanced_cell_4",
+    public static final RegistrySupplier<Item> BATTERY_ADVANCED_CELL_4 = ITEMS.register("battery_advanced_cell_4",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     240000,
@@ -1524,7 +2057,7 @@ public class ModItems {
                     500
             ));
 
-    public static final RegistryObject<Item> BATTERY_ADVANCED_CELL_12 = ITEMS.register("battery_advanced_cell_12",
+    public static final RegistrySupplier<Item> BATTERY_ADVANCED_CELL_12 = ITEMS.register("battery_advanced_cell_12",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     720000,
@@ -1533,7 +2066,7 @@ public class ModItems {
             ));
 
     // ========== ЛИТИЕВЫЕ БАТАРЕЙКИ (LITHIUM) ==========
-    public static final RegistryObject<Item> BATTERY_LITHIUM = ITEMS.register("battery_lithium",
+    public static final RegistrySupplier<Item> BATTERY_LITHIUM = ITEMS.register("battery_lithium",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     250000,
@@ -1541,7 +2074,7 @@ public class ModItems {
                     1000
             ));
 
-    public static final RegistryObject<Item> BATTERY_LITHIUM_CELL = ITEMS.register("battery_lithium_cell",
+    public static final RegistrySupplier<Item> BATTERY_LITHIUM_CELL = ITEMS.register("battery_lithium_cell",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     750000,
@@ -1549,7 +2082,7 @@ public class ModItems {
                     1000
             ));
 
-    public static final RegistryObject<Item> BATTERY_LITHIUM_CELL_3 = ITEMS.register("battery_lithium_cell_3",
+    public static final RegistrySupplier<Item> BATTERY_LITHIUM_CELL_3 = ITEMS.register("battery_lithium_cell_3",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     2250000,
@@ -1557,7 +2090,7 @@ public class ModItems {
                     1000
             ));
 
-    public static final RegistryObject<Item> BATTERY_LITHIUM_CELL_6 = ITEMS.register("battery_lithium_cell_6",
+    public static final RegistrySupplier<Item> BATTERY_LITHIUM_CELL_6 = ITEMS.register("battery_lithium_cell_6",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     4500000,
@@ -1567,7 +2100,7 @@ public class ModItems {
 
 // ========== ШРАБИДИЕВЫЕ БАТАРЕЙКИ (SCHRABIDIUM) - уже есть ==========
 
-    public static final RegistryObject<Item> BATTERY_SCHRABIDIUM_CELL = ITEMS.register("battery_schrabidium_cell",
+    public static final RegistrySupplier<Item> BATTERY_SCHRABIDIUM_CELL = ITEMS.register("battery_schrabidium_cell",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     3000000,
@@ -1575,7 +2108,7 @@ public class ModItems {
                     5000
             ));
 
-    public static final RegistryObject<Item> BATTERY_SCHRABIDIUM_CELL_2 = ITEMS.register("battery_schrabidium_cell_2",
+    public static final RegistrySupplier<Item> BATTERY_SCHRABIDIUM_CELL_2 = ITEMS.register("battery_schrabidium_cell_2",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     6000000,
@@ -1583,7 +2116,7 @@ public class ModItems {
                     5000
             ));
 
-    public static final RegistryObject<Item> BATTERY_SCHRABIDIUM_CELL_4 = ITEMS.register("battery_schrabidium_cell_4",
+    public static final RegistrySupplier<Item> BATTERY_SCHRABIDIUM_CELL_4 = ITEMS.register("battery_schrabidium_cell_4",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     12000000,
@@ -1592,7 +2125,7 @@ public class ModItems {
             ));
 
     // ========== ИСКРОВЫЕ БАТАРЕЙКИ (SPARK) - ЭКСТРЕМАЛЬНЫЕ ==========
-    public static final RegistryObject<Item> BATTERY_SPARK = ITEMS.register("battery_spark",
+    public static final RegistrySupplier<Item> BATTERY_SPARK = ITEMS.register("battery_spark",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     100000000,
@@ -1600,7 +2133,7 @@ public class ModItems {
                     2000000
             ));
 
-    public static final RegistryObject<Item> BATTERY_TRIXITE = ITEMS.register("battery_trixite",
+    public static final RegistrySupplier<Item> BATTERY_TRIXITE = ITEMS.register("battery_trixite",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     5000000,
@@ -1608,7 +2141,7 @@ public class ModItems {
                     200000
             ));
 
-    public static final RegistryObject<Item> BATTERY_SPARK_CELL_6 = ITEMS.register("battery_spark_cell_6",
+    public static final RegistrySupplier<Item> BATTERY_SPARK_CELL_6 = ITEMS.register("battery_spark_cell_6",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     600_000_000L,
@@ -1616,7 +2149,7 @@ public class ModItems {
                     2000000
             ));
 
-    public static final RegistryObject<Item> BATTERY_SPARK_CELL_25 = ITEMS.register("battery_spark_cell_25",
+    public static final RegistrySupplier<Item> BATTERY_SPARK_CELL_25 = ITEMS.register("battery_spark_cell_25",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     2_500_000_000L,
@@ -1624,7 +2157,7 @@ public class ModItems {
                     2000000
             ));
 
-    public static final RegistryObject<Item> BATTERY_SPARK_CELL_100 = ITEMS.register("battery_spark_cell_100",
+    public static final RegistrySupplier<Item> BATTERY_SPARK_CELL_100 = ITEMS.register("battery_spark_cell_100",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     10_000_000_000L,
@@ -1632,7 +2165,7 @@ public class ModItems {
                     2000000
             ));
 
-    public static final RegistryObject<Item> BATTERY_SPARK_CELL_1000 = ITEMS.register("battery_spark_cell_1000",
+    public static final RegistrySupplier<Item> BATTERY_SPARK_CELL_1000 = ITEMS.register("battery_spark_cell_1000",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     100_000_000_000L,
@@ -1640,7 +2173,7 @@ public class ModItems {
                     20000000
             ));
 
-    public static final RegistryObject<Item> BATTERY_SPARK_CELL_2500 = ITEMS.register("battery_spark_cell_2500",
+    public static final RegistrySupplier<Item> BATTERY_SPARK_CELL_2500 = ITEMS.register("battery_spark_cell_2500",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     250_000_000_000L,
@@ -1648,7 +2181,7 @@ public class ModItems {
                     20000000
             ));
 
-    public static final RegistryObject<Item> BATTERY_SPARK_CELL_10000 = ITEMS.register("battery_spark_cell_10000",
+    public static final RegistrySupplier<Item> BATTERY_SPARK_CELL_10000 = ITEMS.register("battery_spark_cell_10000",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     1_000_000_000_000L,
@@ -1656,7 +2189,7 @@ public class ModItems {
                     200000000
             ));
 
-    public static final RegistryObject<Item> BATTERY_SPARK_CELL_POWER = ITEMS.register("battery_spark_cell_power",
+    public static final RegistrySupplier<Item> BATTERY_SPARK_CELL_POWER = ITEMS.register("battery_spark_cell_power",
             () -> new ModBatteryItem(
                     new Item.Properties(),
                     100_000_000_000_000L,
@@ -1665,106 +2198,229 @@ public class ModItems {
             ));
 
 
-    public static final RegistryObject<Item> AIRSTRIKE_TEST = ITEMS.register("airstrike_test",
+    public static final RegistrySupplier<Item> AIRSTRIKE_TEST = ITEMS.register("airstrike_test",
             () -> new AirstrikeItem(new Item.Properties(), AirstrikeType.NORMAL));
-    public static final RegistryObject<Item> AIRSTRIKE_AGENT= ITEMS.register("airstrike_agent",
+    public static final RegistrySupplier<Item> AIRSTRIKE_AGENT= ITEMS.register("airstrike_agent",
             () -> new AirstrikeItem(new Item.Properties(), AirstrikeType.AGENT));
-    public static final RegistryObject<Item> AIRSTRIKE_HEAVY = ITEMS.register("airstrike_heavy",
+    public static final RegistrySupplier<Item> AIRSTRIKE_HEAVY = ITEMS.register("airstrike_heavy",
             () -> new AirstrikeItem(new Item.Properties(), AirstrikeType.HEAVY));
-    public static final RegistryObject<Item> AIRSTRIKE_NUKE = ITEMS.register("airstrike_nuke",
+    public static final RegistrySupplier<Item> AIRSTRIKE_NUKE = ITEMS.register("airstrike_nuke",
             () -> new AirstrikeItem(new Item.Properties(), AirstrikeType.NUKE));
-    public static final RegistryObject<Item> WIRE_RED_COPPER = ITEMS.register("wire_red_copper",
+    public static final RegistrySupplier<Item> WIRE_RED_COPPER = ITEMS.register("wire_red_copper",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> WIRE_ADVANCED_ALLOY = ITEMS.register("wire_advanced_alloy",
+    public static final RegistrySupplier<Item> WIRE_ADVANCED_ALLOY = ITEMS.register("wire_advanced_alloy",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> WIRE_ALUMINIUM = ITEMS.register("wire_aluminium",
+    public static final RegistrySupplier<Item> WIRE_ALUMINIUM = ITEMS.register("wire_aluminium",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> WIRE_COPPER = ITEMS.register("wire_copper",
+    public static final RegistrySupplier<Item> WIRE_COPPER = ITEMS.register("wire_copper",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> WIRE_CARBON = ITEMS.register("wire_carbon",
+    public static final RegistrySupplier<Item> WIRE_CARBON = ITEMS.register("wire_carbon",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> WIRE_FINE = ITEMS.register("wire_fine",
+    public static final RegistrySupplier<Item> WIRE_FINE = ITEMS.register("wire_fine",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> WIRE_GOLD = ITEMS.register("wire_gold",
+    public static final RegistrySupplier<Item> WIRE_GOLD = ITEMS.register("wire_gold",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> WIRE_MAGNETIZED_TUNGSTEN = ITEMS.register("wire_magnetized_tungsten",
+    public static final RegistrySupplier<Item> WIRE_MAGNETIZED_TUNGSTEN = ITEMS.register("wire_magnetized_tungsten",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> WIRE_SCHRABIDIUM = ITEMS.register("wire_schrabidium",
+    public static final RegistrySupplier<Item> WIRE_SCHRABIDIUM = ITEMS.register("wire_schrabidium",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> WIRE_TUNGSTEN = ITEMS.register("wire_tungsten",
+    public static final RegistrySupplier<Item> WIRE_TUNGSTEN = ITEMS.register("wire_tungsten",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_IRON = ITEMS.register("wire_iron",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_STEEL = ITEMS.register("wire_steel",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_TITANIUM = ITEMS.register("wire_titanium",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_SATURNITE = ITEMS.register("wire_saturnite",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRE_COMBINE_STEEL = ITEMS.register("wire_combine_steel",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> SCREWDRIVER = ITEMS.register("screwdriver",
+    public static final RegistrySupplier<Item> SAT_HEAD_LASER = ITEMS.register("sat_head_laser",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAT_BASE = ITEMS.register("sat_base",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAT_LASER = ITEMS.register("sat_laser",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAT_HEAD_RADAR = ITEMS.register("sat_head_radar",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAT_RADAR = ITEMS.register("sat_radar",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAT_HEAD_MAPPER = ITEMS.register("sat_head_mapper",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAT_MAPPER = ITEMS.register("sat_mapper",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAT_HEAD_RESONATOR = ITEMS.register("sat_head_resonator",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAT_RESONATOR = ITEMS.register("sat_resonator",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> THRUSTER_LARGE         = ITEMS.register("thruster_large",         () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> FUEL_TANK_LARGE        = ITEMS.register("fuel_tank_large",        () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WARHEAD_NUCLEAR        = ITEMS.register("warhead_nuclear",        () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> MISSILE_ASSEMBLY           = ITEMS.register("missile_assembly",           () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> INGOT_TUNGSTEN_CARBIDE     = ITEMS.register("ingot_tungsten_carbide",     () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> INGOT_HIGHSPEED_STEEL      = ITEMS.register("ingot_highspeed_steel",      () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> NEUTRON_REFLECTOR          = ITEMS.register("neutron_reflector",          () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WARHEAD_GENERIC_SMALL      = ITEMS.register("warhead_generic_small",      () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WARHEAD_CLUSTER_LARGE      = ITEMS.register("warhead_cluster_large",      () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WARHEAD_INCENDIARY_MEDIUM  = ITEMS.register("warhead_incendiary_medium",  () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WARHEAD_BUSTER_SMALL       = ITEMS.register("warhead_buster_small",       () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> THRUSTER_SMALL          = ITEMS.register("thruster_small",          () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> FUEL_TANK_SMALL         = ITEMS.register("fuel_tank_small",         () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WARHEAD_CLUSTER_SMALL      = ITEMS.register("warhead_cluster_small",      () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WARHEAD_INCENDIARY_SMALL   = ITEMS.register("warhead_incendiary_small",   () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> LOW_DENSITY_ELEMENT     = ITEMS.register("low_density_element",     () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> THRUSTER_MEDIUM         = ITEMS.register("thruster_medium",         () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> FUEL_TANK_MEDIUM        = ITEMS.register("fuel_tank_medium",        () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WARHEAD_GENERIC_MEDIUM  = ITEMS.register("warhead_generic_medium",  () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WARHEAD_GENERIC_LARGE   = ITEMS.register("warhead_generic_large",   () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WARHEAD_BUSTER_LARGE    = ITEMS.register("warhead_buster_large",    () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WARHEAD_MIRV            = ITEMS.register("warhead_mirv",            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WARHEAD_VOLCANO         = ITEMS.register("warhead_volcano",         () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WARHEAD_BUSTER_MEDIUM   = ITEMS.register("warhead_buster_medium",   () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WARHEAD_CLUSTER_MEDIUM  = ITEMS.register("warhead_cluster_medium",  () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> SCREWDRIVER = ITEMS.register("screwdriver",
             () -> new ScrewdriverItem(new Item.Properties().stacksTo(1)));
 
 	// Медленный источник (500 mB/t)
-	public static final RegistryObject<Item> INFINITE_WATER_500 = ITEMS.register("inf_water",
-					() -> new InfiniteWaterItem(new Item.Properties().stacksTo(1), 500));
+	public static final RegistrySupplier<Item> INFINITE_WATER_500 = ITEMS.register("inf_water",
+					() -> new InfiniteFluidItem(new Item.Properties().stacksTo(1), net.minecraft.world.level.material.Fluids.WATER, 500));
 
 	// Быстрый источник (5000 mB/t)
-	public static final RegistryObject<Item> INFINITE_WATER_5000 = ITEMS.register("inf_water_mk2",
-            () -> new InfiniteWaterItem(new Item.Properties().stacksTo(1), 5000));
+	public static final RegistrySupplier<Item> INFINITE_WATER_5000 = ITEMS.register("inf_water_mk2",
+            () -> new InfiniteFluidItem(new Item.Properties().stacksTo(1), net.minecraft.world.level.material.Fluids.WATER, 5000));
 
     // Fluid Barrel - 16,000 mB capacity portable fluid container
-    public static final RegistryObject<Item> FLUID_BARREL = ITEMS.register("fluid_barrel",
+    public static final RegistrySupplier<Item> FLUID_BARREL = ITEMS.register("fluid_barrel",
             () -> new FluidBarrelItem(new Item.Properties()));
 
     // Universal infinite fluid source (any fluid type, 1B mB/t - like 1.7.10 fluid_barrel_infinite)
-    public static final RegistryObject<Item> FLUID_BARREL_INFINITE = ITEMS.register("fluid_barrel_infinite",
+    public static final RegistrySupplier<Item> FLUID_BARREL_INFINITE = ITEMS.register("fluid_barrel_infinite",
             () -> new InfiniteFluidItem(new Item.Properties().stacksTo(1), 1_000_000_000));
 
+
     // Universal fluid identifier - two fluid slots, Shift+RMB opens selection GUI
-    public static final RegistryObject<Item> FLUID_IDENTIFIER = ITEMS.register("fluid_identifier",
+    public static final RegistrySupplier<Item> FLUID_IDENTIFIER = ITEMS.register("fluid_identifier",
             () -> new FluidIdentifierItem(new Item.Properties().stacksTo(1)));
 
     // Mineral Pipes - individual pipe items per mineral, all using pipe.png with color tinting
-    public static final RegistryObject<Item> PIPE_IRON = ITEMS.register("pipe_iron",
+    public static final RegistrySupplier<Item> PIPE_IRON = ITEMS.register("pipe_iron",
             () -> new MineralPipeItem(new Item.Properties(), 0xD8D8D8));
-    public static final RegistryObject<Item> PIPE_COPPER = ITEMS.register("pipe_copper",
+    public static final RegistrySupplier<Item> PIPE_COPPER = ITEMS.register("pipe_copper",
             () -> new MineralPipeItem(new Item.Properties(), 0xE77C56));
-    public static final RegistryObject<Item> PIPE_GOLD = ITEMS.register("pipe_gold",
+    public static final RegistrySupplier<Item> PIPE_GOLD = ITEMS.register("pipe_gold",
             () -> new MineralPipeItem(new Item.Properties(), 0xFCEE4B));
-    public static final RegistryObject<Item> PIPE_LEAD = ITEMS.register("pipe_lead",
+    public static final RegistrySupplier<Item> PIPE_LEAD = ITEMS.register("pipe_lead",
             () -> new MineralPipeItem(new Item.Properties(), 0x414166));
-    public static final RegistryObject<Item> PIPE_STEEL = ITEMS.register("pipe_steel",
+    public static final RegistrySupplier<Item> PIPE_STEEL = ITEMS.register("pipe_steel",
             () -> new MineralPipeItem(new Item.Properties(), 0x767676));
-    public static final RegistryObject<Item> PIPE_TUNGSTEN = ITEMS.register("pipe_tungsten",
+    public static final RegistrySupplier<Item> PIPE_TUNGSTEN = ITEMS.register("pipe_tungsten",
             () -> new MineralPipeItem(new Item.Properties(), 0x3D3D3D));
-    public static final RegistryObject<Item> PIPE_TITANIUM = ITEMS.register("pipe_titanium",
+    public static final RegistrySupplier<Item> PIPE_TITANIUM = ITEMS.register("pipe_titanium",
             () -> new MineralPipeItem(new Item.Properties(), 0x8DC5E2));
-    public static final RegistryObject<Item> PIPE_ALUMINUM = ITEMS.register("pipe_aluminum",
+    public static final RegistrySupplier<Item> PIPE_ALUMINUM = ITEMS.register("pipe_aluminum",
             () -> new MineralPipeItem(new Item.Properties(), 0xC5C5DE));
+    public static final RegistrySupplier<Item> PIPE_DURA_STEEL = ITEMS.register("pipe_dura_steel",
+            () -> new MineralPipeItem(new Item.Properties(), 0x82A59C));
 
     // Fluid Duct - pipe per fluid type, overlay tinted with fluid color (like fluid barrel)
-    public static final RegistryObject<Item> FLUID_DUCT = ITEMS.register("fluid_duct",
+    public static final RegistrySupplier<Item> FLUID_DUCT = ITEMS.register("fluid_duct",
             () -> new FluidDuctItem(new Item.Properties(), ModBlocks.FLUID_DUCT,
                     "item.hbm_m.fluid_duct", "item.hbm_m.fluid_duct.empty"));
-    public static final RegistryObject<Item> FLUID_DUCT_COLORED = ITEMS.register("fluid_duct_colored",
+    public static final RegistrySupplier<Item> FLUID_DUCT_COLORED = ITEMS.register("fluid_duct_colored",
             () -> new FluidDuctItem(new Item.Properties(), ModBlocks.FLUID_DUCT_COLORED,
                     "item.hbm_m.fluid_duct_colored", "item.hbm_m.fluid_duct_colored.empty"));
-    public static final RegistryObject<Item> FLUID_DUCT_SILVER = ITEMS.register("fluid_duct_silver",
+    public static final RegistrySupplier<Item> FLUID_DUCT_SILVER = ITEMS.register("fluid_duct_silver",
             () -> new FluidDuctItem(new Item.Properties(), ModBlocks.FLUID_DUCT_SILVER,
                     "item.hbm_m.fluid_duct_silver", "item.hbm_m.fluid_duct_silver.empty"));
 
-    public static final RegistryObject<Item> FLUID_VALVE = ITEMS.register("fluid_valve",
+    public static final RegistrySupplier<Item> FLUID_VALVE = ITEMS.register("fluid_valve",
             () -> new BlockItem(ModBlocks.FLUID_VALVE.get(), new Item.Properties()));
-    public static final RegistryObject<Item> FLUID_PUMP = ITEMS.register("fluid_pump",
+    public static final RegistrySupplier<Item> FLUID_PUMP = ITEMS.register("fluid_pump",
             () -> new BlockItem(ModBlocks.FLUID_PUMP.get(), new Item.Properties()));
-    public static final RegistryObject<Item> FLUID_EXHAUST = ITEMS.register("fluid_exhaust",
+    public static final RegistrySupplier<Item> FLUID_EXHAUST = ITEMS.register("fluid_exhaust",
             () -> new BlockItem(ModBlocks.FLUID_EXHAUST.get(), new Item.Properties()));
 
     //=============================== ВЁДРА ДЛЯ ЖИДКОСТЕЙ ===============================//
 
-    public static final RegistryObject<Item> CRUDE_OIL_BUCKET = ITEMS.register("bucket_crude_oil",
-            () -> new BucketItem(
-                    () -> ModFluids.CRUDE_OIL.source.get(),
-                    new Item.Properties()
-                            .craftRemainder(Items.BUCKET)
-                            .stacksTo(1)));
+//    public static final RegistrySupplier<Item> CRUDE_OIL_BUCKET = ITEMS.register("bucket_crude_oil",
+//            () -> new BucketItem(
+//                    () -> ModFluids.CRUDE_OIL.source.get(),
+//                    new Item.Properties()
+//                            .craftRemainder(Items.BUCKET)
+//                            .stacksTo(1)));
 
 
-    // Метод для регистрации всех предметов, вызывается в основном классе мода.
-    public static void register(IEventBus eventBus) {
-        ITEMS.register(eventBus);
+    // ─── RBMK Items ──────────────────────────────────────────────────────────
+
+    public static final RegistrySupplier<Item> RBMK_LID = ITEMS.register("rbmk_lid",
+            () -> new RBMKLidItem(1, new Item.Properties()));
+
+    public static final RegistrySupplier<Item> RBMK_LID_GLASS = ITEMS.register("rbmk_lid_glass",
+            () -> new RBMKLidItem(2, new Item.Properties()));
+
+    // Pellets
+    public static final RegistrySupplier<Item> RBMK_PELLET_LEU235 = ITEMS.register("rbmk_pellet_leu235",
+            () -> new RBMKPelletItem(new Item.Properties())
+                    .setFullName("Low-Enriched Uranium-235").setYield(250_000).setReactivity(80)
+                    .setHeat(1.8).setMeltingPoint(1000).setTint(0x4a6a1a));
+
+    public static final RegistrySupplier<Item> RBMK_PELLET_HEU235 = ITEMS.register("rbmk_pellet_heu235",
+            () -> new RBMKPelletItem(new Item.Properties())
+                    .setFullName("High-Enriched Uranium-235").setYield(125_000).setReactivity(200)
+                    .setHeat(2.0).setMeltingPoint(1000).setTint(0x6e901e));
+
+    public static final RegistrySupplier<Item> RBMK_PELLET_LEP = ITEMS.register("rbmk_pellet_lep",
+            () -> new RBMKPelletItem(new Item.Properties())
+                    .setFullName("Low-Enriched Plutonium").setYield(225_000).setReactivity(100)
+                    .setHeat(2.2).setMeltingPoint(975).setTint(0x7c2a12)
+                    .setNeutronTypes(NType.FAST, NType.FAST));
+
+    public static final RegistrySupplier<Item> RBMK_PELLET_HEP = ITEMS.register("rbmk_pellet_hep239",
+            () -> new RBMKPelletItem(new Item.Properties())
+                    .setFullName("High-Enriched Plutonium-239").setYield(100_000).setReactivity(225)
+                    .setHeat(2.5).setMeltingPoint(975).setTint(0xa03318)
+                    .setNeutronTypes(NType.FAST, NType.FAST));
+
+    public static final RegistrySupplier<Item> RBMK_PELLET_MOX = ITEMS.register("rbmk_pellet_mox",
+            () -> new RBMKPelletItem(new Item.Properties())
+                    .setFullName("Mixed Oxide Fuel").setYield(200_000).setReactivity(130)
+                    .setHeat(2.1).setMeltingPoint(1000).setTint(0x604018)
+                    .setNeutronTypes(NType.ANY, NType.FAST));
+
+    // Fuel Rods (assembled from pellets)
+    public static final RegistrySupplier<Item> RBMK_FUEL_LEU235 = ITEMS.register("rbmk_fuel_leu235",
+            () -> new RBMKRodItem("Low-Enriched Uranium-235 Rod", new Item.Properties())
+                    .setYield(250_000).setStats(80).setHeat(1.8).setMeltingPoint(1000)
+                    .setDiffusion(0.02).setTint(0x4a6a1a));
+
+    public static final RegistrySupplier<Item> RBMK_FUEL_HEU235 = ITEMS.register("rbmk_fuel_heu235",
+            () -> new RBMKRodItem("High-Enriched Uranium-235 Rod", new Item.Properties())
+                    .setYield(125_000).setStats(200).setHeat(2.0).setMeltingPoint(1100)
+                    .setDiffusion(0.025).setTint(0x6e901e));
+
+    public static final RegistrySupplier<Item> RBMK_FUEL_LEP = ITEMS.register("rbmk_fuel_lep",
+            () -> new RBMKRodItem("Low-Enriched Plutonium Rod", new Item.Properties())
+                    .setYield(225_000).setStats(100).setHeat(2.2).setMeltingPoint(975)
+                    .setDiffusion(0.02).setTint(0x7c2a12).setNeutronTypes(NType.FAST, NType.FAST));
+
+    public static final RegistrySupplier<Item> RBMK_FUEL_HEP = ITEMS.register("rbmk_fuel_hep239",
+            () -> new RBMKRodItem("High-Enriched Plutonium-239 Rod", new Item.Properties())
+                    .setYield(100_000).setStats(225).setHeat(2.5).setMeltingPoint(975)
+                    .setDiffusion(0.025).setTint(0xa03318).setNeutronTypes(NType.FAST, NType.FAST));
+
+    public static final RegistrySupplier<Item> RBMK_FUEL_MOX = ITEMS.register("rbmk_fuel_mox",
+            () -> new RBMKRodItem("Mixed Oxide Fuel Rod", new Item.Properties())
+                    .setYield(200_000).setStats(130).setHeat(2.1).setMeltingPoint(1000)
+                    .setDiffusion(0.02).setTint(0x604018).setNeutronTypes(NType.ANY, NType.FAST));
+
+    public static final RegistrySupplier<Item> RBMK_FUEL_EMPTY = ITEMS.register("rbmk_fuel_empty",
+            () -> new Item(new Item.Properties()));
+
+    public static void init() {
+        ITEMS.register();
     }
 }

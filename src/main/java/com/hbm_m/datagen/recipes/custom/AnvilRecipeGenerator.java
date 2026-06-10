@@ -1,5 +1,5 @@
 package com.hbm_m.datagen.recipes.custom;
-
+//? if forge {
 import java.util.function.Consumer;
 
 import com.hbm_m.block.ModBlocks;
@@ -15,7 +15,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.registries.RegistryObject;
+import dev.architectury.registry.registries.RegistrySupplier;
+import dev.architectury.registry.registries.RegistrySupplier;
 
 public final class AnvilRecipeGenerator {
     private AnvilRecipeGenerator() { }
@@ -137,6 +138,20 @@ public final class AnvilRecipeGenerator {
                 stack(Items.STONE_BRICKS, 4 ),
                 stack(ModItems.FIREBRICK, 4 ));
 
+        registerInventoryRecipe(writer, "steel", "heating_oven",
+                AnvilTier.STEEL,
+                stack(ModBlocks.HEATING_OVEN),
+                stack(Items.BRICK, 16),
+                stack(ModItems.PLATE_STEEL, 4),
+                stack(Items.COPPER_INGOT, 8));
+
+        registerInventoryRecipe(writer, "steel", "7crucible",
+                AnvilTier.STEEL,
+                stack(ModBlocks.CRUCIBLE),
+                stack(ModItems.FIREBRICK, 20),
+                stack(Items.COPPER_INGOT, 8),
+                stack(ModItems.PLATE_STEEL, 8));
+
         registerInventoryRecipe(writer, "steel", "8advanced_assemble_machine",
                 AnvilTier.STEEL,
                 stack(ModBlocks.ADVANCED_ASSEMBLY_MACHINE),
@@ -144,6 +159,15 @@ public final class AnvilRecipeGenerator {
                 stack(ModItems.getIngot(ModIngots.STEEL).get(), 8),
                 stack(ModItems.MOTOR, 2 ),
                 stack(ModItems.VACUUM_TUBE, 4 ));
+
+        registerInventoryRecipe(writer, "steel", "9arc_welder",
+                AnvilTier.STEEL,
+                stack(ModBlocks.ARC_WELDER),
+                stack(ModItems.PLATE_CAST_STEEL, 4),
+                stack(ModItems.getIngot(ModIngots.TUNGSTEN).get(), 8),
+                stack(ModItems.BOLT_STEEL, 16),
+                stack(ModBlocks.getIngotBlock(ModIngots.STEEL).get(), 2),
+                stack(ModItems.WIRE_COPPER, 32));
 
     }
 
@@ -191,11 +215,16 @@ public final class AnvilRecipeGenerator {
                         .addOutput(stack(ModItems.VACUUM_TUBE), 0.5F)
                         .addOutput(stack(ModItems.MICROCHIP), 0.1F));
 
-        registerDisassemblyRecipe(writer, "steel", "cabinet_breakdown",
-                AnvilTier.STEEL,
+        registerDisassemblyRecipe(writer, "iron", "cabinet_breakdown",
+                AnvilTier.IRON,
                 stack(ModBlocks.FILE_CABINET),
-                stack(ModItems.PLATE_STEEL, 4),
-                builder -> builder.addOutput(stack(ModItems.DUST), 1.0F));
+                stack(ModItems.PLATE_STEEL, 2),
+                builder -> builder.addOutput(stack(ModItems.DUST), 1.0F)
+                        .addOutput(stack(ModItems.PLATE_STEEL), 0.5F)
+                        .addOutput(stack(ModItems.PLATE_STEEL), 0.5F)
+                        .addOutput(stack(ModItems.INSULATOR), 0.25F)
+                        .addOutput(stack(ModItems.INSULATOR), 0.25F)
+                        .addOutput(stack(ModItems.SCRAP), 1F));
 
         registerDisassemblyRecipe(writer, "steel", "toaster_breakdown",
                 AnvilTier.STEEL,
@@ -210,6 +239,7 @@ public final class AnvilRecipeGenerator {
                 stack(ModItems.CANNED_JIZZ, 1),
                 builder -> builder
                         .addOutput(stack(ModItems.CANNED_ASBESTOS), 0.5F));
+
     }
 
     /**
@@ -268,13 +298,26 @@ public final class AnvilRecipeGenerator {
     }
 
     private static ResourceLocation anvilId(String tierFolder, String category, String name) {
-        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID,
+        //? if fabric && < 1.21.1 {
+        /*return new ResourceLocation(RefStrings.MODID,
                 "anvil/" + tierFolder + "/" + category + "_" + name);
+        *///?} else {
+                return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID,
+                "anvil/" + tierFolder + "/" + category + "_" + name);
+        //?}
+
     }
 
     private static ItemStack stack(Object obj, int count) {
-        if (obj instanceof RegistryObject<?>) {
-            Object val = ((RegistryObject<?>) obj).get();
+        if (obj instanceof RegistrySupplier<?>) {
+            Object val = ((RegistrySupplier<?>) obj).get();
+            if (val instanceof Item) {
+                return new ItemStack((Item) val, count);
+            } else if (val instanceof Block) {
+                return new ItemStack(((Block) val).asItem(), count);
+            }
+        } else if (obj instanceof RegistrySupplier<?>) {
+            Object val = ((RegistrySupplier<?>) obj).get();
             if (val instanceof Item) {
                 return new ItemStack((Item) val, count);
             } else if (val instanceof Block) {
@@ -291,7 +334,5 @@ public final class AnvilRecipeGenerator {
     private static ItemStack stack(Object obj) {
         return stack(obj, 1);
     }
-
-
 }
-
+//?}

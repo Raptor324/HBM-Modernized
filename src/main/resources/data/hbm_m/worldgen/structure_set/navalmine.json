@@ -1,0 +1,14 @@
+{
+  "structures": [
+    {
+      "weight": 1,
+      "structure": "hbm_m:navalmine"
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "separation": 5,
+    "spacing": 15,
+    "salt": 9999777344
+  }
+}

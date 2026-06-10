@@ -1,17 +1,21 @@
 package com.hbm_m.network.packets;
 
+import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.network.S2CPacket;
+
+import dev.architectury.networking.NetworkManager.PacketContext;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.NetworkEvent;
 
-import java.util.function.Supplier;
-
-
-// Пакет для синхронизации dash движения силовой брони
-
-public class PowerArmorDashPacket {
+/**
+ * S2C пакет: синхронизация dash-движения силовой брони.
+ * Сервер отправляет всем клиентам вокруг, чтобы те обновили deltaMovement игрока.
+ */
+public class PowerArmorDashPacket implements S2CPacket {
 
     private final int playerId;
     private final Vec3 velocity;
@@ -21,37 +25,48 @@ public class PowerArmorDashPacket {
         this.velocity = velocity;
     }
 
-    public PowerArmorDashPacket(FriendlyByteBuf buf) {
-        this.playerId = buf.readInt();
-        this.velocity = new Vec3(buf.readDouble(), buf.readDouble(), buf.readDouble());
+    // ── Serialization ─────────────────────────────────────────────────────────
+
+    public static PowerArmorDashPacket decode(FriendlyByteBuf buf) {
+        int   id  = buf.readInt();
+        Vec3  vel = new Vec3(buf.readDouble(), buf.readDouble(), buf.readDouble());
+        return new PowerArmorDashPacket(id, vel);
     }
 
-    public void toBytes(FriendlyByteBuf buf) {
+    @Override
+    public void write(FriendlyByteBuf buf) {
         buf.writeInt(playerId);
         buf.writeDouble(velocity.x);
         buf.writeDouble(velocity.y);
         buf.writeDouble(velocity.z);
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            // Обработка на клиенте
-            if (ctx.get().getDirection().getReceptionSide().isClient()) {
-                handleClient();
+    // ── Handler ───────────────────────────────────────────────────────────────
+
+    public static void handle(PowerArmorDashPacket msg, PacketContext context) {
+        context.queue(() -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level == null) return;
+
+            net.minecraft.world.entity.Entity entity = mc.level.getEntity(msg.playerId);
+            if (entity instanceof Player player && player != mc.player) {
+                // Применяем импульс только к другим игрокам (не к локальному)
+                player.setDeltaMovement(msg.velocity);
             }
         });
-        ctx.get().setPacketHandled(true);
     }
 
-    private void handleClient() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) return;
+    // ── Send helper ───────────────────────────────────────────────────────────
 
-        Player player = (Player) mc.level.getEntity(playerId);
-        if (player != null && player != mc.player) {
-            // Применяем движение к игроку (кроме локального игрока)
-            player.setDeltaMovement(velocity);
+    /**
+     * Отправить импульс всем игрокам в радиусе от источника.
+     * Вызывается с серверной стороны.
+     */
+    public static void sendToAll(net.minecraft.server.MinecraftServer server,
+                                 int playerId, Vec3 velocity) {
+        PowerArmorDashPacket packet = new PowerArmorDashPacket(playerId, velocity);
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            ModPacketHandler.sendToPlayer(player, ModPacketHandler.POWER_ARMOR_DASH, packet);
         }
     }
 }
-

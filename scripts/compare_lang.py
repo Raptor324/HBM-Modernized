@@ -1,7 +1,6 @@
 import re
 import os
 
-# Путь к вашему файлу
 FILE_PATH = 'src\main\java\com\hbm_m\datagen\ModLanguageProvider.java'
 
 def parse_keys(block_content):

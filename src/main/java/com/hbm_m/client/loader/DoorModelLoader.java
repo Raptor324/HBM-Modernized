@@ -17,7 +17,6 @@ public class DoorModelLoader extends AbstractObjPartModelLoader<DoorBakedModel> 
         "frame", "doorLeft", "doorRight"
     );
     
-    @Override
     protected Set<String> getPartNames(JsonObject jsonObject) {
         // Читаем части из JSON если есть
         if (jsonObject.has("parts")) {
@@ -32,7 +31,6 @@ public class DoorModelLoader extends AbstractObjPartModelLoader<DoorBakedModel> 
         return DEFAULT_PART_NAMES;
     }
     
-    @Override
     protected DoorBakedModel createBakedModel(HashMap<String, BakedModel> bakedParts, 
                                                ItemTransforms transforms,
                                                ResourceLocation modelLocation) {

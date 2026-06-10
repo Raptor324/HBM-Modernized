@@ -5,7 +5,9 @@ import java.util.Map;
 
 import com.hbm_m.api.network.INetworkProvider;
 
+import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 
 /**
  * Фабрика FluidNet, привязанная к конкретному типу жидкости.
@@ -23,11 +25,38 @@ public class FluidNetProvider implements INetworkProvider<FluidNet> {
     }
 
     /**
+     * Канонизация ключа сети.
+     *
+     * Важно: {@link com.hbm_m.api.network.UniNodespace.NodeKey} сравнивает {@link INetworkProvider} по identity,
+     * поэтому для \"эквивалентных\" жидкостей (vanilla вода/лава vs HBM варианты, source vs flowing)
+     * мы должны возвращать один и тот же ключ.
+     */
+    private static Fluid canonicalize(Fluid fluid) {
+        if (fluid == null) return null;
+
+        // Source/flowing должны жить в одной сети.
+        if (fluid instanceof FlowingFluid flowing) {
+            fluid = flowing.getSource();
+        }
+
+        // Вода/лава: объединяем vanilla и HBM варианты в один net-key.
+        if (VanillaFluidEquivalence.isWater(fluid)) {
+            return Fluids.WATER;
+        }
+        if (VanillaFluidEquivalence.isLava(fluid)) {
+            return Fluids.LAVA;
+        }
+
+        return fluid;
+    }
+
+    /**
      * Получить или создать провайдер для данного типа жидкости.
      * Возвращает один и тот же объект при одинаковом Fluid — это ключ для NodeKey.
      */
     public static FluidNetProvider forFluid(Fluid fluid) {
-        return PROVIDERS.computeIfAbsent(fluid, FluidNetProvider::new);
+        Fluid key = canonicalize(fluid);
+        return PROVIDERS.computeIfAbsent(key, FluidNetProvider::new);
     }
 
     /** Очистка при остановке сервера (опционально, для корректного GC). */

@@ -1,19 +1,19 @@
 package com.hbm_m.network;
 
-import com.hbm_m.particle.ModExplosionParticles;
+import com.hbm_m.network.S2CPacket;
+
+import dev.architectury.networking.NetworkManager.PacketContext;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleType;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.server.level.ServerPlayer;
 
-import java.util.function.Supplier;
+public class SpawnAlwaysVisibleParticlePacket implements S2CPacket {
 
-public class SpawnAlwaysVisibleParticlePacket {
     private final ResourceLocation particleTypeId;
     private final double x, y, z;
     private final double xSpeed, ySpeed, zSpeed;
@@ -21,7 +21,7 @@ public class SpawnAlwaysVisibleParticlePacket {
     public SpawnAlwaysVisibleParticlePacket(ParticleType<?> particleType,
                                             double x, double y, double z,
                                             double xSpeed, double ySpeed, double zSpeed) {
-        this.particleTypeId = ForgeRegistries.PARTICLE_TYPES.getKey(particleType);
+        this.particleTypeId = BuiltInRegistries.PARTICLE_TYPE.getKey(particleType);
         this.x = x;
         this.y = y;
         this.z = z;
@@ -30,17 +30,23 @@ public class SpawnAlwaysVisibleParticlePacket {
         this.zSpeed = zSpeed;
     }
 
-    public SpawnAlwaysVisibleParticlePacket(FriendlyByteBuf buf) {
-        this.particleTypeId = buf.readResourceLocation();
-        this.x = buf.readDouble();
-        this.y = buf.readDouble();
-        this.z = buf.readDouble();
-        this.xSpeed = buf.readDouble();
-        this.ySpeed = buf.readDouble();
-        this.zSpeed = buf.readDouble();
+    // ── Serialization ─────────────────────────────────────────────────────────
+
+    public static SpawnAlwaysVisibleParticlePacket decode(FriendlyByteBuf buf) {
+        ResourceLocation typeId = buf.readResourceLocation();
+        double x      = buf.readDouble();
+        double y      = buf.readDouble();
+        double z      = buf.readDouble();
+        double xSpeed = buf.readDouble();
+        double ySpeed = buf.readDouble();
+        double zSpeed = buf.readDouble();
+
+        ParticleType<?> type = BuiltInRegistries.PARTICLE_TYPE.get(typeId);
+        return new SpawnAlwaysVisibleParticlePacket(type, x, y, z, xSpeed, ySpeed, zSpeed);
     }
 
-    public void encode(FriendlyByteBuf buf) {
+    @Override
+    public void write(FriendlyByteBuf buf) {
         buf.writeResourceLocation(particleTypeId);
         buf.writeDouble(x);
         buf.writeDouble(y);
@@ -50,20 +56,32 @@ public class SpawnAlwaysVisibleParticlePacket {
         buf.writeDouble(zSpeed);
     }
 
-    public void handle(Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-                ParticleType<?> particleType = ForgeRegistries.PARTICLE_TYPES.getValue(particleTypeId);
-                if (particleType != null && Minecraft.getInstance().level != null) {
-                    // КЛЮЧЕВОЙ МОМЕНТ: используем addAlwaysVisibleParticle
-                    Minecraft.getInstance().level.addAlwaysVisibleParticle(
-                            (ParticleOptions) particleType,
-                            x, y, z,
-                            xSpeed, ySpeed, zSpeed
-                    );
-                }
-            });
+    // ── Handler ───────────────────────────────────────────────────────────────
+
+    public static void handle(SpawnAlwaysVisibleParticlePacket msg, PacketContext context) {
+        context.queue(() -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level == null) return;
+
+            ParticleType<?> particleType = BuiltInRegistries.PARTICLE_TYPE.get(msg.particleTypeId);
+            if (particleType != null) {
+                mc.level.addAlwaysVisibleParticle(
+                        (ParticleOptions) particleType,
+                        msg.x, msg.y, msg.z,
+                        msg.xSpeed, msg.ySpeed, msg.zSpeed
+                );
+            }
         });
-        ctx.get().setPacketHandled(true);
+    }
+
+    // ── Send helper ───────────────────────────────────────────────────────────
+
+    public static void sendTo(ServerPlayer player, ParticleType<?> type,
+                              double x, double y, double z,
+                              double xSpeed, double ySpeed, double zSpeed) {
+        // Нужен ID в ModPacketHandler:
+        // public static final ResourceLocation SPAWN_PARTICLE = id("spawn_particle");
+        ModPacketHandler.sendToPlayer(player, ModPacketHandler.SPAWN_PARTICLE,
+                new SpawnAlwaysVisibleParticlePacket(type, x, y, z, xSpeed, ySpeed, zSpeed));
     }
 }

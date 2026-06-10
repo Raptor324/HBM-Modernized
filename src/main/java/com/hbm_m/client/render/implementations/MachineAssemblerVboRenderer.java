@@ -1,21 +1,30 @@
 package com.hbm_m.client.render.implementations;
 
+
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?}
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 import com.hbm_m.client.model.MachineAssemblerBakedModel;
-import com.hbm_m.client.render.GlobalMeshCache;
-import com.hbm_m.client.render.SingleMeshVboRenderer;
+import com.hbm_m.client.render.MeshRenderCache;
 import com.mojang.blaze3d.vertex.PoseStack;
 
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+*///?}
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public class MachineAssemblerVboRenderer {
 
     private static final String BODY = "Body";
@@ -30,7 +39,7 @@ public class MachineAssemblerVboRenderer {
                                  @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
         BakedModel part = model.getPart(BODY);
         if (part != null) {
-            var r = GlobalMeshCache.getOrCreateRenderer("assembler_legacy_" + BODY, part);
+            var r = MeshRenderCache.getOrCreateRenderer("assembler_legacy_" + BODY, part);
             if (r != null) r.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);
         }
     }
@@ -44,9 +53,10 @@ public class MachineAssemblerVboRenderer {
             if (transform != null) {
                 poseStack.last().pose().mul(transform);
             }
-            var r = GlobalMeshCache.getOrCreateRenderer("assembler_legacy_" + partName, part);
+            var r = MeshRenderCache.getOrCreateRenderer("assembler_legacy_" + partName, part);
             if (r != null) r.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);
             poseStack.popPose();
         }
     }
 }
+

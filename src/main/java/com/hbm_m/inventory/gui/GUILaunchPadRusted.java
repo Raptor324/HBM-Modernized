@@ -21,7 +21,12 @@ import net.minecraft.world.entity.player.Inventory;
 public class GUILaunchPadRusted extends GuiInfoScreen<LaunchPadRustedMenu> {
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/weapon/gui_launch_pad_rusted.png");
+            //? if fabric && < 1.21.1 {
+            /*new ResourceLocation(RefStrings.MODID, "textures/gui/weapon/gui_launch_pad_rusted.png");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/weapon/gui_launch_pad_rusted.png");
+            //?}
+
 
     public GUILaunchPadRusted(LaunchPadRustedMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);

@@ -60,8 +60,8 @@ public final class BlockExplosionDefense {
         // Base “blast power” with a bit of randomness to avoid perfect spheres.
         float blastPower = (20F + random.nextFloat() * 10F) * falloff;
 
-        // Vanilla-like resistance metric; capped to keep values sane.
-        float resistance = Math.min(state.getExplosionResistance(level, pos, null), 100F);
+        // Сопротивление взрыву блока (1.20.x: через Block, без BlockState#getExplosionResistance(Level,...)).
+        float resistance = Math.min(state.getBlock().getExplosionResistance(), 100F);
 
         boolean shouldBreak = blastPower > resistance;
         return new ExplosionDefenseResult(shouldBreak, blastPower, resistance);

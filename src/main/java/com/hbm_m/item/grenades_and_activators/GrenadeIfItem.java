@@ -2,7 +2,7 @@ package com.hbm_m.item.grenades_and_activators; // Замените на ваш 
 
 import java.util.List;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.entity.grenades.GrenadeIfProjectileEntity;
 import com.hbm_m.entity.grenades.GrenadeIfType;
@@ -20,14 +20,16 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.registries.RegistryObject;
+
+import dev.architectury.registry.registries.RegistrySupplier;
 
 
 public class GrenadeIfItem extends Item {
 
     private final GrenadeIfType grenadeType;
 
-    public GrenadeIfItem(Properties properties, GrenadeIfType grenadeIf, RegistryObject<EntityType<GrenadeIfProjectileEntity>> grenadeType) {
+    @SuppressWarnings("unused")
+    public GrenadeIfItem(Properties properties, GrenadeIfType grenadeIf, RegistrySupplier<EntityType<GrenadeIfProjectileEntity>> grenadeType) {
         super(properties);
         this.grenadeType = grenadeIf;
 

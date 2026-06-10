@@ -1,3 +1,4 @@
+
 package com.hbm_m.client.render.shader;
 
 import java.lang.invoke.MethodHandle;
@@ -6,28 +7,28 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 
 import com.hbm_m.main.MainRegistry;
-
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.ModList;
+//?}
+
+//? if fabric {
+/*import dev.architectury.platform.Platform;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+*///?}
 
 /**
  * Try-with-resources scope helper that calls
  * {@code WorldRenderingPipeline.setPhase(WorldRenderingPhase.<phase>)} on entry
- * and restores {@code WorldRenderingPhase.NONE} on close. Pack-aware effects
- * (per-block-entity normal maps, SSAO masking, etc.) read this phase to apply
- * the right pass logic.
- * <p>
- * If Iris is not loaded or the reflection lookup fails, this guard becomes a
- * no-op so calling code does not have to special-case absence of Iris.
- * <p>
- * The hot operations ({@code Iris.getPipelineManager()},
- * {@code PipelineManager.getPipelineNullable()},
- * {@code WorldRenderingPipeline.setPhase()}) are bound as MethodHandles so the
- * per-batch open/close pair amortises against the JIT-friendly invokeExact
- * call site rather than {@link Method#invoke}'s {@code Object[]} boxing path.
+ * and restores {@code WorldRenderingPhase.NONE} on close.
  */
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public final class IrisPhaseGuard implements AutoCloseable {
 
     private static volatile boolean initialized = false;
@@ -37,6 +38,7 @@ public final class IrisPhaseGuard implements AutoCloseable {
     private static Method getPipelineManager;
     private static Method getPipelineNullable;
     private static Method setPhase;
+    private static Method getPhase;
 
     /**
      * Hot-path MethodHandles. {@code asType()}-adapted to {@code (Object)Object}
@@ -47,18 +49,21 @@ public final class IrisPhaseGuard implements AutoCloseable {
     private static MethodHandle getPipelineManagerMH;
     private static MethodHandle getPipelineNullableMH;
     private static MethodHandle setPhaseMH;
+    private static MethodHandle getPhaseMH;
 
     private static Class<?> phaseEnumClass;
 
     private static volatile Object phaseBlockEntities;
     private static volatile Object phaseNone;
 
-    private static final IrisPhaseGuard NOOP = new IrisPhaseGuard(false);
+    private static final IrisPhaseGuard NOOP = new IrisPhaseGuard(false, null);
 
     private final boolean active;
+    private final Object previousPhase;
 
-    private IrisPhaseGuard(boolean active) {
+    private IrisPhaseGuard(boolean active, Object previousPhase) {
         this.active = active;
+        this.previousPhase = previousPhase;
     }
 
     /**
@@ -75,8 +80,13 @@ public final class IrisPhaseGuard implements AutoCloseable {
             Object pipeline = currentPipeline();
             if (pipeline == null) return NOOP;
             if (phaseBlockEntities == null) return NOOP;
+            Object prevPhase = invokeGetPhase(pipeline);
+            if (prevPhase == phaseBlockEntities) {
+                return NOOP;
+            }
+
             invokeSetPhase(pipeline, phaseBlockEntities);
-            return new IrisPhaseGuard(true);
+            return new IrisPhaseGuard(true, prevPhase);
         } catch (Throwable t) {
             return NOOP;
         }
@@ -88,8 +98,11 @@ public final class IrisPhaseGuard implements AutoCloseable {
         try {
             Object pipeline = currentPipeline();
             if (pipeline == null) return;
-            if (phaseNone == null) return;
-            invokeSetPhase(pipeline, phaseNone);
+            if (previousPhase != null) {
+                invokeSetPhase(pipeline, previousPhase);
+            } else if (phaseNone != null) {
+                invokeSetPhase(pipeline, phaseNone);
+            }
         } catch (Throwable ignored) {
         }
     }
@@ -106,6 +119,16 @@ public final class IrisPhaseGuard implements AutoCloseable {
         if (setPhase != null) {
             setPhase.invoke(pipeline, phase);
         }
+    }
+
+    private static Object invokeGetPhase(Object pipeline) throws Throwable {
+        if (getPhaseMH != null) {
+            return getPhaseMH.invokeExact(pipeline);
+        }
+        if (getPhase != null) {
+            return getPhase.invoke(pipeline);
+        }
+        return null;
     }
 
     private static Object currentPipeline() throws Throwable {
@@ -128,9 +151,17 @@ public final class IrisPhaseGuard implements AutoCloseable {
         if (initialized) return;
         initialized = true;
 
+        //? if forge {
         if (!ModList.get().isLoaded("oculus") && !ModList.get().isLoaded("iris")) {
             return;
         }
+        //?}
+        //? if fabric {
+        /*if (!Platform.isModLoaded("iris") && !Platform.isModLoaded("oculus")) {
+            return;
+        }
+        *///?}
+
         try {
             Class<?> irisClass = Class.forName("net.irisshaders.iris.Iris");
             getPipelineManager = irisClass.getMethod("getPipelineManager");
@@ -142,12 +173,17 @@ public final class IrisPhaseGuard implements AutoCloseable {
             phaseEnumClass = Class.forName("net.irisshaders.iris.pipeline.WorldRenderingPhase");
             setPhase = worldRenderingPipelineClass.getMethod("setPhase", phaseEnumClass);
 
+            // Находим метод getPhase
+            try {
+                getPhase = worldRenderingPipelineClass.getMethod("getPhase");
+            } catch (NoSuchMethodException e) {
+                getPhase = null;
+            }
+
             phaseBlockEntities = enumValue("BLOCK_ENTITIES");
             phaseNone = enumValue("NONE");
             available = phaseBlockEntities != null && phaseNone != null;
 
-            // Hot-path MethodHandle binding. asType() to Object-based signatures
-            // so per-frame call sites don't need to know the concrete owner classes.
             try {
                 MethodHandles.Lookup lookup = MethodHandles.lookup();
                 getPipelineManager.setAccessible(true);
@@ -159,16 +195,22 @@ public final class IrisPhaseGuard implements AutoCloseable {
                         .asType(MethodType.methodType(Object.class, Object.class));
                 setPhaseMH = lookup.unreflect(setPhase)
                         .asType(MethodType.methodType(void.class, Object.class, Object.class));
+
+                if (getPhase != null) {
+                    getPhase.setAccessible(true);
+                    getPhaseMH = lookup.unreflect(getPhase)
+                            .asType(MethodType.methodType(Object.class, Object.class));
+                }
             } catch (Throwable mhFail) {
                 MainRegistry.LOGGER.warn("IrisPhaseGuard: MethodHandle binding failed ({}), using Method.invoke", mhFail.toString());
                 getPipelineManagerMH = null;
                 getPipelineNullableMH = null;
                 setPhaseMH = null;
+                getPhaseMH = null;
             }
 
             if (available) {
-                MainRegistry.LOGGER.info("IrisPhaseGuard: reflection cached successfully (MH={})",
-                        setPhaseMH != null);
+                MainRegistry.LOGGER.info("IrisPhaseGuard: reflection cached successfully (MH={})", setPhaseMH != null);
             }
         } catch (Throwable t) {
             MainRegistry.LOGGER.warn("IrisPhaseGuard: reflection unavailable ({}), no phase will be set", t.getMessage());

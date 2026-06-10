@@ -1,3 +1,4 @@
+//? if forge {
 package com.hbm_m.powerarmor;
 
 import java.util.HashSet;
@@ -16,6 +17,8 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.event.TickEvent;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -37,8 +40,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
-// Основные импорты Forge
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.RenderGuiEvent;
 import net.minecraftforge.client.event.RenderItemInFrameEvent;
@@ -46,7 +47,6 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -882,6 +882,16 @@ public class ModEventHandlerClient {
      * Рендерит оверлей тепловизора
      */
     public static void onRenderThermalOverlay(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+        renderThermalOverlayHud(guiGraphics, partialTick, screenWidth, screenHeight);
+    }
+
+    /**
+     * Loader-agnostic HUD hook для тепловизора.
+     *
+     * Forge: вызывается из {@link #onRenderThermalOverlay(ForgeGui, GuiGraphics, float, int, int)}.
+     * Fabric: вызывается из {@code ClientSetup.initClient()} через HudRenderCallback.
+     */
+    public static void renderThermalOverlayHud(GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
 
@@ -918,30 +928,25 @@ public class ModEventHandlerClient {
      */
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void onRenderGuiPreBlockLookOverlays(RenderGuiEvent.Pre event) {
-        Minecraft mc = Minecraft.getInstance();
-        LocalPlayer player = mc.player;
-        if (player == null) {
-            return;
-        }
-        HitResult hr = mc.hitResult;
-        Level level = mc.level;
-        if (hr == null || level == null) {
-            return;
-        }
-        if (hr.getType() == HitResult.Type.BLOCK) {
-            BlockHitResult bhr = (BlockHitResult) hr;
-            if (level.getBlockState(bhr.getBlockPos()).getBlock() instanceof ILookOverlay ilo) {
-                ilo.printHook(event, level, bhr.getBlockPos());
-            }
-        }
+        com.hbm_m.client.overlay.BlockLookOverlayHud.render(event.getGuiGraphics());
     }
 
     // TODO: Добавить методы для HUD оверлеев
     // TODO: Добавить методы для визуальных эффектов
     // TODO: Добавить методы для обработки ввода
     // Текстуры для предметов в рамках
-    private static final ResourceLocation POSTER = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/misc/poster.png");
-    private static final ResourceLocation POSTER_CAT = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/misc/poster_cat.png");
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation POSTER = new ResourceLocation(RefStrings.MODID, "textures/models/misc/poster.png");
+    *///?} else {
+        private static final ResourceLocation POSTER = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/misc/poster.png");
+    //?}
+
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation POSTER_CAT = new ResourceLocation(RefStrings.MODID, "textures/models/misc/poster_cat.png");
+    *///?} else {
+        private static final ResourceLocation POSTER_CAT = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/misc/poster_cat.png");
+    //?}
+
 
     // ===== TODO ЗАГЛУШКИ ДЛЯ НЕРЕАЛИЗОВАННЫХ ФУНКЦИЙ =====
     // Эти функции требуют дополнительных зависимостей или инфраструктуры,
@@ -1024,3 +1029,4 @@ public class ModEventHandlerClient {
     // TODO: Добавить вспомогательные методы
 
 }
+//?}

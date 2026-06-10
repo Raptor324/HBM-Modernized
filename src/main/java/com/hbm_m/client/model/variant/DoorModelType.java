@@ -1,7 +1,5 @@
 package com.hbm_m.client.model.variant;
 
-import net.minecraft.resources.ResourceLocation;
-
 import java.util.Locale;
 
 /**

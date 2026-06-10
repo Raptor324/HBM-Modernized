@@ -1,0 +1,39 @@
+{
+  "multipart": [
+    {
+      "apply": { "model": "hbm_m:block/machines/foundry_channel_center" }
+    },
+    {
+      "when": { "east": "true" },
+      "apply": { "model": "hbm_m:block/machines/foundry_channel_connected" }
+    },
+    {
+      "when": { "east": "false" },
+      "apply": { "model": "hbm_m:block/machines/foundry_channel_closed" }
+    },
+    {
+      "when": { "south": "true" },
+      "apply": { "model": "hbm_m:block/machines/foundry_channel_connected", "y": 90 }
+    },
+    {
+      "when": { "south": "false" },
+      "apply": { "model": "hbm_m:block/machines/foundry_channel_closed", "y": 90 }
+    },
+    {
+      "when": { "west": "true" },
+      "apply": { "model": "hbm_m:block/machines/foundry_channel_connected", "y": 180 }
+    },
+    {
+      "when": { "west": "false" },
+      "apply": { "model": "hbm_m:block/machines/foundry_channel_closed", "y": 180 }
+    },
+    {
+      "when": { "north": "true" },
+      "apply": { "model": "hbm_m:block/machines/foundry_channel_connected", "y": 270 }
+    },
+    {
+      "when": { "north": "false" },
+      "apply": { "model": "hbm_m:block/machines/foundry_channel_closed", "y": 270 }
+    }
+  ]
+}

@@ -1,8 +1,6 @@
 package com.hbm_m.client.tooltip;
 
-// Компонент подсказки для рендеринга ItemStack в подсказках на клиенте.
-// Реализует ClientTooltipComponent для интеграции с системой подсказок Minecraft.
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -23,13 +21,13 @@ public class ItemTooltipComponentRenderer implements ClientTooltipComponent {
     }
 
     @Override
-    public int getWidth(@Nonnull Font pFont) {
+    public int getWidth(@NotNull Font pFont) {
         // Ширина иконки (16px) + ширина текста + отступ
         return 18 + pFont.width(stack.getHoverName());
     }
 
     @Override
-    public void renderImage(@Nonnull Font pFont, int pX, int pY, @Nonnull GuiGraphics pGuiGraphics) {
+    public void renderImage(@NotNull Font pFont, int pX, int pY, @NotNull GuiGraphics pGuiGraphics) {
         // Рендерим иконку предмета
         pGuiGraphics.renderFakeItem(this.stack, pX, pY);
         // Рендерим название предмета рядом с иконкой

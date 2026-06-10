@@ -1,0 +1,6 @@
+{
+  "variants": {
+    "lit=false": { "model": "hbm_m:block/machines/solar_boiler" },
+    "lit=true":  { "model": "hbm_m:block/machines/solar_boiler" }
+  }
+}

@@ -16,12 +16,10 @@ public class MachineChemicalPlantModelLoader extends AbstractObjPartModelLoader<
         "Base", "Frame", "Slider", "Spinner", "Fluid"
     );
 
-    @Override
     protected Set<String> getPartNames(JsonObject jsonObject) {
         return PART_NAMES;
     }
 
-    @Override
     protected MachineChemicalPlantBakedModel createBakedModel(HashMap<String, BakedModel> bakedParts, ItemTransforms transforms, ResourceLocation modelLocation) {
         return new MachineChemicalPlantBakedModel(bakedParts, transforms);
     }

@@ -5,6 +5,7 @@ package com.hbm_m.inventory.menu;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machines.BlastFurnaceBlockEntity;
+import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.network.FriendlyByteBuf;
@@ -15,8 +16,6 @@ import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.SlotItemHandler;
 import net.minecraft.world.inventory.ClickType;
 
 public class BlastFurnaceMenu extends AbstractContainerMenu {
@@ -49,12 +48,12 @@ public class BlastFurnaceMenu extends AbstractContainerMenu {
         addPlayerInventory(inv);
         addPlayerHotbar(inv);
 
-        this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(iItemHandler -> {
-            this.addSlot(new FuelSlot(iItemHandler, 0, 8, 36)); // Топливо (лава ведро)
-            this.addSlot(new SlotItemHandler(iItemHandler, 1, 80, 18)); // Первый входной слот
-            this.addSlot(new SlotItemHandler(iItemHandler, 2, 80, 54)); // Второй входной слот
-            this.addSlot(new OutputSlot(iItemHandler, 3, 134, 36)); // Выходной слот
-        });
+        var handler = this.blockEntity.getInventory();
+        var container = new ModItemStackHandlerContainer(handler, this.blockEntity::setChanged);
+        this.addSlot(new FuelSlot(container, 0, 8, 36)); // Топливо (лава ведро)
+        this.addSlot(new Slot(container, 1, 80, 18)); // Первый входной слот
+        this.addSlot(new Slot(container, 2, 80, 54)); // Второй входной слот
+        this.addSlot(new OutputSlot(container, 3, 134, 36)); // Выходной слот
 
         addDataSlots(data);
     }
@@ -196,8 +195,8 @@ public class BlastFurnaceMenu extends AbstractContainerMenu {
         }
     }
 
-    private static class FuelSlot extends SlotItemHandler {
-        public FuelSlot(net.minecraftforge.items.IItemHandler itemHandler, int index, int xPosition, int yPosition) {
+    private static class FuelSlot extends Slot {
+        public FuelSlot(net.minecraft.world.Container itemHandler, int index, int xPosition, int yPosition) {
             super(itemHandler, index, xPosition, yPosition);
         }
 
@@ -207,8 +206,8 @@ public class BlastFurnaceMenu extends AbstractContainerMenu {
         }
     }
 
-    private static class OutputSlot extends SlotItemHandler {
-        public OutputSlot(net.minecraftforge.items.IItemHandler itemHandler, int index, int xPosition, int yPosition) {
+    private static class OutputSlot extends Slot {
+        public OutputSlot(net.minecraft.world.Container itemHandler, int index, int xPosition, int yPosition) {
             super(itemHandler, index, xPosition, yPosition);
         }
 

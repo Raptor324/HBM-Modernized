@@ -46,6 +46,7 @@ public final class ModDamageSources {
     // Типы урона от окружения (без конкретного атакующего)
     public static DamageSource nuclearBlast(Level level) { return create(level, ModDamageTypes.NUCLEAR_BLAST); }
     public static DamageSource radiation(Level level) { return create(level, ModDamageTypes.RADIATION); }
+    public static DamageSource taint(Level level) { return create(level, ModDamageTypes.TAINT); }
     public static DamageSource acid(Level level) { return create(level, ModDamageTypes.ACID); }
     public static DamageSource rubble(Level level) { return create(level, ModDamageTypes.RUBBLE); }
     public static DamageSource blackHole(Level level) { return create(level, ModDamageTypes.BLACK_HOLE); }
