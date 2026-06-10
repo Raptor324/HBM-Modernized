@@ -56,20 +56,22 @@ public final class AssemblerRecipeGenerator {
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.CHEMICAL_PLANT.get(), 1), 200, 300)
                 .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 8)
+                .addIngredient(ModItems.PIPE_COPPER.get(), 2)
+                .addIngredient(ModItems.INSULATOR.get(), 16)
+                .addIngredient(ModItems.MOTOR.get(), 2)
                 .addIngredient(ModItems.COIL_TUNGSTEN.get(), 2)
                 .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 1)
-                .addIngredient(ModItems.PIPE_COPPER.get(), 2)
-                .addIngredient(ModItems.MOTOR.get(), 2)
-                .addIngredient(ModItems.INSULATOR.get(), 16)
                 .save(writer, "chemical_plant");
 
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.CENTRIFUGE.get(), 1), 40, 125)
-                .addIngredient(ModItems.getIngot(ModIngots.POLYMER).get(), 8)
-                .addIngredient(ModItems.CENTRIFUGE_ELEMENT.get(), 2)
-                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 1)
+                .addIngredient(ModItems.CENTRIFUGE_ELEMENT.get(), 1)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.POLYMER).get(),
+                        ModItems.getIngot(ModIngots.BAKELITE).get()), 4)
                 .addIngredient(ModItems.PLATE_STEEL.get(), 8)
                 .addIngredient(ModItems.PLATE_COPPER.get(), 4)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 1)
                 .save(writer, "centrifuge");
 
         AssemblerRecipeBuilder.assemblerRecipe(
@@ -84,12 +86,12 @@ public final class AssemblerRecipeGenerator {
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.FLUID_TANK.get(), 1), 40, 100)
                 .addIngredient(ModItems.PLATE_STEEL.get(), 8)
-                .addIngredient(ModItems.SHELL_TITANIUM.get(), 4)
+                .addIngredient(ModItems.SHELL_STEEL.get(), 4)
                 .save(writer, "fluid_tank");
 
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.CRYSTALLIZER.get(), 1), 40, 100)
-                .addIngredient(ModItems.PLATE_STEEL.get(), 2) //PLATE_WELDED_STEEL NEEDED
+                .addIngredient(ModItems.PLATE_WELDED_STEEL.get(), 2)
                 .addIngredient(ModItems.SHELL_TITANIUM.get(), 3)
                 .addIngredient(ModItems.getIngot(ModIngots.DESH).get(), 4)
                 .addIngredient(ModItems.MOTOR.get(), 1)
@@ -98,13 +100,101 @@ public final class AssemblerRecipeGenerator {
 
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModBlocks.REFINERY.get(), 1), 160, 250)
-                .addIngredient(ModItems.PLATE_STEEL.get(), 3)
+                .addIngredient(ModItems.PLATE_WELDED_STEEL.get(), 3)
                 .addIngredient(ModItems.PLATE_COPPER.get(), 8)
                 .addIngredient(ModItems.SHELL_STEEL.get(), 4)
                 .addIngredient(ModItems.PIPE_STEEL.get(), 12)
                 .addIngredient(ModItems.INSULATOR.get(), 8)
                 .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 3)
                 .save(writer, "refinery");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.ZIRNOX.get(), 1), 240, 400)
+                .addIngredient(ModItems.SHELL_STEEL.get(), 4)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 8)
+                .addIngredient(ModItems.getIngot(ModIngots.BORON).get(), 8)
+                .addIngredient(ModItems.getIngot(ModIngots.GRAPHITE).get(), 16)
+                .addIngredient(ModItems.getIngot(ModIngots.RUBBER).get(), 16)
+                .addIngredient(Ingredient.of(ModBlocks.CONCRETE.get()), 16)
+                .addIngredient(ModItems.INTEGRATED_CIRCUIT.get(), 4)
+                .save(writer, "zirnox");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.TURBINE.get(), 1), 160, 250)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 8)
+                .addIngredient(ModItems.getIngot(ModIngots.BIORUBBER).get(), 4)
+                .addIngredient(ModItems.TURBINE_TITANIUM.get(), 2)
+                .addIngredient(ModItems.WIRE_DENSE_GOLD.get(), 4)
+                .addIngredient(ModItems.PIPE_COPPER.get(), 4)
+                .addIngredient(ModItems.INTEGRATED_CIRCUIT.get(), 1)
+                .save(writer, "turbine");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.INDUSTRIAL_TURBINE.get(), 1), 240, 400)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 16)
+                .addIngredient(ModItems.getIngot(ModIngots.RUBBER).get(), 4)
+                .addIngredient(ModItems.TURBINE_TITANIUM.get(), 2)
+                .addIngredient(ModItems.WIRE_DENSE_GOLD.get(), 4)
+                .addIngredient(ModItems.PIPE_DURA_STEEL.get(), 4)
+                .addIngredient(ModItems.INTEGRATED_CIRCUIT.get(), 2)
+                .save(writer, "industrial_turbine");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.RADAR.get(), 1), 160, 250)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 12)
+                .addIngredient(ModItems.getIngot(ModIngots.RUBBER).get(), 12)
+                .addIngredient(ModItems.MAGNETRON.get(), 5)
+                .addIngredient(ModItems.MOTOR.get(), 1)
+                .addIngredient(ModItems.INTEGRATED_CIRCUIT.get(), 8)
+                .addIngredient(ModItems.CRT_DISPLAY.get(), 4)
+                .save(writer, "radar");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.LARGE_RADAR.get(), 1), 240, 400)
+                .addIngredient(ModItems.PLATE_WELDED_STEEL.get(), 6)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.CADMIUM).get(),
+                        ModItems.getIngot(ModIngots.TECHNETIUM).get()), 4)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.RUBBER).get(),
+                        ModItems.getIngot(ModIngots.BIORUBBER).get()), 24)
+                .addIngredient(ModItems.MAGNETRON.get(), 16)
+                .addIngredient(ModItems.getIngot(ModIngots.DESH).get(), 1)
+                .addIngredient(ModItems.CRT_DISPLAY.get(), 4)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 4)
+                .save(writer, "large_radar");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.DERRICK.get(), 1), 80, 150)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 8)
+                .addIngredient(ModItems.PLATE_CAST_COPPER.get(), 2)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 1)
+                .addIngredient(ModItems.DRILL_TITANIUM.get(), 1)
+                .save(writer, "derrick");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.SOLDERING_STATION.get(), 1), 80, 150)
+                .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 2)
+                .addIngredient(ModItems.COIL_COPPER.get(), 4)
+                .addIngredient(ModItems.BOLT_TUNGSTEN.get(), 4)
+                .addIngredient(ModItems.VACUUM_TUBE.get(), 2)
+                .save(writer, "soldering_station");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.TOWER_SMALL.get(), 1), 240, 400)
+                .addIngredient(Ingredient.of(ModBlocks.BRICK_CONCRETE.get()), 64)
+                .addIngredient(Items.IRON_BARS, 128)
+                .addIngredient(Ingredient.of(ModBlocks.STEAM_CONDENSER.get()), 4)
+                .save(writer, "tower_small");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.COOLING_TOWER.get(), 1), 240, 400)
+                .addIngredient(Ingredient.of(ModBlocks.CONCRETE.get()), 128)
+                .addIngredient(Ingredient.of(ModBlocks.DECO_STEEL_SCAFFOLD.get()), 32)
+                .addIngredient(Ingredient.of(ModBlocks.STEAM_CONDENSER.get()), 16)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 8)
+                .save(writer, "cooling_tower");
 
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.HYDRAULIC_FRACKINING_TOWER.get(), 1), 240, 400)

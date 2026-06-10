@@ -164,6 +164,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.DESIGNATOR_MANUAL);
         simpleItem(ModItems.SCRAP);
         simpleItem(ModItems.CRT_DISPLAY);
+        simpleItem(ModItems.MAGNETRON);
+        simpleItem(ModItems.TURBINE_TITANIUM);
         simpleItem(ModItems.SEQUESTRUM);
         simpleItem(ModItems.BLADE_STEEL);
         simpleItem(ModItems.BLADE_TITANIUM);

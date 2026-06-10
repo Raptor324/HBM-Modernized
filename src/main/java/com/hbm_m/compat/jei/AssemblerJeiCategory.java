@@ -51,22 +51,28 @@ public class AssemblerJeiCategory implements IRecipeCategory<AssemblerRecipe> {
         return icon;
     }
 
+    // Slot positions matching gui_nei_assembler.png: a 1x3 column on the left
+    // followed by a 4x3 grid of input slots.
+    private static final int[][] INPUT_SLOTS = {
+            {7, 16}, {7, 34}, {7, 52},
+            {34, 16}, {52, 16}, {70, 16}, {88, 16},
+            {34, 34}, {52, 34}, {70, 34}, {88, 34},
+            {34, 52}, {52, 52}, {70, 52}, {88, 52}
+    };
+
     @Override
     public void setRecipe(IRecipeLayoutBuilder builder, AssemblerRecipe recipe, mezz.jei.api.recipe.IFocusGroup focuses) {
         int slot = 0;
-
-        // 4x3 input grid aligned with the machine GUI.
         for (var ingredient : recipe.getIngredients()) {
-            int x = 8 + (slot % 3) * 18;
-            int y = 18 + (slot / 3) * 18;
-            builder.addSlot(RecipeIngredientRole.INPUT, x, y).addIngredients(ingredient);
-            slot++;
-            if (slot >= 12) {
+            if (slot >= INPUT_SLOTS.length) {
                 break;
             }
+            int[] pos = INPUT_SLOTS[slot];
+            builder.addSlot(RecipeIngredientRole.INPUT, pos[0], pos[1]).addIngredients(ingredient);
+            slot++;
         }
 
-        builder.addSlot(RecipeIngredientRole.OUTPUT, 98, 45)
+        builder.addSlot(RecipeIngredientRole.OUTPUT, 142, 34)
                 .addItemStack(recipe.getResultItem(null));
     }
 }

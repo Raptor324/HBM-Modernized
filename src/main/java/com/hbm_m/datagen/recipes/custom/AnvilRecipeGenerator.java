@@ -160,6 +160,15 @@ public final class AnvilRecipeGenerator {
                 stack(ModItems.MOTOR, 2 ),
                 stack(ModItems.VACUUM_TUBE, 4 ));
 
+        registerInventoryRecipe(writer, "steel", "9arc_welder",
+                AnvilTier.STEEL,
+                stack(ModBlocks.ARC_WELDER),
+                stack(ModItems.PLATE_CAST_STEEL, 4),
+                stack(ModItems.getIngot(ModIngots.TUNGSTEN).get(), 8),
+                stack(ModItems.BOLT_STEEL, 16),
+                stack(ModBlocks.getIngotBlock(ModIngots.STEEL).get(), 2),
+                stack(ModItems.WIRE_COPPER, 32));
+
     }
 
     private static void registerDisassemblyRecipes(Consumer<FinishedRecipe> writer) {

@@ -505,6 +505,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.mine_nuke.line3", "Может быть обезврежена");
 
                 add("tooltip.hbm_m.mine.line1", "Может быть обезврежена");
+                add("tooltip.hbm_m.naval_mine.line1", "Взрывается при контакте с игроком");
 
 // ДЕТОНАТОР
                 add("tooltip.hbm_m.detonator.target", "Цель: ");
@@ -689,6 +690,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.LEAD_CLADDING.get(), "Свинцовая обшивка");
                 add(ModItems.PAINT_CLADDING.get(), "Свинцовая краска");
                 add(ModItems.CRT_DISPLAY.get(), "Электро-лучевая трубка");
+                add(ModItems.MAGNETRON.get(), "Магнетрон");
+                add(ModItems.TURBINE_TITANIUM.get(), "Титановая турбина");
                 add(ModItems.GRENADESMART.get(), "УМная отскок граната");
                 add(ModItems.GRENADESLIME.get(), "Отскок-отскок граната");
                 add(ModItems.GRENADE.get(), "Отскок граната");
@@ -929,6 +932,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PIPE_TUNGSTEN.get(), "Вольфрамовая труба");
                 add(ModItems.PIPE_TITANIUM.get(), "Титановая труба");
                 add(ModItems.PIPE_ALUMINUM.get(), "Алюминиевая труба");
+                add(ModItems.PIPE_DURA_STEEL.get(), "Труба из прочной стали");
                 add("item.hbm_m.fluid_identifier", "Мульти-жидкостный идентификатор: %s");
                 add("item.hbm_m.fluid_identifier.none", "Мульти-жидкостный идентификатор");
                 add("item.hbm_m.fluid_identifier.info", "Жидкостный идентификатор для:");
@@ -1720,6 +1724,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.CRACKING_TOWER.get(), "Крекинг башня (WIP)");
                 add(ModBlocks.FRACTION_TOWER.get(), "Фракционная башня (WIP)");
                 add(ModBlocks.MINING_DRILL.get(), "Large Mining Drill");
+                add(ModItems.DRILL_TITANIUM.get(), "Титановое сверло");
                 add(ModBlocks.FEL.get(), "FEL (WIP)");
                 add(ModBlocks.SILEX.get(), "Silex (WIP)");
                 add(ModBlocks.CHEMICAL_PLANT.get(), "Химическая установка");
@@ -2508,6 +2513,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.defuser.line1", "Device for disarming mines and bombs");
                 add("tooltip.hbm_m.defuser.line2", "RMB on a compatible device to disarm");
                 add("tooltip.hbm_m.mine.line1", "Can be defused");
+                add("tooltip.hbm_m.naval_mine.line1", "Explodes on contact with a player");
                 add("tooltip.hbm_m.gigadet.line1", "Was made for fun");
                 
 
@@ -2626,6 +2632,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.depthstone.line4", "Use Det Miner to safe-mine depth ores");
 
                 add(ModItems.CRT_DISPLAY.get(), "CRT");
+                add(ModItems.MAGNETRON.get(), "Magnetron");
+                add(ModItems.TURBINE_TITANIUM.get(), "Titanium Turbine");
                 add(ModBlocks.DEPTH_STONE.get(), "Depth Stone");
                 add(ModBlocks.DEPTH_CINNABAR.get(), "Deep Cinnabar Ore");
                 add(ModBlocks.DEPTH_IRON.get(), "Deep Iron Ore");
@@ -2857,6 +2865,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PIPE_TUNGSTEN.get(), "Tungsten Pipe");
                 add(ModItems.PIPE_TITANIUM.get(), "Titanium Pipe");
                 add(ModItems.PIPE_ALUMINUM.get(), "Aluminum Pipe");
+                add(ModItems.PIPE_DURA_STEEL.get(), "Dura Steel Pipe");
                 add("item.hbm_m.fluid_identifier", "Multi Fluid Identifier: %s");
                 add("item.hbm_m.fluid_identifier.none", "Multi Fluid Identifier");
                 add("item.hbm_m.fluid_identifier.info", "Universal fluid identifier for:");
@@ -3507,6 +3516,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.CRACKING_TOWER.get(), "Cracking Tower (WIP)");
                 add(ModBlocks.FRACTION_TOWER.get(), "Fraction Tower (WIP)");
                 add(ModBlocks.MINING_DRILL.get(), "Large Mining Drill");
+                add(ModItems.DRILL_TITANIUM.get(), "Titanium Drill");
                 add(ModBlocks.FEL.get(), "FEL (WIP)");
                 add(ModBlocks.SILEX.get(), "Silex (WIP)");
                 add(ModBlocks.MACHINE_BATTERY_SOCKET.get(), "Battery Socket");

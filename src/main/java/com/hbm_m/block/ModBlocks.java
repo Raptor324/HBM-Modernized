@@ -28,6 +28,7 @@ import com.hbm_m.block.explosives.ExplosiveChargeBlock;
 import com.hbm_m.block.explosives.GigaDetBlock;
 import com.hbm_m.block.explosives.MineBlock;
 import com.hbm_m.block.explosives.MineNukeBlock;
+import com.hbm_m.block.explosives.NavalMineBlock;
 import com.hbm_m.block.explosives.NuclearChargeBlock;
 import com.hbm_m.block.explosives.SmokeBombBlock;
 import com.hbm_m.block.explosives.WasteChargeBlock;
@@ -1002,7 +1003,7 @@ public class ModBlocks {
             () -> new MineBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
 
     public static final RegistrySupplier<Block> NAVAL_MINE = registerBlock("naval_mine",
-            () -> new CrtBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(5, 6.0F).noOcclusion()));
+            () -> new NavalMineBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(5, 6.0F).noOcclusion()));
 
     public static final RegistrySupplier<Block> CRATE_CONSERVE = registerBlock("crate_conserve",
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));

@@ -715,6 +715,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.PIPE_TUNGSTEN.get()));
         add.accept(new ItemStack(ModItems.PIPE_TITANIUM.get()));
         add.accept(new ItemStack(ModItems.PIPE_ALUMINUM.get()));
+        add.accept(new ItemStack(ModItems.PIPE_DURA_STEEL.get()));
 
         add.accept(new ItemStack(ModItems.PLATE_ARMOR_TITANIUM.get()));
         add.accept(new ItemStack(ModItems.PLATE_ARMOR_AJR.get()));
@@ -744,6 +745,8 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.SILICON_CIRCUIT.get()));
         add.accept(new ItemStack(ModItems.PCB.get()));
         add.accept(new ItemStack(ModItems.CRT_DISPLAY.get()));
+        add.accept(new ItemStack(ModItems.MAGNETRON.get()));
+        add.accept(new ItemStack(ModItems.TURBINE_TITANIUM.get()));
         add.accept(new ItemStack(ModItems.VACUUM_TUBE.get()));
         add.accept(new ItemStack(ModItems.CAPACITOR.get()));
         add.accept(new ItemStack(ModItems.MICROCHIP.get()));

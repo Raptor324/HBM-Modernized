@@ -1081,6 +1081,12 @@ public class ModItems {
     public static final RegistrySupplier<Item> CRT_DISPLAY = ITEMS.register("crt_display",
             () -> new Item(new Item.Properties()));
 
+    public static final RegistrySupplier<Item> MAGNETRON = ITEMS.register("magnetron",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> TURBINE_TITANIUM = ITEMS.register("turbine_titanium",
+            () -> new Item(new Item.Properties()));
+
     public static final RegistrySupplier<Item> PLATE_IRON = ITEMS.register("plate_iron",
             () -> new Item(new Item.Properties()));
 
@@ -2304,6 +2310,8 @@ public class ModItems {
             () -> new MineralPipeItem(new Item.Properties(), 0x8DC5E2));
     public static final RegistrySupplier<Item> PIPE_ALUMINUM = ITEMS.register("pipe_aluminum",
             () -> new MineralPipeItem(new Item.Properties(), 0xC5C5DE));
+    public static final RegistrySupplier<Item> PIPE_DURA_STEEL = ITEMS.register("pipe_dura_steel",
+            () -> new MineralPipeItem(new Item.Properties(), 0x82A59C));
 
     // Fluid Duct - pipe per fluid type, overlay tinted with fluid color (like fluid barrel)
     public static final RegistrySupplier<Item> FLUID_DUCT = ITEMS.register("fluid_duct",

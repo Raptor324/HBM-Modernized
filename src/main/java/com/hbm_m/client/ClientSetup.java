@@ -768,7 +768,7 @@ public class ClientSetup {
             return 0xFFFFFF;
         }, ModItems.PIPE_IRON.get(), ModItems.PIPE_COPPER.get(), ModItems.PIPE_GOLD.get(),
            ModItems.PIPE_LEAD.get(), ModItems.PIPE_STEEL.get(), ModItems.PIPE_TUNGSTEN.get(),
-           ModItems.PIPE_TITANIUM.get(), ModItems.PIPE_ALUMINUM.get());
+           ModItems.PIPE_TITANIUM.get(), ModItems.PIPE_ALUMINUM.get(), ModItems.PIPE_DURA_STEEL.get());
 
         ColorProviderRegistry.BLOCK.register((state, level, pos, tintIndex) -> {
             if (tintIndex == 0) return 0xFFFFFF;
@@ -1345,7 +1345,7 @@ public class ClientSetup {
             return 0xFFFFFF;
         }, ModItems.PIPE_IRON.get(), ModItems.PIPE_COPPER.get(), ModItems.PIPE_GOLD.get(),
            ModItems.PIPE_LEAD.get(), ModItems.PIPE_STEEL.get(), ModItems.PIPE_TUNGSTEN.get(),
-           ModItems.PIPE_TITANIUM.get(), ModItems.PIPE_ALUMINUM.get());
+           ModItems.PIPE_TITANIUM.get(), ModItems.PIPE_ALUMINUM.get(), ModItems.PIPE_DURA_STEEL.get());
     }
 
     @SubscribeEvent

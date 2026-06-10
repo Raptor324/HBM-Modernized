@@ -138,6 +138,17 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModItems.PLATE_DESH.get()), has(ModItems.PLATE_DESH.get()))
                 .save(writer, recipeId("crafting/motor_desh"));
 
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.STEAM_TURBINE.get())
+                .pattern("ABA")
+                .pattern("CDC")
+                .pattern("ABA")
+                .define('A', ModItems.getIngot(ModIngots.STEEL).get())
+                .define('B', ModItems.COIL_COPPER.get())
+                .define('C', Ingredient.of(ModItems.getIngot(ModIngots.POLYMER).get(), ModItems.getIngot(ModIngots.BAKELITE).get()))
+                .define('D', ModItems.TURBINE_TITANIUM.get())
+                .unlockedBy(getHasName(ModItems.TURBINE_TITANIUM.get()), has(ModItems.TURBINE_TITANIUM.get()))
+                .save(writer, recipeId("crafting/steam_turbine"));
+
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.INSULATOR.get(), 4)
                 .pattern("$  ")
                 .pattern("$  ")
@@ -301,6 +312,16 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('$', ModItems.getIngot(ModIngots.STEEL).get())
                 .unlockedBy(getHasName(ModItems.getIngot(ModIngots.STEEL).get()), has(ModItems.getIngot(ModIngots.STEEL).get()))
                 .save(writer, recipeId("crafting/screwdriver"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.STEAM_CONDENSER.get())
+                .pattern("ABA")
+                .pattern("BCB")
+                .pattern("ABA")
+                .define('A', ModItems.getIngot(ModIngots.STEEL).get())
+                .define('B', ModItems.PLATE_IRON.get())
+                .define('C', ModItems.PLATE_CAST_COPPER.get())
+                .unlockedBy(getHasName(ModItems.PLATE_CAST_COPPER.get()), has(ModItems.PLATE_CAST_COPPER.get()))
+                .save(writer, recipeId("crafting/steam_condenser"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.CONVERTER_BLOCK.get())
                 .pattern("###")
