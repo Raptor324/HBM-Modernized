@@ -483,6 +483,7 @@ public class ModItemModelProvider extends ItemModelProvider {
 
         simpleItem(ModItems.COIL_TUNGSTEN);
         simpleItem(ModItems.NUGGET_SILICON);
+        simpleItem(ModItems.NUGGET_TANTALIUM);
         simpleItem(ModItems.BILLET_SILICON);
         simpleItem(ModItems.WIRE_RED_COPPER);
         simpleItem(ModItems.WIRE_COPPER);

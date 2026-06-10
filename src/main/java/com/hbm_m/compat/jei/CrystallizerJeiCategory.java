@@ -43,16 +43,16 @@ public class CrystallizerJeiCategory implements IRecipeCategory<CrystallizerJeiR
                           mezz.jei.api.recipe.IFocusGroup focuses) {
         // Input — slot 0 at (62, 45) in the GUI
         if (!recipe.getInputs().isEmpty())
-            builder.addSlot(RecipeIngredientRole.INPUT, 63, 46)
+            builder.addSlot(RecipeIngredientRole.INPUT, 62, 45)
                     .addItemStacks(recipe.getInputs());
 
         // Output — slot 2 at (113, 45)
-        builder.addSlot(RecipeIngredientRole.OUTPUT, 114, 46)
+        builder.addSlot(RecipeIngredientRole.OUTPUT, 113, 45)
                 .addItemStack(recipe.getOutput());
 
         // Fluid input — slot 3 at (17, 18), show acid requirement
         if (!recipe.getAcid().isEmpty()) {
-            builder.addSlot(RecipeIngredientRole.INPUT, 18, 19)
+            builder.addSlot(RecipeIngredientRole.INPUT, 17, 18)
                     .addFluidStack(recipe.getAcid().getFluid(), recipe.getAcid().getAmount());
         }
     }

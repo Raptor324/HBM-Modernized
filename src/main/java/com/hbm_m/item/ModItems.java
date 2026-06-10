@@ -995,6 +995,9 @@ public class ModItems {
     public static final RegistrySupplier<Item> NUGGET_SILICON = ITEMS.register("nugget_silicon",
             () -> new Item(new Item.Properties()));
 
+    public static final RegistrySupplier<Item> NUGGET_TANTALIUM = ITEMS.register("nugget_tantalium",
+            () -> new Item(new Item.Properties()));
+
     public static final RegistrySupplier<Item> BILLET_SILICON = ITEMS.register("billet_silicon",
             () -> new Item(new Item.Properties()));
 

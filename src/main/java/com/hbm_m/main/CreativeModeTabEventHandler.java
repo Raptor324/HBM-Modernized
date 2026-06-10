@@ -445,6 +445,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.WOOD_ASH_POWDER.get()));
         add.accept(new ItemStack(ModItems.SCRAP.get()));
         add.accept(new ItemStack(ModItems.NUGGET_SILICON.get()));
+        add.accept(new ItemStack(ModItems.NUGGET_TANTALIUM.get()));
         add.accept(new ItemStack(ModItems.BILLET_SILICON.get()));
         add.accept(new ItemStack(ModItems.BILLET_PLUTONIUM.get()));
 

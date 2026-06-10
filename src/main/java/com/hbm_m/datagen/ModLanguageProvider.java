@@ -1046,6 +1046,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PCB.get(), "Печатная плата");
                 add(ModItems.INSULATOR.get(), "Изолятор");
                 add(ModItems.NUGGET_SILICON.get(), "Самородок кремния");
+                add(ModItems.NUGGET_TANTALIUM.get(), "Самородок тантала");
                 add(ModItems.BILLET_SILICON.get(), "Заготовка кремния");
 
                 add(ModItems.BATTLE_GEARS.get(), "Боевые детали");
@@ -3178,6 +3179,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add(ModBlocks.SMOKE_BOMB.get(), "Semtex");
                 add(ModItems.NUGGET_SILICON.get(), "Silicon Nugget");
+                add(ModItems.NUGGET_TANTALIUM.get(), "Tantalium Nugget");
                 add(ModItems.BILLET_SILICON.get(), "Silicon Billet");
                 add(ModItems.PLATE_GOLD.get(), "Golden Plate");
                 add(ModItems.PLATE_GUNMETAL.get(), "Gunmetal Plate");

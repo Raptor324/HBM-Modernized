@@ -27,6 +27,7 @@ import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
+import net.minecraft.data.recipes.ShapelessRecipeBuilder;
 import net.minecraft.data.recipes.SimpleCookingRecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
@@ -369,6 +370,13 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('#', ModItems.getPowder(ModIngots.ALUMINUM).get())
                 .unlockedBy(getHasName(ModItems.getPowder(ModIngots.ALUMINUM).get()), has(ModItems.getPowder(ModIngots.ALUMINUM).get()))
                 .save(writer, recipeId("crafting/capacitor"));
+
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.CAPACITOR_TANTALUM.get())
+                .requires(ModItems.INSULATOR.get())
+                .requires(ModItems.NUGGET_TANTALIUM.get())
+                .requires(ModItems.WIRE_COPPER.get())
+                .unlockedBy(getHasName(ModItems.NUGGET_TANTALIUM.get()), has(ModItems.NUGGET_TANTALIUM.get()))
+                .save(writer, recipeId("crafting/capacitor_tantalum"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.CAGE_LAMP.get(), 4)
                 .pattern("%")

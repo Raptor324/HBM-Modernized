@@ -21,13 +21,13 @@ public class AssemblerJeiCategory implements IRecipeCategory<AssemblerRecipe> {
             RecipeType.create(RefStrings.MODID, "assembler", AssemblerRecipe.class);
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_assembler.png");
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/jei_gui/gui_nei_assembler.png");
 
     private final IDrawable background;
     private final IDrawable icon;
 
     public AssemblerJeiCategory(IGuiHelper guiHelper) {
-        this.background = guiHelper.createDrawable(TEXTURE, 0, 0, 176, 144);
+        this.background = guiHelper.createDrawable(TEXTURE, 0, 0, 176, 90);
         this.icon = guiHelper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(ModItems.ADVANCED_ASSEMBLY_MACHINE.get()));
     }
 

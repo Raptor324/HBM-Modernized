@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "Bash(cd \"/c/Users/Luke/Documents/VS Projekte HBM Modernized/HBM-Modernized\" && find src/main/java/com/hbm_m -iname \"*naval*\" -o -iname \"*mine*\" | grep -i naval)",
+      "Read(//c/c/Users/Luke/Documents/VS Projekte HBM Modernized/HBM-Modernized/src/main/java/com/**)"
     ]
   }
 }
