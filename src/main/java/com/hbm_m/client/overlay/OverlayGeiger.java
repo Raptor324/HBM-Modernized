@@ -28,6 +28,11 @@ public class OverlayGeiger {
     private static boolean hasGeigerCached = false;
     private static final long INVENTORY_CHECK_INTERVAL = 1000;
 
+    /** GIT {@link com.hbm.render.util.RenderScreenOverlay#renderRadCounter}: дельта накопленной дозы игрока за секунду. */
+    private static long lastSurveyTime = 0;
+    private static float prevPlayerRadSample = 0.0f;
+    private static float lastPlayerRadSample = 0.0f;
+
     //? if fabric && < 1.21.1 {
     /*private static final ResourceLocation OVERLAY = new ResourceLocation(RefStrings.MODID, "textures/misc/overlay_misc.png");
     *///?} else {
@@ -57,7 +62,14 @@ public class OverlayGeiger {
             return;
         }
 
-        float environmentRad = clientTotalEnvironmentRadiation;
+        // GIT RenderScreenOverlay: иконки/текст — изменение накопленной дозы игрока за последнюю секунду (RAD/s).
+        float environmentRad = lastPlayerRadSample - prevPlayerRadSample;
+        long now = System.currentTimeMillis();
+        if (now >= lastSurveyTime + 1000) {
+            lastSurveyTime = now;
+            prevPlayerRadSample = lastPlayerRadSample;
+            lastPlayerRadSample = clientPlayerRadiation;
+        }
 
         // 3. Данные для полосы прогресса
         float playerRadForBar = clientPlayerRadiation;

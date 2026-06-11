@@ -1,9 +1,7 @@
 package com.hbm_m.radiation;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -22,10 +20,7 @@ import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ChunkRadiationDebugBatchPacket;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.particle.ModParticleTypes;
-import com.hbm_m.world.biome.ModBiomes;
-
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -35,7 +30,6 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
@@ -98,8 +92,8 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                 continue;
             }
 
-            // GIT ChunkRadiationHandlerSimple#updateSystem: buff = текущие значения, затем полный пересчёт spread+decay.
-            // BlockHazard (1.7.10) добавляет hazard*0.1 в ambient раз в секунду — эквивалент blockRad * radSourceInfluenceFactor.
+            // GIT ChunkRadiationHandlerSimple#updateSystem: buff = ambient после источников, затем spread+decay.
+            // BlockHazard (1.7.10): hazard*0.1F/сек через incrementRad — накапливаем в ambient до spread.
             Map<ChunkPos, Float> buff = new HashMap<>();
             for (ChunkPos pos : new HashSet<>(currentActiveChunks)) {
                 LevelChunk chunk = level.getChunkSource().getChunk(pos.x, pos.z, false);
@@ -107,14 +101,17 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                     continue;
                 }
                 getChunkRadiationCap(chunk).ifPresent(cap -> {
-                    float spreadValue = cap.getAmbientRadiation();
-                    // В кратерах ambient = фон биома (30/10). Sellafite даёт hazard на блоках,
-                    // но не должен бесконечно подпитывать chunk ambient (в 1.7.10 sellafite не BlockHazard).
-                    if (getCraterBiomeBaseline(level, pos) <= 0f) {
-                        spreadValue += cap.getBlockRadiation() * ModClothConfig.get().radSourceInfluenceFactor;
+                    float blockContribution = cap.getBlockRadiation() * ModClothConfig.get().radSourceInfluenceFactor;
+                    if (blockContribution > 1e-6f) {
+                        float boosted = Mth.clamp(cap.getAmbientRadiation() + blockContribution, 0f, MAX_RAD);
+                        if (Math.abs(cap.getAmbientRadiation() - boosted) > 1e-6f) {
+                            cap.setAmbientRadiation(boosted);
+                            chunk.setUnsaved(true);
+                        }
                     }
-                    if (spreadValue > 1e-6f) {
-                        buff.put(pos, spreadValue);
+                    float ambient = cap.getAmbientRadiation();
+                    if (ambient > 1e-6f) {
+                        buff.put(pos, ambient);
                     }
                 });
             }
@@ -147,18 +144,18 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                             newRad = Mth.clamp(newRad * 0.99f - 0.05f, 0f, MAX_RAD);
                             radiation.put(newCoord, newRad);
                         } else {
-                            float leaked = Mth.clamp(sourceValue * percent * 0.99f - 0.05f, 0f, MAX_RAD);
-                            radiation.put(newCoord, leaked);
+                            radiation.put(newCoord, sourceValue * percent);
                         }
 
                         float rad = radiation.get(newCoord);
                         if (ModClothConfig.get().enableRadFogEffect
                                 && rad > CHUNK_FOG_RAD_THRESHOLD
                                 && level.random.nextInt(CHUNK_FOG_SPAWN_CHANCE) == 0
-                                && level.hasChunk(coord.x, coord.z)) {
-                            int x = coord.getMinBlockX() + level.random.nextInt(16);
-                            int z = coord.getMinBlockZ() + level.random.nextInt(16);
-                            int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z);
+                                && level.hasChunk(newCoord.x, newCoord.z)) {
+                            int x = newCoord.getMinBlockX() + level.random.nextInt(16);
+                            int z = newCoord.getMinBlockZ() + level.random.nextInt(16);
+                            int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z)
+                                    + level.random.nextInt(5);
 
                             level.sendParticles(
                                     ModParticleTypes.RAD_FOG_PARTICLE.get(),
@@ -191,8 +188,6 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                 if (newAmbient < 0.01f) {
                     newAmbient = 0f;
                 }
-
-                newAmbient = applyCraterBiomeEquilibrium(level, pos, newAmbient);
 
                 newAmbient = Mth.clamp(newAmbient, 0f, MAX_RAD);
                 final float finalAmbientRad = newAmbient;
@@ -548,46 +543,4 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
     }
     //?}
 
-    /**
-     * В биомах кратера ambient стремится к конфигурируемому фону (30 / 10 RAD/s).
-     * Всплески после взрыва сохраняются, но со временем затухают до baseline.
-     */
-    private static float applyCraterBiomeEquilibrium(ServerLevel level, ChunkPos pos, float ambient) {
-        float baseline = getCraterBiomeBaseline(level, pos);
-        if (baseline <= 0f) {
-            return ambient;
-        }
-
-        if (ambient > baseline) {
-            float excess = ambient - baseline;
-            excess = excess * 0.88f - 1.0f;
-            if (excess < 0.5f) {
-                excess = 0f;
-            }
-            return baseline + excess;
-        }
-
-        if (ambient < baseline) {
-            return ambient + (baseline - ambient) * 0.12f;
-        }
-
-        return ambient;
-    }
-
-    private static float getCraterBiomeBaseline(ServerLevel level, ChunkPos pos) {
-        if (!ModClothConfig.get().enableCraterBiomes) {
-            return 0f;
-        }
-
-        BlockPos sample = new BlockPos(pos.getMinBlockX() + 8, level.getSeaLevel(), pos.getMinBlockZ() + 8);
-        Holder<Biome> biome = level.getBiome(sample);
-
-        if (biome.is(ModBiomes.INNER_CRATER_KEY)) {
-            return ModClothConfig.get().craterBiomeInnerChunkRad;
-        }
-        if (biome.is(ModBiomes.OUTER_CRATER_KEY)) {
-            return ModClothConfig.get().craterBiomeOuterChunkRad;
-        }
-        return 0f;
-    }
 }

@@ -3,6 +3,7 @@ import com.hbm_m.api.energy.ConverterBlockEntity;
 import com.hbm_m.api.energy.SwitchBlockEntity;
 import com.hbm_m.api.energy.WireBlockEntity;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.entity.bomb.LandMineBlockEntity;
 import com.hbm_m.block.entity.bomb.NukeFatManBlockEntity;
 import com.hbm_m.block.entity.crates.DeshCrateBlockEntity;
 import com.hbm_m.block.entity.crates.IronCrateBlockEntity;
@@ -10,7 +11,6 @@ import com.hbm_m.block.entity.crates.SteelCrateBlockEntity;
 import com.hbm_m.block.entity.crates.TemplateCrateBlockEntity;
 import com.hbm_m.block.entity.crates.TungstenCrateBlockEntity;
 import com.hbm_m.block.entity.doors.DoorBlockEntity;
-import com.hbm_m.block.entity.explosives.MineBlockEntity;
 import com.hbm_m.block.entity.machines.AnvilBlockEntity;
 import com.hbm_m.block.entity.machines.BatterySocketBlockEntity;
 import com.hbm_m.block.entity.machines.BlastFurnaceBlockEntity;
@@ -229,15 +229,12 @@ public class ModBlockEntities {
                     ModBlocks.ANVIL_MURKY.get())
                 .build(null));
 
-    public static final RegistrySupplier<BlockEntityType<MineBlockEntity>> MINE_BLOCK_ENTITY =
-            BLOCK_ENTITIES.register("mine_block_entity", () ->
-                    BlockEntityType.Builder.of(MineBlockEntity::new, ModBlocks.MINE_AP.get())
-                            .build(null)
-            );
-
-    public static final RegistrySupplier<BlockEntityType<MineBlockEntity>> MINE_NUKE_BLOCK_ENTITY =
-            BLOCK_ENTITIES.register("mine_nuke_block_entity", () ->
-                    BlockEntityType.Builder.of(MineBlockEntity::new, ModBlocks.MINE_FAT.get())
+    public static final RegistrySupplier<BlockEntityType<LandMineBlockEntity>> LANDMINE_BE =
+            BLOCK_ENTITIES.register("landmine_be", () ->
+                    BlockEntityType.Builder.of(LandMineBlockEntity::new,
+                            ModBlocks.MINE_AP.get(),
+                            ModBlocks.MINE_FAT.get(),
+                            ModBlocks.NAVAL_MINE.get())
                             .build(null)
             );
 

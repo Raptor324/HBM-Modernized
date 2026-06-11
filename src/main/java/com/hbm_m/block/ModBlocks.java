@@ -30,9 +30,7 @@ import com.hbm_m.block.explosives.DudFugasBlock;
 import com.hbm_m.block.explosives.DudNukeBlock;
 import com.hbm_m.block.explosives.ExplosiveChargeBlock;
 import com.hbm_m.block.explosives.GigaDetBlock;
-import com.hbm_m.block.explosives.MineBlock;
-import com.hbm_m.block.explosives.MineNukeBlock;
-import com.hbm_m.block.explosives.NavalMineBlock;
+import com.hbm_m.block.bomb.LandmineBlock;
 import com.hbm_m.block.explosives.NuclearChargeBlock;
 import com.hbm_m.block.explosives.SmokeBombBlock;
 import com.hbm_m.block.explosives.WasteChargeBlock;
@@ -1000,7 +998,7 @@ public class ModBlocks {
             () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
 
     public static final RegistrySupplier<Block> MINE_FAT = registerBlock("mine_fat",
-            () -> new MineNukeBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+            () -> new LandmineBlock(Block.Properties.copy(Blocks.STONE).strength(1.0F, 6.0F).noOcclusion(), 2.5D, 1D));
 
     public static final RegistrySupplier<Block> NUKE_FAT_MAN = registerBlockWithoutItem("nuke_fat_man",
             () -> new NukeFatManBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
@@ -1009,10 +1007,10 @@ public class ModBlocks {
             () -> new com.hbm_m.block.bomb.NukePrototypeBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
 
     public static final RegistrySupplier<Block> MINE_AP = registerBlock("mine_ap",
-            () -> new MineBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+            () -> new LandmineBlock(Block.Properties.copy(Blocks.STONE).strength(1.0F, 6.0F).noOcclusion(), 1.5D, 1D));
 
     public static final RegistrySupplier<Block> NAVAL_MINE = registerBlock("naval_mine",
-            () -> new NavalMineBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(5, 6.0F).noOcclusion()));
+            () -> new LandmineBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(1.0F, 6.0F).noOcclusion(), 2.5D, 1D));
 
     public static final RegistrySupplier<Block> CRATE_CONSERVE = registerBlock("crate_conserve",
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
