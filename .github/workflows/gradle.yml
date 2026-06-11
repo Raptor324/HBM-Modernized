@@ -36,6 +36,9 @@ jobs:
       - name: Set active stonecutter project
         run: ./gradlew "Set active project to 1.20.1-forge" -q --console=plain --warning-mode=none
 
+      - name: Generate Data with Gradle
+        run: ./gradlew :1.20.1-forge:runData -Pmod.version=${{ steps.get_version.outputs.version }} -q --console=plain --warning-mode=none
+
       - name: Build Forge 1.20.1
         run: ./gradlew :1.20.1-forge:build -Pmod.version=${{ steps.get_version.outputs.version }} -q --console=plain --warning-mode=none
 
