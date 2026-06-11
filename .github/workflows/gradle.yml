@@ -33,27 +33,27 @@ jobs:
         id: get_version
         run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
 
-      - name: Generate Data with Gradle
-        run: ./gradlew runData
+      - name: Set active stonecutter project
+        run: ./gradlew "Set active project to 1.20.1-forge" -q --console=plain --warning-mode=none
 
-      - name: Build with Gradle
-        run: ./gradlew build -Pmod_version=${{ steps.get_version.outputs.version }}
+      - name: Build Forge 1.20.1
+        run: ./gradlew :1.20.1-forge:build -Pmod.version=${{ steps.get_version.outputs.version }} -q --console=plain --warning-mode=none
 
       - name: Get JAR file path
         id: get_jar
         run: |
-          JAR_PATH=$(find build/libs -name "*.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -n 1)
+          JAR_PATH=$(find versions/1.20.1-forge/build/libs -name "*.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -n 1)
+          if [ -z "$JAR_PATH" ]; then
+            echo "::error::Release JAR not found in versions/1.20.1-forge/build/libs"
+            exit 1
+          fi
           echo "path=$JAR_PATH" >> $GITHUB_OUTPUT
+          echo "Found JAR: $JAR_PATH"
 
       - name: Create Release and Upload Asset
         uses: softprops/action-gh-release@v2
         with:
-          # Файл, который нужно загрузить. Мы берем путь из предыдущего шага.
           files: ${{ steps.get_jar.outputs.path }}
-          # Имя релиза (например, "HBM Modernized v0.0.4-alpha")
           name: "HBM Modernized ${{ github.ref_name }}"
           tag_name: ${{ github.ref_name }}
-          # Автоматически помечать как пре-релиз
           prerelease: ${{ contains(github.ref_name, '-alpha') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
-          # Можно добавить описание релиза здесь, если нужно
-          # body: "Автоматическая сборка"
