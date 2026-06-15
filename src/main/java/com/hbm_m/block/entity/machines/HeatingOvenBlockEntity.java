@@ -1,7 +1,5 @@
 package com.hbm_m.block.entity.machines;
 
-import java.util.Optional;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,34 +17,28 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.item.crafting.SmeltingRecipe;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
 /**
- * Heating Oven block entity - a furnace-like device with animated door.
- * Based on original 1.7.10 TileEntityHeaterOven.
+ * Heating Oven block entity - a pure combustion/heat source with an animated door.
+ * Burns fuel to generate TU. Based on original 1.7.10 TileEntityHeaterOven.
  */
 public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
 
     // Slots
-    private static final int SLOT_COUNT = 3;
+    private static final int SLOT_COUNT = 1;
     private static final int FUEL_SLOT = 0;
-    private static final int INPUT_SLOT = 1;
-    private static final int OUTPUT_SLOT = 2;
 
     // Constants
     private static final int MAX_BURN_TIME = 400;
-    private static final int COOK_TIME = 200;
     private static final long ENERGY_CAPACITY = 20_000L;
     private static final long TU_GENERATION_PER_TICK = 500L;
 
     // State variables
     private int burnTime = 0;
-    private int cookProgress = 0;
     private boolean isOn = false;
 
     // Door animation (0-135 degrees equivalent, stored as 0-135 ticks)
@@ -63,11 +55,9 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
             return switch (index) {
                 case 0 -> burnTime;
                 case 1 -> MAX_BURN_TIME;
-                case 2 -> cookProgress;
-                case 3 -> COOK_TIME;
-                case 4 -> isOn ? 1 : 0;
-                case 5 -> doorOpen ? 1 : 0;
-                case 6 -> (int) doorAngle;
+                case 2 -> isOn ? 1 : 0;
+                case 3 -> doorOpen ? 1 : 0;
+                case 4 -> (int) doorAngle;
                 default -> 0;
             };
         }
@@ -76,16 +66,15 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
         public void set(int index, int value) {
             switch (index) {
                 case 0 -> burnTime = value;
-                case 2 -> cookProgress = value;
-                case 4 -> isOn = value != 0;
-                case 5 -> doorOpen = value != 0;
-                case 6 -> doorAngle = value;
+                case 2 -> isOn = value != 0;
+                case 3 -> doorOpen = value != 0;
+                case 4 -> doorAngle = value;
             }
         }
 
         @Override
         public int getCount() {
-            return 7;
+            return 5;
         }
     };
 
@@ -106,13 +95,10 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        if (slot == OUTPUT_SLOT) {
-            return false; // Output slot can't have items inserted
-        }
         if (slot == FUEL_SLOT) {
             return AbstractFurnaceBlockEntity.getFuel().getOrDefault(stack.getItem(), 0) > 0;
         }
-        return true; // Input slot accepts anything
+        return false;
     }
 
     @Override
@@ -153,18 +139,6 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
                     blockEntity.getEnergyStored() + TU_GENERATION_PER_TICK));
         }
 
-        // Process cooking if burning
-        if (blockEntity.isOn && blockEntity.canCook()) {
-            blockEntity.cookProgress++;
-            if (blockEntity.cookProgress >= COOK_TIME) {
-                blockEntity.cookProgress = 0;
-                blockEntity.cook();
-            }
-            blockEntity.setChanged();
-        } else if (!blockEntity.isOn) {
-            blockEntity.cookProgress = 0;
-        }
-
         // Sync to client if burning state changed
         if (wasOnBefore != blockEntity.isOn) {
             blockEntity.sendUpdateToClient();
@@ -185,46 +159,6 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
         }
     }
 
-    private boolean canCook() {
-        ItemStack input = inventory.getStackInSlot(INPUT_SLOT);
-        if (input.isEmpty()) return false;
-
-        // Check for smelting recipe
-        Optional<SmeltingRecipe> recipe = level.getRecipeManager()
-            .getRecipeFor(RecipeType.SMELTING,
-                new net.minecraft.world.SimpleContainer(input), level);
-
-        if (recipe.isEmpty()) return false;
-
-        ItemStack result = recipe.get().getResultItem(level.registryAccess());
-        ItemStack output = inventory.getStackInSlot(OUTPUT_SLOT);
-
-        if (output.isEmpty()) return true;
-        if (!ItemStack.isSameItem(output, result)) return false;
-        return output.getCount() + result.getCount() <= output.getMaxStackSize();
-    }
-
-    private void cook() {
-        ItemStack input = inventory.getStackInSlot(INPUT_SLOT);
-        Optional<SmeltingRecipe> recipe = level.getRecipeManager()
-            .getRecipeFor(RecipeType.SMELTING,
-                new net.minecraft.world.SimpleContainer(input), level);
-
-        if (recipe.isEmpty()) return;
-
-        ItemStack result = recipe.get().getResultItem(level.registryAccess()).copy();
-        ItemStack output = inventory.getStackInSlot(OUTPUT_SLOT);
-
-        if (output.isEmpty()) {
-            inventory.setStackInSlot(OUTPUT_SLOT, result);
-        } else {
-            output.grow(result.getCount());
-        }
-
-        input.shrink(1);
-        setChanged();
-    }
-
     public void toggleDoor() {
         doorOpen = !doorOpen;
         setChanged();
@@ -235,7 +169,6 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.putInt("burnTime", burnTime);
-        tag.putInt("cookProgress", cookProgress);
         tag.putBoolean("isOn", isOn);
         tag.putFloat("doorAngle", doorAngle);
         tag.putBoolean("doorOpen", doorOpen);
@@ -245,7 +178,6 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
     public void load(CompoundTag tag) {
         super.load(tag);
         burnTime = tag.getInt("burnTime");
-        cookProgress = tag.getInt("cookProgress");
         isOn = tag.getBoolean("isOn");
         doorAngle = tag.getFloat("doorAngle");
         prevDoorAngle = doorAngle;
@@ -275,7 +207,12 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     public AABB getRenderBoundingBox() {
-        return new AABB(worldPosition.offset(-1, 0, -1), worldPosition.offset(2, 2, 2));
+        BlockState state = getBlockState();
+        if (!(state.getBlock() instanceof com.hbm_m.block.machines.HeatingOvenBlock block)) {
+            return new AABB(worldPosition.offset(-1, 0, -1), worldPosition.offset(2, 2, 2));
+        }
+        Direction facing = state.getValue(com.hbm_m.block.machines.HeatingOvenBlock.FACING);
+        return block.getStructureHelper().getRenderBoundingBox(worldPosition, facing, 0.0);
     }
 
     // Client-side getters for renderer
@@ -303,10 +240,5 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
     @Override
     public boolean canConnectEnergy(Direction side) {
         return true;
-    }
-
-    @Override
-    protected boolean isCriticalSlot(int slot) {
-        return slot == INPUT_SLOT || slot == OUTPUT_SLOT;
     }
 }

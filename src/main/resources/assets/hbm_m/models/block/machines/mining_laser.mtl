@@ -1,0 +1,30 @@
+# Generated for WIP machine block
+newmtl laser
+Ns 20.0
+d 1.0
+illum 2
+Kd 0.8 0.8 0.8
+Ka 0.0 0.0 0.0
+Ks 0.2 0.2 0.2
+Ke 0.0 0.0 0.0
+map_Kd hbm_m:block/machine/mining_laser_laser
+
+newmtl pivot
+Ns 20.0
+d 1.0
+illum 2
+Kd 0.8 0.8 0.8
+Ka 0.0 0.0 0.0
+Ks 0.2 0.2 0.2
+Ke 0.0 0.0 0.0
+map_Kd hbm_m:block/machine/mining_laser_pivot
+
+newmtl base
+Ns 20.0
+d 1.0
+illum 2
+Kd 0.8 0.8 0.8
+Ka 0.0 0.0 0.0
+Ks 0.2 0.2 0.2
+Ke 0.0 0.0 0.0
+map_Kd hbm_m:block/machine/mining_laser_base

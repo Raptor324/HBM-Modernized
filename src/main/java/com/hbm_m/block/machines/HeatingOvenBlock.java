@@ -1,9 +1,16 @@
 package com.hbm_m.block.machines;
 
+import java.util.Map;
+import java.util.function.Supplier;
+
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.HeatingOvenBlockEntity;
+import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+import com.hbm_m.multiblock.PartRole;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
@@ -32,18 +39,60 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 
 /**
- * Heating Oven block - a 3x1x3 multiblock furnace with animated door.
+ * Heating Oven block - a 3x3x1 multiblock furnace with animated door.
+ * The controller occupies the center of the 3x3 footprint; the surrounding
+ * 8 cells are filled with invisible {@code UNIVERSAL_MACHINE_PART} blocks
+ * that provide solid collision and redirect interaction back to this controller.
  */
-public class HeatingOvenBlock extends BaseEntityBlock {
+public class HeatingOvenBlock extends BaseEntityBlock implements IMultiblockController {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
-    // Voxel shape for the full 3x1x3 block model
-    private static final VoxelShape SHAPE = Shapes.box(-1.0, 0.0, -1.0, 2.0, 1.0, 2.0);
+    private final MultiblockStructureHelper structureHelper;
 
     public HeatingOvenBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        this.structureHelper = defineStructure();
+    }
+
+    /**
+     * Defines the 3x3x1 footprint of the oven. The controller sits in the
+     * center cell; the 8 surrounding cells are filled with phantom
+     * {@code UNIVERSAL_MACHINE_PART} blocks (full collision cubes).
+     */
+    private static MultiblockStructureHelper defineStructure() {
+        String[] layer = {
+            "OOO",
+            "OCO",
+            "OOO"
+        };
+
+        Map<Character, PartRole> roleMap = Map.of(
+                'O', PartRole.DEFAULT,
+                'C', PartRole.CONTROLLER
+        );
+
+        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
+
+        return MultiblockStructureHelper.createFromLayersWithRoles(
+                new String[][] { layer },
+                symbolMap,
+                () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
+                roleMap,
+                null,
+                null
+        );
+    }
+
+    @Override
+    public MultiblockStructureHelper getStructureHelper() {
+        return this.structureHelper;
+    }
+
+    @Override
+    public PartRole getPartRole(BlockPos localOffset) {
+        return structureHelper.resolvePartRole(localOffset, this);
     }
 
     @Override
@@ -63,7 +112,20 @@ public class HeatingOvenBlock extends BaseEntityBlock {
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return SHAPE;
+        return structureHelper.generateShapeFromParts(state.getValue(FACING));
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return structureHelper.getSpecificPartShape(structureHelper.getControllerOffset(), state.getValue(FACING));
+    }
+
+    @Override
+    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
+        if (!structureHelper.isFullBlock(structureHelper.getControllerOffset(), state.getValue(FACING))) {
+            return Shapes.empty();
+        }
+        return Shapes.block();
     }
 
     @Nullable
@@ -80,6 +142,14 @@ public class HeatingOvenBlock extends BaseEntityBlock {
         }
         return createTickerHelper(type, ModBlockEntities.HEATING_OVEN_BE.get(),
             HeatingOvenBlockEntity::serverTick);
+    }
+
+    @Override
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+        super.onPlace(state, level, pos, oldState, isMoving);
+        if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
+            structureHelper.placeStructure(level, pos, state.getValue(FACING), this);
+        }
     }
 
     @Override
@@ -110,6 +180,9 @@ public class HeatingOvenBlock extends BaseEntityBlock {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof HeatingOvenBlockEntity oven) {
                 oven.dropInventoryContents();
+            }
+            if (!level.isClientSide()) {
+                structureHelper.destroyStructure(level, pos, state.getValue(FACING));
             }
         }
         super.onRemove(state, level, pos, newState, isMoving);

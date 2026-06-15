@@ -1,5 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'solar_boiler.blend'
 # www.blender.org
+mtllib machines/solar_boiler.mtl
+usemtl default
 o Overglow_3
 v -0.000000 0.999328 -1.681751
 v -0.000000 0.097148 -1.348659

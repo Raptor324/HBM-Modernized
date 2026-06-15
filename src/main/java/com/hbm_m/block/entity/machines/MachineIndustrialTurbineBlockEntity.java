@@ -8,6 +8,7 @@ import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineIndustrialTurbineMenu;
+import com.hbm_m.interfaces.IEnergyModeHolder;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 
 import net.minecraft.core.BlockPos;
@@ -47,7 +48,7 @@ import net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant;
  * - Steam consumption: 50 mB/t
  */
 @SuppressWarnings("UnstableApiUsage")
-public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity {
+public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder {
 
     // Slot definitions
     public static final int SLOT_STEAM_IN = 0;      // Steam container input
@@ -287,6 +288,11 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity 
 
     public ContainerData getContainerData() {
         return data;
+    }
+
+    @Override
+    public int getCurrentMode() {
+        return 2; // OUTPUT only, so the energy network treats this as a generator.
     }
 
     // --- Accessors ---

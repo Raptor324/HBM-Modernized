@@ -40,7 +40,7 @@ public final class NuclearScenarioLaunchers {
     private NuclearScenarioLaunchers() {}
 
     // --- Prototype atomic bomb ---
-    private static final int PROTOTYPE_SPHERE_RADIUS = 300;
+    private static final int PROTOTYPE_SPHERE_RADIUS = 150;
 
     public static void launchPrototype(ServerLevel level, BlockPos pos, ExplosionCommandOptions opt) {
         double x = pos.getX() + 0.5;
@@ -62,7 +62,11 @@ public final class NuclearScenarioLaunchers {
         }
     }
 
-    private static final int COLUMNS_PER_TICK = 2000;
+    // Time-budgeted excavation: each tick does as much work as fits in this nanosecond
+    // budget, then yields. This keeps single-tick lag spikes bounded regardless of the
+    // sphere radius, while still adapting to how fast the server actually is.
+    private static final long EXCAVATE_TIME_BUDGET_NANOS = 8_000_000L; // ~8ms/tick
+    private static final int EXCAVATE_TIME_CHECK_INTERVAL = 256;       // blocks between time checks
 
     private static void excavateSphere(ServerLevel level, BlockPos center, int radius) {
         int cx = center.getX();
@@ -87,29 +91,58 @@ public final class NuclearScenarioLaunchers {
         if (server == null) return;
 
         int baseTick = server.getTickCount() + 40;
-        int totalBatches = (columns.size() + COLUMNS_PER_TICK - 1) / COLUMNS_PER_TICK;
+        server.tell(new TickTask(baseTick, () ->
+                processExcavationBatch(level, columns, cx, cy, cz, 0, Integer.MIN_VALUE)));
+    }
 
-        for (int b = 0; b < totalBatches; b++) {
-            final int start = b * COLUMNS_PER_TICK;
-            final int end   = Math.min(start + COLUMNS_PER_TICK, columns.size());
-            final List<int[]> batch = columns.subList(start, end);
+    private static void processExcavationBatch(ServerLevel level, List<int[]> columns, int cx, int cy, int cz,
+                                                 int columnIndex, int dyStart) {
+        MinecraftServer server = level.getServer();
+        if (server == null) return;
 
-            server.tell(new TickTask(baseTick + b, () -> {
-                for (int[] col : batch) {
-                    int x = cx + col[0];
-                    int z = cz + col[1];
-                    int dyMax = col[2];
-                    for (int dy = -dyMax; dy <= dyMax; dy++) {
-                        int worldY = cy + dy;
-                        if (worldY < level.getMinBuildHeight() || worldY >= level.getMaxBuildHeight()) continue;
-                        BlockPos p = new BlockPos(x, worldY, z);
-                        if (!level.getBlockState(p).isAir()
-                                && !level.getBlockState(p).is(net.minecraft.tags.BlockTags.FEATURES_CANNOT_REPLACE)) {
-                            level.setBlock(p, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
-                        }
+        long startTime = System.nanoTime();
+        int dy = dyStart;
+        int processedSinceCheck = 0;
+
+        while (columnIndex < columns.size()) {
+            int[] col = columns.get(columnIndex);
+            int dyMax = col[2];
+            if (dy == Integer.MIN_VALUE) {
+                dy = -dyMax;
+            }
+
+            int x = cx + col[0];
+            int z = cz + col[1];
+
+            while (dy <= dyMax) {
+                int worldY = cy + dy;
+                if (worldY >= level.getMinBuildHeight() && worldY < level.getMaxBuildHeight()) {
+                    BlockPos p = new BlockPos(x, worldY, z);
+                    BlockState state = level.getBlockState(p);
+                    if (!state.isAir() && !state.is(net.minecraft.tags.BlockTags.FEATURES_CANNOT_REPLACE)) {
+                        // Flag 2 (clients only, no neighbor updates) avoids the redstone/
+                        // physics/light update cascade that flag 3 would trigger for every
+                        // single removed block — this is the main TPS killer at this scale.
+                        level.setBlock(p, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
                     }
                 }
-            }));
+                dy++;
+                processedSinceCheck++;
+
+                if (processedSinceCheck >= EXCAVATE_TIME_CHECK_INTERVAL) {
+                    if (System.nanoTime() - startTime >= EXCAVATE_TIME_BUDGET_NANOS) {
+                        final int nextColumnIndex = columnIndex;
+                        final int nextDy = dy;
+                        server.tell(new TickTask(server.getTickCount() + 1, () ->
+                                processExcavationBatch(level, columns, cx, cy, cz, nextColumnIndex, nextDy)));
+                        return;
+                    }
+                    processedSinceCheck = 0;
+                }
+            }
+
+            columnIndex++;
+            dy = Integer.MIN_VALUE;
         }
     }
 

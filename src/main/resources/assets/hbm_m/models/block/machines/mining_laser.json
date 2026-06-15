@@ -1,0 +1,170 @@
+{
+	"textures": {
+		"particle": "hbm_m:block/machine/mining_laser_base"
+	},
+	"loader": "forge:composite",
+	"children": {
+		"mining_laser_model": {
+			"loader": "forge:obj",
+			"model": "hbm_m:models/block/machines/mining_laser.obj",
+			"flip_v": true,
+			"render_type": "minecraft:cutout",
+			"textures": {
+				"laser": "hbm_m:block/machine/mining_laser_laser",
+				"pivot": "hbm_m:block/machine/mining_laser_pivot",
+				"base": "hbm_m:block/machine/mining_laser_base"
+			}
+		}
+	},
+	"transform": {
+		"translation": [
+			0.5,
+			0,
+			0.5
+		],
+		"rotation": [
+			0,
+			0,
+			0
+		],
+		"scale": 1.0
+	},
+	"display": {
+		"thirdperson_righthand": {
+			"rotation": [
+				75,
+				45,
+				0
+			],
+			"translation": [
+				0.0,
+				2.5,
+				0.0
+			],
+			"scale": [
+				0.16,
+				0.16,
+				0.16
+			]
+		},
+		"thirdperson_lefthand": {
+			"rotation": [
+				75,
+				45,
+				0
+			],
+			"translation": [
+				0.0,
+				2.5,
+				0.0
+			],
+			"scale": [
+				0.16,
+				0.16,
+				0.16
+			]
+		},
+		"firstperson_righthand": {
+			"rotation": [
+				0,
+				45,
+				0
+			],
+			"translation": [
+				0.75,
+				1.25,
+				0.0
+			],
+			"scale": [
+				0.16,
+				0.16,
+				0.16
+			]
+		},
+		"firstperson_lefthand": {
+			"rotation": [
+				0,
+				45,
+				0
+			],
+			"translation": [
+				0.0,
+				0.0,
+				0.0
+			],
+			"scale": [
+				0.16,
+				0.16,
+				0.16
+			]
+		},
+		"gui": {
+			"rotation": [
+				30,
+				225,
+				0
+			],
+			"translation": [
+				0.0,
+				-4.75,
+				0.0
+			],
+			"scale": [
+				0.1745,
+				0.1745,
+				0.1745
+			]
+		},
+		"head": {
+			"rotation": [
+				0,
+				0,
+				0
+			],
+			"translation": [
+				0.0,
+				0.0,
+				0.0
+			],
+			"scale": [
+				1.0,
+				1.0,
+				1.0
+			]
+		},
+		"fixed": {
+			"rotation": [
+				0,
+				180,
+				0
+			],
+			"translation": [
+				0.0,
+				0.0,
+				0.0
+			],
+			"scale": [
+				0.2182,
+				0.2182,
+				0.2182
+			]
+		},
+		"ground": {
+			"rotation": [
+				0,
+				0,
+				0
+			],
+			"translation": [
+				0.0,
+				3.0,
+				0.0
+			],
+			"scale": [
+				0.1455,
+				0.1455,
+				0.1455
+			]
+		}
+	}
+}

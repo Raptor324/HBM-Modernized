@@ -1,0 +1,168 @@
+{
+	"textures": {
+		"particle": "hbm_m:block/machine/electric_heater"
+	},
+	"loader": "forge:composite",
+	"children": {
+		"electric_heater_model": {
+			"loader": "forge:obj",
+			"model": "hbm_m:models/block/machines/electric_heater.obj",
+			"flip_v": true,
+			"render_type": "minecraft:cutout",
+			"textures": {
+				"default": "hbm_m:block/machine/electric_heater"
+			}
+		}
+	},
+	"transform": {
+		"translation": [
+			0.5,
+			0,
+			0.5
+		],
+		"rotation": [
+			0,
+			0,
+			0
+		],
+		"scale": 1.0
+	},
+	"display": {
+		"thirdperson_righthand": {
+			"rotation": [
+				75,
+				45,
+				0
+			],
+			"translation": [
+				0.0,
+				2.5,
+				0.0
+			],
+			"scale": [
+				0.2133,
+				0.2133,
+				0.2133
+			]
+		},
+		"thirdperson_lefthand": {
+			"rotation": [
+				75,
+				45,
+				0
+			],
+			"translation": [
+				0.0,
+				2.5,
+				0.0
+			],
+			"scale": [
+				0.2133,
+				0.2133,
+				0.2133
+			]
+		},
+		"firstperson_righthand": {
+			"rotation": [
+				0,
+				45,
+				0
+			],
+			"translation": [
+				0.75,
+				1.25,
+				0.0
+			],
+			"scale": [
+				0.2133,
+				0.2133,
+				0.2133
+			]
+		},
+		"firstperson_lefthand": {
+			"rotation": [
+				0,
+				45,
+				0
+			],
+			"translation": [
+				0.0,
+				0.0,
+				0.0
+			],
+			"scale": [
+				0.2133,
+				0.2133,
+				0.2133
+			]
+		},
+		"gui": {
+			"rotation": [
+				30,
+				225,
+				0
+			],
+			"translation": [
+				0.0,
+				-4.75,
+				0.0
+			],
+			"scale": [
+				0.2327,
+				0.2327,
+				0.2327
+			]
+		},
+		"head": {
+			"rotation": [
+				0,
+				0,
+				0
+			],
+			"translation": [
+				0.0,
+				0.0,
+				0.0
+			],
+			"scale": [
+				1.0,
+				1.0,
+				1.0
+			]
+		},
+		"fixed": {
+			"rotation": [
+				0,
+				180,
+				0
+			],
+			"translation": [
+				0.0,
+				0.0,
+				0.0
+			],
+			"scale": [
+				0.2909,
+				0.2909,
+				0.2909
+			]
+		},
+		"ground": {
+			"rotation": [
+				0,
+				0,
+				0
+			],
+			"translation": [
+				0.0,
+				3.0,
+				0.0
+			],
+			"scale": [
+				0.1939,
+				0.1939,
+				0.1939
+			]
+		}
+	}
+}

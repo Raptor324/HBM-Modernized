@@ -60,8 +60,8 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
 
         this.machineInventory = new ModItemStackHandlerContainer(this.blockEntity.getInventory(), this.blockEntity::setChanged);
 
-        // Battery slot (top-right area, near energy bar)
-        this.addSlot(new Slot(machineInventory, BATTERY_SLOT, 154, 4) {
+        // Battery slot (top-left, on the decorative side panel)
+        this.addSlot(new Slot(machineInventory, BATTERY_SLOT, 8, 4) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 boolean hbm = stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
@@ -78,22 +78,22 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
             }
         });
 
-        // Input slot 1 (left input area)
-        this.addSlot(new Slot(machineInventory, INPUT_SLOT_1, 45, 17));
+        // Input slot 1: gas cell (UF6/PUF6) - top-left of the 2x2 grid
+        this.addSlot(new Slot(machineInventory, INPUT_SLOT_1, 79, 57));
 
-        // Input slot 2 (right input area)
-        this.addSlot(new Slot(machineInventory, INPUT_SLOT_2, 69, 17));
+        // Input slot 2: Centristick catalyst - top-right of the 2x2 grid
+        this.addSlot(new Slot(machineInventory, INPUT_SLOT_2, 97, 57));
 
-        // Output slot 1
-        this.addSlot(new Slot(machineInventory, OUTPUT_SLOT_1, 45, 53) {
+        // Output slot 1: enriched product - bottom-left of the 2x2 grid
+        this.addSlot(new Slot(machineInventory, OUTPUT_SLOT_1, 79, 75) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
             }
         });
 
-        // Output slot 2
-        this.addSlot(new Slot(machineInventory, OUTPUT_SLOT_2, 69, 53) {
+        // Output slot 2: empty cell - bottom-right of the 2x2 grid
+        this.addSlot(new Slot(machineInventory, OUTPUT_SLOT_2, 97, 75) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;

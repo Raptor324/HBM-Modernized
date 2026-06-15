@@ -161,15 +161,6 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
             return false;
         }
 
-        int coolantUse = getCoolantConsumption();
-        if (tanks[TANK_WATER].getFill() < coolantUse) {
-            return false;
-        }
-
-        if (tanks[TANK_SPENT_STEAM].getFill() + coolantUse > tanks[TANK_SPENT_STEAM].getMaxFill()) {
-            return false;
-        }
-
         for (int lane = 0; lane < 3; lane++) {
             ItemStack input = inventory.getStackInSlot(SLOT_INPUT_START + lane);
             ItemStack target = inventory.getStackInSlot(SLOT_TARGET_START + lane);
@@ -298,5 +289,15 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return MachineCyclotronMenu.create(id, inventory, this);
+    }
+
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        BlockState state = getBlockState();
+        if (!(state.getBlock() instanceof com.hbm_m.block.machines.MachineCyclotronBlock block)) {
+            return new net.minecraft.world.phys.AABB(worldPosition.offset(-2, 0, -2), worldPosition.offset(3, 4, 3));
+        }
+        net.minecraft.core.Direction facing = state.getValue(com.hbm_m.block.machines.MachineCyclotronBlock.FACING);
+        return block.getStructureHelper().getRenderBoundingBox(worldPosition, facing, 0.0);
     }
 }

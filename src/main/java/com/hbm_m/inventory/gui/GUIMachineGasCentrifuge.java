@@ -28,6 +28,21 @@ public class GUIMachineGasCentrifuge extends GuiInfoScreen<MachineGasCentrifugeM
         this.titleLabelX = (this.imageWidth - this.font.width(this.title)) / 2;
     }
 
+    // The supplied gui_centrifuge_gas.png does not contain separate widget sprites in the usual
+    // "x >= 176" area, so dynamic bars are rendered as colored fills over the background,
+    // following the same convention as GUIMachineCentrifuge.
+
+    private static final int ENERGY_BAR_X = 134;
+    private static final int ENERGY_BAR_Y = 18;
+    private static final int ENERGY_BAR_WIDTH = 16;
+    private static final int ENERGY_BAR_HEIGHT = 54;
+
+    // Progress indicator overlays the arrow shaft above the 2x2 grid (x 71-105, y 39-40).
+    private static final int PROGRESS_X = 71;
+    private static final int PROGRESS_Y = 39;
+    private static final int PROGRESS_WIDTH = 34;
+    private static final int PROGRESS_HEIGHT = 2;
+
     @Override
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
@@ -36,26 +51,25 @@ public class GUIMachineGasCentrifuge extends GuiInfoScreen<MachineGasCentrifugeM
 
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
-        // Energy bar
+        // Energy bar (fills bottom-up)
         long power = menu.getEnergyLong();
         long maxPower = menu.getMaxEnergyLong();
         if (power > 0 && maxPower > 0) {
-            int barHeight = 52;
-            int filled = (int) (power * barHeight / maxPower);
+            int filled = (int) (power * ENERGY_BAR_HEIGHT / maxPower);
             if (filled > 0) {
-                int x0 = this.leftPos + 152;
-                int y0 = this.topPos + 16 + (barHeight - filled);
-                guiGraphics.fill(x0, y0, x0 + 16, y0 + filled, 0xFF3FCFE0);
+                int x0 = this.leftPos + ENERGY_BAR_X;
+                int y0 = this.topPos + ENERGY_BAR_Y + (ENERGY_BAR_HEIGHT - filled);
+                guiGraphics.fill(x0, y0, x0 + ENERGY_BAR_WIDTH, y0 + filled, 0xFF3FCFE0);
             }
         }
 
-        // Progress arrow
+        // Progress indicator (fills left-to-right)
         if (menu.isProcessing()) {
-            int p = menu.getScaledProgress(24);
+            int p = menu.getScaledProgress(PROGRESS_WIDTH);
             if (p > 0) {
-                int arrowX = this.leftPos + 52;
-                int arrowY = this.topPos + 35;
-                guiGraphics.fill(arrowX, arrowY, arrowX + p, arrowY + 6, 0xFFFFE066);
+                int x0 = this.leftPos + PROGRESS_X;
+                int y0 = this.topPos + PROGRESS_Y;
+                guiGraphics.fill(x0, y0, x0 + p, y0 + PROGRESS_HEIGHT, 0xFFFFE066);
             }
         }
     }
@@ -72,8 +86,8 @@ public class GUIMachineGasCentrifuge extends GuiInfoScreen<MachineGasCentrifugeM
         renderTooltip(guiGraphics, mouseX, mouseY);
 
         drawElectricityInfo(guiGraphics, mouseX, mouseY,
-                152, 16,
-                16, 52,
+                ENERGY_BAR_X, ENERGY_BAR_Y,
+                ENERGY_BAR_WIDTH, ENERGY_BAR_HEIGHT,
                 menu.getEnergyLong(),
                 menu.getMaxEnergyLong());
     }

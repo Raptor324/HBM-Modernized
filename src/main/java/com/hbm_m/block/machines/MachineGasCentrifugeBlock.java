@@ -35,6 +35,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.network.NetworkHooks;
 
@@ -144,7 +145,23 @@ public class MachineGasCentrifugeBlock extends BaseEntityBlock implements IMulti
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        // Full 3x3x3 outline, used for the selection/outline box.
         return structureHelper.generateShapeFromParts(state.getValue(FACING));
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        // Only this cell's own collision shape - the other 26 cells are covered by their
+        // own UNIVERSAL_MACHINE_PART phantom blocks, each providing their own collision.
+        return structureHelper.getSpecificPartShape(structureHelper.getControllerOffset(), state.getValue(FACING));
+    }
+
+    @Override
+    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
+        if (!structureHelper.isFullBlock(structureHelper.getControllerOffset(), state.getValue(FACING))) {
+            return Shapes.empty();
+        }
+        return Shapes.block();
     }
 
     @Override
