@@ -541,6 +541,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.TURBOFAN);
         customMachineBlock(ModBlocks.INDUSTRIAL_TURBINE);
         customMachineBlock(ModBlocks.TURBINE);
+        // MACHINE_CHUNGUS nutzt das bereits vorhandene chungus.obj-Modell (Pfad weicht von der
+        // Registry-ID ab, daher kein customMachineBlock()).
+        horizontalBlock(ModBlocks.MACHINE_CHUNGUS.get(),
+                models().getExistingFile(modLoc("block/machines/chungus")));
         customMachineBlock(ModBlocks.SUBSTATION);
         registerMachineAssemblerBlock(ModBlocks.MACHINE_ASSEMBLER);
         registerAdvancedAssemblyMachineBlock(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
@@ -2457,12 +2461,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 models().cubeAll(
                         ModBlocks.MACHINE_CENTRIFUGE.getId().getPath(),
                         modLoc("block/machine_centrifuge")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.MACHINE_CHUNGUS.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_CHUNGUS.getId().getPath(),
-                        modLoc("block/machine_chungus")
                 )
         );
         simpleBlockWithItem(ModBlocks.MACHINE_CONTROLLER.get(),

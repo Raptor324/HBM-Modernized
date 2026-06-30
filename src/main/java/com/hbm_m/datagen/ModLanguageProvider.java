@@ -2026,6 +2026,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("advancements.hbm_m.radiation_1000.description", "Умереть от лучевой болезни");
 
                 add("chat.hbm_m.structure.obstructed", "Другие блоки мешают установке структуры!!");
+                add("chat.hbm_m.chungus.on", "Турбина Левиафан: ВКЛ");
+                add("chat.hbm_m.chungus.off", "Турбина Левиафан: ВЫКЛ");
 
 
                 add("text.autoconfig.hbm_m.title", "Настройки радиации (HBM Modernized)");
@@ -4125,7 +4127,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("advancements.hbm_m.radiation_1000.description", "Die from radiation sickness");
 
                 add("chat.hbm_m.structure.obstructed", "Placement obstructed by other blocks!");
-                
+                add("chat.hbm_m.chungus.on", "Leviathan Turbine: ON");
+                add("chat.hbm_m.chungus.off", "Leviathan Turbine: OFF");
+
                 add("text.autoconfig.hbm_m.title", "Radiation Settings (HBM Modernized)");
 
                 // CONFIG

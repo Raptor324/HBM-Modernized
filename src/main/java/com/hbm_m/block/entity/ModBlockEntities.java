@@ -73,6 +73,7 @@ import com.hbm_m.block.entity.machines.MachineWatzPowerplantBlockEntity;
 import com.hbm_m.block.entity.machines.MachineZirnoxBlockEntity;
 import com.hbm_m.block.entity.machines.MachineZirnoxDestroyedBlockEntity;
 import com.hbm_m.block.entity.machines.MachineIndustrialTurbineBlockEntity;
+import com.hbm_m.block.entity.machines.MachineChungusBlockEntity;
 import com.hbm_m.block.entity.machines.MachinePressBlockEntity;
 import com.hbm_m.block.entity.machines.MachineRefineryBlockEntity;
 import com.hbm_m.block.entity.machines.MachineShredderBlockEntity;
@@ -437,6 +438,11 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("industrial_turbine_be", () ->
                     BlockEntityType.Builder.of(MachineIndustrialTurbineBlockEntity::new,
                             ModBlocks.INDUSTRIAL_TURBINE.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<MachineChungusBlockEntity>> MACHINE_CHUNGUS_BE =
+            BLOCK_ENTITIES.register("machine_chungus_be", () ->
+                    BlockEntityType.Builder.of(MachineChungusBlockEntity::new,
+                            ModBlocks.MACHINE_CHUNGUS.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<MachineTurbineBlockEntity>> TURBINE_BE =
             BLOCK_ENTITIES.register("turbine_be", () ->

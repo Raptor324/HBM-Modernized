@@ -373,6 +373,18 @@
       "hbm_m:block/motor"
     ]
   },
+  "block.large_turbine": {
+    "subtitle": "sounds.hbm_m.subtitle.large_turbine",
+    "sounds": [
+      "hbm_m:block/largeTurbine"
+    ]
+  },
+  "block.chungus_turbine": {
+    "subtitle": "sounds.hbm_m.subtitle.chungus_turbine",
+    "sounds": [
+      "hbm_m:block/chungusTurbine"
+    ]
+  },
   "block.sonar_ping": {
     "category": "block",
     "subtitle": "sounds.hbm_m.subtitle.sonar_ping",

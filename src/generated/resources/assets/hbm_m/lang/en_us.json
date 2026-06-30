@@ -965,6 +965,8 @@
   "block.hbm_m.wood_barrier": "Wooden Barrier",
   "block.hbm_m.wood_burner": "Wood Burner Generator",
   "block.hbm_m.zirnox": "Zirnox",
+  "chat.hbm_m.chungus.off": "Leviathan Turbine: OFF",
+  "chat.hbm_m.chungus.on": "Leviathan Turbine: ON",
   "chat.hbm_m.structure.obstructed": "Placement obstructed by other blocks!",
   "chat.radar.tolow": "Radar must be placed higher up!",
   "commands.hbm_m.explosion.bad_coord_suffix": "Provide all three coordinates (x y z) or none to use the command source position",

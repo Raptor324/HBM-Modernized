@@ -131,9 +131,6 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<MachineSilexMenu>> SILEX_MENU =
             MENUS.register("silex_menu", () -> MenuRegistry.ofExtended(MachineSilexMenu::new));
 
-    public static final RegistrySupplier<MenuType<MachineIndustrialTurbineMenu>> INDUSTRIAL_TURBINE_MENU =
-            MENUS.register("industrial_turbine_menu", () -> MenuRegistry.ofExtended(MachineIndustrialTurbineMenu::new));
-
     public static final RegistrySupplier<MenuType<MachineTurbineMenu>> TURBINE_MENU =
             MENUS.register("turbine_menu", () -> MenuRegistry.ofExtended(MachineTurbineMenu::new));
 

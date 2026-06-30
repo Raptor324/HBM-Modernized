@@ -657,6 +657,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.TURBOFAN);
         blockItemFromBlockModelMachine(ModBlocks.INDUSTRIAL_TURBINE);
         blockItemFromBlockModelMachine(ModBlocks.TURBINE);
+        blockItemFromBlockModelMachine(ModBlocks.MACHINE_CHUNGUS, "chungus");
         blockItemFromBlockModelMachine(ModBlocks.SUBSTATION);
 
         // --- WIP Machines (3D OBJ models) ---

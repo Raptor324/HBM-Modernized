@@ -18,7 +18,6 @@ import com.hbm_m.multiblock.PartRole;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -217,20 +216,8 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
         if (hasScrewdriver(player)) {
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
-        if (level.isClientSide) return InteractionResult.SUCCESS;
-        
-        BlockEntity be = level.getBlockEntity(pos);
-        if (be instanceof DoorBlockEntity doorBE) {
-            // Самого себя (контроллер) дергаем напрямую
-            if (doorBE.isLocked()) {
-                player.displayClientMessage(Component.translatable("door.locked"), true);
-                return InteractionResult.FAIL;
-            }
-            if (doorBE.isMoving()) return InteractionResult.CONSUME;
-            
-            doorBE.toggle();
-            return InteractionResult.SUCCESS;
-        }
+        // Tür lässt sich nicht mehr per Rechtsklick öffnen/schließen, nur noch per Redstone-Signal
+        // (siehe neighborChanged -> doorBE.checkRedstonePower()).
         return InteractionResult.PASS;
     }
 

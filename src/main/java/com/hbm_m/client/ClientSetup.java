@@ -131,7 +131,6 @@ import com.hbm_m.inventory.gui.GUIMachineSubstation;
 import com.hbm_m.inventory.gui.GUIMachineSteamTurbine;
 import com.hbm_m.inventory.gui.GUIMachineTurbine;
 import com.hbm_m.inventory.gui.GUIMachineZirnox;
-import com.hbm_m.inventory.gui.GUIIndustrialTurbine;
 import com.hbm_m.inventory.gui.GUIMachineChemicalPlant;
 import com.hbm_m.inventory.gui.GUIMachineFluidTank;
 import com.hbm_m.inventory.gui.GUIMachineFrackingTower;
@@ -477,7 +476,6 @@ public class ClientSetup {
         MenuScreens.register(ModMenuTypes.FEL_MENU.get(), GUIMachineFel::new);
         MenuScreens.register(ModMenuTypes.SILEX_MENU.get(), GUIMachineSilex::new);
         MenuScreens.register(ModMenuTypes.GAS_CENTRIFUGE_MENU.get(), GUIMachineGasCentrifuge::new);
-        MenuScreens.register(ModMenuTypes.INDUSTRIAL_TURBINE_MENU.get(), GUIIndustrialTurbine::new);
         MenuScreens.register(ModMenuTypes.TURBINE_MENU.get(), GUIMachineTurbine::new);
         MenuScreens.register(ModMenuTypes.STEAM_TURBINE_MENU.get(), GUIMachineSteamTurbine::new);
         MenuScreens.register(ModMenuTypes.SUBSTATION_MENU.get(), GUIMachineSubstation::new);

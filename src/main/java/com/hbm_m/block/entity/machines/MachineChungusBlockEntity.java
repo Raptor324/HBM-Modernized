@@ -24,6 +24,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -38,34 +39,31 @@ import net.fabricmc.api.Environment;
 *///?}
 
 /**
- * Industrial Turbine BlockEntity - converts steam to energy (HE).
- * Kein Inventar/GUI - Dampf kommt ausschließlich über Rohre an den UNIVERSAL_CONNECTOR-
- * Phantomblöcken der Multiblock-Struktur an (gleiches Prinzip wie bei Chungus).
- *
- * Stats:
- * - Steam tank: 64,000 mB (input)
- * - Spent steam tank: 64,000 mB (output)
- * - Energy output: up to 500 HE/t depending on steam type
+ * Chungus / Leviathan Steam Turbine BlockEntity - das Endgame-Upgrade zur Industrial Turbine.
+ * Kein Inventar/GUI (wie im Original) - Dampf kommt ausschließlich über Rohre an den
+ * UNIVERSAL_CONNECTOR-Phantomblöcken der Multiblock-Struktur an, Energie geht über den
+ * ENERGY_CONNECTOR-Phantomblock raus. Verbraucht (anders als die Industrial Turbine) pro Tick
+ * 100% des verfügbaren Dampfs - das Flywheel ist hier der einzige Puffer/Dämpfer.
  */
 @SuppressWarnings("UnstableApiUsage")
-public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
+public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         implements IEnergyModeHolder, IFluidStandardReceiverMK2, IFluidStandardSenderMK2 {
 
-    // Capacity constants
-    private static final long ENERGY_CAPACITY = 500_000L;
-    private static final long ENERGY_EXTRACT_RATE = 10_000L;
-    private static final int STEAM_CAPACITY = 64_000;
-    private static final int SPENT_STEAM_CAPACITY = 64_000;
+    // Capacity constants (Platzhalter, ~16x Industrial Turbine - beim Playtesten nachjustieren)
+    private static final long ENERGY_CAPACITY = 8_000_000L;
+    private static final long ENERGY_EXTRACT_RATE = 160_000L;
+    private static final int STEAM_CAPACITY = 1_024_000;
+    private static final int SPENT_STEAM_CAPACITY = 1_024_000;
 
     // Conversion constants
-    private static final double CONSUMPTION_PERCENT = 0.2D; // Anteil des Tankinhalts, der pro Tick verbraucht wird
-    private static final long ENERGY_PER_MB_STEAM = 100;    // HE per mB of steam (regular)
-    private static final long ENERGY_PER_MB_HOT = 200;      // HE per mB of hot steam
-    private static final long ENERGY_PER_MB_SUPERHOT = 400;  // HE per mB of super hot steam
-    private static final long ENERGY_PER_MB_ULTRAHOT = 800;  // HE per mB of ultra hot steam
+    private static final double CONSUMPTION_PERCENT = 1.0D; // Original: consumptionPercent() = 1D (alles pro Tick)
+    private static final double EFFICIENCY = 0.85D;         // Original: efficiency-Feld, Default 0.85
+    private static final long ENERGY_PER_MB_STEAM = 100;
+    private static final long ENERGY_PER_MB_HOT = 200;
+    private static final long ENERGY_PER_MB_SUPERHOT = 400;
+    private static final long ENERGY_PER_MB_ULTRAHOT = 800;
 
-    // Flywheel (Spin-up/Spin-down-Trägheit der Turbine). Werte sind an ENERGY_CAPACITY angepasst
-    // und ggf. beim Playtesting nachzujustieren.
+    // Flywheel (Spin-up/Spin-down-Trägheit), gleiches Prinzip wie bei der Industrial Turbine.
     private static final double FLYWHEEL_MAX_ENERGY = ENERGY_CAPACITY * 4.0;
     private double spin = 0.0;
     private long flywheelEnergy = 0L;
@@ -80,17 +78,14 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
     private LazyOptional<IFluidHandler> lazySpentHandler;
     //?}
 
-    //? if fabric {
-    /*private final Storage<FluidVariant> steamStorage;
-    private final Storage<FluidVariant> spentStorage;
-    *///?}
-
     private boolean isActive = false;
+    /** Lever-Ersatz: per Rechtsklick auf den Controller umgeschaltet, gated den Dampfverbrauch. */
+    private boolean operational = false;
     private float anim = 0.0F;
     private float prevAnim = 0.0F;
 
-    public MachineIndustrialTurbineBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), pos, state,
+    public MachineChungusBlockEntity(BlockPos pos, BlockState state) {
+        super(ModBlockEntities.MACHINE_CHUNGUS_BE.get(), pos, state,
               0, ENERGY_CAPACITY, 0L, ENERGY_EXTRACT_RATE);
 
         // Standardmäßig auf normalen Dampf konformiert (wie spentSteamTank auf SPENTSTEAM), damit das
@@ -103,13 +98,9 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
         this.lazySteamHandler = LazyOptional.empty();
         this.lazySpentHandler = LazyOptional.empty();
         //?}
-        //? if fabric {
-        /*this.steamStorage = new TankStorage(steamTank, true, false);
-        this.spentStorage = new TankStorage(spentSteamTank, false, true);
-        *///?}
     }
 
-    public static void tick(Level level, BlockPos pos, BlockState state, MachineIndustrialTurbineBlockEntity be) {
+    public static void tick(Level level, BlockPos pos, BlockState state, MachineChungusBlockEntity be) {
         be.prevAnim = be.anim;
 
         if (level.isClientSide()) {
@@ -120,7 +111,7 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
                 }
             }
             ClientSoundBootstrap.updateSound(be, be.spin > 0.001D,
-                    () -> be.createLoopingSoundReflect(ModSounds.LARGE_TURBINE.get()));
+                    () -> be.createLoopingSoundReflect(ModSounds.CHUNGUS_TURBINE.get()));
             return;
         }
 
@@ -130,7 +121,6 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
 
         be.processTurbine();
 
-        // Push energy to network
         if (be.energy > 0 && level.getGameTime() % 10L == 0L) {
             be.updateEnergyDelta(be.getEnergyStored());
         }
@@ -141,9 +131,22 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
         }
     }
 
+    /** Lever-Ersatz: Rechtsklick auf den Controller schaltet operational um. Wird von MachineChungusBlock.use() gerufen. */
+    public boolean toggleOperational() {
+        this.operational = !this.operational;
+        setChanged();
+        sendUpdateToClient();
+        return this.operational;
+    }
+
+    public boolean isOperational() {
+        return operational;
+    }
+
     private void processTurbine() {
-        // 1. Dampf verbrauchen (20% des aktuellen Tankinhalts/Tick) und Energie-Potential in das Flywheel laden.
-        if (steamTank.getFill() > 0 && steamTank.getTankType() != null) {
+        // 1. Dampf verbrauchen (100% des Tankinhalts/Tick, nur solange operational) und Energie-Potential
+        // in das Flywheel laden.
+        if (operational && steamTank.getFill() > 0 && steamTank.getTankType() != null) {
             long energyPerMb = getEnergyPerMb();
             if (energyPerMb > 0) {
                 int steamAvailable = steamTank.getFill();
@@ -156,13 +159,14 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
                     steamTank.drainMb(steamToConsume);
                     spentSteamTank.fillMb(ModFluids.SPENTSTEAM.getSource(), steamToConsume);
 
-                    maxPower = steamToConsume * energyPerMb;
+                    maxPower = (long) (steamToConsume * energyPerMb * EFFICIENCY);
                     flywheelEnergy += maxPower;
                 }
             }
         }
 
         // 2. Flywheel-Trägheit: die Turbine fährt hoch/runter statt sofort volle Leistung zu liefern.
+        // Läuft auch weiter, wenn operational == false, damit das Flywheel sichtbar auslaufen kann.
         spin = flywheelEnergy / FLYWHEEL_MAX_ENERGY;
 
         long energySpace = Math.max(0L, getMaxEnergyStored() - getEnergyStored());
@@ -198,7 +202,7 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
 
     @Override
     protected Component getDefaultName() {
-        return Component.translatable("container.hbm_m.industrial_turbine");
+        return Component.translatable("block.hbm_m.machine_chungus");
     }
 
     @Override
@@ -214,7 +218,7 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return null; // Kein GUI - Dampf läuft ausschließlich über Rohrverbindungen.
+        return null; // Kein GUI, wie im Original (nur Look-Overlay-HUD, hier per Chat-Nachricht ersetzt)
     }
 
     @Override
@@ -263,7 +267,7 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
         return spin;
     }
 
-    private static final String TURBINE_LOOP_SOUND_FACTORY = "com.hbm_m.client.sound.TurbineLoopSoundFactory";
+    private static final String CHUNGUS_LOOP_SOUND_FACTORY = "com.hbm_m.client.sound.ChungusLoopSoundFactory";
 
     //? if forge {
     @OnlyIn(Dist.CLIENT)
@@ -272,8 +276,8 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
     /*@Environment(EnvType.CLIENT)*///?}
     private Object createLoopingSoundReflect(SoundEvent sound) {
         try {
-            return Class.forName(TURBINE_LOOP_SOUND_FACTORY)
-                    .getMethod("create", MachineIndustrialTurbineBlockEntity.class, SoundEvent.class)
+            return Class.forName(CHUNGUS_LOOP_SOUND_FACTORY)
+                    .getMethod("create", MachineChungusBlockEntity.class, SoundEvent.class)
                     .invoke(null, this, sound);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
@@ -292,6 +296,7 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
         steamTank.writeToNBT(tag, "steam");
         spentSteamTank.writeToNBT(tag, "spent");
         tag.putBoolean("active", isActive);
+        tag.putBoolean("operational", operational);
         tag.putFloat("anim", anim);
         tag.putFloat("prevAnim", prevAnim);
         tag.putLong("flywheelEnergy", flywheelEnergy);
@@ -305,6 +310,7 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
         steamTank.readFromNBT(tag, "steam");
         spentSteamTank.readFromNBT(tag, "spent");
         isActive = tag.getBoolean("active");
+        operational = tag.getBoolean("operational");
         anim = tag.getFloat("anim");
         prevAnim = tag.getFloat("prevAnim");
         flywheelEnergy = tag.getLong("flywheelEnergy");
@@ -318,7 +324,7 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            // UP = spent output, остальное = steam input
+            // UP = spent output, остальное = steam input (gleiche Konvention wie Industrial Turbine)
             if (side == Direction.UP) return lazySpentHandler.cast();
             return lazySteamHandler.cast();
         }
@@ -339,9 +345,9 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
     }
 
     private static class SteamInputHandler implements IFluidHandler {
-        private final MachineIndustrialTurbineBlockEntity be;
+        private final MachineChungusBlockEntity be;
 
-        SteamInputHandler(MachineIndustrialTurbineBlockEntity be) {
+        SteamInputHandler(MachineChungusBlockEntity be) {
             this.be = be;
         }
 
@@ -389,9 +395,9 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
     }
 
     private static class SpentSteamOutputHandler implements IFluidHandler {
-        private final MachineIndustrialTurbineBlockEntity be;
+        private final MachineChungusBlockEntity be;
 
-        SpentSteamOutputHandler(MachineIndustrialTurbineBlockEntity be) {
+        SpentSteamOutputHandler(MachineChungusBlockEntity be) {
             this.be = be;
         }
 
@@ -443,91 +449,10 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
     }
     //?}
 
-    //? if fabric {
-    /*@Nullable
-    public Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
-        // UP: spent out, иначе steam in
-        if (side == Direction.UP) return spentStorage;
-        return steamStorage;
+    @Override
+    public AABB getRenderBoundingBox() {
+        // Struktur reicht (richtungsabhängig) bis zu 10 Blöcke nach hinten, 4-5 nach vorne/seitlich
+        // und 5 nach oben - großzügig symmetrisch geschätzt, unabhängig von der Facing-Richtung.
+        return new AABB(worldPosition).inflate(12.0, 0.0, 12.0).expandTowards(0.0, 5.0, 0.0);
     }
-    *///?}
-
-
-    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
-        return new net.minecraft.world.phys.AABB(
-                worldPosition.offset(-2, -1, -4),
-                worldPosition.offset(3, 4, 8)
-        );
-    }
-
-    //? if fabric {
-    /*@SuppressWarnings("UnstableApiUsage")
-    private static final class TankStorage extends SnapshotParticipant<TankStorage.Snapshot>
-            implements SingleSlotStorage<FluidVariant> {
-
-        private static final long DROPLETS_PER_MB = 81L;
-
-        private final FluidTank tank;
-        private final boolean allowInsert;
-        private final boolean allowExtract;
-
-        private TankStorage(FluidTank tank, boolean allowInsert, boolean allowExtract) {
-            this.tank = tank;
-            this.allowInsert = allowInsert;
-            this.allowExtract = allowExtract;
-        }
-
-        @Override
-        public long insert(FluidVariant resource, long maxAmount, TransactionContext transaction) {
-            if (!allowInsert) return 0;
-            if (resource.isBlank() || maxAmount <= 0) return 0;
-
-            long spaceMb = tank.getMaxFill() - tank.getFill();
-            if (spaceMb <= 0) return 0;
-
-            if (tank.getFill() > 0 && tank.getTankType() != resource.getFluid()) {
-                return 0;
-            }
-
-            long toFillMb = Math.min(spaceMb, maxAmount / DROPLETS_PER_MB);
-            if (toFillMb <= 0) return 0;
-
-            updateSnapshots(transaction);
-            if (tank.getTankType() == net.minecraft.world.level.material.Fluids.EMPTY) {
-                tank.setTankType(resource.getFluid());
-            }
-            tank.fill(tank.getFill() + (int) toFillMb);
-            return toFillMb * DROPLETS_PER_MB;
-        }
-
-        @Override
-        public long extract(FluidVariant resource, long maxAmount, TransactionContext transaction) {
-            if (!allowExtract) return 0;
-            if (resource.isBlank() || maxAmount <= 0) return 0;
-            if (tank.getFill() <= 0) return 0;
-            if (tank.getTankType() != resource.getFluid()) return 0;
-
-            long toDrainMb = Math.min(tank.getFill(), (int) (maxAmount / DROPLETS_PER_MB));
-            if (toDrainMb <= 0) return 0;
-
-            updateSnapshots(transaction);
-            tank.fill(tank.getFill() - (int) toDrainMb);
-            return toDrainMb * DROPLETS_PER_MB;
-        }
-
-        @Override public boolean isResourceBlank() { return tank.getFill() <= 0 || tank.getTankType() == net.minecraft.world.level.material.Fluids.EMPTY; }
-        @Override public FluidVariant getResource() { return isResourceBlank() ? FluidVariant.blank() : FluidVariant.of(tank.getTankType()); }
-        @Override public long getAmount() { return (long) tank.getFill() * DROPLETS_PER_MB; }
-        @Override public long getCapacity() { return (long) tank.getMaxFill() * DROPLETS_PER_MB; }
-
-        @Override protected Snapshot createSnapshot() { return new Snapshot(tank.getTankType(), tank.getFill()); }
-        @Override protected void readSnapshot(Snapshot snapshot) {
-            tank.setTankType(snapshot.type);
-            tank.fill(snapshot.amountMb);
-        }
-        @Override protected void onFinalCommit() {}
-
-        private record Snapshot(net.minecraft.world.level.material.Fluid type, int amountMb) {}
-    }
-    *///?}
 }

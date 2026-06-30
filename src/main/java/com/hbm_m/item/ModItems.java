@@ -1737,6 +1737,9 @@ public class ModItems {
     public static final RegistrySupplier<Item> INDUSTRIAL_TURBINE = ITEMS.register("industrial_turbine",
         () -> new MultiblockBlockItem(ModBlocks.INDUSTRIAL_TURBINE.get(), new Item.Properties()));
 
+    public static final RegistrySupplier<Item> MACHINE_CHUNGUS = ITEMS.register("machine_chungus",
+        () -> new MultiblockBlockItem(ModBlocks.MACHINE_CHUNGUS.get(), new Item.Properties()));
+
     public static final RegistrySupplier<Item> TURBINE = ITEMS.register("turbine",
         () -> new MultiblockBlockItem(ModBlocks.TURBINE.get(), new Item.Properties()));
 

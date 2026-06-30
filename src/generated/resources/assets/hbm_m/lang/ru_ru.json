@@ -613,6 +613,8 @@
   "block.hbm_m.wire_coated": "Провод из красной меди",
   "block.hbm_m.wood_burner": "Дровяной генератор",
   "block.hbm_m.zirnox": "Зирнокс (WIP)",
+  "chat.hbm_m.chungus.off": "Турбина Левиафан: ВЫКЛ",
+  "chat.hbm_m.chungus.on": "Турбина Левиафан: ВКЛ",
   "chat.hbm_m.structure.obstructed": "Другие блоки мешают установке структуры!!",
   "chat.radar.tolow": "Радар должен быть установлен выше!",
   "commands.hbm_m.explosion.bad_coord_suffix": "Нужны все три координаты (x y z) или ни одной - тогда позиция источника",
