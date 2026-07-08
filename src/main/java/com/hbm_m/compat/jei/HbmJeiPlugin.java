@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.generic.BlockAbsorber;
 import com.hbm_m.inventory.gui.GUIAnvil;
 import com.hbm_m.inventory.gui.GUIMachineAdvancedAssembler;
 import com.hbm_m.inventory.gui.GUIMachineAssembler;
@@ -18,6 +19,7 @@ import com.hbm_m.inventory.gui.GUIMachineCrystallizer;
 import com.hbm_m.inventory.gui.GUIMachinePress;
 import com.hbm_m.inventory.recipes.ArcWelderRecipes;
 import com.hbm_m.inventory.recipes.SolderingRecipes;
+import com.hbm_m.item.BlockAbsorberItem;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.recipe.AnvilRecipe;
 import com.hbm_m.recipe.AnvilRecipeManager;
@@ -29,6 +31,7 @@ import com.hbm_m.recipe.CrucibleRecipes;
 import com.hbm_m.recipe.CrucibleSmeltingRecipes;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.item.liquids.FluidBarrelItem;
+import com.hbm_m.item.liquids.FluidDuctItem;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.CentrifugeRecipes;
@@ -37,9 +40,11 @@ import com.hbm_m.recipe.ChemicalPlantRecipe;
 import com.hbm_m.recipe.CyclotronRecipes;
 import com.hbm_m.recipe.PressRecipe;
 
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -181,6 +186,32 @@ public class HbmJeiPlugin implements IModPlugin {
                 ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(output.getItem());
                 return (itemId != null ? itemId.toString() : "unknown") +
                     (output.hasTag() ? output.getTag().toString() : "");
+            }
+        );
+
+        // Rad Absorber subtypes by tier
+        registration.registerSubtypeInterpreter(
+            ModBlocks.RAD_ABSORBER.get().asItem(),
+            (stack, ctx) -> {
+                BlockAbsorber.EnumAbsorberTier tier = BlockAbsorberItem.readTier(stack);
+                return tier != null ? tier.getSerializedName() : "base";
+            }
+        );
+
+        // Регистрация для труб
+        registerDuctSubtype(registration, ModItems.FLUID_DUCT);
+        registerDuctSubtype(registration, ModItems.FLUID_DUCT_COLORED);
+        registerDuctSubtype(registration, ModItems.FLUID_DUCT_SILVER);
+    }
+
+    private void registerDuctSubtype(ISubtypeRegistration registration, RegistrySupplier<Item> ductSupplier) {
+        registration.registerSubtypeInterpreter(
+            ductSupplier.get(),
+            (stack, ctx) -> {
+                dev.architectury.fluid.FluidStack fluid = FluidDuctItem.getFluidType(stack);
+                if (fluid.isEmpty()) return "empty";
+                ResourceLocation fluidId = BuiltInRegistries.FLUID.getKey(fluid.getFluid());
+                return fluidId != null ? fluidId.toString() : "unknown";
             }
         );
     }

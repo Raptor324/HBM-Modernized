@@ -35,7 +35,7 @@ public enum CrateType {
     public int getGuiHeight() { return guiHeight; }
 
     public ResourceLocation getTexture() {
-        return new ResourceLocation(RefStrings.MODID, "textures/gui/storage/" + textureName + ".png");
+        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/storage/" + textureName + ".png");
     }
 
     /** X-отступ для слотов ящика (позиция первого слота в Menu) */

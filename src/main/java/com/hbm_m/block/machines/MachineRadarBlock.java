@@ -7,8 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.MachineRadarBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineRadarBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -95,9 +95,18 @@ public class MachineRadarBlock extends BaseEntityBlock implements IMultiblockCon
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            structureHelper.placeStructure(level, pos, state.getValue(FACING), this);
-            EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
+            BlockPos core = placeMultiblockStructure(level, pos, state);
+            if (core == null) {
+                return;
+            }
+            EnergyNetworkManager.get((ServerLevel) level).addNode(core);
         }
+    }
+
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
     }
 
     @Override

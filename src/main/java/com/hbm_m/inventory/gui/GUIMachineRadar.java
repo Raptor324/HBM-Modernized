@@ -5,7 +5,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
-import com.hbm_m.block.entity.machines.MachineRadarBlockEntity;
+import com.hbm_m.blockentity.machines.MachineRadarBlockEntity;
 import com.hbm_m.inventory.menu.MachineRadarMenu;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.ModPacketHandler;

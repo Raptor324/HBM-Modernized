@@ -7,8 +7,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.entity.machines.BatterySocketBlockEntity;
 import com.hbm_m.block.machines.MachineBatterySocketBlock;
+import com.hbm_m.blockentity.machines.BatterySocketBlockEntity;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.client.Minecraft;

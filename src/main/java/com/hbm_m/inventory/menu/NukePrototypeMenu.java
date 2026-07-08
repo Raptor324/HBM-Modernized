@@ -1,6 +1,6 @@
 package com.hbm_m.inventory.menu;
 
-import com.hbm_m.block.entity.bomb.NukePrototypeBlockEntity;
+import com.hbm_m.blockentity.bomb.NukePrototypeBlockEntity;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;

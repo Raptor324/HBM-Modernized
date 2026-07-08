@@ -1,23 +1,19 @@
 package com.hbm_m.block.machines;
 
 import java.util.Map;
-import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.interfaces.IFrameSupportable;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockSideTuples;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -51,7 +47,6 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     /** Рама видима, когда сверху сбормашины стоят блоки. Хранится в BlockState для запекания в чанк (Embeddium/Sodium). */
     public static final BooleanProperty FRAME = BooleanProperty.create("frame");
-    public static final BooleanProperty RENDER_ACTIVE = BooleanProperty.create("render_active");
 
     private final MultiblockStructureHelper structureHelper;
 
@@ -59,8 +54,7 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
         super(pProperties);
         this.registerDefaultState(this.stateDefinition.any()
         .setValue(FACING, Direction.NORTH)
-        .setValue(FRAME, false)
-        .setValue(RENDER_ACTIVE, false));
+        .setValue(FRAME, false));
 
         this.structureHelper = defineStructureNew();
     }
@@ -71,19 +65,21 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
     public void onPlace(BlockState pState, Level pLevel, BlockPos pPos, BlockState pOldState, boolean pIsMoving) {
         super.onPlace(pState, pLevel, pPos, pOldState, pIsMoving);
         if (!pLevel.isClientSide() && !pState.is(pOldState.getBlock())) {
-            MultiblockStructureHelper helper = getStructureHelper();
+            BlockPos core = placeMultiblockStructure(pLevel, pPos, pState);
+            if (core == null) {
+                return;
+            }
             Direction facing = pState.getValue(FACING);
-
-            helper.placeStructure(pLevel, pPos, facing, this);
+            MultiblockStructureHelper helper = getStructureHelper();
 
             for (BlockPos localPos : helper.getStructureMap().keySet()) {
                 if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
-                    BlockPos worldPos = helper.getRotatedPos(pPos, localPos, facing);
+                    BlockPos worldPos = helper.getRotatedPos(core, localPos, facing);
                     EnergyNetworkManager.get((ServerLevel) pLevel).addNode(worldPos);
                 }
             }
 
-            if (pLevel.getBlockEntity(pPos) instanceof IFrameSupportable be) {
+            if (pLevel.getBlockEntity(core) instanceof IFrameSupportable be) {
                 be.checkForFrame();
             }
         }
@@ -106,7 +102,7 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
                 }
 
                 BlockEntity blockEntity = level.getBlockEntity(pos);
-                if (blockEntity instanceof com.hbm_m.block.entity.BaseMachineBlockEntity be) {
+                if (blockEntity instanceof com.hbm_m.blockentity.BaseMachineBlockEntity be) {
                     be.dropInventoryContents();
                 }
 
@@ -117,8 +113,14 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
     }
 
     @Override public RenderShape getRenderShape(BlockState pState) { return RenderShape.MODEL; }
-    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) { pBuilder.add(FACING, FRAME, RENDER_ACTIVE); }
+    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) { pBuilder.add(FACING, FRAME); }
     @Nullable @Override public BlockState getStateForPlacement(BlockPlaceContext pContext) { return this.defaultBlockState().setValue(FACING, pContext.getHorizontalDirection().getOpposite()); }
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
+    }
+
     @Nullable @Override public BlockEntity newBlockEntity(BlockPos pPos, BlockState pState) { return new MachineAdvancedAssemblerBlockEntity(pPos, pState); }
 
     @Nullable
@@ -164,8 +166,8 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
         
         // Слои структуры 3x3x3
         String[] layer0 = {
-            "BCB", 
-            "BAB",
+            "BBB",
+            "BCB",
             "BBB"
         };
         
@@ -189,15 +191,6 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
             'L', PartRole.LADDER,              // Лестница
             'C', PartRole.CONTROLLER           // Контроллер (ОБЯЗАТЕЛЬНО!)
         );
-        
-        // === symbolMap: какой BlockState использовать для каждого символа ===
-        // Контроллер 'C' НЕ добавляется в symbolMap - он размещается игроком отдельно!
-        Map<Character, Supplier<BlockState>> symbolMap = Map.of(
-            'A', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-            'B', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-            'L', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()
-            // 'C' НЕ здесь - контроллер это отдельный блок
-        );
 
         Map<Character, boolean[]> fluidSideMap = Map.of(
             'C', MultiblockSideTuples.fluid(true, true, true, true, true, false),
@@ -214,7 +207,7 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
         // Используем createFromLayersWithRoles - автоматически найдёт позицию контроллера
         return MultiblockStructureHelper.createFromLayersWithRolesAndSides(
             new String[][]{layer0, layer1, layer2},
-            symbolMap,
+            null,
             () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
             roleMap,
             null,

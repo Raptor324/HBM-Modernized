@@ -6,11 +6,14 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
-import com.hbm_m.block.entity.machines.FluidDuctBlockEntity;
 import com.hbm_m.block.machines.FluidDuctBlock;
+import com.hbm_m.blockentity.machines.FluidDuctBlockEntity;
 import com.hbm_m.inventory.fluid.ModFluids;
+import com.hbm_m.main.MainRegistry;
+import com.hbm_m.sound.ModSounds;
 
 import dev.architectury.fluid.FluidStack;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -24,7 +27,6 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
@@ -50,16 +52,25 @@ public class FluidDuctItem extends Item {
 
     @Override
     public Component getName(ItemStack stack) {
-        FluidStack fluid = getFluidType(stack);
-        if (fluid.isEmpty()) {
-            return Component.translatable(translationEmpty);
+        try {
+            FluidStack fluid = getFluidType(stack);
+            if (fluid.isEmpty()) return Component.translatable(translationEmpty);
+            return Component.translatable(translationWithFluid, fluid.getName());
+        } catch (Exception e) {
+            MainRegistry.LOGGER.error("FluidDuctItem.getName failed for " + stack + ": " + e);
+            return Component.literal("ERR");
         }
-        return Component.translatable(translationWithFluid, fluid.getName());
     }
 
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
+
+        FluidStack fluid = getFluidType(stack);
+        if (!fluid.isEmpty()) {
+            tooltip.add(Component.literal("Fluid: ").withStyle(ChatFormatting.GRAY)
+                    .append(fluid.getName().copy().withStyle(ChatFormatting.AQUA)));
+        }
     }
 
     @Override
@@ -97,9 +108,11 @@ public class FluidDuctItem extends Item {
                 FluidDuctBlock.refreshAdjacentDucts(level, placePos);
             }
 
-            SoundType sound = ductState.getSoundType();
-            level.playSound(null, placePos, sound.getPlaceSound(), SoundSource.BLOCKS,
-                    (sound.getVolume() + 1.0F) / 2.0F, sound.getPitch() * 0.8F);
+            // Parity: original uses ModSoundTypes.pipe (customDig metal + pipePlaced 0.85/0.85 + enveloped + pitch rand + item *0.8 adjust)
+            float vol = (0.85F + 1.0F) / 2.0F;
+            float basePitch = 0.85F + level.getRandom().nextFloat() * 0.2F;
+            float pitch = basePitch * 0.8F;
+            level.playSound(null, placePos, ModSounds.PIPE_PLACED.get(), SoundSource.BLOCKS, vol, pitch);
 
             if (context.getPlayer() != null && !context.getPlayer().getAbilities().instabuild) {
                 context.getItemInHand().shrink(1);
@@ -112,7 +125,7 @@ public class FluidDuctItem extends Item {
     public static FluidStack getFluidType(ItemStack stack) {
         if (stack.hasTag() && stack.getTag().contains(NBT_FLUID_TYPE)) {
             String fluidName = stack.getTag().getString(NBT_FLUID_TYPE);
-            Fluid fluid = BuiltInRegistries.FLUID.get(new ResourceLocation(fluidName));
+            Fluid fluid = BuiltInRegistries.FLUID.get(ResourceLocation.parse(fluidName));
             if (fluid != null && fluid != net.minecraft.world.level.material.Fluids.EMPTY) {
                 return FluidStack.create(fluid, 1);
             }

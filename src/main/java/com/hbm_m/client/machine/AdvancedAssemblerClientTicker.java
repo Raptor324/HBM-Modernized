@@ -2,7 +2,7 @@ package com.hbm_m.client.machine;
 
 import java.util.Arrays;
 
-import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity;
+import com.hbm_m.blockentity.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.sound.AdvancedAssemblerSoundInstance;
 import com.hbm_m.sound.ModSounds;
 

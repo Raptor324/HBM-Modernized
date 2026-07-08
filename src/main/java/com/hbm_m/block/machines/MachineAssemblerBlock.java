@@ -13,8 +13,8 @@ import org.jetbrains.annotations.Nullable;
 import com.google.common.collect.ImmutableMap;
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.MachineAssemblerBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineAssemblerBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -55,7 +55,6 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 public class MachineAssemblerBlock extends BaseEntityBlock implements IMultiblockController {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
-    public static final BooleanProperty RENDER_ACTIVE = BooleanProperty.create("render_active");
 
     private static final Supplier<Map<Direction, VoxelShape>> SHAPES = memoize(() ->
             ImmutableMap.<Direction, VoxelShape>builder()
@@ -130,8 +129,7 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
     public MachineAssemblerBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any()
-                .setValue(FACING, Direction.NORTH)
-                .setValue(RENDER_ACTIVE, false));
+                .setValue(FACING, Direction.NORTH));
     }
 
     @Override
@@ -193,18 +191,18 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
         super.onPlace(state, level, pos, oldState, isMoving);
 
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
+            BlockPos core = placeMultiblockStructure(level, pos, state);
+            if (core == null) {
+                return;
+            }
             Direction facing = state.getValue(FACING);
-
-            // Строим структуру
-            getStructureHelper().placeStructure(level, pos, facing, this);
-
             //  Регистрируем контроллер (IEnergyReceiver)
-            EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
+            EnergyNetworkManager.get((ServerLevel) level).addNode(core);
 
             //  Регистрируем энергетические коннекторы
             for (BlockPos localPos : getStructureHelper().getStructureMap().keySet()) {
                 if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
-                    BlockPos worldPos = getStructureHelper().getRotatedPos(pos, localPos, facing);
+                    BlockPos worldPos = getStructureHelper().getRotatedPos(core, localPos, facing);
                     EnergyNetworkManager.get((ServerLevel) level).addNode(worldPos);
                 }
             }
@@ -212,6 +210,12 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
     }
 
     //  ДОБАВЛЕНО: Удаление из энергосети
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
+    }
+
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
@@ -228,7 +232,7 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
                 }
                 
                 BlockEntity blockEntity = level.getBlockEntity(pos);
-                if (blockEntity instanceof com.hbm_m.block.entity.BaseMachineBlockEntity be) {
+                if (blockEntity instanceof com.hbm_m.blockentity.BaseMachineBlockEntity be) {
                     be.dropInventoryContents();
                 }
 
@@ -283,6 +287,6 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
 
     @Override
     protected void createBlockStateDefinition(@NotNull StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING, RENDER_ACTIVE);
+        builder.add(FACING);
     }
 }

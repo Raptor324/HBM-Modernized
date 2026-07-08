@@ -1,6 +1,6 @@
 package com.hbm_m.item.rbmk;
 
-import com.hbm_m.block.entity.machines.rbmk.IRBMKFluxReceiver.NType;
+import com.hbm_m.blockentity.machines.rbmk.IRBMKFluxReceiver.NType;
 import com.hbm_m.handler.rbmk.RBMKDials;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;

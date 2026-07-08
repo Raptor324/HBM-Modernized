@@ -2,8 +2,8 @@ package com.hbm_m.block.machines;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.HeatingOvenBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.HeatingOvenBlockEntity;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;

@@ -2,7 +2,7 @@ package com.hbm_m.network;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity;
+import com.hbm_m.blockentity.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.network.C2SPacket;
 
 import dev.architectury.networking.NetworkManager.PacketContext;

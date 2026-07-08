@@ -1,6 +1,6 @@
 package com.hbm_m.inventory.gui;
 
-import com.hbm_m.block.entity.machines.rbmk.RBMKBoilerBlockEntity;
+import com.hbm_m.blockentity.machines.rbmk.RBMKBoilerBlockEntity;
 import com.hbm_m.inventory.menu.RBMKBoilerMenu;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;

@@ -1,7 +1,7 @@
 package com.hbm_m.client.render.implementations;
 
-import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.block.machines.MachineFluidTankBlock;
+import com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.client.render.util.DiamondPronter;
 import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.ModFluids;

@@ -16,10 +16,10 @@ import com.google.common.collect.ImmutableMap;
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
-import com.hbm_m.block.entity.machines.FluidDuctBlockEntity;
-import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
-import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
-import com.hbm_m.block.entity.machines.UniversalMachinePartBlockEntity;
+import com.hbm_m.blockentity.machines.FluidDuctBlockEntity;
+import com.hbm_m.blockentity.machines.MachineChemicalPlantBlockEntity;
+import com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity;
+import com.hbm_m.blockentity.machines.UniversalMachinePartBlockEntity;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
@@ -605,16 +605,11 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
         List<Component> text = new ArrayList<>();
         Fluid fluid = ductBe.getFluidType();
         if (fluid == null || fluid == Fluids.EMPTY) {
-            text.add(Component.translatable("gui.hbm_m.fluid_duct.overlay.fluid_empty"));
-        } else {
-            int rgb = HbmFluidRegistry.getTintColor(fluid) & 0xFFFFFF;
-            String name = HbmFluidRegistry.getFluidName(fluid);
-            text.add(Component.literal(name).withStyle(Style.EMPTY.withColor(TextColor.fromRgb(rgb))));
-            text.add(Component.literal("Net nodes: " + ductBe.getNetworkSize())
-                    .withStyle(net.minecraft.ChatFormatting.GRAY));
-            text.add(Component.literal("Transfer/t: " + ductBe.getFluidTracker() + " mB")
-                    .withStyle(net.minecraft.ChatFormatting.GRAY));
+            fluid = ModFluids.NONE.getSource();
         }
+        int rgb = HbmFluidRegistry.getTintColor(fluid) & 0xFFFFFF;
+        String name = HbmFluidRegistry.getFluidName(fluid);
+        text.add(Component.literal(name).withStyle(Style.EMPTY.withColor(TextColor.fromRgb(rgb))));
         ILookOverlay.printGeneric(guiGraphics, Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 }

@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.bomb.IBomb;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.bomb.LandMineBlockEntity;
+import com.hbm_m.blockentity.bomb.LandMineBlockEntity;
 import com.hbm_m.explosion.ExplosionNukeGeneric;
 import com.hbm_m.explosion.vanillant.ExplosionVNT;
 import com.hbm_m.explosion.vanillant.standard.BlockAllocatorStandard;
@@ -34,8 +34,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.FenceBlock;
 import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.FenceBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;

@@ -1466,8 +1466,16 @@ public final class CreativeModeTabEventHandler {
 
     // ТОПЛИВО И ЭЛЕМЕНТЫ МЕХАНИЗМОВ
     public static void populateFuelTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
-        // Упрощенный Consumer, по умолчанию использующий PARENT_AND_SEARCH_TABS
-        Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        // ДОБАВЛЕНА ЗАЩИТА ОТ ДУБЛИКАТОВ, как в TemplatesTab и NukeTab:
+        Set<String> seen = new HashSet<>();
+        Consumer<ItemStack> add = stack -> {
+            if (stack == null || stack.isEmpty()) return;
+            String itemId = String.valueOf(BuiltInRegistries.ITEM.getKey(stack.getItem()));
+            String tag = stack.getTag() == null ? "" : stack.getTag().toString();
+            // Если такой предмет с таким же NBT уже добавлялся, пропускаем его, чтобы не сломать Поиск
+            if (!seen.add(itemId + "|" + tag)) return;
+            acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        };
         add.accept(new ItemStack(ModItems.BLACK_HOLE.get()));
         add.accept(new ItemStack(ModItems.PELLET_ANTIMATTER.get()));
         add.accept(new ItemStack(ModItems.FLAME_PONY.get()));
@@ -1622,6 +1630,9 @@ public final class CreativeModeTabEventHandler {
             add.accept(filledBarrel);
         }
         // Fluid Ducts - one per fluid type (neo / colored / silver styles)
+        add.accept(new ItemStack(ModItems.FLUID_DUCT.get()));
+        add.accept(new ItemStack(ModItems.FLUID_DUCT_COLORED.get()));
+        add.accept(new ItemStack(ModItems.FLUID_DUCT_SILVER.get()));
         for (ModFluids.FluidEntry entry : HbmFluidRegistry.getOrderedFluids()) {
             add.accept(com.hbm_m.item.liquids.FluidDuctItem.createStack(ModItems.FLUID_DUCT.get(), entry));
             add.accept(com.hbm_m.item.liquids.FluidDuctItem.createStack(ModItems.FLUID_DUCT_COLORED.get(), entry));

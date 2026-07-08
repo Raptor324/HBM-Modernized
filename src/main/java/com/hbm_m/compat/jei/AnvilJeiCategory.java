@@ -55,6 +55,7 @@ public class AnvilJeiCategory implements IRecipeCategory<AnvilRecipe> {
     }
 
     @Override
+    @SuppressWarnings("removal")
     public IDrawable getBackground() {
         return background;
     }

@@ -2,9 +2,7 @@ package com.hbm_m.block.machines;
 
 import org.jetbrains.annotations.NotNull;
 
-// Верхняя часть доменной печи. Ускоряет работу при установке и пробрасывает интерфейс блока ниже.
-
-import com.hbm_m.block.entity.machines.BlastFurnaceBlockEntity;
+import com.hbm_m.blockentity.machines.BlastFurnaceBlockEntity;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;

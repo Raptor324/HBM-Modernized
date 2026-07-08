@@ -277,6 +277,7 @@ public class ModArmorFSB extends ArmorItem {
     // Forge: ArmorItem.onArmorTick; NeoForge/Fabric: только inventoryTick (слот брони).
     //? if forge {
     @Override
+    @SuppressWarnings("removal")
     public void onArmorTick(@NotNull ItemStack stack, @NotNull Level world, @NotNull Player player) {
         tickFsbArmor(stack, world, player);
     }

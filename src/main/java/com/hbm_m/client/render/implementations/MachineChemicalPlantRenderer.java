@@ -6,8 +6,8 @@ import java.util.List;
 
 import org.joml.Matrix4f;
 
-import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
+import com.hbm_m.blockentity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.client.model.MachineChemicalPlantBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.MeshRenderCache;
@@ -88,8 +88,8 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
      * Пивот вращения спиннера в пространстве уже запечённых VBO-вершин.
      * В OBJ это {@code (0.5, 0, 0.5)}; JSON root translation {@code [-0.5, 0, 0.5]} сдвигает его в {@code (0, 0, 1)} — не менять JSON, только эти константы под VBO/Batch.
      */
-    private static final float CHEMPLANT_BAKE_PIVOT_X = 0.0f;
-    private static final float CHEMPLANT_BAKE_PIVOT_Z = 1.0f;
+    private static final float CHEMPLANT_BAKE_PIVOT_X = 0.5f;
+    private static final float CHEMPLANT_BAKE_PIVOT_Z = 0.5f;
 
     public MachineChemicalPlantRenderer(BlockEntityRendererProvider.Context ctx) {}
 
@@ -219,9 +219,6 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
                               float partialTick, int packedLight, int packedOverlay, PoseStack poseStack,
                               MultiBufferSource bufferSource) {
         var state = be.getBlockState();
-        boolean renderActive = state.hasProperty(MachineChemicalPlantBlock.RENDER_ACTIVE)
-            && state.getValue(MachineChemicalPlantBlock.RENDER_ACTIVE);
-        boolean useVboGeometry = ShaderCompatibilityDetector.useVboGeometry();
 
         Direction facing = getFacing(be);
         var minecraft = Minecraft.getInstance();
@@ -244,26 +241,11 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
 
         MachineChemicalPlantVboRenderer.FluidVisual visual = MachineChemicalPlantVboRenderer.getRecipeVisual(be);
 
-        // Старый baked-путь под шейдерами + простой: статика и idle-подвижные в baked; BER только жидкость/эффекты.
-        // Под новым VBO путём (useVboGeometry==true) baked пуст и нам нужно рендерить всё самим.
-        if (!useVboGeometry && !renderActive) {
-            if (visual != null) {
-                //? if forge {
-                try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
-                    MachineChemicalPlantVboRenderer.renderChemplantFluid(be, model, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
-                }
-                //?} else {
-                /*MachineChemicalPlantVboRenderer.renderChemplantFluid(be, model, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
-                *///?}
-            }
-            return;
-        }
-
         int blockLight = LightTexture.block(packedLight);
         int skyLight = LightTexture.sky(packedLight);
         int dynamicLight = LightTexture.pack(blockLight, skyLight);
 
-        renderWithVBO(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource, renderActive);
+        renderWithVBO(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource);
 
         if (visual != null) {
             //? if forge {
@@ -282,8 +264,7 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
     }
 
     private void renderWithVBO(MachineChemicalPlantBlockEntity be, MachineChemicalPlantBakedModel model, float partialTick,
-                              PoseStack poseStack, int dynamicLight, BlockPos blockPos, MultiBufferSource bufferSource,
-                              boolean renderActive) {
+                              PoseStack poseStack, int dynamicLight, BlockPos blockPos, MultiBufferSource bufferSource) {
         boolean useVboPath = ShaderCompatibilityDetector.useVboGeometry();
 
         if (useVboPath && !instancersInitialized) {
@@ -311,10 +292,10 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         boolean useIrisBatch = useVboPath && ShaderCompatibilityDetector.isExternalShaderActive();
         if (useIrisBatch) {
             try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
-                renderChemicalPlantPartsInternal(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useVboPath, useBatching, renderActive);
+                renderChemicalPlantPartsInternal(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useVboPath, useBatching);
             }
         } else {
-            renderChemicalPlantPartsInternal(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useVboPath, useBatching, renderActive);
+            renderChemicalPlantPartsInternal(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useVboPath, useBatching);
         }
     }
 
@@ -326,8 +307,7 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
                                                   BlockPos blockPos,
                                                   MultiBufferSource bufferSource,
                                                   boolean useVboPath,
-                                                  boolean useBatching,
-                                                  boolean renderActive) {
+                                                  boolean useBatching) {
         var blockState = be.getBlockState();
 
         float staticFade = SingleMeshVboRenderer.getFadeAlpha();
@@ -335,69 +315,71 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         boolean anyFading = staticFade < 0.99f || (animFade >= 0 && animFade < 0.99f);
         boolean effectiveBatching = useBatching && !anyFading;
 
-        if (useVboPath || renderActive) {
-            poseStack.pushPose();
-            poseStack.translate(-0.5f, 0.0f, -0.5f);
+        poseStack.pushPose();
+        poseStack.translate(-0.5f, 0.0f, -0.5f);
 
-            if (useVboPath) {
-                if (effectiveBatching && instancedBase != null && instancedBase.isInitialized()) {
+        if (useVboPath) {
+            if (effectiveBatching && instancedBase != null && instancedBase.isInitialized()) {
+                poseStack.pushPose();
+                instancedBase.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
+                poseStack.popPose();
+            } else {
+                gpu.renderStaticBase(poseStack, dynamicLight, blockPos, be, bufferSource);
+            }
+
+            if (blockState.hasProperty(MachineChemicalPlantBlock.FRAME) && blockState.getValue(MachineChemicalPlantBlock.FRAME)) {
+                if (effectiveBatching && instancedFrame != null && instancedFrame.isInitialized()) {
                     poseStack.pushPose();
-                    instancedBase.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
+                    instancedFrame.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
                     poseStack.popPose();
                 } else {
-                    gpu.renderStaticBase(poseStack, dynamicLight, blockPos, be, bufferSource);
-                }
-
-                if (blockState.hasProperty(MachineChemicalPlantBlock.FRAME) && blockState.getValue(MachineChemicalPlantBlock.FRAME)) {
-                    if (effectiveBatching && instancedFrame != null && instancedFrame.isInitialized()) {
-                        poseStack.pushPose();
-                        instancedFrame.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
-                        poseStack.popPose();
-                    } else {
-                        gpu.renderStaticFrame(poseStack, dynamicLight, blockPos, be, bufferSource);
-                    }
+                    gpu.renderStaticFrame(poseStack, dynamicLight, blockPos, be, bufferSource);
                 }
             }
-
-            if (animFade < 0) {
-                poseStack.popPose();
-                return;
+        } else {
+            gpu.renderStaticBase(poseStack, dynamicLight, blockPos, be, bufferSource);
+            if (blockState.hasProperty(MachineChemicalPlantBlock.FRAME) && blockState.getValue(MachineChemicalPlantBlock.FRAME)) {
+                gpu.renderStaticFrame(poseStack, dynamicLight, blockPos, be, bufferSource);
             }
-            SingleMeshVboRenderer.setFadeAlpha(Math.min(staticFade, animFade));
-            float anim = be.getAnim(partialTick);
-
-            double sdx = chemicalSps(anim * 0.125) * 0.375;
-            // VBO/instanced: как GL после facing — сдвиг вдоль локальной X позы (не хвост T(-0.5) из assembler).
-            matSlider.identity().translate((float) sdx, 0f, 0f);
-
-            if (effectiveBatching && instancedSlider != null && instancedSlider.isInitialized()) {
-                poseStack.pushPose();
-                poseStack.last().pose().mul(matSlider);
-                instancedSlider.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
-                poseStack.popPose();
-            } else {
-                gpu.renderAnimatedPart(poseStack, dynamicLight, "Slider", matSlider, blockPos, be, bufferSource);
-            }
-
-            float deg = (anim * 15f) % 360f;
-            if (deg < 0f) deg += 360f;
-            matSpinner.identity()
-                .translate(CHEMPLANT_BAKE_PIVOT_X, 0f, CHEMPLANT_BAKE_PIVOT_Z)
-                .rotateY(deg * DEG_TO_RAD)
-                .translate(-CHEMPLANT_BAKE_PIVOT_X, 0f, -CHEMPLANT_BAKE_PIVOT_Z);
-
-            if (effectiveBatching && instancedSpinner != null && instancedSpinner.isInitialized()) {
-                poseStack.pushPose();
-                poseStack.last().pose().mul(matSpinner);
-                instancedSpinner.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
-                poseStack.popPose();
-            } else {
-                gpu.renderAnimatedPart(poseStack, dynamicLight, "Spinner", matSpinner, blockPos, be, bufferSource);
-            }
-
-            SingleMeshVboRenderer.setFadeAlpha(staticFade);
-            poseStack.popPose();
         }
+
+        if (animFade < 0) {
+            poseStack.popPose();
+            return;
+        }
+        SingleMeshVboRenderer.setFadeAlpha(Math.min(staticFade, animFade));
+        float anim = be.getAnim(partialTick);
+
+        double sdx = chemicalSps(anim * 0.125) * 0.375;
+        matSlider.identity().translate((float) sdx, 0f, 0f);
+
+        if (effectiveBatching && instancedSlider != null && instancedSlider.isInitialized()) {
+            poseStack.pushPose();
+            poseStack.last().pose().mul(matSlider);
+            instancedSlider.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
+            poseStack.popPose();
+        } else {
+            gpu.renderAnimatedPart(poseStack, dynamicLight, "Slider", matSlider, blockPos, be, bufferSource);
+        }
+
+        float deg = (anim * 15f) % 360f;
+        if (deg < 0f) deg += 360f;
+        matSpinner.identity()
+            .translate(CHEMPLANT_BAKE_PIVOT_X, 0f, CHEMPLANT_BAKE_PIVOT_Z)
+            .rotateY(deg * DEG_TO_RAD)
+            .translate(-CHEMPLANT_BAKE_PIVOT_X, 0f, -CHEMPLANT_BAKE_PIVOT_Z);
+
+        if (effectiveBatching && instancedSpinner != null && instancedSpinner.isInitialized()) {
+            poseStack.pushPose();
+            poseStack.last().pose().mul(matSpinner);
+            instancedSpinner.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
+            poseStack.popPose();
+        } else {
+            gpu.renderAnimatedPart(poseStack, dynamicLight, "Spinner", matSpinner, blockPos, be, bufferSource);
+        }
+
+        SingleMeshVboRenderer.setFadeAlpha(staticFade);
+        poseStack.popPose();
     }
 
 

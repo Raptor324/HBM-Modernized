@@ -14,14 +14,13 @@ import java.util.function.Supplier;
 // Позволяет определять структуру, проверять возможность постройки, строить и разрушать структуру,
 // а также генерировать VoxelShape для всей структуры. Ядро всей мультиблочной логики.
 import com.hbm_m.api.energy.WireBlock;
-import com.hbm_m.block.machines.UniversalMachinePartBlock;
+import com.hbm_m.block.UniversalMachinePartBlock;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.interfaces.IMultiblockSidedIO;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.HighlightBlocksPacket;
-import com.hbm_m.network.ModPacketHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -45,8 +44,13 @@ public class MultiblockStructureHelper {
     // ThreadLocal флаг для предотвращения рекурсии при разрушении структуры
     private static final ThreadLocal<Boolean> IS_DESTROYING = ThreadLocal.withInitial(() -> false);
 
+    private static final ThreadLocal<Boolean> IS_REPAIRING = ThreadLocal.withInitial(() -> false);
+
     public static boolean isDestroying() {
         return IS_DESTROYING.get();
+    }
+    public static boolean isRepairing() {
+        return IS_REPAIRING.get();
     }
 
     private final Map<BlockPos, Supplier<BlockState>> structureMap;
@@ -79,6 +83,11 @@ public class MultiblockStructureHelper {
     private final Map<BlockPos, VoxelShape> collisionShapes;
     // Позиция контроллера в структуре (относительно центра)
     private final BlockPos controllerOffset;
+    /**
+     * GIT {@code BlockDummyable.getOffset()}: смещение ядра от клетки клика по {@code FACING.getOpposite()}.
+     * 0 — контроллер ставится прямо в точку клика.
+     */
+    private int placementOffset;
 
     private final Set<BlockPos> partOffsets;
     // private final int maxY;
@@ -121,120 +130,20 @@ public class MultiblockStructureHelper {
         this.partShapes = partShapes != null ? Collections.unmodifiableMap(partShapes) : Collections.emptyMap();
         this.collisionShapes = collisionShapes != null ? Collections.unmodifiableMap(collisionShapes) : Collections.emptyMap();
         this.partOffsets = Collections.unmodifiableSet(structureMap.keySet());
+        this.placementOffset = computePlacementOffsetFromStructure(this.partOffsets, this.controllerOffset);
     }
 
-    /**
-     * Создаёт MultiblockStructureHelper из слоёв, заданных строками (рецептоподобный способ).
-     * Каждый слой задаётся как массив строк, где каждая строка - это ряд блоков по оси Z,
-     * а каждый символ в строке - блок по оси X.
-     * Слои идут снизу вверх (слой 0 = y=0, слой 1 = y=1, и т.д.).
-     * 
-     * Структура автоматически центрируется так, чтобы контроллер был в позиции (0, 0, 0).
-     * 
-     * @param layers Массив слоёв, где каждый слой - массив строк (снизу вверх)
-     * @param symbolMap Карта символов на Supplier<BlockState>. Символы, отсутствующие в карте, игнорируются (пустота)
-     * @param phantomBlockState Состояние блока для фантомных частей
-     * @param controllerOffset Смещение контроллера относительно центра структуры (по умолчанию 0,0,0)
-     * @return Новый экземпляр MultiblockStructureHelper
-     * 
-     * @example
-     * String[] layer0 = {"XXX", "XXX", "XXX"};
-     * String[] layer1 = {"XXX", "XXX", "XXX"};
-     * String[] layer2 = {"OOO", "OXO", "OOO"};
-     * Map<Character, Supplier<BlockState>> symbols = Map.of('X', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
-     * MultiblockStructureHelper helper = MultiblockStructureHelper.createFromLayers(
-     *     new String[][]{layer0, layer1, layer2}, 
-     *     symbols,
-     *     () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()
-     * );
-     */
-    // public static MultiblockStructureHelper createFromLayers(
-    //         String[][] layers,
-    //         Map<Character, Supplier<BlockState>> symbolMap,
-    //         Supplier<BlockState> phantomBlockState,
-    //         BlockPos controllerOffset) {
-        
-    //     Map<BlockPos, Supplier<BlockState>> structureMap = new HashMap<>();
-        
-    //     if (layers == null || layers.length == 0) {
-    //         return new MultiblockStructureHelper(Collections.emptyMap(), phantomBlockState);
-    //     }
-        
-    //     // Находим максимальную ширину и глубину для центрирования
-    //     int maxWidth = 0;
-    //     int maxDepth = layers[0].length;
-        
-    //     for (String[] layer : layers) {
-    //         if (layer != null) {
-    //             maxDepth = Math.max(maxDepth, layer.length);
-    //             for (String row : layer) {
-    //                 if (row != null) {
-    //                     maxWidth = Math.max(maxWidth, row.length());
-    //                 }
-    //             }
-    //         }
-    //     }
-        
-    //     // Вычисляем смещения для центрирования (контроллер должен быть в центре)
-    //     // Для нечётных размеров центр находится точно посередине
-    //     // Для чётных размеров центр смещён влево/вверх
-    //     int centerX = (maxWidth - 1) / 2;
-    //     int centerZ = (maxDepth - 1) / 2;
-        
-    //     // Обрабатываем каждый слой
-    //     for (int y = 0; y < layers.length; y++) {
-    //         String[] layer = layers[y];
-    //         if (layer == null) continue;
-            
-    //         // Обрабатываем каждую строку слоя (Z координата)
-    //         for (int z = 0; z < layer.length; z++) {
-    //             String row = layer[z];
-    //             if (row == null) continue;
-                
-    //             // Обрабатываем каждый символ в строке (X координата)
-    //             for (int x = 0; x < row.length(); x++) {
-    //                 char symbol = row.charAt(x);
-                    
-    //                 // Вычисляем относительные координаты (центрированные)
-    //                 int relX = x - centerX + controllerOffset.getX();
-    //                 int relY = y + controllerOffset.getY();
-    //                 int relZ = z - centerZ + controllerOffset.getZ();
-                    
-    //                 BlockPos pos = new BlockPos(relX, relY, relZ);
-                    
-    //                 // Пропускаем позицию контроллера
-    //                 BlockPos controllerPos = new BlockPos(
-    //                     controllerOffset.getX(), 
-    //                     controllerOffset.getY(), 
-    //                     controllerOffset.getZ()
-    //                 );
-    //                 if (pos.equals(controllerPos)) {
-    //                     continue;
-    //                 }
-                    
-    //                 // Если символ есть в карте, добавляем блок
-    //                 Supplier<BlockState> blockStateSupplier = symbolMap.get(symbol);
-    //                 if (blockStateSupplier != null) {
-    //                     structureMap.put(pos, blockStateSupplier);
-    //                 }
-    //             }
-    //         }
-    //     }
-        
-    //     return new MultiblockStructureHelper(structureMap, phantomBlockState);
-    // }
+    private static int computePlacementOffsetFromStructure(Set<BlockPos> partOffsets, BlockPos controllerOffset) {
+        // Ищем минимальный Z (самую ближнюю к игроку деталь, так как NORTH это -Z)
+        int minZ = controllerOffset.getZ();
+        for (BlockPos offset : partOffsets) {
+            minZ = Math.min(minZ, offset.getZ());
+        }
+        // Возвращаем дистанцию от ядра до лицевой части
+        return controllerOffset.getZ() - minZ;
+    }
+
     
-    // /**
-    //  * Перегрузка метода createFromLayers с контроллером в позиции (0, 0, 0).
-    //  */
-    // public static MultiblockStructureHelper createFromLayers(
-    //         String[][] layers,
-    //         Map<Character, Supplier<BlockState>> symbolMap,
-    //         Supplier<BlockState> phantomBlockState) {
-    //     return createFromLayers(layers, symbolMap, phantomBlockState, BlockPos.ZERO);
-    // }
-    
-    // === НОВЫЕ МЕТОДЫ С ПОДДЕРЖКОЙ РОЛЕЙ ===
     
     /**
      * Создаёт MultiblockStructureHelper из слоёв с картой ролей.
@@ -332,7 +241,14 @@ public class MultiblockStructureHelper {
                         if (role == PartRole.CONTROLLER) {
                             foundControllerPositions.add(pos);
                         } else {
-                            structureMap.put(pos, symbolMap.get(symbol));
+                            Supplier<BlockState> partSupplier = phantomBlockState;
+                            if (symbolMap != null) {
+                                Supplier<BlockState> mapped = symbolMap.get(symbol);
+                                if (mapped != null) {
+                                    partSupplier = mapped;
+                                }
+                            }
+                            structureMap.put(pos, partSupplier);
                             if (role == PartRole.LADDER && ladderSideMap != null && ladderSideMap.containsKey(symbol)) {
                                 ladderDirs.put(pos, ladderTupleToLocalSet(symbol, ladderSideMap.get(symbol)));
                             }
@@ -411,7 +327,351 @@ public class MultiblockStructureHelper {
                 helper.controllerFluidSidesFromStructure = true;
             }
         }
+        helper.placementOffset = computePlacementOffset(finalControllerPos, positionSymbolMap);
         return helper;
+    }
+
+    /**
+     * Авто-расчёт offset как максимальное локальное +Z от контроллера (лицевая грань при FACING=NORTH),
+     * как {@code BlockDummyable.getOffset()} у симметричных мультиблоков 1.7.10.
+     */
+    private static int computePlacementOffset(BlockPos controllerPos, Map<BlockPos, Character> occupiedCells) {
+        int minZ = 0;
+        for (BlockPos gridPos : occupiedCells.keySet()) {
+            BlockPos rel = gridPos.subtract(controllerPos);
+            minZ = Math.min(minZ, rel.getZ());
+        }
+        // Эквивалентно 0 - minZ
+        return -minZ;
+    }
+
+    public MultiblockStructureHelper withPlacementOffset(int offset) {
+        this.placementOffset = offset;
+        return this;
+    }
+
+    private static BlockPos getMinPos(BlockPos p1, BlockPos p2) {
+        return new BlockPos(Math.min(p1.getX(), p2.getX()), Math.min(p1.getY(), p2.getY()), Math.min(p1.getZ(), p2.getZ()));
+    }
+
+    private static BlockPos getMaxPos(BlockPos p1, BlockPos p2) {
+        return new BlockPos(Math.max(p1.getX(), p2.getX()), Math.max(p1.getY(), p2.getY()), Math.max(p1.getZ(), p2.getZ()));
+    }
+
+    /**
+     * Пытается обновить структуру до новой версии.
+     * Сдвигает контроллер, если это старый сейв, перестраивает фантомы при изменении размеров или свойств,
+     * а также обновляет рамку выделения.
+     */
+    public boolean attemptAutoRepair(Level level, BlockPos currentCtrlPos, BlockState state, IMultiblockController controller) {
+        if (level.isClientSide) return false;
+
+        // 1. ОТКЛАДЫВАЕМ ПОЧИНКУ, если поблизости нет игроков.
+        // Это разгружает сервер во время старта/загрузки мира и гарантирует, что чанки вокруг будут активны.
+        if (level.getNearestPlayer(currentCtrlPos.getX() + 0.5, currentCtrlPos.getY() + 0.5, currentCtrlPos.getZ() + 0.5, 64.0D, false) == null) {
+            return false;
+        }
+
+        Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
+        
+        // 2. ВЫЧИСЛЯЕМ ОЖИДАЕМЫЕ ПОЗИЦИИ НОВОЙ СТРУКТУРЫ
+        Map<BlockPos, BlockPos> expectedPosToGrid = new java.util.HashMap<>();
+        for (Map.Entry<BlockPos, java.util.function.Supplier<BlockState>> entry : this.structureMap.entrySet()) {
+            BlockPos gridPos = entry.getKey();
+            BlockPos expectedPos = this.getRotatedPos(currentCtrlPos, gridPos, facing);
+            if (!expectedPos.equals(currentCtrlPos)) {
+                expectedPosToGrid.put(expectedPos, gridPos);
+            }
+        }
+        Set<BlockPos> expectedCurrentPositions = expectedPosToGrid.keySet();
+
+        // 3. ВЫЧИСЛЯЕМ ОЖИДАЕМЫЕ ПОЗИЦИИ СТАРОЙ СТРУКТУРЫ (ЕСЛИ БЫЛ СДВИГ ЯДРА)
+        BlockPos newCtrlPos = currentCtrlPos;
+        BlockPos oldOffset = controller.getLegacyControllerOffset();
+        Set<BlockPos> expectedLegacyPositions = new java.util.HashSet<>();
+        
+        if (oldOffset != null) {
+            for (BlockPos gridPos : this.structureMap.keySet()) {
+                BlockPos offsetFromOld = gridPos.subtract(oldOffset);
+                BlockPos expectedPos = currentCtrlPos.offset(rotate(offsetFromOld, facing));
+                if (!expectedPos.equals(currentCtrlPos)) {
+                    expectedLegacyPositions.add(expectedPos);
+                }
+            }
+        }
+
+        // 4. ОПРЕДЕЛЯЕМ ГРАНИЦЫ И ПРОВЕРЯЕМ БЕЗОПАСНОСТЬ (БЕЗ ДЕДЛОКОВ)
+        int minX = currentCtrlPos.getX();
+        int minY = currentCtrlPos.getY();
+        int minZ = currentCtrlPos.getZ();
+        int maxX = currentCtrlPos.getX();
+        int maxY = currentCtrlPos.getY();
+        int maxZ = currentCtrlPos.getZ();
+
+        for (BlockPos pos : expectedCurrentPositions) {
+            minX = Math.min(minX, pos.getX()); minY = Math.min(minY, pos.getY()); minZ = Math.min(minZ, pos.getZ());
+            maxX = Math.max(maxX, pos.getX()); maxY = Math.max(maxY, pos.getY()); maxZ = Math.max(maxZ, pos.getZ());
+        }
+        for (BlockPos pos : expectedLegacyPositions) {
+            minX = Math.min(minX, pos.getX()); minY = Math.min(minY, pos.getY()); minZ = Math.min(minZ, pos.getZ());
+            maxX = Math.max(maxX, pos.getX()); maxY = Math.max(maxY, pos.getY()); maxZ = Math.max(maxZ, pos.getZ());
+        }
+
+        int minChunkX = minX >> 4;
+        int maxChunkX = maxX >> 4;
+        int minChunkZ = minZ >> 4;
+        int maxChunkZ = maxZ >> 4;
+
+        // БЕЗОПАСНАЯ ЗАЩИТА: Проверяем, что затронутые чанки И ИХ СОСЕДИ (радиус +1 чанк) загружены.
+        // Это на 100% предотвращает каскадную загрузку чанков при neighbor updates (setBlock / removeBlock).
+        for (int cx = minChunkX - 1; cx <= maxChunkX + 1; cx++) {
+            for (int cz = minChunkZ - 1; cz <= maxChunkZ + 1; cz++) {
+                if (!level.hasChunk(cx, cz)) {
+                    return false; // Чанк не загружен полностью, откладываем починку
+                }
+            }
+        }
+
+        // 5. ИЩЕМ ВСЕ СУЩЕСТВУЮЩИЕ ФАНТОМЫ, ПРИНАДЛЕЖАЩИЕ ЭТОМУ КОНТРОЛЛЕРУ
+        Set<BlockPos> existingPhantoms = new java.util.HashSet<>();
+        Block phantomBlock = this.phantomBlockState.get().getBlock();
+
+        if (!(level instanceof net.minecraft.server.level.ServerLevel serverLevel)) {
+            return false;
+        }
+
+        for (int cx = minChunkX; cx <= maxChunkX; cx++) {
+            for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
+                net.minecraft.world.level.chunk.LevelChunk chunk =
+                        serverLevel.getChunkSource().getChunkNow(cx, cz);
+                if (chunk == null) {
+                    // Чанк ещё не полностью готов "прямо сейчас" - откладываем починку,
+                    // вместо того чтобы блокировать поток сервера.
+                    return false;
+                }
+                int chunkMinX = Math.max(minX, cx << 4);
+                int chunkMaxX = Math.min(maxX, (cx << 4) + 15);
+                int chunkMinZ = Math.max(minZ, cz << 4);
+                int chunkMaxZ = Math.min(maxZ, (cz << 4) + 15);
+                
+                for (int x = chunkMinX; x <= chunkMaxX; x++) {
+                    for (int z = chunkMinZ; z <= chunkMaxZ; z++) {
+                        for (int y = minY; y <= maxY; y++) {
+                            BlockPos pos = new BlockPos(x, y, z);
+                            BlockState posState = chunk.getBlockState(pos);
+                            if (posState.is(phantomBlock) || posState.getBlock() instanceof UniversalMachinePartBlock) {
+                                BlockEntity be = chunk.getBlockEntity(pos);
+                                if (be instanceof IMultiblockPart part && currentCtrlPos.equals(part.getControllerPos())) {
+                                    existingPhantoms.add(pos);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 6. БЫСТРАЯ ПРОВЕРКА: ИДЕАЛЬНА ЛИ СТРУКТУРА?
+        boolean isPerfect = existingPhantoms.size() == expectedCurrentPositions.size() && existingPhantoms.containsAll(expectedCurrentPositions);
+        
+        if (isPerfect) {
+            for (BlockPos pos : expectedCurrentPositions) {
+                BlockEntity be = level.getBlockEntity(pos);
+                if (be instanceof IMultiblockPart part) {
+                    BlockPos gridPos = expectedPosToGrid.get(pos);
+                    if (part.getPartRole() != resolvePartRole(gridPos, controller)) {
+                        isPerfect = false; // Роли поменялись
+                        break;
+                    }
+                }
+            }
+        }
+        
+        if (isPerfect) {
+            MultiblockFrameHelper.updateFrameForController(level, currentCtrlPos);
+            return true; // Структура в порядке, починка не требуется
+        }
+
+        // === ОПТИМИЗИРОВАННАЯ ПОЧИНКА БЕЗ ПЕРЕСТРОЙКИ (СВАП РОЛЕЙ И ПАРАМЕТРОВ IN-PLACE) ===
+        boolean noNewPartsNeeded = existingPhantoms.containsAll(expectedCurrentPositions);
+
+        if (noNewPartsNeeded) {
+            IS_REPAIRING.set(true);
+            try {
+                var energyManager = com.hbm_m.api.energy.EnergyNetworkManager.get((net.minecraft.server.level.ServerLevel) level);
+
+                // а) Удаляем лишние старые фантомы, если структура стала меньше в размерах
+                for (BlockPos oldPos : existingPhantoms) {
+                    if (!expectedCurrentPositions.contains(oldPos) && !oldPos.equals(currentCtrlPos)) {
+                        BlockEntity be = level.getBlockEntity(oldPos);
+                        if (be instanceof IMultiblockPart part) {
+                            PartRole role = part.getPartRole();
+                            if (role.canReceiveEnergy() || role.canSendEnergy()) {
+                                energyManager.removeNode(oldPos);
+                            }
+                        }
+                        // Используем флаг 3, так как мы гарантировали загруженность соседей
+                        level.removeBlock(oldPos, false);
+                    }
+                }
+
+                // б) Обновляем роли оставшихся фантомов на месте без изменения BlockState
+                boolean rolesChanged = false;
+                for (BlockPos pos : expectedCurrentPositions) {
+                    BlockEntity be = level.getBlockEntity(pos);
+                    if (be instanceof IMultiblockPart part) {
+                        BlockPos gridPos = expectedPosToGrid.get(pos);
+                        PartRole expectedRole = resolvePartRole(gridPos, controller);
+                        if (part.getPartRole() != expectedRole) {
+                            rolesChanged = true;
+                            part.setPartRole(expectedRole);
+
+                            if (expectedRole == PartRole.LADDER) {
+                                Set<Direction> localSides = ladderLocalDirections.get(gridPos);
+                                EnumSet<Direction> worldSides = EnumSet.noneOf(Direction.class);
+                                if (localSides != null && !localSides.isEmpty()) {
+                                    for (Direction localDir : localSides) {
+                                        worldSides.add(rotateLocalDirectionToWorld(localDir, facing));
+                                    }
+                                } else {
+                                    worldSides.add(Direction.NORTH); worldSides.add(Direction.SOUTH);
+                                    worldSides.add(Direction.EAST); worldSides.add(Direction.WEST);
+                                }
+                                part.setAllowedClimbSides(worldSides);
+                            } else {
+                                part.setAllowedClimbSides(Collections.emptySet());
+                            }
+
+                            if (expectedRole == PartRole.ENERGY_CONNECTOR || expectedRole == PartRole.UNIVERSAL_CONNECTOR) {
+                                Set<Direction> localEnergy = energyLocalDirections.get(gridPos);
+                                EnumSet<Direction> worldEnergy = EnumSet.noneOf(Direction.class);
+                                if (localEnergy != null && !localEnergy.isEmpty()) {
+                                    for (Direction localDir : localEnergy) {
+                                        worldEnergy.add(rotateLocalDirectionToWorld(localDir, facing));
+                                    }
+                                } else {
+                                    Collections.addAll(worldEnergy, Direction.values());
+                                }
+                                part.setAllowedEnergySides(worldEnergy);
+                                energyManager.addNode(pos);
+                            } else {
+                                part.setAllowedEnergySides(Collections.emptySet());
+                                energyManager.removeNode(pos);
+                            }
+
+                            if (expectedRole == PartRole.FLUID_CONNECTOR || expectedRole == PartRole.UNIVERSAL_CONNECTOR) {
+                                Set<Direction> localFluid = fluidLocalDirections.get(gridPos);
+                                EnumSet<Direction> worldFluid = EnumSet.noneOf(Direction.class);
+                                if (localFluid != null && !localFluid.isEmpty()) {
+                                    for (Direction localDir : localFluid) {
+                                        worldFluid.add(rotateLocalDirectionToWorld(localDir, facing));
+                                    }
+                                } else {
+                                    Collections.addAll(worldFluid, Direction.values());
+                                }
+                                part.setAllowedFluidSides(worldFluid);
+                            } else {
+                                part.setAllowedFluidSides(Collections.emptySet());
+                            }
+
+                            be.setChanged();
+                        }
+                    }
+                }
+
+                applyControllerSideConfig(level, currentCtrlPos, facing);
+                MultiblockFrameHelper.updateFrameForController(level, currentCtrlPos);
+
+                if (rolesChanged) {
+                    level.sendBlockUpdated(currentCtrlPos, state, state, 3);
+                }
+
+                return true;
+            } finally {
+                IS_REPAIRING.set(false);
+            }
+        }
+
+        // 7. ЛОГИКА МИГРАЦИИ (СДВИГА) - выполняется только при физической перестройке
+        if (oldOffset != null && !existingPhantoms.isEmpty()) {
+            int legacyMatches = 0;
+            int currentMatches = 0;
+            for (BlockPos phantomPos : existingPhantoms) {
+                if (expectedLegacyPositions.contains(phantomPos)) legacyMatches++;
+                if (expectedCurrentPositions.contains(phantomPos)) currentMatches++;
+            }
+            
+            if (legacyMatches > currentMatches) {
+                BlockPos localShift = this.controllerOffset.subtract(oldOffset);
+                BlockPos worldShift = rotate(localShift, facing);
+                newCtrlPos = currentCtrlPos.offset(worldShift);
+            }
+        }
+
+        // 8. ПРОВЕРКА КОЛЛИЗИЙ ДЛЯ ТЕХ МЕСТ, ГДЕ ПРЕПЯТСТВИЙ РАНЬШЕ НЕ БЫЛО
+        Set<BlockPos> finalExpectedPositions = new java.util.HashSet<>();
+        for (BlockPos gridPos : this.structureMap.keySet()) {
+            finalExpectedPositions.add(this.getRotatedPos(newCtrlPos, gridPos, facing));
+        }
+
+        for (BlockPos targetPos : finalExpectedPositions) {
+            if (targetPos.equals(newCtrlPos) || targetPos.equals(currentCtrlPos)) continue;
+            if (!existingPhantoms.contains(targetPos)) {
+                if (!isBlockReplaceable(level.getBlockState(targetPos))) {
+                    return false; // Починка заблокирована сторонним твердым блоком, ждем
+                }
+            }
+        }
+
+        // 9. ВЫПОЛНЯЕМ ПОЛНУЮ ПОЧИНКУ (ФИЗИЧЕСКАЯ ПЕРЕСТРОЙКА БЛОКОВ)
+        IS_REPAIRING.set(true);
+        try {
+            var energyManager = com.hbm_m.api.energy.EnergyNetworkManager.get((net.minecraft.server.level.ServerLevel) level);
+
+            for (BlockPos oldPos : existingPhantoms) {
+                if (!oldPos.equals(currentCtrlPos) && !oldPos.equals(newCtrlPos)) {
+                    BlockEntity be = level.getBlockEntity(oldPos);
+                    if (be instanceof IMultiblockPart part) {
+                        PartRole role = part.getPartRole();
+                        if (role.canReceiveEnergy() || role.canSendEnergy()) {
+                            energyManager.removeNode(oldPos);
+                        }
+                    }
+                    level.removeBlock(oldPos, false);
+                }
+            }
+
+            if (!newCtrlPos.equals(currentCtrlPos)) {
+                BlockEntity oldBE = level.getBlockEntity(currentCtrlPos);
+                net.minecraft.nbt.CompoundTag nbt = null;
+                
+                if (oldBE != null) {
+                    nbt = oldBE.saveWithFullMetadata();
+                    level.removeBlockEntity(currentCtrlPos);
+                }
+                
+                level.removeBlock(currentCtrlPos, false);
+                level.setBlock(newCtrlPos, state, 3);
+
+                if (nbt != null) {
+                    nbt.putInt("x", newCtrlPos.getX());
+                    nbt.putInt("y", newCtrlPos.getY());
+                    nbt.putInt("z", newCtrlPos.getZ());
+                    BlockEntity newBE = level.getBlockEntity(newCtrlPos);
+                    if (newBE != null) {
+                        newBE.load(nbt);
+                    }
+                }
+                level.updateNeighborsAt(currentCtrlPos, state.getBlock());
+                level.updateNeighborsAt(newCtrlPos, state.getBlock());
+            } else {
+                this.placeStructure(level, newCtrlPos, facing, controller);
+            }
+            
+            return true;
+        } finally {
+            IS_REPAIRING.set(false);
+        }
     }
 
     private static final Direction[] LADDER_TUPLE_ORDER = {
@@ -530,6 +790,10 @@ public class MultiblockStructureHelper {
         return this.controllerOffset;
     }
 
+    public int getPlacementOffset() {
+        return this.placementOffset;
+    }
+
     /**
      * Возвращает форму конкретной части в мировом пространстве (но без смещения к позиции).
      * @param gridPos Координаты блока в сетке хелпера (из структуры)
@@ -627,6 +891,12 @@ public class MultiblockStructureHelper {
                state.is(BlockTags.SAPLINGS);             // Саженцы деревьев
     }
 
+    /**
+     * Проверяет, свободны ли все клетки структуры.
+     *
+     * @param controllerPos мировая позиция <b>ядра</b> (контроллера), не клетки клика;
+     *                      для facade используйте {@link #checkPlacementFromFacade}.
+     */
     public boolean checkPlacement(Level level, BlockPos controllerPos, Direction facing, Player player) {
         List<BlockPos> obstructions = new ArrayList<>();
         for (BlockPos relativePos : structureMap.keySet()) {
@@ -655,6 +925,11 @@ public class MultiblockStructureHelper {
         }
 
         return true;
+    }
+
+    /** Проверка от клетки клика (facade): сама вычисляет позицию ядра. */
+    public boolean checkPlacementFromFacade(Level level, BlockPos facadePos, Direction facing, Player player) {
+        return checkPlacement(level, MultiblockPlacement.getCorePos(facadePos, facing, this), facing, player);
     }
 
     /**

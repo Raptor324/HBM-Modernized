@@ -7,8 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.MachineIndustrialTurbineBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineIndustrialTurbineBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -116,19 +116,27 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
         super.onPlace(state, level, pos, oldState, isMoving);
 
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
+            BlockPos core = placeMultiblockStructure(level, pos, state);
+            if (core == null) {
+                return;
+            }
             Direction facing = state.getValue(FACING);
-            structureHelper.placeStructure(level, pos, facing, this);
-
-            EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
+            EnergyNetworkManager.get((ServerLevel) level).addNode(core);
 
             for (BlockPos gridPos : structureHelper.getStructureMap().keySet()) {
                 PartRole role = structureHelper.resolvePartRole(gridPos, this);
                 if (role.canReceiveEnergy()) {
-                    BlockPos worldPos = structureHelper.getRotatedPos(pos, gridPos, facing);
+                    BlockPos worldPos = structureHelper.getRotatedPos(core, gridPos, facing);
                     EnergyNetworkManager.get((ServerLevel) level).addNode(worldPos);
                 }
             }
         }
+    }
+
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
     }
 
     @Override

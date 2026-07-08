@@ -8,8 +8,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-import com.hbm_m.block.entity.machines.MachinePressBlockEntity;
 import com.hbm_m.block.machines.MachinePressBlock;
+import com.hbm_m.blockentity.machines.MachinePressBlockEntity;
 import com.hbm_m.client.model.PressBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.MeshRenderCache;

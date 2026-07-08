@@ -33,7 +33,7 @@ public class ArcWelderJeiCategory implements IRecipeCategory<ArcWelderJeiRecipe>
 
     @Override public RecipeType<ArcWelderJeiRecipe> getRecipeType() { return RECIPE_TYPE; }
     @Override public Component getTitle() { return Component.translatable("block.hbm_m.arc_welder"); }
-    @Override public IDrawable getBackground() { return background; }
+    @Override @SuppressWarnings("removal") public IDrawable getBackground() { return background; }
     @Override public IDrawable getIcon()       { return icon; }
 
     @Override

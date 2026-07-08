@@ -1,6 +1,6 @@
 package com.hbm_m.client.render.implementations;
 
-import com.hbm_m.block.entity.machines.MachineGasCentrifugeBlockEntity;
+import com.hbm_m.blockentity.machines.MachineGasCentrifugeBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 

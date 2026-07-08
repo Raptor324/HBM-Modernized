@@ -6,8 +6,8 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.MachineTurbineBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineTurbineBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -133,8 +133,17 @@ public class MachineTurbineBlock extends BaseEntityBlock implements IMultiblockC
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            structureHelper.placeStructure(level, pos, state.getValue(FACING), this);
+            BlockPos core = placeMultiblockStructure(level, pos, state);
+            if (core == null) {
+                return;
+            }
         }
+    }
+
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
     }
 
     @Override

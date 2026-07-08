@@ -8,8 +8,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.FluidLocalization;
-import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity;
-import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
+import com.hbm_m.blockentity.machines.MachineAdvancedAssemblerBlockEntity;
+import com.hbm_m.blockentity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.SetAssemblerRecipeC2SPacket;

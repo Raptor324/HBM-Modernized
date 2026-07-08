@@ -76,7 +76,7 @@ public final class FleijaSphereMesh {
     }
 
     private static List<Tri> loadTriangles(ResourceManager rm) {
-        ResourceLocation file = new ResourceLocation(SPHERE_OBJ.getNamespace(), SPHERE_OBJ.getPath());
+        ResourceLocation file = ResourceLocation.fromNamespaceAndPath(SPHERE_OBJ.getNamespace(), SPHERE_OBJ.getPath());
         Resource resource = rm.getResource(file).orElse(null);
         if (resource == null) {
             MainRegistry.LOGGER.warn("Fleija sphere OBJ missing: {}", file);

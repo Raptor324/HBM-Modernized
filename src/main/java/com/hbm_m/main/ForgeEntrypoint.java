@@ -19,6 +19,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 @Mod(RefStrings.MODID)
 public final class ForgeEntrypoint {
+    @SuppressWarnings("removal")
     public ForgeEntrypoint() {
         // FML mod bus + явная регистрация в Architectury: иначе DeferredRegister.register() без шины
         // не находит шину по mod id («Can't get event bus for mod … because it was not registered!»).

@@ -11,7 +11,7 @@ import net.fabricmc.api.Environment;*///?}
 
 import java.util.List;
 
-import com.hbm_m.block.entity.machines.HeatingOvenBlockEntity;
+import com.hbm_m.blockentity.machines.HeatingOvenBlockEntity;
 import com.hbm_m.client.render.RenderDistanceHelper;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;

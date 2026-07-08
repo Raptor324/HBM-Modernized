@@ -35,7 +35,7 @@ public class CrystallizerJeiCategory implements IRecipeCategory<CrystallizerJeiR
 
     @Override public RecipeType<CrystallizerJeiRecipe> getRecipeType() { return RECIPE_TYPE; }
     @Override public Component getTitle() { return Component.translatable("container.hbm_m.crystallizer"); }
-    @Override public IDrawable getBackground() { return background; }
+    @Override @SuppressWarnings("removal") public IDrawable getBackground() { return background; }
     @Override public IDrawable getIcon()       { return icon; }
 
     @Override

@@ -18,7 +18,7 @@ import java.util.Map;
 
 public class TemplateCraftingCosts {
 
-    private static final TagKey<Item> VANILLA_DYES = TagKey.create(Registries.ITEM, new ResourceLocation("minecraft", "dyes"));
+    private static final TagKey<Item> VANILLA_DYES = TagKey.create(Registries.ITEM, ResourceLocation.withDefaultNamespace("dyes"));
 
     // Карта: Предмет-результат -> Список ингредиентов для создания его шаблона
     private static final Map<Item, NonNullList<Ingredient>> TEMPLATE_COSTS = new HashMap<>();

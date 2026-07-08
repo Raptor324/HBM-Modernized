@@ -2,7 +2,7 @@ package com.hbm_m.client.render.implementations;
 
 import java.util.Random;
 
-import com.hbm_m.block.entity.machines.BatterySocketBlockEntity;
+import com.hbm_m.blockentity.machines.BatterySocketBlockEntity;
 import com.hbm_m.client.render.RenderDistanceHelper;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.lib.RefStrings;

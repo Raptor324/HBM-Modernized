@@ -1438,38 +1438,30 @@ public class ModBlockStateProvider extends BlockStateProvider {
         ModelFile modelFile = models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath()));
         for (Direction facing : Direction.Plane.HORIZONTAL.stream().toArray(Direction[]::new)) {
             for (boolean frame : new boolean[] { false, true }) {
-                for (boolean renderActive : new boolean[] { false, true }) {
-                    builder.partialState()
-                        .with(MachineChemicalPlantBlock.FACING, facing)
-                        .with(MachineChemicalPlantBlock.FRAME, frame)
-                        .with(MachineChemicalPlantBlock.RENDER_ACTIVE, renderActive)
-                        .modelForState()
-                        .modelFile(modelFile)
-                        .addModel();
-                }
+                builder.partialState()
+                    .with(MachineChemicalPlantBlock.FACING, facing)
+                    .with(MachineChemicalPlantBlock.FRAME, frame)
+                    .modelForState()
+                    .modelFile(modelFile)
+                    .addModel();
             }
         }
     }
 
     private void registerAdvancedAssemblyMachineBlock(RegistrySupplier<? extends Block> blockObject) {
         VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
-        // Используем одну и ту же модель для всех состояний.
-        // Логика отображения (Baked vs BER) скрыта внутри самого MachineAdvancedAssemblerBakedModel.
+        // Используем одну модель для всех состояний; world render — только BER/VBO.
         ModelFile modelFile = models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath()));
         
         for (Direction facing : Direction.Plane.HORIZONTAL.stream().toArray(Direction[]::new)) {
             for (boolean frame : new boolean[]{false, true}) {
-                // Добавляем перебор состояния RENDER_ACTIVE
-                for (boolean renderActive : new boolean[]{false, true}) {
-                    builder.partialState()
-                        .with(MachineAdvancedAssemblerBlock.FACING, facing)
-                        .with(MachineAdvancedAssemblerBlock.FRAME, frame)
-                        .with(MachineAdvancedAssemblerBlock.RENDER_ACTIVE, renderActive)
-                        .modelForState()
-                        .modelFile(modelFile)
-                        .rotationY(getRotationY(facing))
-                        .addModel();
-                }
+                builder.partialState()
+                    .with(MachineAdvancedAssemblerBlock.FACING, facing)
+                    .with(MachineAdvancedAssemblerBlock.FRAME, frame)
+                    .modelForState()
+                    .modelFile(modelFile)
+                    .rotationY(getRotationY(facing))
+                    .addModel();
             }
         }
     }
@@ -1479,15 +1471,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
         ModelFile modelFile = models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath()));
 
         for (Direction facing : Direction.Plane.HORIZONTAL.stream().toArray(Direction[]::new)) {
-            for (boolean renderActive : new boolean[]{false, true}) {
-                builder.partialState()
-                        .with(MachineAssemblerBlock.FACING, facing)
-                        .with(MachineAssemblerBlock.RENDER_ACTIVE, renderActive)
-                        .modelForState()
-                        .modelFile(modelFile)
-                        .rotationY(getRotationY(facing))
-                        .addModel();
-            }
+            builder.partialState()
+                    .with(MachineAssemblerBlock.FACING, facing)
+                    .modelForState()
+                    .modelFile(modelFile)
+                    .rotationY(getRotationY(facing))
+                    .addModel();
         }
     }
 

@@ -53,7 +53,7 @@ import com.hbm_m.block.machines.MachineCatalyticReformerBlock;
 import com.hbm_m.block.machines.MachineCentrifugeBlock;
 import com.hbm_m.block.machines.MachineChemicalFactoryBlock;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
-import com.hbm_m.block.machines.MachineCoolingTowerBlock;
+import com.hbm_m.block.machines.MachineTowerLargeBlock;
 import com.hbm_m.block.machines.MachineFoundryChannelBlock;
 import com.hbm_m.block.machines.MachineFoundryBasinBlock;
 import com.hbm_m.block.machines.MachineCoreEmitterBlock;
@@ -100,7 +100,6 @@ import com.hbm_m.block.machines.MachineWatzPowerplantBlock;
 import com.hbm_m.block.machines.MachineWoodBurnerBlock;
 import com.hbm_m.block.machines.MachineZirnoxBlock;
 import com.hbm_m.block.machines.MachineZirnoxDestroyedBlock;
-import com.hbm_m.block.machines.UniversalMachinePartBlock;
 import com.hbm_m.block.machines.rbmk.RBMKRodBlock;
 import com.hbm_m.block.machines.rbmk.RBMKControlManualBlock;
 import com.hbm_m.block.machines.rbmk.RBMKControlAutoBlock;
@@ -385,7 +384,7 @@ public class ModBlocks {
             () -> new MachineFrackingTowerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> COOLING_TOWER = registerBlockWithoutItem("cooling_tower",
-            () -> new MachineCoolingTowerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+            () -> new MachineTowerLargeBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> TOWER_SMALL = registerBlockWithoutItem("tower_small",
             () -> new MachineTowerSmallBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));

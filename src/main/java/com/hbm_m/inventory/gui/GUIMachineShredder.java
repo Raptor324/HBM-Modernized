@@ -1,6 +1,6 @@
 package com.hbm_m.inventory.gui;
 
-import com.hbm_m.block.entity.machines.MachineShredderBlockEntity;
+import com.hbm_m.blockentity.machines.MachineShredderBlockEntity;
 import com.hbm_m.inventory.menu.MachineShredderMenu;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;

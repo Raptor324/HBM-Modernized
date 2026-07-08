@@ -2,7 +2,6 @@ package com.hbm_m.radiation;
 
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.hazard.HazardSystem;
-import com.hbm_m.hazard.HazardRegistry;
 import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.core.BlockPos;
@@ -198,8 +197,8 @@ public class ChunkRadiationManager {
             return;
         }
 
-        float oldRad = HazardSystem.getHazardLevelFromState(oldState, HazardRegistry.RADIATION);
-        float newRad = HazardSystem.getHazardLevelFromState(newState, HazardRegistry.RADIATION);
+        float oldRad = HazardSystem.getBlockChunkRadiationSumContribution(oldState);
+        float newRad = HazardSystem.getBlockChunkRadiationSumContribution(newState);
         float diff = newRad - oldRad;
 
         // Только явные изменения блоков игроком/взрывом — как BlockHazard onBlockAdded/updateTick в 1.7.10.

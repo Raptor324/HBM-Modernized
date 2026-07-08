@@ -1,6 +1,6 @@
 package com.hbm_m.inventory.gui;
 
-import com.hbm_m.block.entity.machines.MachineSolderingStationBlockEntity;
+import com.hbm_m.blockentity.machines.MachineSolderingStationBlockEntity;
 import com.hbm_m.inventory.menu.MachineSolderingStationMenu;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.SolderingStationControlPacket;

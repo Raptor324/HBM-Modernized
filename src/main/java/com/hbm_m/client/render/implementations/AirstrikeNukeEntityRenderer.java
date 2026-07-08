@@ -59,7 +59,7 @@ public class AirstrikeNukeEntityRenderer extends EntityRenderer<AirstrikeNukeEnt
     @Override
     public ResourceLocation getTextureLocation(AirstrikeNukeEntity entity) {
         // Не используется при рендере через blockRenderer, можно вернуть что‑нибудь дефолтное
-        return new ResourceLocation("minecraft", "textures/block/iron_block.png");
+        return ResourceLocation.fromNamespaceAndPath("minecraft", "textures/block/iron_block.png");
     }
 }
 

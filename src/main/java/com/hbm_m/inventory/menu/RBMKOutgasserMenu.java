@@ -1,6 +1,6 @@
 package com.hbm_m.inventory.menu;
 
-import com.hbm_m.block.entity.machines.rbmk.RBMKOutgasserBlockEntity;
+import com.hbm_m.blockentity.machines.rbmk.RBMKOutgasserBlockEntity;
 import com.hbm_m.item.rbmk.RBMKRodItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;

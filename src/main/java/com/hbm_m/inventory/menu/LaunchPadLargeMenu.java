@@ -1,7 +1,7 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.api.item.IDesignatorItem;
-import com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity;
+import com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.ModPacketHandler;

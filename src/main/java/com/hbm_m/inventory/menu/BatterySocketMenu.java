@@ -1,7 +1,7 @@
 package com.hbm_m.inventory.menu;
 
-import com.hbm_m.block.entity.machines.BatterySocketBlockEntity;
 import com.hbm_m.block.machines.MachineBatterySocketBlock;
+import com.hbm_m.blockentity.machines.BatterySocketBlockEntity;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;

@@ -1,6 +1,5 @@
 package com.hbm_m.handler.rbmk;
 
-import com.hbm_m.block.entity.machines.rbmk.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
@@ -8,6 +7,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.*;
+
+import com.hbm_m.blockentity.machines.rbmk.*;
 
 public class RBMKNeutronHandler {
 

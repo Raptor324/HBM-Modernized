@@ -73,6 +73,7 @@ public abstract class JeiGenericRecipeCategory<R> implements IRecipeCategory<R> 
     }
 
     @Override
+    @SuppressWarnings("removal")
     public IDrawable getBackground() {
         return background;
     }

@@ -31,8 +31,8 @@ import org.jetbrains.annotations.NotNull;
 import com.google.common.collect.ImmutableMap;
 import dev.architectury.registry.registries.RegistrySupplier;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
+import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.client.loader.DoorModelLoader;
 import com.hbm_m.client.loader.HeatingOvenModelLoader;
 import com.hbm_m.client.loader.MachineAdvancedAssemblerModelLoader;
@@ -1400,7 +1400,7 @@ public class ClientSetup {
             if (tintIndex == 0) return 0xFFFFFF;
             if (tintIndex != 1 || level == null || pos == null) return 0xFFFFFF;
             var be = level.getBlockEntity(pos);
-            if (be instanceof com.hbm_m.block.entity.machines.FluidDuctBlockEntity ductBe) {
+            if (be instanceof com.hbm_m.blockentity.machines.FluidDuctBlockEntity ductBe) {
                 var fluid = ductBe.getFluidType();
                 if (fluid != net.minecraft.world.level.material.Fluids.EMPTY) {
                     return com.hbm_m.api.fluids.HbmFluidRegistry.getTintColor(fluid);

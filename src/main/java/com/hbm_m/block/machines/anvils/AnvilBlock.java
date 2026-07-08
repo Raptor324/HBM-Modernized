@@ -3,7 +3,7 @@ package com.hbm_m.block.machines.anvils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.entity.machines.AnvilBlockEntity;
+import com.hbm_m.blockentity.machines.AnvilBlockEntity;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;

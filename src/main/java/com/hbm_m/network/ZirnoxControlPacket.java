@@ -1,6 +1,6 @@
 package com.hbm_m.network;
 
-import com.hbm_m.block.entity.machines.MachineZirnoxBlockEntity;
+import com.hbm_m.blockentity.machines.MachineZirnoxBlockEntity;
 
 import dev.architectury.networking.NetworkManager.PacketContext;
 import net.minecraft.core.BlockPos;

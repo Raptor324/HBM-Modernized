@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
-import com.hbm_m.block.entity.machines.MachineCrystallizerBlockEntity;
+import com.hbm_m.blockentity.machines.MachineCrystallizerBlockEntity;
 import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;

@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.hbm_m.handler.HazmatRegistry;
+import com.hbm_m.block.generic.BlockHazardFalling;
 import com.hbm_m.block.generic.BlockSellafieldSlaked;
 import com.hbm_m.hazard.modifier.HazardModifier;
 import com.hbm_m.hazard.type.HazardTypeBase;
@@ -176,6 +177,25 @@ public final class HazardSystem {
             return sellafiteRadiationForLevel(state.getValue(BlockSellafieldSlaked.COLOR_LEVEL));
         }
         return 0.0f;
+    }
+
+    /**
+     * Вклад блока в {@code blockRad} чанка. В 1.7.10 {@code ChunkRadiationHandlerSimple} не суммирует блоки:
+     * ambient пополняют только {@code BlockHazard#updateTick} / {@code incrementRad} (горячий sellafite, fallout…).
+     * Sellafite slaked — контактный hazard для сущностей, не источник фоновой радиации чанка.
+     */
+    public static float getBlockChunkRadiationSumContribution(BlockState state) {
+        if (state.isAir()) {
+            return 0f;
+        }
+        Block block = state.getBlock();
+        if (block instanceof BlockSellafieldSlaked) {
+            return 0f;
+        }
+        if (block instanceof BlockHazardFalling) {
+            return 0f;
+        }
+        return 0f;
     }
 
     /** GIT HazardRegistry sellafield meta 0–5; уровни 6–10 — горячий центр кратера (fallout color_level). */

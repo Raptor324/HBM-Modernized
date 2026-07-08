@@ -1,7 +1,7 @@
 package com.hbm_m.block.machines;
 
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.GeigerCounterBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.GeigerCounterBlockEntity;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.util.ContaminationUtil;
 

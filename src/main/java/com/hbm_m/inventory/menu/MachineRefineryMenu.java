@@ -1,6 +1,6 @@
 package com.hbm_m.inventory.menu;
 
-import com.hbm_m.block.entity.machines.MachineRefineryBlockEntity;
+import com.hbm_m.blockentity.machines.MachineRefineryBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.lib.RefStrings;
 

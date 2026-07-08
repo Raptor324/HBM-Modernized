@@ -72,6 +72,7 @@ public class CrucibleAlloyingJeiCategory implements IRecipeCategory<CrucibleAllo
     }
 
     @Override
+    @SuppressWarnings("removal")
     public IDrawable getBackground() {
         return background;
     }

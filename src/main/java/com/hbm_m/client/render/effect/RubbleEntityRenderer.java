@@ -43,6 +43,6 @@ public class RubbleEntityRenderer extends EntityRenderer<RubbleEntity> {
 
     @Override
     public ResourceLocation getTextureLocation(RubbleEntity entity) {
-        return new ResourceLocation("minecraft", "textures/block/stone.png");
+        return ResourceLocation.withDefaultNamespace("textures/block/stone.png");
     }
 }

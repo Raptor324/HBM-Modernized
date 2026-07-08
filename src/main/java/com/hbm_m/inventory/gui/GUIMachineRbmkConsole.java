@@ -1,8 +1,8 @@
 package com.hbm_m.inventory.gui;
 
-import com.hbm_m.block.entity.machines.MachineRbmkConsoleBlockEntity;
-import com.hbm_m.block.entity.machines.MachineRbmkConsoleBlockEntity.RBMKColumnData;
-import com.hbm_m.block.entity.machines.rbmk.RBMKColumnBlockEntity.ColumnType;
+import com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity;
+import com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity.RBMKColumnData;
+import com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity.ColumnType;
 import com.hbm_m.inventory.menu.MachineRbmkConsoleMenu;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.RBMKConsoleControlPacket;

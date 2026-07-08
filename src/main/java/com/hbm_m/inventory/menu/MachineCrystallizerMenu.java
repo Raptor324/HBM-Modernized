@@ -1,7 +1,7 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.machines.MachineCrystallizerBlockEntity;
+import com.hbm_m.blockentity.machines.MachineCrystallizerBlockEntity;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;

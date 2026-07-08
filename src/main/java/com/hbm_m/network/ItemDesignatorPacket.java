@@ -1,6 +1,6 @@
 package com.hbm_m.network;
 
-import com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity;
+import com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity;
 import com.hbm_m.inventory.menu.LaunchPadLargeMenu;
 import com.hbm_m.item.ModItems;
 

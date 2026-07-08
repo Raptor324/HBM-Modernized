@@ -5,8 +5,8 @@ import org.slf4j.Logger;
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.api.fluids.bootstrap.ModFluidTraitsBootstrap;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
+import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
@@ -118,7 +118,7 @@ public final class MainRegistry {
         HazardRegistry.registerItems();
         com.hbm_m.config.FalloutConfigJSON.initialize();
         DamageResistanceHandler.initArmorStats();
-        com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity.registerLaunchables();
+        com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity.registerLaunchables();
 
         CentrifugeRecipes.registerRecipes();
         CyclotronRecipes.registerRecipes();

@@ -8,8 +8,8 @@ import org.jetbrains.annotations.Nullable;
 import com.google.common.collect.ImmutableMap;
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.MachineWoodBurnerBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineWoodBurnerBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -94,18 +94,18 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
 
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
             MultiblockStructureHelper helper = getStructureHelper();
+            BlockPos core = placeMultiblockStructure(level, pos, state);
+            if (core == null) {
+                return;
+            }
             Direction facing = state.getValue(FACING);
-
-            // Строим структуру
-            helper.placeStructure(level, pos, facing, this);
-
             //  Регистрируем КОНТРОЛЛЕР в сети (он IEnergyProvider)
-            EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
+            EnergyNetworkManager.get((ServerLevel) level).addNode(core);
 
             //  Регистрируем энергетические коннекторы (parts с PartRole.ENERGY_CONNECTOR)
             for (BlockPos localPos : helper.getStructureMap().keySet()) {
                 if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
-                    BlockPos worldPos = helper.getRotatedPos(pos, localPos, facing);
+                    BlockPos worldPos = helper.getRotatedPos(core, localPos, facing);
                     EnergyNetworkManager.get((ServerLevel) level).addNode(worldPos);
                 }
             }
@@ -113,6 +113,12 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
     }
 
     //  ИСПРАВЛЕНО: Удаление из сети при разрушении
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
+    }
+
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (state.getBlock() != newState.getBlock() && !level.isClientSide()) {
@@ -132,7 +138,7 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
 
             // Дроп предметов
             BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (blockEntity instanceof com.hbm_m.block.entity.BaseMachineBlockEntity be) {
+            if (blockEntity instanceof com.hbm_m.blockentity.BaseMachineBlockEntity be) {
                 be.dropInventoryContents();
             }
 

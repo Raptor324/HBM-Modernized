@@ -5,8 +5,8 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.MachineBatteryBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineBatteryBlockEntity;
 import com.hbm_m.util.EnergyFormatter;
 
 import dev.architectury.registry.menu.MenuRegistry;

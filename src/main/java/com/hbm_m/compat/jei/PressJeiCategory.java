@@ -60,6 +60,7 @@ public class PressJeiCategory implements IRecipeCategory<PressRecipe> {
     }
 
     @Override
+    @SuppressWarnings("removal")
     public IDrawable getBackground() {
         return background;
     }

@@ -125,12 +125,12 @@ public class ChemicalPlantRecipes {
         private final TagKey<Item> tag;
 
         public TagInput(String tagName) {
-            this.tag = TagKey.create(Registries.ITEM, new ResourceLocation(tagName));
+            this.tag = TagKey.create(Registries.ITEM, ResourceLocation.parse(tagName));
             this.count = 1;
         }
 
         public TagInput(String tagName, int count) {
-            this.tag = TagKey.create(Registries.ITEM, new ResourceLocation(tagName));
+            this.tag = TagKey.create(Registries.ITEM, ResourceLocation.parse(tagName));
             this.count = count;
         }
 

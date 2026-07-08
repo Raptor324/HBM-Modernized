@@ -1,7 +1,8 @@
 package com.hbm_m.api.energy;
 
+import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.block.entity.ModBlockEntities;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;

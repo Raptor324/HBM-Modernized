@@ -1,7 +1,7 @@
 package com.hbm_m.client.render.implementations;
 
-import com.hbm_m.block.entity.machines.MachineCoolingTowerBlockEntity;
-import com.hbm_m.block.machines.MachineCoolingTowerBlock;
+import com.hbm_m.block.machines.MachineTowerLargeBlock;
+import com.hbm_m.blockentity.machines.MachineCoolingTowerBlockEntity;
 import com.hbm_m.client.model.MachineCoolingTowerBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.MeshRenderCache;
@@ -78,7 +78,7 @@ public class MachineCoolingTowerRenderer extends AbstractPartBasedRenderer<Machi
 
     @Override
     protected Direction getFacing(MachineCoolingTowerBlockEntity be) {
-        return be.getBlockState().getValue(MachineCoolingTowerBlock.FACING);
+        return be.getBlockState().getValue(MachineTowerLargeBlock.FACING);
     }
 
     @Override

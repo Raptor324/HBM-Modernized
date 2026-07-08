@@ -1,6 +1,7 @@
 package com.hbm_m.item.rbmk;
 
-import com.hbm_m.block.entity.machines.rbmk.IRBMKFluxReceiver.NType;
+import com.hbm_m.blockentity.machines.rbmk.IRBMKFluxReceiver.NType;
+
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 

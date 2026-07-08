@@ -13,9 +13,9 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.client.machine.AdvancedAssemblerClientTicker;
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
+import com.hbm_m.blockentity.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.client.model.MachineAdvancedAssemblerBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.ClientRenderFlags;
@@ -122,7 +122,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
      * {@link LegacyAnimator#setupBlockTransform} через обратный к
      * {@link MultipartFacingTransforms#legacyBlockEntityBakedRotationY} поворот.
      */
-    private static final BlockPos RING_PIVOT_LOCAL = new BlockPos(0, 0, 1);
+    private static final BlockPos RING_PIVOT_LOCAL = BlockPos.ZERO;
 
     private static final float ARM_PIVOT_Y_LOWER = 1.625f;
     private static final float ARM_PIVOT_Y_UPPER = 2.375f;
@@ -282,9 +282,6 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
                             PoseStack poseStack,
                             MultiBufferSource bufferSource) {
         var state = be.getBlockState();
-        boolean renderActive = state.hasProperty(MachineAdvancedAssemblerBlock.RENDER_ACTIVE) 
-                && state.getValue(MachineAdvancedAssemblerBlock.RENDER_ACTIVE);
-        boolean useVboGeometry = ShaderCompatibilityDetector.useVboGeometry();
 
         Direction facing = getFacing(be);
         cachedFacing = facing;
@@ -308,10 +305,6 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         // visibleThisFrame is reset to false at the top of render() before
         // super.render() runs, so this only stays true when culling passes.
         visibleThisFrame = true;
-
-        if (!useVboGeometry && !renderActive) {
-            return;
-        }
 
         float staticFade = RenderDistanceHelper.computeStaticFade(blockPos);
         if (staticFade < 0) return;
@@ -437,27 +430,25 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         }
 
         // 1. Static parts: один merged VBO (только Base или Base+Frame по BlockState).
-        if (useVboPath) {
+        poseStack.pushPose();
+        poseStack.translate(-0.5f, 0.0f, -0.5f);
+
+        boolean frameVisible = blockState.hasProperty(MachineAdvancedAssemblerBlock.FRAME)
+                && blockState.getValue(MachineAdvancedAssemblerBlock.FRAME);
+        InstancedStaticPartRenderer staticCluster = frameVisible ? instancedStaticClusterBaseFrame : instancedStaticClusterBase;
+        List<BakedQuad> staticQuads = frameVisible ? staticClusterBaseFrameQuads : staticClusterBaseQuads;
+
+        if (useVboPath && effectiveBatching && staticCluster != null && staticCluster.isInitialized()) {
             poseStack.pushPose();
-            poseStack.translate(-0.5f, 0.0f, -0.5f);
-
-            boolean frameVisible = blockState.hasProperty(MachineAdvancedAssemblerBlock.FRAME)
-                    && blockState.getValue(MachineAdvancedAssemblerBlock.FRAME);
-            InstancedStaticPartRenderer staticCluster = frameVisible ? instancedStaticClusterBaseFrame : instancedStaticClusterBase;
-            List<BakedQuad> staticQuads = frameVisible ? staticClusterBaseFrameQuads : staticClusterBaseQuads;
-
-            if (effectiveBatching && staticCluster != null && staticCluster.isInitialized()) {
-                poseStack.pushPose();
-                staticCluster.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource, sharedLight);
-                poseStack.popPose();
-            } else if (!staticQuads.isEmpty()) {
-                String cacheKey = frameVisible
-                        ? MachineAdvancedAssemblerVboRenderer.STATIC_CLUSTER_CACHE_BASE_FRAME
-                        : MachineAdvancedAssemblerVboRenderer.STATIC_CLUSTER_CACHE_BASE;
-                gpu.renderStaticCluster(poseStack, dynamicLight, blockPos, be, bufferSource, staticQuads, cacheKey);
-            }
+            staticCluster.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource, sharedLight);
             poseStack.popPose();
+        } else if (!staticQuads.isEmpty()) {
+            String cacheKey = frameVisible
+                    ? MachineAdvancedAssemblerVboRenderer.STATIC_CLUSTER_CACHE_BASE_FRAME
+                    : MachineAdvancedAssemblerVboRenderer.STATIC_CLUSTER_CACHE_BASE;
+            gpu.renderStaticCluster(poseStack, dynamicLight, blockPos, be, bufferSource, staticQuads, cacheKey);
         }
+        poseStack.popPose();
 
         // 2. Animated parts: fade out at modelUpdateDistance.
         if (animFade < 0) return;

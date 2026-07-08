@@ -4,8 +4,8 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.MachineZirnoxDestroyedBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineZirnoxDestroyedBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -54,45 +54,26 @@ public class MachineZirnoxDestroyedBlock extends BaseEntityBlock implements IMul
             "OOOOO",
             "OOOOO"
         };
-        String[] layerRing = {
-            ".OOO.",
-            "O...O",
-            "O...O",
-            "O...O",
-            ".OOO."
-        };
-        String[] layerCap = {
-            ".....",
-            "..O..",
-            ".OOO.",
-            "..O..",
-            "....."
+        String[] layerUpper = {
+            "OOOOO",
+            "OOOOO",
+            "OOOOO",
+            "OOOOO",
+            "OOOOO"
         };
 
         Map<Character, PartRole> roleMap = Map.of(
-            'O', PartRole.FLUID_CONNECTOR,
+            'O', PartRole.DEFAULT,
             'C', PartRole.CONTROLLER
         );
 
-        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
-
-        Map<Character, VoxelShape> shapeMap = Map.of(
-            'C', Block.box(0, 0, 0, 16, 16, 16),
-            'O', Block.box(0, 0, 0, 16, 16, 16)
-        );
-
-        Map<Character, VoxelShape> collisionMap = Map.of(
-            'C', Block.box(0, 0, 0, 16, 16, 16),
-            'O', Block.box(0, 0, 0, 16, 16, 16)
-        );
-
         return MultiblockStructureHelper.createFromLayersWithRoles(
-            new String[][] {layerBase, layerRing, layerRing, layerCap},
-            symbolMap,
+            new String[][]{layerBase, layerUpper},
+            null,
             () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
             roleMap,
-            shapeMap,
-            collisionMap
+            null,
+            null
         );
     }
 

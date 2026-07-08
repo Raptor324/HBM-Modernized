@@ -114,6 +114,8 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> VAULT_SCRAPE = registerSoundEvents("block.vault_scrape");
     public static final RegistrySupplier<SoundEvent> VAULT_THUD = registerSoundEvents("block.vault_thud");
 
+    public static final RegistrySupplier<SoundEvent> PIPE_PLACED = registerSoundEvents("block.pipe_placed");
+
     public static final RegistrySupplier<SoundEvent> SWITCH_ON = registerSoundEvents("block.switch.on");
 
     // РЕГИСТРАЦИЯ АБСТРАКТНОГО СОБЫТИЯ 

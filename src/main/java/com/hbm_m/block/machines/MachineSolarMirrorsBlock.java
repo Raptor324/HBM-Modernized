@@ -2,8 +2,8 @@ package com.hbm_m.block.machines;
 
 import javax.annotation.Nullable;
 
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.MachineSolarMirrorsBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineSolarMirrorsBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.MultiblockStructureStubs;

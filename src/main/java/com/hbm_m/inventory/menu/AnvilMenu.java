@@ -1,7 +1,7 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.machines.AnvilBlockEntity;
+import com.hbm_m.blockentity.machines.AnvilBlockEntity;
 import com.hbm_m.platform.ModItemStackHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;

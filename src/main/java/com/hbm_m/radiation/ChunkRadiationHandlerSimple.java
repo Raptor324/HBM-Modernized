@@ -14,7 +14,6 @@ import com.hbm_m.block.ModBlocks;
 
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.hazard.HazardSystem;
-import com.hbm_m.hazard.HazardRegistry;
 import com.hbm_m.interfaces.IChunkRadiation;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ChunkRadiationDebugBatchPacket;
@@ -92,8 +91,8 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                 continue;
             }
 
-            // GIT ChunkRadiationHandlerSimple#updateSystem: buff = ambient после источников, затем spread+decay.
-            // BlockHazard (1.7.10): hazard*0.1F/сек через incrementRad — накапливаем в ambient до spread.
+            // GIT ChunkRadiationHandlerSimple#updateSystem: buff = текущий ambient, затем spread+decay.
+            // Источники ambient — только incrementRad (взрывы, BlockHazard#updateTick), не сумма blockRad.
             Map<ChunkPos, Float> buff = new HashMap<>();
             for (ChunkPos pos : new HashSet<>(currentActiveChunks)) {
                 LevelChunk chunk = level.getChunkSource().getChunk(pos.x, pos.z, false);
@@ -101,13 +100,10 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                     continue;
                 }
                 getChunkRadiationCap(chunk).ifPresent(cap -> {
-                    float blockContribution = cap.getBlockRadiation() * ModClothConfig.get().radSourceInfluenceFactor;
-                    if (blockContribution > 1e-6f) {
-                        float boosted = Mth.clamp(cap.getAmbientRadiation() + blockContribution, 0f, MAX_RAD);
-                        if (Math.abs(cap.getAmbientRadiation() - boosted) > 1e-6f) {
-                            cap.setAmbientRadiation(boosted);
-                            chunk.setUnsaved(true);
-                        }
+                    // Сброс устаревшего blockRad (sellafite slaked ошибочно суммировался до фикса).
+                    if (cap.getBlockRadiation() > 1e-6f) {
+                        cap.setBlockRadiation(0f);
+                        chunk.setUnsaved(true);
                     }
                     float ambient = cap.getAmbientRadiation();
                     if (ambient > 1e-6f) {
@@ -234,7 +230,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                             if (blockState.isAir()) {
                                 continue;
                             }
-                            float blockRad = HazardSystem.getHazardLevelFromState(blockState, HazardRegistry.RADIATION);
+                            float blockRad = HazardSystem.getBlockChunkRadiationSumContribution(blockState);
 
                             // Если радиация есть, добавляем ее к общей сумме в чанке
                             if (blockRad > 0) {
@@ -267,11 +263,8 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
 
     @Override
     public void receiveChunkLoad(LevelChunk chunk) {
+        recalculateChunkRadiation(chunk);
         getChunkRadiationCap(chunk).ifPresent(cap -> {
-            if (cap.getBlockRadiation() < 1e-6f && cap.getAmbientRadiation() > WORLD_RAD_EFFECTS_THRESHOLD) {
-                recalculateChunkRadiation(chunk);
-            }
-
             if (cap.getAmbientRadiation() > 1e-6f || cap.getBlockRadiation() > 1e-6f) {
                 activeChunksByDimension.computeIfAbsent(chunk.getLevel().dimension().location(),
                         k -> ConcurrentHashMap.newKeySet()).add(chunk.getPos());
