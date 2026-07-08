@@ -40,7 +40,13 @@ public interface ILookOverlay {
         guiGraphics.drawString(font, title.getString(), pX, pZ - 10, titleCol, false);
 
         for (Component line : text) {
-            guiGraphics.drawString(font, line, pX, pZ, 0xFFFFFF, false);
+            int color = 0xFFFFFF;
+            var col = line.getStyle().getColor();
+            if (col != null) {
+                color = col.getValue();
+            }
+            // match original: content lines use drawStringWithShadow
+            guiGraphics.drawString(font, line.getString(), pX, pZ, color, true);
             pZ += 10;
         }
     }

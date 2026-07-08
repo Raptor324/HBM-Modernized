@@ -68,7 +68,7 @@ public class CentrifugeRecipes {
         private final TagKey<Item> tag;
 
         public TagInput(String tagName) {
-            this.tag = TagKey.create(Registries.ITEM, new ResourceLocation(tagName));
+            this.tag = TagKey.create(Registries.ITEM, ResourceLocation.parse(tagName));
         }
 
         public TagInput(TagKey<Item> tag) {

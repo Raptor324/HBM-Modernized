@@ -6,7 +6,7 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
-import com.hbm_m.block.entity.machines.MachineRadarBlockEntity;
+import com.hbm_m.blockentity.machines.MachineRadarBlockEntity;
 import com.hbm_m.client.model.MachineRadarBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.InstancedStaticPartRenderer;

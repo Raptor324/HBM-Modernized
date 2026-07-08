@@ -1,6 +1,6 @@
 package com.hbm_m.inventory.menu;
 
-import com.hbm_m.block.entity.machines.MachineMixerBlockEntity;
+import com.hbm_m.blockentity.machines.MachineMixerBlockEntity;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.lib.RefStrings;
@@ -15,7 +15,6 @@ import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-
 //? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}

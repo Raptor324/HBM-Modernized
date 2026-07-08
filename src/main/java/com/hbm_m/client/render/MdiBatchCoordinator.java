@@ -7,7 +7,6 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.ARBDrawIndirect;
@@ -33,7 +32,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.TextureAtlas;
-
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -904,8 +902,7 @@ public final class MdiBatchCoordinator {
 
     private static void logDispatchDiagStatic(int pendingSize, List<Pending> drawList, int drawTotalInstances,
                                               MdiGeometryAtlas atlas, int droppedNoSlot, String drawMode, long gameTime) {
-        if (!MdiRenderDiag.isDebugEnabled() && !MdiRenderDiag.isVerboseEnabled()
-                && !MainRegistry.LOGGER.isDebugEnabled()) {
+        if (!MdiRenderDiag.isDebugEnabled() && !MdiRenderDiag.isVerboseEnabled()) {
             return;
         }
         String summary = String.format(

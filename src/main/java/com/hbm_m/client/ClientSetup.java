@@ -31,8 +31,8 @@ import org.jetbrains.annotations.NotNull;
 import com.google.common.collect.ImmutableMap;
 import dev.architectury.registry.registries.RegistrySupplier;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
+import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.client.loader.DoorModelLoader;
 import com.hbm_m.client.loader.HeatingOvenModelLoader;
 import com.hbm_m.client.loader.MachineAdvancedAssemblerModelLoader;
@@ -56,8 +56,11 @@ import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.ModShaders;
 import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.client.render.effect.FleijaSphereMesh;
+import com.hbm_m.client.render.effect.RenderBlackHole;
+import com.hbm_m.client.render.effect.RenderQuasar;
 import com.hbm_m.client.render.effect.RenderCloudFleija;
 import com.hbm_m.client.render.effect.RenderFallout;
+import com.hbm_m.client.render.effect.RubbleEntityRenderer;
 import com.hbm_m.client.render.implementations.AirBombProjectileEntityRenderer;
 import com.hbm_m.client.render.implementations.ZirnoxDebrisRenderer;
 import com.hbm_m.client.render.implementations.AirNukeBombProjectileEntityRenderer;
@@ -548,9 +551,13 @@ public class ClientSetup {
         ModEntities.MISSILE_VOLCANO.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
         ModEntities.MISSILE_DOOMSDAY.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
         ModEntities.MISSILE_DOOMSDAY_RUSTED.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
-        ModEntities.CLUSTER_ROCKET.ifPresent(entityType -> EntityRenderers.register(entityType, EmptyEntityRenderer::new));
+        ModEntities.CLUSTER_ROCKET.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.projectile.ClusterRocketEntityRenderer::new));
         ModEntities.EMP_PULSE.ifPresent(entityType -> EntityRenderers.register(entityType, EmptyEntityRenderer::new));
-        ModEntities.BLACK_HOLE.ifPresent(entityType -> EntityRenderers.register(entityType, EmptyEntityRenderer::new));
+        ModEntities.BLACK_HOLE.ifPresent(entityType -> EntityRenderers.register(entityType, RenderBlackHole::new));
+        ModEntities.VORTEX.ifPresent(entityType -> EntityRenderers.register(entityType, RenderBlackHole::new));
+        ModEntities.RAGING_VORTEX.ifPresent(entityType -> EntityRenderers.register(entityType, RenderBlackHole::new));
+        ModEntities.DIGAMMA_QUASAR.ifPresent(entityType -> EntityRenderers.register(entityType, RenderQuasar::new));
+        ModEntities.RUBBLE.ifPresent(entityType -> EntityRenderers.register(entityType, RubbleEntityRenderer::new));
 
         BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.MACHINE_ASSEMBLER_BE.get(), MachineAssemblerRenderer::new);
@@ -669,11 +676,19 @@ public class ClientSetup {
         ModEntities.MISSILE_DOOMSDAY_RUSTED.ifPresent(entityType ->
                 EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
         ModEntities.CLUSTER_ROCKET.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, EmptyEntityRenderer::new));
+                EntityRendererRegistry.register(entityType, com.hbm_m.client.render.projectile.ClusterRocketEntityRenderer::new));
         ModEntities.EMP_PULSE.ifPresent(entityType ->
                 EntityRendererRegistry.register(entityType, EmptyEntityRenderer::new));
         ModEntities.BLACK_HOLE.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, EmptyEntityRenderer::new));
+                EntityRendererRegistry.register(entityType, RenderBlackHole::new));
+        ModEntities.VORTEX.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, RenderBlackHole::new));
+        ModEntities.RAGING_VORTEX.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, RenderBlackHole::new));
+        ModEntities.DIGAMMA_QUASAR.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, RenderQuasar::new));
+        ModEntities.RUBBLE.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, RubbleEntityRenderer::new));
         ModEntities.NOLO.ifPresent(entityType ->
                 EntityRendererRegistry.register(entityType, NoloEntityRenderer::new));
         ModEntities.ENTITY_MOB_TAINTED_CREEPER.ifPresent(entityType ->
@@ -1365,12 +1380,25 @@ public class ClientSetup {
 
     @SubscribeEvent
     public static void onRegisterBlockColors(RegisterColorHandlersEvent.Block event) {
+        net.minecraft.client.color.block.BlockColor sellafiteTint = (state, level, pos, tintIndex) -> {
+            if (tintIndex != 0) return 0xFFFFFF;
+            int levelValue = state.getValue(com.hbm_m.block.generic.BlockSellafieldSlaked.COLOR_LEVEL);
+            return java.awt.Color.HSBtoRGB(0F, 0F, 1F - levelValue / 15F);
+        };
+        event.register(sellafiteTint,
+                com.hbm_m.block.ModBlocks.SELLAFIELD_BEDROCK.get(),
+                com.hbm_m.block.ModBlocks.ORE_SELLAFIELD_DIAMOND.get(),
+                com.hbm_m.block.ModBlocks.ORE_SELLAFIELD_EMERALD.get(),
+                com.hbm_m.block.ModBlocks.ORE_SELLAFIELD_URANIUM_SCORCHED.get(),
+                com.hbm_m.block.ModBlocks.ORE_SELLAFIELD_SCHRABIDIUM.get(),
+                com.hbm_m.block.ModBlocks.ORE_SELLAFIELD_RADGEM.get());
+
         // Fluid Duct block - tint with the fluid's color from the BlockEntity
         event.register((state, level, pos, tintIndex) -> {
             if (tintIndex == 0) return 0xFFFFFF;
             if (tintIndex != 1 || level == null || pos == null) return 0xFFFFFF;
             var be = level.getBlockEntity(pos);
-            if (be instanceof com.hbm_m.block.entity.machines.FluidDuctBlockEntity ductBe) {
+            if (be instanceof com.hbm_m.blockentity.machines.FluidDuctBlockEntity ductBe) {
                 var fluid = ductBe.getFluidType();
                 if (fluid != net.minecraft.world.level.material.Fluids.EMPTY) {
                     return com.hbm_m.api.fluids.HbmFluidRegistry.getTintColor(fluid);
@@ -1424,9 +1452,13 @@ public class ClientSetup {
         event.registerEntityRenderer(ModEntities.MISSILE_VOLCANO.get(), MissileEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.MISSILE_DOOMSDAY.get(), MissileEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.MISSILE_DOOMSDAY_RUSTED.get(), MissileEntityRenderer::new);
-        event.registerEntityRenderer(ModEntities.CLUSTER_ROCKET.get(), ctx -> new EmptyEntityRenderer<>(ctx));
+        event.registerEntityRenderer(ModEntities.CLUSTER_ROCKET.get(), com.hbm_m.client.render.projectile.ClusterRocketEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.EMP_PULSE.get(), ctx -> new EmptyEntityRenderer<>(ctx));
-        event.registerEntityRenderer(ModEntities.BLACK_HOLE.get(), ctx -> new EmptyEntityRenderer<>(ctx));
+        event.registerEntityRenderer(ModEntities.BLACK_HOLE.get(), RenderBlackHole::new);
+        event.registerEntityRenderer(ModEntities.VORTEX.get(), RenderBlackHole::new);
+        event.registerEntityRenderer(ModEntities.RAGING_VORTEX.get(), RenderBlackHole::new);
+        event.registerEntityRenderer(ModEntities.DIGAMMA_QUASAR.get(), RenderQuasar::new);
+        event.registerEntityRenderer(ModEntities.RUBBLE.get(), RubbleEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.NOLO.get(), NoloEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.ENTITY_MOB_TAINTED_CREEPER.get(), RenderCreeperUniversal::tainted);
         event.registerEntityRenderer(ModEntities.ENTITY_MOB_VOLATILE_CREEPER.get(), RenderCreeperUniversal::volatileCreeper);
@@ -1446,6 +1478,7 @@ public class ClientSetup {
                 backgroundExecutor, gameExecutor) -> {
             return preparationBarrier.wait(null).thenRunAsync(() -> {
                 FleijaSphereMesh.reload(resourceManager);
+                com.hbm_m.client.render.projectile.ClusterSubmunitionMesh.reload(resourceManager);
                 // КРИТИЧНО: Откладываем очистку кэшей на render thread, чтобы избежать
                 // race condition с активным рендером (EXCEPTION_ACCESS_VIOLATION при
                 // включении шейдера - clearCaches вызывался во время render pass).

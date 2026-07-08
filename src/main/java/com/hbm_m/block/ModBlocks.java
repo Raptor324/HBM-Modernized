@@ -12,7 +12,11 @@ import com.hbm_m.api.energy.SwitchBlock;
 import com.hbm_m.api.energy.WireBlock;
 import com.hbm_m.block.bomb.BlockTaint;
 import com.hbm_m.block.generic.BlockAbsorber;
+import com.hbm_m.block.generic.BlockOre;
+import com.hbm_m.block.generic.BlockSellafieldOre;
+import com.hbm_m.block.generic.BlockSellafieldSlaked;
 import com.hbm_m.block.generic.BlockSlag;
+import com.hbm_m.block.generic.WasteEarth;
 import com.hbm_m.block.bomb.NukeFatManBlock;
 import com.hbm_m.block.decorations.CageLampBlock;
 import com.hbm_m.block.decorations.CrtBlock;
@@ -26,9 +30,7 @@ import com.hbm_m.block.explosives.DudFugasBlock;
 import com.hbm_m.block.explosives.DudNukeBlock;
 import com.hbm_m.block.explosives.ExplosiveChargeBlock;
 import com.hbm_m.block.explosives.GigaDetBlock;
-import com.hbm_m.block.explosives.MineBlock;
-import com.hbm_m.block.explosives.MineNukeBlock;
-import com.hbm_m.block.explosives.NavalMineBlock;
+import com.hbm_m.block.bomb.LandmineBlock;
 import com.hbm_m.block.explosives.NuclearChargeBlock;
 import com.hbm_m.block.explosives.SmokeBombBlock;
 import com.hbm_m.block.explosives.WasteChargeBlock;
@@ -51,7 +53,7 @@ import com.hbm_m.block.machines.MachineCatalyticReformerBlock;
 import com.hbm_m.block.machines.MachineCentrifugeBlock;
 import com.hbm_m.block.machines.MachineChemicalFactoryBlock;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
-import com.hbm_m.block.machines.MachineCoolingTowerBlock;
+import com.hbm_m.block.machines.MachineTowerLargeBlock;
 import com.hbm_m.block.machines.MachineFoundryChannelBlock;
 import com.hbm_m.block.machines.MachineFoundryBasinBlock;
 import com.hbm_m.block.machines.MachineCoreEmitterBlock;
@@ -98,7 +100,6 @@ import com.hbm_m.block.machines.MachineWatzPowerplantBlock;
 import com.hbm_m.block.machines.MachineWoodBurnerBlock;
 import com.hbm_m.block.machines.MachineZirnoxBlock;
 import com.hbm_m.block.machines.MachineZirnoxDestroyedBlock;
-import com.hbm_m.block.machines.UniversalMachinePartBlock;
 import com.hbm_m.block.machines.rbmk.RBMKRodBlock;
 import com.hbm_m.block.machines.rbmk.RBMKControlManualBlock;
 import com.hbm_m.block.machines.rbmk.RBMKControlAutoBlock;
@@ -383,7 +384,7 @@ public class ModBlocks {
             () -> new MachineFrackingTowerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> COOLING_TOWER = registerBlockWithoutItem("cooling_tower",
-            () -> new MachineCoolingTowerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+            () -> new MachineTowerLargeBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> TOWER_SMALL = registerBlockWithoutItem("tower_small",
             () -> new MachineTowerSmallBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
@@ -927,13 +928,18 @@ public class ModBlocks {
                     .sound(SoundType.STONE)
                     .requiresCorrectToolForDrops()));
 
-    //  ДОБАВЛЕНО: Ядерные осадки (как снег)
+    // Ковёр fallout (1.7.10: ModBlocks.fallout / BlockFallout)
     public static final RegistrySupplier<Block> NUCLEAR_FALLOUT = registerBlock("nuclear_fallout",
-            () -> new SnowLayerBlock(BlockBehaviour.Properties.copy(Blocks.SNOW)
+            () -> new com.hbm_m.block.generic.BlockFallout(BlockBehaviour.Properties.copy(Blocks.SAND)
                     .strength(0.1F)
-                    // Тут можно добавить .lightLevel() если он должен светиться,
-                    // .emissiveRendering() и так далее
-            ));
+                    .sound(SoundType.GRAVEL)
+                    .noOcclusion()));
+
+    // Блок fallout (1.7.10: ModBlocks.block_fallout / BlockHazardFalling)
+    public static final RegistrySupplier<Block> BLOCK_FALLOUT = registerBlock("block_fallout",
+            () -> new com.hbm_m.block.generic.BlockHazardFalling(BlockBehaviour.Properties.copy(Blocks.GRAVEL)
+                    .strength(0.2F)
+                    .sound(SoundType.GRAVEL)));
 
     public static final RegistrySupplier<Block> DOOR_BUNKER = registerBlock("door_bunker",
             () -> new net.minecraft.world.level.block.DoorBlock(BlockBehaviour.Properties.copy(Blocks.NETHERITE_BLOCK).sound(SoundType.NETHERITE_BLOCK).noOcclusion(), BlockSetType.STONE));
@@ -997,7 +1003,7 @@ public class ModBlocks {
             () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
 
     public static final RegistrySupplier<Block> MINE_FAT = registerBlock("mine_fat",
-            () -> new MineNukeBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+            () -> new LandmineBlock(Block.Properties.copy(Blocks.STONE).strength(1.0F, 6.0F).noOcclusion(), 2.5D, 1D));
 
     public static final RegistrySupplier<Block> NUKE_FAT_MAN = registerBlockWithoutItem("nuke_fat_man",
             () -> new NukeFatManBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
@@ -1006,10 +1012,10 @@ public class ModBlocks {
             () -> new com.hbm_m.block.bomb.NukePrototypeBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
 
     public static final RegistrySupplier<Block> MINE_AP = registerBlock("mine_ap",
-            () -> new MineBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+            () -> new LandmineBlock(Block.Properties.copy(Blocks.STONE).strength(1.0F, 6.0F).noOcclusion(), 1.5D, 1D));
 
     public static final RegistrySupplier<Block> NAVAL_MINE = registerBlock("naval_mine",
-            () -> new NavalMineBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(5, 6.0F).noOcclusion()));
+            () -> new LandmineBlock(Block.Properties.copy(Blocks.IRON_BLOCK).strength(1.0F, 6.0F).noOcclusion(), 2.5D, 1D));
 
     public static final RegistrySupplier<Block> CRATE_CONSERVE = registerBlock("crate_conserve",
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
@@ -1081,16 +1087,53 @@ public class ModBlocks {
 
 
     public static final RegistrySupplier<Block> SELLAFIELD_SLAKED  = registerBlock("sellafield_slaked",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+            () -> new BlockSellafieldSlaked(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 
     public static final RegistrySupplier<Block> SELLAFIELD_SLAKED1  = registerBlock("sellafield_slaked1",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+            () -> new BlockSellafieldSlaked(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 
     public static final RegistrySupplier<Block> SELLAFIELD_SLAKED2  = registerBlock("sellafield_slaked2",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+            () -> new BlockSellafieldSlaked(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 
     public static final RegistrySupplier<Block> SELLAFIELD_SLAKED3  = registerBlock("sellafield_slaked3",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+            () -> new BlockSellafieldSlaked(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+
+    public static final RegistrySupplier<Block> SELLAFIELD_BEDROCK = registerBlock("sellafield_bedrock",
+            () -> new BlockSellafieldSlaked(BlockBehaviour.Properties.copy(Blocks.BEDROCK)
+                    .strength(-1.0F, 3600000.0F)
+                    .isValidSpawn((state, level, pos, type) -> false)));
+
+    public static final RegistrySupplier<Block> ORE_SELLAFIELD_DIAMOND = registerBlock("ore_sellafield_diamond",
+            () -> BlockSellafieldOre.diamondOre(BlockBehaviour.Properties.copy(Blocks.STONE)
+                    .strength(5.0F, 10.0F).requiresCorrectToolForDrops()));
+
+    public static final RegistrySupplier<Block> ORE_SELLAFIELD_EMERALD = registerBlock("ore_sellafield_emerald",
+            () -> BlockSellafieldOre.emeraldOre(BlockBehaviour.Properties.copy(Blocks.STONE)
+                    .strength(5.0F, 10.0F).requiresCorrectToolForDrops()));
+
+    public static final RegistrySupplier<Block> ORE_SELLAFIELD_URANIUM_SCORCHED = registerBlock("ore_sellafield_uranium_scorched",
+            () -> BlockSellafieldOre.sellafiteOre(BlockBehaviour.Properties.copy(Blocks.STONE)
+                    .strength(5.0F, 10.0F).requiresCorrectToolForDrops()));
+
+    public static final RegistrySupplier<Block> ORE_SELLAFIELD_SCHRABIDIUM = registerBlock("ore_sellafield_schrabidium",
+            () -> BlockSellafieldOre.sellafiteOre(BlockBehaviour.Properties.copy(Blocks.STONE)
+                    .strength(5.0F, 10.0F).requiresCorrectToolForDrops()));
+
+    public static final RegistrySupplier<Block> ORE_SELLAFIELD_RADGEM = registerBlock("ore_sellafield_radgem",
+            () -> BlockSellafieldOre.radgemOre(BlockBehaviour.Properties.copy(Blocks.STONE)
+                    .strength(5.0F, 10.0F).requiresCorrectToolForDrops()));
+
+    public static final RegistrySupplier<Block> WASTE_TRINITITE = registerBlock("waste_trinitite",
+            () -> new BlockOre(BlockBehaviour.Properties.copy(Blocks.SAND).strength(0.5F, 2.5F)));
+
+    public static final RegistrySupplier<Block> WASTE_TRINITITE_RED = registerBlock("waste_trinitite_red",
+            () -> new BlockOre(BlockBehaviour.Properties.copy(Blocks.SAND).strength(0.5F, 2.5F)));
+
+    public static final RegistrySupplier<Block> WASTE_MYCELIUM = registerBlock("waste_mycelium",
+            () -> new WasteEarth(BlockBehaviour.Properties.copy(Blocks.MYCELIUM)
+                    .strength(0.6F)
+                    .lightLevel(state -> 1)
+                    .randomTicks()));
 
     // ГРАВИТИРУЮЩИЕ ВЕРСИИ СЕЛЛАФИТА (NEW!)
 
@@ -2196,9 +2239,6 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> WAND_LOGIC = registerBlock("wand_logic", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> WAND_LOOT = registerBlock("wand_loot", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> WASTE_EARTH = registerBlock("waste_earth", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> WASTE_MYCELIUM = registerBlock("waste_mycelium", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> WASTE_TRINITITE = registerBlock("waste_trinitite", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> WASTE_TRINITITE_RED = registerBlock("waste_trinitite_red", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> WATZ_COOLER = registerBlock("watz_cooler", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> WATZ_ELEMENT = registerBlock("watz_element", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> WOOD_BARRIER = registerBlock("wood_barrier", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));

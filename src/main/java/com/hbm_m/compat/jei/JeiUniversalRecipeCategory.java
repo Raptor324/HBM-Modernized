@@ -44,6 +44,7 @@ public abstract class JeiUniversalRecipeCategory<R> implements IRecipeCategory<R
     }
 
     @Override
+    @SuppressWarnings("removal")
     public IDrawable getBackground() {
         return background;
     }

@@ -64,6 +64,6 @@ public class ZirnoxDebrisRenderer extends EntityRenderer<ZirnoxDebrisEntity> {
 
     @Override
     public ResourceLocation getTextureLocation(ZirnoxDebrisEntity entity) {
-        return new ResourceLocation("minecraft", "textures/block/iron_block.png");
+        return ResourceLocation.fromNamespaceAndPath("minecraft", "textures/block/iron_block.png");
     }
 }

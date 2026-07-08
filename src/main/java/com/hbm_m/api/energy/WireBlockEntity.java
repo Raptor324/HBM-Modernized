@@ -1,6 +1,5 @@
 package com.hbm_m.api.energy;
 
-import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.interfaces.IEnergyConnector;
 
 import net.minecraft.core.BlockPos;
@@ -10,6 +9,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
+import com.hbm_m.blockentity.ModBlockEntities;
 //? if forge {
 import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.Capability;

@@ -8,9 +8,9 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.api.bomb.IBomb;
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity;
-import com.hbm_m.block.entity.machines.LaunchPadRustedBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity;
+import com.hbm_m.blockentity.machines.LaunchPadRustedBlockEntity;
 import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
@@ -78,16 +78,24 @@ public class LaunchPadRustedBlock extends BaseEntityBlock implements IMultiblock
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!level.isClientSide() && !state.is(oldState.getBlock())) {
             MultiblockStructureHelper helper = getStructureHelper();
+            BlockPos core = placeMultiblockStructure(level, pos, state);
+            if (core == null) {
+                return;
+            }
             Direction facing = state.getValue(FACING);
-
-            helper.placeStructure(level, pos, facing, this);
             for (BlockPos localPos : helper.getStructureMap().keySet()) {
                 if (getPartRole(localPos) == PartRole.UNIVERSAL_CONNECTOR) {
-                    BlockPos worldPos = helper.getRotatedPos(pos, localPos, facing);
+                    BlockPos worldPos = helper.getRotatedPos(core, localPos, facing);
                     EnergyNetworkManager.get((ServerLevel) level).addNode(worldPos);
                 }
             }
         }
+    }
+
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
     }
 
     @Override

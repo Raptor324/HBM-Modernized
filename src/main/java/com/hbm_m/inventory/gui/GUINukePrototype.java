@@ -1,6 +1,5 @@
 package com.hbm_m.inventory.gui;
 
-import com.hbm_m.block.entity.bomb.NukePrototypeBlockEntity;
 import com.hbm_m.inventory.menu.NukePrototypeMenu;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;

@@ -25,8 +25,8 @@ import com.hbm_m.armormod.item.ItemModRadProtection;
 // import com.hbm_m.armormod.item.ItemModRadProtection;
 // import com.hbm_m.armormod.item.ItemModServos;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.machines.rbmk.IRBMKFluxReceiver.NType;
 import com.hbm_m.block.machines.crates.CrateType;
+import com.hbm_m.blockentity.machines.rbmk.IRBMKFluxReceiver.NType;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.grenades.GrenadeIfType;
@@ -954,6 +954,9 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> DUST_TINY = ITEMS.register("dust_tiny",
             () -> new Item(new Item.Properties()));
+    /** 1.7.10 ModItems.fallout — кучка осадков. */
+    public static final RegistrySupplier<Item> FALLOUT = ITEMS.register("fallout",
+            () -> new Item(new Item.Properties()));
 
     public static final RegistrySupplier<Item> LITHIUM_POWDER_TINY = ITEMS.register("lithium_powder_tiny",
             () -> new Item(new Item.Properties()));
@@ -1768,6 +1771,14 @@ public class ModItems {
     public static final RegistrySupplier<Item> MISSILE_ABM = ITEMS.register("missile_abm",
                 () -> new MissileItem(MissileItem.MissileFormFactor.ABM, MissileItem.MissileTier.TIER1,
                                 MissileItem.MissileFuel.SOLID));
+
+  /** Сингулярности / опасные дропы (1.7.10 {@code ModItems.black_hole}, {@code pellet_antimatter}, {@code flame_pony}). */
+    public static final RegistrySupplier<Item> BLACK_HOLE = ITEMS.register("black_hole",
+            () -> new com.hbm_m.item.special.ItemDrop(new Item.Properties().stacksTo(1)));
+    public static final RegistrySupplier<Item> PELLET_ANTIMATTER = ITEMS.register("pellet_antimatter",
+            () -> new com.hbm_m.item.special.ItemDrop(new Item.Properties().stacksTo(1)));
+    public static final RegistrySupplier<Item> FLAME_PONY = ITEMS.register("flame_pony",
+            () -> new Item(new Item.Properties()));
 
     // Tier 0
     public static final RegistrySupplier<Item> MISSILE_MICRO = ITEMS.register("missile_micro",
@@ -2774,7 +2785,6 @@ public class ModItems {
     public static final RegistrySupplier<Item> EUPHEMIUM_HELMET = ITEMS.register("euphemium_helmet", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> EUPHEMIUM_LEGS = ITEMS.register("euphemium_legs", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> EUPHEMIUM_PLATE = ITEMS.register("euphemium_plate", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> FALLOUT = ITEMS.register("fallout", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> FAU_BOOTS = ITEMS.register("fau_boots", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> FAU_HELMET = ITEMS.register("fau_helmet", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> FAU_LEGS = ITEMS.register("fau_legs", () -> new Item(new Item.Properties()));
@@ -2788,7 +2798,6 @@ public class ModItems {
     public static final RegistrySupplier<Item> FLAME_CONSPIRACY = ITEMS.register("flame_conspiracy", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> FLAME_OPINION = ITEMS.register("flame_opinion", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> FLAME_POLITICS = ITEMS.register("flame_politics", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> FLAME_PONY = ITEMS.register("flame_pony", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> FLEIJA_CORE = ITEMS.register("fleija_core", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> FLEIJA_IGNITER = ITEMS.register("fleija_igniter", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> FLEIJA_KIT = ITEMS.register("fleija_kit", () -> new Item(new Item.Properties()));
@@ -3088,7 +3097,6 @@ public class ModItems {
     public static final RegistrySupplier<Item> PARTS_LEGENDARY = ITEMS.register("parts_legendary", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PEAS = ITEMS.register("peas", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PEDESTAL_STEEL = ITEMS.register("pedestal_steel", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> PELLET_ANTIMATTER = ITEMS.register("pellet_antimatter", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PELLET_CLUSTER = ITEMS.register("pellet_cluster", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PELLET_GAS = ITEMS.register("pellet_gas", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PELLET_RTG = ITEMS.register("pellet_rtg", () -> new Item(new Item.Properties()));

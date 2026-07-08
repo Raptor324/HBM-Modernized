@@ -309,7 +309,7 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
             }
         }
 
-        if (motion.y < -this.velocity && this.isCluster) {
+        if (motion.y < -1.5D && this.isCluster) {
             cluster();
             releaseChunkTicket();
             this.discard();

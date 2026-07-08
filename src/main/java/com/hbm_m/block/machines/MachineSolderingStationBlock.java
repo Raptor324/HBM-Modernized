@@ -6,8 +6,8 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.MachineSolderingStationBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineSolderingStationBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -52,24 +52,22 @@ public class MachineSolderingStationBlock extends BaseEntityBlock implements IMu
 
     private static MultiblockStructureHelper defineStructure() {
         String[] layerBase = {
-                "CO",
-                "OO"
+                "CE",
+                "EE"
         };
 
-        String[] layerTop = {
-                "OO",
-                "OO"
-        };
 
         Map<Character, PartRole> roleMap = Map.of(
-                'O', PartRole.DEFAULT,
+                'E', PartRole.UNIVERSAL_CONNECTOR,
                 'C', PartRole.CONTROLLER
         );
 
-        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
+        Map<Character, Supplier<BlockState>> symbolMap = Map.of(
+                'E', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()
+        );
 
         return MultiblockStructureHelper.createFromLayersWithRoles(
-                new String[][] { layerBase, layerTop },
+                new String[][] { layerBase },
                 symbolMap,
                 () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
                 roleMap,
@@ -104,8 +102,17 @@ public class MachineSolderingStationBlock extends BaseEntityBlock implements IMu
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            structureHelper.placeStructure(level, pos, state.getValue(FACING), this);
+            BlockPos core = placeMultiblockStructure(level, pos, state);
+            if (core == null) {
+                return;
+            }
         }
+    }
+
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
     }
 
     @Override

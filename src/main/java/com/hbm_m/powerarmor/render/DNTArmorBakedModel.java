@@ -36,13 +36,13 @@ public class DNTArmorBakedModel extends AbstractArmorBakedModel {
 
     private static final DNTModelConfig CONFIG = new DNTModelConfig();
 
-    public DNTArmorBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms) {
-        super(parts, transforms, CONFIG);
+    public DNTArmorBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms, @org.jetbrains.annotations.Nullable ArmorItem.Type itemArmorType) {
+        super(parts, transforms, CONFIG, itemArmorType);
     }
 
     @Override
     public DNTArmorBakedModel withTransforms(ItemTransforms newTransforms) {
-        return new DNTArmorBakedModel(this.parts, newTransforms);
+        return new DNTArmorBakedModel(this.parts, newTransforms, this.itemArmorType);
     }
 
     private static class DNTModelConfig implements IArmorModelConfig {

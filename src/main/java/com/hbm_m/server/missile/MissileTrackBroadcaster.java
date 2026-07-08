@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity;
+import com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.entity.missile.MissileBaseEntity;
 import com.hbm_m.missile.track.MissileTrackPose;

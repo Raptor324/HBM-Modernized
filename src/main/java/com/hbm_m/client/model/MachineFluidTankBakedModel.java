@@ -7,8 +7,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.block.machines.MachineFluidTankBlock;
+import com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.util.MultipartFacingTransforms;
 
 import net.minecraft.client.Minecraft;

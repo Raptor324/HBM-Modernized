@@ -1,7 +1,7 @@
 package com.hbm_m.block.bomb;
 
 import com.hbm_m.api.bomb.IBomb;
-import com.hbm_m.block.entity.bomb.NukeBaseBlockEntity;
+import com.hbm_m.blockentity.bomb.NukeBaseBlockEntity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

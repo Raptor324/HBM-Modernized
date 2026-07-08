@@ -64,6 +64,7 @@ public class CrucibleSmeltingJeiCategory implements IRecipeCategory<CrucibleSmel
     }
 
     @Override
+    @SuppressWarnings("removal")
     public IDrawable getBackground() {
         return background;
     }

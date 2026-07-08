@@ -2,7 +2,7 @@ package com.hbm_m.block.machines.crates;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.entity.crates.DeshCrateBlockEntity;
+import com.hbm_m.blockentity.crates.DeshCrateBlockEntity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;

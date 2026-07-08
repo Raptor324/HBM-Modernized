@@ -6,9 +6,10 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.MachineBreederBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineBreederBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.multiblock.MultiblockSideTuples;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 
@@ -51,35 +52,57 @@ public class MachineBreederBlock extends BaseEntityBlock implements IMultiblockC
     }
 
     private static MultiblockStructureHelper defineStructureNew() {
-        String[] baseLayer = {
+        // GIT MachineFusionBreeder: 3×5×4 + corner fluid proxies at y=0
+        String[] layer0 = {
+            "OOO",
             "BOB",
-            "OCO",
-            "BOB"
+            "BCB",
+            "OOO",
+            "OOO"
         };
-
-        String[] midLayer = {
+        String[] layer1 = {
             "OOO",
             "OOO",
-            "OLO"
+            "OOO",
+            "OOO",
+            "OOO"
+        };
+        String[] layer2 = {
+            "OOO",
+            "OOO",
+            "OOO",
+            "OOO",
+            "OOO"
+        };
+        String[] layer3 = {
+            "OOO",
+            "OOO",
+            "OOO",
+            "OOO",
+            "OOO"
         };
 
         Map<Character, PartRole> roleMap = Map.of(
             'C', PartRole.CONTROLLER,
             'O', PartRole.DEFAULT,
-            'B', PartRole.UNIVERSAL_CONNECTOR,
-            'L', PartRole.LADDER
+            'B', PartRole.UNIVERSAL_CONNECTOR
         );
 
-        Map<Character, Supplier<BlockState>> symbolMap = Map.of(
+        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
+
+        Map<Character, boolean[]> fluidSideMap = Map.of(
+            'B', MultiblockSideTuples.fluid(true, true, true, true, true, false),
+            'C', MultiblockSideTuples.fluid(true, true, true, true, true, false)
         );
 
-        return MultiblockStructureHelper.createFromLayersWithRoles(
-            new String[][]{baseLayer, midLayer, midLayer, midLayer, midLayer, midLayer},
+        return MultiblockStructureHelper.createFromLayersWithRolesAndSides(
+            new String[][]{layer0, layer1, layer2, layer3},
             symbolMap,
             () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
             roleMap,
             null,
-            null
+            null,
+            fluidSideMap
         );
     }
 
@@ -100,8 +123,17 @@ public class MachineBreederBlock extends BaseEntityBlock implements IMultiblockC
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            structureHelper.placeStructure(level, pos, state.getValue(FACING), this);
+            BlockPos core = placeMultiblockStructure(level, pos, state);
+            if (core == null) {
+                return;
+            }
         }
+    }
+
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
     }
 
     @Override

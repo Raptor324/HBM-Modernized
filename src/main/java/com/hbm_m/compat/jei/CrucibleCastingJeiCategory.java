@@ -65,6 +65,7 @@ public class CrucibleCastingJeiCategory implements IRecipeCategory<CrucibleCasti
     }
 
     @Override
+    @SuppressWarnings("removal")
     public IDrawable getBackground() {
         return background;
     }

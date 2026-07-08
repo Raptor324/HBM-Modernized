@@ -14,15 +14,13 @@ Thank you!
 
 ## Cryptocurrency
 
-<img src="https://cdn.simpleicons.org/tether/50AF95" width="18" height="18" alt="USDT" align="top" /> **USDT (TRON / TRC-20):** `TYourTronAddress`
+<img src="https://cdn.simpleicons.org/tether/50AF95" width="18" height="18" alt="USDT" align="top" /> **USDT (TRON / TRC-20):** `TNByW2sFYprWo87JLHMb9Kg26MUg25vzfU`
 
-<img src="https://cdn.simpleicons.org/tether/50AF95" width="18" height="18" alt="USDT" align="top" /> **USDT (BNB Chain / BEP-20):** `0xYourEvmAddress`
+<img src="https://cdn.simpleicons.org/tether/50AF95" width="18" height="18" alt="USDT" align="top" /> **USDT (BNB Chain / BEP-20):** `0x3A637fBD86B5F114C257815b7FCCAd2DAce89b8b`
 
-<img src="https://cdn.simpleicons.org/usdcoin/2775CA" width="18" height="18" alt="USDC" align="top" /> **USDC (TRON / TRC-20):** `TYourTronAddress`
+<img src="https://cdn.simpleicons.org/polygon/7B3FE4" width="18" height="18" alt="USDC" align="top" /> **USDC (Polygon):** `0x3A637fBD86B5F114C257815b7FCCAd2DAce89b8b`
 
-<img src="https://cdn.simpleicons.org/usdcoin/2775CA" width="18" height="18" alt="USDC" align="top" /> **USDC (BNB Chain / BEP-20):** `0xYourEvmAddress`
-
-<img src="https://cdn.simpleicons.org/solana/9945FF" width="18" height="18" alt="Solana" align="top" /> **Solana (SOL):** `YourSolanaAddress`
+<img src="https://cdn.simpleicons.org/solana/9945FF" width="18" height="18" alt="Solana" align="top" /> **Solana (SOL):** `6Ai4d2wzpeNk1eBndq1yCA2vkJokNVRyQaUZqduHnRWK`
 
 <img src="https://cdn.simpleicons.org/bitcoin/F7931A" width="18" height="18" alt="Bitcoin" align="top" /> **Bitcoin (BTC):** `bc1qscjuf3r8a6jlqyqcad73ftaj9wcnl285gsylc3`
 

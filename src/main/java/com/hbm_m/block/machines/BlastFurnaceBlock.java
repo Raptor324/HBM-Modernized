@@ -2,10 +2,8 @@ package com.hbm_m.block.machines;
 
 import org.jetbrains.annotations.Nullable;
 
-// Этот класс реализует блок доменной печи, которая используется для плавки руды в слитки.
-// Печь имеет два состояния: активное (горит) и неактивное.
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.BlastFurnaceBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.BlastFurnaceBlockEntity;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;

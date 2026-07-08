@@ -1,5 +1,6 @@
 package com.hbm_m.inventory.gui;
 
+import com.hbm_m.blockentity.machines.MachineCyclotronBlockEntity;
 import com.hbm_m.inventory.menu.MachineCyclotronMenu;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -9,7 +10,6 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-import com.hbm_m.block.entity.machines.MachineCyclotronBlockEntity;
 
 public class GUIMachineCyclotron extends GuiInfoScreen<MachineCyclotronMenu> {
 

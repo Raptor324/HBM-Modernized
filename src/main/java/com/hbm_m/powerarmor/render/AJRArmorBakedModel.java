@@ -37,13 +37,13 @@ public class AJRArmorBakedModel extends AbstractArmorBakedModel {
 
     private static final AJRModelConfig CONFIG = new AJRModelConfig();
 
-    public AJRArmorBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms) {
-        super(parts, transforms, CONFIG);
+    public AJRArmorBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms, @org.jetbrains.annotations.Nullable ArmorItem.Type itemArmorType) {
+        super(parts, transforms, CONFIG, itemArmorType);
     }
 
     @Override
     public AJRArmorBakedModel withTransforms(ItemTransforms newTransforms) {
-        return new AJRArmorBakedModel(this.parts, newTransforms);
+        return new AJRArmorBakedModel(this.parts, newTransforms, this.itemArmorType);
     }
 
     private static class AJRModelConfig implements IArmorModelConfig {

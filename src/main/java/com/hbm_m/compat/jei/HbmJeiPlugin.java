@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.generic.BlockAbsorber;
 import com.hbm_m.inventory.gui.GUIAnvil;
 import com.hbm_m.inventory.gui.GUIMachineAdvancedAssembler;
 import com.hbm_m.inventory.gui.GUIMachineAssembler;
@@ -20,6 +21,7 @@ import com.hbm_m.inventory.gui.GUIMachineShredder;
 import com.hbm_m.inventory.gui.GUIBlastFurnace;
 import com.hbm_m.inventory.recipes.ArcWelderRecipes;
 import com.hbm_m.inventory.recipes.SolderingRecipes;
+import com.hbm_m.item.BlockAbsorberItem;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.recipe.AnvilRecipe;
 import com.hbm_m.recipe.AnvilRecipeManager;
@@ -34,16 +36,20 @@ import com.hbm_m.recipe.CrucibleRecipes;
 import com.hbm_m.recipe.CrucibleSmeltingRecipes;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.item.liquids.FluidBarrelItem;
+import com.hbm_m.item.liquids.FluidDuctItem;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.CentrifugeRecipes;
 import com.hbm_m.recipe.CentrifugeRecipes.RecipeInput;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
 import com.hbm_m.recipe.CyclotronRecipes;
+import com.hbm_m.recipe.PressRecipe;
 
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -158,8 +164,8 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeClickArea(GUIMachineArcWelder.class, 72, 37, 33, 14, ArcWelderJeiCategory.RECIPE_TYPE);
         registration.addRecipeClickArea(GUIMachineSolderingStation.class, 72, 28, 33, 14, SolderingStationJeiCategory.RECIPE_TYPE);
         registration.addRecipeClickArea(GUIMachineCrystallizer.class, 80, 39, 33, 14, CrystallizerJeiCategory.RECIPE_TYPE);
-        // Press: gauge needle/arrow area
-        registration.addRecipeClickArea(GUIMachinePress.class, 79, 35, 19, 17, PressJeiCategory.RECIPE_TYPE);
+        // Press — matches legacy NEI transfer rect: new Rectangle(74 + 6 + 18, 23, 24, 18)
+        registration.addRecipeClickArea(GUIMachinePress.class, 98, 23, 24, 18, PressJeiCategory.RECIPE_TYPE);
         // Shredder: progress arrow area
         registration.addRecipeClickArea(GUIMachineShredder.class, 63, 89, 34, 18, ShredderJeiCategory.RECIPE_TYPE);
         // Blast Furnace: progress arrow area
@@ -197,6 +203,32 @@ public class HbmJeiPlugin implements IModPlugin {
                     (output.hasTag() ? output.getTag().toString() : "");
             }
         );
+
+        // Rad Absorber subtypes by tier
+        registration.registerSubtypeInterpreter(
+            ModBlocks.RAD_ABSORBER.get().asItem(),
+            (stack, ctx) -> {
+                BlockAbsorber.EnumAbsorberTier tier = BlockAbsorberItem.readTier(stack);
+                return tier != null ? tier.getSerializedName() : "base";
+            }
+        );
+
+        // Регистрация для труб
+        registerDuctSubtype(registration, ModItems.FLUID_DUCT);
+        registerDuctSubtype(registration, ModItems.FLUID_DUCT_COLORED);
+        registerDuctSubtype(registration, ModItems.FLUID_DUCT_SILVER);
+    }
+
+    private void registerDuctSubtype(ISubtypeRegistration registration, RegistrySupplier<Item> ductSupplier) {
+        registration.registerSubtypeInterpreter(
+            ductSupplier.get(),
+            (stack, ctx) -> {
+                dev.architectury.fluid.FluidStack fluid = FluidDuctItem.getFluidType(stack);
+                if (fluid.isEmpty()) return "empty";
+                ResourceLocation fluidId = BuiltInRegistries.FLUID.getKey(fluid.getFluid());
+                return fluidId != null ? fluidId.toString() : "unknown";
+            }
+        );
     }
 
     private static List<AnvilRecipe> getAnvilRecipes() {
@@ -210,6 +242,15 @@ public class HbmJeiPlugin implements IModPlugin {
 
         return net.minecraft.client.Minecraft.getInstance().level.getRecipeManager()
                 .getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
+    }
+
+    private static List<PressRecipe> getPressRecipes() {
+        if (net.minecraft.client.Minecraft.getInstance().level == null) {
+            return List.of();
+        }
+
+        return net.minecraft.client.Minecraft.getInstance().level.getRecipeManager()
+                .getAllRecipesFor(PressRecipe.Type.INSTANCE);
     }
 
     private static List<CentrifugeJeiCategory.Recipe> getCentrifugeRecipes() {
@@ -283,14 +324,6 @@ public class HbmJeiPlugin implements IModPlugin {
                     inputs.isEmpty() ? ItemStack.EMPTY : inputs.get(0), outputs));
         }
         return result;
-    }
-
-    private static List<PressRecipe> getPressRecipes() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) {
-            return List.of();
-        }
-        return mc.level.getRecipeManager().getAllRecipesFor(PressRecipe.Type.INSTANCE);
     }
 
     private static List<ShredderRecipe> getShredderRecipes() {

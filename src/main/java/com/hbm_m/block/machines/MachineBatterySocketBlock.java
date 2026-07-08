@@ -7,8 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.BatterySocketBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.BatterySocketBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -70,10 +70,6 @@ public class MachineBatterySocketBlock extends BaseEntityBlock implements IMulti
         return STRUCTURE_HELPER;
     }
 
-    public static PartRole getPartRoleStatic(BlockPos localOffset) {
-        return PartRole.ENERGY_CONNECTOR;
-    }
-
     private static MultiblockStructureHelper defineStructure() {
         // 2x2x2: контроллер в нижнем слое, остальные — части.
         String[][] layers = {
@@ -112,7 +108,10 @@ public class MachineBatterySocketBlock extends BaseEntityBlock implements IMulti
 
     @Override
     public PartRole getPartRole(BlockPos localOffset) {
-        return getPartRoleStatic(localOffset);
+        if (structureHelper != null) {
+            return structureHelper.resolvePartRole(localOffset, this);
+        }
+        return PartRole.DEFAULT;
     }
 
     @Override
@@ -150,17 +149,26 @@ public class MachineBatterySocketBlock extends BaseEntityBlock implements IMulti
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
+            BlockPos core = placeMultiblockStructure(level, pos, state);
+            if (core == null) {
+                return;
+            }
             Direction facing = state.getValue(FACING);
             MultiblockStructureHelper helper = getStructureHelper();
-            helper.placeStructure(level, pos, facing, this);
             EnergyNetworkManager mgr = EnergyNetworkManager.get((ServerLevel) level);
-            mgr.addNode(pos);
+            mgr.addNode(core);
             for (BlockPos local : helper.getStructureMap().keySet()) {
                 if (getPartRole(local) == PartRole.ENERGY_CONNECTOR) {
-                    mgr.addNode(helper.getRotatedPos(pos, local, facing));
+                    mgr.addNode(helper.getRotatedPos(core, local, facing));
                 }
             }
         }
+    }
+
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
     }
 
     @Override
@@ -176,7 +184,7 @@ public class MachineBatterySocketBlock extends BaseEntityBlock implements IMulti
                 }
             }
             BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof com.hbm_m.block.entity.BaseMachineBlockEntity machine) {
+            if (be instanceof com.hbm_m.blockentity.BaseMachineBlockEntity machine) {
                 machine.dropInventoryContents();
             }
             helper.destroyStructure(level, pos, facing);

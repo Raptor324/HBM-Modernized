@@ -35,7 +35,7 @@ public class SolderingStationJeiCategory implements IRecipeCategory<SolderingSta
 
     @Override public RecipeType<SolderingStationJeiRecipe> getRecipeType() { return RECIPE_TYPE; }
     @Override public Component getTitle() { return Component.translatable("block.hbm_m.soldering_station"); }
-    @Override public IDrawable getBackground() { return background; }
+    @Override @SuppressWarnings("removal") public IDrawable getBackground() { return background; }
     @Override public IDrawable getIcon()       { return icon; }
 
     @Override

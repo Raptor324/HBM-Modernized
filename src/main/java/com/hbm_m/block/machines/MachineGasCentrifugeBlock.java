@@ -7,8 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.MachineGasCentrifugeBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineGasCentrifugeBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -92,18 +92,26 @@ public class MachineGasCentrifugeBlock extends BaseEntityBlock implements IMulti
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!level.isClientSide() && !state.is(oldState.getBlock())) {
+            BlockPos core = placeMultiblockStructure(level, pos, state);
+            if (core == null) {
+                return;
+            }
             Direction facing = state.getValue(FACING);
-            structureHelper.placeStructure(level, pos, facing, this);
-
-            EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
+            EnergyNetworkManager.get((ServerLevel) level).addNode(core);
 
             for (BlockPos localPos : structureHelper.getStructureMap().keySet()) {
                 if (getPartRole(localPos).canReceiveEnergy()) {
-                    BlockPos worldPos = structureHelper.getRotatedPos(pos, localPos, facing);
+                    BlockPos worldPos = structureHelper.getRotatedPos(core, localPos, facing);
                     EnergyNetworkManager.get((ServerLevel) level).addNode(worldPos);
                 }
             }
         }
+    }
+
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
     }
 
     @Override

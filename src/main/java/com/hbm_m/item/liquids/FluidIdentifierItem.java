@@ -8,8 +8,8 @@ import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
-import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.block.machines.FluidDuctBlock;
+import com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.interfaces.IItemControlReceiver;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
 import com.hbm_m.interfaces.IMultiblockPart;

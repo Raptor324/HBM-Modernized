@@ -1,6 +1,6 @@
 package com.hbm_m.block.machines.rbmk;
 
-import com.hbm_m.block.entity.machines.rbmk.RBMKColumnBlockEntity;
+import com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity;
 import com.hbm_m.handler.rbmk.RBMKDials;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.rbmk.RBMKLidItem;

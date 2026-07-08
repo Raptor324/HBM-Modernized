@@ -1,8 +1,8 @@
 package com.hbm_m.block.machines.rbmk;
 
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.rbmk.RBMKColumnBlockEntity;
-import com.hbm_m.block.entity.machines.rbmk.RBMKRodBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity;
+import com.hbm_m.blockentity.machines.rbmk.RBMKRodBlockEntity;
 import com.hbm_m.handler.rbmk.RBMKDials;
 import com.hbm_m.item.rbmk.RBMKRodItem;
 import net.minecraft.core.BlockPos;

@@ -1,6 +1,7 @@
 package com.hbm_m.network;
 
-import com.hbm_m.block.entity.machines.MachineSolderingStationBlockEntity;
+import com.hbm_m.blockentity.machines.MachineSolderingStationBlockEntity;
+
 import dev.architectury.networking.NetworkManager.PacketContext;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;

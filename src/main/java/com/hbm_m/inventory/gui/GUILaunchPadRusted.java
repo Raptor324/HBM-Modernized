@@ -1,6 +1,6 @@
 package com.hbm_m.inventory.gui;
 
-import com.hbm_m.block.entity.machines.LaunchPadRustedBlockEntity;
+import com.hbm_m.blockentity.machines.LaunchPadRustedBlockEntity;
 import com.hbm_m.inventory.menu.LaunchPadRustedMenu;
 import com.hbm_m.lib.RefStrings;
 

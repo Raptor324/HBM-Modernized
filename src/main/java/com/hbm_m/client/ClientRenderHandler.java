@@ -21,6 +21,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
@@ -64,6 +65,10 @@ public class ClientRenderHandler {
                     RenderSystem.defaultBlendFunc();
                     RenderSystem.disableBlend();
                 });
+        private static final RenderStateShard.ShaderStateShard BHOLE_TEX_COLOR_SHADER =
+                new RenderStateShard.ShaderStateShard(GameRenderer::getPositionTexColorShader);
+        /** Самосветящиеся облака/вспышки взрыва — без lightmap (как RenderTorex 1.7.10). */
+        private static final RenderStateShard.ShaderStateShard NUKE_TEX_COLOR_SHADER = BHOLE_TEX_COLOR_SHADER;
 
         private CustomRenderTypes(String s, VertexFormat v, VertexFormat.Mode m, int i, boolean b, boolean b2, Runnable r, Runnable r2) { super(s, v, m, i, b, b2, r, r2); }
 
@@ -92,31 +97,29 @@ public class ClientRenderHandler {
                         .setOutputState(TRANSLUCENT_TARGET)
                         .createCompositeState(true));
 
-        /** Nuke cloud particles (NukeTorex). */
+        /** Nuke cloud particles (NukeTorex) — vertex color × texture, без lightmap. */
         public static final Function<ResourceLocation, RenderType> NUKE_CLOUDS = Util.memoize(
-                texture -> create("nuke_clouds", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 239120, true, true,
+                texture -> create("nuke_clouds", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 239120, true, true,
                         RenderType.CompositeState.builder()
-                                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+                                .setShaderState(NUKE_TEX_COLOR_SHADER)
                                 .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
                                 .setTransparencyState(SEVEN_SEVEN10)
                                 .setCullState(NO_CULL)
-                                .setLightmapState(LIGHTMAP)
-                                .setOverlayState(NO_OVERLAY)
+                                .setLightmapState(NO_LIGHTMAP)
                                 .setWriteMaskState(COLOR_WRITE)
                                 .setOutputState(TRANSLUCENT_TARGET)
                                 .createCompositeState(false)));
 
         /** Nuke flash (NukeTorex) - без depth test, чтобы рендерился поверх всего. */
         public static final Function<ResourceLocation, RenderType> NUKE_FLASH = Util.memoize(
-                texture -> create("nuke_flash", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 545234, true, true,
+                texture -> create("nuke_flash", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 545234, true, true,
                         RenderType.CompositeState.builder()
-                                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+                                .setShaderState(NUKE_TEX_COLOR_SHADER)
                                 .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
                                 .setTransparencyState(ADDITIVE_BLEND)
                                 .setDepthTestState(NO_DEPTH_TEST)
                                 .setCullState(NO_CULL)
-                                .setLightmapState(LIGHTMAP)
-                                .setOverlayState(NO_OVERLAY)
+                                .setLightmapState(NO_LIGHTMAP)
                                 .setWriteMaskState(COLOR_WRITE)
                                 .setOutputState(TRANSLUCENT_TARGET)
                                 .createCompositeState(false)));
@@ -136,16 +139,68 @@ public class ClientRenderHandler {
         /** Fleija outer shells / shockwave — additive glow. */
         public static final RenderType FLEIJA_SPHERE_ADDITIVE = FLEIJA_SPHERE;
 
-        /** Fallout rain (RenderFallout): entity translucent, NO_CULL, CLOUDS_TARGET, 7/7/1/0 blend. */
-        public static final Function<ResourceLocation, RenderType> ENTITY_SMOOTH = Util.memoize(
-                texture -> create("entity_smooth", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, true, true,
+        /** Black hole event horizon — opaque black, writes depth (порт RenderBlackHole sphere). */
+        public static final RenderType BHOLE_SPHERE = create("bhole_sphere",
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 262144, false, true,
+                RenderType.CompositeState.builder()
+                        .setShaderState(POSITION_COLOR_SHADER)
+                        .setTransparencyState(NO_TRANSPARENCY)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST)
+                        .setCullState(NO_CULL)
+                        .setLightmapState(NO_LIGHTMAP)
+                        .setWriteMaskState(COLOR_DEPTH_WRITE)
+                        .createCompositeState(false));
+
+        /** Accretion disc / swirl — vertex color × texture (1.7.10 glColor × bindTexture). */
+        public static final Function<ResourceLocation, RenderType> BHOLE_DISC = Util.memoize(
+                texture -> create("bhole_disc", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 8192, false, true,
                         RenderType.CompositeState.builder()
-                                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+                                .setShaderState(BHOLE_TEX_COLOR_SHADER)
+                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                                .setTransparencyState(SEVEN_SEVEN10)
+                                .setDepthTestState(LEQUAL_DEPTH_TEST)
+                                .setCullState(NO_CULL)
+                                .setLightmapState(NO_LIGHTMAP)
+                                .setWriteMaskState(COLOR_WRITE)
+                                .setOutputState(TRANSLUCENT_TARGET)
+                                .createCompositeState(false)));
+
+        /** Second pass of disc/swirl — additive white glow (1.7.10 GL_SRC_ALPHA, GL_ONE). */
+        public static final Function<ResourceLocation, RenderType> BHOLE_DISC_ADDITIVE = Util.memoize(
+                texture -> create("bhole_disc_add", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 8192, false, true,
+                        RenderType.CompositeState.builder()
+                                .setShaderState(BHOLE_TEX_COLOR_SHADER)
+                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                                .setTransparencyState(ADDITIVE_BLEND)
+                                .setDepthTestState(LEQUAL_DEPTH_TEST)
+                                .setCullState(NO_CULL)
+                                .setLightmapState(NO_LIGHTMAP)
+                                .setWriteMaskState(COLOR_WRITE)
+                                .setOutputState(TRANSLUCENT_TARGET)
+                                .createCompositeState(false)));
+
+        /** Polar jets — additive, no depth write. */
+        public static final RenderType BHOLE_JETS = create("bhole_jets",
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 512, false, true,
+                RenderType.CompositeState.builder()
+                        .setShaderState(POSITION_COLOR_SHADER)
+                        .setTransparencyState(ADDITIVE_BLEND)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST)
+                        .setCullState(NO_CULL)
+                        .setLightmapState(NO_LIGHTMAP)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .setOutputState(TRANSLUCENT_TARGET)
+                        .createCompositeState(false));
+
+        /** Fallout rain (RenderFallout): tex × vertex color, без lightmap. */
+        public static final Function<ResourceLocation, RenderType> ENTITY_SMOOTH = Util.memoize(
+                texture -> create("entity_smooth", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 256, true, true,
+                        RenderType.CompositeState.builder()
+                                .setShaderState(NUKE_TEX_COLOR_SHADER)
                                 .setTextureState(new RenderStateShard.TextureStateShard(texture, false, true))
                                 .setTransparencyState(SEVEN_SEVEN10)
                                 .setCullState(NO_CULL)
-                                .setLightmapState(LIGHTMAP)
-                                .setOverlayState(OVERLAY)
+                                .setLightmapState(NO_LIGHTMAP)
                                 .setWriteMaskState(COLOR_DEPTH_WRITE)
                                 .setOutputState(CLOUDS_TARGET)
                                 .createCompositeState(false)));

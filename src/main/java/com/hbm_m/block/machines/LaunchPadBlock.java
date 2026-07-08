@@ -8,9 +8,9 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.api.bomb.IBomb;
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity;
-import com.hbm_m.block.entity.machines.LaunchPadBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity;
+import com.hbm_m.blockentity.machines.LaunchPadBlockEntity;
 import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
@@ -75,18 +75,26 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
         super.onPlace(pState, pLevel, pPos, pOldState, pIsMoving);
         if (!pLevel.isClientSide() && !pState.is(pOldState.getBlock())) {
             MultiblockStructureHelper helper = getStructureHelper();
+            BlockPos core = placeMultiblockStructure(pLevel, pPos, pState);
+            if (core == null) {
+                return;
+            }
             Direction facing = pState.getValue(FACING);
-
-            helper.placeStructure(pLevel, pPos, facing, this);
             for (BlockPos localPos : helper.getStructureMap().keySet()) {
                 if (getPartRole(localPos) == PartRole.UNIVERSAL_CONNECTOR) {
-                    BlockPos worldPos = helper.getRotatedPos(pPos, localPos, facing);
+                    BlockPos worldPos = helper.getRotatedPos(core, localPos, facing);
                     EnergyNetworkManager.get((ServerLevel) pLevel).addNode(worldPos);
                 }
             }
         }
     }
 
+
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
+    }
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {

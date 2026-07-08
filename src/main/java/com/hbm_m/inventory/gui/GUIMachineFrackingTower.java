@@ -6,8 +6,8 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
+import com.hbm_m.blockentity.machines.MachineFrackingTowerBlockEntity;
 import com.hbm_m.client.gui.FluidGuiRendering;
-import com.hbm_m.block.entity.machines.MachineFrackingTowerBlockEntity;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineFrackingTowerMenu;
 import com.hbm_m.main.MainRegistry;

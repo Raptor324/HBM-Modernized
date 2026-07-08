@@ -6,7 +6,7 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
-import com.hbm_m.block.entity.machines.MachineCrystallizerBlockEntity;
+import com.hbm_m.blockentity.machines.MachineCrystallizerBlockEntity;
 import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.PartGeometry;

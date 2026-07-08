@@ -119,11 +119,10 @@ public abstract class MissileTier2 extends MissileBaseEntity {
 
             }
 
-            level().explode(this, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D,
+            level().explode(this, getX(), getY(), getZ(), 15.0F, Level.ExplosionInteraction.BLOCK);
 
-                    15.0F, Level.ExplosionInteraction.BLOCK);
-
-            ExplosionChaos.cluster(level(), pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, 50);
+            ExplosionChaos.cluster(level(), getX(), getY(), getZ(), 50,
+                    getYRot(), getXRot(), (float) Math.PI * 0.25F, (float) Math.PI * 0.25F, 1.0F);
 
         }
 

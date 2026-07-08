@@ -2,7 +2,7 @@ package com.hbm_m.block.machines.crates;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.entity.crates.BaseCrateBlockEntity;
+import com.hbm_m.blockentity.crates.BaseCrateBlockEntity;
 import com.hbm_m.sound.ModSounds;
 
 import dev.architectury.registry.menu.MenuRegistry;

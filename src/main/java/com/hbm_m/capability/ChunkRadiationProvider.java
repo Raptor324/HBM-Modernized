@@ -47,9 +47,16 @@ public class ChunkRadiationProvider implements ICapabilitySerializable<CompoundT
     @Override
     public CompoundTag serializeNBT() {
         IChunkRadiation radiation = getOrCreate();
-        if (radiation.getAmbientRadiation() > 1e-6F) {
+        float ambient = radiation.getAmbientRadiation();
+        float block = radiation.getBlockRadiation();
+        if (ambient > 1e-6F || block > 1e-6F) {
             CompoundTag tag = new CompoundTag();
-            tag.putFloat(NBT_KEY_AMBIENT, radiation.getAmbientRadiation());
+            if (ambient > 1e-6F) {
+                tag.putFloat(NBT_KEY_AMBIENT, ambient);
+            }
+            if (block > 1e-6F) {
+                tag.putFloat(NBT_KEY_BLOCK, block);
+            }
 
             if (ModClothConfig.get().enableDebugLogging) {
                 MainRegistry.LOGGER.debug("Serializing ChunkRadiation: {}", tag);
@@ -63,14 +70,8 @@ public class ChunkRadiationProvider implements ICapabilitySerializable<CompoundT
     @Override
     public void deserializeNBT(CompoundTag nbt) {
         IChunkRadiation radiation = getOrCreate();
-        // blockRadiation не персистим: в Simple режиме источники учитываются только через block events.
-        radiation.setBlockRadiation(0);
-
-        if (nbt.contains(NBT_KEY_AMBIENT, Tag.TAG_FLOAT)) {
-            radiation.setAmbientRadiation(nbt.getFloat(NBT_KEY_AMBIENT));
-        } else {
-            radiation.setAmbientRadiation(0);
-        }
+        radiation.setBlockRadiation(nbt.contains(NBT_KEY_BLOCK, Tag.TAG_FLOAT) ? nbt.getFloat(NBT_KEY_BLOCK) : 0F);
+        radiation.setAmbientRadiation(nbt.contains(NBT_KEY_AMBIENT, Tag.TAG_FLOAT) ? nbt.getFloat(NBT_KEY_AMBIENT) : 0F);
 
         if (ModClothConfig.get().enableDebugLogging) {
             if (nbt.size() > 0) {

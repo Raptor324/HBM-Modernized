@@ -1,6 +1,6 @@
 package com.hbm_m.inventory.menu;
 
-import com.hbm_m.block.entity.machines.MachineCyclotronBlockEntity;
+import com.hbm_m.blockentity.machines.MachineCyclotronBlockEntity;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.lib.RefStrings;

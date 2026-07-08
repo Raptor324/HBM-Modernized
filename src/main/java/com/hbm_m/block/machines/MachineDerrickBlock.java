@@ -6,9 +6,10 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.MachineDerrickBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineDerrickBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.multiblock.MultiblockSideTuples;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 
@@ -47,29 +48,45 @@ public class MachineDerrickBlock extends BaseEntityBlock implements IMultiblockC
     public MachineDerrickBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-        this.structureHelper = defineStructure();
+        this.structureHelper = defineStructureNew();
     }
 
-    private static MultiblockStructureHelper defineStructure() {
-        String[] layer0 = { "C" };
-        String[] layer1 = { "O" };
-        String[] layer2 = { "O" };
-        String[] layer3 = { "O" };
-
+    private static MultiblockStructureHelper defineStructureNew() {
+       
+        String[] layer1 = {
+            "O O",
+            " C ",
+            "O O"        
+        };
+        
+        String[] layers = {
+            "OOO",
+            "OOO",
+            "OOO"        
+        };
         Map<Character, PartRole> roleMap = Map.of(
-                'O', PartRole.DEFAULT,
-                'C', PartRole.CONTROLLER
+            'O', PartRole.DEFAULT,
+            'B', PartRole.UNIVERSAL_CONNECTOR,
+            'C', PartRole.CONTROLLER
+        );
+        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
+        Map<Character, boolean[]> energySideMap = Map.of(
+            'B', MultiblockSideTuples.energy(true, true, true, true, true, false),
+            'C', MultiblockSideTuples.energy(true, true, true, true, true, false)
+        );
+        Map<Character, boolean[]> fluidSideMap = Map.of(
+            'B', MultiblockSideTuples.fluid(true, true, true, true, true, false),
+            'C', MultiblockSideTuples.fluid(true, true, true, true, true, false)
         );
 
-        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
-
-        return MultiblockStructureHelper.createFromLayersWithRoles(
-                new String[][] { layer0, layer1, layer2, layer3 },
-                symbolMap,
-                () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-                roleMap,
-                null,
-                null
+        return MultiblockStructureHelper.createFromLayersWithRolesAndSides(
+            new String[][]{layer1, layers, layers, layers, layers, layers, layers, layers, layers, layers},
+            symbolMap,
+            () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
+            roleMap,
+            null,
+            energySideMap,
+            fluidSideMap
         );
     }
 
@@ -99,8 +116,17 @@ public class MachineDerrickBlock extends BaseEntityBlock implements IMultiblockC
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            structureHelper.placeStructure(level, pos, state.getValue(FACING), this);
+            BlockPos core = placeMultiblockStructure(level, pos, state);
+            if (core == null) {
+                return;
+            }
         }
+    }
+
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
     }
 
     @Override
@@ -113,7 +139,7 @@ public class MachineDerrickBlock extends BaseEntityBlock implements IMultiblockC
 
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider menuProvider) {
                 NetworkHooks.openScreen((ServerPlayer) player, menuProvider, pos);

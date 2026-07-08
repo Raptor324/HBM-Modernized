@@ -1,7 +1,7 @@
 package com.hbm_m.network;
 
-import com.hbm_m.block.entity.machines.BatterySocketBlockEntity;
-import com.hbm_m.block.entity.machines.MachineBatteryBlockEntity;
+import com.hbm_m.blockentity.machines.BatterySocketBlockEntity;
+import com.hbm_m.blockentity.machines.MachineBatteryBlockEntity;
 import com.hbm_m.network.C2SPacket;
 
 import dev.architectury.networking.NetworkManager.PacketContext;

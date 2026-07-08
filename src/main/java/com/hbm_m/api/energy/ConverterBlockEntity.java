@@ -1,7 +1,5 @@
 package com.hbm_m.api.energy;
 
-import com.hbm_m.block.entity.ModBlockEntities;
-
 import com.hbm_m.interfaces.IEnergyProvider;
 import com.hbm_m.interfaces.IEnergyReceiver;
 
@@ -13,6 +11,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
 import net.minecraftforge.common.capabilities.Capability;
+
+import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;

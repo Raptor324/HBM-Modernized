@@ -1,6 +1,6 @@
 package com.hbm_m.inventory.gui;
 
-import com.hbm_m.block.entity.machines.MachineMiningDrillBlockEntity;
+import com.hbm_m.blockentity.machines.MachineMiningDrillBlockEntity;
 import com.hbm_m.inventory.menu.MachineMiningDrillMenu;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;

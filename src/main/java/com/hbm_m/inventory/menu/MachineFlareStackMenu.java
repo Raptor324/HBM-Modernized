@@ -1,6 +1,6 @@
 package com.hbm_m.inventory.menu;
 
-import com.hbm_m.block.entity.machines.MachineFlareStackBlockEntity;
+import com.hbm_m.blockentity.machines.MachineFlareStackBlockEntity;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.core.BlockPos;

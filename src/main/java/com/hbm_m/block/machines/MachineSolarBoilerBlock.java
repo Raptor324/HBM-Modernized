@@ -6,8 +6,8 @@ import java.util.function.Supplier;
 import javax.annotation.Nullable;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.MachineSolarBoilerBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineSolarBoilerBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -110,9 +110,18 @@ public class MachineSolarBoilerBlock extends BaseEntityBlock implements IMultibl
         super.onPlace(state, level, pos, oldState, isMoving);
 
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
+            BlockPos core = placeMultiblockStructure(level, pos, state);
+            if (core == null) {
+                return;
+            }
             Direction facing = state.getValue(FACING);
-            structureHelper.placeStructure(level, pos, facing, this);
         }
+    }
+
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
     }
 
     @Override
@@ -121,7 +130,7 @@ public class MachineSolarBoilerBlock extends BaseEntityBlock implements IMultibl
             Direction facing = state.getValue(FACING);
 
             BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (blockEntity instanceof com.hbm_m.block.entity.BaseMachineBlockEntity be) {
+            if (blockEntity instanceof com.hbm_m.blockentity.BaseMachineBlockEntity be) {
                 be.dropInventoryContents();
             }
 

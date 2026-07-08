@@ -6,10 +6,6 @@ import java.util.Map;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
-import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
-import com.hbm_m.util.MultipartFacingTransforms;
-
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -77,42 +73,7 @@ public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedMo
         /*if (state == null) {
             return getItemQuads(side, rand);
         }
-        if (ShaderCompatibilityDetector.useVboGeometry()) {
-            return List.of();
-        }
-
-        List<BakedQuad> result = new ArrayList<>();
-        int rotationY = getRotationYForFacing(state);
-
-        BakedModel basePart = parts.get("Base");
-        if (basePart != null) {
-            result.addAll(ModelHelper.transformQuadsByFacing(
-                basePart.getQuads(state, side, rand), rotationY));
-        }
-
-        if (state.hasProperty(MachineAdvancedAssemblerBlock.FRAME)
-            && state.getValue(MachineAdvancedAssemblerBlock.FRAME)) {
-            BakedModel framePart = parts.get("Frame");
-            if (framePart != null) {
-                result.addAll(ModelHelper.transformQuadsByFacing(
-                    framePart.getQuads(state, side, rand), rotationY));
-            }
-        }
-
-        boolean renderActive = state.hasProperty(MachineAdvancedAssemblerBlock.RENDER_ACTIVE)
-            && state.getValue(MachineAdvancedAssemblerBlock.RENDER_ACTIVE);
-        if (!renderActive) {
-            String[] animatedParts = {"Ring", "ArmLower1", "ArmUpper1", "Head1", "Spike1",
-                "ArmLower2", "ArmUpper2", "Head2", "Spike2"};
-            for (String partName : animatedParts) {
-                BakedModel part = parts.get(partName);
-                if (part != null) {
-                    result.addAll(ModelHelper.transformQuadsByFacing(
-                        part.getQuads(state, side, rand), rotationY));
-                }
-            }
-        }
-        return result;
+        return List.of();
         *///?}
     }
 
@@ -120,52 +81,12 @@ public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedMo
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                      RandomSource rand, ModelData modelData, @Nullable net.minecraft.client.renderer.RenderType renderType) {
-        // ITEM RENDER (Инвентарь/Рука)
         if (state == null) {
             return getItemQuads(side, rand, modelData, renderType);
         }
 
-        // WORLD RENDER: геометрия всегда предоставляется BER/VBO системой.
-        if (ShaderCompatibilityDetector.useVboGeometry()) {
-            return List.of();
-        }
-
-        List<BakedQuad> result = new ArrayList<>();
-        int rotationY = getRotationYForFacing(state);
-
-        // 1. Base
-        BakedModel basePart = parts.get("Base");
-        if (basePart != null) {
-            result.addAll(ModelHelper.transformQuadsByFacing(
-                    basePart.getQuads(state, side, rand, modelData, renderType), rotationY));
-        }
-
-        // 2. Frame (зависит от свойства FRAME)
-        if (state.hasProperty(MachineAdvancedAssemblerBlock.FRAME) 
-                && state.getValue(MachineAdvancedAssemblerBlock.FRAME)) {
-            BakedModel framePart = parts.get("Frame");
-            if (framePart != null) {
-                result.addAll(ModelHelper.transformQuadsByFacing(
-                        framePart.getQuads(state, side, rand, modelData, renderType), rotationY));
-            }
-        }
-        
-        // 3. Анимированные части - только когда машина спит. При работе их рендерит BER (putBulkData).
-        boolean renderActive = state.hasProperty(MachineAdvancedAssemblerBlock.RENDER_ACTIVE) 
-                             && state.getValue(MachineAdvancedAssemblerBlock.RENDER_ACTIVE);
-        if (!renderActive) {
-            String[] animatedParts = {"Ring", "ArmLower1", "ArmUpper1", "Head1", "Spike1",
-                                      "ArmLower2", "ArmUpper2", "Head2", "Spike2"};
-            for (String partName : animatedParts) {
-                BakedModel part = parts.get(partName);
-                if (part != null) {
-                    result.addAll(ModelHelper.transformQuadsByFacing(
-                            part.getQuads(state, side, rand, modelData, renderType), rotationY));
-                }
-            }
-        }
-
-        return result;
+        // WORLD: геометрия полностью в BER/VBO.
+        return List.of();
     }
 
     private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand,
@@ -265,12 +186,5 @@ public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedMo
     public void clearItemQuadCache() {
         this.itemQuadsCached = false;
         this.cachedItemQuads = null;
-    }
-
-    private static int getRotationYForFacing(BlockState state) {
-        if (!state.hasProperty(MachineAdvancedAssemblerBlock.FACING)) {
-            return 90;
-        }
-        return MultipartFacingTransforms.advancedAssemblerBakedRotationY(state.getValue(MachineAdvancedAssemblerBlock.FACING));
     }
 }

@@ -2,7 +2,6 @@ package com.hbm_m.particle.explosions.nuclear.small;
 
 import com.hbm_m.particle.explosions.AbstractExplosionParticle;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.util.Mth;
 
@@ -121,12 +120,7 @@ public class LargeDarkSmoke extends AbstractExplosionParticle {
         }
     }
 
-    @Override
-    public ParticleRenderType getRenderType() {
-        return ParticleRenderType.PARTICLE_SHEET_OPAQUE;
-    }
-
-    public static class Provider extends AbstractExplosionParticle.Provider {
+    public static class Provider extends AbstractExplosionParticle.Provider<LargeDarkSmoke> {
         public Provider(SpriteSet sprites) {
             super(sprites, LargeDarkSmoke::new);
         }

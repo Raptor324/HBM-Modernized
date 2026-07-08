@@ -1,11 +1,20 @@
 package com.hbm_m.block.machines;
 
-import com.hbm_m.block.entity.machines.MachineCrucibleBlockEntity;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.inventory.menu.MachineCrucibleMenu;
-import net.minecraft.core.BlockPos;
+import java.util.Map;
+import java.util.function.Supplier;
+
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineCrucibleBlockEntity;
+import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.inventory.menu.MachineCrucibleMenu;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+import com.hbm_m.multiblock.PartRole;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Containers;
@@ -15,7 +24,6 @@ import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.SimpleContainerData;
-import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
@@ -40,41 +48,71 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.network.NetworkHooks;
 
 /**
- * Crucible machine block (single-block, 1.20 port).
- *
- * Legacy equivalent: MachineCrucible (BlockDummyable, 3×3 multi-block).
- * Multi-block support is not ported yet — the crucible is currently a 1×1 block.
- *
- * Shape: hollow bowl — a base plate plus four walls.
- * Shovel interaction and breakBlock content-drops require MaterialStack/ItemScraps
- * to be ported first (marked with TODO below).
+ * Crucible machine block — GIT MachineCrucible multiblock (3×3 ring) with bowl collision on controller.
  */
-public class MachineCrucibleBlock extends BaseEntityBlock {
+public class MachineCrucibleBlock extends BaseEntityBlock implements IMultiblockController {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
-    // Bowl shape: base + N/S/E/W walls
-    private static final VoxelShape SHAPE = Shapes.or(
-            // Base plate (full width, 4px high)
-            Block.box( 0,  0,  0, 16,  4, 16),
-            // North wall
-            Block.box( 0,  4,  0, 16, 16,  2),
-            // South wall
-            Block.box( 0,  4, 14, 16, 16, 16),
-            // West wall
-            Block.box( 0,  4,  0,  2, 16, 16),
-            // East wall
-            Block.box(14,  4,  0, 16, 16, 16)
+    private static final VoxelShape BOWL_SHAPE = Shapes.or(
+            Block.box(0, 0, 0, 16, 4, 16),
+            Block.box(0, 4, 0, 16, 16, 2),
+            Block.box(0, 4, 14, 16, 16, 16),
+            Block.box(0, 4, 0, 2, 16, 16),
+            Block.box(14, 4, 0, 16, 16, 16)
     );
+
+    private final MultiblockStructureHelper structureHelper;
 
     public MachineCrucibleBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        this.structureHelper = defineStructureNew();
     }
 
-    // -------------------------------------------------------------------------
-    // BlockEntity
-    // -------------------------------------------------------------------------
+    private static MultiblockStructureHelper defineStructureNew() {
+        // GIT MachineCrucible: 3×3×1 hollow ring (walls) around center controller
+        String[] layer0 = {
+            "OOO",
+            "OCO",
+            "OOO"
+        };
+
+        Map<Character, PartRole> roleMap = Map.of(
+            'C', PartRole.CONTROLLER,
+            'O', PartRole.DEFAULT
+        );
+
+        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
+
+        Map<Character, VoxelShape> shapeMap = Map.of(
+            'C', BOWL_SHAPE,
+            'O', Block.box(0, 8, 0, 16, 16, 16)
+        );
+        Map<Character, VoxelShape> collisionMap = Map.of(
+            'C', BOWL_SHAPE,
+            'O', Block.box(0, 8, 0, 16, 16, 16)
+        );
+
+        return MultiblockStructureHelper.createFromLayersWithRoles(
+            new String[][] { layer0 },
+            symbolMap,
+            () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
+            roleMap,
+            shapeMap,
+            collisionMap
+        );
+    }
+
+    @Override
+    public MultiblockStructureHelper getStructureHelper() {
+        return structureHelper;
+    }
+
+    @Override
+    public PartRole getPartRole(BlockPos localOffset) {
+        return structureHelper.resolvePartRole(localOffset, this);
+    }
 
     @Nullable
     @Override
@@ -85,22 +123,31 @@ public class MachineCrucibleBlock extends BaseEntityBlock {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        if (level.isClientSide()) return null;
+        if (level.isClientSide()) {
+            return null;
+        }
         return createTickerHelper(type, ModBlockEntities.CRUCIBLE_BE.get(), MachineCrucibleBlockEntity::serverTick);
     }
 
-    // -------------------------------------------------------------------------
-    // Shape / rendering
-    // -------------------------------------------------------------------------
+    @Override
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+        super.onPlace(state, level, pos, oldState, isMoving);
+        if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
+            BlockPos core = placeMultiblockStructure(level, pos, state);
+            if (core == null) {
+                return;
+            }
+        }
+    }
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return SHAPE;
+        return structureHelper.generateShapeFromParts(state.getValue(FACING));
     }
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return SHAPE;
+        return structureHelper.getSpecificCollisionShape(structureHelper.getControllerOffset(), state.getValue(FACING));
     }
 
     @Override
@@ -112,10 +159,6 @@ public class MachineCrucibleBlock extends BaseEntityBlock {
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
     }
-
-    // -------------------------------------------------------------------------
-    // Block state
-    // -------------------------------------------------------------------------
 
     @Nullable
     @Override
@@ -138,10 +181,6 @@ public class MachineCrucibleBlock extends BaseEntityBlock {
         builder.add(FACING);
     }
 
-    // -------------------------------------------------------------------------
-    // Interaction
-    // -------------------------------------------------------------------------
-
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                  Player player, InteractionHand hand, BlockHitResult hit) {
@@ -150,8 +189,6 @@ public class MachineCrucibleBlock extends BaseEntityBlock {
             return InteractionResult.SUCCESS;
         }
 
-        // Shovel interaction (legacy parity placeholder):
-        // clear current crucible item inventory into player inventory or drop to world.
         ItemStack held = player.getItemInHand(hand);
         if (!held.isEmpty() && held.getItem() instanceof net.minecraft.world.item.ShovelItem) {
             BlockEntity be = level.getBlockEntity(pos);
@@ -159,8 +196,9 @@ public class MachineCrucibleBlock extends BaseEntityBlock {
                 be.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
                     for (int i = 0; i < handler.getSlots(); i++) {
                         ItemStack extracted = handler.extractItem(i, Integer.MAX_VALUE, false);
-                        if (extracted.isEmpty()) continue;
-
+                        if (extracted.isEmpty()) {
+                            continue;
+                        }
                         if (!player.getInventory().add(extracted.copy())) {
                             Containers.dropItemStack(level,
                                     hit.getLocation().x,
@@ -175,7 +213,6 @@ public class MachineCrucibleBlock extends BaseEntityBlock {
             return InteractionResult.CONSUME;
         }
 
-        // Normal interaction: open GUI
         if (player instanceof ServerPlayer serverPlayer) {
             BlockEntity be = level.getBlockEntity(pos);
             ContainerData data = (be instanceof MachineCrucibleBlockEntity cbe)
@@ -187,7 +224,7 @@ public class MachineCrucibleBlock extends BaseEntityBlock {
                                     containerId,
                                     playerInventory,
                                     be,
-                        data
+                                    data
                             ),
                             Component.translatable("container.hbm_m.crucible")
                     ),
@@ -196,16 +233,18 @@ public class MachineCrucibleBlock extends BaseEntityBlock {
         return InteractionResult.CONSUME;
     }
 
-    // -------------------------------------------------------------------------
-    // Block removal — drop molten contents as scraps (legacy parity)
-    // -------------------------------------------------------------------------
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
+    }
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos,
                          BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
-            // Drop current crucible inventory on block replacement/break.
             if (!level.isClientSide()) {
+                structureHelper.destroyStructure(level, pos, state.getValue(FACING));
                 BlockEntity be = level.getBlockEntity(pos);
                 if (be != null) {
                     be.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {

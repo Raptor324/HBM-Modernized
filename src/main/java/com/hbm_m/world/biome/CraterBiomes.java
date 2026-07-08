@@ -20,11 +20,11 @@ public final class CraterBiomes {
 
     public static final ResourceKey<Biome> INNER_CRATER_KEY =
             ResourceKey.create(Registries.BIOME,
-                    new ResourceLocation(MainRegistry.MOD_ID, "inner_crater"));
+                    ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "inner_crater"));
 
     public static final ResourceKey<Biome> OUTER_CRATER_KEY =
             ResourceKey.create(Registries.BIOME,
-                    new ResourceLocation(MainRegistry.MOD_ID, "outer_crater"));
+                    ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "outer_crater"));
 
     private CraterBiomes() {}
 

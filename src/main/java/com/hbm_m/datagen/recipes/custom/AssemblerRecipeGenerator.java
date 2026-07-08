@@ -6,11 +6,14 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.datagen.recipes.ModRecipeProvider;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.common.Tags;
 
 /**
@@ -28,6 +31,7 @@ public final class AssemblerRecipeGenerator {
         registerCastPlateRecipes(writer);
         registerDoorRecipes(writer);
         registerMissileRecipes(writer);
+        registerBombRecipes(writer);
     }
 
 
@@ -369,6 +373,47 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.MOTOR.get(), 1)
                 .save(writer, "centrifuge_element");
     }
+    private static void registerBombRecipes(Consumer<FinishedRecipe> writer) {
+        // TODO: временные заглушки — заменить на ass.explosivelenses2 / ass.manigniter
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.FAT_MAN_EXPLOSIVE.get(), 1), 400, 100)
+                .addIngredient(ModItems.PLATE_ALUMINUM.get(), 8)
+                .addIngredient(ModItems.BALL_TNT.get(), 8)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.POLYMER).get(),
+                        ModItems.getIngot(ModIngots.BAKELITE).get()), 4)
+                .addIngredient(ModItems.NEUTRON_REFLECTOR.get(), 2)
+                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "assembler/fat_man_explosive"));
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.FAT_MAN_IGNITER.get(), 1), 200, 100)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 3)
+                .addIngredient(ModItems.WIRE_GOLD.get(), 24)
+                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "assembler/fat_man_igniter"));
+
+        AssemblerRecipeBuilder.assemblerRecipe(  //TODO: WIP RECIPES, NEEDS REWORK WHEN FULL PROCESSING IS PORTED
+                        new ItemStack(ModItems.BALL_TNT.get(), 10), 80, 150)
+                .addIngredient(Ingredient.of(ModBlocks.FREAKY_ALIEN_BLOCK.get()), 1)
+                .addIngredient(ModItems.SULFUR.get(), 4)
+                .addIngredient(ModItems.getPowder(ModIngots.LEAD).get(), 4)
+                .save(writer, "ball_tnt");
+
+        AssemblerRecipeBuilder.assemblerRecipe(  //TODO: WIP RECIPES, NEEDS REWORK WHEN FULL PROCESSING IS PORTED
+                        new ItemStack(ModBlocks.NUKE_FAT_MAN.get(), 1), 80, 150)
+                .addIngredient(ModItems.PLATE_ADVANCED_ALLOY.get(), 16)
+                .addIngredient(ModItems.PLATE_IRON.get(), 40)
+                .addIngredient(ModItems.WIRE_COPPER.get(), 10)
+                .addIngredient(ModItems.getPowder(ModIngots.LEAD).get(), 4)
+                .save(writer, "nuke_fat_man");
+
+        AssemblerRecipeBuilder.assemblerRecipe(  //TODO: WIP RECIPES, NEEDS REWORK WHEN FULL PROCESSING IS PORTED
+                        new ItemStack(ModBlocks.NUKE_PROTOTYPE.get(), 1), 80, 150)
+                .addIngredient(ModItems.PLATE_ADVANCED_ALLOY.get(), 16)
+                .addIngredient(ModItems.PLATE_IRON.get(), 40)
+                .addIngredient(ModItems.WIRE_COPPER.get(), 10)
+                .addIngredient(ModItems.getPowder(ModIngots.LEAD).get(), 4)
+                .save(writer, "nuke_prototype");
+    }
 
     private static void registerCastPlateRecipes(Consumer<FinishedRecipe> writer) {
         // 2 regular plates → 1 cast plate (pressing / pouring into mold)
@@ -532,6 +577,26 @@ public final class AssemblerRecipeGenerator {
     }
 
     private static void registerMissileRecipes(Consumer<FinishedRecipe> writer) { // TODO: WIP RECIPES, NEEDS REWORK WHEN FULL PROCESSING IS PORTED
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.LAUNCH_PAD.get(), 1), 200, 100)
+                .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 6)
+                .addIngredient(Ingredient.of(ModBlocks.CONCRETE.get(),
+                                             Blocks.WHITE_CONCRETE), 64)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.POLYMER).get(),
+                        ModItems.getIngot(ModIngots.BAKELITE).get(),
+                        ModItems.PLATE_IRON.get()), 16)
+                .addIngredient(Ingredient.of(ModBlocks.DECO_STEEL_SCAFFOLD.get()), 24)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 2)
+                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "assembler/launch_pad"));
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.WARHEAD_GENERIC_MEDIUM.get(), 1), 200, 100)
+                .addIngredient(ModItems.PLATE_TITANIUM.get(), 8)
+                .addIngredient(ModItems.BALL_TNT.get(), 4)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 1)
+                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "assembler/warhead_generic_medium"));
+
         // Tier 0 — micro / ABM (cheap test crafts)
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.MISSILE_TEST.get(), 1), 60, 100)
@@ -638,14 +703,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(Items.GUNPOWDER, 4)
                 .save(writer, "missile_stealth");
 
-        // Tier 2 — strong
-        AssemblerRecipeBuilder.assemblerRecipe(
-                        new ItemStack(ModItems.MISSILE_STRONG.get(), 1), 100, 200)
-                .addIngredient(ModItems.PLATE_STEEL.get(), 6)
-                .addIngredient(ModItems.PLATE_TITANIUM.get(), 4)
-                .addIngredient(Items.GUNPOWDER, 12)
-                .addIngredient(ModItems.MOTOR.get(), 2)
-                .save(writer, "missile_strong");
+        // Tier 2 — strong (missile_strong собирается в дуговой сварке из warhead/fuel_tank/thruster)
 
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.MISSILE_INCENDIARY_STRONG.get(), 1), 100, 200)

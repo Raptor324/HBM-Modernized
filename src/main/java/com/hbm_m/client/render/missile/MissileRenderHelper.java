@@ -1,6 +1,6 @@
 package com.hbm_m.client.render.missile;
 
-import com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity;
+import com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity;
 import com.hbm_m.client.model.MissileBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.MeshRenderCache;

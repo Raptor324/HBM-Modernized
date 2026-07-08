@@ -17,19 +17,35 @@ import dev.architectury.registry.client.keymappings.KeyMappingRegistry;
 import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+//? if forge || neoforge {
+import net.minecraftforge.client.settings.KeyConflictContext;
+import net.minecraftforge.client.settings.KeyModifier;
+//?}
 
 public class ModConfigKeybindHandler {
     public static final String CATEGORY = "key.categories.hbm_m";
     private static boolean INITIALIZED = false;
 
-    public static final KeyMapping OPEN_CONFIG = new KeyMapping(
-            "key.hbm_m.open_config",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_0,
-            CATEGORY
-    );
+    public static final KeyMapping OPEN_CONFIG =
+    //? if forge || neoforge {
+            new KeyMapping(
+                    "key.hbm_m.open_config",
+                    KeyConflictContext.UNIVERSAL,
+                    KeyModifier.ALT,
+                    InputConstants.Type.KEYSYM,
+                    GLFW.GLFW_KEY_0,
+                    CATEGORY
+            );
+    //?} else {
+    /*        new KeyMapping(
+                    "key.hbm_m.open_config",
+                    InputConstants.Type.KEYSYM,
+                    GLFW.GLFW_KEY_0,
+                    CATEGORY
+            );*///?}
 
     public static final KeyMapping POWER_ARMOR_DASH = new KeyMapping(
             "key.hbm_m.power_armor_dash",
@@ -78,7 +94,11 @@ public class ModConfigKeybindHandler {
         if (mc.isPaused()) return;
 
         // Обработка открытия конфига
-        if (OPEN_CONFIG.consumeClick() && Screen.hasAltDown()) {
+        if (OPEN_CONFIG.consumeClick()
+        //? if fabric {
+                /*&& Screen.hasAltDown()
+        *///?}
+        ) {
             if (mc.screen == null) {
                 Screen configScreen = AutoConfig.getConfigScreen(ModClothConfig.class, mc.screen).get();
                 mc.setScreen(configScreen);

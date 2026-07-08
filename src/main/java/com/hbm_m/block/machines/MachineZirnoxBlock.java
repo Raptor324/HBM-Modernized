@@ -6,9 +6,10 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.MachineZirnoxBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineZirnoxBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.multiblock.MultiblockSideTuples;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 
@@ -59,44 +60,47 @@ public class MachineZirnoxBlock extends BaseEntityBlock implements IMultiblockCo
             "OOOOO"
         };
         String[] layerRing = {
-            ".OOO.",
-            "O...O",
-            "O...O",
-            "O...O",
-            ".OOO."
+            "OOOOO",
+            "OOOOO",
+            "FOOOF",
+            "OOOOO",
+            "OOOOO"
         };
         String[] layerCap = {
             ".....",
-            "..O..",
             ".OOO.",
-            "..O..",
+            "FOOOF",
+            ".OOO.",
+            "....."
+        };
+        String[] layerCap2 = {
+            ".....",
+            ".OOO.",
+            "OOOOO",
+            ".OOO.",
             "....."
         };
 
         Map<Character, PartRole> roleMap = Map.of(
-            'O', PartRole.FLUID_CONNECTOR,
+            'O', PartRole.DEFAULT,
+            'F', PartRole.FLUID_CONNECTOR,
             'C', PartRole.CONTROLLER
         );
 
-        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
-
-        Map<Character, VoxelShape> shapeMap = Map.of(
-            'C', Block.box(0, 0, 0, 16, 16, 16),
-            'O', Block.box(0, 0, 0, 16, 16, 16)
+        Map<Character, boolean[]> fluidSideMap = Map.of(
+            'C', MultiblockSideTuples.fluid(true, true, true, true, true, false),
+            'F', MultiblockSideTuples.fluid(true, true, true, true, true, false)
         );
 
-        Map<Character, VoxelShape> collisionMap = Map.of(
-            'C', Block.box(0, 0, 0, 16, 16, 16),
-            'O', Block.box(0, 0, 0, 16, 16, 16)
-        );
 
-        return MultiblockStructureHelper.createFromLayersWithRoles(
-            new String[][]{layerBase, layerRing, layerRing, layerCap},
-            symbolMap,
+        return MultiblockStructureHelper.createFromLayersWithRolesAndSides(
+            new String[][]{layerBase, layerRing, layerCap2, layerCap, layerCap2},
+            null,
             () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
             roleMap,
-            shapeMap,
-            collisionMap
+            null,
+            null,
+            fluidSideMap
         );
     }
 
@@ -135,11 +139,17 @@ public class MachineZirnoxBlock extends BaseEntityBlock implements IMultiblockCo
     }
 
     @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
+    }
+
+    @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
-        if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            getStructureHelper().placeStructure(level, pos, state.getValue(FACING), this);
+        if (state.is(oldState.getBlock()) || level.isClientSide()) {
+            return;
         }
+        placeMultiblockStructure(level, pos, state);
     }
 
     @Override
