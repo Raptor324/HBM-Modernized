@@ -9,8 +9,8 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
-import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
+import com.hbm_m.blockentity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.client.model.MachineChemicalPlantBakedModel;
 import com.hbm_m.client.model.ModelHelper;
@@ -204,7 +204,7 @@ public class MachineChemicalPlantVboRenderer {
     }
 
     private static final ResourceLocation CHEMPLANT_FLUID_TEX =
-        new ResourceLocation("hbm_m", "block/machine/chemical_plant_fluid");
+        ResourceLocation.fromNamespaceAndPath("hbm_m", "block/machine/chemical_plant_fluid");
 
     /**
      * Block translucent: depth write off (как {@code glDepthMask(false)} в 1.7.10), формат BLOCK для baked quads.

@@ -7,8 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.interfaces.IFrameSupportable;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.interfaces.IMultiblockSidedIO;
@@ -49,19 +49,13 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     /** Рама видима, когда над верхним поясом мультиблока есть блоки. В BlockState для Iris/chunk mesh. */
     public static final BooleanProperty FRAME = BooleanProperty.create("frame");
-    /**
-     * true - идёт «работа» (крафт); animated части только в BER, в baked только Base+Frame.
-     * false - простой: Slider+Spinner запекаются в baked (idle). Пока крафта нет - всегда false.
-     */
-    public static final BooleanProperty RENDER_ACTIVE = BooleanProperty.create("render_active");
     private final MultiblockStructureHelper structureHelper;
 
     public MachineChemicalPlantBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any()
             .setValue(FACING, Direction.NORTH)
-            .setValue(FRAME, false)
-            .setValue(RENDER_ACTIVE, false));
+            .setValue(FRAME, false));
         this.structureHelper = defineStructure();
     }
 
@@ -73,20 +67,20 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
         // E = Energy connector (can receive power from cables)
         // A = Default structural part
         // C = Controller (the main block)
-        String[] layer0 = { "FCF",
-                            "FAF",
-                            "FFF" 
+        String[] layer0 = { "FFF",
+                            "FCF",
+                            "FFF"
                         };
 
         String[] layer1 = { "AAA",
                             "AAA",
-                            "AAA" 
-                        }; // Средний
+                            "AAA"
+                        };
 
         String[] layer2 = { "AAA",
                             "AAA",
-                            "AAA" 
-                        }; // Верхний
+                            "AAA"
+                        };
 
         Map<Character, PartRole> roleMap = Map.of(
             'A', PartRole.DEFAULT,
@@ -126,21 +120,22 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!level.isClientSide() && !state.is(oldState.getBlock())) {
+            BlockPos core = placeMultiblockStructure(level, pos, state);
+            if (core == null) {
+                return;
+            }
             Direction facing = state.getValue(FACING);
-            structureHelper.placeStructure(level, pos, facing, this);
 
-            // Register the controller itself as energy node (required for receiving energy)
-            EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
+            EnergyNetworkManager.get((ServerLevel) level).addNode(core);
 
-            // Register energy connector parts as additional energy nodes
             for (BlockPos localPos : structureHelper.getStructureMap().keySet()) {
                 if (getPartRole(localPos).canReceiveEnergy()) {
-                    BlockPos worldPos = structureHelper.getRotatedPos(pos, localPos, facing);
+                    BlockPos worldPos = structureHelper.getRotatedPos(core, localPos, facing);
                     EnergyNetworkManager.get((ServerLevel) level).addNode(worldPos);
                 }
             }
 
-            if (level.getBlockEntity(pos) instanceof IFrameSupportable frameSupportable) {
+            if (level.getBlockEntity(core) instanceof IFrameSupportable frameSupportable) {
                 frameSupportable.checkForFrame();
             }
         }
@@ -213,13 +208,18 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
 
     @Nullable
     @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
+    }
+
+    @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING, FRAME, RENDER_ACTIVE);
+        builder.add(FACING, FRAME);
     }
 
     @Nullable

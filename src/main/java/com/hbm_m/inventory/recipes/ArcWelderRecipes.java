@@ -89,12 +89,12 @@ public class ArcWelderRecipes {
                 item(new ItemStack(ModItems.WIRE_ALUMINIUM.get(), 4)),
                 item(new ItemStack(ModItems.PLATE_STEEL.get(), 4))));
 
-        recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.FUEL_TANK_MEDIUM.get()), 200, 10_000L,
+        recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.FUEL_TANK_MEDIUM.get()), 100, 2_000L,
                 item(new ItemStack(ModBlocks.DECO_STEEL_SCAFFOLD.get().asItem(), 12)),
                 item(new ItemStack(ModItems.PLATE_TITANIUM.get(), 8)),
                 item(new ItemStack(ModItems.PLATE_CAST_ALUMINIUM.get(), 4))));
 
-        recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.THRUSTER_MEDIUM.get()), 200, 5_000L,
+        recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.THRUSTER_MEDIUM.get()), 100, 2_000L,
                 item(new ItemStack(ModItems.getIngot(ModIngots.GRAPHITE).get(), 8)),
                 item(new ItemStack(ModItems.MOTOR.get())),
                 item(new ItemStack(ModItems.PLATE_STEEL.get(), 8))));
@@ -159,7 +159,7 @@ public class ArcWelderRecipes {
                 item(new ItemStack(ModItems.FUEL_TANK_SMALL.get())),
                 item(new ItemStack(ModItems.WARHEAD_CLUSTER_SMALL.get()))));
 
-        recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.MISSILE_STRONG.get()), 100, 5_000L,
+        recipes.add(new ArcWelderRecipe(new ItemStack(ModItems.MISSILE_STRONG.get()), 200, 10_000L,
                 item(new ItemStack(ModItems.THRUSTER_MEDIUM.get())),
                 item(new ItemStack(ModItems.FUEL_TANK_MEDIUM.get())),
                 item(new ItemStack(ModItems.WARHEAD_GENERIC_MEDIUM.get()))));

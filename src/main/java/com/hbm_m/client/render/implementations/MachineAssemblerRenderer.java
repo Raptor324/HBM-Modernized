@@ -7,8 +7,8 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
-import com.hbm_m.block.entity.machines.MachineAssemblerBlockEntity;
 import com.hbm_m.block.machines.MachineAssemblerBlock;
+import com.hbm_m.blockentity.machines.MachineAssemblerBlockEntity;
 import com.hbm_m.client.model.MachineAssemblerBakedModel;
 import com.hbm_m.client.model.ModelHelper;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
@@ -225,8 +225,6 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
                                PoseStack poseStack,
                                MultiBufferSource bufferSource) {
         var state = be.getBlockState();
-        boolean renderActive = state.hasProperty(MachineAssemblerBlock.RENDER_ACTIVE)
-                && state.getValue(MachineAssemblerBlock.RENDER_ACTIVE);
 
         Direction facing = getFacing(be);
         BlockPos blockPos = be.getBlockPos();
@@ -255,17 +253,7 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         if (staticFade < 0) return;
         SingleMeshVboRenderer.setFadeAlpha(staticFade);
 
-        // Источник статической геометрии: VBO/Iris путь vs baked-model путь.
-        boolean useVboGeometry = ShaderCompatibilityDetector.useVboGeometry();
-        if (useVboGeometry) {
-            renderWithVBO(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource);
-        } else if (renderActive && be.isCrafting()) {
-            // Шейдеры + работает: baked рисует Base, BER дорисовывает подвижные части через putBulkData.
-            renderAnimatedWithBulkData(model, animator, be, partialTick);
-        } else {
-            // Шейдеры + idle: всё в baked-model, BER ничего не делает.
-            return;
-        }
+        renderWithVBO(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource);
     }
 
     @Override
@@ -460,9 +448,7 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
 
     // Root transform from machine_assembler.json shifts model by (1,0,2); cog center is there, not at origin.
     private static final float ROOT_TX = 1f, ROOT_TZ = 2f;
-    // Position offset to place cogs in slots: VBO vs baked use different coordinate systems.
     private static final float VBO_COG_OFFSET_X = 1f, VBO_COG_OFFSET_Z = 2f;
-    private static final double BAKED_COG_OFFSET_X = 0.5, BAKED_COG_OFFSET_Z = 1.5;
 
     private static final float[][] COG_IDLE_POSITIONS = {
             {-0.6f, 0.75f, 1.0625f},
@@ -495,60 +481,6 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         } else {
             gpu.renderAnimatedPart(pose, blockLight, partName, transform, blockPos, be, bufferSource);
         }
-    }
-
-    private void renderAnimatedWithBulkData(MachineAssemblerBakedModel model,
-                                            LegacyAnimator animator,
-                                            MachineAssemblerBlockEntity be,
-                                            float pt) {
-        if (shouldSkipAnimatedRender(be.getBlockPos())) return;
-
-        boolean isActive = be.isCrafting();
-        if (!isActive) return;
-
-        long time = System.currentTimeMillis();
-
-        long t = (time % 5000) / 5;
-        int offset = (int) (t > 500 ? 500 - (t - 500) : t);
-        float sliderX = offset * 0.003f - 0.75f;
-
-        double swayRaw = (time % 2000) / 2.0;
-        float sway = (float) Math.sin(swayRaw / Math.PI / 50);
-        float armZ = sway * 0.3f;
-
-        float cogRotation = (float) ((time % (360L * 5)) / 5.0);
-
-        renderPartBulk(animator, model, "Slider", sliderX, 0, 0, 0);
-        renderPartBulk(animator, model, "Arm", sliderX, 0, armZ, 0);
-        renderPartBulk(animator, model, "Cog", -0.6, 0.75, 1.0625, -cogRotation);
-        renderPartBulk(animator, model, "Cog", 0.6, 0.75, 1.0625, cogRotation);
-        renderPartBulk(animator, model, "Cog", -0.6, 0.75, -1.0625, -cogRotation);
-        renderPartBulk(animator, model, "Cog", 0.6, 0.75, -1.0625, cogRotation);
-    }
-
-    private void renderPartBulk(LegacyAnimator animator, MachineAssemblerBakedModel model, String partName,
-                                double x, double y, double z, float rotZDeg) {
-        BakedModel part = model.getPart(partName);
-        if (part == null) return;
-        var quads = MeshRenderCache.getOrCompile("assembler_legacy_" + partName, part);
-        if (quads == null || quads.isEmpty()) return;
-
-        animator.push();
-        // Keep orientation consistent with VBO path (90 deg clockwise).
-        animator.translate(0.5, 0.0, 0.5);
-        animator.rotate(-90, 0, 1, 0);
-        animator.translate(-0.5, 0.0, -0.5);
-
-        animator.translate(x, y, z);
-        if (rotZDeg != 0) {
-            animator.translate(BAKED_COG_OFFSET_X, 0.0, BAKED_COG_OFFSET_Z);  // Cog slot offset
-            animator.rotate(rotZDeg, 0, 0, 1);
-            animator.translate(-ROOT_TX, 0.0, -ROOT_TZ);  // Compensate root transform for cog pivot
-        } else {
-            animator.translate(-0.5, 0.0, -0.5);  // Slider/Arm block-space centering
-        }
-        animator.renderQuads(quads);
-        animator.pop();
     }
 
     // ==================== RECIPE ICON ====================

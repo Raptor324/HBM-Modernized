@@ -5,6 +5,7 @@ import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.logic.EntityNukeExplosionMK5;
 import com.hbm_m.explosion.command.ExplosionCommandOptions;
 import com.hbm_m.particle.helper.NukeTorexCreator;
+import com.hbm_m.util.WorldUtil;
 import com.hbm_m.util.explosions.nuclear.NuclearExplosionHelper;
 
 import net.minecraft.core.BlockPos;
@@ -20,7 +21,7 @@ public final class NuclearExplosionAPI {
     private NuclearExplosionAPI() {}
 
     /** Радиус по умолчанию для Fat Man, если в конфиге не задан. */
-    private static final int DEFAULT_FAT_MAN_RADIUS = 50;
+    private static final int DEFAULT_FAT_MAN_RADIUS = 35;
 
     /**
      * Запускает ядерный взрыв по конфигу. Вызывать на сервере; визуал гриба на клиенте - отдельно через NukeTorexCreator.
@@ -87,7 +88,7 @@ public final class NuclearExplosionAPI {
             NuclearExplosionHelper.playStandardDetonationSound((ServerLevel) level, x, y, z);
         }
 
-        level.addFreshEntity(entity);
+        WorldUtil.loadAndSpawnEntityInWorld(entity);
         return entity;
     }
 

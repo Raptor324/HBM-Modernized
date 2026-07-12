@@ -1,6 +1,6 @@
 package com.hbm_m.client.sound;
 
-import com.hbm_m.block.entity.machines.MachineIndustrialTurbineBlockEntity;
+import com.hbm_m.blockentity.machines.MachineIndustrialTurbineBlockEntity;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;

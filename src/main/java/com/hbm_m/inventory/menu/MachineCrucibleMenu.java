@@ -1,7 +1,7 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.machines.MachineCrucibleBlockEntity;
+import com.hbm_m.blockentity.machines.MachineCrucibleBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 
 import net.minecraft.network.FriendlyByteBuf;

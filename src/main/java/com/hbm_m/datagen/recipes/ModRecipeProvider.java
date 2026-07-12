@@ -82,6 +82,26 @@ public class ModRecipeProvider extends RecipeProvider {
             }
         }
 
+        // Fallout (1.7.10 MineralRecipes: block_fallout ↔ fallout, ковёр из 2 pile)
+        ShapedRecipeBuilder.shaped(net.minecraft.data.recipes.RecipeCategory.MISC, ModBlocks.BLOCK_FALLOUT.get())
+                .pattern("###")
+                .pattern("###")
+                .pattern("###")
+                .define('#', ModItems.FALLOUT.get())
+                .unlockedBy("has_fallout", has(ModItems.FALLOUT.get()))
+                .save(pWriter, "block_fallout_from_fallout");
+
+        ShapelessRecipeBuilder.shapeless(net.minecraft.data.recipes.RecipeCategory.MISC, ModItems.FALLOUT.get(), 9)
+                .requires(ModBlocks.BLOCK_FALLOUT.get())
+                .unlockedBy("has_block_fallout", has(ModBlocks.BLOCK_FALLOUT.get()))
+                .save(pWriter, "fallout_from_block_fallout");
+
+        ShapedRecipeBuilder.shaped(net.minecraft.data.recipes.RecipeCategory.MISC, ModBlocks.NUCLEAR_FALLOUT.get(), 2)
+                .pattern("##")
+                .define('#', ModItems.FALLOUT.get())
+                .unlockedBy("has_fallout", has(ModItems.FALLOUT.get()))
+                .save(pWriter, "nuclear_fallout_from_fallout");
+
         // Delegate vanilla-style recipes so they share a single RecipeProvider registration.
         new ModVanillaRecipeProvider(this.packOutput).registerVanillaRecipes(pWriter);
     }

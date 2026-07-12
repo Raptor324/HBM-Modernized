@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.menu;
 
-import com.hbm_m.block.entity.machines.rbmk.RBMKControlBlockEntity;
+import com.hbm_m.blockentity.machines.rbmk.RBMKControlBlockEntity;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;

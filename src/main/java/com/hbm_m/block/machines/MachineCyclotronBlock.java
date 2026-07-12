@@ -6,9 +6,10 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.MachineCyclotronBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineCyclotronBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.multiblock.MultiblockSideTuples;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 
@@ -47,25 +48,19 @@ public class MachineCyclotronBlock extends BaseEntityBlock implements IMultibloc
     public MachineCyclotronBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-        this.structureHelper = defineStructure();
+        this.structureHelper = defineStructureNew();
     }
 
-    private static MultiblockStructureHelper defineStructure() {
-        String[] layerBase = {
-            "OOOOO",
-            "OOOOO",
-            "OOCOO",
-            "OOOOO",
-            "OOOOO"
+    private static MultiblockStructureHelper defineStructureNew() {
+        // GIT MachineCyclotron: 5×5×5 solid core + outer ring connectors at y=0
+        String[] layer0 = {
+            "OBBBO",
+            "BOOOB",
+            "BOCOB",
+            "BOOOB",
+            "OBBBO"
         };
-        String[] layerRing = {
-            "OOOOO",
-            "OOOOO",
-            "OOOOO",
-            "OOOOO",
-            "OOOOO"
-        };
-        String[] layerCap = {
+        String[] layerSolid = {
             "OOOOO",
             "OOOOO",
             "OOOOO",
@@ -75,28 +70,29 @@ public class MachineCyclotronBlock extends BaseEntityBlock implements IMultibloc
 
         Map<Character, PartRole> roleMap = Map.of(
             'O', PartRole.DEFAULT,
+            'B', PartRole.UNIVERSAL_CONNECTOR,
             'C', PartRole.CONTROLLER
         );
 
         Map<Character, Supplier<BlockState>> symbolMap = Map.of();
 
-        Map<Character, VoxelShape> shapeMap = Map.of(
-            'C', Block.box(0, 0, 0, 16, 16, 16),
-            'O', Block.box(0, 0, 0, 16, 16, 16)
+        Map<Character, boolean[]> energySideMap = Map.of(
+            'B', MultiblockSideTuples.energy(true, true, true, true, true, false),
+            'C', MultiblockSideTuples.energy(true, true, true, true, true, false)
+        );
+        Map<Character, boolean[]> fluidSideMap = Map.of(
+            'B', MultiblockSideTuples.fluid(true, true, true, true, true, false),
+            'C', MultiblockSideTuples.fluid(true, true, true, true, true, false)
         );
 
-        Map<Character, VoxelShape> collisionMap = Map.of(
-            'C', Block.box(0, 0, 0, 16, 16, 16),
-            'O', Block.box(0, 0, 0, 16, 16, 16)
-        );
-
-        return MultiblockStructureHelper.createFromLayersWithRoles(
-            new String[][]{layerBase, layerRing, layerRing, layerCap},
+        return MultiblockStructureHelper.createFromLayersWithRolesAndSides(
+            new String[][]{layer0, layerSolid, layerSolid, layerSolid, layerSolid},
             symbolMap,
             () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
             roleMap,
-            shapeMap,
-            collisionMap
+            null,
+            energySideMap,
+            fluidSideMap
         );
     }
 
@@ -138,8 +134,17 @@ public class MachineCyclotronBlock extends BaseEntityBlock implements IMultibloc
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            getStructureHelper().placeStructure(level, pos, state.getValue(FACING), this);
+            BlockPos core = placeMultiblockStructure(level, pos, state);
+            if (core == null) {
+                return;
+            }
         }
+    }
+
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
     }
 
     @Override
@@ -152,7 +157,7 @@ public class MachineCyclotronBlock extends BaseEntityBlock implements IMultibloc
 
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!level.isClientSide) {
+        if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider menuProvider) {
                 MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));

@@ -136,7 +136,7 @@ public class FluidBarrelItem extends Item {
         if (tag != null && tag.contains(NBT_FLUID)) {
             CompoundTag fluidTag = tag.getCompound(NBT_FLUID);
             // Читаем напрямую по ключам, чтобы избежать проблем с разными форматами Architectury
-            Fluid f = BuiltInRegistries.FLUID.get(new ResourceLocation(fluidTag.getString("id")));
+            Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.parse(fluidTag.getString("id")));
             long amount = fluidTag.getLong("amount");
 
             if (f != Fluids.EMPTY && amount > 0) {

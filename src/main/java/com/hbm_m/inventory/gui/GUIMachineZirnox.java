@@ -1,6 +1,6 @@
 package com.hbm_m.inventory.gui;
 
-import com.hbm_m.block.entity.machines.MachineZirnoxBlockEntity;
+import com.hbm_m.blockentity.machines.MachineZirnoxBlockEntity;
 import com.hbm_m.inventory.menu.MachineZirnoxMenu;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.ZirnoxControlPacket;
@@ -68,7 +68,7 @@ public class GUIMachineZirnox extends GuiInfoScreen<MachineZirnoxMenu> {
             this.drawInfoPanel(guiGraphics, -16, 68, PanelType.LARGE_RED_EXCLAMATION);
         }
 
-        if (zirnox.carbonDioxide < 4000) {
+        if (zirnox.co2Tank.getFill() < 4000) {
             this.drawInfoPanel(guiGraphics, -16, 84, PanelType.LARGE_RED_EXCLAMATION);
         }
     }
@@ -119,7 +119,7 @@ public class GUIMachineZirnox extends GuiInfoScreen<MachineZirnoxMenu> {
         drawCustomInfoStat(guiGraphics, mouseX, mouseY,
                 142, 108, 18, 12,
                 this.leftPos + 160, this.topPos + 108,
-                Component.literal("CO2: " + zirnox.carbonDioxide + "/" + MachineZirnoxBlockEntity.CO2_MAX));
+                Component.literal("CO2: " + zirnox.co2Tank.getFill() + "/" + MachineZirnoxBlockEntity.CO2_MAX));
 
         drawCustomInfoStat(guiGraphics, mouseX, mouseY,
                 178, 108, 18, 12,
@@ -135,7 +135,7 @@ public class GUIMachineZirnox extends GuiInfoScreen<MachineZirnoxMenu> {
                     Component.literal("   Reactor damage risk is rising."));
         }
 
-        if (zirnox.carbonDioxide < 4000) {
+        if (zirnox.co2Tank.getFill() < 4000) {
             drawCustomInfoStat(guiGraphics, mouseX, mouseY,
                     -16, 84, 16, 16,
                     this.leftPos - 8, this.topPos + 100,

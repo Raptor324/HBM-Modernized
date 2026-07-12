@@ -1,7 +1,7 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
-import com.hbm_m.block.entity.machines.MachineZirnoxBlockEntity;
+import com.hbm_m.blockentity.machines.MachineZirnoxBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.lib.RefStrings;

@@ -36,7 +36,7 @@ public class AJRArmorModelLoader extends AbstractObjPartModelLoader<AJRArmorBake
     protected AJRArmorBakedModel createBakedModel(HashMap<String, BakedModel> bakedParts,
                                                   ItemTransforms transforms,
                                                   ResourceLocation modelLocation) {
-        return new AJRArmorBakedModel(bakedParts, transforms);
+        return new AJRArmorBakedModel(bakedParts, transforms, AbstractArmorBakedModel.resolveItemArmorType(modelLocation));
     }
 
     @Override

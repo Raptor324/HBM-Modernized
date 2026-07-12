@@ -1,6 +1,6 @@
 package com.hbm_m.inventory.gui;
 
-import com.hbm_m.block.entity.machines.MachineSilexBlockEntity;
+import com.hbm_m.blockentity.machines.MachineSilexBlockEntity;
 import com.hbm_m.inventory.menu.MachineSilexMenu;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;

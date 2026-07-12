@@ -1,10 +1,11 @@
 package com.hbm_m.handler.rbmk;
 
-import com.hbm_m.block.entity.machines.rbmk.RBMKColumnBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
 import java.util.*;
+
+import com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity;
 
 public class NeutronNodeWorld {
 

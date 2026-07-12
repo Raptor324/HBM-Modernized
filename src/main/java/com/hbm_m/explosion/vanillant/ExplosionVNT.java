@@ -9,10 +9,15 @@ import com.hbm_m.explosion.vanillant.standard.BlockMutatorFire;
 import com.hbm_m.explosion.vanillant.standard.BlockProcessorStandard;
 import com.hbm_m.explosion.vanillant.standard.EntityProcessorStandard;
 import com.hbm_m.explosion.vanillant.standard.ExplosionEffectStandard;
+import com.hbm_m.radiation.ChunkRadiationManager;
+
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -79,6 +84,18 @@ public class ExplosionVNT {
 
         if (processBlocks) {
             blockProcessor.process(this, level, x, y, z, affectedBlocks);
+            if (level instanceof ServerLevel serverLevel && affectedBlocks != null) {
+                HashSet<ChunkPos> affectedChunks = new HashSet<>();
+                for (BlockPos pos : affectedBlocks) {
+                    affectedChunks.add(new ChunkPos(pos));
+                }
+                for (ChunkPos chunkPos : affectedChunks) {
+                    if (serverLevel.hasChunk(chunkPos.x, chunkPos.z)) {
+                        LevelChunk chunk = serverLevel.getChunk(chunkPos.x, chunkPos.z);
+                        ChunkRadiationManager.getProxy().recalculateChunkRadiation(chunk);
+                    }
+                }
+            }
         }
 
         if (sfx != null) {

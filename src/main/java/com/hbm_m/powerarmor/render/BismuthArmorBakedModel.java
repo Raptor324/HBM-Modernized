@@ -36,13 +36,13 @@ public class BismuthArmorBakedModel extends AbstractArmorBakedModel {
 
     private static final BismuthModelConfig CONFIG = new BismuthModelConfig();
 
-    public BismuthArmorBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms) {
-        super(parts, transforms, CONFIG);
+    public BismuthArmorBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms, @org.jetbrains.annotations.Nullable ArmorItem.Type itemArmorType) {
+        super(parts, transforms, CONFIG, itemArmorType);
     }
 
     @Override
     public BismuthArmorBakedModel withTransforms(ItemTransforms newTransforms) {
-        return new BismuthArmorBakedModel(this.parts, newTransforms);
+        return new BismuthArmorBakedModel(this.parts, newTransforms, this.itemArmorType);
     }
 
     private static class BismuthModelConfig implements IArmorModelConfig {

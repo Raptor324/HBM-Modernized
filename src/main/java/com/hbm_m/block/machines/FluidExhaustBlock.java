@@ -2,8 +2,8 @@ package com.hbm_m.block.machines;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.FluidExhaustBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.FluidExhaustBlockEntity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;

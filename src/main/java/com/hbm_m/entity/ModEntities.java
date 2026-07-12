@@ -296,8 +296,8 @@ public class ModEntities {
                     () -> EntityType.Builder.<com.hbm_m.entity.projectile.ClusterRocketEntity>of(
                                     com.hbm_m.entity.projectile.ClusterRocketEntity::new, MobCategory.MISC)
                             .sized(0.25F, 0.25F)
-                            .clientTrackingRange(4)
-                            .updateInterval(10)
+                            .clientTrackingRange(64)
+                            .updateInterval(1)
                             .build("cluster_rocket"));
 
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.logic.EmpPulseEntity>> EMP_PULSE =
@@ -317,6 +317,42 @@ public class ModEntities {
                             .clientTrackingRange(256)
                             .updateInterval(1)
                             .build("black_hole"));
+
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.RubbleEntity>> RUBBLE =
+            ENTITY_TYPES.register("rubble",
+                    () -> EntityType.Builder.<com.hbm_m.entity.projectile.RubbleEntity>of(
+                                    com.hbm_m.entity.projectile.RubbleEntity::new, MobCategory.MISC)
+                            .sized(0.25F, 0.25F)
+                            .clientTrackingRange(64)
+                            .updateInterval(3)
+                            .build("rubble"));
+
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.effect.VortexEntity>> VORTEX =
+            ENTITY_TYPES.register("vortex",
+                    () -> EntityType.Builder.<com.hbm_m.entity.effect.VortexEntity>of(
+                                    com.hbm_m.entity.effect.VortexEntity::new, MobCategory.MISC)
+                            .sized(1.0F, 1.0F)
+                            .clientTrackingRange(256)
+                            .updateInterval(1)
+                            .build("vortex"));
+
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.effect.RagingVortexEntity>> RAGING_VORTEX =
+            ENTITY_TYPES.register("raging_vortex",
+                    () -> EntityType.Builder.<com.hbm_m.entity.effect.RagingVortexEntity>of(
+                                    com.hbm_m.entity.effect.RagingVortexEntity::new, MobCategory.MISC)
+                            .sized(1.0F, 1.0F)
+                            .clientTrackingRange(256)
+                            .updateInterval(1)
+                            .build("raging_vortex"));
+
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.effect.QuasarEntity>> DIGAMMA_QUASAR =
+            ENTITY_TYPES.register("digamma_quasar",
+                    () -> EntityType.Builder.<com.hbm_m.entity.effect.QuasarEntity>of(
+                                    com.hbm_m.entity.effect.QuasarEntity::new, MobCategory.MISC)
+                            .sized(1.0F, 1.0F)
+                            .clientTrackingRange(256)
+                            .updateInterval(1)
+                            .build("digamma_quasar"));
 
     /** Tracking range in chunks; server multiplies by 16 for blocks (see ChunkMap.TrackedEntity). */
     private static final int MISSILE_TRACKING_CHUNKS = 512;

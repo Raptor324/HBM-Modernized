@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.jetbrains.annotations.NotNull;
 
-import com.hbm_m.block.entity.bomb.NukeFatManBlockEntity;
+import com.hbm_m.blockentity.bomb.NukeFatManBlockEntity;
 import com.hbm_m.inventory.menu.NukeFatManMenu;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;

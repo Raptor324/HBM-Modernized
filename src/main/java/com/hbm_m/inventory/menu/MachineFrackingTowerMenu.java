@@ -2,7 +2,7 @@ package com.hbm_m.inventory.menu;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.entity.machines.MachineFrackingTowerBlockEntity;
+import com.hbm_m.blockentity.machines.MachineFrackingTowerBlockEntity;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.platform.ModItemStackHandler;
 

@@ -1,6 +1,6 @@
 package com.hbm_m.client.render.implementations;
 
-import com.hbm_m.block.entity.machines.SU47TrophyBlockEntity;
+import com.hbm_m.blockentity.machines.SU47TrophyBlockEntity;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;

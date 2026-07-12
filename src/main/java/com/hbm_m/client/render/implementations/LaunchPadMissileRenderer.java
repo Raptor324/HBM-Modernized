@@ -1,6 +1,6 @@
 package com.hbm_m.client.render.implementations;
 
-import com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity;
+import com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity;
 import com.hbm_m.client.render.missile.MissileRenderData;
 import com.hbm_m.client.render.missile.MissileRenderRegistry;
 import com.hbm_m.client.render.shader.IrisRenderBatch;

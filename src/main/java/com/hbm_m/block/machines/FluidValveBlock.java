@@ -2,7 +2,7 @@ package com.hbm_m.block.machines;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.entity.machines.FluidValveBlockEntity;
+import com.hbm_m.blockentity.machines.FluidValveBlockEntity;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
 
 import net.minecraft.core.BlockPos;

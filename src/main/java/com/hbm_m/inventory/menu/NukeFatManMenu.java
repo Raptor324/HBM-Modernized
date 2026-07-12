@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.menu;
 
-import com.hbm_m.block.entity.bomb.NukeFatManBlockEntity;
+import com.hbm_m.blockentity.bomb.NukeFatManBlockEntity;
+
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;

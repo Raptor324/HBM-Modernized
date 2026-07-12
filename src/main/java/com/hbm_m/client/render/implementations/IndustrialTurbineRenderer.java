@@ -1,7 +1,7 @@
 package com.hbm_m.client.render.implementations;
 
 
-import com.hbm_m.block.entity.machines.MachineIndustrialTurbineBlockEntity;
+import com.hbm_m.blockentity.machines.MachineIndustrialTurbineBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.renderer.MultiBufferSource;

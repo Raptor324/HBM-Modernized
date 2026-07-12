@@ -59,7 +59,7 @@ public class AirNukeBombProjectileEntityRenderer extends EntityRenderer<AirNukeB
 
     @Override
     public ResourceLocation getTextureLocation(AirNukeBombProjectileEntity entity) {
-        return new ResourceLocation("minecraft", "textures/block/iron_block.png");
+        return ResourceLocation.withDefaultNamespace("textures/block/iron_block.png");
     }
 }
 

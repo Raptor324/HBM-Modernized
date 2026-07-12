@@ -44,6 +44,16 @@ public final class IrisBufferHelper {
     }
 
     /**
+     * {@code begin} без расширения Iris — для {@code POSITION_TEX_COLOR} и прочих immediate-draw путей.
+     */
+    public static void beginWithoutExtending(BufferBuilder buffer, VertexFormat.Mode mode, VertexFormat format) {
+        if (tryIrisBeginWithoutExtending(buffer, mode, format)) {
+            return;
+        }
+        buffer.begin(mode, format);
+    }
+
+    /**
      * Универсальный begin с отключением Iris-расширения при необходимости.
      * Для BLOCK/NEW_ENTITY/POSITION_COLOR_TEX_LIGHTMAP вызывает iris$beginWithoutExtending.
      * <p>
@@ -55,34 +65,40 @@ public final class IrisBufferHelper {
             buffer.begin(mode, format);
             return;
         }
-        boolean usedIris = tryIrisBeginWithoutExtending(buffer, getGlMode(mode), format);
-        if (usedIris) return;
+        if (tryIrisBeginWithoutExtending(buffer, mode, format)) {
+            return;
+        }
         buffer.begin(mode, format);
     }
 
     private static int getGlMode(VertexFormat.Mode mode) {
         return switch (mode) {
-            case QUADS -> 7;           // GL_QUADS
-            case TRIANGLES -> 4;       // GL_TRIANGLES
-            case LINES -> 1;           // GL_LINES
-            case LINE_STRIP -> 3;      // GL_LINE_STRIP
-            case TRIANGLE_STRIP -> 5; // GL_TRIANGLE_STRIP
-            case TRIANGLE_FAN -> 6;   // GL_TRIANGLE_FAN
+            case QUADS -> GL_QUADS;
+            case TRIANGLES -> 4;
+            case LINES -> 1;
+            case LINE_STRIP -> 3;
+            case TRIANGLE_STRIP -> 5;
+            case TRIANGLE_FAN -> 6;
             default -> GL_QUADS;
         };
     }
 
-    private static boolean tryIrisBeginWithoutExtending(BufferBuilder buffer, int drawMode, VertexFormat vertexFormat) {
-        // --- Oculus ---
+    private static boolean tryIrisBeginWithoutExtending(BufferBuilder buffer, VertexFormat.Mode drawMode, VertexFormat vertexFormat) {
+        // --- Iris / Oculus (1.20+) ---
         if (!irisChecked) {
             irisChecked = true;
-            try {
-                Class<?> iface = Class.forName("net.coderbot.iris.vertices.ExtendingBufferBuilder");
-                if (iface.isInstance(buffer)) {
-                    irisBeginWithoutExtending = iface.getMethod("iris$beginWithoutExtending", int.class, VertexFormat.class);
+            for (String className : new String[]{
+                    "net.irisshaders.iris.vertices.ExtendingBufferBuilder",
+                    "net.coderbot.iris.vertices.ExtendingBufferBuilder"
+            }) {
+                try {
+                    Class<?> iface = Class.forName(className);
+                    if (iface.isInstance(buffer)) {
+                        irisBeginWithoutExtending = iface.getMethod("iris$beginWithoutExtending", VertexFormat.Mode.class, VertexFormat.class);
+                        break;
+                    }
+                } catch (ClassNotFoundException | NoSuchMethodException ignored) {
                 }
-            } catch (ClassNotFoundException | NoSuchMethodException ignored) {
-                // Oculus не установлен
             }
         }
         if (irisBeginWithoutExtending != null) {
@@ -94,35 +110,29 @@ public final class IrisBufferHelper {
         }
 
         // --- Connector / Forgified Fabric API (FFAPI) ---
-        // FFAPI тоже расширяет BufferBuilder через mixin для FRAPI, но под другим классом.
-        // Проверяем по тому же интерфейсу (iris$beginWithoutExtending), который FFAPI тоже реализует
-        // через свой compat-слой, либо по собственному классу Connector.
+        int glMode = getGlMode(drawMode);
         if (!connectorChecked) {
             connectorChecked = true;
             try {
-                // Forgified Fabric API / Connector reuses the same mixin interface name
                 Class<?> iface = Class.forName("com.sinytra.forgified_fabric_api.fabric.mixin.renderer.indigo.MixinBufferBuilder");
                 if (iface.isInstance(buffer)) {
                     connectorBeginWithoutExtending = iface.getMethod("iris$beginWithoutExtending", int.class, VertexFormat.class);
                 }
             } catch (ClassNotFoundException | NoSuchMethodException ignored) {
-                // FFAPI-специфичный класс не найден - пробуем общий Fabric Renderer v1
             }
             if (connectorBeginWithoutExtending == null) {
                 try {
-                    // Альтернативный путь: Connector может объявлять тот же mixin через интерфейс FRAPI
                     Class<?> iface = Class.forName("link.infra.indium.renderer.render.ExtendingBufferBuilder");
                     if (iface.isInstance(buffer)) {
                         connectorBeginWithoutExtending = iface.getMethod("iris$beginWithoutExtending", int.class, VertexFormat.class);
                     }
                 } catch (ClassNotFoundException | NoSuchMethodException ignored) {
-                    // Indium тоже не установлен
                 }
             }
         }
         if (connectorBeginWithoutExtending != null) {
             try {
-                connectorBeginWithoutExtending.invoke(buffer, drawMode, vertexFormat);
+                connectorBeginWithoutExtending.invoke(buffer, glMode, vertexFormat);
                 return true;
             } catch (Exception ignored) {
             }

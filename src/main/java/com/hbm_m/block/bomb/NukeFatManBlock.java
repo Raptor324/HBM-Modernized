@@ -2,18 +2,18 @@ package com.hbm_m.block.bomb;
 
 import java.util.Map;
 
-import dev.architectury.registry.menu.MenuRegistry;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.bomb.IBomb;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.bomb.NukeFatManBlockEntity;
+import com.hbm_m.blockentity.bomb.NukeFatManBlockEntity;
 import com.hbm_m.explosion.NuclearExplosionAPI;
 import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
@@ -63,7 +63,10 @@ public class NukeFatManBlock extends BaseEntityBlock implements IMultiblockContr
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
         super.onPlace(state, level, pos, oldState, movedByPiston);
         if (!level.isClientSide && !state.is(oldState.getBlock())) {
-            structureHelper.placeStructure(level, pos, state.getValue(FACING), this);
+            BlockPos core = placeMultiblockStructure(level, pos, state);
+            if (core == null) {
+                return;
+            }
         }
         if (level.hasNeighborSignal(pos)) {
             explode(level, pos);
@@ -75,6 +78,12 @@ public class NukeFatManBlock extends BaseEntityBlock implements IMultiblockContr
         if (!level.isClientSide && level.getBlockState(pos).getBlock() == this && level.hasNeighborSignal(pos)) {
             explode(level, pos);
         }
+    }
+
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
     }
 
     @Override

@@ -7,10 +7,13 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.hbm_m.handler.HazmatRegistry;
+import com.hbm_m.block.generic.BlockHazardFalling;
+import com.hbm_m.block.generic.BlockSellafieldSlaked;
 import com.hbm_m.hazard.modifier.HazardModifier;
 import com.hbm_m.hazard.type.HazardTypeBase;
 
 import net.minecraft.tags.TagKey;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -166,7 +169,49 @@ public final class HazardSystem {
         if (state.isAir() || state.getBlock().asItem() == Items.AIR) {
             return 0.0f;
         }
-        return getHazardLevelFromStack(new ItemStack(state.getBlock()), hazard);
+        float fromItem = getHazardLevelFromStack(new ItemStack(state.getBlock()), hazard);
+        if (fromItem > 0.0f) {
+            return fromItem;
+        }
+        if (hazard == HazardRegistry.RADIATION && state.hasProperty(BlockSellafieldSlaked.COLOR_LEVEL)) {
+            return sellafiteRadiationForLevel(state.getValue(BlockSellafieldSlaked.COLOR_LEVEL));
+        }
+        return 0.0f;
+    }
+
+    /**
+     * Вклад блока в {@code blockRad} чанка. В 1.7.10 {@code ChunkRadiationHandlerSimple} не суммирует блоки:
+     * ambient пополняют только {@code BlockHazard#updateTick} / {@code incrementRad} (горячий sellafite, fallout…).
+     * Sellafite slaked — контактный hazard для сущностей, не источник фоновой радиации чанка.
+     */
+    public static float getBlockChunkRadiationSumContribution(BlockState state) {
+        if (state.isAir()) {
+            return 0f;
+        }
+        Block block = state.getBlock();
+        if (block instanceof BlockSellafieldSlaked) {
+            return 0f;
+        }
+        if (block instanceof BlockHazardFalling) {
+            return 0f;
+        }
+        return 0f;
+    }
+
+    /** GIT HazardRegistry sellafield meta 0–5; уровни 6–10 — горячий центр кратера (fallout color_level). */
+    public static float sellafiteRadiationForLevel(int level) {
+        level = Mth.clamp(level, 0, 10);
+        if (level <= 5) {
+            return switch (level) {
+                case 0 -> 0.5f;
+                case 1 -> 1.0f;
+                case 2 -> 2.5f;
+                case 3 -> 4.0f;
+                case 4 -> 5.0f;
+                default -> 10.0f;
+            };
+        }
+        return 10.0f + (level - 5) * 5.0f;
     }
 
     /**

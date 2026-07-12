@@ -9,6 +9,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import com.hbm_m.client.ClientRenderHandler;
+import com.hbm_m.client.render.ImmediateVertexWriter;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.powerarmor.PowerArmorClientState;
 import com.hbm_m.sound.ModSounds;
@@ -22,7 +23,6 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -111,7 +111,7 @@ public class NukeTorex extends ParticleNT {
             cloudlets.add(cloud);
         }
 
-        if (age < 200 && cloudlets.size() < maxCloudlets) {
+        if (age < 150 && cloudlets.size() < maxCloudlets) {
             int cloudCount = age * 5;
             int shockLife = Math.max(300 - age * 20, 50);
 
@@ -416,9 +416,6 @@ public class NukeTorex extends ParticleNT {
             double r = (prev.x + (color.x - prev.x) * partialTicks) * greying;
             double g = (prev.y + (color.y - prev.y) * partialTicks) * greying;
             double b = (prev.z + (color.z - prev.z) * partialTicks) * greying;
-            r = Mth.clamp(r, 0, 1);
-            g = Mth.clamp(g, 0, 1);
-            b = Mth.clamp(b, 0, 1);
             return new Vec3(r, g, b);
         }
 
@@ -462,10 +459,7 @@ public class NukeTorex extends ParticleNT {
         localPose.translate(this.x - camPos.x, this.y - camPos.y, this.z - camPos.z);
 
         FogRenderer.setupNoFog();
-        MultiBufferSource.BufferSource buffer = Minecraft.getInstance().renderBuffers().bufferSource();
-        cloudletWrapper(partialTicks, localPose, buffer);
-        //  Сбрасываем только свой тип
-        // buffer.endBatch(ClientRenderHandler.CustomRenderTypes.NUKE_CLOUDS.apply(CLOUDLET));
+        cloudletWrapper(partialTicks, localPose, ignored);
 
         long now = System.currentTimeMillis();
         if (this.age < 10 && now - PowerArmorClientState.flashTimestamp > 1_000) {
@@ -495,8 +489,22 @@ public class NukeTorex extends ParticleNT {
         flashWrapper(partialTicks, localPose, buffer);
     }
 
-    private void cloudletWrapper(float partialTicks, PoseStack poseStack, MultiBufferSource buffer) {
-        VertexConsumer consumer = buffer.getBuffer(ClientRenderHandler.CustomRenderTypes.NUKE_CLOUDS.apply(CLOUDLET));
+    private void flashWrapper(float partialTicks, PoseStack poseStack, MultiBufferSource buffer) {
+        double age = Math.min(this.age + partialTicks, 100);
+        float alpha = (float) ((100 - age) / 100F);
+        Random rand = new Random(this.hashCode());
+        Matrix4f matrix = poseStack.last().pose();
+
+        VertexConsumer consumer = buffer.getBuffer(ClientRenderHandler.CustomRenderTypes.NUKE_FLASH.apply(FLASH));
+        for (int i = 0; i < 3; i++) {
+            float lx = (float) (rand.nextGaussian() * 0.5 * this.rollerSize);
+            float ly = (float) (rand.nextGaussian() * 0.5 * this.rollerSize);
+            float lz = (float) (rand.nextGaussian() * 0.5 * this.rollerSize);
+            renderFlash(matrix, consumer, lx, (float) (ly + this.coreHeight), lz, (float) (25 * this.rollerSize), alpha);
+        }
+    }
+
+    private void cloudletWrapper(float partialTicks, PoseStack poseStack, VertexConsumer consumer) {
         Matrix4f matrix = poseStack.last().pose();
         for (Cloudlet cloudlet : cloudlets) {
             Vec3 vec = cloudlet.getInterpPos(partialTicks);
@@ -507,59 +515,28 @@ public class NukeTorex extends ParticleNT {
         }
     }
 
-    private void flashWrapper(float partialTicks, PoseStack poseStack, MultiBufferSource buffer) {
-        VertexConsumer consumer = buffer.getBuffer(ClientRenderHandler.CustomRenderTypes.NUKE_FLASH.apply(FLASH));
-        double age = Math.min(this.age + partialTicks, 100);
-        float alpha = (float) ((100 - age) / 100F);
-        Random rand = new Random(this.hashCode());
-        Matrix4f matrix = poseStack.last().pose();
-        for (int i = 0; i < 3; i++) {
-            float lx = (float) (rand.nextGaussian() * 0.5 * this.rollerSize);
-            float ly = (float) (rand.nextGaussian() * 0.5 * this.rollerSize);
-            float lz = (float) (rand.nextGaussian() * 0.5 * this.rollerSize);
-            renderFlash(matrix, consumer, lx, (float) (ly + this.coreHeight), lz, (float) (25 * this.rollerSize), alpha);
-        }
-    }
-
     private void renderCloudlet(Matrix4f matrix, VertexConsumer consumer, float posX, float posY, float posZ, Cloudlet cloud, float partialTicks) {
         float alpha = cloud.getAlpha();
         float scale = cloud.getScale();
         Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
-        Vector3f leftV = camera.getLeftVector();
-        Vector3f upV = camera.getUpVector();
-        Vector3f l = new Vector3f(leftV).mul(scale);
-        Vector3f u = new Vector3f(upV).mul(scale);
+        Vector3f l = new Vector3f(camera.getLeftVector()).mul(scale);
+        Vector3f u = new Vector3f(camera.getUpVector()).mul(scale);
         float brightness = cloud.type == TorexType.CONDENSATION ? 0.9F : 0.75F * cloud.colorMod;
         Vec3 interpColor = cloud.getInterpColor(partialTicks);
         float r = (float) interpColor.x * brightness;
         float g = (float) interpColor.y * brightness;
         float b = (float) interpColor.z * brightness;
-        int overlay = OverlayTexture.NO_OVERLAY;
-        int light = 240;
-        consumer.vertex(matrix, posX - l.x - u.x, posY - l.y - u.y, posZ - l.z - u.z).color(r, g, b, alpha).uv(1, 1).overlayCoords(overlay).uv2(light).normal(0, 1, 0).endVertex();
-        consumer.vertex(matrix, posX - l.x + u.x, posY - l.y + u.y, posZ - l.z + u.z).color(r, g, b, alpha).uv(1, 0).overlayCoords(overlay).uv2(light).normal(0, 1, 0).endVertex();
-        consumer.vertex(matrix, posX + l.x + u.x, posY + l.y + u.y, posZ + l.z + u.z).color(r, g, b, alpha).uv(0, 0).overlayCoords(overlay).uv2(light).normal(0, 1, 0).endVertex();
-        consumer.vertex(matrix, posX + l.x - u.x, posY + l.y - u.y, posZ + l.z - u.z).color(r, g, b, alpha).uv(0, 1).overlayCoords(overlay).uv2(light).normal(0, 1, 0).endVertex();
+        ImmediateVertexWriter.billboardQuad(consumer, matrix, posX, posY, posZ, l, u, r, g, b, alpha, 0, 0, 1, 1);
     }
 
     private void renderFlash(Matrix4f matrix, VertexConsumer consumer,
             float posX, float posY, float posZ,
             float scale, float alpha) {
-        //  Те же camera-векторы, что и у cloudlet - гарантированно корректный billboard
         Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
         Vector3f r = new Vector3f(camera.getLeftVector()).mul(scale);
         Vector3f u = new Vector3f(camera.getUpVector()).mul(scale);
-
-        int overlay = OverlayTexture.NO_OVERLAY;
-
-        consumer.vertex(matrix, posX - r.x - u.x, posY - r.y - u.y, posZ - r.z - u.z)
-        .color(1, 1, 1, alpha).uv(1, 1).overlayCoords(overlay).uv2(240).normal(0, 1, 0).endVertex();
-        consumer.vertex(matrix, posX - r.x + u.x, posY - r.y + u.y, posZ - r.z + u.z)
-        .color(1, 1, 1, alpha).uv(1, 0).overlayCoords(overlay).uv2(240).normal(0, 1, 0).endVertex();
-        consumer.vertex(matrix, posX + r.x + u.x, posY + r.y + u.y, posZ + r.z + u.z)
-        .color(1, 1, 1, alpha).uv(0, 0).overlayCoords(overlay).uv2(240).normal(0, 1, 0).endVertex();
-        consumer.vertex(matrix, posX + r.x - u.x, posY + r.y - u.y, posZ + r.z - u.z)
-        .color(1, 1, 1, alpha).uv(0, 1).overlayCoords(overlay).uv2(240).normal(0, 1, 0).endVertex();
+        ImmediateVertexWriter.billboardQuad(consumer, matrix, posX, posY, posZ, r, u,
+                1.0F, 1.0F, 1.0F, alpha, 0, 0, 1, 1);
     }
 
     @Override

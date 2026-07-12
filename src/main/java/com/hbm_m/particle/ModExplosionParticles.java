@@ -10,7 +10,7 @@ import net.minecraft.core.registries.Registries;
 
 /**
  *  ВСЕ ЧАСТИЦЫ теперь как ИСКРЫ - видны на 256+ блоков!
- * Все используют alwaysShow=true + AbstractExplosionParticle + LongRangeParticleRenderType
+ * Все используют alwaysShow=true + AbstractExplosionParticle + FullBrightParticleRenderType
  */
 public class ModExplosionParticles {
 

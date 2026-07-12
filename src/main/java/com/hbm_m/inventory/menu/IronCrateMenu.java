@@ -2,7 +2,7 @@ package com.hbm_m.inventory.menu;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.machines.crates.CrateType;
-import com.hbm_m.block.entity.crates.IronCrateBlockEntity;
+import com.hbm_m.blockentity.crates.IronCrateBlockEntity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;

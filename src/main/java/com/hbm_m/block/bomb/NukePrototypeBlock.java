@@ -1,14 +1,14 @@
 package com.hbm_m.block.bomb;
 
-import dev.architectury.registry.menu.MenuRegistry;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.bomb.IBomb;
-import com.hbm_m.block.entity.bomb.NukePrototypeBlockEntity;
+import com.hbm_m.blockentity.bomb.NukePrototypeBlockEntity;
 import com.hbm_m.explosion.command.ExplosionCommandOptions;
 import com.hbm_m.explosion.command.NuclearScenarioLaunchers;
 import com.hbm_m.interfaces.IDetonatable;
 
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;

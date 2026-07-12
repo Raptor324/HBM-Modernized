@@ -2,7 +2,7 @@ package com.hbm_m.api.fluids;
 
 import java.util.Objects;
 
-import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
+import com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.multiblock.PartRole;

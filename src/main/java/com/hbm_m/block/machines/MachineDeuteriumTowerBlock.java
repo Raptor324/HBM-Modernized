@@ -1,12 +1,18 @@
 package com.hbm_m.block.machines;
 
-import javax.annotation.Nullable;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.MachineDeuteriumTowerBlockEntity;
+import java.util.Map;
+import java.util.function.Supplier;
+
+import org.jetbrains.annotations.Nullable;
+
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineDeuteriumTowerBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.multiblock.MultiblockSideTuples;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
-import com.hbm_m.multiblock.MultiblockStructureStubs;
 import com.hbm_m.multiblock.PartRole;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
@@ -16,6 +22,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
@@ -29,31 +36,64 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.network.NetworkHooks;
 
 public class MachineDeuteriumTowerBlock extends BaseEntityBlock implements IMultiblockController {
+
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     private final MultiblockStructureHelper structureHelper;
-    public MachineDeuteriumTowerBlock(BlockBehaviour.Properties p) {
-        super(p);
+
+    public MachineDeuteriumTowerBlock(BlockBehaviour.Properties properties) {
+        super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-        this.structureHelper = MultiblockStructureStubs.singleController();
+        this.structureHelper = defineStructureNew();
     }
-    @Override public RenderShape getRenderShape(BlockState s) { return RenderShape.MODEL; }
-    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> b) { b.add(FACING); }
-    @Nullable @Override public BlockState getStateForPlacement(BlockPlaceContext c) { return this.defaultBlockState().setValue(FACING, c.getHorizontalDirection().getOpposite()); }
-    @Override public void onRemove(BlockState s, Level l, BlockPos p, BlockState ns, boolean m) {
-        if (s.getBlock() != ns.getBlock()) { BlockEntity be = l.getBlockEntity(p); if (be != null) be.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(h -> { for (int i = 0; i < h.getSlots(); i++) Containers.dropItemStack(l, p.getX(), p.getY(), p.getZ(), h.getStackInSlot(i)); }); }
-        super.onRemove(s, l, p, ns, m);
-    }
-    @Nullable @Override public BlockEntity newBlockEntity(BlockPos p, BlockState s) { return new MachineDeuteriumTowerBlockEntity(p, s); }
-    @Override public InteractionResult use(BlockState s, Level l, BlockPos p, Player pl, InteractionHand h, BlockHitResult r) {
-        if (!l.isClientSide() && l.getBlockEntity(p) instanceof MenuProvider mp) NetworkHooks.openScreen((ServerPlayer) pl, mp, p);
-        return InteractionResult.sidedSuccess(l.isClientSide());
-    }
-    @Nullable @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level l, BlockState s, BlockEntityType<T> t) {
-        return createTickerHelper(t, ModBlockEntities.DEUTERIUM_TOWER_BE.get(), MachineDeuteriumTowerBlockEntity::tick);
+
+    private static MultiblockStructureHelper defineStructureNew() {
+        // GIT DeuteriumTower: 2×2×10 + base-corner fluid/power proxies
+        String[] layer0 = {
+            "BB",
+            "BC",
+            "OO"
+        };
+        String[] layerShaft = {
+            "OO",
+            "OO"
+        };
+
+        Map<Character, PartRole> roleMap = Map.of(
+            'C', PartRole.CONTROLLER,
+            'O', PartRole.DEFAULT,
+            'B', PartRole.UNIVERSAL_CONNECTOR
+        );
+
+        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
+
+        Map<Character, boolean[]> energySideMap = Map.of(
+            'B', MultiblockSideTuples.energy(true, true, true, true, true, false),
+            'C', MultiblockSideTuples.energy(true, true, true, true, true, false)
+        );
+        Map<Character, boolean[]> fluidSideMap = Map.of(
+            'B', MultiblockSideTuples.fluid(true, true, true, true, true, false),
+            'C', MultiblockSideTuples.fluid(true, true, true, true, true, false)
+        );
+
+        return MultiblockStructureHelper.createFromLayersWithRolesAndSides(
+            new String[][] {
+                layer0, layerShaft, layerShaft, layerShaft, layerShaft, layerShaft,
+                layerShaft, layerShaft, layerShaft, layerShaft
+            },
+            symbolMap,
+            () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
+            roleMap,
+            null,
+            energySideMap,
+            fluidSideMap
+        );
     }
 
     @Override
@@ -64,5 +104,79 @@ public class MachineDeuteriumTowerBlock extends BaseEntityBlock implements IMult
     @Override
     public PartRole getPartRole(BlockPos localOffset) {
         return structureHelper.resolvePartRole(localOffset, this);
+    }
+
+    @Override
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+        super.onPlace(state, level, pos, oldState, isMoving);
+        if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
+            BlockPos core = placeMultiblockStructure(level, pos, state);
+            if (core == null) {
+                return;
+            }
+        }
+    }
+
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
+    }
+
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (!state.is(newState.getBlock()) && !level.isClientSide()) {
+            structureHelper.destroyStructure(level, pos, state.getValue(FACING));
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be != null) {
+                be.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(h -> {
+                    for (int i = 0; i < h.getSlots(); i++) {
+                        Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), h.getStackInSlot(i));
+                    }
+                });
+            }
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return structureHelper.generateShapeFromParts(state.getValue(FACING));
+    }
+
+    @Override
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.MODEL;
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(FACING);
+    }
+
+    @Nullable
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+    }
+
+    @Nullable
+    @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new MachineDeuteriumTowerBlockEntity(pos, state);
+    }
+
+    @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider menu) {
+            NetworkHooks.openScreen((ServerPlayer) player, menu, pos);
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide());
+    }
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return createTickerHelper(type, ModBlockEntities.DEUTERIUM_TOWER_BE.get(), MachineDeuteriumTowerBlockEntity::tick);
     }
 }

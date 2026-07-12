@@ -1,6 +1,6 @@
 package com.hbm_m.inventory.menu;
 
-import com.hbm_m.block.entity.machines.MachineFelBlockEntity;
+import com.hbm_m.blockentity.machines.MachineFelBlockEntity;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.core.BlockPos;

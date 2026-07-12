@@ -59,7 +59,7 @@ public class AirBombProjectileEntityRenderer extends EntityRenderer<AirBombProje
 
     @Override
     public ResourceLocation getTextureLocation(AirBombProjectileEntity entity) {
-        return new ResourceLocation("minecraft", "textures/block/iron_block.png");
+        return ResourceLocation.withDefaultNamespace("textures/block/iron_block.png");
     }
 }
 

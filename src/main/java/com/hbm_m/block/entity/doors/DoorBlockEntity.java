@@ -4,7 +4,7 @@ package com.hbm_m.block.entity.doors;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.decorations.DoorBlock;
-import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.client.model.variant.DoorModelRegistry;
 import com.hbm_m.client.model.variant.DoorModelSelection;
 import com.hbm_m.client.model.variant.DoorModelType;
@@ -12,19 +12,13 @@ import com.hbm_m.client.model.variant.DoorSkin;
 import com.hbm_m.client.overlay.DoorAnimationDelayHelper;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 import com.hbm_m.interfaces.IMultiblockPart;
+import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.sound.ClientSoundBootstrap;
 
-// Forge-only model-data / distmarker imports intentionally removed for Fabric compilation.
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -38,7 +32,14 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-
+// Forge-only model-data / distmarker imports intentionally removed for Fabric compilation.
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;*///?}
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?}
 
 public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
     //? if fabric {
@@ -230,6 +231,26 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
             initModelSelection(true); // Новая дверь - применить default из конфига
         }
         syncToClient();
+    }
+
+    @Override
+    public void clearRemoved() {
+        super.clearRemoved();
+        if (level instanceof ServerLevel serverLevel && !serverLevel.isClientSide()) {
+            BlockPos pos = this.getBlockPos();
+            // Ставим тик-задачу на СЛЕДУЮЩИЙ тик, а не выполняем прямо сейчас
+            serverLevel.getServer().tell(new net.minecraft.server.TickTask(
+                    serverLevel.getServer().getTickCount() + 1,
+                    () -> {
+                        if (serverLevel.isLoaded(pos)) {
+                            BlockState state = serverLevel.getBlockState(pos);
+                            if (state.getBlock() instanceof IMultiblockController controller) {
+                                controller.getStructureHelper().attemptAutoRepair(serverLevel, pos, state, controller);
+                            }
+                        }
+                    }
+            ));
+        }
     }
 
     // ==================== Публичные методы ====================
@@ -503,10 +524,10 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
 
         for (BlockPos partPos : structureHelper.getAllPartPositions(controllerPos, facing)) {
             BlockState partState = level.getBlockState(partPos);
-            if (partState.hasProperty(com.hbm_m.block.machines.UniversalMachinePartBlock.PASSABLE)) {
-                boolean currentPassable = partState.getValue(com.hbm_m.block.machines.UniversalMachinePartBlock.PASSABLE);
+            if (partState.hasProperty(com.hbm_m.block.UniversalMachinePartBlock.PASSABLE)) {
+                boolean currentPassable = partState.getValue(com.hbm_m.block.UniversalMachinePartBlock.PASSABLE);
                 if (currentPassable != isOpen) {
-                    level.setBlock(partPos, partState.setValue(com.hbm_m.block.machines.UniversalMachinePartBlock.PASSABLE, isOpen), 2);
+                    level.setBlock(partPos, partState.setValue(com.hbm_m.block.UniversalMachinePartBlock.PASSABLE, isOpen), 2);
                 }
             }
             partState = level.getBlockState(partPos);

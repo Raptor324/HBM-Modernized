@@ -1,6 +1,6 @@
 package com.hbm_m.network;
 
-import com.hbm_m.block.entity.machines.MachineWoodBurnerBlockEntity;
+import com.hbm_m.blockentity.machines.MachineWoodBurnerBlockEntity;
 import com.hbm_m.network.C2SPacket;
 
 import dev.architectury.networking.NetworkManager.PacketContext;

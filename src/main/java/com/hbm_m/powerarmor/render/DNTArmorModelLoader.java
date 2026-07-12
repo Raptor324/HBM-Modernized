@@ -37,7 +37,7 @@ public class DNTArmorModelLoader extends AbstractObjPartModelLoader<DNTArmorBake
     protected DNTArmorBakedModel createBakedModel(HashMap<String, BakedModel> bakedParts,
                                                   ItemTransforms transforms,
                                                   ResourceLocation modelLocation) {
-        return new DNTArmorBakedModel(bakedParts, transforms);
+        return new DNTArmorBakedModel(bakedParts, transforms, AbstractArmorBakedModel.resolveItemArmorType(modelLocation));
     }
 
     @Override

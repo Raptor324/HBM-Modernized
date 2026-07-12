@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
+import com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
 
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -212,7 +212,7 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
         return this.data.get(2);
     }
 
-    /** Synced tank pressure (PU), same index as {@link com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity} ContainerData. */
+    /** Synced tank pressure (PU), same index as {@link com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity} ContainerData. */
     public int getPressure() {
         return this.data.get(5);
     }

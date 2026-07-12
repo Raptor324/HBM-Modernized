@@ -1,6 +1,6 @@
 package com.hbm_m.inventory.gui;
 
-import com.hbm_m.block.entity.machines.MachineCrucibleBlockEntity;
+import com.hbm_m.blockentity.machines.MachineCrucibleBlockEntity;
 import com.hbm_m.inventory.menu.MachineCrucibleMenu;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;

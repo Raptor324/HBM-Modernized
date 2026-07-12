@@ -1,6 +1,6 @@
 package com.hbm_m.inventory.gui;
 
-import com.hbm_m.block.entity.machines.rbmk.RBMKStorageBlockEntity;
+import com.hbm_m.blockentity.machines.rbmk.RBMKStorageBlockEntity;
 import com.hbm_m.inventory.menu.RBMKStorageMenu;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;

@@ -7,11 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.ImmutableMap;
 import com.hbm_m.block.ModBlocks;
-// Этот класс реализует блок пресса, который является контроллером мультиблочной структуры.
-// Пресс занимает 1x1x3 блока и использует вспомогательный класс MultiblockStructureHelper для управления своей структурой.
-// Контроллер отвечает за построение и разрушение структуры, а также за взаимодействие с игроком.
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.MachinePressBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachinePressBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -84,10 +81,18 @@ public class MachinePressBlock extends BaseEntityBlock implements IMultiblockCon
         super.onPlace(pState, pLevel, pPos, pOldState, pIsMoving);
         if (!pState.is(pOldState.getBlock())) {
             if (!pLevel.isClientSide) {
-                // Построить структуру частей для пресса
-                getStructureHelper().placeStructure(pLevel, pPos, pState.getValue(FACING), this);
+                BlockPos core = placeMultiblockStructure(pLevel, pPos, pState);
+                if (core == null) {
+                    return;
+                }
             }
         }
+    }
+
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
     }
 
     @Override

@@ -4,26 +4,49 @@ import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.PressRecipe;
 
+import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
+import mezz.jei.api.gui.builder.IRecipeSlotBuilder;
+import mezz.jei.api.gui.drawable.IDrawable;
+import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.helpers.IGuiHelper;
+import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
+import mezz.jei.api.recipe.category.IRecipeCategory;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
 /**
- * JEI category for press recipes (stamp + material -> output).
+ * JEI port of {@code PressRecipeHandler}.
  */
-public class PressJeiCategory extends JeiGenericRecipeCategory<PressRecipe> {
+public class PressJeiCategory implements IRecipeCategory<PressRecipe> {
 
     public static final RecipeType<PressRecipe> RECIPE_TYPE =
-            RecipeType.create(RefStrings.MODID, "press", PressRecipe.class);
+            RecipeType.create(RefStrings.MODID, "pressing", PressRecipe.class);
+
+    /** Stamp slot — {@code PositionedStack(stamp, 83 - 35, 6)} */
+    private static final int STAMP_X = 48;
+    private static final int STAMP_Y = 6;
+
+    /** Material slot — {@code PositionedStack(input, 83 - 35, 5 + 36 + 1)} */
+    private static final int MATERIAL_X = 48;
+    private static final int MATERIAL_Y = 42;
+
+    /** Output slot — {@code PositionedStack(result, 83 + 28, 5 + 18 + 1)} */
+    private static final int OUTPUT_X = 111;
+    private static final int OUTPUT_Y = 24;
+
+    private final IDrawable background;
+    private final IDrawable icon;
+    private final IDrawable itemSlotBackground;
 
     public PressJeiCategory(IGuiHelper guiHelper) {
-        super(guiHelper, new ItemStack[]{
-                new ItemStack(ModItems.PRESS.get())
-        });
+        this.background = JeiPressTextures.createRecipeBackground(guiHelper);
+        this.itemSlotBackground = JeiPressTextures.createItemSlotBackground(guiHelper);
+        this.icon = guiHelper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(ModItems.PRESS.get()));
     }
 
     @Override
@@ -33,45 +56,50 @@ public class PressJeiCategory extends JeiGenericRecipeCategory<PressRecipe> {
 
     @Override
     public Component getTitle() {
-        return Component.translatable("block.hbm_m.press");
+        return Component.translatable("container.hbm_m.press");
     }
 
     @Override
-    protected int getInputCount(PressRecipe recipe) {
-        return recipe.getIngredients().size();
+    @SuppressWarnings("removal")
+    public IDrawable getBackground() {
+        return background;
     }
 
     @Override
-    protected int getOutputCount(PressRecipe recipe) {
-        return 1;
+    public IDrawable getIcon() {
+        return icon;
     }
 
     @Override
-    protected boolean hasBlueprintTemplate(PressRecipe recipe) {
-        return false;
+    public int getWidth() {
+        return JeiPressTextures.RECIPE_WIDTH;
     }
 
     @Override
-    protected void addInputSlots(IRecipeLayoutBuilder builder, PressRecipe recipe, int inputXOffset) {
-        var ingredients = recipe.getIngredients();
-        int[][] positions = JeiNeiLayout.getGenericInputSlotPositions(ingredients.size());
-
-        for (int i = 0; i < ingredients.size() && i < positions.length; i++) {
-            Ingredient ingredient = ingredients.get(i);
-            var slot = addItemSlot(builder, RecipeIngredientRole.INPUT, positions[i][0] + inputXOffset, positions[i][1]);
-            JeiIngredientSlots.addCountedIngredient(slot, ingredient, 1);
-        }
+    public int getHeight() {
+        return JeiPressTextures.RECIPE_HEIGHT;
     }
 
     @Override
-    protected void addOutputSlots(IRecipeLayoutBuilder builder, PressRecipe recipe, int outputXOffset) {
-        int[][] positions = JeiNeiLayout.getGenericOutputSlotPositions(1);
-        addItemSlot(builder, RecipeIngredientRole.OUTPUT, positions[0][0] + outputXOffset, positions[0][1])
+    public void setRecipe(IRecipeLayoutBuilder builder, PressRecipe recipe, IFocusGroup focuses) {
+        Ingredient stamp = recipe.getIngredients().get(0);
+        Ingredient material = recipe.getIngredients().get(1);
+
+        addItemSlot(builder, RecipeIngredientRole.INPUT, STAMP_X, STAMP_Y)
+                .addIngredients(stamp);
+        addItemSlot(builder, RecipeIngredientRole.INPUT, MATERIAL_X, MATERIAL_Y)
+                .addIngredients(material);
+        addItemSlot(builder, RecipeIngredientRole.OUTPUT, OUTPUT_X, OUTPUT_Y)
                 .addItemStack(recipe.getResultItem(null));
     }
 
     @Override
-    protected void addBlueprintSlot(IRecipeLayoutBuilder builder, PressRecipe recipe, int machineXOffset) {
-        // No blueprint slot for press recipes.
+    public void draw(PressRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphics guiGraphics,
+                     double mouseX, double mouseY) {
+        JeiPressRendering.drawProgressBar(guiGraphics);
+    }
+
+    private IRecipeSlotBuilder addItemSlot(IRecipeLayoutBuilder builder, RecipeIngredientRole role, int x, int y) {
+        return builder.addSlot(role, x, y).setBackground(itemSlotBackground, -1, -1);
     }
 }

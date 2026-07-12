@@ -1,6 +1,7 @@
 package com.hbm_m.event;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.bomb.LandmineBlock;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.sound.ModSounds;
 
@@ -33,6 +34,7 @@ public class BombDefuser {
 
     private static final List<RegistrySupplier<Block>> BOMBS = List.of(
             ModBlocks.MINE_AP,
+            ModBlocks.NAVAL_MINE,
             ModBlocks.MINE_FAT,
             ModBlocks.DUD_CONVENTIONAL,
             ModBlocks.DUD_SALTED,
@@ -54,6 +56,10 @@ public class BombDefuser {
             ModBlocks.MINE_AP, List.of(
                     new DropAmount(ModItems.PLATE_STEEL, 3),
                     new DropAmount(ModItems.BALL_TNT, 2)
+            ),
+            ModBlocks.NAVAL_MINE, List.of(
+                    new DropAmount(ModItems.PIPE_STEEL, 3),
+                    new DropAmount(ModItems.BALL_TNT, 24)
             ),
             ModBlocks.DUD_CONVENTIONAL, List.of(
                     new DropAmount(ModItems.PLATE_STEEL, 8),
@@ -90,8 +96,11 @@ public class BombDefuser {
                 serverPlayer.swing(hand, true);
             }
 
-            // Ломаем блок без ванильного дропа
+            // Ломаем блок без ванильного дропа (safeMode предотвращает детонацию)
+            boolean wasSafe = LandmineBlock.safeMode;
+            LandmineBlock.safeMode = true;
             level.destroyBlock(pos, false);
+            LandmineBlock.safeMode = wasSafe;
 
             // Звук
             playDefuseSound(level, pos);

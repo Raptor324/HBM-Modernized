@@ -10,6 +10,7 @@ public final class ParticleCreators {
 
     static {
         CREATORS.put("nuke", new NukeTorexCreator());
+        CREATORS.put("muke", new MukeParticleCreator());
         CREATORS.put("vomit", new VomitParticleCreator());
     }
 

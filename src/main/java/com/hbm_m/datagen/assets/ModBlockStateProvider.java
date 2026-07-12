@@ -5,6 +5,7 @@ import com.hbm_m.block.decorations.DoorBlock;
 // Провайдер генерации состояний блоков и моделей для блоков мода.
 // Используется в классе DataGenerators для регистрации.
 import com.hbm_m.block.generic.BlockAbsorber;
+import com.hbm_m.block.generic.BlockSellafieldSlaked;
 import com.hbm_m.block.machines.BlastFurnaceBlock;
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.machines.MachineAssemblerBlock;
@@ -27,6 +28,7 @@ import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraftforge.client.model.generators.BlockStateProvider;
+import net.minecraftforge.client.model.generators.ConfiguredModel;
 import net.minecraftforge.client.model.generators.ModelFile;
 import net.minecraftforge.client.model.generators.VariantBlockStateBuilder;
 import net.minecraftforge.common.data.ExistingFileHelper;
@@ -148,6 +150,30 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.SELLAFIELD_SLAKED1);
         blockWithItem(ModBlocks.SELLAFIELD_SLAKED2);
         blockWithItem(ModBlocks.SELLAFIELD_SLAKED3);
+        registerSellafieldSlaked(ModBlocks.SELLAFIELD_BEDROCK, "sellafield_bedrock");
+        registerSellafieldOre(ModBlocks.ORE_SELLAFIELD_DIAMOND, "sellafield_ore_diamond", "block/ore_overlay_diamond");
+        registerSellafieldOre(ModBlocks.ORE_SELLAFIELD_EMERALD, "sellafield_ore_emerald", "block/ore_overlay_emerald");
+        registerSellafieldOre(ModBlocks.ORE_SELLAFIELD_URANIUM_SCORCHED, "sellafield_ore_uranium_scorched", "block/ore_overlay_uranium_scorched");
+        registerSellafieldOre(ModBlocks.ORE_SELLAFIELD_SCHRABIDIUM, "sellafield_ore_schrabidium", "block/ore_overlay_schrabidium");
+        registerSellafieldOre(ModBlocks.ORE_SELLAFIELD_RADGEM, "sellafield_ore_radgem", "block/ore_overlay_radgem");
+        blockWithItem(ModBlocks.WASTE_TRINITITE);
+        blockWithItem(ModBlocks.WASTE_TRINITITE_RED);
+        simpleBlockWithItem(ModBlocks.WASTE_MYCELIUM.get(),
+                models().withExistingParent("waste_mycelium", mcLoc("block/block"))
+                        .texture("particle", modLoc("block/waste_earth_bottom"))
+                        .texture("bottom", modLoc("block/waste_earth_bottom"))
+                        .texture("top", modLoc("block/waste_mycelium_top"))
+                        .texture("side", modLoc("block/waste_mycelium_side"))
+                        .element()
+                        .from(0, 0, 0)
+                        .to(16, 16, 16)
+                        .face(Direction.DOWN).uvs(0, 0, 16, 16).texture("#bottom").cullface(Direction.DOWN).end()
+                        .face(Direction.UP).uvs(0, 0, 16, 16).texture("#top").cullface(Direction.UP).end()
+                        .face(Direction.NORTH).uvs(0, 0, 16, 16).texture("#side").cullface(Direction.NORTH).end()
+                        .face(Direction.SOUTH).uvs(0, 0, 16, 16).texture("#side").cullface(Direction.SOUTH).end()
+                        .face(Direction.WEST).uvs(0, 0, 16, 16).texture("#side").cullface(Direction.WEST).end()
+                        .face(Direction.EAST).uvs(0, 0, 16, 16).texture("#side").cullface(Direction.EAST).end()
+                        .end());
         blockWithItem(ModBlocks.FREAKY_ALIEN_BLOCK);
 
         // Connected textures blocks (настоящий CT рендерится через BakedModel wrapper).
@@ -162,7 +188,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // Модель для ядерных осадков
         // Эта функция автоматически создаст все 8 состояний высоты для блока
         // и свяжет их с моделями, которые выглядят как снег, но с вашей текстурой.
-        registerSnowLayerBlock(ModBlocks.NUCLEAR_FALLOUT, "nuclear_fallout");
+        registerFalloutLayerBlock(ModBlocks.NUCLEAR_FALLOUT, "nuclear_fallout");
+        registerFalloutBlock(ModBlocks.BLOCK_FALLOUT, "block_fallout", "nuclear_fallout");
 
         // === РЕГИСТРАЦИЯ ПАДАЮЩИХ БЛОКОВ СЕЛЛАФИТА ===
         // Turrets: echte Original-Modelle (Base statisch per Blockmodell, Carriage/Pitch-Gruppe per BER animiert
@@ -3421,26 +3448,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/waste_earth_bottom")
                 )
         );
-        simpleBlockWithItem(ModBlocks.WASTE_MYCELIUM.get(),
-                models().cubeBottomTop(
-                        ModBlocks.WASTE_MYCELIUM.getId().getPath(),
-                        modLoc("block/waste_mycelium_side"),
-                        modLoc("block/waste_mycelium_side"),
-                        modLoc("block/waste_mycelium_top")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.WASTE_TRINITITE.get(),
-                models().cubeAll(
-                        ModBlocks.WASTE_TRINITITE.getId().getPath(),
-                        modLoc("block/waste_trinitite")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.WASTE_TRINITITE_RED.get(),
-                models().cubeAll(
-                        ModBlocks.WASTE_TRINITITE_RED.getId().getPath(),
-                        modLoc("block/waste_trinitite_red")
-                )
-        );
         simpleBlockWithItem(ModBlocks.WATZ_COOLER.get(),
                 models().cubeBottomTop(
                         ModBlocks.WATZ_COOLER.getId().getPath(),
@@ -3638,38 +3645,30 @@ public class ModBlockStateProvider extends BlockStateProvider {
         ModelFile modelFile = models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath()));
         for (Direction facing : Direction.Plane.HORIZONTAL.stream().toArray(Direction[]::new)) {
             for (boolean frame : new boolean[] { false, true }) {
-                for (boolean renderActive : new boolean[] { false, true }) {
-                    builder.partialState()
-                        .with(MachineChemicalPlantBlock.FACING, facing)
-                        .with(MachineChemicalPlantBlock.FRAME, frame)
-                        .with(MachineChemicalPlantBlock.RENDER_ACTIVE, renderActive)
-                        .modelForState()
-                        .modelFile(modelFile)
-                        .addModel();
-                }
+                builder.partialState()
+                    .with(MachineChemicalPlantBlock.FACING, facing)
+                    .with(MachineChemicalPlantBlock.FRAME, frame)
+                    .modelForState()
+                    .modelFile(modelFile)
+                    .addModel();
             }
         }
     }
 
     private void registerAdvancedAssemblyMachineBlock(RegistrySupplier<? extends Block> blockObject) {
         VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
-        // Используем одну и ту же модель для всех состояний.
-        // Логика отображения (Baked vs BER) скрыта внутри самого MachineAdvancedAssemblerBakedModel.
+        // Используем одну модель для всех состояний; world render — только BER/VBO.
         ModelFile modelFile = models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath()));
         
         for (Direction facing : Direction.Plane.HORIZONTAL.stream().toArray(Direction[]::new)) {
             for (boolean frame : new boolean[]{false, true}) {
-                // Добавляем перебор состояния RENDER_ACTIVE
-                for (boolean renderActive : new boolean[]{false, true}) {
-                    builder.partialState()
-                        .with(MachineAdvancedAssemblerBlock.FACING, facing)
-                        .with(MachineAdvancedAssemblerBlock.FRAME, frame)
-                        .with(MachineAdvancedAssemblerBlock.RENDER_ACTIVE, renderActive)
-                        .modelForState()
-                        .modelFile(modelFile)
-                        .rotationY(getRotationY(facing))
-                        .addModel();
-                }
+                builder.partialState()
+                    .with(MachineAdvancedAssemblerBlock.FACING, facing)
+                    .with(MachineAdvancedAssemblerBlock.FRAME, frame)
+                    .modelForState()
+                    .modelFile(modelFile)
+                    .rotationY(getRotationY(facing))
+                    .addModel();
             }
         }
     }
@@ -3679,15 +3678,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
         ModelFile modelFile = models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath()));
 
         for (Direction facing : Direction.Plane.HORIZONTAL.stream().toArray(Direction[]::new)) {
-            for (boolean renderActive : new boolean[]{false, true}) {
-                builder.partialState()
-                        .with(MachineAssemblerBlock.FACING, facing)
-                        .with(MachineAssemblerBlock.RENDER_ACTIVE, renderActive)
-                        .modelForState()
-                        .modelFile(modelFile)
-                        .rotationY(getRotationY(facing))
-                        .addModel();
-            }
+            builder.partialState()
+                    .with(MachineAssemblerBlock.FACING, facing)
+                    .modelForState()
+                    .modelFile(modelFile)
+                    .rotationY(getRotationY(facing))
+                    .addModel();
         }
     }
 
@@ -3720,6 +3716,20 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 reg.get(),
                 models().getExistingFile(modLoc("block/machines/" + reg.getId().getPath()))
         ));
+    }
+
+    /** Тонкий слой осадков (не snow-layer с LAYERS). */
+    private void registerFalloutLayerBlock(RegistrySupplier<Block> block, String baseName) {
+        ResourceLocation texture = blockTexture(block.get());
+        ModelFile model = models().withExistingParent(baseName, mcLoc("block/snow_height2"))
+                .texture("texture", texture)
+                .texture("particle", texture);
+        simpleBlock(block.get(), model);
+    }
+
+    /** Полный блок fallout (1.7.10 block_fallout). */
+    private void registerFalloutBlock(RegistrySupplier<Block> block, String baseName, String textureName) {
+        simpleBlock(block.get(), models().cubeAll(baseName, modLoc("block/" + textureName)));
     }
 
     private void registerSnowLayerBlock(RegistrySupplier<Block> block, String baseName) {
@@ -3824,6 +3834,59 @@ public class ModBlockStateProvider extends BlockStateProvider {
             case EAST -> 90;
             default -> 0;
         };
+    }
+
+    private void registerSellafieldSlaked(RegistrySupplier<Block> blockObject, String modelBaseName) {
+        Block block = blockObject.get();
+        getVariantBuilder(block).forAllStatesExcept(state -> {
+            int variant = state.getValue(BlockSellafieldSlaked.VARIANT);
+            String modelName = modelBaseName + (variant == 0 ? "" : "_" + variant);
+            String texName = variant == 0 ? "sellafield_slaked" : "sellafield_slaked_" + variant;
+
+            ModelFile tintedModel = models().withExistingParent(modelName, mcLoc("block/cube"))
+                    .texture("particle", modLoc("block/" + texName))
+                    .texture("down", modLoc("block/" + texName))
+                    .texture("up", modLoc("block/" + texName))
+                    .texture("north", modLoc("block/" + texName))
+                    .texture("south", modLoc("block/" + texName))
+                    .texture("west", modLoc("block/" + texName))
+                    .texture("east", modLoc("block/" + texName))
+                    .element()
+                    .from(0, 0, 0).to(16, 16, 16)
+                    .allFaces((dir, face) -> face.texture("#" + dir.getName()).tintindex(0))
+                    .end();
+
+            return ConfiguredModel.builder().modelFile(tintedModel).build();
+        }, BlockSellafieldSlaked.COLOR_LEVEL);
+
+        simpleBlockItem(block, models().cubeAll(modelBaseName, modLoc("block/sellafield_slaked")));
+    }
+
+    private void registerSellafieldOre(RegistrySupplier<Block> blockObject, String baseName, String overlayTexture) {
+        Block block = blockObject.get();
+        getVariantBuilder(block).forAllStatesExcept(state -> {
+            int variant = state.getValue(BlockSellafieldSlaked.VARIANT);
+            String modelName = baseName + (variant == 0 ? "" : "_" + variant);
+            String baseTex = variant == 0 ? "sellafield_slaked" : "sellafield_slaked_" + variant;
+
+            ModelFile oreModel = models().withExistingParent(modelName, mcLoc("block/cube"))
+                    .renderType("cutout")
+                    .texture("base", modLoc("block/" + baseTex))
+                    .texture("overlay", modLoc(overlayTexture))
+                    .texture("particle", modLoc(overlayTexture))
+                    .element()
+                    .from(0, 0, 0).to(16, 16, 16)
+                    .allFaces((dir, face) -> face.texture("#base").tintindex(0))
+                    .end()
+                    .element()
+                    .from(0, 0, 0).to(16, 16, 16)
+                    .allFaces((dir, face) -> face.texture("#overlay"))
+                    .end();
+
+            return ConfiguredModel.builder().modelFile(oreModel).build();
+        }, BlockSellafieldSlaked.COLOR_LEVEL);
+
+        simpleBlockItem(block, models().cubeAll(blockObject.getId().getPath(), modLoc(overlayTexture)));
     }
 }
 //?}

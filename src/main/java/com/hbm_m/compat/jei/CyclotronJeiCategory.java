@@ -47,6 +47,7 @@ public class CyclotronJeiCategory implements IRecipeCategory<CyclotronJeiRecipe>
     }
 
     @Override
+    @SuppressWarnings("removal")
     public IDrawable getBackground() {
         return background;
     }

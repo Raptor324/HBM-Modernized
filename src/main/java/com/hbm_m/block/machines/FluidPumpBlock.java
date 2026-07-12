@@ -2,8 +2,8 @@ package com.hbm_m.block.machines;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.FluidPumpBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.FluidPumpBlockEntity;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
 
 import net.minecraft.core.BlockPos;

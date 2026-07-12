@@ -1,7 +1,7 @@
 package com.hbm_m.block.machines;
 
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.MachineFoundryBasinBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineFoundryBasinBlockEntity;
 import com.hbm_m.item.material.ItemCastMold;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;

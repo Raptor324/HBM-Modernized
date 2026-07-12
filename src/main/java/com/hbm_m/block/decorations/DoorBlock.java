@@ -7,10 +7,10 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.doors.DoorBlockEntity;
 import com.hbm_m.block.entity.doors.DoorDecl;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
+import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
@@ -341,11 +341,13 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         if (!level.isClientSide && !oldState.is(this)) {
-            Direction facing = state.getValue(FACING);
-            structureHelper.placeStructure(level, pos, facing, this);
-            BlockEntity be = level.getBlockEntity(pos);
+            BlockPos core = placeMultiblockStructure(level, pos, state);
+            if (core == null) {
+                return;
+            }
+            BlockEntity be = level.getBlockEntity(core);
             if (be instanceof DoorBlockEntity doorBE) {
-                doorBE.setControllerPos(pos);
+                doorBE.setControllerPos(core);
                 doorBE.onStructureFormed();
             }
         }

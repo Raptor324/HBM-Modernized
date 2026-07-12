@@ -37,7 +37,7 @@ public class BismuthArmorModelLoader extends AbstractObjPartModelLoader<BismuthA
     protected BismuthArmorBakedModel createBakedModel(HashMap<String, BakedModel> bakedParts,
                                                       ItemTransforms transforms,
                                                       ResourceLocation modelLocation) {
-        return new BismuthArmorBakedModel(bakedParts, transforms);
+        return new BismuthArmorBakedModel(bakedParts, transforms, AbstractArmorBakedModel.resolveItemArmorType(modelLocation));
     }
 
     @Override

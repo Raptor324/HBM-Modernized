@@ -1,8 +1,8 @@
 package com.hbm_m.client.render.implementations;
 
-import com.hbm_m.block.entity.machines.rbmk.RBMKColumnBlockEntity;
-import com.hbm_m.block.entity.machines.rbmk.RBMKColumnBlockEntity.ColumnType;
-import com.hbm_m.block.entity.machines.rbmk.RBMKRodBlockEntity;
+import com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity;
+import com.hbm_m.blockentity.machines.rbmk.RBMKRodBlockEntity;
+import com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity.ColumnType;
 import com.hbm_m.handler.rbmk.RBMKDials;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.vertex.PoseStack;

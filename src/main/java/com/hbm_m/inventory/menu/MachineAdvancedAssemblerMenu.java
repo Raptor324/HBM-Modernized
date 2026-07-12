@@ -3,7 +3,7 @@ package com.hbm_m.inventory.menu;
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity;
+import com.hbm_m.blockentity.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;

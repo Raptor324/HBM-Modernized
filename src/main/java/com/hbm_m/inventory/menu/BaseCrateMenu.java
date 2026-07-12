@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import com.hbm_m.block.machines.crates.CrateSlot;
 import com.hbm_m.block.machines.crates.CrateType;
 import com.hbm_m.block.machines.crates.CrateValidation;
-import com.hbm_m.block.entity.crates.BaseCrateBlockEntity;
+import com.hbm_m.blockentity.crates.BaseCrateBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 
 import net.minecraft.world.entity.player.Inventory;

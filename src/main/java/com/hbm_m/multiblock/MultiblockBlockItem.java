@@ -2,10 +2,7 @@ package com.hbm_m.multiblock;
 
 import com.hbm_m.interfaces.IMultiblockController;
 
-// Item для главного блока-контроллера мультиблочной структуры.
-// Выполняет проверку структуры перед установкой блока в мир. Если что-то мешает постройке, установка не происходит. Мешающие блоки выделяются красным.
-
-// import net.minecraft.core.BlockPos;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
@@ -14,52 +11,111 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
+/**
+ * Item для блока-контроллера мультиблока.
+ * При клике автоматически подменяет координаты установки на ядро.
+ */
 public class MultiblockBlockItem extends BlockItem {
 
     public MultiblockBlockItem(Block pBlock, Properties pProperties) {
         super(pBlock, pProperties);
-        // Проверяем, что переданный блок действительно является контроллером.
-        // Если нет, игра вылетит при запуске с понятной ошибкой.
         if (!(pBlock instanceof IMultiblockController)) {
             throw new IllegalArgumentException("MultiblockBlockItem can only be used with blocks that implement IMultiblockController!");
         }
     }
 
     @Override
-    protected boolean placeBlock(BlockPlaceContext pContext, BlockState pState) {
-        // Мы знаем, что наш блок реализует IMultiblockController, поэтому каст безопасен.
+    @Nullable
+    public BlockPlaceContext updatePlacementContext(BlockPlaceContext context) {
+        BlockPlaceContext vanillaContext = super.updatePlacementContext(context);
+        if (vanillaContext == null) {
+            return null;
+        }
+
+        BlockPlaceContext adjusted = shiftContextToCore(vanillaContext);
+        return adjusted != null ? adjusted : vanillaContext;
+    }
+
+    @Override
+    protected boolean placeBlock(BlockPlaceContext context, BlockState state) {
         IMultiblockController controller = (IMultiblockController) this.getBlock();
-        
-        Level level = pContext.getLevel();
-        Player player = pContext.getPlayer();
-        // BlockPos pos = pContext.getClickedPos();
-        
-        // Пытаемся получить направление из BlockState.
-        // Это делает код устойчивым к блокам, у которых может не быть свойства FACING.
-        if (!pState.hasProperty(HorizontalDirectionalBlock.FACING)) {
-            // Если у блока нет направления (например, это какая-то вертикальная структура),
-            // то дальнейшая логика не будет работать. Вы можете либо бросить ошибку,
-            // либо использовать направление по умолчанию. Для универсальности, мы можем просто
-            // прекратить выполнение, но для мультиблоков это маловероятно.
-            // Для простоты оставим как есть, но в будущем это можно доработать.
-        }
-        
-        if (!pState.hasProperty(HorizontalDirectionalBlock.FACING)) {
-            return false; // Вместо пустого if
-        }
-        
-        Direction facing = pState.getValue(HorizontalDirectionalBlock.FACING);
-        if (facing == null || facing.getAxis() == Direction.Axis.Y) {
-            // Защита от вертикальных направлений для горизонтальных структур
+        Level level = context.getLevel();
+        Player player = context.getPlayer();
+
+        if (!state.hasProperty(HorizontalDirectionalBlock.FACING)) {
             return false;
         }
 
-        // Выполняем проверку ДО вызова родительского метода placeBlock
-        if (controller.getStructureHelper().checkPlacement(level, pContext.getClickedPos(), facing, player)) {
-            return super.placeBlock(pContext, pState);
-        } else {
+        Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
+        if (facing.getAxis() == Direction.Axis.Y) {
             return false;
         }
+
+        BlockPos corePos = context.getClickedPos();
+        
+        if (!controller.getStructureHelper().checkPlacement(level, corePos, facing, player)) {
+            return false;
+        }
+
+        if (!level.getBlockState(corePos).canBeReplaced()) {
+            return false;
+        }
+
+        return super.placeBlock(context, state);
+    }
+
+    @Nullable
+    static BlockPlaceContext shiftContextToCore(BlockPlaceContext context) {
+        if (!(context.getItemInHand().getItem() instanceof BlockItem blockItem)) {
+            return null;
+        }
+        Block block = blockItem.getBlock();
+        if (!(block instanceof IMultiblockController controller)) {
+            return null;
+        }
+
+        BlockState preview = block.getStateForPlacement(context);
+        if (preview == null || !preview.hasProperty(HorizontalDirectionalBlock.FACING)) {
+            return null;
+        }
+
+        Direction facing = preview.getValue(HorizontalDirectionalBlock.FACING);
+        if (facing.getAxis() == Direction.Axis.Y) {
+            return null;
+        }
+
+        MultiblockStructureHelper helper = controller.getStructureHelper();
+        if (helper == null) {
+            return null;
+        }
+
+        BlockPos facadePos = context.getClickedPos();
+        
+        // Используем offset из контроллера с фоллбеком на хелпер
+        int offset = controller.getOffset();
+        if (offset < 0) {
+            offset = helper.getPlacementOffset();
+        }
+        
+        BlockPos corePos = MultiblockPlacement.getCorePos(facadePos, facing, offset);
+        if (corePos.equals(facadePos)) {
+            return null;
+        }
+
+        return new BlockPlaceContext(
+                context.getPlayer(),
+                context.getHand(),
+                context.getItemInHand(),
+                new BlockHitResult(
+                        Vec3.atCenterOf(corePos),
+                        context.getClickedFace(),
+                        corePos,
+                        context.isInside()
+                )
+        );
     }
 }

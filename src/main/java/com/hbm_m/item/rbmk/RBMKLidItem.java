@@ -1,6 +1,7 @@
 package com.hbm_m.item.rbmk;
 
-import com.hbm_m.block.entity.machines.rbmk.RBMKColumnBlockEntity;
+import com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;

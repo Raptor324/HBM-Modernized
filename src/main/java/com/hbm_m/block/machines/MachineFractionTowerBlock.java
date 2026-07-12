@@ -6,8 +6,8 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.MachineFractionTowerBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineFractionTowerBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -51,19 +51,27 @@ public class MachineFractionTowerBlock extends BaseEntityBlock implements IMulti
     }
 
     private static MultiblockStructureHelper defineStructure() {
-        String[] layer0 = { "C" };
-        String[] layer1 = { "O" };
-        String[] layer2 = { "O" };
+        String[] layer0 = { 
+            "OCO",
+            "FOF",
+            "OFO"
+         };
+        String[] layers = { 
+            "OOO",
+            "OOO",
+            "OOO"
+        };
 
         Map<Character, PartRole> roleMap = Map.of(
                 'O', PartRole.DEFAULT,
+                'F', PartRole.FLUID_CONNECTOR,
                 'C', PartRole.CONTROLLER
         );
 
         Map<Character, Supplier<BlockState>> symbolMap = Map.of();
 
         return MultiblockStructureHelper.createFromLayersWithRoles(
-                new String[][] { layer0, layer1, layer2 },
+                new String[][] { layer0, layers, layers },
                 symbolMap,
                 () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
                 roleMap,
@@ -98,8 +106,17 @@ public class MachineFractionTowerBlock extends BaseEntityBlock implements IMulti
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            structureHelper.placeStructure(level, pos, state.getValue(FACING), this);
+            BlockPos core = placeMultiblockStructure(level, pos, state);
+            if (core == null) {
+                return;
+            }
         }
+    }
+
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
     }
 
     @Override
