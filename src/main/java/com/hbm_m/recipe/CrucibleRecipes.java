@@ -1,31 +1,28 @@
 package com.hbm_m.recipe;
 
-import java.util.List;
-import java.util.Map;
-
+import com.hbm_m.inventory.material.MaterialStack;
+import com.hbm_m.inventory.material.MaterialType;
+import com.hbm_m.item.material.ItemCastMold;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
+
+import java.util.List;
 
 /**
  * Central recipe registry for the crucible machine.
  *
  * <p>Modern port of legacy {@code CrucibleRecipes extends GenericRecipes<CrucibleRecipe>}.
- * In the legacy code this class was both the alloying-recipe list and the source of
- * dynamically-generated smelting / mold recipes. Here the three recipe types are held in
- * separate dedicated registries:
+ * The three recipe types are held in separate dedicated registries, and this class
+ * just wires their JEI-facing display representations up from the same data the
+ * actual game logic uses:
  * <ul>
- *   <li>{@link CrucibleAlloyingRecipes} — ordered list of {@link CrucibleAlloyingRecipe}s</li>
- *   <li>{@link CrucibleSmeltingRecipes} — input → output(s) smelting map</li>
- *   <li>{@link CrucibleMoldRecipes}     — [material, mold, placeholder, output] arrays</li>
+ *   <li>{@link CrucibleSmeltingRecipes} — item → molten material (used by {@code MachineCrucibleBlockEntity})</li>
+ *   <li>{@link MoltenAlloyRecipes}      — molten material combinations → molten material (used by {@code MachineCrucibleBlockEntity})</li>
+ *   <li>{@link MoldCastingRecipes}      — molten material + mold → item (used by {@code MachineFoundryBasinBlockEntity})</li>
  * </ul>
- *
- * <p>This class acts as a façade so call-sites that use {@code CrucibleRecipes.INSTANCE} or
- * the static helper methods continue to compile after the port.
- *
- * <p><b>MaterialStack / Mats TODO:</b> All {@code registerDefaults()} entries that depend on
- * {@code MaterialStack}, {@code Mats.*}, {@code NTMMaterial}, {@code MaterialShapes},
- * {@code ItemScraps}, or {@code OreDictionary} are stubbed with TODO comments.
- * Restore them once {@code com.hbm_m.inventory.material} is ported.
+ * {@link CrucibleAlloyingRecipes} and {@link CrucibleMoldRecipes} are pure ItemStack-based
+ * JEI display mirrors of {@link MoltenAlloyRecipes} / {@link MoldCastingRecipes}, generated here.
  */
 public class CrucibleRecipes {
 
@@ -35,115 +32,94 @@ public class CrucibleRecipes {
 
     private CrucibleRecipes() {}
 
-    // -------------------------------------------------------------------------
-    // Default recipe registration
-    // -------------------------------------------------------------------------
-
     /**
-     * Registers all built-in crucible recipes.
+     * Registers all built-in crucible recipes and their JEI display mirrors.
      * Call once during mod initialisation (e.g. from the common setup event).
-     *
-     * <p>Legacy method: {@code CrucibleRecipes.INSTANCE.registerDefaults()}.
      */
     public void registerDefaults() {
         if (defaultsRegistered) return;
         defaultsRegistered = true;
 
-        // Temporary seed recipes so JEI categories are not empty until MaterialStack/Mats is ported.
-        CrucibleAlloyingRecipes.register(new CrucibleAlloyingRecipe("crucible.demo_alloy")
-            .setup(2, new ItemStack(Items.IRON_INGOT))
-            .inputs(new ItemStack(Items.IRON_INGOT), new ItemStack(Items.COAL))
-            .outputs(new ItemStack(Items.IRON_NUGGET, 3)));
+        CrucibleSmeltingRecipes.registerDefaults();
+        MoltenAlloyRecipes.registerDefaults();
 
-        // CrucibleSmeltingRecipes is now populated by CrucibleSmeltingRecipes.registerDefaults()
-        // which is called separately from MainRegistry.
+        registerAlloyingDisplay();
+        registerMoldDisplay();
+    }
 
-        CrucibleMoldRecipes.register(
-            new ItemStack(Items.CLAY_BALL),
-            new ItemStack(Items.BRICK),
-            new ItemStack(Items.FLOWER_POT));
+    /** Mirrors {@link MoltenAlloyRecipes} as ItemStack-based recipes for JEI. */
+    private void registerAlloyingDisplay() {
+        for (MoltenAlloyRecipe recipe : MoltenAlloyRecipes.getRecipes()) {
+            ItemStack[] inputs  = new ItemStack[recipe.inputs.length];
+            for (int i = 0; i < inputs.length; i++) {
+                MaterialStack in = recipe.inputs[i];
+                inputs[i] = scaledIcon(in.type, in.amount);
+            }
+            ItemStack[] outputs = new ItemStack[recipe.outputs.length];
+            for (int i = 0; i < outputs.length; i++) {
+                MaterialStack out = recipe.outputs[i];
+                outputs[i] = scaledIcon(out.type, out.amount);
+            }
 
-        /* -----------------------------------------------------------------------
-         * ALLOYING RECIPES
-         * Legacy source: CrucibleRecipes.registerDefaults(), each this.register(...)
-         *
-         * All entries below are stubs.  Once MaterialStack / Mats is ported:
-         *   1. Replace ItemStack inputs/outputs with MaterialStack arrays.
-         *   2. Use MaterialShapes.NUGGET.q(1) / INGOT.q(1) for amounts.
-         *   3. Restore Compat.isModLoaded(Compat.MOD_GT6) conditional block.
-         *   4. Use ModItems.* for icons.
-         * ----------------------------------------------------------------------- */
+            CrucibleAlloyingRecipes.register(new CrucibleAlloyingRecipe(recipe.name)
+                    .setup(recipe.frequency, outputs.length > 0 ? outputs[0] : ItemStack.EMPTY)
+                    .inputs(inputs)
+                    .outputs(outputs));
+        }
+    }
 
-        // crucible.steel — 2× iron nugget + carbon nugget → 2× steel nugget
-        // TODO: CrucibleAlloyingRecipes.register(new CrucibleAlloyingRecipe("crucible.steel")
-        //         .setup(2, new ItemStack(ModItems.INGOT_STEEL.get()))
-        //         .inputs(new MaterialStack(Mats.MAT_IRON, n*2), new MaterialStack(Mats.MAT_CARBON, n))
-        //         .outputs(new MaterialStack(Mats.MAT_STEEL, n*2)));
+    /** Displays a material as a stack of its representative icon item, scaled by mb amount (roughly, for JEI only). */
+    private static ItemStack scaledIcon(MaterialType mat, int amountMb) {
+        ItemStack icon = switch (mat) {
+            // Molten-only intermediates with no castable output: show their real-world smelting source instead.
+            case CARBON   -> new ItemStack(net.minecraft.world.item.Items.COAL);
+            case REDSTONE -> new ItemStack(net.minecraft.world.item.Items.REDSTONE);
+            default       -> MoldCastingRecipes.getMaterialIcon(mat);
+        };
+        if (icon.isEmpty()) return ItemStack.EMPTY;
+        int count = Math.max(1, Math.min(64, Math.round(amountMb / (float) MaterialStack.MB_PER_INGOT)));
+        ItemStack copy = icon.copy();
+        copy.setCount(count);
+        return copy;
+    }
 
-        // crucible.hematite — 2× hematite ingot + 2× flux nugget → iron ingot + 3× slag nugget
-        // TODO: CrucibleAlloyingRecipes.register(new CrucibleAlloyingRecipe("crucible.hematite")
-        //         .setup(6, DictFrame.fromOne(ModBlocks.STONE_RESOURCE.get(), EnumStoneType.HEMATITE))
-        //         .inputs(new MaterialStack(Mats.MAT_HEMATITE, i*2), new MaterialStack(Mats.MAT_FLUX, n*2))
-        //         .outputs(new MaterialStack(Mats.MAT_IRON, i), new MaterialStack(Mats.MAT_SLAG, n*3)));
+    /** Mirrors {@link MoldCastingRecipes} (× every mold item × every material) for JEI. */
+    private void registerMoldDisplay() {
+        for (MaterialType mat : MaterialType.values()) {
+            for (ItemCastMold.MoldType moldType : ItemCastMold.MoldType.values()) {
+                ItemStack output = MoldCastingRecipes.getOutput(moldType, mat);
+                if (output.isEmpty()) continue;
 
-        // crucible.malachite — 2× malachite + 2× flux → copper + slag
-        // TODO: register similarly
+                ItemStack material = MoldCastingRecipes.getMaterialIcon(mat);
+                ItemStack mold = moldItem(moldType);
+                if (material.isEmpty() || mold.isEmpty()) continue;
 
-        // crucible.redcopper — copper + redstone → mingrade
-        // crucible.aa — steel + mingrade → advanced alloy
-        // crucible.hss — 5× steel + 3× tungsten + cobalt → dura steel ×9
-        // crucible.ferro — 2× steel + U238 → ferrouranium ×3
-        // crucible.tcalloy — 8× steel + technetium → tcalloy ingot
-        // crucible.cdalloy — 8× steel + cadmium → cdalloy ingot
-        // crucible.bbronze — 8× copper + bismuth + 3× flux → bismuth bronze + slag
-        // crucible.abronze — 8× copper + arsenic + 3× flux → arsenic bronze + slag
-        // crucible.cmb — 6× magtung + 3× mud → combine steel ingot
-        // crucible.magtung — tungsten ingot + schrabidium nugget → magnetized tungsten ingot
-        // crucible.bscco — 2×Bi + 2×Sr + 2×Ca + 3×Cu → bscco ingot
-        // TODO: register all of the above once MaterialStack / Mats is ported
+                CrucibleMoldRecipes.register(material, mold, output);
+            }
+        }
+    }
 
-        /* -----------------------------------------------------------------------
-         * MOLD (CASTING) RECIPES
-         * Legacy source: CrucibleRecipes.registerMoldsForNEI()
-         * Iterates Mats.orderedList × ItemMold.molds to generate scrap→mold→output entries.
-         * TODO: call CrucibleMoldRecipes.register(...) here once NTMMaterial / ItemMold ported.
-         * ----------------------------------------------------------------------- */
-
-        /* -----------------------------------------------------------------------
-         * SMELTING RECIPES
-         * Legacy source: CrucibleRecipes.getSmeltingRecipes() (dynamic, not stored in INSTANCE).
-         * Smelting recipes are generated at query-time from Mats.orderedList,
-         * Mats.materialOreEntries and Mats.materialEntries.
-         * TODO: populate CrucibleSmeltingRecipes once NTMMaterial / Mats / ItemScraps ported.
-         * ----------------------------------------------------------------------- */
+    private static ItemStack moldItem(ItemCastMold.MoldType moldType) {
+        ResourceLocation id = ResourceLocation.fromNamespaceAndPath("hbm_m", "mold_" + moldType.name().toLowerCase());
+        if (!BuiltInRegistries.ITEM.containsKey(id)) return ItemStack.EMPTY;
+        return new ItemStack(BuiltInRegistries.ITEM.get(id));
     }
 
     // -------------------------------------------------------------------------
     // Accessor façade — delegates to the split registries
     // -------------------------------------------------------------------------
 
-    /**
-     * Returns all alloying recipes in insertion order.
-     * Mirrors legacy usage of {@code CrucibleRecipes.INSTANCE.recipeOrderedList}.
-     */
+    /** Returns all alloying recipes in insertion order. Mirrors legacy {@code CrucibleRecipes.INSTANCE.recipeOrderedList}. */
     public List<CrucibleAlloyingRecipe> getAlloyingRecipes() {
         return CrucibleAlloyingRecipes.getRecipes();
     }
 
-    /**
-     * Returns the smelting recipe map (input ItemStack → list of output ItemStacks).
-     * Mirrors legacy {@code CrucibleRecipes.getSmeltingRecipes()}.
-     *
-     * <p>TODO: replace ItemStack keys with AStack/OreDict keys once RecipesCommon is ported.
-     */
+    /** Returns the smelting recipe list. Mirrors legacy {@code CrucibleRecipes.getSmeltingRecipes()}. */
     public static List<CrucibleSmeltingRecipes.SmeltingEntry> getSmeltingRecipes() {
         return CrucibleSmeltingRecipes.getRecipes();
     }
 
-    /**
-     * Returns all mold-casting recipes as [material, mold, placeholder, output] arrays.
-     * Mirrors legacy {@code CrucibleRecipes.getMoldRecipes()}.
-     */
+    /** Returns all mold-casting recipes as [material, mold, placeholder, output] arrays. Mirrors legacy {@code CrucibleRecipes.getMoldRecipes()}. */
     public static List<ItemStack[]> getMoldRecipes() {
         return CrucibleMoldRecipes.getMoldRecipes();
     }

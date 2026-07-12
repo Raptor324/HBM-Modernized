@@ -1,4 +1,32 @@
 {
+  "soyuz.alarm": {
+    "category": "blocks",
+    "sounds": [
+      "hbm_m:soyuz/alarm"
+    ],
+    "subtitle": "subtitles.hbm_m.soyuz_alarm"
+  },
+  "soyuz.ready": {
+    "category": "blocks",
+    "sounds": [
+      "hbm_m:soyuz/ready"
+    ],
+    "subtitle": "subtitles.hbm_m.soyuz_ready"
+  },
+  "soyuz.takeoff": {
+    "category": "blocks",
+    "sounds": [
+      "hbm_m:soyuz/takeoff"
+    ],
+    "subtitle": "subtitles.hbm_m.soyuz_takeoff"
+  },
+  "soyuz.chime": {
+    "category": "hostile",
+    "sounds": [
+      "hbm_m:soyuz/chime"
+    ],
+    "subtitle": "subtitles.hbm_m.soyuz_chime"
+  },
   "item.geiger1": {
     "category": "player",
     "sounds": [

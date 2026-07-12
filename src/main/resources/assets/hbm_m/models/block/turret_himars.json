@@ -1,0 +1,31 @@
+{
+  "loader": "forge:composite",
+  "textures": {
+    "particle": "hbm_m:block/turrets/arty"
+  },
+  "children": {
+    "static": {
+      "loader": "forge:obj",
+      "model": "hbm_m:models/turrets/turret_arty.obj",
+      "flip_v": true,
+      "render_type": "minecraft:cutout",
+      "textures": {
+        "default": "hbm_m:block/turrets/arty"
+      },
+      "visibility": {
+        "Barrel": false,
+        "Base": true,
+        "Cannon": false,
+        "Carriage": false
+      }
+    }
+  },
+  "transform": {
+    "translation": [
+      0.5,
+      0,
+      0.5
+    ],
+    "scale": 1.0
+  }
+}

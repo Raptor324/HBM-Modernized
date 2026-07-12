@@ -433,6 +433,41 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> CRACKING_TOWER = registerBlockWithoutItem("cracking_tower",
             () -> new MachineCrackingTowerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
+    /** MVP-Turrets (Einzelblock, kein Multiblock) - eine Java-Klasse fuer alle Varianten, siehe {@link com.hbm_m.block.machines.TurretBlock}. */
+    public static final RegistrySupplier<Block> TURRET_SENTRY = registerBlock("turret_sentry",
+            () -> new com.hbm_m.block.machines.TurretBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).noOcclusion(),
+                    () -> com.hbm_m.block.entity.ModBlockEntities.TURRET_SENTRY_BE.get()));
+    public static final RegistrySupplier<Block> TURRET_CHEKHOV = registerBlock("turret_chekhov",
+            () -> new com.hbm_m.block.machines.TurretBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).noOcclusion(),
+                    () -> com.hbm_m.block.entity.ModBlockEntities.TURRET_CHEKHOV_BE.get()));
+    public static final RegistrySupplier<Block> TURRET_FRIENDLY = registerBlock("turret_friendly",
+            () -> new com.hbm_m.block.machines.TurretBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).noOcclusion(),
+                    () -> com.hbm_m.block.entity.ModBlockEntities.TURRET_FRIENDLY_BE.get()));
+    public static final RegistrySupplier<Block> TURRET_JEREMY = registerBlock("turret_jeremy",
+            () -> new com.hbm_m.block.machines.TurretBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).noOcclusion(),
+                    () -> com.hbm_m.block.entity.ModBlockEntities.TURRET_JEREMY_BE.get()));
+    public static final RegistrySupplier<Block> TURRET_TAUON = registerBlock("turret_tauon",
+            () -> new com.hbm_m.block.machines.TurretBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).noOcclusion(),
+                    () -> com.hbm_m.block.entity.ModBlockEntities.TURRET_TAUON_BE.get()));
+    public static final RegistrySupplier<Block> TURRET_RICHARD = registerBlock("turret_richard",
+            () -> new com.hbm_m.block.machines.TurretBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).noOcclusion(),
+                    () -> com.hbm_m.block.entity.ModBlockEntities.TURRET_RICHARD_BE.get()));
+    public static final RegistrySupplier<Block> TURRET_HOWARD = registerBlock("turret_howard",
+            () -> new com.hbm_m.block.machines.TurretBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(6.0f, 12.0f).noOcclusion(),
+                    () -> com.hbm_m.block.entity.ModBlockEntities.TURRET_HOWARD_BE.get()));
+    public static final RegistrySupplier<Block> TURRET_MAXWELL = registerBlock("turret_maxwell",
+            () -> new com.hbm_m.block.machines.TurretBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(6.0f, 12.0f).noOcclusion(),
+                    () -> com.hbm_m.block.entity.ModBlockEntities.TURRET_MAXWELL_BE.get()));
+    public static final RegistrySupplier<Block> TURRET_FRITZ = registerBlock("turret_fritz",
+            () -> new com.hbm_m.block.machines.TurretBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(6.0f, 12.0f).noOcclusion(),
+                    () -> com.hbm_m.block.entity.ModBlockEntities.TURRET_FRITZ_BE.get()));
+    public static final RegistrySupplier<Block> TURRET_ARTY = registerBlock("turret_arty",
+            () -> new com.hbm_m.block.machines.TurretBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(8.0f, 20.0f).noOcclusion(),
+                    () -> com.hbm_m.block.entity.ModBlockEntities.TURRET_ARTY_BE.get()));
+    public static final RegistrySupplier<Block> TURRET_HIMARS = registerBlock("turret_himars",
+            () -> new com.hbm_m.block.machines.TurretBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(8.0f, 20.0f).noOcclusion(),
+                    () -> com.hbm_m.block.entity.ModBlockEntities.TURRET_HIMARS_BE.get()));
+
     public static final RegistrySupplier<Block> FRACTION_TOWER = registerBlockWithoutItem("fraction_tower",
             () -> new MachineFractionTowerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
@@ -2059,7 +2094,8 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> MACHINE_LARGE_TURBINE = registerBlock("machine_large_turbine", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_MICROWAVE = registerBlock("machine_microwave", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_MINING_LASER = registerBlock("machine_mining_laser", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> MACHINE_MISSILE_ASSEMBLY = registerBlock("machine_missile_assembly", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> MACHINE_MISSILE_ASSEMBLY = registerBlock("machine_missile_assembly",
+            () -> new com.hbm_m.block.machines.MachineMissileAssemblyBlock(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_PRESS = registerBlock("machine_press", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_PUF6_TANK = registerBlock("machine_puf6_tank", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_RADAR = registerBlock("machine_radar", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
@@ -2067,7 +2103,8 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> MACHINE_REACTOR = registerBlock("machine_reactor", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_REACTOR_SMALL = registerBlock("machine_reactor_small", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_REFINERY = registerBlock("machine_refinery", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> MACHINE_SATLINKER = registerBlock("machine_satlinker", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> MACHINE_SATLINKER = registerBlock("machine_satlinker",
+            () -> new com.hbm_m.block.machines.MachineSatLinkerBlock(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_SOLAR_BOILER = registerBlock("machine_solar_boiler", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_STORAGE_DRUM = registerBlock("machine_storage_drum", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_UF6_TANK = registerBlock("machine_uf6_tank", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
@@ -2145,7 +2182,16 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> SEAL_HATCH = registerBlock("seal_hatch", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> SEMTEX = registerBlock("semtex", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> SOYUZ_CAPSULE = registerBlock("soyuz_capsule", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> SOYUZ_LAUNCHER = registerBlock("soyuz_launcher", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+    /** Dekorative Soyuz-Startrampe (6 OBJ-Teile, siehe models/block/soyuz_launcher.json) - platzierbar, ohne Spiellogik.
+     *  Rendert ueber BlockEntityRenderer (SoyuzLauncherRenderer), da die Tuerme ueber 60 Bloecke hoch sind
+     *  und damit die 16-Bit-Chunk-Mesh-Grenze eines normalen Block-Modells sprengen wuerden. */
+    public static final RegistrySupplier<Block> SOYUZ_LAUNCHER = registerBlock("soyuz_launcher",
+            () -> new com.hbm_m.block.decorations.SoyuzLauncherBlock(BlockBehaviour.Properties.copy(Blocks.STONE).noOcclusion()));
+    /** Dekorative Soyuz-Rakete (soyuz.obj, Multi-Material) - platzierbar, ohne Spiellogik.
+     *  Rendert ueber BlockEntityRenderer (SoyuzRocketRenderer), da das Modell ueber 50 Bloecke hoch ist
+     *  und damit die 16-Bit-Chunk-Mesh-Grenze eines normalen Block-Modells sprengen wuerde. */
+    public static final RegistrySupplier<Block> DECO_SOYUZ_ROCKET = registerBlock("deco_soyuz_rocket",
+            () -> new com.hbm_m.block.decorations.SoyuzRocketBlock(BlockBehaviour.Properties.copy(Blocks.STONE).noOcclusion()));
     public static final RegistrySupplier<Block> SPIKES = registerBlock("spikes", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> STALACTITE_ASBESTOS = registerBlock("stalactite_asbestos", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> STALACTITE_SULFUR = registerBlock("stalactite_sulfur", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));

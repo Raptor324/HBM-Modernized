@@ -165,7 +165,17 @@ public class ModBlockStateProvider extends BlockStateProvider {
         registerSnowLayerBlock(ModBlocks.NUCLEAR_FALLOUT, "nuclear_fallout");
 
         // === РЕГИСТРАЦИЯ ПАДАЮЩИХ БЛОКОВ СЕЛЛАФИТА ===
-        // Используется simpleBlockWithItem с явным указанием текстуры
+        // Turrets: echte Original-Modelle (Base statisch per Blockmodell, Carriage/Pitch-Gruppe per BER animiert
+        // - siehe MachineTurretRenderer). Statische Composite-Modelle liegen handgeschrieben unter
+        // models/block/turret_<name>.json (Sichtbarkeits-Split aus den Original-OBJs).
+        for (var turretBlock : java.util.List.of(
+                ModBlocks.TURRET_SENTRY, ModBlocks.TURRET_CHEKHOV, ModBlocks.TURRET_FRIENDLY, ModBlocks.TURRET_JEREMY,
+                ModBlocks.TURRET_TAUON, ModBlocks.TURRET_RICHARD, ModBlocks.TURRET_HOWARD,
+                ModBlocks.TURRET_MAXWELL, ModBlocks.TURRET_FRITZ, ModBlocks.TURRET_ARTY, ModBlocks.TURRET_HIMARS)) {
+            simpleBlockWithItem(turretBlock.get(),
+                    models().getExistingFile(modLoc("block/" + turretBlock.getId().getPath())));
+        }
+
         simpleBlockWithItem(ModBlocks.FALLING_SELLAFIT1.get(),
                 models().cubeAll(
                         ModBlocks.FALLING_SELLAFIT1.getId().getPath(),
@@ -3101,12 +3111,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/soyuz_capsule")
                 )
         );
-        simpleBlockWithItem(ModBlocks.SOYUZ_LAUNCHER.get(),
-                models().cubeAll(
-                        ModBlocks.SOYUZ_LAUNCHER.getId().getPath(),
-                        modLoc("block/soyuz_launcher")
-                )
-        );
+        customObjBlock(ModBlocks.SOYUZ_LAUNCHER);
+        customObjBlock(ModBlocks.DECO_SOYUZ_ROCKET);
         simpleBlockWithItem(ModBlocks.SPIKES.get(),
                 models().cubeAll(
                         ModBlocks.SPIKES.getId().getPath(),

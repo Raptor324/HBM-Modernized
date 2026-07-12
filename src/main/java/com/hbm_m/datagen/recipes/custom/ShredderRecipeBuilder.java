@@ -76,6 +76,16 @@ public class ShredderRecipeBuilder implements RecipeBuilder {
         pFinishedRecipeConsumer.accept(new Result(pRecipeId, this));
     }
 
+    /**
+     * Overrides the vanilla {@code RecipeBuilder.save(Consumer, String)} default, which resolves a
+     * bare path string to the {@code minecraft} namespace (via {@code new ResourceLocation(path)}).
+     * Every shredder recipe must live under {@code hbm_m:...} instead.
+     */
+    @Override
+    public void save(@NotNull Consumer<FinishedRecipe> pFinishedRecipeConsumer, @NotNull String pPath) {
+        save(pFinishedRecipeConsumer, ResourceLocation.fromNamespaceAndPath("hbm_m", pPath));
+    }
+
     // Внутренний класс для сериализации
     private static class Result implements FinishedRecipe {
 

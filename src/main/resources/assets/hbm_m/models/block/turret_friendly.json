@@ -1,0 +1,32 @@
+{
+  "loader": "forge:composite",
+  "textures": {
+    "particle": "hbm_m:block/turrets/base_friendly"
+  },
+  "children": {
+    "static": {
+      "loader": "forge:obj",
+      "model": "hbm_m:models/turrets/turret_chekhov.obj",
+      "flip_v": true,
+      "render_type": "minecraft:cutout",
+      "textures": {
+        "default": "hbm_m:block/turrets/base_friendly"
+      },
+      "visibility": {
+        "Barrels": false,
+        "Base": true,
+        "Body": false,
+        "Carriage": false,
+        "Connectors": false
+      }
+    }
+  },
+  "transform": {
+    "translation": [
+      0.5,
+      0,
+      0.5
+    ],
+    "scale": 1.0
+  }
+}

@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 public class MaterialStack {
 
     public static final int MB_PER_INGOT  = 1_000;
+    public static final int MB_PER_NUGGET = MB_PER_INGOT / 9;
     public static final int MB_PER_PLATE  = 2_000;
     public static final int BUCKET        = 9_000;
 

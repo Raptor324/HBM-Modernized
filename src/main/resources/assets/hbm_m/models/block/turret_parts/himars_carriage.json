@@ -1,0 +1,27 @@
+{
+  "loader": "forge:obj",
+  "model": "hbm_m:models/turrets/turret_himars.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "default": "hbm_m:block/turrets/himars",
+    "particle": "hbm_m:block/turrets/himars"
+  },
+  "visibility": {
+    "Base": false,
+    "CapSingle": false,
+    "CapStandard1": false,
+    "CapStandard2": false,
+    "CapStandard3": false,
+    "CapStandard4": false,
+    "CapStandard5": false,
+    "CapStandard6": false,
+    "Carriage": true,
+    "Crane": false,
+    "Launcher": false,
+    "RocketSingle": false,
+    "RocketStandard": false,
+    "TubeSingle": false,
+    "TubeStandard": false
+  }
+}

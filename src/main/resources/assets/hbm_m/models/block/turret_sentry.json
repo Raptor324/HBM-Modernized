@@ -1,0 +1,33 @@
+{
+  "loader": "forge:composite",
+  "textures": {
+    "particle": "hbm_m:block/turrets/sentry"
+  },
+  "children": {
+    "static": {
+      "loader": "forge:obj",
+      "model": "hbm_m:models/turrets/turret_sentry.obj",
+      "flip_v": true,
+      "render_type": "minecraft:cutout",
+      "textures": {
+        "default": "hbm_m:block/turrets/sentry"
+      },
+      "visibility": {
+        "BarrelL": false,
+        "BarrelR": false,
+        "Base": true,
+        "Body": false,
+        "Drum": false,
+        "Pivot": false
+      }
+    }
+  },
+  "transform": {
+    "translation": [
+      0.5,
+      0,
+      0.5
+    ],
+    "scale": 1.0
+  }
+}

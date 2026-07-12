@@ -7,9 +7,12 @@ import com.hbm_m.inventory.material.MaterialStack;
 import com.hbm_m.inventory.material.MaterialType;
 import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.recipe.CrucibleSmeltingRecipes;
+import com.hbm_m.recipe.MoltenAlloyRecipe;
+import com.hbm_m.recipe.MoltenAlloyRecipes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.level.Level;
@@ -21,6 +24,9 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MachineCrucibleBlockEntity extends BlockEntity {
 
@@ -40,8 +46,13 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
     private int   progress    = 0;
     private int   processTime = PROCESS_TIME;
 
-    @Nullable
-    private MaterialStack materialStack = null;
+    /**
+     * Molten material pool. Unlike a single-material tank, the crucible can hold
+     * several different molten materials simultaneously (like the 1.7.10
+     * TileEntityCrucible's recipeStack), which is what lets alloying recipes
+     * (steel, dura steel, bronzes, ...) combine multiple inputs at once.
+     */
+    private final List<MaterialStack> molten = new ArrayList<>();
 
     private float fillLevel = 0f;
     private int   fillColor = 0xFFC18336;
@@ -50,7 +61,7 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
         @Override public int get(int i) { return switch (i) {
             case 0 -> progress; case 1 -> processTime;
             case 2 -> heat;     case 3 -> maxHeat;
-            case 4 -> materialStack != null ? materialStack.amount : 0;
+            case 4 -> totalMoltenAmount();
             case 5 -> LIQUID_CAPACITY;
             default -> 0; }; }
         @Override public void set(int i, int v) { switch (i) {
@@ -68,11 +79,27 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
     public ContainerData         getData()               { return data; }
     public float                 getFillLevel()          { return fillLevel; }
     public int                   getFillColor()          { return fillColor; }
-    public @Nullable MaterialStack getMaterialStack()    { return materialStack; }
+
+    /** Returns the single largest molten material for display purposes, or null if empty. */
+    public @Nullable MaterialStack getMaterialStack() {
+        MaterialStack biggest = null;
+        for (MaterialStack ms : molten) {
+            if (biggest == null || ms.amount > biggest.amount) biggest = ms;
+        }
+        return biggest;
+    }
+
+    public List<MaterialStack> getMoltenPool() { return molten; }
+
+    private int totalMoltenAmount() {
+        int total = 0;
+        for (MaterialStack ms : molten) total += ms.amount;
+        return total;
+    }
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, MachineCrucibleBlockEntity be) {
         int oldHeat = be.heat, oldProg = be.progress;
-        int oldAmt  = be.materialStack != null ? be.materialStack.amount : -1;
+        int oldAmt  = be.totalMoltenAmount();
 
         long pulled = 0L;
         for (int dy = 1; dy <= 2 && pulled <= 0; dy++)
@@ -86,7 +113,8 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
         boolean canSmelt = slot >= 0 && be.heat > 0;
         if (canSmelt) {
             ItemStack in = be.itemHandler.getStackInSlot(slot);
-            MaterialStack ms = CrucibleSmeltingRecipes.smelt(in);
+            // smelt() scales with stack size, but only ONE item is consumed per cycle
+            MaterialStack ms = CrucibleSmeltingRecipes.smelt(in.copyWithCount(1));
             if (ms != null && be.canAccept(ms)) {
                 be.progress++;
                 be.heat = Math.max(0, be.heat - 1);
@@ -102,12 +130,13 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
             be.progress = 0;
         }
 
-        be.tryPourIntoBasin(level, pos);
+        be.tryAlloy(level);
+        be.tryPourFront(level, pos, state);
 
-        int newAmt = be.materialStack != null ? be.materialStack.amount : -1;
-        be.fillLevel = be.materialStack != null
-                ? Math.min(1f, (float) be.materialStack.amount / LIQUID_CAPACITY) : 0f;
-        be.fillColor = be.materialStack != null ? (0xFF000000 | be.materialStack.type.color) : 0xFFC18336;
+        int newAmt = be.totalMoltenAmount();
+        MaterialStack primary = be.getMaterialStack();
+        be.fillLevel = Math.min(1f, (float) newAmt / LIQUID_CAPACITY);
+        be.fillColor = primary != null ? (0xFF000000 | primary.type.color) : 0xFFC18336;
 
         if (oldHeat != be.heat || oldProg != be.progress || oldAmt != newAmt) {
             be.setChanged();
@@ -117,16 +146,61 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
 
     private boolean canAccept(@Nullable MaterialStack ms) {
         if (ms == null) return false;
-        if (materialStack == null) return ms.amount <= LIQUID_CAPACITY;
-        return materialStack.type == ms.type
-                && materialStack.amount + ms.amount <= LIQUID_CAPACITY;
+        return totalMoltenAmount() + ms.amount <= LIQUID_CAPACITY;
     }
 
     private void addMaterial(MaterialStack ms) {
-        if (materialStack == null) {
-            materialStack = ms.copy();
-        } else {
-            materialStack.amount += ms.amount;
+        for (MaterialStack existing : molten) {
+            if (existing.type == ms.type) {
+                existing.amount += ms.amount;
+                return;
+            }
+        }
+        molten.add(ms.copy());
+    }
+
+    private int poolAmount(MaterialType type) {
+        for (MaterialStack ms : molten) if (ms.type == type) return ms.amount;
+        return 0;
+    }
+
+    private boolean poolHasAll(MaterialStack[] required) {
+        for (MaterialStack req : required) if (poolAmount(req.type) < req.amount) return false;
+        return true;
+    }
+
+    private void poolConsume(MaterialStack req) {
+        for (int i = 0; i < molten.size(); i++) {
+            MaterialStack ms = molten.get(i);
+            if (ms.type == req.type) {
+                ms.amount -= req.amount;
+                if (ms.amount <= 0) molten.remove(i);
+                return;
+            }
+        }
+    }
+
+    /**
+     * Combines molten materials into alloys (steel, dura steel, bronzes, ...)
+     * whenever the pool holds enough of every required input.
+     * Port of the 1.7.10 TileEntityCrucible#tryRecipe, generalized over all
+     * registered {@link MoltenAlloyRecipe}s instead of a single active recipe.
+     */
+    private void tryAlloy(Level level) {
+        long time = level.getGameTime();
+        for (MoltenAlloyRecipe recipe : MoltenAlloyRecipes.getRecipes()) {
+            if (recipe.frequency > 0 && time % recipe.frequency != 0) continue;
+            if (!poolHasAll(recipe.inputs)) continue;
+
+            int outputTotal = 0;
+            for (MaterialStack out : recipe.outputs) outputTotal += out.amount;
+            int inputTotal = 0;
+            for (MaterialStack in : recipe.inputs) inputTotal += in.amount;
+            // don't let the reaction overflow the tank
+            if (totalMoltenAmount() - inputTotal + outputTotal > LIQUID_CAPACITY) continue;
+
+            for (MaterialStack in : recipe.inputs) poolConsume(in);
+            for (MaterialStack out : recipe.outputs) addMaterial(out.copy());
         }
     }
 
@@ -134,25 +208,58 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
         for (int i = 0; i < INPUT_SLOTS; i++) {
             ItemStack s = itemHandler.getStackInSlot(i);
             if (s.isEmpty()) continue;
-            MaterialStack ms = CrucibleSmeltingRecipes.smelt(s);
+            // only one item is smelted per cycle, so check a single-item copy
+            MaterialStack ms = CrucibleSmeltingRecipes.smelt(s.copyWithCount(1));
             if (ms != null && canAccept(ms)) return i;
         }
         return -1;
     }
 
-    private void tryPourIntoBasin(Level level, BlockPos cruciblePos) {
-        if (materialStack == null || materialStack.isEmpty()) return;
-        BlockEntity below = level.getBlockEntity(cruciblePos.below());
-        int poured = 0;
-        if (below instanceof MachineFoundryBasinBlockEntity basin) {
-            poured = basin.receiveMaterial(materialStack.type, materialStack.amount);
-        } else if (below instanceof MachineFoundryChannelBlockEntity channel) {
-            poured = channel.receiveMaterial(materialStack.type, materialStack.amount);
+    /**
+     * Original behavior (TileEntityCrucible): the crucible pours out the FRONT
+     * (1 block in facing direction), casting a hitscan up to 6 blocks straight
+     * down, in portions of 3 nuggets per tick, into any ICrucibleAcceptor
+     * (channel, basin with mold, ...). Nothing is lost if no target is found.
+     * Only the single largest molten material is poured per tick, mirroring the
+     * original's "drain top of the stack" behavior.
+     */
+    private static final int POUR_PORTION = MaterialStack.MB_PER_INGOT / 3;
+    private static final int POUR_RANGE   = 6;
+
+    private void tryPourFront(Level level, BlockPos cruciblePos, BlockState state) {
+        MaterialStack top = getMaterialStack();
+        if (top == null || top.isEmpty()) return;
+
+        Direction facing = state.hasProperty(com.hbm_m.block.machines.MachineCrucibleBlock.FACING)
+                ? state.getValue(com.hbm_m.block.machines.MachineCrucibleBlock.FACING)
+                : Direction.NORTH;
+
+        // The OBJ model's green pouring spout sits 90° counterclockwise from FACING
+        // (model space: spout at west for facing=north) — pour where the spout is.
+        Direction pourDir = facing.getCounterClockWise();
+
+        // Original: pour point is 1.875 blocks from the multiblock center → the
+        // block column 2 in front. Distance 1 is tried as fallback since our
+        // crucible is a single block and blocks can be placed inside the model.
+        for (int dist = 2; dist >= 1; dist--) {
+            BlockPos pourPos = cruciblePos.relative(pourDir, dist);
+
+            MaterialStack portion = new MaterialStack(top.type, Math.min(top.amount, POUR_PORTION));
+            int poured = com.hbm_m.util.CrucibleUtil.pourSingleStack(level, pourPos, POUR_RANGE, portion);
+
+            if (poured > 0) {
+                poolConsume(new MaterialStack(top.type, poured));
+                return;
+            }
         }
-        if (poured > 0) {
-            materialStack.amount -= poured;
-            if (materialStack.isEmpty()) materialStack = null;
-        }
+    }
+
+    /** The crucible model spans 3×3 blocks — keep the molten surface visible (Forge render culling). */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(
+                worldPosition.getX() - 1, worldPosition.getY(),     worldPosition.getZ() - 1,
+                worldPosition.getX() + 2, worldPosition.getY() + 2, worldPosition.getZ() + 2);
     }
 
     private static long pullEnergy(IEnergyProvider p, MachineCrucibleBlockEntity be) {
@@ -186,7 +293,14 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
         tag.put("inventory", itemHandler.serializeNBT());
         tag.putInt("heat", heat); tag.putInt("progress", progress);
         tag.putFloat("fillLevel", fillLevel); tag.putInt("fillColor", fillColor);
-        if (materialStack != null) { CompoundTag ms = new CompoundTag(); materialStack.writeToNBT(ms); tag.put("material", ms); }
+
+        ListTag list = new ListTag();
+        for (MaterialStack ms : molten) {
+            CompoundTag entry = new CompoundTag();
+            ms.writeToNBT(entry);
+            list.add(entry);
+        }
+        tag.put("molten", list);
     }
 
     @Override
@@ -195,7 +309,19 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
         if (tag.contains("inventory")) itemHandler.deserializeNBT(tag.getCompound("inventory"));
         heat = tag.getInt("heat"); progress = tag.getInt("progress");
         fillLevel = tag.getFloat("fillLevel"); fillColor = tag.getInt("fillColor");
-        if (tag.contains("material")) materialStack = MaterialStack.readFromNBT(tag.getCompound("material"));
+
+        molten.clear();
+        if (tag.contains("molten")) {
+            ListTag list = tag.getList("molten", net.minecraft.nbt.Tag.TAG_COMPOUND);
+            for (int i = 0; i < list.size(); i++) {
+                MaterialStack ms = MaterialStack.readFromNBT(list.getCompound(i));
+                if (ms != null) molten.add(ms);
+            }
+        } else if (tag.contains("material")) {
+            // legacy single-material save format
+            MaterialStack ms = MaterialStack.readFromNBT(tag.getCompound("material"));
+            if (ms != null) molten.add(ms);
+        }
     }
 
     @Override

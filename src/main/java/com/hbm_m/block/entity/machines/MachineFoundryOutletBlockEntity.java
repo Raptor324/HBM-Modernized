@@ -1,8 +1,11 @@
 package com.hbm_m.block.entity.machines;
 
+import com.hbm_m.api.block.ICrucibleAcceptor;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.block.machines.MachineFoundryOutletBlock;
 import com.hbm_m.inventory.material.MaterialStack;
 import com.hbm_m.inventory.material.MaterialType;
+import com.hbm_m.util.CrucibleUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -14,13 +17,23 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
-public class MachineFoundryOutletBlockEntity extends BlockEntity {
+/**
+ * Port of the 1.7.10 TileEntityFoundryOutlet.
+ * Holds no material itself: it accepts sideways flow from the channel behind it
+ * (opposite of FACING) and immediately re-pours it straight down, up to 4 blocks,
+ * into the first ICrucibleAcceptor below (basin, channel, crucible, ...).
+ * Flow is only accepted if the target below can actually take the material.
+ */
+public class MachineFoundryOutletBlockEntity extends BlockEntity implements ICrucibleAcceptor {
+
+    /** Raytrace depth of the original: y-0.125 down to y+0.125-4 → 4 blocks below. */
+    private static final int POUR_RANGE = 3;
 
     /** Only let this material through (null = all materials allowed). */
     @Nullable public MaterialType filter = null;
 
     /** When true: let everything EXCEPT the filter material through. */
-    public boolean invertFilter   = false;
+    public boolean invertFilter = false;
 
     /** When true: outlet is closed by default and OPENS with redstone.
      *  When false (default): outlet is open by default and CLOSES with redstone. */
@@ -30,8 +43,9 @@ public class MachineFoundryOutletBlockEntity extends BlockEntity {
         super(ModBlockEntities.FOUNDRY_OUTLET_BE.get(), pos, state);
     }
 
-    public boolean isClosed(Level level, BlockPos pos) {
-        boolean powered = level.hasNeighborSignal(pos);
+    public boolean isClosed() {
+        if (level == null) return true;
+        boolean powered = level.hasNeighborSignal(worldPosition);
         return invertRedstone ^ powered;
     }
 
@@ -41,45 +55,46 @@ public class MachineFoundryOutletBlockEntity extends BlockEntity {
         return invertFilter ? !matches : matches;
     }
 
-    /**
-     * Called by an adjacent channel or crucible to offer material to this outlet.
-     * The outlet tries to pour all offered material downward into the nearest basin.
-     * Returns how much was accepted (poured).
-     */
-    public int receiveMaterial(Level level, BlockPos pos, BlockState state,
-                                Direction incomingDir, MaterialType type, int amount) {
-        if (amount <= 0) return 0;
-        if (isClosed(level, pos)) return 0;
-        if (!passesFilter(type)) return 0;
-
-        Direction facing = state.hasProperty(com.hbm_m.block.machines.MachineFoundryOutletBlock.FACING)
-                ? state.getValue(com.hbm_m.block.machines.MachineFoundryOutletBlock.FACING)
+    private Direction getFacing() {
+        BlockState state = getBlockState();
+        return state.hasProperty(MachineFoundryOutletBlock.FACING)
+                ? state.getValue(MachineFoundryOutletBlock.FACING)
                 : Direction.NORTH;
-
-        // Material must arrive from the opposite of the facing direction
-        if (incomingDir != facing.getOpposite()) return 0;
-
-        return pourDownward(level, pos, type, amount);
     }
 
-    /** Searches up to 4 blocks directly below for a FoundryBasin and pours into it. */
-    private int pourDownward(Level level, BlockPos outletPos, MaterialType type, int amount) {
-        for (int dy = 1; dy <= 4; dy++) {
-            BlockPos target = outletPos.below(dy);
-            BlockEntity te = level.getBlockEntity(target);
-            if (te instanceof MachineFoundryBasinBlockEntity basin) {
-                int poured = basin.receiveMaterial(type, amount);
-                if (poured > 0) {
-                    setChanged();
-                    level.sendBlockUpdated(outletPos, level.getBlockState(outletPos), level.getBlockState(outletPos), 3);
-                    return poured;
-                }
-                break;
-            }
-            if (!level.isEmptyBlock(target)) break;
-        }
-        return 0;
+    /* ── ICrucibleAcceptor ──────────────────────────────────────────────── */
+
+    /* Outlets can't be poured into, only flowed through. */
+    @Override public boolean canAcceptPartialPour(Level level, BlockPos pos, Direction side, MaterialStack stack) { return false; }
+    @Override public @Nullable MaterialStack pour(Level level, BlockPos pos, Direction side, MaterialStack stack) { return stack; }
+
+    @Override
+    public boolean canAcceptPartialFlow(Level level, BlockPos pos, Direction side, MaterialStack stack) {
+        if (!passesFilter(stack.type)) return false;
+        if (isClosed()) return false;
+        // material must arrive from behind (channel side), i.e. opposite of the pour direction
+        if (side != getFacing().getOpposite()) return false;
+
+        BlockPos target = CrucibleUtil.getPouringTarget(level, pos.below(), POUR_RANGE);
+        if (target == null) return false;
+
+        BlockEntity be = level.getBlockEntity(target);
+        return be instanceof ICrucibleAcceptor acc
+                && acc.canAcceptPartialPour(level, target, Direction.UP, stack);
     }
+
+    @Override
+    public @Nullable MaterialStack flow(Level level, BlockPos pos, Direction side, MaterialStack stack) {
+        BlockPos target = CrucibleUtil.getPouringTarget(level, pos.below(), POUR_RANGE);
+        if (target == null) return stack;
+
+        BlockEntity be = level.getBlockEntity(target);
+        if (!(be instanceof ICrucibleAcceptor acc)) return stack;
+
+        return acc.pour(level, target, Direction.UP, stack);
+    }
+
+    /* ── NBT / sync ─────────────────────────────────────────────────────── */
 
     @Override
     protected void saveAdditional(CompoundTag tag) {
@@ -93,6 +108,7 @@ public class MachineFoundryOutletBlockEntity extends BlockEntity {
     public void load(CompoundTag tag) {
         super.load(tag);
         if (tag.contains("filter")) filter = MaterialType.byName(tag.getString("filter"));
+        else filter = null;
         invertFilter   = tag.getBoolean("invertFilter");
         invertRedstone = tag.getBoolean("invertRedstone");
     }

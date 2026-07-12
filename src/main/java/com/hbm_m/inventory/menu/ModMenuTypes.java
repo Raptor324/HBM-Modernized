@@ -86,6 +86,12 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<MachineChemicalPlantMenu>> CHEMICAL_PLANT_MENU =
             MENUS.register("chemical_plant_menu", () -> MenuRegistry.ofExtended(MachineChemicalPlantMenu::new));
 
+    public static final RegistrySupplier<MenuType<SoyuzLauncherMenu>> SOYUZ_LAUNCHER_MENU =
+            MENUS.register("soyuz_launcher_menu", () -> MenuRegistry.ofExtended(SoyuzLauncherMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineSatLinkerMenu>> MACHINE_SATLINKER_MENU =
+            MENUS.register("machine_satlinker_menu", () -> MenuRegistry.ofExtended(MachineSatLinkerMenu::new));
+
     public static final RegistrySupplier<MenuType<MachineCyclotronMenu>> CYCLOTRON_MENU =
             MENUS.register("cyclotron_menu", () -> MenuRegistry.ofExtended(MachineCyclotronMenu::new));
 
@@ -177,6 +183,13 @@ public class ModMenuTypes {
 
     public static final RegistrySupplier<MenuType<RBMKOutgasserMenu>> RBMK_OUTGASSER_MENU =
             MENUS.register("rbmk_outgasser_menu", () -> MenuRegistry.ofExtended(RBMKOutgasserMenu::new));
+
+    /** Ein gemeinsamer MenuType fuer alle Turret-Varianten - siehe {@link TurretMenu}. */
+    public static final RegistrySupplier<MenuType<TurretMenu>> TURRET_MENU =
+            MENUS.register("turret_menu", () -> MenuRegistry.ofExtended(TurretMenu::new));
+
+    public static final RegistrySupplier<MenuType<MissileAssemblyMenu>> MISSILE_ASSEMBLY_MENU =
+            MENUS.register("missile_assembly_menu", () -> MenuRegistry.ofExtended(MissileAssemblyMenu::new));
 
     public static void init() {
         MENUS.register();

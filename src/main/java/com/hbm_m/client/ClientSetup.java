@@ -78,6 +78,7 @@ import com.hbm_m.client.render.implementations.CrucibleRenderer;
 import com.hbm_m.client.render.implementations.MachineCoolingTowerRenderer;
 import com.hbm_m.client.render.implementations.MachineCrystallizerRenderer;
 import com.hbm_m.client.render.implementations.MachineHydraulicFrackiningTowerRenderer;
+import com.hbm_m.client.render.implementations.SoyuzLauncherRenderer;
 import com.hbm_m.client.render.implementations.MachinePressRenderer;
 import com.hbm_m.client.render.implementations.MachineRadarRenderer;
 import com.hbm_m.client.render.implementations.RBMKColumnRenderer;
@@ -490,6 +491,8 @@ public class ClientSetup {
         MenuScreens.register(ModMenuTypes.PRESS_MENU.get(), GUIMachinePress::new);
         MenuScreens.register(ModMenuTypes.SHREDDER_MENU.get(), GUIMachineShredder::new);
         MenuScreens.register(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);
+        MenuScreens.register(ModMenuTypes.TURRET_MENU.get(), com.hbm_m.inventory.gui.GUITurret::new);
+        MenuScreens.register(ModMenuTypes.MISSILE_ASSEMBLY_MENU.get(), com.hbm_m.inventory.gui.GUIMissileAssembly::new);
         MenuScreens.register(ModMenuTypes.ANVIL_MENU.get(), GUIAnvil::new);
         MenuScreens.register(ModMenuTypes.CENTRIFUGE_MENU.get(), GUIMachineCentrifuge::new);
         MenuScreens.register(ModMenuTypes.IRON_CRATE_MENU.get(), GUIIronCrate::new);
@@ -499,6 +502,8 @@ public class ClientSetup {
         MenuScreens.register(ModMenuTypes.TEMPLATE_CRATE_MENU.get(), GUITemplateCrate::new);
         MenuScreens.register(ModMenuTypes.FLUID_TANK_MENU.get(), GUIMachineFluidTank::new);
         MenuScreens.register(ModMenuTypes.CHEMICAL_PLANT_MENU.get(), GUIMachineChemicalPlant::new);
+        MenuScreens.register(ModMenuTypes.SOYUZ_LAUNCHER_MENU.get(), com.hbm_m.inventory.gui.GUISoyuzLauncher::new);
+        MenuScreens.register(ModMenuTypes.MACHINE_SATLINKER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineSatLinker::new);
         MenuScreens.register(ModMenuTypes.FRACTURING_TOWER_MENU.get(), GUIMachineFrackingTower::new);
         MenuScreens.register(ModMenuTypes.REFINERY_MENU.get(), GUIMachineRefinery::new);
         MenuScreens.register(ModMenuTypes.LAUNCH_PAD_LARGE_MENU.get(), GUILaunchPadLarge::new);
@@ -509,7 +514,11 @@ public class ClientSetup {
 
     private static void registerRenderersCommon() {
         //? if forge {
+        ModEntities.SOYUZ.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.SoyuzEntityRenderer::new));
+        ModEntities.SOYUZ_CAPSULE.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.SoyuzCapsuleEntityRenderer::new));
         ModEntities.ZIRNOX_DEBRIS.ifPresent(entityType -> EntityRenderers.register(entityType, ZirnoxDebrisRenderer::new));
+        ModEntities.TURRET_BULLET.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
+        ModEntities.TURRET_ROCKET.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
         ModEntities.GRENADE_NUC_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
         ModEntities.GRENADE_IF_FIRE_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
         ModEntities.GRENADE_IF_SLIME_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
@@ -558,6 +567,8 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.PRESS_BE.get(), MachinePressRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.CHEMICAL_PLANT_BE.get(), MachineChemicalPlantRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.HYDRAULIC_FRACKINING_TOWER_BE.get(), MachineHydraulicFrackiningTowerRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.SOYUZ_LAUNCHER_BE.get(), SoyuzLauncherRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.DECO_SOYUZ_ROCKET_BE.get(), com.hbm_m.client.render.implementations.SoyuzRocketRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.HEATING_OVEN_BE.get(), HeatingOvenRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.CRYSTALLIZER.get(), MachineCrystallizerRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), IndustrialTurbineRenderer::new);
@@ -567,8 +578,22 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.LAUNCH_PAD_RUSTED_BE.get(), LaunchPadMissileRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.COOLING_TOWER_BE.get(), MachineCoolingTowerRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.GAS_CENTRIFUGE_BE.get(), GasCentrifugeRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.MINING_DRILL_BE.get(), com.hbm_m.client.render.implementations.MachineMiningDrillRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.TURRET_SENTRY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.TURRET_CHEKHOV_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.TURRET_FRIENDLY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.TURRET_JEREMY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.TURRET_TAUON_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.TURRET_RICHARD_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.TURRET_HOWARD_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.TURRET_MAXWELL_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.TURRET_FRITZ_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.TURRET_ARTY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.TURRET_HIMARS_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RADAR_BE.get(), MachineRadarRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.CRUCIBLE_BE.get(), CrucibleRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.FOUNDRY_BASIN_BE.get(), com.hbm_m.client.render.implementations.FoundryBasinRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.FOUNDRY_CHANNEL_BE.get(), com.hbm_m.client.render.implementations.FoundryChannelRenderer::new);
         // ─── RBMK column renderers (all use the same generic column renderer) ─────
         BlockEntityRenderers.register(ModBlockEntities.RBMK_ROD_BE.get(),          RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.SU47_TROPHY_BE.get(),
@@ -592,7 +617,11 @@ public class ClientSetup {
         //?}
 
         //? if fabric {
-        /*ModEntities.GRENADE_NUC_PROJECTILE.ifPresent(entityType ->
+        /*ModEntities.TURRET_BULLET.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
+        ModEntities.TURRET_ROCKET.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
+        ModEntities.GRENADE_NUC_PROJECTILE.ifPresent(entityType ->
                 EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
         ModEntities.GRENADE_IF_FIRE_PROJECTILE.ifPresent(entityType ->
                 EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
@@ -724,10 +753,24 @@ public class ClientSetup {
         register(ModBlockEntities.BATTERY_SOCKET_BE.get(), BatterySocketCreativeRenderer::new);
         register(ModBlockEntities.COOLING_TOWER_BE.get(), MachineCoolingTowerRenderer::new);
         register(ModBlockEntities.GAS_CENTRIFUGE_BE.get(), GasCentrifugeRenderer::new);
+        register(ModBlockEntities.MINING_DRILL_BE.get(), com.hbm_m.client.render.implementations.MachineMiningDrillRenderer::new);
+        register(ModBlockEntities.TURRET_SENTRY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
+        register(ModBlockEntities.TURRET_CHEKHOV_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
+        register(ModBlockEntities.TURRET_FRIENDLY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
+        register(ModBlockEntities.TURRET_JEREMY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
+        register(ModBlockEntities.TURRET_TAUON_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
+        register(ModBlockEntities.TURRET_RICHARD_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
+        register(ModBlockEntities.TURRET_HOWARD_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
+        register(ModBlockEntities.TURRET_MAXWELL_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
+        register(ModBlockEntities.TURRET_FRITZ_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
+        register(ModBlockEntities.TURRET_ARTY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
+        register(ModBlockEntities.TURRET_HIMARS_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
         register(ModBlockEntities.RADAR_BE.get(), MachineRadarRenderer::new);
         register(ModBlockEntities.LAUNCH_PAD_BE.get(), LaunchPadMissileRenderer::new);
         register(ModBlockEntities.LAUNCH_PAD_RUSTED_BE.get(), LaunchPadMissileRenderer::new);
         register(ModBlockEntities.CRUCIBLE_BE.get(), CrucibleRenderer::new);
+        register(ModBlockEntities.FOUNDRY_BASIN_BE.get(), com.hbm_m.client.render.implementations.FoundryBasinRenderer::new);
+        register(ModBlockEntities.FOUNDRY_CHANNEL_BE.get(), com.hbm_m.client.render.implementations.FoundryChannelRenderer::new);
         register(ModBlockEntities.FLUID_TANK_BE.get(), MachineFluidTankRenderer::new);
         *///?}
     }
@@ -1056,6 +1099,34 @@ public class ClientSetup {
         //?}
 
         //? if fabric && < 1.21.1 {
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/machines/mining_drill_bit"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/mining_drill_bit"));
+        //?}
+
+        // Soyuz rocket mesh - fetched directly via ModelManager for the launcher's mounted-rocket
+        // preview and the SoyuzEntity/SoyuzCapsuleEntity renderers (see SoyuzLauncherRenderer).
+        //? if fabric && < 1.21.1 {
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/deco_soyuz_rocket"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_soyuz_rocket"));
+        //?}
+
+        // Turret-Animationsteile (siehe TurretModel / MachineTurretRenderer) - lose Modelle, per OBJ-"visibility"
+        // aus den geteilten turret_*.obj-Dateien herausgeloest, direkt per ModelManager im BER abgerufen.
+        for (String part : new String[] {
+                "chekhov_carriage", "chekhov_carriage_friendly", "chekhov_body", "chekhov_barrels",
+                "jeremy_gun", "tauon_cannon", "tauon_rotor", "richard_launcher",
+                "howard_carriage", "howard_body", "howard_barrelstop", "howard_barrelsbottom",
+                "fritz_gun", "maxwell_microwave",
+                "arty_carriage", "arty_cannon", "arty_barrel",
+                "himars_carriage", "himars_launcher", "himars_crane",
+                "sentry_pivot", "sentry_body", "sentry_drum", "sentry_barrell", "sentry_barrelr"
+        }) {
+            event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/turret_parts/" + part));
+        }
+
+        //? if fabric && < 1.21.1 {
         /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/round_airlock_door_modern"));
         *///?} else {
                 event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern"));
@@ -1331,8 +1402,10 @@ public class ClientSetup {
         event.register("heating_oven_loader", new HeatingOvenModelLoader());
         event.register("cooling_tower_loader", new MachineCoolingTowerModelLoader());
         event.register("radar_loader", new MachineRadarModelLoader());
+        event.register("soyuz_launcher_loader", new com.hbm_m.client.loader.SoyuzLauncherModelLoader());
+        event.register("soyuz_rocket_loader", new com.hbm_m.client.loader.SoyuzRocketModelLoader());
 
-        MainRegistry.LOGGER.info("Registered geometry loaders: advanced_assembly_machine_loader, chemical_plant_loader, machine_assembler_loader, hydraulic_frackining_tower_loader, template_loader, door, press_loader, heating_oven_loader, cooling_tower_loader, radar_loader");
+        MainRegistry.LOGGER.info("Registered geometry loaders: advanced_assembly_machine_loader, chemical_plant_loader, machine_assembler_loader, hydraulic_frackining_tower_loader, template_loader, door, press_loader, heating_oven_loader, cooling_tower_loader, radar_loader, soyuz_launcher_loader");
     }
 
     // Key mappings регистрируются в ModConfigKeybindHandler.init() через Architectury.
@@ -1393,6 +1466,8 @@ public class ClientSetup {
         event.registerEntityRenderer(ModEntities.AIRSTRIKE_AGENT_ENTITY.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.NUKE_FALLOUT_RAIN.get(), RenderFallout::new);
         event.registerEntityRenderer(ModEntities.NUKE_MK3.get(), ctx -> new EmptyEntityRenderer<>(ctx));
+        event.registerEntityRenderer(ModEntities.TOM_METEOR.get(), ctx -> new EmptyEntityRenderer<>(ctx));
+        event.registerEntityRenderer(ModEntities.TOM_BLAST.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.CLOUD_FLEIJA.get(), RenderCloudFleija::new);
         event.registerEntityRenderer(ModEntities.NUKE_MK5.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.FALLING_SELLAFIT_ENTITY_TYPE.get(), FallingBlockRenderer::new);

@@ -41,12 +41,13 @@ public class CrucibleRenderer implements BlockEntityRenderer<MachineCrucibleBloc
     private static final ResourceLocation LAVA_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/fluids/lava.png");
 
-    /** Y of the bowl base plate top face (4 / 16) */
-    private static final float BOWL_BASE = 4f / 16f;
+    /** The crucible OBJ model spans 3×3 blocks around the block position; its
+     *  interior (the baked "Lava" plane) covers x/z -0.5 .. 1.5 with the melt
+     *  base at y = 0.5. Original surface height: y + 0.5 + fill * 0.875. */
+    private static final float BOWL_BASE = 0.51f; // slightly above the baked plane to avoid z-fighting
 
-    /** Inner wall inset from block edge (2 / 16) */
-    private static final float INNER = 2f / 16f;
-    private static final float INNER_MAX = 1f - INNER; // 14/16
+    private static final float INNER = -0.48f;
+    private static final float INNER_MAX = 1.48f;
 
     public CrucibleRenderer(BlockEntityRendererProvider.Context context) { }
 
@@ -61,7 +62,7 @@ public class CrucibleRenderer implements BlockEntityRenderer<MachineCrucibleBloc
         float fill = blockEntity.getFillLevel();
         if (fill <= 0f) return; // nothing to render yet (MaterialStack not ported)
 
-        float surfaceY = BOWL_BASE + fill * (1f - BOWL_BASE);
+        float surfaceY = BOWL_BASE + fill * 0.875f;
 
         // Decompose ARGB color
         int argb  = blockEntity.getFillColor();

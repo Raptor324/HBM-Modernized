@@ -1,0 +1,32 @@
+{
+  "loader": "hbm_m:soyuz_launcher_loader",
+  "textures": {
+    "particle": "hbm_m:block/soyuz/launcher_table"
+  },
+  "display": {
+    "gui": {
+      "rotation": [ 30, 225, 0 ],
+      "translation": [ 0, 0, 0 ],
+      "scale": [ 0.0125, 0.0125, 0.0125 ]
+    },
+    "fixed": {
+      "rotation": [ 0, 0, 0 ],
+      "translation": [ 0, 0, 0 ],
+      "scale": [ 0.0125, 0.0125, 0.0125 ]
+    },
+    "ground": {
+      "translation": [ 0, 0, 0 ],
+      "scale": [ 0.008, 0.008, 0.008 ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [ 75, 45, 0 ],
+      "translation": [ 0, 0, 0 ],
+      "scale": [ 0.01, 0.01, 0.01 ]
+    },
+    "firstperson_righthand": {
+      "rotation": [ 0, 45, 0 ],
+      "translation": [ 0, 0, 0 ],
+      "scale": [ 0.008, 0.008, 0.008 ]
+    }
+  }
+}

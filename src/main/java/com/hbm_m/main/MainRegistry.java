@@ -118,11 +118,13 @@ public final class MainRegistry {
         HazardRegistry.registerItems();
         DamageResistanceHandler.initArmorStats();
         com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity.registerLaunchables();
+        com.hbm_m.satellite.Satellite.register();
 
         CentrifugeRecipes.registerRecipes();
         CyclotronRecipes.registerRecipes();
         com.hbm_m.inventory.recipes.ArcWelderRecipes.registerDefaults();
         com.hbm_m.recipe.CrucibleSmeltingRecipes.registerDefaults();
+        com.hbm_m.recipe.MoltenAlloyRecipes.registerDefaults();
         com.hbm_m.inventory.recipes.SolderingRecipes.registerDefaults();
 
         // На Fabric DeferredRegister жидкостей ещё не заполнил BuiltInRegistries на момент SETUP

@@ -1,0 +1,14 @@
+{
+  "loader": "forge:obj",
+  "model": "hbm_m:models/turrets/turret_richard.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "default": "hbm_m:block/turrets/richard",
+    "particle": "hbm_m:block/turrets/richard"
+  },
+  "visibility": {
+    "Launcher": true,
+    "MissileLoaded": false
+  }
+}

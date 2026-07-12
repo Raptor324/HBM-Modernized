@@ -2,9 +2,10 @@ package com.hbm_m.inventory.menu;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machines.MachineGasCentrifugeBlockEntity;
-import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
+import com.hbm_m.item.industrial.ItemMachineUpgrade;
+import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;
 
@@ -35,12 +36,12 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
     private long clientEnergy;
     private long clientMaxEnergy;
 
-    private static final int BATTERY_SLOT = 0;
-    private static final int INPUT_SLOT_1 = 1;
-    private static final int INPUT_SLOT_2 = 2;
-    private static final int OUTPUT_SLOT_1 = 3;
-    private static final int OUTPUT_SLOT_2 = 4;
-    private static final int MACHINE_SLOTS = 5;
+    private static final int OUTPUT_SLOT_0 = 0;
+    private static final int OUTPUT_SLOT_3 = 3;
+    private static final int BATTERY_SLOT = 4;
+    private static final int FLUID_ID_SLOT = 5;
+    private static final int UPGRADE_SLOT = 6;
+    private static final int MACHINE_SLOTS = 7;
 
     public MachineGasCentrifugeMenu(int containerId, Inventory playerInventory, FriendlyByteBuf extraData) {
         this(containerId, playerInventory, getBlockEntity(playerInventory, extraData), new SimpleContainerData(2));
@@ -60,11 +61,24 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
 
         this.machineInventory = new ModItemStackHandlerContainer(this.blockEntity.getInventory(), this.blockEntity::setChanged);
 
-        // Battery slot (top-left, on the decorative side panel)
-        this.addSlot(new Slot(machineInventory, BATTERY_SLOT, 8, 4) {
+        // Enrichment product outputs (2x2 grid), auto-filled only.
+        int[][] outputPos = { {71, 53}, {89, 53}, {71, 71}, {89, 71} };
+        for (int i = 0; i < 4; i++) {
+            int x = outputPos[i][0];
+            int y = outputPos[i][1];
+            this.addSlot(new Slot(machineInventory, OUTPUT_SLOT_0 + i, x, y) {
+                @Override
+                public boolean mayPlace(ItemStack stack) {
+                    return false;
+                }
+            });
+        }
+
+        // Battery slot (sits directly below the energy bar)
+        this.addSlot(new Slot(machineInventory, BATTERY_SLOT, 134, 73) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                boolean hbm = stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
+                boolean hbm = stack.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_PROVIDER)
                         .map(provider -> provider.canExtract())
                         .orElse(false);
                 if (hbm) return true;
@@ -78,25 +92,20 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
             }
         });
 
-        // Input slot 1: gas cell (UF6/PUF6) - top-left of the 2x2 grid
-        this.addSlot(new Slot(machineInventory, INPUT_SLOT_1, 79, 57));
-
-        // Input slot 2: Centristick catalyst - top-right of the 2x2 grid
-        this.addSlot(new Slot(machineInventory, INPUT_SLOT_2, 97, 57));
-
-        // Output slot 1: enriched product - bottom-left of the 2x2 grid
-        this.addSlot(new Slot(machineInventory, OUTPUT_SLOT_1, 79, 75) {
+        // Fluid identifier slot (sets which gas the tank accepts)
+        this.addSlot(new Slot(machineInventory, FLUID_ID_SLOT, 91, 15) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return false;
+                return stack.getItem() instanceof FluidIdentifierItem;
             }
         });
 
-        // Output slot 2: empty cell - bottom-right of the 2x2 grid
-        this.addSlot(new Slot(machineInventory, OUTPUT_SLOT_2, 97, 75) {
+        // Speed upgrade slot
+        this.addSlot(new Slot(machineInventory, UPGRADE_SLOT, 69, 15) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return false;
+                return stack.getItem() instanceof ItemMachineUpgrade upgrade
+                        && upgrade.getUpgradeType() == ItemMachineUpgrade.UpgradeType.SPEED;
             }
         });
 
@@ -118,8 +127,8 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
         }
     }
 
-    private static MachineGasCentrifugeBlockEntity getBlockEntity(Inventory playerInventory, FriendlyByteBuf data) {
-        BlockEntity blockEntity = playerInventory.player.level().getBlockEntity(data.readBlockPos());
+    private static MachineGasCentrifugeBlockEntity getBlockEntity(Inventory playerInventory, FriendlyByteBuf extraData) {
+        BlockEntity blockEntity = playerInventory.player.level().getBlockEntity(extraData.readBlockPos());
         if (blockEntity instanceof MachineGasCentrifugeBlockEntity gasCentrifuge) {
             return gasCentrifuge;
         }
@@ -144,6 +153,10 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
         return maxProgress == 0 ? 0 : progress * scale / maxProgress;
     }
 
+    public MachineGasCentrifugeBlockEntity getBlockEntity() {
+        return blockEntity;
+    }
+
     @Override
     public void setEnergy(long energy, long maxEnergy, long delta) {
         this.clientEnergy = energy;
@@ -166,14 +179,14 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
     }
 
     public long getEnergyLong() {
-        if (blockEntity != null && !level.isClientSide) {
+        if (blockEntity != null && !level.isClientSide()) {
             return blockEntity.getEnergyStored();
         }
         return clientEnergy;
     }
 
     public long getMaxEnergyLong() {
-        if (blockEntity != null && !level.isClientSide) {
+        if (blockEntity != null && !level.isClientSide()) {
             return blockEntity.getMaxEnergyStored();
         }
         return clientMaxEnergy;
@@ -183,7 +196,7 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
     public void broadcastChanges() {
         super.broadcastChanges();
 
-        if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
+        if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide()) {
             ModPacketHandler.sendToPlayer((ServerPlayer) this.player, ModPacketHandler.SYNC_ENERGY,
                 new PacketSyncEnergy(
                     this.containerId,
@@ -212,7 +225,7 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
                 return ItemStack.EMPTY;
             }
         } else {
-            boolean isBattery = slotStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
+            boolean isBattery = slotStack.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_PROVIDER)
                     .map(provider -> provider.canExtract())
                     .orElse(false);
             //? if forge {
@@ -225,10 +238,16 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
                 if (!this.moveItemStackTo(slotStack, BATTERY_SLOT, BATTERY_SLOT + 1, false)) {
                     return ItemStack.EMPTY;
                 }
-            } else {
-                if (!this.moveItemStackTo(slotStack, INPUT_SLOT_1, INPUT_SLOT_2 + 1, false)) {
+            } else if (slotStack.getItem() instanceof FluidIdentifierItem) {
+                if (!this.moveItemStackTo(slotStack, FLUID_ID_SLOT, FLUID_ID_SLOT + 1, false)) {
                     return ItemStack.EMPTY;
                 }
+            } else if (slotStack.getItem() instanceof ItemMachineUpgrade) {
+                if (!this.moveItemStackTo(slotStack, UPGRADE_SLOT, UPGRADE_SLOT + 1, false)) {
+                    return ItemStack.EMPTY;
+                }
+            } else {
+                return ItemStack.EMPTY;
             }
         }
 

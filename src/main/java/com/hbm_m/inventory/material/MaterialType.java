@@ -34,7 +34,14 @@ public enum MaterialType {
     BISMUTH     (8300, "bismuth",     0xAA88AA, null),
     BERYLLIUM   (400,  "beryllium",   0xAACC88, null),
     COBALT      (2700, "cobalt",      0x4466BB, null),
-    NICKEL      (2800, "nickel",      0xAABB88, null);
+    NICKEL      (2800, "nickel",      0xAABB88, null),
+
+    /** Alloying intermediates — molten-only, never cast into a plate. */
+    CARBON      (50001,"carbon",      0x2B2B2B, null),
+    ARSENIC     (50002,"arsenic",     0x8B7FBF, null),
+    TECHNETIUM  (50003,"technetium",  0x66AACC, null),
+    REDSTONE    (50004,"redstone",    0xC02020, null),
+    MINGRADE    (50005,"mingrade",    0xB56A3A, null);
 
     public final int    id;
     public final String name;
