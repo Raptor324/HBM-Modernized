@@ -118,12 +118,8 @@ public final class MainRegistry {
         HazardRegistry.registerItems();
         com.hbm_m.config.FalloutConfigJSON.initialize();
         DamageResistanceHandler.initArmorStats();
-<<<<<<< HEAD
-        com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity.registerLaunchables();
-        com.hbm_m.satellite.Satellite.register();
-=======
         com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity.registerLaunchables();
->>>>>>> 910527b2d8c811b73b30c9dce85eea2396003997
+        com.hbm_m.satellite.Satellite.register();
 
         CentrifugeRecipes.registerRecipes();
         CyclotronRecipes.registerRecipes();

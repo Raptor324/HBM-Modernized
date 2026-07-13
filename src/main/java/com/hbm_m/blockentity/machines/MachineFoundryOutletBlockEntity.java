@@ -1,12 +1,8 @@
 package com.hbm_m.blockentity.machines;
 
-<<<<<<< HEAD:src/main/java/com/hbm_m/block/entity/machines/MachineFoundryOutletBlockEntity.java
 import com.hbm_m.api.block.ICrucibleAcceptor;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.machines.MachineFoundryOutletBlock;
-=======
 import com.hbm_m.blockentity.ModBlockEntities;
->>>>>>> 910527b2d8c811b73b30c9dce85eea2396003997:src/main/java/com/hbm_m/blockentity/machines/MachineFoundryOutletBlockEntity.java
+import com.hbm_m.block.machines.MachineFoundryOutletBlock;
 import com.hbm_m.inventory.material.MaterialStack;
 import com.hbm_m.inventory.material.MaterialType;
 import com.hbm_m.util.CrucibleUtil;

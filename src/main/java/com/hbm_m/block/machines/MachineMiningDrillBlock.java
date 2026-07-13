@@ -106,15 +106,8 @@ public class MachineMiningDrillBlock extends BaseEntityBlock implements IMultibl
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-<<<<<<< HEAD
             structureHelper.placeStructure(level, pos, state.getValue(FACING), this);
             EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
-=======
-            BlockPos core = placeMultiblockStructure(level, pos, state);
-            if (core == null) {
-                return;
-            }
->>>>>>> 910527b2d8c811b73b30c9dce85eea2396003997
         }
     }
 

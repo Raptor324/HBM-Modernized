@@ -5,18 +5,12 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-<<<<<<< HEAD:src/main/java/com/hbm_m/block/entity/machines/MachineGasCentrifugeBlockEntity.java
 import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
-import com.hbm_m.block.entity.BaseMachineBlockEntity;
-import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.blockentity.BaseMachineBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.block.machines.MachineGasCentrifugeBlock;
 import com.hbm_m.inventory.UpgradeManager;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
-=======
-import com.hbm_m.blockentity.BaseMachineBlockEntity;
-import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.capability.ModCapabilities;
->>>>>>> 910527b2d8c811b73b30c9dce85eea2396003997:src/main/java/com/hbm_m/blockentity/machines/MachineGasCentrifugeBlockEntity.java
 import com.hbm_m.inventory.menu.MachineGasCentrifugeMenu;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;

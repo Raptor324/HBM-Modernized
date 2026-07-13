@@ -1,7 +1,7 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.machines.MachineGasCentrifugeBlockEntity;
+import com.hbm_m.blockentity.machines.MachineGasCentrifugeBlockEntity;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;

@@ -1,13 +1,7 @@
 package com.hbm_m.block.machines;
 
-<<<<<<< HEAD
 import com.google.common.collect.ImmutableMap;
-import com.hbm_m.block.entity.machines.MachineFoundryOutletBlockEntity;
-=======
-import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineFoundryOutletBlockEntity;
-
->>>>>>> 910527b2d8c811b73b30c9dce85eea2396003997
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;

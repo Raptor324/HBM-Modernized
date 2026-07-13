@@ -1,13 +1,8 @@
 package com.hbm_m.blockentity.machines;
 
-<<<<<<< HEAD:src/main/java/com/hbm_m/block/entity/machines/MachineMiningDrillBlockEntity.java
-import com.hbm_m.block.entity.BaseMachineBlockEntity;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.nature.DepthOreBlock;
-=======
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
->>>>>>> 910527b2d8c811b73b30c9dce85eea2396003997:src/main/java/com/hbm_m/blockentity/machines/MachineMiningDrillBlockEntity.java
+import com.hbm_m.block.nature.DepthOreBlock;
 import com.hbm_m.inventory.menu.MachineMiningDrillMenu;
 import com.hbm_m.item.ModItems;
 

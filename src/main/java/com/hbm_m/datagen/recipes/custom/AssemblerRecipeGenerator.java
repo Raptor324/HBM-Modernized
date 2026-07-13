@@ -31,7 +31,6 @@ public final class AssemblerRecipeGenerator {
         registerCastPlateRecipes(writer);
         registerDoorRecipes(writer);
         registerMissileRecipes(writer);
-<<<<<<< HEAD
         registerMachineParts(writer);
         registerMachines(writer);
         registerGenerators(writer);
@@ -807,9 +806,6 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.CRYSTAL_XEN.get(), 1)
                 .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 16)
                 .save(writer, "satelliteresonator");
-=======
-        registerBombRecipes(writer);
->>>>>>> 910527b2d8c811b73b30c9dce85eea2396003997
     }
 
 

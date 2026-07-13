@@ -1,12 +1,8 @@
 package com.hbm_m.inventory.menu;
 
-<<<<<<< HEAD
 import com.hbm_m.api.energy.ItemEnergyAccess;
-import com.hbm_m.block.entity.machines.MachineMiningDrillBlockEntity;
-import com.hbm_m.inventory.ModItemStackHandlerContainer;
-=======
 import com.hbm_m.blockentity.machines.MachineMiningDrillBlockEntity;
->>>>>>> 910527b2d8c811b73b30c9dce85eea2396003997
+import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.core.BlockPos;
