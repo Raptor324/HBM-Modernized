@@ -505,7 +505,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleMachineBlock(ModBlocks.ARC_FURNACE);
         simpleMachineBlock(ModBlocks.ASSEMBLY_FACTORY);
         simpleMachineBlock(ModBlocks.AUTOSAW);
-        simpleMachineBlock(ModBlocks.BAT9000);
         simpleMachineBlock(ModBlocks.BEAMLINE);
         simpleMachineBlock(ModBlocks.BOILER);
         simpleMachineBlock(ModBlocks.BOILER_FUSION);
@@ -598,6 +597,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // FluidTank - только FACING
         horizontalBlock(ModBlocks.FLUID_TANK.get(),
             models().getExistingFile(modLoc("block/machines/fluid_tank")));
+
+        // BAT9000 - uses its own pre-existing dedicated model/texture (static, no fluid-tint swap)
+        horizontalBlock(ModBlocks.BAT9000.get(),
+            models().getExistingFile(modLoc("block/machines/bat9000")));
 
         horizontalBlock(ModBlocks.MACHINE_BATTERY_SOCKET.get(),
             models().getExistingFile(modLoc("block/machines/machine_battery_socket")));

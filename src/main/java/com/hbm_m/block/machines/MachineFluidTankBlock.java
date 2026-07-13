@@ -59,7 +59,7 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
      * 5 в ширину, 3 в высоту, 3 в глубину.
      * Контроллер 'C' находится в центре переднего ряда нижнего слоя.
      */
-    private MultiblockStructureHelper defineStructure() {
+    protected MultiblockStructureHelper defineStructure() {
         // Строка 0 - передняя (ближняя к игроку), Строка 2 - задняя.
 
         // Направления лестницы: MultiblockSideTuples.ladder(north, south, west, east) - локально к схеме до поворота FACING.

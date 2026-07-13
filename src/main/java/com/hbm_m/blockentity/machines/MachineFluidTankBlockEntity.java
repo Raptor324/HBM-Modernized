@@ -119,9 +119,17 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     //?}
 
     public MachineFluidTankBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.FLUID_TANK_BE.get(), pos, state);
+        this(ModBlockEntities.FLUID_TANK_BE.get(), pos, state, TANK_CAPACITY);
+    }
 
-        this.fluidTank = new FluidTank(ModFluids.NONE.getSource(), TANK_CAPACITY);
+    /**
+     * Used by subclasses (e.g. BAT9000) that reuse this class's logic wholesale with a different
+     * registered {@link net.minecraft.world.level.block.entity.BlockEntityType} and capacity.
+     */
+    protected MachineFluidTankBlockEntity(net.minecraft.world.level.block.entity.BlockEntityType<?> type, BlockPos pos, BlockState state, int capacity) {
+        super(type, pos, state);
+
+        this.fluidTank = new FluidTank(ModFluids.NONE.getSource(), capacity);
 
         this.itemHandler = new ModItemStackHandler(6) {
             @Override

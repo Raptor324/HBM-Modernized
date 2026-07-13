@@ -396,6 +396,11 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(MachineFluidTankBlockEntity::new,
                             ModBlocks.FLUID_TANK.get()).build(null));
 
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.Bat9000BlockEntity>> BAT9000_BE =
+            BLOCK_ENTITIES.register("bat9000_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.Bat9000BlockEntity::new,
+                            ModBlocks.BAT9000.get()).build(null));
+
     public static final RegistrySupplier<BlockEntityType<BatterySocketBlockEntity>> BATTERY_SOCKET_BE =
             BLOCK_ENTITIES.register("battery_socket_be", () ->
                     BlockEntityType.Builder.of(BatterySocketBlockEntity::new,

@@ -1367,6 +1367,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.advanced_assembly_machine", "Сборочная машина");
                 add("block.hbm_m.block_uranium", "Урановый блок");
                 add(ModBlocks.FLUID_TANK.get(), "Цистерна");
+                add(ModBlocks.BAT9000.get(), "БАТ9000");
                 add(ModBlocks.MACHINE_BATTERY_SOCKET.get(), "Аккумуляторный разъём");
                 add(ModBlocks.FLUID_DUCT.get(), "Жидкостная труба (NEO)");
                 add(ModBlocks.FLUID_DUCT_COLORED.get(), "Жидкостная труба (цветная)");
@@ -1403,7 +1404,6 @@ public class ModLanguageProvider extends LanguageProvider {
                     add(ModBlocks.ARC_FURNACE.get(), "Дуговая печь (WIP)");
                     add(ModBlocks.ASSEMBLY_FACTORY.get(), "Сборочный завод (WIP)");
                     add(ModBlocks.AUTOSAW.get(), "Автопила (WIP)");
-                    add(ModBlocks.BAT9000.get(), "BAT9000 (WIP)");
                     add(ModBlocks.BEAMLINE.get(), "Канал пучка (WIP)");
                     add(ModBlocks.BOILER.get(), "Котёл (WIP)");
                     add(ModBlocks.BOILER_FUSION.get(), "Термоядерный котёл (WIP)");
@@ -3717,6 +3717,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.CHEMICAL_PLANT.get(), "Chemical Plant");
                 add(ModBlocks.CENTRIFUGE.get(), "Centrifuge");
                 add(ModBlocks.FLUID_TANK.get(), "Tank");
+                add(ModBlocks.BAT9000.get(), "BAT9000");
                 add(ModBlocks.DERRICK.get(), "Derrick (WIP)");
                 add(ModBlocks.RBMK_CONSOLE.get(), "RBMK Console (WIP)");
                 add(ModBlocks.RBMK_ROD.get(), "RBMK Fuel Channel");
@@ -3818,7 +3819,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.ARC_FURNACE.get(), "Arc Furnace (WIP)");
                 add(ModBlocks.ASSEMBLY_FACTORY.get(), "Assembly Factory (WIP)");
                 add(ModBlocks.AUTOSAW.get(), "Autosaw (WIP)");
-                add(ModBlocks.BAT9000.get(), "BAT9000 (WIP)");
                 add(ModBlocks.BEAMLINE.get(), "Beamline (WIP)");
                 add(ModBlocks.BOILER.get(), "Boiler (WIP)");
                 add(ModBlocks.BOILER_FUSION.get(), "Fusion Boiler (WIP)");

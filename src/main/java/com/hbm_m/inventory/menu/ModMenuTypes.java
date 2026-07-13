@@ -83,6 +83,9 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<MachineFluidTankMenu>> FLUID_TANK_MENU =
             MENUS.register("fluid_tank_menu", () -> MenuRegistry.ofExtended(MachineFluidTankMenu::new));
 
+    public static final RegistrySupplier<MenuType<Bat9000Menu>> BAT9000_MENU =
+            MENUS.register("bat9000_menu", () -> MenuRegistry.ofExtended(Bat9000Menu::new));
+
     public static final RegistrySupplier<MenuType<MachineChemicalPlantMenu>> CHEMICAL_PLANT_MENU =
             MENUS.register("chemical_plant_menu", () -> MenuRegistry.ofExtended(MachineChemicalPlantMenu::new));
 

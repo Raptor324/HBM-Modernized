@@ -725,6 +725,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.MACHINE_ASSEMBLER);
         blockItemFromBlockModelMachine(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
         blockItemFromBlockModelMachine(ModBlocks.FLUID_TANK);
+        blockItemFromBlockModelMachine(ModBlocks.BAT9000);
         blockItemFromBlockModelMachine(ModBlocks.LAUNCH_PAD);
         blockItemFromBlockModelMachine(ModBlocks.LAUNCH_PAD_RUSTED);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_FAT_MAN);
@@ -756,7 +757,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.ARC_FURNACE);
         blockItemFromBlockModelMachine(ModBlocks.ASSEMBLY_FACTORY);
         blockItemFromBlockModelMachine(ModBlocks.AUTOSAW);
-        blockItemFromBlockModelMachine(ModBlocks.BAT9000);
         blockItemFromBlockModelMachine(ModBlocks.BEAMLINE);
         blockItemFromBlockModelMachine(ModBlocks.BOILER);
         blockItemFromBlockModelMachine(ModBlocks.BOILER_FUSION);

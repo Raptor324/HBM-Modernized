@@ -46,6 +46,7 @@ import com.hbm_m.block.machines.LaunchPadRustedBlock;
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.machines.MachineArcWelderBlock;
 import com.hbm_m.block.machines.MachineAssemblerBlock;
+import com.hbm_m.block.machines.MachineBat9000Block;
 import com.hbm_m.block.machines.MachineBatteryBlock;
 import com.hbm_m.block.machines.MachineBatterySocketBlock;
 import com.hbm_m.block.machines.MachineBreederBlock;
@@ -2305,8 +2306,8 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> AUTOSAW = registerBlock("autosaw",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
-    public static final RegistrySupplier<Block> BAT9000 = registerBlock("bat9000",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+    public static final RegistrySupplier<Block> BAT9000 = registerBlockWithoutItem("bat9000",
+            () -> new MachineBat9000Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).requiresCorrectToolForDrops().noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> BEAMLINE = registerBlock("beamline",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
