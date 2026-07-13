@@ -505,6 +505,8 @@ public class ClientSetup {
         MenuScreens.register(ModMenuTypes.TEMPLATE_CRATE_MENU.get(), GUITemplateCrate::new);
         MenuScreens.register(ModMenuTypes.FLUID_TANK_MENU.get(), GUIMachineFluidTank::new);
         MenuScreens.register(ModMenuTypes.BAT9000_MENU.get(), com.hbm_m.inventory.gui.GUIBat9000::new);
+        MenuScreens.register(ModMenuTypes.BARREL_IRON_MENU.get(), com.hbm_m.inventory.gui.GUIBarrelIron::new);
+        MenuScreens.register(ModMenuTypes.BARREL_STEEL_MENU.get(), com.hbm_m.inventory.gui.GUIBarrelSteel::new);
         MenuScreens.register(ModMenuTypes.CHEMICAL_PLANT_MENU.get(), GUIMachineChemicalPlant::new);
         MenuScreens.register(ModMenuTypes.SOYUZ_LAUNCHER_MENU.get(), com.hbm_m.inventory.gui.GUISoyuzLauncher::new);
         MenuScreens.register(ModMenuTypes.MACHINE_SATLINKER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineSatLinker::new);

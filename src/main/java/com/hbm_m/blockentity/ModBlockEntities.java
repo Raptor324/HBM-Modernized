@@ -401,6 +401,16 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.Bat9000BlockEntity::new,
                             ModBlocks.BAT9000.get()).build(null));
 
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.BarrelIronBlockEntity>> BARREL_IRON_BE =
+            BLOCK_ENTITIES.register("barrel_iron_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.BarrelIronBlockEntity::new,
+                            ModBlocks.BARREL_IRON.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.BarrelSteelBlockEntity>> BARREL_STEEL_BE =
+            BLOCK_ENTITIES.register("barrel_steel_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.BarrelSteelBlockEntity::new,
+                            ModBlocks.BARREL_STEEL.get()).build(null));
+
     public static final RegistrySupplier<BlockEntityType<BatterySocketBlockEntity>> BATTERY_SOCKET_BE =
             BLOCK_ENTITIES.register("battery_socket_be", () ->
                     BlockEntityType.Builder.of(BatterySocketBlockEntity::new,

@@ -1063,7 +1063,9 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BARREL_CORRODED = registerBlock("barrel_corroded",
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> BARREL_IRON = registerBlock("barrel_iron",
-            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
+            () -> new com.hbm_m.block.machines.BarrelTankBlock(Block.Properties.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion(),
+                    com.hbm_m.blockentity.machines.BarrelIronBlockEntity::new,
+                    () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_IRON_BE.get()));
     public static final RegistrySupplier<Block> BARREL_PINK = registerBlock("barrel_pink",
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> BARREL_PLASTIC = registerBlock("barrel_plastic",
@@ -1071,7 +1073,9 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BARREL_RED = registerBlock("barrel_red",
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> BARREL_STEEL = registerBlock("barrel_steel",
-            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
+            () -> new com.hbm_m.block.machines.BarrelTankBlock(Block.Properties.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion(),
+                    com.hbm_m.blockentity.machines.BarrelSteelBlockEntity::new,
+                    () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_STEEL_BE.get()));
     public static final RegistrySupplier<Block> BARREL_TAINT = registerBlock("barrel_taint",
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
 
