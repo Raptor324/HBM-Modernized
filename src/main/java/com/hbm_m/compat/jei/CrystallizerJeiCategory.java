@@ -8,6 +8,7 @@ import net.minecraft.world.item.ItemStack;
 
 //? if forge {
 import mezz.jei.api.constants.VanillaTypes;
+import mezz.jei.api.forge.ForgeTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.helpers.IGuiHelper;
@@ -53,6 +54,7 @@ public class CrystallizerJeiCategory implements IRecipeCategory<CrystallizerJeiR
         // Fluid input — slot 3 at (17, 18), show acid requirement
         if (!recipe.getAcid().isEmpty()) {
             builder.addSlot(RecipeIngredientRole.INPUT, 17, 18)
+                    .setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addFluidStack(recipe.getAcid().getFluid(), recipe.getAcid().getAmount());
         }
     }

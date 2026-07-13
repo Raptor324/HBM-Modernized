@@ -74,8 +74,8 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
             });
         }
 
-        // Battery slot (sits directly below the energy bar)
-        this.addSlot(new Slot(machineInventory, BATTERY_SLOT, 134, 73) {
+        // Battery slot (matches the original 1.7.10 ContainerMachineGasCent layout)
+        this.addSlot(new Slot(machineInventory, BATTERY_SLOT, 182, 71) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 boolean hbm = stack.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_PROVIDER)
@@ -109,9 +109,9 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
             }
         });
 
-        // Player inventory
+        // Player inventory (matches the original 1.7.10 ContainerMachineGasCent layout)
         int playerInvX = 8;
-        int playerInvY = 104;
+        int playerInvY = 122;
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 this.addSlot(new Slot(playerInventory, col + row * 9 + 9,
@@ -120,7 +120,7 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
         }
 
         // Hotbar
-        int hotbarY = 162;
+        int hotbarY = 180;
         for (int col = 0; col < 9; col++) {
             this.addSlot(new Slot(playerInventory, col,
                     playerInvX + col * 18, hotbarY));

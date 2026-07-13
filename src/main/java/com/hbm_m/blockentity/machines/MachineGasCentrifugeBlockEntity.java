@@ -124,6 +124,7 @@ public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity impl
 
         if (level.getGameTime() % 10L == 0L) {
             entity.updateEnergyDelta(entity.getEnergyStored());
+            entity.subscribeToNeighborPipes(level, pos);
         }
 
         boolean dirty = false;
@@ -196,6 +197,21 @@ public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity impl
                 inputTank.setTankType(pseudo);
                 outputTank.setTankType(pseudo.getOutputType());
                 tank.conform(newType);
+            }
+        }
+    }
+
+    /**
+     * Subscribes this receiver directly into any adjacent duct's fluid network — mirrors the
+     * original 1.7.10 {@code TileEntityMachineGasCent#updateConnections()}, which walked its own
+     * exposed neighbor positions and called {@code trySubscribe}. Without this, no duct ever
+     * discovers this machine: only dedicated multiblock connector cells auto-register themselves
+     * in this codebase's fluid network, and this machine has none (it's a single exposed block).
+     */
+    private void subscribeToNeighborPipes(Level level, BlockPos pos) {
+        for (Fluid candidate : PseudoFluidType.FLUID_CONVERSIONS.keySet()) {
+            for (Direction dir : Direction.values()) {
+                trySubscribe(candidate, level, pos.relative(dir), dir);
             }
         }
     }

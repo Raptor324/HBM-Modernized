@@ -352,6 +352,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("pseudofluid.hbm_m.pf6", "PuF6 (обогащённый)");
                 add("pseudofluid.hbm_m.mud", "Отходы WATZ");
                 add("pseudofluid.hbm_m.mud_heavy", "Отходы WATZ (концентрат)");
+                add("jei.hbm_m.gas_centrifuge.info", "Требуется %s центрифуг(и)");
+                add("jei.hbm_m.gas_centrifuge.info_high_speed", "Требуется %s центрифуг(и) (ускоренная)");
                 add("tooltip.hbm_m.satchip.freq", "Частота: %s");
                 add("message.hbm_m.satchip.freq_set", "Частота установлена: %s");
                 add("gui.launchPad.notReady", "Не готова");
@@ -2414,6 +2416,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("pseudofluid.hbm_m.pf6", "PuF6 (enriched)");
                 add("pseudofluid.hbm_m.mud", "WATZ Sludge");
                 add("pseudofluid.hbm_m.mud_heavy", "WATZ Sludge (concentrated)");
+                add("jei.hbm_m.gas_centrifuge.info", "Requires %s centrifuge(s)");
+                add("jei.hbm_m.gas_centrifuge.info_high_speed", "Requires %s centrifuge(s) (high-speed)");
                 add("gui.launchPad.notReady", "Not ready");
                 add("gui.launchPad.loading", "Loading...");
                 add("gui.launchPad.ready", "Ready");
