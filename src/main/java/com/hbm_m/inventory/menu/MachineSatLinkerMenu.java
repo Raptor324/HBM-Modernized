@@ -3,7 +3,7 @@ package com.hbm_m.inventory.menu;
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.machines.MachineSatLinkerBlockEntity;
+import com.hbm_m.blockentity.machines.MachineSatLinkerBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 
 import net.minecraft.network.FriendlyByteBuf;

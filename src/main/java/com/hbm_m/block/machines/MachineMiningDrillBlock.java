@@ -122,7 +122,7 @@ public class MachineMiningDrillBlock extends BaseEntityBlock implements IMultibl
         if (!state.is(newState.getBlock()) && !level.isClientSide()) {
             structureHelper.destroyStructure(level, pos, state.getValue(FACING));
             EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
-            if (level.getBlockEntity(pos) instanceof com.hbm_m.block.entity.BaseMachineBlockEntity be) {
+            if (level.getBlockEntity(pos) instanceof com.hbm_m.blockentity.BaseMachineBlockEntity be) {
                 be.dropInventoryContents();
             }
         }

@@ -1,7 +1,7 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.machines.MissileAssemblyBlockEntity;
+import com.hbm_m.blockentity.machines.MissileAssemblyBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 
 import net.minecraft.network.FriendlyByteBuf;

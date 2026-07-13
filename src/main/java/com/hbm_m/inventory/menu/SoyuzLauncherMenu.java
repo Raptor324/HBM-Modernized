@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.api.item.IDesignatorItem;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.machines.SoyuzLauncherBlockEntity;
+import com.hbm_m.blockentity.machines.SoyuzLauncherBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;

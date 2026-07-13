@@ -2401,6 +2401,17 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("gui.hbm_m.energy", "Energy: %s/%s HE");
                 add("gui.hbm_m.burn_time", "Burn time: %s%%");
+                add("container.hbm_m.gas_centrifuge", "Gas Centrifuge");
+                add("desc.gui.gasCent.enrichment", "Enrichment");
+                add("desc.gui.gasCent.output", "Output");
+                add("pseudofluid.hbm_m.none", "None");
+                add("pseudofluid.hbm_m.nuf6", "UF6 (natural)");
+                add("pseudofluid.hbm_m.leuf6", "UF6 (low-enriched)");
+                add("pseudofluid.hbm_m.meuf6", "UF6 (mid-enriched)");
+                add("pseudofluid.hbm_m.heuf6", "UF6 (highly-enriched)");
+                add("pseudofluid.hbm_m.pf6", "PuF6 (enriched)");
+                add("pseudofluid.hbm_m.mud", "WATZ Sludge");
+                add("pseudofluid.hbm_m.mud_heavy", "WATZ Sludge (concentrated)");
                 add("gui.launchPad.notReady", "Not ready");
                 add("gui.launchPad.loading", "Loading...");
                 add("gui.launchPad.ready", "Ready");

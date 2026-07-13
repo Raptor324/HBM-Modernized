@@ -1,6 +1,6 @@
 package com.hbm_m.network;
 
-import com.hbm_m.block.entity.machines.MissileAssemblyBlockEntity;
+import com.hbm_m.blockentity.machines.MissileAssemblyBlockEntity;
 
 import dev.architectury.networking.NetworkManager.PacketContext;
 

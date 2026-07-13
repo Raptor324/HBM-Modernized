@@ -5,8 +5,8 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
-import com.hbm_m.block.entity.BaseMachineBlockEntity;
-import com.hbm_m.block.entity.machines.TurretBaseBlockEntity;
+import com.hbm_m.blockentity.BaseMachineBlockEntity;
+import com.hbm_m.blockentity.machines.TurretBaseBlockEntity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -28,7 +28,7 @@ import net.minecraftforge.network.NetworkHooks;
 /**
  * Generischer MVP-Turret-Block: einzelner Block (kein Multiblock), statisches Modell.
  * Eine Java-Klasse fuer alle 11 Turret-Varianten - siehe {@link TurretBaseBlockEntity}
- * und {@link com.hbm_m.block.entity.machines.TurretStats}. Visuelle Barrel-Rotation ist
+ * und {@link com.hbm_m.blockentity.machines.TurretStats}. Visuelle Barrel-Rotation ist
  * bewusst nicht implementiert (siehe Begruendung bei der urspruenglichen Sentry-MVP).
  */
 public class TurretBlock extends BaseEntityBlock {

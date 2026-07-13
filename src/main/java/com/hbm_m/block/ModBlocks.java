@@ -437,37 +437,37 @@ public class ModBlocks {
     /** MVP-Turrets (Einzelblock, kein Multiblock) - eine Java-Klasse fuer alle Varianten, siehe {@link com.hbm_m.block.machines.TurretBlock}. */
     public static final RegistrySupplier<Block> TURRET_SENTRY = registerBlock("turret_sentry",
             () -> new com.hbm_m.block.machines.TurretBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).noOcclusion(),
-                    () -> com.hbm_m.block.entity.ModBlockEntities.TURRET_SENTRY_BE.get()));
+                    () -> com.hbm_m.blockentity.ModBlockEntities.TURRET_SENTRY_BE.get()));
     public static final RegistrySupplier<Block> TURRET_CHEKHOV = registerBlock("turret_chekhov",
             () -> new com.hbm_m.block.machines.TurretBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).noOcclusion(),
-                    () -> com.hbm_m.block.entity.ModBlockEntities.TURRET_CHEKHOV_BE.get()));
+                    () -> com.hbm_m.blockentity.ModBlockEntities.TURRET_CHEKHOV_BE.get()));
     public static final RegistrySupplier<Block> TURRET_FRIENDLY = registerBlock("turret_friendly",
             () -> new com.hbm_m.block.machines.TurretBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).noOcclusion(),
-                    () -> com.hbm_m.block.entity.ModBlockEntities.TURRET_FRIENDLY_BE.get()));
+                    () -> com.hbm_m.blockentity.ModBlockEntities.TURRET_FRIENDLY_BE.get()));
     public static final RegistrySupplier<Block> TURRET_JEREMY = registerBlock("turret_jeremy",
             () -> new com.hbm_m.block.machines.TurretBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).noOcclusion(),
-                    () -> com.hbm_m.block.entity.ModBlockEntities.TURRET_JEREMY_BE.get()));
+                    () -> com.hbm_m.blockentity.ModBlockEntities.TURRET_JEREMY_BE.get()));
     public static final RegistrySupplier<Block> TURRET_TAUON = registerBlock("turret_tauon",
             () -> new com.hbm_m.block.machines.TurretBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).noOcclusion(),
-                    () -> com.hbm_m.block.entity.ModBlockEntities.TURRET_TAUON_BE.get()));
+                    () -> com.hbm_m.blockentity.ModBlockEntities.TURRET_TAUON_BE.get()));
     public static final RegistrySupplier<Block> TURRET_RICHARD = registerBlock("turret_richard",
             () -> new com.hbm_m.block.machines.TurretBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).noOcclusion(),
-                    () -> com.hbm_m.block.entity.ModBlockEntities.TURRET_RICHARD_BE.get()));
+                    () -> com.hbm_m.blockentity.ModBlockEntities.TURRET_RICHARD_BE.get()));
     public static final RegistrySupplier<Block> TURRET_HOWARD = registerBlock("turret_howard",
             () -> new com.hbm_m.block.machines.TurretBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(6.0f, 12.0f).noOcclusion(),
-                    () -> com.hbm_m.block.entity.ModBlockEntities.TURRET_HOWARD_BE.get()));
+                    () -> com.hbm_m.blockentity.ModBlockEntities.TURRET_HOWARD_BE.get()));
     public static final RegistrySupplier<Block> TURRET_MAXWELL = registerBlock("turret_maxwell",
             () -> new com.hbm_m.block.machines.TurretBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(6.0f, 12.0f).noOcclusion(),
-                    () -> com.hbm_m.block.entity.ModBlockEntities.TURRET_MAXWELL_BE.get()));
+                    () -> com.hbm_m.blockentity.ModBlockEntities.TURRET_MAXWELL_BE.get()));
     public static final RegistrySupplier<Block> TURRET_FRITZ = registerBlock("turret_fritz",
             () -> new com.hbm_m.block.machines.TurretBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(6.0f, 12.0f).noOcclusion(),
-                    () -> com.hbm_m.block.entity.ModBlockEntities.TURRET_FRITZ_BE.get()));
+                    () -> com.hbm_m.blockentity.ModBlockEntities.TURRET_FRITZ_BE.get()));
     public static final RegistrySupplier<Block> TURRET_ARTY = registerBlock("turret_arty",
             () -> new com.hbm_m.block.machines.TurretBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(8.0f, 20.0f).noOcclusion(),
-                    () -> com.hbm_m.block.entity.ModBlockEntities.TURRET_ARTY_BE.get()));
+                    () -> com.hbm_m.blockentity.ModBlockEntities.TURRET_ARTY_BE.get()));
     public static final RegistrySupplier<Block> TURRET_HIMARS = registerBlock("turret_himars",
             () -> new com.hbm_m.block.machines.TurretBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(8.0f, 20.0f).noOcclusion(),
-                    () -> com.hbm_m.block.entity.ModBlockEntities.TURRET_HIMARS_BE.get()));
+                    () -> com.hbm_m.blockentity.ModBlockEntities.TURRET_HIMARS_BE.get()));
 
     public static final RegistrySupplier<Block> FRACTION_TOWER = registerBlockWithoutItem("fraction_tower",
             () -> new MachineFractionTowerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));

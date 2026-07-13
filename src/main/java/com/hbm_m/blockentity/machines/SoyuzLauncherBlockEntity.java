@@ -1,11 +1,11 @@
-package com.hbm_m.block.entity.machines;
+package com.hbm_m.blockentity.machines;
 
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.api.item.IDesignatorItem;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.BaseMachineBlockEntity;
-import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.blockentity.BaseMachineBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.missile.SoyuzEntity;
 import com.hbm_m.inventory.fluid.ModFluids;

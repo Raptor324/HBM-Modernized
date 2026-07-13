@@ -3,7 +3,7 @@ package com.hbm_m.client.render.implementations;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.decorations.SoyuzLauncherBlock;
-import com.hbm_m.block.entity.machines.SoyuzLauncherBlockEntity;
+import com.hbm_m.blockentity.machines.SoyuzLauncherBlockEntity;
 import com.hbm_m.client.model.SoyuzLauncherBakedModel;
 import com.hbm_m.client.model.SoyuzRocketBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;

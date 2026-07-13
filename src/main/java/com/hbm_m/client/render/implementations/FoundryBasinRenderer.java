@@ -1,6 +1,6 @@
 package com.hbm_m.client.render.implementations;
 
-import com.hbm_m.block.entity.machines.MachineFoundryBasinBlockEntity;
+import com.hbm_m.blockentity.machines.MachineFoundryBasinBlockEntity;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.vertex.PoseStack;

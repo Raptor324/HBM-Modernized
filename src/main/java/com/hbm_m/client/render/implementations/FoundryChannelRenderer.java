@@ -1,6 +1,6 @@
 package com.hbm_m.client.render.implementations;
 
-import com.hbm_m.block.entity.machines.MachineFoundryChannelBlockEntity;
+import com.hbm_m.blockentity.machines.MachineFoundryChannelBlockEntity;
 import com.hbm_m.block.machines.MachineFoundryChannelBlock;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.lib.RefStrings;

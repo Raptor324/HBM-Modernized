@@ -1,6 +1,6 @@
 package com.hbm_m.network;
 
-import com.hbm_m.block.entity.machines.SoyuzLauncherBlockEntity;
+import com.hbm_m.blockentity.machines.SoyuzLauncherBlockEntity;
 
 import dev.architectury.networking.NetworkManager.PacketContext;
 import net.minecraft.core.BlockPos;

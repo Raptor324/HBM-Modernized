@@ -2,7 +2,7 @@ package com.hbm_m.client.render.implementations;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.entity.machines.MachineMiningDrillBlockEntity;
+import com.hbm_m.blockentity.machines.MachineMiningDrillBlockEntity;
 import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.lib.RefStrings;

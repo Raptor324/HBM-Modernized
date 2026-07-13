@@ -2,7 +2,7 @@ package com.hbm_m.inventory.gui;
 
 import java.util.List;
 
-import com.hbm_m.block.entity.machines.SoyuzLauncherBlockEntity;
+import com.hbm_m.blockentity.machines.SoyuzLauncherBlockEntity;
 import com.hbm_m.inventory.menu.SoyuzLauncherMenu;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.ModPacketHandler;

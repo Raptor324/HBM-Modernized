@@ -1,11 +1,11 @@
-package com.hbm_m.block.entity.machines;
+package com.hbm_m.blockentity.machines;
 
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.entity.BaseMachineBlockEntity;
-import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.blockentity.BaseMachineBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.inventory.menu.TurretMenu;
 import com.hbm_m.item.ModItems;

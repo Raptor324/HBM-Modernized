@@ -1,6 +1,6 @@
 package com.hbm_m.block.entity.decorations;
 
-import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.blockentity.ModBlockEntities;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;

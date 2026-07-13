@@ -836,7 +836,7 @@ public class ClientSetup {
             if (tintIndex == 0) return 0xFFFFFF;
             if (tintIndex != 1 || level == null || pos == null) return 0xFFFFFF;
             var be = level.getBlockEntity(pos);
-            if (be instanceof com.hbm_m.block.entity.machines.FluidDuctBlockEntity ductBe) {
+            if (be instanceof com.hbm_m.blockentity.machines.FluidDuctBlockEntity ductBe) {
                 var fluid = ductBe.getFluidType();
                 if (fluid != net.minecraft.world.level.material.Fluids.EMPTY) {
                     return com.hbm_m.api.fluids.HbmFluidRegistry.getTintColor(fluid);

@@ -1,6 +1,6 @@
 package com.hbm_m.network;
 
-import com.hbm_m.block.entity.machines.TurretBaseBlockEntity;
+import com.hbm_m.blockentity.machines.TurretBaseBlockEntity;
 
 import dev.architectury.networking.NetworkManager.PacketContext;
 import net.minecraft.core.BlockPos;

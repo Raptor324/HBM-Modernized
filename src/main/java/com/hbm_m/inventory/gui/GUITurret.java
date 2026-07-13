@@ -15,7 +15,7 @@ import net.minecraft.world.entity.player.Inventory;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Generischer GUI-Screen fuer alle Turret-Varianten - Textur kommt aus {@link com.hbm_m.block.entity.machines.TurretStats}. */
+/** Generischer GUI-Screen fuer alle Turret-Varianten - Textur kommt aus {@link com.hbm_m.blockentity.machines.TurretStats}. */
 public class GUITurret extends AbstractContainerScreen<TurretMenu> {
 
     private final ResourceLocation texture;
@@ -65,7 +65,7 @@ public class GUITurret extends AbstractContainerScreen<TurretMenu> {
     private static final int MODE_BTN_Y = BTN_Y_START + 5 * (BTN_SIZE + 2) + 4;
 
     private boolean isArty() {
-        return menu.blockEntity.getStats() == com.hbm_m.block.entity.machines.TurretStats.ARTY;
+        return menu.blockEntity.getStats() == com.hbm_m.blockentity.machines.TurretStats.ARTY;
     }
 
     @Override

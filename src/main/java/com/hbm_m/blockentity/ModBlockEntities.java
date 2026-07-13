@@ -184,43 +184,43 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("cracking_tower_be", () ->
                     BlockEntityType.Builder.of(MachineCrackingTowerBlockEntity::new, ModBlocks.CRACKING_TOWER.get()).build(null));
 
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.block.entity.machines.TurretBaseBlockEntity>> TURRET_SENTRY_BE =
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.TurretBaseBlockEntity>> TURRET_SENTRY_BE =
             BLOCK_ENTITIES.register("turret_sentry_be", () ->
-                    BlockEntityType.Builder.of(com.hbm_m.block.entity.machines.TurretBaseBlockEntity::createSentry, ModBlocks.TURRET_SENTRY.get()).build(null));
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.block.entity.machines.TurretBaseBlockEntity>> TURRET_CHEKHOV_BE =
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.TurretBaseBlockEntity::createSentry, ModBlocks.TURRET_SENTRY.get()).build(null));
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.TurretBaseBlockEntity>> TURRET_CHEKHOV_BE =
             BLOCK_ENTITIES.register("turret_chekhov_be", () ->
-                    BlockEntityType.Builder.of(com.hbm_m.block.entity.machines.TurretBaseBlockEntity::createChekhov, ModBlocks.TURRET_CHEKHOV.get()).build(null));
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.block.entity.machines.TurretBaseBlockEntity>> TURRET_FRIENDLY_BE =
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.TurretBaseBlockEntity::createChekhov, ModBlocks.TURRET_CHEKHOV.get()).build(null));
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.TurretBaseBlockEntity>> TURRET_FRIENDLY_BE =
             BLOCK_ENTITIES.register("turret_friendly_be", () ->
-                    BlockEntityType.Builder.of(com.hbm_m.block.entity.machines.TurretBaseBlockEntity::createFriendly, ModBlocks.TURRET_FRIENDLY.get()).build(null));
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.block.entity.machines.TurretBaseBlockEntity>> TURRET_JEREMY_BE =
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.TurretBaseBlockEntity::createFriendly, ModBlocks.TURRET_FRIENDLY.get()).build(null));
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.TurretBaseBlockEntity>> TURRET_JEREMY_BE =
             BLOCK_ENTITIES.register("turret_jeremy_be", () ->
-                    BlockEntityType.Builder.of(com.hbm_m.block.entity.machines.TurretBaseBlockEntity::createJeremy, ModBlocks.TURRET_JEREMY.get()).build(null));
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.block.entity.machines.TurretBaseBlockEntity>> TURRET_TAUON_BE =
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.TurretBaseBlockEntity::createJeremy, ModBlocks.TURRET_JEREMY.get()).build(null));
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.TurretBaseBlockEntity>> TURRET_TAUON_BE =
             BLOCK_ENTITIES.register("turret_tauon_be", () ->
-                    BlockEntityType.Builder.of(com.hbm_m.block.entity.machines.TurretBaseBlockEntity::createTauon, ModBlocks.TURRET_TAUON.get()).build(null));
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.block.entity.machines.TurretBaseBlockEntity>> TURRET_RICHARD_BE =
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.TurretBaseBlockEntity::createTauon, ModBlocks.TURRET_TAUON.get()).build(null));
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.TurretBaseBlockEntity>> TURRET_RICHARD_BE =
             BLOCK_ENTITIES.register("turret_richard_be", () ->
-                    BlockEntityType.Builder.of(com.hbm_m.block.entity.machines.TurretBaseBlockEntity::createRichard, ModBlocks.TURRET_RICHARD.get()).build(null));
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.block.entity.machines.TurretBaseBlockEntity>> TURRET_HOWARD_BE =
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.TurretBaseBlockEntity::createRichard, ModBlocks.TURRET_RICHARD.get()).build(null));
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.TurretBaseBlockEntity>> TURRET_HOWARD_BE =
             BLOCK_ENTITIES.register("turret_howard_be", () ->
-                    BlockEntityType.Builder.of(com.hbm_m.block.entity.machines.TurretBaseBlockEntity::createHoward, ModBlocks.TURRET_HOWARD.get()).build(null));
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.block.entity.machines.TurretBaseBlockEntity>> TURRET_MAXWELL_BE =
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.TurretBaseBlockEntity::createHoward, ModBlocks.TURRET_HOWARD.get()).build(null));
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.TurretBaseBlockEntity>> TURRET_MAXWELL_BE =
             BLOCK_ENTITIES.register("turret_maxwell_be", () ->
-                    BlockEntityType.Builder.of(com.hbm_m.block.entity.machines.TurretBaseBlockEntity::createMaxwell, ModBlocks.TURRET_MAXWELL.get()).build(null));
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.block.entity.machines.TurretBaseBlockEntity>> TURRET_FRITZ_BE =
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.TurretBaseBlockEntity::createMaxwell, ModBlocks.TURRET_MAXWELL.get()).build(null));
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.TurretBaseBlockEntity>> TURRET_FRITZ_BE =
             BLOCK_ENTITIES.register("turret_fritz_be", () ->
-                    BlockEntityType.Builder.of(com.hbm_m.block.entity.machines.TurretBaseBlockEntity::createFritz, ModBlocks.TURRET_FRITZ.get()).build(null));
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.block.entity.machines.TurretBaseBlockEntity>> TURRET_ARTY_BE =
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.TurretBaseBlockEntity::createFritz, ModBlocks.TURRET_FRITZ.get()).build(null));
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.TurretBaseBlockEntity>> TURRET_ARTY_BE =
             BLOCK_ENTITIES.register("turret_arty_be", () ->
-                    BlockEntityType.Builder.of(com.hbm_m.block.entity.machines.TurretBaseBlockEntity::createArty, ModBlocks.TURRET_ARTY.get()).build(null));
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.block.entity.machines.TurretBaseBlockEntity>> TURRET_HIMARS_BE =
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.TurretBaseBlockEntity::createArty, ModBlocks.TURRET_ARTY.get()).build(null));
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.TurretBaseBlockEntity>> TURRET_HIMARS_BE =
             BLOCK_ENTITIES.register("turret_himars_be", () ->
-                    BlockEntityType.Builder.of(com.hbm_m.block.entity.machines.TurretBaseBlockEntity::createHimars, ModBlocks.TURRET_HIMARS.get()).build(null));
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.TurretBaseBlockEntity::createHimars, ModBlocks.TURRET_HIMARS.get()).build(null));
 
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.block.entity.machines.MissileAssemblyBlockEntity>> MISSILE_ASSEMBLY_BE =
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MissileAssemblyBlockEntity>> MISSILE_ASSEMBLY_BE =
             BLOCK_ENTITIES.register("missile_assembly_be", () ->
-                    BlockEntityType.Builder.of(com.hbm_m.block.entity.machines.MissileAssemblyBlockEntity::new, ModBlocks.MACHINE_MISSILE_ASSEMBLY.get()).build(null));
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MissileAssemblyBlockEntity::new, ModBlocks.MACHINE_MISSILE_ASSEMBLY.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<MachineFractionTowerBlockEntity>> FRACTION_TOWER_BE =
             BLOCK_ENTITIES.register("fraction_tower_be", () ->
@@ -692,9 +692,9 @@ public class ModBlockEntities {
                             ModBlocks.RBMK_NUMITRON.get(), ModBlocks.RBMK_GRAPH.get(),
                             ModBlocks.RBMK_TERMINAL.get(), ModBlocks.RBMK_KEYPAD.get()).build(null));
 
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.block.entity.machines.SoyuzLauncherBlockEntity>> SOYUZ_LAUNCHER_BE =
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.SoyuzLauncherBlockEntity>> SOYUZ_LAUNCHER_BE =
             BLOCK_ENTITIES.register("soyuz_launcher_be", () ->
-                    BlockEntityType.Builder.of(com.hbm_m.block.entity.machines.SoyuzLauncherBlockEntity::new,
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.SoyuzLauncherBlockEntity::new,
                             ModBlocks.SOYUZ_LAUNCHER.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.block.entity.decorations.SoyuzRocketBlockEntity>> DECO_SOYUZ_ROCKET_BE =
@@ -702,9 +702,9 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(com.hbm_m.block.entity.decorations.SoyuzRocketBlockEntity::new,
                             ModBlocks.DECO_SOYUZ_ROCKET.get()).build(null));
 
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.block.entity.machines.MachineSatLinkerBlockEntity>> MACHINE_SATLINKER_BE =
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineSatLinkerBlockEntity>> MACHINE_SATLINKER_BE =
             BLOCK_ENTITIES.register("machine_satlinker_be", () ->
-                    BlockEntityType.Builder.of(com.hbm_m.block.entity.machines.MachineSatLinkerBlockEntity::new,
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineSatLinkerBlockEntity::new,
                             ModBlocks.MACHINE_SATLINKER.get()).build(null));
 
     public static void init() {

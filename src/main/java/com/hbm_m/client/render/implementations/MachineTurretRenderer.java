@@ -5,8 +5,8 @@ import java.util.Map;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.entity.machines.TurretBaseBlockEntity;
-import com.hbm_m.block.entity.machines.TurretStats;
+import com.hbm_m.blockentity.machines.TurretBaseBlockEntity;
+import com.hbm_m.blockentity.machines.TurretStats;
 import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.lib.RefStrings;

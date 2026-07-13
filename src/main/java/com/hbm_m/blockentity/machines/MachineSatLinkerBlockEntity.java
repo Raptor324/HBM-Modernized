@@ -1,9 +1,9 @@
-package com.hbm_m.block.entity.machines;
+package com.hbm_m.blockentity.machines;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineSatLinkerMenu;
 import com.hbm_m.item.ISatChip;
 import com.hbm_m.platform.ModItemStackHandler;
