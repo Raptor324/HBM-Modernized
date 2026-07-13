@@ -352,6 +352,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("pseudofluid.hbm_m.pf6", "PuF6 (обогащённый)");
                 add("pseudofluid.hbm_m.mud", "Отходы WATZ");
                 add("pseudofluid.hbm_m.mud_heavy", "Отходы WATZ (концентрат)");
+                add("tooltip.hbm_m.satchip.freq", "Частота: %s");
+                add("message.hbm_m.satchip.freq_set", "Частота установлена: %s");
                 add("gui.launchPad.notReady", "Не готова");
                 add("gui.launchPad.loading", "Загрузка...");
                 add("gui.launchPad.ready", "Готова");
@@ -5660,6 +5662,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.SAT_COORD.get(), "Satellite Designator");
                 add(ModItems.SAT_DESIGNATOR.get(), "Satellite Laser Designator");
                 add(ModItems.SAT_GERALD.get(), "Gerald The Construction Android");
+                add("tooltip.hbm_m.satchip.freq", "Frequency: %s");
+                add("message.hbm_m.satchip.freq_set", "Frequency set to %s");
                 add(ModItems.SAT_HEAD_SCANNER.get(), "M700 Survey Scanner");
                 add(ModItems.SAT_INTERFACE.get(), "Satellite Control Interface");
                 add(ModItems.SAT_LUNAR_MINER.get(), "Lunar Mining Ship");
