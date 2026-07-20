@@ -3,6 +3,8 @@ package com.hbm_m.blockentity.machines;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Locale;
+
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -435,7 +437,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
                 for (int z = worldPosition.getZ() - range; z <= worldPosition.getZ() + range; z++) {
                     BlockPos checkPos = new BlockPos(x, y, z);
                     Block block = level.getBlockState(checkPos).getBlock();
-                    String blockName = block.getDescriptionId().toLowerCase();
+                    String blockName = block.getDescriptionId().toLowerCase(Locale.ROOT);
                     
                     if (blockName.contains("oil") && blockName.contains("ore")) {
                         return checkPos;

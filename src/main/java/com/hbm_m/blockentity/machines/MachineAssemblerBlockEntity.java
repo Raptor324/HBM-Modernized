@@ -771,13 +771,13 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     // ==================== CLIENT ====================
 
     //? if fabric {
-    /*@Environment(EnvType.CLIENT)
+    /*// NOTE: no @Environment(EnvType.CLIENT) on these fields -- see the Forge branch below;
+    // an annotated field is stripped on a dedicated server while the constructor's PUTFIELD
+    // survives, producing NoSuchFieldError on block entity creation.
     private ItemStack clientRecipeIconTemplate = ItemStack.EMPTY;
 
-    @Environment(EnvType.CLIENT)
     private ItemStack clientRecipeIconCache = ItemStack.EMPTY;
 
-    @Environment(EnvType.CLIENT)
     public ItemStack getClientRecipeIcon() {
         ItemStack template = getInventory().getStackInSlot(TEMPLATE_SLOT);
         if (ItemStack.matches(template, clientRecipeIconTemplate)) {
@@ -794,14 +794,15 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     *///?}
 
     //? if forge {
-    @OnlyIn(Dist.CLIENT)
+    // NOTE: no @OnlyIn(Dist.CLIENT) on these fields. Field initializers are compiled into the
+    // constructor, which is not side-stripped, so an annotated field would be removed on a
+    // dedicated server while its PUTFIELD survives -> NoSuchFieldError on block entity creation.
+    // These are only ever read from the client renderer; on a server they just stay empty.
     private ItemStack clientRecipeIconTemplate = ItemStack.EMPTY;
 
-    @OnlyIn(Dist.CLIENT)
     private ItemStack clientRecipeIconCache = ItemStack.EMPTY;
 
     /** Cached recipe output icon for BER; refreshed when assembly template slot changes. */
-    @OnlyIn(Dist.CLIENT)
     public ItemStack getClientRecipeIcon() {
         ItemStack template = getInventory().getStackInSlot(TEMPLATE_SLOT);
         if (ItemStack.matches(template, clientRecipeIconTemplate)) {

@@ -131,5 +131,20 @@ tasks.named("createMinecraftArtifacts") {
 	dependsOn(tasks.named("stonecutterGenerate"))
 }
 
+// Datagen output (src/generated/resources) is wired into the main sourceSet above, but it
+// deliberately is NOT hooked into `build`. Do not add processResources.dependsOn("runData"):
+// runData's runtime classpath is the main sourceSet output, so runData already depends on
+// classes -> processResources. Adding the reverse edge produces
+//   classes -> processResources -> runData -> classes
+// and Gradle fails with a circular dependency. mustRunAfter cannot help either, since the
+// required ordering is genuinely contradictory within a single task graph.
+//
+// Datagen is therefore a two-invocation workflow, run it after changing any provider:
+//   ./gradlew :<version>:runData
+//   ./gradlew :<version>:build
+// A fresh clone has no generated resources at all (.gitignore excludes blockstates/, models/
+// and data/), so runData is mandatory before the first build or most blocks ship without
+// blockstates, recipes and loot tables.
+
 stonecutter {
 }
