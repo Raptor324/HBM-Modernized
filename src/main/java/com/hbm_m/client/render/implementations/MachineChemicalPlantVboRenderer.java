@@ -17,6 +17,7 @@ import com.hbm_m.client.model.ModelHelper;
 import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
@@ -189,20 +190,6 @@ public class MachineChemicalPlantVboRenderer {
         return Math.sin(Math.PI / 2.0 * Math.cos(x));
     }
 
-    /**
-     * Ставит рендер жидкости в очередь до {@link MachineChemicalPlantRenderer#presentDeferredFluids()}.
-     * Caller уже применил поворот блока; здесь только VBO-сдвиг {@code (-0.5, 0, -0.5)}.
-     */
-    public static void renderChemplantFluid(MachineChemicalPlantBlockEntity be, MachineChemicalPlantBakedModel model,
-                                            float partialTick, PoseStack poseStack, MultiBufferSource bufferSource,
-                                            int packedLight, int packedOverlay, FluidVisual visual) {
-        poseStack.pushPose();
-        poseStack.translate(-0.5f, 0f, -0.5f);
-        MachineChemicalPlantRenderer.scheduleDeferredFluid(
-            be.getBlockPos(), poseStack.last().pose(), packedLight, packedOverlay, visual);
-        poseStack.popPose();
-    }
-
     private static final ResourceLocation CHEMPLANT_FLUID_TEX =
         ResourceLocation.fromNamespaceAndPath("hbm_m", "block/machine/chemical_plant_fluid");
 
@@ -210,6 +197,17 @@ public class MachineChemicalPlantVboRenderer {
      * Block translucent: depth write off (как {@code glDepthMask(false)} в 1.7.10), формат BLOCK для baked quads.
      */
     private static final RenderType FLUID_RENDER_TYPE = RenderType.translucent();
+
+    /**
+     * Изолированный immediate BufferSource для жидкости хемпланта. Один
+     * {@code endBatch()} на кадр делает {@link MachineChemicalPlantRenderer#presentDeferredFluids()}
+     * — это намеренно отдельный источник, НЕ shared {@code mc.renderBuffers().bufferSource()},
+     * потому что {@code endBatch(translucent)} на shared-источнике выкинул бы в glDraw
+     * и чужую pending translucent-геометрию (теперь не HBM) раньше времени и ломал
+     * translucent-compositing других модов на Create-поездах с дверьми copycat.
+     */
+    static final MultiBufferSource.BufferSource FLUID_BUFFER_SOURCE =
+            MultiBufferSource.immediate(new BufferBuilder(262144));
 
     //? if forge {
     /** Immediate draw used by {@link MachineChemicalPlantRenderer#presentDeferredFluids()}. */

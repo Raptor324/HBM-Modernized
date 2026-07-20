@@ -104,6 +104,14 @@ public class ModelHelper {
     private static final int MIN_STRIDE = 8; // Embeddium/Sodium compact format
 
     /**
+     * Reusable scratch vectors for {@link #transformQuadsByMatrix}. Render-thread
+     * only; the transform helpers do not recurse, so per-class scratch is safe and
+     * avoids a {@code new Vector4f} per quad (door open/close, BER part matrix).
+     */
+    private static final Vector4f TMP_POS = new Vector4f();
+    private static final Vector4f TMP_NORM = new Vector4f();
+
+    /**
      * Поворачивает квады вокруг оси Y через центр блока (0.5, 0.5, 0.5).
      * @param quads исходные квады
      * @param angleDeg угол в градусах (0=North, 90=East, 180=South, 270=West)
@@ -297,8 +305,9 @@ public class ModelHelper {
         }
         Matrix4f normalMatrix = new Matrix4f(matrix).invert().transpose();
         List<BakedQuad> result = new ArrayList<>(quads.size());
-        Vector4f pos = new Vector4f();
-        Vector4f norm = new Vector4f();
+        // Reuse class-level scratch (render-thread only, no recursion).
+        Vector4f pos = TMP_POS;
+        Vector4f norm = TMP_NORM;
         for (BakedQuad quad : quads) {
             int[] verts = quad.getVertices();
             if (verts.length < 4 * MIN_STRIDE) {
@@ -314,7 +323,11 @@ public class ModelHelper {
                 float y = Float.intBitsToFloat(verts[i + POSITION_OFFSET + 1]);
                 float z = Float.intBitsToFloat(verts[i + POSITION_OFFSET + 2]);
                 pos.set(x, y, z, 1f);
-                pos.mul(matrix);
+                // Column-vector convention (matrix · pos) — matches QuadTransforms.transform
+                // and the JOML-standard matrices callers build (translate/rotate/mul).
+                // pos.mul(matrix) applied the transpose, diverging from QuadTransforms and
+                // silently transposing door/cog part transforms.
+                matrix.transform(pos);
                 newVerts[i] = Float.floatToIntBits(pos.x());
                 newVerts[i + 1] = Float.floatToIntBits(pos.y());
                 newVerts[i + 2] = Float.floatToIntBits(pos.z());
@@ -324,7 +337,7 @@ public class ModelHelper {
                     byte nyb = (byte) ((packedNormal >> 8) & 0xFF);
                     byte nzb = (byte) ((packedNormal >> 16) & 0xFF);
                     norm.set(nxb / 127f, nyb / 127f, nzb / 127f, 0f);
-                    norm.mul(normalMatrix);
+                    normalMatrix.transform(norm);
                     norm.normalize();
                     int newPacked = ((byte) (norm.x * 127) & 0xFF)
                             | (((byte) (norm.y * 127) & 0xFF) << 8)

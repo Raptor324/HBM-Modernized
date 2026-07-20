@@ -28,6 +28,16 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
     protected final ItemTransforms transforms;
     private TextureAtlasSprite cachedParticleIcon;
 
+    /**
+     * Lazily-built per-cull-face quad merge for the default (non-dynamic)
+     * {@code getQuadsForModelData} / {@code ...Fabric} implementations. Subclasses
+     * with modelData-driven quads (e.g. {@code MachineFluidTankBakedModel}) override
+     * those methods and never touch this cache. Index 0 = general {@code null} side,
+     * 1..6 = {@link Direction} ordinals.
+     */
+    @SuppressWarnings("unchecked")
+    private List<BakedQuad>[] sideQuadsCache;
+
     protected AbstractMultipartBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms) {
         this.parts = parts;
         this.transforms = transforms;
@@ -129,6 +139,29 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
     ) {
         // Дефолтная реализация: просто собираем квады из всех частей без ModelData-логики.
         // Подклассы (например MachineFluidTankBakedModel) переопределяют для динамических текстур.
+        //
+        // renderType==null → item/BER hot path. Квады здесь определяются только
+        // side (modelData эта дефолтная реализация игнорирует), поэтому кэшируем
+        // по side, чтобы не плодить new ArrayList + addAll каждый кадр инвентаря.
+        // renderType!=null → chunk-bake layer query; собираем заново, чтобы
+        // корректно учитывать слой (solid/translucent).
+        if (renderType == null) {
+            int idx = side == null ? 0 : side.ordinal() + 1;
+            List<BakedQuad>[] cache = sideQuadsCache;
+            if (cache == null) {
+                cache = (List<BakedQuad>[]) new List<?>[7];
+                sideQuadsCache = cache;
+            }
+            List<BakedQuad> cached = cache[idx];
+            if (cached != null) return cached;
+            List<BakedQuad> quads = new ArrayList<>();
+            for (BakedModel part : parts.values()) {
+                quads.addAll(part.getQuads(state, side, rand, modelData, renderType));
+            }
+            List<BakedQuad> result = quads.isEmpty() ? List.of() : List.copyOf(quads);
+            cache[idx] = result;
+            return result;
+        }
         List<BakedQuad> quads = new ArrayList<>();
         for (BakedModel part : parts.values()) {
             quads.addAll(part.getQuads(state, side, rand, modelData, renderType));
@@ -167,11 +200,21 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
             @Nullable Direction side,
             RandomSource rand
     ) {
+        int idx = side == null ? 0 : side.ordinal() + 1;
+        List<BakedQuad>[] cache = sideQuadsCache;
+        if (cache == null) {
+            cache = (List<BakedQuad>[]) new List<?>[7];
+            sideQuadsCache = cache;
+        }
+        List<BakedQuad> cached = cache[idx];
+        if (cached != null) return cached;
         List<BakedQuad> quads = new ArrayList<>();
         for (BakedModel part : parts.values()) {
             quads.addAll(part.getQuads(state, side, rand));
         }
-        return quads;
+        List<BakedQuad> result = quads.isEmpty() ? List.of() : List.copyOf(quads);
+        cache[idx] = result;
+        return result;
     }
     *///?}
 

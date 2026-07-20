@@ -137,7 +137,7 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
             return;
         }
 
-        float staticFade = RenderDistanceHelper.computeStaticFade(blockPos);
+        float staticFade = RenderDistanceHelper.computeStaticFade(be);
         if (staticFade < 0) return;
         SingleMeshVboRenderer.setFadeAlpha(staticFade);
 

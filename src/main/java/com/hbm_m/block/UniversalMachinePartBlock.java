@@ -69,12 +69,6 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
     }
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
-    /**
-     * Флаг проходимости для AI-pathfinding (как {@code OPEN} у ванильной двери).
-     * Хранится в blockstate для надёжного доступа из {@link net.minecraft.world.level.pathfinder.WalkNodeEvaluator}
-     * без необходимости обращаться к BlockEntity (которое может быть недоступно в PathNavigationRegion).
-     * Устанавливается контроллером-дверью при открытии/закрытии.
-     */
     public static final BooleanProperty PASSABLE = BooleanProperty.create("passable");
 
     public UniversalMachinePartBlock(Properties pProperties) {
@@ -106,33 +100,40 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
 
     @Override
     public RenderShape getRenderShape(BlockState pState) {
-        // Phantom blocks are always invisible, the controller's BlockEntityRenderer handles the visuals.
         return RenderShape.INVISIBLE;
     }
 
-    /**
-     * Проверяет, потерял ли блок связь с контроллером (осиротел).
-     */
     private boolean isOrphaned(BlockGetter level, BlockPos pos) {
         if (!(level.getBlockEntity(pos) instanceof IMultiblockPart part)) {
             return false;
         }
-
         BlockPos controllerPos = part.getControllerPos();
         if (controllerPos == null) {
-            return true; // Нет контроллера = осиротел
+            return true; 
         }
-
         BlockState controllerState = level.getBlockState(controllerPos);
         if (!(controllerState.getBlock() instanceof IMultiblockController)) {
-            return true; // Контроллер не существует или не является контроллером = осиротел
+            return true; 
         }
-
-        return false; // Контроллер валиден
+        return false;
     }
 
     @Override
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
+        // На контрапшене возвращаем смещенную общую форму двери для корректного взаимодействия лучей (raycasting).
+        // Это необходимо для того, чтобы юзер мог кликнуть ПКМ по фантомной части.
+        if (pLevel instanceof Level lvl && com.hbm_m.compat.ContraptionDoorState.isContraptionWorld(lvl)) {
+            BlockPos controllerPos = com.hbm_m.compat.ContraptionDoorState.getControllerForPart(lvl, pPos);
+            if (controllerPos != null) {
+                VoxelShape masterShape = com.hbm_m.compat.ContraptionDoorState.getShape(lvl, controllerPos);
+                if (masterShape != null) {
+                    BlockPos vecToController = controllerPos.subtract(pPos);
+                    return masterShape.move(vecToController.getX(), vecToController.getY(), vecToController.getZ());
+                }
+            }
+            return Shapes.block(); // Fallback so it remains clickable
+        }
+
         if (!(pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part)) {
             return Shapes.block();
         }
@@ -149,8 +150,6 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
 
         VoxelShape masterShape;
 
-        // 1. Определяем "Мастер-форму" (общий контур всего мультиблока)
-        // Сначала проверяем кастомную форму контроллера (Assembler, AdvancedAssembler и т.д.)
         VoxelShape customShape = controller.getCustomMasterVoxelShape(controllerState);
         if (customShape != null && !customShape.isEmpty()) {
             masterShape = customShape;
@@ -158,49 +157,42 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
             DoorDecl decl = DoorDeclRegistry.getById(doorBlock.getDoorDeclId());
 
             if (decl != null && decl.isDynamicShape()) {
-                // Для люков берем динамически собранную форму (которую мы реализовали в DoorBlock)
                 masterShape = doorBlock.getShape(controllerState, pLevel, controllerPos, pContext);
             } else {
-                // Для обычных дверей берем статическую форму всей структуры
                 Direction facing = controllerState.getValue(DoorBlock.FACING);
                 masterShape = controller.getStructureHelper().generateShapeFromParts(facing);
             }
         } else {
-            // Логика для остальных мультиблоков без кастомной формы
             Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
             masterShape = controller.getStructureHelper().generateShapeFromParts(facing);
         }
 
-        // Сдвигаем общую форму мультиблока относительно текущего фантомного блока.
-        // Без этого рамка будет смещена.
         BlockPos vecToController = controllerPos.subtract(pPos);
         return masterShape.move(vecToController.getX(), vecToController.getY(), vecToController.getZ());
     }
 
-
     @Override
     public VoxelShape getCollisionShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
+        if (pLevel instanceof Level lvl && com.hbm_m.compat.ContraptionDoorState.isContraptionWorld(lvl)) {
+            return Shapes.empty(); // На контрапшене всю коллизию берет на себя контроллер
+        }
 
-        // 1. Получаем TileEntity этой части
         if (!(pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part)) {
             return Shapes.block();
         }
 
-        // 2. Находим позицию контроллера
         BlockPos controllerPos = part.getControllerPos();
         if (controllerPos == null) {
             return Shapes.block();
         }
 
-        // 3. Получаем состояние и блок контроллера
         BlockState controllerState = pLevel.getBlockState(controllerPos);
-        Block controllerBlock = controllerState.getBlock(); // Получаем блок один раз
+        Block controllerBlock = controllerState.getBlock(); 
 
         if (!(controllerBlock instanceof IMultiblockController controller)) {
             return Shapes.block();
         }
 
-        // Сначала проверяем, есть ли у контроллера общая сложная форма (мастер-шейп)
         VoxelShape masterShape = controller.getCustomMasterVoxelShape(controllerState);
 
         if (masterShape != null && !masterShape.isEmpty()) {
@@ -224,7 +216,6 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
                 if (controllerBE instanceof DoorBlockEntity doorBE) {
                     isOpen = doorBE.getState() != 0;
                 } else {
-                    // Pathfinding без TE у контроллера: полностью открыто по BlockState
                     isOpen = controllerState.getValue(DoorBlock.OPEN);
                 }
 
@@ -240,7 +231,6 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
             }
         }
 
-        // 4. Общая логика для всех остальных частей мультиблока (MachineAssembler и т.д.)
         MultiblockStructureHelper helper = controller.getStructureHelper();
         Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
 
@@ -251,11 +241,6 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         return helper.getSpecificCollisionShape(gridPos, facing);
     }
 
-    /**
-     * Как у ванильной двери: проходимость определяется blockstate-свойством {@link #PASSABLE},
-     * которое обновляется контроллером-дверью при открытии/закрытии.
-     * Это гарантирует корректную работу AI-pathfinding без обращения к BlockEntity.
-     */
     @Override
     public boolean isPathfindable(BlockState state, BlockGetter level, BlockPos pos, PathComputationType type) {
         return switch (type) {
@@ -268,14 +253,10 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
     public void neighborChanged(BlockState pState, Level pLevel, BlockPos pPos, Block pBlock, BlockPos pFromPos, boolean pIsMoving) {
         super.neighborChanged(pState, pLevel, pPos, pBlock, pFromPos, pIsMoving);
 
-        // Делегируем всю логику в MultiblockStructureHelper
         MultiblockStructureHelper.onNeighborChangedForPart(pLevel, pPos, pFromPos);
 
-        // Немедленная проверка на клиенте при изменении соседей (оптимизация для быстрого обнаружения)
-        // Это особенно важно, когда контроллер был разрушен - блок сразу станет осиротевшим
         if (pLevel.isClientSide()) {
             if (isOrphaned(pLevel, pPos)) {
-                // Мы уже на клиенте (level.isClientSide), поэтому можно безопасно дернуть клиентский хук напрямую.
                 com.hbm_m.client.ClientRenderHandler.addOrphanedPhantomBlock(pPos);
             } else {
                 com.hbm_m.client.ClientRenderHandler.removeOrphanedPhantomBlock(pPos);
@@ -286,7 +267,6 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
             if (controllerPos != null) {
                 BlockEntity be = pLevel.getBlockEntity(controllerPos);
                 if (be instanceof DoorBlockEntity doorBE) {
-                    // Фантом не говорит "у меня нет сигнала", он говорит "перепроверь всю дверь"
                     doorBE.checkRedstonePower();
                 } else if (be instanceof LaunchPadBaseBlockEntity launchPadBE) {
                     launchPadBE.checkRedstonePower();
@@ -295,12 +275,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         }
     }
 
-    /**
-     * Позволяет блокам с ролью LADDER быть использованными как лестница.
-     * Работает с любых боковых сторон.
-     */
     public boolean isLadder(BlockState pState, LevelReader pLevel, BlockPos pPos, LivingEntity pEntity) {
-        // Проверяем, что это мультиблочная часть с ролью LADDER
         if (pLevel instanceof Level level && level.getBlockEntity(pPos) instanceof IMultiblockPart part) {
             PartRole role = part.getPartRole();
             
@@ -313,8 +288,10 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
 
     @Override
     public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        // Если это не полный блок (например, труба или плита), возвращаем пустую форму.
-        // Это скажет игре: "Не выталкивай игрока из этого блока".
+        if (level instanceof Level lvl && com.hbm_m.compat.ContraptionDoorState.isContraptionWorld(lvl)) {
+            return Shapes.empty();
+        }
+        
         if (level.getBlockEntity(pos) instanceof IMultiblockPart part) {
             BlockPos ctrlPos = part.getControllerPos();
             if (ctrlPos != null && level.getBlockState(ctrlPos).getBlock() instanceof DoorBlock) {
@@ -334,7 +311,6 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
                     MultiblockStructureHelper helper = controller.getStructureHelper();
                     Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
                     
-                    // Вычисляем позицию в сетке
                     BlockPos worldOffset = pos.subtract(controllerPos);
                     BlockPos localOffset = MultiblockStructureHelper.rotateBack(worldOffset, facing);
                     BlockPos gridPos = localOffset.offset(helper.getControllerOffset());
@@ -343,14 +319,13 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
                 }
             }
         }
-        return true; // По умолчанию считаем полным для безопасности
+        return true; 
     }
 
     @Override
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part) {
             BlockPos controllerPos = part.getControllerPos();
-            // Если контроллера нет (пусто) - удаляем фантомный блок на сервере
             if (controllerPos == null) {
                 if (!pLevel.isClientSide()) {
                     pLevel.setBlock(pPos, Blocks.AIR.defaultBlockState(), 3);
@@ -364,10 +339,8 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
                 if (ctrlBe instanceof DoorBlockEntity && hasScrewdriver(pPlayer)) {
                     return InteractionResult.sidedSuccess(pLevel.isClientSide());
                 }
-                // Redirect the interaction to the main controller block
                 return controllerState.use(pLevel, pPlayer, pHand, pHit.withPosition(controllerPos));
             } else {
-                // Контроллер сохранён, но в мире он невалиден - удаляем фантом как резервный механизм
                 if (!pLevel.isClientSide()) {
                     pLevel.setBlock(pPos, Blocks.AIR.defaultBlockState(), 3);
                 }
@@ -389,15 +362,12 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
                 BlockPos controllerPos = partBe.getControllerPos();
                 if (controllerPos != null && !pLevel.isClientSide()) {
                     BlockState controllerState = pLevel.getBlockState(controllerPos);
-                    // Проверяем, что контроллер ещё существует
                     if (controllerState.getBlock() instanceof IMultiblockController controller) {
                         if (!MultiblockStructureHelper.isDestroying() && !MultiblockStructureHelper.isRepairing() && controller.shouldDestroyOnPartRemoved()) {
-                            // Вызываем разрушение структуры
                             if (controllerState.hasProperty(HorizontalDirectionalBlock.FACING)) {
                                 Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
                                 controller.getStructureHelper().destroyStructure(pLevel, controllerPos, facing);
                             }
-                            // Ломаем контроллер
                             pLevel.destroyBlock(controllerPos, true);
                         }
                     }
@@ -422,32 +392,23 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         super.playerWillDestroy(level, pos, state, player);
     }
 
-    
-
     @Override
     public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
         if (level.getBlockEntity(pos) instanceof IMultiblockPart part) {
             BlockPos controllerPos = part.getControllerPos();
             if (controllerPos != null) {
                 BlockState controllerState = level.getBlockState(controllerPos);
-                // Return the item of the main controller block
                 return controllerState.getBlock().getCloneItemStack(level, controllerPos, controllerState);
             }
         }
         return ItemStack.EMPTY;
     }
 
-    /**
-     * Возвращает скорость разрушения блока. Для осиротевших блоков возвращает очень большое значение,
-     * чтобы они ломались мгновенно даже рукой.
-     */
     @Override
     public float getDestroyProgress(BlockState pState, Player pPlayer, BlockGetter pLevel, BlockPos pPos) {
-        // Если блок осиротел (потерял связь с контроллером), делаем его мгновенно ломаемым
         if (isOrphaned(pLevel, pPos)) {
-            return 1.0f; // Максимальная скорость разрушения (мгновенно)
+            return 1.0f;
         }
-        // Для нормальных блоков используем стандартную логику
         return super.getDestroyProgress(pState, pPlayer, pLevel, pPos);
     }
 
@@ -465,24 +426,18 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
     public int getLightBlock(BlockState state, BlockGetter world, BlockPos pos) {
         return 0;
     }
-    /**
-     * Исправляет частицы при приземлении на фантомный блок.
-     * Вместо текстуры фантома (которой нет), берет текстуру контроллера.
-     */
+
     public boolean addLandingEffects(BlockState state1, ServerLevel level, BlockPos pos, BlockState state2, LivingEntity entity, int numberOfParticles) {
         if (level.getBlockEntity(pos) instanceof IMultiblockPart part) {
             BlockPos controllerPos = part.getControllerPos();
             if (controllerPos != null) {
                 BlockState controllerState = level.getBlockState(controllerPos);
                 
-                // Если контроллер существует и не воздух
                 if (!controllerState.isAir()) {
-                    // Генерируем частицы, используя BlockState КОНТРОЛЛЕРА
                     level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, controllerState),
                             entity.getX(), entity.getY(), entity.getZ(),
                             numberOfParticles, 0.0D, 0.0D, 0.0D, 0.15D);
                     
-                    // Возвращаем true, чтобы отменить стандартные частицы (missing texture)
                     return true; 
                 }
             }
@@ -490,19 +445,14 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         return false;
     }
 
-    /**
-     * Исправляет частицы при беге по фантомному блоку.
-     */
     public boolean addRunningEffects(BlockState state, Level level, BlockPos pos, Entity entity) {
-        // Это выполняется на клиенте
         if (level.isClientSide && level.getBlockEntity(pos) instanceof IMultiblockPart part) {
             BlockPos controllerPos = part.getControllerPos();
             if (controllerPos != null) {
                 BlockState controllerState = level.getBlockState(controllerPos);
                 
                 if (!controllerState.isAir()) {
-                    // Обычная логика спавна частиц бега, но с текстурой контроллера
-                    if (level.random.nextFloat() < 0.1F) { // Ограничиваем количество, как в ванилле
+                    if (level.random.nextFloat() < 0.1F) { 
                         double x = entity.getX() + (level.random.nextDouble() - 0.5D) * (double)entity.getBbWidth();
                         double y = entity.getY() + 0.1D;
                         double z = entity.getZ() + (level.random.nextDouble() - 0.5D) * (double)entity.getBbWidth();
@@ -511,7 +461,6 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
                             x, y, z, 
                             -entity.getDeltaMovement().x * 4.0D, 1.5D, -entity.getDeltaMovement().z * 4.0D);
                     }
-                    // Возвращаем true, чтобы отменить стандартные
                     return true;
                 }
             }

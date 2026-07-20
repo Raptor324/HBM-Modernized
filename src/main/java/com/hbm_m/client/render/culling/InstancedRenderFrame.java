@@ -68,6 +68,7 @@ public final class InstancedRenderFrame {
         if (ClientRenderFlags.enableOcclusionCulling()) {
             OcclusionCullingHelper.onFrameStart();
             OcclusionCullingHelper.captureBlockEntityPassFrustum(blockEntityFrustum);
+            OcclusionCullingHelper.captureCpuFrustumFallback(projection, cameraPos);
         } else {
             OcclusionCullingHelper.captureBlockEntityPassFrustum(null);
         }
@@ -109,6 +110,9 @@ public final class InstancedRenderFrame {
             }
 
             // После flush instanced (или при выключенном batching): depth содержит все части BER.
+            // Chemplant/Crystallizer液体 — deferred: рисуется здесь, в AFTER_BLOCK_ENTITIES,
+            // после closePersistentIfActive и instanced-flush, внутри IrisPhaseGuard
+            // BLOCK_ENTITIES (см. MachineChemicalPlantRenderer.presentDeferredFluids).
             MachineChemicalPlantRenderer.presentDeferredFluids();
             MachineCrystallizerRenderer.presentDeferredFluids();
         } catch (Throwable t) {

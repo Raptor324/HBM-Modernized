@@ -1,0 +1,20 @@
+{
+  "_comment": "HBM двери (контроллеры) и их part-блоки могут иметь пустую коллизию в открытом состоянии. Без этого тега Create исключает их из клея/сборки поезда (BlockMovementChecks.isMovementNecessary -> collision empty -> false). Файл живёт под data/create/ и грузится всегда; без Create тег никем не проверяется (безвредно).",
+  "replace": false,
+  "values": [
+    "hbm_m:large_vehicle_door",
+    "hbm_m:round_airlock_door",
+    "hbm_m:transition_seal",
+    "hbm_m:fire_door",
+    "hbm_m:sliding_blast_door",
+    "hbm_m:sliding_seal_door",
+    "hbm_m:secure_access_door",
+    "hbm_m:qe_sliding_door",
+    "hbm_m:qe_containment_door",
+    "hbm_m:water_door",
+    "hbm_m:silo_hatch",
+    "hbm_m:silo_hatch_large",
+    "hbm_m:vault_door",
+    "hbm_m:universal_machine_part"
+  ]
+}

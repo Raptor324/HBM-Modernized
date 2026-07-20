@@ -602,6 +602,13 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
         boolean previousCullFaceEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
+        // Snapshot depth state: the try body force-sets depthFunc/depthMask/depthTest
+        // for both the overlay and the normal draw path. Previously only the overlay
+        // path restored depth in finally, so the normal path left the caller's
+        // depthFunc (GL_LEQUAL) and depthMask(true) permanently clobbered.
+        int previousDepthFunc = GL11.glGetInteger(GL11.GL_DEPTH_FUNC);
+        boolean previousDepthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
+        boolean previousDepthTestEnabled = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
 
         try {
             RenderSystem.setShader(() -> shader);
@@ -746,9 +753,12 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             } else {
                 RenderSystem.disableCull();
             }
-            if (worldMissileOverlayDraw.get()) {
+            RenderSystem.depthFunc(previousDepthFunc);
+            GL11.glDepthMask(previousDepthMask);
+            if (previousDepthTestEnabled) {
                 RenderSystem.enableDepthTest();
-                GL11.glDepthMask(true);
+            } else {
+                RenderSystem.disableDepthTest();
             }
         }
     }

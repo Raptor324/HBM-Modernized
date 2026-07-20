@@ -102,7 +102,7 @@ public class MachineCrystallizerRenderer implements BlockEntityRenderer<MachineC
                 return;
             }
 
-            float staticFade = RenderDistanceHelper.computeStaticFade(blockPos);
+            float staticFade = RenderDistanceHelper.computeStaticFade(blockEntity);
             if (staticFade < 0) return;
 
             poseStack.pushPose();
