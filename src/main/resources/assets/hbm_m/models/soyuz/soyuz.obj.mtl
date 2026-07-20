@@ -1,0 +1,51 @@
+# Material stubs for the Soyuz rocket OBJ. Actual textures are bound per-material
+# in the block model JSON (forge:obj "textures" map), map_Kd values below just need
+# to be valid-looking resource locations so Forge's OBJ loader treats these as textured
+# materials instead of falling back to a missing-texture placeholder.
+newmtl booster
+Kd 1.000 1.000 1.000
+map_Kd hbm_m:block/soyuz/booster
+
+newmtl boosterside
+Kd 1.000 1.000 1.000
+map_Kd hbm_m:block/soyuz/boosterside
+
+newmtl boosterengines
+Kd 1.000 1.000 1.000
+map_Kd hbm_m:block/soyuz/mainengines
+
+newmtl bottomstage
+Kd 1.000 1.000 1.000
+map_Kd hbm_m:block/soyuz/bottomstage
+
+newmtl engineblock
+Kd 1.000 1.000 1.000
+map_Kd hbm_m:block/soyuz/engineblock
+
+newmtl les
+Kd 1.000 1.000 1.000
+map_Kd hbm_m:block/soyuz/les
+
+newmtl lesthrusters
+Kd 1.000 1.000 1.000
+map_Kd hbm_m:block/soyuz/lesthrusters
+
+newmtl mainengines
+Kd 1.000 1.000 1.000
+map_Kd hbm_m:block/soyuz/mainengines
+
+newmtl payload
+Kd 1.000 1.000 1.000
+map_Kd hbm_m:block/soyuz/payload
+
+newmtl payloadblocks
+Kd 1.000 1.000 1.000
+map_Kd hbm_m:block/soyuz/payloadblocks
+
+newmtl sideengines
+Kd 1.000 1.000 1.000
+map_Kd hbm_m:block/soyuz/sideengines
+
+newmtl topstage
+Kd 1.000 1.000 1.000
+map_Kd hbm_m:block/soyuz/topstage

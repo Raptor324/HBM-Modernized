@@ -96,6 +96,92 @@ public class ModItemModelProvider extends ItemModelProvider {
         powderTexture(ModItems.POWDER_DESH_MIX, "powders/powder_desh_mix");
         powderTexture(ModItems.POWDER_NITAN_MIX, "powders/powder_nitan_mix");
 
+        // Neu portierte, freistehende Pulver (Texturen bereits im Asset-Ordner vorhanden)
+        powdersItem(ModItems.POWDER_SAWDUST);
+        powdersItem(ModItems.POWDER_YELLOWCAKE);
+        powdersItem(ModItems.POWDER_BALEFIRE);
+        powdersItem(ModItems.POWDER_PALEOGENITE);
+        powdersItem(ModItems.POWDER_THERMITE);
+        powdersItem(ModItems.POWDER_FERTILIZER);
+        powdersItem(ModItems.POWDER_FLUX);
+        powdersItem(ModItems.POWDER_MAGIC);
+        powdersItem(ModItems.POWDER_ICE);
+        powdersItem(ModItems.POWDER_SPARK_MIX);
+        powdersItem(ModItems.POWDER_SEMTEX_MIX);
+        powdersItem(ModItems.POWDER_DESH_READY);
+        powdersItem(ModItems.POWDER_COLTAN);
+
+        // Sentry-Turret Munition (MVP-Platzhalter, nutzt vorhandene Ammo-DGK-Textur)
+        powderTexture(ModItems.TURRET_AMMO, "ammo_dgk");
+
+        // Echte 9mm/.50/5.56mm-Munition fuer Sentry/Chekhov/Friendly (Platzhalter-Textur, bis eigene Assets vorhanden sind)
+        powderTexture(ModItems.AMMO_9MM_SP, "ammo_dgk");
+        powderTexture(ModItems.AMMO_9MM_FMJ, "ammo_dgk");
+        powderTexture(ModItems.AMMO_9MM_JHP, "ammo_dgk");
+        powderTexture(ModItems.AMMO_9MM_AP, "ammo_dgk");
+        powderTexture(ModItems.AMMO_50_SP, "ammo_dgk");
+        powderTexture(ModItems.AMMO_50_FMJ, "ammo_dgk");
+        powderTexture(ModItems.AMMO_50_JHP, "ammo_dgk");
+        powderTexture(ModItems.AMMO_50_AP, "ammo_dgk");
+        powderTexture(ModItems.AMMO_50_DU, "ammo_dgk");
+        powderTexture(ModItems.AMMO_556_SP, "ammo_dgk");
+        powderTexture(ModItems.AMMO_556_FMJ, "ammo_dgk");
+        powderTexture(ModItems.AMMO_556_JHP, "ammo_dgk");
+        powderTexture(ModItems.AMMO_556_AP, "ammo_dgk");
+        powderTexture(ModItems.ROCKET_TURRET_STANDARD, "ammo_dgk");
+        powderTexture(ModItems.ROCKET_HIMARS_STANDARD, "ammo_dgk");
+        powderTexture(ModItems.ROCKET_HIMARS_HE, "ammo_dgk");
+        powderTexture(ModItems.ROCKET_HIMARS_LAVA, "ammo_dgk");
+        powderTexture(ModItems.ROCKET_HIMARS_MINI_NUKE, "ammo_dgk");
+        powderTexture(ModItems.ROCKET_HIMARS_WP, "ammo_dgk");
+        powderTexture(ModItems.ROCKET_HIMARS_THERMOBARIC, "ammo_dgk");
+        powderTexture(ModItems.AMMO_TAU_URANIUM, "ammo_dgk");
+        powderTexture(ModItems.AMMO_FLAME_DIESEL, "ammo_dgk");
+
+        // Missile-Assembly-Teile (Platzhalter-Texturen, bis eigene Assets vorhanden sind)
+        powderTexture(ModItems.MISSILE_FUSELAGE, "pipes_steel");
+        powderTexture(ModItems.MISSILE_CHIP, "silicon_circuit");
+
+        // Fix: diese Items hatten trotz vorhandener Texturen nie ein Item-Model (FileNotFoundException
+        // beim Client-Start) - dadurch unsichtbar/Missing-Model-Icon im Creative-Tab.
+        simpleItem(ModItems.WARHEAD_GENERIC_SMALL);
+        simpleItem(ModItems.WARHEAD_GENERIC_MEDIUM);
+        simpleItem(ModItems.WARHEAD_GENERIC_LARGE);
+        simpleItem(ModItems.WARHEAD_BUSTER_SMALL);
+        simpleItem(ModItems.WARHEAD_BUSTER_MEDIUM);
+        simpleItem(ModItems.WARHEAD_BUSTER_LARGE);
+        simpleItem(ModItems.WARHEAD_CLUSTER_SMALL);
+        simpleItem(ModItems.WARHEAD_CLUSTER_MEDIUM);
+        simpleItem(ModItems.WARHEAD_CLUSTER_LARGE);
+        simpleItem(ModItems.WARHEAD_INCENDIARY_SMALL);
+        simpleItem(ModItems.WARHEAD_INCENDIARY_MEDIUM);
+        simpleItem(ModItems.WARHEAD_INCENDIARY_LARGE);
+        simpleItem(ModItems.WARHEAD_MIRV);
+        simpleItem(ModItems.WARHEAD_VOLCANO);
+        simpleItem(ModItems.WARHEAD_NUCLEAR);
+        simpleItem(ModItems.THRUSTER_SMALL);
+        simpleItem(ModItems.THRUSTER_MEDIUM);
+        simpleItem(ModItems.THRUSTER_LARGE);
+        simpleItem(ModItems.THRUSTER_NUCLEAR);
+        simpleItem(ModItems.FUEL_TANK_SMALL);
+        simpleItem(ModItems.FUEL_TANK_MEDIUM);
+        simpleItem(ModItems.FUEL_TANK_LARGE);
+        simpleItem(ModItems.MISSILE_ASSEMBLY);
+        simpleItem(ModItems.MISSILE_SOYUZ_LANDER);
+        simpleItem(ModItems.NEUTRON_REFLECTOR);
+        simpleItem(ModItems.LOW_DENSITY_ELEMENT);
+        simpleItem(ModItems.SAT_BASE);
+        simpleItem(ModItems.SAT_LASER);
+        simpleItem(ModItems.SAT_HEAD_LASER);
+        simpleItem(ModItems.SAT_RADAR);
+        simpleItem(ModItems.SAT_HEAD_RADAR);
+        simpleItem(ModItems.SAT_MAPPER);
+        simpleItem(ModItems.SAT_HEAD_MAPPER);
+        simpleItem(ModItems.SAT_RESONATOR);
+        simpleItem(ModItems.SAT_HEAD_RESONATOR);
+        withExistingParent(ModItems.INGOT_TUNGSTEN_CARBIDE.getId().getPath(), "item/generated")
+                .texture("layer0", modLoc("item/ingot/ingot_tungsten_carbide"));
+
         registerRadAbsorberItemModels();
 
         withExistingParent("large_vehicle_door", 
@@ -639,6 +725,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.MACHINE_ASSEMBLER);
         blockItemFromBlockModelMachine(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
         blockItemFromBlockModelMachine(ModBlocks.FLUID_TANK);
+        blockItemFromBlockModelMachine(ModBlocks.BAT9000);
         blockItemFromBlockModelMachine(ModBlocks.LAUNCH_PAD);
         blockItemFromBlockModelMachine(ModBlocks.LAUNCH_PAD_RUSTED);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_FAT_MAN);
@@ -670,7 +757,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.ARC_FURNACE);
         blockItemFromBlockModelMachine(ModBlocks.ASSEMBLY_FACTORY);
         blockItemFromBlockModelMachine(ModBlocks.AUTOSAW);
-        blockItemFromBlockModelMachine(ModBlocks.BAT9000);
         blockItemFromBlockModelMachine(ModBlocks.BEAMLINE);
         blockItemFromBlockModelMachine(ModBlocks.BOILER);
         blockItemFromBlockModelMachine(ModBlocks.BOILER_FUSION);
@@ -750,6 +836,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModel(ModBlocks.ANTENNA_TOP);
         blockItemFromBlockModel(ModBlocks.ASBESTOS_ORE);
         blockItemFromBlockModel(ModBlocks.B29);
+        blockItemFromBlockModel(ModBlocks.SOYUZ_LAUNCHER);
+        blockItemFromBlockModel(ModBlocks.DECO_SOYUZ_ROCKET);
         blockItemFromBlockModel(ModBlocks.BARBED_WIRE);
         blockItemFromBlockModel(ModBlocks.BARBED_WIRE_FIRE);
         blockItemFromBlockModel(ModBlocks.BARBED_WIRE_POISON);

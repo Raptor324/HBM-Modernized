@@ -1,0 +1,16 @@
+{
+  "loader": "forge:obj",
+  "model": "hbm_m:models/turrets/turret_arty.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "default": "hbm_m:block/turrets/arty",
+    "particle": "hbm_m:block/turrets/arty"
+  },
+  "visibility": {
+    "Barrel": false,
+    "Base": false,
+    "Cannon": true,
+    "Carriage": false
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "loader": "forge:obj",
+  "model": "hbm_m:models/turrets/turret_chekhov.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "default": "hbm_m:block/turrets/chekhov_barrels",
+    "particle": "hbm_m:block/turrets/chekhov_barrels"
+  },
+  "visibility": {
+    "Barrels": true,
+    "Base": false,
+    "Body": false,
+    "Carriage": false,
+    "Connectors": false
+  }
+}

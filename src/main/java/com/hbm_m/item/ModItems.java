@@ -135,6 +135,21 @@ public class ModItems {
     public static final RegistrySupplier<Item> WIRE_DENSE_SATURNITE     = ITEMS.register("wire_dense_saturnite",     () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> WIRE_DENSE_COMBINE_STEEL = ITEMS.register("wire_dense_combine_steel", () -> new Item(new Item.Properties()));
 
+    // --- Standalone Pulver ohne Ingot-Gegenstueck (aus Original-Rezepten portiert, DEV-Tab bis einsortiert) ---
+    public static final RegistrySupplier<Item> POWDER_SAWDUST      = ITEMS.register("sawdust_powder",      () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> POWDER_YELLOWCAKE   = ITEMS.register("yellowcake_powder",   () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> POWDER_BALEFIRE     = ITEMS.register("balefire_powder",     () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> POWDER_PALEOGENITE  = ITEMS.register("paleogenite_powder",  () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> POWDER_THERMITE     = ITEMS.register("thermite_powder",     () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> POWDER_FERTILIZER   = ITEMS.register("fertilizer_powder",   () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> POWDER_FLUX         = ITEMS.register("flux_powder",         () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> POWDER_MAGIC        = ITEMS.register("magic_powder",        () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> POWDER_ICE          = ITEMS.register("ice_powder",          () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> POWDER_SPARK_MIX    = ITEMS.register("spark_mix_powder",    () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> POWDER_SEMTEX_MIX   = ITEMS.register("semtex_mix_powder",   () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> POWDER_DESH_READY   = ITEMS.register("desh_ready_powder",   () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> POWDER_COLTAN       = ITEMS.register("coltan_powder",       () -> new Item(new Item.Properties()));
+
     private static final Set<String> POWDER_TINY_NAMES = Set.of(
             "actinium", "boron", "cerium", "cobalt", "cs137", "i131",
             "lanthanium", "lithium", "meteorite", "neodymium", "niobium",
@@ -1683,6 +1698,9 @@ public class ModItems {
 	public static final RegistrySupplier<Item> FLUID_TANK = ITEMS.register("fluid_tank",
         () -> new MultiblockBlockItem(ModBlocks.FLUID_TANK.get(), new Item.Properties()));
 
+	public static final RegistrySupplier<Item> BAT9000 = ITEMS.register("bat9000",
+        () -> new MultiblockBlockItem(ModBlocks.BAT9000.get(), new Item.Properties()));
+
     public static final RegistrySupplier<Item> MACHINE_BATTERY_SOCKET = ITEMS.register("machine_battery_socket",
         () -> new MultiblockBlockItem(ModBlocks.MACHINE_BATTERY_SOCKET.get(), new Item.Properties()));
 
@@ -1831,6 +1849,10 @@ public class ModItems {
     public static final RegistrySupplier<Item> MISSILE_SHUTTLE = ITEMS.register("missile_shuttle",
             () -> new MissileItem(MissileItem.MissileFormFactor.OTHER, MissileItem.MissileTier.TIER3,
                     MissileItem.MissileFuel.KEROSENE_PEROXIDE));
+
+    // Soyuz Launcher lander module (the rocket itself reuses ModBlocks.DECO_SOYUZ_ROCKET's item - see SoyuzLauncherBlockEntity.rocketItem())
+    public static final RegistrySupplier<Item> MISSILE_SOYUZ_LANDER = ITEMS.register("missile_soyuz_lander",
+            () -> new Item(new Item.Properties()));
 
     // Tier 4
     public static final RegistrySupplier<Item> MISSILE_NUCLEAR = ITEMS.register("missile_nuclear",
@@ -3235,8 +3257,10 @@ public class ModItems {
     public static final RegistrySupplier<Item> SAFETY_FUSE = ITEMS.register("safety_fuse", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> SAT_CHIP = ITEMS.register("sat_chip", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> SAT_COORD = ITEMS.register("sat_coord", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> SAT_DESIGNATOR = ITEMS.register("sat_designator", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> SAT_GERALD = ITEMS.register("sat_gerald", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAT_DESIGNATOR = ITEMS.register("sat_designator",
+            () -> new com.hbm_m.item.designator.ItemSatDesignator(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAT_GERALD = ITEMS.register("sat_gerald",
+            () -> new com.hbm_m.item.satellite.ItemSatChip(new Item.Properties()));
     public static final RegistrySupplier<Item> SAT_HEAD_SCANNER = ITEMS.register("sat_head_scanner", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> SAT_INTERFACE = ITEMS.register("sat_interface", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> SAT_LUNAR_MINER = ITEMS.register("sat_lunar_miner", () -> new Item(new Item.Properties()));
@@ -3349,6 +3373,40 @@ public class ModItems {
     public static final RegistrySupplier<Item> TSAR_KIT = ITEMS.register("tsar_kit", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> TURBINE_TUNGSTEN = ITEMS.register("turbine_tungsten", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> TURRET_CHIP = ITEMS.register("turret_chip", () -> new Item(new Item.Properties()));
+    /** Alte MVP-Platzhaltermunition, wird von keinem Turret mehr direkt verwendet (jeder Typ hat jetzt eigene Munition). */
+    public static final RegistrySupplier<Item> TURRET_AMMO = ITEMS.register("turret_ammo", () -> new Item(new Item.Properties()));
+    /** 9mm-Pistolenmunition fuer den Sentry-Turret (Original: {@code XFactory9mm}). */
+    public static final RegistrySupplier<Item> AMMO_9MM_SP = ITEMS.register("ammo_9mm_sp", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> AMMO_9MM_FMJ = ITEMS.register("ammo_9mm_fmj", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> AMMO_9MM_JHP = ITEMS.register("ammo_9mm_jhp", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> AMMO_9MM_AP = ITEMS.register("ammo_9mm_ap", () -> new Item(new Item.Properties()));
+    /** .50 BMG-Munition fuer den Chekhov-Turret (Original: {@code XFactory50}). */
+    public static final RegistrySupplier<Item> AMMO_50_SP = ITEMS.register("ammo_50_sp", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> AMMO_50_FMJ = ITEMS.register("ammo_50_fmj", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> AMMO_50_JHP = ITEMS.register("ammo_50_jhp", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> AMMO_50_AP = ITEMS.register("ammo_50_ap", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> AMMO_50_DU = ITEMS.register("ammo_50_du", () -> new Item(new Item.Properties()));
+    /** 5.56mm-Munition fuer den Friendly-Turret (Original: {@code XFactory556mm}). */
+    public static final RegistrySupplier<Item> AMMO_556_SP = ITEMS.register("ammo_556_sp", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> AMMO_556_FMJ = ITEMS.register("ammo_556_fmj", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> AMMO_556_JHP = ITEMS.register("ammo_556_jhp", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> AMMO_556_AP = ITEMS.register("ammo_556_ap", () -> new Item(new Item.Properties()));
+    /** Gelenkte Rakete fuer den Richard-Turret (Original: {@code XFactoryRocket.rocket_ml}). */
+    public static final RegistrySupplier<Item> ROCKET_TURRET_STANDARD = ITEMS.register("rocket_turret_standard", () -> new Item(new Item.Properties()));
+    /** Gelenkte Raketenvarianten fuer den Himars-Turret (Original: {@code ItemAmmoHIMARS}). */
+    public static final RegistrySupplier<Item> ROCKET_HIMARS_STANDARD = ITEMS.register("rocket_himars_standard", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ROCKET_HIMARS_HE = ITEMS.register("rocket_himars_he", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ROCKET_HIMARS_LAVA = ITEMS.register("rocket_himars_lava", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ROCKET_HIMARS_MINI_NUKE = ITEMS.register("rocket_himars_mini_nuke", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ROCKET_HIMARS_WP = ITEMS.register("rocket_himars_wp", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ROCKET_HIMARS_THERMOBARIC = ITEMS.register("rocket_himars_thermobaric", () -> new Item(new Item.Properties()));
+    /** Uran-Munition fuer den Tauon-Turret (Original: {@code XFactoryAccelerator.tau_uranium}). */
+    public static final RegistrySupplier<Item> AMMO_TAU_URANIUM = ITEMS.register("ammo_tau_uranium", () -> new Item(new Item.Properties()));
+    /** Flammenwerfer-Brennstoff fuer den Fritz-Turret (MVP: Item statt vollem Fluid-Tank, Original: Diesel-Fluid). */
+    public static final RegistrySupplier<Item> AMMO_FLAME_DIESEL = ITEMS.register("ammo_flame_diesel", () -> new Item(new Item.Properties()));
+    /** Fehlende Missile-Assembly-Teile (Original: {@code ItemCustomMissilePart} mit Typ FUSELAGE/CHIP). */
+    public static final RegistrySupplier<Item> MISSILE_FUSELAGE = ITEMS.register("missile_fuselage", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> MISSILE_CHIP = ITEMS.register("missile_chip", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> TWINKIE = ITEMS.register("twinkie", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> ULLAPOOL_CABER = ITEMS.register("ullapool_caber", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> UNDEFINED = ITEMS.register("undefined", () -> new Item(new Item.Properties()));

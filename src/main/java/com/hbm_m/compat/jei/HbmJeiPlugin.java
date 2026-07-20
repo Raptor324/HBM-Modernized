@@ -96,6 +96,7 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCategories(new PressJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new ShredderJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new BlastFurnaceJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new GasCentrifugeJeiCategory(registration.getJeiHelpers().getGuiHelper()));
     }
 
     @Override
@@ -116,6 +117,7 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipes(PressJeiCategory.RECIPE_TYPE, getPressRecipes());
         registration.addRecipes(ShredderJeiCategory.RECIPE_TYPE, getShredderRecipes());
         registration.addRecipes(BlastFurnaceJeiCategory.RECIPE_TYPE, getBlastFurnaceRecipes());
+        registration.addRecipes(GasCentrifugeJeiCategory.RECIPE_TYPE, GasCentrifugeJeiCategory.getDefaultRecipes());
     }
 
     @Override
@@ -139,6 +141,7 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCatalyst(new ItemStack(ModItems.PRESS.get()), PressJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.SHREDDER.get()), ShredderJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.BLAST_FURNACE.get()), BlastFurnaceJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.GAS_CENTRIFUGE.get()), GasCentrifugeJeiCategory.RECIPE_TYPE);
     }
 
     @Override

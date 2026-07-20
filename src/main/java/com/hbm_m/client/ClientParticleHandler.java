@@ -105,6 +105,10 @@ public class ClientParticleHandler {
                 ModParticleTypes.MISSILE_NOZZLE_FLARE.get(),
                 MissileNozzleFlareParticle.Provider::new);
 
+        event.registerSpriteSet(
+                ModParticleTypes.TOM_GLOW.get(),
+                com.hbm_m.particle.custom.TomGlowParticle.Provider::new);
+
         // 🚀 Дым на пусковой площадке (smoke_column.json)
         event.registerSpriteSet(
                 ModParticleTypes.SMOKE_COLUMN.get(),

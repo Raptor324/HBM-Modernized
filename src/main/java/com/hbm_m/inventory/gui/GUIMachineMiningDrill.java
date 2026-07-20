@@ -71,7 +71,8 @@ public class GUIMachineMiningDrill extends GuiInfoScreen<MachineMiningDrillMenu>
             this.leftPos + 78, this.topPos + 67, 8, 8,
             this.leftPos + 78, this.topPos + 67,
                 Component.literal("Progress:"),
-                Component.literal("   " + miningDrill.getProgress() + " / " + miningDrill.getMaxProgress()));
+                Component.literal("   " + miningDrill.getProgress() + " / " + miningDrill.getMaxProgress()
+                        + "   |   Depth: " + miningDrill.getDrillDepth()));
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

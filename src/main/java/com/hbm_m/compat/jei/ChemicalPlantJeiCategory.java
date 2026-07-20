@@ -116,6 +116,7 @@ public class ChemicalPlantJeiCategory extends JeiGenericRecipeCategory<ChemicalP
             addItemSlot(builder, RecipeIngredientRole.INPUT,
                     positions[slotIndex][0] + inputXOffset, positions[slotIndex][1])
                     .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
+                    .setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
             slotIndex++;
         }
@@ -144,6 +145,7 @@ public class ChemicalPlantJeiCategory extends JeiGenericRecipeCategory<ChemicalP
             addItemSlot(builder, RecipeIngredientRole.OUTPUT,
                     positions[slotIndex][0] + outputXOffset, positions[slotIndex][1])
                     .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
+                    .setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
             slotIndex++;
         }

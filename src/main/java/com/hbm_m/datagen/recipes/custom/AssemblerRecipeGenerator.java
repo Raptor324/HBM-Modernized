@@ -31,7 +31,781 @@ public final class AssemblerRecipeGenerator {
         registerCastPlateRecipes(writer);
         registerDoorRecipes(writer);
         registerMissileRecipes(writer);
-        registerBombRecipes(writer);
+        registerMachineParts(writer);
+        registerMachines(writer);
+        registerGenerators(writer);
+        registerAccelerators(writer);
+        registerReactors(writer);
+        registerFusionReactor(writer);
+        registerUpgrades(writer);
+        registerBombParts(writer);
+        registerMissileParts(writer);
+        registerAmmo(writer);
+        registerSpace(writer);
+        registerTurrets(writer);
+
+        // Genuinely blocked — original recipe needs an item/block/enum system that doesn't exist in this
+        // port yet (ItemExpensive, colored keys, BLOCK_CAP, modular missile parts, nuke output
+        // blocks, ore-dict-style tag aggregates like ANY_RESISTANTALLOY/ANY_HIGHEXPLOSIVE, PA_COIL, etc.).
+        // See AssemblerRecipeGenerator gap-analysis notes for the full skipped list.
+    }
+
+    /**
+     * MVP-Turret-Varianten (Original: Assembly-Machine-Rezepte in AssemblyMachineRecipes.java,
+     * ass.turretX). Exakte Original-Zutaten nicht 1:1 uebernommen (das Original nutzt materialspezifische
+     * Formen wie GUNMETAL.mechanism(), die es in diesem Port nicht gibt) - stattdessen plausible,
+     * nach Tier skalierte Annaeherung mit vorhandenen Items.
+     */
+    private static void registerTurrets(Consumer<FinishedRecipe> writer) {
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.TURRET_CHEKHOV.get()), 200, 100)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 1)
+                .addIngredient(ModItems.PART_MECHANISM.get(), 1)
+                .addIngredient(Ingredient.of(ModBlocks.STEEL_SCAFFOLD.get().asItem()), 1)
+                .addIngredient(ModItems.SILICON_CIRCUIT.get(), 1)
+                .addIngredient(ModItems.CRT_DISPLAY.get(), 1)
+                .save(writer, "turret_chekhov");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.TURRET_FRIENDLY.get()), 200, 100)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 1)
+                .addIngredient(ModItems.PART_MECHANISM.get(), 1)
+                .addIngredient(Ingredient.of(ModBlocks.STEEL_SCAFFOLD.get().asItem()), 1)
+                .addIngredient(ModItems.SILICON_CIRCUIT.get(), 1)
+                .addIngredient(ModItems.CRT_DISPLAY.get(), 1)
+                .save(writer, "turret_friendly");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.TURRET_JEREMY.get()), 200, 100)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 1)
+                .addIngredient(ModItems.PART_MECHANISM.get(), 1)
+                .addIngredient(Ingredient.of(ModBlocks.STEEL_SCAFFOLD.get().asItem()), 1)
+                .addIngredient(ModItems.SILICON_CIRCUIT.get(), 1)
+                .addIngredient(ModItems.CRT_DISPLAY.get(), 1)
+                .save(writer, "turret_jeremy");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.TURRET_TAUON.get()), 240, 150)
+                .addIngredient(ModItems.PLATE_TITANIUM.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 1)
+                .addIngredient(ModItems.PART_MECHANISM.get(), 2)
+                .addIngredient(Ingredient.of(ModBlocks.STEEL_SCAFFOLD.get().asItem()), 1)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 1)
+                .addIngredient(ModItems.CRT_DISPLAY.get(), 1)
+                .save(writer, "turret_tauon");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.TURRET_RICHARD.get()), 240, 150)
+                .addIngredient(ModItems.PLATE_TITANIUM.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 1)
+                .addIngredient(ModItems.PART_MECHANISM.get(), 2)
+                .addIngredient(Ingredient.of(ModBlocks.STEEL_SCAFFOLD.get().asItem()), 1)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 1)
+                .addIngredient(ModItems.CRT_DISPLAY.get(), 1)
+                .save(writer, "turret_richard");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.TURRET_HOWARD.get()), 280, 200)
+                .addIngredient(ModItems.PLATE_ADVANCED_ALLOY.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .addIngredient(ModItems.PART_MECHANISM.get(), 2)
+                .addIngredient(Ingredient.of(ModBlocks.STEEL_SCAFFOLD.get().asItem()), 2)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 2)
+                .addIngredient(ModItems.CRT_DISPLAY.get(), 1)
+                .save(writer, "turret_howard");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.TURRET_MAXWELL.get()), 280, 200)
+                .addIngredient(ModItems.PLATE_ADVANCED_ALLOY.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .addIngredient(ModItems.PART_MECHANISM.get(), 2)
+                .addIngredient(Ingredient.of(ModBlocks.STEEL_SCAFFOLD.get().asItem()), 2)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 2)
+                .addIngredient(ModItems.CRT_DISPLAY.get(), 1)
+                .save(writer, "turret_maxwell");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.TURRET_FRITZ.get()), 320, 250)
+                .addIngredient(ModItems.PLATE_DESH.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .addIngredient(ModItems.PART_MECHANISM.get(), 2)
+                .addIngredient(Ingredient.of(ModBlocks.STEEL_SCAFFOLD.get().asItem()), 2)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 2)
+                .addIngredient(ModItems.CRT_DISPLAY.get(), 2)
+                .save(writer, "turret_fritz");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.TURRET_ARTY.get()), 400, 300)
+                .addIngredient(ModItems.PLATE_DESH.get(), 6)
+                .addIngredient(ModItems.MOTOR.get(), 3)
+                .addIngredient(ModItems.PART_MECHANISM.get(), 3)
+                .addIngredient(Ingredient.of(ModBlocks.STEEL_SCAFFOLD.get().asItem()), 3)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 3)
+                .addIngredient(ModItems.CRT_DISPLAY.get(), 2)
+                .save(writer, "turret_arty");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.TURRET_HIMARS.get()), 480, 350)
+                .addIngredient(ModItems.PLATE_DESH.get(), 8)
+                .addIngredient(ModItems.MOTOR.get(), 4)
+                .addIngredient(ModItems.PART_MECHANISM.get(), 4)
+                .addIngredient(Ingredient.of(ModBlocks.STEEL_SCAFFOLD.get().asItem()), 4)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 4)
+                .addIngredient(ModItems.CRT_DISPLAY.get(), 3)
+                .save(writer, "turret_himars");
+    }
+
+    /** Cloth / small parts — port of 1.7.10 ass.platemixed, ass.hazcloth, ass.firecloth, ass.filtercoal. */
+    private static void registerMachineParts(Consumer<FinishedRecipe> writer) {
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.PLATE_MIXED.get(), 4), 50, 100)
+                .addIngredient(ModItems.PLATE_COPPER.get(), 2)
+                .addIngredient(ModItems.NEUTRON_REFLECTOR.get(), 1)
+                .addIngredient(ModItems.PLATE_SATURNITE.get(), 1)
+                .save(writer, "platemixed");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.HAZMAT_CLOTH.get(), 4), 50, 100)
+                .addIngredient(ModItems.getPowder(ModIngots.LEAD).get(), 4)
+                .addIngredient(Items.STRING, 8)
+                .save(writer, "hazcloth");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.ASBESTOS_CLOTH.get(), 4), 50, 100)
+                .addIngredient(ModItems.getIngot(ModIngots.ASBESTOS).get(), 1)
+                .addIngredient(Items.STRING, 8)
+                .save(writer, "firecloth");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.FILTER_COAL.get(), 1), 50, 100)
+                .addIngredient(ModItems.getPowders(com.hbm_m.item.tags_and_tiers.ModPowders.COAL).get(), 4)
+                .addIngredient(Items.STRING, 2)
+                .addIngredient(Items.PAPER, 1)
+                .save(writer, "filtercoal");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.DRILL_TITANIUM.get(), 1), 100, 100)
+                .addIngredient(ModItems.PLATE_CAST_DURA_STEEL.get(), 1)
+                .addIngredient(ModItems.PLATE_TITANIUM.get(), 8)
+                .save(writer, "titaniumdrill");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.ENTANGLEMENT_KIT.get(), 1), 200, 100)
+                .addIngredient(ModItems.PLATE_CAST_DURA_STEEL.get(), 4)
+                .addIngredient(ModItems.PLATE_COPPER.get(), 24)
+                .addIngredient(ModItems.WIRE_DENSE_GOLD.get(), 16)
+                .save(writer, "entanglementkit");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.PART_LITHIUM.get(), 8), 40, 100)
+                .addIngredient(ModItems.getPowder(ModIngots.LITHIUM_INGOT).get(), 1)
+                .save(writer, "partlith");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.PART_BERYLLIUM.get(), 8), 40, 100)
+                .addIngredient(ModItems.getPowder(ModIngots.BERYLLIUM).get(), 1)
+                .save(writer, "partberyl");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.PART_CARBON.get(), 8), 40, 100)
+                .addIngredient(ModItems.getPowders(com.hbm_m.item.tags_and_tiers.ModPowders.COAL).get(), 1)
+                .save(writer, "partcoal");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.PART_PLUTONIUM.get(), 8), 40, 100)
+                .addIngredient(ModItems.getPowder(ModIngots.PLUTONIUM).get(), 1)
+                .save(writer, "partplut");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.CMB_BRICK.get(), 8), 100, 100)
+                .addIngredient(Ingredient.of(ModBlocks.CONCRETE.get().asItem()), 4)
+                .addIngredient(ModItems.PLATE_COMBINE_STEEL.get(), 4)
+                .save(writer, "cmbtile");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.CMB_BRICK_REINFORCED.get(), 8), 100, 100)
+                .addIngredient(ModItems.getIngot(ModIngots.MAGNETIZED_TUNGSTEN).get(), 8)
+                .addIngredient(ModBlocks.DUCRETE.get().asItem(), 4)
+                .addIngredient(ModBlocks.CMB_BRICK.get().asItem(), 8)
+                .save(writer, "cmbbrick");
+    }
+
+    /** Standalone machines — port of 1.7.10 pumpjack/flarestack/crackingtower/coker/compressor/silex/drillbits/slopper/mininglaser/strandcaster. */
+    private static void registerMachines(Consumer<FinishedRecipe> writer) {
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.PUMPJACK.get(), 1), 400, 100)
+                .addIngredient(ModItems.PLATE_DURA_STEEL.get(), 8)
+                .addIngredient(ModItems.PLATE_WELDED_STEEL.get(), 8)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 12)
+                .addIngredient(ModItems.MOTOR_DESH.get(), 1)
+                .addIngredient(ModItems.DRILL_TITANIUM.get(), 1)
+                .save(writer, "pumpjack");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.FLARE_STACK.get(), 1), 100, 100)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 12)
+                .addIngredient(ModItems.PLATE_COPPER.get(), 4)
+                .addIngredient(ModItems.SHELL_STEEL.get(), 4)
+                .addIngredient(ModItems.THERMO_ELEMENT.get(), 3)
+                .save(writer, "flarestack");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.CRACKING_TOWER.get(), 1), 200, 100)
+                .addIngredient(ModBlocks.STEEL_SCAFFOLD.get().asItem(), 16)
+                .addIngredient(ModItems.SHELL_STEEL.get(), 6)
+                .addIngredient(ModItems.getIngot(ModIngots.DESH).get(), 12)
+                .addIngredient(ModItems.getIngot(ModIngots.NIOBIUM).get(), 4)
+                .save(writer, "crackingtower");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.COKER.get(), 1), 200, 100)
+                .addIngredient(ModItems.PLATE_WELDED_STEEL.get(), 8)
+                .addIngredient(ModItems.SHELL_STEEL.get(), 4)
+                .addIngredient(ModItems.PLATE_COPPER.get(), 8)
+                .addIngredient(ModItems.getIngot(ModIngots.RUBBER).get(), 4)
+                .addIngredient(ModItems.getIngot(ModIngots.NIOBIUM).get(), 4)
+                .save(writer, "coker");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.COMPRESSOR.get(), 1), 200, 100)
+                .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 8)
+                .addIngredient(ModItems.PLATE_COPPER.get(), 4)
+                .addIngredient(ModItems.SHELL_STEEL.get(), 2)
+                .addIngredient(ModItems.MOTOR.get(), 3)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 1)
+                .save(writer, "compressor");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.SILEX.get(), 1), 400, 100)
+                .addIngredient(ModBlocks.GLASS_QUARTZ.get().asItem(), 16)
+                .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 8)
+                .addIngredient(ModItems.getIngot(ModIngots.DESH).get(), 4)
+                .addIngredient(ModItems.getIngot(ModIngots.RUBBER).get(), 8)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 8)
+                .save(writer, "silex");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.DRILLBIT_STEEL.get(), 1), 100, 100)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 12)
+                .addIngredient(ModItems.getIngot(ModIngots.TUNGSTEN).get(), 4)
+                .save(writer, "drillsteel");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.DRILLBIT_HSS.get(), 1), 100, 100)
+                .addIngredient(ModItems.getIngot(ModIngots.DURA_STEEL).get(), 12)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.POLYMER).get(),
+                        ModItems.getIngot(ModIngots.BAKELITE).get()), 12)
+                .addIngredient(ModItems.getIngot(ModIngots.TITANIUM).get(), 8)
+                .save(writer, "drilldura");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.DRILLBIT_DESH.get(), 1), 100, 100)
+                .addIngredient(ModItems.getIngot(ModIngots.DESH).get(), 16)
+                .addIngredient(ModItems.getIngot(ModIngots.RUBBER).get(), 12)
+                .addIngredient(ModItems.getIngot(ModIngots.NIOBIUM).get(), 4)
+                .save(writer, "drilldesh");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.ORE_SLOPPER.get(), 1), 200, 100)
+                .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 6)
+                .addIngredient(ModItems.PLATE_TITANIUM.get(), 8)
+                .addIngredient(ModItems.PIPE_COPPER.get(), 3)
+                .addIngredient(ModItems.MOTOR.get(), 3)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 1)
+                .save(writer, "slopper");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.MINING_LASER.get(), 1), 400, 100)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 16)
+                .addIngredient(ModItems.SHELL_TITANIUM.get(), 4)
+                .addIngredient(ModItems.PLATE_DURA_STEEL.get(), 4)
+                .addIngredient(ModItems.CRYSTAL_REDSTONE.get(), 3)
+                .addIngredient(Items.DIAMOND, 3)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.POLYMER).get(),
+                        ModItems.getIngot(ModIngots.BAKELITE).get()), 8)
+                .addIngredient(ModItems.MOTOR.get(), 3)
+                .save(writer, "mininglaser");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.STRAND_CASTER.get(), 1), 200, 100)
+                .addIngredient(ModItems.FIREBRICK.get(), 16)
+                .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 6)
+                .addIngredient(ModItems.PLATE_WELDED_COPPER.get(), 2)
+                .addIngredient(ModItems.SHELL_STEEL.get(), 2)
+                .addIngredient(Ingredient.of(ModBlocks.CONCRETE.get().asItem()), 8)
+                .save(writer, "strandcaster");
+    }
+
+    /** Generators / pistons — port of 1.7.10 dieselgen, pistonset(steel/desh/starmetal), hephaestus. */
+    private static void registerGenerators(Consumer<FinishedRecipe> writer) {
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.DIESELGEN.get(), 1), 200, 100)
+                .addIngredient(ModItems.SHELL_STEEL.get(), 1)
+                .addIngredient(ModItems.PLATE_CAST_COPPER.get(), 2)
+                .addIngredient(ModItems.COIL_COPPER.get(), 4)
+                .save(writer, "dieselgen");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.PISTON_SET_STEEL.get(), 1), 200, 100)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 16)
+                .addIngredient(ModItems.PLATE_COPPER.get(), 4)
+                .addIngredient(ModItems.getIngot(ModIngots.TUNGSTEN).get(), 8)
+                .addIngredient(ModItems.BOLT_TUNGSTEN.get(), 16)
+                .save(writer, "pistonsetsteel");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.PISTON_SET_DESH.get(), 1), 200, 100)
+                .addIngredient(ModItems.getIngot(ModIngots.DESH).get(), 24)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.POLYMER).get(),
+                        ModItems.getIngot(ModIngots.BAKELITE).get()), 12)
+                .addIngredient(ModItems.PLATE_COPPER.get(), 24)
+                .addIngredient(ModItems.getIngot(ModIngots.TUNGSTEN).get(), 16)
+                .addIngredient(ModItems.PIPE_DURA_STEEL.get(), 4)
+                .save(writer, "pistonsetdesh");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.PISTON_SET_STARMETAL.get(), 1), 200, 100)
+                .addIngredient(ModItems.getIngot(ModIngots.STARMETAL).get(), 24)
+                .addIngredient(ModItems.getIngot(ModIngots.RUBBER).get(), 16)
+                .addIngredient(ModItems.PLATE_SATURNITE.get(), 24)
+                .addIngredient(ModItems.getIngot(ModIngots.NIOBIUM).get(), 16)
+                .addIngredient(ModItems.PIPE_DURA_STEEL.get(), 4)
+                .save(writer, "pistonsetstar");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.HEPHAESTUS.get(), 1), 200, 100)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 12)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 24)
+                .addIngredient(ModItems.PLATE_COPPER.get(), 24)
+                .addIngredient(ModItems.getIngot(ModIngots.NIOBIUM).get(), 4)
+                .addIngredient(ModItems.getIngot(ModIngots.RUBBER).get(), 12)
+                .addIngredient(ModBlocks.GLASS_QUARTZ.get().asItem(), 16)
+                .save(writer, "hephaestus");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.CAPACITOR_TANTALUM.get(), 1), 100, 10_000)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.PVC).get(),
+                        ModItems.getIngot(ModIngots.POLYMER_COMPOSITE).get()), 16)
+                .addIngredient(ModItems.getIngot(ModIngots.TANTALIUM).get(), 24)
+                .save(writer, "capacitortantalum");
+    }
+
+    /** Particle accelerator components — port of 1.7.10 beamline/rfc/quadrupole/dipole/source/detector/exposurechamber. */
+    private static void registerAccelerators(Consumer<FinishedRecipe> writer) {
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.BEAMLINE.get(), 1), 200, 100)
+                .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 8)
+                .addIngredient(ModItems.PLATE_COPPER.get(), 16)
+                .addIngredient(ModItems.WIRE_DENSE_GOLD.get(), 4)
+                .save(writer, "beamline");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.RFC.get(), 1), 400, 100)
+                .addIngredient(ModBlocks.BEAMLINE.get().asItem(), 3)
+                .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 16)
+                .addIngredient(ModItems.PLATE_COPPER.get(), 64)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.PVC).get(),
+                        ModItems.getIngot(ModIngots.POLYMER_COMPOSITE).get()), 16)
+                .addIngredient(ModItems.MAGNETRON.get(), 16)
+                .save(writer, "rfc");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.QUADRUPOLE.get(), 1), 400, 100)
+                .addIngredient(ModBlocks.BEAMLINE.get().asItem(), 1)
+                .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 16)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.PVC).get(),
+                        ModItems.getIngot(ModIngots.POLYMER_COMPOSITE).get()), 16)
+                .addIngredient(ModItems.BISMOID_CIRCUIT.get(), 1)
+                .save(writer, "quadrupole");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.DIPOLE.get(), 1), 400, 100)
+                .addIngredient(ModBlocks.BEAMLINE.get().asItem(), 2)
+                .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 16)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.PVC).get(),
+                        ModItems.getIngot(ModIngots.POLYMER_COMPOSITE).get()), 32)
+                .addIngredient(ModItems.BISMOID_CIRCUIT.get(), 4)
+                .save(writer, "dipole");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.SOURCE.get(), 1), 400, 100)
+                .addIngredient(ModBlocks.BEAMLINE.get().asItem(), 3)
+                .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 16)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.PVC).get(),
+                        ModItems.getIngot(ModIngots.POLYMER_COMPOSITE).get()), 16)
+                .addIngredient(ModItems.MAGNETRON.get(), 16)
+                .addIngredient(ModItems.QUANTUM_CIRCUIT.get(), 1)
+                .save(writer, "source");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.DETECTOR.get(), 1), 400, 100)
+                .addIngredient(ModBlocks.BEAMLINE.get().asItem(), 3)
+                .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 24)
+                .addIngredient(ModItems.WIRE_DENSE_GOLD.get(), 16)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.PVC).get(),
+                        ModItems.getIngot(ModIngots.POLYMER_COMPOSITE).get()), 16)
+                .addIngredient(ModItems.QUANTUM_CIRCUIT.get(), 4)
+                .save(writer, "detector");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.EXPOSURE_CHAMBER.get(), 1), 200, 100)
+                .addIngredient(ModItems.PLATE_CAST_ALUMINIUM.get(), 12)
+                .addIngredient(ModItems.getIngot(ModIngots.ADVANCED_ALLOY).get(), 4)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.PVC).get(),
+                        ModItems.getIngot(ModIngots.POLYMER_COMPOSITE).get()), 12)
+                .addIngredient(ModItems.WIRE_DENSE_GOLD.get(), 32)
+                .addIngredient(ModItems.MOTOR_DESH.get(), 2)
+                .addIngredient(ModItems.BISMOID_CIRCUIT.get(), 4)
+                .addIngredient(ModItems.CAPACITOR_TANTALUM.get(), 1)
+                .addIngredient(ModBlocks.GLASS_QUARTZ.get().asItem(), 16)
+                .save(writer, "exposurechamber");
+    }
+
+    /** RBMK / PWR reactor components — port of 1.7.10 ass.rbmk and the pwr* family. */
+    private static void registerReactors(Consumer<FinishedRecipe> writer) {
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.RBMK_BLANK.get(), 1), 100, 100)
+                .addIngredient(ModBlocks.CONCRETE_ASBESTOS.get().asItem(), 4)
+                .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 2)
+                .addIngredient(ModItems.PLATE_COPPER.get(), 4)
+                .addIngredient(ModItems.getIngot(ModIngots.RUBBER).get(), 2)
+                .save(writer, "rbmk");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.PWR_CONTROL.get(), 4), 200, 500)
+                .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 2)
+                .addIngredient(ModItems.getIngot(ModIngots.BORON).get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 1)
+                .save(writer, "pwrcontrol");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.PWR_CHANNEL.get(), 4), 200, 500)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 4)
+                .addIngredient(ModItems.PLATE_COPPER.get(), 4)
+                .save(writer, "pwrchannel");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.PWR_HEATEX.get(), 4), 200, 500)
+                .addIngredient(ModItems.PLATE_CAST_COPPER.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 1)
+                .save(writer, "pwrheatex");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.PWR_HEATSINK.get(), 4), 200, 500)
+                .addIngredient(ModItems.PLATE_CAST_SATURNITE.get(), 4)
+                .addIngredient(ModItems.PLATE_CAST_COPPER.get(), 4)
+                .save(writer, "pwrheatsink");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.PWR_REFLECTOR.get(), 4), 200, 500)
+                .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 2)
+                .addIngredient(ModItems.NEUTRON_REFLECTOR.get(), 4)
+                .save(writer, "pwrreflector");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.PWR_CASING.get(), 4), 200, 500)
+                .addIngredient(ModItems.PLATE_LEAD.get(), 4)
+                .addIngredient(Ingredient.of(ModBlocks.CONCRETE.get().asItem()), 4)
+                .save(writer, "pwrcasing");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.PWR_PORT.get(), 4), 200, 500)
+                .addIngredient(ModItems.PLATE_LEAD.get(), 4)
+                .addIngredient(Ingredient.of(ModBlocks.CONCRETE.get().asItem()), 4)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 4)
+                .save(writer, "pwrport");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.PWR_NEUTRON_SOURCE.get(), 1), 200, 500)
+                .addIngredient(ModItems.PLATE_WELDED_ZIRCONIUM.get(), 1)
+                .addIngredient(ModItems.BILLET_RA226BE.get(), 3)
+                .save(writer, "pwrneutronsource");
+    }
+
+    /** Fusion reactor components — port of 1.7.10 fusionblanket/fusionpipes/fusioncollector/fusionbreeder/fusionboiler. */
+    private static void registerFusionReactor(Consumer<FinishedRecipe> writer) {
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.FUSION_COMPONENT_BLANKET.get(), 4), 100, 100)
+                .addIngredient(ModItems.PLATE_WELDED_TUNGSTEN.get(), 1)
+                .addIngredient(ModItems.PLATE_WELDED_STEEL.get(), 2)
+                .addIngredient(ModItems.getIngot(ModIngots.BERYLLIUM).get(), 4)
+                .save(writer, "fusionblanket");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.FUSION_COMPONENT_MOTOR.get(), 4), 100, 100)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.PVC).get(),
+                        ModItems.getIngot(ModIngots.POLYMER_COMPOSITE).get()), 4)
+                .addIngredient(ModItems.PIPE_COPPER.get(), 2)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 1)
+                .save(writer, "fusionpipes");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.COLLECTOR.get(), 1), 300, 100)
+                .addIngredient(ModItems.PLATE_CAST_ALLOY.get(), 4)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 16)
+                .addIngredient(ModItems.getIngot(ModIngots.GRAPHITE).get(), 16)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.PVC).get(),
+                        ModItems.getIngot(ModIngots.POLYMER_COMPOSITE).get()), 4)
+                .save(writer, "fusioncollector");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.BREEDER_FUSION.get(), 1), 300, 100)
+                .addIngredient(ModItems.PLATE_CAST_ALLOY.get(), 4)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 4)
+                .addIngredient(ModItems.getIngot(ModIngots.BORON).get(), 16)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.PVC).get(),
+                        ModItems.getIngot(ModIngots.POLYMER_COMPOSITE).get()), 16)
+                .save(writer, "fusionbreeder");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.BOILER_FUSION.get(), 1), 300, 100)
+                .addIngredient(ModItems.PLATE_CAST_ALLOY.get(), 16)
+                .addIngredient(ModItems.SHELL_COPPER.get(), 16)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 8)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.PVC).get(),
+                        ModItems.getIngot(ModIngots.POLYMER_COMPOSITE).get()), 16)
+                .save(writer, "fusionboiler");
+    }
+
+    /** WATZ reactor rods — port of 1.7.10 ass.watzrod / ass.watzcooler. */
+    private static void registerUpgrades(Consumer<FinishedRecipe> writer) {
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.WATZ_ELEMENT.get(), 3), 200, 100)
+                .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 2)
+                .addIngredient(ModItems.getIngot(ModIngots.ZIRCONIUM).get(), 2)
+                .addIngredient(ModItems.getIngot(ModIngots.SATURNITE).get(), 2)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.PVC).get(),
+                        ModItems.getIngot(ModIngots.POLYMER_COMPOSITE).get()), 4)
+                .save(writer, "watzrod");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.WATZ_COOLER.get(), 3), 200, 100)
+                .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 2)
+                .addIngredient(ModItems.PLATE_CAST_COPPER.get(), 4)
+                .addIngredient(ModItems.getIngot(ModIngots.RUBBER).get(), 2)
+                .save(writer, "watzcooler");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.UPGRADE_OVERDRIVE_1.get(), 1), 200, 100)
+                .addIngredient(ModItems.UPGRADE_SPEED_3.get(), 1)
+                .addIngredient(ModItems.UPGRADE_EFFECT_3.get(), 1)
+                .addIngredient(ModItems.getIngot(ModIngots.SATURNITE).get(), 16)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.PVC).get(),
+                        ModItems.getIngot(ModIngots.POLYMER_COMPOSITE).get()), 16)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 16)
+                .save(writer, "overdrive1");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.UPGRADE_OVERDRIVE_2.get(), 1), 600, 100)
+                .addIngredient(ModItems.UPGRADE_OVERDRIVE_1.get(), 1)
+                .addIngredient(ModItems.UPGRADE_SPEED_3.get(), 1)
+                .addIngredient(ModItems.UPGRADE_EFFECT_3.get(), 1)
+                .addIngredient(ModItems.getIngot(ModIngots.SATURNITE).get(), 16)
+                .addIngredient(ModItems.getIngot(ModIngots.CFT).get(), 8)
+                .addIngredient(ModItems.CAPACITOR_BOARD.get(), 16)
+                .save(writer, "overdrive2");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.UPGRADE_OVERDRIVE_3.get(), 1), 1200, 100)
+                .addIngredient(ModItems.UPGRADE_OVERDRIVE_2.get(), 1)
+                .addIngredient(ModItems.UPGRADE_SPEED_3.get(), 1)
+                .addIngredient(ModItems.UPGRADE_EFFECT_3.get(), 1)
+                .addIngredient(ModItems.getIngot(ModIngots.BISMUTH_BRONZE).get(), 16)
+                .addIngredient(ModItems.getIngot(ModIngots.CFT).get(), 16)
+                .addIngredient(ModItems.BISMOID_CIRCUIT.get(), 16)
+                .save(writer, "overdrive3");
+    }
+
+    /** Nuclear bomb components — port of 1.7.10 wiring/core1/boyshield/boytarget/boybullet/manigniter/mancore/mikecore/mikedeut/mikecooler/fleijacore/soliniumcore. */
+    private static void registerBombParts(Consumer<FinishedRecipe> writer) {
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.GADGET_WIREING.get(), 1), 200, 100)
+                .addIngredient(ModItems.WIRE_GOLD.get(), 24)
+                .save(writer, "wiring");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.GADGET_CORE.get(), 1), 1200, 100)
+                .addIngredient(ModItems.NUGGET_PU239.get(), 7)
+                .addIngredient(ModItems.NUGGET_U238.get(), 3)
+                .save(writer, "core1");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.BOY_SHIELDING.get(), 1), 200, 100)
+                .addIngredient(ModItems.NEUTRON_REFLECTOR.get(), 12)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 4)
+                .save(writer, "boyshield");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.BOY_TARGET.get(), 1), 200, 100)
+                .addIngredient(ModItems.NUGGET_U235.get(), 18)
+                .save(writer, "boytarget");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.BOY_BULLET.get(), 1), 200, 100)
+                .addIngredient(ModItems.NUGGET_U235.get(), 9)
+                .save(writer, "boybullet");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MAN_IGNITER.get(), 1), 200, 100)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 3)
+                .addIngredient(ModItems.WIRE_GOLD.get(), 24)
+                .save(writer, "manigniter");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MAN_CORE.get(), 1), 1200, 100)
+                .addIngredient(ModItems.NUGGET_PU239.get(), 8)
+                .addIngredient(ModItems.NUGGET_BERYLLIUM.get(), 2)
+                .save(writer, "mancore");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MIKE_CORE.get(), 1), 1200, 100)
+                .addIngredient(ModItems.NUGGET_U238.get(), 24)
+                .addIngredient(ModItems.PLATE_LEAD.get(), 6)
+                .save(writer, "mikecore");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MIKE_DEUT.get(), 1), 600, 100)
+                .addIngredient(ModItems.PLATE_GUNSTEEL.get(), 16)
+                .addIngredient(ModItems.PLATE_TITANIUM.get(), 16)
+                .save(writer, "mikedeut");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MIKE_COOLING_UNIT.get(), 1), 300, 100)
+                .addIngredient(ModItems.PLATE_DURA_STEEL.get(), 8)
+                .addIngredient(ModItems.COIL_COPPER.get(), 5)
+                .addIngredient(ModItems.COIL_TUNGSTEN.get(), 5)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .save(writer, "mikecooler");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.FLEIJA_CORE.get(), 1), 600, 100)
+                .addIngredient(ModItems.NUGGET_U235.get(), 8)
+                .addIngredient(ModItems.NUGGET_NEPTUNIUM.get(), 2)
+                .addIngredient(ModItems.NUGGET_BERYLLIUM.get(), 4)
+                .addIngredient(ModItems.COIL_COPPER.get(), 2)
+                .save(writer, "fleijacore");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.SOLINIUM_CORE.get(), 1), 600, 100)
+                .addIngredient(ModItems.NUGGET_SOLINIUM.get(), 9)
+                .addIngredient(ModItems.NUGGET_EUPHEMIUM.get(), 1)
+                .save(writer, "soliniumcore");
+    }
+
+    /** Missile warheads/thrusters — port of 1.7.10 warheadhe1/warheadcl1-3/thrusternerva. */
+    private static void registerMissileParts(Consumer<FinishedRecipe> writer) {
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.WARHEAD_GENERIC_SMALL.get(), 1), 100, 100)
+                .addIngredient(ModItems.PLATE_TITANIUM.get(), 4)
+                .addIngredient(ModItems.BALL_DYNAMITE.get(), 2)
+                .addIngredient(ModItems.MICROCHIP.get(), 1)
+                .save(writer, "warheadhe1");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.WARHEAD_CLUSTER_SMALL.get(), 1), 100, 100)
+                .addIngredient(ModItems.WARHEAD_GENERIC_SMALL.get(), 1)
+                .addIngredient(ModItems.PELLET_CLUSTER.get(), 2)
+                .save(writer, "warheadcl1");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.WARHEAD_CLUSTER_MEDIUM.get(), 1), 200, 100)
+                .addIngredient(ModItems.WARHEAD_GENERIC_MEDIUM.get(), 1)
+                .addIngredient(ModItems.PELLET_CLUSTER.get(), 4)
+                .save(writer, "warheadcl2");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.WARHEAD_CLUSTER_LARGE.get(), 1), 400, 100)
+                .addIngredient(ModItems.WARHEAD_GENERIC_LARGE.get(), 1)
+                .addIngredient(ModItems.PELLET_CLUSTER.get(), 8)
+                .save(writer, "warheadcl3");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.THRUSTER_NUCLEAR.get(), 1), 600, 100)
+                .addIngredient(ModItems.getIngot(ModIngots.DURA_STEEL).get(), 32)
+                .addIngredient(ModItems.getIngot(ModIngots.BORON).get(), 8)
+                .addIngredient(ModItems.PLATE_LEAD.get(), 16)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 4)
+                .save(writer, "thrusternerva");
+    }
+
+    /** Chemical artillery shells — port of 1.7.10 shellchlorine/shellphosgene/shellmustard.
+     * NOTE: original recipes also consumed 4000mB of the respective gas fluid; the assembler recipe
+     * system in this port has no fluid-input support, so the fluid cost is omitted here. */
+    private static void registerAmmo(Consumer<FinishedRecipe> writer) {
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.AMMO_ARTY_CHLORINE.get(), 1), 100, 1_000)
+                .addIngredient(ModItems.AMMO_ARTY.get(), 1)
+                .addIngredient(ModItems.getIngot(ModIngots.POLYMER).get(), 1)
+                .save(writer, "shellchlorine");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.AMMO_ARTY_PHOSGENE.get(), 1), 100, 1_000)
+                .addIngredient(ModItems.AMMO_ARTY.get(), 1)
+                .addIngredient(ModItems.getIngot(ModIngots.POLYMER).get(), 1)
+                .save(writer, "shellphosgene");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.AMMO_ARTY_MUSTARD_GAS.get(), 1), 100, 1_000)
+                .addIngredient(ModItems.AMMO_ARTY.get(), 1)
+                .addIngredient(ModItems.getIngot(ModIngots.POLYMER).get(), 1)
+                .save(writer, "shellmustard");
+    }
+
+    /** Space program — port of 1.7.10 soyuzcore/satellitemapper/satellitescanner/satelliteradar/satelliteresonator. */
+    private static void registerSpace(Consumer<FinishedRecipe> writer) {
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.STRUCT_SOYUZ_CORE.get(), 1), 1200, 100)
+                .addIngredient(ModItems.PLATE_WELDED_STEEL.get(), 16)
+                .addIngredient(ModItems.UPGRADE_SPEED_3.get(), 1)
+                .addIngredient(ModItems.UPGRADE_POWER_3.get(), 1)
+                .addIngredient(ModItems.CONTROLLER.get(), 4)
+                .addIngredient(ModItems.BATTERY_LITHIUM.get(), 1)
+                .save(writer, "soyuzcore");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.SAT_HEAD_MAPPER.get(), 1), 600, 100)
+                .addIngredient(ModItems.SHELL_STEEL.get(), 3)
+                .addIngredient(ModItems.PLATE_DESH.get(), 4)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 4)
+                .addIngredient(ModBlocks.GLASS_QUARTZ.get().asItem(), 8)
+                .save(writer, "satellitemapper");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.SAT_HEAD_SCANNER.get(), 1), 600, 100)
+                .addIngredient(ModItems.SHELL_STEEL.get(), 3)
+                .addIngredient(ModItems.PLATE_CAST_TITANIUM.get(), 8)
+                .addIngredient(ModItems.PLATE_DESH.get(), 4)
+                .addIngredient(ModItems.MAGNETRON.get(), 8)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 8)
+                .save(writer, "satellitescanner");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.SAT_HEAD_RADAR.get(), 1), 600, 100)
+                .addIngredient(ModItems.SHELL_STEEL.get(), 3)
+                .addIngredient(ModItems.PLATE_CAST_TITANIUM.get(), 12)
+                .addIngredient(ModItems.MAGNETRON.get(), 12)
+                .addIngredient(ModItems.COIL_GOLD.get(), 16)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 4)
+                .save(writer, "satelliteradar");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.SAT_HEAD_RESONATOR.get(), 1), 600, 100)
+                .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 6)
+                .addIngredient(ModItems.getIngot(ModIngots.STARMETAL).get(), 12)
+                .addIngredient(ModItems.getIngot(ModIngots.POLYMER).get(), 48)
+                .addIngredient(ModItems.CRYSTAL_XEN.get(), 1)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 16)
+                .save(writer, "satelliteresonator");
     }
 
 

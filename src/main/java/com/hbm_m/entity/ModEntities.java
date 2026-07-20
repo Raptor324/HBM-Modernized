@@ -23,6 +23,8 @@ import com.hbm_m.entity.missile.MissileTier2;
 import com.hbm_m.entity.missile.MissileTier3;
 import com.hbm_m.entity.missile.MissileTier4;
 import com.hbm_m.entity.projectile.ZirnoxDebrisEntity;
+import com.hbm_m.entity.projectile.TurretBulletEntity;
+import com.hbm_m.entity.projectile.TurretRocketEntity;
 import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.world.entity.EntityType;
@@ -38,6 +40,18 @@ public class ModEntities {
         DeferredRegister.create(MainRegistry.MOD_ID, Registries.ENTITY_TYPE);
 
 
+
+    public static final RegistrySupplier<EntityType<TurretBulletEntity>> TURRET_BULLET =
+        ENTITY_TYPES.register("turret_bullet",
+            () -> EntityType.Builder.<TurretBulletEntity>of(TurretBulletEntity::new, MobCategory.MISC)
+                .sized(0.25f, 0.25f)
+                .build("turret_bullet"));
+
+    public static final RegistrySupplier<EntityType<TurretRocketEntity>> TURRET_ROCKET =
+        ENTITY_TYPES.register("turret_rocket",
+            () -> EntityType.Builder.<TurretRocketEntity>of(TurretRocketEntity::new, MobCategory.MISC)
+                .sized(0.4f, 0.4f)
+                .build("turret_rocket"));
 
     public static final RegistrySupplier<EntityType<GrenadeProjectileEntity>> GRENADE_PROJECTILE =
         ENTITY_TYPES.register("grenade_projectile",
@@ -150,6 +164,23 @@ public class ModEntities {
                             .clientTrackingRange(256)
                             .updateInterval(3)
                             .build("missile_abm"));
+
+    // Soyuz Launcher: flight entity + cargo-mode descent capsule (see SoyuzLauncherBlockEntity)
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.missile.SoyuzEntity>> SOYUZ =
+            ENTITY_TYPES.register("soyuz",
+                    () -> EntityType.Builder.<com.hbm_m.entity.missile.SoyuzEntity>of(com.hbm_m.entity.missile.SoyuzEntity::new, MobCategory.MISC)
+                            .sized(5.0F, 50.0F)
+                            .clientTrackingRange(512)
+                            .updateInterval(10)
+                            .build("soyuz"));
+
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.missile.SoyuzCapsuleEntity>> SOYUZ_CAPSULE =
+            ENTITY_TYPES.register("soyuz_capsule",
+                    () -> EntityType.Builder.<com.hbm_m.entity.missile.SoyuzCapsuleEntity>of(com.hbm_m.entity.missile.SoyuzCapsuleEntity::new, MobCategory.MISC)
+                            .sized(2.0F, 3.0F)
+                            .clientTrackingRange(256)
+                            .updateInterval(10)
+                            .build("soyuz_capsule"));
 
     // Tier 0
     public static final RegistrySupplier<EntityType<MissileTier0.MissileMicro>> MISSILE_MICRO =
@@ -341,6 +372,23 @@ public class ModEntities {
                             .clientTrackingRange(256)
                             .updateInterval(1)
                             .build("nuke_mk3"));
+
+    // Gerald/Horizons orbital strike meteor (see com.hbm_m.satellite.SatelliteHorizons)
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.TomEntity>> TOM_METEOR =
+            ENTITY_TYPES.register("tom_meteor",
+                    () -> EntityType.Builder.<com.hbm_m.entity.projectile.TomEntity>of(com.hbm_m.entity.projectile.TomEntity::new, MobCategory.MISC)
+                            .sized(1.0F, 1.0F)
+                            .clientTrackingRange(512)
+                            .updateInterval(1)
+                            .build("tom_meteor"));
+
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.logic.TomBlastEntity>> TOM_BLAST =
+            ENTITY_TYPES.register("tom_blast",
+                    () -> EntityType.Builder.<com.hbm_m.entity.logic.TomBlastEntity>of(com.hbm_m.entity.logic.TomBlastEntity::new, MobCategory.MISC)
+                            .sized(1.0F, 1.0F)
+                            .clientTrackingRange(256)
+                            .updateInterval(1)
+                            .build("tom_blast"));
 
     // Длительная сущность ядерного взрыва MK5 (Fat Man и другие мощные боеприпасы)
     public static final RegistrySupplier<EntityType<EntityNukeExplosionMK5>> NUKE_MK5 =

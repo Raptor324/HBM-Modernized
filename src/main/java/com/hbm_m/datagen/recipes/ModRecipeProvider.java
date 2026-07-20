@@ -70,13 +70,15 @@ public class ModRecipeProvider extends RecipeProvider {
                         .pattern("III")
                         .define('I', ingotItem.get())
                         .unlockedBy("has_" + ingotName + "_ingot", has(ingotItem.get()))
-                        .save(pWriter, ingotName + "_block_from_ingots");
+                        .save(pWriter, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
+                                com.hbm_m.lib.RefStrings.MODID, ingotName + "_block_from_ingots"));
 
                 // Рецепт: 1 блок -> 9 слитков (Shapeless Recipe)
                 ShapelessRecipeBuilder.shapeless(net.minecraft.data.recipes.RecipeCategory.MISC, ingotItem.get(), 9)
                         .requires(ingotBlock.get())
                         .unlockedBy("has_" + ingotName + "_block", has(ingotBlock.get()))
-                        .save(pWriter, ingotName + "_ingots_from_block");
+                        .save(pWriter, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
+                                com.hbm_m.lib.RefStrings.MODID, ingotName + "_ingots_from_block"));
             }
         }
 

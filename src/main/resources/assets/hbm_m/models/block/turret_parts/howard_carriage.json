@@ -1,0 +1,16 @@
+{
+  "loader": "forge:obj",
+  "model": "hbm_m:models/turrets/turret_howard.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "default": "hbm_m:block/turrets/carriage_ciws",
+    "particle": "hbm_m:block/turrets/carriage_ciws"
+  },
+  "visibility": {
+    "BarrelsBottom": false,
+    "BarrelsTop": false,
+    "Body": false,
+    "Carriage": true
+  }
+}

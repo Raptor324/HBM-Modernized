@@ -88,6 +88,7 @@ public class MachineFoundryChannelBlock extends BaseEntityBlock {
     private boolean canConnect(LevelAccessor level, BlockPos nb) {
         Block b = level.getBlockState(nb).getBlock();
         return b instanceof MachineFoundryChannelBlock
+                || b instanceof MachineFoundryOutletBlock
                 || b == ModBlocks.FOUNDRY_BASIN.get()
                 || b == ModBlocks.CRUCIBLE.get();
     }

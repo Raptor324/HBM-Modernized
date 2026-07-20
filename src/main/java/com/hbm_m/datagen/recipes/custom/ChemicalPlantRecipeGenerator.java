@@ -2,6 +2,7 @@ package com.hbm_m.datagen.recipes.custom;
 //? if forge {
 import java.util.function.Consumer;
 
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
@@ -34,18 +35,234 @@ public final class ChemicalPlantRecipeGenerator {
         registerBasicBlocks(writer);
         registerExplosives(writer);
         registerDhc(writer);
+        registerConstructionMaterials(writer);
+        registerFuelsAndElectrodes(writer);
+        registerPolymers(writer);
+        registerMisc(writer);
 
-        // TODO (1.7.10): chem.tarsand
-        // TODO (1.7.10): chem.tel, chem.deicer
-        // TODO (1.7.10): chem.concrete, chem.concreteasbestos, chem.ducrete, chem.liquidconk, chem.asphalt
-        // TODO (1.7.10): chem.batterylead, chem.batterylithium, chem.batterysodium, chem.batteryschrabidium, chem.batteryquantum
-        // TODO (1.7.10): chem.desh, chem.deshcracked, chem.polymer, chem.bakelite, chem.rubber, chem.hardplastic, chem.pvc
-        // TODO (1.7.10): chem.meth, chem.epearl, chem.meatprocessing, chem.rustysteel
-        // TODO (1.7.10): chem.biosolidfuel, chem.biooilsolidfuel, chem.oilelectrodes, chem.lubeelectrodes
-        // TODO (1.7.10): chem.coltancleaning, chem.coltanpain, chem.coltancrystal
-        // TODO (1.7.10): chem.cordite, chem.rocketfuel, chem.dynamite, chem.tatb
-        // TODO (1.7.10): chem.laminate, chem.polarized
-        // TODO (1.7.10): chem.yellowcake, chem.balefire, chem.osmiridiumdeath
+        // Genuinely blocked — missing item/tag/enum system in this port (see class javadoc history):
+        // chem.hydrogencoke, chem.tarsand, chem.tel, chem.deicer, chem.ducrete,
+        // chem.batterylead, chem.batterylithium, chem.batterysodium, chem.batteryschrabidium, chem.batteryquantum,
+        // chem.cordite, chem.coltancleaning, chem.coltanpain, chem.yellowcake, chem.balefire, chem.osmiridiumdeath, chem.meth
+    }
+
+    /** Concrete/asphalt/aggregate/obsidian family — port of 1.7.10 chem.concrete/concreteasbestos/liquidconk/asphalt/aggregate/obsidian. */
+    private static void registerConstructionMaterials(Consumer<FinishedRecipe> writer) {
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(60, 500)
+            .withIconItem(new ItemStack(Items.OBSIDIAN))
+            .addFluidInput(ModFluids.WATER.getSource(), 1_000)
+            .addFluidInput(ModFluids.LAVA.getSource(), 500)
+            .addFluidInput(ModFluids.AIR.getSource(), 4_000)
+            .addItemOutput(new ItemStack(Items.OBSIDIAN))
+            .withBlueprintPool("discover.stone")
+            .save(writer, "chemplant/chem_obsidian");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(320, 500)
+            .withIconItem(new ItemStack(Items.GRAVEL))
+            .addItemInput(Items.COBBLESTONE, 16)
+            .addItemOutput(new ItemStack(Items.GRAVEL, 8))
+            .addItemOutput(new ItemStack(Items.SAND, 8))
+            .save(writer, "chemplant/chem_aggregate");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
+            .withIconItem(new ItemStack(ModBlocks.CONCRETE.get()))
+            .addItemInput(ModItems.getPowders(ModPowders.CEMENT).get(), 1)
+            .addItemInput(Items.GRAVEL, 8)
+            .addItemInput(Items.SAND, 8)
+            .addFluidInput(ModFluids.WATER.getSource(), 2_000)
+            .addItemOutput(new ItemStack(ModBlocks.CONCRETE.get(), 16))
+            .save(writer, "chemplant/chem_concrete");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
+            .withIconItem(new ItemStack(ModBlocks.CONCRETE_ASBESTOS.get()))
+            .addItemInput(ModItems.getPowders(ModPowders.CEMENT).get(), 4)
+            .addItemInput(ModItems.getIngot(ModIngots.ASBESTOS).get(), 4)
+            .addItemInput(Items.SAND, 8)
+            .addFluidInput(ModFluids.WATER.getSource(), 2_000)
+            .addItemOutput(new ItemStack(ModBlocks.CONCRETE_ASBESTOS.get(), 16))
+            .save(writer, "chemplant/chem_concreteasbestos");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
+            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
+            .withIconFluid(ModFluids.CONCRETE.getSource())
+            .addItemInput(ModItems.getPowders(ModPowders.CEMENT).get(), 1)
+            .addItemInput(Items.GRAVEL, 8)
+            .addItemInput(Items.SAND, 8)
+            .addFluidInput(ModFluids.WATER.getSource(), 2_000)
+            .addFluidOutput(ModFluids.CONCRETE.getSource(), 16_000)
+            .save(writer, "chemplant/chem_liquidconk");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
+            .withIconItem(new ItemStack(ModBlocks.ASPHALT.get()))
+            .addItemInput(Items.GRAVEL, 2)
+            .addItemInput(Items.SAND, 6)
+            .addFluidInput(ModFluids.BITUMEN.getSource(), 1_000)
+            .addItemOutput(new ItemStack(ModBlocks.ASPHALT.get(), 16))
+            .save(writer, "chemplant/chem_asphalt");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
+            .withIconItem(new ItemStack(ModBlocks.DECO_RUSTY_STEEL.get()))
+            .addItemInput(ModBlocks.DECO_STEEL.get().asItem(), 8)
+            .addFluidInput(ModFluids.WATER.getSource(), 1_000)
+            .addItemOutput(new ItemStack(ModBlocks.DECO_RUSTY_STEEL.get(), 8))
+            .save(writer, "chemplant/chem_rustysteel");
+    }
+
+    /** Solid/liquid fuel and arc-electrode chains — port of 1.7.10 chem.biosolidfuel/biooilsolidfuel/oilelectrodes/lubeelectrodes/biogas/rocketfuel. */
+    private static void registerFuelsAndElectrodes(Consumer<FinishedRecipe> writer) {
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
+            .withIconItem(ModItems.SOLID_FUEL.get())
+            .addItemInput(ModItems.BIOMASS_COMPRESSED.get(), 4)
+            .addItemOutput(new ItemStack(ModItems.SOLID_FUEL.get(), 1))
+            .withBlueprintPool("alt.biosolidfuel")
+            .save(writer, "chemplant/chem_biosolidfuel");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
+            .withIconItem(ModItems.SOLID_FUEL.get())
+            .addItemInput(ModItems.BIOMASS_COMPRESSED.get(), 2)
+            .addFluidInput(ModFluids.HEATINGOIL.getSource(), 100)
+            .addItemOutput(new ItemStack(ModItems.SOLID_FUEL.get(), 1))
+            .withBlueprintPool("alt.biosolidfuel")
+            .save(writer, "chemplant/chem_biooilsolidfuel");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(600, 100)
+            .withIconItem(ModItems.ARC_ELECTRODE.get())
+            .addFluidInput(ModFluids.HEATINGOIL.getSource(), 4_000)
+            .addItemOutput(new ItemStack(ModItems.ARC_ELECTRODE.get(), 1))
+            .withBlueprintPool("alt.electrodes")
+            .save(writer, "chemplant/chem_oilelectrodes");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(600, 100)
+            .withIconItem(ModItems.ARC_ELECTRODE.get())
+            .addFluidInput(ModFluids.LUBRICANT.getSource(), 8_000)
+            .addItemOutput(new ItemStack(ModItems.ARC_ELECTRODE.get(), 1))
+            .withBlueprintPool("alt.electrodes")
+            .save(writer, "chemplant/chem_lubeelectrodes");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(60, 100)
+            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
+            .withIconFluid(ModFluids.BIOGAS.getSource())
+            .addItemInput(ModItems.BIOMASS.get(), 16)
+            .addFluidInput(ModFluids.AIR.getSource(), 4_000)
+            .addFluidOutput(ModFluids.BIOGAS.getSource(), 2_000)
+            .save(writer, "chemplant/chem_biogas");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(200, 100)
+            .withIconItem(ModItems.ROCKET_FUEL.get())
+            .addItemInput(ModItems.SOLID_FUEL.get(), 2)
+            .addFluidInput(ModFluids.PETROLEUM.getSource(), 200)
+            .addFluidInput(ModFluids.NITRIC_ACID.getSource(), 100)
+            .addItemOutput(new ItemStack(ModItems.ROCKET_FUEL.get(), 4))
+            .save(writer, "chemplant/chem_rocketfuel");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(50, 100)
+            .withIconItem(ModItems.BALL_DYNAMITE.get())
+            .addItemInput(Items.SUGAR, 1)
+            .addItemInput(ModItems.CRYSTAL_NITER.get(), 1)
+            .addItemInput(Items.SAND, 1)
+            .addItemOutput(new ItemStack(ModItems.BALL_DYNAMITE.get(), 2))
+            .save(writer, "chemplant/chem_dynamite");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(50, 5_000)
+            .withIconItem(ModItems.BALL_TATB.get())
+            .addItemInput(ModItems.BALL_TNT.get(), 1)
+            .addFluidInput(ModFluids.SOURGAS.getSource(), 200)
+            .addFluidInput(ModFluids.NITRIC_ACID.getSource(), 10)
+            .addItemOutput(new ItemStack(ModItems.BALL_TATB.get(), 1))
+            .save(writer, "chemplant/chem_tatb");
+    }
+
+    /** Polymer/plastic chain — port of 1.7.10 chem.polymer/bakelite/rubber/hardplastic/pvc/desh/deshcracked. */
+    private static void registerPolymers(Consumer<FinishedRecipe> writer) {
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
+            .withIconItem(ModItems.getIngot(ModIngots.POLYMER).get())
+            .addItemInput(ModItems.getPowders(ModPowders.COAL).get(), 2)
+            .addItemInput(ModItems.FLUORITE.get(), 1)
+            .addFluidInput(ModFluids.PETROLEUM.getSource(), 1_000)
+            .addItemOutput(new ItemStack(ModItems.getIngot(ModIngots.POLYMER).get(), 4))
+            .save(writer, "chemplant/chem_polymer");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
+            .withIconItem(ModItems.getIngot(ModIngots.BAKELITE).get())
+            .addFluidInput(ModFluids.AROMATICS.getSource(), 500)
+            .addFluidInput(ModFluids.PETROLEUM.getSource(), 500)
+            .addItemOutput(new ItemStack(ModItems.getIngot(ModIngots.BAKELITE).get(), 1))
+            .save(writer, "chemplant/chem_bakelite");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 200)
+            .withIconItem(ModItems.getIngot(ModIngots.RUBBER).get())
+            .addItemInput(ModItems.SULFUR.get(), 1)
+            .addFluidInput(ModFluids.UNSATURATEDS.getSource(), 500)
+            .addItemOutput(new ItemStack(ModItems.getIngot(ModIngots.RUBBER).get(), 2))
+            .save(writer, "chemplant/chem_rubber");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
+            .withIconItem(ModItems.getIngot(ModIngots.DESH).get())
+            .addItemInput(ModItems.POWDER_DESH_MIX.get(), 1)
+            .addFluidInput(ModFluids.LIGHTOIL.getSource(), 200)
+            .addFluidInput(ModFluids.MERCURY.getSource(), 200)
+            .addItemOutput(new ItemStack(ModItems.getIngot(ModIngots.DESH).get(), 1))
+            .save(writer, "chemplant/chem_desh");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
+            .withIconItem(ModItems.getIngot(ModIngots.DESH).get())
+            .addItemInput(ModItems.POWDER_DESH_MIX.get(), 1)
+            .addFluidInput(ModFluids.LIGHTOIL_CRACK.getSource(), 500)
+            .addFluidInput(ModFluids.MERCURY.getSource(), 100)
+            .addItemOutput(new ItemStack(ModItems.getIngot(ModIngots.DESH).get(), 1))
+            .save(writer, "chemplant/chem_deshcracked");
+    }
+
+    /** Miscellaneous late additions — port of 1.7.10 chem.laminate/polarized/epearl/meatprocessing/schrabidate/coltancrystal. */
+    private static void registerMisc(Consumer<FinishedRecipe> writer) {
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(20, 100)
+            .withIconItem(new ItemStack(ModBlocks.REINFORCED_LAMINATE.get()))
+            .addItemInput(Items.GLASS, 1)
+            .addItemInput(ModItems.BOLT_STEEL.get(), 4)
+            .addFluidInput(ModFluids.XYLENE.getSource(), 50)
+            .addFluidInput(ModFluids.PHOSGENE.getSource(), 50)
+            .addItemOutput(new ItemStack(ModBlocks.REINFORCED_LAMINATE.get(), 1))
+            .save(writer, "chemplant/chem_laminate");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 500)
+            .withIconItem(new ItemStack(ModBlocks.GLASS_POLARIZED.get()))
+            .addItemInput(Items.GLASS_PANE, 1)
+            .addFluidInput(ModFluids.PETROLEUM.getSource(), 1_000)
+            .addItemOutput(new ItemStack(ModBlocks.GLASS_POLARIZED.get(), 16))
+            .save(writer, "chemplant/chem_polarized");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 300)
+            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
+            .withIconFluid(ModFluids.ENDERJUICE.getSource())
+            .addItemInput(ModItems.DIAMOND_POWDER.get(), 1)
+            .addFluidInput(ModFluids.XPJUICE.getSource(), 500)
+            .addFluidOutput(ModFluids.ENDERJUICE.getSource(), 100)
+            .save(writer, "chemplant/chem_epearl");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(200, 200)
+            .withIconItem(ModItems.GLYPHID_MEAT.get())
+            .addItemInput(ModItems.GLYPHID_MEAT.get(), 3)
+            .addFluidInput(ModFluids.WATER.getSource(), 1_000)
+            .addItemOutput(new ItemStack(ModItems.SULFUR.get(), 4))
+            .addItemOutput(new ItemStack(ModItems.CRYSTAL_NITER.get(), 3))
+            .addFluidOutput(ModFluids.SALIENT.getSource(), 250)
+            .save(writer, "chemplant/chem_meatprocessing");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(150, 5_000)
+            .withIconItem(ModItems.getIngot(ModIngots.SCHRABIDATE).get())
+            .addItemInput(ModItems.getPowders(ModPowders.IRON).get(), 1)
+            .addFluidInput(ModFluids.SCHRABIDIC.getSource(), 250)
+            .addItemOutput(new ItemStack(ModItems.getIngot(ModIngots.SCHRABIDATE).get(), 1))
+            .save(writer, "chemplant/chem_schrabidate");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(80, 100)
+            .withIconItem(ModItems.GEM_TANTALIUM.get())
+            .addFluidInput(ModFluids.PAIN.getSource(), 1_000)
+            .addFluidInput(ModFluids.PEROXIDE.getSource(), 500)
+            .addItemOutput(new ItemStack(ModItems.GEM_TANTALIUM.get(), 1))
+            .addItemOutput(new ItemStack(ModItems.DUST.get(), 3))
+            .addFluidOutput(ModFluids.WATER.getSource(), 250)
+            .save(writer, "chemplant/chem_coltancrystal");
     }
 
     private static void registerRegularFluids(Consumer<FinishedRecipe> writer) {

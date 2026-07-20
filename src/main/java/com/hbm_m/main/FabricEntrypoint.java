@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.api.fluids.bootstrap.ModFluidTraitsBootstrap;
-import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.item.fekal_electric.ModBatteryItem;

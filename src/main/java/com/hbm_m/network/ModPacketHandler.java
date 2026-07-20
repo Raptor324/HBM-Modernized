@@ -52,6 +52,7 @@ public class ModPacketHandler {
     public static final ResourceLocation SET_ASSEMBLER_RECIPE  = id("set_assembler_recipe");
     public static final ResourceLocation SET_CHEM_RECIPE       = id("set_chem_recipe");
     public static final ResourceLocation TOGGLE_WOOD_BURNER    = id("toggle_wood_burner");
+    public static final ResourceLocation BUILD_MISSILE         = id("build_missile");
     public static final ResourceLocation FLUID_TANK_MODE       = id("fluid_tank_mode");
     public static final ResourceLocation DETONATE_ALL          = id("detonate_all");
     public static final ResourceLocation SET_ACTIVE_POINT      = id("set_active_point");
@@ -66,11 +67,13 @@ public class ModPacketHandler {
     public static final ResourceLocation UPDATE_RADAR          = id("update_radar");
         public static final ResourceLocation ZIRNOX_CONTROL        = id("zirnox_control");
     public static final ResourceLocation RBMK_CONSOLE_CONTROL        = id("rbmk_console_control");
+    public static final ResourceLocation SOYUZ_LAUNCHER_CONTROL      = id("soyuz_launcher_control");
     public static final ResourceLocation SOLDERING_STATION_CONTROL   = id("soldering_station_control");
     public static final ResourceLocation ORPHANED_PHANTOMS     = id("orphaned_phantoms");
     public static final ResourceLocation SPAWN_PARTICLE        = id("spawn_particle");
     public static final ResourceLocation MISSILE_TRACK        = id("missile_track");
     public static final ResourceLocation MISSILE_TRACK_STOP   = id("missile_track_stop");
+    public static final ResourceLocation TURRET_CONTROL        = id("turret_control");
 
 
     // ══════════════════════════ Регистрация ═══════════════════════════════════
@@ -164,6 +167,10 @@ public class ModPacketHandler {
                 ToggleWoodBurnerPacket::decode,
                 ToggleWoodBurnerPacket::handle);
 
+        registerC2S(BUILD_MISSILE,
+                BuildMissilePacket::decode,
+                BuildMissilePacket::handle);
+
         registerC2S(FLUID_TANK_MODE,
                 FluidTankModePacket::decode,
                 FluidTankModePacket::handle);
@@ -216,9 +223,17 @@ public class ModPacketHandler {
                 RBMKConsoleControlPacket::decode,
                 RBMKConsoleControlPacket::handle);
 
+        registerC2S(SOYUZ_LAUNCHER_CONTROL,
+                SoyuzLauncherControlPacket::decode,
+                SoyuzLauncherControlPacket::handle);
+
         registerC2S(SOLDERING_STATION_CONTROL,
                 SolderingStationControlPacket::decode,
                 SolderingStationControlPacket::handle);
+
+        registerC2S(TURRET_CONTROL,
+                TurretControlPacket::decode,
+                TurretControlPacket::handle);
     }
 
     // ══════════════════════ Вспомогательные методы ════════════════════════════

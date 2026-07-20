@@ -51,33 +51,21 @@ public class MachineGasCentrifugeBlock extends BaseEntityBlock implements IMulti
     }
 
     private MultiblockStructureHelper defineStructure() {
-        // E = Energy connector (can receive power from cables)
+        // Original 1.7.10 getDimensions() = {3, 0, 0, 0, 0, 0}: height 3, zero horizontal spread —
+        // a slender 1-wide, 3-tall column, not a 3x3 footprint.
         // A = Default structural part
-        // C = Controller (the main block)
-        String[] layer0 = { "EAE",
-                            "ACA",
-                            "EAE" 
-                        }; // Bottom - corners are energy connectors
-
-        String[] layer1 = { "AAA",
-                            "AAA",
-                            "AAA" 
-                        }; // Middle
-
-        String[] layer2 = { "AAA",
-                            "AAA",
-                            "AAA" 
-                        }; // Top
+        // C = Controller (the main block, placed by the player; holds the real BlockEntity)
+        String[] layer0 = { "C" }; // Bottom - placed block
+        String[] layer1 = { "A" }; // Middle
+        String[] layer2 = { "A" }; // Top
 
         Map<Character, PartRole> roleMap = Map.of(
             'A', PartRole.DEFAULT,
-            'C', PartRole.CONTROLLER,
-            'E', PartRole.ENERGY_CONNECTOR
+            'C', PartRole.CONTROLLER
         );
 
         Map<Character, Supplier<BlockState>> symbolMap = Map.of(
-            'A', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-            'E', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()
+            'A', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()
         );
 
         return MultiblockStructureHelper.createFromLayersWithRoles(

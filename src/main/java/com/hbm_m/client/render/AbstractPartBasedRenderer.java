@@ -143,7 +143,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
         return ((net.minecraftforge.common.extensions.IForgeBlockEntity) blockEntity).getRenderBoundingBox();
         //?}
         //? if fabric {
-        /*if (blockEntity instanceof com.hbm_m.block.entity.BaseMachineBlockEntity b) {
+        /*if (blockEntity instanceof com.hbm_m.blockentity.BaseMachineBlockEntity b) {
             return b.getRenderBoundingBox();
         }
         if (blockEntity instanceof com.hbm_m.block.entity.doors.DoorBlockEntity d) {
