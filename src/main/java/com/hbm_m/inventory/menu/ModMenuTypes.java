@@ -53,6 +53,15 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<MachineShredderMenu>> SHREDDER_MENU =
             MENUS.register("shredder_menu", () -> MenuRegistry.ofExtended(MachineShredderMenu::new));
 
+    public static final RegistrySupplier<MenuType<MachineOreSlopperMenu>> ORE_SLOPPER_MENU =
+            MENUS.register("ore_slopper_menu", () -> MenuRegistry.ofExtended(MachineOreSlopperMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineCombinationOvenMenu>> COMBINATION_OVEN_MENU =
+            MENUS.register("combination_oven_menu", () -> MenuRegistry.ofExtended(MachineCombinationOvenMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineArcFurnaceMenu>> ARC_FURNACE_MENU =
+            MENUS.register("arc_furnace_menu", () -> MenuRegistry.ofExtended(MachineArcFurnaceMenu::new));
+
     public static final RegistrySupplier<MenuType<MachineCentrifugeMenu>> CENTRIFUGE_MENU =
             MENUS.register("centrifuge_menu", () -> MenuRegistry.ofExtended(MachineCentrifugeMenu::new));
 

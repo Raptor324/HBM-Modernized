@@ -1,0 +1,16 @@
+{
+  "type": "hbm_m:combination_oven",
+  "ingredient": {
+    "item": "hbm_m:bedrock_ore_base_rare"
+  },
+  "count": 1,
+  "fluid": {
+    "fluid": "hbm_m:vitriol",
+    "amount": 50
+  },
+  "result": {
+    "item": "hbm_m:bedrock_ore_base_roasted_rare",
+    "count": 1
+  },
+  "duration": 200
+}

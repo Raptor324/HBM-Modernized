@@ -37,11 +37,13 @@ public class MachineMiningDrillMenu extends AbstractContainerMenu {
 
         var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
 
-        this.addSlot(new Slot(container, MachineMiningDrillBlockEntity.SLOT_DRILLBIT, 26, 20));
+        // Layout deckungsgleich mit den Slot-Grafiken in gui_mining_drill.png (siehe
+        // GUIMachineMiningDrill fuer die per Pixel vermessenen Koordinaten dieses Atlas).
+        this.addSlot(new Slot(container, MachineMiningDrillBlockEntity.SLOT_DRILLBIT, 172, 75));
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 3; col++) {
-                this.addSlot(new Slot(container, OUTPUT_START + row * 3 + col, 110 + col * 18, 16 + row * 18) {
+                this.addSlot(new Slot(container, OUTPUT_START + row * 3 + col, 136 + col * 18, 5 + row * 18) {
                     @Override
                     public boolean mayPlace(ItemStack stack) {
                         return false; // Nur Entnahme - wird von der Maschine befuellt.
@@ -50,7 +52,7 @@ public class MachineMiningDrillMenu extends AbstractContainerMenu {
             }
         }
 
-        this.addSlot(new Slot(container, MachineMiningDrillBlockEntity.SLOT_BATTERY, 134, 78) {
+        this.addSlot(new Slot(container, MachineMiningDrillBlockEntity.SLOT_BATTERY, 220, 72) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
@@ -65,11 +67,11 @@ public class MachineMiningDrillMenu extends AbstractContainerMenu {
 
         for (int row = 0; row < 3; ++row) {
             for (int col = 0; col < 9; ++col) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 122 + row * 18));
+                this.addSlot(new Slot(inventory, col + row * 9 + 9, 41 + col * 18, 122 + row * 18));
             }
         }
         for (int col = 0; col < 9; ++col) {
-            this.addSlot(new Slot(inventory, col, 8 + col * 18, 180));
+            this.addSlot(new Slot(inventory, col, 41 + col * 18, 180));
         }
     }
 

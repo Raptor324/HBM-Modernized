@@ -56,6 +56,7 @@ import com.hbm_m.blockentity.machines.MachineLargePylonBlockEntity;
 import com.hbm_m.blockentity.machines.MachineLiquefactorBlockEntity;
 import com.hbm_m.blockentity.machines.MachineMiningDrillBlockEntity;
 import com.hbm_m.blockentity.machines.MachineMixerBlockEntity;
+import com.hbm_m.blockentity.machines.MachineOreSlopperBlockEntity;
 import com.hbm_m.blockentity.machines.MachinePressBlockEntity;
 import com.hbm_m.blockentity.machines.MachinePumpjackBlockEntity;
 import com.hbm_m.blockentity.machines.MachineRadarBlockEntity;
@@ -113,6 +114,11 @@ public class ModBlockEntities {
 	public static final RegistrySupplier<BlockEntityType<MachineCrystallizerBlockEntity>> CRYSTALLIZER =
 		BLOCK_ENTITIES.register("crystallizer", () ->
 			BlockEntityType.Builder.of(MachineCrystallizerBlockEntity::new, ModBlocks.CRYSTALLIZER.get())
+				.build(null));
+
+	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.nature.OreBedrockBlockEntity>> ORE_BEDROCK_BE =
+		BLOCK_ENTITIES.register("ore_bedrock_mineral", () ->
+			BlockEntityType.Builder.of(com.hbm_m.blockentity.nature.OreBedrockBlockEntity::new, ModBlocks.ORE_BEDROCK.get())
 				.build(null));
 
 	public static final RegistrySupplier<BlockEntityType<MachineFrackingTowerBlockEntity>> HYDRAULIC_FRACKINING_TOWER_BE =
@@ -308,6 +314,21 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("shredder", () ->
                     BlockEntityType.Builder.of(MachineShredderBlockEntity::new,
                             ModBlocks.SHREDDER.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<MachineOreSlopperBlockEntity>> ORE_SLOPPER_BE =
+            BLOCK_ENTITIES.register("ore_slopper_be", () ->
+                    BlockEntityType.Builder.of(MachineOreSlopperBlockEntity::new,
+                            ModBlocks.ORE_SLOPPER.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineCombinationOvenBlockEntity>> COMBINATION_OVEN_BE =
+            BLOCK_ENTITIES.register("combination_oven_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineCombinationOvenBlockEntity::new,
+                            ModBlocks.COMBINATION_OVEN.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineArcFurnaceBlockEntity>> ARC_FURNACE_BE =
+            BLOCK_ENTITIES.register("arc_furnace_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineArcFurnaceBlockEntity::new,
+                            ModBlocks.ARC_FURNACE.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<MachineCentrifugeBlockEntity>> CENTRIFUGE_BE =
             BLOCK_ENTITIES.register("centrifuge_be", () ->

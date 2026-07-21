@@ -139,6 +139,9 @@ import com.hbm_m.inventory.gui.GUIMachineChemicalPlant;
 import com.hbm_m.inventory.gui.GUIMachineFluidTank;
 import com.hbm_m.inventory.gui.GUIMachineFrackingTower;
 import com.hbm_m.inventory.gui.GUIMachinePress;
+import com.hbm_m.inventory.gui.GUIMachineOreSlopper;
+import com.hbm_m.inventory.gui.GUIMachineCombinationOven;
+import com.hbm_m.inventory.gui.GUIMachineArcFurnace;
 import com.hbm_m.inventory.gui.GUIMachineShredder;
 import com.hbm_m.inventory.gui.GUIMachineWoodBurner;
 import com.hbm_m.inventory.gui.GUISteelCrate;
@@ -493,6 +496,9 @@ public class ClientSetup {
         MenuScreens.register(ModMenuTypes.HEATING_OVEN_MENU.get(), GUIHeatingOven::new);
         MenuScreens.register(ModMenuTypes.PRESS_MENU.get(), GUIMachinePress::new);
         MenuScreens.register(ModMenuTypes.SHREDDER_MENU.get(), GUIMachineShredder::new);
+        MenuScreens.register(ModMenuTypes.ORE_SLOPPER_MENU.get(), GUIMachineOreSlopper::new);
+        MenuScreens.register(ModMenuTypes.COMBINATION_OVEN_MENU.get(), GUIMachineCombinationOven::new);
+        MenuScreens.register(ModMenuTypes.ARC_FURNACE_MENU.get(), GUIMachineArcFurnace::new);
         MenuScreens.register(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);
         MenuScreens.register(ModMenuTypes.TURRET_MENU.get(), com.hbm_m.inventory.gui.GUITurret::new);
         MenuScreens.register(ModMenuTypes.MISSILE_ASSEMBLY_MENU.get(), com.hbm_m.inventory.gui.GUIMissileAssembly::new);
@@ -590,6 +596,8 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.COOLING_TOWER_BE.get(), MachineCoolingTowerRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.GAS_CENTRIFUGE_BE.get(), GasCentrifugeRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.MINING_DRILL_BE.get(), com.hbm_m.client.render.implementations.MachineMiningDrillRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.ORE_SLOPPER_BE.get(), com.hbm_m.client.render.implementations.MachineOreSlopperRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.ARC_FURNACE_BE.get(), com.hbm_m.client.render.implementations.MachineArcFurnaceRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.TURRET_SENTRY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.TURRET_CHEKHOV_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.TURRET_FRIENDLY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
@@ -773,6 +781,8 @@ public class ClientSetup {
         register(ModBlockEntities.COOLING_TOWER_BE.get(), MachineCoolingTowerRenderer::new);
         register(ModBlockEntities.GAS_CENTRIFUGE_BE.get(), GasCentrifugeRenderer::new);
         register(ModBlockEntities.MINING_DRILL_BE.get(), com.hbm_m.client.render.implementations.MachineMiningDrillRenderer::new);
+        register(ModBlockEntities.ORE_SLOPPER_BE.get(), com.hbm_m.client.render.implementations.MachineOreSlopperRenderer::new);
+        register(ModBlockEntities.ARC_FURNACE_BE.get(), com.hbm_m.client.render.implementations.MachineArcFurnaceRenderer::new);
         register(ModBlockEntities.TURRET_SENTRY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
         register(ModBlockEntities.TURRET_CHEKHOV_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
         register(ModBlockEntities.TURRET_FRIENDLY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
@@ -1121,6 +1131,54 @@ public class ClientSetup {
         /*event.register(new ResourceLocation(RefStrings.MODID, "block/machines/mining_drill_bit"));
         *///?} else {
                 event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/mining_drill_bit"));
+        //?}
+
+        //? if fabric && < 1.21.1 {
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/machines/mining_drill_shaft"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/mining_drill_shaft"));
+        //?}
+
+        //? if fabric && < 1.21.1 {
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/machines/mining_drill_crusher1"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/mining_drill_crusher1"));
+        //?}
+
+        //? if fabric && < 1.21.1 {
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/machines/mining_drill_crusher2"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/mining_drill_crusher2"));
+        //?}
+
+        //? if fabric && < 1.21.1 {
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/machines/ore_slopper_fan"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/ore_slopper_fan"));
+        //?}
+
+        //? if fabric && < 1.21.1 {
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/machines/ore_slopper_blades_left"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/ore_slopper_blades_left"));
+        //?}
+
+        //? if fabric && < 1.21.1 {
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/machines/ore_slopper_blades_right"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/ore_slopper_blades_right"));
+        //?}
+
+        //? if fabric && < 1.21.1 {
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/machines/arc_furnace_electrodes_cold"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/arc_furnace_electrodes_cold"));
+        //?}
+
+        //? if fabric && < 1.21.1 {
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/machines/arc_furnace_electrodes_hot"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/arc_furnace_electrodes_hot"));
         //?}
 
         // Soyuz rocket mesh - fetched directly via ModelManager for the launcher's mounted-rocket

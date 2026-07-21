@@ -502,7 +502,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // --- WIP Machines (3D OBJ models) ---
         simpleMachineBlock(ModBlocks.AMMO_PRESS);
         simpleMachineBlock(ModBlocks.ANNIHILATOR);
-        simpleMachineBlock(ModBlocks.ARC_FURNACE);
+        customMachineBlock(ModBlocks.ARC_FURNACE);
         simpleMachineBlock(ModBlocks.ASSEMBLY_FACTORY);
         simpleMachineBlock(ModBlocks.AUTOSAW);
         simpleMachineBlock(ModBlocks.BEAMLINE);

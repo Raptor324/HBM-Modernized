@@ -591,6 +591,13 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.WIRE_CARBON);
         simpleItem(ModItems.ALUMINUM_RAW);
         simpleItem(ModItems.BERYLLIUM_RAW);
+        simpleItem(ModItems.RADIUM_RAW);
+        simpleItem(ModItems.SALTPETER);
+        simpleItem(ModItems.CRYOLITE);
+        simpleItem(ModItems.MOLYSITE);
+        simpleItem(ModItems.RAREEARTH_RAW);
+        simpleItem(ModItems.POWDER_CHLOROCALCITE);
+        simpleItem(ModItems.POWDER_SODIUM);
 
         trimmedArmorItem(ModItems.ALLOY_HELMET);
         trimmedArmorItem(ModItems.ALLOY_CHESTPLATE);
@@ -1951,6 +1958,10 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.XANAX,
                 ModItems.ZIRCONIUM_LEGS
         ).forEach(this::simpleItem);
+
+        // Bedrock Ore Progression: Rohprodukt + alle 156 Veredelungsstufen (Grade x Type)
+        simpleItem(ModItems.BEDROCK_ORE_BASE);
+        ModItems.BEDROCK_ORE_ALL_VARIANTS.forEach(this::simpleItem);
     };
 
     /**

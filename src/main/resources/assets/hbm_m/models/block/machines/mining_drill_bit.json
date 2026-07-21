@@ -17,6 +17,6 @@
   "transform": {
     "translation": [0.5, 0, 0.5],
     "rotation": [0, 0, 0],
-    "scale": 0.4
+    "scale": 1.0
   }
 }

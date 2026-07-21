@@ -1,0 +1,12 @@
+{
+  "type": "hbm_m:arc_furnace",
+  "ingredient": {
+    "item": "hbm_m:bedrock_ore_solvent_byproduct_light"
+  },
+  "count": 1,
+  "result": {
+    "item": "hbm_m:bedrock_ore_solvent_arc_light",
+    "count": 2
+  },
+  "duration": 100
+}
