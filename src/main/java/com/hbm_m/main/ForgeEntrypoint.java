@@ -30,6 +30,10 @@ public final class ForgeEntrypoint {
         ModFluids.register(modBus);
         modBus.addListener(ModCapabilities::register);
         modBus.addListener(CreativeModeTabEventHandler::onBuildCreativeModeTabContents);
+        // Create compat: регистрация door-behaviours на FMLCommonSetup (guard по isLoaded внутри).
+        // Method-ref грузит CreateCompat безопасно (без статических Create-refs); тело commonSetup
+        // выполняется только когда Create загружен.
+        modBus.addListener(com.hbm_m.compat.create.CreateCompat::commonSetup);
 
         MinecraftForge.EVENT_BUS.register(new BombDefuser());
         MinecraftForge.EVENT_BUS.register(new ForgeMainEvents());

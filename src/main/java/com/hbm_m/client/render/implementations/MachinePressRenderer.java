@@ -86,7 +86,7 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
             return;
         }
 
-        float staticFade = RenderDistanceHelper.computeStaticFade(blockPos);
+        float staticFade = RenderDistanceHelper.computeStaticFade(blockEntity);
         if (staticFade < 0) return;
         SingleMeshVboRenderer.setFadeAlpha(staticFade);
 

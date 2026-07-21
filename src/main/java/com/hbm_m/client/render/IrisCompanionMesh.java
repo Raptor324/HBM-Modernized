@@ -211,6 +211,16 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             = new it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap();
     /** Reverse mapping slot -> hash key (0 when slot unused). */
     private long[] lightmapSlotKey = new long[0];
+    /**
+     * Per-slot monotonic stamp of when it was last (re)allocated. Eviction
+     * picks the OLDEST slot (true LRU) instead of a blind round-robin cursor,
+     * so a slot still likely in GPU flight on the coherent persistent-mapped
+     * path is not reclaimed ahead of an older, long-idle one. (A full fix for
+     * the persistent-map write-hazard needs a per-frame fence; LRU minimises
+     * the collision window within the existing capacity.)
+     */
+    private long[] lightmapSlotLastUsed = new long[0];
+    private long lightmapSlotAllocCounter = 0L;
     /** Next slot to evict when capacity is full. */
     private int lightmapEvictCursor = 0;
     /** Tracks dirty slot range for fallback upload path. */
@@ -690,7 +700,21 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         int perSlotBytes = vertexCount * 4;
         int totalBytes = newCapacity * perSlotBytes;
 
-        // 1. Полностью удаляем старый буфер (это автоматически снимет mapping)
+        // 1. Сначала явно снимаем persistent-mapping, потом удаляем буфер.
+        // glDeleteBuffers на persistently-mapped буфере — UB на Mesa/Intel и
+        // утечка mapping'а на ряде других драйверов.
+        if (lightmapMapped != null && lightmapVboId != -1) {
+            try {
+                GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapVboId);
+                GL15.glUnmapBuffer(GL15.GL_ARRAY_BUFFER);
+            } catch (Throwable ignored) {}
+        }
+        if (lightmapStagingMapped != null && lightmapStagingVboId != -1) {
+            try {
+                GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapStagingVboId);
+                GL15.glUnmapBuffer(GL15.GL_ARRAY_BUFFER);
+            } catch (Throwable ignored) {}
+        }
         if (lightmapVboId != -1) {
             GL15.glDeleteBuffers(lightmapVboId);
             lightmapVboId = -1;
@@ -829,6 +853,8 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         // Reset slot allocator + dirty tracking to match the new capacity.
         lightmapKeyToSlot.clear();
         lightmapSlotKey = new long[newCapacity];
+        lightmapSlotLastUsed = new long[newCapacity];
+        lightmapSlotAllocCounter = 0L;
         lightmapEvictCursor = 0;
         lightmapDirtyMinSlot = Integer.MAX_VALUE;
         lightmapDirtyMaxSlot = -1;
@@ -844,24 +870,69 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         if (key == 0L) key = 1L;
         int slot = lightmapKeyToSlot.getOrDefault(key, -1);
         if (slot >= 0 && slot < lightmapInstanceCapacity) {
+            touchLightmapSlot(slot);
             return (((long) 1) << 32) | (slot & 0xFFFF_FFFFL);
         }
         // Allocate/evict.
         if (lightmapInstanceCapacity <= 0) return 0L;
-        slot = lightmapEvictCursor++;
-        if (lightmapEvictCursor >= lightmapInstanceCapacity) lightmapEvictCursor = 0;
+        // LRU: reclaim the slot whose data was written longest ago. Evicting the
+        // most-recently-written slot (the old round-robin behaviour once the
+        // cursor wrapped) clobbered a region the GPU may still be reading on the
+        // coherent persistent-mapped path.
+        slot = pickLruLightmapSlot();
         long oldKey = (slot < lightmapSlotKey.length) ? lightmapSlotKey[slot] : 0L;
         if (oldKey != 0L) {
             lightmapKeyToSlot.remove(oldKey);
         }
         if (slot >= lightmapSlotKey.length) {
-            long[] grown = new long[Math.max(lightmapInstanceCapacity, slot + 1)];
+            int newLen = Math.max(lightmapInstanceCapacity, slot + 1);
+            long[] grown = new long[newLen];
             System.arraycopy(lightmapSlotKey, 0, grown, 0, lightmapSlotKey.length);
             lightmapSlotKey = grown;
+            long[] grownUsed = new long[newLen];
+            System.arraycopy(lightmapSlotLastUsed, 0, grownUsed, 0, lightmapSlotLastUsed.length);
+            lightmapSlotLastUsed = grownUsed;
         }
         lightmapSlotKey[slot] = key;
         lightmapKeyToSlot.put(key, slot);
+        touchLightmapSlot(slot);
         return (slot & 0xFFFF_FFFFL);
+    }
+
+    /** Marks {@code slot} as freshly written by bumping its LRU stamp. */
+    private void touchLightmapSlot(int slot) {
+        if (slot < 0) return;
+        lightmapSlotAllocCounter++;
+        if (slot < lightmapSlotLastUsed.length) {
+            lightmapSlotLastUsed[slot] = lightmapSlotAllocCounter;
+        }
+    }
+
+    /**
+     * Picks the slot with the oldest {@link #lightmapSlotLastUsed} stamp
+     * (least-recently used). Falls back to the round-robin cursor only when the
+     * stamp array is not yet sized.
+     */
+    private int pickLruLightmapSlot() {
+        int cap = lightmapInstanceCapacity;
+        if (cap <= 0) return 0;
+        // First pass: any never-touched slot (stamp 0) is free — take it.
+        int len = Math.min(cap, lightmapSlotLastUsed.length);
+        int best = -1;
+        long bestStamp = Long.MAX_VALUE;
+        for (int i = 0; i < len; i++) {
+            long s = lightmapSlotLastUsed[i];
+            if (s == 0L) return i;
+            if (s < bestStamp) {
+                bestStamp = s;
+                best = i;
+            }
+        }
+        if (best >= 0) return best;
+        // No stamp tracking yet (array not sized) — fall back to cursor.
+        int slot = lightmapEvictCursor++;
+        if (lightmapEvictCursor >= cap) lightmapEvictCursor = 0;
+        return slot;
     }
 
     /**
@@ -1399,12 +1470,20 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         final int eboToDelete = this.eboId;
         final int vaoToDelete = this.vaoId;
         final int lightmapVboToDelete = this.lightmapVboId;
+        // Staging resources were previously NOT captured here, so every teardown
+        // (F3+T reload, world unload, MeshRenderCache LRU eviction) leaked a GL
+        // buffer + a GLsync fence + a persistently-mapped native ByteBuffer.
+        final int lightmapStagingVboToDelete = this.lightmapStagingVboId;
+        final long lightmapStagingFenceToDelete = this.lightmapStagingFence;
         final ByteBuffer scratchToFree = this.lightmapCpuScratch;
         final ByteBuffer mappedToUnmap = this.lightmapMapped;
+        final ByteBuffer stagingMappedToUnmap = this.lightmapStagingMapped;
         this.vboId = -1;
         this.eboId = -1;
         this.vaoId = -1;
         this.lightmapVboId = -1;
+        this.lightmapStagingVboId = -1;
+        this.lightmapStagingFence = 0L;
         this.lightmapCpuScratch = null;
         this.lightmapMapped = null;
         this.lightmapShortView = null;
@@ -1415,6 +1494,9 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         this.lightmapCurrentSlot = -1;
         this.perVertexCornerWeights = null;
         this.perVertexSlicedWeights = null;
+        this.lightmapStagingMapped = null;
+        this.lightmapStagingShortView = null;
+        this.lightmapStagingAvailable = false;
         this.indexCount = 0;
         this.vertexCount = 0;
         this.built = false;
@@ -1424,6 +1506,10 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             try {
                 if (vboToDelete != -1) GL15.glDeleteBuffers(vboToDelete);
                 if (eboToDelete != -1) GL15.glDeleteBuffers(eboToDelete);
+                // Persistent mappings MUST be explicitly unmapped before the
+                // backing buffer is deleted — glDeleteBuffers on a persistently
+                // mapped buffer is undefined behaviour on Mesa/Intel and leaks
+                // the mapping on others.
                 if (mappedToUnmap != null && lightmapVboToDelete != -1) {
                     try {
                         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapVboToDelete);
@@ -1431,6 +1517,18 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                     } catch (Throwable ignored) {}
                 }
                 if (lightmapVboToDelete != -1) GL15.glDeleteBuffers(lightmapVboToDelete);
+                if (stagingMappedToUnmap != null && lightmapStagingVboToDelete != -1) {
+                    try {
+                        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapStagingVboToDelete);
+                        GL15.glUnmapBuffer(GL15.GL_ARRAY_BUFFER);
+                    } catch (Throwable ignored) {}
+                }
+                if (lightmapStagingVboToDelete != -1) GL15.glDeleteBuffers(lightmapStagingVboToDelete);
+                if (lightmapStagingFenceToDelete != 0L) {
+                    try {
+                        GL32.glDeleteSync(lightmapStagingFenceToDelete);
+                    } catch (Throwable ignored) {}
+                }
                 if (vaoToDelete != -1) GL30.glDeleteVertexArrays(vaoToDelete);
             } catch (Throwable t) {
                 MainRegistry.LOGGER.error("IrisCompanionMesh: cleanup failed", t);

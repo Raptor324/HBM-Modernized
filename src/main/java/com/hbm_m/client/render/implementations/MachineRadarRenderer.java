@@ -99,7 +99,7 @@ public class MachineRadarRenderer implements BlockEntityRenderer<MachineRadarBlo
                 return;
             }
 
-            float staticFade = RenderDistanceHelper.computeStaticFade(blockPos);
+            float staticFade = RenderDistanceHelper.computeStaticFade(blockEntity);
             if (staticFade < 0) {
                 return;
             }

@@ -210,25 +210,46 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
     protected void renderParts(DoorBlockEntity be, DoorBakedModel model, LegacyAnimator animator,
                              float partialTick, int packedLight, int packedOverlay,
                              PoseStack poseStack, MultiBufferSource bufferSource) {
-        if (!be.isController()) return;
+        // На контрапшене controllerPos (NBT = оригинальный world-pos) != worldPosition
+        // (local-pos), поэтому isController() ложно. DoorRenderer зарегистрирован только
+        // на DoorBlockEntity (= контроллер DoorBlock), так что на контрапшене каждый
+        // такой BE и есть контроллер — проверку пропускаем.
+        if (!be.isController() && !com.hbm_m.compat.ContraptionRenderCompat.isContraptionRender(be)) return;
         DoorDecl doorDecl = be.getDoorDecl();
         if (doorDecl == null) return;
 
         BlockPos blockPos = be.getBlockPos();
         
         var minecraft = Minecraft.getInstance();
-        AABB renderBounds = be.getRenderBoundingBox();
-        if (!OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, renderBounds)) {
-            return;
+        // На контрапшене occlusion ray-march по локальной позиции бессмысленен;
+        // фейковый уровень отбракует неверно. Пропускаем (frustum уже пропущен
+        // в AbstractPartBasedRenderer).
+        if (!com.hbm_m.compat.ContraptionRenderCompat.isContraptionRender(be)) {
+            AABB renderBounds = be.getRenderBoundingBox();
+            if (!OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, renderBounds)) {
+                return;
+            }
         }
 
-        float openTicks = be.getOpenProgress(partialTick) * doorDecl.getOpenTime();
-        boolean isOpen = be.isOpen();
+        // На контрапшене BE пересоздаётся из NBT при каждом blockstate-изменении, так
+        // что getOpenProgress(state-based) мерцает. Берём прогресс из renderer-owned
+        // chase-кэша, гонящегося к синкаемому OPEN blockstate.
+        boolean onContraption = com.hbm_m.compat.ContraptionRenderCompat.isContraptionRender(be);
+        float openTicks;
+        boolean isOpen;
+        if (onContraption) {
+            float progress = com.hbm_m.client.compat.create.ContraptionDoorAnimCache.chase(be, doorDecl.getOpenTime());
+            openTicks = progress * doorDecl.getOpenTime();
+            isOpen = progress > 0.5f;
+        } else {
+            openTicks = be.getOpenProgress(partialTick) * doorDecl.getOpenTime();
+            isOpen = be.isOpen();
+        }
         
         // Рамка и створки — одна дистанция modelStaticRenderDistance (без modelUpdateDistance):
         // иначе ThreadLocal FadeAlpha остаётся от другой BE, а instanced addInstance пишет чужую
         // альфу в буфер до flush (как с машинами).
-        float doorFade = RenderDistanceHelper.computeStaticFade(blockPos);
+        float doorFade = RenderDistanceHelper.computeStaticFade(be);
         if (doorFade < 0) {
             return;
         }

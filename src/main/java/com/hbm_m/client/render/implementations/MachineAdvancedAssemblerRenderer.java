@@ -306,7 +306,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         // super.render() runs, so this only stays true when culling passes.
         visibleThisFrame = true;
 
-        float staticFade = RenderDistanceHelper.computeStaticFade(blockPos);
+        float staticFade = RenderDistanceHelper.computeStaticFade(be);
         if (staticFade < 0) return;
         SingleMeshVboRenderer.setFadeAlpha(staticFade);
 

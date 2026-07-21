@@ -343,6 +343,18 @@ public final class MdiBatchCoordinator {
             return;
         }
         try {
+            // Atlas could have repacked (eviction) between publish and this
+            // inter-tick redraw: refresh baseVertex/firstIndexBytes against the
+            // current atlas layout, else the cached draw lands on another
+            // renderer's geometry. Entries whose renderer lost its atlas slot
+            // are dropped by refreshDrawListAtlasSlots.
+            MdiGeometryAtlas atlas = MdiGeometryAtlas.getOrCreate();
+            if (atlas != null && atlas.isReady()) {
+                refreshDrawListAtlasSlots(snap.drawList, atlas);
+            }
+            if (snap.drawList.isEmpty()) {
+                return;
+            }
             executeMdiGlDraw(snap, new Matrix4f(projection), cachedRedrawGameTime);
         } catch (Throwable t) {
             MainRegistry.LOGGER.error("[HBM-M MDI] cached redraw failed", t);
@@ -350,6 +362,26 @@ public final class MdiBatchCoordinator {
     }
 
     private static void publishCachedRedraw(PreparedMdi prepared, long gameTime) {
+        // Cached redraw copies drop instanceData (kept null) to avoid holding
+        // native snapshot buffers across frames. The fade scan in
+        // executeMdiGlDraw reads instanceData — without seeding minFade here it
+        // stays 1.0f and translucent/fading machines flash opaque between ticks.
+        float minFade = 1f;
+        MdiGeometryAtlas atlas = MdiGeometryAtlas.getOrCreate();
+        if (atlas != null && atlas.isReady()) {
+            int instanceFloatsPerInstance = atlas.getInstanceFloatsPerInstance();
+            int fadeOffset = atlas.getInstanceFadeFloatOffset();
+            if (instanceFloatsPerInstance > 0 && fadeOffset >= 0) {
+                for (Pending p : prepared.drawList) {
+                    FloatBuffer buf = p.instanceData;
+                    if (buf == null) continue;
+                    for (int i = 0; i < p.instanceCount; i++) {
+                        float fa = buf.get(i * instanceFloatsPerInstance + fadeOffset);
+                        if (fa < minFade) minFade = fa;
+                    }
+                }
+            }
+        }
         List<Pending> snap = new ArrayList<>(prepared.drawList.size());
         for (Pending p : prepared.drawList) {
             Pending q = new Pending(p.renderer);
@@ -361,7 +393,7 @@ public final class MdiBatchCoordinator {
             snap.add(q);
         }
         cachedRedraw = new PreparedMdi(
-                snap, prepared.drawTotalInstances, prepared.pendingSize, prepared.droppedNoSlot);
+                snap, prepared.drawTotalInstances, prepared.pendingSize, prepared.droppedNoSlot, minFade);
         cachedRedrawGameTime = gameTime;
     }
 
@@ -392,7 +424,7 @@ public final class MdiBatchCoordinator {
         }
     }
 
-    private record PreparedMdi(List<Pending> drawList, int drawTotalInstances, int pendingSize, int droppedNoSlot) {}
+    private record PreparedMdi(List<Pending> drawList, int drawTotalInstances, int pendingSize, int droppedNoSlot, float minFade) {}
 
     private static void freeDrawListInstanceBuffers(List<Pending> drawList) {
         for (Pending p : drawList) {
@@ -509,7 +541,7 @@ public final class MdiBatchCoordinator {
                 ? new Matrix4f(projectionOverride)
                 : new Matrix4f(draw.projectionMatrix);
         PreparedMdi prepared = new PreparedMdi(
-                draw.drawList, draw.drawTotalInstances, draw.pendingSize, draw.droppedNoSlot);
+                draw.drawList, draw.drawTotalInstances, draw.pendingSize, draw.droppedNoSlot, 1f);
         executeMdiGlDraw(prepared, proj, draw.gameTime);
     }
 
@@ -600,7 +632,7 @@ public final class MdiBatchCoordinator {
             return null;
         }
 
-        return new PreparedMdi(drawList, drawTotalInstances, pendingSize, droppedNoSlot);
+        return new PreparedMdi(drawList, drawTotalInstances, pendingSize, droppedNoSlot, 1f);
     }
 
     private static void refreshDrawListAtlasSlots(List<Pending> drawList, MdiGeometryAtlas atlas) {
@@ -724,7 +756,7 @@ public final class MdiBatchCoordinator {
                 shader.apply();
                 InstancedStaticPartRenderer.bindBlockLitTexturesBeforeDraw(shader);
 
-                float minFade = 1f;
+                float minFade = prepared.minFade();
                 int fadeOffset = atlas.getInstanceFadeFloatOffset();
                 for (Pending p : drawList) {
                     FloatBuffer buf = p.instanceData;

@@ -1,10 +1,11 @@
 package com.hbm_m.client.render;
 
-
+import com.hbm_m.compat.ContraptionRenderCompat;
 import com.hbm_m.config.ModClothConfig;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -64,25 +65,41 @@ public final class RenderDistanceHelper {
     }
 
     /**
+     * Safely checks if animation should be skipped, bypassing the check on Create contraptions.
+     */
+    public static boolean shouldSkipAnimation(BlockEntity blockEntity) {
+        if (ContraptionRenderCompat.isContraptionRender(blockEntity)) return false;
+        return shouldSkipAnimation(blockEntity.getBlockPos());
+    }
+
+    /**
      * Computes a fade factor for animated parts at the given position.
-     *
-     * @return 1.0 when fully visible, 0.0 when at/beyond cutoff, smooth
-     *         transition in the last {@link #FADE_ZONE_BLOCKS} before cutoff.
-     *         Returns -1 if beyond cutoff (caller should skip rendering entirely).
      */
     public static float computeAnimatedFade(BlockPos blockPos) {
         return computeFade(blockPos, getAnimatedDistanceBlocks());
     }
 
     /**
+     * Safely computes animated fade factor, bypassing fading entirely on Create contraptions.
+     */
+    public static float computeAnimatedFade(BlockEntity blockEntity) {
+        if (ContraptionRenderCompat.isContraptionRender(blockEntity)) return 1.0f;
+        return computeAnimatedFade(blockEntity.getBlockPos());
+    }
+
+    /**
      * Computes a fade factor for static parts at the given position.
-     *
-     * @return 1.0 when fully visible, 0.0 when at/beyond cutoff, smooth
-     *         transition in the last {@link #FADE_ZONE_BLOCKS} before cutoff.
-     *         Returns -1 if beyond cutoff (caller should skip rendering entirely).
      */
     public static float computeStaticFade(BlockPos blockPos) {
         return computeFade(blockPos, getStaticDistanceBlocks());
+    }
+
+    /**
+     * Safely computes static fade factor, bypassing fading entirely on Create contraptions.
+     */
+    public static float computeStaticFade(BlockEntity blockEntity) {
+        if (ContraptionRenderCompat.isContraptionRender(blockEntity)) return 1.0f;
+        return computeStaticFade(blockEntity.getBlockPos());
     }
 
     /**
@@ -105,6 +122,14 @@ public final class RenderDistanceHelper {
         double dist = Math.sqrt(distSq);
         float t = (float) ((maxBlocks - dist) / FADE_ZONE_BLOCKS);
         return Math.max(0f, Math.min(1f, t));
+    }
+
+    /**
+     * Safely computes fade factor, bypassing fading entirely on Create contraptions.
+     */
+    public static float computeFade(BlockEntity blockEntity, double maxBlocks) {
+        if (ContraptionRenderCompat.isContraptionRender(blockEntity)) return 1.0f;
+        return computeFade(blockEntity.getBlockPos(), maxBlocks);
     }
 
     /**

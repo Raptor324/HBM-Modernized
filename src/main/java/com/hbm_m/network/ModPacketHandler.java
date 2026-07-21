@@ -44,6 +44,7 @@ public class ModPacketHandler {
     public static final ResourceLocation SYNC_ENERGY           = id("sync_energy");
     public static final ResourceLocation AUX_PARTICLE          = id("aux_particle");
     public static final ResourceLocation VANILLA_EXPLOSION     = id("vanilla_explosion");
+    public static final ResourceLocation DOOR_CONTRAPTION_STATE = id("door_contrap_state");
 
     // C2S
     public static final ResourceLocation GIVE_TEMPLATE         = id("give_template");
@@ -114,6 +115,10 @@ public class ModPacketHandler {
         registerS2C(VANILLA_EXPLOSION,
                 VanillaExplosionPacket::decode,
                 VanillaExplosionPacket::handle);
+
+        registerS2C(DOOR_CONTRAPTION_STATE,
+                DoorContraptionStatePacket::decode,
+                DoorContraptionStatePacket::handle);
 
         registerS2C(POWER_ARMOR_DASH,
                 PowerArmorDashPacket::decode,

@@ -235,7 +235,11 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         var minecraft = Minecraft.getInstance();
         AABB renderBounds;
         if (state.getBlock() instanceof com.hbm_m.interfaces.IMultiblockController controller && controller.getStructureHelper() != null) {
-            renderBounds = controller.getStructureHelper().getRenderBoundingBox(blockPos, facing, 0.0);
+            // Inflate MUST match MachineAssemblerBlockEntity.getRenderBoundingBox() (1.35).
+            // The assembler's visual (cogs/arms) extends past the 4×2×4 structure cells;
+            // occluding against the un-inflated box culls the BER while the cogs are still
+            // in view → whole machine flickers as the box toggles around occluder edges.
+            renderBounds = controller.getStructureHelper().getRenderBoundingBox(blockPos, facing, 1.35);
         } else {
             renderBounds = be.getRenderBoundingBox();
         }
@@ -249,7 +253,7 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         // super.render() runs, so this only stays true when culling passes.
         visibleThisFrame = true;
 
-        float staticFade = RenderDistanceHelper.computeStaticFade(blockPos);
+        float staticFade = RenderDistanceHelper.computeStaticFade(be);
         if (staticFade < 0) return;
         SingleMeshVboRenderer.setFadeAlpha(staticFade);
 

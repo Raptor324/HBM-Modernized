@@ -89,6 +89,9 @@ repositories {
 	strictMaven("https://api.modrinth.com/maven", "maven.modrinth") { name = "Modrinth" }
 	strictMaven("https://cursemaven.com", "curse.maven") { name = "CurseForge" }
 	strictMaven("https://maven.architectury.dev/", "dev.architectury") { name = "Architectury" }
+	// Create compat (опционально): Create, Flywheel. См. com.hbm_m.compat.create.
+	maven("https://maven.createmod.net") { name = "Create" }
+	maven("https://maven.ithundxr.dev/mirror") { name = "Ithundxr Mirror" }
 	flatDir { dirs(rootProject.file("libs")) }
 }
 
@@ -104,6 +107,11 @@ dependencies {
 
 	"modCompileOnly"("curse.maven:jei-238222:${prop("deps.jei")}")
 	"modRuntimeOnly"("curse.maven:jei-238222:${prop("deps.jei")}")
+	// Create compat — compile-only (мод опциональный, работает и без Create).
+	// slim-артефакт без транзитивных зависимостей; flywheel-api нужен только для
+	// сигнатур Create MovementBehaviour (VisualizationContext и т.п.).
+	"modCompileOnly"("com.simibubi.create:create-1.20.1:${prop("deps.create")}:slim")
+	"modCompileOnly"("dev.engine-room.flywheel:flywheel-forge-api-1.20.1:${prop("deps.flywheel")}")
 	"modRuntimeOnly"("curse.maven:embeddium-908741:5681725")
 	"modRuntimeOnly"("curse.maven:oculus-581495:6020952")
 	"modRuntimeOnly"("curse.maven:modernfix-790626:7515215")
