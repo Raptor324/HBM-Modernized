@@ -5,6 +5,10 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+    # Crowdin PR из ветки l10n_* меняет только JSON-локализацию — Java CI там не нужен.
+    # paths-ignore хватает: экшен не запустится, если менялись только lang-файлы.
+    paths-ignore:
+      - 'src/main/resources/assets/hbm_m/lang/**'
 
 jobs:
   build:
