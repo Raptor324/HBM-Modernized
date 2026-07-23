@@ -5,6 +5,12 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+    # Не гоняем Java CI на PR с переводами — там нет изменений в Java/ресурсах,
+    # только JSON-локализация. Crowdin action шлёт PR из этой ветки.
+    branches-ignore:
+      - "l10n_*"
+    paths-ignore:
+      - 'src/main/resources/assets/hbm_m/lang/**'
 
 jobs:
   build:

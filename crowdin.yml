@@ -2,10 +2,13 @@ preserve_hierarchy: true
 
 files:
   - source: /src/generated/resources/assets/hbm_m/lang/en_us.json
-    translation: /src/generated/resources/assets/hbm_m/lang/%locale_with_underscore%.json
-    
+    # Переводы кладём в main/resources — туда датаген (runData) не пишет и не чистит,
+    # поэтому Crowdin-файлы не будут затираться при перегенерации. Источник (en_us)
+    # по-прежнему берётся из generated, обе папки попадают в финальный JAR.
+    translation: /src/main/resources/assets/hbm_m/lang/%locale_with_underscore%.json
+
     ignore:
-      - /src/generated/resources/assets/hbm_m/lang/ru_ru.json
+      - /src/main/resources/assets/hbm_m/lang/ru_ru.json
 
     languages_mapping:
       locale_with_underscore:

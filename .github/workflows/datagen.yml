@@ -3,7 +3,8 @@ on:
   push:
     branches: [ main ]
     paths-ignore:
-      - 'src/generated/**' # Чтобы не зациклить экшен
+      - 'src/generated/**'                       # Чтобы не зациклить экшен
+      - 'src/main/resources/assets/hbm_m/lang/**' # Переводы от Crowdin — датаген не нужен
 
 jobs:
   run-datagen:
