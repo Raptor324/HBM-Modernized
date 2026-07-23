@@ -1,22 +1,15 @@
 package com.hbm_m.radiation;
 
 import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.hazard.HazardSystem;
 import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelAccessor;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 //? if forge {
-import net.minecraftforge.common.util.BlockSnapshot;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.event.level.ChunkEvent;
-import net.minecraftforge.event.level.ExplosionEvent;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 //?}
@@ -26,9 +19,6 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
-import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
-import dev.architectury.event.events.common.BlockEvent;
-import dev.architectury.event.events.common.ExplosionEvent;
 *///?}
 
 
@@ -93,36 +83,27 @@ public class ChunkRadiationManager {
             }
         });
 
-        ServerTickEvents.END_SERVER_TICK.register(server -> {
+        // updateSystem на START_SERVER_TICK (до мирового тика), handleWorldDestruction на END.
+        // См. подробный комментарий в onServerTickStart/onServerTickEnd (Forge-ветка) — тот же
+        // фикс для Fabric: при END-фазе получался порядок «emit → decay» и chunk_rad стабильно
+        // находился в LOW-фазе (≈146 для polonium вместо ≈221).
+        ServerTickEvents.START_SERVER_TICK.register(server -> {
             if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads) return;
             INSTANCE.tickCounter++;
             if (INSTANCE.tickCounter >= 20) {
                 getProxy().updateSystem();
                 INSTANCE.tickCounter = 0;
             }
+        });
+
+        ServerTickEvents.END_SERVER_TICK.register(server -> {
+            if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads) return;
             if (ModClothConfig.get().worldRadEffects) {
                 getProxy().handleWorldDestruction();
             }
         });
 
-        BlockEvent.PLACE.register((level, pos, state, placer) -> {
-            if (!level.isClientSide()) {
-                INSTANCE.handleBlockChange(Blocks.AIR.defaultBlockState(), state, level, pos);
-            }
-            return dev.architectury.event.EventResult.pass();
-        });
-
-        PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, blockEntity) -> {
-            INSTANCE.handleBlockChange(state, Blocks.AIR.defaultBlockState(), world, pos);
-        });
-
-        ExplosionEvent.DETONATE.register((level, explosion, list) -> {
-            if (level.isClientSide()) return;
-            for (BlockPos pos : explosion.getToBlow()) {
-                BlockState oldState = level.getBlockState(pos);
-                INSTANCE.handleBlockChange(oldState, Blocks.AIR.defaultBlockState(), level, pos);
-            }
-        });
+        // В 1.7.10 ChunkRadiationManager не отслеживает place/break/explosion — источники переэмиттят сами.
 
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             if (getProxy() instanceof ChunkRadiationHandlerSimple handlerSimple) {
@@ -175,14 +156,26 @@ public class ChunkRadiationManager {
         }
     }
 
+    // updateSystem ДОЛЖЕН срабатывать на Phase.START (до мирового тика), а не на Phase.END.
+    // Причина: BlockHazard.tick эмиттит радиацию во время мирового тика. Если updateSystem бежит
+    // на END (после эмиттера), получается порядок «emit → decay» в одном тике — chunk_rad стабильно
+    // находится в LOW-фазе (≈146 для polonium-210 вместо правильных ≈221), и игрок 19/20 тиков
+    // видит LOW, получая заниженную дозу. На START декей применяется к ПРЕДЫДУЩЕМУ циклу,
+    // а свежая эмиссия остаётся HIGH на весь следующий цикл — как в 1.7.10.
+    // handleWorldDestruction и receiveWorldTick остаются на END (видят уже обновлённый чанк).
     @SubscribeEvent
-    public void onServerTick(TickEvent.ServerTickEvent event) {
-        if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads || event.phase != TickEvent.Phase.END) return;
+    public void onServerTickStart(TickEvent.ServerTickEvent event) {
+        if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads || event.phase != TickEvent.Phase.START) return;
         tickCounter++;
         if (tickCounter >= 20) {
             getProxy().updateSystem();
             tickCounter = 0;
         }
+    }
+
+    @SubscribeEvent
+    public void onServerTickEnd(TickEvent.ServerTickEvent event) {
+        if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads || event.phase != TickEvent.Phase.END) return;
         if (ModClothConfig.get().worldRadEffects) {
             getProxy().handleWorldDestruction();
         }
@@ -191,48 +184,11 @@ public class ChunkRadiationManager {
     //?}
 
     // ОБРАБОТЧИКИ СОБЫТИЙ ИЗМЕНЕНИЯ БЛОКОВ 
-
-    private void handleBlockChange(BlockState oldState, BlockState newState, LevelAccessor level, BlockPos pos) {
-        if (level.isClientSide() || !(level instanceof Level world)) {
-            return;
-        }
-
-        float oldRad = HazardSystem.getBlockChunkRadiationSumContribution(oldState);
-        float newRad = HazardSystem.getBlockChunkRadiationSumContribution(newState);
-        float diff = newRad - oldRad;
-
-        // Только явные изменения блоков игроком/взрывом — как BlockHazard onBlockAdded/updateTick в 1.7.10.
-        if (Math.abs(diff) > 1e-6f) {
-            getProxy().incrementBlockRadiation(world, pos, diff);
-        }
-    }
-
+    // В 1.7.10 ChunkRadiationManager не отслеживает place/break/explosion для радиации:
+    // радиоактивный блок сам переэмиттит радиацию каждый scheduled-tick (20t) через свой updateTick.
+    // При ломании блока эмиттер останавливается, а накопленный ambient естественно затухает в updateSystem.
 
     //? if forge {
-    @SubscribeEvent
-    public void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
-        BlockSnapshot snapshot = event.getBlockSnapshot();
-        BlockState oldState = snapshot.getReplacedBlock();
-        BlockState newState = event.getState();
-        handleBlockChange(oldState, newState, event.getLevel(), event.getPos());
-    }
-
-    @SubscribeEvent
-    public void onBlockBreak(BlockEvent.BreakEvent event) {
-        handleBlockChange(event.getState(), Blocks.AIR.defaultBlockState(), event.getLevel(), event.getPos());
-    }
-
-    @SubscribeEvent
-    public void onExplosionDetonate(ExplosionEvent.Detonate event) {
-        Level level = event.getLevel();
-        if (level.isClientSide()) return;
-        for (BlockPos pos : event.getAffectedBlocks()) {
-            // Передаем BlockState до взрыва
-            BlockState oldState = level.getBlockState(pos);
-            handleBlockChange(oldState, Blocks.AIR.defaultBlockState(), level, pos);
-        }
-    }
-
     @SubscribeEvent
     public void onPlayerLogOut(PlayerEvent.PlayerLoggedOutEvent event) {
         // Проверяем, что уровень серверный

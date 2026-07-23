@@ -1,20 +1,13 @@
 package com.hbm_m.interfaces;
 
-// Интерфейс capability для хранения данных о радиации в чанке.
-// Содержит методы для получения и установки радиации от блоков и фоновой радиации.
-// Также включает метод для копирования данных от другого экземпляра (например, при смерти игрока).
+// Интерфейс capability для хранения ambient-радиации чанка.
+// В 1.7.10 ChunkRadiationHandlerSimple хранит одно Float на чанк (нет разделения на block/ambient):
+// источники переэмиттят радиацию в это значение через собственный scheduled-tick каждый раз.
 public interface IChunkRadiation {
-    // Получает ОБЩУЮ радиацию (блоки + эмбиентная)
-    // float getTotalRadiation();
-
-    // Радиация от блоков
-    float getBlockRadiation();
-    void setBlockRadiation(float value);
-
-    // Радиация, пришедшая извне (эмбиентная)
+    // Ambient-радиация чанка (источники + события + spread/decay).
     float getAmbientRadiation();
     void setAmbientRadiation(float value);
-    
-    // Копирование данных от другого capability (например, при смерти игрока)
+
+    // Копирование данных от другого capability (например, при respawn'е игрока).
     void copyFrom(IChunkRadiation source);
 }

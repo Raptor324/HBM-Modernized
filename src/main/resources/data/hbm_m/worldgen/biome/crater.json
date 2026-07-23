@@ -3,16 +3,16 @@
   "downfall": 0.0,
   "has_precipitation": false,
   "effects": {
-    "fog_color": 4348482,
+    "fog_color": 5399378,
     "water_color": 14738334,
     "water_fog_color": 328464,
-    "sky_color": 4348482,
+    "sky_color": 5399378,
     "foliage_color": 6975545,
-    "grass_color": 3685688,
+    "grass_color": 5785672,
     "particle": {
-      "probability": 0.5,
+      "probability": 0.3,
       "options": {
-        "type": "minecraft:white_ash"
+        "type": "minecraft:ash"
       }
     }
   },

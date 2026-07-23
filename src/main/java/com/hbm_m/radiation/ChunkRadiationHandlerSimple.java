@@ -13,7 +13,6 @@ import com.hbm_m.block.ModBlocks;
 // Этот класс реализует простую и эффективную систему симуляции радиации в чанках. Ядро всей радиационной механики мода.
 
 import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.hazard.HazardSystem;
 import com.hbm_m.interfaces.IChunkRadiation;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ChunkRadiationDebugBatchPacket;
@@ -33,7 +32,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.level.chunk.LevelChunkSection;
 //? if forge {
 import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.event.level.LevelEvent;
@@ -76,7 +74,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
             return;
         }
 
-        // Итерация по всем измерениям, где есть активные чанки
+            // Итерация по всем измерениям, где есть активные чанки
         for (Map.Entry<ResourceLocation, Set<ChunkPos>> dimensionEntry : activeChunksByDimension.entrySet()) {
             ResourceLocation dimId = dimensionEntry.getKey();
             ResourceKey<Level> levelKey = ResourceKey.create(Registries.DIMENSION, dimId);
@@ -91,8 +89,9 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                 continue;
             }
 
-            // GIT ChunkRadiationHandlerSimple#updateSystem: buff = текущий ambient, затем spread+decay.
-            // Источники ambient — только incrementRad (взрывы, BlockHazard#updateTick), не сумма blockRad.
+            // 1:1 порт ChunkRadiationHandlerSimple#updateSystem (GIT): один Float на чанк,
+            // snapshot+clear+rebuild, spread 60/7.5/2.5, decay ×0.99 − 0.05 для чанков уже имевших радиацию.
+            // Источники (BlockHazard и т.д.) накачивают ambient собственным scheduled-tick — здесь только spread+decay.
             Map<ChunkPos, Float> buff = new HashMap<>();
             for (ChunkPos pos : new HashSet<>(currentActiveChunks)) {
                 LevelChunk chunk = level.getChunkSource().getChunk(pos.x, pos.z, false);
@@ -100,11 +99,6 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                     continue;
                 }
                 getChunkRadiationCap(chunk).ifPresent(cap -> {
-                    // Сброс устаревшего blockRad (sellafite slaked ошибочно суммировался до фикса).
-                    if (cap.getBlockRadiation() > 1e-6f) {
-                        cap.setBlockRadiation(0f);
-                        chunk.setUnsaved(true);
-                    }
                     float ambient = cap.getAmbientRadiation();
                     if (ambient > 1e-6f) {
                         buff.put(pos, ambient);
@@ -117,6 +111,8 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                 continue;
             }
 
+            // Накопитель новых значений (после spread+decay). Не пишётся напрямую в cap, чтобы
+            // распределение считалось от стартового состояния цикла (как 1.7.10).
             Map<ChunkPos, Float> radiation = new HashMap<>();
             Set<ChunkPos> nextActiveChunks = ConcurrentHashMap.newKeySet();
 
@@ -135,11 +131,13 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                         ChunkPos newCoord = new ChunkPos(coord.x + dx, coord.z + dz);
 
                         if (buff.containsKey(newCoord)) {
+                            // Чанк уже имел радиацию → spread contribution + decay ×0.99 − 0.05.
                             float rad = radiation.getOrDefault(newCoord, 0f);
                             float newRad = rad + sourceValue * percent;
                             newRad = Mth.clamp(newRad * 0.99f - 0.05f, 0f, MAX_RAD);
                             radiation.put(newCoord, newRad);
                         } else {
+                            // Свежий чанк, впервые получает spread — без декея в этот цикл (как 1.7.10).
                             radiation.put(newCoord, sourceValue * percent);
                         }
 
@@ -165,6 +163,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                 }
             }
 
+            // Запись новых значений в cap и обновление nextActiveChunks.
             Set<ChunkPos> chunksToProcess = new HashSet<>(currentActiveChunks);
             chunksToProcess.addAll(radiation.keySet());
 
@@ -194,12 +193,12 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                         chunk.setUnsaved(true);
 
                         if (ModClothConfig.get().enableDebugLogging) {
-                            MainRegistry.LOGGER.debug("[RadSim] Tick update for chunk [{}, {}]: NewAmb: {}, BlockRad: {}",
-                                    pos.x, pos.z, finalAmbientRad, cap.getBlockRadiation());
+                            MainRegistry.LOGGER.debug("[RadSim] Tick update for chunk [{}, {}]: NewAmb: {}",
+                                    pos.x, pos.z, finalAmbientRad);
                         }
                     }
 
-                    if (finalAmbientRad > 1e-6f || cap.getBlockRadiation() > 1e-6f) {
+                    if (finalAmbientRad > 1e-6f) {
                         nextActiveChunks.add(pos);
                     } else if (ModClothConfig.get().enableDebugLogging && currentActiveChunks.contains(pos)) {
                         MainRegistry.LOGGER.debug("[RadSim] Chunk {} REMOVED from active list (all radiation gone)", pos);
@@ -219,53 +218,15 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
 
     @Override
     public void recalculateChunkRadiation(LevelChunk chunk) {
-        float totalBlockRadiation = 0F;
-        for (LevelChunkSection section : chunk.getSections()) {
-            // hasOnlyAir() немного эффективнее, чем section != null && !section.isEmpty()
-            if (section != null && !section.hasOnlyAir()) { 
-                for (int y = 0; y < 16; y++) {
-                    for (int z = 0; z < 16; z++) {
-                        for (int x = 0; x < 16; x++) {
-                            BlockState blockState = section.getBlockState(x, y, z);
-                            if (blockState.isAir()) {
-                                continue;
-                            }
-                            float blockRad = HazardSystem.getBlockChunkRadiationSumContribution(blockState);
-
-                            // Если радиация есть, добавляем ее к общей сумме в чанке
-                            if (blockRad > 0) {
-                                totalBlockRadiation += blockRad;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        final float finalTotalBlockRadiation = totalBlockRadiation;
-        getChunkRadiationCap(chunk).ifPresent(cap -> {
-            // Устанавливаем значение только если оно изменилось
-            if (Math.abs(cap.getBlockRadiation() - finalTotalBlockRadiation) > 1e-6f) {
-                cap.setBlockRadiation(finalTotalBlockRadiation);
-                chunk.setUnsaved(true);
-            }
-            ResourceLocation dimId = chunk.getLevel().dimension().location();
-            if (cap.getAmbientRadiation() > 1e-6f || finalTotalBlockRadiation > 1e-6f) {
-                activeChunksByDimension.computeIfAbsent(dimId, k -> ConcurrentHashMap.newKeySet()).add(chunk.getPos());
-            } else {
-                Set<ChunkPos> active = activeChunksByDimension.get(dimId);
-                if (active != null) {
-                    active.remove(chunk.getPos());
-                }
-            }
-        });
+        // No-op: 1.7.10 ChunkRadiationHandlerSimple не суммирует радиацию от блоков.
+        // Источники (BlockHazard и т.д.) переэмиттят радиацию в ambient собственным scheduled-tick.
+        // Метод оставлен как no-op, т.к. он вызывается из EntityFalloutRain/ExplosionVNT.
     }
 
     @Override
     public void receiveChunkLoad(LevelChunk chunk) {
-        recalculateChunkRadiation(chunk);
         getChunkRadiationCap(chunk).ifPresent(cap -> {
-            if (cap.getAmbientRadiation() > 1e-6f || cap.getBlockRadiation() > 1e-6f) {
+            if (cap.getAmbientRadiation() > 1e-6f) {
                 activeChunksByDimension.computeIfAbsent(chunk.getLevel().dimension().location(),
                         k -> ConcurrentHashMap.newKeySet()).add(chunk.getPos());
             }
@@ -329,37 +290,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
     public void decrementRad(Level level, int x, int y, int z, float rad) {
         setRadiation(level, x, y, z, Math.max(0, getRadiation(level, x, y, z) - rad));
     }
-    
-    @Override
-    public void incrementBlockRadiation(Level level, BlockPos pos, float diff) {
-        if (level.isClientSide()) return;
 
-        ChunkPos chunkPos = new ChunkPos(pos);
-        LevelChunk chunk = level.getChunkSource().getChunk(chunkPos.x, chunkPos.z, false);
-        if (chunk == null) return;
-
-        getChunkRadiationCap(chunk).ifPresent(cap -> {
-            float oldBlockRad = cap.getBlockRadiation();
-            float newBlockRad = Math.max(0, oldBlockRad + diff);
-
-            cap.setBlockRadiation(newBlockRad);
-            chunk.setUnsaved(true);
-            if (ModClothConfig.get().enableDebugLogging) {
-                MainRegistry.LOGGER.debug("[RadSim] Updated block radiation for chunk {}: {} -> {} (diff: {})", chunkPos, oldBlockRad, newBlockRad, diff);
-            }
-
-            ResourceLocation dimId = level.dimension().location();
-            if (newBlockRad > 1e-6f || cap.getAmbientRadiation() > 1e-6f) {
-                activeChunksByDimension.computeIfAbsent(dimId, k -> ConcurrentHashMap.newKeySet()).add(chunkPos);
-            } else {
-                Set<ChunkPos> active = activeChunksByDimension.get(dimId);
-                if (active != null) {
-                    active.remove(chunkPos);
-                }
-            }
-        });
-    }
-    
     private void sendDebugPackets(ServerLevel level) {
         if (!ModClothConfig.get().enableDebugRender) return;
 

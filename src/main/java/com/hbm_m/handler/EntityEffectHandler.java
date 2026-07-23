@@ -11,6 +11,7 @@ import com.hbm_m.sound.ModSounds;
 import com.hbm_m.util.ContaminationUtil;
 import com.hbm_m.util.ContaminationUtil.ContaminationType;
 import com.hbm_m.util.ContaminationUtil.HazardType;
+import com.hbm_m.world.biome.ModBiomes;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -51,10 +52,60 @@ public final class EntityEffectHandler {
             handleRadiationEffect(entity);
         }
 
+        // Накачка от crater biome (1.7.10 EntityEffectHandler строки 114-124).
+        // Биомы кратера эмиттят радиацию напрямую в игрока, минуя chunk ambient.
+        handleCraterBiomeRadiation(entity);
+
         // Чанковая доза для всех сущностей, включая игроков (1.7.10: handleRadiationFX → contaminate → radEnv).
         handleRadiationFromChunk(entity);
 
         handleRadiationFX(entity);
+    }
+
+    /**
+     * 1:1 порт {@code EntityEffectHandler.onUpdate} строки 114-124 (1.7.10):
+     * если сущность стоит в одном из трёх crater биомов, ей добавляется
+     * {@code craterBiomeInnerRad=25F}/{@code craterBiomeRad=5F}/{@code craterBiomeOuterRad=0.5F}
+     * RAD/сек (делим на 20 — это per-tick доза). В воде множитель {@code ×5} (waterMult).
+     *
+     * <p>Это единственный источник «радиации в кратере» в 1.7.10: chunk ambient radiation
+     * после взрыва нулевой, но игрок в craterInnerBiome получает 25 RAD/сек напрямую.</p>
+     */
+    private static void handleCraterBiomeRadiation(LivingEntity entity) {
+        if (!ModClothConfig.get().enableRadiation) {
+            return;
+        }
+        if (ContaminationUtil.isRadImmune(entity)) {
+            return;
+        }
+
+        Level level = entity.level();
+        var biomeKey = level.getBiome(entity.blockPosition()).unwrapKey().orElse(null);
+        if (biomeKey == null) {
+            return;
+        }
+
+        float radiation = 0F;
+        if (biomeKey == ModBiomes.INNER_CRATER_KEY) {
+            radiation = ModClothConfig.get().craterBiomeInnerRad;
+        } else if (biomeKey == ModBiomes.CRATER_KEY) {
+            radiation = ModClothConfig.get().craterBiomeRad;
+        } else if (biomeKey == ModBiomes.OUTER_CRATER_KEY) {
+            radiation = ModClothConfig.get().craterBiomeOuterRad;
+        }
+
+        if (radiation <= 0F) {
+            return;
+        }
+
+        // entity.isWet() = под дождём или в воде. 1.7.10: "if(entity.isWet()) radiation *= waterMult;"
+        // В 1.20.1 эквивалент — isInWaterRainOrBubble() (объединяет воду, дождь и пузыри).
+        if (entity.isInWaterRainOrBubble()) {
+            radiation *= ModClothConfig.get().craterBiomeWaterMult;
+        }
+
+        // CREATIVE = обходит защиту (как в 1.7.10 ContaminationType.CREATIVE).
+        ContaminationUtil.contaminate(entity, HazardType.RADIATION, ContaminationType.CREATIVE, radiation / 20F);
     }
 
     /** Трансформации и летальные/статусные эффекты от накопленной дозы (как в 1.7.10). */

@@ -171,11 +171,6 @@ public class ModClothConfig implements ConfigData {
 
     @Category("chunk")
     @Gui.Tooltip
-    /** GIT {@link com.hbm.blocks.generic.BlockHazard}: hazard * 0.1F per second via {@code incrementRad}. */
-    public float radSourceInfluenceFactor = 0.1F;
-
-    @Category("chunk")
-    @Gui.Tooltip
     /** GIT {@code ChunkRadiationHandlerSimple} has no ambient randomization. */
     public float radRandomizationFactor = 0.0F;
 
@@ -376,20 +371,39 @@ public class ModClothConfig implements ConfigData {
     @Gui.Tooltip
     public boolean enableCraterBiomes = true;
 
-    /** Целевая ambient-радиация чанка в {@code inner_crater} (Гейгер, RAD/s). */
+    /** RAD/s для игрока в {@code inner_crater} биоме (1.7.10 {@code WorldConfig.craterBiomeInnerRad}). */
     @Category("explosions")
     @Gui.Tooltip
-    public float craterBiomeInnerChunkRad = 30F;
+    public float craterBiomeInnerRad = 25F;
 
-    /** Целевая ambient-радиация чанка в {@code outer_crater} (Гейгер, RAD/s). */
+    /** RAD/s для игрока в {@code crater} биоме (1.7.10 {@code WorldConfig.craterBiomeRad}). */
     @Category("explosions")
     @Gui.Tooltip
-    public float craterBiomeOuterChunkRad = 10F;
+    public float craterBiomeRad = 5F;
 
+    /** RAD/s для игрока в {@code outer_crater} биоме (1.7.10 {@code WorldConfig.craterBiomeOuterRad}). */
+    @Category("explosions")
+    @Gui.Tooltip
+    public float craterBiomeOuterRad = 0.5F;
+
+    /** Множитель RAD/s в crater биомах в воде/под дождём (1.7.10 {@code WorldConfig.craterBiomeWaterMult}). */
+    @Category("explosions")
+    @Gui.Tooltip
+    public float craterBiomeWaterMult = 5F;
+
+    /**
+     * Радиус взрыва Fat Man (блок nuke_fat_man). 1:1 с {@code BombConfig.manRadius = 175}
+     * (1.7.10 {@code NukeMan.igniteTestBomb} → {@code statFac(world, manRadius, ...)}).
+     * <p><b>Важно:</b> в 1.7.10 {@code fatmanRadius = 35} — это {@code BlockCrashedBomb.destructionRange},
+     * НЕ радиус NukeMan. Modernized изначально перепутал значения; верно именно 175.</p>
+     * <p>От этого значения зависит fallout scale ({@code length * 2.5}) → если оно занижено,
+     * {@code EntityFalloutRain.getBiomeChange} проваливает условия
+     * {@code scale >= 150} (INNER) и {@code scale >= 100} (CRATER), оставляя только OUTER_CRATER.</p>
+     */
     @Category("explosions")
     @Gui.Tooltip
     @BoundedDiscrete(min = 10, max = 200)
-    public int fatManRadius = 35;
+    public int fatManRadius = 175;
 
     /** Радиус Fleija-взрыва шрабидиевой ракеты (ориг. {@code BombConfig.aSchrabRadius}). */
     @Category("explosions")

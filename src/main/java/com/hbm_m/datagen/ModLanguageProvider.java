@@ -4044,8 +4044,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.lead_ore", "Lead Ore");
                 add("block.hbm_m.lead_ore_deepslate", "Deepslate Lead Ore");
                 add("block.hbm_m.cinnabar_ore", "Cinnabar Ore");
-                add("block.hbm_m.waste_grass", "Waste Grass");
-                add("block.hbm_m.waste_leaves", "Waste Leaves");
+                add("block.hbm_m.waste_grass", "Dead Grass");
+                add("block.hbm_m.waste_leaves", "Dead Leaves");
                 add("block.hbm_m.freaky_alien_block", "Freaky Allien Block");
                 add("block.hbm_m.reinforced_stone", "Reinforced Stone");
                 add("block.hbm_m.reinforced_stone_slab", "Reinforced Stone Slab");

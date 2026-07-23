@@ -11,7 +11,7 @@ import org.joml.Vector3f;
 import com.hbm_m.client.ClientRenderHandler;
 import com.hbm_m.client.render.ImmediateVertexWriter;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.powerarmor.PowerArmorClientState;
+import com.hbm_m.particle.explosions.basic.CameraShakeHandler;
 import com.hbm_m.sound.ModSounds;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -462,18 +462,29 @@ public class NukeTorex extends ParticleNT {
         cloudletWrapper(partialTicks, localPose, ignored);
 
         long now = System.currentTimeMillis();
-        if (this.age < 10 && now - PowerArmorClientState.flashTimestamp > 1_000) {
-            PowerArmorClientState.triggerNuclearFlash();
+        //  Ядерная вспышка и тряска HUD живут в ModEventHandlerClient (Forge-only оверлей).
+        //  CameraShakeHandler.addShake() работает на всех лоадерах и даёт ещё и тряску камеры.
+        //? if forge {
+        if (this.age < 10 && now - com.hbm_m.powerarmor.ModEventHandlerClient.flashTimestamp > 1_000) {
+            com.hbm_m.powerarmor.ModEventHandlerClient.triggerNuclearFlash();
         }
-        if (this.didPlaySound && !this.didShake && now - PowerArmorClientState.shakeTimestamp > 1_000) {
-            PowerArmorClientState.shakeTimestamp = now;
+        if (this.didPlaySound && !this.didShake && now - com.hbm_m.powerarmor.ModEventHandlerClient.shakeTimestamp > 1_000) {
+            com.hbm_m.powerarmor.ModEventHandlerClient.shakeTimestamp = now;
             this.didShake = true;
+            CameraShakeHandler.addShake(1.0F, 30); //  ~1.5с тряски камеры+GUI, как в оригинале (1500мс)
             Player player = Minecraft.getInstance().player;
             if (player != null) {
                 player.hurtDuration = 15;
                 player.hurtTime = 15;
             }
         }
+        //?} else {
+        /*if (this.didPlaySound && !this.didShake) {
+            this.didShake = true;
+            CameraShakeHandler.addShake(1.0F, 30);
+        }
+        */
+        //?}
     }
 
     @Override

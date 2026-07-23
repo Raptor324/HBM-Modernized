@@ -39,20 +39,9 @@ public final class FabricChunkComponents implements ChunkComponentInitializer {
     }
 
     public static final class ChunkRadiationComponent implements IChunkRadiationComponent {
-        private static final String NBT_KEY_BLOCK = "blockRadiation";
         private static final String NBT_KEY_AMBIENT = "ambientRadiation";
 
         private final ChunkRadiation delegate = new ChunkRadiation();
-
-        @Override
-        public float getBlockRadiation() {
-            return delegate.getBlockRadiation();
-        }
-
-        @Override
-        public void setBlockRadiation(float value) {
-            delegate.setBlockRadiation(value);
-        }
 
         @Override
         public float getAmbientRadiation() {
@@ -71,12 +60,6 @@ public final class FabricChunkComponents implements ChunkComponentInitializer {
 
         @Override
         public void readFromNbt(CompoundTag tag) {
-            if (tag.contains(NBT_KEY_BLOCK, Tag.TAG_FLOAT)) {
-                setBlockRadiation(tag.getFloat(NBT_KEY_BLOCK));
-            } else {
-                setBlockRadiation(0);
-            }
-
             if (tag.contains(NBT_KEY_AMBIENT, Tag.TAG_FLOAT)) {
                 setAmbientRadiation(tag.getFloat(NBT_KEY_AMBIENT));
             } else {
@@ -86,9 +69,7 @@ public final class FabricChunkComponents implements ChunkComponentInitializer {
 
         @Override
         public void writeToNbt(CompoundTag tag) {
-            float block = getBlockRadiation();
             float ambient = getAmbientRadiation();
-            if (block > 1e-6F) tag.putFloat(NBT_KEY_BLOCK, block);
             if (ambient > 1e-6F) tag.putFloat(NBT_KEY_AMBIENT, ambient);
         }
 
@@ -101,4 +82,3 @@ public final class FabricChunkComponents implements ChunkComponentInitializer {
     }
 }
 *///?}
-

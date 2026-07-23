@@ -128,8 +128,7 @@ import com.hbm_m.block.machines.crates.TemplateCrateBlock;
 import com.hbm_m.block.machines.crates.TungstenCrateBlock;
 import com.hbm_m.block.nature.DepthOreBlock;
 import com.hbm_m.block.nature.GeysirBlock;
-import com.hbm_m.block.nature.RadioactiveBlock;
-import com.hbm_m.block.nature.SchrabDisplayBlock;
+import com.hbm_m.block.generic.BlockHazard;
 import com.hbm_m.block.weapons.BarbedWireBlock;
 import com.hbm_m.block.weapons.BarbedWireFireBlock;
 import com.hbm_m.block.weapons.BarbedWirePoisonBlock;
@@ -230,7 +229,7 @@ public class ModBlocks {
 
     /**
      * Слитковые блоки с {@code ExtDisplayEffect.RADFOG} в GIT ({@code BlockHazard#setDisplayEffect}, ModBlocks ~1328–1342).
-     * Только они получают {@link RadioactiveBlock} (частицы townaura); остальные радиоактивные блоки — обычный {@link Block}.
+     * Только для них {@link BlockHazard} получает {@code RADFOG} (частицы townaura).
      */
     private static final Set<String> RADFOG_INGOT_BLOCKS = Set.of(
             "u233", "u235", "neptunium", "plutonium", "pu238", "pu239", "pu240",
@@ -261,17 +260,19 @@ public class ModBlocks {
 
                 RegistrySupplier<Block> registeredBlock;
 
-                // Display particles: RADFOG (townaura) / SCHRAB (schrabfog); chunk rad — через HazardRegistry
-                if (hasRadFogParticles(ingot)) {
-                    registeredBlock = registerBlock(blockName,
-                            () -> new RadioactiveBlock(INGOT_BLOCK_PROPERTIES));
-                } else if (hasSchrabFogParticles(ingot)) {
-                    registeredBlock = registerBlock(blockName,
-                            () -> new SchrabDisplayBlock(INGOT_BLOCK_PROPERTIES));
-                } else {
-                    registeredBlock = registerBlock(blockName,
-                            () -> new Block(INGOT_BLOCK_PROPERTIES));
-                }
+                // Display particles: RADFOG / SCHRAB (1.7.10 BlockHazard#setDisplayEffect, ModBlocks ~1326-1373).
+                // Все слитковые блоки — это BlockHazard; per-tick эмиттер чанковой радиации (hazard × 0.1/сек)
+                // запускается автоматически через scheduled-tick. Различаются только визуальные частицы.
+                registeredBlock = registerBlock(blockName,
+                        () -> {
+                            BlockHazard block = new BlockHazard(INGOT_BLOCK_PROPERTIES).makeBeaconable();
+                            if (hasRadFogParticles(ingot)) {
+                                block.setDisplayEffect(BlockHazard.ExtDisplayEffect.RADFOG);
+                            } else if (hasSchrabFogParticles(ingot)) {
+                                block.setDisplayEffect(BlockHazard.ExtDisplayEffect.SCHRAB);
+                            }
+                            return block;
+                        });
 
                 // Сохраняем в карту
                 INGOT_BLOCKS.put(ingot, registeredBlock);
@@ -298,7 +299,7 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> PLUTONIUM_FUEL_BLOCK = getIngotBlock(ModIngots.PLUTONIUM_FUEL);
 
     public static final RegistrySupplier<Block> POLONIUM210_BLOCK = registerBlock("polonium210_block",
-            () -> new RadioactiveBlock(INGOT_BLOCK_PROPERTIES));
+            () -> new BlockHazard(INGOT_BLOCK_PROPERTIES));
 
     public static final RegistrySupplier<Block> WASTE_GRASS = registerBlock("waste_grass",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.DIRT).sound(SoundType.GRAVEL)));
