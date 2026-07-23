@@ -11,6 +11,11 @@
 			"render_type": "minecraft:cutout",
 			"textures": {
 				"default": "hbm_m:block/machine/ore_slopper"
+			},
+			"visibility": {
+				"Fan": false,
+				"BladesLeft": false,
+				"BladesRight": false
 			}
 		}
 	},

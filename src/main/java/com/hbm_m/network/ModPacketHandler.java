@@ -74,6 +74,7 @@ public class ModPacketHandler {
     public static final ResourceLocation MISSILE_TRACK        = id("missile_track");
     public static final ResourceLocation MISSILE_TRACK_STOP   = id("missile_track_stop");
     public static final ResourceLocation TURRET_CONTROL        = id("turret_control");
+    public static final ResourceLocation MINING_DRILL_TOGGLE   = id("mining_drill_toggle");
 
 
     // ══════════════════════════ Регистрация ═══════════════════════════════════
@@ -234,6 +235,10 @@ public class ModPacketHandler {
         registerC2S(TURRET_CONTROL,
                 TurretControlPacket::decode,
                 TurretControlPacket::handle);
+
+        registerC2S(MINING_DRILL_TOGGLE,
+                MiningDrillToggleC2SPacket::decode,
+                MiningDrillToggleC2SPacket::handle);
     }
 
     // ══════════════════════ Вспомогательные методы ════════════════════════════

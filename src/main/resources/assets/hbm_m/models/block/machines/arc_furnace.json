@@ -11,6 +11,18 @@
 			"render_type": "minecraft:cutout",
 			"textures": {
 				"default": "hbm_m:block/machine/arc_furnace"
+			},
+			"visibility": {
+				"Electrode1": false,
+				"Electrode2": false,
+				"Electrode3": false,
+				"Electrode1Short": false,
+				"Electrode2Short": false,
+				"Electrode3Short": false,
+				"Electrode1Hot": false,
+				"Electrode2Hot": false,
+				"Electrode3Hot": false,
+				"ContentsHot": false
 			}
 		}
 	},

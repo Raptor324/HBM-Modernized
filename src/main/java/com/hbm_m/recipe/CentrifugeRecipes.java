@@ -5,6 +5,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.item.ModItems;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
+
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -399,6 +403,121 @@ public class CentrifugeRecipes {
 
         // =========== MISC RECIPES ===========
 
+        // =========== BEDROCK ORE CHAIN (Mining Drill / Bedrock refinement) ===========
+
+        // ---- Bedrock Ore chain: LIGHT ----
+        addItemRecipe(ModItems.BEDROCK_ORE_BASE_LIGHT.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_LIGHT.get()), new ItemStack(Items.GRAVEL));
+        addItemRecipe(ModItems.BEDROCK_ORE_BASE_ROASTED_LIGHT.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_LIGHT.get()), new ItemStack(Items.GRAVEL));
+        addItemRecipe(ModItems.BEDROCK_ORE_BASE_WASHED_LIGHT.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_LIGHT.get(), 2), new ItemStack(Items.GRAVEL));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_LIGHT.get(), new ItemStack(net.minecraft.world.item.Items.RAW_IRON, 9), new ItemStack(net.minecraft.world.item.Items.RAW_COPPER, 9));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_ROASTED_LIGHT.get(), new ItemStack(net.minecraft.world.item.Items.RAW_IRON, 9), new ItemStack(net.minecraft.world.item.Items.RAW_COPPER, 9));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_SULFURIC_LIGHT.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_LIGHT.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_LIGHT.get(), 2));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_SOLVENT_LIGHT.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_LIGHT.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_LIGHT.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_LIGHT.get(), 2));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_RAD_LIGHT.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_NORAD_LIGHT.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_LIGHT.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_LIGHT.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_RAD_BYPRODUCT_LIGHT.get(), 2));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_LIGHT.get(), new ItemStack(net.minecraft.world.item.Items.RAW_IRON, 9), new ItemStack(net.minecraft.world.item.Items.RAW_COPPER, 9), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_LIGHT.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_LIGHT.get(), new ItemStack(net.minecraft.world.item.Items.RAW_IRON, 9), new ItemStack(net.minecraft.world.item.Items.RAW_COPPER, 9), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_LIGHT.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_NORAD_LIGHT.get(), new ItemStack(net.minecraft.world.item.Items.RAW_IRON, 9), new ItemStack(net.minecraft.world.item.Items.RAW_COPPER, 9), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_LIGHT.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_FIRST_LIGHT.get(), new ItemStack(net.minecraft.world.item.Items.RAW_IRON, 18), new ItemStack(net.minecraft.world.item.Items.RAW_COPPER, 9), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_LIGHT.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_SECOND_LIGHT.get(), new ItemStack(net.minecraft.world.item.Items.RAW_IRON, 9), new ItemStack(net.minecraft.world.item.Items.RAW_COPPER, 18), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_LIGHT.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_SULFURIC_WASHED_LIGHT.get(), new ItemStack(ModItems.TITANIUM_RAW.get(), 6), new ItemStack(ModBlocks.RESOURCE_BAUXITE.get(), 9), new ItemStack(ModItems.CRYOLITE.get(), 3));
+        // Original: solvent=CHLOROCALCITE,LITHIUM,SODIUM; rad=CHLOROCALCITE,LITHIUM,SODIUM
+        addItemRecipe(ModItems.BEDROCK_ORE_SOLVENT_WASHED_LIGHT.get(), new ItemStack(ModItems.POWDER_CHLOROCALCITE.get(), 5), new ItemStack(ModItems.LITHIUM.get(), 5), new ItemStack(ModItems.POWDER_SODIUM.get(), 3));
+        addItemRecipe(ModItems.BEDROCK_ORE_RAD_WASHED_LIGHT.get(), new ItemStack(ModItems.POWDER_CHLOROCALCITE.get(), 6), new ItemStack(ModItems.LITHIUM.get(), 6), new ItemStack(ModItems.POWDER_SODIUM.get(), 6));
+
+        // ---- Bedrock Ore chain: HEAVY ----
+        addItemRecipe(ModItems.BEDROCK_ORE_BASE_HEAVY.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_HEAVY.get()), new ItemStack(Items.GRAVEL));
+        addItemRecipe(ModItems.BEDROCK_ORE_BASE_ROASTED_HEAVY.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_HEAVY.get()), new ItemStack(Items.GRAVEL));
+        addItemRecipe(ModItems.BEDROCK_ORE_BASE_WASHED_HEAVY.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_HEAVY.get(), 2), new ItemStack(Items.GRAVEL));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_HEAVY.get(), new ItemStack(ModItems.TUNGSTEN_RAW.get(), 9), new ItemStack(ModItems.LEAD_RAW.get(), 9));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_ROASTED_HEAVY.get(), new ItemStack(ModItems.TUNGSTEN_RAW.get(), 9), new ItemStack(ModItems.LEAD_RAW.get(), 9));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_SULFURIC_HEAVY.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_HEAVY.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_HEAVY.get(), 2));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_SOLVENT_HEAVY.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_HEAVY.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_HEAVY.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_HEAVY.get(), 2));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_RAD_HEAVY.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_NORAD_HEAVY.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_HEAVY.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_HEAVY.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_RAD_BYPRODUCT_HEAVY.get(), 2));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_HEAVY.get(), new ItemStack(ModItems.TUNGSTEN_RAW.get(), 9), new ItemStack(ModItems.LEAD_RAW.get(), 9), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_HEAVY.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_HEAVY.get(), new ItemStack(ModItems.TUNGSTEN_RAW.get(), 9), new ItemStack(ModItems.LEAD_RAW.get(), 9), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_HEAVY.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_NORAD_HEAVY.get(), new ItemStack(ModItems.TUNGSTEN_RAW.get(), 9), new ItemStack(ModItems.LEAD_RAW.get(), 9), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_HEAVY.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_FIRST_HEAVY.get(), new ItemStack(ModItems.TUNGSTEN_RAW.get(), 18), new ItemStack(ModItems.LEAD_RAW.get(), 9), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_HEAVY.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_SECOND_HEAVY.get(), new ItemStack(ModItems.TUNGSTEN_RAW.get(), 9), new ItemStack(ModItems.LEAD_RAW.get(), 18), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_HEAVY.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_SULFURIC_WASHED_HEAVY.get(), new ItemStack(net.minecraft.world.item.Items.RAW_GOLD, 2), new ItemStack(net.minecraft.world.item.Items.RAW_GOLD, 2), new ItemStack(ModItems.BERYLLIUM_RAW.get(), 3));
+        addItemRecipe(ModItems.BEDROCK_ORE_SOLVENT_WASHED_HEAVY.get(), new ItemStack(ModItems.TUNGSTEN_RAW.get(), 9), new ItemStack(ModItems.LEAD_RAW.get(), 9), new ItemStack(net.minecraft.world.item.Items.RAW_GOLD, 5));
+        addItemRecipe(ModItems.BEDROCK_ORE_RAD_WASHED_HEAVY.get(), new ItemStack(ingot(ModIngots.BISMUTH), 2), new ItemStack(ingot(ModIngots.TANTALIUM), 2), new ItemStack(net.minecraft.world.item.Items.RAW_GOLD, 6));
+
+        // ---- Bedrock Ore chain: RARE ----
+        addItemRecipe(ModItems.BEDROCK_ORE_BASE_RARE.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_RARE.get()), new ItemStack(Items.GRAVEL));
+        addItemRecipe(ModItems.BEDROCK_ORE_BASE_ROASTED_RARE.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_RARE.get()), new ItemStack(Items.GRAVEL));
+        addItemRecipe(ModItems.BEDROCK_ORE_BASE_WASHED_RARE.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_RARE.get(), 2), new ItemStack(Items.GRAVEL));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_RARE.get(), new ItemStack(ModItems.COBALT_RAW.get(), 5), new ItemStack(ModItems.RAREEARTH_RAW.get(), 5));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_ROASTED_RARE.get(), new ItemStack(ModItems.COBALT_RAW.get(), 5), new ItemStack(ModItems.RAREEARTH_RAW.get(), 5));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_SULFURIC_RARE.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_RARE.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_RARE.get(), 2));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_SOLVENT_RARE.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_RARE.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_RARE.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_RARE.get(), 2));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_RAD_RARE.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_NORAD_RARE.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_RARE.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_RARE.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_RAD_BYPRODUCT_RARE.get(), 2));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_RARE.get(), new ItemStack(ModItems.COBALT_RAW.get(), 5), new ItemStack(ModItems.RAREEARTH_RAW.get(), 5), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_RARE.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_RARE.get(), new ItemStack(ModItems.COBALT_RAW.get(), 5), new ItemStack(ModItems.RAREEARTH_RAW.get(), 5), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_RARE.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_NORAD_RARE.get(), new ItemStack(ModItems.COBALT_RAW.get(), 5), new ItemStack(ModItems.RAREEARTH_RAW.get(), 5), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_RARE.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_FIRST_RARE.get(), new ItemStack(ModItems.COBALT_RAW.get(), 10), new ItemStack(ModItems.RAREEARTH_RAW.get(), 5), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_RARE.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_SECOND_RARE.get(), new ItemStack(ModItems.COBALT_RAW.get(), 5), new ItemStack(ModItems.RAREEARTH_RAW.get(), 10), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_RARE.get()));
+        // Original: acid=BORON,LANTHANIUM,NIOBIUM; solvent=NEODYMIUM,STRONTIUM,ZIRCONIUM; rad=NIOBIUM,NEODYMIUM,STRONTIUM
+        addItemRecipe(ModItems.BEDROCK_ORE_SULFURIC_WASHED_RARE.get(), new ItemStack(ingot(ModIngots.BORON), 5), new ItemStack(ingot(ModIngots.LANTHANIUM), 3), new ItemStack(ingot(ModIngots.NIOBIUM), 4));
+        addItemRecipe(ModItems.BEDROCK_ORE_SOLVENT_WASHED_RARE.get(), new ItemStack(ingot(ModIngots.NEODYMIUM), 3), new ItemStack(ingot(ModIngots.STRONTIUM), 3), new ItemStack(ingot(ModIngots.ZIRCONIUM), 3));
+        addItemRecipe(ModItems.BEDROCK_ORE_RAD_WASHED_RARE.get(), new ItemStack(ingot(ModIngots.NIOBIUM), 5), new ItemStack(ingot(ModIngots.NEODYMIUM), 5), new ItemStack(ingot(ModIngots.STRONTIUM), 3));
+
+        // ---- Bedrock Ore chain: ACTINIDE ----
+        addItemRecipe(ModItems.BEDROCK_ORE_BASE_ACTINIDE.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_ACTINIDE.get()), new ItemStack(Items.GRAVEL));
+        addItemRecipe(ModItems.BEDROCK_ORE_BASE_ROASTED_ACTINIDE.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_ACTINIDE.get()), new ItemStack(Items.GRAVEL));
+        addItemRecipe(ModItems.BEDROCK_ORE_BASE_WASHED_ACTINIDE.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_ACTINIDE.get(), 2), new ItemStack(Items.GRAVEL));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_ACTINIDE.get(), new ItemStack(ModItems.URANIUM_RAW.get(), 4), new ItemStack(ModItems.THORIUM_RAW.get(), 4));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_ROASTED_ACTINIDE.get(), new ItemStack(ModItems.URANIUM_RAW.get(), 4), new ItemStack(ModItems.THORIUM_RAW.get(), 4));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_SULFURIC_ACTINIDE.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_ACTINIDE.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_ACTINIDE.get(), 2));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_SOLVENT_ACTINIDE.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_ACTINIDE.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_ACTINIDE.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_ACTINIDE.get(), 2));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_RAD_ACTINIDE.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_NORAD_ACTINIDE.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_ACTINIDE.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_ACTINIDE.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_RAD_BYPRODUCT_ACTINIDE.get(), 2));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_ACTINIDE.get(), new ItemStack(ModItems.URANIUM_RAW.get(), 4), new ItemStack(ModItems.THORIUM_RAW.get(), 4), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_ACTINIDE.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_ACTINIDE.get(), new ItemStack(ModItems.URANIUM_RAW.get(), 4), new ItemStack(ModItems.THORIUM_RAW.get(), 4), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_ACTINIDE.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_NORAD_ACTINIDE.get(), new ItemStack(ModItems.URANIUM_RAW.get(), 4), new ItemStack(ModItems.THORIUM_RAW.get(), 4), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_ACTINIDE.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_FIRST_ACTINIDE.get(), new ItemStack(ModItems.URANIUM_RAW.get(), 8), new ItemStack(ModItems.THORIUM_RAW.get(), 4), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_ACTINIDE.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_SECOND_ACTINIDE.get(), new ItemStack(ModItems.URANIUM_RAW.get(), 4), new ItemStack(ModItems.THORIUM_RAW.get(), 8), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_ACTINIDE.get()));
+        // Original: acid=RADIUM,RADIUM,POLONIUM; solvent=RADIUM,RADIUM,POLONIUM; rad=TECHNETIUM,TECHNETIUM,U238
+        addItemRecipe(ModItems.BEDROCK_ORE_SULFURIC_WASHED_ACTINIDE.get(), new ItemStack(ModItems.RADIUM_RAW.get(), 2), new ItemStack(ModItems.BILLET_POLONIUM.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_SOLVENT_WASHED_ACTINIDE.get(), new ItemStack(ModItems.RADIUM_RAW.get(), 2), new ItemStack(ModItems.BILLET_POLONIUM.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_RAD_WASHED_ACTINIDE.get(), new ItemStack(ModItems.BILLET_TECHNETIUM.get(), 2), new ItemStack(ModItems.BILLET_U238.get()));
+
+        // ---- Bedrock Ore chain: NONMETAL ----
+        addItemRecipe(ModItems.BEDROCK_ORE_BASE_NONMETAL.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_NONMETAL.get()), new ItemStack(Items.GRAVEL));
+        addItemRecipe(ModItems.BEDROCK_ORE_BASE_ROASTED_NONMETAL.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_NONMETAL.get()), new ItemStack(Items.GRAVEL));
+        addItemRecipe(ModItems.BEDROCK_ORE_BASE_WASHED_NONMETAL.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_NONMETAL.get(), 2), new ItemStack(Items.GRAVEL));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_NONMETAL.get(), new ItemStack(net.minecraft.world.item.Items.COAL, 9), new ItemStack(ModItems.SULFUR.get(), 9));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_ROASTED_NONMETAL.get(), new ItemStack(net.minecraft.world.item.Items.COAL, 9), new ItemStack(ModItems.SULFUR.get(), 9));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_SULFURIC_NONMETAL.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_NONMETAL.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_NONMETAL.get(), 2));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_SOLVENT_NONMETAL.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_NONMETAL.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_NONMETAL.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_NONMETAL.get(), 2));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_RAD_NONMETAL.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_NORAD_NONMETAL.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_NONMETAL.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_NONMETAL.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_RAD_BYPRODUCT_NONMETAL.get(), 2));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_NONMETAL.get(), new ItemStack(net.minecraft.world.item.Items.COAL, 9), new ItemStack(ModItems.SULFUR.get(), 9), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_NONMETAL.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_NONMETAL.get(), new ItemStack(net.minecraft.world.item.Items.COAL, 9), new ItemStack(ModItems.SULFUR.get(), 9), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_NONMETAL.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_NORAD_NONMETAL.get(), new ItemStack(net.minecraft.world.item.Items.COAL, 9), new ItemStack(ModItems.SULFUR.get(), 9), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_NONMETAL.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_FIRST_NONMETAL.get(), new ItemStack(net.minecraft.world.item.Items.COAL, 18), new ItemStack(ModItems.SULFUR.get(), 9), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_NONMETAL.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_SECOND_NONMETAL.get(), new ItemStack(net.minecraft.world.item.Items.COAL, 9), new ItemStack(ModItems.SULFUR.get(), 18), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_NONMETAL.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_SULFURIC_WASHED_NONMETAL.get(), new ItemStack(ModItems.LIGNITE.get(), 9), new ItemStack(ModItems.SALTPETER.get(), 6), new ItemStack(ModItems.FLUORITE.get(), 6));
+        addItemRecipe(ModItems.BEDROCK_ORE_SOLVENT_WASHED_NONMETAL.get(), new ItemStack(ModItems.CRYSTAL_PHOSPHORUS.get(), 5), new ItemStack(ModItems.FLUORITE.get(), 6), new ItemStack(ModItems.SULFUR.get(), 6));
+        // Original rad=CHLOROCALCITE,SILICON,SILICON
+        addItemRecipe(ModItems.BEDROCK_ORE_RAD_WASHED_NONMETAL.get(), new ItemStack(ModItems.POWDER_CHLOROCALCITE.get(), 6), new ItemStack(ingot(ModIngots.SILICON), 2), new ItemStack(ingot(ModIngots.SILICON), 2));
+
+        // ---- Bedrock Ore chain: CRYSTAL ----
+        addItemRecipe(ModItems.BEDROCK_ORE_BASE_CRYSTAL.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_CRYSTAL.get()), new ItemStack(Items.GRAVEL));
+        addItemRecipe(ModItems.BEDROCK_ORE_BASE_ROASTED_CRYSTAL.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_CRYSTAL.get()), new ItemStack(Items.GRAVEL));
+        addItemRecipe(ModItems.BEDROCK_ORE_BASE_WASHED_CRYSTAL.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_CRYSTAL.get(), 2), new ItemStack(Items.GRAVEL));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_CRYSTAL.get(), new ItemStack(net.minecraft.world.item.Items.REDSTONE, 9), new ItemStack(ModItems.CINNABAR.get(), 4));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_ROASTED_CRYSTAL.get(), new ItemStack(net.minecraft.world.item.Items.REDSTONE, 9), new ItemStack(ModItems.CINNABAR.get(), 4));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_SULFURIC_CRYSTAL.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_CRYSTAL.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_CRYSTAL.get(), 2));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_SOLVENT_CRYSTAL.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_CRYSTAL.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_CRYSTAL.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_CRYSTAL.get(), 2));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_RAD_CRYSTAL.get(), new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_NORAD_CRYSTAL.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_CRYSTAL.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_CRYSTAL.get(), 2), new ItemStack(ModItems.BEDROCK_ORE_RAD_BYPRODUCT_CRYSTAL.get(), 2));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_CRYSTAL.get(), new ItemStack(net.minecraft.world.item.Items.REDSTONE, 9), new ItemStack(ModItems.CINNABAR.get(), 4), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_CRYSTAL.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_CRYSTAL.get(), new ItemStack(net.minecraft.world.item.Items.REDSTONE, 9), new ItemStack(ModItems.CINNABAR.get(), 4), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_CRYSTAL.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_NORAD_CRYSTAL.get(), new ItemStack(net.minecraft.world.item.Items.REDSTONE, 9), new ItemStack(ModItems.CINNABAR.get(), 4), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_CRYSTAL.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_FIRST_CRYSTAL.get(), new ItemStack(net.minecraft.world.item.Items.REDSTONE, 18), new ItemStack(ModItems.CINNABAR.get(), 4), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_CRYSTAL.get()));
+        addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_SECOND_CRYSTAL.get(), new ItemStack(net.minecraft.world.item.Items.REDSTONE, 9), new ItemStack(ModItems.CINNABAR.get(), 8), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_CRYSTAL.get()));
+        // Original: acid=SODALITE,ASBESTOS,DIAMOND; solvent=CINNABAR,ASBESTOS,EMERALD
+        addItemRecipe(ModItems.BEDROCK_ORE_SULFURIC_WASHED_CRYSTAL.get(), new ItemStack(ModItems.GEM_SODALITE.get(), 9), new ItemStack(ingot(ModIngots.ASBESTOS), 6), new ItemStack(net.minecraft.world.item.Items.DIAMOND, 3));
+        addItemRecipe(ModItems.BEDROCK_ORE_SOLVENT_WASHED_CRYSTAL.get(), new ItemStack(ModItems.CINNABAR.get(), 3), new ItemStack(ingot(ModIngots.ASBESTOS), 5), new ItemStack(net.minecraft.world.item.Items.EMERALD, 3));
+        addItemRecipe(ModItems.BEDROCK_ORE_RAD_WASHED_CRYSTAL.get(), new ItemStack(ModItems.BORAX.get(), 3), new ItemStack(ModItems.MOLYSITE.get(), 3), new ItemStack(ModItems.GEM_SODALITE.get(), 9));
+
         // Blaze Rod
         addItemRecipe(Items.BLAZE_ROD,
             new ItemStack(Items.BLAZE_POWDER, 1),
@@ -408,6 +527,10 @@ public class CentrifugeRecipes {
     }
 
     // Helper methods
+    private static Item ingot(ModIngots ingot) {
+        return ModItems.getIngot(ingot).get();
+    }
+
     private static ItemStack stack(String itemId, int count) {
         ResourceLocation loc = ResourceLocation.tryParse(itemId);
         if (loc == null) return ItemStack.EMPTY;

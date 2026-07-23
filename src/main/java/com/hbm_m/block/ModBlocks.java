@@ -52,6 +52,7 @@ import com.hbm_m.block.machines.MachineBatterySocketBlock;
 import com.hbm_m.block.machines.MachineBreederBlock;
 import com.hbm_m.block.machines.MachineCatalyticReformerBlock;
 import com.hbm_m.block.machines.MachineCentrifugeBlock;
+import com.hbm_m.block.machines.MachineCombinationOvenBlock;
 import com.hbm_m.block.machines.MachineChemicalFactoryBlock;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.block.machines.MachineTowerLargeBlock;
@@ -79,6 +80,7 @@ import com.hbm_m.block.machines.MachineLargePylonBlock;
 import com.hbm_m.block.machines.MachineLiquefactorBlock;
 import com.hbm_m.block.machines.MachineMiningDrillBlock;
 import com.hbm_m.block.machines.MachineMixerBlock;
+import com.hbm_m.block.machines.MachineOreSlopperBlock;
 import com.hbm_m.block.machines.MachinePressBlock;
 import com.hbm_m.block.machines.MachinePumpjackBlock;
 import com.hbm_m.block.machines.MachineLargeRadarBlock;
@@ -1004,6 +1006,10 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> ORE_BEDROCK_OIL = registerBlock("ore_bedrock_oil",
             () -> new Block(Block.Properties.copy(Blocks.BEDROCK)));
+
+    /** Mineralisches Bedrock-Erz (Mining-Drill-Ziel), siehe {@link com.hbm_m.block.nature.OreBedrockBlock}. */
+    public static final RegistrySupplier<Block> ORE_BEDROCK = registerBlock("ore_bedrock_mineral",
+            () -> new com.hbm_m.block.nature.OreBedrockBlock(Block.Properties.copy(Blocks.BEDROCK)));
 
     public static final RegistrySupplier<Block> DEPTH_STONE = registerBlock("depth_stone",
             () -> new DepthOreBlock(Block.Properties.copy(Blocks.DEEPSLATE).strength(4.5F, 6.0F).noOcclusion()));
@@ -2303,7 +2309,7 @@ public class ModBlocks {
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
     public static final RegistrySupplier<Block> ARC_FURNACE = registerBlock("arc_furnace",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+            () -> new com.hbm_m.block.machines.MachineArcFurnaceBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
     public static final RegistrySupplier<Block> ASSEMBLY_FACTORY = registerBlock("assembly_factory",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
@@ -2339,7 +2345,7 @@ public class ModBlocks {
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
     public static final RegistrySupplier<Block> COMBINATION_OVEN = registerBlock("combination_oven",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+            () -> new MachineCombinationOvenBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
     public static final RegistrySupplier<Block> COMBUSTION_ENGINE = registerBlock("combustion_engine",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
@@ -2432,7 +2438,7 @@ public class ModBlocks {
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
     public static final RegistrySupplier<Block> ORE_SLOPPER = registerBlock("ore_slopper",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+            () -> new MachineOreSlopperBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
     public static final RegistrySupplier<Block> PLASMA_FORGE = registerBlock("plasma_forge",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));

@@ -53,15 +53,30 @@ public class MachineMiningDrillBlock extends BaseEntityBlock implements IMultibl
     }
 
     /**
-     * Original-Java-Quelle (TileEntityMachineDrill/BlockMachineDrill) existiert im verfuegbaren
-     * 1.7.10-Checkout nicht (nur das OBJ-Modell). Dessen Bounding-Box (~7x8x7 Einheiten) zeigt aber
-     * eindeutig, dass die alte 1x1x4-Saeule viel zu schmal war - 3x3-Grundflaeche ist eine
-     * plausible Annaeherung an die tatsaechliche Modellgroesse, aber NICHT aus Originalquelle bestaetigt.
+     * Nachgebaut aus der 1.7.10-Originalquelle (MachineExcavator extends BlockDummyable):
+     * {@code getDimensions() = {3, 0, 3, 3, 3, 3}} (west/sued/ost/nord je 3, unten 0, oben 3) ergibt
+     * eine 7x4x7-Huelle um den Anker. Die oberen ~4.75 OBJ-Einheiten von "Main" ragen rein optisch
+     * darueber hinaus (im Original nur per {@code getRenderBoundingBox} abgedeckt, keine Kollision).
      */
     private static MultiblockStructureHelper defineStructure() {
-        String[] layer0 = { "OOO", "OCO", "OOO" };
-        String[] layer1 = { "OOO", "OOO", "OOO" };
-        String[] layer2 = { "OOO", "OOO", "OOO" };
+        String[] controllerLayer = {
+            "OOOOOOO",
+            "OOOOOOO",
+            "OOOOOOO",
+            "OOOCOOO",
+            "OOOOOOO",
+            "OOOOOOO",
+            "OOOOOOO"
+        };
+        String[] fillerLayer = {
+            "OOOOOOO",
+            "OOOOOOO",
+            "OOOOOOO",
+            "OOOOOOO",
+            "OOOOOOO",
+            "OOOOOOO",
+            "OOOOOOO"
+        };
 
         Map<Character, PartRole> roleMap = Map.of(
                 'O', PartRole.DEFAULT,
@@ -71,7 +86,7 @@ public class MachineMiningDrillBlock extends BaseEntityBlock implements IMultibl
         Map<Character, Supplier<BlockState>> symbolMap = Map.of();
 
         return MultiblockStructureHelper.createFromLayersWithRoles(
-                new String[][] { layer0, layer1, layer2 },
+                new String[][] { controllerLayer, fillerLayer, fillerLayer, fillerLayer },
                 symbolMap,
                 () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
                 roleMap,

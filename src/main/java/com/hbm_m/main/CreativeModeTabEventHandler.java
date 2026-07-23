@@ -992,6 +992,13 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.SCHRABIDIUM_ORE_GNEISS.get()));
         add.accept(new ItemStack(ModBlocks.BLOCK_SCHRABIDIUM_CLUSTER.get()));
 
+        // Bedrock-Ore-Progression (Mining Drill): Rohprodukt + alle 156 Veredelungsstufen.
+        add.accept(new ItemStack(ModItems.BEDROCK_ORE_FRAGMENT.get()));
+        add.accept(new ItemStack(ModItems.BEDROCK_ORE_BASE.get()));
+        for (RegistrySupplier<Item> variant : ModItems.BEDROCK_ORE_ALL_VARIANTS) {
+            add.accept(new ItemStack(variant.get()));
+        }
+
         add.accept(new ItemStack(ModBlocks.RESOURCE_ASBESTOS.get()));
         add.accept(new ItemStack(ModBlocks.RESOURCE_BAUXITE.get()));
         add.accept(new ItemStack(ModBlocks.RESOURCE_HEMATITE.get()));
@@ -1009,6 +1016,13 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.TITANIUM_RAW.get()));
         add.accept(new ItemStack(ModItems.TUNGSTEN_RAW.get()));
         add.accept(new ItemStack(ModItems.URANIUM_RAW.get()));
+        add.accept(new ItemStack(ModItems.RADIUM_RAW.get()));
+        add.accept(new ItemStack(ModItems.SALTPETER.get()));
+        add.accept(new ItemStack(ModItems.CRYOLITE.get()));
+        add.accept(new ItemStack(ModItems.MOLYSITE.get()));
+        add.accept(new ItemStack(ModItems.RAREEARTH_RAW.get()));
+        add.accept(new ItemStack(ModItems.POWDER_CHLOROCALCITE.get()));
+        add.accept(new ItemStack(ModItems.POWDER_SODIUM.get()));
 
         add.accept(new ItemStack(ModBlocks.METEOR.get()));
         add.accept(new ItemStack(ModBlocks.METEOR_COBBLE.get()));
