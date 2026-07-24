@@ -11,6 +11,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 
+import java.util.Locale;
+
 /**
  * Апгрейд машины — порт ItemMachineUpgrade из 1.7.10.
  *
@@ -29,7 +31,9 @@ public class ItemMachineUpgrade extends Item {
         OVERDRIVE;
 
         public String getTranslationKeySuffix() {
-            return name().toLowerCase();
+            // Locale.ROOT: OVERDRIVE would lowercase to a dotless i under a Turkish locale,
+            // producing a translation key that matches nothing in the lang files.
+            return name().toLowerCase(Locale.ROOT);
         }
     }
 

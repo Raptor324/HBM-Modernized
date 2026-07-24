@@ -36,6 +36,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+
+import java.util.Locale;
 //? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
@@ -331,7 +333,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         if (entity instanceof IRadarDetectable detectable) {
             return detectable.getTargetType() != IRadarDetectable.RadarTargetType.PLAYER;
         }
-        String name = entity.getType().toString().toLowerCase();
+        String name = entity.getType().toString().toLowerCase(Locale.ROOT);
         return name.contains("missile")
                 || name.contains("rocket")
                 || name.contains("airstrike")
@@ -344,8 +346,8 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             return false;
         }
 
-        String typeName = living.getType().toString().toLowerCase();
-        String displayName = living.getName().getString().toLowerCase();
+        String typeName = living.getType().toString().toLowerCase(Locale.ROOT);
+        String displayName = living.getName().getString().toLowerCase(Locale.ROOT);
         return typeName.contains("digamma")
                 || typeName.contains("jam")
                 || displayName.contains("digamma")

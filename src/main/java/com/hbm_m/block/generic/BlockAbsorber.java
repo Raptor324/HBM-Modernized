@@ -18,6 +18,7 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.storage.loot.LootParams;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Поглотитель радиации с четырьмя уровнями (порт {@link com.hbm.blocks.generic.BlockAbsorber} 1.7.10).
@@ -49,7 +50,10 @@ public class BlockAbsorber extends Block {
 
         @Override
         public String getSerializedName() {
-            return name().toLowerCase();
+            // Locale.ROOT is required: this value becomes a blockstate property name, which
+            // Minecraft validates against [a-z0-9_]. Under a Turkish locale the default
+            // toLowerCase() maps PINK -> "pdotless-i-nk", failing registration of every block.
+            return name().toLowerCase(Locale.ROOT);
         }
     }
 

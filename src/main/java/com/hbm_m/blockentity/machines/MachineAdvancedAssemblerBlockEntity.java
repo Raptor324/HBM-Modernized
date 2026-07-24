@@ -815,14 +815,14 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         return clientTicker != null ? clientTicker.getArms() : new AdvancedAssemblerClientTicker.AssemblerArm[0];
     }
 
-    @Environment(EnvType.CLIENT)
+    // NOTE: no @Environment(EnvType.CLIENT) on these fields -- see the Forge branch below;
+    // an annotated field is stripped on a dedicated server while the constructor's PUTFIELD
+    // survives, producing NoSuchFieldError on block entity creation.
     @Nullable
     private ResourceLocation clientRecipeIconCacheId;
 
-    @Environment(EnvType.CLIENT)
     private ItemStack clientRecipeIconCache = ItemStack.EMPTY;
 
-    @Environment(EnvType.CLIENT)
     public ItemStack getClientRecipeIcon() {
         ResourceLocation id = selectedRecipeId;
         if (id == null) {
@@ -849,15 +849,16 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     *///?}
 
     //? if forge {
-    @OnlyIn(Dist.CLIENT)
+    // NOTE: no @OnlyIn(Dist.CLIENT) on these fields. Field initializers are compiled into the
+    // constructor, which is not side-stripped, so an annotated field would be removed on a
+    // dedicated server while its PUTFIELD survives -> NoSuchFieldError on block entity creation.
+    // These are only ever read from the client renderer; on a server they just stay empty.
     @Nullable
     private ResourceLocation clientRecipeIconCacheId;
 
-    @OnlyIn(Dist.CLIENT)
     private ItemStack clientRecipeIconCache = ItemStack.EMPTY;
 
     /** Cached recipe output icon for BER; refreshed when {@link #selectedRecipeId} changes. */
-    @OnlyIn(Dist.CLIENT)
     public ItemStack getClientRecipeIcon() {
         ResourceLocation id = selectedRecipeId;
         if (id == null) {

@@ -19,6 +19,8 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 
+import java.util.Locale;
+
 /**
  * Тепловизор (FULL_SHADER): общий обработчик состояния/шейдера.
  *
@@ -231,7 +233,7 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
 
         @Override
         public com.mojang.blaze3d.vertex.VertexConsumer getBuffer(net.minecraft.client.renderer.RenderType type) {
-            String name = type.toString().toLowerCase();
+            String name = type.toString().toLowerCase(Locale.ROOT);
 
             // Тени/шлейфы/глинт и прочее лишнее нам не нужно в тепловизоре.
             // Возвращаем noOp, чтобы ItemRenderer не создавал дублирующиеся VertexMultiConsumer'ы
