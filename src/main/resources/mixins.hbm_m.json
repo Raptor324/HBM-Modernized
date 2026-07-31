@@ -18,7 +18,8 @@
     "LightTextureMixin",
     "ModelBlockRendererMixin",
     "LivingEntityRendererInvoker",
-    "client.MixinItemRendererTemplatePreview"
+    "client.MixinItemRendererTemplatePreview",
+    "client.MixinAbstractClientPlayerSkin"
   ],
   "injectors": {
     "defaultRequire": 1

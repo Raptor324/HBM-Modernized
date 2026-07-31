@@ -1,6 +1,5 @@
-﻿# Blender v2.79 (sub 0) OBJ File: 'vacuum_distill.blend'
+# Blender v2.79 (sub 0) OBJ File: 'vacuum_distill.blend'
 # www.blender.org
-mtllib vacuum_distill.mtl
 o Cylinder
 v 0.000000 2.250000 -1.500000
 v 0.000000 5.750000 -1.500000
@@ -3405,7 +3404,6 @@ vn -0.1319 0.9824 0.1319
 vn 0.6099 -0.6737 0.4172
 vn 0.6630 0.5294 0.5293
 s off
-usemtl default
 f 140/1/1 136/2/1 132/3/1
 f 146/4/1 151/5/1 147/6/1
 f 148/7/1 150/8/1 146/4/1

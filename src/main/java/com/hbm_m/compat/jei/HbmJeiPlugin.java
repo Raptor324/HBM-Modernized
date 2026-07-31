@@ -17,6 +17,8 @@ import com.hbm_m.inventory.gui.GUIMachineArcWelder;
 import com.hbm_m.inventory.gui.GUIMachineSolderingStation;
 import com.hbm_m.inventory.gui.GUIMachineCrystallizer;
 import com.hbm_m.inventory.gui.GUIMachinePress;
+import com.hbm_m.inventory.gui.GUIMachineShredder;
+import com.hbm_m.inventory.gui.GUIBlastFurnace;
 import com.hbm_m.inventory.recipes.ArcWelderRecipes;
 import com.hbm_m.inventory.recipes.SolderingRecipes;
 import com.hbm_m.item.BlockAbsorberItem;
@@ -24,6 +26,9 @@ import com.hbm_m.item.ModItems;
 import com.hbm_m.recipe.AnvilRecipe;
 import com.hbm_m.recipe.AnvilRecipeManager;
 import com.hbm_m.recipe.AssemblerRecipe;
+import com.hbm_m.recipe.PressRecipe;
+import com.hbm_m.recipe.ShredderRecipe;
+import com.hbm_m.recipe.BlastFurnaceRecipe;
 import com.hbm_m.recipe.CrucibleAlloyingRecipe;
 import com.hbm_m.recipe.CrucibleAlloyingRecipes;
 import com.hbm_m.recipe.CrucibleMoldRecipes;
@@ -89,6 +94,9 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCategories(new SolderingStationJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new CrystallizerJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new PressJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new ShredderJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new BlastFurnaceJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new GasCentrifugeJeiCategory(registration.getJeiHelpers().getGuiHelper()));
     }
 
     @Override
@@ -107,6 +115,9 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipes(SolderingStationJeiCategory.RECIPE_TYPE, SolderingStationJeiRecipe.fromRecipes());
         registration.addRecipes(CrystallizerJeiCategory.RECIPE_TYPE, CrystallizerJeiRecipe.fromAll());
         registration.addRecipes(PressJeiCategory.RECIPE_TYPE, getPressRecipes());
+        registration.addRecipes(ShredderJeiCategory.RECIPE_TYPE, getShredderRecipes());
+        registration.addRecipes(BlastFurnaceJeiCategory.RECIPE_TYPE, getBlastFurnaceRecipes());
+        registration.addRecipes(GasCentrifugeJeiCategory.RECIPE_TYPE, GasCentrifugeJeiCategory.getDefaultRecipes());
     }
 
     @Override
@@ -128,6 +139,9 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.SOLDERING_STATION.get()), SolderingStationJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CRYSTALLIZER.get()), CrystallizerJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModItems.PRESS.get()), PressJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.SHREDDER.get()), ShredderJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.BLAST_FURNACE.get()), BlastFurnaceJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.GAS_CENTRIFUGE.get()), GasCentrifugeJeiCategory.RECIPE_TYPE);
     }
 
     @Override
@@ -155,6 +169,10 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeClickArea(GUIMachineCrystallizer.class, 80, 39, 33, 14, CrystallizerJeiCategory.RECIPE_TYPE);
         // Press — matches legacy NEI transfer rect: new Rectangle(74 + 6 + 18, 23, 24, 18)
         registration.addRecipeClickArea(GUIMachinePress.class, 98, 23, 24, 18, PressJeiCategory.RECIPE_TYPE);
+        // Shredder: progress arrow area
+        registration.addRecipeClickArea(GUIMachineShredder.class, 63, 89, 34, 18, ShredderJeiCategory.RECIPE_TYPE);
+        // Blast Furnace: progress arrow area
+        registration.addRecipeClickArea(GUIBlastFurnace.class, 101, 35, 24, 17, BlastFurnaceJeiCategory.RECIPE_TYPE);
     }
 
     @Override
@@ -309,6 +327,22 @@ public class HbmJeiPlugin implements IModPlugin {
                     inputs.isEmpty() ? ItemStack.EMPTY : inputs.get(0), outputs));
         }
         return result;
+    }
+
+    private static List<ShredderRecipe> getShredderRecipes() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) {
+            return List.of();
+        }
+        return mc.level.getRecipeManager().getAllRecipesFor(ShredderRecipe.Type.INSTANCE);
+    }
+
+    private static List<BlastFurnaceRecipe> getBlastFurnaceRecipes() {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) {
+            return List.of();
+        }
+        return mc.level.getRecipeManager().getAllRecipesFor(BlastFurnaceRecipe.Type.INSTANCE);
     }
 
     private static void ensureCrucibleFallbackRecipes() {

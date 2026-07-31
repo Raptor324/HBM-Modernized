@@ -13,15 +13,9 @@ import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 
-import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.MenuProvider;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -36,7 +30,6 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
-import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -147,11 +140,8 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
             EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
 
             for (BlockPos gridPos : structureHelper.getStructureMap().keySet()) {
-                PartRole role = structureHelper.resolvePartRole(gridPos, this);
-                if (role.canReceiveEnergy()) {
-                    BlockPos worldPos = structureHelper.getRotatedPos(pos, gridPos, facing);
-                    EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
-                }
+                BlockPos worldPos = structureHelper.getRotatedPos(pos, gridPos, facing);
+                EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
             }
 
             BlockEntity blockEntity = level.getBlockEntity(pos);
@@ -168,16 +158,6 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineIndustrialTurbineBlockEntity(pos, state);
-    }
-
-    @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!level.isClientSide()) {
-            if (level.getBlockEntity(pos) instanceof MenuProvider provider) {
-                MenuRegistry.openExtendedMenu((ServerPlayer) player, provider, buf -> buf.writeBlockPos(pos));
-            }
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
     @Nullable

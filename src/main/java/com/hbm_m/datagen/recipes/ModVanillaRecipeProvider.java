@@ -66,6 +66,215 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         registerPowderCooking(writer);
         registerOreAndRawCooking(writer);
         registerMeteoriteSword(writer);
+        registerBilletNuggetPairs(writer);
+        registerTurretRecipes(writer);
+    }
+
+    //Sentry-Turret + MVP-Munition (Original-Rezept aus WeaponRecipes.java, GUNMETAL.mechanism() -> generisches PART_MECHANISM)
+    private void registerTurretRecipes(Consumer<FinishedRecipe> writer) {
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModBlocks.TURRET_SENTRY.get())
+                .pattern("PPL")
+                .pattern(" MD")
+                .pattern(" SC")
+                .define('P', ModItems.PLATE_STEEL.get())
+                .define('M', ModItems.MOTOR.get())
+                .define('L', ModItems.PART_MECHANISM.get())
+                .define('S', ModBlocks.STEEL_SCAFFOLD.get())
+                .define('C', ModItems.SILICON_CIRCUIT.get())
+                .define('D', ModItems.CRT_DISPLAY.get())
+                .unlockedBy(getHasName(ModItems.CRT_DISPLAY.get()), has(ModItems.CRT_DISPLAY.get()))
+                .save(writer, recipeId("crafting/turret_sentry"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.TURRET_AMMO.get(), 8)
+                .pattern("L")
+                .pattern("G")
+                .pattern("C")
+                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('G', Items.GUNPOWDER)
+                .define('C', ModItems.CASING_BAG.get())
+                .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
+                .save(writer, recipeId("crafting/turret_ammo"));
+
+        // 9mm-Munition fuer den Sentry-Turret (Original hatte hierfuer keine dokumentierten Table-Rezepte -
+        // plausible Annaeherung analog turret_ammo, siehe TurretBaseBlockEntity#isAcceptedAmmo).
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_9MM_SP.get(), 12)
+                .pattern("L")
+                .pattern("G")
+                .pattern("C")
+                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('G', Items.GUNPOWDER)
+                .define('C', ModItems.CASING_BAG.get())
+                .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
+                .save(writer, recipeId("crafting/ammo_9mm_sp"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_9MM_JHP.get(), 12)
+                .pattern("L")
+                .pattern("G")
+                .pattern("C")
+                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('G', Items.GUNPOWDER)
+                .define('C', ModItems.CASING_BAG.get())
+                .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
+                .save(writer, recipeId("crafting/ammo_9mm_jhp"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_9MM_FMJ.get(), 12)
+                .pattern("L")
+                .pattern("I")
+                .pattern("C")
+                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('I', Items.IRON_INGOT)
+                .define('C', ModItems.CASING_BAG.get())
+                .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
+                .save(writer, recipeId("crafting/ammo_9mm_fmj"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_9MM_AP.get(), 12)
+                .pattern("L")
+                .pattern("I")
+                .pattern("C")
+                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('I', Items.IRON_INGOT)
+                .define('C', ModItems.CASING_BAG.get())
+                .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
+                .save(writer, recipeId("crafting/ammo_9mm_ap"));
+
+        // .50 BMG-Munition fuer den Chekhov-Turret
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_50_SP.get(), 8)
+                .pattern("L").pattern("G").pattern("C")
+                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('G', Items.GUNPOWDER)
+                .define('C', ModItems.CASING_BAG.get())
+                .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
+                .save(writer, recipeId("crafting/ammo_50_sp"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_50_JHP.get(), 8)
+                .pattern("L").pattern("G").pattern("C")
+                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('G', Items.GUNPOWDER)
+                .define('C', ModItems.CASING_BAG.get())
+                .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
+                .save(writer, recipeId("crafting/ammo_50_jhp"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_50_FMJ.get(), 8)
+                .pattern("L").pattern("I").pattern("C")
+                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('I', Items.IRON_INGOT)
+                .define('C', ModItems.CASING_BAG.get())
+                .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
+                .save(writer, recipeId("crafting/ammo_50_fmj"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_50_AP.get(), 8)
+                .pattern("L").pattern("I").pattern("C")
+                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('I', Items.IRON_INGOT)
+                .define('C', ModItems.CASING_BAG.get())
+                .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
+                .save(writer, recipeId("crafting/ammo_50_ap"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_50_DU.get(), 8)
+                .pattern("L").pattern("I").pattern("C")
+                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('I', ModItems.getIngot(ModIngots.URANIUM238).get())
+                .define('C', ModItems.CASING_BAG.get())
+                .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
+                .save(writer, recipeId("crafting/ammo_50_du"));
+
+        // 5.56mm-Munition fuer den Friendly-Turret
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_556_SP.get(), 12)
+                .pattern("L").pattern("G").pattern("C")
+                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('G', Items.GUNPOWDER)
+                .define('C', ModItems.CASING_BAG.get())
+                .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
+                .save(writer, recipeId("crafting/ammo_556_sp"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_556_JHP.get(), 12)
+                .pattern("L").pattern("G").pattern("C")
+                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('G', Items.GUNPOWDER)
+                .define('C', ModItems.CASING_BAG.get())
+                .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
+                .save(writer, recipeId("crafting/ammo_556_jhp"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_556_FMJ.get(), 12)
+                .pattern("L").pattern("I").pattern("C")
+                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('I', Items.IRON_INGOT)
+                .define('C', ModItems.CASING_BAG.get())
+                .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
+                .save(writer, recipeId("crafting/ammo_556_fmj"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_556_AP.get(), 12)
+                .pattern("L").pattern("I").pattern("C")
+                .define('L', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('I', Items.IRON_INGOT)
+                .define('C', ModItems.CASING_BAG.get())
+                .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
+                .save(writer, recipeId("crafting/ammo_556_ap"));
+
+        // Gelenkte Raketen fuer Richard/Himars-Turret (Original hatte hierfuer keine dokumentierten
+        // Table-Rezepte - plausible Annaeherung, siehe TurretRocketEntity).
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.ROCKET_TURRET_STANDARD.get())
+                .pattern(" P ")
+                .pattern(" M ")
+                .pattern(" G ")
+                .define('P', ModItems.PLATE_STEEL.get())
+                .define('M', ModItems.MOTOR.get())
+                .define('G', Items.GUNPOWDER)
+                .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
+                .save(writer, recipeId("crafting/rocket_turret_standard"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.ROCKET_HIMARS_STANDARD.get())
+                .pattern(" P ")
+                .pattern(" M ")
+                .pattern(" G ")
+                .define('P', ModItems.PLATE_TITANIUM.get())
+                .define('M', ModItems.MOTOR.get())
+                .define('G', Items.GUNPOWDER)
+                .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
+                .save(writer, recipeId("crafting/rocket_himars_standard"));
+
+        // Tauon-Turret Munition (Original hatte hierfuer keine dokumentierte Table-Rezept)
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_TAU_URANIUM.get(), 4)
+                .pattern("U")
+                .pattern("C")
+                .define('U', ModItems.getIngot(ModIngots.URANIUM).get())
+                .define('C', ModItems.CASING_BAG.get())
+                .unlockedBy(getHasName(ModItems.getIngot(ModIngots.URANIUM).get()), has(ModItems.getIngot(ModIngots.URANIUM).get()))
+                .save(writer, recipeId("crafting/ammo_tau_uranium"));
+
+        // Fritz-Turret Brennstoff (MVP-Item statt Fluid-Tank, siehe TurretBaseBlockEntity#tickFritz)
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_FLAME_DIESEL.get(), 8)
+                .pattern("C")
+                .pattern("B")
+                .define('C', ModItems.CANNED_DIESEL.get())
+                .define('B', ModItems.CASING_BAG.get())
+                .unlockedBy(getHasName(ModItems.CANNED_DIESEL.get()), has(ModItems.CANNED_DIESEL.get()))
+                .save(writer, recipeId("crafting/ammo_flame_diesel"));
+
+        // Missile-Assembly-Station + fehlende Teile (Original-Rezept nicht auffindbar, plausible Annaeherung)
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModBlocks.MACHINE_MISSILE_ASSEMBLY.get())
+                .pattern("PPP")
+                .pattern("MCM")
+                .pattern("SSS")
+                .define('P', ModItems.PLATE_STEEL.get())
+                .define('M', ModItems.MOTOR.get())
+                .define('C', ModItems.ADVANCED_CIRCUIT.get())
+                .define('S', ModBlocks.STEEL_SCAFFOLD.get())
+                .unlockedBy(getHasName(ModItems.ADVANCED_CIRCUIT.get()), has(ModItems.ADVANCED_CIRCUIT.get()))
+                .save(writer, recipeId("crafting/machine_missile_assembly"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.MISSILE_FUSELAGE.get(), 2)
+                .pattern("P")
+                .pattern("P")
+                .define('P', ModItems.PLATE_STEEL.get())
+                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .save(writer, recipeId("crafting/missile_fuselage"));
+
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.COMBAT, ModItems.MISSILE_CHIP.get())
+                .requires(ModItems.SILICON_CIRCUIT.get())
+                .requires(ModItems.getIngot(ModIngots.LEAD).get())
+                .unlockedBy(getHasName(ModItems.SILICON_CIRCUIT.get()), has(ModItems.SILICON_CIRCUIT.get()))
+                .save(writer, recipeId("crafting/missile_chip"));
     }
 
     //  БЕЗОПАСНАЯ ПРОВЕРКА NULL
@@ -1473,6 +1682,71 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         *///?} else {
                 return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, path);
         //?}
+    }
+
+
+    /**
+     * Billet <-> nugget compression (6 nuggets -> 1 billet, 1 billet -> 6 nuggets).
+     * Port of the 1.7.10 MineralRecipes.java addBillet(billet, nugget) family.
+     */
+    private void registerBilletNuggetPairs(Consumer<FinishedRecipe> writer) {
+        registerBilletNuggetPair(writer, ModItems.BILLET_ACTINIUM.get(), ModItems.NUGGET_ACTINIUM.get(), "actinium");
+        registerBilletNuggetPair(writer, ModItems.BILLET_AM241.get(), ModItems.NUGGET_AM241.get(), "am241");
+        registerBilletNuggetPair(writer, ModItems.BILLET_AM242.get(), ModItems.NUGGET_AM242.get(), "am242");
+        registerBilletNuggetPair(writer, ModItems.BILLET_AMERICIUM_FUEL.get(), ModItems.NUGGET_AMERICIUM_FUEL.get(), "americium_fuel");
+        registerBilletNuggetPair(writer, ModItems.BILLET_AM_MIX.get(), ModItems.NUGGET_AM_MIX.get(), "am_mix");
+        registerBilletNuggetPair(writer, ModItems.BILLET_AU198.get(), ModItems.NUGGET_AU198.get(), "au198");
+        registerBilletNuggetPair(writer, ModItems.BILLET_AUSTRALIUM.get(), ModItems.NUGGET_AUSTRALIUM.get(), "australium");
+        registerBilletNuggetPair(writer, ModItems.BILLET_AUSTRALIUM_GREATER.get(), ModItems.NUGGET_AUSTRALIUM_GREATER.get(), "australium_greater");
+        registerBilletNuggetPair(writer, ModItems.BILLET_AUSTRALIUM_LESSER.get(), ModItems.NUGGET_AUSTRALIUM_LESSER.get(), "australium_lesser");
+        registerBilletNuggetPair(writer, ModItems.BILLET_BERYLLIUM.get(), ModItems.NUGGET_BERYLLIUM.get(), "beryllium");
+        registerBilletNuggetPair(writer, ModItems.BILLET_BISMUTH.get(), ModItems.NUGGET_BISMUTH.get(), "bismuth");
+        registerBilletNuggetPair(writer, ModItems.BILLET_CO60.get(), ModItems.NUGGET_CO60.get(), "co60");
+        registerBilletNuggetPair(writer, ModItems.BILLET_COBALT.get(), ModItems.NUGGET_COBALT.get(), "cobalt");
+        registerBilletNuggetPair(writer, ModItems.BILLET_GH336.get(), ModItems.NUGGET_GH336.get(), "gh336");
+        registerBilletNuggetPair(writer, ModItems.BILLET_HES.get(), ModItems.NUGGET_HES.get(), "hes");
+        registerBilletNuggetPair(writer, ModItems.BILLET_LES.get(), ModItems.NUGGET_LES.get(), "les");
+        registerBilletNuggetPair(writer, ModItems.BILLET_MOX_FUEL.get(), ModItems.NUGGET_MOX_FUEL.get(), "mox_fuel");
+        registerBilletNuggetPair(writer, ModItems.BILLET_NEPTUNIUM.get(), ModItems.NUGGET_NEPTUNIUM.get(), "neptunium");
+        registerBilletNuggetPair(writer, ModItems.BILLET_NEPTUNIUM_FUEL.get(), ModItems.NUGGET_NEPTUNIUM_FUEL.get(), "neptunium_fuel");
+        registerBilletNuggetPair(writer, ModItems.BILLET_PB209.get(), ModItems.NUGGET_PB209.get(), "pb209");
+        registerBilletNuggetPair(writer, ModItems.BILLET_PLUTONIUM.get(), ModItems.NUGGET_PLUTONIUM.get(), "plutonium");
+        registerBilletNuggetPair(writer, ModItems.BILLET_PLUTONIUM_FUEL.get(), ModItems.NUGGET_PLUTONIUM_FUEL.get(), "plutonium_fuel");
+        registerBilletNuggetPair(writer, ModItems.BILLET_POLONIUM.get(), ModItems.NUGGET_POLONIUM.get(), "polonium");
+        registerBilletNuggetPair(writer, ModItems.BILLET_PU238.get(), ModItems.NUGGET_PU238.get(), "pu238");
+        registerBilletNuggetPair(writer, ModItems.BILLET_PU239.get(), ModItems.NUGGET_PU239.get(), "pu239");
+        registerBilletNuggetPair(writer, ModItems.BILLET_PU240.get(), ModItems.NUGGET_PU240.get(), "pu240");
+        registerBilletNuggetPair(writer, ModItems.BILLET_PU241.get(), ModItems.NUGGET_PU241.get(), "pu241");
+        registerBilletNuggetPair(writer, ModItems.BILLET_PU_MIX.get(), ModItems.NUGGET_PU_MIX.get(), "pu_mix");
+        registerBilletNuggetPair(writer, ModItems.BILLET_RA226.get(), ModItems.NUGGET_RA226.get(), "ra226");
+        registerBilletNuggetPair(writer, ModItems.BILLET_SCHRABIDIUM.get(), ModItems.NUGGET_SCHRABIDIUM.get(), "schrabidium");
+        registerBilletNuggetPair(writer, ModItems.BILLET_SCHRABIDIUM_FUEL.get(), ModItems.NUGGET_SCHRABIDIUM_FUEL.get(), "schrabidium_fuel");
+        registerBilletNuggetPair(writer, ModItems.BILLET_SILICON.get(), ModItems.NUGGET_SILICON.get(), "silicon");
+        registerBilletNuggetPair(writer, ModItems.BILLET_SOLINIUM.get(), ModItems.NUGGET_SOLINIUM.get(), "solinium");
+        registerBilletNuggetPair(writer, ModItems.BILLET_SR90.get(), ModItems.NUGGET_SR90.get(), "sr90");
+        registerBilletNuggetPair(writer, ModItems.BILLET_TECHNETIUM.get(), ModItems.NUGGET_TECHNETIUM.get(), "technetium");
+        registerBilletNuggetPair(writer, ModItems.BILLET_TH232.get(), ModItems.NUGGET_TH232.get(), "th232");
+        registerBilletNuggetPair(writer, ModItems.BILLET_THORIUM_FUEL.get(), ModItems.NUGGET_THORIUM_FUEL.get(), "thorium_fuel");
+        registerBilletNuggetPair(writer, ModItems.BILLET_U233.get(), ModItems.NUGGET_U233.get(), "u233");
+        registerBilletNuggetPair(writer, ModItems.BILLET_U235.get(), ModItems.NUGGET_U235.get(), "u235");
+        registerBilletNuggetPair(writer, ModItems.BILLET_U238.get(), ModItems.NUGGET_U238.get(), "u238");
+        registerBilletNuggetPair(writer, ModItems.BILLET_URANIUM.get(), ModItems.NUGGET_URANIUM.get(), "uranium");
+        registerBilletNuggetPair(writer, ModItems.BILLET_URANIUM_FUEL.get(), ModItems.NUGGET_URANIUM_FUEL.get(), "uranium_fuel");
+        registerBilletNuggetPair(writer, ModItems.BILLET_ZIRCONIUM.get(), ModItems.NUGGET_ZIRCONIUM.get(), "zirconium");
+    }
+
+    private void registerBilletNuggetPair(Consumer<FinishedRecipe> writer, Item billet, Item nugget, String name) {
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, billet)
+                .pattern("###")
+                .pattern("###")
+                .define('#', nugget)
+                .unlockedBy(getHasName(nugget), has(nugget))
+                .save(writer, recipeId("crafting/billet_" + name + "_compress"));
+
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, nugget, 6)
+                .requires(billet)
+                .unlockedBy(getHasName(billet), has(billet))
+                .save(writer, recipeId("crafting/nugget_" + name + "_decompress"));
     }
 }
 //?}

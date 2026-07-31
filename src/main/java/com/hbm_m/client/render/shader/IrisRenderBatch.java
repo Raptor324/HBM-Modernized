@@ -394,6 +394,18 @@ public final class IrisRenderBatch implements AutoCloseable {
         if (shader == null || !companion.isBuilt()) return;
         GlStateManager._glBindVertexArray(targetVao);
         companion.prepareForShader(shader.getId());
+        if (lastBoundVao != targetVao) {
+            // VAO changed: its UV2 generic-attrib still holds whatever value was
+            // last written on THAT VAO (possibly stale from a previous BE/frame,
+            // or 0 on a freshly primed VAO). The constant-UV2 fast path below
+            // would otherwise trust the lastBlockU/lastSkyV carried over from the
+            // previous VAO and skip the glVertexAttribI2i re-issue when two BEs
+            // share the same packedLight — rendering the 2nd+ machine with a
+            // wrong/zero lightmap. restoreConstantLightmap() is a no-op in
+            // constant mode, so the cache must be invalidated here.
+            lastBlockU = Integer.MIN_VALUE;
+            lastSkyV = Integer.MIN_VALUE;
+        }
         lastBoundVao = targetVao;
     }
 

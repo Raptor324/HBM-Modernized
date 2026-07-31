@@ -1,6 +1,6 @@
 {
   "loader": "hbm_m:radar_loader",
-  "model": "hbm_m:models/block/radar.obj",
+  "model": "hbm_m:models/block/machines/radar.obj",
   "flip_v": true,
   "render_type": "minecraft:cutout",
   "parts": ["Base", "Dish"],

@@ -1,0 +1,22 @@
+{
+  "loader": "forge:obj",
+  "model": "hbm_m:models/block/machines/mining_drill.obj",
+  "flip_v": true,
+  "render_type": "minecraft:solid",
+  "textures": {
+    "default": "hbm_m:block/machine/mining_drill",
+    "particle": "hbm_m:block/machine/mining_drill"
+  },
+  "visibility": {
+    "Main": false,
+    "Shaft": false,
+    "Crusher1": false,
+    "Crusher2": false,
+    "Drillbit": true
+  },
+  "transform": {
+    "translation": [0.5, 0, 0.5],
+    "rotation": [0, 0, 0],
+    "scale": 1.0
+  }
+}

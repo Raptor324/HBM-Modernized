@@ -38,6 +38,12 @@ public class ModRecipes {
     public static final RegistrySupplier<RecipeType<PressRecipe>> PRESS_TYPE =
             RECIPE_TYPES.register("press", () -> PressRecipe.Type.INSTANCE);
 
+    public static final RegistrySupplier<RecipeSerializer<ArcFurnaceRecipe>> ARC_FURNACE_SERIALIZER =
+            SERIALIZERS.register("arc_furnace", () -> ArcFurnaceRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<ArcFurnaceRecipe>> ARC_FURNACE_TYPE =
+            RECIPE_TYPES.register("arc_furnace", () -> ArcFurnaceRecipe.Type.INSTANCE);
+
     public static final RegistrySupplier<RecipeSerializer<BlastFurnaceRecipe>> BLAST_FURNACE_SERIALIZER =
             SERIALIZERS.register("blast_furnace", () -> BlastFurnaceRecipe.Serializer.INSTANCE);
 
@@ -61,6 +67,12 @@ public class ModRecipes {
 
     public static final RegistrySupplier<RecipeType<AnvilRecipe>> ANVIL_TYPE =
             RECIPE_TYPES.register("anvil", () -> AnvilRecipe.Type.INSTANCE);
+
+    public static final RegistrySupplier<RecipeSerializer<CombinationOvenRecipe>> COMBINATION_OVEN_SERIALIZER =
+            SERIALIZERS.register("combination_oven", () -> CombinationOvenRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<CombinationOvenRecipe>> COMBINATION_OVEN_TYPE =
+            RECIPE_TYPES.register("combination_oven", () -> CombinationOvenRecipe.Type.INSTANCE);
 
 
 

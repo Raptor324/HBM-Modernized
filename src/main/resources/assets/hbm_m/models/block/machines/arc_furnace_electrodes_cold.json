@@ -1,0 +1,24 @@
+{
+  "loader": "forge:obj",
+  "model": "hbm_m:models/block/machines/arc_furnace.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "default": "hbm_m:block/machine/arc_furnace",
+    "particle": "hbm_m:block/machine/arc_furnace"
+  },
+  "visibility": {
+    "Cable1": false, "Cable2": false, "Cable3": false,
+    "ContentsCold": false, "ContentsHot": false,
+    "Electrode1": true, "Electrode2": true, "Electrode3": true,
+    "Electrode1Hot": false, "Electrode2Hot": false, "Electrode3Hot": false,
+    "Electrode1Short": false, "Electrode2Short": false, "Electrode3Short": false,
+    "Furnace": false, "Lid": false,
+    "Ring1": false, "Ring2": false, "Ring3": false
+  },
+  "transform": {
+    "translation": [0.5, 0, 0.5],
+    "rotation": [0, 0, 0],
+    "scale": 1.0
+  }
+}

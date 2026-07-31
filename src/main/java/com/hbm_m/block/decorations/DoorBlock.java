@@ -18,7 +18,6 @@ import com.hbm_m.multiblock.PartRole;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -68,28 +67,22 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
             DoorDecl.DoorStructureDefinition def = decl.getStructureDefinition();
             Map<BlockPos, Supplier<BlockState>> structureMap = new HashMap<>();
             
-            // Заполняем карту блоков на основе закрытых форм
             for (BlockPos localPos : def.getClosedShapes().keySet()) {
                 if (localPos.equals(BlockPos.ZERO)) continue; // Пропускаем контроллер
                 structureMap.put(localPos, phantomSupplier);
             }
             
-            // ВАЖНО: 
-            // 1. Передаем specificPartShapes (def.getClosedShapes())
-            // 2. Передаем specificCollisionShapes (def.getClosedShapes())
-            // 3. Offset ставим в ZERO, так как координаты в def уже относительны контроллера (С=0,0,0)
             this.structureHelper = new MultiblockStructureHelper(
                 structureMap, 
                 phantomSupplier,
-                null, // symbolRoleMap не нужен, роли уже распарсены
-                null, // positionSymbolMap не нужен
-                def.getClosedShapes(), // Формы для Outline
-                def.getClosedShapes(), // Формы для Physics
-                BlockPos.ZERO          // Смещение контроллера
+                null, 
+                null, 
+                def.getClosedShapes(), 
+                def.getClosedShapes(), 
+                BlockPos.ZERO          
             );
             
        } else {
-           // === СТАРАЯ ЛОГИКА (FALLBACK) ===
            Map<BlockPos, Supplier<BlockState>> structureMap = createStructureForDoor(doorDeclId);
            this.structureHelper = new MultiblockStructureHelper(structureMap, phantomSupplier);
        }
@@ -105,10 +98,8 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
         Map<BlockPos, Supplier<BlockState>> structureMap = new HashMap<>();
         Supplier<BlockState> phantomSupplier = () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState();
 
-        // Получаем размеры двери на основе типа
         int[] dimensions = getDoorDimensions(doorDeclId);
         
-        // dimensions = [offsetX, offsetY, offsetZ, sizeX, sizeY, sizeZ]
         int offsetX = dimensions[0];
         int offsetY = dimensions[1]; 
         int offsetZ = dimensions[2];
@@ -116,7 +107,6 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
         int sizeY = dimensions[4];
         int sizeZ = dimensions[5];
 
-        // Генерируем структуру на основе размеров
         for (int x = offsetX; x <= offsetX + sizeX; x++) {
             for (int y = offsetY; y <= offsetY + sizeY; y++) {
                 for (int z = offsetZ; z <= offsetZ + sizeZ; z++) {
@@ -133,13 +123,9 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
 
     @Override
     public boolean isCollisionShapeFullBlock(BlockState state, BlockGetter world, BlockPos pos) {
-        return false; // Это отключает логику "выталкивания" игрока изнутри блока
+        return false;
     }
 
-    /**
-     * Как ванильная дверь: проходимость определяется blockstate-свойством {@link #OPEN}.
-     * Не зависит от BlockEntity, работает надёжно в PathNavigationRegion.
-     */
     @Override
     public boolean isPathfindable(BlockState state, BlockGetter level, BlockPos pos, PathComputationType type) {
         return switch (type) {
@@ -147,29 +133,6 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
             default -> false;
         };
     }
-
-    /**
-     * Получение размеров дверей для генерации структуры
-     * Размеры берутся статически из switch, чтобы избежать проблем инициализации
-     * (DoorDeclRegistry может быть недоступен во время генерации данных)
-     */
-    // public static int[] getDoorDimensions(String doorDeclId) {
-    //     return switch (doorDeclId) {
-    //         case "large_vehicle_door" -> new int[] { -3, 0, 0, 6, 5, 0 };
-    //         case "round_airlock_door" -> new int[] { -1, 0, 0, 3, 3, 0 };
-    //         case "transition_seal" -> new int[] { -12, 0, 0, 25, 23, 0 };
-    //         case "fire_door" -> new int[] { -1, 0, 0, 3, 2, 0 };
-    //         case "sliding_blast_door" -> new int[] { -3, 0, 0, 6, 3, 0 };
-    //         case "sliding_seal_door" -> new int[] { 0, 0, 0, 0, 1, 0 };
-    //         case "secure_access_door" -> new int[] { -2, 0, 0, 4, 4, 0 };
-    //         case "qe_sliding_door" -> new int[] { 0, 0, 0, 1, 1, 0 };
-    //         case "qe_containment_door" -> new int[] { -1, 0, 0, 2, 2, 0 };
-    //         case "water_door" -> new int[] { -1, 0, 0, 2, 2, 0 };
-    //         case "silo_hatch" -> new int[] { -2, 0, -2, 4, 0, 4 };
-    //         case "silo_hatch_large" -> new int[] { -3, 0, -3, 6, 0, 6 };
-    //         default -> new int[] { 0, 0, 0, 0, 1, 0 };
-    //     };
-    // }    
 
     public static int[] getDoorDimensions(String doorDeclId) {
         DoorDecl decl = DoorDeclRegistry.getById(doorDeclId);
@@ -217,21 +180,13 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
         if (hasScrewdriver(player)) {
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
-        if (level.isClientSide) return InteractionResult.SUCCESS;
-        
-        BlockEntity be = level.getBlockEntity(pos);
-        if (be instanceof DoorBlockEntity doorBE) {
-            // Самого себя (контроллер) дергаем напрямую
-            if (doorBE.isLocked()) {
-                player.displayClientMessage(Component.translatable("door.locked"), true);
-                return InteractionResult.FAIL;
+        if (!level.isClientSide) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof DoorBlockEntity doorBE) {
+                doorBE.toggle();
             }
-            if (doorBE.isMoving()) return InteractionResult.CONSUME;
-            
-            doorBE.toggle();
-            return InteractionResult.SUCCESS;
         }
-        return InteractionResult.PASS;
+        return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
     private static boolean hasScrewdriver(Player player) {
@@ -241,51 +196,51 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        // 1. Получаем TE, но НЕ делаем жесткой зависимости от него
+        // Контрапшен: DoorBlock полностью берет на себя объединенную коллизию, чтобы 
+        // игроку не пришлось выделять все фантомные блоки суперклеем
+        if (level instanceof Level lvl && com.hbm_m.compat.ContraptionDoorState.isContraptionWorld(lvl)) {
+            VoxelShape cached = com.hbm_m.compat.ContraptionDoorState.getShape(lvl, pos);
+            if (cached != null) return cached;
+        }
+        
         BlockEntity be = level.getBlockEntity(pos);
         boolean isOpen;
         if (be instanceof DoorBlockEntity doorBE) {
-            isOpen = doorBE.getState() != 0; // 0 = закрыто, остальное = открыто/движется
+            isOpen = doorBE.getState() != 0; 
         } else {
-            // Pathfinding и др. BlockGetter без TE: опираемся на OPEN (полностью открыто), см. DoorBlockEntity.serverTick
             isOpen = state.getValue(OPEN);
         }
 
-        // 2. Если дверь открыта (или открывается)
         if (isOpen) {
             DoorDecl decl = DoorDeclRegistry.getById(doorDeclId);
             if (decl != null && decl.getStructureDefinition() != null) {
-                // Пытаемся взять форму открытого состояния из схемы
-                // Для контроллера позиция всегда ZERO
                 VoxelShape openShape = decl.getStructureDefinition().getOpenShapes().get(BlockPos.ZERO);
                 if (openShape != null && !openShape.isEmpty()) {
                     return MultiblockStructureHelper.rotateShape(openShape, state.getValue(FACING));
                 }
             }
-            // Если в схеме пробел или формы нет -> проход свободен
             return Shapes.empty();
         }
 
-        // 3. Если закрыта (или TE недоступен и OPEN=false) — форма из закрытой схемы
-        // Важно: мы используем structureHelper, который уже знает форму из конструктора.
-        // Больше никакого Shapes.block() в конце!
         return structureHelper.getSpecificCollisionShape(BlockPos.ZERO, state.getValue(FACING));
     }
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        if (level instanceof Level lvl && com.hbm_m.compat.ContraptionDoorState.isContraptionWorld(lvl)) {
+            VoxelShape cached = com.hbm_m.compat.ContraptionDoorState.getShape(lvl, pos);
+            if (cached != null) return cached;
+        }
+        
         DoorDecl decl = DoorDeclRegistry.getById(doorDeclId);
         
-        // Если это люк, строим общую динамическую рамку
         if (decl != null && decl.isDynamicShape()) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof DoorBlockEntity doorBE) {
-                // Передаем true в метод генерации, чтобы он учитывал открытость/закрытость
                 return generateDynamicFullShape(state, level, pos, doorBE);
             }
         }
 
-        // Стандартная полная рамка для обычных дверей
         return this.shapeCache.computeIfAbsent(state.getValue(FACING),
                 facing -> getStructureHelper().generateShapeFromParts(facing));
     }
@@ -304,9 +259,7 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
             if (partShape.isEmpty()) continue;
     
             BlockPos relativePos = entry.getKey();
-            // Вращаем позицию блока
             BlockPos rotatedPos = MultiblockStructureHelper.rotate(relativePos, facing);
-            // Вращаем саму форму блока
             VoxelShape rotatedShape = MultiblockStructureHelper.rotateShape(partShape, facing);
             
             combined = Shapes.or(combined, rotatedShape.move(rotatedPos.getX(), rotatedPos.getY(), rotatedPos.getZ()));
@@ -321,18 +274,14 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
 
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof DoorBlockEntity doorBE) {
-            // Запускаем агрегированную проверку сигнала
             doorBE.checkRedstonePower();
         }
     }
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        // MODEL - BakedModel запекается в чанк (нужно для Iris/Oculus).
-        // ENTITYBLOCK_ANIMATED не использует BakedModel для world render.
         return RenderShape.MODEL;
     }
-
 
     @Override
     public VoxelShape getCustomMasterVoxelShape(BlockState state) {
@@ -349,7 +298,6 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING, PART_ROLE, DOOR_MOVING, OPEN);
     }
-
 
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
@@ -378,19 +326,17 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
 
     @Override
     public int getLightBlock(BlockState pState, BlockGetter pLevel, BlockPos pPos) {
-        return 0; // Полная прозрачность для движка света
+        return 0;
     }
 
     @Override
     public float getShadeBrightness(BlockState pState, BlockGetter pLevel, BlockPos pPos) {
-        return 1.0F; // Убирает тени под блоком и Ambient Occlusion
+        return 1.0F; 
     }
 
     public boolean propagatesSkylightDown(BlockState pState, BlockGetter pLevel, BlockPos pPos) {
         return true;
     }
-
-    // ---------------- КАМЕРА И ФИЗИКА ----------------
 
     @Override
     public VoxelShape getVisualShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {

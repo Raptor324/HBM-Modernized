@@ -75,6 +75,20 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
     /** Мировые стороны жидкостного подключения; пусто = не задано (для коннектора - все стороны). */
     private java.util.Set<Direction> allowedFluidSides = java.util.EnumSet.noneOf(Direction.class);
 
+    //? if forge {
+    /**
+     * Reiner Konnektivitäts-Marker für JEDEN Teil der Struktur (auch DEFAULT-Phantomblöcke), NICHT
+     * an die Connector-Rollen delegiert. EnergyNetworkManager#addNode lehnt Knoten ohne
+     * ModCapabilities.hasEnergyComponent() sofort ab (EnergyNode#isValid) - ohne diesen Marker
+     * würden DEFAULT-Blöcke nie als Knoten registriert, und der Controller könnte nie eine
+     * physische Kette zu weit entfernten Connectoren (z.B. Chungus' Energie-Connector 10 Blöcke
+     * entfernt) bilden. canConnectEnergy() bleibt unabhängig rollenbasiert - Kabel docken weiterhin
+     * nur visuell an echten Connector-Rollen an.
+     */
+    private final net.minecraftforge.common.util.LazyOptional<IEnergyConnector> selfEnergyConnector =
+            net.minecraftforge.common.util.LazyOptional.of(() -> this);
+    //?}
+
     public UniversalMachinePartBlockEntity(BlockPos pPos, BlockState pBlockState) {
         super(ModBlockEntities.UNIVERSAL_MACHINE_PART_BE.get(), pPos, pBlockState);
     }
@@ -531,6 +545,13 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
             }
         }
 
+        // Reiner Konnektivitäts-Marker für ALLE Rollen (auch DEFAULT) - siehe Javadoc bei
+        // selfEnergyConnector. Greift nur, wenn der Block oben NICHT schon als echte
+        // Connector-Rolle an den Controller delegiert hat.
+        if (cap == ModCapabilities.HBM_ENERGY_CONNECTOR) {
+            return selfEnergyConnector.cast();
+        }
+
         // === ДЕЛЕГИРОВАНИЕ ПРЕДМЕТОВ ===
         if (cap == ForgeCapabilities.ITEM_HANDLER &&
                 (this.role == PartRole.ITEM_INPUT || this.role == PartRole.ITEM_OUTPUT))
@@ -558,6 +579,12 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         }
 
         return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        selfEnergyConnector.invalidate();
     }
     //?}
 

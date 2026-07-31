@@ -1,44 +1,24 @@
 {
   "temperature": 0.8,
-  "downfall": 0.4,
-  "has_precipitation": true,
+  "downfall": 0.0,
+  "has_precipitation": false,
   "effects": {
-    "fog_color": 329232,
-    "water_color": 658970,
-    "water_fog_color": 329011,
-    "sky_color": 1710619,
+    "fog_color": 4348482,
+    "water_color": 14738334,
+    "water_fog_color": 328464,
+    "sky_color": 4348482,
     "foliage_color": 6975545,
-    "grass_color": 9470285,
+    "grass_color": 3685688,
     "particle": {
-      "probability": 0.001,
+      "probability": 0.5,
       "options": {
-        "type": "minecraft:ash"
+        "type": "minecraft:white_ash"
       }
     }
   },
   "spawners": {
-    "monster": [
-      {
-        "type": "minecraft:zombie",
-        "weight": 95,
-        "minCount": 1,
-        "maxCount": 3
-      }
-    ],
-    "creature": [
-      {
-        "type": "minecraft:pig",
-        "weight": 10,
-        "minCount": 2,
-        "maxCount": 4
-      },
-      {
-        "type": "minecraft:cow",
-        "weight": 8,
-        "minCount": 2,
-        "maxCount": 4
-      }
-    ],
+    "monster": [],
+    "creature": [],
     "ambient": [],
     "axolotls": [],
     "underground_water_creature": [],

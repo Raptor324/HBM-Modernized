@@ -15,7 +15,7 @@ import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 
 /**
  * Menu for the Heating Oven machine.
- * Simple furnace-like layout with fuel, input and output slots.
+ * A pure combustion source with a single fuel slot, burning fuel into TU.
  */
 public class HeatingOvenMenu extends AbstractContainerMenu {
     public final HeatingOvenBlockEntity blockEntity;
@@ -24,9 +24,7 @@ public class HeatingOvenMenu extends AbstractContainerMenu {
 
     private static final int DATA_INDEX_BURN_TIME = 0;
     private static final int DATA_INDEX_MAX_BURN_TIME = 1;
-    private static final int DATA_INDEX_COOK_PROGRESS = 2;
-    private static final int DATA_INDEX_COOK_TIME = 3;
-    private static final int DATA_INDEX_IS_ON = 4;
+    private static final int DATA_INDEX_IS_ON = 2;
 
     // Slot indices
     private static final int HOTBAR_SLOT_COUNT = 9;
@@ -35,12 +33,12 @@ public class HeatingOvenMenu extends AbstractContainerMenu {
     private static final int PLAYER_INVENTORY_SLOT_COUNT = PLAYER_INVENTORY_COLUMN_COUNT * PLAYER_INVENTORY_ROW_COUNT;
     private static final int VANILLA_SLOT_COUNT = HOTBAR_SLOT_COUNT + PLAYER_INVENTORY_SLOT_COUNT;
 
-    private static final int MACHINE_SLOT_COUNT = 3;
+    private static final int MACHINE_SLOT_COUNT = 1;
     private static final int VANILLA_FIRST_SLOT_INDEX = 0;
     private static final int MACHINE_FIRST_SLOT_INDEX = VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT;
 
     public HeatingOvenMenu(int containerId, Inventory inv, FriendlyByteBuf extraData) {
-        this(containerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(7));
+        this(containerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(5));
     }
 
     public HeatingOvenMenu(int containerId, Inventory inv, BlockEntity entity, ContainerData data) {
@@ -49,7 +47,7 @@ public class HeatingOvenMenu extends AbstractContainerMenu {
             throw new IllegalStateException("Expected HeatingOvenBlockEntity at position, got: " + entity);
         }
         blockEntity = (HeatingOvenBlockEntity) entity;
-        checkContainerDataCount(data, 7);
+        checkContainerDataCount(data, 5);
         this.level = inv.player.level();
         this.data = data;
 
@@ -58,9 +56,7 @@ public class HeatingOvenMenu extends AbstractContainerMenu {
 
         var handler = this.blockEntity.getInventory();
         var container = new ModItemStackHandlerContainer(handler, this.blockEntity::setChanged);
-        this.addSlot(new FuelSlot(container, 0, 56, 53)); // Fuel slot
-        this.addSlot(new Slot(container, 1, 56, 17)); // Input slot
-        this.addSlot(new OutputSlot(container, 2, 116, 35)); // Output slot
+        this.addSlot(new FuelSlot(container, 0, 44, 27)); // Fuel slot
 
         addDataSlots(data);
     }
@@ -69,24 +65,28 @@ public class HeatingOvenMenu extends AbstractContainerMenu {
         return data.get(DATA_INDEX_BURN_TIME) > 0;
     }
 
-    public boolean isCooking() {
-        return data.get(DATA_INDEX_COOK_PROGRESS) > 0;
+    public boolean isOn() {
+        return data.get(DATA_INDEX_IS_ON) != 0;
     }
 
-    public int getScaledProgress() {
-        int progress = this.data.get(DATA_INDEX_COOK_PROGRESS);
-        int maxProgress = this.data.get(DATA_INDEX_COOK_TIME);
-        int arrowPixelSize = 24; // Arrow width
-
-        return maxProgress != 0 && progress != 0 ? progress * arrowPixelSize / maxProgress : 0;
-    }
-
-    public int getScaledFuel() {
+    public int getBurnTimeScaled(int scale) {
         int burnTime = this.data.get(DATA_INDEX_BURN_TIME);
         int maxBurnTime = this.data.get(DATA_INDEX_MAX_BURN_TIME);
-        int flamePixelHeight = 14; // Flame height
 
-        return maxBurnTime != 0 ? burnTime * flamePixelHeight / maxBurnTime : 0;
+        return maxBurnTime != 0 ? burnTime * scale / maxBurnTime : 0;
+    }
+
+    public long getEnergyStored() {
+        return blockEntity.getEnergyStored();
+    }
+
+    public long getMaxEnergyStored() {
+        return blockEntity.getMaxEnergyStored();
+    }
+
+    public int getEnergyScaled(int scale) {
+        long maxEnergy = Math.max(getMaxEnergyStored(), 1L);
+        return (int) (getEnergyStored() * scale / maxEnergy);
     }
 
     @Override
@@ -149,18 +149,6 @@ public class HeatingOvenMenu extends AbstractContainerMenu {
         @Override
         public boolean mayPlace(ItemStack stack) {
             return AbstractFurnaceBlockEntity.getFuel().getOrDefault(stack.getItem(), 0) > 0;
-        }
-    }
-
-    // Output slot - cannot receive items
-    private static class OutputSlot extends Slot {
-        public OutputSlot(net.minecraft.world.Container itemHandler, int index, int xPosition, int yPosition) {
-            super(itemHandler, index, xPosition, yPosition);
-        }
-
-        @Override
-        public boolean mayPlace(ItemStack stack) {
-            return false;
         }
     }
 }

@@ -13,28 +13,27 @@ files:
     languages_mapping:
       locale_with_underscore:
         af: af_za
-        ar: ar_sa
-        ast: ast_es
-        az: az_az
-        ba: ba_ru
-        be: be_by
-        bg: bg_bg
-        br: br_fr
-        bs: bs_ba
-        ca: ca_es
-        cs: cs_cz
-        cy: cy_gb
-        da: da_dk
-        de: de_de
-        el: el_gr
-        # en-US: en_us
+        ar-SA: ar_sa
+        ast-ES: ast_es
+        az-AZ: az_az
+        ba-RU: ba_ru
+        be-BY: be_by
+        bg-BG: bg_bg
+        br-FR: br_fr
+        bs-BA: bs_ba
+        ca-ES: ca_es
+        cs-CZ: cs_cz
+        cy-GB: cy_gb
+        da-DK: da_dk
+        de-DE: de_de
+        el-GR: el_gr
         en-AU: en_au
         en-CA: en_ca
         en-GB: en_gb
         en-NZ: en_nz
         en-PT: en_pt
         en-UD: en_ud
-        eo: eo_uy
+        eo-UY: eo_uy
         es-AR: es_ar
         es-CL: es_cl
         es-EC: es_ec
@@ -42,75 +41,75 @@ files:
         es-MX: es_mx
         es-UY: es_uy
         es-VE: es_ve
-        et: et_ee
-        eu: eu_es
-        fa: fa_ir
-        fi: fi_fi
-        fil: fil_ph
-        fo: fo_fo
+        et-EE: et_ee
+        eu-ES: eu_es
+        fa-IR: fa_ir
+        fi-FI: fi_fi
+        fil-PH: fil_ph
+        fo-FO: fo_fo
         fr-CA: fr_ca
-        fr: fr_fr
+        fr-FR: fr_fr
         fy-NL: fy_nl
         ga-IE: ga_ie
-        gd: gd_gb
-        gl: gl_es
-        haw: haw_us
-        he: he_il
-        hi: hi_in
-        hr: hr_hr
-        hu: hu_hu
+        gd-GB: gd_gb
+        gl-ES: gl_es
+        haw-US: haw_us
+        he-IL: he_il
+        hi-IN: hi_in
+        hr-HR: hr_hr
+        hu-HU: hu_hu
         hy-AM: hy_am
-        id: id_id
-        ig: ig_ng
-        is: is_is
-        it: it_it
-        ja: ja_jp
-        ka: ka_ge
-        kk: kk_kz
-        kn: kn_in
-        ko: ko_kr
+        id-ID: id_id
+        ig-NG: ig_ng
+        is-IS: is_is
+        it-IT: it_it
+        ja-JP: ja_jp
+        ka-GE: ka_ge
+        kk-KZ: kk_kz
+        kn-IN: kn_in
+        ko-KR: ko_kr
         ksh: ksh
-        kw: kw_gb
+        kw-GB: kw_gb
         la-LA: la_la
-        lb: lb_lu
-        li: li_li
-        lol: lol_us
-        lt: lt_lt
-        lv: lv_lv
+        lb-LU: lb_lu
+        li-LI: li_li
+        lol-US: lol_us
+        lt-LT: lt_lt
+        lv-LV: lv_lv
         lzh: lzh
-        mk: mk_mk
-        mn: mn_mn
-        ms: ms_my
-        mt: mt_mt
-        nds: nds_de
+        mk-MK: mk_mk
+        mn-MN: mn_mn
+        ms-MY: ms_my
+        mt-MT: mt_mt
+        nds-DE: nds_de
         nl-BE: nl_be
-        nl: nl_nl
+        nl-NL: nl_nl
         nn-NO: nn_no
-        no: no_no
-        oc: oc_fr
-        pl: pl_pl
+        'no': no_no
+        oc-FR: oc_fr
+        pl-PL: pl_pl
         pt-BR: pt_br
         pt-PT: pt_pt
         qya-AA: qya_aa
-        ro: ro_ro
-        ru: ru_ru
-        sk: sk_sk
-        sl: sl_si
-        so: so_so
-        sq: sq_al
-        sr: sr_sp
+        ro-RO: ro_ro
+        ru-RU: ru_ru
+        sk-SK: sk_sk
+        sl-SI: sl_si
+        so-SO: so_so
+        sq-AL: sq_al
+        sr-SP: sr_sp
         sv-SE: sv_se
-        ta: ta_in
-        th: th_th
+        ta-IN: ta_in
+        th-TH: th_th
         tlh-AA: tlh_aa
-        tr: tr_tr
+        tr-TR: tr_tr
         tt-RU: tt_ru
-        uk: uk_ua
+        uk-UA: uk_ua
         val-ES: val_es
-        vec: vec_it
-        vi: vi_vn
-        yi: yi_de
-        yo: yo_ng
+        vec-IT: vec_it
+        vi-VN: vi_vn
+        yi-DE: yi_de
+        yo-NG: yo_ng
         zh-CN: zh_cn
         zh-HK: zh_hk
         zh-TW: zh_tw

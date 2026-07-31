@@ -43,15 +43,15 @@ public class MachineCyclotronMenu extends AbstractContainerMenu {
         this.access = ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos());
         this.machineInventory = new HandlerContainer(blockEntity.getInventory());
 
-        // Input
-        this.addSlot(new Slot(machineInventory, 0, 11, 18));
-        this.addSlot(new Slot(machineInventory, 1, 11, 36));
-        this.addSlot(new Slot(machineInventory, 2, 11, 54));
+        // Input (rendered on the right, next to its matching powder column)
+        this.addSlot(new Slot(machineInventory, 0, 101, 18));
+        this.addSlot(new Slot(machineInventory, 1, 101, 36));
+        this.addSlot(new Slot(machineInventory, 2, 101, 54));
 
-        // Targets
-        this.addSlot(new Slot(machineInventory, 3, 101, 18));
-        this.addSlot(new Slot(machineInventory, 4, 101, 36));
-        this.addSlot(new Slot(machineInventory, 5, 101, 54));
+        // Targets (rendered on the left, matching the part_ icon artwork)
+        this.addSlot(new Slot(machineInventory, 3, 11, 18));
+        this.addSlot(new Slot(machineInventory, 4, 11, 36));
+        this.addSlot(new Slot(machineInventory, 5, 11, 54));
 
         // Output (take only)
         this.addSlot(new TakeOnlySlot(machineInventory, 6, 131, 18));

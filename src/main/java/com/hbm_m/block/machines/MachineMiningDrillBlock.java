@@ -5,6 +5,7 @@ import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineMiningDrillBlockEntity;
@@ -14,6 +15,7 @@ import com.hbm_m.multiblock.PartRole;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -50,11 +52,31 @@ public class MachineMiningDrillBlock extends BaseEntityBlock implements IMultibl
         this.structureHelper = defineStructure();
     }
 
+    /**
+     * Nachgebaut aus der 1.7.10-Originalquelle (MachineExcavator extends BlockDummyable):
+     * {@code getDimensions() = {3, 0, 3, 3, 3, 3}} (west/sued/ost/nord je 3, unten 0, oben 3) ergibt
+     * eine 7x4x7-Huelle um den Anker. Die oberen ~4.75 OBJ-Einheiten von "Main" ragen rein optisch
+     * darueber hinaus (im Original nur per {@code getRenderBoundingBox} abgedeckt, keine Kollision).
+     */
     private static MultiblockStructureHelper defineStructure() {
-        String[] layer0 = { "C" };
-        String[] layer1 = { "O" };
-        String[] layer2 = { "O" };
-        String[] layer3 = { "O" };
+        String[] controllerLayer = {
+            "OOOOOOO",
+            "OOOOOOO",
+            "OOOOOOO",
+            "OOOCOOO",
+            "OOOOOOO",
+            "OOOOOOO",
+            "OOOOOOO"
+        };
+        String[] fillerLayer = {
+            "OOOOOOO",
+            "OOOOOOO",
+            "OOOOOOO",
+            "OOOOOOO",
+            "OOOOOOO",
+            "OOOOOOO",
+            "OOOOOOO"
+        };
 
         Map<Character, PartRole> roleMap = Map.of(
                 'O', PartRole.DEFAULT,
@@ -64,7 +86,7 @@ public class MachineMiningDrillBlock extends BaseEntityBlock implements IMultibl
         Map<Character, Supplier<BlockState>> symbolMap = Map.of();
 
         return MultiblockStructureHelper.createFromLayersWithRoles(
-                new String[][] { layer0, layer1, layer2, layer3 },
+                new String[][] { controllerLayer, fillerLayer, fillerLayer, fillerLayer },
                 symbolMap,
                 () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
                 roleMap,
@@ -99,10 +121,8 @@ public class MachineMiningDrillBlock extends BaseEntityBlock implements IMultibl
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            BlockPos core = placeMultiblockStructure(level, pos, state);
-            if (core == null) {
-                return;
-            }
+            structureHelper.placeStructure(level, pos, state.getValue(FACING), this);
+            EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
         }
     }
 
@@ -116,6 +136,10 @@ public class MachineMiningDrillBlock extends BaseEntityBlock implements IMultibl
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide()) {
             structureHelper.destroyStructure(level, pos, state.getValue(FACING));
+            EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
+            if (level.getBlockEntity(pos) instanceof com.hbm_m.blockentity.BaseMachineBlockEntity be) {
+                be.dropInventoryContents();
+            }
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }

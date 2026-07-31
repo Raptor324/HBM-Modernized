@@ -96,12 +96,19 @@ final class ObjQuadBaker {
         // This matches: quadBaker.setDirection(Direction.getNearest(normal.x(), normal.y(), normal.z())) at i==0
         Direction dir = Direction.getNearest(norm[0].x(), norm[0].y(), norm[0].z());
 
-        int packed = packNormal(norm[0].x(), norm[0].y(), norm[0].z());
+        // Pack each vertex's OWN normal. Previously norm[0]'s packed normal was
+        // reused for all 4 vertices while norm[1..3] were computed and discarded —
+        // smooth-shaded OBJ models (per-vertex vn) flat-shaded with vertex 0 and
+        // lit wrong on cylinders/spheres.
+        int packed0 = packNormal(norm[0].x(), norm[0].y(), norm[0].z());
+        int packed1 = packNormal(norm[1].x(), norm[1].y(), norm[1].z());
+        int packed2 = packNormal(norm[2].x(), norm[2].y(), norm[2].z());
+        int packed3 = packNormal(norm[3].x(), norm[3].y(), norm[3].z());
         int[] data = new int[4 * 8];
-        putVertex(data, 0, pos[0], uv(a, sprite, flipV), packed);
-        putVertex(data, 1, pos[1], uv(b, sprite, flipV), packed);
-        putVertex(data, 2, pos[2], uv(c, sprite, flipV), packed);
-        putVertex(data, 3, pos[3], uv(d, sprite, flipV), packed);
+        putVertex(data, 0, pos[0], uv(a, sprite, flipV), packed0);
+        putVertex(data, 1, pos[1], uv(b, sprite, flipV), packed1);
+        putVertex(data, 2, pos[2], uv(c, sprite, flipV), packed2);
+        putVertex(data, 3, pos[3], uv(d, sprite, flipV), packed3);
 
         return new BakedQuad(data, tintIndex, dir, sprite, shade);
     }

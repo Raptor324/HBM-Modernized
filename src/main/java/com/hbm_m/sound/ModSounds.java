@@ -21,6 +21,11 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> GEIGER_5 = registerSoundEvents("item.geiger5");
     public static final RegistrySupplier<SoundEvent> GEIGER_6 = registerSoundEvents("item.geiger6");
 
+    public static final RegistrySupplier<SoundEvent> SOYUZ_ALARM = registerSoundEvents("soyuz.alarm");
+    public static final RegistrySupplier<SoundEvent> SOYUZ_READY = registerSoundEvents("soyuz.ready");
+    public static final RegistrySupplier<SoundEvent> SOYUZ_TAKEOFF = registerSoundEvents("soyuz.takeoff");
+    public static final RegistrySupplier<SoundEvent> SOYUZ_CHIME = registerSoundEvents("soyuz.chime");
+
     public static final RegistrySupplier<SoundEvent> BOMBDET3 = registerSoundEvents("bombdet3");
     public static final RegistrySupplier<SoundEvent> BOMBDET2 = registerSoundEvents("bombdet2");
     public static final RegistrySupplier<SoundEvent> BOMBDET1 = registerSoundEvents("bombdet1");
@@ -86,6 +91,8 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> ASSEMBLER_STRIKE_2 = registerSoundEvents("block.assembler_strike2");
     public static final RegistrySupplier<SoundEvent> SONAR_PING = registerSoundEvents("block.sonar_ping");
     public static final RegistrySupplier<SoundEvent> MOTOR = registerSoundEvents("block.motor");
+    public static final RegistrySupplier<SoundEvent> LARGE_TURBINE = registerSoundEvents("block.large_turbine");
+    public static final RegistrySupplier<SoundEvent> CHUNGUS_TURBINE = registerSoundEvents("block.chungus_turbine");
     public static final RegistrySupplier<SoundEvent> METAL_BOX_OPEN = registerSoundEvents("block.metal_box_open");
     public static final RegistrySupplier<SoundEvent> METAL_BOX_CLOSE = registerSoundEvents("block.metal_box_close");
     public static final RegistrySupplier<SoundEvent> PRESS_OPERATE = registerSoundEvents("block.press_operate");

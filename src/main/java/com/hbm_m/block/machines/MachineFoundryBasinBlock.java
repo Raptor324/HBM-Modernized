@@ -66,9 +66,10 @@ public class MachineFoundryBasinBlock extends BaseEntityBlock {
             return InteractionResult.FAIL;
         }
 
-        // Remove mold with empty hand
+        // Remove mold with empty hand (only possible while the basin is empty)
         if (held.isEmpty() && !basin.getMoldSlot().isEmpty()) {
             ItemStack mold = basin.takeMold();
+            if (mold.isEmpty()) return InteractionResult.FAIL;
             player.addItem(mold);
             return InteractionResult.SUCCESS;
         }

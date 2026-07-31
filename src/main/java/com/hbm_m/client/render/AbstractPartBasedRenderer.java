@@ -59,10 +59,6 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
      * does the defensive copy on demand.
      */
     private final Matrix4f currentModelViewMatrix = new Matrix4f();
-    private boolean gpuStateSetup = false;
-    
-    private static final net.minecraft.client.renderer.RenderType RT_SOLID = 
-        net.minecraft.client.renderer.RenderType.solid();
     
     /** Defensive copy - callers may not mutate the renderer's snapshot field. */
     public Matrix4f getCurrentModelViewMatrix() {
@@ -109,11 +105,6 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
             renderParts(blockEntity, model, animator, partialTick, packedLight, packedOverlay, poseStack, bufferSource);
         } finally {
             poseStack.popPose();
-            if (gpuStateSetup) {
-                RT_SOLID.clearRenderState();
-                Minecraft.getInstance().gameRenderer.lightTexture().turnOffLightLayer();
-                gpuStateSetup = false;
-            }
             com.hbm_m.client.render.LightSampleCache.BASE_POSE_SET.set(false);
         }
     }
@@ -123,6 +114,13 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
     }
 
     protected boolean isInViewFrustum(T blockEntity) {
+        // Контрапшен (Create train и т.п.): BE висит на фейковом уровне и
+        // getRenderBoundingBox() возвращает AABB в локальных координатах, который
+        // world-space фрустум отбраковывает -> модель невидима (тень рисуется,
+        // т.к. shadow-pass этот чек пропускает). Пропускаем position-based кулл.
+        if (com.hbm_m.compat.ContraptionRenderCompat.isContraptionRender(blockEntity)) {
+            return true;
+        }
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.levelRenderer == null) {
             return true;
@@ -145,7 +143,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
         return ((net.minecraftforge.common.extensions.IForgeBlockEntity) blockEntity).getRenderBoundingBox();
         //?}
         //? if fabric {
-        /*if (blockEntity instanceof com.hbm_m.block.entity.BaseMachineBlockEntity b) {
+        /*if (blockEntity instanceof com.hbm_m.blockentity.BaseMachineBlockEntity b) {
             return b.getRenderBoundingBox();
         }
         if (blockEntity instanceof com.hbm_m.block.entity.doors.DoorBlockEntity d) {

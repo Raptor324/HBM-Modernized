@@ -533,7 +533,9 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
      * Подклассы могут переопределить (например, для FOB‑шаттлов).
      */
     public boolean needsDesignator(Item item) {
-        return true;
+        // ABM запускается без дизайнатора (порт TileEntityLaunchPadBase.needsDesignator:
+        // return item != ModItems.missile_anti_ballistic).
+        return item != com.hbm_m.item.ModItems.MISSILE_ABM.get();
     }
 
     /**

@@ -26,6 +26,29 @@ public final class MissileTrackWorldRender {
 
     private MissileTrackWorldRender() {}
 
+    /**
+     * Dedicated, isolated {@link MultiBufferSource} for missile track rendering.
+     * MUST NOT be the shared {@link Minecraft#renderBuffers()} bufferSource: the
+     * flush-all at the end of {@link #render} must only flush missile geometry, not
+     * every other mod's pending shared-builder quads. Copycats' Sliding/Folding
+     * door emits to {@code RenderType.translucentMovingBlock()} (a non-fixed layer
+     * that lives in the shared global builder); flushing it here at AFTER_ENTITIES
+     * (before the contraption solid flush and before translucent terrain/water/
+     * slime) made the door write depth early and occlude everything drawn after it
+     * behind the door. Isolating missile geometry onto a private source makes the
+     * flush-all safe even when missiles are actually launching.
+     */
+    private static volatile MultiBufferSource.BufferSource missileBufferSource;
+
+    private static MultiBufferSource.BufferSource missileBufferSource() {
+        MultiBufferSource.BufferSource bs = missileBufferSource;
+        if (bs == null) {
+            bs = MultiBufferSource.immediate(new com.mojang.blaze3d.vertex.BufferBuilder(256));
+            missileBufferSource = bs;
+        }
+        return bs;
+    }
+
     public static void render(float partialTick, PoseStack poseStack) {
         if (!MissileTrackClient.isEnabled()) {
             return;
@@ -37,10 +60,12 @@ public final class MissileTrackWorldRender {
         }
 
         Vec3 camera = mc.gameRenderer.getMainCamera().getPosition();
-        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
+        // Private source — never the shared global one (see missileBufferSource()).
+        MultiBufferSource.BufferSource buffers = missileBufferSource();
 
         poseStack.pushPose();
         poseStack.translate(-camera.x, -camera.y, -camera.z);
+        boolean drewAny = false;
         try {
             for (MissileTrackClient.TrackEntry entry : MissileTrackClient.entries()) {
                 if (!MissileTrackClient.shouldUseTrackWorldRender(entry.entityId)) {
@@ -50,19 +75,28 @@ public final class MissileTrackWorldRender {
                 if (pose == null) {
                     continue;
                 }
-                renderOne(level, pose, poseStack, buffers, camera);
+                if (renderOne(level, pose, poseStack, buffers, camera)) {
+                    drewAny = true;
+                }
             }
         } finally {
             poseStack.popPose();
         }
-        buffers.endBatch();
+        // Flush the private missile source so buffered missile aux-geometry draws
+        // this frame. Safe because this source is isolated from the shared global
+        // bufferSource — flush-all here cannot disturb other mods' pending
+        // shared-builder quads (Copycats' translucentMovingBlock door etc.).
+        // drewAny just skips the call when nothing was buffered.
+        if (drewAny) {
+            buffers.endBatch();
+        }
     }
 
-    private static void renderOne(ClientLevel level, MissileTrackClient.InterpolatedPose pose,
+    private static boolean renderOne(ClientLevel level, MissileTrackClient.InterpolatedPose pose,
                                   PoseStack poseStack, MultiBufferSource.BufferSource buffers, Vec3 camera) {
         MissileRenderData data = MissileRenderHelper.resolveFromTrack(pose.current());
         if (data == null) {
-            return;
+            return false;
         }
 
         CameraRelativePose virtual = virtualizeWorld(pose.x(), pose.y(), pose.z(), camera);
@@ -103,6 +137,7 @@ public final class MissileTrackWorldRender {
         SingleMeshVboRenderer.setEntityMissileDepthBias(true);
         try {
             data.render(poseStack, packedLight, lightPos, buffers);
+            return true;
         } finally {
             SingleMeshVboRenderer.setEntityMissileDepthBias(false);
             RenderSystem.setShaderFogStart(prevFogStart);

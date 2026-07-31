@@ -49,6 +49,10 @@ public class ModParticleTypes {
     public static final RegistrySupplier<SimpleParticleType> MISSILE_NOZZLE_FLARE = PARTICLES.register("missile_nozzle_flare",
             () -> createParticle(true));
 
+    /** Blue glow trailing Gerald's meteor ({@link com.hbm_m.entity.projectile.TomEntity}). */
+    public static final RegistrySupplier<SimpleParticleType> TOM_GLOW = PARTICLES.register("tom_glow",
+            () -> createParticle(true));
+
     public static void init() {
         PARTICLES.register();
     }

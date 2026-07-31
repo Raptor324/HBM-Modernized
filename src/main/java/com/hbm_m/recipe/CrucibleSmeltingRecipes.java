@@ -33,6 +33,13 @@ public class CrucibleSmeltingRecipes {
         register(Ingredient.of(key), mat, mb);
     }
 
+    /** Smelts a specific hbm_m item id (used for alloying intermediates that have no forge tag). */
+    private static void itemId(String path, MaterialType mat, int mb) {
+        ResourceLocation id = ResourceLocation.fromNamespaceAndPath("hbm_m", path);
+        if (!net.minecraft.core.registries.BuiltInRegistries.ITEM.containsKey(id)) return;
+        register(Ingredient.of(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(id)), mat, mb);
+    }
+
     public static void registerDefaults() {
         RECIPES.clear();
 
@@ -67,6 +74,25 @@ public class CrucibleSmeltingRecipes {
         dustTag("ores/copper",  MaterialType.COPPER,  MaterialStack.MB_PER_INGOT * 2);
         dustTag("ores/gold",    MaterialType.GOLD,    MaterialStack.MB_PER_INGOT * 2);
         dustTag("ores/titanium",MaterialType.TITANIUM,MaterialStack.MB_PER_INGOT * 2);
+
+        // Alloying intermediates — consumed directly by MoltenAlloyRecipes, never cast.
+        register(Ingredient.of(net.minecraft.world.item.Items.COAL), MaterialType.CARBON, MaterialStack.MB_PER_NUGGET);
+        register(Ingredient.of(net.minecraft.world.item.Items.CHARCOAL), MaterialType.CARBON, MaterialStack.MB_PER_NUGGET);
+        itemId("nugget_arsenic",    MaterialType.ARSENIC,    MaterialStack.MB_PER_NUGGET);
+        itemId("nugget_technetium", MaterialType.TECHNETIUM, MaterialStack.MB_PER_NUGGET);
+        register(Ingredient.of(net.minecraft.world.item.Items.REDSTONE), MaterialType.REDSTONE, MaterialStack.MB_PER_NUGGET);
+
+        // Raw hematite/malachite ore blocks — port of crucible.hematite / crucible.malachite
+        // (flux input and slag byproduct omitted, no flux/slag material exists in this port).
+        blockItemId("resource_hematite",       MaterialType.IRON,   MaterialStack.MB_PER_INGOT * 2);
+        blockItemId("stone_resource_hematite", MaterialType.IRON,   MaterialStack.MB_PER_INGOT * 2);
+        blockItemId("resource_malachite",      MaterialType.COPPER, MaterialStack.MB_PER_INGOT * 2);
+        blockItemId("stone_resource_malachite",MaterialType.COPPER, MaterialStack.MB_PER_INGOT * 2);
+    }
+
+    /** Smelts the item form of a registered block (ore blocks etc). */
+    private static void blockItemId(String path, MaterialType mat, int mb) {
+        itemId(path, mat, mb);
     }
 
     public static List<SmeltingEntry> getRecipes() {

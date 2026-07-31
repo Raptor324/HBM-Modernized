@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.UUID;
 
 import com.hbm_m.explosion.MissileWarheadEffects;
+import com.mojang.logging.LogUtils;
+import org.slf4j.Logger;
 
 import api.hbm.entity.IRadarDetectable;
 import net.minecraft.core.BlockPos;
@@ -42,6 +44,8 @@ import net.minecraft.world.phys.Vec3;
  * на больших дистанциях полёта.
  */
 public abstract class MissileBaseEntity extends Projectile implements IRadarDetectable {
+
+    private static final Logger LOGGER = LogUtils.getLogger();
 
     /** Тикет на загрузку чанка под ракетой. */
     private static final TicketType<UUID> CHUNK_TICKET =
@@ -161,10 +165,24 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         this.lerpSteps = steps + 1;
     }
 
+    @Override
     public void recreateFromPacket(ClientboundAddEntityPacket packet) {
         super.recreateFromPacket(packet);
+        // Projectile.recreateFromPacket ломает xRot/yRot, вычисляя их по-своему из motion.
+        // Восстанавливаем оригинальные углы, пришедшие с сервера, чтобы ракета не ложилась на бок.
+        this.setXRot((packet.getXRot() * 360.0F) / 256.0F);
+        this.setYRot((packet.getYRot() * 360.0F) / 256.0F);
         this.xRotO = this.getXRot();
         this.yRotO = this.getYRot();
+    }
+
+    @Override
+    public void lerpMotion(double x, double y, double z) {
+        this.setDeltaMovement(x, y, z);
+        // Базовый класс Projectile в ванилле при получении первого пакета движения
+        // принудительно пересчитывает XRot/YRot из вектора скорости, если они равны строго 0.0F.
+        // Именно это заставляло ракеты при вертикальном старте с базы мгновенно ложиться на бок.
+        // Блокируем это поведение.
     }
 
     private void clientLerpStep() {
@@ -188,9 +206,12 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
      */
     @Override
     public void tick() {
+        // Обязательно обновляем значения предыдущего кадра, иначе рендер будет дёргаться или lerp'иться от нулей.
         this.xOld = this.getX();
         this.yOld = this.getY();
         this.zOld = this.getZ();
+        this.xRotO = this.getXRot();
+        this.yRotO = this.getYRot();
 
         if (!this.level().isClientSide) {
             if (this.exploded) {
@@ -265,7 +286,11 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
     }
 
     private void normalizeRotationDeltas() {
-        for (this.xRotO = this.getXRot(); this.getXRot() - this.xRotO < -180.0F; this.xRotO -= 360.0F) {
+        while (this.getXRot() - this.xRotO < -180.0F) {
+            this.xRotO -= 360.0F;
+        }
+        while (this.getXRot() - this.xRotO >= 180.0F) {
+            this.xRotO += 360.0F;
         }
         while (this.getYRot() - this.yRotO < -180.0F) {
             this.yRotO -= 360.0F;
@@ -275,7 +300,7 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         }
     }
 
-    private void serverTickLogic() {
+    protected void serverTickLogic() {
         if (this.velocity < 4.0D) {
             this.velocity += Mth.clamp((double) this.tickCount / 60.0D * 0.05D, 0.0D, 0.05D);
         }
@@ -359,8 +384,11 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
             return;
         }
         Vec3 motion = new Vec3(this.xOld - this.getX(), this.yOld - this.getY(), this.zOld - this.getZ());
+        if (motion.lengthSqr() <= 1.0E-8D) {
+            motion = this.getDeltaMovement().reverse();
+        }
         double len = motion.length();
-        if (len <= 0.0D) {
+        if (len <= 1.0E-8D) {
             return;
         }
         motion = motion.normalize();
@@ -380,8 +408,16 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
                 offsetX, offsetY, offsetZ);
     }
 
-    private void updateRotationFromMotion() {
+    protected void updateRotationFromMotion() {
+
         Vec3 motion = this.getDeltaMovement();
+
+        // Защита от поворота на бок (pitch = -90) и случайного рыскания при нулевой скорости.
+        // Именно из-за этого при призыве ракеты командой без движения она падала на бок в воздухе.
+        if (motion.lengthSqr() < 1.0E-5D) {
+            return;
+        }
+        
         double f2 = Math.sqrt(motion.x * motion.x + motion.z * motion.z);
         float pitch = (float) (Math.atan2(motion.y, f2) * 180.0D / Math.PI) - 90.0F;
         float yaw = (float) (Math.atan2(this.targetX - this.getX(), this.targetZ - this.getZ()) * 180.0D / Math.PI);
@@ -480,6 +516,7 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         }
         releaseChunkTicket();
         if (!this.level().isClientSide && this.level() instanceof ServerLevel server) {
+            server.explode(this, this.getX(), this.getY(), this.getZ(), 5.0F, Level.ExplosionInteraction.NONE);
             Vec3 motion = this.getDeltaMovement();
             MissileWarheadEffects.missileDestroyed(server, this,
                     this.getX(), this.getY(), this.getZ(),
@@ -525,6 +562,18 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
     public void onAddedToWorld() {
         super.onAddedToWorld();
         if (!this.level().isClientSide && this.level() instanceof ServerLevel server) {
+            // Ракета сама держит region‑тикет на свой чанк, чтобы летать сквозь выгруженные
+            // чанки. Вдали от игрока PersistentEntitySectionManager изредка ре‑десериализует
+            // её из устаревшего entity‑chunk — копия наследует UUID оригинала. Если живая
+            // ракета с таким UUID уже есть в этом уровне — это клон: выкидываем его до того,
+            // как он получит тикет/контрейл, иначе в воздухе появится вторая (и третья) ракета
+            // и второй контакт на радаре.
+            if (com.hbm_m.server.missile.MissileTrackBroadcaster.isDuplicateSpawn(server, this)) {
+                LOGGER.warn("Discarding duplicate missile {} (uuid={}) — a live missile with the same UUID already exists",
+                        this.getId(), this.getUUID());
+                this.discard();
+                return;
+            }
             if (this.loadedChunk == null) {
                 this.loadedChunk = new ChunkPos(this.blockPosition());
                 server.getChunkSource().addRegionTicket(CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());

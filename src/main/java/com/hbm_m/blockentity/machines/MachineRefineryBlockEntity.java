@@ -1,6 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
 import com.hbm_m.api.fluids.FluidItemAccess;
+import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -37,7 +38,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Refinery BlockEntity - processes crude oil into petroleum products.
  */
-public class MachineRefineryBlockEntity extends BaseMachineBlockEntity {
+public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
 
     public static final int INVENTORY_SIZE = 13;
     public static final int SLOT_BATTERY = 0;
@@ -139,6 +140,31 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity {
 
     public FluidTank getTank(int index) {
         return (index >= 0 && index < tanks.length) ? tanks[index] : tanks[0];
+    }
+
+    // ═══════════════════════════ IFluidStandardTransceiverMK2 ════════════════════════════════
+    // Делает контроллер видимым для MK2-сети жидкостных труб (как у химической установки):
+    // без этого UniversalMachinePartBlockEntity не подписывает рефайнери ни как receiver, ни
+    // как provider, и трубы не могут залить сырую нефть / забрать продукты переработки.
+
+    @Override
+    public FluidTank[] getReceivingTanks() {
+        return new FluidTank[] { tanks[TANK_INPUT] };
+    }
+
+    @Override
+    public FluidTank[] getSendingTanks() {
+        return new FluidTank[] { tanks[TANK_HEAVY], tanks[TANK_NAPHTHA], tanks[TANK_LIGHT], tanks[TANK_PETROLEUM] };
+    }
+
+    @Override
+    public FluidTank[] getAllTanks() {
+        return tanks;
+    }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
     public boolean hasDisplayRecipe() {

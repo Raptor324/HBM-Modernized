@@ -1,13 +1,1 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(python -c ' *)",
-      "Bash(cd \"/c/Users/Luke/Documents/VS Projekte HBM Modernized/HBM-Modernized\" && find src/main/java/com/hbm_m -iname \"*naval*\" -o -iname \"*mine*\" | grep -i naval)",
-      "Read(//c/c/Users/Luke/Documents/VS Projekte HBM Modernized/HBM-Modernized/src/main/java/com/**)",
-      "Bash(cd \"/c/Users/Luke/Documents/VS Projekte HBM Modernized/HBM-Modernized\" && grep -rni \"naval_mine\\\\|navalmine\\\\|NAVAL_MINE\" src/main/java src/main/resources 2>/dev/null | head -50)",
-      "Read(//c/c/Users/Luke/Documents/VS Projekte HBM Modernized/HBM-Modernized/src/main/**)",
-      "Bash(cd \"/c/Users/Luke/Documents/VS Projekte HBM Modernized/HBM-Modernized\" && find . -path ./build -prune -o -iname \"gas_centrifuge.json\" -print 2>/dev/null)",
-      "Read(//c/c/Users/Luke/Documents/VS Projekte HBM Modernized/**)"
-    ]
-  }
-}
+

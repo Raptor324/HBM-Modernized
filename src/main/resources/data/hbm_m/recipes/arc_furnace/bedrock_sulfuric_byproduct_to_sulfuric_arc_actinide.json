@@ -1,0 +1,12 @@
+{
+  "type": "hbm_m:arc_furnace",
+  "ingredient": {
+    "item": "hbm_m:bedrock_ore_sulfuric_byproduct_actinide"
+  },
+  "count": 1,
+  "result": {
+    "item": "hbm_m:bedrock_ore_sulfuric_arc_actinide",
+    "count": 2
+  },
+  "duration": 100
+}

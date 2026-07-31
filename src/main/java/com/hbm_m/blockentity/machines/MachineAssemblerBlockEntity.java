@@ -794,10 +794,8 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     *///?}
 
     //? if forge {
-    @OnlyIn(Dist.CLIENT)
     private ItemStack clientRecipeIconTemplate = ItemStack.EMPTY;
 
-    @OnlyIn(Dist.CLIENT)
     private ItemStack clientRecipeIconCache = ItemStack.EMPTY;
 
     /** Cached recipe output icon for BER; refreshed when assembly template slot changes. */

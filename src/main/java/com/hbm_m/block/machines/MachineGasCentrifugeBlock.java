@@ -35,6 +35,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.network.NetworkHooks;
 
@@ -50,33 +51,21 @@ public class MachineGasCentrifugeBlock extends BaseEntityBlock implements IMulti
     }
 
     private MultiblockStructureHelper defineStructure() {
-        // E = Energy connector (can receive power from cables)
+        // Original 1.7.10 getDimensions() = {3, 0, 0, 0, 0, 0}: height 3, zero horizontal spread —
+        // a slender 1-wide, 3-tall column, not a 3x3 footprint.
         // A = Default structural part
-        // C = Controller (the main block)
-        String[] layer0 = { "EAE",
-                            "ACA",
-                            "EAE" 
-                        }; // Bottom - corners are energy connectors
-
-        String[] layer1 = { "AAA",
-                            "AAA",
-                            "AAA" 
-                        }; // Middle
-
-        String[] layer2 = { "AAA",
-                            "AAA",
-                            "AAA" 
-                        }; // Top
+        // C = Controller (the main block, placed by the player; holds the real BlockEntity)
+        String[] layer0 = { "C" }; // Bottom - placed block
+        String[] layer1 = { "A" }; // Middle
+        String[] layer2 = { "A" }; // Top
 
         Map<Character, PartRole> roleMap = Map.of(
             'A', PartRole.DEFAULT,
-            'C', PartRole.CONTROLLER,
-            'E', PartRole.ENERGY_CONNECTOR
+            'C', PartRole.CONTROLLER
         );
 
         Map<Character, Supplier<BlockState>> symbolMap = Map.of(
-            'A', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-            'E', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()
+            'A', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()
         );
 
         return MultiblockStructureHelper.createFromLayersWithRoles(
@@ -152,7 +141,23 @@ public class MachineGasCentrifugeBlock extends BaseEntityBlock implements IMulti
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        // Full 3x3x3 outline, used for the selection/outline box.
         return structureHelper.generateShapeFromParts(state.getValue(FACING));
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        // Only this cell's own collision shape - the other 26 cells are covered by their
+        // own UNIVERSAL_MACHINE_PART phantom blocks, each providing their own collision.
+        return structureHelper.getSpecificPartShape(structureHelper.getControllerOffset(), state.getValue(FACING));
+    }
+
+    @Override
+    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
+        if (!structureHelper.isFullBlock(structureHelper.getControllerOffset(), state.getValue(FACING))) {
+            return Shapes.empty();
+        }
+        return Shapes.block();
     }
 
     @Override

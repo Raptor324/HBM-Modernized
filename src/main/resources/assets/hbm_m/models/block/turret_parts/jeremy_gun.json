@@ -1,0 +1,13 @@
+{
+  "loader": "forge:obj",
+  "model": "hbm_m:models/turrets/turret_jeremy.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "default": "hbm_m:block/turrets/jeremy",
+    "particle": "hbm_m:block/turrets/jeremy"
+  },
+  "visibility": {
+    "Gun": true
+  }
+}

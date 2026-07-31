@@ -65,18 +65,36 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
     private static volatile boolean instancersInitialized = false;
 
     /**
-     * Жидкость с depth test, но без depth write (как {@code glDepthMask(false)} в 1.7.10).
-     * Рисуем после flush instanced/VBO-частей всех chemplant в кадре — иначе в depth только террейн.
+     * Отложенный fluid-запрос: {@code renderParts} только фиксирует матрицу pose +
+     * цвет/anim, сама отрисовка идёт в {@link #presentDeferredFluids()} в
+     * {@code AFTER_BLOCK_ENTITIES} — после {@code IrisRenderBatch.closePersistentIfActive()}
+     * и instanced-flush частей, внутри {@code IrisPhaseGuard} BLOCK_ENTITIES.
+     * <p>
+     * Почему deferred, а не inline в BER (как раньше):
+     * <ul>
+     *   <li>Inline-рисование шло пока активен persistent Iris-batch (наш BLOCK_ENTITY
+     *       ExtendedShader = активная GL-программа). {@code endBatch()} translucent
+     *       загружал ModelViewMat/ProjMat, но GL-программа ещё не переключилась на
+     *       translucent → {@code glUniformMatrix*} по не-матричному uniform →
+     *       {@code GL_INVALID_OPERATION: Uniform must be a matrix type}.</li>
+     *   <li>При включённом instanced batching части идут через {@code addInstance}
+     *       (запись, draw позже в {@code flushInstancedBatches}). Inline-жидкость в BER
+     *       рисовалась ДО частей → opaque-части рисовали поверх жидкости («корпус всегда
+     *       ближе жидкости»). Deferred рисует жидкость после частей → корректный depth.</li>
+     * </ul>
+     * Та же модель, что у {@link MachineCrystallizerRenderer#presentDeferredFluids()}.
      */
-    private static final List<DeferredChemplantFluid> DEFERRED_FLUIDS = new ArrayList<>();
-
     private record DeferredChemplantFluid(
-        BlockPos pos,
-        Matrix4f pose,
-        int packedLight,
-        int packedOverlay,
-        MachineChemicalPlantVboRenderer.FluidVisual visual
+            MachineChemicalPlantBakedModel model,
+            net.minecraft.world.level.block.state.BlockState state,
+            Matrix4f pose,
+            float anim,
+            int packedLight,
+            int packedOverlay,
+            MachineChemicalPlantVboRenderer.FluidVisual visual
     ) {}
+
+    private static final List<DeferredChemplantFluid> DEFERRED_FLUIDS = new ArrayList<>();
 
     private final Matrix4f matSlider = new Matrix4f();
     private final Matrix4f matSpinner = new Matrix4f();
@@ -85,80 +103,25 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
     private static final float DEG_TO_RAD = (float) (Math.PI / 180.0);
 
     /**
-     * Пивот вращения спиннера в пространстве уже запечённых VBO-вершин.
-     * В OBJ это {@code (0.5, 0, 0.5)}; JSON root translation {@code [-0.5, 0, 0.5]} сдвигает его в {@code (0, 0, 1)} — не менять JSON, только эти константы под VBO/Batch.
+     * Пивот вращения спиннера в пространстве УЖЕ ЗАПЕЧЁННЫХ VBO-вершин
+     * (baked-space = OBJ + JSON root translation).
+     * <p>
+     * Центр геометрии Spinner в OBJ = {@code (0.5, 1.25, 0.5)} (X,Z = 0.5, 0.5).
+     * JSON {@code chemical_plant.json} transform.translation = {@code [0.5, 0, 0.5]}
+     * (компенсация смещения контроллера в структуре). Значит baked-центр спиннера
+     * (X,Z) = {@code (0.5+0.5, 0.5+0.5)} = {@code (1.0, 1.0)}.
+     * <p>
+     * matSpinner применяется к baked-вершинам (после T_off(-0.5,0,-0.5) в renderParts),
+     * поэтому пивот должен быть в baked-координатах. Раньше тут было (0.5, 0.5) —
+     * OBJ-центр, без учёта JSON-сдвига → спиннер крутился вокруг чужой оси.
+     * <p>
+     * Если снова меняешь JSON translation: pivot = OBJ_CENTER + JSON_translation.
+     * Вращение вокруг Y, поэтому Y пивота не важен.
      */
-    private static final float CHEMPLANT_BAKE_PIVOT_X = 0.5f;
-    private static final float CHEMPLANT_BAKE_PIVOT_Z = 0.5f;
+    private static final float CHEMPLANT_BAKE_PIVOT_X = 1.0f;
+    private static final float CHEMPLANT_BAKE_PIVOT_Z = 1.0f;
 
     public MachineChemicalPlantRenderer(BlockEntityRendererProvider.Context ctx) {}
-
-    /** Сброс очереди в начале кадра (до BER). */
-    public static void clearDeferredFluids() {
-        DEFERRED_FLUIDS.clear();
-    }
-
-    /**
-     * Ставит жидкость в очередь; отрисовка — {@link #presentDeferredFluids()} после
-     * {@link #flushInstancedBatches(Matrix4f)} в {@link com.hbm_m.client.render.culling.InstancedRenderFrame}.
-     */
-    public static void scheduleDeferredFluid(BlockPos pos, Matrix4f poseInLocalSpace,
-                                             int packedLight, int packedOverlay,
-                                             MachineChemicalPlantVboRenderer.FluidVisual visual) {
-        if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
-            return;
-        }
-        DEFERRED_FLUIDS.add(new DeferredChemplantFluid(
-            pos, new Matrix4f(poseInLocalSpace), packedLight, packedOverlay, visual));
-    }
-
-    /**
-     * После всех BER и flush instanced: в depth уже все части машин, жидкость только тестирует depth.
-     */
-    public static void presentDeferredFluids() {
-        if (DEFERRED_FLUIDS.isEmpty()) {
-            return;
-        }
-        Minecraft mc = Minecraft.getInstance();
-        var level = mc.level;
-        if (level == null) {
-            DEFERRED_FLUIDS.clear();
-            return;
-        }
-
-        float partialTick = mc.getFrameTime();
-        MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
-        PoseStack poseStack = new PoseStack();
-        boolean depthMaskWas = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
-
-        //? if forge {
-        try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
-            RenderSystem.depthMask(false);
-            for (DeferredChemplantFluid entry : DEFERRED_FLUIDS) {
-                BlockEntity raw = level.getBlockEntity(entry.pos);
-                if (!(raw instanceof MachineChemicalPlantBlockEntity be)) {
-                    continue;
-                }
-                BakedModel rawModel = mc.getBlockRenderer().getBlockModel(be.getBlockState());
-                if (!(rawModel instanceof MachineChemicalPlantBakedModel model)) {
-                    continue;
-                }
-                float anim = be.getAnim(partialTick);
-                BlockState state = be.getBlockState();
-                poseStack.pushPose();
-                poseStack.last().pose().set(entry.pose);
-                MachineChemicalPlantVboRenderer.drawChemplantFluidBaked(
-                    model, state, anim, poseStack, buffers, entry.packedLight, entry.packedOverlay, entry.visual);
-                poseStack.popPose();
-            }
-            buffers.endBatch();
-        } finally {
-            RenderSystem.depthMask(depthMaskWas);
-        }
-        //?} else {
-        /*DEFERRED_FLUIDS.clear();*///?}
-        DEFERRED_FLUIDS.clear();
-    }
 
     private static synchronized void initializeInstancedRenderersSync(MachineChemicalPlantBakedModel model) {
         if (instancersInitialized) return;
@@ -235,7 +198,7 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
             return;
         }
 
-        float staticFade = RenderDistanceHelper.computeStaticFade(blockPos);
+        float staticFade = RenderDistanceHelper.computeStaticFade(be);
         if (staticFade < 0) return;
         SingleMeshVboRenderer.setFadeAlpha(staticFade);
 
@@ -249,11 +212,12 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
 
         if (visual != null) {
             //? if forge {
-            try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
-                MachineChemicalPlantVboRenderer.renderChemplantFluid(be, model, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
-            }
+            // Только запись в очередь; draw — в presentDeferredFluids (AFTER_BLOCK_ENTITIES),
+            // см. комментарий у DeferredChemplantFluid.
+            scheduleDeferredFluid(model, be.getBlockState(), poseStack, be.getAnim(partialTick),
+                    packedLight, packedOverlay, visual);
             //?} else {
-            /*MachineChemicalPlantVboRenderer.renderChemplantFluid(be, model, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
+            /*// Fabric: deferred-fluid путь требует forge-only IrisPhaseGuard, на fabric жидкость не рисуется.
             *///?}
         }
     }
@@ -382,6 +346,69 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         poseStack.popPose();
     }
 
+
+    // ==================== DEFERRED FLUID ====================
+
+    /** Сброс очереди жидкости в начале кадра (или на early-return). */
+    public static void clearDeferredFluids() {
+        DEFERRED_FLUIDS.clear();
+    }
+
+    /**
+     * Запись жидкости в очередь на отложенную отрисовку. Вызывается из
+     * {@code renderParts} в BER-фазе; pose и anim фиксируются здесь, draw — позже.
+     * В shadow-pass не планируем (жидкость translucent, в shadow не видна и
+     * только дропает depth).
+     */
+    //? if forge {
+    static void scheduleDeferredFluid(MachineChemicalPlantBakedModel model,
+                                      net.minecraft.world.level.block.state.BlockState state,
+                                      PoseStack poseStack, float anim,
+                                      int packedLight, int packedOverlay,
+                                      MachineChemicalPlantVboRenderer.FluidVisual visual) {
+        if (ShaderCompatibilityDetector.isRenderingShadowPass()) return;
+        DEFERRED_FLUIDS.add(new DeferredChemplantFluid(
+                model, state, new Matrix4f(poseStack.last().pose()), anim, packedLight, packedOverlay, visual));
+    }
+    //?}
+
+    /**
+     * Отрисовка всей накопленной за кад жидкости. Вызывается из
+     * {@code InstancedRenderFrame.presentAfterBlockEntities} после
+     * {@code IrisRenderBatch.closePersistentIfActive()} и instanced-flush.
+     * <p>
+     * depthMask(false) вокруг цикла — как {@code glDepthMask(false)} в 1.7.10:
+     * жидкость не пишет depth, корректно смешивается с частями за ней (depth уже
+     * содержит opaque-части, отрисованные на instanced-flush). Один
+     * {@code endBatch()} изолированного {@link MachineChemicalPlantVboRenderer#FLUID_BUFFER_SOURCE}
+     * после цикла = один translucent glDraw (а не N), вне shared bufferSource.
+     */
+    public static void presentDeferredFluids() {
+        if (DEFERRED_FLUIDS.isEmpty()) return;
+        //? if forge {
+        try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
+            boolean depthMaskWas = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
+            PoseStack poseStack = new PoseStack();
+            try {
+                RenderSystem.depthMask(false);
+                for (DeferredChemplantFluid e : DEFERRED_FLUIDS) {
+                    poseStack.pushPose();
+                    poseStack.last().pose().set(e.pose);
+                    poseStack.translate(-0.5f, 0f, -0.5f);
+                    MachineChemicalPlantVboRenderer.drawChemplantFluidBaked(
+                            e.model, e.state, e.anim, poseStack,
+                            MachineChemicalPlantVboRenderer.FLUID_BUFFER_SOURCE,
+                            e.packedLight, e.packedOverlay, e.visual);
+                    poseStack.popPose();
+                }
+                MachineChemicalPlantVboRenderer.FLUID_BUFFER_SOURCE.endBatch();
+            } finally {
+                RenderSystem.depthMask(depthMaskWas);
+            }
+        }
+        //?}
+        DEFERRED_FLUIDS.clear();
+    }
 
     public static void flushInstancedBatches(org.joml.Matrix4f projectionMatrix) {
         flushInstanced(projectionMatrix, instancedBase);

@@ -25,10 +25,10 @@
 			"scale": [ 0.20, 0.20, 0.20 ]
 		},
 		"firstperson_righthand": {
-            "rotation": [ 0, 45, 0 ],
-            "translation": [ 0.75, 1.00, 0.00 ],
-            "scale": [ 0.21, 0.21, 0.21 ]
-        },
+			"rotation": [ 0, 217, 0 ],
+			"translation": [ 0.25, 1.00, -1.75 ],
+			"scale": [ 0.21, 0.21, 0.21 ]
+		},
 		"firstperson_lefthand": {
 			"rotation": [ 0, 45, 0 ],
 			"translation": [ 2.00, -1.00, 0.00 ],
@@ -36,7 +36,7 @@
 		},
 		"gui": {
 			"rotation": [ 30, 225, 0 ],
-			"translation": [ -2.50, -3.80, 0.00 ],
+			"translation": [ 0.00, -2.55, 0.50 ],
 			"scale": [ 0.21, 0.21, 0.21 ]
 		},
 		"head": {

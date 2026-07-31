@@ -11,6 +11,12 @@
       "render_type": "minecraft:solid",
       "textures": {
         "default": "hbm_m:block/machine/mining_drill"
+      },
+      "visibility": {
+        "Shaft": false,
+        "Crusher1": false,
+        "Crusher2": false,
+        "Drillbit": false
       }
     }
   },
@@ -23,27 +29,27 @@
     "thirdperson_righthand": {
         "rotation": [ 75, 45, 0 ],
         "translation": [ 0.00, 2.50, 0.00 ],
-        "scale": [ 0.22, 0.22, 0.22 ]
+        "scale": [ 0.09, 0.09, 0.09 ]
     },
     "thirdperson_lefthand": {
         "rotation": [ 75, 45, 0 ],
         "translation": [ 0.00, 2.50, 0.00 ],
-        "scale": [ 0.22, 0.22, 0.22 ]
+        "scale": [ 0.09, 0.09, 0.09 ]
     },
     "firstperson_righthand": {
         "rotation": [ 0, 45, 0 ],
         "translation": [ 0.25, 0.25, -0.50 ],
-        "scale": [ 0.08, 0.08, 0.08 ]
+        "scale": [ 0.035, 0.035, 0.035 ]
     },
     "firstperson_lefthand": {
         "rotation": [ 0, 45, 0 ],
         "translation": [ 0.75, 1.00, 0.00 ],
-        "scale": [ 0.22, 0.22, 0.22 ]
+        "scale": [ 0.09, 0.09, 0.09 ]
     },
     "gui": {
         "rotation": [ 30, 225, 0 ],
         "translation": [ 0.00, -3.25, 0.00 ],
-        "scale": [ 0.09, 0.09, 0.09 ]
+        "scale": [ 0.04, 0.04, 0.04 ]
     },
     "head": {
         "rotation": [ 0, 0, 0 ],
@@ -53,12 +59,12 @@
     "fixed": {
         "rotation": [ 0, 180, 0 ],
         "translation": [ 0.00, 0.00, 0.00 ],
-        "scale": [ 0.30, 0.30, 0.30 ]
+        "scale": [ 0.13, 0.13, 0.13 ]
     },
     "ground": {
         "rotation": [ 0, 0, 0 ],
         "translation": [ 0.00, 3.00, 0.00 ],
-        "scale": [ 0.20, 0.20, 0.20 ]
+        "scale": [ 0.09, 0.09, 0.09 ]
     }
   }
 }

@@ -1,0 +1,56 @@
+{
+  "loader": "forge:obj",
+  "model": "hbm_m:models/block/machines/radar_screen.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "hbm_m:block/machine/radar_screen",
+    "default": "hbm_m:block/machine/radar_screen"
+  },
+  "transform": {
+    "rotation": [0, 90, 0],
+    "translation": [ 0, 0, -3 ]
+  },
+  "display": {
+    "thirdperson_righthand": {
+        "rotation": [ 75, 45, 0 ],
+        "translation": [ 1.25, 0.50, 0.00 ],
+        "scale": [ 0.15, 0.15, 0.15 ]
+    },
+    "thirdperson_lefthand": {
+        "rotation": [ 75, 45, 0 ],
+        "translation": [ 0.00, 2.50, 0.00 ],
+        "scale": [ 0.20, 0.20, 0.20 ]
+    },
+    "firstperson_righthand": {
+        "rotation": [ 24, 101, 308 ],
+        "translation": [ 4.00, 1.00, 0.00 ],
+        "scale": [ 0.20, 0.20, 0.20 ]
+    },
+    "firstperson_lefthand": {
+        "rotation": [ 0, 45, 0 ],
+        "translation": [ 0.75, 1.00, 0.00 ],
+        "scale": [ 0.20, 0.20, 0.20 ]
+    },
+    "gui": {
+        "rotation": [ 30, 135, 0 ],
+        "translation": [ 2.50, -1.25, 0.00 ],
+        "scale": [ 0.35, 0.35, 0.35 ]
+    },
+    "head": {
+        "rotation": [ 0, 0, 0 ],
+        "translation": [ 0.00, 0.00, 0.00 ],
+        "scale": [ 1.00, 1.00, 1.00 ]
+    },
+    "fixed": {
+        "rotation": [ 0, 180, 0 ],
+        "translation": [ 0.00, 0.00, 0.00 ],
+        "scale": [ 0.28, 0.28, 0.28 ]
+    },
+    "ground": {
+        "rotation": [ 0, 0, 0 ],
+        "translation": [ 0.00, 3.00, 0.00 ],
+        "scale": [ 0.18, 0.18, 0.18 ]
+    }
+}
+}

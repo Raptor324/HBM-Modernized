@@ -194,7 +194,23 @@ public class MachineTowerLargeBlock extends BaseEntityBlock implements IMultiblo
 
     @Override
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
-        // WIP - keine GUI vorhanden
+        // No GUI - this multiblock is a purely passive fluid pipe-to-pipe converter.
+        // Right-clicking just reports the current tank levels via an action bar message.
+        if (!pLevel.isClientSide()) {
+            BlockEntity be = pLevel.getBlockEntity(pPos);
+            if (be instanceof MachineCoolingTowerBlockEntity tower) {
+                var hot = tower.getTank(MachineCoolingTowerBlockEntity.TANK_HOT_IN);
+                var cool = tower.getTank(MachineCoolingTowerBlockEntity.TANK_COOLANT_OUT);
+                pPlayer.displayClientMessage(net.minecraft.network.chat.Component.translatable(
+                        "info.hbm_m.cooling_tower.status",
+                        hot.getFill(), hot.getMaxFill(),
+                        cool.getFill(), cool.getMaxFill(),
+                        tower.isCooling()
+                                ? net.minecraft.network.chat.Component.translatable("info.hbm_m.cooling_tower.active")
+                                : net.minecraft.network.chat.Component.translatable("info.hbm_m.cooling_tower.idle")
+                ), true);
+            }
+        }
         return InteractionResult.sidedSuccess(pLevel.isClientSide());
     }
 

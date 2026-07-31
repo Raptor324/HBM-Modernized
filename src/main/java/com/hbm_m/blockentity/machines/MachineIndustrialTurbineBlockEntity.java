@@ -3,58 +3,53 @@ package com.hbm_m.blockentity.machines;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
+import com.hbm_m.api.fluids.IFluidStandardSenderMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.interfaces.IEnergyModeHolder;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
-import com.hbm_m.inventory.menu.MachineIndustrialTurbineMenu;
-import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
+import com.hbm_m.sound.ClientSoundBootstrap;
+import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.Containers;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 //?}
-
 //? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.fabricmc.fabric.api.transfer.v1.storage.base.SingleSlotStorage;
-import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
-import net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant;
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 *///?}
 
 /**
  * Industrial Turbine BlockEntity - converts steam to energy (HE).
+ * Kein Inventar/GUI - Dampf kommt ausschließlich über Rohre an den UNIVERSAL_CONNECTOR-
+ * Phantomblöcken der Multiblock-Struktur an (gleiches Prinzip wie bei Chungus).
  *
  * Stats:
  * - Steam tank: 64,000 mB (input)
  * - Spent steam tank: 64,000 mB (output)
  * - Energy output: up to 500 HE/t depending on steam type
- * - Steam consumption: 50 mB/t
  */
 @SuppressWarnings("UnstableApiUsage")
-public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity {
-
-    // Slot definitions
-    public static final int SLOT_STEAM_IN = 0;      // Steam container input
-    public static final int SLOT_STEAM_OUT = 1;      // Empty container output
-    public static final int SLOT_SPENT_IN = 2;       // Empty container for spent steam
-    public static final int SLOT_SPENT_OUT = 3;      // Filled spent steam container
-    public static final int INVENTORY_SIZE = 4;
+public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
+        implements IEnergyModeHolder, IFluidStandardReceiverMK2, IFluidStandardSenderMK2 {
 
     // Capacity constants
     private static final long ENERGY_CAPACITY = 500_000L;
@@ -63,19 +58,26 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity 
     private static final int SPENT_STEAM_CAPACITY = 64_000;
 
     // Conversion constants
-    private static final int STEAM_CONSUMPTION_RATE = 50;   // mB of steam consumed per tick
+    private static final double CONSUMPTION_PERCENT = 0.2D; // Anteil des Tankinhalts, der pro Tick verbraucht wird
     private static final long ENERGY_PER_MB_STEAM = 100;    // HE per mB of steam (regular)
     private static final long ENERGY_PER_MB_HOT = 200;      // HE per mB of hot steam
     private static final long ENERGY_PER_MB_SUPERHOT = 400;  // HE per mB of super hot steam
     private static final long ENERGY_PER_MB_ULTRAHOT = 800;  // HE per mB of ultra hot steam
+
+    // Flywheel (Spin-up/Spin-down-Trägheit der Turbine). Werte sind an ENERGY_CAPACITY angepasst
+    // und ggf. beim Playtesting nachzujustieren.
+    private static final double FLYWHEEL_MAX_ENERGY = ENERGY_CAPACITY * 4.0;
+    private double spin = 0.0;
+    private long flywheelEnergy = 0L;
+    private long maxPower = 0L;
 
     // Fluid tanks
     private final FluidTank steamTank;
     private final FluidTank spentSteamTank;
 
     //? if forge {
-    private final LazyOptional<IFluidHandler> lazySteamHandler;
-    private final LazyOptional<IFluidHandler> lazySpentHandler;
+    private LazyOptional<IFluidHandler> lazySteamHandler;
+    private LazyOptional<IFluidHandler> lazySpentHandler;
     //?}
 
     //? if fabric {
@@ -87,35 +89,14 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity 
     private float anim = 0.0F;
     private float prevAnim = 0.0F;
 
-    protected final ContainerData data = new ContainerData() {
-        @Override
-        public int get(int index) {
-            return switch (index) {
-                case 0 -> steamTank.getFill();
-                case 1 -> steamTank.getMaxFill();
-                case 2 -> spentSteamTank.getFill();
-                case 3 -> spentSteamTank.getMaxFill();
-                case 4 -> isActive ? 1 : 0;
-                case 5 -> (int) (energy & 0xFFFFFFFF);
-                case 6 -> (int) ((energy >> 32) & 0xFFFFFFFF);
-                default -> 0;
-            };
-        }
-
-        @Override
-        public void set(int index, int value) {}
-
-        @Override
-        public int getCount() {
-            return 7;
-        }
-    };
-
     public MachineIndustrialTurbineBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), pos, state,
-              INVENTORY_SIZE, ENERGY_CAPACITY, 0L, ENERGY_EXTRACT_RATE);
+              0, ENERGY_CAPACITY, 0L, ENERGY_EXTRACT_RATE);
 
-        this.steamTank = new FluidTank(STEAM_CAPACITY);
+        // Standardmäßig auf normalen Dampf konformiert (wie spentSteamTank auf SPENTSTEAM), damit das
+        // Fluid-Netzwerk den Tank sofort erkennt, statt erst nach dem ersten manuellen Einfüllen
+        // (UniversalMachinePartBlockEntity#collectControllerFluidTypes ignoriert Tanks ohne Typ).
+        this.steamTank = new FluidTank(ModFluids.STEAM.getSource(), STEAM_CAPACITY);
         this.spentSteamTank = new FluidTank(ModFluids.SPENTSTEAM.getSource(), SPENT_STEAM_CAPACITY);
 
         //? if forge {
@@ -138,17 +119,15 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity 
                     be.anim -= (float) (Math.PI * 2.0);
                 }
             }
+            ClientSoundBootstrap.updateSound(be, be.spin > 0.001D,
+                    () -> be.createLoopingSoundReflect(ModSounds.LARGE_TURBINE.get()));
             return;
         }
 
         be.ensureNetworkInitialized();
 
-        // Process fluid containers
-        be.processFluidContainers();
-
         boolean wasActive = be.isActive;
 
-        // Convert steam to energy
         be.processTurbine();
 
         // Push energy to network
@@ -162,98 +141,59 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity 
         }
     }
 
-    private void processFluidContainers() {
-        ItemStack[] slots = new ItemStack[INVENTORY_SIZE];
-        for (int i = 0; i < INVENTORY_SIZE; i++) {
-            slots[i] = inventory.getStackInSlot(i);
-        }
-
-        // Load steam from containers
-        if (steamTank.loadTank(SLOT_STEAM_IN, SLOT_STEAM_OUT, slots)) {
-            for (int i = 0; i < INVENTORY_SIZE; i++) {
-                inventory.setStackInSlot(i, slots[i]);
-            }
-        }
-
-        // Unload spent steam to containers
-        if (spentSteamTank.unloadTank(SLOT_SPENT_IN, SLOT_SPENT_OUT, slots)) {
-            for (int i = 0; i < INVENTORY_SIZE; i++) {
-                inventory.setStackInSlot(i, slots[i]);
-            }
-        }
-    }
-
     private void processTurbine() {
-        if (steamTank.getFill() <= 0 || steamTank.getTankType() == null) {
-            isActive = false;
-            return;
+        // 1. Dampf verbrauchen (20% des aktuellen Tankinhalts/Tick) und Energie-Potential in das Flywheel laden.
+        if (steamTank.getFill() > 0 && steamTank.getTankType() != null) {
+            long energyPerMb = getEnergyPerMb();
+            if (energyPerMb > 0) {
+                int steamAvailable = steamTank.getFill();
+                int steamToConsume = Math.min((int) Math.ceil(steamAvailable * CONSUMPTION_PERCENT), steamAvailable);
+
+                int spentSpace = spentSteamTank.getMaxFill() - spentSteamTank.getFill();
+                steamToConsume = Math.min(steamToConsume, spentSpace);
+
+                if (steamToConsume > 0) {
+                    steamTank.drainMb(steamToConsume);
+                    spentSteamTank.fillMb(ModFluids.SPENTSTEAM.getSource(), steamToConsume);
+
+                    maxPower = steamToConsume * energyPerMb;
+                    flywheelEnergy += maxPower;
+                }
+            }
         }
 
-        // Calculate energy per mB based on steam type
-        long energyPerMb = getEnergyPerMb();
-        if (energyPerMb <= 0) {
-            isActive = false;
-            return;
+        // 2. Flywheel-Trägheit: die Turbine fährt hoch/runter statt sofort volle Leistung zu liefern.
+        spin = flywheelEnergy / FLYWHEEL_MAX_ENERGY;
+
+        long energySpace = Math.max(0L, getMaxEnergyStored() - getEnergyStored());
+        long potentialOutput = (long) (Math.max(spin, 0.05D) * maxPower);
+        long output = Math.min(Math.min(potentialOutput, flywheelEnergy), energySpace);
+
+        boolean generating = output > 0;
+        if (generating) {
+            flywheelEnergy -= output;
+            setEnergyStored(getEnergyStored() + output);
+            setChanged();
+            sendUpdateToClient();
         }
 
-        int steamAvailable = steamTank.getFill();
-        int steamToConsume = Math.min(STEAM_CONSUMPTION_RATE, steamAvailable);
-
-        // Check energy capacity
-        long energyToGenerate = steamToConsume * energyPerMb;
-        long energySpace = getMaxEnergyStored() - getEnergyStored();
-        if (energySpace <= 0) {
-            isActive = false;
-            return;
-        }
-        if (energyToGenerate > energySpace) {
-            steamToConsume = (int) (energySpace / energyPerMb);
-            energyToGenerate = steamToConsume * energyPerMb;
-        }
-
-        // Check spent steam capacity
-        int spentSpace = spentSteamTank.getMaxFill() - spentSteamTank.getFill();
-        if (spentSpace < steamToConsume) {
-            steamToConsume = spentSpace;
-            energyToGenerate = steamToConsume * energyPerMb;
-        }
-
-        if (steamToConsume <= 0) {
-            isActive = false;
-            return;
-        }
-
-        // Consume steam
-        steamTank.fill(steamTank.getFill() - steamToConsume);
-
-        // Produce spent steam
-        spentSteamTank.setTankType(ModFluids.SPENTSTEAM.getSource());
-        spentSteamTank.fill(spentSteamTank.getFill() + steamToConsume);
-
-        // Generate energy
-        setEnergyStored(getEnergyStored() + energyToGenerate);
-
-        isActive = true;
-        setChanged();
-        sendUpdateToClient();
+        isActive = generating || flywheelEnergy > 0;
     }
 
     private long getEnergyPerMb() {
-        if (steamTank.getTankType() == ModFluids.ULTRAHOTSTEAM.getSource()) return ENERGY_PER_MB_ULTRAHOT;
-        if (steamTank.getTankType() == ModFluids.SUPERHOTSTEAM.getSource()) return ENERGY_PER_MB_SUPERHOT;
-        if (steamTank.getTankType() == ModFluids.HOTSTEAM.getSource()) return ENERGY_PER_MB_HOT;
-        if (steamTank.getTankType() == ModFluids.STEAM.getSource()) return ENERGY_PER_MB_STEAM;
+        return getEnergyPerMb(steamTank.getTankType());
+    }
+
+    private long getEnergyPerMb(net.minecraft.world.level.material.Fluid fluid) {
+        if (fluid == ModFluids.ULTRAHOTSTEAM.getSource()) return ENERGY_PER_MB_ULTRAHOT;
+        if (fluid == ModFluids.SUPERHOTSTEAM.getSource()) return ENERGY_PER_MB_SUPERHOT;
+        if (fluid == ModFluids.HOTSTEAM.getSource()) return ENERGY_PER_MB_HOT;
+        if (fluid == ModFluids.STEAM.getSource()) return ENERGY_PER_MB_STEAM;
         return 0;
     }
 
     public void drops() {
-        if (level == null) return;
-        for (int i = 0; i < inventory.getSlots(); i++) {
-            ItemStack stack = inventory.getStackInSlot(i);
-            if (!stack.isEmpty()) {
-                Containers.dropItemStack(level, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), stack);
-            }
-        }
+        // Kein Inventar - nichts zu droppen.
     }
 
     @Override
@@ -268,25 +208,40 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity 
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        if (slot == SLOT_STEAM_IN || slot == SLOT_SPENT_IN) {
-            //? if forge {
-            return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-            //?}
-            //? if fabric {
-            /*return net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage.ITEM.find(stack, null) != null;
-            *///?}
-        }
         return false;
     }
 
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new MachineIndustrialTurbineMenu(containerId, playerInventory, this, data);
+        return null; // Kein GUI - Dampf läuft ausschließlich über Rohrverbindungen.
     }
 
-    public ContainerData getContainerData() {
-        return data;
+    @Override
+    public int getCurrentMode() {
+        return 2; // OUTPUT only, so the energy network treats this as a generator.
+    }
+
+    // --- MK2 Fluid-Netzwerk (UNIVERSAL_CONNECTOR-Phantomblöcke der Multiblock-Struktur) ---
+
+    @Override
+    public FluidTank[] getAllTanks() {
+        return new FluidTank[]{ steamTank, spentSteamTank };
+    }
+
+    @Override
+    public FluidTank[] getReceivingTanks() {
+        return new FluidTank[]{ steamTank };
+    }
+
+    @Override
+    public FluidTank[] getSendingTanks() {
+        return new FluidTank[]{ spentSteamTank };
+    }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved();
     }
 
     // --- Accessors ---
@@ -303,6 +258,28 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity 
         return isActive;
     }
 
+    /** 0.0 = Flywheel steht, 1.0 = volle Drehzahl. Steuert Sound-Pitch/Volume und Anim-Geschwindigkeit. */
+    public double getSpin() {
+        return spin;
+    }
+
+    private static final String TURBINE_LOOP_SOUND_FACTORY = "com.hbm_m.client.sound.TurbineLoopSoundFactory";
+
+    //? if forge {
+    @OnlyIn(Dist.CLIENT)
+    //?}
+    //? if fabric {
+    /*@Environment(EnvType.CLIENT)*///?}
+    private Object createLoopingSoundReflect(SoundEvent sound) {
+        try {
+            return Class.forName(TURBINE_LOOP_SOUND_FACTORY)
+                    .getMethod("create", MachineIndustrialTurbineBlockEntity.class, SoundEvent.class)
+                    .invoke(null, this, sound);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public float getAnim(float partialTicks) {
         return prevAnim + (anim - prevAnim) * partialTicks;
     }
@@ -317,6 +294,9 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity 
         tag.putBoolean("active", isActive);
         tag.putFloat("anim", anim);
         tag.putFloat("prevAnim", prevAnim);
+        tag.putLong("flywheelEnergy", flywheelEnergy);
+        tag.putLong("maxPower", maxPower);
+        tag.putDouble("spin", spin);
     }
 
     @Override
@@ -327,6 +307,9 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity 
         isActive = tag.getBoolean("active");
         anim = tag.getFloat("anim");
         prevAnim = tag.getFloat("prevAnim");
+        flywheelEnergy = tag.getLong("flywheelEnergy");
+        maxPower = tag.getLong("maxPower");
+        spin = tag.getDouble("spin");
     }
 
     // --- Capabilities ---
@@ -344,8 +327,8 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity 
 
     @Override
     protected void setupFluidCapability() {
-        // Forge-side wrappers currently отсутствуют в com.hbm_m.inventory.fluid.tank.FluidTank (Forge branch stubbed).
-        // Если понадобится, можно восстановить ForgeFluidHandlerWrapper в FluidTank и вернуть getCapability().
+        lazySteamHandler = LazyOptional.of(() -> new SteamInputHandler(this));
+        lazySpentHandler = LazyOptional.of(() -> new SpentSteamOutputHandler(this));
     }
 
     @Override
@@ -353,6 +336,110 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity 
         super.invalidateCaps();
         lazySteamHandler.invalidate();
         lazySpentHandler.invalidate();
+    }
+
+    private static class SteamInputHandler implements IFluidHandler {
+        private final MachineIndustrialTurbineBlockEntity be;
+
+        SteamInputHandler(MachineIndustrialTurbineBlockEntity be) {
+            this.be = be;
+        }
+
+        @Override
+        public int getTanks() { return 1; }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
+            return new net.minecraftforge.fluids.FluidStack(be.steamTank.getTankType(), be.steamTank.getFill());
+        }
+
+        @Override
+        public int getTankCapacity(int tank) {
+            return be.steamTank.getMaxFill();
+        }
+
+        @Override
+        public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) {
+            return be.getEnergyPerMb(stack.getFluid()) > 0;
+        }
+
+        @Override
+        public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty() || be.getEnergyPerMb(resource.getFluid()) <= 0) return 0;
+            if (be.steamTank.getFill() > 0 && be.steamTank.getTankType() != resource.getFluid()) return 0;
+            int space = be.steamTank.getMaxFill() - be.steamTank.getFill();
+            int toFill = Math.min(space, resource.getAmount());
+            if (toFill <= 0) return 0;
+            if (action.execute()) {
+                be.steamTank.setTankType(resource.getFluid());
+                be.steamTank.fill(be.steamTank.getFill() + toFill);
+            }
+            return toFill;
+        }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            return net.minecraftforge.fluids.FluidStack.EMPTY;
+        }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            return net.minecraftforge.fluids.FluidStack.EMPTY;
+        }
+    }
+
+    private static class SpentSteamOutputHandler implements IFluidHandler {
+        private final MachineIndustrialTurbineBlockEntity be;
+
+        SpentSteamOutputHandler(MachineIndustrialTurbineBlockEntity be) {
+            this.be = be;
+        }
+
+        @Override
+        public int getTanks() { return 1; }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
+            return new net.minecraftforge.fluids.FluidStack(be.spentSteamTank.getTankType(), be.spentSteamTank.getFill());
+        }
+
+        @Override
+        public int getTankCapacity(int tank) {
+            return be.spentSteamTank.getMaxFill();
+        }
+
+        @Override
+        public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) {
+            return false;
+        }
+
+        @Override
+        public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            return 0;
+        }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty() || be.spentSteamTank.getFill() <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            if (resource.getFluid() != be.spentSteamTank.getTankType()) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            int toDrain = Math.min(resource.getAmount(), be.spentSteamTank.getFill());
+            net.minecraftforge.fluids.FluidStack drained = new net.minecraftforge.fluids.FluidStack(be.spentSteamTank.getTankType(), toDrain);
+            if (action.execute()) {
+                be.spentSteamTank.fill(be.spentSteamTank.getFill() - toDrain);
+            }
+            return drained;
+        }
+
+        @Override
+        public @NotNull net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            if (maxDrain <= 0 || be.spentSteamTank.getFill() <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            int toDrain = Math.min(maxDrain, be.spentSteamTank.getFill());
+            net.minecraftforge.fluids.FluidStack drained = new net.minecraftforge.fluids.FluidStack(be.spentSteamTank.getTankType(), toDrain);
+            if (action.execute()) {
+                be.spentSteamTank.fill(be.spentSteamTank.getFill() - toDrain);
+            }
+            return drained;
+        }
     }
     //?}
 

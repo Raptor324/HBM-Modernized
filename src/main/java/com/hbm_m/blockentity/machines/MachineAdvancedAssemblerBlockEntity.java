@@ -849,11 +849,9 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     *///?}
 
     //? if forge {
-    @OnlyIn(Dist.CLIENT)
     @Nullable
     private ResourceLocation clientRecipeIconCacheId;
 
-    @OnlyIn(Dist.CLIENT)
     private ItemStack clientRecipeIconCache = ItemStack.EMPTY;
 
     /** Cached recipe output icon for BER; refreshed when {@link #selectedRecipeId} changes. */

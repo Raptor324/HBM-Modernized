@@ -5,6 +5,8 @@ import com.hbm_m.main.MainRegistry;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 
@@ -78,19 +80,23 @@ public final class OcclusionCullingHelper {
     private OcclusionCullingHelper() {}
 
     /**
-     * Ключ кэша: позиция контроллера + фаза (main vs Iris shadow). Иначе за один
-     * клиентский кадр сначала отрабатывает shadow pass с одной камерой, потом main
-     * с другой — оба вызывают {@link #shouldRender} с тем же {@code pos.asLong()},
-     * и второй проход получает чужой результат из кэша (типичный «мигающий» BER,
-     * особенно на компактных мультиблоках вроде Assembly Machine).
+     * Ключ кэша: чистый {@code pos.asLong()}.
+     * <p>
+     * Раньше сюда подмешивался бит {@code 1<<62} для разделения main/shadow фаз,
+     * но {@code BlockPos.asLong()} пакует Y в биты 52–63 — свободного бита нет,
+     * и XOR ломал Y (aliasing с другой позицией по высоте), а
+     * {@code stripShadowKeyBit} corrupил Y при каждом {@code BlockPos.of}.
+     * Тег оказался и не нужен: {@link #shouldRender} выходит ранним {@code return}
+     * в shadow-проходе, поэтому shadow-результаты никогда не попадают в
+     * {@link #occlusionCache}, и столкновение main/shadow в кэше физически
+     * невозможно.
      */
     private static long occlusionCacheKey(BlockPos pos) {
-        long pk = pos.asLong();
-        return ShaderCompatibilityDetector.isRenderingShadowPass() ? (pk ^ (1L << 62)) : pk;
+        return pos.asLong();
     }
 
     private static long stripShadowKeyBit(long key) {
-        return key & ~(1L << 62);
+        return key;
     }
 
     public static void setTransparentBlocksTag(TagKey<Block> tag) {
@@ -108,6 +114,40 @@ public final class OcclusionCullingHelper {
     /** Вызывать из {@code RenderLevelStageEvent.Stage.AFTER_ENTITIES} (Forge) перед циклом BER. */
     public static void captureBlockEntityPassFrustum(@Nullable Frustum frustum) {
         blockEntityPassFrustum = frustum;
+    }
+
+    /**
+     * Вооружает fallback {@link CpuFrustumCuller}: извлекает плоскости из
+     * world-space {@code projection · view} так, чтобы тест против world-space
+     * AABB (как у {@link net.minecraft.world.level.block.entity.BlockEntity}-
+     * {@code getRenderBoundingBox()}) был корректен. Раньше
+     * {@link CpuFrustumCuller#updateFrustum} не имел ни одного вызова →
+     * {@code planesValid} всегда false → {@code isVisible} всегда true и fallback
+     * вообще не каллил.
+     *
+     * <p>В MC 1.20.1 {@code RenderSystem.getModelViewMatrix()} на фазе AFTER_ENTITIES
+     * содержит только поворот камеры R (сдвиг на {@code -cameraPos} вносится в
+     * level PoseStack по каждому объекту, а не в RenderSystem). Поэтому полную
+     * view-матрицу восстанавливаем как {@code R · T(−cam)}.
+     */
+    public static void captureCpuFrustumFallback(Matrix4f projection, Vec3 cameraPos) {
+        if (projection == null) {
+            CpuFrustumCuller.invalidate();
+            return;
+        }
+        try {
+            Matrix4f rot = new Matrix4f(RenderSystem.getModelViewMatrix());           // R
+            // T(−cam): чистый сдвиг. mul даёт R · T(−cam) → столбец сдвига = −R·cam
+            // (именно это и есть view: p_view = R·(p − cam)). setTranslation дал бы −cam —
+            // некорректно, т.к. cameraPos в world-space, а не в повёрнутом.
+            Matrix4f trans = new Matrix4f().setTranslation(
+                    (float) -cameraPos.x, (float) -cameraPos.y, (float) -cameraPos.z);
+            Matrix4f view = rot.mul(trans);                                          // R · T(−cam)
+            Matrix4f viewProj = new Matrix4f(projection).mul(view);                  // P · V
+            CpuFrustumCuller.updateFrustum(viewProj);
+        } catch (Throwable err) {
+            CpuFrustumCuller.invalidate();
+        }
     }
 
     /** Тот же тест AABB, что vanilla делает для BE перед {@code render}. */

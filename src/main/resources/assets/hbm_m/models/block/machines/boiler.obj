@@ -1,6 +1,8 @@
 # Blender v2.79 (sub 0) OBJ File: 'boiler.blend'
 # www.blender.org
 o Plane
+mtllib boiler.mtl
+usemtl default
 v -1.500000 0.000000 1.500000
 v 1.500000 0.000000 1.500000
 v -1.500000 0.000000 -1.500000

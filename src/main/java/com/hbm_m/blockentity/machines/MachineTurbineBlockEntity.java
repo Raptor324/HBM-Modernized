@@ -8,6 +8,7 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineTurbineMenu;
+import com.hbm_m.interfaces.IEnergyModeHolder;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 
@@ -35,7 +36,7 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 //?}
 
-public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
+public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2, IEnergyModeHolder {
 
     public static final int SLOT_FLUID_ID_IN    = 0;
     public static final int SLOT_FLUID_ID_OUT   = 1;
@@ -71,8 +72,15 @@ public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements
     private LazyOptional<IFluidHandler> spentOutputHandler = LazyOptional.empty();
     //?}
 
+    private static final long ENERGY_EXTRACT_RATE = 50_000L;
+
     public MachineTurbineBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.TURBINE_BE.get(), pos, state, INVENTORY_SIZE, 500_000L, 10_000L, 0L);
+        super(ModBlockEntities.TURBINE_BE.get(), pos, state, INVENTORY_SIZE, 500_000L, 10_000L, ENERGY_EXTRACT_RATE);
+    }
+
+    @Override
+    public int getCurrentMode() {
+        return 2; // OUTPUT only, so the energy network treats this as a generator.
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineTurbineBlockEntity blockEntity) {
@@ -115,14 +123,8 @@ public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements
             }
         }
 
-        // Power decay: turbine loses 5 % of stored energy each tick when not generating
         boolean wasActive = active;
         active = processSteam();
-
-        if (!active) {
-            long decayed = (long)(getEnergyStored() * 0.95);
-            setEnergyStored(decayed);
-        }
 
         if (active && maxProgress > 0) {
             progress = (progress + 1) % maxProgress;

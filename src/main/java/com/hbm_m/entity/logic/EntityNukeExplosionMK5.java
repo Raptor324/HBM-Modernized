@@ -130,12 +130,18 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
                         (System.currentTimeMillis() - explosionStart));
             }
 
-            // Fallout будет реализован отдельной задачей (FalloutRain + RenderFallout)
-            // Здесь оставляем точку расширения.
-            if (applyInstantPlayerRads) {
-                // Всплеск ambient в эпицентре (как раньше от sellafite+spread), затем затухание к фону кратера.
-                ExplosionNukeGeneric.incrementRad(level(), getX(), getY(), getZ(), this.length * 2.0F);
-            }
+            // Fallout будет реализован отдельной задачей (FalloutRain + RenderFallout).
+            //
+            // ВНИМАНИЕ: здесь НЕ должно быть прямого ChunkRadiationManager.incrementRad.
+            // В 1.7.10 путь NukeBoy/NukeMan/NukeMike → EntityNukeExplosionMK5 НЕ накачивает
+            // chunk-радиацию напрямую. Источников chunk radiation после взрыва block-fatman
+            // в оригинале НЕТ (BlockSellafieldSlaked extends Block — инертный, MK5 только
+            // применяет дозу живым сущностям через ContaminationUtil.contaminate).
+            //
+            // Радиация в кратере в 1.7.10 появляется ИСКЛЮЧИТЕЛЬНО через crater biomes:
+            // EntityFalloutRain → getBiomeChange меняет биом на craterBiome/craterInnerBiome/
+            // craterOuterBiome, а EntityEffectHandler.onUpdate каждые 20 тиков добавляет
+            // игроку 25/5/0.5 RAD/сек соответственно (см. WorldConfig.craterBiome*Rad).
 
             if (fallout) {
                 spawnFallout();

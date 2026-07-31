@@ -359,6 +359,33 @@ public class ClientRenderHandler {
     }
 
     /**
+     * Dedicated, isolated {@link net.minecraft.client.renderer.MultiBufferSource} for
+     * highlight overlays. MUST NOT be the shared {@link Minecraft#renderBuffers()}
+     * bufferSource: poking the shared source here (getBuffer/endBatch) flushes
+     * whatever it currently holds. {@code RenderType.translucentMovingBlock()} — used
+     * by Copycats' Sliding/Folding door BER — is NOT a fixed buffer layer, so its
+     * quads live in the shared builder; an unconditional {@code getBuffer} +
+     * {@code endBatch} here at AFTER_BLOCK_ENTITIES flushes those quads mid-frame
+     * instead of at the normal end-of-frame flush, corrupting their translucent
+     * compositing on the main render target under Fast/Fancy graphics (where the
+     * door renders to the main FB — under Fabulous it is isolated on the
+     * item-entity target, so the disturbance is invisible). Keep highlight rendering
+     * on a private source so it can never disturb other mods' pending shared-builder
+     * geometry. See {@link #onRenderWorldLate}.
+     */
+    private static volatile net.minecraft.client.renderer.MultiBufferSource.BufferSource highlightBufferSource;
+
+    private static net.minecraft.client.renderer.MultiBufferSource.BufferSource highlightBufferSource() {
+        net.minecraft.client.renderer.MultiBufferSource.BufferSource bs = highlightBufferSource;
+        if (bs == null) {
+            bs = net.minecraft.client.renderer.MultiBufferSource.immediate(
+                    new com.mojang.blaze3d.vertex.BufferBuilder(CustomRenderTypes.HIGHLIGHT_BOX_FILL.bufferSize()));
+            highlightBufferSource = bs;
+        }
+        return bs;
+    }
+
+    /**
      * Platform hook: render highlight boxes in world.
      *
      * Forge: call from RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES
@@ -367,8 +394,23 @@ public class ClientRenderHandler {
     public static void onRenderWorldLate(net.minecraft.client.renderer.MultiBufferSource.BufferSource ignored, com.mojang.blaze3d.vertex.PoseStack poseStack, Vec3 cameraPos) {
         Minecraft mc = Minecraft.getInstance();
         long currentTime = System.currentTimeMillis();
-        VertexConsumer fillConsumer = mc.renderBuffers().bufferSource().getBuffer(CustomRenderTypes.HIGHLIGHT_BOX_FILL);
         float alpha = ModClothConfig.get().obstructionHighlight.obstructionHighlightAlpha / 100.0f;
+
+        boolean hasHighlights = !highlightedBlocks.isEmpty() && alpha > 0;
+        boolean hasOrphans = !orphanedPhantomBlocks.isEmpty();
+        if (!hasHighlights && !hasOrphans) {
+            // Nothing to draw — do NOT touch any bufferSource. The old code
+            // unconditionally called getBuffer/endBatch(HIGHLIGHT_BOX_FILL) on the
+            // shared global bufferSource even with zero HBM blocks present, which
+            // flushed other mods' pending shared-builder geometry mid-frame (notably
+            // Copycats' sliding/folding doors on a Create train) and broke their
+            // translucent compositing under Fast/Fancy graphics.
+            return;
+        }
+
+        // Private source — never the shared global one (see highlightBufferSource()).
+        net.minecraft.client.renderer.MultiBufferSource.BufferSource buf = highlightBufferSource();
+        VertexConsumer fillConsumer = buf.getBuffer(CustomRenderTypes.HIGHLIGHT_BOX_FILL);
 
         poseStack.pushPose();
         poseStack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
@@ -424,7 +466,7 @@ public class ClientRenderHandler {
             }
         }
 
-        mc.renderBuffers().bufferSource().endBatch(CustomRenderTypes.HIGHLIGHT_BOX_FILL);
+        buf.endBatch(CustomRenderTypes.HIGHLIGHT_BOX_FILL);
         poseStack.popPose();
     }
 
