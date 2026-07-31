@@ -326,7 +326,11 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        tag.put("inventory", inventory.serializeNBT());
+        // copy() обязателен: ItemStack.save() кладёт в NBT ССЫЛКУ на живой ItemStack.tag.
+        // Chunk NBT сериализуется в потоке IOWorker, а машины продолжают менять теги
+        // предметов (зарядка батарей, счётчики) → ConcurrentModificationException
+        // в CompoundTag.write и незавершаемое "Saving worlds" при выходе из мира.
+        tag.put("inventory", inventory.serializeNBT().copy());
         tag.putLong("energy", energy);
         tag.putLong("capacity", capacity);
         tag.putLong("lastEnergy", lastEnergy);

@@ -85,6 +85,7 @@ import com.hbm_m.block.machines.MachinePressBlock;
 import com.hbm_m.block.machines.MachinePumpjackBlock;
 import com.hbm_m.block.machines.MachineLargeRadarBlock;
 import com.hbm_m.block.machines.MachineRadarBlock;
+import com.hbm_m.block.machines.MachineRadarScreenBlock;
 import com.hbm_m.block.machines.MachineRbmkConsoleBlock;
 import com.hbm_m.block.machines.MachineRefineryBlock;
 import com.hbm_m.block.machines.MachineShredderBlock;
@@ -434,6 +435,9 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> LARGE_RADAR = registerBlockWithoutItem("large_radar",
             () -> new MachineLargeRadarBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistrySupplier<Block> RADAR_SCREEN = registerBlockWithoutItem("radar_screen",
+            () -> new MachineRadarScreenBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> CRACKING_TOWER = registerBlockWithoutItem("cracking_tower",
             () -> new MachineCrackingTowerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));

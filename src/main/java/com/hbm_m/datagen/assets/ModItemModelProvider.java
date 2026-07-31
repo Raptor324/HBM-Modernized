@@ -724,6 +724,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.PUMPJACK);
         blockItemFromBlockModelMachine(ModBlocks.RADAR, "radar_item");
         blockItemFromBlockModelMachine(ModBlocks.LARGE_RADAR, "large_radar_item");
+        blockItemFromBlockModelMachine(ModBlocks.RADAR_SCREEN);
         blockItemFromBlockModelMachine(ModBlocks.CRACKING_TOWER);
         blockItemFromBlockModelMachine(ModBlocks.FRACTION_TOWER);
         blockItemFromBlockModelMachine(ModBlocks.MINING_DRILL);

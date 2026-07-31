@@ -121,7 +121,8 @@ import com.hbm_m.inventory.gui.GUIMachineLargePylon;
 import com.hbm_m.inventory.gui.GUIMachineMixer;
 import com.hbm_m.inventory.gui.GUIMachineMiningDrill;
 import com.hbm_m.inventory.gui.GUIMachinePumpjack;
-import com.hbm_m.inventory.gui.GUIMachineRadar;
+import com.hbm_m.inventory.gui.GUIMachineRadarNT;
+import com.hbm_m.inventory.gui.GUIMachineRadarNTSlots;
 import com.hbm_m.inventory.gui.GUIMachineRefinery;
 import com.hbm_m.inventory.gui.GUIMachineRbmkConsole;
 import com.hbm_m.inventory.gui.GUIRBMKRod;
@@ -476,7 +477,8 @@ public class ClientSetup {
         MenuScreens.register(ModMenuTypes.RBMK_OUTGASSER_MENU.get(), GUIRBMKOutgasser::new);
         MenuScreens.register(ModMenuTypes.FLARE_STACK_MENU.get(), GUIMachineFlareStack::new);
         MenuScreens.register(ModMenuTypes.PUMPJACK_MENU.get(), GUIMachinePumpjack::new);
-        MenuScreens.register(ModMenuTypes.RADAR_MENU.get(), GUIMachineRadar::new);
+        MenuScreens.register(ModMenuTypes.RADAR_MENU.get(), GUIMachineRadarNT::new);
+        MenuScreens.register(ModMenuTypes.RADAR_SLOTS_MENU.get(), GUIMachineRadarNTSlots::new);
         MenuScreens.register(ModMenuTypes.CRACKING_TOWER_MENU.get(), GUIMachineCrackingTower::new);
         MenuScreens.register(ModMenuTypes.FRACTION_TOWER_MENU.get(), GUIMachineFractionTower::new);
         MenuScreens.register(ModMenuTypes.MINING_DRILL_MENU.get(), GUIMachineMiningDrill::new);
@@ -610,6 +612,7 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.TURRET_ARTY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.TURRET_HIMARS_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RADAR_BE.get(), MachineRadarRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RADAR_SCREEN_BE.get(), com.hbm_m.client.render.implementations.MachineRadarScreenRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.CRUCIBLE_BE.get(), CrucibleRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.FOUNDRY_BASIN_BE.get(), com.hbm_m.client.render.implementations.FoundryBasinRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.FOUNDRY_CHANNEL_BE.get(), com.hbm_m.client.render.implementations.FoundryChannelRenderer::new);
@@ -795,6 +798,7 @@ public class ClientSetup {
         register(ModBlockEntities.TURRET_ARTY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
         register(ModBlockEntities.TURRET_HIMARS_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
         register(ModBlockEntities.RADAR_BE.get(), MachineRadarRenderer::new);
+        register(ModBlockEntities.RADAR_SCREEN_BE.get(), com.hbm_m.client.render.implementations.MachineRadarScreenRenderer::new);
         register(ModBlockEntities.LAUNCH_PAD_BE.get(), LaunchPadMissileRenderer::new);
         register(ModBlockEntities.LAUNCH_PAD_RUSTED_BE.get(), LaunchPadMissileRenderer::new);
         register(ModBlockEntities.CRUCIBLE_BE.get(), CrucibleRenderer::new);
@@ -1629,7 +1633,7 @@ public class ClientSetup {
                         MachinePressRenderer.clearCaches();
                         MachineChemicalPlantRenderer.clearCaches();
                         MachineCrystallizerRenderer.clearCaches();
-            MachineRadarRenderer.clearCaches();
+                        MachineRadarRenderer.clearCaches();
                         MeshRenderCache.clearAll();
                         com.hbm_m.client.render.MdiGeometryAtlas.resetForResourceLifecycle();
                         AbstractObjArmorLayer.clearAllCaches();

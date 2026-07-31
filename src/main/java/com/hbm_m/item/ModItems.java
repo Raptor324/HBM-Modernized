@@ -1682,7 +1682,10 @@ public class ModItems {
         () -> new MultiblockBlockItem(ModBlocks.RADAR.get(), new Item.Properties()));
 
 	public static final RegistrySupplier<Item> LARGE_RADAR = ITEMS.register("large_radar",
-        () -> new MultiblockBlockItem(ModBlocks.LARGE_RADAR.get(), new Item.Properties()));
+	    () -> new MultiblockBlockItem(ModBlocks.LARGE_RADAR.get(), new Item.Properties()));
+
+	public static final RegistrySupplier<Item> RADAR_SCREEN = ITEMS.register("radar_screen",
+	    () -> new MultiblockBlockItem(ModBlocks.RADAR_SCREEN.get(), new Item.Properties()));
 
 	public static final RegistrySupplier<Item> CRACKING_TOWER = ITEMS.register("cracking_tower",
         () -> new MultiblockBlockItem(ModBlocks.CRACKING_TOWER.get(), new Item.Properties()));
@@ -3390,7 +3393,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> PUDDING = ITEMS.register("pudding", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PWR_PRINTER = ITEMS.register("pwr_printer", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> QUARTZ_PLUTONIUM = ITEMS.register("quartz_plutonium", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> RADAR_LINKER = ITEMS.register("radar_linker", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> RADAR_LINKER = ITEMS.register("radar_linker", () -> new com.hbm_m.item.tool.ItemRadarLinker(new Item.Properties()));
     public static final RegistrySupplier<Item> RAG = ITEMS.register("rag", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> RAG_DAMP = ITEMS.register("rag_damp", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> RAG_PISS = ITEMS.register("rag_piss", () -> new Item(new Item.Properties()));

@@ -301,6 +301,15 @@ public class ModClothConfig implements ConfigData {
 
     @Category("machines")
     @Gui.CollapsibleObject(startExpanded = false)
+    public MachineRadarSettings machineRadar = new MachineRadarSettings();
+
+    public static class MachineRadarSettings {
+        @Gui.Tooltip
+        public boolean generateChunks = false;
+    }
+
+    @Category("machines")
+    @Gui.CollapsibleObject(startExpanded = false)
     public FrackingTowerSettings frackingTower = new FrackingTowerSettings();
 
     public static class FrackingTowerSettings {

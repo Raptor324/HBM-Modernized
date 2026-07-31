@@ -178,6 +178,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.CRATE_CONSERVE.get()));
         add.accept(new ItemStack(ModBlocks.RADAR.get()));
         add.accept(new ItemStack(ModBlocks.LARGE_RADAR.get()));
+        add.accept(new ItemStack(ModBlocks.RADAR_SCREEN.get()));
         add.accept(new ItemStack(ModItems.RANGEFINDER.get()));
         add.accept(new ItemStack(ModItems.DESIGNATOR.get()));
         add.accept(new ItemStack(ModItems.DESIGNATOR_RANGE.get()));
@@ -229,7 +230,7 @@ public final class CreativeModeTabEventHandler {
         };
 
         add.accept(new ItemStack(ModBlocks.NUKE_FAT_MAN.get()));
-        add.accept(new ItemStack(ModBlocks.NUKE_PROTOTYPE.get()));
+        // add.accept(new ItemStack(ModBlocks.NUKE_PROTOTYPE.get()));
         add.accept(new ItemStack(ModBlocks.DUD_CONVENTIONAL.get()));
         add.accept(new ItemStack(ModBlocks.DUD_NUKE.get()));
         add.accept(new ItemStack(ModBlocks.DUD_SALTED.get()));
@@ -304,41 +305,41 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.BARBED_WIRE_RAD.get()));
         add.accept(new ItemStack(ModBlocks.BARBED_WIRE_WITHER.get()));
         add.accept(new ItemStack(ModBlocks.BARBED_WIRE.get()));
-        add.accept(new ItemStack(ModBlocks.TURRET_SENTRY.get()));
-        add.accept(new ItemStack(ModBlocks.TURRET_CHEKHOV.get()));
-        add.accept(new ItemStack(ModBlocks.TURRET_FRIENDLY.get()));
-        add.accept(new ItemStack(ModBlocks.TURRET_JEREMY.get()));
-        add.accept(new ItemStack(ModBlocks.TURRET_TAUON.get()));
-        add.accept(new ItemStack(ModBlocks.TURRET_RICHARD.get()));
-        add.accept(new ItemStack(ModBlocks.TURRET_HOWARD.get()));
-        add.accept(new ItemStack(ModBlocks.TURRET_MAXWELL.get()));
-        add.accept(new ItemStack(ModBlocks.TURRET_FRITZ.get()));
-        add.accept(new ItemStack(ModBlocks.TURRET_ARTY.get()));
-        add.accept(new ItemStack(ModBlocks.TURRET_HIMARS.get()));
-        add.accept(new ItemStack(ModItems.TURRET_AMMO.get()));
-        add.accept(new ItemStack(ModItems.AMMO_9MM_SP.get()));
-        add.accept(new ItemStack(ModItems.AMMO_9MM_FMJ.get()));
-        add.accept(new ItemStack(ModItems.AMMO_9MM_JHP.get()));
-        add.accept(new ItemStack(ModItems.AMMO_9MM_AP.get()));
-        add.accept(new ItemStack(ModItems.AMMO_50_SP.get()));
-        add.accept(new ItemStack(ModItems.AMMO_50_FMJ.get()));
-        add.accept(new ItemStack(ModItems.AMMO_50_JHP.get()));
-        add.accept(new ItemStack(ModItems.AMMO_50_AP.get()));
-        add.accept(new ItemStack(ModItems.AMMO_50_DU.get()));
-        add.accept(new ItemStack(ModItems.AMMO_556_SP.get()));
-        add.accept(new ItemStack(ModItems.AMMO_556_FMJ.get()));
-        add.accept(new ItemStack(ModItems.AMMO_556_JHP.get()));
-        add.accept(new ItemStack(ModItems.AMMO_556_AP.get()));
-        add.accept(new ItemStack(ModItems.ROCKET_TURRET_STANDARD.get()));
-        add.accept(new ItemStack(ModItems.ROCKET_HIMARS_STANDARD.get()));
-        add.accept(new ItemStack(ModItems.ROCKET_HIMARS_HE.get()));
-        add.accept(new ItemStack(ModItems.ROCKET_HIMARS_LAVA.get()));
-        add.accept(new ItemStack(ModItems.ROCKET_HIMARS_MINI_NUKE.get()));
-        add.accept(new ItemStack(ModItems.ROCKET_HIMARS_WP.get()));
-        add.accept(new ItemStack(ModItems.ROCKET_HIMARS_THERMOBARIC.get()));
-        add.accept(new ItemStack(ModItems.AMMO_TAU_URANIUM.get()));
-        add.accept(new ItemStack(ModItems.AMMO_FLAME_DIESEL.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_MISSILE_ASSEMBLY.get()));
+        // add.accept(new ItemStack(ModBlocks.TURRET_SENTRY.get()));
+        // add.accept(new ItemStack(ModBlocks.TURRET_CHEKHOV.get()));
+        // add.accept(new ItemStack(ModBlocks.TURRET_FRIENDLY.get()));
+        // add.accept(new ItemStack(ModBlocks.TURRET_JEREMY.get()));
+        // add.accept(new ItemStack(ModBlocks.TURRET_TAUON.get()));
+        // add.accept(new ItemStack(ModBlocks.TURRET_RICHARD.get()));
+        // add.accept(new ItemStack(ModBlocks.TURRET_HOWARD.get()));
+        // add.accept(new ItemStack(ModBlocks.TURRET_MAXWELL.get()));
+        // add.accept(new ItemStack(ModBlocks.TURRET_FRITZ.get()));
+        // add.accept(new ItemStack(ModBlocks.TURRET_ARTY.get()));
+        // add.accept(new ItemStack(ModBlocks.TURRET_HIMARS.get()));
+        // add.accept(new ItemStack(ModItems.TURRET_AMMO.get()));
+        // add.accept(new ItemStack(ModItems.AMMO_9MM_SP.get()));
+        // add.accept(new ItemStack(ModItems.AMMO_9MM_FMJ.get()));
+        // add.accept(new ItemStack(ModItems.AMMO_9MM_JHP.get()));
+        // add.accept(new ItemStack(ModItems.AMMO_9MM_AP.get()));
+        // add.accept(new ItemStack(ModItems.AMMO_50_SP.get()));
+        // add.accept(new ItemStack(ModItems.AMMO_50_FMJ.get()));
+        // add.accept(new ItemStack(ModItems.AMMO_50_JHP.get()));
+        // add.accept(new ItemStack(ModItems.AMMO_50_AP.get()));
+        // add.accept(new ItemStack(ModItems.AMMO_50_DU.get()));
+        // add.accept(new ItemStack(ModItems.AMMO_556_SP.get()));
+        // add.accept(new ItemStack(ModItems.AMMO_556_FMJ.get()));
+        // add.accept(new ItemStack(ModItems.AMMO_556_JHP.get()));
+        // add.accept(new ItemStack(ModItems.AMMO_556_AP.get()));
+        // add.accept(new ItemStack(ModItems.ROCKET_TURRET_STANDARD.get()));
+        // add.accept(new ItemStack(ModItems.ROCKET_HIMARS_STANDARD.get()));
+        // add.accept(new ItemStack(ModItems.ROCKET_HIMARS_HE.get()));
+        // add.accept(new ItemStack(ModItems.ROCKET_HIMARS_LAVA.get()));
+        // add.accept(new ItemStack(ModItems.ROCKET_HIMARS_MINI_NUKE.get()));
+        // add.accept(new ItemStack(ModItems.ROCKET_HIMARS_WP.get()));
+        // add.accept(new ItemStack(ModItems.ROCKET_HIMARS_THERMOBARIC.get()));
+        // add.accept(new ItemStack(ModItems.AMMO_TAU_URANIUM.get()));
+        // add.accept(new ItemStack(ModItems.AMMO_FLAME_DIESEL.get()));
+        // add.accept(new ItemStack(ModBlocks.MACHINE_MISSILE_ASSEMBLY.get()));
         add.accept(new ItemStack(ModItems.MISSILE_FUSELAGE.get()));
         add.accept(new ItemStack(ModItems.MISSILE_CHIP.get()));
         add.accept(new ItemStack(ModItems.GRENADE.get()));
@@ -397,6 +398,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.STARMETAL_SHOVEL.get()));
         add.accept(new ItemStack(ModItems.METEORITE_SWORD.get()));
         add.accept(new ItemStack(ModItems.METEORITE_SWORD_SEARED.get()));
+        add.accept(new ItemStack(ModItems.CROWBAR.get()));
 
         // Силовая броня добавляется полностью заряженной
         add.accept(createChargedArmorStack(ModItems.T51_HELMET.get()));
@@ -683,22 +685,20 @@ public final class CreativeModeTabEventHandler {
         // Упрощенный Consumer, по умолчанию использующий PARENT_AND_SEARCH_TABS
         Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         add.accept(new ItemStack(ModBlocks.ARMOR_TABLE.get()));
-        // АВТОМАТИЧЕСКОЕ ДОБАВЛЕНИЕ ВСЕХ МОДИФИКАТОРОВ
-        // 1. Получаем все зарегистрированные предметы
-        for (RegistrySupplier<Item> itemObject : ModItems.ITEMS) {
-            if (!itemObject.isPresent()) {
-                continue;
-            }
-            Item item = itemObject.get();
-            if (item instanceof ItemArmorMod) {
-                add.accept(new ItemStack(item));
-                if (ModClothConfig.get().enableDebugLogging) {
-                    MainRegistry.LOGGER.info("Automatically added Armor Mod [{}] to NTM Consumables tab", itemObject.getId());
-                }
-            }
-        }
+        add.accept(new ItemStack(ModBlocks.CRATE.get()));
+        add.accept(new ItemStack(ModBlocks.CRATE_LEAD.get()));
+        add.accept(new ItemStack(ModBlocks.CRATE_METAL.get()));
+        add.accept(new ItemStack(ModBlocks.CRATE_WEAPON.get()));
+        add.accept(new ItemStack(ModBlocks.CRATE_CONSERVE.get()));
+
+        add.accept(new ItemStack(ModItems.OIL_DETECTOR.get()));
+        add.accept(new ItemStack(ModItems.DEPTH_ORES_SCANNER.get()));
+        add.accept(new ItemStack(ModItems.DOSIMETER.get()));
+        add.accept(new ItemStack(ModItems.GEIGER_COUNTER.get()));
+        add.accept(new ItemStack(ModItems.DIGAMMA_DIAGNOSTIC.get()));
+        add.accept(new ItemStack(ModItems.RADAR_LINKER.get()));
+
         add.accept(new ItemStack(ModItems.RADAWAY.get()));
-        add.accept(new ItemStack(ModItems.CAN_KEY.get()));
         add.accept(new ItemStack(ModItems.CAN_EMPTY.get()));
         add.accept(new ItemStack(ModItems.CANNED_ASBESTOS.get()));
         add.accept(new ItemStack(ModItems.CANNED_ASS.get()));
@@ -736,15 +736,22 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.CAN_OVERCHARGE.get()));
         add.accept(new ItemStack(ModItems.CAN_REDBOMB.get()));
         add.accept(new ItemStack(ModItems.CAN_SMART.get()));
+        add.accept(new ItemStack(ModItems.CAN_KEY.get()));
 
-        add.accept(new ItemStack(ModItems.CROWBAR.get()));
-        add.accept(new ItemStack(ModItems.SCREWDRIVER.get()));
-
-        add.accept(new ItemStack(ModItems.DOSIMETER.get()));
-        add.accept(new ItemStack(ModItems.DIGAMMA_DIAGNOSTIC.get()));
-        add.accept(new ItemStack(ModItems.GEIGER_COUNTER.get()));
-        add.accept(new ItemStack(ModItems.OIL_DETECTOR.get()));
-        add.accept(new ItemStack(ModItems.DEPTH_ORES_SCANNER.get()));
+        // АВТОМАТИЧЕСКОЕ ДОБАВЛЕНИЕ ВСЕХ МОДИФИКАТОРОВ
+        // 1. Получаем все зарегистрированные предметы
+        for (RegistrySupplier<Item> itemObject : ModItems.ITEMS) {
+            if (!itemObject.isPresent()) {
+                continue;
+            }
+            Item item = itemObject.get();
+            if (item instanceof ItemArmorMod) {
+                add.accept(new ItemStack(item));
+                if (ModClothConfig.get().enableDebugLogging) {
+                    MainRegistry.LOGGER.info("Automatically added Armor Mod [{}] to NTM Consumables tab", itemObject.getId());
+                }
+            }
+        }
 
         add.accept(new ItemStack(ModItems.AIRSTRIKE_TEST.get()));
         add.accept(new ItemStack(ModItems.AIRSTRIKE_HEAVY.get()));
@@ -1312,11 +1319,6 @@ public final class CreativeModeTabEventHandler {
 
         //ЯЩИКИ
         add.accept(new ItemStack(ModBlocks.FREAKY_ALIEN_BLOCK.get()));
-        add.accept(new ItemStack(ModBlocks.CRATE.get()));
-        add.accept(new ItemStack(ModBlocks.CRATE_LEAD.get()));
-        add.accept(new ItemStack(ModBlocks.CRATE_METAL.get()));
-        add.accept(new ItemStack(ModBlocks.CRATE_WEAPON.get()));
-        add.accept(new ItemStack(ModBlocks.CRATE_CONSERVE.get()));
 
         //ОСВЕЩЕНИЕ
         add.accept(new ItemStack(ModBlocks.CAGE_LAMP.get()));
@@ -1596,6 +1598,7 @@ public final class CreativeModeTabEventHandler {
     /** Временная вкладка для новых, ещё не отсортированных предметов/блоков. */
     public static void populateDevItemsTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
         Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        /*
         add.accept(new ItemStack(ModBlocks.MACHINE_SIREN.get()));
         add.accept(new ItemStack(ModBlocks.BROADCASTER.get()));
 
@@ -2734,7 +2737,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.PUDDING.get()));
         add.accept(new ItemStack(ModItems.PWR_PRINTER.get()));
         add.accept(new ItemStack(ModItems.QUARTZ_PLUTONIUM.get()));
-        add.accept(new ItemStack(ModItems.RADAR_LINKER.get()));
         add.accept(new ItemStack(ModItems.RAG.get()));
         add.accept(new ItemStack(ModItems.RAG_DAMP.get()));
         add.accept(new ItemStack(ModItems.RAG_PISS.get()));
@@ -2849,7 +2851,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.SCRAP_OIL.get()));
         add.accept(new ItemStack(ModItems.SCRAP_PLASTIC.get()));
         add.accept(new ItemStack(ModItems.SCRAPS.get()));
-        add.accept(new ItemStack(ModItems.SCREWDRIVER_DESH.get()));
         add.accept(new ItemStack(ModItems.SCRUMPY.get()));
         add.accept(new ItemStack(ModItems.SECURITY_LEGS.get()));
         add.accept(new ItemStack(ModItems.SECURITY_PLATE.get()));
@@ -2984,7 +2985,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.POWDER_SPARK_MIX.get()));
         add.accept(new ItemStack(ModItems.POWDER_SEMTEX_MIX.get()));
         add.accept(new ItemStack(ModItems.POWDER_DESH_READY.get()));
-        add.accept(new ItemStack(ModItems.POWDER_COLTAN.get()));
+        add.accept(new ItemStack(ModItems.POWDER_COLTAN.get()));*/
     }
 
     // ТОПЛИВО И ЭЛЕМЕНТЫ МЕХАНИЗМОВ
@@ -3242,6 +3243,9 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.UPGRADE_OVERDRIVE_1.get()));
         add.accept(new ItemStack(ModItems.UPGRADE_OVERDRIVE_2.get()));
         add.accept(new ItemStack(ModItems.UPGRADE_OVERDRIVE_3.get()));
+
+        add.accept(new ItemStack(ModItems.SCREWDRIVER.get()));
+        add.accept(new ItemStack(ModItems.SCREWDRIVER_DESH.get()));
 
         EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
             ClientSetup.addTemplatesClient(add);

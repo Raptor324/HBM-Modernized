@@ -122,8 +122,12 @@ public abstract class ModItemStackHandler {
             if (!stacks[i].isEmpty()) {
                 CompoundTag entry = new CompoundTag();
                 entry.putByte("Slot", (byte) i);
+                // save() кладёт в entry ССЫЛКУ на живой ItemStack.tag. Chunk NBT
+                // сериализуется в потоке IOWorker, а машины (например зарядка батареи)
+                // продолжают менять этот тег → ConcurrentModificationException
+                // в CompoundTag.write. Поэтому отдаём независимый снимок.
                 stacks[i].save(entry);
-                list.add(entry);
+                list.add(entry.copy());
             }
         }
         CompoundTag tag = new CompoundTag();

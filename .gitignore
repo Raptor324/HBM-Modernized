@@ -27,6 +27,7 @@ bin/
 .cursor
 .cursorignore
 .zcode
+.roo
 
 # ================= Generated Files =================
 src/generated/resources/.cache

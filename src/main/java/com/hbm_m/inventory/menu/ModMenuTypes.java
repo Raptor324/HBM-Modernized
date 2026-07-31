@@ -140,6 +140,9 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<MachineRadarMenu>> RADAR_MENU =
             MENUS.register("radar_menu", () -> MenuRegistry.ofExtended(MachineRadarMenu::new));
 
+    public static final RegistrySupplier<MenuType<MachineRadarSlotsMenu>> RADAR_SLOTS_MENU =
+            MENUS.register("radar_slots_menu", () -> MenuRegistry.ofExtended(MachineRadarSlotsMenu::new));
+
     public static final RegistrySupplier<MenuType<MachineCrackingTowerMenu>> CRACKING_TOWER_MENU =
             MENUS.register("cracking_tower_menu", () -> MenuRegistry.ofExtended(MachineCrackingTowerMenu::new));
 

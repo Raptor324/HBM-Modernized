@@ -60,6 +60,7 @@ import com.hbm_m.blockentity.machines.MachineOreSlopperBlockEntity;
 import com.hbm_m.blockentity.machines.MachinePressBlockEntity;
 import com.hbm_m.blockentity.machines.MachinePumpjackBlockEntity;
 import com.hbm_m.blockentity.machines.MachineRadarBlockEntity;
+import com.hbm_m.blockentity.machines.MachineRadarScreenBlockEntity;
 import com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity;
 import com.hbm_m.blockentity.machines.MachineRefineryBlockEntity;
 import com.hbm_m.blockentity.machines.MachineShredderBlockEntity;
@@ -185,6 +186,10 @@ public class ModBlockEntities {
     public static final RegistrySupplier<BlockEntityType<MachineRadarBlockEntity>> RADAR_BE =
             BLOCK_ENTITIES.register("radar_be", () ->
                     BlockEntityType.Builder.of(MachineRadarBlockEntity::new, ModBlocks.RADAR.get(), ModBlocks.LARGE_RADAR.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<MachineRadarScreenBlockEntity>> RADAR_SCREEN_BE =
+            BLOCK_ENTITIES.register("radar_screen_be", () ->
+                    BlockEntityType.Builder.of(MachineRadarScreenBlockEntity::new, ModBlocks.RADAR_SCREEN.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<MachineCrackingTowerBlockEntity>> CRACKING_TOWER_BE =
             BLOCK_ENTITIES.register("cracking_tower_be", () ->
