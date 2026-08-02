@@ -1,4 +1,4 @@
-package api.hbm.entity;
+package api.hbm_m.entity;
 
 public interface IRadarDetectable {
 

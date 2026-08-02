@@ -12,6 +12,8 @@ public final class ParticleCreators {
         CREATORS.put("nuke", new NukeTorexCreator());
         CREATORS.put("muke", new MukeParticleCreator());
         CREATORS.put("vomit", new VomitParticleCreator());
+        CREATORS.put("skeleton", new SkeletonCreator());
+        CREATORS.put("ashes", new AshesCreator());
     }
 
     public static Map<String, IParticleCreator> particleCreators() {

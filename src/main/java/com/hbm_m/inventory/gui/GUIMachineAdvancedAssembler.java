@@ -186,30 +186,18 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
 
             // Отрисовываем призрак только если слот пуст
             if (!slot.hasItem()) {
-                // Отрисовка призрачного предмета с полупрозрачностью
-                guiGraphics.pose().pushPose();
-                guiGraphics.pose().translate(0, 0, 100); // z-level 100
-
-                // Полупрозрачность
-                RenderSystem.enableBlend();
-                RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 0.5F);
-
                 int x = this.leftPos + slot.x;
                 int y = this.topPos + slot.y;
 
-                guiGraphics.renderItem(ghostStack, x, y);
+                // setShaderColor(alpha) не влияет на 3D-блоки (квады с
+                // фиксированным цветом вершин) — используем общий утилит,
+                // который умножает альфу на уровне вершин.
+                GhostItemRenderUtil.renderTranslucent(guiGraphics, ghostStack, x, y, 0.5F);
 
                 // ОТРИСОВКА КОЛИЧЕСТВА (если > 1)
                 if (ghostStack.getCount() > 1) {
-                    RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F); // Полная непрозрачность для текста
                     guiGraphics.renderItemDecorations(this.font, ghostStack, x, y);
                 }
-
-                // Восстанавливаем цвет
-                RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-                RenderSystem.disableBlend();
-
-                guiGraphics.pose().popPose();
             }
             
             slotOffset++;

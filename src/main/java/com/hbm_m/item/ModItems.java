@@ -50,6 +50,7 @@ import com.hbm_m.item.grenades_and_activators.GrenadeItem;
 import com.hbm_m.item.grenades_and_activators.GrenadeNucItem;
 import com.hbm_m.item.grenades_and_activators.MultiDetonatorItem;
 import com.hbm_m.item.grenades_and_activators.RangeDetonatorItem;
+import com.hbm_m.item.tool.ConfettiTesterItem;
 import com.hbm_m.item.tool.RangefinderItem;
 import com.hbm_m.item.industrial.FuelItem;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
@@ -840,6 +841,9 @@ public class ModItems {
 
     public static final RegistrySupplier<Item> RANGEFINDER = ITEMS.register("rangefinder",
             () -> new RangefinderItem(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> CONFETTI_TESTER = ITEMS.register("confetti_tester",
+            ConfettiTesterItem::new);
 
     public static final RegistrySupplier<Item> RANGE_DETONATOR = ITEMS.register("range_detonator",
             () -> new RangeDetonatorItem(new Item.Properties()));

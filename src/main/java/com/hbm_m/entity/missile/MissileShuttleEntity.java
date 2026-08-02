@@ -4,7 +4,7 @@ import com.hbm_m.explosion.MissileWarheadEffects;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.sound.ModSounds;
 
-import api.hbm.entity.IRadarDetectable;
+import api.hbm_m.entity.IRadarDetectable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;

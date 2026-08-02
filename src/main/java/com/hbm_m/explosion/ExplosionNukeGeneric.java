@@ -5,6 +5,7 @@ import java.util.List;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.entity.effect.EntityCloudFleija;
+import com.hbm_m.util.confetti.ConfettiUtil;
 import com.hbm_m.entity.logic.EntityExplosionChunkloading;
 import com.hbm_m.interfaces.IEnergyReceiver;
 import com.hbm_m.radiation.ChunkRadiationManager;
@@ -12,6 +13,7 @@ import com.hbm_m.radiation.ChunkRadiationManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.Ocelot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
@@ -99,10 +101,22 @@ public class ExplosionNukeGeneric {
                 double entY = entity.getY() + entity.getEyeHeight();
                 double entZ = entity.getZ();
 
+                // Защита от дублей скелетов/пепла ("дорожки" от эпицентра):
+                // - Не бьём уже мёртвых (hurt по трупу проходит и повторно триггерит decideConfetti
+                //   при следующих импульсах dealDamage от той же детонации).
+                // - Не бьём сущности, помеченные к удалению.
+                if ((entity instanceof LivingEntity l && !l.isAlive()) || entity.isRemoved()) {
+                    continue;
+                }
+
                 if (!isExplosionExempt(entity) && !isObstructed(level, x, y, z, entX, entY, entZ)) {
                     double dist = Math.sqrt(distSq);
                     double damage = maxDamage * (radius - dist) / radius;
                     entity.hurt(ModDamageSources.nuclearBlast(level), (float) damage);
+                    // Смертельный урон шоквейном Fatman -> эффект скелетонизации
+                    if (entity instanceof LivingEntity living && !living.isAlive()) {
+                        ConfettiUtil.decideConfetti(living, ModDamageSources.nuclearBlast(level));
+                    }
                     entity.setRemainingFireTicks(100);
 
                     double knockX = entX - x;

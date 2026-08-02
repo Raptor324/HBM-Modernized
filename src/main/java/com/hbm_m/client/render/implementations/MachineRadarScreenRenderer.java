@@ -230,7 +230,11 @@ public class MachineRadarScreenRenderer implements BlockEntityRenderer<MachineRa
 
     /** Бегущая зелёная полоса развёртки (порт GL_QUADS-полосы из RenderRadarScreen). */
     private void renderSweep(PoseStack pose, long time, float partialTick) {
-        double offset = ((time % 56) + partialTick) / 30D;
+        // Смещение инвертировано относительно оригинальной формулы, чтобы
+        // полоса двигалась СВЕРХУ ВНИЗ: экранная плоскость перевёрнута
+        // Z-вращением на 180° (см. render()), поэтому для визуального
+        // направления «вниз» локальный offset должен убывать со временем.
+        double offset = (56D / 30D) - ((time % 56) + partialTick) / 30D;
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
@@ -259,7 +263,7 @@ public class MachineRadarScreenRenderer implements BlockEntityRenderer<MachineRa
         buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
         // Точная форма оригинального BER: верхняя кромка полностью прозрачна,
         // нижняя имеет alpha=50. Поэтому видна мягкая горизонтальная полоса,
-        // которая движется сверху вниз и затем зацикливается.
+        // которая движется (после инверсии offset) сверху вниз и зацикливается.
         buffer.vertex(matrix, x, yTop, 1.375F)
                 .color(0, 255, 0, 0).endVertex();
         buffer.vertex(matrix, x, yTop, -0.375F)

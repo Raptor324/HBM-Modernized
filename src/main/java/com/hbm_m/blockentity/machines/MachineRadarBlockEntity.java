@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import api.hbm.entity.IRadarDetectable;
+import api.hbm_m.entity.IRadarDetectable;
 import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;

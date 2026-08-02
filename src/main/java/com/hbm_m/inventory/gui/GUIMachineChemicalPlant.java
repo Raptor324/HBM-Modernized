@@ -266,20 +266,14 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
             int x = this.leftPos + slot.x;
             int y = this.topPos + slot.y;
 
-            guiGraphics.pose().pushPose();
-            guiGraphics.pose().translate(0, 0, 100);
-            com.mojang.blaze3d.systems.RenderSystem.enableBlend();
-            com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, 0.5f);
+            // setShaderColor(alpha) не влияет на 3D-блоки (квады с
+            // фиксированным цветом вершин) — используем общий утилит,
+            // который умножает альфу на уровне вершин.
+            GhostItemRenderUtil.renderTranslucent(guiGraphics, ghost, x, y, 0.5f);
 
-            guiGraphics.renderItem(ghost, x, y);
             if (ghost.getCount() > 1) {
-                com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
                 guiGraphics.renderItemDecorations(this.font, ghost, x, y);
             }
-
-            com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
-            com.mojang.blaze3d.systems.RenderSystem.disableBlend();
-            guiGraphics.pose().popPose();
         }
     }
 

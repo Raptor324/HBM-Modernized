@@ -8,7 +8,7 @@ import com.hbm_m.explosion.MissileWarheadEffects;
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
 
-import api.hbm.entity.IRadarDetectable;
+import api.hbm_m.entity.IRadarDetectable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;

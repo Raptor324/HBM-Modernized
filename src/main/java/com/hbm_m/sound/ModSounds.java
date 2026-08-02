@@ -139,6 +139,9 @@ public class ModSounds {
 
     // Music discs
     public static final RegistrySupplier<SoundEvent> MUSIC_DISC_BUNKER = registerSoundEvents("music_disc.bunker");
+
+    // Эффект скелетонизации (порт из HBM 1.7.10 — weapon.fire.disintegration)
+    public static final RegistrySupplier<SoundEvent> DISINTEGRATION = registerSoundEvents("weapon.disintegration");
     
     // Вспомогательный метод для регистрации
     private static RegistrySupplier<SoundEvent> registerSoundEvents(String name) {

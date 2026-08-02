@@ -6,6 +6,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.MultiBufferSource;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -42,13 +43,26 @@ public class ParticleEngineNT {
             batches.computeIfAbsent(type, t -> new ArrayList<>()).add(particle);
         }
 
-        for (Map.Entry<net.minecraft.client.renderer.RenderType, List<ParticleNT>> entry : batches.entrySet()) {
+        // Детерминированный порядок: батчи (кости, облака) сначала; пепел — всегда последним.
+        // Раньше HashMap давал случайный порядок: пепел, нарисованный раньше костей, писал
+        // глубину и перекрывал их. Теперь пепел тестируется против глубины костей и корректно
+        // скрывается за ними, а перед костями — блендится поверх.
+        List<Map.Entry<net.minecraft.client.renderer.RenderType, List<ParticleNT>>> ordered =
+                new ArrayList<>(batches.entrySet());
+        ordered.sort(Comparator.comparingInt(e -> containsAshes(e.getValue()) ? 1 : 0));
+
+        for (Map.Entry<net.minecraft.client.renderer.RenderType, List<ParticleNT>> entry : ordered) {
             net.minecraft.client.renderer.RenderType type = entry.getKey();
             VertexConsumer consumer = buffer.getBuffer(type);
             for (ParticleNT particle : entry.getValue()) {
                 particle.render(consumer, camera, partialTick, levelPoseStack);
             }
         }
+    }
+
+    /** Батч с пеплом (ParticleAshesNT) рисуется последним: его depth-test видит глубину костей. */
+    private static boolean containsAshes(List<ParticleNT> list) {
+        return !list.isEmpty() && list.get(0) instanceof ParticleAshesNT;
     }
 
     /** Рендер только flash-частиц (NukeTorex) поверх всех остальных частиц. */

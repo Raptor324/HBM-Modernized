@@ -413,13 +413,13 @@
   "block.large_turbine": {
     "subtitle": "sounds.hbm_m.subtitle.large_turbine",
     "sounds": [
-      "hbm_m:block/largeTurbine"
+      "hbm_m:block/large_turbine"
     ]
   },
   "block.chungus_turbine": {
     "subtitle": "sounds.hbm_m.subtitle.chungus_turbine",
     "sounds": [
-      "hbm_m:block/chungusTurbine"
+      "hbm_m:block/chungus_turbine"
     ]
   },
   "block.sonar_ping": {
@@ -648,6 +648,12 @@
     "subtitle": "item.hbm_m.music_disc_bunker.desc",
     "sounds": [
       "hbm_m:messages/bunker"
+    ]
+  },
+  "weapon.disintegration": {
+    "category": "player",
+    "sounds": [
+      "hbm_m:weapon/disintegration"
     ]
   }
 }

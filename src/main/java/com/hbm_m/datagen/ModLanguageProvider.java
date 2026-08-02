@@ -776,6 +776,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.GRENADE_IF_SLIME.get(), "IF-Граната: прыгучая");
                 add(ModItems.MULTI_DETONATOR.get(), "Мульти-детонатор");
                 add(ModItems.RANGEFINDER.get(), "Дальномер");
+                add(ModItems.CONFETTI_TESTER.get(), "Тестер *конфетти* эффектов");
                 add(ModItems.RANGE_DETONATOR.get(), "Детонатор дальнего действия");
                 add(ModItems.DETONATOR.get(), "Детонатор");
                 add(ModBlocks.BARBED_WIRE_POISON.get(), "Колючая проволока (яд)");
@@ -3447,6 +3448,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.GRENADE_IF_SLIME.get(), "IF Grenade: Bouncy");
                 add(ModItems.MULTI_DETONATOR.get(), "Multi Detonator");
                 add(ModItems.RANGEFINDER.get(), "Rangefinder");
+                add(ModItems.CONFETTI_TESTER.get(), "Confetti Effect Tester");
                 add(ModItems.RANGE_DETONATOR.get(), "Range Detonator");
                 add(ModItems.DETONATOR.get(), "Detonator");
                 add(ModBlocks.BARBED_WIRE_POISON.get(), "Poison Barbed Wire");

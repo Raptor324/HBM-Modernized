@@ -3221,8 +3221,8 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.STAMP_DESH_357.get()));
 
         add.accept(new ItemStack(ModItems.TEMPLATE_FOLDER.get()));
-        add.accept(new ItemStack(ModItems.ASSEMBLY_TEMPLATE.get()));
-        add.accept(new ItemStack(ModItems.BLUEPRINT_FOLDER.get()));
+        // add.accept(new ItemStack(ModItems.ASSEMBLY_TEMPLATE.get()));
+        // add.accept(new ItemStack(ModItems.BLUEPRINT_FOLDER.get()));
 
         // Machine Upgrades
         add.accept(new ItemStack(ModItems.UPGRADE_SPEED_1.get()));
@@ -3246,6 +3246,7 @@ public final class CreativeModeTabEventHandler {
 
         add.accept(new ItemStack(ModItems.SCREWDRIVER.get()));
         add.accept(new ItemStack(ModItems.SCREWDRIVER_DESH.get()));
+        add.accept(new ItemStack(ModItems.CONFETTI_TESTER.get()));
 
         EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
             ClientSetup.addTemplatesClient(add);

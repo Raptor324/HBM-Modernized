@@ -124,6 +124,52 @@ public class ClientRenderHandler {
                                 .setOutputState(TRANSLUCENT_TARGET)
                                 .createCompositeState(false)));
 
+        /**
+         * локаои 1.7.10-рендера костей/пепла (ParticleSkeleton/ParticleAshes).
+         * В 1.7.10: GL_BLEND(770/771) + GL_ALPHA_TEST GREATER 0 + наследуемый depth (LEQUAL + depth write) + cull face.
+         * 1.7.10 использовал OpenGlHelper.setLightmapTextureCoords; в 1.20.1 -> COLOR_TEX_LIGHTMAP shader
+         * который семплирует lightmap по UV2. Ранее использовался PARTICLE_SHADER без привязки lightmap –
+         * все частицы рендерились чёрными.
+         */
+        /**
+         * Скелет-кости: TRIANGLES, формат NEW_ENTITY (с нормалями и overlay UV1).
+         * NEW_ENTITY + RENDERTYPE_ENTITY_TRANSLUCENT_SHADER — это тот же путь, что и у
+         * RenderType.entityTranslucent(): полноценная запись глубины и back-face culling.
+         * Старый POSITION_COLOR_TEX_LIGHTMAP шейдер на TRIANGLES не писал глубину —
+         * отсюда «дырявый череп» и выигрыш пепла в depth-тесте.
+         */
+        public static final Function<ResourceLocation, RenderType> SKELETON_PARTICLES = Util.memoize(
+                texture -> create("skeleton_particles", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.TRIANGLES, 1536, false, true,
+                        RenderType.CompositeState.builder()
+                                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                                .setCullState(CULL)
+                                .setLightmapState(LIGHTMAP)
+                                .setOverlayState(OVERLAY)
+                                .setDepthTestState(LEQUAL_DEPTH_TEST)
+                                .setWriteMaskState(COLOR_DEPTH_WRITE)
+                                .createCompositeState(false)));
+
+        /**
+         * Пепел (ParticleAshesNT): QUADS, тот же lightmap-шейдер что и у скелета.
+         * Тоже пишет глубину (COLOR_DEPTH_WRITE), как кости — тогда в зонах, где другие
+         * частицы (облака гриба) оставили NO_DEPTH_TEST, пепел, нарисованный последним,
+         * корректно проигрывает depth-тест против глубины костей. Порядок «кости раньше,
+         * пепел позже» гарантирован сортировкой в ParticleEngineNT.
+         */
+        public static final Function<ResourceLocation, RenderType> ASHES_PARTICLES = Util.memoize(
+                texture -> create("ashes_particles", DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP, VertexFormat.Mode.QUADS, 1536, false, true,
+                        RenderType.CompositeState.builder()
+                                .setShaderState(POSITION_COLOR_TEX_LIGHTMAP_SHADER)
+                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                                .setTransparencyState(SEVEN_SEVEN10)
+                                .setCullState(NO_CULL)
+                                .setLightmapState(LIGHTMAP)
+                                .setDepthTestState(LEQUAL_DEPTH_TEST)
+                                .setWriteMaskState(COLOR_DEPTH_WRITE)
+                                .createCompositeState(false)));
+
         /** Fleija cloud — untextured sphere, full-bright color (порт RenderCloudFleija). */
         public static final RenderType FLEIJA_SPHERE = create("fleija_sphere",
                 DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 262144, false, true,

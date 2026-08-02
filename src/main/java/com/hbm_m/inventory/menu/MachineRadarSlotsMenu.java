@@ -71,11 +71,13 @@ public class MachineRadarSlotsMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
+        // Без проверки дистанции (как в MachineRadarMenu, порт 1.7.10):
+        // саб-меню слотов может открываться с Radar Screen, который находится
+        // далеко от самого радара. distanceToSqr <= 64 закрывал GUI через секунду.
         if (blockEntity == null || blockEntity.getLevel() != player.level()) {
             return false;
         }
-        var pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return !blockEntity.isRemoved();
     }
 
     @Override
