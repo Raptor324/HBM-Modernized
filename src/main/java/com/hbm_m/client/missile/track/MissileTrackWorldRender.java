@@ -24,6 +24,9 @@ public final class MissileTrackWorldRender {
     private static final double FRUSTUM_SAFETY = 0.72D;
     private static final double MIN_VIRTUAL_DISTANCE_BLOCKS = 96.0D;
 
+    private static int cachedRenderDistance = -1;
+    private static double cachedMaxSafeDistance = MIN_VIRTUAL_DISTANCE_BLOCKS;
+
     private MissileTrackWorldRender() {}
 
     /**
@@ -150,7 +153,11 @@ public final class MissileTrackWorldRender {
     public static double maxSafeRenderDistanceBlocks() {
         Minecraft mc = Minecraft.getInstance();
         int chunks = mc.options.getEffectiveRenderDistance();
-        return Math.max(MIN_VIRTUAL_DISTANCE_BLOCKS, chunks * 16.0D * FRUSTUM_SAFETY);
+        if (chunks != cachedRenderDistance) {
+            cachedRenderDistance = chunks;
+            cachedMaxSafeDistance = Math.max(MIN_VIRTUAL_DISTANCE_BLOCKS, chunks * 16.0D * FRUSTUM_SAFETY);
+        }
+        return cachedMaxSafeDistance;
     }
 
     public static CameraRelativePose virtualizeWorld(double worldX, double worldY, double worldZ, Vec3 camera) {

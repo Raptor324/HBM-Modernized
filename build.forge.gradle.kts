@@ -116,11 +116,13 @@ dependencies {
 	"modRuntimeOnly"("curse.maven:oculus-581495:6020952")
 	"modRuntimeOnly"("curse.maven:modernfix-790626:7515215")
 	"modRuntimeOnly"("curse.maven:smooth-boot-reloaded-633412:5016280")
-	"modRuntimeOnly"("maven.modrinth:spark:1.10.53-forge")
+	
 	"modRuntimeOnly"("curse.maven:screenshot-to-clipboard-326950:3643026")
 	// "modRuntimeOnly"("maven.modrinth:cwoL6CqY:3PEwIAxS") // Item Transforms Helper
 	// "modRuntimeOnly"("maven.modrinth:f3zK7pP5:8gUY8UiV") // Tick Freeze
-
+	"modRuntimeOnly"("maven.modrinth:spark:1.10.53-forge")
+	"modRuntimeOnly"("maven.modrinth:VYRu7qmG:QtSVNyjm") // Observable -  profiles (tile) entities and shows you what's taking up tick time and where.
+	"modRuntimeOnly"("maven.modrinth:ordsPcFz:Zsh14XeQ") // Kotlin For Forge
 	// "modRuntimeOnly"("curse.maven:konkrete-410295:5028413")
 	// "modCompileOnly"("maven.modrinth:distanthorizons:lcyL2Fq3")
 	// "modRuntimeOnly"("maven.modrinth:distanthorizons:lcyL2Fq3")

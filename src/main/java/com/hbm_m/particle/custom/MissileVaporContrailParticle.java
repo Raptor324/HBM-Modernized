@@ -31,9 +31,9 @@ public class MissileVaporContrailParticle extends TextureSheetParticle {
 
     private static final int SUB_QUADS = 6;
 
-    private final float[] layerR = new float[SUB_QUADS];
-    private final float[] layerG = new float[SUB_QUADS];
-    private final float[] layerB = new float[SUB_QUADS];
+    private final int[] layerR = new int[SUB_QUADS];
+    private final int[] layerG = new int[SUB_QUADS];
+    private final int[] layerB = new int[SUB_QUADS];
     /** Pre-scaled gaussian sample: {@code nextGaussian() * 0.5F}. */
     private final float[] layerGaussX = new float[SUB_QUADS];
     private final float[] layerGaussY = new float[SUB_QUADS];
@@ -76,9 +76,9 @@ public class MissileVaporContrailParticle extends TextureSheetParticle {
     private void precomputeRenderLayers(Random subRand) {
         for (int layer = 0; layer < SUB_QUADS; layer++) {
             float mod = subRand.nextFloat() * 0.2F + 0.15F;
-            this.layerR[layer] = Math.min(1.0F, this.rCol + mod);
-            this.layerG[layer] = Math.min(1.0F, this.gCol + mod);
-            this.layerB[layer] = Math.min(1.0F, this.bCol + mod);
+            this.layerR[layer] = (int) (Math.min(1.0F, this.rCol + mod) * 255.0F);
+            this.layerG[layer] = (int) (Math.min(1.0F, this.gCol + mod) * 255.0F);
+            this.layerB[layer] = (int) (Math.min(1.0F, this.bCol + mod) * 255.0F);
             this.layerGaussX[layer] = (float) (subRand.nextGaussian() * 0.5D);
             this.layerGaussY[layer] = (float) (subRand.nextGaussian() * 0.5D);
             this.layerGaussZ[layer] = (float) (subRand.nextGaussian() * 0.5D);
@@ -140,44 +140,67 @@ public class MissileVaporContrailParticle extends TextureSheetParticle {
         double wx = Mth.lerp(partialTick, this.xo, this.x);
         double wy = Mth.lerp(partialTick, this.yo, this.y);
         double wz = Mth.lerp(partialTick, this.zo, this.z);
-        MissileTrackWorldRender.CameraRelativePose virtual =
-                MissileTrackWorldRender.virtualizeWorld(wx, wy, wz, cam);
+        double rx = wx - cam.x;
+        double ry = wy - cam.y;
+        double rz = wz - cam.z;
+        double distSq = rx * rx + ry * ry + rz * rz;
+        float screenScale = 1.0F;
+        if (distSq > 9216.0D) {
+            double max = MissileTrackWorldRender.maxSafeRenderDistanceBlocks();
+            if (distSq > max * max) {
+                double dist = Math.sqrt(distSq);
+                screenScale = (float) (max / dist);
+                rx *= screenScale;
+                ry *= screenScale;
+                rz *= screenScale;
+            }
+        }
 
-        float relX = (float) virtual.relX();
-        float relY = (float) virtual.relY();
-        float relZ = (float) virtual.relZ();
-        float screenScale = virtual.screenScale();
+        float relX = (float) rx;
+        float relY = (float) ry;
+        float relZ = (float) rz;
         float spreadMul = this.cachedSpreadBase * screenScale;
         float scale = (this.alpha + 0.5F) * this.quadSize * screenScale;
-        float alpha = this.alpha;
+        int iAlpha = (int) (this.alpha * 255.0F);
         int light = this.cachedLight;
+        int lightU = light & 0xFFFF;
+        int lightV = light >> 16 & 0xFFFF;
+        float u0 = this.cachedU0;
+        float u1 = this.cachedU1;
+        float v0 = this.cachedV0;
+        float v1 = this.cachedV1;
         Quaternionf rotation = camera.rotation();
+
+        this.cornerScratch[0].set(-scale, -scale, 0.0F);
+        this.cornerScratch[1].set(-scale, scale, 0.0F);
+        this.cornerScratch[2].set(scale, scale, 0.0F);
+        this.cornerScratch[3].set(scale, -scale, 0.0F);
+        for (int i = 0; i < 4; i++) {
+            this.cornerScratch[i].rotate(rotation);
+        }
+
+        float cx0 = this.cornerScratch[0].x(), cy0 = this.cornerScratch[0].y(), cz0 = this.cornerScratch[0].z();
+        float cx1 = this.cornerScratch[1].x(), cy1 = this.cornerScratch[1].y(), cz1 = this.cornerScratch[1].z();
+        float cx2 = this.cornerScratch[2].x(), cy2 = this.cornerScratch[2].y(), cz2 = this.cornerScratch[2].z();
+        float cx3 = this.cornerScratch[3].x(), cy3 = this.cornerScratch[3].y(), cz3 = this.cornerScratch[3].z();
 
         for (int layer = 0; layer < SUB_QUADS; layer++) {
             float px = relX + this.layerGaussX[layer] * spreadMul;
             float py = relY + this.layerGaussY[layer] * spreadMul;
             float pz = relZ + this.layerGaussZ[layer] * spreadMul;
 
-            this.cornerScratch[0].set(-scale, -scale, 0.0F);
-            this.cornerScratch[1].set(-scale, scale, 0.0F);
-            this.cornerScratch[2].set(scale, scale, 0.0F);
-            this.cornerScratch[3].set(scale, -scale, 0.0F);
-            for (Vector3f corner : this.cornerScratch) {
-                corner.rotate(rotation);
-                corner.add(px, py, pz);
-            }
+            int ir = this.layerR[layer];
+            int ig = this.layerG[layer];
+            int ib = this.layerB[layer];
 
-            float r = this.layerR[layer];
-            float g = this.layerG[layer];
-            float b = this.layerB[layer];
-            buffer.vertex(this.cornerScratch[0].x(), this.cornerScratch[0].y(), this.cornerScratch[0].z())
-                    .uv(this.cachedU1, this.cachedV1).color(r, g, b, alpha).uv2(light).endVertex();
-            buffer.vertex(this.cornerScratch[1].x(), this.cornerScratch[1].y(), this.cornerScratch[1].z())
-                    .uv(this.cachedU1, this.cachedV0).color(r, g, b, alpha).uv2(light).endVertex();
-            buffer.vertex(this.cornerScratch[2].x(), this.cornerScratch[2].y(), this.cornerScratch[2].z())
-                    .uv(this.cachedU0, this.cachedV0).color(r, g, b, alpha).uv2(light).endVertex();
-            buffer.vertex(this.cornerScratch[3].x(), this.cornerScratch[3].y(), this.cornerScratch[3].z())
-                    .uv(this.cachedU0, this.cachedV1).color(r, g, b, alpha).uv2(light).endVertex();
+            buffer.vertex(px + cx0, py + cy0, pz + cz0)
+                    .uv(u1, v1).color(ir, ig, ib, iAlpha).uv2(lightU, lightV).endVertex();
+            buffer.vertex(px + cx1, py + cy1, pz + cz1)
+                    .uv(u1, v0).color(ir, ig, ib, iAlpha).uv2(lightU, lightV).endVertex();
+            buffer.vertex(px + cx2, py + cy2, pz + cz2)
+                    .uv(u0, v0).color(ir, ig, ib, iAlpha).uv2(lightU, lightV).endVertex();
+            buffer.vertex(px + cx3, py + cy3, pz + cz3)
+                    .uv(u0, v1).color(ir, ig, ib, iAlpha).uv2(lightU, lightV).endVertex();
         }
     }
 

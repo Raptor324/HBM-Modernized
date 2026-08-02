@@ -84,11 +84,10 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
     private static final int MAP_UPDATE_INTERVAL = 5;
     /** Максимум последовательных слайсов в одном сетевом пакете. */
     private static final int MAP_SYNC_MAX_SLICES = 20;
-    /** Жёсткий предохранитель от генерации тысяч чанков при включённом generateChunks. */
-    private static final int MAX_GENERATED_CHUNKS_PER_MAP = 256;
-
-    /** Макс. подгрузок чанков за тик (порт {@code TileEntityMachineRadarNT.chunkLoadCap} = 10). */
-    private static final int CHUNK_LOAD_CAP = 10;
+    /** AABB-скан локальных сущностей (игроки, мобы, джаммеры). Ракеты и снаряды
+     *  детектятся ТОЛЬКО через MissileTrackBroadcaster — AABB на 6000 блоков
+     *  заставляет сервер перебирать ~140k секций чанков и вешает главный поток. */
+    private static final int LOCAL_SCAN_RANGE = 200;
 
     private int progress = 0;
     private int maxProgress = DEFAULT_MAX_PROGRESS;
@@ -132,6 +131,29 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
 
     public MachineRadarBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.RADAR_BE.get(), pos, state, SLOT_COUNT, 250_000L, 2_500L, 0L);
+    }
+
+    /**
+     * Базовый setEnergyStored() помечает чанк грязным при КАЖДОМ изменении энергии.
+     * Радар тратит/получает энергию каждый тик — чанк становится перманентно
+     * dirty, и сервер обязан сериализовать 40 КБ карты в NBT при каждом
+     * автосейве/выгрузке. Точное значение заряда не обязано переживать рестарт
+     * с точностью до тика, поэтому dirty-флаг взводим редко (раз в ~10 секунд)
+     * или при пересечении нуля (нужен записанный флаг active на диске).
+     */
+    @Override
+    public void setEnergyStored(long energy) {
+        long clamped = Math.max(0, Math.min(getMaxEnergyStored(), energy));
+        long prev = getEnergyStored();
+        if (clamped == prev) {
+            return;
+        }
+        // Пишем в protected-поле напрямую, минуя setChanged() базового сеттера.
+        this.energy = clamped;
+        if (prev == 0 || clamped == 0
+                || (level != null && level.getGameTime() % 200L == 0L)) {
+            setChanged();
+        }
     }
 
     public boolean isLargeRadar() {
@@ -248,9 +270,11 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         // Скан идёт каждый тик, но несколько последовательных слайсов объединяются
         // в один пакет. Поэтому клиент не получает редкие полосы и при этом не тонет
         // в потоке BlockEntityDataPacket/NBT.
+        // ВАЖНО: здесь ТОЛЬКО сеть (sendBlockUpdated). setChanged() не вызываем:
+        // координаты целей и слайсы карты — транзитные данные, они не должны
+        // помечать чанк грязным и заставлять сервер сбрасывать 40+ КБ NBT на диск.
         boolean periodicSync = level.getGameTime() % MAP_UPDATE_INTERVAL == 0;
         if (mapSliceReady || wasActive != active || periodicSync || progress == 0) {
-            setChanged();
             sendUpdateToClient();
         }
     }
@@ -272,8 +296,6 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         int radarZ = worldPosition.getZ();
         int slice = mapSliceIndex;
         int baseIndex = slice * MAP_SLICE_SIZE;
-        boolean generateChunks = com.hbm_m.config.ModClothConfig.get().machineRadar.generateChunks;
-        int chunkLoads = 0;
 
         for (int i = 0; i < MAP_SLICE_SIZE; i++) {
             int index = baseIndex + i;
@@ -284,19 +306,16 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             int cx = x >> 4;
             int cz = z >> 4;
 
+            // ТОЛЬКО уже загруженные чанки. Серверу нельзя звать getChunk() на
+            // незагруженный чанк: это синхронная генерация на главном потоке,
+            // а после тика чанк без тикета уходит в выгрузку и сохраняется —
+            // бесконечный цикл загрузка→выгрузка→PalettedContainer.pack.
+            // Пиксели за пределами загруженного мира просто остаются 0,
+            // как пустые клетки карты в оригинале.
             if (serverLevel.hasChunk(cx, cz)) {
                 net.minecraft.world.level.chunk.LevelChunk chunk = serverLevel.getChunk(cx, cz);
                 int h = chunk.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x & 15, z & 15);
                 map[index] = (byte) net.minecraft.util.Mth.clamp(h, 50, 128);
-            } else if (generateChunks && chunkLoads < CHUNK_LOAD_CAP
-                    && generatedChunksThisMap < MAX_GENERATED_CHUNKS_PER_MAP) {
-                // Явно включённая генерация чанков сохраняет поведение оригинала,
-                // но ограничена, чтобы радар не удерживал тысячи новых чанков.
-                net.minecraft.world.level.chunk.LevelChunk chunk = serverLevel.getChunk(cx, cz);
-                int h = chunk.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x & 15, z & 15);
-                map[index] = (byte) net.minecraft.util.Mth.clamp(h, 50, 128);
-                chunkLoads++;
-                generatedChunksThisMap++;
             }
         }
 
@@ -306,9 +325,6 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         mapSyncSliceCount = Math.min(MAP_SYNC_MAX_SLICES, mapSyncSliceCount + 1);
         mapSliceReady = true;
         mapSliceIndex = (slice + 1) % MAP_SLICES;
-        if (mapSliceIndex == 0) {
-            generatedChunksThisMap = 0;
-        }
     }
 
     /**
@@ -458,78 +474,51 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         trackedEntities.clear();
         jammed = false;
 
-        // Порт allocateTargets: оригинал не имеет верхнего лимита высоты
-        // (глобальный реестр ракет). AABB-скан с maxY=getMaxBuildHeight() (320)
-        // пропускал ракеты выше build height → поднимаем потолок скана.
+        // Локальный AABB-скан: ТОЛЬКО малый радиус (игроки, мобы, джаммеры).
+        // Ни в коем случае не раздувать до getRange(): коробка 6000x6000 заставляет
+        // level.getEntities перебирать ~140k секций чанков каждые 5 тиков —
+        // это чёрная дыра для главного потока. Все ракеты/снаряды видны через
+        // глобальный реестр даже в выгруженных чанках, поэтому дальний AABB не нужен.
         AABB area = new AABB(
-                worldPosition.getX() + 0.5D - getRange(),
+                worldPosition.getX() + 0.5D - LOCAL_SCAN_RANGE,
                 level.getMinBuildHeight(),
-                worldPosition.getZ() + 0.5D - getRange(),
-                worldPosition.getX() + 0.5D + getRange(),
+                worldPosition.getZ() + 0.5D - LOCAL_SCAN_RANGE,
+                worldPosition.getX() + 0.5D + LOCAL_SCAN_RANGE,
                 level.getMaxBuildHeight() + 4096.0,
-                worldPosition.getZ() + 0.5D + getRange()
+                worldPosition.getZ() + 0.5D + LOCAL_SCAN_RANGE
         );
 
-        List<Entity> entities = level.getEntities((Entity) null, area, Entity::isAlive);
+        // getEntitiesOfClass гонит тот же пространственный индекс, но локальный
+        // радиус держит стоимость скана в рамках нескольких секций чанков.
+        List<Player> players = level.getEntitiesOfClass(Player.class, area, Entity::isAlive);
+        List<LivingEntity> mobs = level.getEntitiesOfClass(LivingEntity.class, area,
+                e -> e.isAlive() && !(e instanceof Player));
 
-        for (Entity entity : entities) {
-            if (nearbyMissiles.size() >= MAX_CONTACTS) {
-                break;
-            }
-
-            // Jamming-сущности проверяем на любой высоте (как и в 1.7.10 — фильтр высоты
-            // применялся только к missile/shell-целям, не к игрокам и не к jammer'ам).
-            if (isJammingEntity(entity)) {
+        // Jamming-сущности проверяем на любой высоте (как и в 1.7.10 — фильтр высоты
+        // применялся только к missile/shell-целям, не к игрокам и не к jammer'ам).
+        for (LivingEntity mob : mobs) {
+            if (isJammingEntity(mob)) {
                 jammed = true;
                 nearbyMissiles.clear();
                 trackedEntities.clear();
                 return;
             }
+        }
 
-            // Игроки детектятся на ЛЮБОЙ высоте (порт 1.7.10: players не имели buffer).
-            // Раньше RADAR_BUFFER=30 фильтровал игроков ниже radarY+30 → радар «не видел»
-            // игроков на земле рядом с радаром.
-            if (entity instanceof Player && scanPlayers) {
-                nearbyMissiles.add(createContact(entity, getTargetTypeIndex(entity)));
-                trackedEntities.add(entity);
-                continue;
-            }
-
-            // Для missile/shell-целей — фильтр по высоте (RADAR_BUFFER),
-            // чтобы не детектить ракеты на пусковой (ниже радара).
-            if (entity.getY() < worldPosition.getY() + RADAR_BUFFER) {
-                continue;
-            }
-
-            if (scanMissiles && isMissileLike(entity)) {
-                if (entity instanceof com.hbm_m.entity.missile.MissileBaseEntity missile
-                        && !missile.canBeDetectedByRadar()) {
-                    continue;
+        // Игроки детектятся на ЛЮБОЙ высоте (порт 1.7.10: players не имели buffer).
+        if (scanPlayers) {
+            for (Player player : players) {
+                if (nearbyMissiles.size() >= MAX_CONTACTS) {
+                    break;
                 }
-                int type = getTargetTypeIndex(entity);
-                nearbyMissiles.add(createContact(entity, type));
-
-                // ABM-перехватчик (как и suppliesRedstone()==false в 1.7.10) не даёт редстоун
-                // и не считается «угрожающей» целью — в trackedEntities (для redstone) не попадает.
-                if (type != IRadarDetectable.RadarTargetType.MISSILE_AB.ordinal()) {
-                    if (smartMode) {
-                        Vec3 motion = entity.getDeltaMovement();
-                        if (motion.y <= 0.0D && isEntityApproaching(entity)) {
-                            trackedEntities.add(entity);
-                        }
-                    } else {
-                        trackedEntities.add(entity);
-                    }
-                }
-            } else if (scanShells && isArtilleryShell(entity)) {
-                // Порт IRadarDetectableNT.paramsApplicable(scanShells) — артиллерийские снаряды.
-                nearbyMissiles.add(createContact(entity, IRadarDetectable.RadarTargetType.MISSILE_TIER0.ordinal()));
-                trackedEntities.add(entity);
+                nearbyMissiles.add(createContact(player, getTargetTypeIndex(player)));
+                trackedEntities.add(player);
             }
         }
 
-        // Глобальный трекер: ракеты в НЕзагруженных чанках
+        // Ракеты и артиллерийские снаряды — ТОЛЬКО через глобальный реестр
         // (порт IRadarDetectableNT — оригинал видел ракеты через глобальный реестр).
+        // Реестр не привязан к загрузке чанков и работает за O(число ракет).
         scanGlobalTrackedMissiles();
     }
 
@@ -912,41 +901,34 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     public void saveAdditional(CompoundTag tag) {
-        // Сначала собираем полностью независимый снимок. ChunkSerializer передаёт
-        // результат в IOWorker, который пишет NBT асинхронно; нельзя оставлять в нём
-        // ссылки на теги инвентаря/способностей, принадлежащие живым ItemStack.
-        CompoundTag snapshot = new CompoundTag();
-        super.saveAdditional(snapshot);
-        snapshot.putInt("progress", progress);
-        snapshot.putInt("max_progress", maxProgress);
-        snapshot.putBoolean("active", active);
-        snapshot.putBoolean("scan_missiles", scanMissiles);
-        snapshot.putBoolean("scan_shells", scanShells);
-        snapshot.putBoolean("scan_players", scanPlayers);
+        // Никакого snapshot.copy()/merge: в 1.20.1 chunk NBT собирается на главном
+        // потоке, а побайтная запись уже уходит в IOWorker. Глубокое копирование
+        // 40 КБ дерева и побайтный merge обратно — чистый расход главного потока.
+        super.saveAdditional(tag);
+        tag.putInt("progress", progress);
+        tag.putInt("max_progress", maxProgress);
+        tag.putBoolean("active", active);
+        tag.putBoolean("scan_missiles", scanMissiles);
+        tag.putBoolean("scan_shells", scanShells);
+        tag.putBoolean("scan_players", scanPlayers);
         // Позиция экрана, связанного через radar linker (для разрыва связи при удалении линкера).
         if (lastScreenLinkerPos != null) {
-            snapshot.putInt("lastScreenX", lastScreenLinkerPos.getX());
-            snapshot.putInt("lastScreenY", lastScreenLinkerPos.getY());
-            snapshot.putInt("lastScreenZ", lastScreenLinkerPos.getZ());
+            tag.putInt("lastScreenX", lastScreenLinkerPos.getX());
+            tag.putInt("lastScreenY", lastScreenLinkerPos.getY());
+            tag.putInt("lastScreenZ", lastScreenLinkerPos.getZ());
         }
-        snapshot.putBoolean("smart_mode", smartMode);
-        snapshot.putBoolean("red_mode", redMode);
-        snapshot.putBoolean("show_map", showMap);
-        snapshot.putBoolean("jammed", jammed);
+        tag.putBoolean("smart_mode", smartMode);
+        tag.putBoolean("red_mode", redMode);
+        tag.putBoolean("show_map", showMap);
+        tag.putBoolean("jammed", jammed);
         // Карта высот сохраняется на диск целиком (порт nbt.setByteArray("map", map)).
         // В сетевой пакет (getUpdateTag) попадает только инкрементальный слайс.
+        // Одного copyOf массива достаточно, чтобы не отдать живой массив.
         if (map == null || map.length != MAP_LENGTH) {
             map = new byte[MAP_LENGTH];
         }
-        // IOWorker сериализует chunk NBT на отдельном потоке. Нельзя передавать ему
-        // живой массив карты: следующий тик радара продолжит менять его во время
-        // записи чанка. Также отсоединяем inventory NBT от ItemStack capability tags,
-        // которые могут измениться при зарядке батареи.
-        snapshot.putByteArray("map", Arrays.copyOf(map, MAP_LENGTH));
-        snapshot.put("inventory", snapshot.getCompound("inventory").copy());
+        tag.putByteArray("map", Arrays.copyOf(map, MAP_LENGTH));
         // rotation/prevRotation НЕ сохраняем: это чисто клиентское состояние анимации.
-        // На сервере rotation всегда 0, и попадание его в getUpdateTag()/handleUpdateTag()
-        // каждую синхронизацию сбрасывало клиентский rotation → тарелка «дёргалась в припадке».
 
         ListTag contacts = new ListTag();
         for (int[] entry : nearbyMissiles) {
@@ -963,11 +945,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             contactTag.putInt("eid", entry.length >= 7 ? entry[6] : -1);
             contacts.add(contactTag);
         }
-        snapshot.put("contacts", contacts);
-
-        // merge(copy) отсоединяет все вложенные Tag-объекты от временного снимка
-        // и от любых объектов, которыми владеет BlockEntity.
-        tag.merge(snapshot.copy());
+        tag.put("contacts", contacts);
     }
 
     @Override

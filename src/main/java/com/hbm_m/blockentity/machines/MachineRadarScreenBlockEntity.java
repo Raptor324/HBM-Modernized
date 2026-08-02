@@ -47,23 +47,63 @@ public class MachineRadarScreenBlockEntity extends BlockEntity {
     /**
      * Вызывается радаром серверно: принимает список целей и координаты радара-источника
      * (порт {@code TileEntityMachineRadarNT.updateEntity} → screen.entries = ...).
+     *
+     * <p>setChanged() вызывается ТОЛЬКО при реальной смене персистентного состояния
+     * (линк/координаты радара/режим карты). Координаты целей и содержимое карты —
+     * транзитные данные: они синкаются на клиент по сети (sendBlockUpdated), но
+     * не должны помечать чанк грязным и заставлять сервер каждые 5 тиков
+     * сериализовать 40 КБ height_map на диск.
+     *
+     * @return true, если набор целей изменился с прошлого вызова.
      */
-    public void receiveFromRadar(List<int[]> sourceEntries, int refX, int refY, int refZ, int range,
-                                 boolean showMap, byte[] sourceMap) {
+    public boolean receiveFromRadar(List<int[]> sourceEntries, int refX, int refY, int refZ, int range,
+                                    boolean showMap, byte[] sourceMap) {
         if (level == null || level.isClientSide) {
-            return;
+            return false;
         }
-        this.entries.clear();
+
+        // Канонизируем список, чтобы сравнивать набор целей по entityID,
+        // а не по порядку сканирования (он недетерминирован для HashSet/mixed списков).
+        List<int[]> canon = new ArrayList<>(sourceEntries.size());
         for (int[] e : sourceEntries) {
             if (e != null && e.length >= 5) {
+                canon.add(e);
+            }
+        }
+        canon.sort((a, b) -> Integer.compare(a.length >= 7 ? a[6] : -1, b.length >= 7 ? b[6] : -1));
+
+        boolean targetsChanged = canon.size() != this.entries.size();
+        if (!targetsChanged) {
+            // Грубый детект изменений: суммы координат/типов/eid. Для радарного
+            // экрана ложноположительный детект безвреден (лишний сетевой пакет),
+            // ложноотрицательный сведётся к пропуску одного периода обновления.
+            long oldSig = 0, newSig = 0;
+            for (int i = 0; i < canon.size(); i++) {
+                int[] ne = canon.get(i);
+                int[] oe = this.entries.get(i);
+                newSig += ne[0] * 31L + ne[1] * 37L + ne[2] * 41L + ne[3] * 43L + ne[4]
+                        + (ne.length >= 7 ? ne[6] * 47L : 0);
+                oldSig += oe[0] * 31L + oe[1] * 37L + oe[2] * 41L + oe[3] * 43L + oe[4]
+                        + (oe.length >= 7 ? oe[6] * 47L : 0);
+            }
+            targetsChanged = oldSig != newSig;
+        }
+
+        if (targetsChanged) {
+            this.entries.clear();
+            for (int[] e : canon) {
                 this.entries.add(e.clone());
             }
         }
+
+        boolean persistedChanged = this.refX != refX || this.refY != refY || this.refZ != refZ
+                || this.range != range;
         this.refX = refX;
         this.refY = refY;
         this.refZ = refZ;
         this.range = range;
         this.linked = true;
+
         boolean mapChanged = this.showMap != showMap;
         this.showMap = showMap;
         if (mapChanged && showMap) {
@@ -77,19 +117,34 @@ public class MachineRadarScreenBlockEntity extends BlockEntity {
                 heightMap = new byte[MachineRadarBlockEntity.MAP_LENGTH];
             }
             System.arraycopy(sourceMap, 0, heightMap, 0, MachineRadarBlockEntity.MAP_LENGTH);
+            persistedChanged = true; // height_map сериализуется на диск
         } else if (!showMap && mapChanged) {
             Arrays.fill(heightMap, (byte) 0);
+            persistedChanged = true;
         }
-        setChanged();
-        if (level != null && !level.isClientSide && !isRemoved()
-                && (mapChanged || level.getGameTime() % 5L == 0L)) {
+
+        // Диск: только при изменении персистентного состояния.
+        if (persistedChanged) {
+            setChanged();
+        }
+
+        // Сеть: при любом релевантном изменении, но не чаще раза в 5 тиков
+        // (движущиеся цели не требуют пакета каждый тик — 4 Гц достаточно).
+        if (!isRemoved()
+                && (targetsChanged || mapChanged || level.getGameTime() % 5L == 0L)) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
+        return targetsChanged;
     }
 
     /** Периодически проверяет источник, чтобы сломанный радар не оставлял экран linked=true. */
     public static void tick(Level level, BlockPos pos, BlockState state, MachineRadarScreenBlockEntity screen) {
         if (level.isClientSide || level.getGameTime() % 5L != 0L) {
+            return;
+        }
+        // Экран никогда не был прилинкован (координаты радара неизвестны) —
+        // нечего проверять, и чанк (0,0,0) дёргать не нужно.
+        if (!screen.linked && screen.refX == 0 && screen.refY == 0 && screen.refZ == 0) {
             return;
         }
         BlockPos radarPos = new BlockPos(screen.refX, screen.refY, screen.refZ);
@@ -120,6 +175,11 @@ public class MachineRadarScreenBlockEntity extends BlockEntity {
      */
     public void unlink() {
         if (level == null || level.isClientSide) {
+            return;
+        }
+        // Идемпотентность: если связи уже нет и целей нет — ничего не изменилось,
+        // незачем помечать чанк грязным и слать пакет каждые 5 тиков.
+        if (!this.linked && this.entries.isEmpty()) {
             return;
         }
         this.linked = false;
