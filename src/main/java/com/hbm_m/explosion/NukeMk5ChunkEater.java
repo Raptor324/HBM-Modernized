@@ -246,22 +246,23 @@ public class NukeMk5ChunkEater implements IExplosionRay {
         int minZ = chunkZ << 4;
         int maxZ = minZ + 15;
         int maxR = this.length;
+        int maxRSq = maxR * maxR;
+        int minY = level.getMinBuildHeight();
+        int maxY = level.getMaxBuildHeight();
         BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
 
-        // [FIX] Расширяем границы на 1 блок во все стороны, чтобы захватить
-        // воду на стыках чанков (линии x=minX-1, x=maxX+1, z=minZ-1, z=maxZ+1),
-        // которые иначе остаются висеть стенами толщиной 1 блок между чанками.
-        // Проверка радиуса внутри цикла отсекает то, что дальше maxR от центра.
+        // [FIX] Сканируем ПОЛНУЮ высоту колонки (minY..maxY), а не surfaceY+16.
+        // После прохода лучей heightmap падает до дна кратера, и вода на уровне
+        // океана оказывалась выше surfaceY+16 → не сканировалась → оставалась сеткой.
+        // Границы расширены на 1 блок для перекрытия стыков чанков.
         for (int x = minX - 1; x <= maxX + 1; x++) {
             for (int z = minZ - 1; z <= maxZ + 1; z++) {
                 double dx = x + 0.5D - posX;
                 double dz = z + 0.5D - posZ;
-                if (dx * dx + dz * dz > (double) maxR * maxR) {
+                if (dx * dx + dz * dz > (double) maxRSq) {
                     continue;
                 }
-                int surfaceY = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
-                int maxY = Math.min(level.getMaxBuildHeight(), surfaceY + 16);
-                for (int y = level.getMinBuildHeight(); y < maxY; y++) {
+                for (int y = minY; y < maxY; y++) {
                     mutablePos.set(x, y, z);
                     BlockState state = level.getBlockState(mutablePos);
                     if (!state.getFluidState().isEmpty()) {
@@ -290,6 +291,8 @@ public class NukeMk5ChunkEater implements IExplosionRay {
 
         long deadline = System.currentTimeMillis() + budgetMs;
         BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
+        int minY = level.getMinBuildHeight();
+        int maxY = level.getMaxBuildHeight();
 
         outer:
         for (; fluidClearCursorX <= posX + maxR; fluidClearCursorX++) {
@@ -304,9 +307,8 @@ public class NukeMk5ChunkEater implements IExplosionRay {
                     continue;
                 }
 
-                int surfaceY = level.getHeight(Heightmap.Types.WORLD_SURFACE, fluidClearCursorX, z);
-                int maxY = Math.min(level.getMaxBuildHeight(), surfaceY + 16);
-                for (int y = level.getMinBuildHeight(); y < maxY; y++) {
+                // [FIX] Полная высота колонки (см. комментарий в clearFluidsInChunkColumn)
+                for (int y = minY; y < maxY; y++) {
                     mutablePos.set(fluidClearCursorX, y, z);
                     if (!level.getBlockState(mutablePos).getFluidState().isEmpty()) {
                         clearBlock(mutablePos);
@@ -324,14 +326,21 @@ public class NukeMk5ChunkEater implements IExplosionRay {
         clearBlock(new BlockPos(x, y, z));
     }
 
-    /** Удаляет блок/жидкость вдоль луча (1.20: вода иначе даёт полоски между чанками). */
+    /**
+     * Удаляет блок/жидкость.
+     * [FIX] Level.removeBlock(pos, false) — это NO-OP для жидкостей в ванилле 1.20.1:
+     * он вызывает setBlock(pos, fluidstate.createLegacyBlock(), 3), т.е. ставит воду
+     * ОБРАТНО. Поэтому используем setBlock(AIR) напрямую.
+     * Флаг UPDATE_CLIENTS (2) — без neighbor-update, чтобы соседние source-блоки
+     * не получили уведомления и не затекли обратно.
+     */
     private void clearBlock(BlockPos pos) {
         BlockState state = level.getBlockState(pos);
         if (state.isAir() && state.getFluidState().isEmpty()) return;
-        level.removeBlock(pos, false);
-        if (!level.getBlockState(pos).getFluidState().isEmpty()) {
-            level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
-        }
+        // [FIX] flag UPDATE_CLIENTS | UPDATE_IMMEDIATE (18):
+        // UPDATE_IMMEDIATE пропускает updateNeighbourShapes в Level.markAndNotifyBlock,
+        // иначе соседняя вода получает neighborChanged и растекается.
+        level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
     }
 
     private static boolean shouldClearBlock(BlockState state) {

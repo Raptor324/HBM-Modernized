@@ -20,7 +20,6 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
@@ -160,11 +159,47 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
             }
         }
 
+        // [FIX] stomp расставляет sellafite/waste с setBlock(flag=3, UPDATE_NEIGHBORS).
+        // Соседний океан получает neighbor-update → вода затекает обратно в кратер
+        // → уродливые сетки и полосы на границах чанков.
+        // Вычищаем всю жидкость в чанке в пределах радиуса кратера (не fallout-радиуса!),
+        // с флагом UPDATE_CLIENTS (2) — без neighbor-update, чтобы не запустить новый поток.
+        clearChunkFluidsPostStomp(serverLevel, chunkPosX, chunkPosZ);
+
         if (biomeModified) {
             WorldUtil.flushChunk(serverLevel, chunk);
         }
 
         ChunkRadiationManager.getProxy().recalculateChunkRadiation(chunk);
+    }
+
+    /**
+     * Пост-обработка: удаляет жидкость, затёкшую в кратер после расстановки sellafite.
+     * Радиус = ~40% от fallout scale (соответствует crater radius = length ≈ scale / 2.5).
+     * Флаг 2 = UPDATE_CLIENTS, без neighbor-update.
+     */
+    private void clearChunkFluidsPostStomp(ServerLevel level, int chunkPosX, int chunkPosZ) {
+        int craterRadius = (int) (getScale() * 0.4D);
+        int craterRadiusSq = craterRadius * craterRadius;
+        int minY = level.getMinBuildHeight();
+        int maxY = level.getMaxBuildHeight();
+        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
+
+        for (int x = chunkPosX << 4; x < (chunkPosX << 4) + 16; x++) {
+            for (int z = chunkPosZ << 4; z < (chunkPosZ << 4) + 16; z++) {
+                double dx = x + 0.5D - getX();
+                double dz = z + 0.5D - getZ();
+                if (dx * dx + dz * dz > craterRadiusSq) continue;
+
+                for (int y = minY; y < maxY; y++) {
+                    mutable.set(x, y, z);
+                    if (!level.getBlockState(mutable).getFluidState().isEmpty()) {
+                        // flag 18 = UPDATE_CLIENTS | UPDATE_IMMEDIATE — без updateNeighbourShapes
+                        level.setBlock(mutable, Blocks.AIR.defaultBlockState(), 18);
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -239,12 +274,20 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
             if (state.isAir() || state.is(ModBlocks.NUCLEAR_FALLOUT.get())) continue;
 
+            // [FIX] Вычищаем жидкость/waterlogged блоки (вода, ламинарии, морская трава)
+            // с флагом 18 (UPDATE_CLIENTS | UPDATE_IMMEDIATE) — без updateNeighbourShapes,
+            // чтобы соседняя вода не получила уведомление и не растеклась.
+            if (!state.getFluidState().isEmpty()) {
+                level.setBlock(pos, Blocks.AIR.defaultBlockState(), 18);
+                continue;
+            }
+
             BlockPos above = pos.above();
             BlockState aboveState = level.getBlockState(above);
 
             if (dist < 65 && state.isFlammable(level, pos, Direction.UP)) {
                 if (random.nextInt(5) == 0 && level.getBlockState(above).isAir()) {
-                    level.setBlock(above, Blocks.FIRE.defaultBlockState(), 3);
+                    level.setBlock(above, Blocks.FIRE.defaultBlockState(), 18);
                 }
             }
 
@@ -257,24 +300,6 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
                 }
             }
 
-            float hardness = state.getDestroySpeed(level, pos);
-            if (y > minY && dist < 65
-                    && hardness <= Blocks.STONE_BRICKS.defaultBlockState().getDestroySpeed(level, pos)
-                    && hardness >= 0) {
-                if (level.getBlockState(pos.below()).isAir()) {
-                    for (int i = 0; i <= depth; i++) {
-                        BlockPos fallingPos = pos.offset(0, i, 0);
-                        BlockState fallingState = level.getBlockState(fallingPos);
-                        float h = fallingState.getDestroySpeed(level, fallingPos);
-                        if (h <= Blocks.STONE_BRICKS.defaultBlockState().getDestroySpeed(null, null) && h >= 0) {
-                            FallingBlockEntity falling = FallingBlockEntity.fall(level, fallingPos, fallingState);
-                            if (falling != null) {
-                                falling.dropItem = false;
-                            }
-                        }
-                    }
-                }
-            }
 
             if (!eval && state.isSolidRender(level, pos)) {
                 depth++;
@@ -309,7 +334,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
             double d = dist / 100;
             double chance = 0.1 - Math.pow(d - 0.7, 2);
             if (chance >= random.nextDouble()) {
-                level.setBlock(above, ModBlocks.NUCLEAR_FALLOUT.get().defaultBlockState(), 3);
+                level.setBlock(above, ModBlocks.NUCLEAR_FALLOUT.get().defaultBlockState(), 18);
             }
             return;
         }

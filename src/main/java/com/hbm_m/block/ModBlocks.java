@@ -308,7 +308,7 @@ public class ModBlocks {
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.DIRT).sound(SoundType.GRAVEL)));
 
     public static final RegistrySupplier<Block> WASTE_LEAVES = registerBlock("waste_leaves",
-            () -> new LeavesBlock(BlockBehaviour.Properties.copy(Blocks.OAK_LEAVES).noOcclusion()));
+            () -> new com.hbm_m.block.generic.WasteLeaves(BlockBehaviour.Properties.copy(Blocks.OAK_LEAVES).noOcclusion()));
 
     /** Шлак (оригинал {@code ModBlocks.block_slag}) — оболочка volatile creeper и др. */
     public static final RegistrySupplier<Block> BLOCK_SLAG = registerBlock("block_slag",
