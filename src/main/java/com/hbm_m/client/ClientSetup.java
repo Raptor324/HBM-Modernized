@@ -34,6 +34,7 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.client.loader.DoorModelLoader;
+import com.hbm_m.client.loader.DaeModelLoader;
 import com.hbm_m.client.loader.HeatingOvenModelLoader;
 import com.hbm_m.client.loader.MachineAdvancedAssemblerModelLoader;
 import com.hbm_m.client.loader.MachineAssemblerModelLoader;
@@ -68,6 +69,7 @@ import com.hbm_m.client.render.implementations.AirstrikeEntityRenderer;
 import com.hbm_m.client.render.implementations.AirstrikeNukeEntityRenderer;
 import com.hbm_m.client.render.implementations.BatterySocketCreativeRenderer;
 import com.hbm_m.client.render.implementations.DoorRenderer;
+import com.hbm_m.client.render.implementations.TransitionSealRenderer;
 import com.hbm_m.client.render.implementations.GasCentrifugeRenderer;
 import com.hbm_m.client.render.implementations.HeatingOvenRenderer;
 import com.hbm_m.client.render.implementations.MachineFluidTankRenderer;
@@ -180,6 +182,7 @@ import com.mojang.blaze3d.vertex.VertexFormatElement;
 import net.minecraft.client.GraphicsStatus;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.network.chat.Component;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
@@ -200,6 +203,7 @@ import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
+import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
 import net.minecraftforge.client.event.RegisterColorHandlersEvent;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
@@ -448,6 +452,26 @@ public class ClientSetup {
         MinecraftForge.EVENT_BUS.addListener(ClientSetup::onClientDisconnect);
 
         event.enqueueWork(ClientSetup::registerRadAbsorberItemProperties);
+        event.enqueueWork(ClientSetup::registerRenderLayers);
+        MinecraftForge.EVENT_BUS.addListener(ClientSetup::registerDebugClientCommands);
+    }
+
+    private static void registerDebugClientCommands(RegisterClientCommandsEvent event) {
+        event.getDispatcher().register(
+            net.minecraft.commands.Commands.literal("debug_ntm_m_transition_seal")
+                .executes(context -> {
+                    if (Minecraft.getInstance().player != null) {
+                        Minecraft.getInstance().player.displayClientMessage(
+                            Component.literal(TransitionSealRenderer.getDebugInfo()), false);
+                    }
+                    return 1;
+                })
+        );
+    }
+
+    private static void registerRenderLayers() {
+        net.minecraft.client.renderer.ItemBlockRenderTypes.setRenderLayer(
+                ModBlocks.TRANSITION_SEAL.get(), RenderType.cutout());
     }
 
     private static void registerRadAbsorberItemProperties() {
@@ -582,6 +606,7 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.MACHINE_ASSEMBLER_BE.get(), MachineAssemblerRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.TRANSITION_SEAL_BE.get(), TransitionSealRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.PRESS_BE.get(), MachinePressRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.CHEMICAL_PLANT_BE.get(), MachineChemicalPlantRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.HYDRAULIC_FRACKINING_TOWER_BE.get(), MachineHydraulicFrackiningTowerRenderer::new);
@@ -889,6 +914,10 @@ public class ClientSetup {
                 new com.hbm_m.client.reload.IdentifiableReloadListenerAdapter(
                         new ResourceLocation(RefStrings.MODID, "deferred_cache_cleanup_reload_listener"),
                         new com.hbm_m.client.reload.DeferredCacheCleanupReloadListener()));
+        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(
+                new com.hbm_m.client.reload.IdentifiableReloadListenerAdapter(
+                        new ResourceLocation(RefStrings.MODID, "dae_model_reload_listener"),
+                        new com.hbm_m.client.loader.dae.DaeModelReloader()));
         *///?}
     }
 
@@ -1477,6 +1506,7 @@ public class ClientSetup {
         event.register("fluid_tank_loader", new MachineFluidTankModelLoader());
         event.register("battery_socket_loader", new MachineBatterySocketModelLoader());
         event.register("door", new DoorModelLoader());
+        event.register("dae", new DaeModelLoader());
         event.register("template_loader", new TemplateModelLoader());
         event.register("press_loader", new PressModelLoader());
         event.register("missile_loader", new MissileModelLoader());
@@ -1614,6 +1644,7 @@ public class ClientSetup {
         event.registerReloadListener(new ShaderReloadListener());
         event.registerReloadListener(HbmThermalHandler.INSTANCE);
         event.registerReloadListener(com.hbm_m.client.model.variant.DoorModelRegistry.getInstance());
+        event.registerReloadListener(new com.hbm_m.client.loader.dae.DaeModelReloader());
         event.registerReloadListener((preparationBarrier, resourceManager,
                 preparationsProfiler, reloadProfiler,
                 backgroundExecutor, gameExecutor) -> {

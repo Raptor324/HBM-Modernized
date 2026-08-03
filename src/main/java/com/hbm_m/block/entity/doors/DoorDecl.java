@@ -91,7 +91,6 @@ public abstract class DoorDecl {
         return switch (getBlockId().getPath()) {
             case "large_vehicle_door" -> new int[] { -3, 0, 0, 6, 5, 0 };
             case "round_airlock_door" -> new int[] { -1, 0, 0, 3, 3, 0 };
-            case "transition_seal" -> new int[] { -12, 0, 0, 25, 23, 0 };
             case "fire_door" -> new int[] { -1, 0, 0, 3, 2, 0 };
             case "sliding_blast_door" -> new int[] { -3, 0, 0, 6, 3, 0 };
             case "sliding_seal_door" -> new int[] { 0, 0, 0, 0, 1, 0 };
@@ -672,80 +671,6 @@ public abstract class DoorDecl {
         @Override public float getSoundVolume() { return 2.0f; }
     };
     
-    public static final DoorDecl TRANSITION_SEAL = new DoorDecl() {
-        @Override
-        public ResourceLocation getBlockId() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "transition_seal");
-            *///?} else {
-                        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "transition_seal");
-            //?}
-
-        }
-    
-        @Override
-        public ResourceLocation getColladaAnimationSource() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "models/block/doors/transition_seal.dae");
-            *///?} else {
-                        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/doors/transition_seal.dae");
-            //?}
-
-        }
-    
-        @Override
-        public String getDaeObjectName(String partName) {
-            // DAE обычно заменяет точки на подчеркивания
-            return partName.replace('.', '_');
-        }
-    
-        @Override
-        public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
-            // В 1.7.10 логика была: "всё кроме базы едет вверх".
-            // Здесь мы повторяем это: Рама стоит, всё остальное (дверь, шестерни, замки) едет вверх.
-            if ("frame".equals(partName) || "base".equals(partName)) {
-                set(trans, 0, 0, 0);
-            } else {
-                // Процедурный подъем на 3.5 блока
-                set(trans, 0, 3.5F * getNormTime(openTicks), 0);
-            }
-        }
-    
-        @Override 
-        public int getOpenTime() { 
-            return 480; 
-        }
-    
-        @Override
-        public String[] getPartNames() {
-            return new String[] { 
-                "frame", "door", "Cylinder.001", "Cylinder.003", "Cylinder.005", "Cube.006", "Cylinder.007", "Cylinder.008", "Circle", "Cylinder.009", "Cylinder.010", "Cylinder.011", "door.005", "door.002", "door.008", "ring.001", "door.003", "door.004", "ring.002", "door.006"
-            };
-        }
-        
-        @Override
-        public void doOffsetTransform(IDoorAnimator animator) {
-            // Глобальное смещение всей модели (как в 1.7.10 GL11.glTranslated)
-            animator.translate(0.0f, 0.0f, 0.5f);
-        }
-        
-        @Override 
-        public int[][] getDoorOpenRanges() {
-            return new int[][] { { -9, 2, 0, 20, 20, 1 } };
-        }
-    
-        @Override 
-        public SoundEvent getOpenSoundStart() { 
-            return ModSounds.TRANSITION_SEAL_OPEN.get(); 
-        }
-        
-        @Override 
-        public float getSoundVolume() { 
-            return 6.0f; 
-        }
-    };
-    
-
     public static final DoorDecl FIRE_DOOR = new DoorDecl() {
         {
             DoorStructureDefinition.Builder builder = DoorStructureDefinition.create();

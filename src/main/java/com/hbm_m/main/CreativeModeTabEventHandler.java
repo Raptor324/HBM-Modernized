@@ -1353,7 +1353,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.SILO_HATCH.get()));
         add.accept(new ItemStack(ModBlocks.SILO_HATCH_LARGE.get()));
         add.accept(new ItemStack(ModBlocks.VAULT_DOOR.get()));
-        // add.accept(new ItemStack(ModBlocks.TRANSITION_SEAL.get()));
+        add.accept(new ItemStack(ModBlocks.TRANSITION_SEAL.get()));
         // add.accept(new ItemStack(ModBlocks.SLIDE_DOOR.get()));
     }
 
