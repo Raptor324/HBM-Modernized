@@ -1,0 +1,34 @@
+{
+  "_comment": "Авторский лут радиостанций/антенн — электроника, провода, полюса, красная сеть (порт POOL_ANTENNA + POOL_SPACESHIP)",
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": { "min": 5, "max": 9 },
+      "entries": [
+        { "type": "item", "name": "hbm_m:steel_ingot", "weight": 8, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:red_copper_ingot", "weight": 7, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:titanium_ingot", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:wire_fine", "weight": 8, "functions": [ { "function": "minecraft:set_count", "count": { "min": 2, "max": 8 } } ] },
+        { "type": "item", "name": "hbm_m:wire_copper", "weight": 7, "functions": [ { "function": "minecraft:set_count", "count": { "min": 2, "max": 8 } } ] },
+        { "type": "item", "name": "hbm_m:wire_red_copper", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 2, "max": 6 } } ] },
+        { "type": "item", "name": "hbm_m:red_cable", "weight": 7, "functions": [ { "function": "minecraft:set_count", "count": { "min": 4, "max": 16 } } ] },
+        { "type": "item", "name": "hbm_m:red_wire_coated", "weight": 7, "functions": [ { "function": "minecraft:set_count", "count": { "min": 2, "max": 8 } } ] },
+        { "type": "item", "name": "hbm_m:steel_scaffold", "weight": 8, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:vacuum_tube", "weight": 6 },
+        { "type": "item", "name": "hbm_m:capacitor_copper", "weight": 5 },
+        { "type": "item", "name": "hbm_m:analog_circuit", "weight": 5 },
+        { "type": "item", "name": "hbm_m:battery_red_cell_6", "weight": 5 },
+        { "type": "item", "name": "hbm_m:coil_copper_torus", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:coil_gold", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:iodine_powder", "weight": 3 },
+        { "type": "item", "name": "hbm_m:cell_deuterium", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:airstrike_agent", "weight": 2 },
+        { "type": "item", "name": "hbm_m:airstrike_heavy", "weight": 1 },
+        { "type": "item", "name": "hbm_m:designator_manual", "weight": 4 },
+        { "type": "item", "name": "hbm_m:gas_mask_filter", "weight": 5 },
+        { "type": "item", "name": "hbm_m:tape_recorder", "weight": 3 },
+        { "type": "item", "name": "hbm_m:stealth_boy", "weight": 2 }
+      ]
+    }
+  ]
+}

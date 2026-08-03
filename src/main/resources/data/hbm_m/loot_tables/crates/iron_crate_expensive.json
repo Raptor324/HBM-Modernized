@@ -1,0 +1,32 @@
+{
+  "_comment": "POOL_EXPENSIVE — спрятанный ценный лут (порт ItemPoolsLegacy.POOL_EXPENSIVE из 1.7.10)",
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": { "min": 3, "max": 6 },
+      "entries": [
+        { "type": "item", "name": "hbm_m:chlorine_pinwheel", "weight": 1 },
+        { "type": "item", "name": "hbm_m:vacuum_tube", "weight": 4 },
+        { "type": "item", "name": "hbm_m:analog_circuit", "weight": 3 },
+        { "type": "item", "name": "hbm_m:advanced_circuit", "weight": 2 },
+        { "type": "item", "name": "hbm_m:gun_kit_1", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:gun_kit_2", "weight": 3, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:ammo_50_sp", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:stealth_boy", "weight": 2 },
+        { "type": "item", "name": "hbm_m:battery_lithium", "weight": 1 },
+        { "type": "item", "name": "hbm_m:syringe_awesome", "weight": 1 },
+        { "type": "item", "name": "hbm_m:fusion_core", "weight": 4 },
+        { "type": "item", "name": "hbm_m:bottle_nuka", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:bottle_quantum", "weight": 3 },
+        { "type": "item", "name": "hbm_m:gas_mask_m65", "weight": 5 },
+        { "type": "item", "name": "hbm_m:airstrike_agent", "weight": 2 },
+        { "type": "item", "name": "hbm_m:missile_micro", "weight": 1 },
+        { "type": "item", "name": "hbm_m:gas_mask_filter", "weight": 4 },
+        { "type": "item", "name": "hbm_m:launch_code_piece", "weight": 1 },
+        { "type": "item", "name": "hbm_m:blueprint_folder", "weight": 2 },
+        { "type": "item", "name": "hbm_m:designator", "weight": 2 },
+        { "type": "item", "name": "hbm_m:coin_token", "weight": 3 }
+      ]
+    }
+  ]
+}

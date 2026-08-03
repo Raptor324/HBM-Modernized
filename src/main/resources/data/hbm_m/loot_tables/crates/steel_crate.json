@@ -1,0 +1,28 @@
+{
+  "_comment": "POOL_MACHINE_PARTS — детали машин (порт ItemPoolsComponent.POOL_MACHINE_PARTS из 1.7.10)",
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": { "min": 5, "max": 8 },
+      "entries": [
+        { "type": "item", "name": "hbm_m:plate_steel", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 5 } } ] },
+        { "type": "item", "name": "hbm_m:shell_steel", "weight": 3, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:plate_polymer", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 6 } } ] },
+        { "type": "item", "name": "hbm_m:bolt_steel", "weight": 3, "functions": [ { "function": "minecraft:set_count", "count": { "min": 4, "max": 16 } } ] },
+        { "type": "item", "name": "hbm_m:bolt_tungsten", "weight": 3, "functions": [ { "function": "minecraft:set_count", "count": { "min": 4, "max": 16 } } ] },
+        { "type": "item", "name": "hbm_m:coil_tungsten", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:motor", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:coil_copper", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:coil_copper_torus", "weight": 3, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:wire_fine", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 8 } } ] },
+        { "type": "item", "name": "hbm_m:piston_selenium", "weight": 3 },
+        { "type": "item", "name": "hbm_m:vacuum_tube", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:pcb", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:capacitor_copper", "weight": 3 },
+        { "type": "item", "name": "hbm_m:blade_titanium", "weight": 1, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 8 } } ] },
+        { "type": "item", "name": "hbm_m:blueprint_folder", "weight": 1 },
+        { "type": "item", "name": "hbm_m:screwdriver", "weight": 2 }
+      ]
+    }
+  ]
+}

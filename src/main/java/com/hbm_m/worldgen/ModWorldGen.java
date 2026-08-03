@@ -36,6 +36,15 @@ public class ModWorldGen {
             FOUNDATION_PROCESSOR = PROCESSORS.register("foundation_processor",
             () -> () -> StructureFoundationProcessor.CODEC);
 
+    /**
+     * Процессор, назначающий лут-таблицы сундукам и ящикам HBM при генерации
+     * структур. Подключён в {@code worldgen/processor_list/foundation_processor.json},
+     * на который ссылается подавляющее большинство структурных template_pool.
+     */
+    public static final RegistrySupplier<StructureProcessorType<StructureLootProcessor>>
+            LOOT_PROCESSOR = PROCESSORS.register("loot_processor",
+            () -> () -> StructureLootProcessor.CODEC);
+
     public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> OILCLASTER_SURROUNDED =
             FEATURES.register("oilclaster_surrounded", () -> new OilClasterSurroundedFeature(NoneFeatureConfiguration.CODEC));
 

@@ -1,0 +1,28 @@
+{
+  "_comment": "POOL_VAULT_LAB — лабораторные предметы из бункеров (порт ItemPoolsComponent.POOL_VAULT_LAB из 1.7.10)",
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": { "min": 5, "max": 8 },
+      "entries": [
+        { "type": "item", "name": "hbm_m:blowtorch", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:screwdriver", "weight": 10 },
+        { "type": "item", "name": "hbm_m:nugget_mercury", "weight": 3 },
+        { "type": "item", "name": "hbm_m:morning_glory", "weight": 1 },
+        { "type": "item", "name": "hbm_m:filter_coal", "weight": 5 },
+        { "type": "item", "name": "hbm_m:dust", "weight": 25, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "minecraft:paper", "weight": 15, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:cell_empty", "weight": 5 },
+        { "type": "item", "name": "minecraft:glass_bottle", "weight": 5 },
+        { "type": "item", "name": "hbm_m:iodine_powder", "weight": 2 },
+        { "type": "item", "name": "hbm_m:cobalt_powder", "weight": 2 },
+        { "type": "item", "name": "hbm_m:neodymium_powder", "weight": 2 },
+        { "type": "item", "name": "hbm_m:boron_powder", "weight": 2 },
+        { "type": "item", "name": "hbm_m:blueprint_folder", "weight": 2 },
+        { "type": "item", "name": "hbm_m:coin_token", "weight": 4 },
+        { "type": "item", "name": "hbm_m:quartz_powder", "weight": 4 },
+        { "type": "item", "name": "hbm_m:thermite_powder", "weight": 3 }
+      ]
+    }
+  ]
+}

@@ -40,6 +40,8 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                  Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof BaseCrateBlockEntity crateEntity) {
+            // Генерируем лут из таблицы структуры (если назначена) при первом открытии.
+            crateEntity.unpackLootTable(player);
             playOpenSound(level, pos);
             MenuRegistry.openExtendedMenu((ServerPlayer) player, crateEntity, buf -> buf.writeBlockPos(pos));
         }

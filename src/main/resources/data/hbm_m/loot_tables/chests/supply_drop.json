@@ -1,0 +1,42 @@
+{
+  "_comment": "Авторский лут сброса припасов (C-130/вертибёрд) — высокоуровневый военный и энергетический лут (порт POOL_VERTIBIRD)",
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": { "min": 5, "max": 9 },
+      "entries": [
+        { "type": "item", "name": "hbm_m:fusion_core", "weight": 8 },
+        { "type": "item", "name": "hbm_m:battery_lithium", "weight": 7 },
+        { "type": "item", "name": "hbm_m:battery_schrabidium", "weight": 2 },
+        { "type": "item", "name": "hbm_m:stealth_boy", "weight": 6 },
+        { "type": "item", "name": "hbm_m:gun_b92", "weight": 5 },
+        { "type": "item", "name": "hbm_m:gun_kit_1", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:gun_kit_2", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:ammo_50_fmj", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 4, "max": 16 } } ] },
+        { "type": "item", "name": "hbm_m:ammo_556_fmj", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 6, "max": 24 } } ] },
+        { "type": "item", "name": "hbm_m:ammo_container", "weight": 4 },
+        { "type": "item", "name": "hbm_m:grenadehe", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:t51_helmet", "weight": 4 },
+        { "type": "item", "name": "hbm_m:t51_chestplate", "weight": 4 },
+        { "type": "item", "name": "hbm_m:t51_leggings", "weight": 4 },
+        { "type": "item", "name": "hbm_m:t51_boots", "weight": 4 },
+        { "type": "item", "name": "hbm_m:billet_uranium_fuel", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:uranium_ingot", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:bottle_nuka", "weight": 8, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:bottle_quantum", "weight": 5 },
+        { "type": "item", "name": "hbm_m:gas_mask_m65", "weight": 6 },
+        { "type": "item", "name": "hbm_m:gas_mask_filter", "weight": 6 },
+        { "type": "item", "name": "hbm_m:definitelyfood", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 2, "max": 6 } } ] },
+        { "type": "item", "name": "hbm_m:airstrike_agent", "weight": 2 },
+        { "type": "item", "name": "hbm_m:airstrike_heavy", "weight": 1 },
+        { "type": "item", "name": "hbm_m:airstrike_nuke", "weight": 1 },
+        { "type": "item", "name": "hbm_m:missile_incendiary", "weight": 1 },
+        { "type": "item", "name": "hbm_m:missile_strong", "weight": 1 },
+        { "type": "item", "name": "hbm_m:missile_buster", "weight": 1 },
+        { "type": "item", "name": "hbm_m:launch_code_piece", "weight": 2 },
+        { "type": "item", "name": "hbm_m:designator", "weight": 4 },
+        { "type": "item", "name": "hbm_m:cap_nuka", "weight": 7, "functions": [ { "function": "minecraft:set_count", "count": { "min": 3, "max": 20 } } ] }
+      ]
+    }
+  ]
+}

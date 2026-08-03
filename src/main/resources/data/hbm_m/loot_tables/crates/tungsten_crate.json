@@ -1,0 +1,33 @@
+{
+  "_comment": "Вольфрамовый ящик — «горячий» лут: радиоактивные изотопы, РИТЭГ-пеллеты, топливные стержни",
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": { "min": 4, "max": 7 },
+      "entries": [
+        { "type": "item", "name": "hbm_m:tungsten_ingot", "weight": 8, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:block_tungsten", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:nugget_u235", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 3, "max": 12 } } ] },
+        { "type": "item", "name": "hbm_m:nugget_pu238", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 3, "max": 12 } } ] },
+        { "type": "item", "name": "hbm_m:nugget_ra226", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 3, "max": 6 } } ] },
+        { "type": "item", "name": "hbm_m:nugget_co60", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 5 } } ] },
+        { "type": "item", "name": "hbm_m:rod_quad_uranium", "weight": 3 },
+        { "type": "item", "name": "hbm_m:pellet_rtg", "weight": 3 },
+        { "type": "item", "name": "hbm_m:pellet_rtg_cobalt", "weight": 3 },
+        { "type": "item", "name": "hbm_m:pellet_rtg_strontium", "weight": 3 },
+        { "type": "item", "name": "hbm_m:pellet_rtg_polonium", "weight": 2 },
+        { "type": "item", "name": "hbm_m:pellet_rtg_radium", "weight": 2 },
+        { "type": "item", "name": "hbm_m:billet_polonium", "weight": 2 },
+        { "type": "item", "name": "hbm_m:billet_neptunium", "weight": 2 },
+        { "type": "item", "name": "hbm_m:billet_uranium_fuel", "weight": 3, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:cell_deuterium", "weight": 3, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:cell_tritium", "weight": 3, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:hazmat_kit", "weight": 4 },
+        { "type": "item", "name": "hbm_m:gas_mask_m65", "weight": 6 },
+        { "type": "item", "name": "hbm_m:gas_mask_filter", "weight": 6 },
+        { "type": "item", "name": "hbm_m:barrel_yellow", "weight": 3, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:rtg_unit", "weight": 1 }
+      ]
+    }
+  ]
+}
