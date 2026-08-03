@@ -220,21 +220,24 @@ public class MachineRadarScreenRenderer implements BlockEntityRenderer<MachineRa
         float yBottom = 0.125F;
         float zLeft = -0.375F;
         float zRight = 1.375F;
-        buffer.vertex(matrix, x, yTop, zRight).uv(0F, 1F).color(255, 255, 255, 255).endVertex();
-        buffer.vertex(matrix, x, yTop, zLeft).uv(1F, 1F).color(255, 255, 255, 255).endVertex();
-        buffer.vertex(matrix, x, yBottom, zLeft).uv(1F, 0F).color(255, 255, 255, 255).endVertex();
-        buffer.vertex(matrix, x, yBottom, zRight).uv(0F, 0F).color(255, 255, 255, 255).endVertex();
+        // V отображается «севером вверх»: v=0 — верх текстуры (mapZ=0, север)
+        // попадает на верхнюю кромку экрана (yTop). Раньше V был перевёрнут
+        // компенсацией под Z-флип оверлея; теперь оверлей не повёрнут, поэтому V
+        // идёт напрямую. U как в оригинале: zLeft(-0.375)=восток=u1, zRight(1.375)=запад=u0.
+        buffer.vertex(matrix, x, yTop, zRight).uv(0F, 0F).color(255, 255, 255, 255).endVertex();
+        buffer.vertex(matrix, x, yTop, zLeft).uv(1F, 0F).color(255, 255, 255, 255).endVertex();
+        buffer.vertex(matrix, x, yBottom, zLeft).uv(1F, 1F).color(255, 255, 255, 255).endVertex();
+        buffer.vertex(matrix, x, yBottom, zRight).uv(0F, 1F).color(255, 255, 255, 255).endVertex();
         BufferUploader.drawWithShader(buffer.end());
         RenderSystem.disableBlend();
     }
 
     /** Бегущая зелёная полоса развёртки (порт GL_QUADS-полосы из RenderRadarScreen). */
     private void renderSweep(PoseStack pose, long time, float partialTick) {
-        // Смещение инвертировано относительно оригинальной формулы, чтобы
-        // полоса двигалась СВЕРХУ ВНИЗ: экранная плоскость перевёрнута
-        // Z-вращением на 180° (см. render()), поэтому для визуального
-        // направления «вниз» локальный offset должен убывать со временем.
-        double offset = (56D / 30D) - ((time % 56) + partialTick) / 30D;
+        // Точная формула оригинала: offset = ((time%56)+f)/30. С ростом времени
+        // 2-offset убывает → полоса идёт СВЕРХУ ВНИЗ. Оверлей больше не перевёрнут
+        // Z-вращением (см. render()), поэтому инверсия смещения, как прежде, не нужна.
+        double offset = ((time % 56) + partialTick) / 30D;
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShader(GameRenderer::getPositionColorShader);

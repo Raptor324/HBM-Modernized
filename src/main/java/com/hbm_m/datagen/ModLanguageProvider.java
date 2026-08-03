@@ -764,11 +764,17 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.ROD_QUAD_LEAD.get(), "Четырёхкратный свинцовый стержень");
                 add(ModItems.ROD_QUAD_NP237.get(), "Четырёхкратный стержень Нп-237");
                 add(ModItems.ROD_QUAD_URANIUM.get(), "Четырёхкратный урановый стержень");
-                add(ModItems.FAT_MAN_EXPLOSIVE.get(), "Ранние взрывные линзы");
-                add(ModItems.FAT_MAN_IGNITER.get(), "Воспламенитель 'Толстяк'");
+                add(ModItems.FAT_MAN_EXPLOSIVE.get(), "Набор взрывных линз первого поколения");
+                add(ModItems.FAT_MAN_IGNITER.get(), "Зажигатель");
                 add(ModItems.FAT_MAN_CORE.get(), "Плутониевое ядро");
                 add("container.hbm_m.nuke_fat_man", "Ядерная бомба 'Толстяк'");
-                add("gui.hbm_m.nuke_fat_man.desc", "Установите 4 ранние взрывные линзы, воспламенитель и плутониевое ядро. Активируется редстоуном или детонатором.");
+                add("gui.hbm_m.nuke_fat_man.requires", "Требует:");
+                add("gui.hbm_m.nuke_fat_man.line_lenses", " * 4 набора взрывных линз первого поколения");
+                add("gui.hbm_m.nuke_fat_man.line_core", " * Плутониевое ядро");
+                add("gui.hbm_m.nuke_fat_man.line_igniter", " * Зажигатель");
+                // Тултип предмета «линзы» (как early_explosive_lenses.desc, 1.7.10)
+                add("tooltip.hbm_m.fat_man_explosive.desc1", "Сборка из 8 осколочно-фугасных линз с алюминиевым");
+                add("tooltip.hbm_m.fat_man_explosive.desc2", "толкателем, дюралюминиевой оболочкой и проволочными детонаторами.");
                 add(ModBlocks.MINE_AP.get(), "Противопехотная мина");
                 add(ModItems.GRENADE_NUC.get(), "Ядерная граната");
                 add(ModItems.GRENADE_IF_HE.get(), "IF-Граната: фугасная");
@@ -789,7 +795,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.NUCLEAR_CHARGE.get(), "Ядерный заряд");
                 add(ModBlocks.C4.get(), "Заряд C4");
                 add(ModItems.DEFUSER.get(), "Устройство для разминирования");
-                add(ModItems.CROWBAR.get(), "Лом");
+                add(ModItems.CROWBAR.get(), "Mk.V Устройство Для Вскрытия Ящиков ''Лом''");
                 add(ModItems.DEPTH_ORES_SCANNER.get(), "Сканер глубинных кластеров");
                 add(ModItems.OIL_DETECTOR.get(), "Детектор нефти");
 
@@ -2317,6 +2323,117 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.debugRenderInSurvival.@Tooltip", "Показывать отладочный рендер в режиме выживания");
                 add("text.autoconfig.hbm_m.option.enableDebugLogging.@Tooltip", "Если выключено, будет активно глубокое логгирование игровых событий. Не стоит включать, если не испытываете проблем");
 
+                // ── Недостающие категории и опции (weapons / machines / nukes / explosions / пробелы rendering) ──
+                add("text.autoconfig.hbm_m.category.weapons", "Оружие");
+                add("text.autoconfig.hbm_m.category.machines", "Станки и механизмы");
+                add("text.autoconfig.hbm_m.category.nukes", "Ядерка");
+                add("text.autoconfig.hbm_m.category.explosions", "Взрывчатка");
+
+                add("text.autoconfig.hbm_m.option.dropSingularity", "Сингулярность при падении предмета");
+                add("text.autoconfig.hbm_m.option.dropSingularity.@Tooltip", "Создаёт сингулярность/чёрную дыру при падении предмета-сингулярности (WeaponConfig.dropSing).");
+                add("text.autoconfig.hbm_m.option.dropCell", "Антиматерия при падении ячейки");
+                add("text.autoconfig.hbm_m.option.dropCell.@Tooltip", "Вызывает аннигиляционный взрыв при падении антиматериальной ячейки/пеллета (WeaponConfig.dropCell).");
+
+                add("text.autoconfig.hbm_m.option.machineRadar", "Радар");
+                add("text.autoconfig.hbm_m.option.machineRadar.generateChunks", "Генерировать чанки");
+                add("text.autoconfig.hbm_m.option.machineRadar.generateChunks.@Tooltip", "Если включено, радар принудительно прогружает/генерирует сканируемые чанки.");
+                add("text.autoconfig.hbm_m.option.frackingTower", "Фрекинговая вышка");
+                add("text.autoconfig.hbm_m.option.frackingTower.maxPower", "Макс. энергия");
+                add("text.autoconfig.hbm_m.option.frackingTower.maxPower.@Tooltip", "Максимальный запас энергии фрекинговой вышки.");
+                add("text.autoconfig.hbm_m.option.frackingTower.consumption", "Потребление энергии");
+                add("text.autoconfig.hbm_m.option.frackingTower.consumption.@Tooltip", "Энергия, потребляемая за одну операцию.");
+                add("text.autoconfig.hbm_m.option.frackingTower.solutionRequired", "Требуется раствора");
+                add("text.autoconfig.hbm_m.option.frackingTower.solutionRequired.@Tooltip", "Расход фрекингового раствора (мБ) за операцию.");
+                add("text.autoconfig.hbm_m.option.frackingTower.delay", "Задержка операции");
+                add("text.autoconfig.hbm_m.option.frackingTower.delay.@Tooltip", "Тиков между операциями фрекинга.");
+                add("text.autoconfig.hbm_m.option.frackingTower.oilPerDeposit", "Нефть на месторождение");
+                add("text.autoconfig.hbm_m.option.frackingTower.oilPerDeposit.@Tooltip", "Нефть (мБ) с обычного месторождения.");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerDepositMin", "Мин. газа на месторождение");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerDepositMin.@Tooltip", "Минимум газа (мБ) с обычного месторождения.");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerDepositMax", "Макс. газа на месторождение");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerDepositMax.@Tooltip", "Максимум газа (мБ) с обычного месторождения.");
+                add("text.autoconfig.hbm_m.option.frackingTower.drainChance", "Шанс истощения");
+                add("text.autoconfig.hbm_m.option.frackingTower.drainChance.@Tooltip", "Шанс (0–1), что операция истощает месторождение.");
+                add("text.autoconfig.hbm_m.option.frackingTower.oilPerBedrockDeposit", "Нефть на бедрок-месторождение");
+                add("text.autoconfig.hbm_m.option.frackingTower.oilPerBedrockDeposit.@Tooltip", "Нефть (мБ) с бедрок-месторождения.");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerBedrockDepositMin", "Мин. газа на бедрок-месторождение");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerBedrockDepositMin.@Tooltip", "Минимум газа (мБ) с бедрок-месторождения.");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerBedrockDepositMax", "Макс. газа на бедрок-месторождение");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerBedrockDepositMax.@Tooltip", "Максимум газа (мБ) с бедрок-месторождения.");
+                add("text.autoconfig.hbm_m.option.frackingTower.destructionRange", "Радиус разрушения");
+                add("text.autoconfig.hbm_m.option.frackingTower.destructionRange.@Tooltip", "Радиус взрыва при разрушении фрекинговой вышки.");
+
+                add("text.autoconfig.hbm_m.option.gadgetRadius", "Радиус «Gadget»");
+                add("text.autoconfig.hbm_m.option.gadgetRadius.@Tooltip", "Радиус взрыва «Gadget».");
+                add("text.autoconfig.hbm_m.option.boyRadius", "Радиус «Little Boy»");
+                add("text.autoconfig.hbm_m.option.boyRadius.@Tooltip", "Радиус взрыва «Little Boy».");
+                add("text.autoconfig.hbm_m.option.manRadius", "Радиус «Fat Man»");
+                add("text.autoconfig.hbm_m.option.manRadius.@Tooltip", "Радиус взрыва «Fat Man».");
+                add("text.autoconfig.hbm_m.option.mikeRadius", "Радиус «Ivy Mike»");
+                add("text.autoconfig.hbm_m.option.mikeRadius.@Tooltip", "Радиус взрыва «Ivy Mike».");
+                add("text.autoconfig.hbm_m.option.tsarRadius", "Радиус «Царь-бомбы»");
+                add("text.autoconfig.hbm_m.option.tsarRadius.@Tooltip", "Радиус взрыва «Царь-бомбы».");
+                add("text.autoconfig.hbm_m.option.prototypeRadius", "Радиус «Prototype»");
+                add("text.autoconfig.hbm_m.option.prototypeRadius.@Tooltip", "Радиус взрыва «Prototype».");
+                add("text.autoconfig.hbm_m.option.fleijaRadius", "Радиус «F.L.E.I.J.A.»");
+                add("text.autoconfig.hbm_m.option.fleijaRadius.@Tooltip", "Радиус взрыва «F.L.E.I.J.A.».");
+                add("text.autoconfig.hbm_m.option.soliniumRadius", "Радиус «Solinium»");
+                add("text.autoconfig.hbm_m.option.soliniumRadius.@Tooltip", "Радиус взрыва солиниевого заряда (blue rinse).");
+                add("text.autoconfig.hbm_m.option.n2Radius", "Радиус N2-мины");
+                add("text.autoconfig.hbm_m.option.n2Radius.@Tooltip", "Радиус взрыва N2-мины.");
+                add("text.autoconfig.hbm_m.option.missileRadius", "Радиус ядерной ракеты");
+                add("text.autoconfig.hbm_m.option.missileRadius.@Tooltip", "Радиус взрыва ядерной баллистической ракеты.");
+                add("text.autoconfig.hbm_m.option.mirvRadius", "Радиус РГЧ (MIRV)");
+                add("text.autoconfig.hbm_m.option.mirvRadius.@Tooltip", "Радиус взрыва боеголовки типа MIRV.");
+                add("text.autoconfig.hbm_m.option.fatmanRadius", "Радиус гранатомёта «Fatman»");
+                add("text.autoconfig.hbm_m.option.fatmanRadius.@Tooltip", "Радиус взрыва мини-ядерки гранатомёта «Fatman Launcher».");
+                add("text.autoconfig.hbm_m.option.nukaRadius", "Радиус «Nuka»-гранаты");
+                add("text.autoconfig.hbm_m.option.nukaRadius.@Tooltip", "Радиус взрыва «Nuka»-гранаты.");
+                add("text.autoconfig.hbm_m.option.aSchrabRadius", "Радиус антишрабидия");
+                add("text.autoconfig.hbm_m.option.aSchrabRadius.@Tooltip", "Радиус взрыва упавшего антишрабидия.");
+
+                add("text.autoconfig.hbm_m.option.mk5TickTimeMs", "Время тика MK5 (мс)");
+                add("text.autoconfig.hbm_m.option.mk5TickTimeMs.@Tooltip", "Минимум миллисекунд на тик для обработки чанков взрывом MK5.");
+                add("text.autoconfig.hbm_m.option.blastSpeed", "Скорость взрыва");
+                add("text.autoconfig.hbm_m.option.blastSpeed.@Tooltip", "Базовая скорость взрыва MK3/Tom (блоков/тик).");
+                add("text.autoconfig.hbm_m.option.falloutRangePercent", "Радиус осадков (%)");
+                add("text.autoconfig.hbm_m.option.falloutRangePercent.@Tooltip", "Радиус зоны радиоактивных осадков в % от базового радиуса взрыва.");
+                add("text.autoconfig.hbm_m.option.falloutDelay", "Задержка осадков");
+                add("text.autoconfig.hbm_m.option.falloutDelay.@Tooltip", "Сколько тиков ждать перед следующим расчётом чанка осадков.");
+                add("text.autoconfig.hbm_m.option.enableChunkLoading", "Прогрузка чанков");
+                add("text.autoconfig.hbm_m.option.enableChunkLoading.@Tooltip", "Разрешает процедурным взрывам удерживать центральный чанк загруженным и генерировать новые чанки.");
+                add("text.autoconfig.hbm_m.option.explosionAlgorithm", "Алгоритм взрыва");
+                add("text.autoconfig.hbm_m.option.explosionAlgorithm.@Tooltip", "0 = Legacy, 1 = Threaded DDA, 2 = Threaded DDA с накоплением урона.");
+                add("text.autoconfig.hbm_m.option.enableCraterBiomes", "Биомы кратеров");
+                add("text.autoconfig.hbm_m.option.enableCraterBiomes.@Tooltip", "Превращает кратер от ядерного взрыва в радиоактивные биомы кратеров.");
+                add("text.autoconfig.hbm_m.option.craterBiomeInnerRad", "RAD/s внутреннего биома кратера");
+                add("text.autoconfig.hbm_m.option.craterBiomeInnerRad.@Tooltip", "RAD/s для игрока внутри биома inner_crater.");
+                add("text.autoconfig.hbm_m.option.craterBiomeRad", "RAD/s биома кратера");
+                add("text.autoconfig.hbm_m.option.craterBiomeRad.@Tooltip", "RAD/s для игрока внутри биома crater.");
+                add("text.autoconfig.hbm_m.option.craterBiomeOuterRad", "RAD/s внешнего биома кратера");
+                add("text.autoconfig.hbm_m.option.craterBiomeOuterRad.@Tooltip", "RAD/s для игрока внутри биома outer_crater.");
+                add("text.autoconfig.hbm_m.option.craterBiomeWaterMult", "Множитель осадков в воде");
+                add("text.autoconfig.hbm_m.option.craterBiomeWaterMult.@Tooltip", "Множитель RAD/s в биомах кратера, когда игрок в воде или под дождём.");
+                add("text.autoconfig.hbm_m.option.limitExplosionLifespan", "Лимит жизни взрыва");
+                add("text.autoconfig.hbm_m.option.limitExplosionLifespan.@Tooltip", "Сколько секунд невыгруженный взрыв может просуществовать. 0 = без лимита.");
+
+                // Rendering — недостающие опции трекинга ракет и instanced-рендера
+                add("text.autoconfig.hbm_m.option.enableMissileNetworkTrack", "Отслеживать ракеты по сети");
+                add("text.autoconfig.hbm_m.option.missileTrackMaxRangeBlocks", "Макс. дальность трекинга ракет (блоки)");
+                add("text.autoconfig.hbm_m.option.missileTrackMaxRangeBlocks.@Tooltip", "Максимальное расстояние (в блоках), на котором ракеты синхронизируются по сети. 0 = без лимита.");
+                add("text.autoconfig.hbm_m.option.missileTrackInterval", "Интервал трекинга ракет");
+                add("text.autoconfig.hbm_m.option.missileTrackInterval.@Tooltip", "Как часто (в тиках) позиции ракет отправляются клиентам.");
+                add("text.autoconfig.hbm_m.option.instanceVboOrphanBeforeUpload", "Orphaning instance VBO");
+                add("text.autoconfig.hbm_m.option.instanceVboOrphanBeforeUpload.@Tooltip", "Перед заливкой instance VBO вызывать glBufferData(NULL) того же размера, чтобы драйвер не синхронизировался с предыдущим кадром. Отключайте только при проблемах.");
+                add("text.autoconfig.hbm_m.option.gpuBoneSkinning", "GPU bone skinning");
+                add("text.autoconfig.hbm_m.option.gpuBoneSkinning.@Tooltip", "Считать матрицы base×part на GPU для продвинутого сборщика (только vanilla; под Iris/Oculus — отдельный путь).");
+                add("text.autoconfig.hbm_m.option.mdiDebugLogDispatch", "Лог MDI-диспетча");
+                add("text.autoconfig.hbm_m.option.mdiDebugLogDispatch.@Tooltip", "Писать одну строку INFO на каждый MDI-dispatch (число sub-draw, инстансов, атлас).");
+                add("text.autoconfig.hbm_m.option.mdiVerboseSubdraws", "Подробный лог MDI");
+                add("text.autoconfig.hbm_m.option.mdiVerboseSubdraws.@Tooltip", "Доп. строка INFO на каждую MDI-команду (тег части, baseInstance и т.д.).");
+                add("text.autoconfig.hbm_m.option.maxInstancedInstancesPerPart", "Макс. инстансов на часть");
+                add("text.autoconfig.hbm_m.option.maxInstancedInstancesPerPart.@Tooltip", "Максимум инстансов на одну OBJ-часть для instanced-рендера. Большие поля машин требуют 4096+.");
+
                 // FSB ARMOR TOOLTIPS
                 add("tooltip.hbm_m.fsb_bonus", "Бонусы полного набора брони:");
                 add("tooltip.hbm_m.fsb_resistances", "Сопротивления при полном наборе брони:");
@@ -2406,11 +2523,18 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.ROD_QUAD_LEAD.get(), "Quad Lead Rod");
                 add(ModItems.ROD_QUAD_NP237.get(), "Quad Np-237 Rod");
                 add(ModItems.ROD_QUAD_URANIUM.get(), "Quad Uranium Rod");
-                add(ModItems.FAT_MAN_EXPLOSIVE.get(), "Early Explosive Lenses");
-                add(ModItems.FAT_MAN_IGNITER.get(), "Fat Man Igniter");
+                add(ModItems.FAT_MAN_EXPLOSIVE.get(), "Array of First-Generation High-Explosive Lenses");
+                add(ModItems.FAT_MAN_IGNITER.get(), "Bomb Firing Unit");
                 add(ModItems.FAT_MAN_CORE.get(), "Plutonium Core");
                 add("container.hbm_m.nuke_fat_man", "Fat Man");
-                add("gui.hbm_m.nuke_fat_man.desc", "Place 4 Early Explosive Lenses, Fat Man Igniter and Fat Man Core. Activated by redstone or detonator.");
+                // GUI tooltip (mirrors desc.gui.nukeMan.desc, 1.7.10): header + per-line list
+                add("gui.hbm_m.nuke_fat_man.requires", "Requires:");
+                add("gui.hbm_m.nuke_fat_man.line_lenses", " * 4 Arrays of First-Generation High-Explosive Lenses");
+                add("gui.hbm_m.nuke_fat_man.line_core", " * Plutonium Core");
+                add("gui.hbm_m.nuke_fat_man.line_igniter", " * Bomb Firing Unit");
+                // Item tooltip for the lenses (mirrors early_explosive_lenses.desc, 1.7.10)
+                add("tooltip.hbm_m.fat_man_explosive.desc1", "Assembly of 8 high-explosive lenses with an aluminium");
+                add("tooltip.hbm_m.fat_man_explosive.desc2", "pusher, duraluminium shell, and bridgewire detonators.");
                 // EQUIPMENT
                 add("item.hbm_m.alloy_sword", "Alloy Sword");
                 add("item.hbm_m.alloy_pickaxe", "Alloy Pickaxe");
@@ -3461,7 +3585,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.NUCLEAR_CHARGE.get(), "Nuclear Charge");
                 add(ModBlocks.C4.get(), "C4 Charge");
                 add(ModItems.DEFUSER.get(), "Defuser");
-                add(ModItems.CROWBAR.get(), "Crowbar");
+                add(ModItems.CROWBAR.get(), "Mk.V Crate Opening Device ''Crowbar''");
                 add(ModItems.DEPTH_ORES_SCANNER.get(), "Depth Ore Scanner");
                 add(ModItems.OIL_DETECTOR.get(), "Oil Detector");
 
@@ -4500,6 +4624,117 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.debugRenderDistance.@Tooltip", "Debug render distance (in chunks)");
                 add("text.autoconfig.hbm_m.option.debugRenderInSurvival.@Tooltip", "Show debug renderer in survival mode");
                 add("text.autoconfig.hbm_m.option.enableDebugLogging.@Tooltip", "If disabled, deep logging of game events will be active. Do not enable unless you experience problems");
+
+                // ── Missing categories & options (weapons / machines / nukes / explosions / rendering gaps) ──
+                add("text.autoconfig.hbm_m.category.weapons", "Weapons");
+                add("text.autoconfig.hbm_m.category.machines", "Machines");
+                add("text.autoconfig.hbm_m.category.nukes", "Nukes");
+                add("text.autoconfig.hbm_m.category.explosions", "Explosions");
+
+                add("text.autoconfig.hbm_m.option.dropSingularity", "Drop singularity on item despawn");
+                add("text.autoconfig.hbm_m.option.dropSingularity.@Tooltip", "Spawns a singularity/black hole when a singularity item is dropped (WeaponConfig.dropSing).");
+                add("text.autoconfig.hbm_m.option.dropCell", "Antimatter explosion on cell drop");
+                add("text.autoconfig.hbm_m.option.dropCell.@Tooltip", "Triggers an antimatter explosion when an antimatter cell/pellet is dropped (WeaponConfig.dropCell).");
+
+                add("text.autoconfig.hbm_m.option.machineRadar", "Radar");
+                add("text.autoconfig.hbm_m.option.machineRadar.generateChunks", "Generate chunks");
+                add("text.autoconfig.hbm_m.option.machineRadar.generateChunks.@Tooltip", "When enabled, the radar forces loading/generation of the chunks it scans.");
+                add("text.autoconfig.hbm_m.option.frackingTower", "Fracking Tower");
+                add("text.autoconfig.hbm_m.option.frackingTower.maxPower", "Max power");
+                add("text.autoconfig.hbm_m.option.frackingTower.maxPower.@Tooltip", "Maximum energy the fracking tower can store.");
+                add("text.autoconfig.hbm_m.option.frackingTower.consumption", "Power consumption");
+                add("text.autoconfig.hbm_m.option.frackingTower.consumption.@Tooltip", "Energy consumed per operation.");
+                add("text.autoconfig.hbm_m.option.frackingTower.solutionRequired", "Solution required");
+                add("text.autoconfig.hbm_m.option.frackingTower.solutionRequired.@Tooltip", "Fracking solution (mB) consumed per operation.");
+                add("text.autoconfig.hbm_m.option.frackingTower.delay", "Operation delay");
+                add("text.autoconfig.hbm_m.option.frackingTower.delay.@Tooltip", "Ticks between each fracking operation.");
+                add("text.autoconfig.hbm_m.option.frackingTower.oilPerDeposit", "Oil per deposit");
+                add("text.autoconfig.hbm_m.option.frackingTower.oilPerDeposit.@Tooltip", "Oil (mB) yielded per normal deposit.");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerDepositMin", "Min gas per deposit");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerDepositMin.@Tooltip", "Minimum gas (mB) yielded per normal deposit.");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerDepositMax", "Max gas per deposit");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerDepositMax.@Tooltip", "Maximum gas (mB) yielded per normal deposit.");
+                add("text.autoconfig.hbm_m.option.frackingTower.drainChance", "Deposit drain chance");
+                add("text.autoconfig.hbm_m.option.frackingTower.drainChance.@Tooltip", "Chance (0–1) that an operation drains the deposit.");
+                add("text.autoconfig.hbm_m.option.frackingTower.oilPerBedrockDeposit", "Oil per bedrock deposit");
+                add("text.autoconfig.hbm_m.option.frackingTower.oilPerBedrockDeposit.@Tooltip", "Oil (mB) yielded per bedrock deposit.");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerBedrockDepositMin", "Min gas per bedrock deposit");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerBedrockDepositMin.@Tooltip", "Minimum gas (mB) yielded per bedrock deposit.");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerBedrockDepositMax", "Max gas per bedrock deposit");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerBedrockDepositMax.@Tooltip", "Maximum gas (mB) yielded per bedrock deposit.");
+                add("text.autoconfig.hbm_m.option.frackingTower.destructionRange", "Destruction range");
+                add("text.autoconfig.hbm_m.option.frackingTower.destructionRange.@Tooltip", "Explosion radius when a fracking tower is destroyed.");
+
+                add("text.autoconfig.hbm_m.option.gadgetRadius", "Gadget radius");
+                add("text.autoconfig.hbm_m.option.gadgetRadius.@Tooltip", "Radius of the Gadget.");
+                add("text.autoconfig.hbm_m.option.boyRadius", "Little Boy radius");
+                add("text.autoconfig.hbm_m.option.boyRadius.@Tooltip", "Radius of Little Boy.");
+                add("text.autoconfig.hbm_m.option.manRadius", "Fat Man radius");
+                add("text.autoconfig.hbm_m.option.manRadius.@Tooltip", "Radius of Fat Man.");
+                add("text.autoconfig.hbm_m.option.mikeRadius", "Ivy Mike radius");
+                add("text.autoconfig.hbm_m.option.mikeRadius.@Tooltip", "Radius of Ivy Mike.");
+                add("text.autoconfig.hbm_m.option.tsarRadius", "Tsar Bomba radius");
+                add("text.autoconfig.hbm_m.option.tsarRadius.@Tooltip", "Radius of the Tsar Bomba.");
+                add("text.autoconfig.hbm_m.option.prototypeRadius", "Prototype radius");
+                add("text.autoconfig.hbm_m.option.prototypeRadius.@Tooltip", "Radius of the Prototype.");
+                add("text.autoconfig.hbm_m.option.fleijaRadius", "F.L.E.I.J.A. radius");
+                add("text.autoconfig.hbm_m.option.fleijaRadius.@Tooltip", "Radius of F.L.E.I.J.A.");
+                add("text.autoconfig.hbm_m.option.soliniumRadius", "Solinium radius");
+                add("text.autoconfig.hbm_m.option.soliniumRadius.@Tooltip", "Radius of the blue rinse (Solinium).");
+                add("text.autoconfig.hbm_m.option.n2Radius", "N2 mine radius");
+                add("text.autoconfig.hbm_m.option.n2Radius.@Tooltip", "Radius of the N2 mine.");
+                add("text.autoconfig.hbm_m.option.missileRadius", "Nuclear missile radius");
+                add("text.autoconfig.hbm_m.option.missileRadius.@Tooltip", "Radius of the nuclear missile.");
+                add("text.autoconfig.hbm_m.option.mirvRadius", "MIRV radius");
+                add("text.autoconfig.hbm_m.option.mirvRadius.@Tooltip", "Radius of a MIRV.");
+                add("text.autoconfig.hbm_m.option.fatmanRadius", "Fatman launcher radius");
+                add("text.autoconfig.hbm_m.option.fatmanRadius.@Tooltip", "Radius of the Fatman Launcher.");
+                add("text.autoconfig.hbm_m.option.nukaRadius", "Nuka grenade radius");
+                add("text.autoconfig.hbm_m.option.nukaRadius.@Tooltip", "Radius of the nuka grenade.");
+                add("text.autoconfig.hbm_m.option.aSchrabRadius", "Anti-schrabidium radius");
+                add("text.autoconfig.hbm_m.option.aSchrabRadius.@Tooltip", "Radius of dropped anti-schrabidium.");
+
+                add("text.autoconfig.hbm_m.option.mk5TickTimeMs", "MK5 tick time (ms)");
+                add("text.autoconfig.hbm_m.option.mk5TickTimeMs.@Tooltip", "Minimum milliseconds per tick allocated for MK5 chunk processing.");
+                add("text.autoconfig.hbm_m.option.blastSpeed", "Blast speed");
+                add("text.autoconfig.hbm_m.option.blastSpeed.@Tooltip", "Base speed of MK3/Tom detonations (blocks/tick).");
+                add("text.autoconfig.hbm_m.option.falloutRangePercent", "Fallout range (%)");
+                add("text.autoconfig.hbm_m.option.falloutRangePercent.@Tooltip", "Radius of the fallout area as a percentage of the base blast radius.");
+                add("text.autoconfig.hbm_m.option.falloutDelay", "Fallout delay");
+                add("text.autoconfig.hbm_m.option.falloutDelay.@Tooltip", "Ticks to wait between each fallout chunk computation.");
+                add("text.autoconfig.hbm_m.option.enableChunkLoading", "Enable chunk loading");
+                add("text.autoconfig.hbm_m.option.enableChunkLoading.@Tooltip", "Allows procedural explosions to keep the central chunk loaded and generate new chunks.");
+                add("text.autoconfig.hbm_m.option.explosionAlgorithm", "Explosion algorithm");
+                add("text.autoconfig.hbm_m.option.explosionAlgorithm.@Tooltip", "0 = Legacy, 1 = Threaded DDA, 2 = Threaded DDA with damage accumulation.");
+                add("text.autoconfig.hbm_m.option.enableCraterBiomes", "Enable crater biomes");
+                add("text.autoconfig.hbm_m.option.enableCraterBiomes.@Tooltip", "Converts the crater left by nuclear explosions into radioactive crater biomes.");
+                add("text.autoconfig.hbm_m.option.craterBiomeInnerRad", "Inner crater biome RAD/s");
+                add("text.autoconfig.hbm_m.option.craterBiomeInnerRad.@Tooltip", "RAD/s applied to the player inside the inner_crater biome.");
+                add("text.autoconfig.hbm_m.option.craterBiomeRad", "Crater biome RAD/s");
+                add("text.autoconfig.hbm_m.option.craterBiomeRad.@Tooltip", "RAD/s applied to the player inside the crater biome.");
+                add("text.autoconfig.hbm_m.option.craterBiomeOuterRad", "Outer crater biome RAD/s");
+                add("text.autoconfig.hbm_m.option.craterBiomeOuterRad.@Tooltip", "RAD/s applied to the player inside the outer_crater biome.");
+                add("text.autoconfig.hbm_m.option.craterBiomeWaterMult", "Crater biome water multiplier");
+                add("text.autoconfig.hbm_m.option.craterBiomeWaterMult.@Tooltip", "Multiplier applied to crater biome RAD/s when the player is in water or rain.");
+                add("text.autoconfig.hbm_m.option.limitExplosionLifespan", "Explosion lifespan limit");
+                add("text.autoconfig.hbm_m.option.limitExplosionLifespan.@Tooltip", "How long an explosion can stay unloaded before it dies (seconds). 0 = unlimited.");
+
+                // Rendering — missing missile tracking and instanced render options
+                add("text.autoconfig.hbm_m.option.enableMissileNetworkTrack", "Track missiles over network");
+                add("text.autoconfig.hbm_m.option.missileTrackMaxRangeBlocks", "Missile track max range (blocks)");
+                add("text.autoconfig.hbm_m.option.missileTrackMaxRangeBlocks.@Tooltip", "Maximum distance (in blocks) at which missiles are network-tracked. 0 = unlimited.");
+                add("text.autoconfig.hbm_m.option.missileTrackInterval", "Missile track interval");
+                add("text.autoconfig.hbm_m.option.missileTrackInterval.@Tooltip", "How often (in ticks) missile positions are synced to clients.");
+                add("text.autoconfig.hbm_m.option.instanceVboOrphanBeforeUpload", "Instance VBO orphaning");
+                add("text.autoconfig.hbm_m.option.instanceVboOrphanBeforeUpload.@Tooltip", "Orphan the instance VBO (glBufferData NULL) before upload to avoid driver sync stalls. Disable only if it causes issues.");
+                add("text.autoconfig.hbm_m.option.gpuBoneSkinning", "GPU bone skinning");
+                add("text.autoconfig.hbm_m.option.gpuBoneSkinning.@Tooltip", "Compute base×part matrices on the GPU for the advanced assembler instanced path (vanilla only; Iris/Oculus use a separate path).");
+                add("text.autoconfig.hbm_m.option.mdiDebugLogDispatch", "MDI debug log dispatch");
+                add("text.autoconfig.hbm_m.option.mdiDebugLogDispatch.@Tooltip", "Log one INFO line per MDI dispatch (sub-draw count, instances, atlas).");
+                add("text.autoconfig.hbm_m.option.mdiVerboseSubdraws", "MDI verbose subdraws");
+                add("text.autoconfig.hbm_m.option.mdiVerboseSubdraws.@Tooltip", "Log one INFO line per MDI command (part tag, baseInstance, etc.).");
+                add("text.autoconfig.hbm_m.option.maxInstancedInstancesPerPart", "Max instances per part");
+                add("text.autoconfig.hbm_m.option.maxInstancedInstancesPerPart.@Tooltip", "Maximum instances per OBJ part for instanced static rendering. Large machine fields need 4096+.");
 
                 // DAMAGE TYPES FOR POWER ARMOR TOOLTIPS
                 add("damage.type.physical", "Physical");

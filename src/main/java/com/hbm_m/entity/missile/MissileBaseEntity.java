@@ -51,7 +51,7 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
     private static final TicketType<UUID> CHUNK_TICKET =
             TicketType.create("hbm_m_missile", Comparator.comparing(UUID::toString));
 
-    private static final int CHUNK_TICKET_RADIUS = 2;
+    private static final int CHUNK_TICKET_RADIUS = 3;
 
     /** Макс. длина сегмента raycast за тик (как в 1.7.10 — один луч, но без туннелирования). */
     private static final double MAX_COLLISION_SEGMENT = 1.0D;

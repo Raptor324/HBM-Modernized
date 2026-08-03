@@ -859,7 +859,18 @@ public class ModItems {
     public static final RegistrySupplier<Item> BALL_TNT = ITEMS.register("ball_tnt",
             () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> FAT_MAN_EXPLOSIVE = ITEMS.register("fat_man_explosive",
-            () -> new Item(new Item.Properties()));
+            () -> new Item(new Item.Properties()) {
+                // Тултип-описание, как у оригинального ItemCustomLore (early_explosive_lenses.desc, 1.7.10)
+                @Override
+                public void appendHoverText(ItemStack stack, @Nullable Level level,
+                                            @Nullable List<Component> tooltip, TooltipFlag flag) {
+                    if (tooltip == null) return;
+                    tooltip.add(Component.translatable("tooltip.hbm_m.fat_man_explosive.desc1")
+                            .withStyle(ChatFormatting.GRAY));
+                    tooltip.add(Component.translatable("tooltip.hbm_m.fat_man_explosive.desc2")
+                            .withStyle(ChatFormatting.GRAY));
+                }
+            });
     public static final RegistrySupplier<Item> FAT_MAN_IGNITER = ITEMS.register("fat_man_igniter",
             () -> new Item(new Item.Properties()));
 

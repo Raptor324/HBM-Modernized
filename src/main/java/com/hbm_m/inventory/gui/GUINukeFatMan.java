@@ -10,6 +10,7 @@ import com.hbm_m.inventory.menu.NukeFatManMenu;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -45,8 +46,13 @@ public class GUINukeFatMan extends GuiInfoScreen<NukeFatManMenu> {
         
         this.renderTooltip(guiGraphics, mouseX, mouseY);
 
+        // Многострочный тултип требований, как в оригинале (desc.gui.nukeMan.desc, 1.7.10):
+        // заголовок «Requires:» тёмно-синим, далее построчный список компонентов для подрыва.
         List<Component> text = new ArrayList<>();
-        text.add(Component.translatable("gui.hbm_m.nuke_fat_man.desc"));
+        text.add(Component.translatable("gui.hbm_m.nuke_fat_man.requires").withStyle(ChatFormatting.DARK_BLUE));
+        text.add(Component.translatable("gui.hbm_m.nuke_fat_man.line_lenses").withStyle(ChatFormatting.GRAY));
+        text.add(Component.translatable("gui.hbm_m.nuke_fat_man.line_core").withStyle(ChatFormatting.GRAY));
+        text.add(Component.translatable("gui.hbm_m.nuke_fat_man.line_igniter").withStyle(ChatFormatting.GRAY));
         this.drawCustomInfoStat(guiGraphics, mouseX, mouseY, -16, 16, 16, 16,
                 leftPos - 8, topPos + 16 + 16, text.toArray(new Component[0]));
     }

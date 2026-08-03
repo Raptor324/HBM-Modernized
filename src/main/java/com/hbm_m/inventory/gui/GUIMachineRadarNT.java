@@ -258,10 +258,17 @@ public class GUIMachineRadarNT extends GuiInfoScreen<MachineRadarMenu> {
         guiGraphics.pose().popPose();
     }
 
+    /**
+     * Точная реплика {@code Vec3.rotateAroundZ} из 1.7.10 — именно ей оригинальный
+     * GUIMachineRadarNT вращает клин развёртки. Minecraft применяет транспонированную
+     * форму поворота, а не стандартную CCW-матрицу: x' = x·cos + y·sin, y' = y·cos − x·sin.
+     * Прежняя версия использовала CCW-матрицу (x' = x·cos − y·sin, y' = x·sin + y·cos),
+     * из-за чего развёртка крутилась в сторону, противоположную оригиналу.
+     */
     private static double[] rotate(double x, double y, float rad) {
         double cos = Math.cos(rad);
         double sin = Math.sin(rad);
-        return new double[] { x * cos - y * sin, x * sin + y * cos };
+        return new double[] { x * cos + y * sin, y * cos - x * sin };
     }
 
     @Override
