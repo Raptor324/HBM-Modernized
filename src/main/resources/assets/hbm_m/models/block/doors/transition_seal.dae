@@ -58,7 +58,7 @@
   </library_effects>
   <library_images>
     <image id="final_png" name="final_png">
-      <init_from>/G:/Assets/black_mesa_deco/transition_seal/final.png</init_from>
+      <init_from>textures/block/doors/transition_seal.png</init_from>
     </image>
   </library_images>
   <library_materials>

@@ -221,7 +221,7 @@ public class DoorModelRegistry implements ResourceManagerReloadListener {
     
     private void loadAllConfigs(ResourceManager resourceManager) {
         String[] knownDoorTypes = {
-            "large_vehicle_door", "round_airlock_door", "transition_seal", "fire_door",
+            "large_vehicle_door", "round_airlock_door", "fire_door",
             "sliding_blast_door", "sliding_seal_door", "secure_access_door",
             "qe_sliding_door", "qe_containment_door", "water_door", "silo_hatch", "silo_hatch_large",
             "vault_door"

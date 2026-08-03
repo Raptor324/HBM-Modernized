@@ -248,7 +248,6 @@ public class GUIDoorModelSelection extends Screen {
         return switch (doorId) {
             case "large_vehicle_door" -> ModItems.LARGE_VEHICLE_DOOR.get();
             case "round_airlock_door" -> ModItems.ROUND_AIRLOCK_DOOR.get();
-            case "transition_seal" -> ModItems.TRANSITION_SEAL.get();
             case "fire_door" -> ModItems.FIRE_DOOR.get();
             case "sliding_blast_door" -> ModItems.SLIDE_DOOR.get();
             case "sliding_seal_door" -> ModItems.SLIDING_SEAL_DOOR.get();

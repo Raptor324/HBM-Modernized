@@ -85,6 +85,7 @@ import com.hbm_m.block.machines.MachinePressBlock;
 import com.hbm_m.block.machines.MachinePumpjackBlock;
 import com.hbm_m.block.machines.MachineLargeRadarBlock;
 import com.hbm_m.block.machines.MachineRadarBlock;
+import com.hbm_m.block.machines.TransitionSealBlock;
 import com.hbm_m.block.machines.MachineRadarScreenBlock;
 import com.hbm_m.block.machines.MachineRbmkConsoleBlock;
 import com.hbm_m.block.machines.MachineRefineryBlock;
@@ -651,15 +652,13 @@ public class ModBlocks {
             ));
 
     public static final RegistrySupplier<Block> TRANSITION_SEAL = registerBlockWithoutItem("transition_seal",
-            () -> new DoorBlock(
+            () -> new TransitionSealBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
                             .noOcclusion()
-                            .isViewBlocking((state, level, pos) -> false),
-                    "transition_seal"
-            ));
+                            .isViewBlocking((state, level, pos) -> false)));
 
     public static final RegistrySupplier<Block> FIRE_DOOR = registerBlockWithoutItem("fire_door",
             () -> new DoorBlock(

@@ -740,7 +740,7 @@ public class ModLanguageProvider extends LanguageProvider {
 // MULTIBLOCK DOORS
                 add(ModBlocks.LARGE_VEHICLE_DOOR.get(), "Дверь для крупногабаритного транспорта");
                 add(ModBlocks.ROUND_AIRLOCK_DOOR.get(), "Круглая воздушная дверь");
-                add(ModBlocks.TRANSITION_SEAL.get(), "Транзитный люк (WIP)");
+                add(ModBlocks.TRANSITION_SEAL.get(), "Транзитный люк");
                 add(ModBlocks.SLIDE_DOOR.get(), "Скользящая взрывная дверь (WIP)");
                 add(ModBlocks.FIRE_DOOR.get(), "Пожарная дверь");
                 add(ModBlocks.SLIDING_SEAL_DOOR.get(), "Скользящая герметичная дверь");
@@ -3432,7 +3432,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.WATER_DOOR.get(), "Waterproof Hatch");
                 add(ModBlocks.SILO_HATCH.get(), "Silo Hatch");
                 add(ModBlocks.SILO_HATCH_LARGE.get(), "Large Silo Hatch");
-                add(ModBlocks.TRANSITION_SEAL.get(), "Transition Seal (WIP)");
+                add(ModBlocks.TRANSITION_SEAL.get(), "Transition Seal");
                 add(ModBlocks.SLIDE_DOOR.get(), "Sliding Blast Door (WIP)");
 
 

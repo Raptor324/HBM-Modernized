@@ -472,8 +472,6 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
             return "large_vehicle_door";
         } else if (doorDecl == DoorDecl.ROUND_AIRLOCK_DOOR) {
             return "round_airlock_door";
-        } else if (doorDecl == DoorDecl.TRANSITION_SEAL) {
-            return "transition_seal";
         } else if (doorDecl == DoorDecl.FIRE_DOOR) {
             return "fire_door";
         } else if (doorDecl == DoorDecl.SLIDE_DOOR) {

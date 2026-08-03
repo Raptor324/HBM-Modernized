@@ -1911,7 +1911,7 @@ public class ModItems {
         () -> new DoorBlockItem(ModBlocks.ROUND_AIRLOCK_DOOR.get(), new Item.Properties()));
 
     public static final RegistrySupplier<Item> TRANSITION_SEAL = ITEMS.register("transition_seal",
-        () -> new DoorBlockItem(ModBlocks.TRANSITION_SEAL.get(), new Item.Properties()));
+        () -> new MultiblockBlockItem(ModBlocks.TRANSITION_SEAL.get(), new Item.Properties()));
 
     public static final RegistrySupplier<Item> SILO_HATCH = ITEMS.register("silo_hatch",
         () -> new DoorBlockItem(ModBlocks.SILO_HATCH.get(), new Item.Properties()));

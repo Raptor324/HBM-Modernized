@@ -8,9 +8,11 @@ import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.block.entity.doors.DoorBlockEntity;
 import com.hbm_m.block.entity.doors.DoorDecl;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
+import com.hbm_m.block.machines.TransitionSealBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity;
 import com.hbm_m.blockentity.machines.MachineRadarBlockEntity;
+import com.hbm_m.blockentity.machines.TransitionSealBlockEntity;
 import com.hbm_m.blockentity.machines.UniversalMachinePartBlockEntity;
 import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.interfaces.IMultiblockController;
@@ -200,6 +202,13 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
             return masterShape.move(vecToController.getX(), vecToController.getY(), vecToController.getZ());
         }
 
+        if (controllerBlock instanceof TransitionSealBlock) {
+            if (pLevel.getBlockEntity(controllerPos) instanceof TransitionSealBlockEntity sealBE && sealBE.isOpen()) {
+                return TransitionSealBlock.getCellCollisionShape(pLevel, controllerPos, controllerState, pPos);
+            }
+            return Shapes.block();
+        }
+
         if (controllerBlock instanceof DoorBlock doorBlock) {
             BlockEntity controllerBE = pLevel.getBlockEntity(controllerPos);
 
@@ -294,8 +303,11 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         
         if (level.getBlockEntity(pos) instanceof IMultiblockPart part) {
             BlockPos ctrlPos = part.getControllerPos();
-            if (ctrlPos != null && level.getBlockState(ctrlPos).getBlock() instanceof DoorBlock) {
-                return Shapes.empty();
+            if (ctrlPos != null) {
+                Block ctrlBlock = level.getBlockState(ctrlPos).getBlock();
+                if (ctrlBlock instanceof DoorBlock || ctrlBlock instanceof TransitionSealBlock) {
+                    return Shapes.empty();
+                }
             }
         }
         

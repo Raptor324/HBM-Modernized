@@ -79,6 +79,7 @@ import com.hbm_m.blockentity.machines.MachineWatzPowerplantBlockEntity;
 import com.hbm_m.blockentity.machines.MachineWoodBurnerBlockEntity;
 import com.hbm_m.blockentity.machines.MachineZirnoxBlockEntity;
 import com.hbm_m.blockentity.machines.MachineZirnoxDestroyedBlockEntity;
+import com.hbm_m.blockentity.machines.TransitionSealBlockEntity;
 import com.hbm_m.blockentity.machines.UniversalMachinePartBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKAbsorberBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKAutoloaderBlockEntity;
@@ -555,7 +556,6 @@ public class ModBlockEntities {
                 // Все блоки дверей, которые используют этот BlockEntity
                         ModBlocks.LARGE_VEHICLE_DOOR.get(),
                         ModBlocks.ROUND_AIRLOCK_DOOR.get(),
-                        ModBlocks.TRANSITION_SEAL.get(),
                         ModBlocks.FIRE_DOOR.get(),
                         ModBlocks.SLIDE_DOOR.get(),
                         ModBlocks.SLIDING_SEAL_DOOR.get(),
@@ -567,6 +567,11 @@ public class ModBlockEntities {
                         ModBlocks.SILO_HATCH_LARGE.get(),
                         ModBlocks.VAULT_DOOR.get())
                     .build(null));
+
+    public static final RegistrySupplier<BlockEntityType<TransitionSealBlockEntity>> TRANSITION_SEAL_BE =
+            BLOCK_ENTITIES.register("transition_seal_be", () ->
+                    BlockEntityType.Builder.of(TransitionSealBlockEntity::new,
+                            ModBlocks.TRANSITION_SEAL.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<IronCrateBlockEntity>> IRON_CRATE_BE =
             BLOCK_ENTITIES.register("iron_crate_be", () ->
