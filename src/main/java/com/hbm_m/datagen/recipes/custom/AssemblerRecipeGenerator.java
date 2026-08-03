@@ -1088,6 +1088,15 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 4)
                 .addIngredient(Ingredient.of(Tags.Items.DYES_WHITE), 2)
                 .save(writer, "door_sliding_seal");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.TRANSITION_SEAL.get(), 1), 100, 300)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 30)
+                .addIngredient(ModItems.INSULATOR.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 8)
+                .addIngredient(Items.IRON_BLOCK, 10)
+                .addIngredient(Ingredient.of(Tags.Items.DYES_GRAY), 8)
+                .save(writer, "door_transition_seal");
     }
 
     private static void registerElectronics(Consumer<FinishedRecipe> writer) {
