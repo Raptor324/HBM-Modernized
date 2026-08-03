@@ -118,7 +118,7 @@ public final class NuclearExplosionAPI {
 
     private static int getFatManRadius() {
         try {
-            return ModClothConfig.get().fatManRadius;
+            return ModClothConfig.get().manRadius;
         } catch (Exception e) {
             return DEFAULT_FAT_MAN_RADIUS;
         }

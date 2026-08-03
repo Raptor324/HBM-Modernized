@@ -9,6 +9,7 @@ import com.hbm_m.explosion.command.ExplosionCommandOptions;
 import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;
+import com.hbm_m.particle.helper.ExplosionCreator;
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.SimpleParticleType;
@@ -105,6 +106,10 @@ public class NuclearExplosionHelper {
     }
 
     private static void scheduleExplosionEffects(ServerLevel level, double x, double y, double z) {
+        // 1.7.10-паритет: delayed near/far звук explosionLarge (soundRange=350,
+        // скорость звука 8.575 б/тик) + волна/облако/обломки.
+        ExplosionCreator.composeEffectLarge(level, x, y, z);
+
         level.sendParticles(
                 (SimpleParticleType) ModExplosionParticles.EXPLOSION_FLASH.get(),
                 x, y, z, 1, 0, 0, 0, 0

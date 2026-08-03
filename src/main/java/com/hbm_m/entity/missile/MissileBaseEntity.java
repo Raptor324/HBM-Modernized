@@ -51,8 +51,7 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
     private static final TicketType<UUID> CHUNK_TICKET =
             TicketType.create("hbm_m_missile", Comparator.comparing(UUID::toString));
 
-    /** Радиус region ticket'а (в чанках). */
-    private static final int CHUNK_TICKET_RADIUS = 3;
+    private static final int CHUNK_TICKET_RADIUS = 2;
 
     /** Макс. длина сегмента raycast за тик (как в 1.7.10 — один луч, но без туннелирования). */
     private static final double MAX_COLLISION_SEGMENT = 1.0D;
@@ -516,7 +515,9 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         }
         releaseChunkTicket();
         if (!this.level().isClientSide && this.level() instanceof ServerLevel server) {
-            server.explode(this, this.getX(), this.getY(), this.getZ(), 5.0F, Level.ExplosionInteraction.NONE);
+            // 1.7.10 EntityMissileBaseNT.killMissile: ОДИН createExplosion(5F) + shrapnel + debris.
+            // Лишний server.explode(NONE) убран — он давал второй «бум» поверх explosion из
+            // missileDestroyed (TNT), который и выполняет разрушение блоков + звук.
             Vec3 motion = this.getDeltaMovement();
             MissileWarheadEffects.missileDestroyed(server, this,
                     this.getX(), this.getY(), this.getZ(),

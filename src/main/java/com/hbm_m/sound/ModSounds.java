@@ -36,6 +36,9 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> CRATE_OPEN = registerSoundEvents("crateopen");
     public static final RegistrySupplier<SoundEvent> CRATE_CLOSE = registerSoundEvents("crateclose");
     public static final RegistrySupplier<SoundEvent> EXPLOSION_LARGE_NEAR = registerSoundEvents("explosionlargenear");
+    public static final RegistrySupplier<SoundEvent> EXPLOSION_LARGE_FAR = registerSoundEvents("explosionlargefar");
+    public static final RegistrySupplier<SoundEvent> EXPLOSION_TINY = registerSoundEvents("explosiontiny");
+    public static final RegistrySupplier<SoundEvent> OLD_EXPLOSION = registerSoundEvents("oldexplosion");
     public static final RegistrySupplier<SoundEvent> EXPLOSION_SMALL_NEAR1 = registerSoundEvents("explosionsmallnear1");
     public static final RegistrySupplier<SoundEvent> EXPLOSION_SMALL_NEAR2 = registerSoundEvents("explosionsmallnear2");
     public static final RegistrySupplier<SoundEvent> EXPLOSION_SMALL_NEAR3 = registerSoundEvents("explosionsmallnear3");
@@ -44,6 +47,9 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> MUKE_EXPLOSION = registerSoundEvents("mukeexplosion");
     public static final RegistrySupplier<SoundEvent> NUCLEAR_EXPLOSION = registerSoundEvents("nuclear_explosion");
     public static final RegistrySupplier<SoundEvent> MISSILE_TAKEOFF = registerSoundEvents("missile_takeoff");
+    // Звук пролета ракеты — управляется клиентским движком MissileSoundEngine
+    // (Допплер-питч, запаздывающая позиция, плавные fade) через MissileFlybySoundInstance.
+    public static final RegistrySupplier<SoundEvent> MISSILE_FLYBY = registerSoundEvents("missile.flyby");
     public static final RegistrySupplier<SoundEvent> GRENADE_TRIGGER = registerSoundEvents("grenadetrigger");
 
     public static final RegistrySupplier<SoundEvent> RADAWAY_USE = registerSoundEvents("radaway_use");

@@ -359,22 +359,134 @@ public class ModClothConfig implements ConfigData {
         public int destructionRange = 75;
     }
 
-    // ЯДЕРНЫЕ ВЗРЫВЫ (MK5)
+    // ════════════════════════════════════════════════════════════════
+    // РАДИУСЫ ЯДЕРНЫХ УСТРОЙСТВ — порт BombConfig (1.7.10, категория "nukes", ключи 3.00–3.13)
+    // Имена оригинальных ключей сохранены в комментариях для переноса конфигов.
+    // ════════════════════════════════════════════════════════════════
 
+    /** Радиус взрыва «Gadget». Ориг. ключ: 3.00_gadgetRadius = 150 */
+    @Category("nukes")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 10, max = 1500)
+    public int gadgetRadius = 150;
+
+    /** Радиус взрыва «Little Boy». Ориг. ключ: 3.01_boyRadius = 120 */
+    @Category("nukes")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 10, max = 1500)
+    public int boyRadius = 120;
+
+    /** Радиус взрыва «Fat Man» (NukeMan / ракетаёр Фэт). Ориг. ключ: 3.02_manRadius = 175 */
+    @Category("nukes")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 10, max = 1500)
+    public int manRadius = 175;
+
+    /** Радиус взрыва «Ivy Mike». Ориг. ключ: 3.03_mikeRadius = 250 */
+    @Category("nukes")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 10, max = 1500)
+    public int mikeRadius = 250;
+
+    /** Радиус взрыва «Царь-бомба». Ориг. ключ: 3.04_tsarRadius = 500 */
+    @Category("nukes")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 10, max = 1500)
+    public int tsarRadius = 500;
+
+    /** Радиус взрыва «Prototype». Ориг. ключ: 3.05_prototypeRadius = 150 */
+    @Category("nukes")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 10, max = 1500)
+    public int prototypeRadius = 150;
+
+    /** Радиус взрыва «FleiJa». Ориг. ключ: 3.06_fleijaRadius = 50 */
+    @Category("nukes")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 10, max = 1500)
+    public int fleijaRadius = 50;
+
+    /** Радиус взрыва ЭТЗ-заряда (Solinium). Ориг. ключ: 3.07_soliniumRadius = 150 */
+    @Category("nukes")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 10, max = 1500)
+    public int soliniumRadius = 150;
+
+    /** Радиус взрыва N2-мины. Ориг. ключ: 3.08_n2Radius = 200 */
+    @Category("nukes")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 10, max = 1500)
+    public int n2Radius = 200;
+
+    /** Радиус ядерной боеголовки баллистической ракеты. Ориг. ключ: 3.09_missileRadius = 100 */
+    @Category("nukes")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 10, max = 1500)
+    public int missileRadius = 100;
+
+    /** Радиус РГЧ (cluster MIRV warhead). Ориг. ключ: 3.10_mirvRadius = 100 */
+    @Category("nukes")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 10, max = 1500)
+    public int mirvRadius = 100;
+
+    /** Радиус мини-ядерки (Fat Man launcher / PARAMS_HIGH). Ориг. ключ: 3.11_fatmanRadius = 35 */
+    @Category("nukes")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 10, max = 1500)
+    public int fatmanRadius = 35;
+
+    /** Радиус взрыва «Nuka» гранаты. Ориг. ключ: 3.12_nukaRadius = 25 */
+    @Category("nukes")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 10, max = 1500)
+    public int nukaRadius = 25;
+
+    /** Радиус взрыва антишрабидиевого снаряда (Schrabidium rocket). Ориг. ключ: 3.13_aSchrabRadius = 20 */
+    @Category("nukes")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 10, max = 1500)
+    public int aSchrabRadius = 20;
+
+    // ════════════════════════════════════════════════════════════════
+    // ПАРАМЕТРЫ ВЗРЫВНОГО ДВИЖКА — ориг. категория "explosions", ключи 6.00–6.06
+    // (6.00 limitExplosionLifespan уже существует ниже — не дублируем)
+    // ════════════════════════════════════════════════════════════════
+
+    /** Минимальное время миллисекунд на тик для MK5 chunk processing. Ориг. ключ: 6.02_mk5BlastTime = 50 */
     @Category("explosions")
     @Gui.Tooltip
-    @BoundedDiscrete(min = 1, max = 50)
-    public int mk5TickTimeMs = 10;
+    @BoundedDiscrete(min = 0, max = 1000)
+    public int mk5TickTimeMs = 50;
 
+    /** Базовая скорость MK3/Tom blast (блоков/тик). Ориг. ключ: 6.01_blastSpeed = 1024 */
     @Category("explosions")
     @Gui.Tooltip
-    @BoundedDiscrete(min = 10, max = 400)
+    @BoundedDiscrete(min = 1, max = 8192)
+    public int blastSpeed = 1024;
+
+    /** Радиус области радиоактивных осадков, в % от базового радиуса. Ориг. ключ: 6.03_falloutRange = 100 */
+    @Category("explosions")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 0, max = 500)
     public int falloutRangePercent = 100;
 
+    /** Сколько тиков ждать перед следующим расчётом fallout chunk. Ориг. ключ: 6.04_falloutDelay = 4 */
     @Category("explosions")
     @Gui.Tooltip
-    @BoundedDiscrete(min = 0, max = 20)
+    @BoundedDiscrete(min = 0, max = 100)
     public int falloutDelay = 4;
+
+    /** Включить принудительную прогрузку чанков взрывом (chunk ticket). Ориг. ключ: 6.05_enableChunkLoading = true */
+    @Category("explosions")
+    @Gui.Tooltip
+    public boolean enableChunkLoading = true;
+
+    /** Алгоритм взрыва: 0 = Legacy, 1 = Threaded DDA, 2 = Threaded DDA с накоплением урона. Ориг. ключ: 6.06_explosionAlgorithm = 2 */
+    @Category("explosions")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 0, max = 2)
+    public int explosionAlgorithm = 2;
 
     @Category("explosions")
     @Gui.Tooltip
@@ -400,33 +512,7 @@ public class ModClothConfig implements ConfigData {
     @Gui.Tooltip
     public float craterBiomeWaterMult = 5F;
 
-    /**
-     * Радиус взрыва Fat Man (блок nuke_fat_man). 1:1 с {@code BombConfig.manRadius = 175}
-     * (1.7.10 {@code NukeMan.igniteTestBomb} → {@code statFac(world, manRadius, ...)}).
-     * <p><b>Важно:</b> в 1.7.10 {@code fatmanRadius = 35} — это {@code BlockCrashedBomb.destructionRange},
-     * НЕ радиус NukeMan. Modernized изначально перепутал значения; верно именно 175.</p>
-     * <p>От этого значения зависит fallout scale ({@code length * 2.5}) → если оно занижено,
-     * {@code EntityFalloutRain.getBiomeChange} проваливает условия
-     * {@code scale >= 150} (INNER) и {@code scale >= 100} (CRATER), оставляя только OUTER_CRATER.</p>
-     */
-    @Category("explosions")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 10, max = 200)
-    public int fatManRadius = 175;
-
-    /** Радиус Fleija-взрыва шрабидиевой ракеты (ориг. {@code BombConfig.aSchrabRadius}). */
-    @Category("explosions")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 5, max = 200)
-    public int aSchrabRadius = 20;
-
-    /** Скорость расширения MK3-взрывов (ориг. {@code BombConfig.blastSpeed}). */
-    @Category("explosions")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 1, max = 4096)
-    public int blastSpeed = 1024;
-
-    /** Лимит жизни невыгруженного взрыва в секундах; 0 = без лимита (ориг. {@code BombConfig.limitExplosionLifespan}). */
+    /** Лимит жизни невыгруженного взрыва в секундах; 0 = без лимита (ориг. {@code BombConfig.limitExplosionLifespan}, ключ 6.00). */
     @Category("explosions")
     @Gui.Tooltip
     @BoundedDiscrete(min = 0, max = 3600)

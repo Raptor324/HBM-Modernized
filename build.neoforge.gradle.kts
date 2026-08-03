@@ -77,6 +77,8 @@ sourceSets {
 	}
 }
 
+tasks.withType<JavaCompile>().configureEach { options.encoding = "UTF-8" }
+
 stonecutter {
 	val isModern = current.parsed >= "1.21.11"
 

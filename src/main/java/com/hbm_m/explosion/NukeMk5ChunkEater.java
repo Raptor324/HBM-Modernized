@@ -248,8 +248,12 @@ public class NukeMk5ChunkEater implements IExplosionRay {
         int maxR = this.length;
         BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
 
-        for (int x = minX; x <= maxX; x++) {
-            for (int z = minZ; z <= maxZ; z++) {
+        // [FIX] Расширяем границы на 1 блок во все стороны, чтобы захватить
+        // воду на стыках чанков (линии x=minX-1, x=maxX+1, z=minZ-1, z=maxZ+1),
+        // которые иначе остаются висеть стенами толщиной 1 блок между чанками.
+        // Проверка радиуса внутри цикла отсекает то, что дальше maxR от центра.
+        for (int x = minX - 1; x <= maxX + 1; x++) {
+            for (int z = minZ - 1; z <= maxZ + 1; z++) {
                 double dx = x + 0.5D - posX;
                 double dz = z + 0.5D - posZ;
                 if (dx * dx + dz * dz > (double) maxR * maxR) {

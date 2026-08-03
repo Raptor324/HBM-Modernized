@@ -590,7 +590,10 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
                 worldPosition.getZ() + 0.5D,
                 com.hbm_m.sound.ModSounds.MISSILE_TAKEOFF.get(),
                 SoundSource.PLAYERS,
-                2.0F, 1.0F);
+                // volume = радиус рассылки пакета: 16 × volume = 512 бл. = attenuation_distance
+                // в sounds.json. Громкость рассеивания на клиенте считается локально (линейно),
+                // поэтому дальние игроки получают тихий «рохот», а близкие — полную силу.
+                15.0F, 1.0F);
 
         this.energy = Math.max(0, this.energy - 75_000L);
 
@@ -625,10 +628,6 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
                 ? com.hbm_m.api.bomb.IBomb.BombReturnCode.LAUNCHED
                 : com.hbm_m.api.bomb.IBomb.BombReturnCode.ERROR_MISSING_COMPONENT;
     }
-
-    // -----------------------
-    // Редстоун‑логика (упрощённый порт)
-    // -----------------------
 
     /**
      * Агрегирует редстоун с контроллера и всех частей мультиблока (как у дверей).

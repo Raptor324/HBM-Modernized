@@ -1,6 +1,7 @@
 package com.hbm_m.entity.missile;
 
 import api.hbm_m.entity.IRadarDetectable;
+import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.explosion.NuclearExplosionAPI;
 import com.hbm_m.explosion.NuclearExplosionConfig;
 import net.minecraft.core.BlockPos;
@@ -13,7 +14,13 @@ import net.minecraft.world.phys.Vec3;
  */
 public abstract class MissileTier4 extends MissileBaseEntity {
 
-    private static final int MISSILE_NUKE_RADIUS = 50;
+    /**
+     * Радиус ядерного взрыва ракеты. 1.7.10 {@code BombConfig.missileRadius} (дефолт 100).
+     * Раньше был захардкожен 50 — дефицит мощности вдвое. Теперь читается из конфига.
+     */
+    private static int missileNukeRadius() {
+        return ModClothConfig.get().missileRadius;
+    }
 
     protected MissileTier4(EntityType<? extends MissileTier4> type, Level level) {
         super(type, level);
@@ -62,7 +69,7 @@ public abstract class MissileTier4 extends MissileBaseEntity {
 
         @Override
         protected void onMissileImpact(BlockPos pos) {
-            startNukeAt(pos, MISSILE_NUKE_RADIUS, 0);
+            startNukeAt(pos, missileNukeRadius(), 0);
         }
     }
 
@@ -73,7 +80,7 @@ public abstract class MissileTier4 extends MissileBaseEntity {
 
         @Override
         protected void onMissileImpact(BlockPos pos) {
-            startNukeAt(pos, MISSILE_NUKE_RADIUS * 2, 0);
+            startNukeAt(pos, missileNukeRadius() * 2, 0);
         }
     }
 
@@ -100,7 +107,7 @@ public abstract class MissileTier4 extends MissileBaseEntity {
 
         @Override
         protected void onMissileImpact(BlockPos pos) {
-            startNukeAt(pos, MISSILE_NUKE_RADIUS * 2, 100);
+            startNukeAt(pos, missileNukeRadius() * 2, 100);
         }
     }
 
@@ -111,7 +118,7 @@ public abstract class MissileTier4 extends MissileBaseEntity {
 
         @Override
         protected void onMissileImpact(BlockPos pos) {
-            startNukeAt(pos, MISSILE_NUKE_RADIUS, 100);
+            startNukeAt(pos, missileNukeRadius(), 100);
         }
     }
 }
