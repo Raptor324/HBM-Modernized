@@ -32,48 +32,6 @@ public class TransitionSealBlockEntity extends BlockEntity {
     /** Horizontal half span of the frame ring around the core, in blocks. */
     private static final int RING_WIDTH = 13;
 
-    public float animTicks = 0F;
-    public boolean moving = false;
-    public boolean opening = false;
-
-    public TransitionSealBlockEntity(BlockPos pos, BlockState blockState) {
-        super(ModBlockEntities.TRANSITION_SEAL_BE.get(), pos, blockState);
-    }
-
-    public static void tick(Level level, BlockPos pos, BlockState state, TransitionSealBlockEntity be) {
-        be.updateEntity();
-    }
-
-    public void updateEntity() {
-        if(level == null) return;
-
-        boolean powered = isPowered();
-        float prev = animTicks;
-        boolean prevOpen = prev >= DURATION_TICKS;
-
-        if(powered && animTicks < DURATION_TICKS) {
-            animTicks = Math.min(DURATION_TICKS, animTicks + 1F);
-        } else if(!powered && animTicks > 0F) {
-            animTicks = Math.max(0F, animTicks - 1F);
-        }
-
-        opening = powered;
-        moving = animTicks > 0F && animTicks < DURATION_TICKS;
-
-        if(!level.isClientSide) {
-            if(moving && !(prev > 0F && prev < DURATION_TICKS)) {
-                level.playSound(null, worldPosition, opening ? ModSounds.TRANSITION_SEAL_OPEN.get() : ModSounds.TRANSITION_SEAL_CLOSE.get(), SoundSource.BLOCKS, 2.0F, 1.0F);
-            }
-            if(!moving && prev > 0F && prev < DURATION_TICKS) {
-                level.playSound(null, worldPosition, ModSounds.METAL_STOP_1.get(), SoundSource.BLOCKS, 2.0F, 1.0F);
-            }
-            if(animTicks != prev) setChanged();
-            if(isOpen() != prevOpen) {
-                updatePartStates();
-                setChanged();
-            }
-        }
-    }
 
     /** Synchronizes the PASSABLE flag of every phantom part with the door's open state. */
     private void updatePartStates() {
@@ -145,15 +103,76 @@ public class TransitionSealBlockEntity extends BlockEntity {
         return new AABB(worldPosition, worldPosition.offset(0, 24, 0)).inflate(13);
     }
 
+    // Animation state
+    public float animTicks = 0F;
+    public boolean moving = false;
+    /** Target direction while animating: true = opening, false = closing */
+    public boolean opening = false;
+    /** Previous redstone state used to implement toggle-on-pulse behaviour */
+    public boolean prevPowered = false;
+
+    public TransitionSealBlockEntity(BlockPos pos, BlockState blockState) {
+        super(ModBlockEntities.TRANSITION_SEAL_BE.get(), pos, blockState);
+    }
+
+    public static void tick(Level level, BlockPos pos, BlockState state, TransitionSealBlockEntity be) {
+        be.updateEntity();
+    }
+
+    public void updateEntity() {
+        if(level == null) return;
+
+        boolean powered = isPowered();
+        float prev = animTicks;
+        boolean prevOpen = prev >= DURATION_TICKS;
+        boolean wasMoving = moving;
+
+        // Toggle on rising edge: a single redstone pulse will start the animation toward
+        // the opposite state and it will continue until fully open/closed without
+        // requiring the power to be held.
+        if(powered && !prevPowered) {
+            opening = !isOpen();
+            moving = true;
+        }
+        prevPowered = powered;
+
+        if(moving) {
+            if(opening && animTicks < DURATION_TICKS) {
+                animTicks = Math.min(DURATION_TICKS, animTicks + 1F);
+            }
+            else if(!opening && animTicks > 0F) {
+                animTicks = Math.max(0F, animTicks - 1F);
+            }
+        }
+
+        moving = animTicks > 0F && animTicks < DURATION_TICKS;
+
+        if(!level.isClientSide) {
+            if(moving && !wasMoving) {
+                level.playSound(null, worldPosition, opening ? ModSounds.TRANSITION_SEAL_OPEN.get() : ModSounds.TRANSITION_SEAL_CLOSE.get(), SoundSource.BLOCKS, 2.0F, 1.0F);
+            }
+            if(!moving && wasMoving) {
+                level.playSound(null, worldPosition, ModSounds.METAL_STOP_1.get(), SoundSource.BLOCKS, 2.0F, 1.0F);
+            }
+            if(animTicks != prev) setChanged();
+            if(isOpen() != prevOpen) {
+                updatePartStates();
+                setChanged();
+            }
+        }
+    }
+
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.putFloat("animTicks", animTicks);
+        tag.putBoolean("prevPowered", prevPowered);
     }
 
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
         animTicks = tag.getFloat("animTicks");
+        prevPowered = tag.getBoolean("prevPowered");
     }
 }
