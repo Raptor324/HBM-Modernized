@@ -40,7 +40,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.network.NetworkHooks;
+import dev.architectury.registry.menu.MenuRegistry;
 
 public class MachineChemicalFactoryBlock extends BaseEntityBlock implements IMultiblockController {
 
@@ -178,7 +178,7 @@ public class MachineChemicalFactoryBlock extends BaseEntityBlock implements IMul
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider menu) {
-            NetworkHooks.openScreen((ServerPlayer) player, menu, pos);
+            MenuRegistry.openExtendedMenu((ServerPlayer) player, menu, buf -> buf.writeBlockPos(pos));
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }

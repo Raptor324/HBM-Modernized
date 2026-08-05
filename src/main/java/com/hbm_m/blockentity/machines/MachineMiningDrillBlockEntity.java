@@ -20,6 +20,7 @@ import com.hbm_m.item.ModItems;
 import com.hbm_m.recipe.ModRecipes;
 import com.hbm_m.recipe.ShredderRecipe;
 import com.hbm_m.worldgen.BedrockOreDensity;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -367,7 +368,7 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity {
             double density = BedrockOreDensity.getDensity(pos.getX(), pos.getZ(), type) * mult;
             nbt.putDouble(type.name().toLowerCase(java.util.Locale.ROOT), density);
         }
-        drop.setTag(nbt);
+        PlatformHooks.setItemTag(drop, nbt);
 
         insertOrDrop(pos, drop);
     }

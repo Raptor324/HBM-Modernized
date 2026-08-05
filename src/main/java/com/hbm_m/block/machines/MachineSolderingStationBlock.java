@@ -36,7 +36,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
+import dev.architectury.registry.menu.MenuRegistry;
 
 public class MachineSolderingStationBlock extends BaseEntityBlock implements IMultiblockController {
 
@@ -128,7 +128,7 @@ public class MachineSolderingStationBlock extends BaseEntityBlock implements IMu
         if (!level.isClientSide) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider menuProvider) {
-                NetworkHooks.openScreen((ServerPlayer) player, menuProvider, pos);
+                MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide());

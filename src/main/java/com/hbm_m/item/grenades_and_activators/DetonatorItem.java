@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.sound.ModSounds;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -40,8 +41,8 @@ public class DetonatorItem extends Item {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
 
-        if (stack.hasTag()) {
-            CompoundTag nbt = stack.getTag();
+        if (PlatformHooks.hasItemTag(stack)) {
+            CompoundTag nbt = PlatformHooks.getItemTag(stack);
             if (nbt != null && nbt.contains("HasTarget") && nbt.getBoolean("HasTarget")) {
                 int x = nbt.getInt("DetPosX");
                 int y = nbt.getInt("DetPosY");
@@ -86,11 +87,11 @@ public class DetonatorItem extends Item {
 
         // Если игрок присел - сохраняем позицию
         if (player.isCrouching()) {
-            if (!stack.hasTag()) {
-                stack.setTag(new CompoundTag());
+            if (!PlatformHooks.hasItemTag(stack)) {
+                PlatformHooks.setItemTag(stack, new CompoundTag());
             }
 
-            CompoundTag nbt = stack.getTag();
+            CompoundTag nbt = PlatformHooks.getItemTag(stack);
             nbt.putInt(NBT_POS_X, pos.getX());
             nbt.putInt(NBT_POS_Y, pos.getY());
             nbt.putInt(NBT_POS_Z, pos.getZ());
@@ -121,7 +122,7 @@ public class DetonatorItem extends Item {
 
         // Если игрок НЕ присел - активируем сохраненную позицию
         if (!player.isCrouching()) {
-            if (!stack.hasTag()) {
+            if (!PlatformHooks.hasItemTag(stack)) {
                 if (!level.isClientSide) {
                     player.displayClientMessage(
                             Component.translatable("message.hbm_m.detonator.no_saved_position")
@@ -136,7 +137,7 @@ public class DetonatorItem extends Item {
                 return InteractionResultHolder.fail(stack);
             }
 
-            CompoundTag nbt = stack.getTag();
+            CompoundTag nbt = PlatformHooks.getItemTag(stack);
 
             if (!nbt.contains(NBT_HAS_TARGET) || !nbt.getBoolean(NBT_HAS_TARGET)) {
                 if (!level.isClientSide) {

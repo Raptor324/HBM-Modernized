@@ -4,6 +4,7 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.rbmk.*;
 import com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity.ColumnType;
 import com.hbm_m.inventory.menu.MachineRbmkConsoleMenu;
+import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -277,7 +278,7 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
     }
 
     public void onDataPacket(net.minecraft.network.Connection connection, ClientboundBlockEntityDataPacket packet, net.minecraft.core.HolderLookup.Provider registries) {
-        if (packet.getTag() != null) applyUpdateTag(packet.getTag());
+        if (PlatformHooks.getItemTag(packet) != null) applyUpdateTag(PlatformHooks.getItemTag(packet));
     }
     *///?}
 

@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -40,12 +42,12 @@ public class ZirnoxRodItem extends Item {
     }
 
     public static int getLifeTime(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = PlatformHooks.getItemTag(stack);
         return tag == null ? 0 : tag.getInt(NBT_LIFE);
     }
 
     public static void setLifeTime(ItemStack stack, int time) {
-        stack.getOrCreateTag().putInt(NBT_LIFE, Math.max(0, time));
+        PlatformHooks.editItemTag(stack, t -> t.putInt(NBT_LIFE, Math.max(0, time)));
     }
 
     public static void incrementLifeTime(ItemStack stack) {

@@ -16,6 +16,7 @@ import com.hbm_m.interfaces.IEnergyProvider;
 import com.hbm_m.interfaces.IEnergyReceiver;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.platform.ModItemStackHandler;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -376,8 +377,8 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
     //? if forge {
     @Override
     public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
-        if (pkt.getTag() != null) {
-            load(pkt.getTag());
+        if (PlatformHooks.getItemTag(pkt) != null) {
+            load(PlatformHooks.getItemTag(pkt));
         }
     }//?}
 

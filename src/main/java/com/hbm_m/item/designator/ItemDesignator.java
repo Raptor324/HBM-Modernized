@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.hbm_m.api.item.IDesignatorItem;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.ChatFormatting;
@@ -30,10 +31,10 @@ public class ItemDesignator extends Item implements IDesignatorItem {
 
     @Override
     public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
-        if (stack.hasTag() && stack.getTag().contains("xCoord")) {
+        if (PlatformHooks.contains(stack, "xCoord")) {
             tooltip.add(Component.translatable("tooltip.hbm_m.designator.target"));
-            tooltip.add(Component.literal("X: " + stack.getTag().getInt("xCoord")).withStyle(ChatFormatting.GRAY));
-            tooltip.add(Component.literal("Z: " + stack.getTag().getInt("zCoord")).withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.literal("X: " + PlatformHooks.getInt(stack, "xCoord")).withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.literal("Z: " + PlatformHooks.getInt(stack, "zCoord")).withStyle(ChatFormatting.GRAY));
         } else {
             tooltip.add(Component.translatable("tooltip.hbm_m.designator.no_target"));
         }
@@ -51,9 +52,8 @@ public class ItemDesignator extends Item implements IDesignatorItem {
         }
 
         ItemStack stack = context.getItemInHand();
-        var tag = stack.getOrCreateTag();
-        tag.putInt("xCoord", pos.getX());
-        tag.putInt("zCoord", pos.getZ());
+        PlatformHooks.putInt(stack, "xCoord", pos.getX());
+        PlatformHooks.putInt(stack, "zCoord", pos.getZ());
 
         if (level.isClientSide()) {
             context.getPlayer().displayClientMessage(Component.translatable("message.hbm_m.designator.position_set"), true);
@@ -66,14 +66,12 @@ public class ItemDesignator extends Item implements IDesignatorItem {
 
     @Override
     public boolean isReady(Level level, ItemStack stack, int x, int y, int z) {
-        var tag = stack.getTag();
-        return tag != null && tag.contains("xCoord") && tag.contains("zCoord");
+        return PlatformHooks.contains(stack, "xCoord") && PlatformHooks.contains(stack, "zCoord");
     }
 
     @Override
     public Vec3 getCoords(Level level, ItemStack stack, int x, int y, int z) {
-        var tag = stack.getTag();
-        if (tag == null || !tag.contains("xCoord")) return Vec3.ZERO;
-        return new Vec3(tag.getInt("xCoord"), 0, tag.getInt("zCoord"));
+        if (!PlatformHooks.contains(stack, "xCoord")) return Vec3.ZERO;
+        return new Vec3(PlatformHooks.getInt(stack, "xCoord"), 0, PlatformHooks.getInt(stack, "zCoord"));
     }
 }

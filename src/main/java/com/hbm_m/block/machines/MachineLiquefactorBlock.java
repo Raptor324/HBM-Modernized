@@ -31,7 +31,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.network.NetworkHooks;
+import dev.architectury.registry.menu.MenuRegistry;
 
 public class MachineLiquefactorBlock extends BaseEntityBlock implements IMultiblockController {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
@@ -50,7 +50,7 @@ public class MachineLiquefactorBlock extends BaseEntityBlock implements IMultibl
     }
     @Nullable @Override public BlockEntity newBlockEntity(BlockPos p, BlockState s) { return new MachineLiquefactorBlockEntity(p, s); }
     @Override public InteractionResult use(BlockState s, Level l, BlockPos p, Player pl, InteractionHand h, BlockHitResult r) {
-        if (!l.isClientSide() && l.getBlockEntity(p) instanceof MenuProvider mp) NetworkHooks.openScreen((ServerPlayer) pl, mp, p);
+        if (!l.isClientSide() && l.getBlockEntity(p) instanceof MenuProvider mp) MenuRegistry.openExtendedMenu((ServerPlayer) pl, mp, buf -> buf.writeBlockPos(p));
         return InteractionResult.sidedSuccess(l.isClientSide());
     }
     @Nullable @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level l, BlockState s, BlockEntityType<T> t) {

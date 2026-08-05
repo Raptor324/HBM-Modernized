@@ -51,7 +51,9 @@ public class ArmorModificationServerEvents {
 //?}
 
 //? if fabric {
-/*import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;*///?}
+/*import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import com.hbm_m.platform.PlatformHooks;
+*///?}
 
 //? if fabric {
 /*public class ArmorModificationServerEvents {
@@ -95,7 +97,7 @@ public class ArmorModificationServerEvents {
 
         private static Object key(net.minecraft.world.item.ItemStack stack) {
             if (stack.isEmpty()) return "";
-            return stack.getItem().builtInRegistryHolder().key().location().toString() + "#" + stack.getTag();
+            return stack.getItem().builtInRegistryHolder().key().location().toString() + "#" + PlatformHooks.getItemTag(stack);
         }
     }
 }

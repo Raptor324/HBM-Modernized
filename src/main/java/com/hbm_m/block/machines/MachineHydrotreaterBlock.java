@@ -8,6 +8,7 @@ import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.MultiblockStructureStubs;
 import com.hbm_m.multiblock.PartRole;
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
@@ -31,7 +32,6 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.network.NetworkHooks;
 
 public class MachineHydrotreaterBlock extends BaseEntityBlock implements IMultiblockController {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
@@ -50,7 +50,7 @@ public class MachineHydrotreaterBlock extends BaseEntityBlock implements IMultib
     }
     @Nullable @Override public BlockEntity newBlockEntity(BlockPos p, BlockState s) { return new MachineHydrotreaterBlockEntity(p, s); }
     @Override public InteractionResult use(BlockState s, Level l, BlockPos p, Player pl, InteractionHand h, BlockHitResult r) {
-        if (!l.isClientSide() && l.getBlockEntity(p) instanceof MenuProvider mp) NetworkHooks.openScreen((ServerPlayer) pl, mp, p);
+        if (!l.isClientSide() && l.getBlockEntity(p) instanceof MenuProvider mp) MenuRegistry.openExtendedMenu((ServerPlayer) pl, mp, buf -> buf.writeBlockPos(p));
         return InteractionResult.sidedSuccess(l.isClientSide());
     }
     @Nullable @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level l, BlockState s, BlockEntityType<T> t) {

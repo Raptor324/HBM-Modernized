@@ -17,6 +17,7 @@ import com.hbm_m.main.MainRegistry;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.sound.ClientSoundBootstrap;
+import com.hbm_m.platform.PlatformHooks;
 
 
 import net.minecraft.core.BlockPos;
@@ -832,7 +833,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
     @Override
     //?}
     public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
-        CompoundTag tag = pkt.getTag();
+        CompoundTag tag = PlatformHooks.getItemTag(pkt);
         if (tag != null) {
             // Сохраняем предыдущее видимое состояние ДО загрузки - чтобы определить, нужна ли инвалидация
             byte prevState = this.state;

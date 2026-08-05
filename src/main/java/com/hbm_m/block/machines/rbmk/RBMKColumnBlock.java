@@ -24,7 +24,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
+import dev.architectury.registry.menu.MenuRegistry;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class RBMKColumnBlock extends BaseEntityBlock {
@@ -85,7 +85,7 @@ public abstract class RBMKColumnBlock extends BaseEntityBlock {
 
         // Open GUI (if this block has a menu)
         if (!player.isShiftKeyDown() && col instanceof MenuProvider mp) {
-            NetworkHooks.openScreen((ServerPlayer) player, mp, pos);
+            MenuRegistry.openExtendedMenu((ServerPlayer) player, mp, buf -> buf.writeBlockPos(pos));
             return InteractionResult.SUCCESS;
         }
 

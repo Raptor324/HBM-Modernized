@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.sound.ModSounds;
+import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -120,11 +121,11 @@ public class MultiDetonatorItem extends Item {
 
         // Только при приседании сохраняем позицию
         if (player.isCrouching()) {
-            if (!stack.hasTag()) {
-                stack.setTag(new CompoundTag());
+            if (!PlatformHooks.hasItemTag(stack)) {
+                PlatformHooks.setItemTag(stack, new CompoundTag());
             }
 
-            CompoundTag nbt = stack.getTag();
+            CompoundTag nbt = PlatformHooks.getItemTag(stack);
 
             int activePoint = nbt.getInt(NBT_ACTIVE_POINT);
             if (activePoint < 0 || activePoint >= MAX_POINTS) {
@@ -196,7 +197,7 @@ public class MultiDetonatorItem extends Item {
 
         // На сервере: активируем текущую выбранную точку при ПКМ в воздухе
         if (!level.isClientSide) {
-            if (!stack.hasTag()) {
+            if (!PlatformHooks.hasItemTag(stack)) {
                 player.displayClientMessage(
                         Component.translatable("message.hbm_m.multi_detonator.no_coordinates")
                                 .withStyle(ChatFormatting.RED),
@@ -211,7 +212,7 @@ public class MultiDetonatorItem extends Item {
                 return InteractionResultHolder.fail(stack);
             }
 
-            CompoundTag nbt = stack.getTag();
+            CompoundTag nbt = PlatformHooks.getItemTag(stack);
             int activePoint = nbt.getInt(NBT_ACTIVE_POINT);
 
             if (activePoint >= MAX_POINTS) {
@@ -310,11 +311,11 @@ public class MultiDetonatorItem extends Item {
      * Получить данные точки по индексу
      */
     public PointData getPointData(ItemStack stack, int pointIndex) {
-        if (!stack.hasTag() || pointIndex < 0 || pointIndex >= MAX_POINTS) {
+        if (!PlatformHooks.hasItemTag(stack) || pointIndex < 0 || pointIndex >= MAX_POINTS) {
             return null;
         }
 
-        CompoundTag nbt = stack.getTag();
+        CompoundTag nbt = PlatformHooks.getItemTag(stack);
 
         if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) {
             return null;
@@ -351,11 +352,11 @@ public class MultiDetonatorItem extends Item {
      * Установить активную точку
      */
     public void setActivePoint(ItemStack stack, int pointIndex) {
-        if (!stack.hasTag()) {
-            stack.setTag(new CompoundTag());
+        if (!PlatformHooks.hasItemTag(stack)) {
+            PlatformHooks.setItemTag(stack, new CompoundTag());
         }
 
-        CompoundTag nbt = stack.getTag();
+        CompoundTag nbt = PlatformHooks.getItemTag(stack);
 
         if (pointIndex >= 0 && pointIndex < MAX_POINTS) {
             nbt.putInt(NBT_ACTIVE_POINT, pointIndex);
@@ -366,11 +367,11 @@ public class MultiDetonatorItem extends Item {
      * Получить активную точку
      */
     public int getActivePoint(ItemStack stack) {
-        if (!stack.hasTag()) {
+        if (!PlatformHooks.hasItemTag(stack)) {
             return 0;
         }
 
-        int activePoint = stack.getTag().getInt(NBT_ACTIVE_POINT);
+        int activePoint = PlatformHooks.getInt(stack, NBT_ACTIVE_POINT);
         return (activePoint >= 0 && activePoint < MAX_POINTS) ? activePoint : 0;
     }
 
@@ -378,15 +379,15 @@ public class MultiDetonatorItem extends Item {
      * Установить имя точки
      */
     public void setPointName(ItemStack stack, int pointIndex, String name) {
-        if (!stack.hasTag()) {
-            stack.setTag(new CompoundTag());
+        if (!PlatformHooks.hasItemTag(stack)) {
+            PlatformHooks.setItemTag(stack, new CompoundTag());
         }
 
         if (pointIndex < 0 || pointIndex >= MAX_POINTS) {
             return;
         }
 
-        CompoundTag nbt = stack.getTag();
+        CompoundTag nbt = PlatformHooks.getItemTag(stack);
 
         // Инициализируем список точек
         if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) {
@@ -416,11 +417,11 @@ public class MultiDetonatorItem extends Item {
      * Очистить точку (только координаты, имя сохраняется!)
      */
     public void clearPoint(ItemStack stack, int pointIndex) {
-        if (!stack.hasTag() || pointIndex < 0 || pointIndex >= MAX_POINTS) {
+        if (!PlatformHooks.hasItemTag(stack) || pointIndex < 0 || pointIndex >= MAX_POINTS) {
             return;
         }
 
-        CompoundTag nbt = stack.getTag();
+        CompoundTag nbt = PlatformHooks.getItemTag(stack);
 
         if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) {
             return;

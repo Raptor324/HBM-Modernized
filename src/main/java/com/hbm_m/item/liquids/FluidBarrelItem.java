@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
+import com.hbm_m.platform.PlatformHooks;
 
 //? if forge {
 import net.minecraftforge.common.capabilities.Capability;
@@ -132,7 +133,7 @@ public class FluidBarrelItem extends Item {
 
     // Static helper methods for NBT access
     public static FluidStack getFluid(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = PlatformHooks.getItemTag(stack);
         if (tag != null && tag.contains(NBT_FLUID)) {
             CompoundTag fluidTag = tag.getCompound(NBT_FLUID);
             // Читаем напрямую по ключам, чтобы избежать проблем с разными форматами Architectury
@@ -151,8 +152,8 @@ public class FluidBarrelItem extends Item {
         if (fluid.isEmpty() || fluid.getAmount() <= 0) {
             stack.removeTagKey(NBT_FLUID);
             // Если после удаления тега он пустой — удаляем весь CompoundTag, чтобы стакалось с чистыми бочками
-            if (stack.hasTag() && stack.getTag().isEmpty()) {
-                stack.setTag(null);
+            if (PlatformHooks.hasItemTag(stack) && stack.getTag().isEmpty()) {
+                PlatformHooks.setItemTag(stack, null);
             }
         } else {
             CompoundTag tag = stack.getOrCreateTag();

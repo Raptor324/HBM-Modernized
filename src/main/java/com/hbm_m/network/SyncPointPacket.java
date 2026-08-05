@@ -2,6 +2,7 @@ package com.hbm_m.network;
 
 import com.hbm_m.item.grenades_and_activators.MultiDetonatorItem;
 import com.hbm_m.network.C2SPacket;
+import com.hbm_m.platform.PlatformHooks;
 
 import dev.architectury.networking.NetworkManager.PacketContext;
 
@@ -67,35 +68,35 @@ public class SyncPointPacket implements C2SPacket {
 
             if (detonatorStack.isEmpty()) return;
 
-            CompoundTag nbt = detonatorStack.getOrCreateTag();
+            PlatformHooks.editItemTag(detonatorStack, nbt -> {
+                ListTag pointsList;
+                if (!nbt.contains("Points", Tag.TAG_LIST)) {
+                    pointsList = new ListTag();
+                    nbt.put("Points", pointsList);
+                } else {
+                    pointsList = nbt.getList("Points", Tag.TAG_COMPOUND);
+                }
 
-            ListTag pointsList;
-            if (!nbt.contains("Points", Tag.TAG_LIST)) {
-                pointsList = new ListTag();
+                while (pointsList.size() <= msg.pointIndex) {
+                    CompoundTag emptyTag = new CompoundTag();
+                    emptyTag.putInt("X", 0);
+                    emptyTag.putInt("Y", 0);
+                    emptyTag.putInt("Z", 0);
+                    emptyTag.putString("Name", "");
+                    emptyTag.putBoolean("HasTarget", false);
+                    pointsList.add(emptyTag);
+                }
+
+                CompoundTag pointTag = pointsList.getCompound(msg.pointIndex);
+                pointTag.putInt("X", msg.x);
+                pointTag.putInt("Y", msg.y);
+                pointTag.putInt("Z", msg.z);
+                pointTag.putString("Name", msg.pointName);
+                pointTag.putBoolean("HasTarget", msg.hasTarget);
+
+                pointsList.set(msg.pointIndex, pointTag);
                 nbt.put("Points", pointsList);
-            } else {
-                pointsList = nbt.getList("Points", Tag.TAG_COMPOUND);
-            }
-
-            while (pointsList.size() <= msg.pointIndex) {
-                CompoundTag emptyTag = new CompoundTag();
-                emptyTag.putInt("X", 0);
-                emptyTag.putInt("Y", 0);
-                emptyTag.putInt("Z", 0);
-                emptyTag.putString("Name", "");
-                emptyTag.putBoolean("HasTarget", false);
-                pointsList.add(emptyTag);
-            }
-
-            CompoundTag pointTag = pointsList.getCompound(msg.pointIndex);
-            pointTag.putInt("X", msg.x);
-            pointTag.putInt("Y", msg.y);
-            pointTag.putInt("Z", msg.z);
-            pointTag.putString("Name", msg.pointName);
-            pointTag.putBoolean("HasTarget", msg.hasTarget);
-
-            pointsList.set(msg.pointIndex, pointTag);
-            nbt.put("Points", pointsList);
+            });
 
             player.containerMenu.broadcastChanges();
         });

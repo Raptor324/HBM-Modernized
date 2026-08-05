@@ -4,6 +4,7 @@ import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.interfaces.IEnergyProvider;
 import com.hbm_m.interfaces.IEnergyReceiver;
 import com.hbm_m.powerarmor.ModArmorFSBPowered;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
@@ -78,7 +79,7 @@ public class EnergyCapabilityProvider implements ICapabilityProvider {
             if (isPoweredArmor()) {
                 return poweredArmor().getCharge(stack);
             }
-            return stack.getOrCreateTag().getLong("energy");
+            return PlatformHooks.getLong(stack, "energy");
         }
 
         @Override
@@ -88,7 +89,7 @@ public class EnergyCapabilityProvider implements ICapabilityProvider {
             if (isPoweredArmor()) {
                 poweredArmor().setCharge(stack, clamped);
             } else {
-                stack.getOrCreateTag().putLong("energy", clamped);
+                PlatformHooks.putLong(stack, "energy", clamped);
             }
         }
 
@@ -177,10 +178,10 @@ public class EnergyCapabilityProvider implements ICapabilityProvider {
             this.maxExtract = maxExtract;
         }
 
-        @Override public long getEnergyStored() { return stack.getOrCreateTag().getLong("energy"); }
+        @Override public long getEnergyStored() { return PlatformHooks.getLong(stack, "energy"); }
         @Override public void setEnergyStored(long energy) {
             long clamped = Math.max(0, Math.min(energy, capacity));
-            stack.getOrCreateTag().putLong("energy", clamped);
+            PlatformHooks.putLong(stack, "energy", clamped);
         }
         @Override public long getMaxEnergyStored() { return this.capacity; }
 

@@ -1,361 +1,164 @@
 package com.hbm_m.config;
-// Конфигурация мода с использованием AutoConfig и Cloth Config.
-// Включает валидацию значений после загрузки для обеспечения корректных настроек
+// POJO-холдер конфигурации мода. Все поля публичные со значениями по умолчанию.
+//
+// Загрузка/сохранение — через HbmConfigStore (JSON, без зависимостей).
+// Метаданные полей (сторона, границы, категория, режим применения) — в ConfigSchema.
+// Валидация границ — ConfigSchema.validate() (замена validatePostLoad из AutoConfig).
+//
+// Раньше класс использовал AutoConfig + Cloth Config + Toml4j; теперь это чистый POJO,
+// что позволяет убрать обязательную зависимость cloth-config, сохранив ~120 call-сайтов
+// вида ModClothConfig.get().field без изменений.
 
-import me.shedaniel.autoconfig.AutoConfig;
-import me.shedaniel.autoconfig.ConfigData;
-import me.shedaniel.autoconfig.annotation.Config;
-import me.shedaniel.autoconfig.annotation.ConfigEntry.BoundedDiscrete;
-import me.shedaniel.autoconfig.annotation.ConfigEntry.Category;
-import me.shedaniel.autoconfig.annotation.ConfigEntry.Gui;
-import me.shedaniel.autoconfig.serializer.Toml4jConfigSerializer;
-import net.minecraft.util.Mth;
+import com.hbm_m.config.schema.ConfigSchema;
+import com.hbm_m.config.schema.ConfigSide;
 
-@Config(name = "hbm_m")
-public class ModClothConfig implements ConfigData {
+public class ModClothConfig {
 
-    // Общие настройки 
-    @Category("general")
-    @Gui.Tooltip
+    // ════════════════════════════════════════════════════════════════
+    // Общие настройки
+    // ════════════════════════════════════════════════════════════════
     public boolean enableRadiation = true;
-
-    @Category("general")
-    @Gui.Tooltip
     public boolean enableChunkRads = true;
 
     /** MOTD при входе в мир и уведомление о новой версии на Modrinth (ориг. GeneralConfig.enableMOTD). */
-    @Category("general")
-    @Gui.Tooltip
     public boolean enableMOTD = true;
 
-//    @Category("general")
-//    @Gui.Tooltip
-//    public boolean usePrismSystem = false;
-
-    /** Частицы радиоактивного тумана в чанках (порог/шанс — {@link com.hbm_m.radiation.ChunkRadiationHandlerSimple}, как fogRad/fogCh в 1.7.10). */
-    @Category("world_effects")
-    @Gui.Tooltip
+    // ════════════════════════════════════════════════════════════════
+    // Эффекты мира
+    // ════════════════════════════════════════════════════════════════
+    /** Частицы радиоактивного тумана в чанках (порог/шанс — ChunkRadiationHandlerSimple, как fogRad/fogCh в 1.7.10). */
     public boolean enableRadFogEffect = true;
 
-    /** Как {@code RadiationConfig.worldRadEffects} (1.7.10). Пороги/частота — константы в {@link com.hbm_m.radiation.ChunkRadiationHandlerSimple}. */
-    @Category("world_effects")
-    @Gui.Tooltip
+    /** Как RadiationConfig.worldRadEffects (1.7.10). Пороги/частота — константы в ChunkRadiationHandlerSimple. */
     public boolean worldRadEffects = true;
 
     /** Следы блока taint под сущностями с эффектом порчи (ориг. ServerConfig.TAINT_TRAILS, по умолчанию выкл.). */
-    @Category("world_effects")
-    @Gui.Tooltip
     public boolean taintTrails = false;
 
-    // Игрок 
-    /** Спавн сингулярностей/чёрных дыр при падении предмета ({@code WeaponConfig.dropSing}). */
-    @Category("weapons")
-    @Gui.Tooltip
+    // ════════════════════════════════════════════════════════════════
+    // Оружие / падение предметов
+    // ════════════════════════════════════════════════════════════════
+    /** Спавн сингулярностей/чёрных дыр при падении предмета (WeaponConfig.dropSing). */
     public boolean dropSingularity = true;
 
-    /** Взрыв антиматерии при падении ячейки/пеллета ({@code WeaponConfig.dropCell}). */
-    @Category("weapons")
-    @Gui.Tooltip
+    /** Взрыв антиматерии при падении ячейки/пеллета (WeaponConfig.dropCell). */
     public boolean dropCell = true;
 
-    @Category("player")
-    @Gui.Tooltip
+    // ════════════════════════════════════════════════════════════════
+    // Игрок (радиация)
+    // ════════════════════════════════════════════════════════════════
     public float maxPlayerRad = 1000F;
-
-    @Category("player")
-    @Gui.Tooltip
     public float radDecay = 0.01F;
-
-    @Category("player")
-    @Gui.Tooltip
     public float radDamage = 0.05F;
-
-    @Category("player")
-    @Gui.Tooltip
     public float radDamageThreshold = 200F;
-
-    @Category("player")
-    @Gui.Tooltip
     public int radSickness = 200;
-
-    @Category("player")
-    @Gui.Tooltip
     public int radWater = 500;
-
-    @Category("player")
-    @Gui.Tooltip
     public int radConfusion = 700;
-
-    @Category("player")
-    @Gui.Tooltip
     public int radBlindness = 900;
 
-    // Экранные наложения
-
-    @Category("overlay")
-    @Gui.CollapsibleObject(startExpanded = false)
+    // ════════════════════════════════════════════════════════════════
+    // Экранные наложения (overlay) — клиент
+    // ════════════════════════════════════════════════════════════════
     public RadiationPixelEffectSettings radiationPixelEffect = new RadiationPixelEffectSettings();
 
     public static class RadiationPixelEffectSettings {
-        @Gui.Tooltip
         public boolean enableRadiationPixelEffect = true;
-
-        @Gui.Tooltip
         public float radiationPixelEffectThreshold = 0.3f;
-
-        @Gui.Tooltip
         public float radiationPixelMaxIntensityRad = 100.0f;
-
-        @Gui.Tooltip
-        @BoundedDiscrete(min = 1, max = 500)
         public int radiationPixelEffectMaxDots = 250;
-
-        @Gui.Tooltip
         public float radiationPixelEffectGreenChance = 0.5f;
-
-        @Gui.Tooltip
         public int radiationPixelMinLifetime = 5;
-
-        @Gui.Tooltip
         public int radiationPixelMaxLifetime = 20;
     }
 
-    @Category("overlay")
-    @Gui.CollapsibleObject(startExpanded = false)
     public obstructionHighlightSettings obstructionHighlight = new obstructionHighlightSettings();
 
     public static class obstructionHighlightSettings {
-
-        @Gui.Tooltip
         public boolean enableObstructionHighlight = true;
-
-        @Gui.Tooltip
-        @BoundedDiscrete(min = 0, max = 100)
         public int obstructionHighlightAlpha = 20;
-
-        @Gui.Tooltip
-        @BoundedDiscrete(min = 1, max = 10)
         public int obstructionHighlightDuration = 2;
     }
 
-    @Category("overlay")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 0, max = 500)
     public int infoToastOffsetX = 15;
-
-    @Category("overlay")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 0, max = 500)
     public int infoToastOffsetY = 15;
 
-    // Чанк 
-    @Category("chunk")
-    @Gui.Tooltip
+    // ════════════════════════════════════════════════════════════════
+    // Чанк-радиация
+    // ════════════════════════════════════════════════════════════════
     public float maxRad = 100_000F;
-
-    @Category("chunk")
-    @Gui.Tooltip
     public float radChunkDecay = 0.1F;
-
-    @Category("chunk")
-    @Gui.Tooltip
     public float radChunkSpreadFactor = 0.2F;
-
-    @Category("chunk")
-    @Gui.Tooltip
     public float radSpreadThreshold = 0.01F;
-
-    @Category("chunk")
-    @Gui.Tooltip
     public float minRadDecayAmount = 0.01F;
-
-    @Category("chunk")
-    @Gui.Tooltip
-    /** GIT {@code ChunkRadiationHandlerSimple} has no ambient randomization. */
+    /** GIT ChunkRadiationHandlerSimple has no ambient randomization. */
     public float radRandomizationFactor = 0.0F;
 
-    @Category("rendering")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 0, max = 20)
+    // ════════════════════════════════════════════════════════════════
+    // Рендеринг — клиент
+    // ════════════════════════════════════════════════════════════════
     public int modelUpdateDistance = 3;
-
-    @Category("rendering")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 1, max = 20)
     public int modelStaticRenderDistance = 8;
 
-    /**
-     * Server → client pose sync for ballistic missiles (independent of client chunk loading).
-     */
-    @Category("rendering")
-    @Gui.Tooltip
+    /** Server → client pose sync for ballistic missiles (independent of client chunk loading). */
     public boolean enableMissileNetworkTrack = true;
-
-    @Category("rendering")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 0, max = 500000)
     public int missileTrackMaxRangeBlocks = 0;
-
-    @Category("rendering")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 1, max = 20)
     public int missileTrackInterval = 1;
 
-    @Category("rendering")
-    @Gui.Tooltip
-    /**
-     * CPU voxel ray-march окклюзии в {@link com.hbm_m.client.render.culling.OcclusionCullingHelper}
-     * (frustum vanilla + raycast по блокам). Выключите, если модели рендерятся некорректно.
-     */
+    /** CPU voxel ray-march окклюзии в OcclusionCullingHelper (frustum vanilla + raycast по блокам). Выключите, если модели рендерятся некорректно. */
     public boolean enableOcclusionCulling = false;
 
-    /**
-     * Перед заливкой instance VBO вызывать {@code glBufferData(..., NULL)} того же размера —
-     * orphaning буфера, чтобы драйвер не синхронизировался с предыдущим кадром на каждом
-     * {@code glBufferSubData} (типичный AZDO-приём для STREAM).
-     */
-    @Category("rendering")
-    @Gui.Tooltip
+    /** Перед заливкой instance VBO вызывать glBufferData(..., NULL) того же размера — orphaning буфера. */
     public boolean instanceVboOrphanBeforeUpload = true;
 
-    /**
-     * Зарезервировано: persistent mapped instance buffer (GL 4.4+ / ARB_buffer_storage).
-     * Сейчас не используется — только переключатель для будущей реализации; безопасный default.
-     */
-    // @Category("rendering")
-    // @Gui.Tooltip
-    // public boolean experimentalPersistentInstanceBuffer = true;
-
-    @Category("rendering")
-    @Gui.Tooltip
-    /**
-     * Instanced batch для OBJ-частей. Flush только в {@code AFTER_BLOCK_ENTITIES};
-     * текстуры block_lit: {@link com.hbm_m.client.render.SingleMeshVboRenderer} «РЕГРЕССИЯ-СТОП».
-     * Нарушение контракта → белые модели при true, нормально при false.
-     */
+    /** Instanced batch для OBJ-частей. Flush только в AFTER_BLOCK_ENTITIES. Нарушение контракта → белые модели при true. */
     public boolean useInstancedStaticRendering = true;
 
-    /**
-     * Advanced assembler: при vanilla instanced использовать {@code addInstanceGpuBones}
-     * (матрица base×part на CPU, без PoseStack push/mul/pop на каждую часть).
-     * Под Iris/Oculus внешний шейдер — отдельный путь; этот флаг влияет только на vanilla.
-     */
-    @Category("rendering")
-    @Gui.Tooltip
+    /** Advanced assembler: при vanilla instanced использовать addInstanceGpuBones (матрица base×part на CPU). */
     public boolean gpuBoneSkinning = true;
 
-    /**
-     * 2×4×2 sliced light probes (16 UV) вместо 8 угловых сэмплов для instanced/VBO block_lit.
-     * Улучшает освещение на высоких моделях (башня охлаждения, фрекинг), но
-     * <b>несовместимо</b> с {@link #useMultiDrawIndirect}: атлас MDI принимает только unsliced layout (30 float).
-     */
-    @Category("rendering")
-    @Gui.Tooltip
+    /** 2×4×2 sliced light probes (16 UV). Несовместимо с useMultiDrawIndirect. */
     public boolean useSlicedLight = false;
 
-    /**
-     * Аггрегация instanced draw в один батч по общему атласу: один
-     * {@code glMultiDrawElementsIndirect} на flush (при наличии GL/ARB).
-     * Требует GL 4.0+ draw indirect и base instance в команде (GL 4.2+). На macOS (GL 4.1) и без
-     * возможностей путь отключается. Не применяется к частям с {@link #useSlicedLight} или GPU bone skinning.
-     * Отключите при проблемах с драйвером.
-     */
-    @Category("rendering")
-    @Gui.Tooltip
+    /** Аггрегация instanced draw в один батч по общему атласу: один glMultiDrawElementsIndirect на flush. */
     public boolean useMultiDrawIndirect = true;
 
     /** После каждого MDI-dispatch: одна строка INFO (число sub-draw, инстансов, атлас). */
-    @Category("rendering")
-    @Gui.Tooltip
     public boolean mdiDebugLogDispatch = false;
 
     /** Плюс по строке INFO на каждую MDI-команду (тег части, baseInstance и т.д.). */
-    @Category("rendering")
-    @Gui.Tooltip
     public boolean mdiVerboseSubdraws = false;
 
-    /**
-     * Max instances per {@link com.hbm_m.client.render.InstancedStaticPartRenderer}
-     * (one OBJ part, e.g. ChemPlant/Base). Large machine fields need 4096+.
-     */
-    @Category("rendering")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 256, max = 16384)
+    /** Max instances per InstancedStaticPartRenderer (one OBJ part). Large machine fields need 4096+. */
     public int maxInstancedInstancesPerPart = 4096;
 
-    @Category("rendering")
-    @Gui.Tooltip
     public boolean useColladaDoorAnimations = true;
-
-    @Category("rendering")
-    @Gui.Tooltip
     public boolean useColladaZUpConversion = true;
 
-
-    @Category("rendering")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 1, max = 32)
     public int vatsRenderDistanceChunks = 7;
 
+    // ════════════════════════════════════════════════════════════════
     // Машины
-
-    @Category("machines")
-    @Gui.CollapsibleObject(startExpanded = false)
+    // ════════════════════════════════════════════════════════════════
     public MachineRadarSettings machineRadar = new MachineRadarSettings();
 
     public static class MachineRadarSettings {
-        @Gui.Tooltip
         public boolean generateChunks = false;
     }
 
-    @Category("machines")
-    @Gui.CollapsibleObject(startExpanded = false)
     public FrackingTowerSettings frackingTower = new FrackingTowerSettings();
 
     public static class FrackingTowerSettings {
-        @Gui.Tooltip
         public long maxPower = 5_000_000L;
-
-        @Gui.Tooltip
         public long consumption = 5_000L;
-
-        @Gui.Tooltip
-        @BoundedDiscrete(min = 1, max = 10_000)
         public int solutionRequired = 10;
-
-        @Gui.Tooltip
-        @BoundedDiscrete(min = 1, max = 1200)
         public int delay = 20;
-
-        @Gui.Tooltip
-        @BoundedDiscrete(min = 1, max = 64_000)
         public int oilPerDeposit = 1000;
-
-        @Gui.Tooltip
-        @BoundedDiscrete(min = 1, max = 64_000)
         public int gasPerDepositMin = 100;
-
-        @Gui.Tooltip
-        @BoundedDiscrete(min = 1, max = 64_000)
         public int gasPerDepositMax = 500;
-
-        @Gui.Tooltip
         public double drainChance = 0.02D;
-
-        @Gui.Tooltip
-        @BoundedDiscrete(min = 1, max = 64_000)
         public int oilPerBedrockDeposit = 100;
-
-        @Gui.Tooltip
-        @BoundedDiscrete(min = 1, max = 64_000)
         public int gasPerBedrockDepositMin = 10;
-
-        @Gui.Tooltip
-        @BoundedDiscrete(min = 1, max = 64_000)
         public int gasPerBedrockDepositMax = 50;
-
-        @Gui.Tooltip
-        @BoundedDiscrete(min = 1, max = 256)
         public int destructionRange = 75;
     }
 
@@ -363,165 +166,66 @@ public class ModClothConfig implements ConfigData {
     // РАДИУСЫ ЯДЕРНЫХ УСТРОЙСТВ — порт BombConfig (1.7.10, категория "nukes", ключи 3.00–3.13)
     // Имена оригинальных ключей сохранены в комментариях для переноса конфигов.
     // ════════════════════════════════════════════════════════════════
-
     /** Радиус взрыва «Gadget». Ориг. ключ: 3.00_gadgetRadius = 150 */
-    @Category("nukes")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 10, max = 1500)
     public int gadgetRadius = 150;
-
     /** Радиус взрыва «Little Boy». Ориг. ключ: 3.01_boyRadius = 120 */
-    @Category("nukes")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 10, max = 1500)
     public int boyRadius = 120;
-
-    /** Радиус взрыва «Fat Man» (NukeMan / ракетаёр Фэт). Ориг. ключ: 3.02_manRadius = 175 */
-    @Category("nukes")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 10, max = 1500)
+    /** Радиус взрыва «Fat Man». Ориг. ключ: 3.02_manRadius = 175 */
     public int manRadius = 175;
-
     /** Радиус взрыва «Ivy Mike». Ориг. ключ: 3.03_mikeRadius = 250 */
-    @Category("nukes")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 10, max = 1500)
     public int mikeRadius = 250;
-
     /** Радиус взрыва «Царь-бомба». Ориг. ключ: 3.04_tsarRadius = 500 */
-    @Category("nukes")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 10, max = 1500)
     public int tsarRadius = 500;
-
     /** Радиус взрыва «Prototype». Ориг. ключ: 3.05_prototypeRadius = 150 */
-    @Category("nukes")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 10, max = 1500)
     public int prototypeRadius = 150;
-
     /** Радиус взрыва «FleiJa». Ориг. ключ: 3.06_fleijaRadius = 50 */
-    @Category("nukes")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 10, max = 1500)
     public int fleijaRadius = 50;
-
     /** Радиус взрыва ЭТЗ-заряда (Solinium). Ориг. ключ: 3.07_soliniumRadius = 150 */
-    @Category("nukes")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 10, max = 1500)
     public int soliniumRadius = 150;
-
     /** Радиус взрыва N2-мины. Ориг. ключ: 3.08_n2Radius = 200 */
-    @Category("nukes")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 10, max = 1500)
     public int n2Radius = 200;
-
     /** Радиус ядерной боеголовки баллистической ракеты. Ориг. ключ: 3.09_missileRadius = 100 */
-    @Category("nukes")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 10, max = 1500)
     public int missileRadius = 100;
-
     /** Радиус РГЧ (cluster MIRV warhead). Ориг. ключ: 3.10_mirvRadius = 100 */
-    @Category("nukes")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 10, max = 1500)
     public int mirvRadius = 100;
-
-    /** Радиус мини-ядерки (Fat Man launcher / PARAMS_HIGH). Ориг. ключ: 3.11_fatmanRadius = 35 */
-    @Category("nukes")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 10, max = 1500)
+    /** Радиус мини-ядерки (Fat Man launcher). Ориг. ключ: 3.11_fatmanRadius = 35 */
     public int fatmanRadius = 35;
-
     /** Радиус взрыва «Nuka» гранаты. Ориг. ключ: 3.12_nukaRadius = 25 */
-    @Category("nukes")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 10, max = 1500)
     public int nukaRadius = 25;
-
-    /** Радиус взрыва антишрабидиевого снаряда (Schrabidium rocket). Ориг. ключ: 3.13_aSchrabRadius = 20 */
-    @Category("nukes")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 10, max = 1500)
+    /** Радиус взрыва антишрабидиевого снаряда. Ориг. ключ: 3.13_aSchrabRadius = 20 */
     public int aSchrabRadius = 20;
 
     // ════════════════════════════════════════════════════════════════
     // ПАРАМЕТРЫ ВЗРЫВНОГО ДВИЖКА — ориг. категория "explosions", ключи 6.00–6.06
-    // (6.00 limitExplosionLifespan уже существует ниже — не дублируем)
     // ════════════════════════════════════════════════════════════════
-
     /** Минимальное время миллисекунд на тик для MK5 chunk processing. Ориг. ключ: 6.02_mk5BlastTime = 50 */
-    @Category("explosions")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 0, max = 1000)
     public int mk5TickTimeMs = 50;
-
     /** Базовая скорость MK3/Tom blast (блоков/тик). Ориг. ключ: 6.01_blastSpeed = 1024 */
-    @Category("explosions")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 1, max = 8192)
     public int blastSpeed = 1024;
-
     /** Радиус области радиоактивных осадков, в % от базового радиуса. Ориг. ключ: 6.03_falloutRange = 100 */
-    @Category("explosions")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 0, max = 500)
     public int falloutRangePercent = 100;
-
     /** Сколько тиков ждать перед следующим расчётом fallout chunk. Ориг. ключ: 6.04_falloutDelay = 4 */
-    @Category("explosions")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 0, max = 100)
     public int falloutDelay = 4;
-
     /** Включить принудительную прогрузку чанков взрывом (chunk ticket). Ориг. ключ: 6.05_enableChunkLoading = true */
-    @Category("explosions")
-    @Gui.Tooltip
     public boolean enableChunkLoading = true;
-
     /** Алгоритм взрыва: 0 = Legacy, 1 = Threaded DDA, 2 = Threaded DDA с накоплением урона. Ориг. ключ: 6.06_explosionAlgorithm = 2 */
-    @Category("explosions")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 0, max = 2)
     public int explosionAlgorithm = 2;
 
-    @Category("explosions")
-    @Gui.Tooltip
     public boolean enableCraterBiomes = true;
-
-    /** RAD/s для игрока в {@code inner_crater} биоме (1.7.10 {@code WorldConfig.craterBiomeInnerRad}). */
-    @Category("explosions")
-    @Gui.Tooltip
+    /** RAD/s для игрока в inner_crater биоме (1.7.10 WorldConfig.craterBiomeInnerRad). */
     public float craterBiomeInnerRad = 25F;
-
-    /** RAD/s для игрока в {@code crater} биоме (1.7.10 {@code WorldConfig.craterBiomeRad}). */
-    @Category("explosions")
-    @Gui.Tooltip
+    /** RAD/s для игрока в crater биоме (1.7.10 WorldConfig.craterBiomeRad). */
     public float craterBiomeRad = 5F;
-
-    /** RAD/s для игрока в {@code outer_crater} биоме (1.7.10 {@code WorldConfig.craterBiomeOuterRad}). */
-    @Category("explosions")
-    @Gui.Tooltip
+    /** RAD/s для игрока в outer_crater биоме (1.7.10 WorldConfig.craterBiomeOuterRad). */
     public float craterBiomeOuterRad = 0.5F;
-
-    /** Множитель RAD/s в crater биомах в воде/под дождём (1.7.10 {@code WorldConfig.craterBiomeWaterMult}). */
-    @Category("explosions")
-    @Gui.Tooltip
+    /** Множитель RAD/s в crater биомах в воде/под дождём (1.7.10 WorldConfig.craterBiomeWaterMult). */
     public float craterBiomeWaterMult = 5F;
-
-    /** Лимит жизни невыгруженного взрыва в секундах; 0 = без лимита (ориг. {@code BombConfig.limitExplosionLifespan}, ключ 6.00). */
-    @Category("explosions")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 0, max = 3600)
+    /** Лимит жизни невыгруженного взрыва в секундах; 0 = без лимита (ориг. BombConfig.limitExplosionLifespan, ключ 6.00). */
     public int limitExplosionLifespan = 0;
 
+    // ════════════════════════════════════════════════════════════════
     // Тепловизор
-    @Category("rendering")
-    @Gui.Tooltip
-    @Gui.EnumHandler(option = Gui.EnumHandler.EnumDisplayOption.BUTTON)
+    // ════════════════════════════════════════════════════════════════
     public ThermalRenderMode thermalRenderMode = ThermalRenderMode.FULL_SHADER;
 
     public enum ThermalRenderMode {
@@ -529,56 +233,66 @@ public class ModClothConfig implements ConfigData {
         ORIGINAL_FALLBACK
     }
 
-    // Отладка 
-    @Category("debug")
-    @Gui.Tooltip
+    // ════════════════════════════════════════════════════════════════
+    // Отладка
+    // ════════════════════════════════════════════════════════════════
     public boolean enableDebugRender = true;
-
-    @Category("debug")
-    @Gui.Tooltip
     public boolean debugRenderInSurvival = false;
-
-    @Category("debug")
-    @Gui.Tooltip
     public float debugRenderTextSize = 0.2F;
-
-    @Category("debug")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 1, max = 20)
     public int debugRenderDistance = 4;
-
-    @Category("debug")
-    @Gui.Tooltip
     public boolean enableDebugLogging = false;
 
-    @Override
-    public void validatePostLoad() throws ValidationException {
-        // Вызываем родительский метод на всякий случай
-        ConfigData.super.validatePostLoad();
+    // ════════════════════════════════════════════════════════════════
+    // Singleton + загрузка/сохранение (замена AutoConfig)
+    // ════════════════════════════════════════════════════════════════
 
-        // Проверяем и исправляем наше float значение
-        float originalScaling = this.radiationPixelEffect.radiationPixelEffectGreenChance;
+    /** Текущий экземпляр конфига (никогда не null). */
+    private static volatile ModClothConfig INSTANCE = new ModClothConfig();
 
-        this.radiationPixelEffect.radiationPixelEffectGreenChance = Mth.clamp(originalScaling, 0.0F, 1.0F);
-        // Здесь можно добавить валидацию для других полей, если потребуется
-
-        // Машины
-        this.frackingTower.drainChance = Mth.clamp(this.frackingTower.drainChance, 0.0D, 1.0D);
-    }
-
-    // Регистрация конфига (вызывать в инициализации мода) 
-    public static void register() {
-        AutoConfig.register(ModClothConfig.class, Toml4jConfigSerializer::new);
-    }
-
-    // Получение текущих настроек 
+    /** Текущие настройки (никогда не возвращает null). ~120 call-сайтов читают поля отсюда. */
     public static ModClothConfig get() {
-        return AutoConfig.getConfigHolder(ModClothConfig.class).getConfig();
+        return INSTANCE;
+    }
+
+    /**
+     * Загружает конфиг из JSON-файлов (client.json + server.json) и заменяет синглтон.
+     * Заменяет {@code AutoConfig.register(...)}. Вызывать один раз на старте
+     * (статический блок MainRegistry) — ДО загрузки классов, захватывающих значения
+     * в static final (см. {@code ChunkRadiationHandlerSimple.MAX_RAD}).
+     *
+     * <p>Если файлы отсутствуют — создаются со значениями по умолчанию. Повреждённый
+     * файл → значения по умолчанию (без падения).
+     */
+    public static void load() {
+        ModClothConfig cfg = new ModClothConfig();
+        HbmConfigStore.load(ConfigSide.CLIENT, cfg);
+        HbmConfigStore.load(ConfigSide.SERVER, cfg);
+        ConfigSchema.validate(cfg);
+        INSTANCE = cfg;
+    }
+
+    /** Перезагружает только клиентские настройки из client.json. */
+    public static void reloadClient() {
+        HbmConfigStore.load(ConfigSide.CLIENT, INSTANCE);
+    }
+
+    /** Перезагружает только серверные настройки из server.json. */
+    public static void reloadServer() {
+        HbmConfigStore.load(ConfigSide.SERVER, INSTANCE);
+    }
+
+    /** Сохраняет клиентские настройки в {@code config/hbm_m/client.json}. */
+    public static void saveClient() {
+        HbmConfigStore.save(ConfigSide.CLIENT, INSTANCE);
+    }
+
+    /** Сохраняет серверные настройки в {@code config/hbm_m/server.json}. */
+    public static void saveServer() {
+        HbmConfigStore.save(ConfigSide.SERVER, INSTANCE);
     }
 
     /** Использовать батчинг для статических частей (frame, Base). При проблемах отключите. */
     public static boolean useInstancedBatching() {
-        return get().useInstancedStaticRendering;
+        return INSTANCE.useInstancedStaticRendering;
     }
-
 }

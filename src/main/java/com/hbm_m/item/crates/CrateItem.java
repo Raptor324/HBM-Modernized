@@ -10,6 +10,7 @@ import java.util.Optional;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.client.tooltip.CrateContentsTooltipComponent;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -71,8 +72,8 @@ public class CrateItem extends BlockItem {
     }
 
     private @Nullable CrateTooltipData readTooltipData(ItemStack stack) {
-        if (!stack.hasTag()) return null;
-        CompoundTag tag = stack.getTag();
+        if (!PlatformHooks.hasItemTag(stack)) return null;
+        CompoundTag tag = PlatformHooks.getItemTag(stack);
         if (tag == null || !tag.contains("BlockEntityTag")) return null;
 
         CompoundTag beTag = tag.getCompound("BlockEntityTag");

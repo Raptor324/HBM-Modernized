@@ -1,5 +1,6 @@
 package com.hbm_m.item;
 
+import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 
@@ -24,11 +25,11 @@ public interface ISatChip {
     }
 
     default int getFreq(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = PlatformHooks.getItemTag(stack);
         return tag != null ? tag.getInt("freq") : 0;
     }
 
     default void setFreq(ItemStack stack, int freq) {
-        stack.getOrCreateTag().putInt("freq", freq);
+        PlatformHooks.editItemTag(stack, t -> t.putInt("freq", freq));
     }
 }

@@ -10,6 +10,7 @@ import java.util.Optional;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.Screen;
@@ -64,8 +65,8 @@ public class ArmorTooltipHandler {
         }
 
         boolean hasMods = false;
-        if (stack.hasTag() && stack.getTag().contains(ArmorModificationHelper.MOD_COMPOUND_KEY, 10)) {
-            CompoundTag modsCompound = stack.getTag().getCompound(ArmorModificationHelper.MOD_COMPOUND_KEY);
+        if (PlatformHooks.hasItemTag(stack) && PlatformHooks.contains(stack, ArmorModificationHelper.MOD_COMPOUND_KEY)) {
+            CompoundTag modsCompound = PlatformHooks.getCompound(stack, ArmorModificationHelper.MOD_COMPOUND_KEY);
             hasMods = !modsCompound.isEmpty();
         }
 
@@ -87,10 +88,10 @@ public class ArmorTooltipHandler {
             return Optional.empty();
         }
 
-        if (!stack.hasTag() || !stack.getTag().contains(ArmorModificationHelper.MOD_COMPOUND_KEY, 10)) {
+        if (!PlatformHooks.hasItemTag(stack) || !PlatformHooks.contains(stack, ArmorModificationHelper.MOD_COMPOUND_KEY)) {
             return Optional.empty();
         }
-        CompoundTag modsCompound = stack.getTag().getCompound(ArmorModificationHelper.MOD_COMPOUND_KEY);
+        CompoundTag modsCompound = PlatformHooks.getCompound(stack, ArmorModificationHelper.MOD_COMPOUND_KEY);
         if (modsCompound.isEmpty()) {
             return Optional.empty();
         }

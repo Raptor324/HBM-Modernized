@@ -12,6 +12,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hbm_m.block.machines.anvils.AnvilTier;
 import com.hbm_m.recipe.AnvilRecipe;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.CriterionTriggerInstance;
@@ -127,8 +128,8 @@ public class AnvilRecipeBuilder implements RecipeBuilder {
         if (stack.getCount() > 1) {
             obj.addProperty("count", stack.getCount());
         }
-        if (stack.hasTag()) {
-            obj.addProperty("nbt", stack.getTag().toString());
+        if (PlatformHooks.hasItemTag(stack)) {
+            obj.addProperty("nbt", PlatformHooks.getItemTag(stack).toString());
         }
         return obj;
     }

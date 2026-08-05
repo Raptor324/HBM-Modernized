@@ -1,6 +1,7 @@
 package com.hbm_m.item.tools_and_armor;
 
 import com.hbm_m.client.overlay.OverlayInfoToast;
+import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -135,8 +136,8 @@ public class ModShovelItem extends ShovelItem {
 
     private ModeFeedback disableAllAbilities(ItemStack stack, Player player, boolean apply) {
         if (apply) {
-            stack.getOrCreateTag().putBoolean(NBT_VEIN_MINER, false);
-            stack.getOrCreateTag().putBoolean(NBT_SILK_TOUCH, false);
+            PlatformHooks.putBoolean(stack, NBT_VEIN_MINER, false);
+            PlatformHooks.putBoolean(stack, NBT_SILK_TOUCH, false);
             clearModeSilkTouch(stack);
             playToggleSound(player, false);
         }
@@ -164,9 +165,9 @@ public class ModShovelItem extends ShovelItem {
 
     private ModeFeedback toggleVeinMiner(ItemStack stack, Player player, boolean enable, boolean apply) {
         if (apply) {
-            stack.getOrCreateTag().putBoolean(NBT_VEIN_MINER, enable);
+            PlatformHooks.putBoolean(stack, NBT_VEIN_MINER, enable);
             if (enable) {
-                stack.getOrCreateTag().putBoolean(NBT_SILK_TOUCH, false);
+                PlatformHooks.putBoolean(stack, NBT_SILK_TOUCH, false);
                 clearModeSilkTouch(stack);
             }
             playToggleSound(player, enable);
@@ -183,9 +184,9 @@ public class ModShovelItem extends ShovelItem {
 
     private ModeFeedback toggleSilkTouch(ItemStack stack, Player player, boolean enable, boolean apply) {
         if (apply) {
-            stack.getOrCreateTag().putBoolean(NBT_SILK_TOUCH, enable);
+            PlatformHooks.putBoolean(stack, NBT_SILK_TOUCH, enable);
             if (enable) {
-                stack.getOrCreateTag().putBoolean(NBT_VEIN_MINER, false);
+                PlatformHooks.putBoolean(stack, NBT_VEIN_MINER, false);
                 applyModeSilkTouch(stack);
             } else {
                 clearModeSilkTouch(stack);
@@ -203,17 +204,17 @@ public class ModShovelItem extends ShovelItem {
 
     private void applyModeSilkTouch(ItemStack stack) {
         int vanilla = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SILK_TOUCH, stack);
-        stack.getOrCreateTag().putInt(NBT_PRE_SILK, vanilla);
+        PlatformHooks.putInt(stack, NBT_PRE_SILK, vanilla);
         Map<Enchantment, Integer> enchants = new HashMap<>(EnchantmentHelper.getEnchantments(stack));
         enchants.put(Enchantments.SILK_TOUCH, Math.max(vanilla, 1));
         EnchantmentHelper.setEnchantments(enchants, stack);
     }
 
     private void clearModeSilkTouch(ItemStack stack) {
-        if (!stack.hasTag() || !stack.getTag().contains(NBT_PRE_SILK)) {
+        if (!PlatformHooks.hasItemTag(stack) || !PlatformHooks.contains(stack, NBT_PRE_SILK)) {
             return;
         }
-        int vanilla = stack.getTag().getInt(NBT_PRE_SILK);
+        int vanilla = PlatformHooks.getInt(stack, NBT_PRE_SILK);
         Map<Enchantment, Integer> enchants = new HashMap<>(EnchantmentHelper.getEnchantments(stack));
         if (vanilla > 0) {
             enchants.put(Enchantments.SILK_TOUCH, vanilla);
@@ -221,7 +222,7 @@ public class ModShovelItem extends ShovelItem {
             enchants.remove(Enchantments.SILK_TOUCH);
         }
         EnchantmentHelper.setEnchantments(enchants, stack);
-        stack.getTag().remove(NBT_PRE_SILK);
+        PlatformHooks.remove(stack, NBT_PRE_SILK);
     }
 
     private ItemStack getToolForDrops(ItemStack stack) {
@@ -243,11 +244,11 @@ public class ModShovelItem extends ShovelItem {
     }
 
     private boolean isVeinMinerEnabled(ItemStack stack) {
-        return stack.hasTag() && stack.getTag().getBoolean(NBT_VEIN_MINER);
+        return PlatformHooks.hasItemTag(stack) && PlatformHooks.getBoolean(stack, NBT_VEIN_MINER);
     }
 
     private boolean isSilkTouchEnabled(ItemStack stack) {
-        return stack.hasTag() && stack.getTag().getBoolean(NBT_SILK_TOUCH);
+        return PlatformHooks.hasItemTag(stack) && PlatformHooks.getBoolean(stack, NBT_SILK_TOUCH);
     }
 
     private void veinMine(Level level, BlockPos startPos, Block targetBlock, ItemStack stack, LivingEntity entity, int radius) {

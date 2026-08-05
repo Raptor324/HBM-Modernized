@@ -18,6 +18,7 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.entity.missile.MissileBaseEntity;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -805,7 +806,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         if (linker.isEmpty()) {
             return null;
         }
-        net.minecraft.nbt.CompoundTag tag = linker.getTag();
+        net.minecraft.nbt.CompoundTag tag = PlatformHooks.getItemTag(linker);
         if (tag == null || !tag.contains("xCoord")) {
             return null;
         }
@@ -1150,8 +1151,8 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     public void onDataPacket(net.minecraft.network.Connection net, net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket pkt) {
-        if (pkt.getTag() != null) {
-            handleUpdateTag(pkt.getTag());
+        if (PlatformHooks.getItemTag(pkt) != null) {
+            handleUpdateTag(PlatformHooks.getItemTag(pkt));
         }
     }
 

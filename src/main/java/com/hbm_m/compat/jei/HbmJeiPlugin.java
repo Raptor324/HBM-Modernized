@@ -44,6 +44,7 @@ import com.hbm_m.recipe.CentrifugeRecipes.RecipeInput;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
 import com.hbm_m.recipe.CyclotronRecipes;
 import com.hbm_m.recipe.PressRecipe;
+import com.hbm_m.platform.PlatformHooks;
 
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -203,7 +204,7 @@ public class HbmJeiPlugin implements IModPlugin {
                 if (output.isEmpty()) return "empty";
                 ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(output.getItem());
                 return (itemId != null ? itemId.toString() : "unknown") +
-                    (output.hasTag() ? output.getTag().toString() : "");
+                    (PlatformHooks.hasItemTag(output) ? PlatformHooks.getItemTag(output).toString() : "");
             }
         );
 

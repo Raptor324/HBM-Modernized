@@ -18,10 +18,6 @@ platform {
 			slug("architectury-api")
 			forgeVersionRange = "[${prop("deps.architectury")},)"
 		}
-		required("cloth_config") {
-			slug(modrinthSlug = "cloth-config", curseforgeSlug = "cloth-config")
-			forgeVersionRange = "[${prop("deps.cloth-config")},)"
-		}
 	}
 }
 
@@ -103,7 +99,6 @@ dependencies {
 
 	"modImplementation"("dev.architectury:architectury-forge:${prop("deps.architectury")}")
 	jarJar("dev.architectury:architectury-forge:${prop("deps.architectury")}")
-	"modImplementation"("me.shedaniel.cloth:cloth-config-forge:${prop("deps.cloth-config")}")
 
 	"modCompileOnly"("curse.maven:jei-238222:${prop("deps.jei")}")
 	"modRuntimeOnly"("curse.maven:jei-238222:${prop("deps.jei")}")

@@ -1,5 +1,7 @@
 package com.hbm_m.item.liquids;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.List;
 
 import net.minecraft.network.chat.Component;
@@ -83,8 +85,8 @@ public class InfiniteFluidItem extends Item {
         if (fixedFluid != null && fixedFluid != Fluids.EMPTY) {
             return fixedFluid;
         }
-        if (stack.hasTag() && stack.getTag().contains("FluidType")) {
-            return BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(stack.getTag().getString("FluidType")));
+        if (PlatformHooks.hasItemTag(stack) && PlatformHooks.contains(stack, "FluidType")) {
+            return BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(PlatformHooks.getString(stack, "FluidType")));
         }
         return Fluids.EMPTY;
     }
@@ -137,8 +139,8 @@ public class InfiniteFluidItem extends Item {
 
         private Fluid getConfiguredFluid() {
             if (fixedFluid != null && fixedFluid != Fluids.EMPTY) return fixedFluid;
-            if (container.hasTag() && container.getTag().contains("FluidType")) {
-                return BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(container.getTag().getString("FluidType")));
+            if (PlatformHooks.hasItemTag(container) && PlatformHooks.contains(container, "FluidType")) {
+                return BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(PlatformHooks.getString(container, "FluidType")));
             }
             return Fluids.EMPTY;
         }

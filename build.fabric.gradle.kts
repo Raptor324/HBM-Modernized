@@ -115,8 +115,6 @@ dependencies {
 	// Fabric compat: external energy via TeamReborn Energy API (bundled)
 	modApi("teamreborn:energy:3.0.0")
 	include("teamreborn:energy:3.0.0")
-	include("me.shedaniel.cloth:cloth-config-fabric:${prop("deps.cloth-config")}")
-	modApi("me.shedaniel.cloth:cloth-config-fabric:${prop("deps.cloth-config")}")
 	// ---- Compile-only shims for shared (Forge-origin) sources ----
 	// These MUST NOT end up in the Fabric runtime jar.
 	// compileOnly("net.minecraftforge:forge:1.20.1-47.4.20:universal")

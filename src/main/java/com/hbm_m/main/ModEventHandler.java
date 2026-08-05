@@ -3,6 +3,7 @@ package com.hbm_m.main;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.handler.HTTPHandler;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.network.ConfigSyncS2CPacket;
 import com.hbm_m.platform.PlayerPersistentData;
 import dev.architectury.event.events.common.PlayerEvent;
 import dev.architectury.platform.Platform;
@@ -12,6 +13,7 @@ import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 
 public final class ModEventHandler {
@@ -30,6 +32,10 @@ public final class ModEventHandler {
 	private static void onPlayerJoin(Player player) {
 		if (player.level().isClientSide()) {
 			return;
+		}
+		// Синхронизация серверного конфига клиенту при входе (независимо от MOTD).
+		if (player instanceof ServerPlayer sp) {
+			ConfigSyncS2CPacket.sendTo(sp);
 		}
 		if (!ModClothConfig.get().enableMOTD) {
 			return;

@@ -12,6 +12,7 @@ import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.inventory.menu.MachineCrucibleMenu;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+import dev.architectury.registry.menu.MenuRegistry;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -45,7 +46,6 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.network.NetworkHooks;
 
 /**
  * Crucible machine block — GIT MachineCrucible multiblock (3×3 ring) with bowl collision on controller.
@@ -218,7 +218,7 @@ public class MachineCrucibleBlock extends BaseEntityBlock implements IMultiblock
             ContainerData data = (be instanceof MachineCrucibleBlockEntity cbe)
                 ? cbe.getData()
                 : new SimpleContainerData(4);
-            NetworkHooks.openScreen(serverPlayer,
+            MenuRegistry.openExtendedMenu(serverPlayer,
                     new SimpleMenuProvider(
                             (containerId, playerInventory, p) -> new MachineCrucibleMenu(
                                     containerId,
@@ -228,7 +228,7 @@ public class MachineCrucibleBlock extends BaseEntityBlock implements IMultiblock
                             ),
                             Component.translatable("container.hbm_m.crucible")
                     ),
-                    pos);
+                    buf -> buf.writeBlockPos(pos));
         }
         return InteractionResult.CONSUME;
     }

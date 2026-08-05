@@ -52,7 +52,10 @@ public final class MainRegistry {
     public static final RegistrySupplier<CreativeModeTab> nukeTab = ModCreativeTabs.NTM_BOMBS_TAB;
 
     static {
-        ModClothConfig.register();
+        // Загрузка JSON-конфига (client.json + server.json) ДО любой инициализации,
+        // чтобы классы, захватывающие значения в static final (ChunkRadiationHandlerSimple.MAX_RAD),
+        // видели загруженные значения. Замена AutoConfig.register(...).
+        ModClothConfig.load();
     }
 
     public static void init() {

@@ -13,8 +13,8 @@ import com.hbm_m.powerarmor.PowerArmorHandlers;
 import com.mojang.blaze3d.platform.InputConstants;
 
 import dev.architectury.event.events.client.ClientTickEvent;
+import com.hbm_m.client.gui.ConfigScreen;
 import dev.architectury.registry.client.keymappings.KeyMappingRegistry;
-import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 
@@ -100,8 +100,7 @@ public class ModConfigKeybindHandler {
         *///?}
         ) {
             if (mc.screen == null) {
-                Screen configScreen = AutoConfig.getConfigScreen(ModClothConfig.class, mc.screen).get();
-                mc.setScreen(configScreen);
+                mc.setScreen(new ConfigScreen());
             }
         }
 

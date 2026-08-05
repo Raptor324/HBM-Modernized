@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -285,8 +286,8 @@ public class MachineRadarScreenBlockEntity extends BlockEntity {
     @Override
     public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
         super.onDataPacket(net, pkt);
-        if (pkt.getTag() != null) {
-            handleUpdateTag(pkt.getTag());
+        if (PlatformHooks.getItemTag(pkt) != null) {
+            handleUpdateTag(PlatformHooks.getItemTag(pkt));
         }
     }
 

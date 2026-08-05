@@ -8,6 +8,7 @@ import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineBatteryBlockEntity;
 import com.hbm_m.util.EnergyFormatter;
+import com.hbm_m.platform.PlatformHooks;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.ChatFormatting;
@@ -134,7 +135,7 @@ public class MachineBatteryBlock extends BaseEntityBlock {
             if (be instanceof MachineBatteryBlockEntity batteryBE) {
 
                 // Проверяем, есть ли у предмета NBT
-                CompoundTag itemNbt = pStack.getTag();
+                CompoundTag itemNbt = PlatformHooks.getItemTag(pStack);
 
                 // Ищем наш специальный тег "BlockEntityTag", который создал лут-тейбл
                 if (itemNbt != null && itemNbt.contains("BlockEntityTag")) {
@@ -158,7 +159,7 @@ public class MachineBatteryBlock extends BaseEntityBlock {
 
         // 1. Получаем сохраненную энергию из NBT
         long energy = 0;
-        CompoundTag nbt = pStack.getTag();
+        CompoundTag nbt = PlatformHooks.getItemTag(pStack);
 
         // Мы читаем тот же "BlockEntityTag", который записали в loot table
         if (nbt != null && nbt.contains("BlockEntityTag")) {

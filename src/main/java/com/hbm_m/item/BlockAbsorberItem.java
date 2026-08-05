@@ -2,6 +2,7 @@ package com.hbm_m.item;
 
 import com.hbm_m.block.generic.BlockAbsorber;
 import com.hbm_m.block.generic.BlockAbsorber.EnumAbsorberTier;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -24,7 +25,7 @@ public class BlockAbsorberItem extends BlockItem {
         ItemStack stack = new ItemStack(block);
         CompoundTag blockStateTag = new CompoundTag();
         blockStateTag.putString("tier", tier.getSerializedName());
-        stack.getOrCreateTag().put("BlockStateTag", blockStateTag);
+        PlatformHooks.put(stack, "BlockStateTag", blockStateTag);
         return stack;
     }
 

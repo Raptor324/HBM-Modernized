@@ -2,6 +2,7 @@ package com.hbm_m.item.rbmk;
 
 import com.hbm_m.blockentity.machines.rbmk.IRBMKFluxReceiver.NType;
 import com.hbm_m.handler.rbmk.RBMKDials;
+import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -239,12 +240,12 @@ public class RBMKRodItem extends Item {
 
     //? if < 1.21.1 {
     private static CompoundTag getOrCreateTag(ItemStack stack) {
-        if (!stack.hasTag()) {
+        if (!PlatformHooks.hasItemTag(stack)) {
             CompoundTag tag = new CompoundTag();
             if (stack.getItem() instanceof RBMKRodItem rod) tag.putDouble("yield", rod.yield);
             tag.putDouble("core", 20.0);
             tag.putDouble("hull", 20.0);
-            stack.setTag(tag);
+            PlatformHooks.setItemTag(stack, tag);
         }
         return stack.getOrCreateTag();
     }

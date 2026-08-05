@@ -21,6 +21,7 @@ import com.hbm_m.multiblock.MultiblockFrameHelper;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.sound.ModSounds;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -58,6 +59,7 @@ import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import team.reborn.energy.api.EnergyStorage;
 import com.hbm_m.client.machine.AdvancedAssemblerClientTicker;
+import com.hbm_m.platform.PlatformHooks;
 *///?}
 /**
  * Advanced Assembler Block Entity:
@@ -665,7 +667,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     // Пакеты синхронизации
     public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
-        load(pkt.getTag());
+        load(PlatformHooks.getItemTag(pkt));
     }
 
     @Override

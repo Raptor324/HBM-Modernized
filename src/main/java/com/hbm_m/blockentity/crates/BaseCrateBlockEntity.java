@@ -77,7 +77,7 @@ public abstract class BaseCrateBlockEntity extends BlockEntity implements MenuPr
     public void load(CompoundTag tag) {
         super.load(tag);
         if (tag.contains("LootTable", 8)) {
-            this.lootTable = new ResourceLocation(tag.getString("LootTable"));
+            this.lootTable = ResourceLocation.parse(tag.getString("LootTable"));
             this.lootTableSeed = tag.getLong("LootTableSeed");
         }
         if (tag.contains("inventory")) {

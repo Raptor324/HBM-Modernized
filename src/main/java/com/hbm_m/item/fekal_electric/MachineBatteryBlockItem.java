@@ -1,5 +1,7 @@
 package com.hbm_m.item.fekal_electric;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -32,7 +34,7 @@ public class MachineBatteryBlockItem extends BlockItem {
         pTooltip.add(Component.translatable("tooltip.hbm_m.machine_battery.discharge_speed", maxPower / 600).withStyle(ChatFormatting.GOLD));
 
         // Читаем энергию из NBT
-        if (pStack.hasTag()) {
+        if (PlatformHooks.hasItemTag(pStack)) {
             CompoundTag blockEntityTag = pStack.getTagElement("BlockEntityTag");
             // Важно: в MachineBatteryBlockEntity мы сохраняем как "Energy" (с большой буквы), проверь это!
             // В старом коде было "Energy", здесь "energy". Лучше проверять оба варианта или привести к одному.

@@ -16,7 +16,7 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.network.NetworkHooks;
+import dev.architectury.registry.menu.MenuRegistry;
 
 /** MVP-Port der Missile-Assembly-Station - siehe {@link MissileAssemblyBlockEntity}. */
 public class MachineMissileAssemblyBlock extends BaseEntityBlock {
@@ -51,7 +51,7 @@ public class MachineMissileAssemblyBlock extends BaseEntityBlock {
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider menuProvider && player instanceof ServerPlayer serverPlayer) {
-                NetworkHooks.openScreen(serverPlayer, menuProvider, pos);
+                MenuRegistry.openExtendedMenu(serverPlayer, menuProvider, buf -> buf.writeBlockPos(pos));
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide());

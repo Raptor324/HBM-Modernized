@@ -63,6 +63,8 @@ dependencies {
 	implementation(libs.moulberry.mixinconstraints)
 	jarJar(libs.moulberry.mixinconstraints)
 	implementation("dev.architectury:architectury-neoforge:${prop("deps.architectury")}")
+	"compileOnly"("com.simibubi.create:create-1.21.1:${prop("deps.create")}:slim")
+	"compileOnly"("dev.engine-room.flywheel:flywheel-forge-api-1.20.1:${prop("deps.flywheel")}")
 }
 
 tasks.named("createMinecraftArtifacts") {
@@ -77,7 +79,10 @@ sourceSets {
 	}
 }
 
-tasks.withType<JavaCompile>().configureEach { options.encoding = "UTF-8" }
+tasks.withType<JavaCompile>().configureEach {
+	options.compilerArgs.addAll(listOf("-Xmaxerrs", "10000"))
+	options.encoding = "UTF-8"
+}
 
 stonecutter {
 	val isModern = current.parsed >= "1.21.11"

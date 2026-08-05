@@ -125,8 +125,49 @@ public class ModLanguageProvider extends LanguageProvider {
             return replaced.trim();
         }
     }
+
+    /** Тултипы меню конфигурации (ConfigScreen) — единый блок для обеих локалей.
+     *  Базовые config.hbm_m.* ключи (title/tab.client/.../restart.*) уже добавляются
+     *  ниже в switch по локали — здесь только недостающие .tooltip-строки. */
+    private void addConfigTranslations() {
+        if ("ru_ru".equals(this.locale)) {
+            add("config.hbm_m.tab.client.tooltip", "Клиентские настройки — хранятся локально в client.json");
+            add("config.hbm_m.tab.server.tooltip", "Серверные настройки. Доступны в одиночной игре или с правами оператора.");
+            add("config.hbm_m.category.general.tooltip", "Общие тумблеры мода (радиация, MOTD).");
+            add("config.hbm_m.category.world_effects.tooltip", "Эффекты мира (радиоактивный туман, следы порчи).");
+            add("config.hbm_m.category.weapons.tooltip", "Поведение оружия и падение предметов.");
+            add("config.hbm_m.category.player.tooltip", "Пороги радиации игрока.");
+            add("config.hbm_m.category.chunk.tooltip", "Движок радиации чанков.");
+            add("config.hbm_m.category.machines.tooltip", "Настройка механизмов и мультиблоков.");
+            add("config.hbm_m.category.nukes.tooltip", "Радиусы взрывов ядерных устройств.");
+            add("config.hbm_m.category.explosions.tooltip", "Движок взрывов и радиоактивные осадки.");
+            add("config.hbm_m.category.missile_track.tooltip", "Сетевое отслеживание ракет.");
+            add("config.hbm_m.category.debug.tooltip", "Отладочный рендер и логирование.");
+            add("config.hbm_m.category.rendering.tooltip", "Клиентские опции рендеринга.");
+            add("config.hbm_m.category.overlay.tooltip", "Экранные оверлеи (пиксельный эффект, подсветка).");
+        } else {
+            add("config.hbm_m.tab.client.tooltip", "Client-side settings, stored locally in client.json");
+            add("config.hbm_m.tab.server.tooltip", "Server-side settings. Editable in singleplayer or as operator.");
+            add("config.hbm_m.category.general.tooltip", "Common mod toggles (radiation, MOTD).");
+            add("config.hbm_m.category.world_effects.tooltip", "World-side effects (rad fog, taint trails).");
+            add("config.hbm_m.category.weapons.tooltip", "Weapon behaviour and item drops.");
+            add("config.hbm_m.category.player.tooltip", "Player radiation thresholds.");
+            add("config.hbm_m.category.chunk.tooltip", "Chunk radiation engine.");
+            add("config.hbm_m.category.machines.tooltip", "Machine and multiblock tuning.");
+            add("config.hbm_m.category.nukes.tooltip", "Explosive radii of nuclear devices.");
+            add("config.hbm_m.category.explosions.tooltip", "Explosion engine and fallout.");
+            add("config.hbm_m.category.missile_track.tooltip", "Network missile tracking.");
+            add("config.hbm_m.category.debug.tooltip", "Debug rendering and logging.");
+            add("config.hbm_m.category.rendering.tooltip", "Client rendering options.");
+            add("config.hbm_m.category.overlay.tooltip", "Screen overlays (pixel effect, highlight).");
+        }
+    }
+
     @Override
     protected void addTranslations() {
+        // Меню конфигурации (ConfigScreen) — общий блок для обеих локалей.
+        addConfigTranslations();
+
         // Neu portierte, freistehende Pulver ohne Ingot-Gegenstueck (DEV-Tab, zur Durchsicht)
         if ("ru_ru".equals(this.locale)) {
             add(ModItems.POWDER_SAWDUST.get(), "Опилки");
@@ -2193,6 +2234,19 @@ public class ModLanguageProvider extends LanguageProvider {
 
 
                 add("text.autoconfig.hbm_m.title", "Настройки радиации (HBM Modernized)");
+
+                // ── Config GUI (config.hbm_m.*) — собственное меню на vanilla-виджетах ──
+                add("config.hbm_m.title", "Настройки HBM Modernized");
+                add("config.hbm_m.tab.client", "Клиент");
+                add("config.hbm_m.tab.server", "Сервер");
+                add("config.hbm_m.save", "Сохранить");
+                add("config.hbm_m.apply", "Применить");
+                add("config.hbm_m.restart.title", "Требуется перезапуск");
+                add("config.hbm_m.restart.message", "Некоторые изменения вступят в силу только после перезапуска игры или перезагрузки ресурсов (F3+T). Применить?");
+                add("config.hbm_m.reset", "Сбросить");
+                add("config.hbm_m.reset.all", "Сбросить всё");
+                add("config.hbm_m.reset.title", "Сбросить настройки?");
+                add("config.hbm_m.reset.message", "Сбросить все значения текущей стороны к значениям по умолчанию? Изменения применятся после сохранения.");
 
                 add("text.autoconfig.hbm_m.category.general", "Общие настройки");
                 add("text.autoconfig.hbm_m.option.enableRadiation", "Включить радиацию");
@@ -4491,6 +4545,19 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.title", "Radiation Settings (HBM Modernized)");
 
                 // CONFIG
+
+                // ── Config GUI (config.hbm_m.*) — custom vanilla-widget menu ──
+                add("config.hbm_m.title", "HBM Modernized Settings");
+                add("config.hbm_m.tab.client", "Client");
+                add("config.hbm_m.tab.server", "Server");
+                add("config.hbm_m.save", "Save");
+                add("config.hbm_m.apply", "Apply");
+                add("config.hbm_m.restart.title", "Restart Required");
+                add("config.hbm_m.restart.message", "Some changes require a game restart or resource reload (F3+T) to take effect. Apply anyway?");
+                add("config.hbm_m.reset", "Reset");
+                add("config.hbm_m.reset.all", "Reset All");
+                add("config.hbm_m.reset.title", "Reset settings?");
+                add("config.hbm_m.reset.message", "Reset all values of the current side to their defaults? Changes apply after saving.");
 
                 add("text.autoconfig.hbm_m.category.general", "General Settings");
                 add("text.autoconfig.hbm_m.option.enableRadiation", "Enable radiation");

@@ -5,6 +5,7 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
 
@@ -25,15 +26,14 @@ public class ItemBlueprintFolder extends Item {
     // Записать пул в NBT
     public static void writeBlueprintPool(ItemStack folderStack, String poolName) {
         if (folderStack.getItem() instanceof ItemBlueprintFolder) {
-            CompoundTag nbt = folderStack.getOrCreateTag();
-            nbt.putString("blueprintPool", poolName);
+            PlatformHooks.editItemTag(folderStack, nbt -> nbt.putString("blueprintPool", poolName));
         }
     }
 
     // Получить пул из NBT
     public static String getBlueprintPool(ItemStack folderStack) {
-        if (folderStack.hasTag() && folderStack.getTag().contains("blueprintPool")) {
-            return folderStack.getTag().getString("blueprintPool");
+        if (PlatformHooks.hasItemTag(folderStack) && PlatformHooks.getItemTag(folderStack).contains("blueprintPool")) {
+            return PlatformHooks.getItemTag(folderStack).getString("blueprintPool");
         }
         return "";
     }

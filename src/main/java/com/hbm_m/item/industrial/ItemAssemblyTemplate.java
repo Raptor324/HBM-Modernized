@@ -5,6 +5,7 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.util.TemplateTooltipUtil;
 
 import net.minecraft.nbt.CompoundTag;
@@ -25,16 +26,15 @@ public class ItemAssemblyTemplate extends Item {
     // Логика NBT для хранения рецепта
     public static void writeRecipeOutput(ItemStack templateStack, ItemStack outputStack) {
         if (templateStack.getItem() instanceof ItemAssemblyTemplate) {
-            CompoundTag nbt = templateStack.getOrCreateTag();
             CompoundTag outputNbt = new CompoundTag();
             outputStack.save(outputNbt);
-            nbt.put("recipeOutput", outputNbt);
+            PlatformHooks.editItemTag(templateStack, nbt -> nbt.put("recipeOutput", outputNbt));
         }
     }
 
     public static ItemStack getRecipeOutput(ItemStack templateStack) {
-        if (templateStack.hasTag() && templateStack.getTag().contains("recipeOutput")) {
-            CompoundTag outputNbt = templateStack.getTag().getCompound("recipeOutput");
+        if (PlatformHooks.hasItemTag(templateStack) && PlatformHooks.getItemTag(templateStack).contains("recipeOutput")) {
+            CompoundTag outputNbt = PlatformHooks.getItemTag(templateStack).getCompound("recipeOutput");
             return ItemStack.of(outputNbt);
         }
         return ItemStack.EMPTY;

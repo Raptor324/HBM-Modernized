@@ -469,6 +469,7 @@ public class ClientSetup {
         );
     }
 
+    @SuppressWarnings("removal")
     private static void registerRenderLayers() {
         net.minecraft.client.renderer.ItemBlockRenderTypes.setRenderLayer(
                 ModBlocks.TRANSITION_SEAL.get(), RenderType.cutout());

@@ -21,6 +21,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 //? if forge {
 import com.hbm_m.api.energy.EnergyCapabilityProvider;
+import com.hbm_m.platform.PlatformHooks;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 //?}
 
@@ -78,11 +79,11 @@ public class ModArmorFSBPowered extends ModArmorFSB {
 
     public void setCharge(ItemStack stack, long amount) {
         if (stack.getItem() instanceof ModArmorFSBPowered) {
-            if (stack.hasTag()) {
-                stack.getTag().putLong("charge", amount);
+            if (PlatformHooks.hasItemTag(stack)) {
+                PlatformHooks.putLong(stack, "charge", amount);
             } else {
-                stack.setTag(new CompoundTag());
-                stack.getTag().putLong("charge", amount);
+                PlatformHooks.setItemTag(stack, new CompoundTag());
+                PlatformHooks.putLong(stack, "charge", amount);
             }
         }
     }
@@ -101,12 +102,12 @@ public class ModArmorFSBPowered extends ModArmorFSB {
 
     public long getCharge(ItemStack stack) {
         if (stack.getItem() instanceof ModArmorFSBPowered) {
-            if (stack.hasTag()) {
-                return Math.min(stack.getTag().getLong("charge"), getMaxCharge(stack));
+            if (PlatformHooks.hasItemTag(stack)) {
+                return Math.min(PlatformHooks.getLong(stack, "charge"), getMaxCharge(stack));
             } else {
-                stack.setTag(new CompoundTag());
-                stack.getTag().putLong("charge", getMaxCharge(stack));
-                return stack.getTag().getLong("charge");
+                PlatformHooks.setItemTag(stack, new CompoundTag());
+                PlatformHooks.putLong(stack, "charge", getMaxCharge(stack));
+                return PlatformHooks.getLong(stack, "charge");
             }
         }
         return 0;

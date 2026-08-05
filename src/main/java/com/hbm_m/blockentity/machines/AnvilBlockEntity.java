@@ -16,6 +16,7 @@ import com.hbm_m.item.fekal_electric.ModBatteryItem;
 import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.recipe.AnvilRecipe;
 import com.hbm_m.recipe.AnvilRecipeManager;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -736,7 +737,7 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
         if (actual.isEmpty()) {
             return false;
         }
-        if (required.hasTag()) {
+        if (PlatformHooks.hasItemTag(required)) {
             return ItemStack.isSameItemSameTags(actual, required);
         }
         return actual.is(required.getItem());

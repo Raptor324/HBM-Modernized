@@ -7,6 +7,7 @@ import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.ItemDesignatorPacket;
 import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -54,8 +55,8 @@ public class DesignatorScreen extends Screen {
         shownX = 0;
         shownZ = 0;
         ItemStack stack = player.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND);
-        if (!stack.isEmpty() && stack.is(ModItems.DESIGNATOR_MANUAL.get()) && stack.hasTag()) {
-            var tag = stack.getTag();
+        if (!stack.isEmpty() && stack.is(ModItems.DESIGNATOR_MANUAL.get()) && PlatformHooks.hasItemTag(stack)) {
+            var tag = PlatformHooks.getItemTag(stack);
             if (tag != null && tag.contains("xCoord")) {
                 shownX = tag.getInt("xCoord");
                 shownZ = tag.getInt("zCoord");

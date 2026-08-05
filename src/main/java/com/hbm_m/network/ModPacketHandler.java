@@ -45,6 +45,7 @@ public class ModPacketHandler {
     public static final ResourceLocation AUX_PARTICLE          = id("aux_particle");
     public static final ResourceLocation VANILLA_EXPLOSION     = id("vanilla_explosion");
     public static final ResourceLocation DOOR_CONTRAPTION_STATE = id("door_contrap_state");
+    public static final ResourceLocation CONFIG_SYNC           = id("config_sync");
 
     // C2S
     public static final ResourceLocation GIVE_TEMPLATE         = id("give_template");
@@ -75,6 +76,7 @@ public class ModPacketHandler {
     public static final ResourceLocation MISSILE_TRACK_STOP   = id("missile_track_stop");
     public static final ResourceLocation TURRET_CONTROL        = id("turret_control");
     public static final ResourceLocation MINING_DRILL_TOGGLE   = id("mining_drill_toggle");
+    public static final ResourceLocation CONFIG_EDIT           = id("config_edit");
 
 
     // ══════════════════════════ Регистрация ═══════════════════════════════════
@@ -139,6 +141,10 @@ public class ModPacketHandler {
         registerS2C(MISSILE_TRACK_STOP,
                 com.hbm_m.network.missile.S2CMissileTrackStopPacket::decode,
                 com.hbm_m.network.missile.S2CMissileTrackStopPacket::handle);
+
+        registerS2C(CONFIG_SYNC,
+                ConfigSyncS2CPacket::decode,
+                ConfigSyncS2CPacket::handle);
 
     }
 
@@ -239,6 +245,10 @@ public class ModPacketHandler {
         registerC2S(MINING_DRILL_TOGGLE,
                 MiningDrillToggleC2SPacket::decode,
                 MiningDrillToggleC2SPacket::handle);
+
+        registerC2S(CONFIG_EDIT,
+                ConfigEditC2SPacket::decode,
+                ConfigEditC2SPacket::handle);
     }
 
     // ══════════════════════ Вспомогательные методы ════════════════════════════

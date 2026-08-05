@@ -4,6 +4,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.blockentity.crates.BaseCrateBlockEntity;
 import com.hbm_m.sound.ModSounds;
+import com.hbm_m.platform.PlatformHooks;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
@@ -51,10 +52,10 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state,
                             @Nullable LivingEntity placer, ItemStack stack) {
-        if (stack.hasTag()) {
+        if (PlatformHooks.hasItemTag(stack)) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof BaseCrateBlockEntity crateEntity) {
-                CompoundTag tag = stack.getTag();
+                CompoundTag tag = PlatformHooks.getItemTag(stack);
                 if (tag != null && tag.contains("BlockEntityTag")) {
                     crateEntity.load(tag.getCompound("BlockEntityTag"));
                 }

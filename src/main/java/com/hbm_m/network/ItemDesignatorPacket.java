@@ -3,6 +3,7 @@ package com.hbm_m.network;
 import com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity;
 import com.hbm_m.inventory.menu.LaunchPadLargeMenu;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.platform.PlatformHooks;
 
 import dev.architectury.networking.NetworkManager.PacketContext;
 
@@ -67,25 +68,26 @@ public class ItemDesignatorPacket implements C2SPacket {
     }
 
     private static void applyOperator(ItemStack stack, ItemDesignatorPacket msg, ServerPlayer player) {
-        CompoundTag tag = stack.getOrCreateTag();
-        int x = tag.getInt("xCoord");
-        int z = tag.getInt("zCoord");
+        PlatformHooks.editItemTag(stack, tag -> {
+            int x = tag.getInt("xCoord");
+            int z = tag.getInt("zCoord");
 
-        if (msg.operator == 2) {
-            if (msg.reference == 0) {
-                tag.putInt("xCoord", (int) Math.round(player.getX()));
-            } else {
-                tag.putInt("zCoord", (int) Math.round(player.getZ()));
+            if (msg.operator == 2) {
+                if (msg.reference == 0) {
+                    tag.putInt("xCoord", (int) Math.round(player.getX()));
+                } else {
+                    tag.putInt("zCoord", (int) Math.round(player.getZ()));
+                }
+                return;
             }
-            return;
-        }
 
-        int result = (msg.operator == 0) ? msg.value : -msg.value;
-        if (msg.reference == 0) {
-            tag.putInt("xCoord", x + result);
-        } else {
-            tag.putInt("zCoord", z + result);
-        }
+            int result = (msg.operator == 0) ? msg.value : -msg.value;
+            if (msg.reference == 0) {
+                tag.putInt("xCoord", x + result);
+            } else {
+                tag.putInt("zCoord", z + result);
+            }
+        });
     }
 
     // ── Send helper ───────────────────────────────────────────────────────────

@@ -4,7 +4,6 @@ import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.effect.BlackHoleEntity;
 import com.hbm_m.item.ModItems;
-import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -36,7 +35,7 @@ public class ItemDrop extends Item {
             return false;
         }
 
-        ModClothConfig config = AutoConfig.getConfigHolder(ModClothConfig.class).getConfig();
+        ModClothConfig config = ModClothConfig.get();
 
         if (stack.is(ModItems.BLACK_HOLE.get()) && config.dropSingularity) {
             BlackHoleEntity hole = new BlackHoleEntity(ModEntities.BLACK_HOLE.get(), level);

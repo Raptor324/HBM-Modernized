@@ -21,6 +21,7 @@ import com.hbm_m.item.liquids.FluidBarrelItem;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
+import com.hbm_m.platform.PlatformHooks;
 
 import dev.architectury.registry.registries.RegistrySupplier;
 import dev.architectury.utils.Env;
@@ -32,6 +33,7 @@ import dev.architectury.utils.EnvExecutor;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 //?}
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
@@ -109,9 +111,9 @@ public final class CreativeModeTabEventHandler {
             populateMissilesTab((stack, vis) -> event.accept(stack, vis));
         }
 
-        if (event.getTab() == ModCreativeTabs.NTM_DEV_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateDevItemsTab((stack, vis) -> event.accept(stack, vis));
-        }
+        // if (event.getTab() == ModCreativeTabs.NTM_DEV_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
+        //     populateDevItemsTab((stack, vis) -> event.accept(stack, vis));
+        // }
 
     }
     //?}
@@ -222,7 +224,8 @@ public final class CreativeModeTabEventHandler {
                 return;
             }
             String itemId = String.valueOf(BuiltInRegistries.ITEM.getKey(stack.getItem()));
-            String tag = stack.getTag() == null ? "" : stack.getTag().toString();
+            CompoundTag itemTag = PlatformHooks.getItemTag(stack);
+            String tag = itemTag == null ? "" : itemTag.toString();
             if (!seen.add(itemId + "|" + tag)) {
                 return;
             }
@@ -2995,7 +2998,8 @@ public final class CreativeModeTabEventHandler {
         Consumer<ItemStack> add = stack -> {
             if (stack == null || stack.isEmpty()) return;
             String itemId = String.valueOf(BuiltInRegistries.ITEM.getKey(stack.getItem()));
-            String tag = stack.getTag() == null ? "" : stack.getTag().toString();
+            CompoundTag itemTag = PlatformHooks.getItemTag(stack);
+            String tag = itemTag == null ? "" : itemTag.toString();
             // Если такой предмет с таким же NBT уже добавлялся, пропускаем его, чтобы не сломать Поиск
             if (!seen.add(itemId + "|" + tag)) return;
             acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
@@ -3178,7 +3182,8 @@ public final class CreativeModeTabEventHandler {
         Consumer<ItemStack> add = stack -> {
             if (stack == null || stack.isEmpty()) return;
             String itemId = String.valueOf(BuiltInRegistries.ITEM.getKey(stack.getItem()));
-            String tag = stack.getTag() == null ? "" : stack.getTag().toString();
+            CompoundTag itemTag = PlatformHooks.getItemTag(stack);
+            String tag = itemTag == null ? "" : itemTag.toString();
             if (!seen.add(itemId + "|" + tag)) return;
             acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         };
@@ -3269,7 +3274,7 @@ public final class CreativeModeTabEventHandler {
         if (item instanceof com.hbm_m.powerarmor.ModArmorFSBPowered powerArmor) {
             // Получаем максимальную емкость и устанавливаем полный заряд
             long maxCapacity = powerArmor.getMaxCharge(stack);
-            stack.getOrCreateTag().putLong("charge", maxCapacity);
+            PlatformHooks.putLong(stack, "charge", maxCapacity);
         }
 
         return stack;

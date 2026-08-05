@@ -39,7 +39,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
+import dev.architectury.registry.menu.MenuRegistry;
 
 public class MachineRadarBlock extends BaseEntityBlock implements IMultiblockController {
 
@@ -146,7 +146,7 @@ public class MachineRadarBlock extends BaseEntityBlock implements IMultiblockCon
         if (!level.isClientSide) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider menuProvider && player instanceof ServerPlayer serverPlayer) {
-                NetworkHooks.openScreen(serverPlayer, menuProvider, pos);
+                MenuRegistry.openExtendedMenu(serverPlayer, menuProvider, buf -> buf.writeBlockPos(pos));
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide);

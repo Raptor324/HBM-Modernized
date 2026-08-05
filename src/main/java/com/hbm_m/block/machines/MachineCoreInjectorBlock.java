@@ -32,7 +32,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.network.NetworkHooks;
+import dev.architectury.registry.menu.MenuRegistry;
 
 public class MachineCoreInjectorBlock extends BaseEntityBlock implements IMultiblockController {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
@@ -85,7 +85,7 @@ public class MachineCoreInjectorBlock extends BaseEntityBlock implements IMultib
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider p) {
-            NetworkHooks.openScreen((ServerPlayer) player, p, pos);
+            MenuRegistry.openExtendedMenu((ServerPlayer) player, p, buf -> buf.writeBlockPos(pos));
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }

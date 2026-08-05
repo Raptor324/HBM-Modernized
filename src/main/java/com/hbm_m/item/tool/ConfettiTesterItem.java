@@ -5,6 +5,7 @@ import java.util.function.Consumer;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.util.confetti.ConfettiUtil;
 
 import net.minecraft.ChatFormatting;
@@ -47,14 +48,14 @@ public class ConfettiTesterItem extends Item {
     }
 
     private static int getEffectIndex(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = PlatformHooks.getItemTag(stack);
         if (tag == null || !tag.contains(NBT_EFFECT)) return 0;
         int index = tag.getInt(NBT_EFFECT);
         return Math.floorMod(index, EFFECTS.length);
     }
 
     private static void setEffectIndex(ItemStack stack, int index) {
-        stack.getOrCreateTag().putInt(NBT_EFFECT, Math.floorMod(index, EFFECTS.length));
+        PlatformHooks.editItemTag(stack, t -> t.putInt(NBT_EFFECT, Math.floorMod(index, EFFECTS.length)));
     }
 
     @Override

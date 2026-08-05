@@ -19,6 +19,7 @@ import com.hbm_m.api.network.NodeDirPos;
 import com.hbm_m.api.network.UniNodespace;
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -669,7 +670,7 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
     //? if forge {
     @Override
     public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
-        CompoundTag tag = pkt.getTag();
+        CompoundTag tag = PlatformHooks.getItemTag(pkt);
         if (tag != null) {
             handleUpdateTag(tag);
             

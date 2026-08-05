@@ -13,6 +13,7 @@ import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.armormod.item.ItemModBattery;
 import com.hbm_m.armormod.item.ItemModRadProtection;
 import com.hbm_m.hazard.HazardSystem;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -141,7 +142,7 @@ public class ArmorModificationHelper {
             return;
         }
 
-        CompoundTag armorTag = armor.getTag();
+        CompoundTag armorTag = PlatformHooks.getItemTag(armor);
         if (armorTag == null || !armorTag.contains(MOD_COMPOUND_KEY)) {
             return;
         }
@@ -168,7 +169,7 @@ public class ArmorModificationHelper {
             return false;
         }
 
-        CompoundTag armorTag = armor.getTag();
+        CompoundTag armorTag = PlatformHooks.getItemTag(armor);
         return armorTag != null && armorTag.contains(MOD_COMPOUND_KEY, Tag.TAG_COMPOUND);
     }
 
@@ -217,7 +218,7 @@ public class ArmorModificationHelper {
             return slots;
         }
 
-        CompoundTag armorTag = armor.getTag();
+        CompoundTag armorTag = PlatformHooks.getItemTag(armor);
         if (armorTag == null) {
             return slots;
         }
@@ -245,7 +246,7 @@ public class ArmorModificationHelper {
             return ItemStack.EMPTY;
         }
 
-        CompoundTag armorTag = armor.getTag();
+        CompoundTag armorTag = PlatformHooks.getItemTag(armor);
         if (armorTag == null) {
             return ItemStack.EMPTY;
         }
@@ -266,7 +267,7 @@ public class ArmorModificationHelper {
             tableInventory.setItem(i, ItemStack.EMPTY);
         }
 
-        CompoundTag armorTagForMods = armorStack.getTag();
+        CompoundTag armorTagForMods = PlatformHooks.getItemTag(armorStack);
         if (armorTagForMods == null || !armorTagForMods.contains(MOD_COMPOUND_KEY)) {
             return;
         }
@@ -385,7 +386,7 @@ public class ArmorModificationHelper {
      * @return Список ItemStack'ов модов или пустой список, если модов нет.
      */
     public static List<ItemStack> getModsFromArmor(ItemStack armorStack) {
-        CompoundTag armorTagForList = armorStack.getTag();
+        CompoundTag armorTagForList = PlatformHooks.getItemTag(armorStack);
         if (armorTagForList == null || !armorTagForList.contains(MOD_COMPOUND_KEY, 10)) {
             return Collections.emptyList();
         }

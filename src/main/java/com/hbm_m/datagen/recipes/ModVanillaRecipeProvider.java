@@ -17,6 +17,7 @@ import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
 import com.hbm_m.item.tags_and_tiers.ModTags;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.PlatformHooks;
 import net.minecraftforge.common.Tags;
 
 import dev.architectury.registry.registries.RegistrySupplier;
@@ -1670,8 +1671,8 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         if (stack.getCount() > 1) {
             json.addProperty("count", stack.getCount());
         }
-        if (stack.hasTag()) {
-            json.addProperty("nbt", stack.getTag().toString());
+        if (PlatformHooks.hasItemTag(stack)) {
+            json.addProperty("nbt", PlatformHooks.getItemTag(stack).toString());
         }
         return json;
     }

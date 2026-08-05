@@ -11,6 +11,7 @@ import com.hbm_m.blockentity.machines.FluidDuctBlockEntity;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.sound.ModSounds;
+import com.hbm_m.platform.PlatformHooks;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.ChatFormatting;
@@ -123,8 +124,8 @@ public class FluidDuctItem extends Item {
     }
 
     public static FluidStack getFluidType(ItemStack stack) {
-        if (stack.hasTag() && stack.getTag().contains(NBT_FLUID_TYPE)) {
-            String fluidName = stack.getTag().getString(NBT_FLUID_TYPE);
+        if (PlatformHooks.hasItemTag(stack) && PlatformHooks.contains(stack, NBT_FLUID_TYPE)) {
+            String fluidName = PlatformHooks.getString(stack, NBT_FLUID_TYPE);
             Fluid fluid = BuiltInRegistries.FLUID.get(ResourceLocation.parse(fluidName));
             if (fluid != null && fluid != net.minecraft.world.level.material.Fluids.EMPTY) {
                 return FluidStack.create(fluid, 1);
@@ -136,7 +137,7 @@ public class FluidDuctItem extends Item {
     public static void setFluidType(ItemStack stack, Fluid fluid) {
         ResourceLocation loc = BuiltInRegistries.FLUID.getKey(fluid);
         if (loc != null) {
-            stack.getOrCreateTag().putString(NBT_FLUID_TYPE, loc.toString());
+            PlatformHooks.putString(stack, NBT_FLUID_TYPE, loc.toString());
         }
     }
 

@@ -58,6 +58,7 @@ public class HbmFluidJeiRenderer implements IIngredientRenderer<net.minecraftfor
     }
 
     @Override
+    @SuppressWarnings("removal")
     public List<Component> getTooltip(net.minecraftforge.fluids.FluidStack ingredient, TooltipFlag flag) {
         if (ingredient == null || ingredient.isEmpty()) return List.of();
         Fluid fluid = ingredient.getFluid();

@@ -1,6 +1,7 @@
 package com.hbm_m.worldgen;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.main.MainRegistry;
 import com.mojang.serialization.Codec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -56,7 +57,7 @@ public class StructureLootProcessor extends StructureProcessor {
     private static final ResourceLocation TUNGSTEN_TABLE = rl("crates/tungsten_crate");
 
     private static ResourceLocation rl(String path) {
-        return new ResourceLocation("hbm_m", path);
+        return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, path);
     }
 
     @Override

@@ -14,6 +14,7 @@ import com.hbm_m.interfaces.IItemControlReceiver;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
 import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.inventory.fluid.ModFluids;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -225,7 +226,7 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
     }
 
     public static String getTypeName(ItemStack stack, boolean primary) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = PlatformHooks.getItemTag(stack);
         if (tag == null) return "none";
         String key = primary ? NBT_FLUID1 : NBT_FLUID2;
         return tag.getString(key);
@@ -236,8 +237,7 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
     }
 
     public static void setType(ItemStack stack, String fluidName, boolean primary) {
-        stack.getOrCreateTag().putString(primary ? NBT_FLUID1 : NBT_FLUID2,
-            fluidName != null ? fluidName : "none");
+        PlatformHooks.putString(stack, primary ? NBT_FLUID1 : NBT_FLUID2, fluidName != null ? fluidName : "none");
     }
 
     /** Returns tint color for primary fluid (for ItemColor). */
