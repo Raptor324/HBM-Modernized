@@ -1,8 +1,12 @@
-//? if forge {
+//? if forge || neoforge {
 package com.hbm_m.compat.create;
-
+//? if forge {
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+//?} elif neoforge {
+/*import net.neoforged.fml.ModList;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;*/
+//?}
 
 /**
  * Точка входа совместимости с Create. Forge-only: Create существует только под

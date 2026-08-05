@@ -74,7 +74,9 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.RenderGuiEvent;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;*/
 //?}
 
 /**
@@ -592,7 +594,7 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
     }
 
     @Override
-//? if forge {
+//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
 //?}
 //? if fabric {

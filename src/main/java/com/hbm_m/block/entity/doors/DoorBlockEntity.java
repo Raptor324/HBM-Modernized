@@ -34,13 +34,17 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 // Forge-only model-data / distmarker imports intentionally removed for Fabric compilation.
+
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
-//? if forge {
+import net.fabricmc.api.Environment;
+*///?} elif forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
     //? if fabric {
@@ -64,10 +68,9 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
     /**
      * Кэшированные ModelData для производительности
      */
-//? if forge {
+//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
+//?} elif fabric {
 /*@Environment(EnvType.CLIENT)*///?}
     private Object cachedModelData;
 
@@ -78,10 +81,9 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
     private PartRole partRole = PartRole.DEFAULT;
 
     private java.util.Set<Direction> allowedClimbSides = java.util.EnumSet.noneOf(Direction.class);
-//? if forge {
+//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
+//?} elif fabric {
 /*@Environment(EnvType.CLIENT)*///?}
     private Object loopingSound;
 

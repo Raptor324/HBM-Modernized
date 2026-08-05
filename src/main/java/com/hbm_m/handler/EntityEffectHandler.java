@@ -75,6 +75,9 @@ public final class EntityEffectHandler {
         if (!ModClothConfig.get().enableRadiation) {
             return;
         }
+        if (!ModClothConfig.get().enableCraterBiomes) {
+            return;
+        }
         if (ContaminationUtil.isRadImmune(entity)) {
             return;
         }

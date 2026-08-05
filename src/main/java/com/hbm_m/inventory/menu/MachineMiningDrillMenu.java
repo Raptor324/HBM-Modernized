@@ -13,9 +13,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
 
 public class MachineMiningDrillMenu extends AbstractContainerMenu {
 
@@ -37,8 +34,6 @@ public class MachineMiningDrillMenu extends AbstractContainerMenu {
 
         var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
 
-        // Layout deckungsgleich mit den Slot-Grafiken in gui_mining_drill.png (siehe
-        // GUIMachineMiningDrill fuer die per Pixel vermessenen Koordinaten dieses Atlas).
         this.addSlot(new Slot(container, MachineMiningDrillBlockEntity.SLOT_DRILLBIT, 172, 75));
 
         for (int row = 0; row < 3; row++) {
@@ -46,7 +41,7 @@ public class MachineMiningDrillMenu extends AbstractContainerMenu {
                 this.addSlot(new Slot(container, OUTPUT_START + row * 3 + col, 136 + col * 18, 5 + row * 18) {
                     @Override
                     public boolean mayPlace(ItemStack stack) {
-                        return false; // Nur Entnahme - wird von der Maschine befuellt.
+                        return false; 
                     }
                 });
             }
@@ -55,13 +50,7 @@ public class MachineMiningDrillMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(container, MachineMiningDrillBlockEntity.SLOT_BATTERY, 220, 72) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
-                //? if forge {
-                return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-                //?}
-                //? if fabric {
-                /*return false;
-                *///?}
+                return ItemEnergyAccess.isEnergySource(stack);
             }
         });
 
@@ -115,11 +104,7 @@ public class MachineMiningDrillMenu extends AbstractContainerMenu {
                     return ItemStack.EMPTY;
                 }
             } else {
-                boolean isEnergySource = ItemEnergyAccess.getHbmProvider(slotStack).isPresent()
-                        //? if forge {
-                        || slotStack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-                        //?}
-                if (isEnergySource) {
+                if (ItemEnergyAccess.isEnergySource(slotStack)) {
                     if (!this.moveItemStackTo(slotStack, MachineMiningDrillBlockEntity.SLOT_BATTERY, MachineMiningDrillBlockEntity.SLOT_BATTERY + 1, false)) {
                         return ItemStack.EMPTY;
                     }

@@ -1,4 +1,4 @@
-//? if forge {
+//? if forge || neoforge {
 package com.hbm_m.client.compat.create;
 
 import com.hbm_m.block.entity.doors.DoorDecl;
@@ -19,8 +19,13 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 
 import org.apache.commons.lang3.tuple.Pair;
 
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;*/
+//?}
 
 /**
  * Клиентский приёмник {@code DoorContraptionStatePacket}.

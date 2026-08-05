@@ -41,6 +41,7 @@ public final class ConfigField {
     private final FieldType type;
     private final Double min;           // Нижняя граница (для числовых полей; null = без клэмпа)
     private final Double max;           // Верхняя граница
+    private String comment = null;      // Комментарий в JSON (для ручного редактирования пользователем; null = без комментария)
 
     private ConfigField(Builder b) {
         this.key = Objects.requireNonNull(b.key);
@@ -214,6 +215,15 @@ public final class ConfigField {
         }
     }
 
+    /** Возвращает реальный тип объекта для GSON (чтобы не было кавычек) */
+    public Object getForSerialization(ModClothConfig cfg) {
+        Object val = get(cfg);
+        if (type == FieldType.ENUM) {
+            return val != null ? val.toString() : null;
+        }
+        return val; // Отдаст настоящий Boolean или Number (Integer, Float и т.д.)
+    }
+
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Object parseEnum(String raw) {
         Class<?> enumClass = resolveFieldClass();
@@ -281,6 +291,17 @@ public final class ConfigField {
             return null;
         }
     }
+
+    // Метод для чейнинга при регистрации
+    public ConfigField withComment(String comment) {
+        this.comment = comment;
+        return this;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
 
     // ================================================================
     // Accessors для GUI/сериализации

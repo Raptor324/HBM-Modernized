@@ -82,6 +82,12 @@ public class EnergyNetwork {
             providerCap = be.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).resolve();
             receiverCap = be.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).resolve();
             //?}
+            //? if neoforge {
+            /*IEnergyProvider p = level.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, node.getPos(), level.getBlockState(node.getPos()), be, null);
+            providerCap = Optional.ofNullable(p);
+            IEnergyReceiver r = level.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER, node.getPos(), level.getBlockState(node.getPos()), be, null);
+            receiverCap = Optional.ofNullable(r);
+            *///?}
             //? if fabric {
             /*providerCap = be instanceof IEnergyProvider p ? Optional.of(p) : Optional.empty();
             receiverCap = be instanceof IEnergyReceiver r ? Optional.of(r) : Optional.empty();

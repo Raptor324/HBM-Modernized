@@ -36,6 +36,14 @@ public class ChunkRadiationDebugRenderer {
 
         if (!ModClothConfig.get().enableDebugRender || !mc.options.renderDebug) return;
 
+        // Если радиация отключена в конфиге, не рендерим ничего.
+        // ClientRadiationData может содержать устаревшие значения с прошлого сеанса,
+        // поэтому проверяем конфиг, а не только данные.
+        if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads) {
+            ClientRadiationData.clearAll(); // Очищаем устаревший кэш
+            return;
+        }
+
         boolean isCreativeOrSpectator = player.isCreative() || player.isSpectator();
         if (!ModClothConfig.get().debugRenderInSurvival && !isCreativeOrSpectator) return;
         // Используем значения из ClothConfig:

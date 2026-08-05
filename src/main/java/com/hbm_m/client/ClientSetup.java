@@ -33,6 +33,7 @@ import dev.architectury.registry.registries.RegistrySupplier;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.client.loader.CargoElevatorModelLoader;
 import com.hbm_m.client.loader.DoorModelLoader;
 import com.hbm_m.client.loader.DaeModelLoader;
 import com.hbm_m.client.loader.HeatingOvenModelLoader;
@@ -605,6 +606,7 @@ public class ClientSetup {
         ModEntities.RUBBLE.ifPresent(entityType -> EntityRenderers.register(entityType, RubbleEntityRenderer::new));
 
         BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.CARGO_ELEVATOR_BE.get(), com.hbm_m.client.render.implementations.CargoElevatorRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.MACHINE_ASSEMBLER_BE.get(), MachineAssemblerRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.TRANSITION_SEAL_BE.get(), TransitionSealRenderer::new);
@@ -1507,6 +1509,7 @@ public class ClientSetup {
         event.register("fluid_tank_loader", new MachineFluidTankModelLoader());
         event.register("battery_socket_loader", new MachineBatterySocketModelLoader());
         event.register("door", new DoorModelLoader());
+        event.register("cargo_elevator", new CargoElevatorModelLoader());
         event.register("dae", new DaeModelLoader());
         event.register("template_loader", new TemplateModelLoader());
         event.register("press_loader", new PressModelLoader());

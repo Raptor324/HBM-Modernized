@@ -57,14 +57,22 @@ repositories {
 	strictMaven("https://api.modrinth.com/maven", "maven.modrinth") { name = "Modrinth" }
 	strictMaven("https://maven.architectury.dev/", "dev.architectury") { name = "Architectury" }
 	maven("https://maven.parchmentmc.org") { name = "ParchmentMC" }
+	maven("https://maven.createmod.net") { name = "CreateMod" }
+	strictMaven("https://cursemaven.com", "curse.maven") { name = "CurseForge" }
 }
 
 dependencies {
 	implementation(libs.moulberry.mixinconstraints)
 	jarJar(libs.moulberry.mixinconstraints)
 	implementation("dev.architectury:architectury-neoforge:${prop("deps.architectury")}")
-	"compileOnly"("com.simibubi.create:create-1.21.1:${prop("deps.create")}:slim")
-	"compileOnly"("dev.engine-room.flywheel:flywheel-forge-api-1.20.1:${prop("deps.flywheel")}")
+	val mcVer = stonecutter.current.version
+	"compileOnly"("com.simibubi.create:create-$mcVer:${prop("deps.create")}:slim") {
+		isTransitive = false
+	}
+	// В NeoForge артефакт называется flywheel-neoforge-api 
+	"compileOnly"("dev.engine-room.flywheel:flywheel-neoforge-api-$mcVer:${prop("deps.flywheel")}")
+	"compileOnly"("curse.maven:jei-238222:${prop("deps.jei")}")
+	"runtimeOnly"("curse.maven:jei-238222:${prop("deps.jei")}")
 }
 
 tasks.named("createMinecraftArtifacts") {

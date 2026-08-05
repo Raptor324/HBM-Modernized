@@ -65,7 +65,6 @@ public final class HbmConfigStore {
     public static void load(ConfigSide side, ModClothConfig cfg) {
         Path file = ConfigPaths.file(side);
         if (!Files.exists(file)) {
-            // Первый запуск: создаём файл с дефолтами, чтобы пользователь видел все ключи.
             save(side, cfg);
             return;
         }
@@ -74,8 +73,9 @@ public final class HbmConfigStore {
             if (obj != null) {
                 Map<String, String> map = new LinkedHashMap<>();
                 for (Map.Entry<String, JsonElement> e : obj.entrySet()) {
+                    if (e.getKey().startsWith("_desc_") || e.getKey().equals("_comment")) continue;
+
                     JsonElement v = e.getValue();
-                    // Только примитивы (строка/число/булев) — объекты/массивы пропускаем.
                     if (v != null && v.isJsonPrimitive()) {
                         map.put(e.getKey(), v.getAsString());
                     }
@@ -83,7 +83,6 @@ public final class HbmConfigStore {
                 ConfigSchema.applyAll(cfg, side, map);
             }
         } catch (Exception e) {
-            // Не падаем из-за конфига: оставляем дефолты, файл не трогаем.
             LOGGER.error("[hbm_m] Не удалось прочитать конфиг {}: {}", file, e.toString());
         }
     }
@@ -96,10 +95,13 @@ public final class HbmConfigStore {
         Path file = ConfigPaths.file(side);
         try {
             Files.createDirectories(file.getParent());
-            Map<String, String> map = ConfigSchema.snapshot(cfg, side);
-            Map<String, String> withComment = new LinkedHashMap<>();
+            
+            Map<String, Object> map = ConfigSchema.snapshotForJson(cfg, side);
+            
+            Map<String, Object> withComment = new LinkedHashMap<>();
             withComment.put("_comment", side == ConfigSide.CLIENT ? COMMENT_CLIENT : COMMENT_SERVER);
             withComment.putAll(map);
+            
             try (Writer w = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
                 GSON.toJson(withComment, w);
             }

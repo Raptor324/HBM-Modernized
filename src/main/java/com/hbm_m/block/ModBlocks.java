@@ -37,6 +37,7 @@ import com.hbm_m.block.explosives.WasteChargeBlock;
 import com.hbm_m.block.machines.ArmorTableBlock;
 import com.hbm_m.block.machines.BlastFurnaceBlock;
 import com.hbm_m.block.machines.BlastFurnaceExtensionBlock;
+import com.hbm_m.block.machines.CargoElevatorBlock;
 import com.hbm_m.block.machines.FluidDuctBlock;
 import com.hbm_m.block.machines.BlockDecon;
 import com.hbm_m.block.machines.GeigerCounterBlock;
@@ -626,6 +627,9 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> HEATING_OVEN = registerBlock("heating_oven",
             () -> new HeatingOvenBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+
+    public static final RegistrySupplier<Block> CARGO_ELEVATOR = registerBlock("cargo_elevator",
+            () -> new CargoElevatorBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     //---------------------------<ДВЕРИ>-------------------------------------
 

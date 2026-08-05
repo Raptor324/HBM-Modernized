@@ -13,9 +13,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
 
 public class MachineOreSlopperMenu extends AbstractContainerMenu {
 
@@ -57,13 +54,7 @@ public class MachineOreSlopperMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(container, MachineOreSlopperBlockEntity.SLOT_BATTERY, 152, 37) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
-                //? if forge {
-                return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-                //?}
-                //? if fabric {
-                /*return false;
-                *///?}
+                return ItemEnergyAccess.isEnergySource(stack);
             }
         });
 
@@ -116,10 +107,7 @@ public class MachineOreSlopperMenu extends AbstractContainerMenu {
                     return ItemStack.EMPTY;
                 }
             } else {
-                boolean isEnergySource = ItemEnergyAccess.getHbmProvider(slotStack).isPresent()
-                        //? if forge {
-                        || slotStack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-                        //?}
+                boolean isEnergySource = ItemEnergyAccess.isEnergySource(slotStack);
                 if (isEnergySource) {
                     if (!this.moveItemStackTo(slotStack, MachineOreSlopperBlockEntity.SLOT_BATTERY, MachineOreSlopperBlockEntity.SLOT_BATTERY + 1, false)) {
                         return ItemStack.EMPTY;

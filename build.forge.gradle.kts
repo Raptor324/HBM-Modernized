@@ -12,7 +12,8 @@ platform {
 			forgeVersionRange = "[${prop("deps.minecraft")}]"
 		}
 		required("forge") {
-			forgeVersionRange = "[1,)"
+			// Минимальная версия Forge: 47.3.31. Более старые версии Forge не смогут загрузить мод.
+			forgeVersionRange = "[47.3.31,)"
 		}
 		optional("architectury") {
 			slug("architectury-api")
@@ -105,7 +106,9 @@ dependencies {
 	// Create compat — compile-only (мод опциональный, работает и без Create).
 	// slim-артефакт без транзитивных зависимостей; flywheel-api нужен только для
 	// сигнатур Create MovementBehaviour (VisualizationContext и т.п.).
-	"modCompileOnly"("com.simibubi.create:create-1.20.1:${prop("deps.create")}:slim")
+	"modCompileOnly"("com.simibubi.create:create-1.20.1:${prop("deps.create")}:slim") {
+		isTransitive = false
+	}
 	"modCompileOnly"("dev.engine-room.flywheel:flywheel-forge-api-1.20.1:${prop("deps.flywheel")}")
 	"modRuntimeOnly"("curse.maven:embeddium-908741:5681725")
 	"modRuntimeOnly"("curse.maven:oculus-581495:6020952")

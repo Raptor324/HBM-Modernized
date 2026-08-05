@@ -49,6 +49,9 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.DistExecutor;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;*/
 //?}
 
 //? if fabric {
@@ -850,7 +853,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     }
     *///?}
 
-    //? if forge {
+    //? if forge || neoforge {
     @Nullable
     private ResourceLocation clientRecipeIconCacheId;
 

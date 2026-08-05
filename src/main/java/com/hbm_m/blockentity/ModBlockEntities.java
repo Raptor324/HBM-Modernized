@@ -23,6 +23,7 @@ import com.hbm_m.blockentity.machines.GeigerCounterBlockEntity;
 import com.hbm_m.blockentity.machines.HeatingOvenBlockEntity;
 import com.hbm_m.blockentity.machines.LaunchPadBlockEntity;
 import com.hbm_m.blockentity.machines.LaunchPadRustedBlockEntity;
+import com.hbm_m.blockentity.machines.CargoElevatorBlockEntity;
 import com.hbm_m.blockentity.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.blockentity.machines.MachineArcWelderBlockEntity;
 import com.hbm_m.blockentity.machines.MachineAssemblerBlockEntity;
@@ -262,6 +263,11 @@ public class ModBlockEntities {
     public static final RegistrySupplier<BlockEntityType<MachineAssemblerBlockEntity>> MACHINE_ASSEMBLER_BE =
 		BLOCK_ENTITIES.register("machine_assembler_be", () ->
 			BlockEntityType.Builder.<MachineAssemblerBlockEntity>of(MachineAssemblerBlockEntity::new, ModBlocks.MACHINE_ASSEMBLER.get())
+				.build(null));
+
+    public static final RegistrySupplier<BlockEntityType<CargoElevatorBlockEntity>> CARGO_ELEVATOR_BE =
+		BLOCK_ENTITIES.register("cargo_elevator_be", () ->
+			BlockEntityType.Builder.<CargoElevatorBlockEntity>of(CargoElevatorBlockEntity::new, ModBlocks.CARGO_ELEVATOR.get())
 				.build(null));
 
     public static final RegistrySupplier<BlockEntityType<MachineAdvancedAssemblerBlockEntity>> ADVANCED_ASSEMBLY_MACHINE_BE =

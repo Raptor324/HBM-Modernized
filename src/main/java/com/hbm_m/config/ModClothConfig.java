@@ -35,6 +35,17 @@ public class ModClothConfig {
     /** Следы блока taint под сущностями с эффектом порчи (ориг. ServerConfig.TAINT_TRAILS, по умолчанию выкл.). */
     public boolean taintTrails = false;
 
+    /** Включает смену биома при ядерном взрыве (ориг. WorldConfig.enableCraterBiomes). */
+    public boolean enableCraterBiomes = true;
+    /** RAD/s для игрока в inner_crater биоме (1.7.10 WorldConfig.craterBiomeInnerRad). */
+    public float craterBiomeInnerRad = 25F;
+    /** RAD/s для игрока в crater биоме (1.7.10 WorldConfig.craterBiomeRad). */
+    public float craterBiomeRad = 5F;
+    /** RAD/s для игрока в outer_crater биоме (1.7.10 WorldConfig.craterBiomeOuterRad). */
+    public float craterBiomeOuterRad = 0.5F;
+    /** Множитель RAD/s в crater биомах в воде/под дождём (1.7.10 WorldConfig.craterBiomeWaterMult). */
+    public float craterBiomeWaterMult = 5F;
+
     // ════════════════════════════════════════════════════════════════
     // Оружие / падение предметов
     // ════════════════════════════════════════════════════════════════
@@ -210,16 +221,6 @@ public class ModClothConfig {
     public boolean enableChunkLoading = true;
     /** Алгоритм взрыва: 0 = Legacy, 1 = Threaded DDA, 2 = Threaded DDA с накоплением урона. Ориг. ключ: 6.06_explosionAlgorithm = 2 */
     public int explosionAlgorithm = 2;
-
-    public boolean enableCraterBiomes = true;
-    /** RAD/s для игрока в inner_crater биоме (1.7.10 WorldConfig.craterBiomeInnerRad). */
-    public float craterBiomeInnerRad = 25F;
-    /** RAD/s для игрока в crater биоме (1.7.10 WorldConfig.craterBiomeRad). */
-    public float craterBiomeRad = 5F;
-    /** RAD/s для игрока в outer_crater биоме (1.7.10 WorldConfig.craterBiomeOuterRad). */
-    public float craterBiomeOuterRad = 0.5F;
-    /** Множитель RAD/s в crater биомах в воде/под дождём (1.7.10 WorldConfig.craterBiomeWaterMult). */
-    public float craterBiomeWaterMult = 5F;
     /** Лимит жизни невыгруженного взрыва в секундах; 0 = без лимита (ориг. BombConfig.limitExplosionLifespan, ключ 6.00). */
     public int limitExplosionLifespan = 0;
 

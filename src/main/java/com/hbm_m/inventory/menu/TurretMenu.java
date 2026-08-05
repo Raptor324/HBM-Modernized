@@ -14,9 +14,6 @@ import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
 
 /** Generisches Menu fuer alle Turret-Varianten - siehe {@link TurretBaseBlockEntity}. */
 @SuppressWarnings("UnstableApiUsage")
@@ -55,13 +52,7 @@ public class TurretMenu extends AbstractContainerMenu implements ILongEnergyMenu
         this.addSlot(new Slot(container, BATTERY_SLOT, 152, 99) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
-                //? if forge {
-                return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-                //?}
-                //? if fabric {
-                /*return false;
-                *///?}
+                return ItemEnergyAccess.isEnergySource(stack);
             }
         });
 
@@ -144,10 +135,7 @@ public class TurretMenu extends AbstractContainerMenu implements ILongEnergyMenu
                         return ItemStack.EMPTY;
                     }
                 } else {
-                    boolean isEnergySource = ItemEnergyAccess.getHbmProvider(slotStack).isPresent()
-                            //? if forge {
-                            || slotStack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-                            //?}
+                    boolean isEnergySource = ItemEnergyAccess.isEnergySource(slotStack);
                     if (isEnergySource && !this.moveItemStackTo(slotStack, BATTERY_SLOT, BATTERY_SLOT + 1, false)) {
                         return ItemStack.EMPTY;
                     } else if (!isEnergySource) {

@@ -44,7 +44,7 @@ public final class ConfigSchema {
 
     private static void register() {
         // ── SERVER: общие ───────────────────────────────────────────
-        reg(ConfigField.bool("enableRadiation", ConfigSide.SERVER, ApplyMode.LIVE, "general"));
+        reg(ConfigField.bool("enableRadiation", ConfigSide.SERVER, ApplyMode.LIVE, "general").withComment("Enables / disables global radiation system"));
         reg(ConfigField.bool("enableChunkRads", ConfigSide.SERVER, ApplyMode.LIVE, "general"));
         reg(ConfigField.bool("enableMOTD", ConfigSide.SERVER, ApplyMode.LIVE, "general"));
 
@@ -52,6 +52,13 @@ public final class ConfigSchema {
         reg(ConfigField.bool("enableRadFogEffect", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects"));
         reg(ConfigField.bool("worldRadEffects", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects"));
         reg(ConfigField.bool("taintTrails", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects"));
+
+        // ── SERVER: кратерные биомы (ориг. WorldConfig, категория CATEGORY_BIOMES) ──
+        reg(ConfigField.bool("enableCraterBiomes", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects").withComment("Enables the biome change caused by nuclear explosions"));
+        reg(ConfigField.floatNum("craterBiomeInnerRad", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects", 0F, 10_000F));
+        reg(ConfigField.floatNum("craterBiomeRad", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects", 0F, 10_000F));
+        reg(ConfigField.floatNum("craterBiomeOuterRad", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects", 0F, 10_000F));
+        reg(ConfigField.floatNum("craterBiomeWaterMult", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects", 0F, 100F));
 
         // ── SERVER: оружие / падение предметов ──────────────────────
         reg(ConfigField.bool("dropSingularity", ConfigSide.SERVER, ApplyMode.LIVE, "weapons"));
@@ -114,11 +121,6 @@ public final class ConfigSchema {
         reg(ConfigField.integer("falloutDelay", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", 0, 100));
         reg(ConfigField.bool("enableChunkLoading", ConfigSide.SERVER, ApplyMode.LIVE, "explosions"));
         reg(ConfigField.integer("explosionAlgorithm", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", 0, 2));
-        reg(ConfigField.bool("enableCraterBiomes", ConfigSide.SERVER, ApplyMode.LIVE, "explosions"));
-        reg(ConfigField.floatNum("craterBiomeInnerRad", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", 0F, 10_000F));
-        reg(ConfigField.floatNum("craterBiomeRad", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", 0F, 10_000F));
-        reg(ConfigField.floatNum("craterBiomeOuterRad", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", 0F, 10_000F));
-        reg(ConfigField.floatNum("craterBiomeWaterMult", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", 0F, 100F));
         reg(ConfigField.integer("limitExplosionLifespan", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", 0, 3600));
 
         // ── SERVER: сетевая трассировка ракет ───────────────────────
@@ -223,11 +225,42 @@ public final class ConfigSchema {
     // Снапшоты (для файла/сети)
     // ================================================================
 
-    /** Снапшот всех значений стороны как key→String (для сериализации/пакетов). */
+    /** 
+     * Снапшот всех значений стороны как key→String. 
+     * Используется сетевыми пакетами и GUI. Не содержит описаний.
+     */
     public static Map<String, String> snapshot(ModClothConfig cfg, ConfigSide side) {
         Map<String, String> out = new LinkedHashMap<>();
         for (ConfigField f : FIELDS.values()) {
             if (f.getSide() == side) out.put(f.getKey(), f.getAsString(cfg));
+        }
+        return out;
+    }
+
+    /** 
+     * Снапшот как key→Object (для сериализации GSON в файл). 
+     * Избавляет от кавычек для чисел/true/false и добавляет _desc_ ключи.
+     */
+    public static Map<String, Object> snapshotForJson(ModClothConfig cfg, ConfigSide side) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        for (ConfigField f : FIELDS.values()) {
+            if (f.getSide() == side) {
+                // Формируем строчку с описанием, дефолтным значением и границами
+                StringBuilder desc = new StringBuilder();
+                if (f.getComment() != null) desc.append(f.getComment()).append(" ");
+                
+                if (f.getMin() != null && f.getMax() != null) {
+                    desc.append("[Range: ").append(f.getMin()).append(" ~ ").append(f.getMax()).append("] ");
+                }
+                desc.append("[Default: ").append(defaultAsString(f)).append("]");
+                if (f.requiresRestart()) desc.append(" [REQUIRES RESTART]");
+
+                // Записываем фейковый ключ-комментарий
+                out.put("_desc_" + f.getKey(), desc.toString().trim());
+                
+                // Записываем само значение (без кавычек)
+                out.put(f.getKey(), f.getForSerialization(cfg));
+            }
         }
         return out;
     }
