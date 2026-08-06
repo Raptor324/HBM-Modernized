@@ -475,9 +475,9 @@ public class CentrifugeRecipes {
         addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_NORAD_ACTINIDE.get(), new ItemStack(ModItems.URANIUM_RAW.get(), 4), new ItemStack(ModItems.THORIUM_RAW.get(), 4), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_ACTINIDE.get()));
         addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_FIRST_ACTINIDE.get(), new ItemStack(ModItems.URANIUM_RAW.get(), 8), new ItemStack(ModItems.THORIUM_RAW.get(), 4), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_ACTINIDE.get()));
         addItemRecipe(ModItems.BEDROCK_ORE_PRIMARY_SECOND_ACTINIDE.get(), new ItemStack(ModItems.URANIUM_RAW.get(), 4), new ItemStack(ModItems.THORIUM_RAW.get(), 8), new ItemStack(ModItems.BEDROCK_ORE_CRUMBS_ACTINIDE.get()));
-        // Original: acid=RADIUM,RADIUM,POLONIUM; solvent=RADIUM,RADIUM,POLONIUM; rad=TECHNETIUM,TECHNETIUM,U238
-        addItemRecipe(ModItems.BEDROCK_ORE_SULFURIC_WASHED_ACTINIDE.get(), new ItemStack(ModItems.RADIUM_RAW.get(), 2), new ItemStack(ModItems.BILLET_POLONIUM.get()));
-        addItemRecipe(ModItems.BEDROCK_ORE_SOLVENT_WASHED_ACTINIDE.get(), new ItemStack(ModItems.RADIUM_RAW.get(), 2), new ItemStack(ModItems.BILLET_POLONIUM.get()));
+        // Original: acid=RADIUM(2),RADIUM(2),POLONIUM(2); solvent=RADIUM(2),RADIUM(2),POLONIUM(2); rad=TECHNETIUM(1),TECHNETIUM(1),U238(1)
+        addItemRecipe(ModItems.BEDROCK_ORE_SULFURIC_WASHED_ACTINIDE.get(), new ItemStack(ModItems.RADIUM_RAW.get(), 4), new ItemStack(ModItems.BILLET_POLONIUM.get(), 2));
+        addItemRecipe(ModItems.BEDROCK_ORE_SOLVENT_WASHED_ACTINIDE.get(), new ItemStack(ModItems.RADIUM_RAW.get(), 4), new ItemStack(ModItems.BILLET_POLONIUM.get(), 2));
         addItemRecipe(ModItems.BEDROCK_ORE_RAD_WASHED_ACTINIDE.get(), new ItemStack(ModItems.BILLET_TECHNETIUM.get(), 2), new ItemStack(ModItems.BILLET_U238.get()));
 
         // ---- Bedrock Ore chain: NONMETAL ----

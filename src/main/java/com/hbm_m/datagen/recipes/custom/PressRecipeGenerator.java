@@ -22,9 +22,34 @@ public final class PressRecipeGenerator {
     }
 
     public static void generate(Consumer<FinishedRecipe> writer) {
+        generateFlat(writer);
         generatePlates(writer);
         generateWires(writer);
         generateCircuits(writer);
+    }
+
+    private static void generateFlat(Consumer<FinishedRecipe> writer) {
+        // Ported from 1.7.10 PressRecipes.java (StampType.FLAT).
+        // Only recipes whose input AND output items both exist in this port were ported;
+        // see task summary for the recipes that were skipped (dusts, briquettes, pages, etc. don't exist here).
+
+        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.BIOMASS_COMPRESSED.get()))
+                .stamp(ModTags.Items.STAMPS_FLAT)
+                .material(ModItems.BIOMASS.get())
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "biomass_compressed"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "biomass_compressed"));
+                //?}
+
+        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.BALL_RESIN.get()))
+                .stamp(ModTags.Items.STAMPS_FLAT)
+                .material(net.minecraft.world.level.block.Blocks.JUNGLE_LOG)
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "ball_resin"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "ball_resin"));
+                //?}
     }
 
     private static void generatePlates(Consumer<FinishedRecipe> writer) {
@@ -148,6 +173,15 @@ public final class PressRecipeGenerator {
                 /*.save(writer, new ResourceLocation(RefStrings.MODID, "plate_gunmetal"));
                 *///?} else {
                                 .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_gunmetal"));
+                //?}
+
+        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_DURA_STEEL.get()))
+                .stamp(ModTags.Items.STAMPS_PLATE)
+                .material(ModItems.getIngot(ModIngots.DURA_STEEL).get())
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "plate_dura_steel"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_dura_steel"));
                 //?}
 
     }

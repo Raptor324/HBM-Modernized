@@ -198,6 +198,15 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.BLADE_TEST.get());
         // ТЕГИ ДЛЯ ШТАМПОВ ПРЕССА
 
+        // Alle Flach-Stempel (StampType.FLAT im Original)
+        this.tag(ModTags.Items.STAMPS_FLAT)
+                .add(ModItems.STAMP_STONE_FLAT.get())
+                .add(ModItems.STAMP_IRON_FLAT.get())
+                .add(ModItems.STAMP_STEEL_FLAT.get())
+                .add(ModItems.STAMP_TITANIUM_FLAT.get())
+                .add(ModItems.STAMP_OBSIDIAN_FLAT.get())
+                .add(ModItems.STAMP_DESH_FLAT.get());
+
         // Все штампы пластин
         this.tag(ModTags.Items.STAMPS_PLATE)
                 .add(ModItems.STAMP_STONE_PLATE.get())

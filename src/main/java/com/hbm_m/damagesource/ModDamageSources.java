@@ -61,6 +61,8 @@ public final class ModDamageSources {
     public static DamageSource blacklung(Level level) { return create(level, ModDamageTypes.BLACKLUNG); }
     public static DamageSource vacuum(Level level) { return create(level, ModDamageTypes.VACUUM); }
     public static DamageSource microwave(Level level) { return create(level, ModDamageTypes.MICROWAVE); }
+    public static DamageSource broadcast(Level level) { return create(level, ModDamageTypes.BROADCAST); }
+    public static DamageSource enervation(Level level) { return create(level, ModDamageTypes.ENERVATION); }
     // ... и другие типы урона, которые могут быть без источника
 
     // Типы урона от сущностей (атакующий + опционально снаряд)

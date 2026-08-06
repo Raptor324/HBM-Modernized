@@ -139,6 +139,15 @@ public class ModSounds {
 
     // Music discs
     public static final RegistrySupplier<SoundEvent> MUSIC_DISC_BUNKER = registerSoundEvents("music_disc.bunker");
+
+    // Siren cassette tracks
+    public static final RegistrySupplier<SoundEvent> SIREN_AMS = registerSoundEvents("alarm.amssiren");
+    public static final RegistrySupplier<SoundEvent> SIREN_BEEP = registerSoundEvents("alarm.beepsiren");
+    public static final RegistrySupplier<SoundEvent> SIREN_CLASSIC = registerSoundEvents("alarm.classicsiren");
+    public static final RegistrySupplier<SoundEvent> SIREN_NOSTROMO = registerSoundEvents("alarm.nostromosiren");
+    public static final RegistrySupplier<SoundEvent> SIREN_REGULAR = registerSoundEvents("alarm.regularsiren");
+    public static final RegistrySupplier<SoundEvent> SIREN_STRIDER = registerSoundEvents("alarm.stridersiren");
+    public static final RegistrySupplier<SoundEvent> SIREN_SWEEP = registerSoundEvents("alarm.sweepsiren");
     
     // Вспомогательный метод для регистрации
     private static RegistrySupplier<SoundEvent> registerSoundEvents(String name) {

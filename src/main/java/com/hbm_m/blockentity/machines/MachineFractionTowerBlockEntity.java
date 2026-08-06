@@ -1,10 +1,17 @@
 package com.hbm_m.blockentity.machines;
 
+import org.jetbrains.annotations.NotNull;
+
+import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineFractionTowerMenu;
+import com.hbm_m.recipe.FractionTowerRecipes;
+import com.hbm_m.recipe.FractionTowerRecipes.Split;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -13,76 +20,144 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluid;
 
-public class MachineFractionTowerBlockEntity extends BaseMachineBlockEntity {
+/**
+ * Fraktionsturm: Portierung der Kernrezeptlogik aus {@code TileEntityMachineFractionTower} (1.7.10 Original).
+ * Spaltet alle 10 Ticks 100mB eines schweren Oel-Fluids (Tank 0) in zwei leichtere Fraktionen (Tank 1/2) auf,
+ * ueber die feste Rezeptliste {@link FractionTowerRecipes} (Direktport von {@code FractionRecipes}).
+ * <p>
+ * Vereinfachung ggue. Original: das 1.7.10-Original ist ein 4-hohes Multiblock, das Fluid zwischen gestapelten
+ * Tuermen weiterreicht (Oel steigt auf, Fraktionen sinken ab). Diese Portierung ist bewusst ein Einzelblock -
+ * Ein-/Ausgabe erfolgt direkt ueber das MK2-Rohrnetz an allen 6 Seiten, analog zum bereits portierten
+ * {@link MachineGasCentrifugeBlockEntity}.
+ */
+public class MachineFractionTowerBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
 
-    private static final int DEFAULT_MAX_PROGRESS = 200;
+    private static final int TANK_CAPACITY_MB = 4000;
+    private static final int FRACTIONATE_INTERVAL = 10;
+    private static final int INPUT_PER_CYCLE_MB = 100;
 
-    private int progress = 0;
-    private int maxProgress = DEFAULT_MAX_PROGRESS;
-    private boolean active = false;
+    private final FluidTank[] tanks = new FluidTank[3];
 
     public MachineFractionTowerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.FRACTION_TOWER_BE.get(), pos, state, 0, 0L, 0L, 0L);
-    }
-
-    public static void tick(Level level, BlockPos pos, BlockState state, MachineFractionTowerBlockEntity blockEntity) {
-        if (!level.isClientSide) {
-            blockEntity.serverTick();
-        }
-    }
-
-    private void serverTick() {
-        if (active) {
-            progress++;
-            if (progress >= maxProgress) {
-                progress = 0;
+        tanks[0] = new FluidTank(TANK_CAPACITY_MB) {
+            @Override
+            public boolean isFluidValid(Fluid fluid) {
+                return FractionTowerRecipes.has(fluid);
             }
-            setChanged();
-        }
+        };
+        tanks[1] = new FluidTank(TANK_CAPACITY_MB);
+        tanks[2] = new FluidTank(TANK_CAPACITY_MB);
     }
 
-    public int getProgressScaled(int scale) {
-        if (maxProgress <= 0) {
-            return 0;
+    public static void tick(Level level, BlockPos pos, BlockState state, MachineFractionTowerBlockEntity be) {
+        if (level.isClientSide) return;
+
+        be.setupTanks();
+
+        if (level.getGameTime() % FRACTIONATE_INTERVAL == 0) {
+            be.fractionate();
         }
-        return progress * scale / maxProgress;
+
+        for (Direction dir : Direction.values()) {
+            BlockPos neighborPos = pos.relative(dir);
+            be.trySubscribe(be.tanks[0].getTankType(), level, neighborPos, dir);
+            be.tryProvide(be.tanks[1], level, neighborPos, dir);
+            be.tryProvide(be.tanks[2], level, neighborPos, dir);
+        }
+
+        be.setChanged();
+        be.sendUpdateToClient();
     }
+
+    /** Direktport von {@code setupTanks()}: konformiert die Ausgabetanks auf den Rezepttyp, solange sie leer sind
+     *  (im Original wird der Typ bedingungslos ueberschrieben, hier vorsichtiger um kein Fluid zu vernichten). */
+    private void setupTanks() {
+        Split split = FractionTowerRecipes.get(tanks[0].getTankType());
+        if (split == null) return;
+        if (tanks[1].isEmpty()) tanks[1].conform(split.outA());
+        if (tanks[2].isEmpty()) tanks[2].conform(split.outB());
+    }
+
+    /** Direktport von {@code fractionate()}. */
+    private boolean fractionate() {
+        Split split = FractionTowerRecipes.get(tanks[0].getTankType());
+        if (split == null) return false;
+        if (tanks[0].getFill() < INPUT_PER_CYCLE_MB) return false;
+        if (tanks[1].getFill() + split.amountA() > tanks[1].getMaxFill()) return false;
+        if (tanks[2].getFill() + split.amountB() > tanks[2].getMaxFill()) return false;
+
+        tanks[0].drainMb(INPUT_PER_CYCLE_MB);
+        tanks[1].fillMb(split.outA(), split.amountA());
+        tanks[2].fillMb(split.outB(), split.amountB());
+        return true;
+    }
+
+    // ==================== GUI (generische GuiInfoScreen-Balken) ====================
 
     public int getProgress() {
-        return progress;
+        return tanks[0].getFill();
     }
 
     public int getMaxProgress() {
-        return maxProgress;
+        return tanks[0].getMaxFill();
     }
 
-    public boolean isActive() {
-        return active;
+    public int getProgressScaled(int scale) {
+        int max = tanks[0].getMaxFill();
+        return max <= 0 ? 0 : tanks[0].getFill() * scale / max;
     }
 
-    public void setActive(boolean active) {
-        this.active = active;
-        setChanged();
+    public FluidTank[] getTanks() {
+        return tanks;
     }
+
+    // ==================== IFluidUserMK2 / MK2-Netz ====================
+
+    @Override
+    public FluidTank[] getAllTanks() {
+        return tanks;
+    }
+
+    @Override
+    public FluidTank[] getReceivingTanks() {
+        return new FluidTank[] { tanks[0] };
+    }
+
+    @Override
+    public FluidTank[] getSendingTanks() {
+        return new FluidTank[] { tanks[1], tanks[2] };
+    }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    @Override
+    public boolean canConnect(Fluid fluid, Direction fromDir) {
+        return fromDir != null && (FractionTowerRecipes.has(fluid)
+                || tanks[1].getTankType() == fluid || tanks[2].getTankType() == fluid);
+    }
+
+    // ==================== NBT ====================
 
     @Override
     public void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        tag.putInt("progress", progress);
-        tag.putInt("max_progress", maxProgress);
-        tag.putBoolean("active", active);
+        for (int i = 0; i < tanks.length; i++) {
+            tanks[i].writeToNBT(tag, "tank" + i);
+        }
     }
 
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-        progress = tag.getInt("progress");
-        maxProgress = tag.getInt("max_progress");
-        if (maxProgress <= 0) {
-            maxProgress = DEFAULT_MAX_PROGRESS;
+        for (int i = 0; i < tanks.length; i++) {
+            tanks[i].readFromNBT(tag, "tank" + i);
         }
-        active = tag.getBoolean("active");
     }
 
     @Override
@@ -91,7 +166,7 @@ public class MachineFractionTowerBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    public Component getDisplayName() {
+    public @NotNull Component getDisplayName() {
         return getDefaultName();
     }
 

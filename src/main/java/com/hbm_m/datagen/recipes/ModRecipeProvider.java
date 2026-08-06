@@ -8,7 +8,9 @@ import org.jetbrains.annotations.NotNull;
 // Здесь мы определяем, как создаются наши предметы в игре.
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.datagen.recipes.custom.AmmoPressRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.AnvilRecipeGenerator;
+import com.hbm_m.datagen.recipes.custom.PurexRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.AssemblerRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.BlastFurnaceRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.CentrifugeRecipeGenerator;
@@ -45,6 +47,8 @@ public class ModRecipeProvider extends RecipeProvider {
         AnvilRecipeGenerator.generate(pWriter);
         ShredderRecipeGenerator.generate(pWriter, ModRecipeProvider::unlockedByItem);
         CentrifugeRecipeGenerator.generate(pWriter);
+        AmmoPressRecipeGenerator.generate(pWriter);
+        PurexRecipeGenerator.generate(pWriter);
 
         // ==================== АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ РЕЦЕПТОВ ДЛЯ БЛОКОВ СЛИТКОВ ====================
         for (ModIngots ingot : ModIngots.values()) {

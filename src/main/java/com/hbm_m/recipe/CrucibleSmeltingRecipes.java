@@ -81,6 +81,9 @@ public class CrucibleSmeltingRecipes {
         itemId("nugget_arsenic",    MaterialType.ARSENIC,    MaterialStack.MB_PER_NUGGET);
         itemId("nugget_technetium", MaterialType.TECHNETIUM, MaterialStack.MB_PER_NUGGET);
         register(Ingredient.of(net.minecraft.world.item.Items.REDSTONE), MaterialType.REDSTONE, MaterialStack.MB_PER_NUGGET);
+        // crucible.cdalloy input — cadmium_ingot exists (ModIngots.CADMIUM), unlike a prior pass's
+        // assumption that it was missing.
+        itemId("cadmium_ingot", MaterialType.CADMIUM, MaterialStack.MB_PER_INGOT);
 
         // Raw hematite/malachite ore blocks — port of crucible.hematite / crucible.malachite
         // (flux input and slag byproduct omitted, no flux/slag material exists in this port).

@@ -12,7 +12,6 @@ import com.hbm_m.item.fekal_electric.ModBatteryItem;
 import com.hbm_m.item.liquids.FluidBarrelItem;
 import com.hbm_m.item.liquids.InfiniteFluidItem;
 import com.hbm_m.radiation.ChunkRadiationManager;
-import com.hbm_m.recipe.ChemicalPlantRecipes;
 import com.hbm_m.recipe.CyclotronRecipes;
 import com.hbm_m.recipe.CrystallizerRecipes;
 
@@ -139,7 +138,6 @@ public final class FabricEntrypoint implements ModInitializer {
                 }
                 try {
                     CyclotronRecipes.registerRecipes();
-                    ChemicalPlantRecipes.registerRecipes();
                     CrystallizerRecipes.registerDefaults();
                     ModFluidTraitsBootstrap.registerAll();
                     FLUID_DEPENDENT_SETUP_DONE.set(true);

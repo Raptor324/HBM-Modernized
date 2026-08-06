@@ -8,6 +8,8 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.inventory.menu.MachineBreederMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
+import com.hbm_m.recipe.BreederRecipes;
+import com.hbm_m.recipe.FluidBreederRecipes;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -20,13 +22,28 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 
+/**
+ * Breeder - true multiblock port of the original 1.7.10 {@code MachineReactorBreeding}/
+ * {@code TileEntityMachineReactorBreeding}. In the original, the reactor drew "neutron flux" from
+ * an adjacent {@code TileEntityReactorResearch} (Research Reactor) which was never ported to this
+ * codebase, so that mechanic is replaced here with this port's standard battery-slot/FE energy
+ * system (see {@link #getPowerRequired()} - reuses the original's per-recipe "flux" balance numbers
+ * 1:1 as an FE-per-tick draw). Item breeding recipes are ported from
+ * {@code com.hbm.inventory.recipes.BreederRecipes} (see {@link BreederRecipes} for the exact
+ * material substitutions, since the original's {@code ItemBreedingRod} meta-item system does not
+ * exist in this port). The fluid tank additionally drives {@link FluidBreederRecipes}, ported from
+ * {@code com.hbm.inventory.recipes.FluidBreederRecipes} (unused by the original tile entity, but
+ * kept here since this port's tank/GUI already exist for it).
+ */
 public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
 
     private static final int SLOT_INPUT = 0;
@@ -40,7 +57,10 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
     private static final long MAX_POWER = 1_000_000;
     private static final long MAX_RECEIVE = 1_000;
     private static final int TANK_CAPACITY = 8_000;
-    private static final int DEFAULT_DURATION = 600;
+    /** GIT original: progress += 0.0025F per tick at the minimum required flux -> 1.0F / 0.0025F = 400 ticks. */
+    private static final int DEFAULT_DURATION = 400;
+    /** Energy cost for one fluid-breeding conversion batch (not present in the original - see {@link FluidBreederRecipes}). */
+    private static final long FLUID_ENERGY_COST = 2000;
 
     private final FluidTank tank = new FluidTank(TANK_CAPACITY) {
         @Override
@@ -88,6 +108,7 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
         entity.ensureNetworkInitialized();
         entity.chargeFromBattery();
         entity.transferFluidsFromItems();
+        entity.tickFluidBreeding();
 
         entity.isOn = false;
         if (entity.canProcess()) {
@@ -107,6 +128,28 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
                 entity.setChanged();
             }
         }
+    }
+
+    /**
+     * In-place fluid-to-fluid conversion driven by {@link FluidBreederRecipes}. Batch-converts the
+     * whole recipe amount at once (mirrors the original's threshold-based {@code canProcess()}
+     * rather than a gradual drain, since a single-fluid {@link FluidTank} cannot hold input and
+     * output simultaneously mid-conversion).
+     */
+    private void tickFluidBreeding() {
+        FluidStack current = tank.getFluid();
+        if (current.isEmpty()) return;
+
+        FluidBreederRecipes.FluidBreederRecipe recipe = FluidBreederRecipes.getOutput(current.getFluid());
+        if (recipe == null) return;
+        if (current.getAmount() < recipe.amount) return;
+        if (getEnergyStored() < FLUID_ENERGY_COST) return;
+
+        tank.drain(recipe.amount, IFluidHandler.FluidAction.EXECUTE);
+        tank.fill(recipe.output.copy(), IFluidHandler.FluidAction.EXECUTE);
+        setEnergyStored(getEnergyStored() - FLUID_ENERGY_COST);
+        setChanged();
+        sendUpdateToClient();
     }
 
     private void chargeFromBattery() {
@@ -155,16 +198,40 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
     }
 
     private boolean canProcess() {
-        if (inventory.getStackInSlot(SLOT_INPUT).isEmpty()) return false;
-        if (getEnergyStored() < getPowerRequired()) return false;
-        return false;
+        ItemStack input = inventory.getStackInSlot(SLOT_INPUT);
+        if (input.isEmpty()) return false;
+
+        BreederRecipes.BreederRecipe recipe = BreederRecipes.getOutput(input);
+        if (recipe == null) return false;
+
+        if (getEnergyStored() < recipe.energyPerTick) return false;
+
+        ItemStack output = inventory.getStackInSlot(SLOT_OUTPUT);
+        if (output.isEmpty()) return true;
+
+        if (!ItemStack.isSameItemSameTags(output, recipe.output)) return false;
+        return output.getCount() < output.getMaxStackSize();
     }
 
     private void processItem() {
+        ItemStack input = inventory.getStackInSlot(SLOT_INPUT);
+        BreederRecipes.BreederRecipe recipe = BreederRecipes.getOutput(input);
+        if (recipe == null) return;
+
+        ItemStack output = inventory.getStackInSlot(SLOT_OUTPUT);
+        if (output.isEmpty()) {
+            inventory.setStackInSlot(SLOT_OUTPUT, recipe.output.copy());
+        } else if (ItemStack.isSameItemSameTags(output, recipe.output)) {
+            output.grow(recipe.output.getCount());
+        }
+
+        input.shrink(1);
     }
 
+    /** Reuses the current recipe's "flux" balance number 1:1 as an FE-per-tick draw (see class javadoc). */
     public int getPowerRequired() {
-        return 1000;
+        BreederRecipes.BreederRecipe recipe = BreederRecipes.getOutput(inventory.getStackInSlot(SLOT_INPUT));
+        return recipe != null ? recipe.energyPerTick : 0;
     }
 
     public int getDuration() {
@@ -215,7 +282,20 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
         if (slot == SLOT_FLUID_ID) {
             return true;
         }
+        if (slot == SLOT_INPUT) {
+            return BreederRecipes.getOutput(stack) != null;
+        }
         return true;
+    }
+
+    @Override
+    public AABB getRenderBoundingBox() {
+        BlockState state = getBlockState();
+        if (!(state.getBlock() instanceof com.hbm_m.block.machines.MachineBreederBlock block)) {
+            return super.getRenderBoundingBox();
+        }
+        Direction facing = state.getValue(com.hbm_m.block.machines.MachineBreederBlock.FACING);
+        return block.getStructureHelper().getRenderBoundingBox(worldPosition, facing, 0.0);
     }
 
     public boolean stillValid(Player player) {

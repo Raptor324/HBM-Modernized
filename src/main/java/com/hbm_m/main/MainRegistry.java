@@ -29,7 +29,6 @@ import com.hbm_m.powerarmor.PowerArmorHandlers;
 import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.recipe.CentrifugeRecipes;
-import com.hbm_m.recipe.ChemicalPlantRecipes;
 import com.hbm_m.recipe.CyclotronRecipes;
 import com.hbm_m.recipe.ModRecipes;
 import com.hbm_m.recipe.CrystallizerRecipes;
@@ -123,6 +122,7 @@ public final class MainRegistry {
 
         CentrifugeRecipes.registerRecipes();
         CyclotronRecipes.registerRecipes();
+        com.hbm_m.recipe.BreederRecipes.registerRecipes();
         com.hbm_m.inventory.recipes.ArcWelderRecipes.registerDefaults();
         com.hbm_m.recipe.CrucibleSmeltingRecipes.registerDefaults();
         com.hbm_m.recipe.MoltenAlloyRecipes.registerDefaults();
@@ -131,14 +131,14 @@ public final class MainRegistry {
         // На Fabric DeferredRegister жидкостей ещё не заполнил BuiltInRegistries на момент SETUP
         // (см. FabricEntrypoint#registerFluidDependentSetupWhenReady).
         //? if forge {
-        ChemicalPlantRecipes.registerRecipes();
         CrystallizerRecipes.registerDefaults();
         ModFluidTraitsBootstrap.registerAll();
+        com.hbm_m.recipe.FluidBreederRecipes.registerRecipes();
         //?}
         //? if neoforge {
-        /*ChemicalPlantRecipes.registerRecipes();
-        CrystallizerRecipes.registerDefaults();
+        /*CrystallizerRecipes.registerDefaults();
         ModFluidTraitsBootstrap.registerAll();
+        com.hbm_m.recipe.FluidBreederRecipes.registerRecipes();
         *///?}
 
         LOGGER.info("Common setup finished");

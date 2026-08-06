@@ -136,6 +136,7 @@ import com.hbm_m.inventory.gui.GUIMachineSteamTurbine;
 import com.hbm_m.inventory.gui.GUIMachineTurbine;
 import com.hbm_m.inventory.gui.GUIMachineZirnox;
 import com.hbm_m.inventory.gui.GUIMachineChemicalPlant;
+import com.hbm_m.inventory.gui.GUIMachineChemicalFactory;
 import com.hbm_m.inventory.gui.GUIMachineFluidTank;
 import com.hbm_m.inventory.gui.GUIMachineFrackingTower;
 import com.hbm_m.inventory.gui.GUIMachinePress;
@@ -464,10 +465,34 @@ public class ClientSetup {
         MenuScreens.register(ModMenuTypes.LARGE_PYLON_MENU.get(), GUIMachineLargePylon::new);
         MenuScreens.register(ModMenuTypes.CYCLOTRON_MENU.get(), GUIMachineCyclotron::new);
         MenuScreens.register(ModMenuTypes.ZIRNOX_MENU.get(), GUIMachineZirnox::new);
+        MenuScreens.register(ModMenuTypes.WATZ_POWERPLANT_MENU.get(), com.hbm_m.inventory.gui.GUIMachineWatzPowerplant::new);
         MenuScreens.register(ModMenuTypes.ARC_WELDER_MENU.get(), GUIMachineArcWelder::new);
         MenuScreens.register(ModMenuTypes.SOLDERING_STATION_MENU.get(), GUIMachineSolderingStation::new);
         MenuScreens.register(ModMenuTypes.MIXER_MENU.get(), GUIMachineMixer::new);
         MenuScreens.register(ModMenuTypes.DERRICK_MENU.get(), GUIMachineDerrick::new);
+        MenuScreens.register(ModMenuTypes.MACHINE_WELL_MENU.get(), com.hbm_m.inventory.gui.GUIMachineOilWell::new);
+        MenuScreens.register(ModMenuTypes.COKER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCoker::new);
+        MenuScreens.register(ModMenuTypes.PYROOVEN_MENU.get(), com.hbm_m.inventory.gui.GUIMachinePyroOven::new);
+        MenuScreens.register(ModMenuTypes.SOLIDIFIER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineSolidifier::new);
+        MenuScreens.register(ModMenuTypes.ASHPIT_MENU.get(), com.hbm_m.inventory.gui.GUIMachineAshpit::new);
+        MenuScreens.register(ModMenuTypes.REACTOR_RESEARCH_MENU.get(), com.hbm_m.inventory.gui.GUIMachineReactorResearch::new);
+        MenuScreens.register(ModMenuTypes.RADGEN_MENU.get(), com.hbm_m.inventory.gui.GUIMachineRadGen::new);
+        MenuScreens.register(ModMenuTypes.CRANE_INSERTER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCraneInserter::new);
+        MenuScreens.register(ModMenuTypes.CRANE_EXTRACTOR_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCraneExtractor::new);
+        MenuScreens.register(ModMenuTypes.CRANE_GRABBER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCraneGrabber::new);
+        MenuScreens.register(ModMenuTypes.CRANE_ROUTER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCraneRouter::new);
+        MenuScreens.register(ModMenuTypes.CRANE_BOXER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCraneBoxer::new);
+        MenuScreens.register(ModMenuTypes.CRANE_UNBOXER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCraneUnboxer::new);
+        MenuScreens.register(ModMenuTypes.DRONE_CRATE_MENU.get(), com.hbm_m.inventory.gui.GUIMachineDroneCrate::new);
+        MenuScreens.register(ModMenuTypes.DRONE_PROVIDER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineDroneProvider::new);
+        MenuScreens.register(ModMenuTypes.DRONE_REQUESTER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineDroneRequester::new);
+        MenuScreens.register(ModMenuTypes.DRONE_DOCK_MENU.get(), com.hbm_m.inventory.gui.GUIMachineDroneDock::new);
+        MenuScreens.register(ModMenuTypes.RADIO_TORCH_COUNTER_MENU.get(), com.hbm_m.inventory.gui.radio.GUIRadioTorchCounter::new);
+        MenuScreens.register(ModMenuTypes.MACHINE_STORAGE_DRUM_MENU.get(), com.hbm_m.inventory.gui.GUIMachineStorageDrum::new);
+        MenuScreens.register(ModMenuTypes.MACHINE_SIREN_MENU.get(), com.hbm_m.inventory.gui.GUIMachineSiren::new);
+        MenuScreens.register(ModMenuTypes.MACHINE_FIREBOX_MENU.get(), com.hbm_m.inventory.gui.GUIMachineFirebox::new);
+        MenuScreens.register(ModMenuTypes.MACHINE_KEYFORGE_MENU.get(), com.hbm_m.inventory.gui.GUIMachineKeyforge::new);
+        MenuScreens.register(ModMenuTypes.MACHINE_MASS_STORAGE_MENU.get(), com.hbm_m.inventory.gui.GUIMachineMassStorage::new);
         MenuScreens.register(ModMenuTypes.RBMK_CONSOLE_MENU.get(), GUIMachineRbmkConsole::new);
         MenuScreens.register(ModMenuTypes.RBMK_ROD_MENU.get(), GUIRBMKRod::new);
         MenuScreens.register(ModMenuTypes.RBMK_CONTROL_MENU.get(), GUIRBMKControl::new);
@@ -484,6 +509,8 @@ public class ClientSetup {
         MenuScreens.register(ModMenuTypes.SILEX_MENU.get(), GUIMachineSilex::new);
         MenuScreens.register(ModMenuTypes.GAS_CENTRIFUGE_MENU.get(), GUIMachineGasCentrifuge::new);
         MenuScreens.register(ModMenuTypes.TURBINE_MENU.get(), GUIMachineTurbine::new);
+        MenuScreens.register(ModMenuTypes.LARGE_TURBINE_MENU.get(), com.hbm_m.inventory.gui.GUIMachineLargeTurbine::new);
+        MenuScreens.register(ModMenuTypes.TURBINEGAS_MENU.get(), com.hbm_m.inventory.gui.GUIMachineTurbineGas::new);
         MenuScreens.register(ModMenuTypes.STEAM_TURBINE_MENU.get(), GUIMachineSteamTurbine::new);
         MenuScreens.register(ModMenuTypes.SUBSTATION_MENU.get(), GUIMachineSubstation::new);
         MenuScreens.register(ModMenuTypes.CRUCIBLE_MENU.get(), GUIMachineCrucible::new);
@@ -499,6 +526,16 @@ public class ClientSetup {
         MenuScreens.register(ModMenuTypes.ORE_SLOPPER_MENU.get(), GUIMachineOreSlopper::new);
         MenuScreens.register(ModMenuTypes.COMBINATION_OVEN_MENU.get(), GUIMachineCombinationOven::new);
         MenuScreens.register(ModMenuTypes.ARC_FURNACE_MENU.get(), GUIMachineArcFurnace::new);
+        MenuScreens.register(ModMenuTypes.ANNIHILATOR_MENU.get(), com.hbm_m.inventory.gui.GUIMachineAnnihilator::new);
+        MenuScreens.register(ModMenuTypes.MINING_LASER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineMiningLaser::new);
+        MenuScreens.register(ModMenuTypes.AMMO_PRESS_MENU.get(), com.hbm_m.inventory.gui.GUIMachineAmmoPress::new);
+        MenuScreens.register(ModMenuTypes.EPRESS_MENU.get(), com.hbm_m.inventory.gui.GUIMachineEPress::new);
+        MenuScreens.register(ModMenuTypes.AUTOCRAFTER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineAutocrafter::new);
+        MenuScreens.register(ModMenuTypes.INDUSTRIAL_GENERATOR_MENU.get(), com.hbm_m.inventory.gui.GUIMachineIndustrialGenerator::new);
+        MenuScreens.register(ModMenuTypes.DIESEL_GENERATOR_MENU.get(), com.hbm_m.inventory.gui.GUIMachineDieselGenerator::new);
+        MenuScreens.register(ModMenuTypes.COMBUSTION_ENGINE_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCombustionEngine::new);
+        MenuScreens.register(ModMenuTypes.FUNNEL_MENU.get(), com.hbm_m.inventory.gui.GUIMachineFunnel::new);
+        MenuScreens.register(ModMenuTypes.PUREX_MENU.get(), com.hbm_m.inventory.gui.GUIMachinePUREX::new);
         MenuScreens.register(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);
         MenuScreens.register(ModMenuTypes.TURRET_MENU.get(), com.hbm_m.inventory.gui.GUITurret::new);
         MenuScreens.register(ModMenuTypes.MISSILE_ASSEMBLY_MENU.get(), com.hbm_m.inventory.gui.GUIMissileAssembly::new);
@@ -511,9 +548,13 @@ public class ClientSetup {
         MenuScreens.register(ModMenuTypes.TEMPLATE_CRATE_MENU.get(), GUITemplateCrate::new);
         MenuScreens.register(ModMenuTypes.FLUID_TANK_MENU.get(), GUIMachineFluidTank::new);
         MenuScreens.register(ModMenuTypes.BAT9000_MENU.get(), com.hbm_m.inventory.gui.GUIBat9000::new);
+        MenuScreens.register(ModMenuTypes.ORBUS_MENU.get(), com.hbm_m.inventory.gui.GUIOrbus::new);
+        MenuScreens.register(ModMenuTypes.MACHINE_RTG_MENU.get(), com.hbm_m.inventory.gui.GUIMachineRtg::new);
+        MenuScreens.register(ModMenuTypes.MACHINE_WASTE_DRUM_MENU.get(), com.hbm_m.inventory.gui.GUIMachineWasteDrum::new);
         MenuScreens.register(ModMenuTypes.BARREL_IRON_MENU.get(), com.hbm_m.inventory.gui.GUIBarrelIron::new);
         MenuScreens.register(ModMenuTypes.BARREL_STEEL_MENU.get(), com.hbm_m.inventory.gui.GUIBarrelSteel::new);
         MenuScreens.register(ModMenuTypes.CHEMICAL_PLANT_MENU.get(), GUIMachineChemicalPlant::new);
+        MenuScreens.register(ModMenuTypes.CHEMICAL_FACTORY_MENU.get(), GUIMachineChemicalFactory::new);
         MenuScreens.register(ModMenuTypes.SOYUZ_LAUNCHER_MENU.get(), com.hbm_m.inventory.gui.GUISoyuzLauncher::new);
         MenuScreens.register(ModMenuTypes.MACHINE_SATLINKER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineSatLinker::new);
         MenuScreens.register(ModMenuTypes.FRACTURING_TOWER_MENU.get(), GUIMachineFrackingTower::new);
@@ -522,6 +563,21 @@ public class ClientSetup {
         MenuScreens.register(ModMenuTypes.LAUNCH_PAD_RUSTED_MENU.get(), GUILaunchPadRusted::new);
         MenuScreens.register(ModMenuTypes.NUKE_FAT_MAN_MENU.get(), com.hbm_m.inventory.gui.GUINukeFatMan::new);
         MenuScreens.register(ModMenuTypes.NUKE_PROTOTYPE_MENU.get(), com.hbm_m.inventory.gui.GUINukePrototype::new);
+        MenuScreens.register(ModMenuTypes.VACUUM_DISTILL_MENU.get(), com.hbm_m.inventory.gui.GUIMachineVacuumDistill::new);
+        MenuScreens.register(ModMenuTypes.HYDROTREATER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineHydrotreater::new);
+        MenuScreens.register(ModMenuTypes.CATALYTIC_REFORMER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCatalyticReformer::new);
+        MenuScreens.register(ModMenuTypes.LIQUEFACTOR_MENU.get(), com.hbm_m.inventory.gui.GUIMachineLiquefactor::new);
+        MenuScreens.register(ModMenuTypes.FURNACE_IRON_MENU.get(), com.hbm_m.inventory.gui.GUIMachineFurnaceIron::new);
+        MenuScreens.register(ModMenuTypes.FURNACE_STEEL_MENU.get(), com.hbm_m.inventory.gui.GUIMachineFurnaceSteel::new);
+        MenuScreens.register(ModMenuTypes.ROTARY_FURNACE_MENU.get(), com.hbm_m.inventory.gui.GUIMachineRotaryFurnace::new);
+        MenuScreens.register(ModMenuTypes.STRAND_CASTER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineStrandCaster::new);
+        MenuScreens.register(ModMenuTypes.MICROWAVE_MENU.get(), com.hbm_m.inventory.gui.GUIMachineMicrowave::new);
+        MenuScreens.register(ModMenuTypes.EXPOSURE_CHAMBER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineExposureChamber::new);
+        MenuScreens.register(ModMenuTypes.RADIOLYSIS_MENU.get(), com.hbm_m.inventory.gui.GUIMachineRadiolysis::new);
+        MenuScreens.register(ModMenuTypes.ELECTROLYSER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineElectrolyser::new);
+        MenuScreens.register(ModMenuTypes.COMPRESSOR_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCompressor::new);
+        MenuScreens.register(ModMenuTypes.ELECTRIC_FURNACE_MENU.get(), com.hbm_m.inventory.gui.GUIMachineElectricFurnace::new);
+        MenuScreens.register(ModMenuTypes.FURNACE_BRICK_MENU.get(), com.hbm_m.inventory.gui.GUIMachineFurnaceBrick::new);
     }
 
     private static void registerRenderersCommon() {
@@ -529,6 +585,10 @@ public class ClientSetup {
         ModEntities.SOYUZ.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.SoyuzEntityRenderer::new));
         ModEntities.SOYUZ_CAPSULE.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.SoyuzCapsuleEntityRenderer::new));
         ModEntities.ZIRNOX_DEBRIS.ifPresent(entityType -> EntityRenderers.register(entityType, ZirnoxDebrisRenderer::new));
+        ModEntities.MOVING_CONVEYOR_ITEM.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
+        ModEntities.MOVING_CONVEYOR_PACKAGE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
+        ModEntities.DELIVERY_DRONE.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.DeliveryDroneRenderer::new));
+        ModEntities.REQUEST_DRONE.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.DeliveryDroneRenderer::new));
         ModEntities.TURRET_BULLET.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
         ModEntities.TURRET_ROCKET.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
         ModEntities.GRENADE_NUC_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
@@ -617,6 +677,8 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.RBMK_ROD_BE.get(),          RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.SU47_TROPHY_BE.get(),
                 com.hbm_m.client.render.implementations.SU47TrophyRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.JAS39_TROPHY_BE.get(),
+                com.hbm_m.client.render.implementations.JAS39TrophyRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_BLANK_BE.get(),        RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_ABSORBER_BE.get(),     RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_REFLECTOR_BE.get(),    RBMKColumnRenderer::new);

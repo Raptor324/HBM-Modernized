@@ -66,6 +66,7 @@ public class ModPacketHandler {
     public static final ResourceLocation ITEM_DESIGNATOR       = id("item_designator");
     public static final ResourceLocation UPDATE_RADAR          = id("update_radar");
         public static final ResourceLocation ZIRNOX_CONTROL        = id("zirnox_control");
+    public static final ResourceLocation WATZ_CONTROL          = id("watz_control");
     public static final ResourceLocation RBMK_CONSOLE_CONTROL        = id("rbmk_console_control");
     public static final ResourceLocation SOYUZ_LAUNCHER_CONTROL      = id("soyuz_launcher_control");
     public static final ResourceLocation SOLDERING_STATION_CONTROL   = id("soldering_station_control");
@@ -75,6 +76,10 @@ public class ModPacketHandler {
     public static final ResourceLocation MISSILE_TRACK_STOP   = id("missile_track_stop");
     public static final ResourceLocation TURRET_CONTROL        = id("turret_control");
     public static final ResourceLocation MINING_DRILL_TOGGLE   = id("mining_drill_toggle");
+    public static final ResourceLocation MICROWAVE_SPEED       = id("microwave_speed");
+    public static final ResourceLocation ANNIHILATOR_POOL      = id("annihilator_pool");
+    public static final ResourceLocation FUNNEL_MODE            = id("funnel_mode");
+    public static final ResourceLocation RADIO_TORCH_CONTROL    = id("radio_torch_control");
 
 
     // ══════════════════════════ Регистрация ═══════════════════════════════════
@@ -220,6 +225,10 @@ public class ModPacketHandler {
                 ZirnoxControlPacket::decode,
                 ZirnoxControlPacket::handle);
 
+        registerC2S(WATZ_CONTROL,
+                WatzControlPacket::decode,
+                WatzControlPacket::handle);
+
         registerC2S(RBMK_CONSOLE_CONTROL,
                 RBMKConsoleControlPacket::decode,
                 RBMKConsoleControlPacket::handle);
@@ -239,6 +248,22 @@ public class ModPacketHandler {
         registerC2S(MINING_DRILL_TOGGLE,
                 MiningDrillToggleC2SPacket::decode,
                 MiningDrillToggleC2SPacket::handle);
+
+        registerC2S(MICROWAVE_SPEED,
+                MicrowaveSpeedC2SPacket::decode,
+                MicrowaveSpeedC2SPacket::handle);
+
+        registerC2S(ANNIHILATOR_POOL,
+                AnnihilatorPoolC2SPacket::decode,
+                AnnihilatorPoolC2SPacket::handle);
+
+        registerC2S(FUNNEL_MODE,
+                FunnelModeC2SPacket::decode,
+                FunnelModeC2SPacket::handle);
+
+        registerC2S(RADIO_TORCH_CONTROL,
+                RadioTorchControlPacket::decode,
+                RadioTorchControlPacket::handle);
     }
 
     // ══════════════════════ Вспомогательные методы ════════════════════════════

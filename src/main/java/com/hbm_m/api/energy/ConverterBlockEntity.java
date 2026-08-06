@@ -102,8 +102,18 @@ public class ConverterBlockEntity extends BlockEntity implements IEnergyReceiver
     }
     //?}
 
+    /** Locked to a fixed direction by subclasses (e.g. the original's one-way HE-RF/RF-HE converters); {@code null} = freely cycleable (default generic converter). */
+    private Integer lockedMode = null;
+
     public ConverterBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CONVERTER_BE.get(), pos, state);
+    }
+
+    /** Used by fixed-direction subclasses ({@code machine_converter_he_rf}/{@code rf_he}), which reuse this class's logic wholesale under their own registered type. */
+    protected ConverterBlockEntity(net.minecraft.world.level.block.entity.BlockEntityType<?> type, BlockPos pos, BlockState state, int lockedIoMode) {
+        super(type, pos, state);
+        this.lockedMode = lockedIoMode;
+        this.ioMode = lockedIoMode;
     }
 
     // ЖИЗНЕННЫЙ ЦИКЛ
@@ -134,6 +144,7 @@ public class ConverterBlockEntity extends BlockEntity implements IEnergyReceiver
     }
 
     public void cycleMode() {
+        if (lockedMode != null) return;
         ioMode = (ioMode + 1) % 3;
         setChanged();
     }

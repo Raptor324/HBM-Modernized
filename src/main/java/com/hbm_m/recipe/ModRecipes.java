@@ -44,6 +44,18 @@ public class ModRecipes {
     public static final RegistrySupplier<RecipeType<ArcFurnaceRecipe>> ARC_FURNACE_TYPE =
             RECIPE_TYPES.register("arc_furnace", () -> ArcFurnaceRecipe.Type.INSTANCE);
 
+    public static final RegistrySupplier<RecipeSerializer<AmmoPressRecipe>> AMMO_PRESS_SERIALIZER =
+            SERIALIZERS.register("ammo_press", () -> AmmoPressRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<AmmoPressRecipe>> AMMO_PRESS_TYPE =
+            RECIPE_TYPES.register("ammo_press", () -> AmmoPressRecipe.Type.INSTANCE);
+
+    public static final RegistrySupplier<RecipeSerializer<PurexRecipe>> PUREX_SERIALIZER =
+            SERIALIZERS.register("purex", () -> PurexRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<PurexRecipe>> PUREX_TYPE =
+            RECIPE_TYPES.register("purex", () -> PurexRecipe.Type.INSTANCE);
+
     public static final RegistrySupplier<RecipeSerializer<BlastFurnaceRecipe>> BLAST_FURNACE_SERIALIZER =
             SERIALIZERS.register("blast_furnace", () -> BlastFurnaceRecipe.Serializer.INSTANCE);
 

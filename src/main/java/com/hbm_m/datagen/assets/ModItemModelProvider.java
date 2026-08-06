@@ -158,6 +158,16 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.WARHEAD_INCENDIARY_LARGE);
         simpleItem(ModItems.WARHEAD_MIRV);
         simpleItem(ModItems.WARHEAD_VOLCANO);
+
+        // Siren cassettes all share the single ported "cassette" texture (no per-track overlay tint,
+        // simplified from the original's dye-tinted overlay layer)
+        simpleItemModelByName(ModItems.CASSETTE_AMS_SIREN.getId().getPath(), "cassette");
+        simpleItemModelByName(ModItems.CASSETTE_BEEP_SIREN.getId().getPath(), "cassette");
+        simpleItemModelByName(ModItems.CASSETTE_CLASSIC_SIREN.getId().getPath(), "cassette");
+        simpleItemModelByName(ModItems.CASSETTE_NOSTROMO_SIREN.getId().getPath(), "cassette");
+        simpleItemModelByName(ModItems.CASSETTE_REGULAR_SIREN.getId().getPath(), "cassette");
+        simpleItemModelByName(ModItems.CASSETTE_STRIDER_SIREN.getId().getPath(), "cassette");
+        simpleItemModelByName(ModItems.CASSETTE_SWEEP_SIREN.getId().getPath(), "cassette");
         simpleItem(ModItems.WARHEAD_NUCLEAR);
         simpleItem(ModItems.THRUSTER_SMALL);
         simpleItem(ModItems.THRUSTER_MEDIUM);
@@ -288,6 +298,12 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.UPGRADE_SPEED_1);
         simpleItem(ModItems.UPGRADE_SPEED_2);
         simpleItem(ModItems.UPGRADE_SPEED_3);
+        simpleItem(ModItems.UPGRADE_STACK_1);
+        simpleItem(ModItems.UPGRADE_STACK_2);
+        simpleItem(ModItems.UPGRADE_STACK_3);
+        simpleItem(ModItems.UPGRADE_EJECTOR_1);
+        simpleItem(ModItems.UPGRADE_EJECTOR_2);
+        simpleItem(ModItems.UPGRADE_EJECTOR_3);
         simpleItem(ModItems.UPGRADE_EFFECT_1);
         simpleItem(ModItems.UPGRADE_EFFECT_2);
         simpleItem(ModItems.UPGRADE_EFFECT_3);
@@ -457,6 +473,17 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.ROD_ZIRNOX_ZFB_MOX);
         simpleItem(ModItems.ROD_ZIRNOX_ZFB_MOX_DEPLETED);
 
+        simpleItem(ModItems.WATZ_PELLET_SCHRABIDIUM_OXIDE);
+        simpleItem(ModItems.WATZ_PELLET_SCHRABIDIUM_OXIDE_DEPLETED);
+        simpleItem(ModItems.WATZ_PELLET_LES_OXIDE);
+        simpleItem(ModItems.WATZ_PELLET_LES_OXIDE_DEPLETED);
+        simpleItem(ModItems.WATZ_PELLET_NATURAL_URANIUM);
+        simpleItem(ModItems.WATZ_PELLET_NATURAL_URANIUM_DEPLETED);
+        simpleItem(ModItems.WATZ_PELLET_BORON_CARBIDE);
+        simpleItem(ModItems.WATZ_PELLET_BORON_CARBIDE_DEPLETED);
+        simpleItem(ModItems.WATZ_PELLET_LEAD_SHIELD);
+        simpleItem(ModItems.WATZ_PELLET_LEAD_SHIELD_DEPLETED);
+
         simpleItem(ModItems.PLATE_IRON);
         simpleItem(ModItems.PLATE_STEEL);
         simpleItem(ModItems.PLATE_GOLD);
@@ -498,6 +525,9 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.PLATE_FUEL_SA326);
         simpleItem(ModItems.PLATE_FUEL_U233);
         simpleItem(ModItems.PLATE_FUEL_U235);
+        withExistingParent(ModItems.WASTE_PLATE_U233.getId().getPath(), "item/generated").texture("layer0", modLoc("item/waste_plate_uranium"));
+        withExistingParent(ModItems.WASTE_PLATE_U235.getId().getPath(), "item/generated").texture("layer0", modLoc("item/waste_plate_uranium"));
+        withExistingParent(ModItems.WASTE_PLATE_PU239.getId().getPath(), "item/generated").texture("layer0", modLoc("item/waste_plate_mox"));
         withExistingParent(ModItems.RBMK_FUEL_DRX.getId().getPath(), "item/generated")
             .texture("layer0", modLoc("block/rbmkrods/" + ModItems.RBMK_FUEL_DRX.getId().getPath()));
 
@@ -719,6 +749,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.SOLDERING_STATION);
         blockItemFromBlockModelMachine(ModBlocks.MIXER);
         blockItemFromBlockModelMachine(ModBlocks.DERRICK);
+        blockItemFromBlockModelMachine(ModBlocks.MACHINE_WELL);
         blockItemFromBlockModelMachine(ModBlocks.RBMK_CONSOLE);
         blockItemFromBlockModelMachine(ModBlocks.FLARE_STACK);
         blockItemFromBlockModelMachine(ModBlocks.PUMPJACK);
@@ -775,6 +806,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.COMBINATION_OVEN);
         blockItemFromBlockModelMachine(ModBlocks.COMBUSTION_ENGINE);
         blockItemFromBlockModelMachine(ModBlocks.COMPRESSOR);
+        withExistingParent(ModBlocks.MACHINE_COMPRESSOR_COMPACT.getId().getPath(),
+                modLoc("block/" + ModBlocks.MACHINE_COMPRESSOR_COMPACT.getId().getPath()));
         blockItemFromBlockModelMachine(ModBlocks.CONDENSER_POWERED);
         blockItemFromBlockModelMachine(ModBlocks.CONVEYOR_PRESS);
         blockItemFromBlockModelMachine(ModBlocks.COUPLER);
@@ -787,7 +820,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.EPRESS);
         blockItemFromBlockModelMachine(ModBlocks.EXPOSURE_CHAMBER);
         blockItemFromBlockModelMachine(ModBlocks.FENSU);
-        blockItemFromBlockModelMachine(ModBlocks.FENSU2);
+        // FENSU2 (machine_battery_redd) item model is generated by orientableBlockWithItem in ModBlockStateProvider.
         blockItemFromBlockModelMachine(ModBlocks.FIREBOX);
         blockItemFromBlockModelMachine(ModBlocks.FRACTION_SPACER);
         blockItemFromBlockModelMachine(ModBlocks.FURNACE_IRON);
@@ -814,11 +847,23 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.ROTARY_FURNACE);
         blockItemFromBlockModelMachine(ModBlocks.SAWMILL);
         blockItemFromBlockModelMachine(ModBlocks.SOLIDIFIER);
+        blockItemFromBlockModelMachine(ModBlocks.ASHPIT);
+        blockItemFromBlockModelMachine(ModBlocks.REACTOR_RESEARCH);
+        blockItemFromBlockModelMachine(ModBlocks.MACHINE_RADGEN);
+        itemModelFromBlockResourcePath(ModBlocks.CRANE_INSERTER.getId().getPath(), "block/crane_inserter_north");
+        itemModelFromBlockResourcePath(ModBlocks.CRANE_EXTRACTOR.getId().getPath(), "block/crane_extractor_north");
+        itemModelFromBlockResourcePath(ModBlocks.CRANE_GRABBER.getId().getPath(), "block/crane_grabber_north");
+        itemModelFromBlockResourcePath(ModBlocks.CRANE_BOXER.getId().getPath(), "block/crane_boxer_north");
+        itemModelFromBlockResourcePath(ModBlocks.CRANE_UNBOXER.getId().getPath(), "block/crane_unboxer_north");
         blockItemFromBlockModelMachine(ModBlocks.SOURCE);
+        blockItemFromBlockModelMachine(ModBlocks.MACHINE_LARGE_TURBINE);
+        blockItemFromBlockModelMachine(ModBlocks.LPW2);
+        blockItemFromBlockModelMachine(ModBlocks.STEAM_ENGINE);
         blockItemFromBlockModelMachine(ModBlocks.STIRLING);
         blockItemFromBlockModelMachine(ModBlocks.STIRLING_CREATIVE);
         blockItemFromBlockModelMachine(ModBlocks.STIRLING_STEEL);
         blockItemFromBlockModelMachine(ModBlocks.STRAND_CASTER);
+        blockItemFromBlockModelMachine(ModBlocks.THRESHER);
         blockItemFromBlockModelMachine(ModBlocks.TORUS);
         blockItemFromBlockModelMachine(ModBlocks.TURBINEGAS);
         blockItemFromBlockModelMachine(ModBlocks.WATZ_PUMP);
@@ -916,6 +961,12 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.GRENADESLIME);
         simpleItem(ModItems.GRENADESMART);
         simpleItem(ModItems.SULFUR);
+        simpleItem(ModItems.COKE_PETROLEUM);
+        simpleItem(ModItems.ASH_WOOD);
+        simpleItem(ModItems.ASH_COAL);
+        simpleItem(ModItems.ASH_MISC);
+        simpleItem(ModItems.ASH_FLY);
+        simpleItem(ModItems.ASH_SOOT);
         simpleItem(ModItems.FLUORITE);
         simpleItem(ModItems.LIGNITE);
         simpleItem(ModItems.CINNABAR);
@@ -1344,6 +1395,11 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.DRILLBIT_TCALLOY,
                 ModItems.DRILLBIT_TCALLOY_DIAMOND,
                 ModItems.DRONE_LINKER,
+                ModItems.DRONE_PATROL,
+                ModItems.DRONE_PATROL_CHUNKLOADING,
+                ModItems.DRONE_PATROL_EXPRESS,
+                ModItems.DRONE_PATROL_EXPRESS_CHUNKLOADING,
+                ModItems.DRONE_REQUEST,
                 ModItems.DWARVEN_PICKAXE,
                 ModItems.DYSFUNCTIONAL_REACTOR,
                 ModItems.EGG_BALEFIRE,
@@ -1657,6 +1713,7 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.PART_RECEIVER_HEAVY,
                 ModItems.PART_RECEIVER_LIGHT,
                 ModItems.PART_STOCK,
+                ModItems.KEY_PIN,
                 ModItems.PARTICLE_AMAT,
                 ModItems.PARTICLE_ASCHRAB,
                 ModItems.PARTICLE_COPPER,

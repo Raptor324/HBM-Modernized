@@ -82,32 +82,149 @@ public final class MixerRecipes {
     }
 
     static {
-        // Sulfuric Acid: Vitriol + Water -> Sulfuric Acid
-        // Direct port of the original HBM vitriol-process recipe.
-        add(ModFluids.VITRIOL.getSource(), 1000,
-            ModFluids.WATER.getSource(), 1000,
-            ModFluids.SULFURIC_ACID.getSource(), 2000,
-            100, 50L);
+        // Sulfuric Acid and Chlorocalcite Mix in the original both require a solid ingredient
+        // (S.dust() / powder_flux) that this port's fluid-only MixerRecipe can't represent -
+        // both are already producible via other machines (Crystallizer / Fraction Tower), so
+        // they're skipped here rather than approximated with fabricated fluid substitutes.
 
-        // Biofuel: Ethanol + Sunflower Oil -> Biofuel
-        // Transesterification of plant oil with ethanol yields biodiesel/biofuel.
-        add(ModFluids.ETHANOL.getSource(), 1000,
-            ModFluids.SUNFLOWEROIL.getSource(), 1000,
-            ModFluids.BIOFUEL.getSource(), 2000,
-            100, 50L);
+        // Biofuel: Fish Oil + Wood Oil -> Biofuel, Sunflower Oil + Wood Oil -> Biofuel
+        // Ported 1:1 from original MixerRecipes.java (register(Fluids.BIOFUEL, ...)).
+        add(ModFluids.FISHOIL.getSource(), 500,
+            ModFluids.WOODOIL.getSource(), 500,
+            ModFluids.BIOFUEL.getSource(), 250,
+            20, 50L);
+        add(ModFluids.SUNFLOWEROIL.getSource(), 500,
+            ModFluids.WOODOIL.getSource(), 500,
+            ModFluids.BIOFUEL.getSource(), 200,
+            20, 50L);
 
-        // Nitroglycerin: Nitric Acid + Peroxide -> Nitroglycerin
-        // Simplified nitration step using fluids available in this codebase.
-        add(ModFluids.NITRIC_ACID.getSource(), 1000,
-            ModFluids.PEROXIDE.getSource(), 1000,
+        // Nitroglycerin: Petroleum + Nitric Acid -> Nitroglycerin, Fish Oil + Nitric Acid -> Nitroglycerin
+        // Ported 1:1 from original MixerRecipes.java (register(Fluids.NITROGLYCERIN, ...)).
+        add(ModFluids.PETROLEUM.getSource(), 1000,
+            ModFluids.NITRIC_ACID.getSource(), 1000,
             ModFluids.NITROGLYCERIN.getSource(), 1000,
-            200, 100L);
+            20, 50L);
+        add(ModFluids.FISHOIL.getSource(), 500,
+            ModFluids.NITRIC_ACID.getSource(), 500,
+            ModFluids.NITROGLYCERIN.getSource(), 1000,
+            20, 50L);
 
-        // Chlorocalcite Mix: Calcium Solution + Chlorocalcite Solution -> Chlorocalcite Mix
-        // Part of the calcium chloride / lithium extraction processing chain.
-        add(ModFluids.CALCIUM_SOLUTION.getSource(), 1000,
-            ModFluids.CHLOROCALCITE_SOLUTION.getSource(), 1000,
-            ModFluids.CHLOROCALCITE_MIX.getSource(), 2000,
-            150, 75L);
+        // ---------------------------------------------------------------------------------
+        // Additional recipes ported from the original 1.7.10 MixerRecipes.java.
+        // Only fluid+fluid recipes are portable here: this port's MixerRecipe record has no
+        // solid-input slot, so every original recipe involving setSolid(...) was skipped.
+        // ---------------------------------------------------------------------------------
+
+        // Fracksol: Sulfuric Acid + Petroleum -> Fracksol
+        add(ModFluids.SULFURIC_ACID.getSource(), 900,
+            ModFluids.PETROLEUM.getSource(), 100,
+            ModFluids.FRACKSOL.getSource(), 1000,
+            20, 50L);
+
+        // Salient: Seed Slurry + Blood -> Salient
+        add(ModFluids.SEEDSLURRY.getSource(), 500,
+            ModFluids.BLOOD.getSource(), 500,
+            ModFluids.SALIENT.getSource(), 1000,
+            20, 50L);
+
+        // Phosgene: Unsaturateds + Chlorine -> Phosgene
+        add(ModFluids.UNSATURATEDS.getSource(), 500,
+            ModFluids.CHLORINE.getSource(), 500,
+            ModFluids.PHOSGENE.getSource(), 1000,
+            20, 50L);
+
+        // Solvent: Naphtha + Aromatics -> Solvent (and its cracked/DS/coker variants)
+        add(ModFluids.NAPHTHA.getSource(), 500,
+            ModFluids.AROMATICS.getSource(), 500,
+            ModFluids.SOLVENT.getSource(), 1000,
+            50, 50L);
+        add(ModFluids.NAPHTHA_CRACK.getSource(), 500,
+            ModFluids.AROMATICS.getSource(), 500,
+            ModFluids.SOLVENT.getSource(), 1000,
+            50, 50L);
+        add(ModFluids.NAPHTHA_DS.getSource(), 500,
+            ModFluids.AROMATICS.getSource(), 500,
+            ModFluids.SOLVENT.getSource(), 1000,
+            50, 50L);
+        add(ModFluids.NAPHTHA_COKER.getSource(), 500,
+            ModFluids.AROMATICS.getSource(), 500,
+            ModFluids.SOLVENT.getSource(), 1000,
+            50, 50L);
+
+        // Radiosolvent: Reformgas + Chlorine -> Radiosolvent
+        add(ModFluids.REFORMGAS.getSource(), 750,
+            ModFluids.CHLORINE.getSource(), 250,
+            ModFluids.RADIOSOLVENT.getSource(), 1000,
+            50, 50L);
+
+        // Petroil: Reclaimed Oil + Lubricant -> Petroil
+        add(ModFluids.RECLAIMED.getSource(), 800,
+            ModFluids.LUBRICANT.getSource(), 200,
+            ModFluids.PETROIL.getSource(), 1000,
+            30, 50L);
+
+        // Lubricant: Heating Oil + Unsaturateds -> Lubricant (and oil/ethanol variants)
+        add(ModFluids.HEATINGOIL.getSource(), 500,
+            ModFluids.UNSATURATEDS.getSource(), 500,
+            ModFluids.LUBRICANT.getSource(), 1000,
+            20, 50L);
+        add(ModFluids.FISHOIL.getSource(), 800,
+            ModFluids.ETHANOL.getSource(), 200,
+            ModFluids.LUBRICANT.getSource(), 1000,
+            20, 50L);
+        add(ModFluids.SUNFLOWEROIL.getSource(), 800,
+            ModFluids.ETHANOL.getSource(), 200,
+            ModFluids.LUBRICANT.getSource(), 1000,
+            20, 50L);
+
+        // Biofuel: Fish Oil / Sunflower Oil + Wood Oil -> Biofuel
+        add(ModFluids.FISHOIL.getSource(), 500,
+            ModFluids.WOODOIL.getSource(), 500,
+            ModFluids.BIOFUEL.getSource(), 250,
+            20, 50L);
+        add(ModFluids.SUNFLOWEROIL.getSource(), 500,
+            ModFluids.WOODOIL.getSource(), 500,
+            ModFluids.BIOFUEL.getSource(), 200,
+            20, 50L);
+
+        // Nitroglycerin: Petroleum / Fish Oil + Nitric Acid -> Nitroglycerin
+        add(ModFluids.PETROLEUM.getSource(), 1000,
+            ModFluids.NITRIC_ACID.getSource(), 1000,
+            ModFluids.NITROGLYCERIN.getSource(), 1000,
+            20, 50L);
+        add(ModFluids.FISHOIL.getSource(), 500,
+            ModFluids.NITRIC_ACID.getSource(), 500,
+            ModFluids.NITROGLYCERIN.getSource(), 1000,
+            20, 50L);
+
+        // Syngas: Coal Oil + Steam -> Syngas
+        add(ModFluids.COALOIL.getSource(), 500,
+            ModFluids.STEAM.getSource(), 500,
+            ModFluids.SYNGAS.getSource(), 1000,
+            50, 50L);
+
+        // Oxyhydrogen: Hydrogen + Air / Oxygen -> Oxyhydrogen
+        add(ModFluids.HYDROGEN.getSource(), 500,
+            ModFluids.AIR.getSource(), 2000,
+            ModFluids.OXYHYDROGEN.getSource(), 1000,
+            50, 50L);
+        add(ModFluids.HYDROGEN.getSource(), 500,
+            ModFluids.OXYGEN.getSource(), 500,
+            ModFluids.OXYHYDROGEN.getSource(), 1000,
+            50, 50L);
+
+        // Reformed fuels: Diesel/Diesel Crack/Kerosene + Reformate -> respective reformed fuel
+        add(ModFluids.DIESEL.getSource(), 900,
+            ModFluids.REFORMATE.getSource(), 100,
+            ModFluids.DIESEL_REFORM.getSource(), 1000,
+            50, 50L);
+        add(ModFluids.DIESEL_CRACK.getSource(), 900,
+            ModFluids.REFORMATE.getSource(), 100,
+            ModFluids.DIESEL_CRACK_REFORM.getSource(), 1000,
+            50, 50L);
+        add(ModFluids.KEROSENE.getSource(), 900,
+            ModFluids.REFORMATE.getSource(), 100,
+            ModFluids.KEROSENE_REFORM.getSource(), 1000,
+            50, 50L);
     }
 }

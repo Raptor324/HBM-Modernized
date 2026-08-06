@@ -1,0 +1,204 @@
+package com.hbm_m.blockentity.machines;
+
+import com.hbm_m.blockentity.BaseMachineBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.inventory.menu.MachineRadGenMenu;
+import com.hbm_m.interfaces.IEnergyModeHolder;
+import com.hbm_m.recipe.RadGenRecipes;
+import com.hbm_m.recipe.RadGenRecipes.Recipe;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
+
+/**
+ * RadGen - Port von {@code TileEntityMachineRadGen} (1.7.10 Original). 12 parallele
+ * Verarbeitungs-"Warteschlangen" (Slots 0-11 Eingabe, 12-23 Ausgabe), jede verarbeitet
+ * unabhaengig ein Item ueber {@code maxProgress} Ticks und erzeugt dabei kontinuierlich
+ * {@code production} HE/Tick - 1:1 aus dem Original.
+ * <p>
+ * SCOPE-Entscheidung: Die Original-Fairness-Pruefung in {@code isItemValidForSlot} (verhindert
+ * eine Warteschlange staerker zu befuellen als andere) entfaellt - jeder der 12 Eingabeslots
+ * akzeptiert unabhaengig jeden gueltigen Brennstoff (kleinere QoL-Vereinfachung ohne
+ * Gameplay-Auswirkung auf die Kernmechanik).
+ */
+public class MachineRadGenBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder {
+
+    public static final int QUEUE_COUNT = 12;
+    public static final int SLOT_INPUT_START  = 0;
+    public static final int SLOT_OUTPUT_START = 12;
+    public static final int INVENTORY_SIZE    = 24;
+
+    private static final long MAX_POWER = 1_000_000L;
+    private static final long ENERGY_EXTRACT_RATE = 50_000L;
+
+    private final int[] progress = new int[QUEUE_COUNT];
+    private final int[] maxProgress = new int[QUEUE_COUNT];
+    private final int[] production = new int[QUEUE_COUNT];
+    private final ItemStack[] processing = new ItemStack[QUEUE_COUNT];
+
+    private int output;
+    private boolean isOn;
+
+    public MachineRadGenBlockEntity(BlockPos pos, BlockState state) {
+        super(ModBlockEntities.RADGEN_BE.get(), pos, state, INVENTORY_SIZE, MAX_POWER, 0L, ENERGY_EXTRACT_RATE);
+    }
+
+    @Override
+    public int getCurrentMode() {
+        return 2; // OUTPUT only, so the energy network treats this as a generator.
+    }
+
+    public static void tick(Level level, BlockPos pos, BlockState state, MachineRadGenBlockEntity be) {
+        if (!level.isClientSide) {
+            be.serverTick();
+        }
+    }
+
+    private void serverTick() {
+        ensureNetworkInitialized();
+        output = 0;
+
+        for (int i = 0; i < QUEUE_COUNT; i++) {
+            ItemStack input = inventory.getStackInSlot(SLOT_INPUT_START + i);
+            if (processing[i] == null && !input.isEmpty()) {
+                Recipe recipe = RadGenRecipes.get(input.getItem());
+                if (recipe != null && recipe.duration() > 0 && canAcceptOutput(i, recipe)) {
+                    progress[i] = 0;
+                    maxProgress[i] = recipe.duration();
+                    production[i] = recipe.power();
+                    processing[i] = new ItemStack(input.getItem(), 1);
+                    input.shrink(1);
+                    if (input.isEmpty()) inventory.setStackInSlot(SLOT_INPUT_START + i, ItemStack.EMPTY);
+                    setChanged();
+                }
+            }
+        }
+
+        isOn = false;
+        for (int i = 0; i < QUEUE_COUNT; i++) {
+            if (processing[i] == null) continue;
+
+            isOn = true;
+            long space = getMaxEnergyStored() - getEnergyStored();
+            long added = Math.min(production[i], space);
+            setEnergyStored(getEnergyStored() + added);
+            output += production[i];
+            progress[i]++;
+
+            if (progress[i] >= maxProgress[i]) {
+                progress[i] = 0;
+                Recipe recipe = RadGenRecipes.get(processing[i].getItem());
+                if (recipe != null && recipe.output() != null && !recipe.output().isEmpty()) {
+                    ItemStack out = recipe.output().copy();
+                    ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT_START + i);
+                    if (current.isEmpty()) {
+                        inventory.setStackInSlot(SLOT_OUTPUT_START + i, out);
+                    } else {
+                        current.grow(out.getCount());
+                    }
+                }
+                processing[i] = null;
+                setChanged();
+            }
+        }
+
+        sendUpdateToClient();
+    }
+
+    private boolean canAcceptOutput(int queue, Recipe recipe) {
+        if (recipe.output() == null || recipe.output().isEmpty()) return true;
+        ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT_START + queue);
+        if (current.isEmpty()) return true;
+        return ItemStack.isSameItemSameTags(current, recipe.output())
+                && current.getCount() + recipe.output().getCount() <= current.getMaxStackSize();
+    }
+
+    // ── Accessors ────────────────────────────────────────────────────────────
+
+    public int getProgress(int queue)    { return progress[queue]; }
+    public int getMaxProgress(int queue) { return maxProgress[queue]; }
+    public boolean isProcessing(int queue) { return processing[queue] != null; }
+    public int getOutput()   { return output; }
+    public boolean isOn()    { return isOn; }
+
+    // ── NBT ─────────────────────────────────────────────────────────────────
+
+    @Override
+    public void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
+        tag.putIntArray("progress", progress);
+        tag.putIntArray("max_progress", maxProgress);
+        tag.putIntArray("production", production);
+        tag.putBoolean("is_on", isOn);
+
+        ListTag list = new ListTag();
+        for (int i = 0; i < QUEUE_COUNT; i++) {
+            if (processing[i] != null) {
+                CompoundTag entry = new CompoundTag();
+                entry.putByte("slot", (byte) i);
+                entry.put("stack", processing[i].save(new CompoundTag()));
+                list.add(entry);
+            }
+        }
+        tag.put("processing", list);
+    }
+
+    @Override
+    public void load(CompoundTag tag) {
+        super.load(tag);
+        int[] p = tag.getIntArray("progress");
+        int[] mp = tag.getIntArray("max_progress");
+        int[] pr = tag.getIntArray("production");
+        for (int i = 0; i < QUEUE_COUNT; i++) {
+            progress[i] = i < p.length ? p[i] : 0;
+            maxProgress[i] = i < mp.length ? mp[i] : 0;
+            production[i] = i < pr.length ? pr[i] : 0;
+            processing[i] = null;
+        }
+        isOn = tag.getBoolean("is_on");
+
+        ListTag list = tag.getList("processing", 10);
+        for (int i = 0; i < list.size(); i++) {
+            CompoundTag entry = list.getCompound(i);
+            int slot = entry.getByte("slot");
+            if (slot >= 0 && slot < QUEUE_COUNT) {
+                processing[slot] = ItemStack.of(entry.getCompound("stack"));
+            }
+        }
+    }
+
+    // ── Slot validation ──────────────────────────────────────────────────────
+
+    @Override
+    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
+        if (slot < SLOT_OUTPUT_START) {
+            return RadGenRecipes.get(stack.getItem()) != null;
+        }
+        return false;
+    }
+
+    // ── Menu ────────────────────────────────────────────────────────────────
+
+    @Override
+    protected Component getDefaultName() {
+        return Component.translatable("container.hbm_m.radgen");
+    }
+
+    @Override
+    public Component getDisplayName() {
+        return getDefaultName();
+    }
+
+    @Override
+    public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
+        return MachineRadGenMenu.create(id, inventory, this);
+    }
+}

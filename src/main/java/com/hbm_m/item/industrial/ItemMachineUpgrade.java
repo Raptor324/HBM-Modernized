@@ -26,7 +26,9 @@ public class ItemMachineUpgrade extends Item {
         POWER,
         FORTUNE,
         AFTERBURN,
-        OVERDRIVE;
+        OVERDRIVE,
+        STACK,
+        EJECTOR;
 
         public String getTranslationKeySuffix() {
             return name().toLowerCase();

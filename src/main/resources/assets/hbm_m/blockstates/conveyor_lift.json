@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "hbm_m:block/network/conveyor_lift" },
+    "facing=east": { "model": "hbm_m:block/network/conveyor_lift", "y": 90 },
+    "facing=south": { "model": "hbm_m:block/network/conveyor_lift", "y": 180 },
+    "facing=west": { "model": "hbm_m:block/network/conveyor_lift", "y": 270 }
+  }
+}

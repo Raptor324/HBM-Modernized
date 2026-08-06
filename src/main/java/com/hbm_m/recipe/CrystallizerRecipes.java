@@ -8,6 +8,7 @@ import javax.annotation.Nullable;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
@@ -119,19 +120,20 @@ public final class CrystallizerRecipes {
         // СПЕЦИАЛЬНЫЕ БЛОКИ-РУДЫ (фосфор, тикит, гравий с алмазами)
         // ═══════════════════════════════════════════════════════════════════
         // TODO: ModBlocks.ORE_NETHER_FIRE -> CRYSTAL_PHOSPHORUS, baseTime, prod 0.05, без кислоты.
-        //       (Незер-руда фосфора — нужно добавить блок и тег.)
+        //       (Незер-руда фосфора — нужно добавить блок и тег. Всё ещё отсутствует.)
         // addItem(ModBlocks.ORE_NETHER_FIRE.get(), new ItemStack(ModItems.CRYSTAL_PHOSPHORUS.get()), 0.05f, BASE_TIME, null);
 
         // TODO: ModBlocks.ORE_TIKITE -> CRYSTAL_TRIXITE, baseTime, prod 0.05, серная.
-        //       (Трикситовая руда — оригинал: ore_tikite block.)
+        //       (Трикситовая руда — оригинал: ore_tikite block. Всё ещё отсутствует.)
         // addItem(ModBlocks.ORE_TIKITE.get(), new ItemStack(ModItems.CRYSTAL_TRIXITE.get()), 0.05f, BASE_TIME, sulfur);
 
-        // TODO: ModBlocks.GRAVEL_DIAMOND -> CRYSTAL_DIAMOND, baseTime, prod 0.05, без кислоты.
-        // addItem(ModBlocks.GRAVEL_DIAMOND.get(), new ItemStack(ModItems.CRYSTAL_DIAMOND.get()), 0.05f, BASE_TIME, null);
+        // Гравий с алмазами -> кристалл алмаза (baseTime, prod 0.05, перекись по умолчанию).
+        // ModBlocks.GRAVEL_DIAMOND теперь существует (ранее отсутствовал).
+        addItem(ModBlocks.GRAVEL_DIAMOND.get(), new ItemStack(ModItems.CRYSTAL_DIAMOND.get()), 0.05f, BASE_TIME, peroxide);
 
-        // TODO: SRN.ingot() (шрараниевый ингот) -> CRYSTAL_SCHRARANIUM, baseTime, prod 0.05.
-        //       (В оригинале это OreDictStack(SRN.ingot()) — нужен ингот шрараниума в ModIngots.)
-        // addItem(ModItems.INGOT_SCHRARANIUM.get(), new ItemStack(ModItems.CRYSTAL_SCHRARANIUM.get()), 0.05f, BASE_TIME, null);
+        // Шрараниевый ингот -> кристалл шрараниума (baseTime, prod 0.05, перекись по умолчанию).
+        // ModIngots.SCHRARANIUM и ModItems.CRYSTAL_SCHRARANIUM теперь оба существуют.
+        addItem(ModItems.getIngot(ModIngots.SCHRARANIUM).get(), new ItemStack(ModItems.CRYSTAL_SCHRARANIUM.get()), 0.05f, BASE_TIME, peroxide);
 
         // ═══════════════════════════════════════════════════════════════════
         // УТИЛИТАРНЫЕ ПРЕОБРАЗОВАНИЯ
@@ -143,9 +145,9 @@ public final class CrystallizerRecipes {
         // Булыжник → укреплённый камень (utilityTime, перекись)
         addItem(Items.COBBLESTONE, new ItemStack(ModBlocks.REINFORCED_STONE.get()), 0f, UTILITY_TIME, peroxide);
 
-        // TODO: ModBlocks.GRAVEL_OBSIDIAN -> BRICK_OBSIDIAN, utilityTime.
-        //       (Обсидиановый гравий — нужен блок ore_gravel_obsidian.)
-        // addItem(ModBlocks.GRAVEL_OBSIDIAN.get(), new ItemStack(ModBlocks.BRICK_OBSIDIAN.get()), 0f, UTILITY_TIME, null);
+        // Обсидиановый гравий -> обсидиановый кирпич (utilityTime, перекись по умолчанию).
+        // ModBlocks.GRAVEL_OBSIDIAN и ModBlocks.BRICK_OBSIDIAN теперь оба существуют.
+        addItem(ModBlocks.GRAVEL_OBSIDIAN.get(), new ItemStack(ModBlocks.BRICK_OBSIDIAN.get()), 0f, UTILITY_TIME, peroxide);
 
         // Кость → 16 слизи (mixing, серная 1000 mB)
         addItem(Items.BONE, new ItemStack(Items.SLIME_BALL, 16), 0f, MIXING_TIME, fluid(ModFluids.SULFURIC_ACID, 1_000));
@@ -158,23 +160,23 @@ public final class CrystallizerRecipes {
         // ═══════════════════════════════════════════════════════════════════
 
         // TODO: песок -> ingot_fiberglass, utilityTime, prod 0.15.
-        //       (Стекловолокно — нужен ModItems.INGOT_FIBERGLASS.)
+        //       (Стекловолокно — нужен ModItems.INGOT_FIBERGLASS. Всё ещё отсутствует.)
         // addOreTag("forge:sand", ModItems.INGOT_FIBERGLASS.get(), 0.15f, null);
 
-        // TODO: кремниевый ингот -> 2 кварца, utilityTime, prod 0.10, кислород 250 mB.
-        //       (Нужен ингот кремния в ModIngots.SILICON или подобное.)
-        // addItem(ModItems.INGOT_SILICON.get(), new ItemStack(Items.QUARTZ, 2), 0.10f, UTILITY_TIME, fluid(ModFluids.OXYGEN, 250));
+        // Кремниевый ингот -> 2 кварца (utilityTime, prod 0.10, кислород 250 mB).
+        // ModIngots.SILICON теперь существует (ранее был только nugget/billet, ингота не было).
+        addItem(ModItems.getIngot(ModIngots.SILICON).get(), new ItemStack(Items.QUARTZ, 2), 0.10f, UTILITY_TIME, fluid(ModFluids.OXYGEN, 250));
 
         // ═══════════════════════════════════════════════════════════════════
         // РТУТЬ
         // ═══════════════════════════════════════════════════════════════════
 
         // Блок редстоуна → ингот ртути (baseTime, prod 0.25)
-        // TODO: нужен ModItems.INGOT_MERCURY (в ModIngots пока MERCURY отсутствует).
+        // TODO: нужен ModItems.INGOT_MERCURY (в ModIngots пока MERCURY отсутствует — только фluid MERCURY есть).
         // addItem(Items.REDSTONE_BLOCK, new ItemStack(ModItems.INGOT_MERCURY.get()), 0.25f, BASE_TIME, null);
 
         // TODO: CINNABAR.crystal() -> 3 ингота ртути, baseTime, prod 0.25.
-        //       (Циннабарит-кристалл существует в ModItems.CRYSTAL_CINNEBAR — а нужен ингот ртути.)
+        //       (Циннабарит-кристалл существует в ModItems.CRYSTAL_CINNEBAR — а нужен ингот ртути, всё ещё отсутствует.)
         // addItem(ModItems.CRYSTAL_CINNEBAR.get(), new ItemStack(ModItems.INGOT_MERCURY.get(), 3), 0.25f, BASE_TIME, null);
 
         // ═══════════════════════════════════════════════════════════════════
@@ -189,9 +191,9 @@ public final class CrystallizerRecipes {
         // АРМАТУРА → АРМБЕТОН
         // ═══════════════════════════════════════════════════════════════════
 
-        // TODO: ModBlocks.REBAR -> CONCRETE_REBAR, 10 тиков, бетон 1000 mB.
-        //       (REBAR блок отсутствует, есть только CONCRETE_REBAR.)
-        // addItem(ModBlocks.REBAR.get(), new ItemStack(ModBlocks.CONCRETE_REBAR.get()), 0f, 10, fluid(ModFluids.CONCRETE, 1_000));
+        // Арматура -> армбетон (10 тиков, бетон 1000 mB).
+        // ModBlocks.REBAR теперь существует (ранее отсутствовал, был только CONCRETE_REBAR).
+        addItem(ModBlocks.REBAR.get(), new ItemStack(ModBlocks.CONCRETE_REBAR.get()), 0f, 10, fluid(ModFluids.CONCRETE, 1_000));
 
         // ═══════════════════════════════════════════════════════════════════
         // КАЛЬЦИЙ → ЦЕМЕНТ, МАЛАХИТ → СКРАП-МЕДЬ
@@ -208,22 +210,24 @@ public final class CrystallizerRecipes {
         // ═══════════════════════════════════════════════════════════════════
 
         // TODO: BORAX.dust() -> 3 powder_boron_tiny, baseTime, prod 0.25, серная 500 mB.
+        //       (POWDER_BORAX всё ещё отсутствует как именованный предмет.)
         // addItem(ModItems.POWDER_BORAX.get(), new ItemStack(ModItems.POWDER_BORON_TINY.get(), 3), 0.25f, BASE_TIME, sulfur);
 
         // ═══════════════════════════════════════════════════════════════════
         // АДСКИЙ УГОЛЬ → ТВЁРДОЕ ТОПЛИВО
         // ═══════════════════════════════════════════════════════════════════
 
-        // TODO: ModItems.COAL_INFERNAL -> SOLID_FUEL, utilityTime.
-        //       (Нужны оба предмета.)
-        // addItem(ModItems.COAL_INFERNAL.get(), new ItemStack(ModItems.SOLID_FUEL.get()), 0f, UTILITY_TIME, null);
+        // Адский уголь -> твёрдое топливо (utilityTime, перекись по умолчанию).
+        // Оба предмета (COAL_INFERNAL, SOLID_FUEL) теперь существуют.
+        addItem(ModItems.COAL_INFERNAL.get(), new ItemStack(ModItems.SOLID_FUEL.get()), 0f, UTILITY_TIME, peroxide);
 
         // ═══════════════════════════════════════════════════════════════════
         // ГНЕЙС (КАМЕНЬ) → ЛИТИЕВЫЙ ПОРОШОК
         // ═══════════════════════════════════════════════════════════════════
 
-        // TODO: ModBlocks.STONE_GNEISS -> POWDER_LITHIUM, utilityTime, prod 0.25.
-        // addItem(ModBlocks.STONE_GNEISS.get(), new ItemStack(ModItems.POWDER_LITHIUM.get()), 0.25f, UTILITY_TIME, null);
+        // Гнейс -> литиевый порошок (utilityTime, prod 0.25, перекись по умолчанию).
+        // ModBlocks.STONE_GNEISS теперь существует, порошок называется ModItems.LITHIUM_POWDER.
+        addItem(ModBlocks.STONE_GNEISS.get(), new ItemStack(ModItems.LITHIUM_POWDER.get()), 0.25f, UTILITY_TIME, peroxide);
 
         // ═══════════════════════════════════════════════════════════════════
         // MUSTARDWILLOW → КАДМИЙ
@@ -250,30 +254,36 @@ public final class CrystallizerRecipes {
         // ДРАГОЦЕННЫЕ ПЫЛИ → ОБРАТНО В САМОЦВЕТЫ
         // ═══════════════════════════════════════════════════════════════════
 
-        // TODO: powder_diamond -> diamond, utilityTime.
-        // addItem(ModItems.POWDER_DIAMOND.get(), new ItemStack(Items.DIAMOND), 0f, UTILITY_TIME, null);
-
-        // TODO: powder_emerald -> emerald, utilityTime.
-        // addItem(ModItems.POWDER_EMERALD.get(), new ItemStack(Items.EMERALD), 0f, UTILITY_TIME, null);
-
-        // TODO: powder_lapis -> blue dye, utilityTime.
-        // addItem(ModItems.POWDER_LAPIS.get(), new ItemStack(Items.BLUE_DYE), 0f, UTILITY_TIME, null);
+        // Драгоценные пыли обратно в самоцветы (utilityTime, перекись по умолчанию).
+        // ModItems.DIAMOND_POWDER / EMERALD_POWDER / LAPIS_POWDER теперь существуют.
+        addItem(ModItems.DIAMOND_POWDER.get(), new ItemStack(Items.DIAMOND), 0f, UTILITY_TIME, peroxide);
+        addItem(ModItems.EMERALD_POWDER.get(), new ItemStack(Items.EMERALD), 0f, UTILITY_TIME, peroxide);
+        // Lapis dust meta 4 in 1.7.10 was lapis lazuli itself (not a dye subtype) - use the modern LAPIS_LAZULI item.
+        addItem(ModItems.LAPIS_POWDER.get(), new ItemStack(Items.LAPIS_LAZULI), 0f, UTILITY_TIME, peroxide);
 
         // ═══════════════════════════════════════════════════════════════════
         // SEMTEX, DESH, METEORITE
         // ═══════════════════════════════════════════════════════════════════
 
         // TODO: powder_semtex_mix -> ingot_semtex, baseTime.
-        // TODO: powder_desh_ready -> ingot_desh, baseTime.
-        // TODO: powder_meteorite -> fragment_meteorite, utilityTime.
-        // (Нужны соответствующие порошки и слитки.)
+        //       (ModItems.POWDER_SEMTEX_MIX существует, но ingot_semtex всё ещё отсутствует — есть только STICK_SEMTEX,
+        //        другая форма предмета, подставлять её было бы неверной заменой.)
+
+        // Порошок готового деша -> ингот деша (baseTime, перекись по умолчанию).
+        // ModIngots.DESH теперь существует.
+        addItem(ModItems.POWDER_DESH_READY.get(), new ItemStack(ModItems.getIngot(ModIngots.DESH).get()), 0f, BASE_TIME, peroxide);
+
+        // Порошок метеоритного железа -> фрагмент метеорита (utilityTime, перекись по умолчанию).
+        // ModIngots.METEORITE и ModItems.FRAGMENT_METEORITE теперь оба существуют.
+        addItem(ModItems.getPowder(ModIngots.METEORITE).get(), new ItemStack(ModItems.FRAGMENT_METEORITE.get()), 0f, UTILITY_TIME, peroxide);
 
         // ═══════════════════════════════════════════════════════════════════
         // КАДМИЙ → РЕЗИНА
         // ═══════════════════════════════════════════════════════════════════
 
         // TODO: cadmium dust -> 16 ingot_rubber, utilityTime, FISHOIL 4000 mB.
-        // (Cadmium dust + ingot_rubber отсутствуют как именованные предметы.)
+        // (Cadmium dust теперь существует (ModItems.getPowder(ModIngots.CADMIUM)), но ingot_rubber
+        //  всё ещё отсутствует как именованный предмет.)
 
         // TODO: latex ingot -> ingot_rubber, mixing, prod 0.15, SOURGAS 25 mB.
         // (INGOT_LATEX и INGOT_RUBBER отсутствуют.)
@@ -282,8 +292,9 @@ public final class CrystallizerRecipes {
         // ОПИЛКИ → КОРДИТ (взрывчатка)
         // ═══════════════════════════════════════════════════════════════════
 
-        // TODO: powder_sawdust -> CORDITE, mixing, prod 0.25, NITROGLYCERIN 250 mB.
-        // (POWDER_SAWDUST и CORDITE не портированы.)
+        // Опилки -> кордит (mixing, prod 0.25, NITROGLYCERIN 250 mB).
+        // ModItems.POWDER_SAWDUST и ModItems.CORDITE теперь оба существуют.
+        addItem(ModItems.POWDER_SAWDUST.get(), new ItemStack(ModItems.CORDITE.get()), 0.25f, MIXING_TIME, fluid(ModFluids.NITROGLYCERIN, 250));
 
         // ═══════════════════════════════════════════════════════════════════
         // ОСМИРИДИЙ
@@ -334,8 +345,11 @@ public final class CrystallizerRecipes {
         // addOreTag("forge:sand", Items.CLAY, 0f, fluid(ModFluids.COLLOID, 1_000));   // если addOreTag поддержит ItemLike → доделать
 
         // TODO: SAND_MIX:QUARTZ -> 16 ball_dynamite, 20 тиков, NITROGLYCERIN 1000 mB.
-        // TODO: NETHERQUARTZ.dust() -> 4 ball_dynamite, 20 тиков, NITROGLYCERIN 250 mB.
-        // (BALL_DYNAMITE отсутствует, BALL_TNT — есть, но это другое.)
+        // (Блок/предмет SAND_MIX с вариантом QUARTZ всё ещё отсутствует.)
+
+        // Кварцевая пыль -> 4 динамитных шара (20 тиков, NITROGLYCERIN 250 mB).
+        // ModItems.QUARTZ_POWDER (аналог NETHERQUARTZ.dust()) и ModItems.BALL_DYNAMITE теперь оба существуют.
+        addItem(ModItems.QUARTZ_POWDER.get(), new ItemStack(ModItems.BALL_DYNAMITE.get(), 4), 0f, 20, fluid(ModFluids.NITROGLYCERIN, 250));
 
         // ═══════════════════════════════════════════════════════════════════
         // BEDROCK-РУДЫ — старая ветка (ore_centrifuged → ore_cleaned, и т.д.)
@@ -388,9 +402,9 @@ public final class CrystallizerRecipes {
         addItemAny(new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_RAD_LIGHT.get()), 0f, BEDROCK_TIME, radiosolvent250, 1, ModItems.BEDROCK_ORE_PRIMARY_LIGHT.get(), ModItems.BEDROCK_ORE_PRIMARY_ROASTED_LIGHT.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_LIGHT.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_LIGHT.get());
         addItemAny(new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_FIRST_LIGHT.get()), 0f, BEDROCK_TIME, hydrogen250, 1, ModItems.BEDROCK_ORE_PRIMARY_LIGHT.get(), ModItems.BEDROCK_ORE_PRIMARY_ROASTED_LIGHT.get(), ModItems.BEDROCK_ORE_PRIMARY_SULFURIC_LIGHT.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_LIGHT.get(), ModItems.BEDROCK_ORE_PRIMARY_SOLVENT_LIGHT.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_LIGHT.get(), ModItems.BEDROCK_ORE_PRIMARY_RAD_LIGHT.get(), ModItems.BEDROCK_ORE_PRIMARY_NORAD_LIGHT.get());
         addItemAny(new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_SECOND_LIGHT.get()), 0f, BEDROCK_TIME, chlorine250, 1, ModItems.BEDROCK_ORE_PRIMARY_LIGHT.get(), ModItems.BEDROCK_ORE_PRIMARY_ROASTED_LIGHT.get(), ModItems.BEDROCK_ORE_PRIMARY_SULFURIC_LIGHT.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_LIGHT.get(), ModItems.BEDROCK_ORE_PRIMARY_SOLVENT_LIGHT.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_LIGHT.get(), ModItems.BEDROCK_ORE_PRIMARY_RAD_LIGHT.get(), ModItems.BEDROCK_ORE_PRIMARY_NORAD_LIGHT.get());
-        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_WASHED_LIGHT.get()), 0f, WASHING_TIME, water250, 1, ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_LIGHT.get(), ModItems.BEDROCK_ORE_SULFURIC_ROASTED_LIGHT.get(), ModItems.BEDROCK_ORE_SULFURIC_ARC_LIGHT.get());
-        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_WASHED_LIGHT.get()), 0f, WASHING_TIME, water250, 1, ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_LIGHT.get(), ModItems.BEDROCK_ORE_SOLVENT_ROASTED_LIGHT.get(), ModItems.BEDROCK_ORE_SOLVENT_ARC_LIGHT.get());
-        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_RAD_WASHED_LIGHT.get()), 0f, WASHING_TIME, water250, 1, ModItems.BEDROCK_ORE_RAD_BYPRODUCT_LIGHT.get(), ModItems.BEDROCK_ORE_RAD_ROASTED_LIGHT.get(), ModItems.BEDROCK_ORE_RAD_ARC_LIGHT.get());
+        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_WASHED_LIGHT.get()), 0f, WASHING_TIME, water250, 4, ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_LIGHT.get(), ModItems.BEDROCK_ORE_SULFURIC_ROASTED_LIGHT.get(), ModItems.BEDROCK_ORE_SULFURIC_ARC_LIGHT.get());
+        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_WASHED_LIGHT.get()), 0f, WASHING_TIME, water250, 4, ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_LIGHT.get(), ModItems.BEDROCK_ORE_SOLVENT_ROASTED_LIGHT.get(), ModItems.BEDROCK_ORE_SOLVENT_ARC_LIGHT.get());
+        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_RAD_WASHED_LIGHT.get()), 0f, WASHING_TIME, water250, 4, ModItems.BEDROCK_ORE_RAD_BYPRODUCT_LIGHT.get(), ModItems.BEDROCK_ORE_RAD_ROASTED_LIGHT.get(), ModItems.BEDROCK_ORE_RAD_ARC_LIGHT.get());
         addItem(ModItems.BEDROCK_ORE_CRUMBS_LIGHT.get(), new ItemStack(ModItems.BEDROCK_ORE_BASE_LIGHT.get()), 0f, BEDROCK_TIME, slop1000, 64);
 
         // ---- HEAVY ----
@@ -400,9 +414,9 @@ public final class CrystallizerRecipes {
         addItemAny(new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_RAD_HEAVY.get()), 0f, BEDROCK_TIME, radiosolvent250, 1, ModItems.BEDROCK_ORE_PRIMARY_HEAVY.get(), ModItems.BEDROCK_ORE_PRIMARY_ROASTED_HEAVY.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_HEAVY.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_HEAVY.get());
         addItemAny(new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_FIRST_HEAVY.get()), 0f, BEDROCK_TIME, hydrogen250, 1, ModItems.BEDROCK_ORE_PRIMARY_HEAVY.get(), ModItems.BEDROCK_ORE_PRIMARY_ROASTED_HEAVY.get(), ModItems.BEDROCK_ORE_PRIMARY_SULFURIC_HEAVY.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_HEAVY.get(), ModItems.BEDROCK_ORE_PRIMARY_SOLVENT_HEAVY.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_HEAVY.get(), ModItems.BEDROCK_ORE_PRIMARY_RAD_HEAVY.get(), ModItems.BEDROCK_ORE_PRIMARY_NORAD_HEAVY.get());
         addItemAny(new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_SECOND_HEAVY.get()), 0f, BEDROCK_TIME, chlorine250, 1, ModItems.BEDROCK_ORE_PRIMARY_HEAVY.get(), ModItems.BEDROCK_ORE_PRIMARY_ROASTED_HEAVY.get(), ModItems.BEDROCK_ORE_PRIMARY_SULFURIC_HEAVY.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_HEAVY.get(), ModItems.BEDROCK_ORE_PRIMARY_SOLVENT_HEAVY.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_HEAVY.get(), ModItems.BEDROCK_ORE_PRIMARY_RAD_HEAVY.get(), ModItems.BEDROCK_ORE_PRIMARY_NORAD_HEAVY.get());
-        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_WASHED_HEAVY.get()), 0f, WASHING_TIME, water250, 1, ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_HEAVY.get(), ModItems.BEDROCK_ORE_SULFURIC_ROASTED_HEAVY.get(), ModItems.BEDROCK_ORE_SULFURIC_ARC_HEAVY.get());
-        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_WASHED_HEAVY.get()), 0f, WASHING_TIME, water250, 1, ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_HEAVY.get(), ModItems.BEDROCK_ORE_SOLVENT_ROASTED_HEAVY.get(), ModItems.BEDROCK_ORE_SOLVENT_ARC_HEAVY.get());
-        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_RAD_WASHED_HEAVY.get()), 0f, WASHING_TIME, water250, 1, ModItems.BEDROCK_ORE_RAD_BYPRODUCT_HEAVY.get(), ModItems.BEDROCK_ORE_RAD_ROASTED_HEAVY.get(), ModItems.BEDROCK_ORE_RAD_ARC_HEAVY.get());
+        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_WASHED_HEAVY.get()), 0f, WASHING_TIME, water250, 4, ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_HEAVY.get(), ModItems.BEDROCK_ORE_SULFURIC_ROASTED_HEAVY.get(), ModItems.BEDROCK_ORE_SULFURIC_ARC_HEAVY.get());
+        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_WASHED_HEAVY.get()), 0f, WASHING_TIME, water250, 4, ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_HEAVY.get(), ModItems.BEDROCK_ORE_SOLVENT_ROASTED_HEAVY.get(), ModItems.BEDROCK_ORE_SOLVENT_ARC_HEAVY.get());
+        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_RAD_WASHED_HEAVY.get()), 0f, WASHING_TIME, water250, 4, ModItems.BEDROCK_ORE_RAD_BYPRODUCT_HEAVY.get(), ModItems.BEDROCK_ORE_RAD_ROASTED_HEAVY.get(), ModItems.BEDROCK_ORE_RAD_ARC_HEAVY.get());
         addItem(ModItems.BEDROCK_ORE_CRUMBS_HEAVY.get(), new ItemStack(ModItems.BEDROCK_ORE_BASE_HEAVY.get()), 0f, BEDROCK_TIME, slop1000, 64);
 
         // ---- RARE ----
@@ -412,9 +426,9 @@ public final class CrystallizerRecipes {
         addItemAny(new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_RAD_RARE.get()), 0f, BEDROCK_TIME, radiosolvent250, 1, ModItems.BEDROCK_ORE_PRIMARY_RARE.get(), ModItems.BEDROCK_ORE_PRIMARY_ROASTED_RARE.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_RARE.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_RARE.get());
         addItemAny(new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_FIRST_RARE.get()), 0f, BEDROCK_TIME, hydrogen250, 1, ModItems.BEDROCK_ORE_PRIMARY_RARE.get(), ModItems.BEDROCK_ORE_PRIMARY_ROASTED_RARE.get(), ModItems.BEDROCK_ORE_PRIMARY_SULFURIC_RARE.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_RARE.get(), ModItems.BEDROCK_ORE_PRIMARY_SOLVENT_RARE.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_RARE.get(), ModItems.BEDROCK_ORE_PRIMARY_RAD_RARE.get(), ModItems.BEDROCK_ORE_PRIMARY_NORAD_RARE.get());
         addItemAny(new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_SECOND_RARE.get()), 0f, BEDROCK_TIME, chlorine250, 1, ModItems.BEDROCK_ORE_PRIMARY_RARE.get(), ModItems.BEDROCK_ORE_PRIMARY_ROASTED_RARE.get(), ModItems.BEDROCK_ORE_PRIMARY_SULFURIC_RARE.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_RARE.get(), ModItems.BEDROCK_ORE_PRIMARY_SOLVENT_RARE.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_RARE.get(), ModItems.BEDROCK_ORE_PRIMARY_RAD_RARE.get(), ModItems.BEDROCK_ORE_PRIMARY_NORAD_RARE.get());
-        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_WASHED_RARE.get()), 0f, WASHING_TIME, water250, 1, ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_RARE.get(), ModItems.BEDROCK_ORE_SULFURIC_ROASTED_RARE.get(), ModItems.BEDROCK_ORE_SULFURIC_ARC_RARE.get());
-        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_WASHED_RARE.get()), 0f, WASHING_TIME, water250, 1, ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_RARE.get(), ModItems.BEDROCK_ORE_SOLVENT_ROASTED_RARE.get(), ModItems.BEDROCK_ORE_SOLVENT_ARC_RARE.get());
-        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_RAD_WASHED_RARE.get()), 0f, WASHING_TIME, water250, 1, ModItems.BEDROCK_ORE_RAD_BYPRODUCT_RARE.get(), ModItems.BEDROCK_ORE_RAD_ROASTED_RARE.get(), ModItems.BEDROCK_ORE_RAD_ARC_RARE.get());
+        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_WASHED_RARE.get()), 0f, WASHING_TIME, water250, 4, ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_RARE.get(), ModItems.BEDROCK_ORE_SULFURIC_ROASTED_RARE.get(), ModItems.BEDROCK_ORE_SULFURIC_ARC_RARE.get());
+        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_WASHED_RARE.get()), 0f, WASHING_TIME, water250, 4, ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_RARE.get(), ModItems.BEDROCK_ORE_SOLVENT_ROASTED_RARE.get(), ModItems.BEDROCK_ORE_SOLVENT_ARC_RARE.get());
+        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_RAD_WASHED_RARE.get()), 0f, WASHING_TIME, water250, 4, ModItems.BEDROCK_ORE_RAD_BYPRODUCT_RARE.get(), ModItems.BEDROCK_ORE_RAD_ROASTED_RARE.get(), ModItems.BEDROCK_ORE_RAD_ARC_RARE.get());
         addItem(ModItems.BEDROCK_ORE_CRUMBS_RARE.get(), new ItemStack(ModItems.BEDROCK_ORE_BASE_RARE.get()), 0f, BEDROCK_TIME, slop1000, 64);
 
         // ---- ACTINIDE ----
@@ -424,9 +438,9 @@ public final class CrystallizerRecipes {
         addItemAny(new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_RAD_ACTINIDE.get()), 0f, BEDROCK_TIME, radiosolvent250, 1, ModItems.BEDROCK_ORE_PRIMARY_ACTINIDE.get(), ModItems.BEDROCK_ORE_PRIMARY_ROASTED_ACTINIDE.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_ACTINIDE.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_ACTINIDE.get());
         addItemAny(new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_FIRST_ACTINIDE.get()), 0f, BEDROCK_TIME, hydrogen250, 1, ModItems.BEDROCK_ORE_PRIMARY_ACTINIDE.get(), ModItems.BEDROCK_ORE_PRIMARY_ROASTED_ACTINIDE.get(), ModItems.BEDROCK_ORE_PRIMARY_SULFURIC_ACTINIDE.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_ACTINIDE.get(), ModItems.BEDROCK_ORE_PRIMARY_SOLVENT_ACTINIDE.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_ACTINIDE.get(), ModItems.BEDROCK_ORE_PRIMARY_RAD_ACTINIDE.get(), ModItems.BEDROCK_ORE_PRIMARY_NORAD_ACTINIDE.get());
         addItemAny(new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_SECOND_ACTINIDE.get()), 0f, BEDROCK_TIME, chlorine250, 1, ModItems.BEDROCK_ORE_PRIMARY_ACTINIDE.get(), ModItems.BEDROCK_ORE_PRIMARY_ROASTED_ACTINIDE.get(), ModItems.BEDROCK_ORE_PRIMARY_SULFURIC_ACTINIDE.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_ACTINIDE.get(), ModItems.BEDROCK_ORE_PRIMARY_SOLVENT_ACTINIDE.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_ACTINIDE.get(), ModItems.BEDROCK_ORE_PRIMARY_RAD_ACTINIDE.get(), ModItems.BEDROCK_ORE_PRIMARY_NORAD_ACTINIDE.get());
-        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_WASHED_ACTINIDE.get()), 0f, WASHING_TIME, water250, 1, ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_ACTINIDE.get(), ModItems.BEDROCK_ORE_SULFURIC_ROASTED_ACTINIDE.get(), ModItems.BEDROCK_ORE_SULFURIC_ARC_ACTINIDE.get());
-        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_WASHED_ACTINIDE.get()), 0f, WASHING_TIME, water250, 1, ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_ACTINIDE.get(), ModItems.BEDROCK_ORE_SOLVENT_ROASTED_ACTINIDE.get(), ModItems.BEDROCK_ORE_SOLVENT_ARC_ACTINIDE.get());
-        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_RAD_WASHED_ACTINIDE.get()), 0f, WASHING_TIME, water250, 1, ModItems.BEDROCK_ORE_RAD_BYPRODUCT_ACTINIDE.get(), ModItems.BEDROCK_ORE_RAD_ROASTED_ACTINIDE.get(), ModItems.BEDROCK_ORE_RAD_ARC_ACTINIDE.get());
+        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_WASHED_ACTINIDE.get()), 0f, WASHING_TIME, water250, 4, ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_ACTINIDE.get(), ModItems.BEDROCK_ORE_SULFURIC_ROASTED_ACTINIDE.get(), ModItems.BEDROCK_ORE_SULFURIC_ARC_ACTINIDE.get());
+        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_WASHED_ACTINIDE.get()), 0f, WASHING_TIME, water250, 4, ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_ACTINIDE.get(), ModItems.BEDROCK_ORE_SOLVENT_ROASTED_ACTINIDE.get(), ModItems.BEDROCK_ORE_SOLVENT_ARC_ACTINIDE.get());
+        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_RAD_WASHED_ACTINIDE.get()), 0f, WASHING_TIME, water250, 4, ModItems.BEDROCK_ORE_RAD_BYPRODUCT_ACTINIDE.get(), ModItems.BEDROCK_ORE_RAD_ROASTED_ACTINIDE.get(), ModItems.BEDROCK_ORE_RAD_ARC_ACTINIDE.get());
         addItem(ModItems.BEDROCK_ORE_CRUMBS_ACTINIDE.get(), new ItemStack(ModItems.BEDROCK_ORE_BASE_ACTINIDE.get()), 0f, BEDROCK_TIME, slop1000, 64);
 
         // ---- NONMETAL ----
@@ -436,9 +450,9 @@ public final class CrystallizerRecipes {
         addItemAny(new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_RAD_NONMETAL.get()), 0f, BEDROCK_TIME, radiosolvent250, 1, ModItems.BEDROCK_ORE_PRIMARY_NONMETAL.get(), ModItems.BEDROCK_ORE_PRIMARY_ROASTED_NONMETAL.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_NONMETAL.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_NONMETAL.get());
         addItemAny(new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_FIRST_NONMETAL.get()), 0f, BEDROCK_TIME, hydrogen250, 1, ModItems.BEDROCK_ORE_PRIMARY_NONMETAL.get(), ModItems.BEDROCK_ORE_PRIMARY_ROASTED_NONMETAL.get(), ModItems.BEDROCK_ORE_PRIMARY_SULFURIC_NONMETAL.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_NONMETAL.get(), ModItems.BEDROCK_ORE_PRIMARY_SOLVENT_NONMETAL.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_NONMETAL.get(), ModItems.BEDROCK_ORE_PRIMARY_RAD_NONMETAL.get(), ModItems.BEDROCK_ORE_PRIMARY_NORAD_NONMETAL.get());
         addItemAny(new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_SECOND_NONMETAL.get()), 0f, BEDROCK_TIME, chlorine250, 1, ModItems.BEDROCK_ORE_PRIMARY_NONMETAL.get(), ModItems.BEDROCK_ORE_PRIMARY_ROASTED_NONMETAL.get(), ModItems.BEDROCK_ORE_PRIMARY_SULFURIC_NONMETAL.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_NONMETAL.get(), ModItems.BEDROCK_ORE_PRIMARY_SOLVENT_NONMETAL.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_NONMETAL.get(), ModItems.BEDROCK_ORE_PRIMARY_RAD_NONMETAL.get(), ModItems.BEDROCK_ORE_PRIMARY_NORAD_NONMETAL.get());
-        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_WASHED_NONMETAL.get()), 0f, WASHING_TIME, water250, 1, ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_NONMETAL.get(), ModItems.BEDROCK_ORE_SULFURIC_ROASTED_NONMETAL.get(), ModItems.BEDROCK_ORE_SULFURIC_ARC_NONMETAL.get());
-        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_WASHED_NONMETAL.get()), 0f, WASHING_TIME, water250, 1, ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_NONMETAL.get(), ModItems.BEDROCK_ORE_SOLVENT_ROASTED_NONMETAL.get(), ModItems.BEDROCK_ORE_SOLVENT_ARC_NONMETAL.get());
-        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_RAD_WASHED_NONMETAL.get()), 0f, WASHING_TIME, water250, 1, ModItems.BEDROCK_ORE_RAD_BYPRODUCT_NONMETAL.get(), ModItems.BEDROCK_ORE_RAD_ROASTED_NONMETAL.get(), ModItems.BEDROCK_ORE_RAD_ARC_NONMETAL.get());
+        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_WASHED_NONMETAL.get()), 0f, WASHING_TIME, water250, 4, ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_NONMETAL.get(), ModItems.BEDROCK_ORE_SULFURIC_ROASTED_NONMETAL.get(), ModItems.BEDROCK_ORE_SULFURIC_ARC_NONMETAL.get());
+        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_WASHED_NONMETAL.get()), 0f, WASHING_TIME, water250, 4, ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_NONMETAL.get(), ModItems.BEDROCK_ORE_SOLVENT_ROASTED_NONMETAL.get(), ModItems.BEDROCK_ORE_SOLVENT_ARC_NONMETAL.get());
+        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_RAD_WASHED_NONMETAL.get()), 0f, WASHING_TIME, water250, 4, ModItems.BEDROCK_ORE_RAD_BYPRODUCT_NONMETAL.get(), ModItems.BEDROCK_ORE_RAD_ROASTED_NONMETAL.get(), ModItems.BEDROCK_ORE_RAD_ARC_NONMETAL.get());
         addItem(ModItems.BEDROCK_ORE_CRUMBS_NONMETAL.get(), new ItemStack(ModItems.BEDROCK_ORE_BASE_NONMETAL.get()), 0f, BEDROCK_TIME, slop1000, 64);
 
         // ---- CRYSTAL ----
@@ -448,9 +462,9 @@ public final class CrystallizerRecipes {
         addItemAny(new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_RAD_CRYSTAL.get()), 0f, BEDROCK_TIME, radiosolvent250, 1, ModItems.BEDROCK_ORE_PRIMARY_CRYSTAL.get(), ModItems.BEDROCK_ORE_PRIMARY_ROASTED_CRYSTAL.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_CRYSTAL.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_CRYSTAL.get());
         addItemAny(new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_FIRST_CRYSTAL.get()), 0f, BEDROCK_TIME, hydrogen250, 1, ModItems.BEDROCK_ORE_PRIMARY_CRYSTAL.get(), ModItems.BEDROCK_ORE_PRIMARY_ROASTED_CRYSTAL.get(), ModItems.BEDROCK_ORE_PRIMARY_SULFURIC_CRYSTAL.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_CRYSTAL.get(), ModItems.BEDROCK_ORE_PRIMARY_SOLVENT_CRYSTAL.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_CRYSTAL.get(), ModItems.BEDROCK_ORE_PRIMARY_RAD_CRYSTAL.get(), ModItems.BEDROCK_ORE_PRIMARY_NORAD_CRYSTAL.get());
         addItemAny(new ItemStack(ModItems.BEDROCK_ORE_PRIMARY_SECOND_CRYSTAL.get()), 0f, BEDROCK_TIME, chlorine250, 1, ModItems.BEDROCK_ORE_PRIMARY_CRYSTAL.get(), ModItems.BEDROCK_ORE_PRIMARY_ROASTED_CRYSTAL.get(), ModItems.BEDROCK_ORE_PRIMARY_SULFURIC_CRYSTAL.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSULFURIC_CRYSTAL.get(), ModItems.BEDROCK_ORE_PRIMARY_SOLVENT_CRYSTAL.get(), ModItems.BEDROCK_ORE_PRIMARY_NOSOLVENT_CRYSTAL.get(), ModItems.BEDROCK_ORE_PRIMARY_RAD_CRYSTAL.get(), ModItems.BEDROCK_ORE_PRIMARY_NORAD_CRYSTAL.get());
-        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_WASHED_CRYSTAL.get()), 0f, WASHING_TIME, water250, 1, ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_CRYSTAL.get(), ModItems.BEDROCK_ORE_SULFURIC_ROASTED_CRYSTAL.get(), ModItems.BEDROCK_ORE_SULFURIC_ARC_CRYSTAL.get());
-        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_WASHED_CRYSTAL.get()), 0f, WASHING_TIME, water250, 1, ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_CRYSTAL.get(), ModItems.BEDROCK_ORE_SOLVENT_ROASTED_CRYSTAL.get(), ModItems.BEDROCK_ORE_SOLVENT_ARC_CRYSTAL.get());
-        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_RAD_WASHED_CRYSTAL.get()), 0f, WASHING_TIME, water250, 1, ModItems.BEDROCK_ORE_RAD_BYPRODUCT_CRYSTAL.get(), ModItems.BEDROCK_ORE_RAD_ROASTED_CRYSTAL.get(), ModItems.BEDROCK_ORE_RAD_ARC_CRYSTAL.get());
+        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SULFURIC_WASHED_CRYSTAL.get()), 0f, WASHING_TIME, water250, 4, ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_CRYSTAL.get(), ModItems.BEDROCK_ORE_SULFURIC_ROASTED_CRYSTAL.get(), ModItems.BEDROCK_ORE_SULFURIC_ARC_CRYSTAL.get());
+        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_SOLVENT_WASHED_CRYSTAL.get()), 0f, WASHING_TIME, water250, 4, ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_CRYSTAL.get(), ModItems.BEDROCK_ORE_SOLVENT_ROASTED_CRYSTAL.get(), ModItems.BEDROCK_ORE_SOLVENT_ARC_CRYSTAL.get());
+        addItemAny(new ItemStack(ModItems.BEDROCK_ORE_RAD_WASHED_CRYSTAL.get()), 0f, WASHING_TIME, water250, 4, ModItems.BEDROCK_ORE_RAD_BYPRODUCT_CRYSTAL.get(), ModItems.BEDROCK_ORE_RAD_ROASTED_CRYSTAL.get(), ModItems.BEDROCK_ORE_RAD_ARC_CRYSTAL.get());
         addItem(ModItems.BEDROCK_ORE_CRUMBS_CRYSTAL.get(), new ItemStack(ModItems.BEDROCK_ORE_BASE_CRYSTAL.get()), 0f, BEDROCK_TIME, slop1000, 64);
 
         // ═══════════════════════════════════════════════════════════════════

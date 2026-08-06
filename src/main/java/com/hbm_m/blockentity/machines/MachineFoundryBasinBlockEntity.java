@@ -43,6 +43,11 @@ public class MachineFoundryBasinBlockEntity extends BlockEntity implements ICruc
         super(ModBlockEntities.FOUNDRY_BASIN_BE.get(), pos, state);
     }
 
+    /** Used by {@link MachineFoundryMoldBlockEntity}, which reuses this class's logic wholesale under a different registered type. */
+    protected MachineFoundryBasinBlockEntity(net.minecraft.world.level.block.entity.BlockEntityType<?> type, BlockPos pos, BlockState state) {
+        super(type, pos, state);
+    }
+
     /* ── mold handling ──────────────────────────────────────────────────── */
 
     public ItemStack getMoldSlot()   { return moldSlot; }

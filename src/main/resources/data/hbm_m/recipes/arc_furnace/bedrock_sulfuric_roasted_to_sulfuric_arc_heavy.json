@@ -1,0 +1,12 @@
+{
+  "type": "hbm_m:arc_furnace",
+  "ingredient": {
+    "item": "hbm_m:bedrock_ore_sulfuric_roasted_heavy"
+  },
+  "count": 1,
+  "result": {
+    "item": "hbm_m:bedrock_ore_sulfuric_arc_heavy",
+    "count": 4
+  },
+  "duration": 100
+}
