@@ -398,12 +398,9 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.STARMETAL_SHOVEL.get()));
         add.accept(new ItemStack(ModItems.METEORITE_SWORD.get()));
         add.accept(new ItemStack(ModItems.METEORITE_SWORD_SEARED.get()));
-<<<<<<< HEAD
         add.accept(new ItemStack(ModItems.METEORITE_SWORD_HARDENED.get()));
         add.accept(new ItemStack(ModItems.METEORITE_SWORD_ALLOYED.get()));
-=======
         add.accept(new ItemStack(ModItems.CROWBAR.get()));
->>>>>>> 69580563aaf162ddcf6c5550d793128d3cafae7b
 
         // Силовая броня добавляется полностью заряженной
         add.accept(createChargedArmorStack(ModItems.T51_HELMET.get()));

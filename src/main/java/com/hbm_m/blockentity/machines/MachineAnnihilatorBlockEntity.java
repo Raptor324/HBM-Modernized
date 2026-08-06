@@ -141,7 +141,7 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
         float amount = Math.min(1000f, hazard * count);
         LevelChunk chunk = level.getChunkAt(worldPosition);
         ChunkRadiationAccess.get(chunk).ifPresent(rad ->
-                rad.setBlockRadiation(rad.getBlockRadiation() + amount));
+                rad.setAmbientRadiation(rad.getAmbientRadiation() + amount));
     }
 
     private void updateMonitor(ServerLevel level) {
