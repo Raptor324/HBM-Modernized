@@ -1357,7 +1357,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.SILO_HATCH_LARGE.get()));
         add.accept(new ItemStack(ModBlocks.VAULT_DOOR.get()));
         add.accept(new ItemStack(ModBlocks.TRANSITION_SEAL.get()));
-        // add.accept(new ItemStack(ModBlocks.SLIDE_DOOR.get()));
+        add.accept(new ItemStack(ModBlocks.SLIDE_DOOR.get()));
     }
 
     // СТАНКИ
@@ -1404,8 +1404,8 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.GAS_CENTRIFUGE.get()));
         add.accept(new ItemStack(ModBlocks.CENTRIFUGE.get()));
         add.accept(new ItemStack(ModBlocks.CRYSTALLIZER.get()));
-        add.accept(new ItemStack(ModBlocks.BREEDER.get()));
-        add.accept(new ItemStack(ModBlocks.LARGE_PYLON.get()));
+        // add.accept(new ItemStack(ModBlocks.BREEDER.get()));
+        // add.accept(new ItemStack(ModBlocks.LARGE_PYLON.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_ASSEMBLER.get()));
         add.accept(new ItemStack(ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get()));
         add.accept(new ItemStack(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get()));
@@ -1501,7 +1501,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.INDUSTRIAL_BOILER.get()));
         // add.accept(new ItemStack(ModBlocks.SOLAR_BOILER.get()));
         // add.accept(new ItemStack(ModBlocks.SOLAR_MIRRORS.get()));
-        add.accept(new ItemStack(ModBlocks.WATZ_POWERPLANT.get()));
+        // add.accept(new ItemStack(ModBlocks.WATZ_POWERPLANT.get()));
         // add.accept(new ItemStack(ModBlocks.HYDROTREATER.get()));
         // add.accept(new ItemStack(ModBlocks.CATALYTIC_REFORMER.get()));
         // add.accept(new ItemStack(ModBlocks.DEUTERIUM_TOWER.get()));
@@ -1515,7 +1515,7 @@ public final class CreativeModeTabEventHandler {
         // add.accept(new ItemStack(ModBlocks.TURBOFAN.get()));
         // add.accept(new ItemStack(ModBlocks.INDUSTRIAL_TURBINE.get()));
         // add.accept(new ItemStack(ModBlocks.TURBINE.get()));
-        add.accept(new ItemStack(ModBlocks.SUBSTATION.get()));
+        // add.accept(new ItemStack(ModBlocks.SUBSTATION.get()));
         add.accept(new ItemStack(ModBlocks.REFINERY.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_BATTERY.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_BATTERY_LITHIUM.get()));

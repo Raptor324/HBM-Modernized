@@ -191,7 +191,9 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
 
     private static boolean hasScrewdriver(Player player) {
         return player.getItemInHand(InteractionHand.MAIN_HAND).getItem() == ModItems.SCREWDRIVER.get()
-                || player.getItemInHand(InteractionHand.OFF_HAND).getItem() == ModItems.SCREWDRIVER.get();
+                || player.getItemInHand(InteractionHand.OFF_HAND).getItem() == ModItems.SCREWDRIVER.get()
+                || player.getItemInHand(InteractionHand.MAIN_HAND).getItem() == ModItems.SCREWDRIVER_DESH.get()
+                || player.getItemInHand(InteractionHand.OFF_HAND).getItem() == ModItems.SCREWDRIVER_DESH.get();
     }
 
     @Override
@@ -280,7 +282,14 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        // Двери рендерятся исключительно через BlockEntityRenderer (DoorRenderer):
+        // VBO/DAE-pipeline для анимированных частей + InstancedStaticPartRenderer
+        // для статичного каркаса. Chunk-render тут не нужен — DoorBakedModel и так
+        // skip-ает world-quads через shouldSkipWorldRendering, а DaeBakedModel
+        // (sliding_blast_door) отдавал бы в chunk «кривую» статичную геометрию без
+        // поворота по FACING и без анимации. ENTITYBLOCK_ANIMATED отключает
+        // chunk-bake полностью, оставляя только BER, как у TransitionSealBlock.
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Override

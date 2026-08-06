@@ -191,7 +191,7 @@ public class ModItemModelProvider extends ItemModelProvider {
             modLoc("block/doors/round_airlock_door_modern"));
 
         withExistingParent("transition_seal", 
-            modLoc("block/transition_seal"));
+            modLoc("block/doors/transition_seal"));
 
         withExistingParent("silo_hatch", 
             modLoc("block/doors/silo_hatch"));

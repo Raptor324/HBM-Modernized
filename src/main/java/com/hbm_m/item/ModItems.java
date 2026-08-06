@@ -3525,7 +3525,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> SCRAP_OIL = ITEMS.register("scrap_oil", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> SCRAP_PLASTIC = ITEMS.register("scrap_plastic", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> SCRAPS = ITEMS.register("scraps", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> SCREWDRIVER_DESH = ITEMS.register("screwdriver_desh", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> SCREWDRIVER_DESH = ITEMS.register("screwdriver_desh", () -> new ScrewdriverItem(new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> SCRUMPY = ITEMS.register("scrumpy", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> SECURITY_LEGS = ITEMS.register("security_legs", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> SECURITY_PLATE = ITEMS.register("security_plate", () -> new Item(new Item.Properties()));

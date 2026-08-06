@@ -782,7 +782,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.LARGE_VEHICLE_DOOR.get(), "Дверь для крупногабаритного транспорта");
                 add(ModBlocks.ROUND_AIRLOCK_DOOR.get(), "Круглая воздушная дверь");
                 add(ModBlocks.TRANSITION_SEAL.get(), "Транзитный люк");
-                add(ModBlocks.SLIDE_DOOR.get(), "Скользящая взрывная дверь (WIP)");
+                add(ModBlocks.SLIDE_DOOR.get(), "Раздвижная дверь");
                 add(ModBlocks.FIRE_DOOR.get(), "Пожарная дверь");
                 add(ModBlocks.SLIDING_SEAL_DOOR.get(), "Скользящая герметичная дверь");
                 add(ModBlocks.SECURE_ACCESS_DOOR.get(), "Усиленная дверь");
@@ -1415,7 +1415,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.advanced_assembly_machine", "Сборочная машина");
                 add("block.hbm_m.block_uranium", "Урановый блок");
                 add(ModBlocks.FLUID_TANK.get(), "Цистерна");
-                add(ModBlocks.BAT9000.get(), "БАТ9000");
+                add(ModBlocks.BAT9000.get(), "Цистернище");
                 add(ModBlocks.MACHINE_BATTERY_SOCKET.get(), "Аккумуляторный разъём");
                 add(ModBlocks.FLUID_DUCT.get(), "Жидкостная труба (NEO)");
                 add(ModBlocks.FLUID_DUCT_COLORED.get(), "Жидкостная труба (цветная)");
@@ -2084,12 +2084,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("door.skin.hbm_m.secure_access_door.gray", "Серая");
                 add("door.skin.hbm_m.secure_access_door.black", "Черная");
                 add("door.skin.hbm_m.secure_access_door.yellow", "Жёлтая");
-                add("door.skin.hbm_m.sliding_blast_door.default", "Новая");
+                add("door.skin.hbm_m.sliding_blast_door.default", "Стандартная");
                 add("door.skin.hbm_m.sliding_blast_door.variant1", "Вариант 1");
                 add("door.skin.hbm_m.sliding_blast_door.variant2", "Вариант 2");
                 add("door.skin.hbm_m.sliding_seal_door.default", "Новая");
-                add("door.skin.hbm_m.large_vehicle_door.default", "Новая");
+                add("door.skin.hbm_m.large_vehicle_door.default", "Чистая");
                 add("door.skin.hbm_m.large_vehicle_door.rad", "Радиация");
+                add("door.skin.hbm_m.large_vehicle_door.clear", "Стандартная");
                 add("door.skin.hbm_m.water_door.default", "Новая");
                 add("door.skin.hbm_m.water_door.clean", "Чистая");
                 add("door.skin.hbm_m.qe_sliding_door.default", "Новая");
@@ -2310,8 +2311,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.useInstancedStaticRendering", "Батчинг частей obj моделей");
                 add("text.autoconfig.hbm_m.option.useSlicedLight", "Sliced light (2×4×2 зонды)");
                 add("text.autoconfig.hbm_m.option.useMultiDrawIndirect", "Multi-draw indirect (MDI)");
-                add("text.autoconfig.hbm_m.option.useColladaDoorAnimations", "Анимации дверей из DAE (COLLADA)");
-                add("text.autoconfig.hbm_m.option.useColladaZUpConversion", "Конвертация Z-up→Y-up для DAE (Blender)");
 
                 add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks", "Дальность прорисовки VATS");
 
@@ -2366,8 +2365,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.useInstancedStaticRendering.@Tooltip", "Использовать батчинговый рендер для частей obj. Сильно повышает производительность рендеринга в бесшейдерном режиме, при проблемах отключите.");
                 add("text.autoconfig.hbm_m.option.useSlicedLight.@Tooltip", "16 зондов освещения вместо 8 углов — лучше на высоких башнях. Несовместимо с MDI: при включении части снова рисуются отдельными instanced draw. После смены — F3+T.");
                 add("text.autoconfig.hbm_m.option.useMultiDrawIndirect.@Tooltip", "Один glMultiDrawElementsIndirect на кадр вместо многих instanced draw (без shader pack). Выигрыш заметен при большом числе одинаковых машин. Не работает с sliced light и GPU bone skinning.");
-                add("text.autoconfig.hbm_m.option.useColladaDoorAnimations.@Tooltip", "Использовать анимации из DAE для transition_seal и sliding_blast_door. Отключите при проблемах - будет procedural fallback.");
-                add("text.autoconfig.hbm_m.option.useColladaZUpConversion.@Tooltip", "Конвертировать систему координат Blender (Z-up) в Minecraft (Y-up). Отключите для тестирования.");
 
                 add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks.@Tooltip", "Дальность отрисовки полосок здоровья мобов (чанки). Больше значение - дальше видно, но выше нагрузка.");
 
@@ -3611,7 +3608,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.SILO_HATCH.get(), "Silo Hatch");
                 add(ModBlocks.SILO_HATCH_LARGE.get(), "Large Silo Hatch");
                 add(ModBlocks.TRANSITION_SEAL.get(), "Transition Seal");
-                add(ModBlocks.SLIDE_DOOR.get(), "Sliding Blast Door (WIP)");
+                add(ModBlocks.SLIDE_DOOR.get(), "Sliding Blast Door");
 
 
                 add(ModBlocks.DUD_SALTED.get(), "Unexploded Salted Bomb");
@@ -3927,7 +3924,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.CHEMICAL_PLANT.get(), "Chemical Plant");
                 add(ModBlocks.CENTRIFUGE.get(), "Centrifuge");
                 add(ModBlocks.FLUID_TANK.get(), "Tank");
-                add(ModBlocks.BAT9000.get(), "BAT9000");
+                add(ModBlocks.BAT9000.get(), "Big-Ass Tank 9000");
                 add(ModBlocks.DERRICK.get(), "Derrick (WIP)");
                 add(ModBlocks.RBMK_CONSOLE.get(), "RBMK Console (WIP)");
                 add(ModBlocks.RBMK_ROD.get(), "RBMK Fuel Channel");
@@ -4394,8 +4391,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("door.skin.hbm_m.sliding_blast_door.variant1", "Variant 1");
                 add("door.skin.hbm_m.sliding_blast_door.variant2", "Variant 2");
                 add("door.skin.hbm_m.sliding_seal_door.default", "Standard");
-                add("door.skin.hbm_m.large_vehicle_door.default", "Standard");
+                add("door.skin.hbm_m.large_vehicle_door.default", "Clean");
                 add("door.skin.hbm_m.large_vehicle_door.rad", "Radiation");
+                add("door.skin.hbm_m.large_vehicle_door.clear", "Standard");
                 add("door.skin.hbm_m.water_door.default", "Standard");
                 add("door.skin.hbm_m.water_door.clean", "Clean");
                 add("door.skin.hbm_m.qe_sliding_door.default", "Standard");
@@ -4627,8 +4625,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.useInstancedStaticRendering", "Instanced batching for obj model parts");
                 add("text.autoconfig.hbm_m.option.useSlicedLight", "Sliced light (2×4×2 probes)");
                 add("text.autoconfig.hbm_m.option.useMultiDrawIndirect", "Multi-draw indirect (MDI)");
-                add("text.autoconfig.hbm_m.option.useColladaDoorAnimations", "Door animations from DAE (COLLADA)");
-                add("text.autoconfig.hbm_m.option.useColladaZUpConversion", "Z-up to Y-up conversion for DAE (Blender)");
 
                 add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks", "VATS render distance (chunks)");
 
@@ -4681,8 +4677,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.useInstancedStaticRendering.@Tooltip", "Use batch rendering for obj parts. This greatly improves rendering performance in shaderless mode. If you experience issues, disable it");
                 add("text.autoconfig.hbm_m.option.useSlicedLight.@Tooltip", "16 light probes instead of 8 corners — better on tall towers. Incompatible with MDI: parts fall back to separate instanced draws. Reload resources (F3+T) after changing.");
                 add("text.autoconfig.hbm_m.option.useMultiDrawIndirect.@Tooltip", "One glMultiDrawElementsIndirect per frame instead of many instanced draws (no shader pack). Helps with large fields of identical machines. Does not apply with sliced light or GPU bone skinning.");
-                add("text.autoconfig.hbm_m.option.useColladaDoorAnimations.@Tooltip", "Use DAE animations for transition_seal and sliding_blast_door. Disable if broken - falls back to procedural.");
-                add("text.autoconfig.hbm_m.option.useColladaZUpConversion.@Tooltip", "Convert Blender (Z-up) to Minecraft (Y-up) coordinate system. Disable for testing.");
 
                 add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks.@Tooltip","Max distance for mob health highlighting. Higher values increase range but reduce performance.");
 

@@ -251,6 +251,12 @@ public class ClientSetup {
         PowerArmorSounds.register();
         PowerArmorStepSoundHandler.initClient();
 
+        dev.architectury.event.events.client.ClientPlayerEvent.CLIENT_PLAYER_QUIT.register(player -> {
+                com.hbm_m.config.ModClothConfig.reloadServer();
+                ClientRadiationData.clearAll();
+        });
+
+
         // Экраны меню - vanilla API, одинаково работает на обоих лоадерах.
         registerScreens();
 
@@ -1274,6 +1280,12 @@ public class ClientSetup {
         /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/large_vehicle_door_modern_rad"));
         *///?} else {
                 event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern_rad"));
+        //?}
+
+        //? if fabric && < 1.21.1 {
+        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/large_vehicle_door_modern_clean"));
+        *///?} else {
+                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern_clean"));
         //?}
 
         // fire_door

@@ -142,9 +142,6 @@ public class ModClothConfig {
     /** Max instances per InstancedStaticPartRenderer (one OBJ part). Large machine fields need 4096+. */
     public int maxInstancedInstancesPerPart = 4096;
 
-    public boolean useColladaDoorAnimations = true;
-    public boolean useColladaZUpConversion = true;
-
     public int vatsRenderDistanceChunks = 7;
 
     // ════════════════════════════════════════════════════════════════

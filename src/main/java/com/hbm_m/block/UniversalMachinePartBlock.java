@@ -364,7 +364,9 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
 
     private static boolean hasScrewdriver(net.minecraft.world.entity.player.Player player) {
         return player.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND).getItem() == ModItems.SCREWDRIVER.get()
-                || player.getItemInHand(net.minecraft.world.InteractionHand.OFF_HAND).getItem() == ModItems.SCREWDRIVER.get();
+                || player.getItemInHand(net.minecraft.world.InteractionHand.OFF_HAND).getItem() == ModItems.SCREWDRIVER.get()
+                || player.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND).getItem() == ModItems.SCREWDRIVER_DESH.get()
+                || player.getItemInHand(net.minecraft.world.InteractionHand.OFF_HAND).getItem() == ModItems.SCREWDRIVER_DESH.get();
     }
 
     @Override

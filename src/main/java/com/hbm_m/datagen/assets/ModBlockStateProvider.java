@@ -461,14 +461,15 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customDoorBlock(ModBlocks.LARGE_VEHICLE_DOOR);
         customDoorBlock(ModBlocks.ROUND_AIRLOCK_DOOR);
         horizontalBlock(ModBlocks.TRANSITION_SEAL.get(),
-            models().getExistingFile(modLoc("block/transition_seal")));
+            models().getExistingFile(modLoc("block/doors/transition_seal")));
+        horizontalBlock(ModBlocks.SLIDE_DOOR.get(),
+            models().getExistingFile(modLoc("block/doors/sliding_blast_door")));
         customDoorBlock(ModBlocks.SILO_HATCH);
         customDoorBlock(ModBlocks.SILO_HATCH_LARGE);
         customDoorBlock(ModBlocks.QE_SLIDING);
         customDoorBlock(ModBlocks.QE_CONTAINMENT);
         customDoorBlock(ModBlocks.WATER_DOOR);
         customDoorBlock(ModBlocks.FIRE_DOOR);
-        customDoorBlock(ModBlocks.SLIDE_DOOR);
         customDoorBlock(ModBlocks.SLIDING_SEAL_DOOR);
         customDoorBlock(ModBlocks.SECURE_ACCESS_DOOR);
         customDoorBlock(ModBlocks.VAULT_DOOR);

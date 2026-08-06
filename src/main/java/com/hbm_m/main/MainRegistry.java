@@ -27,6 +27,7 @@ import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.powerarmor.PowerArmorHandlers;
 import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
+import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.recipe.CentrifugeRecipes;
 import com.hbm_m.recipe.ChemicalPlantRecipes;
@@ -82,6 +83,7 @@ public final class MainRegistry {
         ScrewdriverInteractionHandler.init();
         BombDefuser.init();
         PlayerHandler.register();
+        ChunkRadiationManager.init();
         ModEventHandler.register();
         PowerArmorHandlers.register();
         LadderClimbHandler.register();
@@ -133,16 +135,12 @@ public final class MainRegistry {
 
         // На Fabric DeferredRegister жидкостей ещё не заполнил BuiltInRegistries на момент SETUP
         // (см. FabricEntrypoint#registerFluidDependentSetupWhenReady).
-        //? if forge {
+        
+        //? if forge || neoforge {
         ChemicalPlantRecipes.registerRecipes();
         CrystallizerRecipes.registerDefaults();
         ModFluidTraitsBootstrap.registerAll();
         //?}
-        //? if neoforge {
-        /*ChemicalPlantRecipes.registerRecipes();
-        CrystallizerRecipes.registerDefaults();
-        ModFluidTraitsBootstrap.registerAll();
-        *///?}
 
         LOGGER.info("Common setup finished");
     }

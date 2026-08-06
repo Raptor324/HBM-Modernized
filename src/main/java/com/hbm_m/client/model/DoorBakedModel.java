@@ -14,10 +14,8 @@ import org.joml.Matrix4f;
 import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.block.entity.doors.DoorDecl;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
-import com.hbm_m.client.loader.ColladaAnimationData;
 import com.hbm_m.client.model.variant.DoorModelSelection;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
-import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.util.MultipartFacingTransforms;
 
 import net.minecraft.client.Minecraft;
@@ -175,14 +173,6 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
 
         int rotationY = getRotationYForFacing(state);
 
-        ColladaAnimationData animData = null;
-        if (ModClothConfig.get().useColladaDoorAnimations && doorDecl.getColladaAnimationSource() != null) {
-            var mc = Minecraft.getInstance();
-            if (mc.getResourceManager() != null) {
-                animData = ColladaAnimationData.getOrLoad(mc.getResourceManager(), doorDecl.getColladaAnimationSource());
-            }
-        }
-
         Map<String, BakedModel> partsToUse = getPartsForModelData(modelData);
         String[] partNamesToUse = partsToUse.keySet().toArray(new String[0]);
 
@@ -205,7 +195,7 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
                 allQuads.addAll(ModelHelper.transformQuadsByFacing(translated, rotationY));
             } else {
                 DoorModelSelection selection = modelData.get(DoorModelProperties.MODEL_SELECTION_PROPERTY);
-                Matrix4f transform = buildPartTransformWithParent(doorDecl, partName, openTicks, animData, partNamesToUse, transformCache, selection);
+                Matrix4f transform = buildPartTransformWithParent(doorDecl, partName, openTicks, partNamesToUse, transformCache, selection);
                 if (transform != null) {
                     partQuads = ModelHelper.transformQuadsByMatrix(partQuads, transform);
                 }
@@ -277,14 +267,6 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
 
         int rotationY = getRotationYForFacing(state);
 
-        ColladaAnimationData animData = null;
-        if (ModClothConfig.get().useColladaDoorAnimations && doorDecl.getColladaAnimationSource() != null) {
-            var mc = Minecraft.getInstance();
-            if (mc.getResourceManager() != null) {
-                animData = ColladaAnimationData.getOrLoad(mc.getResourceManager(), doorDecl.getColladaAnimationSource());
-            }
-        }
-
         DoorModelSelection selection = data != null ? data.selection() : null;
         String[] partNamesToUse = partsToUse.keySet().toArray(new String[0]);
 
@@ -305,7 +287,7 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
                 List<BakedQuad> translated = ModelHelper.translateQuads(partQuads, 0.5f, 0f, 0.5f);
                 allQuads.addAll(ModelHelper.transformQuadsByFacing(translated, rotationY));
             } else {
-                Matrix4f transform = buildPartTransformWithParent(doorDecl, partName, openTicks, animData, partNamesToUse, transformCache, selection);
+                Matrix4f transform = buildPartTransformWithParent(doorDecl, partName, openTicks, partNamesToUse, transformCache, selection);
                 if (transform != null) {
                     partQuads = ModelHelper.transformQuadsByMatrix(partQuads, transform);
                 }
@@ -403,18 +385,18 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
      */
     @Nullable
     private static Matrix4f buildPartTransformWithParent(DoorDecl doorDecl, String partName,
-            float openTicks, ColladaAnimationData animData, String[] allPartNames,
+            float openTicks, String[] allPartNames,
             java.util.Map<String, Matrix4f> transformCache, DoorModelSelection selection) {
         String parentName = findParent(doorDecl, partName, allPartNames, selection);
         Matrix4f parentMat = null;
         if (parentName != null) {
             parentMat = transformCache.get(parentName);
             if (parentMat == null) {
-                parentMat = buildPartTransformWithParent(doorDecl, parentName, openTicks, animData, allPartNames, transformCache, selection);
+                parentMat = buildPartTransformWithParent(doorDecl, parentName, openTicks, allPartNames, transformCache, selection);
                 if (parentMat != null) transformCache.put(parentName, parentMat);
             }
         }
-        Matrix4f mat = buildPartTransformMatrix(doorDecl, partName, openTicks, parentName != null, animData, selection);
+        Matrix4f mat = buildPartTransformMatrix(doorDecl, partName, openTicks, parentName != null, selection);
         if (mat == null) return null;
         if (parentMat != null) {
             mat = new Matrix4f(parentMat).mul(mat);
@@ -438,7 +420,7 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
      */
     @Nullable
     private static Matrix4f buildPartTransformMatrix(DoorDecl doorDecl, String partName,
-            float openTicks, boolean child, ColladaAnimationData animData, DoorModelSelection selection) {
+            float openTicks, boolean child, DoorModelSelection selection) {
         float[] origin = new float[3];
         float[] rotation = new float[3];
         float[] translation = new float[3];
@@ -452,18 +434,6 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         if (rotation[1] != 0) mat.rotateY((float) Math.toRadians(rotation[1]));
         if (rotation[2] != 0) mat.rotateZ((float) Math.toRadians(rotation[2]));
         mat.translate(-origin[0] + translation[0], -origin[1] + translation[1], -origin[2] + translation[2]);
-
-        if (animData != null && animData.getDurationSeconds() > 0) {
-            String daeName = doorDecl.getDaeObjectName(partName);
-            float normProgress = Math.min(1f, openTicks / Math.max(1, doorDecl.getOpenTime()));
-            float timeSec = doorDecl.isColladaAnimationInverted()
-                    ? (1f - normProgress) * animData.getDurationSeconds()
-                    : normProgress * animData.getDurationSeconds();
-            Matrix4f daeMatrix = animData.getTransformMatrix(daeName, timeSec);
-            if (daeMatrix != null) {
-                mat.mul(daeMatrix);
-            }
-        }
         return mat;
     }
     

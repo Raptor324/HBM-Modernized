@@ -48,12 +48,12 @@ public class ConverterBlock extends BaseEntityBlock {
         }
     }
 
-    // --- ВЗАИМОДЕЙСТВИЕ (Твой код с отверткой) ---
+    // --- ВЗАИМОДЕЙСТВИЕ ---
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         ItemStack stack = player.getItemInHand(hand);
 
-        if (stack.getItem() == ModItems.SCREWDRIVER.get()) {
+        if (stack.getItem() == ModItems.SCREWDRIVER.get() || stack.getItem() == ModItems.SCREWDRIVER_DESH.get()) {
             if (!level.isClientSide) {
                 BlockEntity be = level.getBlockEntity(pos);
                 if (be instanceof ConverterBlockEntity converter) {

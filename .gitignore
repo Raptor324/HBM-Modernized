@@ -28,7 +28,7 @@ bin/
 .cursorignore
 .zcode
 .roo
-
+.rooignore
 # ================= Generated Files =================
 src/generated/resources/.cache
 src/generated/resources/assets/hbm_m/blockstates/

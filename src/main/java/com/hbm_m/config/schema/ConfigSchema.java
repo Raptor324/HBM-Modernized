@@ -146,8 +146,6 @@ public final class ConfigSchema {
         reg(ConfigField.bool("mdiVerboseSubdraws", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         // Размер буферов инстансинга фиксируется при создании рендерера → reload ресурсов
         reg(ConfigField.integer("maxInstancedInstancesPerPart", ConfigSide.CLIENT, ApplyMode.REQUIRES_RESOURCE_RELOAD, "rendering", 256, 16384));
-        reg(ConfigField.bool("useColladaDoorAnimations", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
-        reg(ConfigField.bool("useColladaZUpConversion", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.integer("vatsRenderDistanceChunks", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", 1, 32));
         reg(ConfigField.enumField("thermalRenderMode", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
 
