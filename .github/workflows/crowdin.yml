@@ -1,0 +1,56 @@
+name: Crowdin Sync
+
+# Скачивает переводы из Crowdin и собирает их в ОДИН pull request.
+# Заменяет нативную GitHub-интеграцию Crowdin, которая коммитила по одному
+# файлу на язык (110 языков = 110 коммитов = 110 уведомлений в Discord).
+#
+# Перед включением: отключить нативную интеграцию в Crowdin:
+# Project Settings → Integrations → GitHub → Remove.
+# Иначе она будет дублировать работу этого экшена.
+
+on:
+  # Ручной запуск из вкладки Actions (аналог старого "Sync Now")
+  workflow_dispatch:
+  # Ночём в 03:00 UTC (06:00 МСК). GitHub не гарантирует точное время,
+  # cron может задержаться на 10-30 минут в часы пик — это нормально.
+  schedule:
+    - cron: '0 3 * * *'
+
+permissions:
+  contents: write       # коммит переводов в ветку l10n_main
+  pull-requests: write  # создание/обновление PR
+
+jobs:
+  sync-with-crowdin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Crowdin Action
+        uses: crowdin/github-action@v2
+        with:
+          # Залить исходник (en_us.json) в Crowdin — синхронизация ключей.
+          upload_sources: true
+          # Не заливать переводы из репо в Crowdin (Crowdin — источник правды для переводов).
+          upload_translations: false
+          # Скачать переводы всех языков и положить их туда, куда указывает crowdin.yml
+          # (после фикса — в src/main/resources/assets/hbm_m/lang/).
+          download_translations: true
+
+          # Создать/обновить один PR со всеми языками одним коммитом.
+          create_pull_request: true
+          localization_branch_name: 'l10n_main'
+          # База для PR. Если переводы нужны в FFA вместо main — поменяй здесь.
+          pull_request_base_branch_name: 'main'
+          pull_request_title: 'chore: sync translations from Crowdin'
+          pull_request_body: 'Автоматический PR: обновления переводов из Crowdin (все языки одним коммитом).'
+          # Один коммит за прогон вместо коммита на каждый файл.
+          commit_message: 'chore: update translations from Crowdin'
+
+          # Пути source/translation берутся из crowdin.yml в корне репо,
+          # поэтому здесь их не дублируем.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}

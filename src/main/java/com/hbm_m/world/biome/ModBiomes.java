@@ -37,6 +37,17 @@ public class ModBiomes {
                     //?}
                     );
 
+    public static final ResourceKey<Biome> CRATER_KEY =
+            ResourceKey.create(
+                    Registries.BIOME,
+                    //? if fabric && < 1.21.1 {
+                    /*new ResourceLocation(MainRegistry.MOD_ID, "crater")
+                    *///?} else {
+
+                    ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "crater")
+                    //?}
+                    );
+
     public static final ResourceKey<Biome> OUTER_CRATER_KEY =
             ResourceKey.create(
                     Registries.BIOME,
@@ -56,6 +67,11 @@ public class ModBiomes {
     public static final RegistrySupplier<Biome> INNER_CRATER = BIOMES.register(
             "inner_crater",
             CraterBiomes::createInnerCraterBiome
+    );
+
+    public static final RegistrySupplier<Biome> CRATER = BIOMES.register(
+            "crater",
+            CraterBiomes::createCraterBiome
     );
 
     public static final RegistrySupplier<Biome> OUTER_CRATER = BIOMES.register(

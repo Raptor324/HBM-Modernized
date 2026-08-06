@@ -93,9 +93,14 @@ public final class MissileTrackClient {
         if (mc.isPaused()) {
             return;
         }
-        tickStale();
-
+        
         ClientLevel level = mc.level;
+        if (level == null) {
+            clear(); // Очищаем ракеты, чтобы они не переносились в другую сессию
+            return;
+        }
+
+        tickStale();
 
         for (TrackEntry entry : TRACKS.values()) {
             entry.tick(level);

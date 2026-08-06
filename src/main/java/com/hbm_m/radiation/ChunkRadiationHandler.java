@@ -52,8 +52,6 @@ public abstract class ChunkRadiationHandler {
      */
     public abstract void incrementRad(Level level, int x, int y, int z, float rad);
 
-    public abstract void incrementBlockRadiation(Level level, BlockPos pos, float diff);
-    
     /**
      * Уменьшает уровень радиации в указанной позиции
      * @param level мир

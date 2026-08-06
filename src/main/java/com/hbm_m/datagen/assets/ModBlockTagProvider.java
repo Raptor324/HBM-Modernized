@@ -249,6 +249,16 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(ModBlocks.DECO_STEEL.get())
                 .add(ModBlocks.DECO_RUSTY_STEEL.get());
 
+        // ============ BEACON BASE BLOCKS ============
+        // Порт 1.7.10 BlockHazard.makeBeaconable(): все блоки, помеченные makeBeaconable(),
+        // добавляются в ванильный тег beacon_base_blocks (в 1.20.1 это замена Forge isBeaconBase).
+        var beaconBaseTag = this.tag(BlockTags.BEACON_BASE_BLOCKS);
+        for (RegistrySupplier<Block> regObject : ModBlocks.BLOCKS) {
+            if (regObject.get() instanceof com.hbm_m.block.generic.BlockHazard hazard && hazard.isBeaconable()) {
+                beaconBaseTag.add(regObject.get());
+            }
+        }
+
     }
 }
 //?}

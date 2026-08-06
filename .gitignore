@@ -26,6 +26,9 @@ bin/
 .vscode/
 .cursor
 .cursorignore
+.zcode
+.roo
+
 # ================= Generated Files =================
 src/generated/resources/.cache
 src/generated/resources/assets/hbm_m/blockstates/

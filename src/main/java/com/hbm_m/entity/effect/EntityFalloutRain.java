@@ -100,6 +100,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
                 if (ModClothConfig.get().enableCraterBiomes) {
                     biomeCache.put(ModBiomes.INNER_CRATER_KEY, getCachedHolder(ModBiomes.INNER_CRATER_KEY));
+                    biomeCache.put(ModBiomes.CRATER_KEY, getCachedHolder(ModBiomes.CRATER_KEY));
                     biomeCache.put(ModBiomes.OUTER_CRATER_KEY, getCachedHolder(ModBiomes.OUTER_CRATER_KEY));
                 }
 
@@ -166,17 +167,27 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         ChunkRadiationManager.getProxy().recalculateChunkRadiation(chunk);
     }
 
+    /**
+     * 1:1 порт {@code EntityFalloutRain.getBiomeChange} (1.7.10):
+     * <ul>
+     *   <li>{@code scale >= 150 && dist < 15} → INNER (эпицентр крупных взрывов)</li>
+     *   <li>{@code scale >= 100 && dist < 55} → CRATER (средняя зона, если не INNER)</li>
+     *   <li>{@code scale >= 25} → OUTER (внешняя зона, если не INNER/CRATER)</li>
+     * </ul>
+     * {@code dist} — процент радиуса fallout от эпицентра (0..100).
+     */
     public static ResourceKey<Biome> getBiomeChange(double dist, int scale, ResourceKey<Biome> original) {
         if (!ModClothConfig.get().enableCraterBiomes || original == null) return null;
 
-        // dist = % радиуса fallout от эпицентра (как в 1.7.10). Fat Man (scale ~87): эпицентр <15% → inner.
-        if (scale >= 25 && dist < 15) {
+        if (scale >= 150 && dist < 15) {
             return ModBiomes.INNER_CRATER_KEY;
         }
-        if (scale >= 25 && dist < 55 && original != ModBiomes.INNER_CRATER_KEY) {
-            return ModBiomes.OUTER_CRATER_KEY;
+        if (scale >= 100 && dist < 55 && original != ModBiomes.INNER_CRATER_KEY) {
+            return ModBiomes.CRATER_KEY;
         }
-        if (scale >= 25 && original != ModBiomes.INNER_CRATER_KEY && original != ModBiomes.OUTER_CRATER_KEY) {
+        if (scale >= 25
+                && original != ModBiomes.INNER_CRATER_KEY
+                && original != ModBiomes.CRATER_KEY) {
             return ModBiomes.OUTER_CRATER_KEY;
         }
         return null;

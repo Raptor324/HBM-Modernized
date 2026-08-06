@@ -497,6 +497,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.PUMPJACK);
         customMachineBlock(ModBlocks.RADAR);
         customMachineBlock(ModBlocks.LARGE_RADAR);
+        customMachineBlock(ModBlocks.RADAR_SCREEN);
         customMachineBlock(ModBlocks.CRACKING_TOWER);
         customMachineBlock(ModBlocks.FRACTION_TOWER);
         customMachineBlock(ModBlocks.MINING_DRILL);

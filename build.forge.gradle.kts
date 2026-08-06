@@ -119,6 +119,7 @@ dependencies {
 	"modRuntimeOnly"("maven.modrinth:spark:1.10.53-forge")
 	"modRuntimeOnly"("curse.maven:screenshot-to-clipboard-326950:3643026")
 	// "modRuntimeOnly"("maven.modrinth:cwoL6CqY:3PEwIAxS") // Item Transforms Helper
+	// "modRuntimeOnly"("maven.modrinth:f3zK7pP5:8gUY8UiV") // Tick Freeze
 
 	// "modRuntimeOnly"("curse.maven:konkrete-410295:5028413")
 	// "modCompileOnly"("maven.modrinth:distanthorizons:lcyL2Fq3")

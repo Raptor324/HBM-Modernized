@@ -40,14 +40,9 @@ public final class PowerArmorClientState {
         thermalActive = false;
     }
 
-    // Nuclear flash / screen shake timestamps (used by particles / overlays)
-    public static final int FLASH_DURATION = 5_000;
-    public static long flashTimestamp;
-    public static final int SHAKE_DURATION = 1_500;
-    public static long shakeTimestamp;
-
-    public static void triggerNuclearFlash() {
-        flashTimestamp = System.currentTimeMillis();
-    }
+    //  Примечание: метки времени flash/shake раньше дублировались здесь и в
+    //  ModEventHandlerClient (Forge-only). NukeTorex писал в этот «мёртвый»
+    //  дубликат, поэтому эффекты не срабатывали. Теперь они обращаются напрямую
+    //  к ModEventHandlerClient, а сама тряска камеры — к CameraShakeHandler.
 }
 

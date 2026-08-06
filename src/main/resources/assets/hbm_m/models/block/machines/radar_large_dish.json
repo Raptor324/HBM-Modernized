@@ -1,6 +1,6 @@
 {
   "loader": "forge:obj",
-  "model": "hbm_m:models/block/radar_large.obj",
+  "model": "hbm_m:models/block/machines/radar_large.obj",
   "flip_v": true,
   "render_type": "minecraft:cutout",
   "textures": {

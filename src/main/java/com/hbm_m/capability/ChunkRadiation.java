@@ -1,26 +1,14 @@
 package com.hbm_m.capability;
 
-// Реализация IChunkRadiation для хранения данных о радиации в чанке.
+// Реализация IChunkRadiation для хранения ambient-радиации чанка (1.7.10 parity — одно Float на чанк).
 import net.minecraft.util.Mth;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.interfaces.IChunkRadiation;
 
 public class ChunkRadiation implements IChunkRadiation {
-    private float blockRadiation = 0.0F;
     private float ambientRadiation = 0.0f;
 
     private final float MAX_RAD = ModClothConfig.get().maxRad;
-
-
-    @Override
-    public float getBlockRadiation() {
-        return this.blockRadiation;
-    }
-    
-    @Override
-    public void setBlockRadiation(float value) {
-        this.blockRadiation = Mth.clamp(value, 0, MAX_RAD);
-    }
 
     @Override
     public float getAmbientRadiation() {
@@ -34,7 +22,6 @@ public class ChunkRadiation implements IChunkRadiation {
 
     @Override
     public void copyFrom(IChunkRadiation source) {
-        this.setBlockRadiation(source.getBlockRadiation());
         this.setAmbientRadiation(source.getAmbientRadiation());
     }
 }

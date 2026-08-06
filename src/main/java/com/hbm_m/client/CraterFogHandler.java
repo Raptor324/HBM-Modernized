@@ -13,45 +13,60 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.api.distmarker.Dist;
 
+/**
+ * Туман в crater биомах. Цвета и плотность — средние значения из 1.7.10
+ * {@code BiomeGenCraterBase.skyColor}: inner 0x424A42, mid 0x525A52, outer 0x6B9189.
+ */
 @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, value = Dist.CLIENT)
 public class CraterFogHandler {
 
-    // Этот метод делает туман очень близким и густым в биоме inner_crater
     @SubscribeEvent
     public static void onFogDensity(ViewportEvent.RenderFog event) {
         Level level = Minecraft.getInstance().level;
         LocalPlayer player = Minecraft.getInstance().player;
         if (level == null || player == null) return;
 
-        Biome biome = level.getBiome(player.blockPosition()).value();
-        // Проверяем, что мы в нужном биоме
-        if (level.getBiome(player.blockPosition()).is(CraterBiomes.INNER_CRATER_KEY)) {
-            // Настраиваем туман: start - где начинается, end - где заканчивается (чем меньше, тем ближе и гуще)
-            event.setNearPlaneDistance(0.1F); // Туман начинается почти у носа
-            event.setFarPlaneDistance(140.0F);  // Туман полностью непрозрачный уже в 6 блоках
-            event.setCanceled(true); // Отключаем стандартный туман
-        }
+        var biomeKey = level.getBiome(player.blockPosition()).unwrapKey().orElse(null);
+        if (biomeKey == null) return;
 
-        if (level.getBiome(player.blockPosition()).is(CraterBiomes.OUTER_CRATER_KEY)) {
-            // Настраиваем туман: start - где начинается, end - где заканчивается (чем меньше, тем ближе и гуще)
-            event.setNearPlaneDistance(0.07F); // Туман начинается почти у носа
-            event.setFarPlaneDistance(180.0F);  // Туман полностью непрозрачный уже в 6 блоках
-            event.setCanceled(true); // Отключаем стандартный туман
+        // Эпицентр — самый плотный туман, к периферии — рассеивается.
+        if (biomeKey == CraterBiomes.INNER_CRATER_KEY) {
+            event.setNearPlaneDistance(0.1F);
+            event.setFarPlaneDistance(140.0F);
+            event.setCanceled(true);
+        } else if (biomeKey == CraterBiomes.CRATER_KEY) {
+            event.setNearPlaneDistance(0.5F);
+            event.setFarPlaneDistance(180.0F);
+            event.setCanceled(true);
+        } else if (biomeKey == CraterBiomes.OUTER_CRATER_KEY) {
+            event.setNearPlaneDistance(0.07F);
+            event.setFarPlaneDistance(220.0F);
+            event.setCanceled(true);
         }
     }
 
-    // Этот метод задаёт цвет тумана (можно не трогать, если устраивает цвет из биома)
     @SubscribeEvent
     public static void onFogColor(ViewportEvent.ComputeFogColor event) {
         Level level = Minecraft.getInstance().level;
         LocalPlayer player = Minecraft.getInstance().player;
         if (level == null || player == null) return;
 
-        if (level.getBiome(player.blockPosition()).is(CraterBiomes.INNER_CRATER_KEY)) {
-            // Цвет тумана (тёмно-серый)
-            event.setRed(0.10F);
-            event.setGreen(0.10F);
-            event.setBlue(0.12F);
+        var biomeKey = level.getBiome(player.blockPosition()).unwrapKey().orElse(null);
+        if (biomeKey == null) return;
+
+        // Соответствует skyColor каждого биома (как 1.7.10 — туман = sky).
+        if (biomeKey == CraterBiomes.INNER_CRATER_KEY) {
+            event.setRed(0x42 / 255F);
+            event.setGreen(0x4A / 255F);
+            event.setBlue(0x42 / 255F);
+        } else if (biomeKey == CraterBiomes.CRATER_KEY) {
+            event.setRed(0x52 / 255F);
+            event.setGreen(0x5A / 255F);
+            event.setBlue(0x52 / 255F);
+        } else if (biomeKey == CraterBiomes.OUTER_CRATER_KEY) {
+            event.setRed(0x6B / 255F);
+            event.setGreen(0x91 / 255F);
+            event.setBlue(0x89 / 255F);
         }
     }
 }

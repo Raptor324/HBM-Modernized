@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.hbm_m.config.GeneralConfig;
 import com.hbm_m.hazard.modifier.HazardModifier;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.util.BobMathUtil;
 import com.hbm_m.util.ContaminationUtil;
 import com.hbm_m.util.ContaminationUtil.ContaminationType;
@@ -18,17 +19,34 @@ import net.minecraft.world.item.ItemStack;
 
 public class HazardTypeRadiation extends HazardTypeBase {
 
+    /**
+     * 1:1 с {@link com.hbm.hazard.type.HazardTypeRadiation#onUpdate} (1.7.10).
+     * <p>Без reacher: {@code rad = level / 20F} (линейно).<br>
+     * С reacher: применяется нелинейная нормализация — {@code BobMathUtil.squirt} (обычный режим)
+     * или {@code rad / 49F} ({@code 528}-режим, обратно-квадратичный по расстоянию).</p>
+     * <p><b>Баг фикс:</b> Modernized применял {@code squirt}/{@code 528}-нормализацию безусловно,
+     * что занижало радиацию для всех игроков. Для 1 блока polonium это давало
+     * ~122 RAD/s вместо правильных 750 RAD/s.</p>
+     */
     @Override
     public void onUpdate(LivingEntity target, float level, ItemStack stack) {
+        boolean reacher = false;
+
+        if (target instanceof Player player) {
+            reacher = player.getInventory().contains(new ItemStack(ModItems.REACHER.get()));
+        }
+
         level *= stack.getCount();
 
         if (level > 0) {
             float rad = level / 20F;
-            if (GeneralConfig.enable528) {
+
+            if (GeneralConfig.enable528 && reacher) {
                 rad = (float) (rad / 49F);
-            } else {
+            } else if (reacher) {
                 rad = (float) BobMathUtil.squirt(rad);
             }
+
             ContaminationUtil.contaminate(target, HazardType.RADIATION, ContaminationType.CREATIVE, rad);
         }
     }
