@@ -1613,7 +1613,6 @@ public final class CreativeModeTabEventHandler {
     /** Временная вкладка для новых, ещё не отсортированных предметов/блоков. */
     public static void populateDevItemsTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
         Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
-        /*
         add.accept(new ItemStack(ModBlocks.MACHINE_SIREN.get()));
         add.accept(new ItemStack(ModBlocks.BROADCASTER.get()));
 
@@ -3037,7 +3036,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.POWDER_SPARK_MIX.get()));
         add.accept(new ItemStack(ModItems.POWDER_SEMTEX_MIX.get()));
         add.accept(new ItemStack(ModItems.POWDER_DESH_READY.get()));
-        add.accept(new ItemStack(ModItems.POWDER_COLTAN.get()));*/
+        add.accept(new ItemStack(ModItems.POWDER_COLTAN.get()));
     }
 
     // ТОПЛИВО И ЭЛЕМЕНТЫ МЕХАНИЗМОВ
