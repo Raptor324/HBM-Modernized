@@ -12,7 +12,8 @@ files:
   - source: /src/generated/resources/assets/hbm_m/lang/en_us.json
     # %locale_with_underscore% выдаёт код вида ru_ru, zh_cn, pt_br —
     # ровно тот формат, который требует Minecraft (language_country).
-    # Это снимает необходимость вручную мапить ~100 языков.
+    # Скачаются только те языки, которые включены в Target Languages
+    # проекта на Crowdin (Project Settings → Languages → Target Languages).
     translation: /src/main/resources/assets/hbm_m/lang/%locale_with_underscore%.json
 
     # Язык-источник — английский. Без явного указания Crowdin может попытаться
@@ -20,31 +21,10 @@ files:
     source_language: en
 
     # Файлы, которые Crowdin НЕ должен перезаписывать при download:
-    #   en_us.json — это сам источник (лежит в generated, но если попадётся в main — не трогать);
+    #   en_us.json — это сам источник.
     #   ru_ru.json — генерируется датагеном (провайдер ru_ru), неуправляемый Crowdin-ом.
+    # Если хочешь, чтобы Crowdin ТОЖЕ управлял русским — удали строку ru_ru.json ниже,
+    # а датаген-провайдер ru_ru убери (иначе будут конфликты при перегенерации).
     ignore:
       - /src/main/resources/assets/hbm_m/lang/en_us.json
       - /src/main/resources/assets/hbm_m/lang/ru_ru.json
-
-    # Маппим только те языки, у которых Crowdin-код не совпадает с желаемым именем файла.
-    # Ключи (слева) — официальные коды Crowdin (https://developer.crowdin.com/language-codes).
-    # Раньше здесь были невалидные коды (ar-SA, 'no', lol-US, tlh-AA, qya-AA, sr-SP),
-    # из-за которых Crowdin отвергал весь конфиг на этапе UPLOAD SOURCES — поэтому
-    # экшен падал с "Configuration file is invalid ... mapping format".
-    languages_mapping:
-      locale_with_underscore:
-        # Норвежский: Crowdin nb/nn → %locale% даёт nb_no/nn_no,
-        # в Minecraft нет nb_no — нужен no_no.
-        nb: no_no
-        nn: no_no
-        # Klingon — Crowdin код без региона, оставляем как есть.
-        tlh: tlh
-        # Valencian — явно подчёркиваем формат.
-        val-ES: val_es
-        # Английские диалекты (маппим в формат xx_xx для MC):
-        en-AU: en_au
-        en-CA: en_ca
-        en-GB: en_gb
-        en-NZ: en_nz
-        en-PT: en_pt
-        en-UD: en_ud
