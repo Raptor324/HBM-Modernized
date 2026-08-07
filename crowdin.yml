@@ -1,115 +1,50 @@
 preserve_hierarchy: true
 
+# Конфиг Crowdin для HBM-Modernized.
+# Project ID и токен передаются экшеном через env (см. .github/workflows/crowdin.yml).
+#
+# Источник (en_us) берётся из generated-resources (его пишет датаген).
+# Переводы кладём в main/resources — туда датаген не пишет и не чистит,
+# поэтому Crowdin-файлы не затираются при перегенерации.
+# Обе папки попадают в финальный JAR.
+
 files:
   - source: /src/generated/resources/assets/hbm_m/lang/en_us.json
-    # Переводы кладём в main/resources — туда датаген (runData) не пишет и не чистит,
-    # поэтому Crowdin-файлы не будут затираться при перегенерации. Источник (en_us)
-    # по-прежнему берётся из generated, обе папки попадают в финальный JAR.
+    # %locale_with_underscore% выдаёт код вида ru_ru, zh_cn, pt_br —
+    # ровно тот формат, который требует Minecraft (language_country).
+    # Это снимает необходимость вручную мапить ~100 языков.
     translation: /src/main/resources/assets/hbm_m/lang/%locale_with_underscore%.json
 
+    # Язык-источник — английский. Без явного указания Crowdin может попытаться
+    # скачать перевод на en и положить en_us.json в папку переводов (конфликт с source).
+    source_language: en
+
+    # Файлы, которые Crowdin НЕ должен перезаписывать при download:
+    #   en_us.json — это сам источник (лежит в generated, но если попадётся в main — не трогать);
+    #   ru_ru.json — генерируется датагеном (провайдер ru_ru), неуправляемый Crowdin-ом.
     ignore:
+      - /src/main/resources/assets/hbm_m/lang/en_us.json
       - /src/main/resources/assets/hbm_m/lang/ru_ru.json
 
+    # Маппим только те языки, у которых Crowdin-код не совпадает с желаемым именем файла.
+    # Ключи (слева) — официальные коды Crowdin (https://developer.crowdin.com/language-codes).
+    # Раньше здесь были невалидные коды (ar-SA, 'no', lol-US, tlh-AA, qya-AA, sr-SP),
+    # из-за которых Crowdin отвергал весь конфиг на этапе UPLOAD SOURCES — поэтому
+    # экшен падал с "Configuration file is invalid ... mapping format".
     languages_mapping:
       locale_with_underscore:
-        af: af_za
-        ar-SA: ar_sa
-        ast-ES: ast_es
-        az-AZ: az_az
-        ba-RU: ba_ru
-        be-BY: be_by
-        bg-BG: bg_bg
-        br-FR: br_fr
-        bs-BA: bs_ba
-        ca-ES: ca_es
-        cs-CZ: cs_cz
-        cy-GB: cy_gb
-        da-DK: da_dk
-        de-DE: de_de
-        el-GR: el_gr
+        # Норвежский: Crowdin nb/nn → %locale% даёт nb_no/nn_no,
+        # в Minecraft нет nb_no — нужен no_no.
+        nb: no_no
+        nn: no_no
+        # Klingon — Crowdin код без региона, оставляем как есть.
+        tlh: tlh
+        # Valencian — явно подчёркиваем формат.
+        val-ES: val_es
+        # Английские диалекты (маппим в формат xx_xx для MC):
         en-AU: en_au
         en-CA: en_ca
         en-GB: en_gb
         en-NZ: en_nz
         en-PT: en_pt
         en-UD: en_ud
-        eo-UY: eo_uy
-        es-AR: es_ar
-        es-CL: es_cl
-        es-EC: es_ec
-        es-ES: es_es
-        es-MX: es_mx
-        es-UY: es_uy
-        es-VE: es_ve
-        et-EE: et_ee
-        eu-ES: eu_es
-        fa-IR: fa_ir
-        fi-FI: fi_fi
-        fil-PH: fil_ph
-        fo-FO: fo_fo
-        fr-CA: fr_ca
-        fr-FR: fr_fr
-        fy-NL: fy_nl
-        ga-IE: ga_ie
-        gd-GB: gd_gb
-        gl-ES: gl_es
-        haw-US: haw_us
-        he-IL: he_il
-        hi-IN: hi_in
-        hr-HR: hr_hr
-        hu-HU: hu_hu
-        hy-AM: hy_am
-        id-ID: id_id
-        ig-NG: ig_ng
-        is-IS: is_is
-        it-IT: it_it
-        ja-JP: ja_jp
-        ka-GE: ka_ge
-        kk-KZ: kk_kz
-        kn-IN: kn_in
-        ko-KR: ko_kr
-        ksh: ksh
-        kw-GB: kw_gb
-        la-LA: la_la
-        lb-LU: lb_lu
-        li-LI: li_li
-        lol-US: lol_us
-        lt-LT: lt_lt
-        lv-LV: lv_lv
-        lzh: lzh
-        mk-MK: mk_mk
-        mn-MN: mn_mn
-        ms-MY: ms_my
-        mt-MT: mt_mt
-        nds-DE: nds_de
-        nl-BE: nl_be
-        nl-NL: nl_nl
-        nn-NO: nn_no
-        'no': no_no
-        oc-FR: oc_fr
-        pl-PL: pl_pl
-        pt-BR: pt_br
-        pt-PT: pt_pt
-        qya-AA: qya_aa
-        ro-RO: ro_ro
-        ru-RU: ru_ru
-        sk-SK: sk_sk
-        sl-SI: sl_si
-        so-SO: so_so
-        sq-AL: sq_al
-        sr-SP: sr_sp
-        sv-SE: sv_se
-        ta-IN: ta_in
-        th-TH: th_th
-        tlh-AA: tlh_aa
-        tr-TR: tr_tr
-        tt-RU: tt_ru
-        uk-UA: uk_ua
-        val-ES: val_es
-        vec-IT: vec_it
-        vi-VN: vi_vn
-        yi-DE: yi_de
-        yo-NG: yo_ng
-        zh-CN: zh_cn
-        zh-HK: zh_hk
-        zh-TW: zh_tw
