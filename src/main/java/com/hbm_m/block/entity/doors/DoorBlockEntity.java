@@ -66,12 +66,22 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
     private DoorModelSelection modelSelection = DoorModelSelection.DEFAULT;
     
     /**
-     * Кэшированные ModelData для производительности
+     * Кэшированные ModelData для производительности.
+     *
+     * <p>ВНИМАНИЕ: поле НЕ помечено @OnlyIn(Dist.CLIENT)/@Environment(EnvType.CLIENT).
+     * Раньше было, но Forge {@code RuntimeDistCleaner} удаляет @OnlyIn(Dist.CLIENT) ПОЛЯ
+     * (а не только методы) на dedicated-сервере → серверный {@code load(CompoundTag)}
+     * (m_142466_) падал с {@link NoSuchFieldError} на {@code this.cachedModelData = null;},
+     * BlockEntity skipped → Create-disassembly не могла восстановить BlockEntity двери →
+     * поезд разбирался наполовину, часть блоков пропадала бесследно. Двойная разборка —
+     * первый цикл восстанавливал BE частично (BE null), сущность contraption оставалась
+     * живой; второй цикл убивал contraption окончательно, теряя невосстановленные блоки.
+     *
+     * <p>Plain Object поле безопасно держать и на сервере (null по умолчанию, никто не
+     * мутирует на сервере). Все клиент-специфичные методы, которые пишут/читают его,
+     * остаются @OnlyIn(Dist.CLIENT) на уровне метода — runtimedistcleaner удаляет только
+     * методы, а не поля, поэтому отсутствие @OnlyIn на поле безопасно.
      */
-//? if forge || neoforge {
-@OnlyIn(Dist.CLIENT)
-//?} elif fabric {
-/*@Environment(EnvType.CLIENT)*///?}
     private Object cachedModelData;
 
     private String doorDeclId;
@@ -81,10 +91,9 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
     private PartRole partRole = PartRole.DEFAULT;
 
     private java.util.Set<Direction> allowedClimbSides = java.util.EnumSet.noneOf(Direction.class);
-//? if forge || neoforge {
-@OnlyIn(Dist.CLIENT)
-//?} elif fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+    // См. комментарий у cachedModelData: @OnlyIn(Dist.CLIENT) на ПОЛЕ ломает загрузку
+    // BlockEntity на dedicated-сервере (NoSuchFieldError после RuntimeDistCleaner) и
+    // вторично ломает Create-disassembly поезда. Поле держим plain Object (null default).
     private Object loopingSound;
 
     /** Called from DoorAnimationDelayHelper when delay expires. Client-only. */

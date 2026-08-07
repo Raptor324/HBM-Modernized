@@ -282,14 +282,28 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        // Двери рендерятся исключительно через BlockEntityRenderer (DoorRenderer):
-        // VBO/DAE-pipeline для анимированных частей + InstancedStaticPartRenderer
-        // для статичного каркаса. Chunk-render тут не нужен — DoorBakedModel и так
-        // skip-ает world-quads через shouldSkipWorldRendering, а DaeBakedModel
-        // (sliding_blast_door) отдавал бы в chunk «кривую» статичную геометрию без
-        // поворота по FACING и без анимации. ENTITYBLOCK_ANIMATED отключает
-        // chunk-bake полностью, оставляя только BER, как у TransitionSealBlock.
-        return RenderShape.ENTITYBLOCK_ANIMATED;
+        // По умолчанию RenderShape.MODEL —DoorBakedModel skip-ает world-quads через
+        // shouldSkipWorldRendering, а DoorRenderer рисует анимированную геометрию через
+        // BlockEntityRenderer (VBO/instanced). Это рабочий паттерн, который НЕ ломает
+        // контрапшены Create: при разборке поезда Create возвращает блоки из
+        // contraption.getBlocks() в мир через level.setBlock, и с RenderShape.MODEL
+        // блок появляется в chunk-render сразу, без задержки/дублирования.
+        //
+        // ENTITYBLOCK_ANIMATED отключает chunk-bake полностью, оставляя только BER — это
+        // было нужно для DAE-дверей (getColladaAnimationSource() != null), чей
+        // DaeBakedModel иначе отдаёт в chunk «кривую» статичную геометрию без поворота по
+        // FACING и без анимации (Sliding Blast Door: 2 пайплайна OBJ + DAE).
+        //
+        // НО: ENTITYBLOCK_ANIMATED ломает разборку составных contraption-поездов Create
+        // — реальный блок-дверь (состояние из StructureBlockInfo) перестаёт появляться в
+        // мире синхронно с удалением сущности-конрапшена; остается «двойной рендер»
+        // (сущность + реальная копия), часть склеенных блоков бесследно пропадает.
+        // Поэтому: только DAE-двери используют ENTITYBLOCK_ANIMATED, остальные — MODEL.
+        DoorDecl decl = DoorDeclRegistry.getById(doorDeclId);
+        if (decl != null && decl.getColladaAnimationSource() != null) {
+            return RenderShape.ENTITYBLOCK_ANIMATED;
+        }
+        return RenderShape.MODEL;
     }
 
     @Override

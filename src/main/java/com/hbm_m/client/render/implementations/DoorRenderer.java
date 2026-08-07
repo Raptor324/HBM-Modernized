@@ -227,7 +227,12 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
         } else {
             ResourceLocation daePath = doorDecl.getColladaAnimationSource();
             if (daePath != null) {
-                renderDaeModel(be, daePath, doorDecl, partialTick, poseStack, packedLight, bufferSource);
+                // ВАЖНО: передаём уже вычисленный openTicks (с учётом onContraption через
+                // ContraptionDoorAnimCache.chase), а не partialTick. Раньше DAE-путь сам
+                // брал be.getOpenProgress(partialTick), который на контрапшене не обновляется
+                // (BE пересоздаётся из frozen NBT на reset) → анимация DAE-двери на поезде
+                // застывала в позиции сборки, хотя OBJ-путь той же двери работал.
+                renderDaeModel(be, daePath, doorDecl, openTicks, poseStack, packedLight, bufferSource);
             }
         }
     }
@@ -235,9 +240,9 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
     // ================= DAE RENDER PIPELINE =================
     
     private void renderDaeModel(DoorBlockEntity be, ResourceLocation daePath, DoorDecl doorDecl,
-                                float partialTick, PoseStack poseStack, int packedLight,
+                                float openTicks, PoseStack poseStack, int packedLight,
                                 MultiBufferSource bufferSource) {
-                                    
+                                     
         DaeModel model = DAE_MODELS_CACHE.computeIfAbsent(daePath, path -> {
             try {
                 return DaeModel.load(path);
@@ -254,7 +259,11 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
             clip = model.animations.values().iterator().next();
         }
         
-        float time = (be.getOpenProgress(partialTick) * doorDecl.getOpenTime()) / 20.0f;
+        // openTicks уже несёт корректный прогресс (0..openTime) с учётом контрапшена
+        // (ContraptionDoorAnimCache.chase) ИЛИ обычного BE.getOpenProgress. Раньше тут
+        // было be.getOpenProgress(partialTick) * openTime — на контрапшене это всегда 0
+        // (BE frozen), что и держало DAE-дверь статичной на поезде.
+        float time = openTicks / 20.0f;
         DoorModelSelection selection = be.getModelSelection();
 
         // NBT-синхронизация reconstructs DoorSkin только по id (texturePath=null),
