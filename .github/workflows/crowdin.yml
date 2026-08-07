@@ -116,11 +116,11 @@ jobs:
           # Коммит ведётся от github-actions[bot]; author — инициатор workflow.
           title: 'chore: sync translations from Crowdin'
           body: |
-            Автоматический PR: обновления переводов из Crowdin (все языки одним коммитом).
+            Automatic PR: Translation updates from Crowdin (all languages ​​in one commit).
 
-            * Источник: `src/generated/resources/assets/hbm_m/lang/en_us.json` (датаген).
-            * Переводы: `src/main/resources/assets/hbm_m/lang/*.json` (нижний регистр, формат Minecraft `language_country`).
-            * `ru_ru.json` намеренно исключён — управляется датагеном.
+            * Source: `src/generated/resources/assets/hbm_m/lang/en_us.json` (datagen).
+            * Translations: `src/main/resources/assets/hbm_m/lang/*.json` (lowercase, Minecraft `language_country` format).
+            * `ru_ru.json` and `en_us.json` are intentionally included - it is controlled by the data generator.
           commit-message: 'chore: update translations from Crowdin'
           # Коммитить только изменения в папке переводов, чтобы шаг Normalise
           # не зацепил ничего лишнего.
