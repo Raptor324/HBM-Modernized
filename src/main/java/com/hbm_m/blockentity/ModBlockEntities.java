@@ -571,7 +571,8 @@ public class ModBlockEntities {
                         ModBlocks.WATER_DOOR.get(),
                         ModBlocks.SILO_HATCH.get(),
                         ModBlocks.SILO_HATCH_LARGE.get(),
-                        ModBlocks.VAULT_DOOR.get())
+                        ModBlocks.VAULT_DOOR.get(),
+                        ModBlocks.CARGO_DOOR.get())
                     .build(null));
 
     public static final RegistrySupplier<BlockEntityType<TransitionSealBlockEntity>> TRANSITION_SEAL_BE =

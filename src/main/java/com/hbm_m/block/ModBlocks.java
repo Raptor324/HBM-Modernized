@@ -774,6 +774,17 @@ public class ModBlocks {
                     "vault_door"
             ));
 
+    public static final RegistrySupplier<Block> CARGO_DOOR = registerBlockWithoutItem("cargo_door",
+            () -> new DoorBlock(
+                    BlockBehaviour.Properties.of()
+                            .strength(10.0F, 1000.0F)
+                            .requiresCorrectToolForDrops()
+                            .sound(SoundType.METAL)
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
+                    "cargo_door"
+            ));
+
 
     //---------------------------<БЛОКИ>-------------------------------------
     public static final RegistrySupplier<Block> REINFORCED_STONE = registerBlock("reinforced_stone",

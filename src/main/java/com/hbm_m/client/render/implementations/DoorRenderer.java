@@ -507,6 +507,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
         if (doorDecl == DoorDecl.SILO_HATCH) return "silo_hatch";
         if (doorDecl == DoorDecl.SILO_HATCH_LARGE) return "silo_hatch_large";
         if (doorDecl == DoorDecl.VAULT_DOOR) return "vault_door";
+        if (doorDecl == DoorDecl.CARGO_DOOR) return "cargo_door";
         if (doorDecl.getBlockId().getPath().equals("sliding_blast_door")) return "sliding_blast_door";
         throw new IllegalStateException("Unknown door type: " + doorDecl.getClass().getName());
     }

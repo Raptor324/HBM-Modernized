@@ -1358,6 +1358,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.VAULT_DOOR.get()));
         add.accept(new ItemStack(ModBlocks.TRANSITION_SEAL.get()));
         add.accept(new ItemStack(ModBlocks.SLIDE_DOOR.get()));
+        add.accept(new ItemStack(ModBlocks.CARGO_DOOR.get()));
     }
 
     // СТАНКИ

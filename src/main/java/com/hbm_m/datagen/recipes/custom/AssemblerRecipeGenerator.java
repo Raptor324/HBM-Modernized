@@ -1097,6 +1097,18 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(Items.IRON_BLOCK, 10)
                 .addIngredient(Ingredient.of(Tags.Items.DYES_GRAY), 8)
                 .save(writer, "door_transition_seal");
+
+        // Cargo door: оригинал 1.7.10 — ass.cargodoor (200 тиков, 100 power):
+        // steel_beam×32, STEEL.plate()×4, DURA.bolt()×4, motor×2, KEY_GRAY×1.
+        // steel_beam отсутствует в Modernized → заменяем на стальной слиток (32).
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.CARGO_DOOR.get(), 1), 200, 100)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 32)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 4)
+                .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .addIngredient(Ingredient.of(Tags.Items.DYES_GRAY), 1)
+                .save(writer, "cargo_door");
     }
 
     private static void registerElectronics(Consumer<FinishedRecipe> writer) {

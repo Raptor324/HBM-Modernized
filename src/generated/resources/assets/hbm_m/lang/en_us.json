@@ -210,6 +210,7 @@
   "block.hbm_m.capacitor_niobium": "Niobium Capacitor (LEGACY)",
   "block.hbm_m.capacitor_schrabidate": "Schrabidate Capacitor (LEGACY)",
   "block.hbm_m.capacitor_tantalium": "Tantalum Capacitor (LEGACY)",
+  "block.hbm_m.cargo_door": "Cargo Door",
   "block.hbm_m.catalytic_reformer": "Catalytic Reformer (WIP)",
   "block.hbm_m.centrifuge": "Centrifuge",
   "block.hbm_m.charge_c4": "Demolition Charge",

@@ -100,6 +100,7 @@ public abstract class DoorDecl {
             case "water_door" -> new int[] { -1, 0, 0, 2, 2, 0 };
             case "silo_hatch" -> new int[] { -2, 0, -2, 4, 0, 4 };
             case "silo_hatch_large" -> new int[] { -3, 0, -3, 6, 0, 6 };
+            case "cargo_door" -> new int[] { -1, -1, 0, 3, 3, 1 };
             default -> new int[] { 0, 0, 0, 0, 1, 0 };
         };
     }
@@ -1534,6 +1535,93 @@ public abstract class DoorDecl {
         @Override public SoundEvent getOpenSoundEnd() { return ModSounds.DOOR_WGH_BIG_STOP.get(); }
         @Override public SoundEvent getOpenSoundLoop() { return ModSounds.DOOR_WGH_BIG_START.get(); }
         @Override public SoundEvent getCloseSoundEnd() { return ModSounds.DOOR_WGH_BIG_STOP.get(); }
+        @Override public float getSoundVolume() { return 2.0f; }
+    };
+
+    public static final DoorDecl CARGO_DOOR = new DoorDecl() {
+        {
+            DoorStructureDefinition.Builder builder = DoorStructureDefinition.create();
+
+            // Повторяет оригинальный getBlockBound из 1.7.10:
+            // закрытая дверь — тонкая створка 0.375..0.625 по Z (т.е. 6/16..10/16)
+            VoxelShape thin = Block.box(0, 0, 6, 16, 16, 10);
+            builder.addSymbol('#', thin, PartRole.DEFAULT);
+            builder.addSymbol('C', thin, PartRole.CONTROLLER);
+
+            // Вид спереди (Y сверху вниз): 3 блока в ширину (X), 3 в высоту (Y).
+            // Контроллер — нижний-средний блок (как в оригинале getDimensions {-1,-1,0,3,3,1}).
+            String[] closed = {
+                "###",
+                "###",
+                "#C#"
+            };
+
+            // В открытом состоянии вся створка убирается, рамка остаётся коллизией
+            // ( BOT/TOP поднимаются, проход свободен ).
+            String[] open = {
+                "###",
+                "   ",
+                "   "
+            };
+
+            defineStructure(builder.parseVertical(closed, open, 'C'));
+        }
+
+        //? if fabric && < 1.21.1 {
+        /*@Override public ResourceLocation getBlockId() { return new ResourceLocation(RefStrings.MODID, "cargo_door");
+        *///?} else {
+                @Override public ResourceLocation getBlockId() { return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "cargo_door");
+        //?}
+ }
+
+        @Override public String[] getPartNames() { return new String[] { "Frame", "DoorTop", "DoorBot" }; }
+        @Override public int getOpenTime() { return 60; }
+
+        @Override
+        public DoorModelSelection getDefaultModelSelection() {
+            return DoorModelSelection.modern(DoorSkin.DEFAULT);
+        }
+
+        // Повторяет логику AxisAlignedBB из оригинального DoorDecl.CARGO_DOOR (1.7.10).
+        // open=false → створка 0..1 × 0..1 × 0.375..0.625.
+        // open=true: верхние блоки (y>1) ↑ 0.25..1; нижний (y==0) ↑ 0..(forCollision?0:0.125).
+        @Override
+        public AABB getBlockBound(int x, int y, int z, boolean open, boolean forCollision) {
+            if (!open) return new AABB(0, 0, 0.375, 1, 1, 0.625);
+            if (y > 1) return new AABB(0, 0.25, 0.375, 1, 1, 0.625);
+            else if (y == 0) return new AABB(0, 0, 0.375, 1, forCollision ? 0 : 0.125, 0.625);
+            return super.getBlockBound(x, y, z, open, forCollision);
+        }
+
+        // BusAnimation оригинала: BOT поднимается на 2 блока за timeToOpen*2 тиков
+        // (полный проезд한다 за открытие), TOP поднимается на 1 блок с задержкой.
+        // В Modernized трансляции задаётся через нормированный прогресс [0..1].
+        @Override
+        public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
+            float norm = getNormTime(openTicks, 0, getOpenTime());
+            if ("DoorBot".equals(partName)) {
+                // BOT: полное смещение 2 блока, плавное (ease-in/out через smoothstep)
+                float t = smoothstep(norm);
+                set(trans, 0, 2.0F * t, 0);
+            } else if ("DoorTop".equals(partName)) {
+                // TOP: половина длительности стоит, потом поднимается на 1 блок.
+                // Оригинал BusAnimation: addPos(0,0,0,half) + addPos(0,1,0,half).
+                float t = smoothstep(getNormTime(openTicks, getOpenTime() * 0.5F, getOpenTime()));
+                set(trans, 0, 1.0F * t, 0);
+            } else {
+                super.getTranslation(partName, openTicks, child, trans);
+            }
+        }
+
+        private float smoothstep(float t) { return t * t * (3.0f - 2.0f * t); }
+
+        @Override public int[][] getDoorOpenRanges() { return new int[][] { { -1, -1, 0, 3, 3, 1 } }; }
+
+        // Звуки: hbm:door.garage_move (loop) / hbm:door.garage_stop (end), громкость 2.0
+        @Override public SoundEvent getOpenSoundLoop() { return ModSounds.GARAGE_MOVE.get(); }
+        @Override public SoundEvent getOpenSoundEnd() { return ModSounds.GARAGE_STOP.get(); }
+        @Override public SoundEvent getCloseSoundLoop() { return ModSounds.GARAGE_MOVE.get(); }
+        @Override public SoundEvent getCloseSoundEnd() { return ModSounds.GARAGE_STOP.get(); }
         @Override public float getSoundVolume() { return 2.0f; }
     };
 

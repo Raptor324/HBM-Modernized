@@ -1954,6 +1954,9 @@ public class ModItems {
     public static final RegistrySupplier<Item> VAULT_DOOR = ITEMS.register("vault_door",
         () -> new DoorBlockItem(ModBlocks.VAULT_DOOR.get(), new Item.Properties()));
 
+    public static final RegistrySupplier<Item> CARGO_DOOR = ITEMS.register("cargo_door",
+        () -> new DoorBlockItem(ModBlocks.CARGO_DOOR.get(), new Item.Properties()));
+
 
 
     public static final RegistrySupplier<Item> STAMP_STONE_FLAT = ITEMS.register("stamp_stone_flat",

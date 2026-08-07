@@ -792,6 +792,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.WATER_DOOR.get(), "Подводный люк");
                 add(ModBlocks.SILO_HATCH.get(), "Малый люк");
                 add(ModBlocks.SILO_HATCH_LARGE.get(), "Люк ракетной шахты");
+                add(ModBlocks.CARGO_DOOR.get(), "Грузовая дверь");
 
                 add(ModBlocks.DUD_SALTED.get(), "Неразорвавшаяся солёная бомба");
                 add(ModBlocks.DUD_NUKE.get(), "Неразорвавшаяся ядерная бомба");
@@ -3609,6 +3610,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.SILO_HATCH_LARGE.get(), "Large Silo Hatch");
                 add(ModBlocks.TRANSITION_SEAL.get(), "Transition Seal");
                 add(ModBlocks.SLIDE_DOOR.get(), "Sliding Blast Door");
+                add(ModBlocks.CARGO_DOOR.get(), "Cargo Door");
 
 
                 add(ModBlocks.DUD_SALTED.get(), "Unexploded Salted Bomb");
