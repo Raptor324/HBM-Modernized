@@ -7,9 +7,16 @@ name: Crowdin Sync
 # Перед включением: отключить нативную интеграцию в Crowdin:
 # Project Settings → Integrations → GitHub → Remove.
 # Иначе она будет дублировать работу этого экшена.
+#
+# ВАЖНО по правам (иначе 403 "GitHub Actions is not permitted to create PR"):
+# Repository → Settings → Actions → General → Workflow permissions:
+#   * выбрать "Read and write permissions"
+#   * ВКЛЮЧИТЬ галку "Allow GitHub Actions to create and approve pull requests"
+# Без этой галки GITHUB_TOKEN не сможет открыть PR, даже если в yaml написано
+# permissions: pull-requests: write.
 
 on:
-  # Ручной запуск из вкладки Actions (аналог старого "Sync Now")
+  # Ручной запуск из вкладки Actions (аналог старого "Sync Now").
   workflow_dispatch:
   # Ночём в 03:00 UTC (06:00 МСК). GitHub не гарантирует точное время,
   # cron может задержаться на 10-30 минут в часы пик — это нормально.
@@ -27,6 +34,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 1) Crowdin: заливаем источник, скачиваем переводы.
+      #    PR не создаём здесь (это вызывало 403) — PR сделает отдельный шаг ниже,
+      #    после переименования файлов в нижний регистр.
       - name: Crowdin Action
         uses: crowdin/github-action@v2
         with:
@@ -35,18 +45,16 @@ jobs:
           # Не заливать переводы из репо в Crowdin (Crowdin — источник правды для переводов).
           upload_translations: false
           # Скачать переводы всех языков и положить их туда, куда указывает crowdin.yml
-          # (после фикса — в src/main/resources/assets/hbm_m/lang/).
+          # (src/main/resources/assets/hbm_m/lang/).
           download_translations: true
 
-          # Создать/обновить один PR со всеми языками одним коммитом.
-          create_pull_request: true
-          localization_branch_name: 'l10n_main'
-          # База для PR. Если переводы нужны в FFA вместо main — поменяй здесь.
-          pull_request_base_branch_name: 'main'
-          pull_request_title: 'chore: sync translations from Crowdin'
-          pull_request_body: 'Автоматический PR: обновления переводов из Crowdin (все языки одним коммитом).'
+          # PR создаём вручную ниже — НЕ здесь.
+          create_pull_request: false
+
           # Один коммит за прогон вместо коммита на каждый файл.
           commit_message: 'chore: update translations from Crowdin'
+          # Ветка, куда Crowdin коммитит скачанные переводы.
+          localization_branch_name: 'l10n_main'
 
           # Пути source/translation берутся из crowdin.yml в корне репо,
           # поэтому здесь их не дублируем.
@@ -54,3 +62,55 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
           CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+
+      # 2) Нормализация имён файлов в нижний регистр.
+      #    Crowdin отдаёт %locale_with_underscore% в виде "tr_TR", "af_ZA", "zh_CN"
+      #    (страна в верхнем регистре), а Minecraft требует строго "tr_tr", "af_za",
+      #    "zh_cn". Без этого шага MC загрузит только fi_fi/zh_cn и проигнорирует все
+      #    новые переводы. Также удаляем дубликаты (fi_FI.json + fi_fi.json).
+      - name: Normalize lang filenames to lowercase
+        run: |
+          LANG_DIR="src/main/resources/assets/hbm_m/lang"
+          if [ ! -d "$LANG_DIR" ]; then
+            echo "lang dir missing, nothing to normalize"
+            exit 0
+          fi
+          shopt -s nullglob
+          for f in "$LANG_DIR"/*.json; do
+            base=$(basename "$f")
+            lower=$(echo "$base" | tr '[:upper:]' '[:lower:]')
+            if [ "$base" != "$lower" ]; then
+              # Удалить уже существующий lowercase-файл, чтобы не было коллизии
+              # ( Crowdin пишет в верхнем регистре, у тебя уже были lowercase-файлы).
+              if [ -f "$LANG_DIR/$lower" ]; then
+                rm -f "$LANG_DIR/$lower"
+              fi
+              git mv "$f" "$LANG_DIR/$lower" 2>/dev/null || mv "$f" "$LANG_DIR/$lower"
+              echo "renamed: $base -> $lower"
+            fi
+          done
+          # Покажем итог структуры
+          ls -1 "$LANG_DIR" | head -40
+
+      # 3) Создаём/обновляем PR с переименованными файлами через peter-evans.
+      #    Экшен peter-evans/create-pull-request работает поверх GITHUB_TOKEN
+      #    и умеет открывать PR даже когда нативный вызов API запрещён — при условии,
+      #    что в настройках репо включена галка
+      #    "Allow GitHub Actions to create and approve pull requests".
+      - name: Create / update pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: l10n_main
+          base: main
+          title: 'chore: sync translations from Crowdin'
+          body: |
+            Автоматический PR: обновления переводов из Crowdin (все языки одним коммитом).
+
+            * Источник: `src/generated/resources/assets/hbm_m/lang/en_us.json` (датаген).
+            * Переводы: `src/main/resources/assets/hbm_m/lang/*.json` (нижний регистр, формат Minecraft `language_country`).
+            * `ru_ru.json` намеренно исключён — управляется датагеном.
+          commit-message: 'chore: update translations from Crowdin'
+          # Метки можно добавить при желании (labels: translations, i18n)
+          add-paths: |
+            src/main/resources/assets/hbm_m/lang/*.json
