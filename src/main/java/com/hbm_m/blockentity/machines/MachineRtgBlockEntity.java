@@ -1,17 +1,14 @@
 package com.hbm_m.blockentity.machines;
 
-import java.util.Map;
-
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.item.ModItems;
+import com.hbm_m.util.RtgPelletHeat;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -37,26 +34,6 @@ public class MachineRtgBlockEntity extends BaseMachineBlockEntity {
 
     private int heat = 0;
 
-    private static Map<Item, Integer> heatMap;
-
-    private static Map<Item, Integer> heatMap() {
-        if (heatMap == null) {
-            heatMap = Map.ofEntries(
-                    Map.entry(ModItems.PELLET_RTG_RADIUM.get(), 3),
-                    Map.entry(ModItems.PELLET_RTG_WEAK.get(), 5),
-                    Map.entry(ModItems.PELLET_RTG.get(), 10),
-                    Map.entry(ModItems.PELLET_RTG_STRONTIUM.get(), 15),
-                    Map.entry(ModItems.PELLET_RTG_COBALT.get(), 15),
-                    Map.entry(ModItems.PELLET_RTG_ACTINIUM.get(), 20),
-                    Map.entry(ModItems.PELLET_RTG_AMERICIUM.get(), 20),
-                    Map.entry(ModItems.PELLET_RTG_POLONIUM.get(), 50),
-                    Map.entry(ModItems.PELLET_RTG_GOLD.get(), 100),
-                    Map.entry(ModItems.PELLET_RTG_LEAD.get(), 200)
-            );
-        }
-        return heatMap;
-    }
-
     public MachineRtgBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MACHINE_RTG_BE.get(), pos, state, INVENTORY_SIZE, POWER_MAX, 0L, PROVIDE_SPEED);
     }
@@ -68,8 +45,7 @@ public class MachineRtgBlockEntity extends BaseMachineBlockEntity {
         for (int i = 0; i < INVENTORY_SIZE; i++) {
             ItemStack stack = be.inventory.getStackInSlot(i);
             if (stack.isEmpty()) continue;
-            Integer h = heatMap().get(stack.getItem());
-            if (h != null) newHeat += h;
+            newHeat += RtgPelletHeat.getHeat(stack.getItem());
         }
         be.heat = Math.min(newHeat, HEAT_MAX);
 
@@ -85,7 +61,7 @@ public class MachineRtgBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return heatMap().containsKey(stack.getItem());
+        return RtgPelletHeat.getHeat(stack.getItem()) > 0;
     }
 
     @Override

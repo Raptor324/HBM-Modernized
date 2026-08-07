@@ -38,7 +38,12 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
 
     // Конструктор, вызываемый с сервера
     public MachineAdvancedAssemblerMenu(int pContainerId, Inventory pPlayerInventory, MachineAdvancedAssemblerBlockEntity pBlockEntity, ContainerData pData) {
-        super(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), pContainerId);
+        this(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), pContainerId, pPlayerInventory, pBlockEntity, pData);
+    }
+
+    /** Used by {@code MachinePrecAssMenu} - see {@code MachineAdvancedAssemblerBlockEntity}'s matching protected constructor. */
+    protected MachineAdvancedAssemblerMenu(net.minecraft.world.inventory.MenuType<?> type, int pContainerId, Inventory pPlayerInventory, MachineAdvancedAssemblerBlockEntity pBlockEntity, ContainerData pData) {
+        super(type, pContainerId);
         // Убедимся, что данных пришло нужное количество
         checkContainerDataCount(pData, 2);
         this.blockEntity = pBlockEntity;

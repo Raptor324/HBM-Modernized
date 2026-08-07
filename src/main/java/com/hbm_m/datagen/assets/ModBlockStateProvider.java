@@ -2720,6 +2720,30 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 models().cubeAll(ModBlocks.MACHINE_FAN.getId().getPath(), modLoc("block/machine/fan")));
         simpleBlockWithItem(ModBlocks.MACHINE_DRAIN.get(),
                 models().cubeAll(ModBlocks.MACHINE_DRAIN.getId().getPath(), modLoc("block/concrete")));
+        orientableBlockWithItem(
+                ModBlocks.MACHINE_DIFURNACE_RTG,
+                modLoc("block/difurnace_side_tall"),
+                modLoc("block/difurnace_front_off_tall"),
+                modLoc("block/difurnace_top_off_alt")
+        );
+        simpleBlockWithItem(ModBlocks.MACHINE_TELEPORTER.get(),
+                models().cubeBottomTop(
+                        ModBlocks.MACHINE_TELEPORTER.getId().getPath(),
+                        modLoc("block/teleporter_side"),
+                        modLoc("block/teleporter_bottom"),
+                        modLoc("block/teleporter_top")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.TELEANCHOR.get(),
+                models().cubeBottomTop(
+                        ModBlocks.TELEANCHOR.getId().getPath(),
+                        modLoc("block/tele_anchor_side"),
+                        modLoc("block/tele_anchor_side"),
+                        modLoc("block/tele_anchor_top")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.MACHINE_PRECASS.get(),
+                models().cubeAll(ModBlocks.MACHINE_PRECASS.getId().getPath(), modLoc("block/machine/precass")));
         simpleBlockWithItem(ModBlocks.MACHINE_TRANSFORMER.get(),
                 models().cubeBottomTop(
                         ModBlocks.MACHINE_TRANSFORMER.getId().getPath(),

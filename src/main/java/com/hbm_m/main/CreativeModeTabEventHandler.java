@@ -1412,6 +1412,17 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.LARGE_PYLON.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_ASSEMBLER.get()));
         add.accept(new ItemStack(ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_PRECASS.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_DIFURNACE_RTG.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_TELEPORTER.get()));
+        add.accept(new ItemStack(ModBlocks.TELEANCHOR.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_RADAR.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_FAN.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_DRAIN.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_TRANSFORMER.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_RTG.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_WASTE_DRUM.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_COMPRESSOR_COMPACT.get()));
         add.accept(new ItemStack(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get()));
         add.accept(new ItemStack(ModBlocks.COOLING_TOWER.get()));
         add.accept(new ItemStack(ModBlocks.TOWER_SMALL.get()));

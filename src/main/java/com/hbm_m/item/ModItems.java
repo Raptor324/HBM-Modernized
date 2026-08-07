@@ -3272,7 +3272,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> LAUNCH_KEY = ITEMS.register("launch_key", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> LEAD_GAVEL = ITEMS.register("lead_gavel", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> LEMON = ITEMS.register("lemon", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> LINKER = ITEMS.register("linker", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> LINKER = ITEMS.register("linker", () -> new com.hbm_m.item.ItemTeleLink(new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> LIQUIDATOR_LEGS = ITEMS.register("liquidator_legs", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> LIQUIDATOR_PLATE = ITEMS.register("liquidator_plate", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> LITHIUM = ITEMS.register("lithium", () -> new Item(new Item.Properties()));

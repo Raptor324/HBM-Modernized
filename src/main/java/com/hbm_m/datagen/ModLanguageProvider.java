@@ -4911,6 +4911,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.MACHINE_DRAIN.get(), "Drain");
                 add("container.hbm_m.machine_drain", "Drain");
                 add(ModBlocks.MACHINE_TRANSFORMER.get(), "Transformer");
+                add(ModBlocks.MACHINE_PRECASS.get(), "Precision Assembler");
+                add("container.hbm_m.machine_precass", "Precision Assembler");
+                add(ModBlocks.MACHINE_DIFURNACE_RTG.get(), "RTG Blast Furnace");
+                add("container.hbm_m.machine_difurnace_rtg", "RTG Blast Furnace");
+                add(ModBlocks.MACHINE_TELEPORTER.get(), "Teleporter");
+                add("container.hbm_m.machine_teleporter", "Teleporter");
+                add(ModBlocks.TELEANCHOR.get(), "Teleport Anchor");
                 add(ModBlocks.MACHINE_RTG.get(), "RTG");
                 add("container.hbm_m.machine_rtg", "RTG");
                 add(ModBlocks.MACHINE_WASTE_DRUM.get(), "Waste Drum");

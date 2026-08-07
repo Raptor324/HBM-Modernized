@@ -38,6 +38,12 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<MachineAdvancedAssemblerMenu>> ADVANCED_ASSEMBLY_MACHINE_MENU =
             MENUS.register("advanced_assembly_machine_menu", () -> MenuRegistry.ofExtended(MachineAdvancedAssemblerMenu::new));
 
+    public static final RegistrySupplier<MenuType<MachineDifurnaceRtgMenu>> MACHINE_DIFURNACE_RTG_MENU =
+            MENUS.register("machine_difurnace_rtg_menu", () -> MenuRegistry.ofExtended(MachineDifurnaceRtgMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineAdvancedAssemblerMenu>> MACHINE_PRECASS_MENU =
+            MENUS.register("machine_precass_menu", () -> MenuRegistry.ofExtended(MachinePrecAssMenu::new));
+
     public static final RegistrySupplier<MenuType<MachineBatteryMenu>> MACHINE_BATTERY_MENU =
             MENUS.register("machine_battery_menu", () -> MenuRegistry.ofExtended(MachineBatteryMenu::new));
 

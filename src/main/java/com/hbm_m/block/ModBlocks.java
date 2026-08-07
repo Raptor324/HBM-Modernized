@@ -2235,6 +2235,19 @@ public class ModBlocks {
     /** Genuinely missing from the port until now - no RTG (radioisotope thermoelectric generator) existed anywhere. */
     public static final RegistrySupplier<Block> MACHINE_RTG = registerBlock("machine_rtg_grey",
             () -> new com.hbm_m.block.machines.MachineRtgBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL).noOcclusion()));
+    /** Genuinely missing from the port until now - machine_difurnace_off/_extension already exist under
+     * blast_furnace/blast_furnace_extension (renamed IDs); only the RTG-heated variant was a real gap. */
+    public static final RegistrySupplier<Block> MACHINE_DIFURNACE_RTG = registerBlock("machine_difurnace_rtg_off",
+            () -> new com.hbm_m.block.machines.MachineDifurnaceRtgBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL).noOcclusion()));
+    /** Genuinely missing from the port until now. */
+    public static final RegistrySupplier<Block> MACHINE_TELEPORTER = registerBlock("machine_teleporter",
+            () -> new com.hbm_m.block.machines.MachineTeleporterBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL).noOcclusion()));
+    /** Genuinely missing from the port until now - purely decorative marker, no TileEntity (matches original). */
+    public static final RegistrySupplier<Block> TELEANCHOR = registerBlock("teleanchor",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL)));
+    /** Genuinely missing from the port until now - reuses MachineAdvancedAssemblerBlockEntity wholesale (see class javadoc). */
+    public static final RegistrySupplier<Block> MACHINE_PRECASS = registerBlock("machine_precass",
+            () -> new com.hbm_m.block.machines.MachinePrecAssBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 30.0f).sound(SoundType.METAL).noOcclusion()));
     /** Genuinely missing from the port until now. */
     public static final RegistrySupplier<Block> MACHINE_DRAIN = registerBlock("machine_drain",
             () -> new com.hbm_m.block.machines.MachineDrainBlock(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 10.0f).noOcclusion()));

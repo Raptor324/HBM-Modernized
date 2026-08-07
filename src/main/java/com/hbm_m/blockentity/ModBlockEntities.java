@@ -408,6 +408,21 @@ public class ModBlockEntities {
 			BlockEntityType.Builder.<MachineAdvancedAssemblerBlockEntity>of(MachineAdvancedAssemblerBlockEntity::new, ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get())
 				.build(null));
 
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineDifurnaceRtgBlockEntity>> MACHINE_DIFURNACE_RTG_BE =
+            BLOCK_ENTITIES.register("machine_difurnace_rtg_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineDifurnaceRtgBlockEntity::new,
+                            ModBlocks.MACHINE_DIFURNACE_RTG.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineTeleporterBlockEntity>> MACHINE_TELEPORTER_BE =
+            BLOCK_ENTITIES.register("machine_teleporter_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineTeleporterBlockEntity::new,
+                            ModBlocks.MACHINE_TELEPORTER.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachinePrecAssBlockEntity>> MACHINE_PRECASS_BE =
+		BLOCK_ENTITIES.register("machine_precass_be", () ->
+			BlockEntityType.Builder.<com.hbm_m.blockentity.machines.MachinePrecAssBlockEntity>of(com.hbm_m.blockentity.machines.MachinePrecAssBlockEntity::new, ModBlocks.MACHINE_PRECASS.get())
+				.build(null));
+
     public static final RegistrySupplier<BlockEntityType<MachineBatteryBlockEntity>> MACHINE_BATTERY_BE =
             BLOCK_ENTITIES.register("machine_battery_be", () -> {
                 // Превращаем список RegistrySupplier в массив Block[]
