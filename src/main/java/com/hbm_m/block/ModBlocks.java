@@ -2312,19 +2312,29 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> PNEUMATIC_TUBE = registerBlock("pneumatic_tube", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> PNEUMATIC_TUBE_PAINTABLE = registerBlock("pneumatic_tube_paintable", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> PRESS_PREHEATER = registerBlock("press_preheater", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+    /** Unused now that assembly no longer converts parts into a generic carrier block; see PWRPartBlockEntity. */
     public static final RegistrySupplier<Block> PWR_BLOCK = registerBlock("pwr_block", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> PWR_CASING = registerBlock("pwr_casing", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> PWR_CHANNEL = registerBlock("pwr_channel", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> PWR_CONTROL = registerBlock("pwr_control", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    /** The reactor's only functional block; see com.hbm_m.blockentity.machines.PWRControllerBlockEntity. */
+    public static final RegistrySupplier<Block> PWR_CASING = registerBlock("pwr_casing",
+            () -> new com.hbm_m.block.machines.PWRPartBlock(com.hbm_m.blockentity.machines.PWRPartBlockEntity.Kind.CASING, BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)));
+    public static final RegistrySupplier<Block> PWR_CHANNEL = registerBlock("pwr_channel",
+            () -> new com.hbm_m.block.machines.PWRPartBlock(com.hbm_m.blockentity.machines.PWRPartBlockEntity.Kind.CHANNEL, BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)));
+    public static final RegistrySupplier<Block> PWR_CONTROL = registerBlock("pwr_control",
+            () -> new com.hbm_m.block.machines.PWRPartBlock(com.hbm_m.blockentity.machines.PWRPartBlockEntity.Kind.CONTROL, BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)));
+    /** The reactor's only true machine block (the assembly's controller); see com.hbm_m.blockentity.machines.PWRControllerBlockEntity. */
     public static final RegistrySupplier<Block> PWR_CONTROLLER = registerBlock("pwr_controller",
             () -> new com.hbm_m.block.machines.MachinePWRControllerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
-    public static final RegistrySupplier<Block> PWR_FUEL = registerBlock("pwr_fuel", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> PWR_HEATEX = registerBlock("pwr_heatex", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> PWR_HEATSINK = registerBlock("pwr_heatsink", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> PWR_NEUTRON_SOURCE = registerBlock("pwr_neutron_source", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> PWR_PORT = registerBlock("pwr_port", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> PWR_REFLECTOR = registerBlock("pwr_reflector", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> PWR_FUEL = registerBlock("pwr_fuel",
+            () -> new com.hbm_m.block.machines.PWRPartBlock(com.hbm_m.blockentity.machines.PWRPartBlockEntity.Kind.FUEL, BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)));
+    public static final RegistrySupplier<Block> PWR_HEATEX = registerBlock("pwr_heatex",
+            () -> new com.hbm_m.block.machines.PWRPartBlock(com.hbm_m.blockentity.machines.PWRPartBlockEntity.Kind.HEATEX, BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)));
+    public static final RegistrySupplier<Block> PWR_HEATSINK = registerBlock("pwr_heatsink",
+            () -> new com.hbm_m.block.machines.PWRPartBlock(com.hbm_m.blockentity.machines.PWRPartBlockEntity.Kind.HEATSINK, BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)));
+    public static final RegistrySupplier<Block> PWR_NEUTRON_SOURCE = registerBlock("pwr_neutron_source",
+            () -> new com.hbm_m.block.machines.PWRPartBlock(com.hbm_m.blockentity.machines.PWRPartBlockEntity.Kind.NEUTRON_SOURCE, BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)));
+    public static final RegistrySupplier<Block> PWR_PORT = registerBlock("pwr_port",
+            () -> new com.hbm_m.block.machines.PWRPartBlock(com.hbm_m.blockentity.machines.PWRPartBlockEntity.Kind.PORT, BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)));
+    public static final RegistrySupplier<Block> PWR_REFLECTOR = registerBlock("pwr_reflector",
+            () -> new com.hbm_m.block.machines.PWRPartBlock(com.hbm_m.blockentity.machines.PWRPartBlockEntity.Kind.REFLECTOR, BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)));
     public static final RegistrySupplier<Block> RADIO_TELEX = registerBlock("radio_telex",
             () -> new com.hbm_m.block.network.RadioTelexBlock(BlockBehaviour.Properties.copy(Blocks.STONE).noOcclusion()));
     public static final RegistrySupplier<Block> RADIOBOX = registerBlock("radiobox",
@@ -2360,13 +2370,16 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> REINFORCED_LIGHT = registerBlock("reinforced_light", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> REINFORCED_SAND = registerBlock("reinforced_sand", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> SAFE = registerBlock("safe", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> SAND_BORON = registerBlock("sand_boron", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+    // sand_mix (orig BlockNTMSand): 1.7.10 metadata-variant falling sand, ported as one block per
+    // variant (matching this port's established convention) using vanilla FallingBlock instead of
+    // reimplementing the original's fall()/onBlockAdded tick logic (vanilla's is equivalent).
+    public static final RegistrySupplier<Block> SAND_BORON = registerBlock("sand_boron", () -> new net.minecraft.world.level.block.FallingBlock(BlockBehaviour.Properties.copy(Blocks.SAND)));
     public static final RegistrySupplier<Block> SAND_DIRTY = registerBlock("sand_dirty", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> SAND_DIRTY_RED = registerBlock("sand_dirty_red", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> SAND_LEAD = registerBlock("sand_lead", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> SAND_POLONIUM = registerBlock("sand_polonium", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> SAND_QUARTZ = registerBlock("sand_quartz", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> SAND_URANIUM = registerBlock("sand_uranium", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> SAND_LEAD = registerBlock("sand_lead", () -> new net.minecraft.world.level.block.FallingBlock(BlockBehaviour.Properties.copy(Blocks.SAND)));
+    public static final RegistrySupplier<Block> SAND_POLONIUM = registerBlock("sand_polonium", () -> new net.minecraft.world.level.block.FallingBlock(BlockBehaviour.Properties.copy(Blocks.SAND)));
+    public static final RegistrySupplier<Block> SAND_QUARTZ = registerBlock("sand_quartz", () -> new net.minecraft.world.level.block.FallingBlock(BlockBehaviour.Properties.copy(Blocks.SAND)));
+    public static final RegistrySupplier<Block> SAND_URANIUM = registerBlock("sand_uranium", () -> new net.minecraft.world.level.block.FallingBlock(BlockBehaviour.Properties.copy(Blocks.SAND)));
     public static final RegistrySupplier<Block> SANDBAGS = registerBlock("sandbags", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> SAT_DOCK = registerBlock("sat_dock", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> SAT_FOEQ = registerBlock("sat_foeq", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
@@ -2467,6 +2480,12 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> BOILER = registerBlock("boiler",
             () -> new com.hbm_m.block.machines.MachineBoilerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+
+    public static final RegistrySupplier<Block> PUMP_STEAM = registerBlock("pump_steam",
+            () -> new com.hbm_m.block.machines.MachinePumpBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion(), false));
+
+    public static final RegistrySupplier<Block> PUMP_ELECTRIC = registerBlock("pump_electric",
+            () -> new com.hbm_m.block.machines.MachinePumpBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion(), true));
 
     public static final RegistrySupplier<Block> BOILER_FUSION = registerBlock("boiler_fusion",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));

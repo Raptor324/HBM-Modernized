@@ -516,6 +516,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
             models().getExistingFile(modLoc("block/machines/thresher")));
         simpleMachineBlock(ModBlocks.BEAMLINE);
         customMachineBlock(ModBlocks.BOILER);
+        horizontalBlock(ModBlocks.PUMP_STEAM.get(),
+            models().cubeAll(ModBlocks.PUMP_STEAM.getId().getPath(), modLoc("block/machine/pump_steam")));
+        horizontalBlock(ModBlocks.PUMP_ELECTRIC.get(),
+            models().cubeAll(ModBlocks.PUMP_ELECTRIC.getId().getPath(), modLoc("block/machine/pump_electric")));
         simpleMachineBlock(ModBlocks.BOILER_FUSION);
         simpleMachineBlock(ModBlocks.BREEDER_FUSION);
         customMachineBlock(ModBlocks.CHIMNEY_BRICK);

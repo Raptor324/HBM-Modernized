@@ -550,6 +550,16 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineBoilerBlockEntity::new,
                             ModBlocks.BOILER.get()).build(null));
 
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachinePumpSteamBlockEntity>> MACHINE_PUMP_STEAM_BE =
+            BLOCK_ENTITIES.register("machine_pump_steam_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachinePumpSteamBlockEntity::new,
+                            ModBlocks.PUMP_STEAM.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachinePumpElectricBlockEntity>> MACHINE_PUMP_ELECTRIC_BE =
+            BLOCK_ENTITIES.register("machine_pump_electric_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachinePumpElectricBlockEntity::new,
+                            ModBlocks.PUMP_ELECTRIC.get()).build(null));
+
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineCapacitorBlockEntity>> MACHINE_CAPACITOR_BE =
             BLOCK_ENTITIES.register("machine_capacitor_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineCapacitorBlockEntity::new,
@@ -854,6 +864,16 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("pwr_controller_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.PWRControllerBlockEntity::new,
                             ModBlocks.PWR_CONTROLLER.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.PWRPartBlockEntity>> PWR_PART_BE =
+            BLOCK_ENTITIES.register("pwr_part_be", () ->
+                    BlockEntityType.Builder.of(
+                            (pos, state) -> new com.hbm_m.blockentity.machines.PWRPartBlockEntity(pos, state,
+                                    ((com.hbm_m.block.machines.PWRPartBlock) state.getBlock()).getKind()),
+                            ModBlocks.PWR_FUEL.get(), ModBlocks.PWR_CONTROL.get(), ModBlocks.PWR_CHANNEL.get(),
+                            ModBlocks.PWR_HEATEX.get(), ModBlocks.PWR_HEATSINK.get(), ModBlocks.PWR_NEUTRON_SOURCE.get(),
+                            ModBlocks.PWR_CASING.get(), ModBlocks.PWR_REFLECTOR.get(), ModBlocks.PWR_PORT.get())
+                            .build(null));
 
     public static final RegistrySupplier<BlockEntityType<MachineHydrotreaterBlockEntity>> HYDROTREATER_BE =
             BLOCK_ENTITIES.register("hydrotreater_be", () ->

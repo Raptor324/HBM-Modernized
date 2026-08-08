@@ -311,9 +311,9 @@ public class RBMKRodItem extends Item {
             list.add(Component.translatable("trait.rbmk.source").withStyle(ChatFormatting.RED));
 
         list.add(Component.translatable("trait.rbmk.depletion",
-            String.format("%.3f%%", (1.0 - getEnrichment(stack)) * 100)));
+            String.format("%.3f%%", (1.0 - getEnrichment(stack)) * 100)).withStyle(ChatFormatting.GREEN));
         list.add(Component.translatable("trait.rbmk.xenon",
-            String.format("%.3f%%", getPoison(stack))));
+            String.format("%.3f%%", getPoison(stack))).withStyle(ChatFormatting.DARK_PURPLE));
         list.add(Component.translatable("trait.rbmk.splitsWith",
             Component.translatable(nType.unlocalized)).withStyle(ChatFormatting.BLUE));
         list.add(Component.translatable("trait.rbmk.splitsInto",
@@ -330,9 +330,12 @@ public class RBMKRodItem extends Item {
             heat + "°C").withStyle(ChatFormatting.GOLD));
         list.add(Component.translatable("trait.rbmk.diffusion",
             diffusion + "¹/²").withStyle(ChatFormatting.GOLD));
-        list.add(Component.literal(ChatFormatting.RED + "Skin: " + String.format("%.1f°C", hull)));
-        list.add(Component.literal(ChatFormatting.RED + "Core: " + String.format("%.1f°C", core)));
-        list.add(Component.literal(ChatFormatting.DARK_RED + "Melt: " + meltingPoint + "°C"));
+        list.add(Component.translatable("trait.rbmk.skinTemp",
+            String.format("%.1f°C", hull)).withStyle(ChatFormatting.RED));
+        list.add(Component.translatable("trait.rbmk.coreTemp",
+            String.format("%.1f°C", core)).withStyle(ChatFormatting.RED));
+        list.add(Component.translatable("trait.rbmk.melt",
+            meltingPoint + "°C").withStyle(ChatFormatting.DARK_RED));
     }
 
     // ─── Durability bar (depletion) ───────────────────────────────────────────

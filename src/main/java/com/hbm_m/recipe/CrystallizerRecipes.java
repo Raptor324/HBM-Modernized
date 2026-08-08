@@ -344,8 +344,10 @@ public final class CrystallizerRecipes {
         // TODO: forge:sand -> CLAY, 20 тиков, COLLOID 1000 mB.
         // addOreTag("forge:sand", Items.CLAY, 0f, fluid(ModFluids.COLLOID, 1_000));   // если addOreTag поддержит ItemLike → доделать
 
-        // TODO: SAND_MIX:QUARTZ -> 16 ball_dynamite, 20 тиков, NITROGLYCERIN 1000 mB.
-        // (Блок/предмет SAND_MIX с вариантом QUARTZ всё ещё отсутствует.)
+        // SAND_MIX:QUARTZ -> 16 ball_dynamite, 20 тиков, NITROGLYCERIN 1000 mB.
+        // Оригинальный sand_mix — один блок с 5 метавариантами; в этом порте портирован как
+        // отдельные блоки на вариант (см. ModBlocks.SAND_*), тут нужен именно QUARTZ.
+        addItem(ModBlocks.SAND_QUARTZ.get(), new ItemStack(ModItems.BALL_DYNAMITE.get(), 16), 0f, 20, fluid(ModFluids.NITROGLYCERIN, 1_000));
 
         // Кварцевая пыль -> 4 динамитных шара (20 тиков, NITROGLYCERIN 250 mB).
         // ModItems.QUARTZ_POWDER (аналог NETHERQUARTZ.dust()) и ModItems.BALL_DYNAMITE теперь оба существуют.

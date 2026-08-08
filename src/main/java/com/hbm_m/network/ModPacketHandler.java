@@ -43,6 +43,7 @@ public class ModPacketHandler {
     public static final ResourceLocation HIGHLIGHT_BLOCKS      = id("highlight_blocks");
     public static final ResourceLocation SYNC_ENERGY           = id("sync_energy");
     public static final ResourceLocation AUX_PARTICLE          = id("aux_particle");
+    public static final ResourceLocation PWR_PRINTER_SCAN      = id("pwr_printer_scan");
     public static final ResourceLocation VANILLA_EXPLOSION     = id("vanilla_explosion");
     public static final ResourceLocation DOOR_CONTRAPTION_STATE = id("door_contrap_state");
 
@@ -117,6 +118,10 @@ public class ModPacketHandler {
         registerS2C(AUX_PARTICLE,
                 AuxParticlePacket::decode,
                 AuxParticlePacket::handle);
+
+        registerS2C(PWR_PRINTER_SCAN,
+                PWRPrinterScanPacket::decode,
+                PWRPrinterScanPacket::handle);
 
         registerS2C(VANILLA_EXPLOSION,
                 VanillaExplosionPacket::decode,

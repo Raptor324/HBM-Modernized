@@ -61,7 +61,7 @@ public class GUIMachinePWRController extends GuiInfoScreen<PWRControllerMenu> {
         pwr.getCoolantHotTank().renderTank(guiGraphics, this.leftPos + TANK_HOT_X, this.topPos + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
 
         int heatScaled = pwr.getGaugeScaled(HEAT_BAR_WIDTH, 2);
-        int heatColor = pwr.coreHeat > PWRControllerBlockEntity.CORE_HEAT_CAPACITY / 2 ? 0xFFCC3333 : 0xFFCC8833;
+        int heatColor = pwr.coreHeat > pwr.coreHeatCapacity / 2 ? 0xFFCC3333 : 0xFFCC8833;
         guiGraphics.fill(this.leftPos + HEAT_BAR_X, this.topPos + HEAT_BAR_Y,
                 this.leftPos + HEAT_BAR_X + heatScaled, this.topPos + HEAT_BAR_Y + HEAT_BAR_HEIGHT, heatColor);
 
@@ -95,7 +95,7 @@ public class GUIMachinePWRController extends GuiInfoScreen<PWRControllerMenu> {
         drawCustomInfoStat(guiGraphics, mouseX, mouseY,
                 HEAT_BAR_X, HEAT_BAR_Y, HEAT_BAR_WIDTH, HEAT_BAR_HEIGHT,
                 this.leftPos + HEAT_BAR_X, this.topPos + HEAT_BAR_Y,
-                Component.literal("Core heat: " + pwr.coreHeat + " / " + PWRControllerBlockEntity.CORE_HEAT_CAPACITY),
+                Component.literal("Core heat: " + pwr.coreHeat + " / " + pwr.coreHeatCapacity),
                 Component.literal("Flux: " + Math.round(pwr.flux)));
 
         drawCustomInfoStat(guiGraphics, mouseX, mouseY,

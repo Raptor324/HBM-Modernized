@@ -475,14 +475,34 @@ public class ModItemModelProvider extends ItemModelProvider {
 
         simpleItem(ModItems.PWR_FUEL_MEU);
         simpleItem(ModItems.PWR_FUEL_MEU_HOT);
-        simpleItem(ModItems.PWR_FUEL_HEU);
-        simpleItem(ModItems.PWR_FUEL_HEU_HOT);
+        simpleItem(ModItems.PWR_FUEL_HEU233);
+        simpleItem(ModItems.PWR_FUEL_HEU233_HOT);
+        simpleItem(ModItems.PWR_FUEL_HEU235);
+        simpleItem(ModItems.PWR_FUEL_HEU235_HOT);
+        simpleItem(ModItems.PWR_FUEL_MEN);
+        simpleItem(ModItems.PWR_FUEL_MEN_HOT);
+        simpleItem(ModItems.PWR_FUEL_HEN237);
+        simpleItem(ModItems.PWR_FUEL_HEN237_HOT);
         simpleItem(ModItems.PWR_FUEL_MOX);
         simpleItem(ModItems.PWR_FUEL_MOX_HOT);
-        simpleItem(ModItems.PWR_FUEL_HEP);
-        simpleItem(ModItems.PWR_FUEL_HEP_HOT);
-        simpleItem(ModItems.PWR_FUEL_SCHRABIDIUM);
-        simpleItem(ModItems.PWR_FUEL_SCHRABIDIUM_HOT);
+        simpleItem(ModItems.PWR_FUEL_MEP);
+        simpleItem(ModItems.PWR_FUEL_MEP_HOT);
+        simpleItem(ModItems.PWR_FUEL_HEP239);
+        simpleItem(ModItems.PWR_FUEL_HEP239_HOT);
+        simpleItem(ModItems.PWR_FUEL_HEP241);
+        simpleItem(ModItems.PWR_FUEL_HEP241_HOT);
+        simpleItem(ModItems.PWR_FUEL_MEA);
+        simpleItem(ModItems.PWR_FUEL_MEA_HOT);
+        simpleItem(ModItems.PWR_FUEL_HEA242);
+        simpleItem(ModItems.PWR_FUEL_HEA242_HOT);
+        simpleItem(ModItems.PWR_FUEL_HES326);
+        simpleItem(ModItems.PWR_FUEL_HES326_HOT);
+        simpleItem(ModItems.PWR_FUEL_HES327);
+        simpleItem(ModItems.PWR_FUEL_HES327_HOT);
+        simpleItem(ModItems.PWR_FUEL_BFB_AM_MIX);
+        simpleItem(ModItems.PWR_FUEL_BFB_AM_MIX_HOT);
+        simpleItem(ModItems.PWR_FUEL_BFB_PU241);
+        simpleItem(ModItems.PWR_FUEL_BFB_PU241_HOT);
         simpleItem(ModItems.WATZ_PELLET_SCHRABIDIUM_OXIDE);
         simpleItem(ModItems.WATZ_PELLET_SCHRABIDIUM_OXIDE_DEPLETED);
         simpleItem(ModItems.WATZ_PELLET_LES_OXIDE);
@@ -809,6 +829,10 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.AUTOSAW);
         blockItemFromBlockModelMachine(ModBlocks.BEAMLINE);
         blockItemFromBlockModelMachine(ModBlocks.BOILER);
+        withExistingParent(ModBlocks.PUMP_STEAM.getId().getPath(),
+                modLoc("block/" + ModBlocks.PUMP_STEAM.getId().getPath()));
+        withExistingParent(ModBlocks.PUMP_ELECTRIC.getId().getPath(),
+                modLoc("block/" + ModBlocks.PUMP_ELECTRIC.getId().getPath()));
         blockItemFromBlockModelMachine(ModBlocks.BOILER_FUSION);
         blockItemFromBlockModelMachine(ModBlocks.BREEDER_FUSION);
         blockItemFromBlockModelMachine(ModBlocks.CHIMNEY_BRICK);

@@ -68,6 +68,108 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         registerMeteoriteSword(writer);
         registerBilletNuggetPairs(writer);
         registerTurretRecipes(writer);
+        registerRbmkFuelRecipes(writer);
+    }
+
+    /**
+     * RBMK fuel chain - 1:1 in structure to the original's {@code RodRecipes.addRBMKRod}/
+     * {@code addPellet} (empty casing + 8 loaded units -&gt; rod), adapted to this port's item
+     * model: the original loaded rods directly from ore-dict billets; this port has an explicit
+     * pellet item as the rod's stated precursor (see {@code RBMKPelletItem}'s class doc), so each
+     * pellet is first crafted from the matching billet (1:1), then 8 pellets + the empty casing
+     * assemble into the rod (matching the original's 8-billet loading pattern exactly, just with
+     * the pellet as the intermediate unit). The empty casing recipe (zirconium + rod_quad_empty)
+     * is a 1:1 port of the original's own {@code rbmk_fuel_empty} recipe.
+     */
+    private void registerRbmkFuelRecipes(Consumer<FinishedRecipe> writer) {
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.RBMK_FUEL_EMPTY.get())
+                .pattern("ZRZ")
+                .pattern("Z Z")
+                .pattern("ZRZ")
+                .define('Z', ModItems.getIngot(ModIngots.ZIRCONIUM).get())
+                .define('R', ModItems.ROD_QUAD_EMPTY.get())
+                .unlockedBy(getHasName(ModItems.ROD_QUAD_EMPTY.get()), has(ModItems.ROD_QUAD_EMPTY.get()))
+                .save(writer, recipeId("crafting/rbmk_fuel_empty"));
+
+        rbmkPellet(writer, ModItems.RBMK_PELLET_UEU, ModItems.BILLET_URANIUM);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_MEU, ModItems.BILLET_URANIUM_FUEL);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_HEU233, ModItems.BILLET_U233);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_HEU235, ModItems.BILLET_U235);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_UZH, ModItems.BILLET_UZH);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_THMEU, ModItems.BILLET_THORIUM_FUEL);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_LEP, ModItems.BILLET_PLUTONIUM_FUEL);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_MEP, ModItems.BILLET_PU_MIX);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_HEP, ModItems.BILLET_PU239);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_HEP241, ModItems.BILLET_PU241);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_LEA, ModItems.BILLET_AMERICIUM_FUEL);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_MEA, ModItems.BILLET_AM_MIX);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_HEA241, ModItems.BILLET_AM241);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_HEA242, ModItems.BILLET_AM242);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_MEN, ModItems.BILLET_NEPTUNIUM_FUEL);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_HEN, ModItems.BILLET_NEPTUNIUM);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_MOX, ModItems.BILLET_MOX_FUEL);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_LES, ModItems.BILLET_LES);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_MES, ModItems.BILLET_SCHRABIDIUM_FUEL);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_HES, ModItems.BILLET_HES);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_LEAUS, ModItems.BILLET_AUSTRALIUM_LESSER);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_HEAUS, ModItems.BILLET_AUSTRALIUM_GREATER);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_PO210BE, ModItems.BILLET_PO210BE);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_RA226BE, ModItems.BILLET_RA226BE);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_PU238BE, ModItems.BILLET_PU238BE);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_BALEFIRE_GOLD, ModItems.BILLET_BALEFIRE_GOLD);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_FLASHLEAD, ModItems.BILLET_FLASHLEAD);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_ZFB_BISMUTH, ModItems.BILLET_ZFB_BISMUTH);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_ZFB_PU241, ModItems.BILLET_ZFB_PU241);
+        rbmkPellet(writer, ModItems.RBMK_PELLET_ZFB_AM_MIX, ModItems.BILLET_ZFB_AM_MIX);
+
+        rbmkRod(writer, ModItems.RBMK_FUEL_UEU, ModItems.RBMK_PELLET_UEU);
+        rbmkRod(writer, ModItems.RBMK_FUEL_MEU, ModItems.RBMK_PELLET_MEU);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEU233, ModItems.RBMK_PELLET_HEU233);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEU235, ModItems.RBMK_PELLET_HEU235);
+        rbmkRod(writer, ModItems.RBMK_FUEL_UZH, ModItems.RBMK_PELLET_UZH);
+        rbmkRod(writer, ModItems.RBMK_FUEL_THMEU, ModItems.RBMK_PELLET_THMEU);
+        rbmkRod(writer, ModItems.RBMK_FUEL_LEP, ModItems.RBMK_PELLET_LEP);
+        rbmkRod(writer, ModItems.RBMK_FUEL_MEP, ModItems.RBMK_PELLET_MEP);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEP, ModItems.RBMK_PELLET_HEP);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEP_ALT, ModItems.RBMK_PELLET_HEP);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEP241, ModItems.RBMK_PELLET_HEP241);
+        rbmkRod(writer, ModItems.RBMK_FUEL_LEA, ModItems.RBMK_PELLET_LEA);
+        rbmkRod(writer, ModItems.RBMK_FUEL_MEA, ModItems.RBMK_PELLET_MEA);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEA241, ModItems.RBMK_PELLET_HEA241);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEA242, ModItems.RBMK_PELLET_HEA242);
+        rbmkRod(writer, ModItems.RBMK_FUEL_MEN, ModItems.RBMK_PELLET_MEN);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEN, ModItems.RBMK_PELLET_HEN);
+        rbmkRod(writer, ModItems.RBMK_FUEL_MOX, ModItems.RBMK_PELLET_MOX);
+        rbmkRod(writer, ModItems.RBMK_FUEL_LES, ModItems.RBMK_PELLET_LES);
+        rbmkRod(writer, ModItems.RBMK_FUEL_MES, ModItems.RBMK_PELLET_MES);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HES, ModItems.RBMK_PELLET_HES);
+        rbmkRod(writer, ModItems.RBMK_FUEL_LEAUS, ModItems.RBMK_PELLET_LEAUS);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEAUS, ModItems.RBMK_PELLET_HEAUS);
+        rbmkRod(writer, ModItems.RBMK_FUEL_PO210BE, ModItems.RBMK_PELLET_PO210BE);
+        rbmkRod(writer, ModItems.RBMK_FUEL_RA226BE, ModItems.RBMK_PELLET_RA226BE);
+        rbmkRod(writer, ModItems.RBMK_FUEL_PU238BE, ModItems.RBMK_PELLET_PU238BE);
+        rbmkRod(writer, ModItems.RBMK_FUEL_BALEFIRE_GOLD, ModItems.RBMK_PELLET_BALEFIRE_GOLD);
+        rbmkRod(writer, ModItems.RBMK_FUEL_FLASHLEAD, ModItems.RBMK_PELLET_FLASHLEAD);
+        rbmkRod(writer, ModItems.RBMK_FUEL_BALEFIRE, ModItems.RBMK_PELLET_BALEFIRE);
+        rbmkRod(writer, ModItems.RBMK_FUEL_ZFB_BISMUTH, ModItems.RBMK_PELLET_ZFB_BISMUTH);
+        rbmkRod(writer, ModItems.RBMK_FUEL_ZFB_PU241, ModItems.RBMK_PELLET_ZFB_PU241);
+        rbmkRod(writer, ModItems.RBMK_FUEL_ZFB_AM_MIX, ModItems.RBMK_PELLET_ZFB_AM_MIX);
+        rbmkRod(writer, ModItems.RBMK_FUEL_LEU235, ModItems.RBMK_PELLET_LEU235);
+    }
+
+    private void rbmkPellet(Consumer<FinishedRecipe> writer, RegistrySupplier<Item> pellet, RegistrySupplier<Item> billet) {
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, pellet.get())
+                .requires(billet.get())
+                .unlockedBy(getHasName(billet.get()), has(billet.get()))
+                .save(writer, recipeId("crafting/" + pellet.getId().getPath()));
+    }
+
+    private void rbmkRod(Consumer<FinishedRecipe> writer, RegistrySupplier<Item> rod, RegistrySupplier<Item> pellet) {
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, rod.get())
+                .requires(ModItems.RBMK_FUEL_EMPTY.get())
+                .requires(pellet.get(), 8)
+                .unlockedBy(getHasName(pellet.get()), has(pellet.get()))
+                .save(writer, recipeId("crafting/" + rod.getId().getPath()));
     }
 
     //Sentry-Turret + MVP-Munition (Original-Rezept aus WeaponRecipes.java, GUNMETAL.mechanism() -> generisches PART_MECHANISM)
