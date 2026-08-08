@@ -467,6 +467,7 @@ public class ClientSetup {
         MenuScreens.register(ModMenuTypes.CYCLOTRON_MENU.get(), GUIMachineCyclotron::new);
         MenuScreens.register(ModMenuTypes.ZIRNOX_MENU.get(), GUIMachineZirnox::new);
         MenuScreens.register(ModMenuTypes.WATZ_POWERPLANT_MENU.get(), com.hbm_m.inventory.gui.GUIMachineWatzPowerplant::new);
+        MenuScreens.register(ModMenuTypes.PWR_CONTROLLER_MENU.get(), com.hbm_m.inventory.gui.GUIMachinePWRController::new);
         MenuScreens.register(ModMenuTypes.ARC_WELDER_MENU.get(), GUIMachineArcWelder::new);
         MenuScreens.register(ModMenuTypes.SOLDERING_STATION_MENU.get(), GUIMachineSolderingStation::new);
         MenuScreens.register(ModMenuTypes.MIXER_MENU.get(), GUIMachineMixer::new);
@@ -679,6 +680,8 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.FOUNDRY_BASIN_BE.get(), com.hbm_m.client.render.implementations.FoundryBasinRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.FOUNDRY_CHANNEL_BE.get(), com.hbm_m.client.render.implementations.FoundryChannelRenderer::new);
         // ─── RBMK column renderers (all use the same generic column renderer) ─────
+        BlockEntityRenderers.register(ModBlockEntities.CARGO_ELEVATOR_BE.get(),
+                com.hbm_m.client.render.implementations.CargoElevatorRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_ROD_BE.get(),          RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.SU47_TROPHY_BE.get(),
                 com.hbm_m.client.render.implementations.SU47TrophyRenderer::new);

@@ -1113,6 +1113,8 @@ public class ModBlocks {
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> BARREL_YELLOW = registerBlock("barrel_yellow",
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
+    public static final RegistrySupplier<Block> BARREL_ANTIMATTER = registerBlock("barrel_antimatter",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(2.0F, 5.0F).noOcclusion()));
 
     public static final RegistrySupplier<Block> BARBED_WIRE = registerBlock("barbed_wire",
             () -> new BarbedWireBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
@@ -1911,6 +1913,9 @@ public class ModBlocks {
     // ── Fuel Channels ──────────────────────────────────────────────────────────
     public static final RegistrySupplier<Block> RBMK_ROD          = registerBlock("rbmk_element",      () -> new RBMKRodBlock(false, rbmkProps()));
     public static final RegistrySupplier<Block> RBMK_ROD_MOD      = registerBlock("rbmk_element_mod",  () -> new RBMKRodBlock(true,  rbmkProps()));
+    /** ReaSim variants: same logic/BlockEntity as the base rod, distinct skin only (matches the rbmk_control_reasim precedent). */
+    public static final RegistrySupplier<Block> RBMK_ROD_REASIM       = registerBlock("rbmk_element_reasim",       () -> new RBMKRodBlock(false, rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_ROD_REASIM_MOD   = registerBlock("rbmk_element_reasim_mod",   () -> new RBMKRodBlock(true,  rbmkProps()));
 
     // ── Control Rods ────────────────────────────────────────────────────────
     public static final RegistrySupplier<Block> RBMK_CONTROL               = registerBlock("rbmk_control",               () -> new RBMKControlManualBlock(false, rbmkProps()));
@@ -1959,6 +1964,8 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> RBMK_GRAPH     = registerBlock("rbmk_graph",     () -> new RBMKPanelBlock(rbmkProps()));
     public static final RegistrySupplier<Block> RBMK_TERMINAL  = registerBlock("rbmk_terminal",  () -> new RBMKPanelBlock(rbmkProps()));
     public static final RegistrySupplier<Block> RBMK_KEYPAD    = registerBlock("rbmk_keypad",    () -> new RBMKPanelBlock(rbmkProps()));
+    /** Blank decorative panel, reuses the rbmk_display texture (matches the original, which had no dedicated texture for it either). */
+    public static final RegistrySupplier<Block> RBMK_DISPLAY_BLANK = registerBlock("rbmk_display_blank", () -> new RBMKPanelBlock(rbmkProps()));
 
     // ══════════════════════════════════════════════════════════════════════
     // DEV: Blöcke aus dem Original-HBM-Mod, die hier noch fehlen (zur Sichtung)
@@ -2010,6 +2017,9 @@ public class ModBlocks {
             () -> new com.hbm_m.block.machines.MachineCapacitorBlock(BlockBehaviour.Properties.copy(Blocks.STONE).noOcclusion(), 50_000_000_000L));
     public static final RegistrySupplier<Block> CAPACITOR_TANTALIUM = registerBlock("capacitor_tantalium",
             () -> new com.hbm_m.block.machines.MachineCapacitorBlock(BlockBehaviour.Properties.copy(Blocks.STONE).noOcclusion(), 150_000_000L));
+    /** Self-stacking 3x3 elevator shaft; see com.hbm_m.block.machines.CargoElevatorBlock. */
+    public static final RegistrySupplier<Block> CARGO_ELEVATOR = registerBlock("cargo_elevator",
+            () -> new com.hbm_m.block.machines.CargoElevatorBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
     public static final RegistrySupplier<Block> CHARGE_C4 = registerBlock("charge_c4", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> CHARGE_DYNAMITE = registerBlock("charge_dynamite", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> CHARGE_MINER = registerBlock("charge_miner", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
@@ -2117,7 +2127,11 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> FLAME_WAR = registerBlock("flame_war", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FLUID_COUNTER_VALVE = registerBlock("fluid_counter_valve", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FLUID_DUCT_BOX = registerBlock("fluid_duct_box", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+    /** Reuses the fluid_duct_box texture, matching the original. */
+    public static final RegistrySupplier<Block> FLUID_DUCT_EXHAUST = registerBlock("fluid_duct_exhaust", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FLUID_DUCT_PAINTABLE = registerBlock("fluid_duct_paintable", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+    /** Reuses the block_steel texture, matching the original. */
+    public static final RegistrySupplier<Block> PIPE_ANCHOR = registerBlock("pipe_anchor", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FLUID_SWITCH = registerBlock("fluid_switch", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FOUNDRY_MOLD = registerBlock("foundry_mold",
             () -> new com.hbm_m.block.machines.MachineFoundryMoldBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
@@ -2302,7 +2316,9 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> PWR_CASING = registerBlock("pwr_casing", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> PWR_CHANNEL = registerBlock("pwr_channel", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> PWR_CONTROL = registerBlock("pwr_control", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> PWR_CONTROLLER = registerBlock("pwr_controller", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+    /** The reactor's only functional block; see com.hbm_m.blockentity.machines.PWRControllerBlockEntity. */
+    public static final RegistrySupplier<Block> PWR_CONTROLLER = registerBlock("pwr_controller",
+            () -> new com.hbm_m.block.machines.MachinePWRControllerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
     public static final RegistrySupplier<Block> PWR_FUEL = registerBlock("pwr_fuel", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> PWR_HEATEX = registerBlock("pwr_heatex", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> PWR_HEATSINK = registerBlock("pwr_heatsink", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
@@ -2323,9 +2339,16 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> RAIL_WOOD = registerBlock("rail_wood", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> RED_CABLE = registerBlock("red_cable", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> RED_CABLE_CLASSIC = registerBlock("red_cable_classic", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+    /** Reuses the fluid_duct_box texture, matching the original. */
+    public static final RegistrySupplier<Block> RED_CABLE_BOX = registerBlock("red_cable_box", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> RED_CONNECTOR = registerBlock("red_connector", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+    /** Reuses the red_connector texture, matching the original (no dedicated texture existed for it either). */
+    public static final RegistrySupplier<Block> RED_CONNECTOR_SUPER = registerBlock("red_connector_super", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> RED_PYLON = registerBlock("red_pylon", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> RED_PYLON_LARGE = registerBlock("red_pylon_large", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+    /** Both reuse the red_pylon texture, matching the original. */
+    public static final RegistrySupplier<Block> RED_PYLON_MEDIUM_WOOD  = registerBlock("red_pylon_medium_wood",  () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> RED_PYLON_MEDIUM_STEEL = registerBlock("red_pylon_medium_steel", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> RED_WIRE_COATED = registerBlock("red_wire_coated", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> REINFORCED_BRICK = registerBlock("reinforced_brick", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> REINFORCED_DUCRETE = registerBlock("reinforced_ducrete", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
@@ -2391,6 +2414,9 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> STRUCT_SOYUZ_CORE = registerBlock("struct_soyuz_core", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> STRUCT_TORUS_CORE = registerBlock("struct_torus_core", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> STRUCT_WATZ_CORE = registerBlock("struct_watz_core", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+    /** Decorative casing end-cap; original toggled bolted/unbolted via screwdriver, ported here as two plain block variants. */
+    public static final RegistrySupplier<Block> WATZ_END = registerBlock("watz_end", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> WATZ_END_BOLTED = registerBlock("watz_end_bolted", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> TEKTITE = registerBlock("tektite", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> TESLA = registerBlock("tesla", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> THERM_ENDO = registerBlock("therm_endo", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));

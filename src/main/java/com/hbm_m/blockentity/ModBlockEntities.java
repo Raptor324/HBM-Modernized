@@ -557,6 +557,11 @@ public class ModBlockEntities {
                             ModBlocks.CAPACITOR_NIOBIUM.get(), ModBlocks.CAPACITOR_SCHRABIDATE.get(), ModBlocks.CAPACITOR_TANTALIUM.get())
                             .build(null));
 
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.CargoElevatorBlockEntity>> CARGO_ELEVATOR_BE =
+            BLOCK_ENTITIES.register("cargo_elevator_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.CargoElevatorBlockEntity::new,
+                            ModBlocks.CARGO_ELEVATOR.get()).build(null));
+
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineRtgBlockEntity>> MACHINE_RTG_BE =
             BLOCK_ENTITIES.register("machine_rtg_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineRtgBlockEntity::new,
@@ -845,6 +850,11 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(MachineWatzPowerplantBlockEntity::new,
                             ModBlocks.WATZ_POWERPLANT.get()).build(null));
 
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.PWRControllerBlockEntity>> PWR_CONTROLLER_BE =
+            BLOCK_ENTITIES.register("pwr_controller_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.PWRControllerBlockEntity::new,
+                            ModBlocks.PWR_CONTROLLER.get()).build(null));
+
     public static final RegistrySupplier<BlockEntityType<MachineHydrotreaterBlockEntity>> HYDROTREATER_BE =
             BLOCK_ENTITIES.register("hydrotreater_be", () ->
                     BlockEntityType.Builder.of(MachineHydrotreaterBlockEntity::new,
@@ -1050,7 +1060,8 @@ public class ModBlockEntities {
     public static final RegistrySupplier<BlockEntityType<RBMKRodBlockEntity>> RBMK_ROD_BE =
             BLOCK_ENTITIES.register("rbmk_rod_be", () ->
                     BlockEntityType.Builder.of(RBMKRodBlockEntity::new,
-                            ModBlocks.RBMK_ROD.get(), ModBlocks.RBMK_ROD_MOD.get()).build(null));
+                            ModBlocks.RBMK_ROD.get(), ModBlocks.RBMK_ROD_MOD.get(),
+                            ModBlocks.RBMK_ROD_REASIM.get(), ModBlocks.RBMK_ROD_REASIM_MOD.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<RBMKControlManualBlockEntity>> RBMK_CONTROL_BE =
             BLOCK_ENTITIES.register("rbmk_control_be", () ->
@@ -1142,7 +1153,8 @@ public class ModBlockEntities {
                             ModBlocks.RBMK_DISPLAY.get(), ModBlocks.RBMK_GAUGE.get(),
                             ModBlocks.RBMK_INDICATOR.get(), ModBlocks.RBMK_LEVER.get(),
                             ModBlocks.RBMK_NUMITRON.get(), ModBlocks.RBMK_GRAPH.get(),
-                            ModBlocks.RBMK_TERMINAL.get(), ModBlocks.RBMK_KEYPAD.get()).build(null));
+                            ModBlocks.RBMK_TERMINAL.get(), ModBlocks.RBMK_KEYPAD.get(),
+                            ModBlocks.RBMK_DISPLAY_BLANK.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.SoyuzLauncherBlockEntity>> SOYUZ_LAUNCHER_BE =
             BLOCK_ENTITIES.register("soyuz_launcher_be", () ->

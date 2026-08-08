@@ -697,6 +697,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlock(ModBlocks.BARREL_CORRODED);
         customObjBlock(ModBlocks.BARREL_IRON);
         customObjBlock(ModBlocks.BARREL_LOX);
+        customObjBlock(ModBlocks.BARREL_ANTIMATTER);
         customObjBlock(ModBlocks.BARREL_PINK);
         customObjBlock(ModBlocks.BARREL_RED);
         customObjBlock(ModBlocks.BARREL_PLASTIC);
@@ -2122,6 +2123,18 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/fluid_duct_box")
                 )
         );
+        simpleBlockWithItem(ModBlocks.FLUID_DUCT_EXHAUST.get(),
+                models().cubeAll(
+                        ModBlocks.FLUID_DUCT_EXHAUST.getId().getPath(),
+                        modLoc("block/fluid_duct_box")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.PIPE_ANCHOR.get(),
+                models().cubeAll(
+                        ModBlocks.PIPE_ANCHOR.getId().getPath(),
+                        modLoc("block/block_steel")
+                )
+        );
         simpleBlockWithItem(ModBlocks.FLUID_DUCT_PAINTABLE.get(),
                 models().cubeAll(
                         ModBlocks.FLUID_DUCT_PAINTABLE.getId().getPath(),
@@ -2996,11 +3009,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/pwr_control_top")
                 )
         );
-        simpleBlockWithItem(ModBlocks.PWR_CONTROLLER.get(),
-                models().cubeAll(
-                        ModBlocks.PWR_CONTROLLER.getId().getPath(),
-                        modLoc("block/pwr_controller")
-                )
+        orientableBlockWithItem(ModBlocks.PWR_CONTROLLER,
+                modLoc("block/pwr_casing"),
+                modLoc("block/pwr_controller"),
+                modLoc("block/pwr_casing")
         );
         simpleBlockWithItem(ModBlocks.PWR_FUEL.get(),
                 models().cubeBottomTop(
@@ -3106,9 +3118,33 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/red_connector")
                 )
         );
+        simpleBlockWithItem(ModBlocks.RED_CONNECTOR_SUPER.get(),
+                models().cubeAll(
+                        ModBlocks.RED_CONNECTOR_SUPER.getId().getPath(),
+                        modLoc("block/red_connector")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.RED_CABLE_BOX.get(),
+                models().cubeAll(
+                        ModBlocks.RED_CABLE_BOX.getId().getPath(),
+                        modLoc("block/fluid_duct_box")
+                )
+        );
         simpleBlockWithItem(ModBlocks.RED_PYLON.get(),
                 models().cubeAll(
                         ModBlocks.RED_PYLON.getId().getPath(),
+                        modLoc("block/red_pylon")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.RED_PYLON_MEDIUM_WOOD.get(),
+                models().cubeAll(
+                        ModBlocks.RED_PYLON_MEDIUM_WOOD.getId().getPath(),
+                        modLoc("block/red_pylon")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.RED_PYLON_MEDIUM_STEEL.get(),
+                models().cubeAll(
+                        ModBlocks.RED_PYLON_MEDIUM_STEEL.getId().getPath(),
                         modLoc("block/red_pylon")
                 )
         );
@@ -3450,6 +3486,18 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 models().cubeAll(
                         ModBlocks.STRUCT_WATZ_CORE.getId().getPath(),
                         modLoc("block/struct_watz_core")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.WATZ_END.get(),
+                models().cubeAll(
+                        ModBlocks.WATZ_END.getId().getPath(),
+                        modLoc("block/watz_end")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.WATZ_END_BOLTED.get(),
+                models().cubeAll(
+                        ModBlocks.WATZ_END_BOLTED.getId().getPath(),
+                        modLoc("block/watz_end_bolted")
                 )
         );
         simpleBlockWithItem(ModBlocks.TEKTITE.get(),

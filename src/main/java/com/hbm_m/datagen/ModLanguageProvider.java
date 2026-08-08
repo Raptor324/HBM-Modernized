@@ -722,6 +722,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.PUTER.get(), "(PC) Personal Computer"); //NEEDS TRANSLATION
                 add(ModBlocks.BARREL_CORRODED.get(), "Проржавевшая бочка");
                 add(ModBlocks.BARREL_LOX.get(), "Бочка с жидким кислородом");
+                add(ModBlocks.BARREL_ANTIMATTER.get(), "Бочка с антиматерией");
                 add(ModBlocks.BARREL_PINK.get(), "Бочка с керосином");
                 add(ModBlocks.BARREL_YELLOW.get(), "Бочка с ядерными отходами");
                 add(ModBlocks.BARREL_VITRIFIED.get(), "Бочка с остеклованными ядерными отходами");
@@ -1933,6 +1934,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.RBMK_CONSOLE.get(), "Пульт РБМК (WIP)");
                 add(ModBlocks.RBMK_ROD.get(), "РБМК Топливный канал");
                 add(ModBlocks.RBMK_ROD_MOD.get(), "РБМК Топливный канал (с замедлителем)");
+                add(ModBlocks.RBMK_ROD_REASIM.get(), "РБМК Топливный канал (ReaSim)");
+                add(ModBlocks.RBMK_ROD_REASIM_MOD.get(), "РБМК Топливный канал (ReaSim, с замедлителем)");
                 add(ModBlocks.RBMK_CONTROL.get(), "РБМК Стержень управления");
                 add(ModBlocks.RBMK_CONTROL_AUTO.get(), "РБМК Автостержень управления");
                 add(ModBlocks.RBMK_MODERATOR.get(), "РБМК Замедлитель");
@@ -1969,6 +1972,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.RBMK_GRAPH.get(),               "РБМК Граф");
                 add(ModBlocks.RBMK_TERMINAL.get(),            "РБМК Терминал");
                 add(ModBlocks.RBMK_KEYPAD.get(),              "РБМК Клавиатура");
+                add(ModBlocks.RBMK_DISPLAY_BLANK.get(),       "РБМК Пустая панель");
                 add(ModBlocks.FLARE_STACK.get(), "Факельная башня (WIP)");
                 add(ModBlocks.PUMPJACK.get(), "Станок-качалка (WIP)");
                 add(ModBlocks.RADAR.get(), "Радар (WIP)");
@@ -3466,6 +3470,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.STEEL_WALL.get(), "Steel Wall(WIP)");
                 add(ModBlocks.BARREL_CORRODED.get(), "Corroded Barrel");
                 add(ModBlocks.BARREL_LOX.get(), "LOX Barrel");
+                add(ModBlocks.BARREL_ANTIMATTER.get(), "Antimatter Barrel");
                 add(ModBlocks.BARREL_PINK.get(), "Pink Barrel");
                 add(ModBlocks.BARREL_YELLOW.get(), "Yellow Barrel");
                 add(ModBlocks.BARREL_VITRIFIED.get(), "Vitrified Barrel");
@@ -3822,6 +3827,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.RBMK_CONSOLE.get(), "RBMK Console (WIP)");
                 add(ModBlocks.RBMK_ROD.get(), "RBMK Fuel Channel");
                 add(ModBlocks.RBMK_ROD_MOD.get(), "RBMK Fuel Channel (Moderated)");
+                add(ModBlocks.RBMK_ROD_REASIM.get(), "RBMK Fuel Channel (ReaSim)");
+                add(ModBlocks.RBMK_ROD_REASIM_MOD.get(), "RBMK Fuel Channel (ReaSim, Moderated)");
                 add(ModBlocks.RBMK_CONTROL.get(), "RBMK Control Rod");
                 add(ModBlocks.RBMK_CONTROL_AUTO.get(), "RBMK Auto Control Rod");
                 add(ModBlocks.RBMK_MODERATOR.get(), "RBMK Moderator");
@@ -3858,6 +3865,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.RBMK_GRAPH.get(),               "RBMK Graph");
                 add(ModBlocks.RBMK_TERMINAL.get(),            "RBMK Terminal");
                 add(ModBlocks.RBMK_KEYPAD.get(),              "RBMK Key Pad");
+                add(ModBlocks.RBMK_DISPLAY_BLANK.get(),       "RBMK Blank Panel");
                 add(ModItems.RBMK_LID.get(), "RBMK Lid");
                 add(ModItems.RBMK_LID_GLASS.get(), "RBMK Glass Lid");
                 add(ModItems.RBMK_FUEL_EMPTY.get(), "RBMK Fuel Rod (Empty)");
@@ -4235,6 +4243,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("msg.hbm_m.solar_mirror.sky_access", "Mirror has sky access");
                 add("msg.hbm_m.solar_mirror.no_sky_access", "Mirror is shaded");
                 add("container.hbm_m.watz_powerplant", "Watz Powerplant");
+                add("container.hbm_m.pwr_controller", "PWR Controller");
                 add("container.hbm_m.hydrotreater", "Hydrotreater");
                 add("container.hbm_m.catalytic_reformer", "Catalytic Reformer");
                 add("container.hbm_m.deuterium_tower", "Deuterium Tower");
@@ -4679,6 +4688,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.CAPACITOR_NIOBIUM.get(), "Niobium Capacitor (LEGACY)");
                 add(ModBlocks.CAPACITOR_SCHRABIDATE.get(), "Schrabidate Capacitor (LEGACY)");
                 add(ModBlocks.CAPACITOR_TANTALIUM.get(), "Tantalum Capacitor (LEGACY)");
+                add(ModBlocks.CARGO_ELEVATOR.get(), "Cargo Elevator");
                 add("container.hbm_m.machine_capacitor", "Capacitor");
                 add(ModBlocks.CHARGE_C4.get(), "Demolition Charge");
                 add(ModBlocks.CHARGE_DYNAMITE.get(), "Time Bomb");
@@ -4771,6 +4781,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.FLAME_WAR.get(), "Flame War in a Box");
                 add(ModBlocks.FLUID_COUNTER_VALVE.get(), "Fluid Valve with Counter");
                 add(ModBlocks.FLUID_DUCT_BOX.get(), "Universal Fluid Duct (Boxduct)");
+                add(ModBlocks.FLUID_DUCT_EXHAUST.get(), "Fluid Duct Exhaust");
+                add(ModBlocks.PIPE_ANCHOR.get(), "Pipe Anchor");
                 add(ModBlocks.FLUID_DUCT_PAINTABLE.get(), "Paintable Coated Universal Fluid Duct");
                 add(ModBlocks.FLUID_SWITCH.get(), "Redstone Fluid Valve");
                 add(ModBlocks.FOUNDRY_MOLD.get(), "Shallow Foundry Basin");
@@ -4975,9 +4987,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.RAIL_NARROW.get(), "Narrow Gauge Cart Rail");
                 add(ModBlocks.RAIL_WOOD.get(), "Wooden Tracks");
                 add(ModBlocks.RED_CABLE.get(), "Red Copper Cable");
+                add(ModBlocks.RED_CABLE_BOX.get(), "Red Cable Junction Box");
                 add(ModBlocks.RED_CABLE_CLASSIC.get(), "Red Copper Cable (Classic)");
                 add(ModBlocks.RED_CONNECTOR.get(), "Electricity Connector");
+                add(ModBlocks.RED_CONNECTOR_SUPER.get(), "Super Electricity Connector");
                 add(ModBlocks.RED_PYLON.get(), "Electricity Pylon");
+                add(ModBlocks.RED_PYLON_MEDIUM_WOOD.get(), "Medium Electricity Pylon (Wood)");
+                add(ModBlocks.RED_PYLON_MEDIUM_STEEL.get(), "Medium Electricity Pylon (Steel)");
                 add(ModBlocks.RED_PYLON_LARGE.get(), "Large Electricity Pylon");
                 add(ModBlocks.RED_WIRE_COATED.get(), "Coated Red Copper Cable");
                 add(ModBlocks.REINFORCED_BRICK.get(), "Reinforced Stone");
@@ -5037,6 +5053,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.STRUCT_SOYUZ_CORE.get(), "Soyuz Launcher Core Component");
                 add(ModBlocks.STRUCT_TORUS_CORE.get(), "Fusion Reactor Vessel Core Component");
                 add(ModBlocks.STRUCT_WATZ_CORE.get(), "Watz Powerplant Core Component");
+                add(ModBlocks.WATZ_END.get(), "Watz Casing End");
+                add(ModBlocks.WATZ_END_BOLTED.get(), "Watz Casing End (Bolted)");
                 add(ModBlocks.TEKTITE.get(), "Tektite");
                 add(ModBlocks.TESLA.get(), "Tesla Coil");
                 add(ModBlocks.THERM_ENDO.get(), "Endothermic Bomb");
@@ -5999,6 +6017,16 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PROTOTYPE_KIT.get(), "Prototype Kit");
                 add(ModItems.PUDDING.get(), "Pudding");
                 add(ModItems.PWR_PRINTER.get(), "PWR Printer");
+                add(ModItems.PWR_FUEL_MEU.get(), "PWR Fuel Rod (MEU)");
+                add(ModItems.PWR_FUEL_MEU_HOT.get(), "Spent PWR Fuel Rod (MEU)");
+                add(ModItems.PWR_FUEL_HEU.get(), "PWR Fuel Rod (HEU)");
+                add(ModItems.PWR_FUEL_HEU_HOT.get(), "Spent PWR Fuel Rod (HEU)");
+                add(ModItems.PWR_FUEL_MOX.get(), "PWR Fuel Rod (MOX)");
+                add(ModItems.PWR_FUEL_MOX_HOT.get(), "Spent PWR Fuel Rod (MOX)");
+                add(ModItems.PWR_FUEL_HEP.get(), "PWR Fuel Rod (HEP)");
+                add(ModItems.PWR_FUEL_HEP_HOT.get(), "Spent PWR Fuel Rod (HEP)");
+                add(ModItems.PWR_FUEL_SCHRABIDIUM.get(), "PWR Fuel Rod (Schrabidium)");
+                add(ModItems.PWR_FUEL_SCHRABIDIUM_HOT.get(), "Spent PWR Fuel Rod (Schrabidium)");
                 add(ModItems.QUARTZ_PLUTONIUM.get(), "Plutonic Quartz");
                 add(ModItems.RADAR_LINKER.get(), "Radar Linker");
                 add(ModItems.RAG.get(), "Cloth");

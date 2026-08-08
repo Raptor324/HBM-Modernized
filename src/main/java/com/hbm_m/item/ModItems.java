@@ -3482,6 +3482,28 @@ public class ModItems {
     public static final RegistrySupplier<Item> PROTOTYPE_KIT = ITEMS.register("prototype_kit", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PUDDING = ITEMS.register("pudding", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PWR_PRINTER = ITEMS.register("pwr_printer", () -> new Item(new Item.Properties()));
+
+    // PWR reactor fuel - see com.hbm_m.item.nuclear.PWRFuelType for the mechanics.
+    public static final RegistrySupplier<Item> PWR_FUEL_MEU = ITEMS.register("pwr_fuel_meu",
+        () -> new com.hbm_m.item.nuclear.PWRFuelItem(new Item.Properties(), com.hbm_m.item.nuclear.PWRFuelType.MEU));
+    public static final RegistrySupplier<Item> PWR_FUEL_MEU_HOT = ITEMS.register("pwr_fuel_meu_hot",
+        () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PWR_FUEL_HEU = ITEMS.register("pwr_fuel_heu",
+        () -> new com.hbm_m.item.nuclear.PWRFuelItem(new Item.Properties(), com.hbm_m.item.nuclear.PWRFuelType.HEU));
+    public static final RegistrySupplier<Item> PWR_FUEL_HEU_HOT = ITEMS.register("pwr_fuel_heu_hot",
+        () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PWR_FUEL_MOX = ITEMS.register("pwr_fuel_mox",
+        () -> new com.hbm_m.item.nuclear.PWRFuelItem(new Item.Properties(), com.hbm_m.item.nuclear.PWRFuelType.MOX));
+    public static final RegistrySupplier<Item> PWR_FUEL_MOX_HOT = ITEMS.register("pwr_fuel_mox_hot",
+        () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PWR_FUEL_HEP = ITEMS.register("pwr_fuel_hep",
+        () -> new com.hbm_m.item.nuclear.PWRFuelItem(new Item.Properties(), com.hbm_m.item.nuclear.PWRFuelType.HEP));
+    public static final RegistrySupplier<Item> PWR_FUEL_HEP_HOT = ITEMS.register("pwr_fuel_hep_hot",
+        () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PWR_FUEL_SCHRABIDIUM = ITEMS.register("pwr_fuel_schrabidium",
+        () -> new com.hbm_m.item.nuclear.PWRFuelItem(new Item.Properties(), com.hbm_m.item.nuclear.PWRFuelType.SCHRABIDIUM));
+    public static final RegistrySupplier<Item> PWR_FUEL_SCHRABIDIUM_HOT = ITEMS.register("pwr_fuel_schrabidium_hot",
+        () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> QUARTZ_PLUTONIUM = ITEMS.register("quartz_plutonium", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> RADAR_LINKER = ITEMS.register("radar_linker", () -> new com.hbm_m.item.tool.ItemRadarLinker(new Item.Properties()));
     public static final RegistrySupplier<Item> RAG = ITEMS.register("rag", () -> new Item(new Item.Properties()));

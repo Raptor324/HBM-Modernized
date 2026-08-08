@@ -67,6 +67,7 @@ public class ModPacketHandler {
     public static final ResourceLocation UPDATE_RADAR          = id("update_radar");
         public static final ResourceLocation ZIRNOX_CONTROL        = id("zirnox_control");
     public static final ResourceLocation WATZ_CONTROL          = id("watz_control");
+    public static final ResourceLocation PWR_CONTROL           = id("pwr_control");
     public static final ResourceLocation RBMK_CONSOLE_CONTROL        = id("rbmk_console_control");
     public static final ResourceLocation SOYUZ_LAUNCHER_CONTROL      = id("soyuz_launcher_control");
     public static final ResourceLocation SOLDERING_STATION_CONTROL   = id("soldering_station_control");
@@ -228,6 +229,10 @@ public class ModPacketHandler {
         registerC2S(WATZ_CONTROL,
                 WatzControlPacket::decode,
                 WatzControlPacket::handle);
+
+        registerC2S(PWR_CONTROL,
+                PWRControlPacket::decode,
+                PWRControlPacket::handle);
 
         registerC2S(RBMK_CONSOLE_CONTROL,
                 RBMKConsoleControlPacket::decode,

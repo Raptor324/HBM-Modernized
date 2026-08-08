@@ -164,6 +164,9 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<MachineWatzPowerplantMenu>> WATZ_POWERPLANT_MENU =
             MENUS.register("watz_powerplant_menu", () -> MenuRegistry.ofExtended(MachineWatzPowerplantMenu::new));
 
+    public static final RegistrySupplier<MenuType<PWRControllerMenu>> PWR_CONTROLLER_MENU =
+            MENUS.register("pwr_controller_menu", () -> MenuRegistry.ofExtended(PWRControllerMenu::new));
+
     public static final RegistrySupplier<MenuType<MachineArcWelderMenu>> ARC_WELDER_MENU =
             MENUS.register("arc_welder_menu", () -> MenuRegistry.ofExtended(MachineArcWelderMenu::new));
 

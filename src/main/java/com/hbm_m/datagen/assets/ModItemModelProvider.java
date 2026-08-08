@@ -473,6 +473,16 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.ROD_ZIRNOX_ZFB_MOX);
         simpleItem(ModItems.ROD_ZIRNOX_ZFB_MOX_DEPLETED);
 
+        simpleItem(ModItems.PWR_FUEL_MEU);
+        simpleItem(ModItems.PWR_FUEL_MEU_HOT);
+        simpleItem(ModItems.PWR_FUEL_HEU);
+        simpleItem(ModItems.PWR_FUEL_HEU_HOT);
+        simpleItem(ModItems.PWR_FUEL_MOX);
+        simpleItem(ModItems.PWR_FUEL_MOX_HOT);
+        simpleItem(ModItems.PWR_FUEL_HEP);
+        simpleItem(ModItems.PWR_FUEL_HEP_HOT);
+        simpleItem(ModItems.PWR_FUEL_SCHRABIDIUM);
+        simpleItem(ModItems.PWR_FUEL_SCHRABIDIUM_HOT);
         simpleItem(ModItems.WATZ_PELLET_SCHRABIDIUM_OXIDE);
         simpleItem(ModItems.WATZ_PELLET_SCHRABIDIUM_OXIDE_DEPLETED);
         simpleItem(ModItems.WATZ_PELLET_LES_OXIDE);
@@ -550,7 +560,8 @@ public class ModItemModelProvider extends ItemModelProvider {
 
         // RBMK block items — parent points to block/rbmk/ not block/machines/
         java.util.List<dev.architectury.registry.registries.RegistrySupplier<net.minecraft.world.level.block.Block>> rbmkBlocks = java.util.List.of(
-            ModBlocks.RBMK_ROD, ModBlocks.RBMK_ROD_MOD, ModBlocks.RBMK_CONTROL,
+            ModBlocks.RBMK_ROD, ModBlocks.RBMK_ROD_MOD, ModBlocks.RBMK_ROD_REASIM, ModBlocks.RBMK_ROD_REASIM_MOD,
+            ModBlocks.RBMK_CONTROL,
             ModBlocks.RBMK_CONTROL_BLUE, ModBlocks.RBMK_CONTROL_GREEN, ModBlocks.RBMK_CONTROL_YELLOW,
             ModBlocks.RBMK_CONTROL_PURPLE, ModBlocks.RBMK_CONTROL_MOD, ModBlocks.RBMK_CONTROL_MOD_AUTO,
             ModBlocks.RBMK_CONTROL_AUTO, ModBlocks.RBMK_CONTROL_REASIM, ModBlocks.RBMK_CONTROL_REASIM_AUTO,
@@ -561,7 +572,7 @@ public class ModItemModelProvider extends ItemModelProvider {
             ModBlocks.RBMK_LOADER, ModBlocks.RBMK_AUTOLOADER, ModBlocks.RBMK_CRANE_CONSOLE,
             ModBlocks.RBMK_DISPLAY, ModBlocks.RBMK_GAUGE, ModBlocks.RBMK_INDICATOR,
             ModBlocks.RBMK_LEVER, ModBlocks.RBMK_NUMITRON, ModBlocks.RBMK_GRAPH,
-            ModBlocks.RBMK_TERMINAL, ModBlocks.RBMK_KEYPAD,
+            ModBlocks.RBMK_TERMINAL, ModBlocks.RBMK_KEYPAD, ModBlocks.RBMK_DISPLAY_BLANK,
             ModBlocks.RBMK_DEBRIS, ModBlocks.RBMK_DEBRIS_BURNING,
             ModBlocks.RBMK_DEBRIS_DIGAMMA, ModBlocks.RBMK_DEBRIS_RADIATING
         );
@@ -899,6 +910,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModel(ModBlocks.BARREL_CORRODED);
         blockItemFromBlockModel(ModBlocks.BARREL_IRON);
         blockItemFromBlockModel(ModBlocks.BARREL_LOX);
+        blockItemFromBlockModel(ModBlocks.BARREL_ANTIMATTER);
         blockItemFromBlockModel(ModBlocks.BARREL_PINK);
         blockItemFromBlockModel(ModBlocks.BARREL_PLASTIC);
         blockItemFromBlockModel(ModBlocks.BARREL_RED);
