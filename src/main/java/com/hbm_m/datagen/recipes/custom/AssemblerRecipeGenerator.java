@@ -1399,15 +1399,6 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.DRILL_TITANIUM.get(), 1)
                 .save(writer, "derrick");
 
-        // machine_well — no ass.machineWell recipe existed in the original 1.7.10 either; invented here.
-        AssemblerRecipeBuilder.assemblerRecipe(
-                        new ItemStack(ModItems.MACHINE_WELL.get(), 1), 80, 150)
-                .addIngredient(ModItems.PLATE_STEEL.get(), 6)
-                .addIngredient(ModItems.PIPE_STEEL.get(), 4)
-                .addIngredient(ModItems.MOTOR.get(), 1)
-                .addIngredient(ModItems.DRILL_TITANIUM.get(), 1)
-                .save(writer, "machine_well");
-
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.SOLDERING_STATION.get(), 1), 80, 150)
                 .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 2)

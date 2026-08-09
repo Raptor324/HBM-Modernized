@@ -425,8 +425,6 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> DERRICK = registerBlockWithoutItem("derrick",
             () -> new MachineDerrickBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
-    public static final RegistrySupplier<Block> MACHINE_WELL = registerBlockWithoutItem("machine_well",
-            () -> new com.hbm_m.block.machines.MachineOilWellBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 20.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> RBMK_CONSOLE = registerBlockWithoutItem("rbmk_console",
             () -> new MachineRbmkConsoleBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
@@ -2245,7 +2243,6 @@ public class ModBlocks {
     /** Rein dekorativ im Original (leerer TE-Stub, keine Fluid-Logik) - siehe {@link #MACHINE_UF6_TANK}. */
     public static final RegistrySupplier<Block> MACHINE_PUF6_TANK = registerBlock("machine_puf6_tank",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).noOcclusion()));
-    public static final RegistrySupplier<Block> MACHINE_RADAR = registerBlock("machine_radar", () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     /** Genuinely missing from the port until now - no RTG (radioisotope thermoelectric generator) existed anywhere. */
     public static final RegistrySupplier<Block> MACHINE_RTG = registerBlock("machine_rtg_grey",
             () -> new com.hbm_m.block.machines.MachineRtgBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL).noOcclusion()));

@@ -175,9 +175,6 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("derrick_be", () ->
                     BlockEntityType.Builder.of(MachineDerrickBlockEntity::new, ModBlocks.DERRICK.get()).build(null));
 
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineOilWellBlockEntity>> MACHINE_WELL_BE =
-            BLOCK_ENTITIES.register("machine_well_be", () ->
-                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineOilWellBlockEntity::new, ModBlocks.MACHINE_WELL.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineCokerBlockEntity>> COKER_BE =
             BLOCK_ENTITIES.register("coker_be", () ->

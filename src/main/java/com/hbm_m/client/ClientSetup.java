@@ -474,7 +474,6 @@ public class ClientSetup {
         MenuScreens.register(ModMenuTypes.SOLDERING_STATION_MENU.get(), GUIMachineSolderingStation::new);
         MenuScreens.register(ModMenuTypes.MIXER_MENU.get(), GUIMachineMixer::new);
         MenuScreens.register(ModMenuTypes.DERRICK_MENU.get(), GUIMachineDerrick::new);
-        MenuScreens.register(ModMenuTypes.MACHINE_WELL_MENU.get(), com.hbm_m.inventory.gui.GUIMachineOilWell::new);
         MenuScreens.register(ModMenuTypes.COKER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCoker::new);
         MenuScreens.register(ModMenuTypes.PYROOVEN_MENU.get(), com.hbm_m.inventory.gui.GUIMachinePyroOven::new);
         MenuScreens.register(ModMenuTypes.SOLIDIFIER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineSolidifier::new);

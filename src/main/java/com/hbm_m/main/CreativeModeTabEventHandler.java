@@ -1409,7 +1409,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.CENTRIFUGE.get()));
         add.accept(new ItemStack(ModBlocks.CRYSTALLIZER.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_ASSEMBLER.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_RADAR.get()));
         add.accept(new ItemStack(ModBlocks.ARC_WELDER.get()));
         add.accept(new ItemStack(ModBlocks.SOLDERING_STATION.get()));
         add.accept(new ItemStack(ModBlocks.DERRICK.get()));
@@ -1536,7 +1535,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.PART_PLUTONIUM.get()));
         add.accept(new ItemStack(ModBlocks.ZIRNOX.get()));
         // add.accept(new ItemStack(ModBlocks.MIXER.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_WELL.get()));
         add.accept(new ItemStack(ModBlocks.RBMK_CONSOLE.get()));
         add.accept(new ItemStack(ModBlocks.FLARE_STACK.get()));
         add.accept(new ItemStack(ModBlocks.PUMPJACK.get()));

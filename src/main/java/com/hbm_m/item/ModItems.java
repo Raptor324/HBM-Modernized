@@ -1713,9 +1713,6 @@ public class ModItems {
 	public static final RegistrySupplier<Item> DERRICK = ITEMS.register("derrick",
         () -> new MultiblockBlockItem(ModBlocks.DERRICK.get(), new Item.Properties()));
 
-	public static final RegistrySupplier<Item> MACHINE_WELL = ITEMS.register("machine_well",
-        () -> new MultiblockBlockItem(ModBlocks.MACHINE_WELL.get(), new Item.Properties()));
-
 	public static final RegistrySupplier<Item> ASHPIT = ITEMS.register("ashpit",
         () -> new MultiblockBlockItem(ModBlocks.ASHPIT.get(), new Item.Properties()));
 

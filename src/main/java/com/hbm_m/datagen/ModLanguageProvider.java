@@ -1933,7 +1933,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.SOLDERING_STATION.get(), "Паяльная станция (WIP)");
                 add(ModBlocks.MIXER.get(), "Промышленный миксер (WIP)");
                 add(ModBlocks.DERRICK.get(), "Деррик (WIP)");
-                add(ModBlocks.MACHINE_WELL.get(), "Нефтяная вышка");
                 add(ModBlocks.RBMK_CONSOLE.get(), "Пульт РБМК (WIP)");
                 add(ModBlocks.RBMK_ROD.get(), "РБМК Топливный канал");
                 add(ModBlocks.RBMK_ROD_MOD.get(), "РБМК Топливный канал (с замедлителем)");
@@ -3844,7 +3843,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.FLUID_TANK.get(), "Tank");
                 add(ModBlocks.BAT9000.get(), "BAT9000");
                 add(ModBlocks.DERRICK.get(), "Derrick (WIP)");
-                add(ModBlocks.MACHINE_WELL.get(), "Oil Derrick");
                 add(ModBlocks.RBMK_CONSOLE.get(), "RBMK Console (WIP)");
                 add(ModBlocks.RBMK_ROD.get(), "RBMK Fuel Channel");
                 add(ModBlocks.RBMK_ROD_MOD.get(), "RBMK Fuel Channel (Moderated)");
@@ -4960,7 +4958,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.MACHINE_MISSILE_ASSEMBLY.get(), "Missile Assembly Station");
                 add(ModBlocks.MACHINE_PRESS.get(), "Burner Press");
                 add(ModBlocks.MACHINE_PUF6_TANK.get(), "Plutonium Hexafluoride Tank");
-                add(ModBlocks.MACHINE_RADAR.get(), "Radar");
                 add(ModBlocks.MACHINE_FAN.get(), "Industrial Fan");
                 add(ModBlocks.MACHINE_DRAIN.get(), "Drain");
                 add("container.hbm_m.machine_drain", "Drain");

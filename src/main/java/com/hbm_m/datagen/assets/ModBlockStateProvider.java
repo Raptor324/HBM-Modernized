@@ -491,7 +491,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.SOLDERING_STATION);
         customMachineBlock(ModBlocks.MIXER);
         customMachineBlock(ModBlocks.DERRICK);
-        simpleMachineBlock(ModBlocks.MACHINE_WELL);
         customMachineBlock(ModBlocks.RBMK_CONSOLE);
         customMachineBlock(ModBlocks.FLARE_STACK);
         customMachineBlock(ModBlocks.PUMPJACK);
@@ -2725,12 +2724,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 models().cubeAll(
                         ModBlocks.MACHINE_PUF6_TANK.getId().getPath(),
                         modLoc("block/machine_puf6_tank")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.MACHINE_RADAR.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_RADAR.getId().getPath(),
-                        modLoc("block/machine_radar")
                 )
         );
         plainFacingBlock(ModBlocks.MACHINE_FAN.get(),

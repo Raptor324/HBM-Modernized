@@ -179,8 +179,6 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<MachineDerrickMenu>> DERRICK_MENU =
             MENUS.register("derrick_menu", () -> MenuRegistry.ofExtended(MachineDerrickMenu::new));
 
-    public static final RegistrySupplier<MenuType<MachineOilWellMenu>> MACHINE_WELL_MENU =
-            MENUS.register("machine_well_menu", () -> MenuRegistry.ofExtended(MachineOilWellMenu::new));
 
     public static final RegistrySupplier<MenuType<MachineCokerMenu>> COKER_MENU =
             MENUS.register("coker_menu", () -> MenuRegistry.ofExtended(MachineCokerMenu::new));

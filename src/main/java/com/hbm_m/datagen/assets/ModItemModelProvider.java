@@ -780,7 +780,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.SOLDERING_STATION);
         blockItemFromBlockModelMachine(ModBlocks.MIXER);
         blockItemFromBlockModelMachine(ModBlocks.DERRICK);
-        blockItemFromBlockModelMachine(ModBlocks.MACHINE_WELL);
         blockItemFromBlockModelMachine(ModBlocks.RBMK_CONSOLE);
         blockItemFromBlockModelMachine(ModBlocks.FLARE_STACK);
         blockItemFromBlockModelMachine(ModBlocks.PUMPJACK);

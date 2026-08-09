@@ -96,7 +96,7 @@ nicht kontrolliert zu haben.
 - [ ] MACHINE_DIFURNACE_RTG
 - [ ] MACHINE_TELEPORTER
 - [ ] TELEANCHOR
-- [x] MACHINE_RADAR ✅ (im Machinen-Tab)
+- ~~MACHINE_RADAR~~ ❌ gelöscht (2026-08-09, auf Wunsch) — Block+Registrierung+Textur komplett entfernt
 - [ ] MACHINE_FAN
 - [ ] MACHINE_DRAIN
 - [ ] MACHINE_TRANSFORMER
@@ -193,7 +193,7 @@ nicht kontrolliert zu haben.
 - [x] SOLDERING_STATION ✅ (im Machinen-Tab)
 - [ ] MIXER *(war schon vorher auskommentiert im Original-Machinen-Tab — evtl. bewusst kaputt/WIP, bitte extra prüfen)*
 - [x] DERRICK ✅ (im Machinen-Tab)
-- [ ] MACHINE_WELL
+- ~~MACHINE_WELL~~ ❌ gelöscht (2026-08-09, auf Wunsch) — war redundanter Steel-Block-Duplikat vom echten Oil Derrick (`DERRICK`), Block+BlockEntity+Menu+GUI+Registrierungen+Rezept+Textur-Model komplett entfernt, DERRICK selbst unangetastet
 - [ ] RBMK_CONSOLE *(Teil A: GUI wurde als "braucht Neuimplementierung" markiert, siehe gui-container-porting-roadmap.md)*
 - [ ] FLARE_STACK
 - [ ] PUMPJACK
