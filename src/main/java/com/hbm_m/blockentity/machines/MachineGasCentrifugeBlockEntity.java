@@ -185,19 +185,18 @@ public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity impl
         return isHighSpeed() ? PROCESSING_SPEED_HIGH : PROCESSING_SPEED;
     }
 
-    /** Reads the fluid-identifier item in the ID slot and (re)conforms {@link #tank} to it. */
+    /**
+     * Derives the pseudo-fluid stage directly from whatever real fluid is currently piped into
+     * {@link #tank} (UF6/PUF6/WATZ each map 1:1 to a starting stage, so there's no ambiguity to
+     * resolve). The fluid-identifier item in the ID slot is not needed for this - {@link #tank}
+     * auto-conforms to the first fluid it receives on its own.
+     */
     private void refreshTankTypeFromIdentifier() {
-        ItemStack idStack = inventory.getStackInSlot(SLOT_FLUID_ID);
-        Fluid newType = FluidIdentifierItem.resolvePrimaryForTank(idStack);
-        if (newType == null) return;
-
-        if (tank.getTankType() != newType) {
-            PseudoFluidType pseudo = PseudoFluidType.FLUID_CONVERSIONS.get(newType);
-            if (pseudo != null) {
-                inputTank.setTankType(pseudo);
-                outputTank.setTankType(pseudo.getOutputType());
-                tank.conform(newType);
-            }
+        Fluid realType = tank.getConfiguredFluid();
+        PseudoFluidType pseudo = PseudoFluidType.FLUID_CONVERSIONS.get(realType);
+        if (pseudo != null && inputTank.getTankType() != pseudo) {
+            inputTank.setTankType(pseudo);
+            outputTank.setTankType(pseudo.getOutputType());
         }
     }
 

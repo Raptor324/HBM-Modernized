@@ -1425,6 +1425,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM.get()));
         add.accept(new ItemStack(ModBlocks.SWITCH.get()));
         add.accept(new ItemStack(ModBlocks.GEIGER_COUNTER_BLOCK.get()));
+        add.accept(new ItemStack(ModBlocks.BROADCASTER_PC.get()));
         for (BlockAbsorber.EnumAbsorberTier tier : BlockAbsorber.EnumAbsorberTier.values()) {
             add.accept(BlockAbsorberItem.forTier(ModBlocks.RAD_ABSORBER.get(), tier));
         }
@@ -1667,7 +1668,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.BRICK_JUNGLE_OOZE.get()));
         add.accept(new ItemStack(ModBlocks.BRICK_JUNGLE_TRAP.get()));
         add.accept(new ItemStack(ModBlocks.BRICK_RED.get()));
-        add.accept(new ItemStack(ModBlocks.BROADCASTER_PC.get()));
         add.accept(new ItemStack(ModBlocks.CABLE_DETECTOR.get()));
         add.accept(new ItemStack(ModBlocks.CABLE_DIODE.get()));
         add.accept(new ItemStack(ModBlocks.CABLE_SWITCH.get()));
