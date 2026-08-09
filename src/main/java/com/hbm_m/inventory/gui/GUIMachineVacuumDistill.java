@@ -41,7 +41,7 @@ public class GUIMachineVacuumDistill extends GuiInfoScreen<MachineVacuumDistillM
 
         long power = be.getEnergyStored();
         long maxPower = Math.max(1L, be.getMaxEnergyStored());
-        int j = (int) (power * TANK_H / maxPower);
+        int j = (int) (power * 54 / maxPower);
         if (j > 0) {
             guiGraphics.blit(TEXTURE, leftPos + ENERGY_X, topPos + TANK_Y + TANK_H - j, 176, TANK_H - j, TANK_W, j);
         }

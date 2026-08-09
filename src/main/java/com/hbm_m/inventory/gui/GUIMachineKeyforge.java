@@ -20,7 +20,7 @@ public class GUIMachineKeyforge extends AbstractContainerScreen<MachineKeyforgeM
     public GUIMachineKeyforge(MachineKeyforgeMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
-        this.imageHeight = 184;
+        this.imageHeight = 186;
         this.inventoryLabelY = this.imageHeight - 96 + 2;
     }
 

@@ -23,7 +23,7 @@ public class GUIMachineCraneGrabber extends GuiInfoScreen<MachineCraneGrabberMen
     public GUIMachineCraneGrabber(MachineCraneGrabberMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.grabber = menu.getBlockEntity();
-        this.imageWidth = 212;
+        this.imageWidth = 176;
         this.imageHeight = 185;
     }
 
@@ -34,9 +34,9 @@ public class GUIMachineCraneGrabber extends GuiInfoScreen<MachineCraneGrabberMen
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
         if (grabber.isWhitelist()) {
-            guiGraphics.blit(TEXTURE, this.leftPos + 139, this.topPos + 33, 212, 18, 3, 6);
+            guiGraphics.blit(TEXTURE, this.leftPos + 108, this.topPos + 33, 176, 0, 3, 6);
         } else {
-            guiGraphics.blit(TEXTURE, this.leftPos + 139, this.topPos + 47, 212, 18, 3, 6);
+            guiGraphics.blit(TEXTURE, this.leftPos + 108, this.topPos + 47, 176, 0, 3, 6);
         }
     }
 
@@ -44,7 +44,7 @@ public class GUIMachineCraneGrabber extends GuiInfoScreen<MachineCraneGrabberMen
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         Component name = this.title;
         guiGraphics.drawString(this.font, name, this.imageWidth / 2 - this.font.width(name) / 2, 6, 0x404040, false);
-        guiGraphics.drawString(this.font, this.playerInventoryTitle, 26, this.imageHeight - 96 + 2, 0x404040, false);
+        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 0x404040, false);
     }
 
     @Override
@@ -76,7 +76,7 @@ public class GUIMachineCraneGrabber extends GuiInfoScreen<MachineCraneGrabberMen
             }
         }
 
-        if (isHovering(139, 33, 14, 26, (int) mouseX, (int) mouseY)) {
+        if (isHovering(97, 30, 14, 26, (int) mouseX, (int) mouseY)) {
             grabber.toggleWhitelist();
             return true;
         }

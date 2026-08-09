@@ -48,7 +48,7 @@ public class GUIMachineSolidifier extends GuiInfoScreen<MachineSolidifierMenu> {
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         Component title = this.title;
-        guiGraphics.drawString(this.font, title, this.imageWidth / 2 - this.font.width(title) / 2, 6, 0x404040, false);
+        guiGraphics.drawString(this.font, title, 70 - this.font.width(title) / 2, 6, 0xC7C1A3, false);
         guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 0x404040, false);
     }
 

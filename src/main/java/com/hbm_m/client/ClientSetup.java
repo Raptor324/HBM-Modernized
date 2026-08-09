@@ -502,6 +502,8 @@ public class ClientSetup {
         MenuScreens.register(ModMenuTypes.RBMK_STORAGE_MENU.get(), GUIRBMKStorage::new);
         MenuScreens.register(ModMenuTypes.RBMK_OUTGASSER_MENU.get(), GUIRBMKOutgasser::new);
         MenuScreens.register(ModMenuTypes.FLARE_STACK_MENU.get(), GUIMachineFlareStack::new);
+        MenuScreens.register(ModMenuTypes.OILBURNER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineOilburner::new);
+        MenuScreens.register(ModMenuTypes.HEATEX_MENU.get(), com.hbm_m.inventory.gui.GUIMachineHeatex::new);
         MenuScreens.register(ModMenuTypes.PUMPJACK_MENU.get(), GUIMachinePumpjack::new);
         MenuScreens.register(ModMenuTypes.RADAR_MENU.get(), GUIMachineRadarNT::new);
         MenuScreens.register(ModMenuTypes.RADAR_SLOTS_MENU.get(), GUIMachineRadarNTSlots::new);
@@ -520,7 +522,7 @@ public class ClientSetup {
         MenuScreens.register(ModMenuTypes.ARMOR_TABLE_MENU.get(), GUIArmorTable::new);
         MenuScreens.register(ModMenuTypes.MACHINE_ASSEMBLER_MENU.get(), GUIMachineAssembler::new);
         MenuScreens.register(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), GUIMachineAdvancedAssembler::new);
-        MenuScreens.register(ModMenuTypes.MACHINE_PRECASS_MENU.get(), GUIMachineAdvancedAssembler::new);
+        MenuScreens.register(ModMenuTypes.MACHINE_PRECASS_MENU.get(), com.hbm_m.inventory.gui.GUIMachinePrecAss::new);
         MenuScreens.register(ModMenuTypes.MACHINE_DIFURNACE_RTG_MENU.get(), com.hbm_m.inventory.gui.GUIMachineDifurnaceRtg::new);
         MenuScreens.register(ModMenuTypes.MACHINE_BATTERY_MENU.get(), GUIMachineBattery::new);
         MenuScreens.register(ModMenuTypes.BATTERY_SOCKET_MENU.get(), GUIBatterySocket::new);
@@ -539,6 +541,7 @@ public class ClientSetup {
         MenuScreens.register(ModMenuTypes.INDUSTRIAL_GENERATOR_MENU.get(), com.hbm_m.inventory.gui.GUIMachineIndustrialGenerator::new);
         MenuScreens.register(ModMenuTypes.DIESEL_GENERATOR_MENU.get(), com.hbm_m.inventory.gui.GUIMachineDieselGenerator::new);
         MenuScreens.register(ModMenuTypes.COMBUSTION_ENGINE_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCombustionEngine::new);
+        MenuScreens.register(ModMenuTypes.TURBOFAN_MENU.get(), com.hbm_m.inventory.gui.GUIMachineTurbofan::new);
         MenuScreens.register(ModMenuTypes.FUNNEL_MENU.get(), com.hbm_m.inventory.gui.GUIMachineFunnel::new);
         MenuScreens.register(ModMenuTypes.PUREX_MENU.get(), com.hbm_m.inventory.gui.GUIMachinePUREX::new);
         MenuScreens.register(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);

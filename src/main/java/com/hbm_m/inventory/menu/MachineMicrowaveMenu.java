@@ -79,8 +79,8 @@ public class MachineMicrowaveMenu extends AbstractContainerMenu {
         if (index < MACHINE_SLOTS) {
             if (!moveItemStackTo(stack, MACHINE_SLOTS, slots.size(), true)) return ItemStack.EMPTY;
         } else {
-            if (!moveItemStackTo(stack, MachineMicrowaveBlockEntity.SLOT_BATTERY, MachineMicrowaveBlockEntity.SLOT_BATTERY + 1, false)
-             && !moveItemStackTo(stack, MachineMicrowaveBlockEntity.SLOT_INPUT, MachineMicrowaveBlockEntity.SLOT_INPUT + 1, false))
+            if (!moveItemStackTo(stack, MachineMicrowaveBlockEntity.SLOT_INPUT, MachineMicrowaveBlockEntity.SLOT_INPUT + 1, false)
+             && !moveItemStackTo(stack, MachineMicrowaveBlockEntity.SLOT_BATTERY, MachineMicrowaveBlockEntity.SLOT_BATTERY + 1, false))
                 return ItemStack.EMPTY;
         }
 

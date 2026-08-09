@@ -4,11 +4,13 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.interfaces.IItemFluidIdentifier;
 import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.fluid.trait.FT_Combustible;
 import com.hbm_m.inventory.fluid.trait.FT_Combustible.FuelGrade;
+import com.hbm_m.inventory.menu.MachineTurbofanMenu;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -33,8 +35,22 @@ import net.minecraft.world.level.material.Fluid;
  * Ansaug-/Abgasstrahl-Entity-Interaktion (Feuer/Instant-Kill-Hazard-Mechanik), Blut-Partikel-Fluid,
  * Rauch-/Feuerpartikel, Sound, Verschmutzung (Pollution). Reine Energieerzeugung aus Treibstoff
  * bleibt 1:1 erhalten.
+ * <p>
+ * GUI/Menu-Slots (manuelle Entscheidung, siehe {@code MachineTurbofanMenu}): das Original hatte 5
+ * Slots (Treibstoff-Behaelter, Leer-Behaelter-Ausgabe, Upgrade, Batterie, Fluid-Identifier). Der
+ * Upgrade-Slot entfaellt (kein Upgrade-System an diesem Block, siehe oben), daher bleiben genau die
+ * 4 hier vorhandenen Slots uebrig: {@link #SLOT_FUEL_CONTAINER}, {@link #SLOT_EMPTY_CONTAINER},
+ * {@link #SLOT_BATTERY}, {@link #SLOT_FLUID_IDENTIFIER}. Nur der Batterie-Slot ist aktiv verdrahtet
+ * (wird pro Tick ueber {@code chargeItemInSlot} geladen, analog zum Combustion Engine). Behaelter-
+ * Befuellung/-Leerung (slot 0/1) und das erzwungene Setzen des Tank-Typs per Identifier-Item (slot 3)
+ * sind NICHT implementiert - der Tank wird ausschliesslich ueber das Fluid-Netz (Capability) befuellt.
  */
 public class MachineTurbofanBlockEntity extends BaseMachineBlockEntity {
+
+    public static final int SLOT_FUEL_CONTAINER = 0;
+    public static final int SLOT_EMPTY_CONTAINER = 1;
+    public static final int SLOT_BATTERY = 2;
+    public static final int SLOT_FLUID_IDENTIFIER = 3;
 
     private static final int TANK_CAPACITY_MB = 24_000;
     private static final int BASE_BURN_MB_PER_TICK = 1;
@@ -58,6 +74,8 @@ public class MachineTurbofanBlockEntity extends BaseMachineBlockEntity {
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineTurbofanBlockEntity be) {
         if (level.isClientSide()) return;
+
+        be.chargeItemInSlot(SLOT_BATTERY);
 
         Fluid fuel = be.tank.getStoredFluid();
         FT_Combustible combustible = FluidType.getTrait(fuel, FT_Combustible.class);
@@ -105,7 +123,7 @@ public class MachineTurbofanBlockEntity extends BaseMachineBlockEntity {
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
-        return null;
+        return new MachineTurbofanMenu(id, inv, this);
     }
 
     @Override
@@ -115,6 +133,9 @@ public class MachineTurbofanBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
+        if (slot == SLOT_BATTERY) return isEnergyReceiverItem(stack);
+        if (slot == SLOT_FLUID_IDENTIFIER) return stack.getItem() instanceof IItemFluidIdentifier;
+        if (slot == SLOT_FUEL_CONTAINER) return true;
         return false;
     }
 }

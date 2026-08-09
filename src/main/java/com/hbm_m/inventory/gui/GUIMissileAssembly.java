@@ -28,7 +28,7 @@ public class GUIMissileAssembly extends AbstractContainerScreen<MissileAssemblyM
         super.init();
         this.titleLabelX = this.imageWidth / 2 - this.font.width(this.title) / 2;
         this.titleLabelY = 6;
-        this.inventoryLabelY = this.imageHeight - 96;
+        this.inventoryLabelY = this.imageHeight - 96 + 2;
     }
 
     @Override

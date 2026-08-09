@@ -63,7 +63,8 @@ public class GUIMachineSolderingStation extends GuiInfoScreen<MachineSolderingSt
     @Override
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
         Component title = this.title;
-        g.drawString(font, title, imageWidth / 2 - font.width(title) / 2, 6, 0x404040, false);
+        // Original: xSize / 2 - width / 2 - 18 (offset to make room for the fluid tank icon)
+        g.drawString(font, title, imageWidth / 2 - font.width(title) / 2 - 18, 6, 0x404040, false);
         g.drawString(font, playerInventoryTitle, 8, imageHeight - 96 + 2, 0x404040, false);
     }
 

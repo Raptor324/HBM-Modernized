@@ -49,6 +49,7 @@ public class MachineOilburnerBlockEntity extends BaseMachineBlockEntity implemen
 
     private int setting = 1;
     private int heat = 0;
+    private boolean burning = false;
 
     public MachineOilburnerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.OILBURNER_BE.get(), pos, state, 0, 0L, 0L, 0L);
@@ -103,11 +104,13 @@ public class MachineOilburnerBlockEntity extends BaseMachineBlockEntity implemen
         boolean powered = level.hasNeighborSignal(pos);
         FT_Flammable trait = FluidType.getTrait(oilTank.getStoredFluid(), FT_Flammable.class);
 
+        boolean burnedThisTick = false;
         if (powered && trait != null && heat < MAX_HEAT) {
             int burned = Math.min(setting * burnMultiplier, oilTank.getFluidAmountMb());
             if (burned > 0) {
                 oilTank.drainMb(burned);
                 heat = Math.min(MAX_HEAT, heat + (int) (trait.getHeatEnergy() / 1000L) * burned);
+                burnedThisTick = true;
             } else {
                 decayHeat();
             }
@@ -115,7 +118,10 @@ public class MachineOilburnerBlockEntity extends BaseMachineBlockEntity implemen
             decayHeat();
         }
 
+        this.burning = burnedThisTick;
+
         setChanged();
+        sendUpdateToClient();
     }
 
     private void decayHeat() {
@@ -129,6 +135,11 @@ public class MachineOilburnerBlockEntity extends BaseMachineBlockEntity implemen
 
     public int getSetting() {
         return setting;
+    }
+
+    /** True while the burner actually consumed oil and produced heat on the last server tick. */
+    public boolean isBurning() {
+        return burning;
     }
 
     @Override
@@ -164,7 +175,7 @@ public class MachineOilburnerBlockEntity extends BaseMachineBlockEntity implemen
 
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
-        return null;
+        return com.hbm_m.inventory.menu.MachineOilburnerMenu.create(id, inventory, this);
     }
 
     @Override
@@ -172,6 +183,7 @@ public class MachineOilburnerBlockEntity extends BaseMachineBlockEntity implemen
         super.saveAdditional(tag);
         tag.putInt("setting", setting);
         tag.putInt("heat", heat);
+        tag.putBoolean("burning", burning);
         tag.put("oilTank", oilTank.writeNBT(new CompoundTag()));
     }
 
@@ -180,6 +192,7 @@ public class MachineOilburnerBlockEntity extends BaseMachineBlockEntity implemen
         super.load(tag);
         setting = tag.contains("setting") ? tag.getInt("setting") : 1;
         heat = tag.getInt("heat");
+        burning = tag.getBoolean("burning");
         if (tag.contains("oilTank")) oilTank.readNBT(tag.getCompound("oilTank"));
     }
 }

@@ -33,18 +33,19 @@ public class GUIMachineExposureChamber extends AbstractContainerScreen<MachineEx
         int y = topPos;
         guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
 
-        int progress = blockEntity.getProgressScaled(24);
+        int progress = blockEntity.getProgressScaled(42);
         if (progress > 0) {
-            guiGraphics.fill(x + 96, y + 40, x + 96 + progress, y + 48, 0xFFC0C0C0);
+            guiGraphics.fill(x + 36, y + 39, x + 36 + progress, y + 49, 0xFFC0C0C0);
         }
 
         int particles = blockEntity.getParticlesScaled(16);
         if (particles > 0) {
-            guiGraphics.fill(x + 26, y + 34 - particles, x + 36, y + 34, 0xFF30D0FF);
+            guiGraphics.fill(x + 26, y + 52 - particles, x + 35, y + 52, 0xFF30D0FF);
         }
 
-        if (blockEntity.getEnergyStored() > 0) {
-            guiGraphics.fill(x + 156, y + 46, x + 168, y + 78, 0xFF3080FF);
+        int energy = blockEntity.getEnergyScaled(34);
+        if (energy > 0) {
+            guiGraphics.fill(x + 152, y + 52 - energy, x + 168, y + 52, 0xFF3080FF);
         }
     }
 

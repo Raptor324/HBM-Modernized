@@ -30,7 +30,7 @@ public class GUIArmorTable extends AbstractContainerScreen<ArmorTableMenu> {
 
 
     private static final int SIDE_PANEL_WIDTH = 22;
-    private static final int SIDE_PANEL_HEIGHT = 80;
+    private static final int SIDE_PANEL_HEIGHT = 100;
     private static final int SIDE_PANEL_U = 176;
     private static final int SIDE_PANEL_V = 96;
 

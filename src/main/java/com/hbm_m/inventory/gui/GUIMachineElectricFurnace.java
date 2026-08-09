@@ -31,9 +31,9 @@ public class GUIMachineElectricFurnace extends AbstractContainerScreen<MachineEl
         // Fortschritts-/Energieanzeige als einfache Fuellrechtecke: die genaue Sprite-Anordnung
         // der (aus dem Original uebernommenen) GUI-Textur ist unbekannt, ein blit() von geratenen
         // Koordinaten wuerde falsche Bildausschnitte zeigen. Rechtecke sind immer korrekt.
-        int cookProgress = menu.getCookProgressScaled(24);
+        int cookProgress = menu.getCookProgressScaled(28);
         if (cookProgress > 0) {
-            guiGraphics.fill(x + 44, y + 39, x + 44 + cookProgress, y + 47, 0xFFC0C0C0);
+            guiGraphics.fill(x + 43, y + 36, x + 43 + cookProgress, y + 48, 0xFFC0C0C0);
         }
 
         if (menu.hasPower()) {

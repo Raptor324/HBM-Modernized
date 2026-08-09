@@ -30,19 +30,21 @@ public class GUIMachineFurnaceSteel extends AbstractContainerScreen<MachineFurna
         int y = topPos;
         guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
 
-        // Fortschritts-/Brennstoffanzeigen als einfache Fuellrechtecke: die genaue Sprite-Anordnung
-        // der (bereits vorhandenen) GUI-Textur ist unbekannt, ein blit() von geratenen Koordinaten
-        // wuerde falsche Bildausschnitte zeigen. Rechtecke sind immer korrekt, unabhaengig davon.
+        // Fuellstand des Brennstoffs: das Original hatte keine Brennstoff-Slots (reine
+        // Waermequelle mit vertikalem Heat-Balken bei 152,18); dieser Port nutzt eigene
+        // Brennstoff-Slots (siehe MachineFurnaceSteelMenu), daher gibt es keine 1:1-Textur-UV
+        // dafuer - Fuellrechteck bleibt als Behelfsanzeige bestehen.
         if (menu.isLit()) {
             int fuelHeight = menu.getBurnProgressScaled(14);
             guiGraphics.fill(x + 80, y + 39 - fuelHeight, x + 94, y + 39, 0xFFE04B10);
         }
 
+        // Pro-Spur-Fortschrittsbalken 1:1 aus GUIFurnaceSteel (1.7.10 Original) uebernommen:
+        // Position (54, 18+18*i), UV (176,18), Hoehe 5.
         for (int lane = 0; lane < 3; lane++) {
-            int laneY = 17 + lane * 18;
-            int cookProgress = menu.getCookProgressScaled(lane, 24);
-            if (cookProgress > 0) {
-                guiGraphics.fill(x + 60, y + laneY + 2, x + 60 + cookProgress, y + laneY + 10, 0xFFC0C0C0);
+            int p = menu.getCookProgressScaled(lane, 69);
+            if (p > 0) {
+                guiGraphics.blit(TEXTURE, x + 54, y + 18 + 18 * lane, 176, 18, p, 5);
             }
         }
     }

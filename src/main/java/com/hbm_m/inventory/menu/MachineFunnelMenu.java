@@ -33,10 +33,10 @@ public class MachineFunnelMenu extends AbstractContainerMenu {
         var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
 
         for (int i = 0; i < SLOT_PAIRS; i++) {
-            this.addSlot(new Slot(container, i, 26 + i * 16, 18));
+            this.addSlot(new Slot(container, i, 8 + i * 18, 18));
         }
         for (int i = 0; i < SLOT_PAIRS; i++) {
-            this.addSlot(new Slot(container, SLOT_PAIRS + i, 26 + i * 16, 54) {
+            this.addSlot(new Slot(container, SLOT_PAIRS + i, 8 + i * 18, 54) {
                 @Override
                 public boolean mayPlace(ItemStack stack) {
                     return false; // Nur Entnahme - wird von der Maschine befuellt.
@@ -45,13 +45,13 @@ public class MachineFunnelMenu extends AbstractContainerMenu {
         }
 
         int playerInvX = 8;
-        int playerInvY = 84;
+        int playerInvY = 86;
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 this.addSlot(new Slot(inventory, col + row * 9 + 9, playerInvX + col * 18, playerInvY + row * 18));
             }
         }
-        int hotbarY = playerInvY + 58;
+        int hotbarY = 144;
         for (int col = 0; col < 9; col++) {
             this.addSlot(new Slot(inventory, col, playerInvX + col * 18, hotbarY));
         }

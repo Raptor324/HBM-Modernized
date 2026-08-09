@@ -88,7 +88,7 @@ public class GUIMachineCraneExtractor extends GuiInfoScreen<MachineCraneExtracto
             extractor.toggleMaxEject();
             return true;
         }
-        if (isHovering(139, 33, 14, 26, (int) mouseX, (int) mouseY)) {
+        if (isHovering(128, 30, 14, 26, (int) mouseX, (int) mouseY)) {
             extractor.toggleWhitelist();
             return true;
         }

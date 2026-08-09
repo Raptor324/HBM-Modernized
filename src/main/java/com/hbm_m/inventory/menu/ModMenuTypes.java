@@ -41,7 +41,7 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<MachineDifurnaceRtgMenu>> MACHINE_DIFURNACE_RTG_MENU =
             MENUS.register("machine_difurnace_rtg_menu", () -> MenuRegistry.ofExtended(MachineDifurnaceRtgMenu::new));
 
-    public static final RegistrySupplier<MenuType<MachineAdvancedAssemblerMenu>> MACHINE_PRECASS_MENU =
+    public static final RegistrySupplier<MenuType<MachinePrecAssMenu>> MACHINE_PRECASS_MENU =
             MENUS.register("machine_precass_menu", () -> MenuRegistry.ofExtended(MachinePrecAssMenu::new));
 
     public static final RegistrySupplier<MenuType<MachineBatteryMenu>> MACHINE_BATTERY_MENU =
@@ -262,6 +262,15 @@ public class ModMenuTypes {
 
     public static final RegistrySupplier<MenuType<MachineFlareStackMenu>> FLARE_STACK_MENU =
             MENUS.register("flare_stack_menu", () -> MenuRegistry.ofExtended(MachineFlareStackMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineOilburnerMenu>> OILBURNER_MENU =
+            MENUS.register("oilburner_menu", () -> MenuRegistry.ofExtended(MachineOilburnerMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineTurbofanMenu>> TURBOFAN_MENU =
+            MENUS.register("turbofan_menu", () -> MenuRegistry.ofExtended(MachineTurbofanMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineHeatexMenu>> HEATEX_MENU =
+            MENUS.register("heatex_menu", () -> MenuRegistry.ofExtended(MachineHeatexMenu::new));
 
     public static final RegistrySupplier<MenuType<MachinePumpjackMenu>> PUMPJACK_MENU =
             MENUS.register("pumpjack_menu", () -> MenuRegistry.ofExtended(MachinePumpjackMenu::new));

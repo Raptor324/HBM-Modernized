@@ -38,7 +38,7 @@ public class MachineCraneGrabberMenu extends AbstractContainerMenu {
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 3; col++) {
                 int filterIndex = col + row * 3 + FILTER_START;
-                this.addSlot(new Slot(container, filterIndex, 71 + col * 18, 17 + row * 18) {
+                this.addSlot(new Slot(container, filterIndex, 40 + col * 18, 17 + row * 18) {
                     @Override
                     public void set(ItemStack stack) {
                         super.set(stack);
@@ -48,13 +48,13 @@ public class MachineCraneGrabberMenu extends AbstractContainerMenu {
             }
         }
 
-        this.addSlot(new Slot(container, SLOT_UPGRADE_STACK, 152, 23) {
+        this.addSlot(new Slot(container, SLOT_UPGRADE_STACK, 121, 23) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return stack.getItem() instanceof ItemMachineUpgrade up && up.getUpgradeType() == ItemMachineUpgrade.UpgradeType.STACK;
             }
         });
-        this.addSlot(new Slot(container, SLOT_UPGRADE_EJECTOR, 152, 47) {
+        this.addSlot(new Slot(container, SLOT_UPGRADE_EJECTOR, 121, 47) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return stack.getItem() instanceof ItemMachineUpgrade up && up.getUpgradeType() == ItemMachineUpgrade.UpgradeType.EJECTOR;
@@ -63,11 +63,11 @@ public class MachineCraneGrabberMenu extends AbstractContainerMenu {
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, 26 + col * 18, 103 + row * 18));
+                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 103 + row * 18));
             }
         }
         for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(inventory, col, 26 + col * 18, 161));
+            this.addSlot(new Slot(inventory, col, 8 + col * 18, 161));
         }
     }
 

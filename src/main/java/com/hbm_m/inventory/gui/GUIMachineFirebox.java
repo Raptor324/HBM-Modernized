@@ -24,7 +24,7 @@ public class GUIMachineFirebox extends AbstractContainerScreen<MachineFireboxMen
         super(menu, playerInventory, title);
         this.firebox = menu.getBlockEntity();
         this.imageWidth = 176;
-        this.imageHeight = 166;
+        this.imageHeight = 168;
         this.inventoryLabelY = this.imageHeight - 96 + 2;
     }
 

@@ -131,6 +131,12 @@ public class MachineExposureChamberBlockEntity extends BaseMachineBlockEntity {
         return savedParticles * scale / MAX_PARTICLES;
     }
 
+    public int getEnergyScaled(int scale) {
+        long max = getMaxEnergyStored();
+        if (max <= 0) return 0;
+        return (int) (getEnergyStored() * scale / max);
+    }
+
     // ==================== NBT ====================
 
     @Override

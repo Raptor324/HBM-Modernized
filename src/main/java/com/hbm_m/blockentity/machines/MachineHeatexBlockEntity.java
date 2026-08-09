@@ -10,6 +10,7 @@ import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.fluid.trait.FT_Coolable;
 import com.hbm_m.inventory.fluid.trait.FT_Coolable.CoolingType;
+import com.hbm_m.inventory.menu.MachineHeatexMenu;
 import com.hbm_m.interfaces.IHeatSource;
 
 import net.minecraft.core.BlockPos;
@@ -158,7 +159,7 @@ public class MachineHeatexBlockEntity extends BaseMachineBlockEntity implements 
 
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
-        return null;
+        return MachineHeatexMenu.create(id, inventory, this);
     }
 
     @Override

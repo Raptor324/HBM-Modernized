@@ -24,7 +24,7 @@ public class GUIMachineMassStorage extends AbstractContainerScreen<MachineMassSt
         super(menu, playerInventory, title);
         this.massStorage = menu.getBlockEntity();
         this.imageWidth = 176;
-        this.imageHeight = 202;
+        this.imageHeight = 221;
         this.inventoryLabelY = this.imageHeight - 96 + 2;
     }
 

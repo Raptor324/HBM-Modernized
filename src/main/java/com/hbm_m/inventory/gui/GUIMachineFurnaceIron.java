@@ -28,17 +28,15 @@ public class GUIMachineFurnaceIron extends AbstractContainerScreen<MachineFurnac
         int y = topPos;
         guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
 
-        // Fortschritts-/Brennstoffanzeigen als einfache Fuellrechtecke: die genaue Sprite-Anordnung
-        // der (bereits vorhandenen) GUI-Textur ist unbekannt, ein blit() von geratenen Koordinaten
-        // wuerde falsche Bildausschnitte zeigen. Rechtecke sind immer korrekt, unabhaengig davon.
-        if (menu.isLit()) {
-            int fuelHeight = menu.getBurnProgressScaled(14);
-            guiGraphics.fill(x + 56, y + 69 - fuelHeight, x + 70, y + 69, 0xFFE04B10);
+        // UV-Koordinaten und Rechtecke 1:1 aus GUIFurnaceIron (1.7.10 Original) uebernommen.
+        int i = menu.getCookProgressScaled(70);
+        if (i > 0) {
+            guiGraphics.blit(TEXTURE, x + 53, y + 36, 176, 18, i, 5);
         }
 
-        int cookProgress = menu.getCookProgressScaled(24);
-        if (cookProgress > 0) {
-            guiGraphics.fill(x + 92, y + 36, x + 92 + cookProgress, y + 44, 0xFFC0C0C0);
+        int j = menu.getBurnProgressScaled(70);
+        if (j > 0) {
+            guiGraphics.blit(TEXTURE, x + 53, y + 45, 176, 23, j, 5);
         }
     }
 
