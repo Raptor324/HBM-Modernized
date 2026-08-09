@@ -618,6 +618,36 @@
       "hbm_m:block/switch_on"
     ]
   },
+  "block.broadcast1": {
+    "category": "block",
+    "subtitle": "sounds.hbm_m.subtitle.broadcast",
+    "sounds": [
+      "hbm_m:broadcast1"
+    ]
+  },
+  "block.broadcast2": {
+    "category": "block",
+    "subtitle": "sounds.hbm_m.subtitle.broadcast",
+    "sounds": [
+      "hbm_m:broadcast2"
+    ]
+  },
+  "block.broadcast3": {
+    "category": "block",
+    "subtitle": "sounds.hbm_m.subtitle.broadcast",
+    "sounds": [
+      "hbm_m:broadcast3"
+    ]
+  },
+  "block.broadcast_random": {
+    "category": "block",
+    "subtitle": "sounds.hbm_m.subtitle.broadcast",
+    "sounds": [
+      "hbm_m:broadcast1",
+      "hbm_m:broadcast2",
+      "hbm_m:broadcast3"
+    ]
+  },
   "step.powered": {
     "category": "player",
     "sounds": [

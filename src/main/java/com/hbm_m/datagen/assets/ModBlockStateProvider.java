@@ -389,10 +389,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/block_steel_machine")
                 ));
 
-        simpleBlockWithItem(ModBlocks.BROADCASTER.get(),
-                models().cubeAll(ModBlocks.BROADCASTER.getId().getPath(),
-                        modLoc("block/broadcaster")));
-
         simpleBlockWithItem(ModBlocks.BARBED_WIRE.get(),
                 models().cubeAll(ModBlocks.BARBED_WIRE.getId().getPath(),
                                 blockTexture(ModBlocks.BARBED_WIRE.get()))
@@ -1590,12 +1586,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/brick_red_top")
                 )
         );
-        simpleBlockWithItem(ModBlocks.BROADCASTER_PC.get(),
-                models().cubeAll(
-                        ModBlocks.BROADCASTER_PC.getId().getPath(),
-                        modLoc("block/broadcaster_pc")
-                )
-        );
+        simpleBlock(ModBlocks.BROADCASTER_PC.get(),
+                models().getExistingFile(modLoc("block/machines/broadcaster_pc")));
+        simpleBlockItem(ModBlocks.BROADCASTER_PC.get(),
+                models().getExistingFile(modLoc("block/machines/broadcaster_pc")));
         simpleBlockWithItem(ModBlocks.CABLE_DETECTOR.get(),
                 models().cubeAll(
                         ModBlocks.CABLE_DETECTOR.getId().getPath(),

@@ -790,9 +790,6 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> MACHINE_SIREN = registerBlock("machine_siren",
             () -> new com.hbm_m.block.machines.MachineSirenBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0F, 10.0F).noOcclusion()));
 
-    public static final RegistrySupplier<Block> BROADCASTER = registerBlock("broadcaster",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0F, 10.0F).requiresCorrectToolForDrops()));
-
     public static final RegistrySupplier<Block> CRATE = registerBlock("crate",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.OAK_WOOD).strength(1.0f, 1.0f).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> CRATE_LEAD = registerBlock("crate_lead",

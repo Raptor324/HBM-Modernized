@@ -125,6 +125,12 @@ public class ModSounds {
 
     public static final RegistrySupplier<SoundEvent> SWITCH_ON = registerSoundEvents("block.switch.on");
 
+    // Broadcaster ambient loop - Minecraft picks one of the 3 variants at random each play.
+    public static final RegistrySupplier<SoundEvent> BROADCAST1 = registerSoundEvents("block.broadcast1");
+    public static final RegistrySupplier<SoundEvent> BROADCAST2 = registerSoundEvents("block.broadcast2");
+    public static final RegistrySupplier<SoundEvent> BROADCAST3 = registerSoundEvents("block.broadcast3");
+    public static final RegistrySupplier<SoundEvent> BROADCAST_RANDOM = registerSoundEvents("block.broadcast_random");
+
     // РЕГИСТРАЦИЯ АБСТРАКТНОГО СОБЫТИЯ 
     // Это тот самый звук, который мы будем вызывать в коде.
     // Minecraft сам выберет один из 7 реальных звуков случайным образом.

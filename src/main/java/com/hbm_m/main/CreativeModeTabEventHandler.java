@@ -1441,7 +1441,6 @@ public final class CreativeModeTabEventHandler {
     /** Временная вкладка для новых, ещё не отсортированных предметов/блоков. */
     public static void populateDevItemsTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
         Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
-        add.accept(new ItemStack(ModBlocks.BROADCASTER.get()));
 
         add.accept(new ItemStack(ModBlocks.BARREL_CORRODED.get()));
         add.accept(new ItemStack(ModBlocks.BARREL_TCALLOY.get()));

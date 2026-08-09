@@ -215,7 +215,7 @@ public class ModCreativeTabs {
 
                     .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_dev_tab"))
 
-                    .icon(() -> new ItemStack(ModBlocks.BROADCASTER.get()))
+                    .icon(() -> new ItemStack(ModBlocks.BROADCASTER_PC.get()))
 
                     .displayItems((params, output) -> CreativeModeTabEventHandler.populateDevItemsTab(output::accept))
 

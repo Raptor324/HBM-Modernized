@@ -2,6 +2,8 @@ package com.hbm_m.blockentity.machines;
 
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.damagesource.ModDamageSources;
+import com.hbm_m.sound.BroadcastSoundInstance;
+import com.hbm_m.sound.ClientSoundBootstrap;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -15,12 +17,10 @@ import net.minecraft.world.phys.AABB;
 /**
  * Port of {@code TileEntityBroadcaster} (1.7.10 Original) - "Corrupted Broadcaster". Purely
  * environmental hazard prop, no GUI/inventory: every tick it scans a radius around itself and
- * applies nausea within 25 blocks, plus scaling damage within 15 blocks.
- * <p>
- * SCOPE-Vereinfachung: Das Original spawnt zusaetzlich als Weltgenerierungs-Struktur (gesteuert per
- * {@code WorldConfig.broadcaster}-Chance) und spielt einen positionsabhaengigen Ambient-Sound-Loop
- * clientseitig ab. Beides entfaellt hier - der Kernmechanismus (Konfusion/Schaden im Umkreis) bleibt
- * vollstaendig erhalten.
+ * applies nausea within 25 blocks, plus scaling damage within 15 blocks. Additionally plays a
+ * permanent, client-side looping ambient sound (one of 3 variants, picked randomly per block/load)
+ * for as long as the block exists and is loaded, using the same looping-sound infrastructure as
+ * the other machines ({@link com.hbm_m.sound.ClientSoundManager}).
  */
 public class BroadcasterPcBlockEntity extends BlockEntity {
 
@@ -34,7 +34,10 @@ public class BroadcasterPcBlockEntity extends BlockEntity {
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, BroadcasterPcBlockEntity be) {
-        if (level.isClientSide) return;
+        if (level.isClientSide) {
+            ClientSoundBootstrap.updateSound(be, true, () -> new BroadcastSoundInstance(pos));
+            return;
+        }
 
         AABB box = new AABB(pos).inflate(CONFUSION_RADIUS);
         double cx = pos.getX() + 0.5D, cy = pos.getY() + 0.5D, cz = pos.getZ() + 0.5D;
@@ -53,6 +56,14 @@ public class BroadcasterPcBlockEntity extends BlockEntity {
                     entity.hurt(ModDamageSources.broadcast(level), damage);
                 }
             }
+        }
+    }
+
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        if (level != null && level.isClientSide) {
+            ClientSoundBootstrap.stopSound(level, worldPosition);
         }
     }
 }
