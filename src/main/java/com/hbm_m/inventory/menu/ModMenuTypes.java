@@ -263,6 +263,12 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<MachineFlareStackMenu>> FLARE_STACK_MENU =
             MENUS.register("flare_stack_menu", () -> MenuRegistry.ofExtended(MachineFlareStackMenu::new));
 
+    public static final RegistrySupplier<MenuType<MachineCoreReceiverMenu>> CORE_RECEIVER_MENU =
+            MENUS.register("core_receiver_menu", () -> MenuRegistry.ofExtended(MachineCoreReceiverMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineCoreEmitterMenu>> CORE_EMITTER_MENU =
+            MENUS.register("core_emitter_menu", () -> MenuRegistry.ofExtended(MachineCoreEmitterMenu::new));
+
     public static final RegistrySupplier<MenuType<MachineOilburnerMenu>> OILBURNER_MENU =
             MENUS.register("oilburner_menu", () -> MenuRegistry.ofExtended(MachineOilburnerMenu::new));
 
@@ -334,14 +340,23 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<RBMKControlMenu>> RBMK_CONTROL_MENU =
             MENUS.register("rbmk_control_menu", () -> MenuRegistry.ofExtended(RBMKControlMenu::new));
 
+    public static final RegistrySupplier<MenuType<RBMKControlAutoMenu>> RBMK_CONTROL_AUTO_MENU =
+            MENUS.register("rbmk_control_auto_menu", () -> MenuRegistry.ofExtended(RBMKControlAutoMenu::new));
+
     public static final RegistrySupplier<MenuType<RBMKBoilerMenu>> RBMK_BOILER_MENU =
             MENUS.register("rbmk_boiler_menu", () -> MenuRegistry.ofExtended(RBMKBoilerMenu::new));
+
+    public static final RegistrySupplier<MenuType<RBMKHeaterMenu>> RBMK_HEATER_MENU =
+            MENUS.register("rbmk_heater_menu", () -> MenuRegistry.ofExtended(RBMKHeaterMenu::new));
 
     public static final RegistrySupplier<MenuType<RBMKStorageMenu>> RBMK_STORAGE_MENU =
             MENUS.register("rbmk_storage_menu", () -> MenuRegistry.ofExtended(RBMKStorageMenu::new));
 
     public static final RegistrySupplier<MenuType<RBMKOutgasserMenu>> RBMK_OUTGASSER_MENU =
             MENUS.register("rbmk_outgasser_menu", () -> MenuRegistry.ofExtended(RBMKOutgasserMenu::new));
+
+    public static final RegistrySupplier<MenuType<RBMKAutoloaderMenu>> RBMK_AUTOLOADER_MENU =
+            MENUS.register("rbmk_autoloader_menu", () -> MenuRegistry.ofExtended(RBMKAutoloaderMenu::new));
 
     /** Ein gemeinsamer MenuType fuer alle Turret-Varianten - siehe {@link TurretMenu}. */
     public static final RegistrySupplier<MenuType<TurretMenu>> TURRET_MENU =
@@ -355,6 +370,9 @@ public class ModMenuTypes {
 
     public static final RegistrySupplier<MenuType<MachineHydrotreaterMenu>> HYDROTREATER_MENU =
             MENUS.register("hydrotreater_menu", () -> MenuRegistry.ofExtended(MachineHydrotreaterMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineCoreInjectorMenu>> CORE_INJECTOR_MENU =
+            MENUS.register("core_injector_menu", () -> MenuRegistry.ofExtended(MachineCoreInjectorMenu::new));
 
     public static final RegistrySupplier<MenuType<MachineCatalyticReformerMenu>> CATALYTIC_REFORMER_MENU =
             MENUS.register("catalytic_reformer_menu", () -> MenuRegistry.ofExtended(MachineCatalyticReformerMenu::new));

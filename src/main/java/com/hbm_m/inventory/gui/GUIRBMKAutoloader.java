@@ -1,7 +1,6 @@
 package com.hbm_m.inventory.gui;
 
-import com.hbm_m.blockentity.machines.rbmk.RBMKStorageBlockEntity;
-import com.hbm_m.inventory.menu.RBMKStorageMenu;
+import com.hbm_m.inventory.menu.RBMKAutoloaderMenu;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -11,19 +10,20 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
-/** Port of {@code GUIRBMKStorage} (1.7.10 Original). */
-public class GUIRBMKStorage extends GuiInfoScreen<RBMKStorageMenu> {
+/** Port of {@code GUIRBMKAutoloader} (1.7.10 Original). */
+public class GUIRBMKAutoloader extends GuiInfoScreen<RBMKAutoloaderMenu> {
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/reactors/gui_rbmk_storage.png");
+            //? if fabric && < 1.21.1 {
+            /*new ResourceLocation(RefStrings.MODID, "textures/gui/machine/gui_autoloader.png");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/machine/gui_autoloader.png");
+            //?}
 
-    private final RBMKStorageBlockEntity be;
-
-    public GUIRBMKStorage(RBMKStorageMenu menu, Inventory inv, Component title) {
+    public GUIRBMKAutoloader(RBMKAutoloaderMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
-        this.be = menu.getBlockEntity();
         this.imageWidth  = 176;
-        this.imageHeight = 186;
+        this.imageHeight = 182;
         this.inventoryLabelY = this.imageHeight - 96 + 2;
     }
 
@@ -33,16 +33,13 @@ public class GUIRBMKStorage extends GuiInfoScreen<RBMKStorageMenu> {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
         // Item icons are rendered automatically by AbstractContainerScreen using the
-        // Menu's real slot positions (32 + 32*j, 29 + 16*i) - no manual icon drawing needed here.
+        // Menu's real slot positions (17 + 18*col, 18 + 18*row) - no manual icon drawing needed here.
     }
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
-
-        guiGraphics.drawString(this.font, String.format("Heat: %.1f°C", be.heat), leftPos + 8, topPos + 6, 0x990000, false);
-
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
 }

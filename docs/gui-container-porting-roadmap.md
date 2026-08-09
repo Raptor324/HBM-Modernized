@@ -115,12 +115,14 @@ Status-Legende: ✅ = geprüft, war bereits/ist jetzt 1:1 korrekt · 🔧 = Zahl
 - [x] GUINukePrototype — ✅
 - [x] GUIOreSlopper → GUIMachineOreSlopper — ⚠️ andere Slot-Anzahl/-Position
 - [x] GUIPyroOven → GUIMachinePyroOven — ✅ vorbildlicher 1:1-Port
-- [x] GUIRBMKBoiler — 🛑 komplett andere Architektur (texturlos statt Textur-GUI)
-- [x] GUIRBMKConsole → GUIMachineRbmkConsole — 🛑 andere Enum-Struktur für Mini-Screens, keine reine Zahlenkorrektur möglich
-- [x] GUIRBMKControl — 🛑 komplett andere Architektur (Flat-Fill statt Textur-Gauges)
-- [x] GUIRBMKOutgasser — 🛑 1 statt 2 Slots, kein Balken-Rendering
-- [x] GUIRBMKRod — 🛑 kein Player-Inventar im Menu, kein Balken-Rendering
-- [x] GUIRBMKStorage — 🛑 Slot-Grid 3×4 (Original) vs. 2×6 (Mod), zusätzlich interner Rendering-Bug gefunden (Icons nicht an Menu-Slots ausgerichtet)
+- [x] GUIRBMKBoiler — ✅ neu gebaut (2026-08-09): echte Textur `gui_rbmk_boiler.png` genutzt, Wasser-/Dampf-Füllstand + Steam-Grade-Anzeige 1:1 restauriert, Spieler-Inventar-Slot-Verschiebung (~20px) behoben.
+- [x] GUIRBMKConsole → GUIMachineRbmkConsole — ✅ neu gebaut: Textur war schon vorhanden, aber mit **falschen UV-Koordinaten** (Boiler/Moderator/Absorber/Reflector/Cooler/Heater/Outgasser/Storage zeigten alle die falsche Sprite) — korrigiert; Heater-Overlay ergänzt. Mini-Screen-Icons (18px-Reihe) bleiben architekturbedingt limitiert (anderes Datenmodell `ColumnType` statt Original-`ScreenType`), zeigen jetzt zumindest gültige statt zufällige Icons.
+- [x] GUIRBMKControl — ✅ neu gebaut: echte Textur `gui_rbmk_control.png`, Rod-Level-Balken + Farbgruppen-Marker 1:1 restauriert, Klick-Regionen statt Original-Drag (dokumentierte Vereinfachung). Power-Icon nicht restaurierbar (BlockEntity hat kein power-Feld).
+- [x] GUIRBMKOutgasser — ✅ neu gebaut: echte Textur, Slot auf Original-Position verschoben. Balken zeigen mangels echter Progress-/Fluid-Daten stattdessen Xenon-Vergiftung% bzw. Heizwert (dokumentierter Kompromiss).
+- [x] GUIRBMKRod — ✅ neu gebaut: echte Textur, Depletion-/Xenon-Balken mit echten Live-Werten. **Bug behoben:** Spieler-Inventar fehlte komplett im Menu (war nie erreichbar) — jetzt ergänzt inkl. Hitze-Sicherheitssperre beim Entnehmen zu heißer Stäbe.
+- [x] GUIRBMKStorage — ✅ neu gebaut: Slot-Grid von 2×6 auf Original-3×4 umgestellt (Textur ist fest für 3×4 gezeichnet), damit behoben: Icons waren vorher nicht an den echten Slot-Positionen ausgerichtet.
+
+Build-Status RBMK-Rebuild: `./gradlew compileJava` → `BUILD SUCCESSFUL`.
 - [x] GUIRadioRec — ⚠️ komplett andere UI-Technik (Vanilla-Widgets statt Textur)
 - [x] GUIRadiolysis → GUIMachineRadiolysis — ⚠️ 2 statt 15 Slots (RTG-Grid entfällt, dokumentiert)
 - [x] GUIReactorResearch → GUIMachineReactorResearch — ✅ alle Rod-Slot-Koordinaten exakt
@@ -201,64 +203,192 @@ ein GUI überhaupt Sinn ergibt:**
 Zusatzfund: `MachineElectricHeaterBlock` ist registriert, hat aber keine
 zugehörige BlockEntity gefunden — separat von Heatex, ggf. unvollständig/totes Feature, nicht Teil dieser Liste.
 
-### PWR-Familie (aktuell in Arbeit laut git status)
-GUIPWR (Original-Basisname — abgleichen mit eurem neuen
-`MachinePWRControllerBlock`/`PWRControllerBlockEntity`/
-`PWRPartBlock`/`PWRPartBlockEntity` System; im Original evtl. nur eine
-einzige Container/GUI-Klasse für den Controller, Rest ist Multiblock ohne
-eigenes Menü — verifizieren)
+### PWR-Familie — NICHT ANFASSEN, aktive Arbeit des Entwicklers
+
+Recherche (2026-08-09): Original `ContainerPWR`/`GUIPWR` gehört zu
+`TileEntityPWRController`, einem echten Multiblock (flood-fill über
+Casing/Rods/Reflektoren/Heatex/Kanäle/Ports). Exakte Original-Werte:
+`xSize=176,ySize=188`, Textur `gui_pwr.png`, Slots bei (53,5)/(89,32)/(8,59),
+Fortschrittsbalken/Rod-Balken/Overheat-Icon/2 Fluid-Tanks — alles dokumentiert
+im Original.
+
+Der modernisierte `PWRControllerMenu`/`GUIMachinePWRController` ist
+**bewusst kein 1:1-Port**: Single-Block statt Multiblock,
+`imageWidth=226/imageHeight=230` statt 176/188, andere Slot-Positionen,
+kein Coolant-Tank-Slot, Balken als Fill-Rechtecke statt Textur-Gauges,
++/-5%-Buttons statt Original-Drag-Regler. Die Code-Kommentare sagen das
+explizit ("keine pixelgenaue Reproduktion der Original-GUIPWR-Overlay-
+Koordinaten"). `GUIPWRPrinter` hat im Original gar kein Pendant (reines
+neues Feature, ebenfalls dokumentiert als bewusst nicht 1:1).
+
+**→ Diese Gruppe wird nicht automatisiert angefasst, da aktuell aktive,
+bewusste Entwicklungsarbeit (siehe git log "PWR part 3?", "PWR Blocks and
+Cargo Elevator..."). Bei Bedarf bitte explizit anfragen.**
 
 ### Reaktor / Fusion / Teilchenbeschleuniger
-GUICore, GUICoreEmitter, GUICoreInjector, GUICoreReceiver,
-GUICoreStabilizer, GUIFusionBreeder, GUIFusionKlystron, GUIFusionTorus,
-GUIICF, GUIICFPress, GUIPADetector, GUIPADipole, GUIPAQuadrupole,
-GUIPARFC, GUIPASource, GUIReactorControl, GUIReactorZirnox, GUIWatz
+
+Recherche (2026-08-09): alle 18 Original-Namen haben echte Container+GUI
+mit echten Slots (2-30 Slots je nach Machine).
+
+**Bereits fertig (falsch als fehlend gelistet):**
+- [x] GUIReactorZirnox → `MachineZirnoxBlock`/`MachineZirnoxMenu`/`GUIMachineZirnox` ✅
+- [x] GUIWatz → `MachineWatzPowerplantBlock`/`...Menu`/`GUIMachineWatzPowerplant` ✅
+
+**Block+BlockEntity existiert bereits → GUI+Menu gebaut (2026-08-09):**
+- [x] GUICoreEmitter — ✅ gebaut (`MachineCoreEmitterMenu`+`GUIMachineCoreEmitter`, echte Textur `gui_emitter.png`). `createMenu()` gab vorher `null` zurück (Bug behoben). Original-Watt-Textbox/On-Off-Toggle entfallen (BE hat keine `watts`/`isOn`-Felder, feuert immer bei Energie+Kühlmittel).
+- [x] GUICoreInjector — ✅ gebaut (`MachineCoreInjectorMenu`+`GUIMachineCoreInjector`, echte Textur `gui_injector.png`, Deuterium-/Tritium-Tanks). `createMenu()` gab vorher `null` zurück (Bug behoben). Original-Crafting-Slotpaare entfallen (BE hat keine Rezeptlogik, `isItemValidForSlot` immer `false`).
+- [x] GUICoreReceiver — ✅ gebaut (`MachineCoreReceiverMenu`+`GUIMachineCoreReceiver`, echte Textur `gui_receiver.png`). `createMenu()` gab vorher `null` zurück (Bug behoben). SPK/HE-Doppelwirtschaft aus Original zu einem Energie-Pool zusammengefasst (BE-Design), Cryogel-Tank als Fill-Rechteck (keine passende Textur-UV bekannt).
+
+**Braucht erst Block+BlockEntity-Arbeit (13):** GUICore, GUICoreStabilizer,
+GUIFusionBreeder, GUIFusionKlystron, GUIFusionTorus, GUIICF, GUIICFPress,
+GUIPADetector, GUIPADipole, GUIPAQuadrupole, GUIPARFC, GUIPASource,
+GUIReactorControl (klassischer Fission-Reaktor — nicht verwechseln mit
+RBMK/PWR, komplett eigenes System im Original).
 
 ### Nukes
-GUINukeBoy, GUINukeCustom, GUINukeFleija, GUINukeFstbmb, GUINukeGadget,
-GUINukeMan, GUINukeMike, GUINukeN2, GUINukeSolinium, GUINukeTsar,
-GUIBombMulti
 
-### Türme/Turrets
-GUITurretArty, GUITurretBase, GUITurretChekhov, GUITurretFriendly,
-GUITurretFritz, GUITurretHIMARS, GUITurretHoward, GUITurretJeremy,
-GUITurretMaxwell, GUITurretRichard, GUITurretSentry, GUITurretTauon,
-GUIWeaponTable
+Recherche (2026-08-09): alle 11 Original-Namen haben echte Container+GUI.
 
-### Pneumatik / Transportrohre
-GUIPneumoStorageAccess, GUIPneumoStorageClutter,
-GUIPneumoStorageExporter, GUIPneumoStorageImporter, GUIPneumoStorageMono,
-GUIPneumoTube, GUICartDestroyer
+**Bereits fertig (falsch als fehlend gelistet):**
+- [x] GUINukeBoy → `NukeFatManBlockEntity`/`NukeFatManMenu`/`GUINukeFatMan` ✅ ("Fat Man" ist nur der Anzeigename)
+- [x] (Bonus, war schon in Teil A) NukePrototype → `NukePrototypeMenu`/`GUINukePrototype` ✅
+
+**Braucht komplette Neuentwicklung (kein Block/Item/Entity vorhanden):**
+- [ ] GUINukeCustom
+- [ ] GUINukeFleija — Explosions-/Wolkeneffekt existiert bereits (`ExplosionFleija`, `EntityCloudFleija`, `FleijaSphereMesh`), aber kein platzierbares Bomben-Item/-Block + kein GUI
+- [ ] GUINukeFstbmb
+- [ ] GUINukeGadget
+- [ ] GUINukeMan
+- [ ] GUINukeMike
+- [ ] GUINukeN2
+- [ ] GUINukeSolinium
+- [ ] GUINukeTsar
+- [ ] GUIBombMulti
+
+### Türme/Turrets — GRUPPE FERTIG ✅
+
+Recherche (2026-08-09): Original nutzt für **alle** 12 Turret-Varianten
+nur einen einzigen echten Container (`ContainerTurretBase`); die
+`GUITurretX`-Klassen unterscheiden sich nur in Hintergrundtextur. Der
+modernisierte Code spiegelt das exakt: ein gemeinsames `GUITurret`/
+`TurretMenu`, angetrieben von der `TurretStats`-Enum mit allen 11
+konkreten Varianten (SENTRY, CHEKHOV, FRIENDLY, JEREMY, TAUON, RICHARD,
+HOWARD, MAXWELL, FRITZ, ARTY, HIMARS), je mit eigenem Block+BlockEntity.
+
+- [x] GUITurretArty / Base / Chekhov / Friendly / Fritz / HIMARS / Howard / Jeremy / Maxwell / Richard / Sentry / Tauon — ✅ alle fertig über gemeinsames `GUITurret`/`TurretMenu`, deckt sich mit Original-Architektur
+- [ ] GUIWeaponTable — **fehlt komplett**, ist inhaltlich kein Turret (eigenständiger Munitions-/Waffen-Modifikations-Tisch mit 3D-Vorschau), kein Block/Container/GUI im modernisierten Code vorhanden
+
+Nebenfund (nicht Teil dieses Auftrags): alle 11 Turret-Items sind in
+`CreativeModeTabEventHandler.java` (`populateWeaponsTab`, Zeilen ~309-320)
+manuell auskommentiert — bewusster eigener Commit ("Creative tab"), daher
+nicht automatisch angefasst.
+
+### Pneumatik / Transportrohre — komplett unbearbeitet
+
+Recherche (2026-08-09): alle 7 Original-Namen haben echte Container+GUI,
+aber **kein Pneumo-Rohr-System existiert im modernisierten Code** (nur
+funktional andere `ConveyorBlock*`-Familie). Braucht das komplette
+Subsystem neu:
+- [ ] GUIPneumoStorageAccess
+- [ ] GUIPneumoStorageClutter
+- [ ] GUIPneumoStorageExporter
+- [ ] GUIPneumoStorageImporter
+- [ ] GUIPneumoStorageMono
+- [ ] GUIPneumoTube
+- [ ] GUICartDestroyer
 
 ### Lagerung / Kisten
-GUICrateDesh, GUICrateIron, GUICrateSteel, GUICrateTungsten, GUISafe,
-GUILeadBox, GUIFileCabinet, GUIAmmoBag, GUICasingBag, GUIPlasticBag,
-GUIToolBox, GUIBarrel, GUIBatteryREDD
+
+Recherche (2026-08-09):
+
+**Bereits fertig (falsch als fehlend gelistet):**
+- [x] GUICrateDesh / Iron / Steel / Tungsten → `*Crate*Menu`/`GUI*Crate` ✅
+- [x] GUIBarrel → aufgeteilt in `GUIBarrelIron`/`GUIBarrelSteel` + `BarrelIronBlockEntity`/`BarrelSteelBlockEntity` ✅ (Original hatte nur einen gemeinsamen Container)
+
+**Komplett fehlend (kein modernisiertes Pendant, entgegen ursprünglicher Annahme):**
+- [ ] GUISafe
+- [ ] GUILeadBox
+- [ ] GUIFileCabinet
+- [ ] GUIAmmoBag
+- [ ] GUICasingBag
+- [ ] GUIPlasticBag
+- [ ] GUIToolBox
+- [ ] GUIBatteryREDD
 
 ### Raumfahrt
-GUISatDock, GUISoyuzCapsule
+
+Recherche (2026-08-09):
+- [ ] GUISatDock — kein Block/BlockEntity vorhanden (nicht zu verwechseln mit `MachineSatLinkerBlock`, das ist ein anderes Gerät: Satelliten-Linking statt Chip-Lagerung)
+- [ ] GUISoyuzCapsule — Flug-Entity (`SoyuzCapsuleEntity`+Renderer) existiert bereits, aber kein GUI/Menu für die Innenraum-Lagerung (nicht zu verwechseln mit `GUISoyuzLauncher`, das ist bereits fertiger Teil von Teil A)
 
 ### RBMK-Zusatzteile
-GUIRBMKAutoloader, GUIRBMKControlAuto, GUIRBMKHeater
+
+Recherche (2026-08-09): alle 3 Original-Namen haben echte Container+GUI
+(teils nur Spieler-Inventar, keine Machine-Slots). Block+BlockEntity
+existierten im modernisierten Code bereits für alle drei → **gebaut
+(2026-08-09)**:
+- [x] GUIRBMKAutoloader — ✅ gebaut, echte Textur `gui_autoloader.png`. `createMenu()` gab vorher `null` zurück (Bug behoben). Original hatte 18 Slots (3×3 Input + 3×3 Output) + editierbaren Cycle-Schwellwert; modernisierte BE nutzt stattdessen 1 gemeinsamen 9-Slot-Puffer mit festen Schwellwerten — 1:1 nur im Rahmen dieser vereinfachten Architektur.
+- [x] GUIRBMKControlAuto — ✅ gebaut, echte Textur `gui_rbmk_control_auto.png`, Textfelder für Level-/Heat-Kurve + Funktions-Auswahl-Buttons + Rod-Level-Balken. Power-Icon nicht restaurierbar (kein power-Feld, wie beim manuellen RBMKControl). **Hinweis:** der zugehörige Build-Agent ist mittendrin hängengeblieben (Menu+BlockEntity+Registrierung fertig, aber GUI-Klasse fehlte) — von mir manuell fertiggestellt.
+- [x] GUIRBMKHeater — ✅ gebaut, echte Textur `gui_rbmk_heater.png`, Wasser-/Dampf-Tanks über bestehende `FluidTank.renderTank`. Original-Fluid-ID-Slot entfällt (BE hat keine Item-Slots, nur die beiden Tanks).
+
+Build-Status aller 6 "direkt baubar"-Machines (CoreEmitter/Injector/Receiver
++ RBMKAutoloader/ControlAuto/Heater): `./gradlew compileJava` → `BUILD SUCCESSFUL`.
 
 ### Sonstige Blöcke
-GUICounterTorch, GUIDiode, GUIForceField, GUILemegeton
+
+Recherche (2026-08-09):
+- [x] GUICounterTorch — ✅ bereits fertig als `GUIRadioTorchCounter`/`RadioTorchCounterMenu` (Datei dokumentiert sich selbst als "Port of GUICounterTorch")
+- [x] GUIDiode — kein echtes GUI nötig (Original ist reiner `GuiScreen` ohne Container, kein Inventar) — out of scope
+- [ ] GUIForceField — Original hat 3 echte Slots, kein modernisiertes Pendant (kein Block/BE/GUI/Menu) — braucht Grundarbeit
+- [ ] GUILemegeton — Original hat echte Crafting-Slots, kein modernisiertes Pendant — braucht Grundarbeit
 
 ### Reine Anzeige-/HUD-Screens (niedrige Priorität — keine echten Container/Slots)
-GUIScreenBobble, GUIScreenBobmazon, GUIScreenClayTablet,
-GUIScreenDesignator, GUIScreenFluid, GUIScreenGuide, GUIScreenHolotape,
-GUIScreenPager, GUIScreenPreview, GUIScreenRBMKDisplay,
-GUIScreenRBMKGauge, GUIScreenRBMKGraph, GUIScreenRBMKIndicator,
-GUIScreenRBMKKeyPad, GUIScreenRBMKLever, GUIScreenRBMKTerminal,
-GUIScreenRadioAUTOCAL, GUIScreenRadioTelex, GUIScreenRadioTorch,
-GUIScreenRadioTorchController, GUIScreenRadioTorchLogic,
-GUIScreenRadioTorchReader, GUIScreenSatCoord, GUIScreenSlicePrinter,
-GUIScreenSnowglobe, GUIScreenToolAbility, GUIScreenWikiRender, GUIBook,
-GUIBookLore, GUICalculator, GUIElements, GuiFileList, GuiInfoContainer
+
+Recherche (2026-08-09):
+
+**Bereits fertig:**
+- [x] GUIScreenDesignator → `DesignatorScreen.java` ✅
+- [x] GUIScreenRadioAUTOCAL → `GUIRadioAutocal.java` ✅
+- [x] GUIScreenRadioTelex → `GUIRadioTelex.java` ✅
+- [x] GUIScreenRadioTorch → `GUIRadioTorchSimple.java` ✅ (vermutlich)
+- [x] GUIScreenRadioTorchController → `GUIRadioTorchController.java` ✅
+- [x] GUIScreenRadioTorchLogic → `GUIRadioTorchLogic.java` ✅
+- [x] GUIScreenRadioTorchReader → `GUIRadioTorchReader.java` ✅
+
+**Fehlend, echte reine Anzeige-Screens ohne Container (niedrige Priorität):**
+GUIScreenBobble, GUIScreenBobmazon, GUIScreenClayTablet, GUIScreenFluid,
+GUIScreenGuide, GUIScreenHolotape, GUIScreenPager, GUIScreenPreview,
+GUIScreenRBMKDisplay, GUIScreenRBMKGauge, GUIScreenRBMKGraph,
+GUIScreenRBMKIndicator, GUIScreenRBMKKeyPad, GUIScreenRBMKLever,
+GUIScreenRBMKTerminal, GUIScreenSatCoord, GUIScreenSlicePrinter,
+GUIScreenSnowglobe, GUIScreenToolAbility, GUIScreenWikiRender,
+GUIBookLore, GUICalculator
+
+**Achtung — fälschlich als "reine Anzeige" eingestuft, haben tatsächlich
+einen echten Container/Inventar (höhere Priorität als der Rest dieser
+Gruppe, separat bewerten):**
+- [ ] GUIBook — extends `GuiContainer`, hat echten Container
+- [ ] GuiFileList — ist kein eigenständiger Screen, sondern eine Scroll-Listen-Widget-Komponente innerhalb eines anderen Screens
+- [ ] GuiInfoContainer — abstrakte Klasse mit echtem Container + NEI-Handler-Interface
+
+**Kein Screen, keine Aktion nötig:**
+- GUIElements — ist gar kein Screen, nur eine statische Helper-/Widget-Zeichenklasse
+
+## Zusammenfassung Teil B (Stand 2026-08-09)
+
+- **Bereits fertig, aber falsch als fehlend gelistet:** ~20 Einträge (ArcFurnaceLarge, AssemblyMachine, Diesel, Excavator, GasFlare, ReactorBreeding, Electrolyser x2, FurnaceCombo, RtgFurnace, ReactorZirnox, Watz, NukeBoy, alle 11 Turret-Varianten, 4 Crates, Barrel, CounterTorch, 7 Radio-Screens)
+- **Neu gebaut (2026-08-09):** 4 (PrecAss, Turbofan, Heatex, Oilburner)
+- **Direkt baubar (Block+BE existiert bereits):** 6 (CoreEmitter, CoreInjector, CoreReceiver, RBMKAutoloader, RBMKControlAuto, RBMKHeater)
+- **Braucht erst Block/BlockEntity-Grundarbeit:** ~30 (u.a. AssemblyFactory, CompactLauncher, PlasmaForge, MachineCustom, LaunchTable, DiFurnace, Core, CoreStabilizer, Fusion*, ICF*, PA*, ReactorControl, 9 Nukes, WeaponTable, Safe/LeadBox/FileCabinet/etc., SatDock, ForceField, Lemegeton)
+- **Komplettes Subsystem fehlt:** Pneumatik/Transportrohre (7 Einträge, braucht eigene Architektur)
+- **Bewusst nicht angefasst:** PWR-Familie (aktive Entwicklerarbeit)
+- **Niedrige Priorität, meist unbearbeitet:** ~24 reine HUD-Screens
 
 ## Nächster Schritt
 
-Bitte auswählen, mit welcher Gruppe aus Teil B (oder welchem Teil-A-Audit)
-als nächstes begonnen werden soll — angesichts der Größe (127 fehlende +
-90 zu auditierende Paare) wird das über mehrere Sessions abgearbeitet,
-jeweils machine-für-machine mit eigenem Commit.
+Empfehlung: als nächstes die 9 "direkt baubar"-Einträge (CoreEmitter/
+CoreInjector/CoreReceiver + die 3 RBMK-Zusatzteile) angehen, da dafür wie
+bei PrecAss/Turbofan/Heatex/Oilburner kein Vorlauf nötig ist. Danach
+Priorität mit dem Auftraggeber klären: Nukes (Content-Impact hoch, aber
+Grundarbeit nötig) vs. Pneumatik-Subsystem vs. Lagerung-Kleinkram vs.
+HUD-Screens (niedrigste Priorität).

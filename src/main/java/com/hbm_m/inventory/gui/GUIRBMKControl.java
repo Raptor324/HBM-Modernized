@@ -2,12 +2,23 @@ package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKControlBlockEntity;
 import com.hbm_m.inventory.menu.RBMKControlMenu;
+import com.hbm_m.lib.RefStrings;
+import com.mojang.blaze3d.systems.RenderSystem;
+
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
+/**
+ * Port of {@code GUIRBMKControl} (1.7.10 Original), rendered with the real
+ * {@code gui_rbmk_control.png} texture instead of a flat-fill placeholder.
+ */
 public class GUIRBMKControl extends GuiInfoScreen<RBMKControlMenu> {
+
+    private static final ResourceLocation TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/reactors/gui_rbmk_control.png");
 
     private final RBMKControlBlockEntity be;
 
@@ -15,36 +26,26 @@ public class GUIRBMKControl extends GuiInfoScreen<RBMKControlMenu> {
         super(menu, inv, title);
         this.be = menu.getBlockEntity();
         this.imageWidth  = 176;
-        this.imageHeight = 166;
-    }
-
-    @Override
-    protected void init() {
-        super.init();
-        // Insert / Extract buttons
-        addRenderableWidget(Button.builder(Component.literal("Insert (0%)"), btn -> {
-            be.setTarget(0.0);
-        }).bounds(leftPos + 20, topPos + 60, 60, 16).build());
-
-        addRenderableWidget(Button.builder(Component.literal("50%"), btn -> {
-            be.setTarget(0.5);
-        }).bounds(leftPos + 88, topPos + 60, 40, 16).build());
-
-        addRenderableWidget(Button.builder(Component.literal("Extract"), btn -> {
-            be.setTarget(1.0);
-        }).bounds(leftPos + 136, topPos + 60, 50, 16).build());
+        this.imageHeight = 186;
+        this.inventoryLabelY = this.imageHeight - 96 + 2;
     }
 
     @Override
     protected void renderBg(GuiGraphics g, float partial, int mx, int my) {
-        g.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, 0xFF2B2B2B);
-        g.fill(leftPos + 1, topPos + 1, leftPos + imageWidth - 1, topPos + imageHeight - 1, 0xFFC6C6C6);
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
 
-        // Level bar background
-        g.fill(leftPos + 20, topPos + 40, leftPos + 156, topPos + 56, 0xFF888888);
-        // Level fill
-        int fillW = (int)((156 - 20) * be.level);
-        g.fill(leftPos + 20, topPos + 40, leftPos + 20 + fillW, topPos + 56, 0xFF00CC00);
+        // Rod-level bar: the higher the rod is withdrawn, the taller the "empty" overlay drawn from the top.
+        int height = (int) (56 * (1.0 - be.level));
+        if (height > 0) {
+            g.blit(TEXTURE, leftPos + 75, topPos + 29, 176, 56 - height, 8, height);
+        }
+
+        // Color-group marker, if this rod is assigned to a farbgroup (0-4). -1 = ungrouped.
+        if (be.color >= 0 && be.color < 5) {
+            g.blit(TEXTURE, leftPos + 28, topPos + 26 + be.color * 11, 184, be.color * 10, 12, 10);
+        }
     }
 
     @Override
@@ -52,12 +53,32 @@ public class GUIRBMKControl extends GuiInfoScreen<RBMKControlMenu> {
         renderBackground(g);
         super.render(g, mx, my, partial);
 
-        int x = leftPos + 8, y = topPos + 8;
-        g.drawString(font, "RBMK Control Rod", x, y, 0x333333, false);
-        g.drawString(font, String.format("Level:  %.1f%%", be.level * 100), x, y + 12, 0x006600, false);
-        g.drawString(font, String.format("Target: %.1f%%", be.targetLevel * 100), x, y + 22, 0x004499, false);
-        g.drawString(font, String.format("Heat:   %.1f°C", be.heat), x, y + 84, 0x990000, false);
+        drawCustomInfoStat(g, mx, my, 71, 29, 16, 56, mx, my,
+                Component.literal((int) (be.level * 100) + "%"));
 
         renderTooltip(g, mx, my);
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        boolean handled = super.mouseClicked(mouseX, mouseY, button);
+
+        for (int k = 0; k < 5; k++) {
+            // Manual rod-level presets (100%, 75%, 50%, 25%, 0%), stacked column of 5 buttons.
+            if (isPointInRect(118, 26 + k * 11, 30, 10, (int) mouseX, (int) mouseY)) {
+                playClickSound();
+                be.setTarget(1.0 - k * 0.25);
+                return true;
+            }
+
+            // Farbgroup (color group) assignment buttons.
+            if (isPointInRect(28, 26 + k * 11, 12, 10, (int) mouseX, (int) mouseY)) {
+                playClickSound();
+                be.color = (short) k;
+                return true;
+            }
+        }
+
+        return handled;
     }
 }

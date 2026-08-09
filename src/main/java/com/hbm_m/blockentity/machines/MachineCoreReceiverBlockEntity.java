@@ -121,7 +121,7 @@ public class MachineCoreReceiverBlockEntity extends BaseMachineBlockEntity imple
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
-        return null;
+        return com.hbm_m.inventory.menu.MachineCoreReceiverMenu.create(id, inv, this);
     }
 
     @Override

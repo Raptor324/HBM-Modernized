@@ -3,12 +3,18 @@ package com.hbm_m.blockentity.machines.rbmk;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.handler.rbmk.RBMKNeutronHandler.RBMKType;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
+import com.hbm_m.inventory.menu.RBMKHeaterMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity {
+public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity implements MenuProvider {
 
     public final FluidTank inputTank  = new FluidTank(10_000);
     public final FluidTank outputTank = new FluidTank(10_000);
@@ -38,6 +44,9 @@ public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity {
 
     @Override public RBMKType getRBMKType()      { return RBMKType.OTHER; }
     @Override public ColumnType getConsoleType() { return ColumnType.HEATER; }
+
+    @Override public Component getDisplayName() { return Component.translatable("block.hbm_m.rbmk_heater"); }
+    @Override public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) { return new RBMKHeaterMenu(id, inv, this); }
 
     @Override
     protected void saveAdditional(CompoundTag tag) {

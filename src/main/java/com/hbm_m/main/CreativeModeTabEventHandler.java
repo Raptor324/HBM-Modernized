@@ -1374,25 +1374,14 @@ public final class CreativeModeTabEventHandler {
     public static void populateMachinesTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
         // Упрощенный Consumer, по умолчанию использующий PARENT_AND_SEARCH_TABS
         Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
-    }
-
-
-    /** Временная вкладка для новых, ещё не отсортированных предметов/блоков. */
-    public static void populateDevItemsTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
-        Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         add.accept(new ItemStack(ModBlocks.MACHINE_SIREN.get()));
-        add.accept(new ItemStack(ModBlocks.BROADCASTER.get()));
-
         add.accept(new ItemStack(ModBlocks.CRATE_IRON.get()));
         add.accept(new ItemStack(ModBlocks.CRATE_STEEL.get()));
         add.accept(new ItemStack(ModBlocks.CRATE_TUNGSTEN.get()));
         add.accept(new ItemStack(ModBlocks.CRATE_DESH.get()));
         add.accept(new ItemStack(ModBlocks.CRATE_TEMPLATE.get()));
-        add.accept(new ItemStack(ModBlocks.BARREL_CORRODED.get()));
         add.accept(new ItemStack(ModBlocks.BARREL_IRON.get()));
         add.accept(new ItemStack(ModBlocks.BARREL_STEEL.get()));
-        add.accept(new ItemStack(ModBlocks.BARREL_TCALLOY.get()));
-        add.accept(new ItemStack(ModBlocks.BARREL_PLASTIC.get()));
         add.accept(new ItemStack(ModBlocks.ANVIL_IRON.get()));
         add.accept(new ItemStack(ModBlocks.ANVIL_LEAD.get()));
         add.accept(new ItemStack(ModBlocks.ANVIL_STEEL.get()));
@@ -1412,25 +1401,60 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.STEAM_CONDENSER.get()));
         add.accept(new ItemStack(ModBlocks.SHREDDER.get()));
         add.accept(new ItemStack(ModBlocks.WOOD_BURNER.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_SIREN.get()));
         add.accept(new ItemStack(ModBlocks.CHEMICAL_PLANT.get()));
         add.accept(new ItemStack(ModBlocks.CRUCIBLE.get()));
         add.accept(new ItemStack(ModBlocks.FOUNDRY_BASIN.get()));
         add.accept(new ItemStack(ModBlocks.FOUNDRY_CHANNEL.get()));
         add.accept(new ItemStack(ModBlocks.FOUNDRY_OUTLET.get()));
-        add.accept(new ItemStack(ModBlocks.FOUNDRY_CHANNEL.get()));
-        add.accept(new ItemStack(ModBlocks.GAS_CENTRIFUGE.get()));
         add.accept(new ItemStack(ModBlocks.CENTRIFUGE.get()));
         add.accept(new ItemStack(ModBlocks.CRYSTALLIZER.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_ASSEMBLER.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_RADAR.get()));
+        add.accept(new ItemStack(ModBlocks.ARC_WELDER.get()));
+        add.accept(new ItemStack(ModBlocks.SOLDERING_STATION.get()));
+        add.accept(new ItemStack(ModBlocks.DERRICK.get()));
+        add.accept(new ItemStack(ModBlocks.RADAR.get()));
+        add.accept(new ItemStack(ModBlocks.LARGE_RADAR.get()));
+        add.accept(new ItemStack(ModBlocks.FRACTION_TOWER.get()));
+        add.accept(new ItemStack(ModBlocks.MINING_DRILL.get()));
+        add.accept(new ItemStack(ModBlocks.FLUID_TANK.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_BATTERY_SOCKET.get()));
+        add.accept(new ItemStack(ModBlocks.REFINERY.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_BATTERY.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_BATTERY_LITHIUM.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM.get()));
+        add.accept(new ItemStack(ModBlocks.SWITCH.get()));
+        add.accept(new ItemStack(ModBlocks.GEIGER_COUNTER_BLOCK.get()));
+        for (BlockAbsorber.EnumAbsorberTier tier : BlockAbsorber.EnumAbsorberTier.values()) {
+            add.accept(BlockAbsorberItem.forTier(ModBlocks.RAD_ABSORBER.get(), tier));
+        }
+        add.accept(new ItemStack(ModItems.CASSETTE_AMS_SIREN.get()));
+        add.accept(new ItemStack(ModItems.CASSETTE_BEEP_SIREN.get()));
+        add.accept(new ItemStack(ModItems.CASSETTE_CLASSIC_SIREN.get()));
+        add.accept(new ItemStack(ModItems.CASSETTE_NOSTROMO_SIREN.get()));
+        add.accept(new ItemStack(ModItems.CASSETTE_REGULAR_SIREN.get()));
+        add.accept(new ItemStack(ModItems.CASSETTE_STRIDER_SIREN.get()));
+        add.accept(new ItemStack(ModItems.CASSETTE_SWEEP_SIREN.get()));
+    }
+
+
+    /** Временная вкладка для новых, ещё не отсортированных предметов/блоков. */
+    public static void populateDevItemsTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
+        Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        add.accept(new ItemStack(ModBlocks.BROADCASTER.get()));
+
+        add.accept(new ItemStack(ModBlocks.BARREL_CORRODED.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_TCALLOY.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_PLASTIC.get()));
+        add.accept(new ItemStack(ModBlocks.GAS_CENTRIFUGE.get()));
         add.accept(new ItemStack(ModBlocks.BREEDER.get()));
         add.accept(new ItemStack(ModBlocks.LARGE_PYLON.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_ASSEMBLER.get()));
         add.accept(new ItemStack(ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_PRECASS.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_DIFURNACE_RTG.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_TELEPORTER.get()));
         add.accept(new ItemStack(ModBlocks.TELEANCHOR.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_RADAR.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_FAN.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_DRAIN.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_TRANSFORMER.get()));
@@ -1511,25 +1535,16 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.PART_COPPER.get()));
         add.accept(new ItemStack(ModItems.PART_PLUTONIUM.get()));
         add.accept(new ItemStack(ModBlocks.ZIRNOX.get()));
-        add.accept(new ItemStack(ModBlocks.ARC_WELDER.get()));
-        add.accept(new ItemStack(ModBlocks.SOLDERING_STATION.get()));
         // add.accept(new ItemStack(ModBlocks.MIXER.get()));
-        add.accept(new ItemStack(ModBlocks.DERRICK.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_WELL.get()));
         add.accept(new ItemStack(ModBlocks.RBMK_CONSOLE.get()));
         add.accept(new ItemStack(ModBlocks.FLARE_STACK.get()));
         add.accept(new ItemStack(ModBlocks.PUMPJACK.get()));
         add.accept(new ItemStack(ModBlocks.PUMP_STEAM.get()));
         add.accept(new ItemStack(ModBlocks.PUMP_ELECTRIC.get()));
-        add.accept(new ItemStack(ModBlocks.RADAR.get()));
-        add.accept(new ItemStack(ModBlocks.LARGE_RADAR.get()));
         add.accept(new ItemStack(ModBlocks.CRACKING_TOWER.get()));
-        add.accept(new ItemStack(ModBlocks.FRACTION_TOWER.get()));
-        add.accept(new ItemStack(ModBlocks.MINING_DRILL.get()));
         add.accept(new ItemStack(ModBlocks.FEL.get()));
         add.accept(new ItemStack(ModBlocks.SILEX.get()));
-        add.accept(new ItemStack(ModBlocks.FLUID_TANK.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_BATTERY_SOCKET.get()));
         add.accept(new ItemStack(ModBlocks.INDUSTRIAL_BOILER.get()));
         add.accept(new ItemStack(ModBlocks.SOLAR_BOILER.get()));
         add.accept(new ItemStack(ModBlocks.SOLAR_MIRRORS.get()));
@@ -1548,20 +1563,10 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.INDUSTRIAL_TURBINE.get()));
         add.accept(new ItemStack(ModBlocks.TURBINE.get()));
         add.accept(new ItemStack(ModBlocks.SUBSTATION.get()));
-        add.accept(new ItemStack(ModBlocks.REFINERY.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_BATTERY.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_BATTERY_LITHIUM.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM.get()));
         add.accept(new ItemStack(ModBlocks.CONVERTER_BLOCK.get()));
-        add.accept(new ItemStack(ModBlocks.SWITCH.get()));
         add.accept(new ItemStack(ModBlocks.WIRE_COATED.get()));
-        add.accept(new ItemStack(ModBlocks.GEIGER_COUNTER_BLOCK.get()));
         add.accept(new ItemStack(ModBlocks.DECON.get()));
         add.accept(new ItemStack(ModBlocks.EMP.get()));
-        for (BlockAbsorber.EnumAbsorberTier tier : BlockAbsorber.EnumAbsorberTier.values()) {
-            add.accept(BlockAbsorberItem.forTier(ModBlocks.RAD_ABSORBER.get(), tier));
-        }
 
         // --- WIP Machines (3D OBJ models) ---
         add.accept(new ItemStack(ModBlocks.AMMO_PRESS.get()));
@@ -1853,7 +1858,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.MACHINE_MISSILE_ASSEMBLY.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_PRESS.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_PUF6_TANK.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_RADAR.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_FAN.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_DRAIN.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_TRANSFORMER.get()));
@@ -2989,13 +2993,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.WASTE_THORIUM.get()));
         add.accept(new ItemStack(ModItems.WASTE_URANIUM.get()));
         add.accept(new ItemStack(ModItems.WASTE_ZFB_MOX.get()));
-        add.accept(new ItemStack(ModItems.CASSETTE_AMS_SIREN.get()));
-        add.accept(new ItemStack(ModItems.CASSETTE_BEEP_SIREN.get()));
-        add.accept(new ItemStack(ModItems.CASSETTE_CLASSIC_SIREN.get()));
-        add.accept(new ItemStack(ModItems.CASSETTE_NOSTROMO_SIREN.get()));
-        add.accept(new ItemStack(ModItems.CASSETTE_REGULAR_SIREN.get()));
-        add.accept(new ItemStack(ModItems.CASSETTE_STRIDER_SIREN.get()));
-        add.accept(new ItemStack(ModItems.CASSETTE_SWEEP_SIREN.get()));
         add.accept(new ItemStack(ModItems.WATCH.get()));
         add.accept(new ItemStack(ModItems.WD40.get()));
         add.accept(new ItemStack(ModItems.WILD_P.get()));
@@ -3023,27 +3020,9 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.POWDER_SEMTEX_MIX.get()));
         add.accept(new ItemStack(ModItems.POWDER_DESH_READY.get()));
         add.accept(new ItemStack(ModItems.POWDER_COLTAN.get()));
-    }
 
-    // ТОПЛИВО И ЭЛЕМЕНТЫ МЕХАНИЗМОВ
-    public static void populateFuelTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
-        // ДОБАВЛЕНА ЗАЩИТА ОТ ДУБЛИКАТОВ, как в TemplatesTab и NukeTab:
-        Set<String> seen = new HashSet<>();
-        Consumer<ItemStack> add = stack -> {
-            if (stack == null || stack.isEmpty()) return;
-            String itemId = String.valueOf(BuiltInRegistries.ITEM.getKey(stack.getItem()));
-            String tag = stack.getTag() == null ? "" : stack.getTag().toString();
-            // Если такой предмет с таким же NBT уже добавлялся, пропускаем его, чтобы не сломать Поиск
-            if (!seen.add(itemId + "|" + tag)) return;
-            acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
-        };
-        add.accept(new ItemStack(ModItems.BLACK_HOLE.get()));
-        add.accept(new ItemStack(ModItems.PELLET_ANTIMATTER.get()));
-        add.accept(new ItemStack(ModItems.FLAME_PONY.get()));
-        add.accept(new ItemStack(ModItems.CREATIVE_BATTERY.get()));
+        // RBMK-Teile (2026-08-09, aus Fuel-Tab verschoben, noch nicht vom Entwickler kontrolliert)
         add.accept(new ItemStack(ModItems.RBMK_FUEL_DRX.get()));
-
-        // RBMK blocks
         add.accept(new ItemStack(ModBlocks.RBMK_ROD.get()));
         add.accept(new ItemStack(ModBlocks.RBMK_ROD_MOD.get()));
         add.accept(new ItemStack(ModBlocks.RBMK_ROD_REASIM.get()));
@@ -3085,8 +3064,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.RBMK_DEBRIS_BURNING.get()));
         add.accept(new ItemStack(ModBlocks.RBMK_DEBRIS_DIGAMMA.get()));
         add.accept(new ItemStack(ModBlocks.RBMK_DEBRIS_RADIATING.get()));
-
-        // RBMK items
         add.accept(new ItemStack(ModItems.RBMK_LID.get()));
         add.accept(new ItemStack(ModItems.RBMK_LID_GLASS.get()));
         add.accept(new ItemStack(ModItems.RBMK_FUEL_EMPTY.get()));
@@ -3100,6 +3077,28 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.RBMK_PELLET_LEP.get()));
         add.accept(new ItemStack(ModItems.RBMK_PELLET_HEP.get()));
         add.accept(new ItemStack(ModItems.RBMK_PELLET_MOX.get()));
+    }
+
+    // ТОПЛИВО И ЭЛЕМЕНТЫ МЕХАНИЗМОВ
+    public static void populateFuelTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
+        // ДОБАВЛЕНА ЗАЩИТА ОТ ДУБЛИКАТОВ, как в TemplatesTab и NukeTab:
+        Set<String> seen = new HashSet<>();
+        Consumer<ItemStack> add = stack -> {
+            if (stack == null || stack.isEmpty()) return;
+            String itemId = String.valueOf(BuiltInRegistries.ITEM.getKey(stack.getItem()));
+            String tag = stack.getTag() == null ? "" : stack.getTag().toString();
+            // Если такой предмет с таким же NBT уже добавлялся, пропускаем его, чтобы не сломать Поиск
+            if (!seen.add(itemId + "|" + tag)) return;
+            acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        };
+        add.accept(new ItemStack(ModItems.BLACK_HOLE.get()));
+        add.accept(new ItemStack(ModItems.PELLET_ANTIMATTER.get()));
+        add.accept(new ItemStack(ModItems.FLAME_PONY.get()));
+        add.accept(new ItemStack(ModItems.CREATIVE_BATTERY.get()));
+
+        // RBMK blocks
+
+        // RBMK items
 
 
 

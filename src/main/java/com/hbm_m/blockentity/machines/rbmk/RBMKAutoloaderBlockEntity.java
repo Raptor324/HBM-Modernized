@@ -2,6 +2,7 @@ package com.hbm_m.blockentity.machines.rbmk;
 
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.handler.rbmk.RBMKNeutronHandler.RBMKType;
+import com.hbm_m.inventory.menu.RBMKAutoloaderMenu;
 import com.hbm_m.item.rbmk.RBMKRodItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -75,7 +76,7 @@ public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements 
     }
 
     @Override public Component getDisplayName() { return Component.translatable("block.hbm_m.rbmk_autoloader"); }
-    @Override public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) { return null; } // TODO: dedicated menu
+    @Override public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) { return new RBMKAutoloaderMenu(id, inv, this); }
     @Override public RBMKType getRBMKType()      { return RBMKType.OTHER; }
     @Override public ColumnType getConsoleType() { return ColumnType.STORAGE; }
 

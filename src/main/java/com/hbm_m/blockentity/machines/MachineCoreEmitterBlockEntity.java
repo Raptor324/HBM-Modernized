@@ -161,7 +161,7 @@ public class MachineCoreEmitterBlockEntity extends BaseMachineBlockEntity {
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
-        return null;
+        return com.hbm_m.inventory.menu.MachineCoreEmitterMenu.create(id, inv, this);
     }
 
     @Override
