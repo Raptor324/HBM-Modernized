@@ -1367,9 +1367,22 @@ public final class CreativeModeTabEventHandler {
     }
 
     // СТАНКИ
+    // Absichtlich leer: alle Machines wurden am 2026-08-09 nach ntm_dev_tab
+    // verschoben, damit dieser Tab nur noch manuell geprüfte/fertige
+    // Machines enthält. Fertige Machines hier per add.accept(...) wieder
+    // eintragen, sobald sie geprüft/abgenommen sind.
     public static void populateMachinesTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
         // Упрощенный Consumer, по умолчанию использующий PARENT_AND_SEARCH_TABS
         Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+    }
+
+
+    /** Временная вкладка для новых, ещё не отсортированных предметов/блоков. */
+    public static void populateDevItemsTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
+        Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        add.accept(new ItemStack(ModBlocks.MACHINE_SIREN.get()));
+        add.accept(new ItemStack(ModBlocks.BROADCASTER.get()));
+
         add.accept(new ItemStack(ModBlocks.CRATE_IRON.get()));
         add.accept(new ItemStack(ModBlocks.CRATE_STEEL.get()));
         add.accept(new ItemStack(ModBlocks.CRATE_TUNGSTEN.get()));
@@ -1549,86 +1562,6 @@ public final class CreativeModeTabEventHandler {
         for (BlockAbsorber.EnumAbsorberTier tier : BlockAbsorber.EnumAbsorberTier.values()) {
             add.accept(BlockAbsorberItem.forTier(ModBlocks.RAD_ABSORBER.get(), tier));
         }
-
-        // --- WIP Machines (3D OBJ models) ---
-        add.accept(new ItemStack(ModBlocks.AMMO_PRESS.get()));
-        add.accept(new ItemStack(ModBlocks.ANNIHILATOR.get()));
-        add.accept(new ItemStack(ModBlocks.ARC_FURNACE.get()));
-        add.accept(new ItemStack(ModBlocks.ASSEMBLY_FACTORY.get()));
-        add.accept(new ItemStack(ModBlocks.AUTOSAW.get()));
-        add.accept(new ItemStack(ModBlocks.BAT9000.get()));
-        add.accept(new ItemStack(ModBlocks.BEAMLINE.get()));
-        add.accept(new ItemStack(ModBlocks.BOILER.get()));
-        add.accept(new ItemStack(ModBlocks.BOILER_FUSION.get()));
-        add.accept(new ItemStack(ModBlocks.BREEDER_FUSION.get()));
-        add.accept(new ItemStack(ModBlocks.CHIMNEY_BRICK.get()));
-        add.accept(new ItemStack(ModBlocks.CHIMNEY_INDUSTRIAL.get()));
-        add.accept(new ItemStack(ModBlocks.COKER.get()));
-        add.accept(new ItemStack(ModBlocks.COLLECTOR.get()));
-        add.accept(new ItemStack(ModBlocks.COMBINATION_OVEN.get()));
-        add.accept(new ItemStack(ModBlocks.COMBUSTION_ENGINE.get()));
-        add.accept(new ItemStack(ModBlocks.COMPRESSOR.get()));
-        add.accept(new ItemStack(ModBlocks.CONDENSER_POWERED.get()));
-        add.accept(new ItemStack(ModBlocks.LPW2.get()));
-        add.accept(new ItemStack(ModBlocks.CONVEYOR_PRESS.get()));
-        add.accept(new ItemStack(ModBlocks.COUPLER.get()));
-        add.accept(new ItemStack(ModBlocks.DETECTOR.get()));
-        add.accept(new ItemStack(ModBlocks.DIESELGEN.get()));
-        add.accept(new ItemStack(ModBlocks.DIPOLE.get()));
-        add.accept(new ItemStack(ModBlocks.DRONE.get()));
-        add.accept(new ItemStack(ModBlocks.ELECTRIC_HEATER.get()));
-        add.accept(new ItemStack(ModBlocks.ELECTROLYSER.get()));
-        add.accept(new ItemStack(ModBlocks.EPRESS.get()));
-        add.accept(new ItemStack(ModBlocks.EXPOSURE_CHAMBER.get()));
-        add.accept(new ItemStack(ModBlocks.FENSU.get()));
-        add.accept(new ItemStack(ModBlocks.FENSU2.get()));
-        add.accept(new ItemStack(ModBlocks.FIREBOX.get()));
-        add.accept(new ItemStack(ModBlocks.FRACTION_SPACER.get()));
-        add.accept(new ItemStack(ModBlocks.FURNACE_IRON.get()));
-        add.accept(new ItemStack(ModBlocks.FURNACE_STEEL.get()));
-        add.accept(new ItemStack(ModBlocks.HEATEX.get()));
-        add.accept(new ItemStack(ModBlocks.HEPHAESTUS.get()));
-        add.accept(new ItemStack(ModBlocks.ICF.get()));
-        add.accept(new ItemStack(ModBlocks.INTAKE.get()));
-        add.accept(new ItemStack(ModBlocks.KLYSTRON.get()));
-        add.accept(new ItemStack(ModBlocks.MHDT.get()));
-        add.accept(new ItemStack(ModBlocks.MICROWAVE.get()));
-        add.accept(new ItemStack(ModBlocks.MINING_LASER.get()));
-        add.accept(new ItemStack(ModBlocks.OILBURNER.get()));
-        add.accept(new ItemStack(ModBlocks.OILBURNER_HP.get()));
-        add.accept(new ItemStack(ModBlocks.ORBUS.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_SLOPPER.get()));
-        add.accept(new ItemStack(ModBlocks.PLASMA_FORGE.get()));
-        add.accept(new ItemStack(ModBlocks.PYROOVEN.get()));
-        add.accept(new ItemStack(ModBlocks.QUADRUPOLE.get()));
-        add.accept(new ItemStack(ModBlocks.RADGEN.get()));
-        add.accept(new ItemStack(ModBlocks.RADIOLYSIS.get()));
-        add.accept(new ItemStack(ModBlocks.REACTOR_SMALL.get()));
-        add.accept(new ItemStack(ModBlocks.RFC.get()));
-        add.accept(new ItemStack(ModBlocks.ROTARY_FURNACE.get()));
-        add.accept(new ItemStack(ModBlocks.SAWMILL.get()));
-        add.accept(new ItemStack(ModBlocks.SOLIDIFIER.get()));
-        add.accept(new ItemStack(ModBlocks.ASHPIT.get()));
-        add.accept(new ItemStack(ModBlocks.REACTOR_RESEARCH.get()));
-        add.accept(new ItemStack(ModBlocks.SOURCE.get()));
-        add.accept(new ItemStack(ModBlocks.INDUSTRIAL_GENERATOR.get()));
-        add.accept(new ItemStack(ModBlocks.STEAM_ENGINE.get()));
-        add.accept(new ItemStack(ModBlocks.STIRLING.get()));
-        add.accept(new ItemStack(ModBlocks.STIRLING_CREATIVE.get()));
-        add.accept(new ItemStack(ModBlocks.STIRLING_STEEL.get()));
-        add.accept(new ItemStack(ModBlocks.STRAND_CASTER.get()));
-        add.accept(new ItemStack(ModBlocks.THRESHER.get()));
-        add.accept(new ItemStack(ModBlocks.TORUS.get()));
-        add.accept(new ItemStack(ModBlocks.TURBINEGAS.get()));
-        add.accept(new ItemStack(ModBlocks.WATZ_PUMP.get()));
-        add.accept(new ItemStack(ModBlocks.CHUNGUS.get()));
-    }
-
-    /** Временная вкладка для новых, ещё не отсортированных предметов/блоков. */
-    public static void populateDevItemsTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
-        Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
-        add.accept(new ItemStack(ModBlocks.MACHINE_SIREN.get()));
-        add.accept(new ItemStack(ModBlocks.BROADCASTER.get()));
 
         // --- WIP Machines (3D OBJ models) ---
         add.accept(new ItemStack(ModBlocks.AMMO_PRESS.get()));
