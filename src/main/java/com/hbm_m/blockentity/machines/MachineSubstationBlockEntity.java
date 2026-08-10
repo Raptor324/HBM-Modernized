@@ -72,6 +72,7 @@ public class MachineSubstationBlockEntity extends BaseMachineBlockEntity {
         return active;
     }
 
+    //? if < 1.21.1 {
     @Override
     public void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -79,7 +80,19 @@ public class MachineSubstationBlockEntity extends BaseMachineBlockEntity {
         tag.putInt("max_progress", maxProgress);
         tag.putBoolean("active", active);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        tag.putInt("progress", progress);
+        tag.putInt("max_progress", maxProgress);
+        tag.putBoolean("active", active);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -90,6 +103,20 @@ public class MachineSubstationBlockEntity extends BaseMachineBlockEntity {
         }
         active = tag.getBoolean("active");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        progress = tag.getInt("progress");
+        maxProgress = tag.getInt("max_progress");
+        if (maxProgress <= 0) {
+            maxProgress = DEFAULT_MAX_PROGRESS;
+        }
+        active = tag.getBoolean("active");
+    
+    }
+    *///?}
 
     @Override
     protected Component getDefaultName() {

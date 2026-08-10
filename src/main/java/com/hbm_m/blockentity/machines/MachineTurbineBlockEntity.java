@@ -232,6 +232,7 @@ public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements
 
     // ── NBT ─────────────────────────────────────────────────────────────────
 
+    //? if < 1.21.1 {
     @Override
     public void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -241,7 +242,21 @@ public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements
         tanks[0].writeToNBT(tag, "input");
         tanks[1].writeToNBT(tag, "output");
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        tag.putInt("progress", progress);
+        tag.putInt("max_progress", maxProgress);
+        tag.putBoolean("active", active);
+        tanks[0].writeToNBT(tag, "input");
+        tanks[1].writeToNBT(tag, "output");
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -252,6 +267,20 @@ public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements
         tanks[0].readFromNBT(tag, "input");
         tanks[1].readFromNBT(tag, "output");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        progress    = tag.getInt("progress");
+        maxProgress = tag.getInt("max_progress");
+        if (maxProgress <= 0) maxProgress = DEFAULT_MAX_PROGRESS;
+        active = tag.getBoolean("active");
+        tanks[0].readFromNBT(tag, "input");
+        tanks[1].readFromNBT(tag, "output");
+    
+    }
+    *///?}
 
     // ── Slot validation ──────────────────────────────────────────────────────
 

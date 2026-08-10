@@ -118,4 +118,13 @@ public class BlastFurnaceBlock extends BaseEntityBlock {
         return createTickerHelper(blockEntityType, ModBlockEntities.BLAST_FURNACE_BE.get(),
                 (level1, pos, state1, blockEntity) -> blockEntity.tick(level1, pos, state1));
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<BlastFurnaceBlock> CODEC = simpleCodec(BlastFurnaceBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

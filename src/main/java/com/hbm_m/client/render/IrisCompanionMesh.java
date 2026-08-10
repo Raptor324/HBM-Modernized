@@ -27,6 +27,7 @@ import org.lwjgl.opengl.GL42;
 import org.lwjgl.opengl.GL44;
 import org.lwjgl.system.MemoryUtil;
 
+import com.hbm_m.client.render.shader.IrisBufferHelper;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -328,9 +329,8 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             // bbox must be derived from the unmodified BakedQuad data.
             computeObjBboxAndWeights();
 
-            BufferBuilder builder = new BufferBuilder(quads.size() * 256);
             // Begin with NEW_ENTITY; Iris mixin extends to IrisVertexFormats.ENTITY when loaded.
-            builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.NEW_ENTITY);
+            BufferBuilder builder = IrisBufferHelper.create(VertexFormat.Mode.QUADS, DefaultVertexFormat.NEW_ENTITY, quads.size() * 256);
 
             PoseStack.Pose neutralPose = new PoseStack().last();
             // Bake max sky+block light into UV2 so shader packs that read the

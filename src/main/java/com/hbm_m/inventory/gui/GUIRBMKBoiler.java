@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKBoilerBlockEntity;
 import com.hbm_m.inventory.menu.RBMKBoilerMenu;
@@ -48,7 +49,7 @@ public class GUIRBMKBoiler extends GuiInfoScreen<RBMKBoilerMenu> {
 
     @Override
     public void render(GuiGraphics g, int mx, int my, float partial) {
-        renderBackground(g);
+        GuiCompat.renderBackground(this, g, mx, my, partial);
         super.render(g, mx, my, partial);
 
         int x = leftPos + 8, y = topPos + 8;

@@ -93,4 +93,13 @@ public class SoyuzLauncherBlock extends BaseEntityBlock {
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<SoyuzLauncherBlock> CODEC = simpleCodec(SoyuzLauncherBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

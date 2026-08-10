@@ -225,4 +225,13 @@ public class MachineBatterySocketBlock extends BaseEntityBlock implements IMulti
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return level.isClientSide ? null : createTickerHelper(type, ModBlockEntities.BATTERY_SOCKET_BE.get(), BatterySocketBlockEntity::tick);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineBatterySocketBlock> CODEC = simpleCodec(MachineBatterySocketBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

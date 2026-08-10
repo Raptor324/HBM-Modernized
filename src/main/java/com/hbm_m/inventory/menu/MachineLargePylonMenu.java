@@ -65,9 +65,9 @@ public class MachineLargePylonMenu extends AbstractContainerMenu implements ILon
             @Override
             public boolean mayPlace(ItemStack stack) {
                 //? if forge {
-                if (stack.getCapability(ForgeCapabilities.ENERGY).isPresent()) return true;
+                if (com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent()) return true;
                 //?}
-                return stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()
+                return com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).isPresent()
                     || stack.getItem() instanceof ItemCreativeBattery;
             }
         });
@@ -172,10 +172,10 @@ public class MachineLargePylonMenu extends AbstractContainerMenu implements ILon
                 return ItemStack.EMPTY;
             }
         } else {
-            boolean isBattery = stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()
+            boolean isBattery = com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).isPresent()
                 || stack.getItem() instanceof ItemCreativeBattery;
             //? if forge {
-            isBattery = isBattery || stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+            isBattery = isBattery || com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent();
             //?}
 
             if (isBattery) {

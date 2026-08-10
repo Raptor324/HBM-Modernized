@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.inventory.menu.MachineBatteryMenu;
 // Используем импорты из твоих файлов
@@ -57,7 +58,7 @@ public class GUIMachineBattery extends AbstractContainerScreen<MachineBatteryMen
     @Override
     public void render(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
         // Используем renderBackground() здесь, как в новом GUI
-        this.renderBackground(pGuiGraphics);
+        GuiCompat.renderBackground(this, pGuiGraphics, pMouseX, pMouseY, pPartialTick);
         super.render(pGuiGraphics, pMouseX, pMouseY, pPartialTick);
         this.renderTooltip(pGuiGraphics, pMouseX, pMouseY);
     }

@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKStorageBlockEntity;
 import com.hbm_m.inventory.menu.RBMKStorageMenu;
@@ -33,7 +34,7 @@ public class GUIRBMKStorage extends GuiInfoScreen<RBMKStorageMenu> {
 
     @Override
     public void render(GuiGraphics g, int mx, int my, float partial) {
-        renderBackground(g);
+        GuiCompat.renderBackground(this, g, mx, my, partial);
         super.render(g, mx, my, partial);
 
         g.drawString(font, "RBMK Storage Column", leftPos + 8, topPos + 8, 0x333333, false);

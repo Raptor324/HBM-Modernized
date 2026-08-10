@@ -64,4 +64,13 @@ public class ArmorTableBlock extends BaseEntityBlock {
         }
         return InteractionResult.SUCCESS;
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<ArmorTableBlock> CODEC = simpleCodec(ArmorTableBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

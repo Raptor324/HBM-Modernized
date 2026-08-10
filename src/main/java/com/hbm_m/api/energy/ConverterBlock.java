@@ -92,4 +92,9 @@ public class ConverterBlock extends BaseEntityBlock {
         if (level.isClientSide) return null;
         return createTickerHelper(type, ModBlockEntities.CONVERTER_BE.get(), ConverterBlockEntity::serverTick);
     }
+
+    //? if > 1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<ConverterBlock> CODEC = simpleCodec(ConverterBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

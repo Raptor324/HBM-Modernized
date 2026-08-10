@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.MachineCyclotronBlockEntity;
 import com.hbm_m.inventory.menu.MachineCyclotronMenu;
@@ -54,7 +55,7 @@ public class GUIMachineCyclotron extends GuiInfoScreen<MachineCyclotronMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
         drawElectricityInfo(guiGraphics, mouseX, mouseY,

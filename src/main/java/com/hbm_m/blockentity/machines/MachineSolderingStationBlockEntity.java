@@ -182,6 +182,7 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity {
 
     // ─── NBT ──────────────────────────────────────────────────────────────────
 
+    //? if < 1.21.1 {
     @Override
     public void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -190,7 +191,20 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity {
         tag.putBoolean("collision", collisionPrevention);
         tank.writeToNBT(tag, "tank");
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        tag.putInt("progress",    progress);
+        tag.putInt("processTime", processTime);
+        tag.putBoolean("collision", collisionPrevention);
+        tank.writeToNBT(tag, "tank");
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -200,4 +214,17 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity {
         collisionPrevention = tag.getBoolean("collision");
         tank.readFromNBT(tag, "tank");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        progress            = tag.getInt("progress");
+        processTime         = tag.getInt("processTime");
+        if (processTime <= 0) processTime = 200;
+        collisionPrevention = tag.getBoolean("collision");
+        tank.readFromNBT(tag, "tank");
+    
+    }
+    *///?}
 }

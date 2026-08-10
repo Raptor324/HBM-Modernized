@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -99,7 +100,7 @@ public class DesignatorScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         guiGraphics.blit(TEXTURE, leftPos, topPos, 0, 0, WIDTH, HEIGHT);
         for (FolderButton b : buttons) {
             b.drawButton(guiGraphics, b.isMouseOnButton(mouseX, mouseY));

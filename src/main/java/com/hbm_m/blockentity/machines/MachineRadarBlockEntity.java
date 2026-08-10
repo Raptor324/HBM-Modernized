@@ -900,6 +900,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         return active;
     }
 
+    //? if < 1.21.1 {
     @Override
     public void saveAdditional(CompoundTag tag) {
         // Никакого snapshot.copy()/merge: в 1.20.1 chunk NBT собирается на главном
@@ -948,7 +949,60 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         }
         tag.put("contacts", contacts);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        // Никакого snapshot.copy()/merge: в 1.20.1 chunk NBT собирается на главном
+        // потоке, а побайтная запись уже уходит в IOWorker. Глубокое копирование
+        // 40 КБ дерева и побайтный merge обратно — чистый расход главного потока.
+        super.saveAdditional(tag, registries);
+        tag.putInt("progress", progress);
+        tag.putInt("max_progress", maxProgress);
+        tag.putBoolean("active", active);
+        tag.putBoolean("scan_missiles", scanMissiles);
+        tag.putBoolean("scan_shells", scanShells);
+        tag.putBoolean("scan_players", scanPlayers);
+        // Позиция экрана, связанного через radar linker (для разрыва связи при удалении линкера).
+        if (lastScreenLinkerPos != null) {
+            tag.putInt("lastScreenX", lastScreenLinkerPos.getX());
+            tag.putInt("lastScreenY", lastScreenLinkerPos.getY());
+            tag.putInt("lastScreenZ", lastScreenLinkerPos.getZ());
+        }
+        tag.putBoolean("smart_mode", smartMode);
+        tag.putBoolean("red_mode", redMode);
+        tag.putBoolean("show_map", showMap);
+        tag.putBoolean("jammed", jammed);
+        // Карта высот сохраняется на диск целиком (порт nbt.setByteArray("map", map)).
+        // В сетевой пакет (getUpdateTag) попадает только инкрементальный слайс.
+        // Одного copyOf массива достаточно, чтобы не отдать живой массив.
+        if (map == null || map.length != MAP_LENGTH) {
+            map = new byte[MAP_LENGTH];
+        }
+        tag.putByteArray("map", Arrays.copyOf(map, MAP_LENGTH));
+        // rotation/prevRotation НЕ сохраняем: это чисто клиентское состояние анимации.
+
+        ListTag contacts = new ListTag();
+        for (int[] entry : nearbyMissiles) {
+            if (entry == null || entry.length < 5) {
+                continue;
+            }
+            CompoundTag contactTag = new CompoundTag();
+            contactTag.putInt("x", entry[0]);
+            contactTag.putInt("y", entry[1]);
+            contactTag.putInt("z", entry[2]);
+            contactTag.putInt("v", entry[3]);
+            contactTag.putInt("t", entry[4]);
+            contactTag.putInt("m", entry.length >= 6 ? entry[5] : 0);
+            contactTag.putInt("eid", entry.length >= 7 ? entry[6] : -1);
+            contacts.add(contactTag);
+        }
+        tag.put("contacts", contacts);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -1015,6 +1069,76 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             });
         }
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        progress = tag.getInt("progress");
+        maxProgress = tag.getInt("max_progress");
+        if (maxProgress <= 0) {
+            maxProgress = DEFAULT_MAX_PROGRESS;
+        }
+        active = tag.getBoolean("active");
+        scanMissiles = !tag.contains("scan_missiles") || tag.getBoolean("scan_missiles");
+        scanShells = !tag.contains("scan_shells") || tag.getBoolean("scan_shells");
+        scanPlayers = tag.getBoolean("scan_players");
+        if (tag.contains("lastScreenX")) {
+            lastScreenLinkerPos = new BlockPos(
+                    tag.getInt("lastScreenX"),
+                    tag.getInt("lastScreenY"),
+                    tag.getInt("lastScreenZ"));
+        }
+        smartMode = tag.getBoolean("smart_mode");
+        redMode = tag.getBoolean("red_mode");
+        showMap = tag.getBoolean("show_map");
+        jammed = tag.getBoolean("jammed");
+
+        // Карта: с диска — целиком, из сети — инкрементальный слайс (см. getUpdateTag).
+        if (tag.contains("map")) {
+            byte[] saved = tag.getByteArray("map");
+            if (saved != null && saved.length == MAP_LENGTH) {
+                // clone() обязателен: getByteArray() возвращает массив, которым владеет
+                // ByteArrayTag загруженного chunk NBT. Без копии тик радара продолжал бы
+                // менять массив, который IOWorker пишет на диск в другом потоке.
+                map = saved.clone();
+            }
+        }
+        if (tag.contains("mapSliceIdx")) {
+            int idx = tag.getInt("mapSliceIdx");
+            byte[] slice = tag.getByteArray("mapSlice");
+            if (slice != null && idx >= 0 && idx * MAP_SLICE_SIZE + slice.length <= MAP_LENGTH) {
+                if (map == null || map.length != MAP_LENGTH) {
+                    map = new byte[MAP_LENGTH];
+                }
+                System.arraycopy(slice, 0, map, idx * MAP_SLICE_SIZE, slice.length);
+            }
+        }
+        if (tag.getBoolean("mapClear")) {
+            if (map == null || map.length != MAP_LENGTH) {
+                map = new byte[MAP_LENGTH];
+            } else {
+                Arrays.fill(map, (byte) 0);
+            }
+        }
+
+        nearbyMissiles.clear();
+        ListTag contacts = tag.getList("contacts", Tag.TAG_COMPOUND);
+        for (int i = 0; i < contacts.size(); i++) {
+            CompoundTag contactTag = contacts.getCompound(i);
+            nearbyMissiles.add(new int[] {
+                    contactTag.getInt("x"),
+                    contactTag.getInt("y"),
+                    contactTag.getInt("z"),
+                    contactTag.getInt("v"),
+                    contactTag.getInt("t"),
+                    contactTag.getInt("m"),
+                    contactTag.getInt("eid")
+            });
+        }
+    
+    }
+    *///?}
 
     @Override
     protected Component getDefaultName() {
@@ -1030,6 +1154,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
      * Лёгкий сетевой синк: без инвентаря и полной карты (40 КБ).
      * Карта — несколько последовательных инкрементальных слайсов по 100 байт.
      */
+    //? if < 1.21.1 {
     @Override
     public CompoundTag getUpdateTag() {
         CompoundTag tag = new CompoundTag();
@@ -1086,6 +1211,66 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         }
         return tag;
     }
+    //?} else {
+    /*@Override
+    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+
+        CompoundTag tag = new CompoundTag();
+        tag.putLong("energy", getEnergyStored());
+        tag.putBoolean("active", active);
+        tag.putBoolean("scan_missiles", scanMissiles);
+        tag.putBoolean("scan_shells", scanShells);
+        tag.putBoolean("scan_players", scanPlayers);
+        tag.putBoolean("smart_mode", smartMode);
+        tag.putBoolean("red_mode", redMode);
+        tag.putBoolean("show_map", showMap);
+        tag.putBoolean("jammed", jammed);
+
+        ListTag contacts = new ListTag();
+        for (int[] entry : nearbyMissiles) {
+            if (entry == null || entry.length < 5) {
+                continue;
+            }
+            CompoundTag contactTag = new CompoundTag();
+            contactTag.putInt("x", entry[0]);
+            contactTag.putInt("y", entry[1]);
+            contactTag.putInt("z", entry[2]);
+            contactTag.putInt("v", entry[3]);
+            contactTag.putInt("t", entry[4]);
+            contactTag.putInt("m", entry.length >= 6 ? entry[5] : 0);
+            contactTag.putInt("eid", entry.length >= 7 ? entry[6] : -1);
+            contacts.add(contactTag);
+        }
+        tag.put("contacts", contacts);
+
+        if (showMap && level != null && !level.isClientSide && mapSliceReady && map != null) {
+            int count = Math.min(mapSyncSliceCount, MAP_SYNC_MAX_SLICES);
+            byte[] slices = new byte[count * MAP_SLICE_SIZE];
+            for (int i = 0; i < count; i++) {
+                int slice = (mapSyncStartIndex + i) % MAP_SLICES;
+                System.arraycopy(map, slice * MAP_SLICE_SIZE, slices,
+                        i * MAP_SLICE_SIZE, MAP_SLICE_SIZE);
+            }
+            tag.putInt("mapSliceStart", mapSyncStartIndex);
+            tag.putInt("mapSliceCount", count);
+            tag.putByteArray("mapSlices", slices);
+            mapSyncSliceCount -= count;
+            if (mapSyncSliceCount > 0) {
+                mapSyncStartIndex = (mapSyncStartIndex + count) % MAP_SLICES;
+            }
+            if (mapSyncSliceCount <= 0) {
+                mapSyncSliceCount = 0;
+                mapSliceReady = false;
+            }
+        }
+        if (clearPulse) {
+            tag.putBoolean("mapClear", true);
+            clearPulse = false;
+        }
+        return tag;
+    
+    }
+    *///?}
 
     @Override
     public void handleUpdateTag(CompoundTag tag) {
@@ -1192,7 +1377,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             return true;
         }
         //? if forge {
-        return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+        return com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent();
         //?}
         //? if fabric {
         /*return teamreborn.energy.api.EnergyStorage.ITEM.find(stack, null) != null;

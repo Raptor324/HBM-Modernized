@@ -763,6 +763,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         return new AABB(worldPosition).inflate(3.0D);
     }
 
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         //? if fabric {
@@ -819,7 +820,68 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             refreshAdjacentFluidDuctConnections();
         }
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        //? if fabric {
+        /^// На Fabric клиентский пакет синхронизации часто приходит через load(), а не через
+        // onDataPacket (Forge). Без инвалидации чанка Sodium держит старые квады baked-модели.
+        final boolean clientFabric = level != null && level.isClientSide;
+        final ResourceLocation prevTankTexture = clientFabric ? getTankTextureLocation() : null;
+        ^///?}
+        //? if forge {
+        final boolean clientForge = level != null && level.isClientSide;
+        final ResourceLocation prevTankTextureForge = clientForge ? getTankTextureLocation() : null;
+        //?}
+
+        super.loadAdditional(tag, registries);
+        itemHandler.deserializeNBT(registries, tag.getCompound("Inventory"));
+        fluidTank.readFromNBT(tag, "tank");
+        // Старые миры могли не иметь этого поля — по умолчанию нужен режим, который умеет и fill и drain.
+        mode = tag.contains("mode") ? tag.getShort("mode") : 1;
+        hasExploded = tag.getBoolean("exploded");
+        onFire = tag.getBoolean("onFire");
+
+        if (tag.contains("filterFluid")) {
+            filterFluid = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(tag.getString("filterFluid")));
+        } else {
+            filterFluid = null;
+        }
+
+        if (tag.contains("AllowedFluidSides")) {
+            int mask = tag.getInt("AllowedFluidSides");
+            allowedFluidSides.clear();
+            for (Direction dir : Direction.values()) {
+                if ((mask & (1 << dir.get3DDataValue())) != 0) {
+                    allowedFluidSides.add(dir);
+                }
+            }
+        }
+        if (tag.contains("FluidSidesFromMbStructure")) {
+            fluidSidesFromMultiblockStructure = tag.getBoolean("FluidSidesFromMbStructure");
+        }
+
+        //? if fabric {
+        /^if (clientFabric && !getTankTextureLocation().equals(prevTankTexture)) {
+            scheduleChunkRebuild();
+        }
+        ^///?}
+
+        //? if forge {
+        if (clientForge && prevTankTextureForge != null && !prevTankTextureForge.equals(getTankTextureLocation())) {
+            requestModelDataUpdate();
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
+        }
+        //?}
+        if (level != null) {
+            refreshAdjacentFluidDuctConnections();
+        }
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -849,6 +911,39 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             tag.putInt("AllowedFluidSides", mask);
         }
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.saveAdditional(tag, registries);
+        tag.put("Inventory", itemHandler.serializeNBT(registries));
+        fluidTank.writeToNBT(tag, "tank");
+        tag.putShort("mode", mode);
+        tag.putBoolean("exploded", hasExploded);
+        tag.putBoolean("onFire", onFire);
+
+        if (filterFluid != null && filterFluid != Fluids.EMPTY) {
+            ResourceLocation key = BuiltInRegistries.FLUID.getKey(filterFluid);
+            if (key != null) {
+                tag.putString("filterFluid", key.toString());
+            }
+        }
+
+        if (fluidSidesFromMultiblockStructure) {
+            tag.putBoolean("FluidSidesFromMbStructure", true);
+            int mask = 0;
+            for (Direction dir : allowedFluidSides) {
+                mask |= (1 << dir.get3DDataValue());
+            }
+            tag.putInt("AllowedFluidSides", mask);
+        } else if (!allowedFluidSides.isEmpty()) {
+            int mask = 0;
+            for (Direction dir : allowedFluidSides) mask |= (1 << dir.get3DDataValue());
+            tag.putInt("AllowedFluidSides", mask);
+        }
+    
+    }
+    *///?}
 
     //? if forge {
     @Override
@@ -959,12 +1054,23 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         return filterFluid;
     }
 
+    //? if < 1.21.1 {
     @Override
     public CompoundTag getUpdateTag() {
         CompoundTag tag = new CompoundTag();
         saveAdditional(tag);
         return tag;
     }
+    //?} else {
+    /*@Override
+    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+
+        CompoundTag tag = new CompoundTag();
+        saveAdditional(tag, registries);
+        return tag;
+    
+    }
+    *///?}
 
     @Nullable
     @Override

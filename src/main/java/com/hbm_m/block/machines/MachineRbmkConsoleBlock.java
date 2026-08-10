@@ -149,4 +149,13 @@ public class MachineRbmkConsoleBlock extends BaseEntityBlock implements IMultibl
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return Shapes.block();
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineRbmkConsoleBlock> CODEC = simpleCodec(MachineRbmkConsoleBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

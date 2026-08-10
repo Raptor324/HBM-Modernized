@@ -180,4 +180,13 @@ public class TransitionSealBlock extends BaseEntityBlock implements IMultiblockC
         if(ex * ex + ey * ey <= 1.0) return Shapes.empty();
         return Shapes.block();
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<TransitionSealBlock> CODEC = simpleCodec(TransitionSealBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

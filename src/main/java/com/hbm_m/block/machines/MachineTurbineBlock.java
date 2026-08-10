@@ -189,4 +189,13 @@ public class MachineTurbineBlock extends BaseEntityBlock implements IMultiblockC
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return getCustomMasterVoxelShape(state);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineTurbineBlock> CODEC = simpleCodec(MachineTurbineBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

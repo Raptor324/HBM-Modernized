@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
@@ -192,7 +193,7 @@ public class GUILaunchPadLarge extends GuiInfoScreen<LaunchPadLargeMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
         LaunchPadBaseBlockEntity be = menu.getBlockEntity();

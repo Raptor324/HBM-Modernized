@@ -39,7 +39,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+//? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+//?}
 import dev.architectury.registry.menu.MenuRegistry;
 
 public class MachineChemicalFactoryBlock extends BaseEntityBlock implements IMultiblockController {
@@ -188,4 +190,13 @@ public class MachineChemicalFactoryBlock extends BaseEntityBlock implements IMul
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.CHEMICAL_FACTORY_BE.get(), MachineChemicalFactoryBlockEntity::tick);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineChemicalFactoryBlock> CODEC = simpleCodec(MachineChemicalFactoryBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

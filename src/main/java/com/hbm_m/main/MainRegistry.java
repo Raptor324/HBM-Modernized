@@ -70,6 +70,9 @@ public final class MainRegistry {
         ModExplosionParticles.init();
         ModSounds.init();
         ModItems.init();
+        //? if neoforge {
+        /*com.hbm_m.item.tools_and_armor.ModArmorMaterialsAccess.init();
+        *///?}
         ModMenuTypes.init();
         ModCreativeTabs.init();
         ModParticleTypes.init();

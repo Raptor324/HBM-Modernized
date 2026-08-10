@@ -1,15 +1,9 @@
 package com.hbm_m.client.render.effect;
 
-
-
 import com.hbm_m.client.ClientRenderHandler;
-
 import com.hbm_m.entity.effect.BlackHoleEntity;
-
 import com.hbm_m.entity.effect.RagingVortexEntity;
-
 import com.hbm_m.entity.effect.VortexEntity;
-
 import com.hbm_m.lib.RefStrings;
 
 import com.mojang.blaze3d.platform.GlStateManager;
@@ -25,55 +19,33 @@ import com.mojang.math.Axis;
 
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
-
 import net.minecraft.client.renderer.culling.Frustum;
-
 import net.minecraft.client.renderer.entity.EntityRenderer;
-
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-
 import net.minecraft.resources.ResourceLocation;
-
 import net.minecraft.world.entity.Entity;
-
 import net.minecraft.world.phys.Vec3;
 
 import org.joml.Matrix4f;
 
 
-
 /**
-
  * Порт {@code com.hbm.render.entity.effect.RenderBlackHole} (1.7.10).
-
  */
 
 public class RenderBlackHole<T extends BlackHoleEntity> extends EntityRenderer<T> {
 
-
-
     private static final int SPHERE_STACKS = 16;
-
     private static final int SPHERE_SLICES = 16;
-
-
 
     protected static final ResourceLocation SWIRL = RefStrings.resourceLocation("textures/entity/bhole.png");
 
-
-
     public RenderBlackHole(EntityRendererProvider.Context context) {
-
         super(context);
-
     }
 
-
-
     @Override
-
     public void render(T entity, float entityYaw, float partialTick,
-
                        PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
 
         poseStack.pushPose();
@@ -82,127 +54,68 @@ public class RenderBlackHole<T extends BlackHoleEntity> extends EntityRenderer<T
         float size = entity.getSize();
         poseStack.scale(size, size, size);
 
-
-
         renderBlackSphere(poseStack, bufferSource, 1.0F);
 
-
-
         if (entity instanceof VortexEntity) {
-
             renderSwirl(entity, partialTick, poseStack, bufferSource);
-
         } else if (entity instanceof RagingVortexEntity) {
-
             renderSwirl(entity, partialTick, poseStack, bufferSource);
-
             renderJets(poseStack, bufferSource, entity);
-
         } else {
-
             renderDisc(entity, partialTick, poseStack, bufferSource);
-
             renderJets(poseStack, bufferSource, entity);
-
         }
-
-
 
         RenderSystem.enableCull();
         poseStack.popPose();
     }
 
     /** Solid black event horizon (1.7.10 {@code Sphere.obj} + {@code BlackHole.png}). */
-
     protected void renderBlackSphere(PoseStack poseStack, MultiBufferSource bufferSource, float radius) {
 
         VertexConsumer consumer = bufferSource.getBuffer(ClientRenderHandler.CustomRenderTypes.BHOLE_SPHERE);
-
         Matrix4f matrix = poseStack.last().pose();
 
-
-
         for (int i = 0; i < SPHERE_STACKS; i++) {
-
             double phi1 = Math.PI * i / SPHERE_STACKS;
-
             double phi2 = Math.PI * (i + 1) / SPHERE_STACKS;
 
-
-
             for (int j = 0; j < SPHERE_SLICES; j++) {
-
                 double theta1 = 2.0 * Math.PI * j / SPHERE_SLICES;
-
                 double theta2 = 2.0 * Math.PI * (j + 1) / SPHERE_SLICES;
 
-
-
                 float x1 = (float) (radius * Math.sin(phi1) * Math.cos(theta1));
-
                 float y1 = (float) (radius * Math.cos(phi1));
-
                 float z1 = (float) (radius * Math.sin(phi1) * Math.sin(theta1));
 
-
-
                 float x2 = (float) (radius * Math.sin(phi2) * Math.cos(theta1));
-
                 float y2 = (float) (radius * Math.cos(phi2));
-
                 float z2 = (float) (radius * Math.sin(phi2) * Math.sin(theta1));
 
-
-
                 float x3 = (float) (radius * Math.sin(phi2) * Math.cos(theta2));
-
                 float y3 = (float) (radius * Math.cos(phi2));
-
                 float z3 = (float) (radius * Math.sin(phi2) * Math.sin(theta2));
 
-
-
                 float x4 = (float) (radius * Math.sin(phi1) * Math.cos(theta2));
-
                 float y4 = (float) (radius * Math.cos(phi1));
-
                 float z4 = (float) (radius * Math.sin(phi1) * Math.sin(theta2));
 
-
-
                 emitSolidVertex(consumer, matrix, x1, y1, z1);
-
                 emitSolidVertex(consumer, matrix, x2, y2, z2);
-
                 emitSolidVertex(consumer, matrix, x3, y3, z3);
-
-
 
                 emitSolidVertex(consumer, matrix, x1, y1, z1);
-
                 emitSolidVertex(consumer, matrix, x3, y3, z3);
-
                 emitSolidVertex(consumer, matrix, x4, y4, z4);
-
             }
-
         }
-
     }
-
-
 
     private static void emitSolidVertex(VertexConsumer consumer, Matrix4f matrix, float x, float y, float z) {
-
         consumer.vertex(matrix, x, y, z)
-
                 .color(0, 0, 0, 255)
-
                 .endVertex();
-
     }
-
-
 
     protected void renderDisc(T entity, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource) {
         float glow = 0.75F;
@@ -250,8 +163,6 @@ public class RenderBlackHole<T extends BlackHoleEntity> extends EntityRenderer<T
         endDiscPass();
         poseStack.popPose();
     }
-
-
 
     protected void renderSwirl(T entity, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource) {
         float glow = entity instanceof RagingVortexEntity ? 0.25F : 0.75F;
@@ -312,59 +223,32 @@ public class RenderBlackHole<T extends BlackHoleEntity> extends EntityRenderer<T
         poseStack.popPose();
     }
 
-
-
     protected void renderJets(PoseStack poseStack, MultiBufferSource bufferSource, T entity) {
-
+        
         poseStack.pushPose();
-
         poseStack.mulPose(Axis.XP.rotationDegrees(entity.getId() % 90 - 45));
-
         poseStack.mulPose(Axis.YP.rotationDegrees(entity.getId() % 360));
 
-
-
         Matrix4f matrix = poseStack.last().pose();
-
         VertexConsumer consumer = bufferSource.getBuffer(ClientRenderHandler.CustomRenderTypes.BHOLE_JETS);
-
         int innerAlpha = (int) (0.35F * 255);
 
-
-
         for (int j = -1; j <= 1; j += 2) {
-
             Vec3 jet = new Vec3(0.5, 0, 0);
-
             Vec3[] ring = new Vec3[13];
-
             for (int i = 0; i <= 12; i++) {
-
                 ring[i] = jet;
-
                 jet = rotateY(jet, (float) (Math.PI / 6 * -j));
-
             }
 
             for (int i = 0; i < 12; i++) {
-
                 consumer.vertex(matrix, 0, 0, 0).color(255, 255, 255, innerAlpha).endVertex();
-
                 consumer.vertex(matrix, (float) ring[i].x, 10 * j, (float) ring[i].z).color(255, 255, 255, 0).endVertex();
-
                 consumer.vertex(matrix, (float) ring[i + 1].x, 10 * j, (float) ring[i + 1].z).color(255, 255, 255, 0).endVertex();
-
             }
-
         }
-
-
-
         poseStack.popPose();
-
     }
-
-
 
     private static void beginDiscPass(ResourceLocation texture) {
         RenderSystem.enableDepthTest();
@@ -399,9 +283,7 @@ public class RenderBlackHole<T extends BlackHoleEntity> extends EntityRenderer<T
 
 
     protected int steps() {
-
         return 15;
-
     }
 
 
@@ -410,38 +292,23 @@ public class RenderBlackHole<T extends BlackHoleEntity> extends EntityRenderer<T
 
         int a = (int) (alpha * 255);
 
-
-
         if (iteration < 5) {
-
             float g = 0.125F + iteration * (1F / 10F);
-
             return new int[]{255, (int) (g * 255), 0, a};
-
         }
 
         if (iteration == 5) {
-
             return new int[]{255, 255, 0, a};
-
         }
 
         if (iteration > 5) {
-
             int i = iteration - 6;
-
             float r = 1.0F - i * (1F / 9F);
-
             float g = 1F - i * (1F / 9F);
-
             float b = i * (1F / 5F);
-
             return new int[]{(int) (r * 255), (int) (g * 255), (int) (b * 255), a};
-
         }
-
         return new int[]{255, 255, 255, a};
-
     }
 
 
@@ -449,47 +316,29 @@ public class RenderBlackHole<T extends BlackHoleEntity> extends EntityRenderer<T
     protected int[] getColorFull(Entity entity) {
 
         if (entity instanceof VortexEntity) {
-
             return new int[]{0x38, 0x98, 0xb3, 255};
-
         }
 
         if (entity instanceof RagingVortexEntity) {
-
             return new int[]{0xe8, 0x39, 0x0d, 255};
-
         }
-
         return new int[]{0xFF, 0xB9, 0x00, 255};
-
     }
-
-
 
     protected int[] getColorNone(Entity entity) {
 
         if (entity instanceof VortexEntity) {
-
             return new int[]{0x38, 0x98, 0xb3, 0};
-
         }
 
         if (entity instanceof RagingVortexEntity) {
-
             return new int[]{0xe8, 0x39, 0x0d, 0};
-
         }
-
         return new int[]{0xFF, 0xB9, 0x00, 0};
-
     }
 
-
-
     protected ResourceLocation discTex() {
-
         return RefStrings.resourceLocation("textures/entity/bhole_disc.png");
-
     }
 
 
@@ -497,43 +346,22 @@ public class RenderBlackHole<T extends BlackHoleEntity> extends EntityRenderer<T
     protected static Vec3 rotateY(Vec3 vec, float angle) {
 
         double cos = Math.cos(angle);
-
         double sin = Math.sin(angle);
-
         return new Vec3(vec.x * cos + vec.z * sin, vec.y, -vec.x * sin + vec.z * cos);
-
     }
 
-
-
     @Override
-
     public ResourceLocation getTextureLocation(T entity) {
-
         return RefStrings.resourceLocation("textures/models/blackhole.png");
-
     }
 
-
-
     @Override
-
     public boolean shouldRender(T entity, Frustum frustum, double camX, double camY, double camZ) {
-
         return true;
-
     }
-
-
 
     @Override
-
     protected int getBlockLightLevel(T entity, net.minecraft.core.BlockPos pos) {
-
         return 15;
-
     }
-
 }
-
-

@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -131,7 +133,7 @@ public class MachineCombinationOvenBlockEntity extends BaseMachineBlockEntity {
         ItemStack outSlot = inventory.getStackInSlot(SLOT_OUTPUT);
         ItemStack out = recipe.getOutput();
         if (!outSlot.isEmpty()) {
-            if (!ItemStack.isSameItemSameTags(outSlot, out)) return false;
+            if (!PlatformHooks.isSameItemSameTags(outSlot, out)) return false;
             if (outSlot.getCount() + out.getCount() > outSlot.getMaxStackSize()) return false;
         }
 
@@ -156,6 +158,7 @@ public class MachineCombinationOvenBlockEntity extends BaseMachineBlockEntity {
 
     // ==================== NBT ====================
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -163,7 +166,19 @@ public class MachineCombinationOvenBlockEntity extends BaseMachineBlockEntity {
         tag.putInt("duration", currentDuration);
         tank.writeToNBT(tag, "tank");
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        tag.putInt("progress", progressTicks);
+        tag.putInt("duration", currentDuration);
+        tank.writeToNBT(tag, "tank");
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -171,6 +186,17 @@ public class MachineCombinationOvenBlockEntity extends BaseMachineBlockEntity {
         currentDuration = tag.contains("duration") ? Math.max(1, tag.getInt("duration")) : 1;
         tank.readFromNBT(tag, "tank");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        progressTicks = tag.getInt("progress");
+        currentDuration = tag.contains("duration") ? Math.max(1, tag.getInt("duration")) : 1;
+        tank.readFromNBT(tag, "tank");
+    
+    }
+    *///?}
 
     // ==================== GETTERS / MENU ====================
 

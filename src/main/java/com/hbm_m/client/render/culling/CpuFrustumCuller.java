@@ -12,6 +12,9 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+*///?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 
 /**
@@ -21,7 +24,7 @@ import net.fabricmc.api.Environment;
  * <p>Стоимость: 6 dot-product сравнений на BE + одна квадратичная дистанция.
  * На 1000 BE это &lt;0.1 ms, против 7.8 ms у raycast-варианта.
  */
-//? if forge {
+//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
 //?}
 //? if fabric {

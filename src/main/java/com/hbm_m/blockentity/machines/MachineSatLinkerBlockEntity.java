@@ -70,12 +70,23 @@ public class MachineSatLinkerBlockEntity extends BlockEntity implements MenuProv
         }
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.put("inventory", inventory.serializeNBT());
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        tag.put("inventory", inventory.serializeNBT(registries));
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -83,6 +94,17 @@ public class MachineSatLinkerBlockEntity extends BlockEntity implements MenuProv
             inventory.deserializeNBT(tag.getCompound("inventory"));
         }
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        if (tag.contains("inventory")) {
+            inventory.deserializeNBT(registries, tag.getCompound("inventory"));
+        }
+    
+    }
+    *///?}
 
     @Override
     public Component getDisplayName() {

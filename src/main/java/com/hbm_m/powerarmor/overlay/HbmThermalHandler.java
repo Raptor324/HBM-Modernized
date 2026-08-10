@@ -153,7 +153,14 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
             poseStack.pushPose();
             pushedPose = true;
             net.minecraft.client.renderer.MultiBufferSource.BufferSource originalBufferSource =
-                    net.minecraft.client.renderer.MultiBufferSource.immediate(new BufferBuilder(256));
+                    net.minecraft.client.renderer.MultiBufferSource.immediate(
+                            //? if forge {
+                            new BufferBuilder(256)
+                            //?}
+                            //? if neoforge {
+                            /*new BufferBuilder(com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_COLOR, com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS, 256)
+                            *///?}
+                    );
             ShadowIgnoringBufferSource bufferSource = new ShadowIgnoringBufferSource(originalBufferSource);
 
             for (Entity entity : mc.level.entitiesForRendering()) {

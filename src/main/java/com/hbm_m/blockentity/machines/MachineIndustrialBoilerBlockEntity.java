@@ -329,6 +329,7 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
     public int getThermalUnits() { return heat; }
 
     // --- NBT ---
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -345,7 +346,28 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
         tag.putInt("ThermalUnits", heat);
         tag.putBoolean("IsOn", isOn);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        
+        CompoundTag waterTag = new CompoundTag();
+        waterTank.writeToNBT(waterTag, "water");
+        tag.put("WaterTank", waterTag);
+        
+        CompoundTag steamTag = new CompoundTag();
+        steamTank.writeToNBT(steamTag, "steam");
+        tag.put("SteamTank", steamTag);
+        
+        tag.putInt("Heat", heat);
+        tag.putInt("ThermalUnits", heat);
+        tag.putBoolean("IsOn", isOn);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -363,6 +385,27 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
         }
         isOn = tag.getBoolean("IsOn");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        
+        if (tag.contains("WaterTank")) {
+            waterTank.readFromNBT(tag.getCompound("WaterTank"), "water");
+        }
+        if (tag.contains("SteamTank")) {
+            steamTank.readFromNBT(tag.getCompound("SteamTank"), "steam");
+        }
+        if (tag.contains("Heat")) {
+            heat = tag.getInt("Heat");
+        } else {
+            heat = tag.getInt("ThermalUnits");
+        }
+        isOn = tag.getBoolean("IsOn");
+    
+    }
+    *///?}
 
     // --- Capabilities ---
     //? if forge {

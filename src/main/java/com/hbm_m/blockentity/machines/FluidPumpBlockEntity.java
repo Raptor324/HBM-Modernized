@@ -184,12 +184,23 @@ public class FluidPumpBlockEntity extends BlockEntity implements IFluidStandardT
         return values[ordinal];
     }
 
+    //? if < 1.21.1 {
     @Override
     public CompoundTag getUpdateTag() {
         CompoundTag tag = super.getUpdateTag();
         saveAdditional(tag);
         return tag;
     }
+    //?} else {
+    /*@Override
+    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+
+        CompoundTag tag = super.getUpdateTag(registries);
+        saveAdditional(tag, registries);
+        return tag;
+    
+    }
+    *///?}
 
     @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {

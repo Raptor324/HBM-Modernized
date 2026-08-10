@@ -111,4 +111,13 @@ public class BarrelTankBlock extends BaseEntityBlock {
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level level, @NotNull BlockState state, @NotNull BlockEntityType<T> type) {
         return createTickerHelper(type, beTypeSupplier.get(), MachineFluidTankBlockEntity::tick);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<BarrelTankBlock> CODEC = simpleCodec(BarrelTankBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

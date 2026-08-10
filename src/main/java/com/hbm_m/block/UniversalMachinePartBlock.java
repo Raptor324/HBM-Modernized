@@ -516,4 +516,9 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         }
         return 0;
     }
+
+    //? if > 1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<UniversalMachinePartBlock> CODEC = simpleCodec(UniversalMachinePartBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

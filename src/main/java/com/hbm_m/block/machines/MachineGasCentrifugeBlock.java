@@ -200,4 +200,13 @@ public class MachineGasCentrifugeBlock extends BaseEntityBlock implements IMulti
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.GAS_CENTRIFUGE_BE.get(), MachineGasCentrifugeBlockEntity::tick);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineGasCentrifugeBlock> CODEC = simpleCodec(MachineGasCentrifugeBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

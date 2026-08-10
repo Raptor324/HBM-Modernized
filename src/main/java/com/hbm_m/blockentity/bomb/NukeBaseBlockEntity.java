@@ -116,6 +116,7 @@ public abstract class NukeBaseBlockEntity extends BlockEntity implements Worldly
         return out;
     }
 
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -135,7 +136,31 @@ public abstract class NukeBaseBlockEntity extends BlockEntity implements Worldly
             }
         }
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.loadAdditional(tag, registries);
+        ListTag list = tag.getList("Items", 10);
+        for (int i = 0; i < list.size(); i++) {
+            CompoundTag itemTag = list.getCompound(i);
+            byte b = itemTag.getByte("Slot");
+            if (b >= 0 && b < slots.size()) {
+                slots.set(b, ItemStack.of(itemTag));
+            }
+        }
+        if (tag.contains("CustomName", 8)) {
+            try {
+                customName = Component.Serializer.fromJson(com.google.gson.JsonParser.parseString(tag.getString("CustomName")));
+            } catch (Exception e) {
+                customName = null;
+            }
+        }
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -154,6 +179,28 @@ public abstract class NukeBaseBlockEntity extends BlockEntity implements Worldly
             tag.putString("CustomName", net.minecraft.network.chat.Component.Serializer.toJson(customName));
         }
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.saveAdditional(tag, registries);
+        ListTag list = new ListTag();
+        for (int i = 0; i < slots.size(); i++) {
+            ItemStack stack = slots.get(i);
+            if (!stack.isEmpty()) {
+                CompoundTag itemTag = new CompoundTag();
+                itemTag.putByte("Slot", (byte) i);
+                stack.save(itemTag);
+                list.add(itemTag);
+            }
+        }
+        tag.put("Items", list);
+        if (customName != null) {
+            tag.putString("CustomName", net.minecraft.network.chat.Component.Serializer.toJson(customName));
+        }
+    
+    }
+    *///?}
 
     @Override
     public boolean isEmpty() {

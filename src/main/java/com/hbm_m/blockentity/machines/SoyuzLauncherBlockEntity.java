@@ -369,6 +369,7 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity {
                          p.getX() + 9, p.getY() + 66, p.getZ() + 9);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -378,7 +379,21 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity {
         tanks[0].writeToNBT(tag, "fuel");
         tanks[1].writeToNBT(tag, "oxidizer");
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        tag.putInt("soyuz_mode", mode);
+        tag.putBoolean("soyuz_starting", starting);
+        tag.putInt("soyuz_countdown", countdown);
+        tanks[0].writeToNBT(tag, "fuel");
+        tanks[1].writeToNBT(tag, "oxidizer");
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -388,4 +403,17 @@ public class SoyuzLauncherBlockEntity extends BaseMachineBlockEntity {
         tanks[0].readFromNBT(tag, "fuel");
         tanks[1].readFromNBT(tag, "oxidizer");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        mode = tag.getInt("soyuz_mode");
+        starting = tag.getBoolean("soyuz_starting");
+        countdown = tag.getInt("soyuz_countdown");
+        tanks[0].readFromNBT(tag, "fuel");
+        tanks[1].readFromNBT(tag, "oxidizer");
+    
+    }
+    *///?}
 }

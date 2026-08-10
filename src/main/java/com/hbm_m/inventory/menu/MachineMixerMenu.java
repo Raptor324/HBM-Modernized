@@ -47,12 +47,12 @@ public class MachineMixerMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(machineInventory, SLOT_BATTERY, 23, 95) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                boolean hbm = stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
+                boolean hbm = com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack)
                         .map(provider -> provider.canExtract())
                         .orElse(false);
                 if (hbm) return true;
                 //? if forge {
-                return stack.getCapability(ForgeCapabilities.ENERGY)
+                return com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack)
                         .map(storage -> storage.canExtract())
                         .orElse(false);
                 //?} else {
@@ -118,11 +118,11 @@ public class MachineMixerMenu extends AbstractContainerMenu {
                 return ItemStack.EMPTY;
             }
         } else {
-            boolean isBattery = slotStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
+            boolean isBattery = com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(slotStack)
                     .map(provider -> provider.canExtract())
                     .orElse(false);
             //? if forge {
-            isBattery = isBattery || slotStack.getCapability(ForgeCapabilities.ENERGY)
+            isBattery = isBattery || com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(slotStack)
                     .map(storage -> storage.canExtract())
                     .orElse(false);
             //?}

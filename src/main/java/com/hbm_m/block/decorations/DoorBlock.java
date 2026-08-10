@@ -375,4 +375,13 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
     public VoxelShape getBlockSupportShape(BlockState pState, BlockGetter pLevel, BlockPos pPos) {
         return Shapes.empty();
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<DoorBlock> CODEC = simpleCodec(DoorBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

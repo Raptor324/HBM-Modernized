@@ -4,7 +4,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.item.ArmorMaterial;
+import com.hbm_m.item.tools_and_armor.ModArmorMaterials;
 import net.minecraft.world.item.ItemStack;
 
 /**
@@ -53,7 +53,7 @@ public class BismuthArmor extends ModPowerArmorItem {
             .setJumpSound("hbm_m:step.iron_jump")
             .setFallSound("hbm_m:step.iron_land");
 
-    public BismuthArmor(ArmorMaterial material, Type type, Properties properties) {
+    public BismuthArmor(ModArmorMaterials material, Type type, Properties properties) {
         super(material, type, properties, BISMUTH_SPECS);
     }
 

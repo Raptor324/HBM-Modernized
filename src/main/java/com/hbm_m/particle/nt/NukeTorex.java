@@ -483,8 +483,8 @@ public class NukeTorex extends ParticleNT {
             this.didShake = true;
             CameraShakeHandler.addShake(1.0F, 30);
         }
-        */
-        //?}
+        
+        *///?}
     }
 
     @Override

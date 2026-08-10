@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.MachineSolderingStationBlockEntity;
 import com.hbm_m.inventory.menu.MachineSolderingStationMenu;
@@ -71,7 +72,7 @@ public class GUIMachineSolderingStation extends GuiInfoScreen<MachineSolderingSt
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(g);
+        GuiCompat.renderBackground(this, g, mouseX, mouseY, partialTick);
         super.render(g, mouseX, mouseY, partialTick);
 
         drawElectricityInfo(g, mouseX, mouseY, 152, 18, 16, 52,

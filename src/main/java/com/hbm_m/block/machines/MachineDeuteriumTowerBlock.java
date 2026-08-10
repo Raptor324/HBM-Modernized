@@ -39,7 +39,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+//? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+//?}
 import dev.architectury.registry.menu.MenuRegistry;
 
 public class MachineDeuteriumTowerBlock extends BaseEntityBlock implements IMultiblockController {
@@ -179,4 +181,13 @@ public class MachineDeuteriumTowerBlock extends BaseEntityBlock implements IMult
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.DEUTERIUM_TOWER_BE.get(), MachineDeuteriumTowerBlockEntity::tick);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineDeuteriumTowerBlock> CODEC = simpleCodec(MachineDeuteriumTowerBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

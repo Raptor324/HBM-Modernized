@@ -43,7 +43,10 @@ import com.hbm_m.client.render.shader.IrisPhaseGuard;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.model.data.ModelData;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
@@ -57,7 +60,7 @@ import net.fabricmc.api.Environment;
  * <p>Статическое тело — {@code crystallizer.json} в chunk mesh (Spinner/Fluid скрыты).
  * Под Iris/VBO путь совпадает с {@link MachineChemicalPlantRenderer} / {@link MachineAdvancedAssemblerRenderer}.</p>
  */
-//? if forge {
+//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
 //?}
 //? if fabric {

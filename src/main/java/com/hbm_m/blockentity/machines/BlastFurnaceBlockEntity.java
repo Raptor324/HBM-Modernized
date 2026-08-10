@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Optional;
@@ -9,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
-// Блок-энтити для Плавильной Печи, которая переплавляет два входных предмета в один выходной с использованием топлива.
+// Р‘Р»РѕРє-СЌРЅС‚РёС‚Рё РґР»СЏ РџР»Р°РІРёР»СЊРЅРѕР№ РџРµС‡Рё, РєРѕС‚РѕСЂР°СЏ РїРµСЂРµРїР»Р°РІР»СЏРµС‚ РґРІР° РІС…РѕРґРЅС‹С… РїСЂРµРґРјРµС‚Р° РІ РѕРґРёРЅ РІС‹С…РѕРґРЅРѕР№ СЃ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµРј С‚РѕРїР»РёРІР°.
 import com.hbm_m.block.machines.BlastFurnaceBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.BlastFurnaceMenu;
@@ -85,7 +87,7 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
         }
     };
 
-    /** Общий (loader-agnostic) доступ к инвентарю для меню/рендера. */
+    /** РћР±С‰РёР№ (loader-agnostic) РґРѕСЃС‚СѓРї Рє РёРЅРІРµРЅС‚Р°СЂСЋ РґР»СЏ РјРµРЅСЋ/СЂРµРЅРґРµСЂР°. */
     public ModItemStackHandler getInventory() {
         return itemHandler;
     }
@@ -240,6 +242,7 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
         return new BlastFurnaceMenu(containerId, playerInventory, this, this.data);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         tag.put("inventory", itemHandler.serializeNBT());
@@ -250,7 +253,22 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
         tag.putInt("blast_furnace.side_fuel", sideFuel);
         super.saveAdditional(tag);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        tag.put("inventory", itemHandler.serializeNBT(registries));
+        tag.putInt("blast_furnace.progress", progress);
+        tag.putInt("blast_furnace.fuel", fuel);
+        tag.putInt("blast_furnace.side_upper", sideUpper);
+        tag.putInt("blast_furnace.side_lower", sideLower);
+        tag.putInt("blast_furnace.side_fuel", sideFuel);
+        super.saveAdditional(tag, registries);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -261,6 +279,20 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
         sideLower = tag.getInt("blast_furnace.side_lower");
         sideFuel = tag.getInt("blast_furnace.side_fuel");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        itemHandler.deserializeNBT(registries, tag.getCompound("inventory"));
+        progress = tag.getInt("blast_furnace.progress");
+        fuel = tag.getInt("blast_furnace.fuel");
+        sideUpper = tag.getInt("blast_furnace.side_upper");
+        sideLower = tag.getInt("blast_furnace.side_lower");
+        sideFuel = tag.getInt("blast_furnace.side_fuel");
+    
+    }
+    *///?}
 
     public void tick(Level level, BlockPos pos, BlockState state) {
         if (level.isClientSide()) {
@@ -353,7 +385,7 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
 
     private static boolean canItemStacksStack(ItemStack a, ItemStack b) {
         if (a.isEmpty() || !a.is(b.getItem())) return false;
-        return ItemStack.isSameItemSameTags(a, b);
+        return PlatformHooks.isSameItemSameTags(a, b);
     }
 
     private Optional<BlastFurnaceRecipe> getCurrentRecipe() {
@@ -487,12 +519,21 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
+    //? if < 1.21.1 {
     @Override
     public CompoundTag getUpdateTag() {
         return saveWithoutMetadata();
     }
+    //?} else {
+    /*@Override
+    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
 
-    // ─────────────────── DirectionalItemHandler (Forge only) ─────────────────
+        return saveWithoutMetadata();
+    
+    }
+    *///?}
+
+    // в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ DirectionalItemHandler (Forge only) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
     //? if forge {
     private class DirectionalItemHandler implements IItemHandler {

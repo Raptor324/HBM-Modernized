@@ -286,6 +286,7 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
 
     // --- NBT ---
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -298,7 +299,24 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
         tag.putLong("maxPower", maxPower);
         tag.putDouble("spin", spin);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        steamTank.writeToNBT(tag, "steam");
+        spentSteamTank.writeToNBT(tag, "spent");
+        tag.putBoolean("active", isActive);
+        tag.putFloat("anim", anim);
+        tag.putFloat("prevAnim", prevAnim);
+        tag.putLong("flywheelEnergy", flywheelEnergy);
+        tag.putLong("maxPower", maxPower);
+        tag.putDouble("spin", spin);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -311,6 +329,22 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
         maxPower = tag.getLong("maxPower");
         spin = tag.getDouble("spin");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        steamTank.readFromNBT(tag, "steam");
+        spentSteamTank.readFromNBT(tag, "spent");
+        isActive = tag.getBoolean("active");
+        anim = tag.getFloat("anim");
+        prevAnim = tag.getFloat("prevAnim");
+        flywheelEnergy = tag.getLong("flywheelEnergy");
+        maxPower = tag.getLong("maxPower");
+        spin = tag.getDouble("spin");
+    
+    }
+    *///?}
 
     // --- Capabilities ---
 

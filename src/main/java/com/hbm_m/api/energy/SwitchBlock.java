@@ -123,4 +123,9 @@ public class SwitchBlock extends BaseEntityBlock {
         if (level.isClientSide) return null;
         return createTickerHelper(type, ModBlockEntities.SWITCH_BE.get(), SwitchBlockEntity::tick);
     }
+
+    //? if > 1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<SwitchBlock> CODEC = simpleCodec(SwitchBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

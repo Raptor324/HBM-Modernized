@@ -127,6 +127,65 @@ public final class PlatformHooks {
     }
 
     // =====================================================================================
+    //  ItemStack сравнение и сериализация (версионные обёртки).
+    //
+    //  1.20.1: isSameItemSameTags, ItemStack.of(CompoundTag), stack.save(CompoundTag).
+    //  1.21.1: isSameItemSameComponents, ItemStack.parseOptional(Provider, CompoundTag),
+    //          stack.save(Provider, CompoundTag) — все требуют HolderLookup.Provider.
+    // =====================================================================================
+
+    /**
+     * Сравнение двух ItemStack по предмету и данным (NBT на 1.20.1 / DataComponents на 1.21.1).
+     * Заменяет {@code ItemStack.isSameItemSameTags(a, b)}.
+     */
+    public static boolean isSameItemSameTags(ItemStack a, ItemStack b) {
+        //? if forge || fabric {
+        return ItemStack.isSameItemSameTags(a, b);
+        //?}
+        //? if neoforge {
+        /*return ItemStack.isSameItemSameComponents(a, b);
+        *///?}
+    }
+
+    /**
+     * Создание ItemStack из NBT-тега. Заменяет {@code ItemStack.of(tag)} на 1.20.1.
+     * На 1.21.1 требует {@code HolderLookup.Provider} (DataComponents несут реестровые ссылки).
+     *
+     * @param provider реестры (передавайте {@code level.holderLookup()} или {@code player.registryAccess()})
+     */
+    public static ItemStack itemStackOf(CompoundTag tag, net.minecraft.core.HolderLookup.Provider provider) {
+        //? if forge || fabric {
+        return ItemStack.of(tag);
+        //?}
+        //? if neoforge {
+        /*return ItemStack.parseOptional(provider, tag);
+        *///?}
+    }
+
+    /**
+     * Сохранение ItemStack в NBT-тег. Заменяет {@code stack.save(tag)} на 1.20.1.
+     * Возвращает тот же (заполненный) тег на обеих версиях.
+     *
+     * @param provider реестры (на 1.21.1 обязателен)
+     */
+    public static CompoundTag saveItemStack(ItemStack stack, CompoundTag tag, net.minecraft.core.HolderLookup.Provider provider) {
+        //? if forge || fabric {
+        return stack.save(tag);
+        //?}
+        //? if neoforge {
+        /*return (CompoundTag) stack.save(provider, tag);
+        *///?}
+    }
+
+    /**
+     * Удобная обёртка: сохраняет {@code stack} в НОВЫЙ {@link CompoundTag} и возвращает его.
+     * Используйте, когда не нужен конкретный целевой тег (как {@code stack.save(new CompoundTag())}).
+     */
+    public static CompoundTag safeItemSave(ItemStack stack, net.minecraft.core.HolderLookup.Provider provider) {
+        return saveItemStack(stack, new CompoundTag(), provider);
+    }
+
+    // =====================================================================================
     //  Типизированные хелперы (COMMON — делегируют в getItemTag/editItemTag, без gating).
     //  Цель: сохранить линейный стиль вызова, близкий к stack.getOrCreateTag().putX(...),
     //  без лямбд и лишних скобок. Каждый putX делает read-modify-write (сохраняется на обеих версиях).

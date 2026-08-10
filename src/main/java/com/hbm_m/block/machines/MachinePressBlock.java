@@ -159,4 +159,13 @@ public class MachinePressBlock extends BaseEntityBlock implements IMultiblockCon
         // Для пресса все части - чистая структура
         return PartRole.DEFAULT;
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachinePressBlock> CODEC = simpleCodec(MachinePressBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

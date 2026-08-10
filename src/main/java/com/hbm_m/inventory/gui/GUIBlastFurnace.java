@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.inventory.menu.BlastFurnaceMenu;
 // GUI для плавильной печи. Показывает прогресс плавки, уровень топлива и индикатор работы печи.
@@ -72,7 +73,7 @@ public class GUIBlastFurnace extends AbstractContainerScreen<BlastFurnaceMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, delta);
         super.render(guiGraphics, mouseX, mouseY, delta);
         renderSlotDirectionTooltip(guiGraphics, mouseX, mouseY);
         renderTooltip(guiGraphics, mouseX, mouseY);

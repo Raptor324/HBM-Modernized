@@ -1,5 +1,8 @@
 package com.hbm_m.inventory.gui;
 
+import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.client.GuiCompat;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -79,7 +82,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         searchBox.setTextColorUneditable(0xFFFFFFFF);
         searchBox.setResponder(this::applySearch);
         
-        // Устанавливаем подсказку
+        // РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј РїРѕРґСЃРєР°Р·РєСѓ
         String hint = Component.translatable("gui.hbm_m.anvil.search_hint").getString();
         if ("gui.hbm_m.anvil.search_hint".equals(hint)) {
             hint = Component.translatable("gui.hbm_m.anvil.search").getString();
@@ -201,7 +204,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
             if (searchBox.isFocused() && searchBox.getValue().isEmpty()) {
                 searchBox.setSuggestion("");
             } else if (!searchBox.isFocused() && searchBox.getValue().isEmpty()) {
-                // Возвращаем подсказку когда теряем фокус и поле пустое
+                // Р’РѕР·РІСЂР°С‰Р°РµРј РїРѕРґСЃРєР°Р·РєСѓ РєРѕРіРґР° С‚РµСЂСЏРµРј С„РѕРєСѓСЃ Рё РїРѕР»Рµ РїСѓСЃС‚РѕРµ
                 String hint = Component.translatable("gui.hbm_m.anvil.search_hint").getString();
                 if ("gui.hbm_m.anvil.search_hint".equals(hint)) {
                     hint = Component.translatable("gui.hbm_m.anvil.search").getString();
@@ -502,7 +505,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         
         guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, imageHeight - 96 + 2, 0x404040, false);
         
-        // Рисуем текст деталей рецепта (если выбран)
+        // Р РёСЃСѓРµРј С‚РµРєСЃС‚ РґРµС‚Р°Р»РµР№ СЂРµС†РµРїС‚Р° (РµСЃР»Рё РІС‹Р±СЂР°РЅ)
         renderRecipeDetailsText(guiGraphics);
     }
     
@@ -552,16 +555,16 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
             
             AnvilRecipe recipe = filteredRecipes.get(recipeIndex);
             
-            // ИСПРАВЛЕНИЕ: Определяем иконку в зависимости от типа рецепта
+            // РРЎРџР РђР’Р›Р•РќРР•: РћРїСЂРµРґРµР»СЏРµРј РёРєРѕРЅРєСѓ РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ С‚РёРїР° СЂРµС†РµРїС‚Р°
             ItemStack displayStack;
             if (recipe.isRecycling()) {
-                // Для разборки - показываем входной предмет
+                // Р”Р»СЏ СЂР°Р·Р±РѕСЂРєРё - РїРѕРєР°Р·С‹РІР°РµРј РІС…РѕРґРЅРѕР№ РїСЂРµРґРјРµС‚
                 displayStack = recipe.getRecyclingInputStack();
                 if (displayStack.isEmpty()) {
-                    displayStack = recipe.getDisplayStack(); // Фоллбэк
+                    displayStack = recipe.getDisplayStack(); // Р¤РѕР»Р»Р±СЌРє
                 }
             } else {
-                // Для обычных рецептов - стандартная иконка
+                // Р”Р»СЏ РѕР±С‹С‡РЅС‹С… СЂРµС†РµРїС‚РѕРІ - СЃС‚Р°РЅРґР°СЂС‚РЅР°СЏ РёРєРѕРЅРєР°
                 displayStack = recipe.getDisplayStack();
             }
             
@@ -591,24 +594,24 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
     private void renderSidePanel(GuiGraphics guiGraphics, int guiLeft, int guiTop) {
         int slide = Mth.clamp(lastTextWidth - 42, 0, 1000);
         
-        // СНАЧАЛА рисуем дополнительные сегменты (слева направо)
+        // РЎРќРђР§РђР›Рђ СЂРёСЃСѓРµРј РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Рµ СЃРµРіРјРµРЅС‚С‹ (СЃР»РµРІР° РЅР°РїСЂР°РІРѕ)
         int mul = 1;
         while (slide >= 51 * mul) {
             guiGraphics.blit(TEXTURE, guiLeft + 125 + 51 * mul, guiTop + 17, 125, 17, 54, 108);
             mul++;
         }
         
-        // ПОТОМ рисуем основной сегмент (справа)
+        // РџРћРўРћРњ СЂРёСЃСѓРµРј РѕСЃРЅРѕРІРЅРѕР№ СЃРµРіРјРµРЅС‚ (СЃРїСЂР°РІР°)
         guiGraphics.blit(TEXTURE, guiLeft + 125 + slide, guiTop + 17, 125, 17, 54, 108);
     }
     
     /**
-     * Отрисовка текста деталей рецепта
+     * РћС‚СЂРёСЃРѕРІРєР° С‚РµРєСЃС‚Р° РґРµС‚Р°Р»РµР№ СЂРµС†РµРїС‚Р°
      */
     private void renderRecipeDetailsText(GuiGraphics guiGraphics) {
         List<Component> lines = buildRecipeDetails();
         
-        // Вычисляем ширину текста и обновляем lastTextWidth
+        // Р’С‹С‡РёСЃР»СЏРµРј С€РёСЂРёРЅСѓ С‚РµРєСЃС‚Р° Рё РѕР±РЅРѕРІР»СЏРµРј lastTextWidth
         int longest = 0;
         if (!lines.isEmpty()) {
             for (Component line : lines) {
@@ -620,12 +623,12 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
             lastTextWidth = 0;
         }
         
-        // Если нет текста - выходим
+        // Р•СЃР»Рё РЅРµС‚ С‚РµРєСЃС‚Р° - РІС‹С…РѕРґРёРј
         if (lines.isEmpty()) {
             return;
         }
         
-        // Рисуем текст
+        // Р РёСЃСѓРµРј С‚РµРєСЃС‚
         float scale = 0.5F;
         guiGraphics.pose().pushPose();
         guiGraphics.pose().scale(scale, scale, 1.0F);
@@ -686,7 +689,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
         hoveredRecipeStack = ItemStack.EMPTY;
-        renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, delta);
         super.render(guiGraphics, mouseX, mouseY, delta);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
         
@@ -728,7 +731,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         Inventory inventory = minecraft.player.getInventory();
         for (int i = 0; i < inventory.getContainerSize(); i++) {
             ItemStack invStack = inventory.getItem(i);
-            if (ItemStack.isSameItemSameTags(invStack, stack)) {
+            if (PlatformHooks.isSameItemSameTags(invStack, stack)) {
                 count += invStack.getCount();
             }
         }
@@ -791,7 +794,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         
         for (int slot = 0; slot < slotLimit; slot++) {
             ItemStack slotStack = handler.getStackInSlot(slot);
-            if (ItemStack.isSameItemSameTags(slotStack, stack)) {
+            if (PlatformHooks.isSameItemSameTags(slotStack, stack)) {
                 count += slotStack.getCount();
             }
         }

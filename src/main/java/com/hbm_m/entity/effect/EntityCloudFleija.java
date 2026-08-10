@@ -37,10 +37,20 @@ public class EntityCloudFleija extends Entity {
         return this.entityData.get(MAX_AGE);
     }
 
+    //? if < 1.21.1 {
+
     @Override
     protected void defineSynchedData() {
         this.entityData.define(MAX_AGE, 100);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+
+        builder.define(MAX_AGE, 100);
+    
+    }
+    *///?}
 
     @Override
     public void tick() {

@@ -21,8 +21,11 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+@OnlyIn(Dist.CLIENT)
+*///?} elif fabric {
 /*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 @Environment(EnvType.CLIENT)*///?}

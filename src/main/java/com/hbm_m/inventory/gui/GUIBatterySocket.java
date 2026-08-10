@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +46,7 @@ public class GUIBatterySocket extends AbstractContainerScreen<BatterySocketMenu>
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
+        GuiCompat.renderBackground(this, graphics, mouseX, mouseY, partialTick);
         super.render(graphics, mouseX, mouseY, partialTick);
         renderTooltip(graphics, mouseX, mouseY);
     }

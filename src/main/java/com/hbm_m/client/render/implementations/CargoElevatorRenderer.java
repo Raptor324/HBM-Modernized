@@ -15,9 +15,10 @@ import com.mojang.blaze3d.vertex.PoseStack;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-
-//? if fabric {
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?} elif fabric {
 /*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 *///?}
@@ -41,7 +42,7 @@ import net.minecraft.world.phys.AABB;
  *   <li>Piston — (extension+1) раз, стопка по Y (если renderPlatform)</li>
  * </ul>
  */
-//? if forge {
+//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
 //?}
 //? if fabric {

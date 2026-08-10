@@ -61,6 +61,7 @@ public abstract class BaseCrateBlockEntity extends BlockEntity implements MenuPr
 
     // Forge item handler capabilities removed for Fabric compilation.
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -72,7 +73,23 @@ public abstract class BaseCrateBlockEntity extends BlockEntity implements MenuPr
         }
         tag.put("inventory", itemHandler.serializeNBT());
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        if (this.lootTable != null) {
+            tag.putString("LootTable", this.lootTable.toString());
+            if (this.lootTableSeed != 0L) {
+                tag.putLong("LootTableSeed", this.lootTableSeed);
+            }
+        }
+        tag.put("inventory", itemHandler.serializeNBT(registries));
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -84,6 +101,21 @@ public abstract class BaseCrateBlockEntity extends BlockEntity implements MenuPr
             itemHandler.deserializeNBT(tag.getCompound("inventory"));
         }
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        if (tag.contains("LootTable", 8)) {
+            this.lootTable = ResourceLocation.parse(tag.getString("LootTable"));
+            this.lootTableSeed = tag.getLong("LootTableSeed");
+        }
+        if (tag.contains("inventory")) {
+            itemHandler.deserializeNBT(registries, tag.getCompound("inventory"));
+        }
+    
+    }
+    *///?}
 
     public boolean isEmpty() {
         for (int i = 0; i < itemHandler.getSlots(); i++) {

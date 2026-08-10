@@ -21,10 +21,12 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+//? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+//?}
 
 /**
  * BlockEntity for the Cooling Tower (Small) multiblock.
@@ -158,6 +160,7 @@ public class MachineTowerSmallBlockEntity extends BaseMachineBlockEntity impleme
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -166,7 +169,20 @@ public class MachineTowerSmallBlockEntity extends BaseMachineBlockEntity impleme
         }
         tag.putBoolean("isCooling", isCooling);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        for (int i = 0; i < tanks.length; i++) {
+            tanks[i].writeToNBT(tag, "tank_" + i);
+        }
+        tag.putBoolean("isCooling", isCooling);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -175,6 +191,18 @@ public class MachineTowerSmallBlockEntity extends BaseMachineBlockEntity impleme
         }
         isCooling = tag.getBoolean("isCooling");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        for (int i = 0; i < tanks.length; i++) {
+            tanks[i].readFromNBT(tag, "tank_" + i);
+        }
+        isCooling = tag.getBoolean("isCooling");
+    
+    }
+    *///?}
 
     //? if forge {
     @Override

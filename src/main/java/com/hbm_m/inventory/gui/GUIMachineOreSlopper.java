@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.MachineOreSlopperBlockEntity;
 import com.hbm_m.inventory.menu.MachineOreSlopperMenu;
@@ -69,7 +70,7 @@ public class GUIMachineOreSlopper extends GuiInfoScreen<MachineOreSlopperMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, delta);
         super.render(guiGraphics, mouseX, mouseY, delta);
 
         MachineOreSlopperBlockEntity be = menu.getBlockEntity();

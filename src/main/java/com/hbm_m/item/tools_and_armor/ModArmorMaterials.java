@@ -5,14 +5,32 @@ import com.hbm_m.main.MainRegistry;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.crafting.Ingredient;
 
 import java.util.function.Supplier;
 
+//? if forge {
+import net.minecraft.world.item.ArmorMaterial;
+//?}
+
+/**
+ * Перечень материалов брони мода.
+ *
+ * На 1.20.1 (Forge) enum реализует {@code ArmorMaterial} интерфейс — это ванильный способ.
+ *
+ * На 1.21.1 (NeoForge) {@code ArmorMaterial} стал {@code final record} — его нельзя
+ * реализовать через enum. Поэтому здесь enum НЕ реализует {@code ArmorMaterial}, а
+ * действительный материал регистрируется через {@link ModArmorMaterialsAccess#holder}.
+ *
+ * Чтобы не плодить stonecutter-ветки в call-sites, все реальные параметры публикуются
+ * через публичные геттеры — {@code ModArmorMaterialsAccess} использует их при сборке
+ * материала на NeoForge.
+ */
+//? if forge {
 public enum ModArmorMaterials implements ArmorMaterial {
-
-
+//?} elif neoforge {
+/*public enum ModArmorMaterials {
+*///?}
 
 
     ALLOY("alloy", 26, new int[]{ 5, 7, 5, 4 }, 25,
@@ -46,15 +64,12 @@ public enum ModArmorMaterials implements ArmorMaterial {
             SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModItems.PLATE_STEEL.get())),
 
     TITANIUM("titanium", 26, new int[]{ 5, 7, 5, 4 }, 15,
-    SoundEvents.ARMOR_EQUIP_IRON, 1f, 0.05f, () -> Ingredient.of(ModItems.PLATE_IRON.get())),
+            SoundEvents.ARMOR_EQUIP_IRON, 1f, 0.05f, () -> Ingredient.of(ModItems.PLATE_IRON.get())),
 
     // Used by Bismuth power armor (ported from 1.7.10 HBM_BISMUTH).
     // Note: vanilla defense is ignored for power armor items (see ModPowerArmorItem#getDefense()).
     BISMUTH("bismuth", 100, new int[]{ 3, 8, 6, 3 }, 100,
             SoundEvents.ARMOR_EQUIP_IRON, 2f, 0.2f, () -> Ingredient.of(ModItems.PLATE_BISMUTH.get()));
-
-
-
 
 
     private final String name;
@@ -80,6 +95,35 @@ public enum ModArmorMaterials implements ArmorMaterial {
         this.repairIngredient = repairIngredient;
     }
 
+    // ---- Публичные геттеры для обеих версий (используются ModArmorMaterialsAccess на NeoForge) ----
+
+    public String getName() {
+        return MainRegistry.MOD_ID + ":" + this.name;
+    }
+
+    public int[] getProtectionAmounts() {
+        return this.protectionAmounts;
+    }
+
+    public int getEnchantmentValue() {
+        return enchantmentValue;
+    }
+
+    public float getToughness() {
+        return this.toughness;
+    }
+
+    public float getKnockbackResistance() {
+        return this.knockbackResistance;
+    }
+
+    public Supplier<Ingredient> getRepairIngredientSupplier() {
+        return this.repairIngredient;
+    }
+
+    // ---- Forge-only реализация ArmorMaterial (1.20.1) ----
+
+    //? if forge {
     @Override
     public int getDurabilityForType(ArmorItem.Type pType) {
         return BASE_DURABILITY[pType.ordinal()] * this.durabilityMultiplier;
@@ -91,11 +135,6 @@ public enum ModArmorMaterials implements ArmorMaterial {
     }
 
     @Override
-    public int getEnchantmentValue() {
-        return enchantmentValue;
-    }
-
-    @Override
     public SoundEvent getEquipSound() {
         return this.equipSound;
     }
@@ -104,20 +143,5 @@ public enum ModArmorMaterials implements ArmorMaterial {
     public Ingredient getRepairIngredient() {
         return this.repairIngredient.get();
     }
-
-    @Override
-    public String getName() {
-        return MainRegistry.MOD_ID + ":" + this.name;
-    }
-
-    @Override
-    public float getToughness() {
-        return this.toughness;
-    }
-
-    @Override
-    public float getKnockbackResistance() {
-        return this.knockbackResistance;
-    }
-
+    //?}
 }

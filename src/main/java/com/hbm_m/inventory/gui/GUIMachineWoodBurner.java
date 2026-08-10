@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.inventory.menu.MachineWoodBurnerMenu;
 import com.hbm_m.main.MainRegistry; // ЗАМЕНИ НА СВОЙ КЛАСС
@@ -79,7 +80,7 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
 
     @Override
     public void render(GuiGraphics gui, int mouseX, int mouseY, float delta) {
-        this.renderBackground(gui);
+        GuiCompat.renderBackground(this, gui, mouseX, mouseY, delta);
         super.render(gui, mouseX, mouseY, delta);
         this.renderTooltip(gui, mouseX, mouseY);
     }

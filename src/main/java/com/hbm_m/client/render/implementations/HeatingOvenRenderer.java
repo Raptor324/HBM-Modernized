@@ -7,7 +7,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 //?}
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
+import net.fabricmc.api.Environment;
+*///?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 import java.util.List;
 
@@ -34,7 +38,7 @@ import net.minecraftforge.client.model.data.ModelData;
  * Renderer for HeatingOven block entity.
  * Renders animated door and inner burning state based on original 1.7.10 code.
  */
-//? if forge {
+//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
 //?}
 //? if fabric {

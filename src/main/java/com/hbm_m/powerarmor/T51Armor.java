@@ -2,7 +2,7 @@ package com.hbm_m.powerarmor;
 
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.item.ArmorMaterial;
+import com.hbm_m.item.tools_and_armor.ModArmorMaterials;
 
 // T51 Power Armor with full set bonus - powered armor with various enhancements
 public class T51Armor extends ModPowerArmorItem {
@@ -30,7 +30,7 @@ public class T51Armor extends ModPowerArmorItem {
 	.setJumpSound("hbm_m:step.iron_jump")
 	.setFallSound("hbm_m:step.iron_land");
 
-    public T51Armor(ArmorMaterial material, Type type, Properties properties) {
+    public T51Armor(ModArmorMaterials material, Type type, Properties properties) {
         super(material, type, properties, T51_SPECS);
     }
 }

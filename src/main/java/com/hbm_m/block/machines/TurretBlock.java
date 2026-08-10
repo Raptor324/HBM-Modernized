@@ -86,4 +86,13 @@ public class TurretBlock extends BaseEntityBlock {
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<TurretBlock> CODEC = simpleCodec(TurretBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

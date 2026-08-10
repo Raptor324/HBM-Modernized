@@ -240,4 +240,9 @@ public class WireBlock extends BaseEntityBlock {
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new WireBlockEntity(pos, state);
     }
+
+    //? if > 1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<WireBlock> CODEC = simpleCodec(WireBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

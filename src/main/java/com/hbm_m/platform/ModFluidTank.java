@@ -7,12 +7,13 @@ import org.jetbrains.annotations.NotNull;
 
 //? if forge {
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 
 
 // * На Forge ModFluidTank — тонкая обёртка над FluidTank.
 // * isFluidValid переопределяется анонимным классом или подклассом.
- 
+
 public class ModFluidTank extends FluidTank {
 
     private Fluid conformedFluid = Fluids.EMPTY;
@@ -44,7 +45,7 @@ public class ModFluidTank extends FluidTank {
 
     // ── Платформенные хелперы (для единообразия с Fabric API) ────────────────
 
-//   Кол-во жидкости в мБ.
+    //   Кол-во жидкости в мБ.
     public int getFluidAmountMb() {
         return fluid.getAmount();
     }
@@ -58,12 +59,12 @@ public class ModFluidTank extends FluidTank {
         return fluid.isEmpty();
     }
 
-//     Свободное место в мБ.
+    //     Свободное место в мБ.
     public int getSpaceMb() {
         return capacity - fluid.getAmount();
     }
 
-//   Тип жидкости (Fluids.EMPTY если пусто).
+    //   Тип жидкости (Fluids.EMPTY если пусто).
     public Fluid getStoredFluid() {
         return fluid.isEmpty() ? Fluids.EMPTY : fluid.getFluid();
     }
@@ -80,27 +81,25 @@ public class ModFluidTank extends FluidTank {
         return drain(amountMb, FluidAction.EXECUTE).getAmount();
     }
 
+    //     * Заполнить tankом amount мБ указанной жидкости (без проверки isFluidValid).
+    //     * Возвращает реально добавленное количество.
 
-//     * Заполнить tanком amount мБ указанной жидкости (без проверки isFluidValid).
-//     * Возвращает реально добавленное количество.
-     
     public int fillInternal(Fluid fluid, int amount) {
         if (amount <= 0 || fluid == Fluids.EMPTY) return 0;
         FluidStack stack = new FluidStack(fluid, amount);
         return fill(stack, FluidAction.EXECUTE);
     }
 
+    //     * Слить amount мБ (любой жидкости из танка).
+    //     * Возвращает реально слитое количество.
 
-//     * Слить amount мБ (любой жидкости из танка).
-//     * Возвращает реально слитое количество.
-     
     public int drainInternal(int amount) {
         if (amount <= 0) return 0;
         FluidStack drained = drain(amount, FluidAction.EXECUTE);
         return drained.getAmount();
     }
 
-//     NBT: сохранить.
+    //     NBT: сохранить (1.20.1 forge API — без провайдера).
     public CompoundTag writeNBT(CompoundTag tag) {
         writeToNBT(tag);
         if (conformedFluid != Fluids.EMPTY) {
@@ -110,7 +109,7 @@ public class ModFluidTank extends FluidTank {
         return tag;
     }
 
-//    NBT: загрузить.
+    //    NBT: загрузить (1.20.1 forge API — без провайдера).
     public void readNBT(CompoundTag tag) {
         readFromNBT(tag);
         if (tag.contains("ConformedFluid")) {
@@ -121,12 +120,128 @@ public class ModFluidTank extends FluidTank {
         }
     }
 }
-//?}
+//?} elif neoforge {
+/*import net.minecraft.core.HolderLookup;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
+
+/^*
+ * На NeoForge 1.21.1 ModFluidTank — тонкая обёртка над FluidTank.
+ *
+ * <p><b>ВНИМАНИЕ:</b> на NeoForge 1.21.1 {@code writeToNBT}/{@code readFromNBT} требуют
+ * {@link HolderLookup.Provider} (DataComponents несут реестровые ссылки). Поэтому NBT-методы
+ * имеют версии с провайдером. Машины, использующие {@code saveAdditional(tag, registries)},
+ * должны вызывать {@code writeNBT(registries, tag)}.
+ ^/
+public class ModFluidTank extends FluidTank {
+
+    private Fluid conformedFluid = Fluids.EMPTY;
+
+    public ModFluidTank(int capacity) {
+        super(capacity);
+    }
+
+    public void conform(Fluid type) {
+        if (type == null) type = Fluids.EMPTY;
+        if (getStoredFluid() != type && !isEmpty()) {
+            drain(getFluidAmountMb(), IFluidHandler.FluidAction.EXECUTE);
+        }
+        this.conformedFluid = type;
+    }
+
+    public void resetTank() {
+        if (!isEmpty()) {
+            drain(getFluidAmountMb(), IFluidHandler.FluidAction.EXECUTE);
+        }
+        this.conformedFluid = Fluids.EMPTY;
+    }
+
+    @NotNull
+    public Fluid getConfiguredFluid() {
+        Fluid stored = getStoredFluid();
+        return stored != Fluids.EMPTY ? stored : conformedFluid;
+    }
+
+    // ── Платформенные хелперы ────────────────────────────────────────────────
+
+    public int getFluidAmountMb() {
+        return fluid.getAmount();
+    }
+
+    public int getCapacityMb() {
+        return capacity;
+    }
+
+    public boolean isEmpty() {
+        return fluid.isEmpty();
+    }
+
+    public int getSpaceMb() {
+        return capacity - fluid.getAmount();
+    }
+
+    public Fluid getStoredFluid() {
+        return fluid.isEmpty() ? Fluids.EMPTY : fluid.getFluid();
+    }
+
+    // ──────────────── Fill/Drain в mB ────────────────
+
+    public int fillMb(Fluid fluid, int amountMb) {
+        if (amountMb <= 0 || fluid == Fluids.EMPTY) return 0;
+        return fill(new FluidStack(fluid, amountMb), IFluidHandler.FluidAction.EXECUTE);
+    }
+
+    public int drainMb(int amountMb) {
+        if (amountMb <= 0) return 0;
+        return drain(amountMb, IFluidHandler.FluidAction.EXECUTE).getAmount();
+    }
+
+    public int fillInternal(Fluid fluid, int amount) {
+        if (amount <= 0 || fluid == Fluids.EMPTY) return 0;
+        FluidStack stack = new FluidStack(fluid, amount);
+        return fill(stack, IFluidHandler.FluidAction.EXECUTE);
+    }
+
+    public int drainInternal(int amount) {
+        if (amount <= 0) return 0;
+        FluidStack drained = drain(amount, IFluidHandler.FluidAction.EXECUTE);
+        return drained.getAmount();
+    }
+
+    // ──────────────── NBT (1.21.1 neoforge API — с HolderLookup.Provider) ────────────────
+    // На NeoForge 1.21.1 без-providер версия невозможна (DataComponents требуют реестров).
+    // Машины должны вызывать writeNBT(registries, tag) / readNBT(registries, tag),
+    // где registries — параметр из saveAdditional(tag, registries)/loadAdditional(tag, registries).
+    // Это параллельно с ModItemStackHandler.serializeNBT(provider).
+
+    public CompoundTag writeNBT(HolderLookup.Provider provider, CompoundTag tag) {
+        writeToNBT(provider, tag);
+        if (conformedFluid != Fluids.EMPTY) {
+            net.minecraft.resources.ResourceLocation loc = net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(conformedFluid);
+            if (loc != null) tag.putString("ConformedFluid", loc.toString());
+        }
+        return tag;
+    }
+
+    public void readNBT(HolderLookup.Provider provider, CompoundTag tag) {
+        readFromNBT(provider, tag);
+        if (tag.contains("ConformedFluid")) {
+            Fluid f = net.minecraft.core.registries.BuiltInRegistries.FLUID.get(net.minecraft.resources.ResourceLocation.tryParse(tag.getString("ConformedFluid")));
+            conformedFluid = f != null ? f : Fluids.EMPTY;
+        } else {
+            conformedFluid = Fluids.EMPTY;
+        }
+    }
+}
+*///?}
 
 //? if fabric {
 /*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.storage.base.SingleVariantStorage;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+
+import net.minecraft.core.HolderLookup;
 
 /^*
  * На Fabric ModFluidTank — обёртка над SingleVariantStorage<FluidVariant>.
@@ -274,6 +389,10 @@ public abstract class ModFluidTank {
         return tag;
     }
 
+    public CompoundTag writeNBT(HolderLookup.Provider provider, CompoundTag tag) {
+        return writeNBT(tag);
+    }
+
     public void readNBT(CompoundTag tag) {
         try (Transaction tx = Transaction.openOuter()) {
             // Перезаписываем содержимое, иначе при повторных sync/load будет накапливаться amount.
@@ -301,6 +420,10 @@ public abstract class ModFluidTank {
         } else {
             conformedFluid = Fluids.EMPTY;
         }
+    }
+
+    public void readNBT(HolderLookup.Provider provider, CompoundTag tag) {
+        readNBT(tag);
     }
 }
 *///?}

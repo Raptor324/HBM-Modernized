@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.MachineDerrickBlockEntity;
 import com.hbm_m.inventory.menu.MachineDerrickMenu;
@@ -71,7 +72,7 @@ public class GUIMachineDerrick extends GuiInfoScreen<MachineDerrickMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
         // energy tooltip (bar spans x=8..24, y=17..51)

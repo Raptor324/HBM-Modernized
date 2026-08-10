@@ -326,8 +326,8 @@ public class ConfigScreen extends Screen {
     /*@Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double amount) {
         return handleMouseScrolled(mouseX, mouseY, amount);
-    }*/
-    //?}
+    }
+    *///?}
 
     private boolean handleMouseScrolled(double mouseX, double mouseY, double amount) {
         // Колесо над полосой вкладок (или Shift в любом месте) → прокрутка вкладок,
@@ -341,8 +341,8 @@ public class ConfigScreen extends Screen {
         //? if <1.21 {
         return super.mouseScrolled(mouseX, mouseY, amount);
         //?} else {
-        /*return super.mouseScrolled(mouseX, mouseY, 0.0D, amount);*/
-        //?}
+        /*return super.mouseScrolled(mouseX, mouseY, 0.0D, amount);
+        *///?}
     }
 
     // ================================================================

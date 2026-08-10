@@ -90,4 +90,24 @@ public final class ItemEnergyAccess {
         return cap != null && cap.canExtract();
     }
     *///?}
+
+    /**
+     * Кросс-платформенный доступ к FE-item-capability предмета (Forge Energy).
+     * На forge возвращает {@code net.minecraftforge.energy.IEnergyStorage},
+     * на neoforge — {@code net.neoforged.neoforge.energy.IEnergyStorage}.
+     * У обоих интерфейсов идентичная сигнатура методов, call-сайт внутри
+     * {@code .ifPresent(...)} работает одинаково.
+     */
+    //? if forge {
+    public static java.util.Optional<net.minecraftforge.energy.IEnergyStorage> getForgeEnergy(ItemStack stack) {
+        if (stack.isEmpty()) return java.util.Optional.empty();
+        return stack.getCapability(ForgeCapabilities.ENERGY).resolve();
+    }
+    //?}
+    //? if neoforge {
+    /*public static java.util.Optional<net.neoforged.neoforge.energy.IEnergyStorage> getForgeEnergy(ItemStack stack) {
+        if (stack.isEmpty()) return java.util.Optional.empty();
+        return java.util.Optional.ofNullable(stack.getCapability(Capabilities.EnergyStorage.ITEM));
+    }
+    *///?}
 }

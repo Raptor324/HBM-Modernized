@@ -55,6 +55,7 @@ public abstract class RBMKControlBlockEntity extends RBMKColumnBlockEntity imple
         return d;
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -62,7 +63,19 @@ public abstract class RBMKControlBlockEntity extends RBMKColumnBlockEntity imple
         tag.putDouble("targetLevel", targetLevel);
         tag.putShort("color", color);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        tag.putDouble("level", level);
+        tag.putDouble("targetLevel", targetLevel);
+        tag.putShort("color", color);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -70,5 +83,16 @@ public abstract class RBMKControlBlockEntity extends RBMKColumnBlockEntity imple
         targetLevel = tag.getDouble("targetLevel");
         color       = tag.getShort("color");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        level       = tag.getDouble("level");
+        targetLevel = tag.getDouble("targetLevel");
+        color       = tag.getShort("color");
+    
+    }
+    *///?}
 }
 

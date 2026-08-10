@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -165,7 +167,7 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
                 continue;
             }
 
-            if (!ItemStack.isSameItemSameTags(outputSlot, result)) {
+            if (!PlatformHooks.isSameItemSameTags(outputSlot, result)) {
                 return false;
             }
 
@@ -197,7 +199,7 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
             ItemStack outputSlot = inventory.getStackInSlot(slot);
             if (outputSlot.isEmpty()) {
                 inventory.setStackInSlot(slot, result.copy());
-            } else if (ItemStack.isSameItemSameTags(outputSlot, result)) {
+            } else if (PlatformHooks.isSameItemSameTags(outputSlot, result)) {
                 outputSlot.grow(result.getCount());
             }
         }

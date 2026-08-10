@@ -31,7 +31,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
+//? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+//?}
 
 public class MachineHydrotreaterBlock extends BaseEntityBlock implements IMultiblockController {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
@@ -66,4 +68,13 @@ public class MachineHydrotreaterBlock extends BaseEntityBlock implements IMultib
     public PartRole getPartRole(BlockPos localOffset) {
         return structureHelper.resolvePartRole(localOffset, this);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineHydrotreaterBlock> CODEC = simpleCodec(MachineHydrotreaterBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

@@ -103,4 +103,13 @@ public class MachineShredderBlock extends BaseEntityBlock {
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineShredderBlock> CODEC = simpleCodec(MachineShredderBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

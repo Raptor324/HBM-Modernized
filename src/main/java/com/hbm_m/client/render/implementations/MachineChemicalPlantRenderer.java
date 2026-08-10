@@ -32,7 +32,10 @@ import org.lwjgl.opengl.GL11;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
@@ -48,7 +51,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-//? if forge {
+//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
 //?}
 //? if fabric {
@@ -216,9 +219,11 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
             // см. комментарий у DeferredChemplantFluid.
             scheduleDeferredFluid(model, be.getBlockState(), poseStack, be.getAnim(partialTick),
                     packedLight, packedOverlay, visual);
-            //?} else {
-            /*// Fabric: deferred-fluid путь требует forge-only IrisPhaseGuard, на fabric жидкость не рисуется.
-            *///?}
+            
+           //?} else { 
+             
+            //?}
+            // Fabric: deferred-fluid путь требует forge-only IrisPhaseGuard, на fabric жидкость не рисуется.
         }
     }
 

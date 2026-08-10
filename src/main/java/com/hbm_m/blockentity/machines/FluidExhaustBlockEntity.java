@@ -174,10 +174,19 @@ public class FluidExhaustBlockEntity extends BlockEntity implements IFluidPipeMK
         super.load(tag);
     }
 
+    //? if < 1.21.1 {
     @Override
     public CompoundTag getUpdateTag() {
         return super.getUpdateTag();
     }
+    //?} else {
+    /*@Override
+    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+
+        return super.getUpdateTag(registries);
+    
+    }
+    *///?}
 
     @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {

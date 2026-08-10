@@ -316,6 +316,7 @@ public class MachineSolarBoilerBlockEntity extends BaseMachineBlockEntity implem
     public int getActiveMirrorCount() { return activeMirrorCount; }
 
     // --- NBT ---
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -325,7 +326,21 @@ public class MachineSolarBoilerBlockEntity extends BaseMachineBlockEntity implem
         tag.putInt("SolarBrightness", solarBrightness);
         tag.putInt("ActiveMirrorCount", activeMirrorCount);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        for (int i = 0; i < tanks.length; i++) {
+            tanks[i].writeToNBT(tag, "tank_" + i);
+        }
+        tag.putInt("SolarBrightness", solarBrightness);
+        tag.putInt("ActiveMirrorCount", activeMirrorCount);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -335,6 +350,19 @@ public class MachineSolarBoilerBlockEntity extends BaseMachineBlockEntity implem
         solarBrightness = tag.getInt("SolarBrightness");
         activeMirrorCount = tag.getInt("ActiveMirrorCount");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        for (int i = 0; i < tanks.length; i++) {
+            tanks[i].readFromNBT(tag, "tank_" + i);
+        }
+        solarBrightness = tag.getInt("SolarBrightness");
+        activeMirrorCount = tag.getInt("ActiveMirrorCount");
+    
+    }
+    *///?}
 
     // --- Capabilities ---
     //? if forge {

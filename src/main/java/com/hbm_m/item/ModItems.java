@@ -2,9 +2,9 @@ package com.hbm_m.item;
 
 import static com.hbm_m.lib.RefStrings.MODID;
 
-// Класс для регистрации всех предметов мода.
-// Использует DeferredRegister для отложенной регистрации. Здесь так же регистрируются моды для брони.
-// Слитки регистрируются автоматически на основе перечисления ModIngots.
+// РљР»Р°СЃСЃ РґР»СЏ СЂРµРіРёСЃС‚СЂР°С†РёРё РІСЃРµС… РїСЂРµРґРјРµС‚РѕРІ РјРѕРґР°.
+// РСЃРїРѕР»СЊР·СѓРµС‚ DeferredRegister РґР»СЏ РѕС‚Р»РѕР¶РµРЅРЅРѕР№ СЂРµРіРёСЃС‚СЂР°С†РёРё. Р—РґРµСЃСЊ С‚Р°Рє Р¶Рµ СЂРµРіРёСЃС‚СЂРёСЂСѓСЋС‚СЃСЏ РјРѕРґС‹ РґР»СЏ Р±СЂРѕРЅРё.
+// РЎР»РёС‚РєРё СЂРµРіРёСЃС‚СЂРёСЂСѓСЋС‚СЃСЏ Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РЅР° РѕСЃРЅРѕРІРµ РїРµСЂРµС‡РёСЃР»РµРЅРёСЏ ModIngots.
 
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -78,6 +78,7 @@ import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
 import com.hbm_m.item.tags_and_tiers.RadioactiveItem;
 import com.hbm_m.item.tools_and_armor.ModArmorMaterials;
+import com.hbm_m.item.tools_and_armor.ModArmorMaterialsAccess;
 import com.hbm_m.item.tools_and_armor.ModAxeItem;
 import com.hbm_m.item.tools_and_armor.ModPickaxeItem;
 import com.hbm_m.item.tools_and_armor.ModShovelItem;
@@ -115,8 +116,8 @@ import net.minecraftforge.common.ForgeSpawnEggItem;
 
 
 public class ModItems {
-    // Создаем отложенный регистратор для предметов.
-    // Это стандартный способ регистрации объектов в Forge.
+    // РЎРѕР·РґР°РµРј РѕС‚Р»РѕР¶РµРЅРЅС‹Р№ СЂРµРіРёСЃС‚СЂР°С‚РѕСЂ РґР»СЏ РїСЂРµРґРјРµС‚РѕРІ.
+    // Р­С‚Рѕ СЃС‚Р°РЅРґР°СЂС‚РЅС‹Р№ СЃРїРѕСЃРѕР± СЂРµРіРёСЃС‚СЂР°С†РёРё РѕР±СЉРµРєС‚РѕРІ РІ Forge.
     public static final DeferredRegister<Item> ITEMS =
             DeferredRegister.create(MODID, Registries.ITEM);
 
@@ -157,7 +158,7 @@ public class ModItems {
             "sr90", "steel", "xe135");
     private static final Map<String, RegistrySupplier<Item>> POWDER_ITEMS_BY_ID = new HashMap<>();
 
-        private static final Set<String> ENABLED_MODPOWDERS = Set.of("iron", "gold", "coal", "cement", "aluminum", "limestone"); // Только ModPowders!
+        private static final Set<String> ENABLED_MODPOWDERS = Set.of("iron", "gold", "coal", "cement", "aluminum", "limestone"); // РўРѕР»СЊРєРѕ ModPowders!
     private static final Set<String> ENABLED_INGOT_POWDERS = Set.of(
             "uranium", "plutonium",
             "actinium", "steel", "advanced_alloy", "aluminum", "schrabidium", "lead",
@@ -178,7 +179,7 @@ public class ModItems {
     );
 
     static {
-        // 1. СЛИТКИ (ВСЕГДА)  OK
+        // 1. РЎР›РРўРљР (Р’РЎР•Р“Р”Рђ)  OK
         for (ModIngots ingot : ModIngots.values()) {
             RegistrySupplier<Item> registeredItem;
             if (ingot == ModIngots.URANIUM) {
@@ -189,7 +190,7 @@ public class ModItems {
             INGOTS.put(ingot, registeredItem);
         }
 
-        // 2. ModPowders (ТОЛЬКО ИЗ ENABLED_MODPOWDERS)  ИСПРАВЛЕНО!
+        // 2. ModPowders (РўРћР›Р¬РљРћ РР— ENABLED_MODPOWDERS)  РРЎРџР РђР’Р›Р•РќРћ!
         for (ModPowders powder : ModPowders.values()) {
             String baseName = powder.getName(); // use getName() to get lowercase name
             if (ENABLED_MODPOWDERS.contains(baseName)) {
@@ -201,11 +202,11 @@ public class ModItems {
             }
         }
 
-        // 3. Порошки из слитков (ТОЛЬКО ИЗ ENABLED_INGOT_POWDERS)  ИСПРАВЛЕНО!
+        // 3. РџРѕСЂРѕС€РєРё РёР· СЃР»РёС‚РєРѕРІ (РўРћР›Р¬РљРћ РР— ENABLED_INGOT_POWDERS)  РРЎРџР РђР’Р›Р•РќРћ!
         for (ModIngots ingot : ModIngots.values()) {
             String baseName = ingot.getName();
 
-            // Основной порошок
+            // РћСЃРЅРѕРІРЅРѕР№ РїРѕСЂРѕС€РѕРє
             if (ENABLED_INGOT_POWDERS.contains(baseName)) {
                 String powderId = baseName + "_powder";
                 RegistrySupplier<Item> powderItem = POWDER_ITEMS_BY_ID.get(powderId);
@@ -216,7 +217,7 @@ public class ModItems {
                 INGOT_POWDERS.put(ingot, powderItem);
             }
 
-            // Маленький порошок  OK
+            // РњР°Р»РµРЅСЊРєРёР№ РїРѕСЂРѕС€РѕРє  OK
             if (POWDER_TINY_NAMES.contains(baseName) && ENABLED_TINY_POWDERS.contains(baseName)) {
                 String tinyId = baseName + "_powder_tiny";
                 RegistrySupplier<Item> tinyItem = ITEMS.register(tinyId, () -> new Item(new Item.Properties()));
@@ -225,7 +226,7 @@ public class ModItems {
         }
     }
 
-    // УДОБНЫЙ МЕТОД ДЛЯ ПОЛУЧЕНИЯ СЛИТКА
+    // РЈР”РћР‘РќР«Р™ РњР•РўРћР” Р”Р›РЇ РџРћР›РЈР§Р•РќРРЇ РЎР›РРўРљРђ
     public static RegistrySupplier<Item> getIngot(ModIngots ingot) {
         return INGOTS.get(ingot);
     }
@@ -240,13 +241,13 @@ public class ModItems {
     public static final int SLOT_CHEST = 1;
     public static final int SLOT_LEGS = 2;
     public static final int SLOT_BOOTS = 3;
-    public static final int SLOT_BATTERY = 8;  // Изменено согласно ArmorModificationHelper.battery
-    public static final int SLOT_SPECIAL = 7;  // Изменено согласно ArmorModificationHelper.extra
+    public static final int SLOT_BATTERY = 8;  // РР·РјРµРЅРµРЅРѕ СЃРѕРіР»Р°СЃРЅРѕ ArmorModificationHelper.battery
+    public static final int SLOT_SPECIAL = 7;  // РР·РјРµРЅРµРЅРѕ СЃРѕРіР»Р°СЃРЅРѕ ArmorModificationHelper.extra
     public static final int SLOT_INSERT = 6;
-    public static final int SLOT_CLADDING = 5; // Изменено согласно ArmorModificationHelper.cladding
-    public static final int SLOT_SERVOS = 4;   // Изменено согласно ArmorModificationHelper.servos
+    public static final int SLOT_CLADDING = 5; // РР·РјРµРЅРµРЅРѕ СЃРѕРіР»Р°СЃРЅРѕ ArmorModificationHelper.cladding
+    public static final int SLOT_SERVOS = 4;   // РР·РјРµРЅРµРЅРѕ СЃРѕРіР»Р°СЃРЅРѕ ArmorModificationHelper.servos
 
-    // Дополнительные константы для совместимости
+    // Р”РѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Рµ РєРѕРЅСЃС‚Р°РЅС‚С‹ РґР»СЏ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё
     public static final int SLOT_HELMET_ONLY = 0;
     public static final int SLOT_PLATE_ONLY = 1;
     public static final int SLOT_LEGS_ONLY = 2;
@@ -255,7 +256,7 @@ public class ModItems {
 
     public static final int BATTERY_CAPACITY = 1_000_000;
 
-// ХАВЧИК:
+// РҐРђР’Р§РРљ:
     public static final RegistrySupplier<Item> STRAWBERRY = ITEMS.register("strawberry",
             () -> new Item(new Item.Properties().food(ModFoods.STRAWBERRY)));
     public static final RegistrySupplier<Item> CANNED_ASBESTOS = ITEMS.register("canned_asbestos",
@@ -321,7 +322,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> CAN_CREATURE = ITEMS.register("can_creature",
             () -> new ItemEnergyDrink(new Item.Properties().food(ItemEnergyDrink.CAN_CREATURE)));
     public static final RegistrySupplier<Item> CAN_EMPTY = ITEMS.register("can_empty",
-            () -> new Item(new Item.Properties())); // Пустая банка без эффекта
+            () -> new Item(new Item.Properties())); // РџСѓСЃС‚Р°СЏ Р±Р°РЅРєР° Р±РµР· СЌС„С„РµРєС‚Р°
     public static final RegistrySupplier<Item> CAN_LUNA = ITEMS.register("can_luna",
             () -> new ItemEnergyDrink(new Item.Properties().food(ItemEnergyDrink.CAN_LUNA)));
     public static final RegistrySupplier<Item> CAN_MRSUGAR = ITEMS.register("can_mrsugar",
@@ -337,7 +338,7 @@ public class ModItems {
 
 
 
-    // ИНСТРУМЕНТЫ ГОРНЯКА:
+    // РРќРЎРўР РЈРњР•РќРўР« Р“РћР РќРЇРљРђ:
     public static final RegistrySupplier<Item> STARMETAL_SWORD = ITEMS.register("starmetal_sword",
             () -> new SwordItem(ModToolTiers.STARMETAL, 7, -2, new Item.Properties()));
     public static final RegistrySupplier<Item> STARMETAL_AXE = ITEMS.register("starmetal_axe",
@@ -452,96 +453,96 @@ public class ModItems {
             "entity_mob_nuclear_creeper_spawn_egg",
             () -> new ForgeSpawnEggItem(ModEntities.ENTITY_MOB_NUCLEAR_CREEPER, 0x204131, 0x75CE00, new Item.Properties()));
 
-    // БРОНЯ ГОРНЯКА:
+    // Р‘Р РћРќРЇ Р“РћР РќРЇРљРђ:
     public static final RegistrySupplier<Item> ALLOY_HELMET = ITEMS.register("alloy_helmet",
-            () -> new ArmorItem(ModArmorMaterials.ALLOY, ArmorItem.Type.HELMET, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.ALLOY), ArmorItem.Type.HELMET, new Item.Properties()));
     public static final RegistrySupplier<Item> ALLOY_CHESTPLATE = ITEMS.register("alloy_chestplate",
-            () -> new ArmorItem(ModArmorMaterials.ALLOY, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.ALLOY), ArmorItem.Type.CHESTPLATE, new Item.Properties()));
     public static final RegistrySupplier<Item> ALLOY_LEGGINGS = ITEMS.register("alloy_leggings",
-            () -> new ArmorItem(ModArmorMaterials.ALLOY, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.ALLOY), ArmorItem.Type.LEGGINGS, new Item.Properties()));
     public static final RegistrySupplier<Item> ALLOY_BOOTS = ITEMS.register("alloy_boots",
-            () -> new ArmorItem(ModArmorMaterials.ALLOY, ArmorItem.Type.BOOTS, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.ALLOY), ArmorItem.Type.BOOTS, new Item.Properties()));
 
     public static final RegistrySupplier<Item> TITANIUM_HELMET = ITEMS.register("titanium_helmet",
-            () -> new ArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.HELMET, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.TITANIUM), ArmorItem.Type.HELMET, new Item.Properties()));
     public static final RegistrySupplier<Item> TITANIUM_CHESTPLATE = ITEMS.register("titanium_chestplate",
-            () -> new ArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.TITANIUM), ArmorItem.Type.CHESTPLATE, new Item.Properties()));
     public static final RegistrySupplier<Item> TITANIUM_LEGGINGS = ITEMS.register("titanium_leggings",
-            () -> new ArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.TITANIUM), ArmorItem.Type.LEGGINGS, new Item.Properties()));
     public static final RegistrySupplier<Item> TITANIUM_BOOTS = ITEMS.register("titanium_boots",
-            () -> new ArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.BOOTS, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.TITANIUM), ArmorItem.Type.BOOTS, new Item.Properties()));
 
     public static final RegistrySupplier<Item> STEEL_HELMET = ITEMS.register("steel_helmet",
-            () -> new ArmorItem(ModArmorMaterials.STEEL, ArmorItem.Type.HELMET, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.STEEL), ArmorItem.Type.HELMET, new Item.Properties()));
     public static final RegistrySupplier<Item> STEEL_CHESTPLATE = ITEMS.register("steel_chestplate",
-            () -> new ArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.TITANIUM), ArmorItem.Type.CHESTPLATE, new Item.Properties()));
     public static final RegistrySupplier<Item> STEEL_LEGGINGS = ITEMS.register("steel_leggings",
-            () -> new ArmorItem(ModArmorMaterials.STEEL, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.STEEL), ArmorItem.Type.LEGGINGS, new Item.Properties()));
     public static final RegistrySupplier<Item> STEEL_BOOTS = ITEMS.register("steel_boots",
-            () -> new ArmorItem(ModArmorMaterials.STEEL, ArmorItem.Type.BOOTS, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.STEEL), ArmorItem.Type.BOOTS, new Item.Properties()));
 
     public static final RegistrySupplier<Item> COBALT_HELMET = ITEMS.register("cobalt_helmet",
-            () -> new ArmorItem(ModArmorMaterials.COBALT, ArmorItem.Type.HELMET, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.COBALT), ArmorItem.Type.HELMET, new Item.Properties()));
     public static final RegistrySupplier<Item> COBALT_CHESTPLATE = ITEMS.register("cobalt_chestplate",
-            () -> new ArmorItem(ModArmorMaterials.COBALT, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.COBALT), ArmorItem.Type.CHESTPLATE, new Item.Properties()));
     public static final RegistrySupplier<Item> COBALT_LEGGINGS = ITEMS.register("cobalt_leggings",
-            () -> new ArmorItem(ModArmorMaterials.COBALT, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.COBALT), ArmorItem.Type.LEGGINGS, new Item.Properties()));
     public static final RegistrySupplier<Item> COBALT_BOOTS = ITEMS.register("cobalt_boots",
-            () -> new ArmorItem(ModArmorMaterials.COBALT, ArmorItem.Type.BOOTS, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.COBALT), ArmorItem.Type.BOOTS, new Item.Properties()));
 
     public static final RegistrySupplier<Item> SECURITY_HELMET = ITEMS.register("security_helmet",
-            () -> new ArmorItem(ModArmorMaterials.SECURITY, ArmorItem.Type.HELMET, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.SECURITY), ArmorItem.Type.HELMET, new Item.Properties()));
     public static final RegistrySupplier<Item> SECURITY_CHESTPLATE = ITEMS.register("security_chestplate",
-            () -> new ArmorItem(ModArmorMaterials.SECURITY, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.SECURITY), ArmorItem.Type.CHESTPLATE, new Item.Properties()));
     public static final RegistrySupplier<Item> SECURITY_LEGGINGS = ITEMS.register("security_leggings",
-            () -> new ArmorItem(ModArmorMaterials.SECURITY, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.SECURITY), ArmorItem.Type.LEGGINGS, new Item.Properties()));
     public static final RegistrySupplier<Item> SECURITY_BOOTS = ITEMS.register("security_boots",
-            () -> new ArmorItem(ModArmorMaterials.SECURITY, ArmorItem.Type.BOOTS, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.SECURITY), ArmorItem.Type.BOOTS, new Item.Properties()));
 
     public static final RegistrySupplier<Item> ASBESTOS_HELMET = ITEMS.register("asbestos_helmet",
-            () -> new ArmorItem(ModArmorMaterials.ASBESTOS, ArmorItem.Type.HELMET, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.ASBESTOS), ArmorItem.Type.HELMET, new Item.Properties()));
     public static final RegistrySupplier<Item> ASBESTOS_CHESTPLATE = ITEMS.register("asbestos_chestplate",
-            () -> new ArmorItem(ModArmorMaterials.ASBESTOS, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.ASBESTOS), ArmorItem.Type.CHESTPLATE, new Item.Properties()));
     public static final RegistrySupplier<Item> ASBESTOS_LEGGINGS = ITEMS.register("asbestos_leggings",
-            () -> new ArmorItem(ModArmorMaterials.ASBESTOS, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.ASBESTOS), ArmorItem.Type.LEGGINGS, new Item.Properties()));
     public static final RegistrySupplier<Item> ASBESTOS_BOOTS = ITEMS.register("asbestos_boots",
-            () -> new ArmorItem(ModArmorMaterials.ASBESTOS, ArmorItem.Type.BOOTS, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.ASBESTOS), ArmorItem.Type.BOOTS, new Item.Properties()));
 
     public static final RegistrySupplier<Item> HAZMAT_HELMET = ITEMS.register("hazmat_helmet",
-            () -> new ArmorItem(ModArmorMaterials.HAZMAT, ArmorItem.Type.HELMET, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.HAZMAT), ArmorItem.Type.HELMET, new Item.Properties()));
     public static final RegistrySupplier<Item> HAZMAT_CHESTPLATE = ITEMS.register("hazmat_chestplate",
-            () -> new ArmorItem(ModArmorMaterials.HAZMAT, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.HAZMAT), ArmorItem.Type.CHESTPLATE, new Item.Properties()));
     public static final RegistrySupplier<Item> HAZMAT_LEGGINGS = ITEMS.register("hazmat_leggings",
-            () -> new ArmorItem(ModArmorMaterials.HAZMAT, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.HAZMAT), ArmorItem.Type.LEGGINGS, new Item.Properties()));
     public static final RegistrySupplier<Item> HAZMAT_BOOTS = ITEMS.register("hazmat_boots",
-            () -> new ArmorItem(ModArmorMaterials.HAZMAT, ArmorItem.Type.BOOTS, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.HAZMAT), ArmorItem.Type.BOOTS, new Item.Properties()));
 
     public static final RegistrySupplier<Item> LIQUIDATOR_HELMET = ITEMS.register("liquidator_helmet",
-            () -> new ArmorItem(ModArmorMaterials.LIQUIDATOR, ArmorItem.Type.HELMET, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.LIQUIDATOR), ArmorItem.Type.HELMET, new Item.Properties()));
     public static final RegistrySupplier<Item> LIQUIDATOR_CHESTPLATE = ITEMS.register("liquidator_chestplate",
-            () -> new ArmorItem(ModArmorMaterials.LIQUIDATOR, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.LIQUIDATOR), ArmorItem.Type.CHESTPLATE, new Item.Properties()));
     public static final RegistrySupplier<Item> LIQUIDATOR_LEGGINGS = ITEMS.register("liquidator_leggings",
-            () -> new ArmorItem(ModArmorMaterials.LIQUIDATOR, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.LIQUIDATOR), ArmorItem.Type.LEGGINGS, new Item.Properties()));
     public static final RegistrySupplier<Item> LIQUIDATOR_BOOTS = ITEMS.register("liquidator_boots",
-            () -> new ArmorItem(ModArmorMaterials.LIQUIDATOR, ArmorItem.Type.BOOTS, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.LIQUIDATOR), ArmorItem.Type.BOOTS, new Item.Properties()));
 
     public static final RegistrySupplier<Item> PAA_HELMET = ITEMS.register("paa_helmet",
-            () -> new ArmorItem(ModArmorMaterials.PAA, ArmorItem.Type.HELMET, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.PAA), ArmorItem.Type.HELMET, new Item.Properties()));
     public static final RegistrySupplier<Item> PAA_CHESTPLATE = ITEMS.register("paa_chestplate",
-            () -> new ArmorItem(ModArmorMaterials.PAA, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.PAA), ArmorItem.Type.CHESTPLATE, new Item.Properties()));
     public static final RegistrySupplier<Item> PAA_LEGGINGS = ITEMS.register("paa_leggings",
-            () -> new ArmorItem(ModArmorMaterials.PAA, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.PAA), ArmorItem.Type.LEGGINGS, new Item.Properties()));
     public static final RegistrySupplier<Item> PAA_BOOTS = ITEMS.register("paa_boots",
-            () -> new ArmorItem(ModArmorMaterials.PAA, ArmorItem.Type.BOOTS, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.PAA), ArmorItem.Type.BOOTS, new Item.Properties()));
 
     public static final RegistrySupplier<Item> STARMETAL_HELMET = ITEMS.register("starmetal_helmet",
-            () -> new ArmorItem(ModArmorMaterials.STARMETAL, ArmorItem.Type.HELMET, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.STARMETAL), ArmorItem.Type.HELMET, new Item.Properties()));
     public static final RegistrySupplier<Item> STARMETAL_CHESTPLATE = ITEMS.register("starmetal_chestplate",
-            () -> new ArmorItem(ModArmorMaterials.STARMETAL, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.STARMETAL), ArmorItem.Type.CHESTPLATE, new Item.Properties()));
     public static final RegistrySupplier<Item> STARMETAL_LEGGINGS = ITEMS.register("starmetal_leggings",
-            () -> new ArmorItem(ModArmorMaterials.STARMETAL, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.STARMETAL), ArmorItem.Type.LEGGINGS, new Item.Properties()));
     public static final RegistrySupplier<Item> STARMETAL_BOOTS = ITEMS.register("starmetal_boots",
-            () -> new ArmorItem(ModArmorMaterials.STARMETAL, ArmorItem.Type.BOOTS, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.STARMETAL), ArmorItem.Type.BOOTS, new Item.Properties()));
 
 
     //-----------------------POWER ARMOR ----------------------------------
@@ -608,7 +609,7 @@ public class ModItems {
 
 
 
-    // Инструменты
+    // РРЅСЃС‚СЂСѓРјРµРЅС‚С‹
     public static final RegistrySupplier<Item> GEIGER_COUNTER = ITEMS.register("geiger_counter",
             () -> new ItemGeigerCounter(new Item.Properties().stacksTo(1)));
 
@@ -643,7 +644,7 @@ public class ModItems {
 
 
 
-    // Модификаторы брони
+    // РњРѕРґРёС„РёРєР°С‚РѕСЂС‹ Р±СЂРѕРЅРё
     public static final RegistrySupplier<Item> HEART_PIECE = ITEMS.register("heart_piece",
             () -> new ItemModHealth(
                     new Item.Properties(),
@@ -716,7 +717,7 @@ public class ModItems {
             )
     );
 
-    // Новые модификации брони
+    // РќРѕРІС‹Рµ РјРѕРґРёС„РёРєР°С†РёРё Р±СЂРѕРЅРё
 //     public static final RegistrySupplier<Item> ARMOR_MOD_SERVOS = ITEMS.register("armor_mod_servos",
 //             () -> new ItemModServos(new Item.Properties())
 //     );
@@ -733,7 +734,7 @@ public class ModItems {
 //             () -> new ItemModExtra(new Item.Properties())
 //     );
 
-    // Модификаторы батареи (увеличивают заряд брони)
+    // РњРѕРґРёС„РёРєР°С‚РѕСЂС‹ Р±Р°С‚Р°СЂРµРё (СѓРІРµР»РёС‡РёРІР°СЋС‚ Р·Р°СЂСЏРґ Р±СЂРѕРЅРё)
     public static final RegistrySupplier<Item> ARMOR_BATTERY = ITEMS.register("armor_battery",
             () -> new ItemModBattery(1.25D)
     );
@@ -766,7 +767,7 @@ public class ModItems {
         )
     );
 
-    // ═══════════════════ MACHINE UPGRADES ═══════════════════
+    // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ MACHINE UPGRADES в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
     public static final RegistrySupplier<Item> UPGRADE_SPEED_1 = ITEMS.register("upgrade_speed_1",
             () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.SPEED, 1));
@@ -810,24 +811,24 @@ public class ModItems {
     public static final RegistrySupplier<Item> UPGRADE_OVERDRIVE_3 = ITEMS.register("upgrade_overdrive_3",
             () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.OVERDRIVE, 3));
 
-    // ═══════════════════ END MACHINE UPGRADES ═══════════════════
+    // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ END MACHINE UPGRADES в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
     public static final RegistrySupplier<Item> RADAWAY = ITEMS.register("radaway",
             () -> new ItemSimpleConsumable(new Item.Properties(), (player, stack) -> {
-                // Это лямбда-выражение определяет, что произойдет при использовании предмета.
+                // Р­С‚Рѕ Р»СЏРјР±РґР°-РІС‹СЂР°Р¶РµРЅРёРµ РѕРїСЂРµРґРµР»СЏРµС‚, С‡С‚Рѕ РїСЂРѕРёР·РѕР№РґРµС‚ РїСЂРё РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРё РїСЂРµРґРјРµС‚Р°.
                 
-                // Действуем только на сервере
+                // Р”РµР№СЃС‚РІСѓРµРј С‚РѕР»СЊРєРѕ РЅР° СЃРµСЂРІРµСЂРµ
                 if (!player.level().isClientSide()) {
-                    // 1. Накладываем эффект Антирадина.
-                    //    Длительность: 200 тиков (10 секунд)
-                    //    Уровень: I (amplifier = 0)
+                    // 1. РќР°РєР»Р°РґС‹РІР°РµРј СЌС„С„РµРєС‚ РђРЅС‚РёСЂР°РґРёРЅР°.
+                    //    Р”Р»РёС‚РµР»СЊРЅРѕСЃС‚СЊ: 200 С‚РёРєРѕРІ (10 СЃРµРєСѓРЅРґ)
+                    //    РЈСЂРѕРІРµРЅСЊ: I (amplifier = 0)
                     player.addEffect(new MobEffectInstance(ModEffects.RADAWAY.get(), 120, 0));
 
-                    // 2. Проигрываем звук
+                    // 2. РџСЂРѕРёРіСЂС‹РІР°РµРј Р·РІСѓРє
                     player.level().playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.RADAWAY_USE.get(), player.getSoundSource(), 1.0F, 1.0F);
 
-                    // 3. Уменьшаем количество предметов в стаке
-                    if (!player.getAbilities().instabuild) { // не уменьшать в креативе
+                    // 3. РЈРјРµРЅСЊС€Р°РµРј РєРѕР»РёС‡РµСЃС‚РІРѕ РїСЂРµРґРјРµС‚РѕРІ РІ СЃС‚Р°РєРµ
+                    if (!player.getAbilities().instabuild) { // РЅРµ СѓРјРµРЅСЊС€Р°С‚СЊ РІ РєСЂРµР°С‚РёРІРµ
                         stack.shrink(1);
                     }
                 }
@@ -860,7 +861,7 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> FAT_MAN_EXPLOSIVE = ITEMS.register("fat_man_explosive",
             () -> new Item(new Item.Properties()) {
-                // Тултип-описание, как у оригинального ItemCustomLore (early_explosive_lenses.desc, 1.7.10)
+                // РўСѓР»С‚РёРї-РѕРїРёСЃР°РЅРёРµ, РєР°Рє Сѓ РѕСЂРёРіРёРЅР°Р»СЊРЅРѕРіРѕ ItemCustomLore (early_explosive_lenses.desc, 1.7.10)
                 @Override
                 public void appendHoverText(ItemStack stack, @Nullable Level level,
                                             @Nullable List<Component> tooltip, TooltipFlag flag) {
@@ -984,7 +985,7 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> DUST_TINY = ITEMS.register("dust_tiny",
             () -> new Item(new Item.Properties()));
-    /** 1.7.10 ModItems.fallout — кучка осадков. */
+    /** 1.7.10 ModItems.fallout вЂ” РєСѓС‡РєР° РѕСЃР°РґРєРѕРІ. */
     public static final RegistrySupplier<Item> FALLOUT = ITEMS.register("fallout",
             () -> new Item(new Item.Properties()));
 
@@ -1362,7 +1363,7 @@ public class ModItems {
 
 
 
-    // Материалы
+    // РњР°С‚РµСЂРёР°Р»С‹
     public static final RegistrySupplier<Item> SULFUR = ITEMS.register("sulfur",
             () -> new Item(new Item.Properties()));
 
@@ -1381,11 +1382,11 @@ public class ModItems {
     public static final RegistrySupplier<Item> WOOD_ASH_POWDER = ITEMS.register("wood_ash_powder",
             () -> new Item(new Item.Properties()));
 
-    /** Порт {@code powder_desh_mix}. */
+    /** РџРѕСЂС‚ {@code powder_desh_mix}. */
     public static final RegistrySupplier<Item> POWDER_DESH_MIX = ITEMS.register("powder_desh_mix",
             () -> new Item(new Item.Properties()));
 
-    /** Порт {@code powder_nitan_mix}. */
+    /** РџРѕСЂС‚ {@code powder_nitan_mix}. */
     public static final RegistrySupplier<Item> POWDER_NITAN_MIX = ITEMS.register("powder_nitan_mix",
             () -> new Item(new Item.Properties()));
 
@@ -1531,7 +1532,7 @@ public class ModItems {
 
 
 
-    // Здесь мы регистрируем мультиблочные структуры для того, чтобы MultiblockBlockItem при установке мог обрабатывать их на наличие препятствующих блоков.
+    // Р—РґРµСЃСЊ РјС‹ СЂРµРіРёСЃС‚СЂРёСЂСѓРµРј РјСѓР»СЊС‚РёР±Р»РѕС‡РЅС‹Рµ СЃС‚СЂСѓРєС‚СѓСЂС‹ РґР»СЏ С‚РѕРіРѕ, С‡С‚РѕР±С‹ MultiblockBlockItem РїСЂРё СѓСЃС‚Р°РЅРѕРІРєРµ РјРѕРі РѕР±СЂР°Р±Р°С‚С‹РІР°С‚СЊ РёС… РЅР° РЅР°Р»РёС‡РёРµ РїСЂРµРїСЏС‚СЃС‚РІСѓСЋС‰РёС… Р±Р»РѕРєРѕРІ.
 
     public static final RegistrySupplier<Item> MACHINE_ASSEMBLER = ITEMS.register("machine_assembler",
         () -> new MultiblockBlockItem(ModBlocks.MACHINE_ASSEMBLER.get(), new Item.Properties()));
@@ -1551,19 +1552,19 @@ public class ModItems {
 	public static final RegistrySupplier<Item> CYCLOTRON = ITEMS.register("cyclotron",
         () -> new MultiblockBlockItem(ModBlocks.CYCLOTRON.get(), new Item.Properties()));
 
-    // ─── Cyclotron particle parts ─────────────────────────────────────────────
-    /** Lithium ion — accelerated in the cyclotron as a low-energy particle. */
+    // в”Ђв”Ђв”Ђ Cyclotron particle parts в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+    /** Lithium ion вЂ” accelerated in the cyclotron as a low-energy particle. */
     public static final RegistrySupplier<Item> PART_LITHIUM    = ITEMS.register("part_lithium",    () -> new Item(new Item.Properties().stacksTo(16)));
-    /** Beryllium particle — medium-energy cyclotron projectile. */
+    /** Beryllium particle вЂ” medium-energy cyclotron projectile. */
     public static final RegistrySupplier<Item> PART_BERYLLIUM  = ITEMS.register("part_beryllium",  () -> new Item(new Item.Properties().stacksTo(16)));
-    /** Carbon (coal-derived) particle — low-energy cyclotron projectile. */
+    /** Carbon (coal-derived) particle вЂ” low-energy cyclotron projectile. */
     public static final RegistrySupplier<Item> PART_CARBON     = ITEMS.register("part_carbon",     () -> new Item(new Item.Properties().stacksTo(16)));
-    /** Copper ion — medium-energy cyclotron projectile. */
+    /** Copper ion вЂ” medium-energy cyclotron projectile. */
     public static final RegistrySupplier<Item> PART_COPPER     = ITEMS.register("part_copper",     () -> new Item(new Item.Properties().stacksTo(16)));
-    /** Plutonium nucleus — high-energy cyclotron projectile, produces australium. */
+    /** Plutonium nucleus вЂ” high-energy cyclotron projectile, produces australium. */
     public static final RegistrySupplier<Item> PART_PLUTONIUM  = ITEMS.register("part_plutonium",  () -> new Item(new Item.Properties().stacksTo(16)));
 
-    // ─── Cast Molds ───────────────────────────────────────────────────────────
+    // в”Ђв”Ђв”Ђ Cast Molds в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
     public static final RegistrySupplier<Item> MOLD_BARREL_HEAVY = ITEMS.register("mold_barrel_heavy",
             () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.BARREL_HEAVY, new Item.Properties()));
     public static final RegistrySupplier<Item> MOLD_BARREL_LIGHT = ITEMS.register("mold_barrel_light",
@@ -1631,7 +1632,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> MOLD_WIRES_DENSE = ITEMS.register("mold_wires_dense",
             () -> new com.hbm_m.item.material.ItemCastMold(com.hbm_m.item.material.ItemCastMold.MoldType.WIRES_DENSE, new Item.Properties()));
 
-    // ─── Cast Plates (plate_cast_<material>) ─────────────────────────────────
+    // в”Ђв”Ђв”Ђ Cast Plates (plate_cast_<material>) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
     // Port of the original metadata-based plate_cast item. Each material is a
     // separate registration in the modern system.
     public static final RegistrySupplier<Item> PLATE_CAST_IRON        = ITEMS.register("plate_cast_iron",        () -> new Item(new Item.Properties()));
@@ -1655,8 +1656,8 @@ public class ModItems {
     public static final RegistrySupplier<Item> PLATE_CAST_ABRONZE     = ITEMS.register("plate_cast_abronze",     () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PLATE_CAST_SATURNITE   = ITEMS.register("plate_cast_saturnite",   () -> new Item(new Item.Properties()));
 
-    // ─── Welded Plates (plate_welded_<material>) ─────────────────────────────
-    // Produced by the Arc Welder from 2× cast plates of the same material.
+    // в”Ђв”Ђв”Ђ Welded Plates (plate_welded_<material>) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+    // Produced by the Arc Welder from 2Г— cast plates of the same material.
     public static final RegistrySupplier<Item> PLATE_WELDED_IRON       = ITEMS.register("plate_welded_iron",       () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PLATE_WELDED_STEEL      = ITEMS.register("plate_welded_steel",      () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PLATE_WELDED_COPPER     = ITEMS.register("plate_welded_copper",     () -> new Item(new Item.Properties()));
@@ -1821,7 +1822,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> NUKE_PROTOTYPE = ITEMS.register("nuke_prototype",
         () -> new net.minecraft.world.item.BlockItem(com.hbm_m.block.ModBlocks.NUKE_PROTOTYPE.get(), new Item.Properties()));
 
-    // ПРОТОТИП РАКЕТЫ (TIER 0, MICRO)
+    // РџР РћРўРћРўРРџ Р РђРљР•РўР« (TIER 0, MICRO)
     public static final RegistrySupplier<Item> MISSILE_TEST = ITEMS.register("missile_test",
         () -> new MissileItem(MissileItem.MissileFormFactor.MICRO, MissileItem.MissileTier.TIER0,
                 MissileItem.MissileFuel.SOLID));
@@ -1830,7 +1831,7 @@ public class ModItems {
                 () -> new MissileItem(MissileItem.MissileFormFactor.ABM, MissileItem.MissileTier.TIER1,
                                 MissileItem.MissileFuel.SOLID));
 
-  /** Сингулярности / опасные дропы (1.7.10 {@code ModItems.black_hole}, {@code pellet_antimatter}, {@code flame_pony}). */
+  /** РЎРёРЅРіСѓР»СЏСЂРЅРѕСЃС‚Рё / РѕРїР°СЃРЅС‹Рµ РґСЂРѕРїС‹ (1.7.10 {@code ModItems.black_hole}, {@code pellet_antimatter}, {@code flame_pony}). */
     public static final RegistrySupplier<Item> BLACK_HOLE = ITEMS.register("black_hole",
             () -> new com.hbm_m.item.special.ItemDrop(new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> PELLET_ANTIMATTER = ITEMS.register("pellet_antimatter",
@@ -1981,7 +1982,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> BLADE_ALLOY = ITEMS.register("blade_alloy",
             () -> new ItemBlades(new Item.Properties(), 700));
 
-    // Железные штампы (48 использований)
+    // Р–РµР»РµР·РЅС‹Рµ С€С‚Р°РјРїС‹ (48 РёСЃРїРѕР»СЊР·РѕРІР°РЅРёР№)
     public static final RegistrySupplier<Item> STAMP_IRON_FLAT = ITEMS.register("stamp_iron_flat",
             () -> new ItemStamp(new Item.Properties(), 48));
     public static final RegistrySupplier<Item> STAMP_IRON_PLATE = ITEMS.register("stamp_iron_plate",
@@ -1999,7 +2000,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> STAMP_IRON_357 = ITEMS.register("stamp_iron_357",
             () -> new ItemStamp(new Item.Properties(), 48));
 
-    // Стальные штампы (64 использования)
+    // РЎС‚Р°Р»СЊРЅС‹Рµ С€С‚Р°РјРїС‹ (64 РёСЃРїРѕР»СЊР·РѕРІР°РЅРёСЏ)
     public static final RegistrySupplier<Item> STAMP_STEEL_FLAT = ITEMS.register("stamp_steel_flat",
             () -> new ItemStamp(new Item.Properties(), 64));
     public static final RegistrySupplier<Item> STAMP_STEEL_PLATE = ITEMS.register("stamp_steel_plate",
@@ -2009,7 +2010,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> STAMP_STEEL_CIRCUIT = ITEMS.register("stamp_steel_circuit",
             () -> new ItemStamp(new Item.Properties(), 64));
 
-    // Титановые штампы (80 использований)
+    // РўРёС‚Р°РЅРѕРІС‹Рµ С€С‚Р°РјРїС‹ (80 РёСЃРїРѕР»СЊР·РѕРІР°РЅРёР№)
     public static final RegistrySupplier<Item> STAMP_TITANIUM_FLAT = ITEMS.register("stamp_titanium_flat",
             () -> new ItemStamp(new Item.Properties(), 80));
     public static final RegistrySupplier<Item> STAMP_TITANIUM_PLATE = ITEMS.register("stamp_titanium_plate",
@@ -2019,7 +2020,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> STAMP_TITANIUM_CIRCUIT = ITEMS.register("stamp_titanium_circuit",
             () -> new ItemStamp(new Item.Properties(), 80));
 
-    // Обсидиановые штампы (96 использований)
+    // РћР±СЃРёРґРёР°РЅРѕРІС‹Рµ С€С‚Р°РјРїС‹ (96 РёСЃРїРѕР»СЊР·РѕРІР°РЅРёР№)
     public static final RegistrySupplier<Item> STAMP_OBSIDIAN_FLAT = ITEMS.register("stamp_obsidian_flat",
             () -> new ItemStamp(new Item.Properties(), 96));
     public static final RegistrySupplier<Item> STAMP_OBSIDIAN_PLATE = ITEMS.register("stamp_obsidian_plate",
@@ -2029,7 +2030,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> STAMP_OBSIDIAN_CIRCUIT = ITEMS.register("stamp_obsidian_circuit",
             () -> new ItemStamp(new Item.Properties(), 96));
 
-    // Desh штампы (бесконечная прочность)
+    // Desh С€С‚Р°РјРїС‹ (Р±РµСЃРєРѕРЅРµС‡РЅР°СЏ РїСЂРѕС‡РЅРѕСЃС‚СЊ)
     public static final RegistrySupplier<Item> STAMP_DESH_FLAT = ITEMS.register("stamp_desh_flat",
             () -> new ItemStamp(new Item.Properties()));
     public static final RegistrySupplier<Item> STAMP_DESH_PLATE = ITEMS.register("stamp_desh_plate",
@@ -2048,7 +2049,7 @@ public class ModItems {
             () -> new ItemStamp(new Item.Properties()));
 
 
-    //батарейки
+    //Р±Р°С‚Р°СЂРµР№РєРё
 
     public static final RegistrySupplier<Item> BATTERY_SCHRABIDIUM = ITEMS.register("battery_schrabidium",
             () -> new ModBatteryItem(
@@ -2058,7 +2059,7 @@ public class ModItems {
                     5000
             ));
 
-    // ========== КАРТОФЕЛЬНАЯ И БАЗОВЫЕ ==========
+    // ========== РљРђР РўРћР¤Р•Р›Р¬РќРђРЇ Р Р‘РђР—РћР’Р«Р• ==========
     public static final RegistrySupplier<Item> BATTERY_POTATO = ITEMS.register("battery_potato",
             () -> new ModBatteryItem(
                     new Item.Properties(),
@@ -2075,7 +2076,7 @@ public class ModItems {
                     100
             ));
 
-    // ========== КРАСНЫЕ БАТАРЕЙКИ (RED CELL) ==========
+    // ========== РљР РђРЎРќР«Р• Р‘РђРўРђР Р•Р™РљР (RED CELL) ==========
     public static final RegistrySupplier<Item> BATTERY_RED_CELL = ITEMS.register("battery_red_cell",
             () -> new ModBatteryItem(
                     new Item.Properties(),
@@ -2100,7 +2101,7 @@ public class ModItems {
                     100
             ));
 
-    // ========== ПРОДВИНУТЫЕ БАТАРЕЙКИ (ADVANCED) ==========
+    // ========== РџР РћР”Р’РРќРЈРўР«Р• Р‘РђРўРђР Р•Р™РљР (ADVANCED) ==========
     public static final RegistrySupplier<Item> BATTERY_ADVANCED = ITEMS.register("battery_advanced",
             () -> new ModBatteryItem(
                     new Item.Properties(),
@@ -2133,7 +2134,7 @@ public class ModItems {
                     500
             ));
 
-    // ========== ЛИТИЕВЫЕ БАТАРЕЙКИ (LITHIUM) ==========
+    // ========== Р›РРўРР•Р’Р«Р• Р‘РђРўРђР Р•Р™РљР (LITHIUM) ==========
     public static final RegistrySupplier<Item> BATTERY_LITHIUM = ITEMS.register("battery_lithium",
             () -> new ModBatteryItem(
                     new Item.Properties(),
@@ -2166,7 +2167,7 @@ public class ModItems {
                     1000
             ));
 
-// ========== ШРАБИДИЕВЫЕ БАТАРЕЙКИ (SCHRABIDIUM) - уже есть ==========
+// ========== РЁР РђР‘РР”РР•Р’Р«Р• Р‘РђРўРђР Р•Р™РљР (SCHRABIDIUM) - СѓР¶Рµ РµСЃС‚СЊ ==========
 
     public static final RegistrySupplier<Item> BATTERY_SCHRABIDIUM_CELL = ITEMS.register("battery_schrabidium_cell",
             () -> new ModBatteryItem(
@@ -2192,7 +2193,7 @@ public class ModItems {
                     5000
             ));
 
-    // ========== ИСКРОВЫЕ БАТАРЕЙКИ (SPARK) - ЭКСТРЕМАЛЬНЫЕ ==========
+    // ========== РРЎРљР РћР’Р«Р• Р‘РђРўРђР Р•Р™РљР (SPARK) - Р­РљРЎРўР Р•РњРђР›Р¬РќР«Р• ==========
     public static final RegistrySupplier<Item> BATTERY_SPARK = ITEMS.register("battery_spark",
             () -> new ModBatteryItem(
                     new Item.Properties(),
@@ -2353,11 +2354,11 @@ public class ModItems {
     public static final RegistrySupplier<Item> SCREWDRIVER = ITEMS.register("screwdriver",
             () -> new ScrewdriverItem(new Item.Properties().stacksTo(1)));
 
-	// Медленный источник (500 mB/t)
+	// РњРµРґР»РµРЅРЅС‹Р№ РёСЃС‚РѕС‡РЅРёРє (500 mB/t)
 	public static final RegistrySupplier<Item> INFINITE_WATER_500 = ITEMS.register("inf_water",
 					() -> new InfiniteFluidItem(new Item.Properties().stacksTo(1), net.minecraft.world.level.material.Fluids.WATER, 500));
 
-	// Быстрый источник (5000 mB/t)
+	// Р‘С‹СЃС‚СЂС‹Р№ РёСЃС‚РѕС‡РЅРёРє (5000 mB/t)
 	public static final RegistrySupplier<Item> INFINITE_WATER_5000 = ITEMS.register("inf_water_mk2",
             () -> new InfiniteFluidItem(new Item.Properties().stacksTo(1), net.minecraft.world.level.material.Fluids.WATER, 5000));
 
@@ -2412,7 +2413,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> FLUID_EXHAUST = ITEMS.register("fluid_exhaust",
             () -> new BlockItem(ModBlocks.FLUID_EXHAUST.get(), new Item.Properties()));
 
-    //=============================== ВЁДРА ДЛЯ ЖИДКОСТЕЙ ===============================//
+    //=============================== Р’РЃР”Р Рђ Р”Р›РЇ Р–РР”РљРћРЎРўР•Р™ ===============================//
 
 //    public static final RegistrySupplier<Item> CRUDE_OIL_BUCKET = ITEMS.register("bucket_crude_oil",
 //            () -> new BucketItem(
@@ -2422,7 +2423,7 @@ public class ModItems {
 //                            .stacksTo(1)));
 
 
-    // ─── RBMK Items ──────────────────────────────────────────────────────────
+    // в”Ђв”Ђв”Ђ RBMK Items в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
     public static final RegistrySupplier<Item> RBMK_LID = ITEMS.register("rbmk_lid",
             () -> new RBMKLidItem(1, new Item.Properties()));
@@ -2488,9 +2489,9 @@ public class ModItems {
     public static final RegistrySupplier<Item> RBMK_FUEL_EMPTY = ITEMS.register("rbmk_fuel_empty",
             () -> new Item(new Item.Properties()));
 
-    // ══════════════════════════════════════════════════════════════════════
+    // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
     // DEV: importierte fehlende Items aus dem Original-HBM (zur Sichtung)
-    // ══════════════════════════════════════════════════════════════════════
+    // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
     public static final RegistrySupplier<Item> ACETYLENE_TORCH = ITEMS.register("acetylene_torch", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> AJR_LEGS = ITEMS.register("ajr_legs", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> AJR_PLATE = ITEMS.register("ajr_plate", () -> new Item(new Item.Properties()));
@@ -2573,7 +2574,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> BATHWATER_MK2 = ITEMS.register("bathwater_mk2", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> BDCL = ITEMS.register("bdcl", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> BEDROCK_ORE_FRAGMENT = ITEMS.register("bedrock_ore_fragment", () -> new Item(new Item.Properties()));
-    // ═══ Bedrock Ore Progression: Rohprodukt + alle Veredelungsstufen (Grade x Type) ═══
+    // в•ђв•ђв•ђ Bedrock Ore Progression: Rohprodukt + alle Veredelungsstufen (Grade x Type) в•ђв•ђв•ђ
     // Grade-Namen/Traits 1:1 aus ItemBedrockOreNew.BedrockOreGrade (Original-Repo) uebernommen.
     public static final RegistrySupplier<Item> BEDROCK_ORE_BASE = ITEMS.register("bedrock_ore_base", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> BEDROCK_ORE_BASE_LIGHT = ITEMS.register("bedrock_ore_base_light", () -> new com.hbm_m.item.industrial.ItemBedrockOreGraded(new Item.Properties(), com.hbm_m.item.industrial.ItemBedrockOreGraded.Grade.BASE, com.hbm_m.worldgen.BedrockOreDensity.Type.LIGHT));

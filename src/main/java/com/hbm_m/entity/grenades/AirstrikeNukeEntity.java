@@ -128,11 +128,22 @@ public class AirstrikeNukeEntity extends Entity {
         this.setDeltaMovement(this.direction.scale(PLANE_SPEED));
     }
 
+    //? if < 1.21.1 {
+
     @Override
     protected void defineSynchedData() {
         this.entityData.define(TARGET_POS, BlockPos.ZERO);
         this.entityData.define(OWNER_UUID_ACCESSOR, "");
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+
+        builder.define(TARGET_POS, BlockPos.ZERO);
+        builder.define(OWNER_UUID_ACCESSOR, "");
+    
+    }
+    *///?}
 
     @Override
     public void tick() {

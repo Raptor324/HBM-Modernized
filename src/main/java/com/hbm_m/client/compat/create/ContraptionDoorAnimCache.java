@@ -13,8 +13,8 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 //?} elif neoforge {
 /*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;*/
-//?}
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Renderer-owned chase-кэш плавной анимации двери на контрапшене.

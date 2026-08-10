@@ -157,6 +157,7 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity {
     }
 
     // --- NBT ---
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag); // Сохраняет inventory и energy из базового класса
@@ -164,7 +165,19 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity {
         tag.putInt("maxBurnTime", maxBurnTime);
         tag.putBoolean("enabled", enabled);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries); // Сохраняет inventory и energy из базового класса
+        tag.putInt("burnTime", burnTime);
+        tag.putInt("maxBurnTime", maxBurnTime);
+        tag.putBoolean("enabled", enabled);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag); // Загружает inventory и energy из базового класса
@@ -172,6 +185,17 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity {
         maxBurnTime = tag.getInt("maxBurnTime");
         enabled = tag.getBoolean("enabled");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries); // Загружает inventory и energy из базового класса
+        burnTime = tag.getInt("burnTime");
+        maxBurnTime = tag.getInt("maxBurnTime");
+        enabled = tag.getBoolean("enabled");
+    
+    }
+    *///?}
 
     // --- GUI ---
     @Override

@@ -48,12 +48,24 @@ public class GrenadeIfProjectileEntity extends ThrowableItemProjectile {
         this.grenadeType = type;
     }
 
+    //? if < 1.21.1 {
+
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(TIMER_ACTIVATED, false);
         this.entityData.define(DETONATION_TIME, 0);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+
+        super.defineSynchedData();
+        builder.define(TIMER_ACTIVATED, false);
+        builder.define(DETONATION_TIME, 0);
+    
+    }
+    *///?}
 
     @Override
     protected Item getDefaultItem() {

@@ -520,6 +520,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
     }
     *///?}
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -532,7 +533,24 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
         tag.putInt("powerUpgrade", powerUpgradeLevel);
         tag.putInt("afterburnerUpgrade", afterburnerUpgradeLevel);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        tag.put("oilTank", oilTank.writeNBT(new CompoundTag()));
+        tag.put("gasTank", gasTank.writeNBT(new CompoundTag()));
+        tag.put("fracksolTank", fracksolTank.writeNBT(new CompoundTag()));
+        tag.putInt("progressTimer", progressTimer);
+        tag.putInt("indicator", indicator);
+        tag.putInt("speedUpgrade", speedUpgradeLevel);
+        tag.putInt("powerUpgrade", powerUpgradeLevel);
+        tag.putInt("afterburnerUpgrade", afterburnerUpgradeLevel);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -545,6 +563,22 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
         powerUpgradeLevel = tag.getInt("powerUpgrade");
         afterburnerUpgradeLevel = tag.getInt("afterburnerUpgrade");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        oilTank.readNBT(tag.getCompound("oilTank"));
+        gasTank.readNBT(tag.getCompound("gasTank"));
+        fracksolTank.readNBT(tag.getCompound("fracksolTank"));
+        progressTimer = tag.getInt("progressTimer");
+        indicator = tag.getInt("indicator");
+        speedUpgradeLevel = tag.getInt("speedUpgrade");
+        powerUpgradeLevel = tag.getInt("powerUpgrade");
+        afterburnerUpgradeLevel = tag.getInt("afterburnerUpgrade");
+    
+    }
+    *///?}
 
     //=====================================================================================//
     // CAPABILITIES

@@ -15,7 +15,16 @@ public abstract class ModItemStackHandler extends ItemStackHandler {
         super(size);
     }
 }
-//?}
+//?} elif neoforge {
+/*import net.neoforged.neoforge.items.ItemStackHandler;
+
+public abstract class ModItemStackHandler extends ItemStackHandler {
+
+    public ModItemStackHandler(int size) {
+        super(size);
+    }
+}
+*///?}
 
 //? if fabric {
 /*import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
@@ -111,10 +120,10 @@ public abstract class ModItemStackHandler {
     }
 
     private static boolean isSameItem(ItemStack a, ItemStack b) {
-        return a.is(b.getItem()) && ItemStack.isSameItemSameTags(a, b);
+        return a.is(b.getItem()) && PlatformHooks.isSameItemSameTags(a, b);
     }
 
-    // ── NBT ──────────────────────────────────────────────────────────────────
+    // в”Ђв”Ђ NBT в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
     public CompoundTag serializeNBT() {
         ListTag list = new ListTag();
@@ -122,10 +131,10 @@ public abstract class ModItemStackHandler {
             if (!stacks[i].isEmpty()) {
                 CompoundTag entry = new CompoundTag();
                 entry.putByte("Slot", (byte) i);
-                // save() кладёт в entry ССЫЛКУ на живой ItemStack.tag. Chunk NBT
-                // сериализуется в потоке IOWorker, а машины (например зарядка батареи)
-                // продолжают менять этот тег → ConcurrentModificationException
-                // в CompoundTag.write. Поэтому отдаём независимый снимок.
+                // save() РєР»Р°РґС‘С‚ РІ entry РЎРЎР«Р›РљРЈ РЅР° Р¶РёРІРѕР№ ItemStack.tag. Chunk NBT
+                // СЃРµСЂРёР°Р»РёР·СѓРµС‚СЃСЏ РІ РїРѕС‚РѕРєРµ IOWorker, Р° РјР°С€РёРЅС‹ (РЅР°РїСЂРёРјРµСЂ Р·Р°СЂСЏРґРєР° Р±Р°С‚Р°СЂРµРё)
+                // РїСЂРѕРґРѕР»Р¶Р°СЋС‚ РјРµРЅСЏС‚СЊ СЌС‚РѕС‚ С‚РµРі в†’ ConcurrentModificationException
+                // РІ CompoundTag.write. РџРѕСЌС‚РѕРјСѓ РѕС‚РґР°С‘Рј РЅРµР·Р°РІРёСЃРёРјС‹Р№ СЃРЅРёРјРѕРє.
                 stacks[i].save(entry);
                 list.add(entry.copy());
             }
@@ -146,7 +155,7 @@ public abstract class ModItemStackHandler {
         }
     }
 
-    // ── Fabric Transfer API ───────────────────────────────────────────────────
+    // в”Ђв”Ђ Fabric Transfer API в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 
     public Storage<ItemVariant> getStorage() {
         List<SingleSlotStorage<ItemVariant>> slots = new ArrayList<>();

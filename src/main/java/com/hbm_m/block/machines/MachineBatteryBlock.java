@@ -175,4 +175,13 @@ public class MachineBatteryBlock extends BaseEntityBlock {
         pTooltip.add(Component.translatable("tooltip.hbm_m.machine_battery.stored", energyStr, maxEnergyStr)
                 .withStyle(ChatFormatting.YELLOW));
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineBatteryBlock> CODEC = simpleCodec(MachineBatteryBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

@@ -276,4 +276,13 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
     public boolean propagatesSkylightDown(BlockState pState, BlockGetter pLevel, BlockPos pPos) {
         return true;
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<LaunchPadBlock> CODEC = simpleCodec(LaunchPadBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

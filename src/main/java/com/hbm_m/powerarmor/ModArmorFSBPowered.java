@@ -15,13 +15,13 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ArmorMaterial;
+import com.hbm_m.item.tools_and_armor.ModArmorMaterials;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.PlatformHooks;
 //? if forge {
 import com.hbm_m.api.energy.EnergyCapabilityProvider;
-import com.hbm_m.platform.PlatformHooks;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 //?}
 
@@ -38,8 +38,8 @@ public class ModArmorFSBPowered extends ModArmorFSB {
     public static final int ARMOR_SLOT_LEGS = 2;
     public static final int ARMOR_SLOT_FEET = 3;
 
-    public ModArmorFSBPowered(ArmorMaterial material, Type type, Properties properties, 
-                              String texture, long maxPower, long chargeRate, 
+    public ModArmorFSBPowered(ModArmorMaterials material, Type type, Properties properties,
+                              String texture, long maxPower, long chargeRate,
                               long consumption, long drain) {
         super(material, type, properties, texture);
         this.maxPower = maxPower;
@@ -70,9 +70,8 @@ public class ModArmorFSBPowered extends ModArmorFSB {
         if (!(stack.getItem() instanceof ModArmorFSBPowered)) return;
         
         long prev = getCharge(stack);
-        CompoundTag tag = stack.getOrCreateTag();
         long newCharge = Math.min(prev + amount, getMaxCharge(stack));
-        tag.putLong("charge", newCharge);
+        PlatformHooks.putLong(stack, "charge", newCharge);
         
         // Синхронизация (вызов в onArmorTick или при получении урона)
     }
@@ -91,11 +90,10 @@ public class ModArmorFSBPowered extends ModArmorFSB {
 
     public void dischargeBattery(ItemStack stack, long amount) {
         if (stack.getItem() instanceof ModArmorFSBPowered) {
-            CompoundTag tag = stack.getOrCreateTag();
-            long prev = tag.getLong("charge");
+            long prev = PlatformHooks.getLong(stack, "charge");
             long newCharge = Math.max(0, prev - amount);
-            tag.putLong("charge", newCharge);
-            
+            PlatformHooks.putLong(stack, "charge", newCharge);
+
             // Синхронизация будет вызвана в onArmorTick() или при получении урона
         }
     }

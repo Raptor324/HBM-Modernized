@@ -46,12 +46,15 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 *///?}
-//? if forge {
+//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
 //?}
 //? if fabric {
@@ -207,7 +210,14 @@ public class MachineChemicalPlantVboRenderer {
      * translucent-compositing других модов на Create-поездах с дверьми copycat.
      */
     static final MultiBufferSource.BufferSource FLUID_BUFFER_SOURCE =
-            MultiBufferSource.immediate(new BufferBuilder(262144));
+            MultiBufferSource.immediate(
+                    //? if forge {
+                    new BufferBuilder(262144)
+                    //?}
+                    //? if neoforge {
+                    /*new BufferBuilder(com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_COLOR, com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS, 262144)
+                    *///?}
+            );
 
     //? if forge {
     /** Immediate draw used by {@link MachineChemicalPlantRenderer#presentDeferredFluids()}. */

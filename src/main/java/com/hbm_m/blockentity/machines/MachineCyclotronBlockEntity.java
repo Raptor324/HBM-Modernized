@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.Map;
 
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
@@ -179,7 +181,7 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
                 return true;
             }
 
-            if (!ItemStack.isSameItemSameTags(existing, out)) {
+            if (!PlatformHooks.isSameItemSameTags(existing, out)) {
                 continue;
             }
 
@@ -214,7 +216,7 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
             if (existing.isEmpty()) {
                 inventory.setStackInSlot(outputSlot, out);
             } else {
-                if (!ItemStack.isSameItemSameTags(existing, out)) {
+                if (!PlatformHooks.isSameItemSameTags(existing, out)) {
                     continue;
                 }
                 int max = Math.min(existing.getMaxStackSize(), inventory.getSlotLimit(outputSlot));

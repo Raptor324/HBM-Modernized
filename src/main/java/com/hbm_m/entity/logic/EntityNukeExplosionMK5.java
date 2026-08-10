@@ -72,10 +72,20 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
         return Math.min(12, Math.max(super.getChunkLoadRadius(), (this.length + 15) >> 4) + 1);
     }
 
+    //? if < 1.21.1 {
+
     @Override
     protected void defineSynchedData() {
         // нет синхронизируемых полей
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+
+        // нет синхронизируемых полей
+    
+    }
+    *///?}
 
     @Override
     public void tick() {

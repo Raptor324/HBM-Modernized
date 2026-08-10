@@ -2,7 +2,7 @@ package com.hbm_m.powerarmor;
 
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.item.ArmorMaterial;
+import com.hbm_m.item.tools_and_armor.ModArmorMaterials;
 
 public class AJRArmor extends ModPowerArmorItem {
 
@@ -30,7 +30,7 @@ public class AJRArmor extends ModPowerArmorItem {
     .setJumpSound("hbm_m:step.iron_jump")
     .setFallSound("hbm_m:step.iron_land");
 
-    public AJRArmor(ArmorMaterial material, Type type, Properties properties) {
+    public AJRArmor(ModArmorMaterials material, Type type, Properties properties) {
         super(material, type, properties, AJR_SPECS);
     }
 }

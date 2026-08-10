@@ -237,4 +237,13 @@ public class MachineZirnoxBlock extends BaseEntityBlock implements IMultiblockCo
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineZirnoxBlock> CODEC = simpleCodec(MachineZirnoxBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

@@ -193,6 +193,7 @@ public class MachineFoundryBasinBlockEntity extends BlockEntity implements ICruc
 
     /* ── NBT / sync ─────────────────────────────────────────────────────── */
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -204,7 +205,23 @@ public class MachineFoundryBasinBlockEntity extends BlockEntity implements ICruc
         tag.putFloat("fillLevel", fillLevel);
         tag.putInt("fillColor", fillColor);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        if (type != null) tag.putString("mat_type", type.name);
+        tag.putInt("mat_amount", amount);
+        if (!moldSlot.isEmpty())   tag.put("mold",   moldSlot.save(new CompoundTag()));
+        if (!outputSlot.isEmpty()) tag.put("output", outputSlot.save(new CompoundTag()));
+        tag.putInt("cooloff", cooloff);
+        tag.putFloat("fillLevel", fillLevel);
+        tag.putInt("fillColor", fillColor);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -217,9 +234,32 @@ public class MachineFoundryBasinBlockEntity extends BlockEntity implements ICruc
         fillLevel = tag.getFloat("fillLevel");
         fillColor = tag.getInt("fillColor");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.loadAdditional(tag, registries);
+        if (tag.contains("mat_type")) type = MaterialType.byName(tag.getString("mat_type"));
+        else type = null;
+        amount = tag.getInt("mat_amount");
+        moldSlot   = tag.contains("mold")   ? ItemStack.of(tag.getCompound("mold"))   : ItemStack.EMPTY;
+        outputSlot = tag.contains("output") ? ItemStack.of(tag.getCompound("output")) : ItemStack.EMPTY;
+        cooloff = tag.contains("cooloff") ? tag.getInt("cooloff") : 100;
+        fillLevel = tag.getFloat("fillLevel");
+        fillColor = tag.getInt("fillColor");
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public CompoundTag getUpdateTag() { CompoundTag t = super.getUpdateTag(); saveAdditional(t); return t; }
+    //?} else {
+    /*@Override
+    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+ CompoundTag t = super.getUpdateTag(registries); saveAdditional(t, registries); return t; 
+    }
+    *///?}
 
     @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {

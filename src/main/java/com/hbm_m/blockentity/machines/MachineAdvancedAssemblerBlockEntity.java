@@ -51,8 +51,8 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.DistExecutor;
 //?} elif neoforge {
 /*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;*/
-//?}
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
@@ -580,6 +580,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     }
 
     // NBT
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -616,7 +617,48 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             tag.putInt("AllowedFluidSides", mask);
         }
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        tag.put("input_tank", inputTank.writeNBT(new CompoundTag()));
+        tag.put("output_tank", outputTank.writeNBT(new CompoundTag()));
+        tag.putLong("last_use_tick", lastUseTick);
+        // Frame хранится в BlockState (FRAME property)
+        tag.putBoolean("HasRecipe", selectedRecipeId != null);
+        if (selectedRecipeId != null) {
+            tag.putString("SelectedRecipe", selectedRecipeId.toString());
+        }
+        if (assemblerModule != null) {
+            CompoundTag moduleTag = new CompoundTag();
+            assemblerModule.writeToNBT(moduleTag);
+            tag.put("AssemblerModule", moduleTag);
+        }
+        tag.putBoolean("is_crafting", isCrafting());
+
+        if (!allowedEnergySides.isEmpty()) {
+            int mask = 0;
+            for (Direction dir : allowedEnergySides) mask |= (1 << dir.get3DDataValue());
+            tag.putInt("AllowedEnergySides", mask);
+        }
+        if (fluidSidesFromMultiblockStructure) {
+            tag.putBoolean("FluidSidesFromMbStructure", true);
+            int mask = 0;
+            for (Direction dir : allowedFluidSides) {
+                mask |= (1 << dir.get3DDataValue());
+            }
+            tag.putInt("AllowedFluidSides", mask);
+        } else if (!allowedFluidSides.isEmpty()) {
+            int mask = 0;
+            for (Direction dir : allowedFluidSides) mask |= (1 << dir.get3DDataValue());
+            tag.putInt("AllowedFluidSides", mask);
+        }
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -667,6 +709,60 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             fluidSidesFromMultiblockStructure = tag.getBoolean("FluidSidesFromMbStructure");
         }
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+
+        inputTank.readNBT(tag.getCompound("input_tank"));
+        outputTank.readNBT(tag.getCompound("output_tank"));
+        lastUseTick = tag.getLong("last_use_tick");
+        // Миграция: старые сохранения имели FrameVisible в NBT - синхронизируем в BlockState
+        if (tag.contains("FrameVisible") && level != null && !level.isClientSide) {
+            MultiblockFrameHelper.applyFrameToBlockState(level, worldPosition, tag.getBoolean("FrameVisible"));
+        }
+        clientIsCrafting = tag.getBoolean("is_crafting");
+        if (tag.contains("HasRecipe") && tag.getBoolean("HasRecipe")) {
+            selectedRecipeId = ResourceLocation.tryParse(tag.getString("SelectedRecipe"));
+            recipeCacheDirty = true;
+        } else {
+            selectedRecipeId = null;
+            cachedRecipe = null;
+        }
+
+        if (tag.contains("AssemblerModule") && level != null) {
+            if (assemblerModule == null) {
+                // НОВЫЙ ПРАВИЛЬНЫЙ СПОСОБ
+                assemblerModule = new MachineModuleAdvancedAssembler(0, this, inventory, level);
+            }
+            assemblerModule.readFromNBT(tag.getCompound("AssemblerModule"));
+        }
+
+        if (tag.contains("AllowedEnergySides")) {
+            int mask = tag.getInt("AllowedEnergySides");
+            allowedEnergySides.clear();
+            for (Direction dir : Direction.values()) {
+                if ((mask & (1 << dir.get3DDataValue())) != 0) {
+                    allowedEnergySides.add(dir);
+                }
+            }
+        }
+        if (tag.contains("AllowedFluidSides")) {
+            int mask = tag.getInt("AllowedFluidSides");
+            allowedFluidSides.clear();
+            for (Direction dir : Direction.values()) {
+                if ((mask & (1 << dir.get3DDataValue())) != 0) {
+                    allowedFluidSides.add(dir);
+                }
+            }
+        }
+        if (tag.contains("FluidSidesFromMbStructure")) {
+            fluidSidesFromMultiblockStructure = tag.getBoolean("FluidSidesFromMbStructure");
+        }
+    
+    }
+    *///?}
 
     // Пакеты синхронизации
     public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
@@ -679,12 +775,23 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
+    //? if < 1.21.1 {
     @Override
     public CompoundTag getUpdateTag() {
         CompoundTag tag = new CompoundTag();
         saveAdditional(tag);
         return tag;
     }
+    //?} else {
+    /*@Override
+    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+
+        CompoundTag tag = new CompoundTag();
+        saveAdditional(tag, registries);
+        return tag;
+    
+    }
+    *///?}
 
     // Capability: используем базовые item/energy/fluids, плюс локальные хэндлеры флюидов
     //? if forge {

@@ -76,8 +76,8 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 //?} elif neoforge {
 /*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;*/
-//?}
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Fluid duct: multipart blockstate + Forge OBJ visibility on {@code pipe_neo.obj}. Fluid type lives in the block entity.
@@ -614,4 +614,13 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
         text.add(Component.literal(name).withStyle(Style.EMPTY.withColor(TextColor.fromRgb(rgb))));
         ILookOverlay.printGeneric(guiGraphics, Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<FluidDuctBlock> CODEC = simpleCodec(FluidDuctBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

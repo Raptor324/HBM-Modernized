@@ -10,8 +10,10 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?} elif fabric {
 /*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;*///?}
 
@@ -20,7 +22,7 @@ import net.fabricmc.api.Environment;*///?}
  * Currently a placeholder — the static model is rendered via RenderShape.MODEL.
  * TODO: Animate the Flywheel OBJ group spinning when the turbine is active.
  */
-//? if forge {
+//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
 //?}
 //? if fabric {

@@ -59,8 +59,11 @@ import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+@OnlyIn(Dist.CLIENT)
+*///?} elif fabric {
 /*@Environment(EnvType.CLIENT)*///?}
 public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, BakedModel> {
 

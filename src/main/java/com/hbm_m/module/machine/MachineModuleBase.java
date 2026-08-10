@@ -1,5 +1,7 @@
 package com.hbm_m.module.machine;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
@@ -17,18 +19,18 @@ import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.recipe.index.ModRecipeIndex;
 
 /**
- * Базовый модуль машины, инкапсулирующий логику крафта.
- * Вдохновлён оригинальным ModuleMachineBase из HBM 1.7.10.
+ * Р‘Р°Р·РѕРІС‹Р№ РјРѕРґСѓР»СЊ РјР°С€РёРЅС‹, РёРЅРєР°РїСЃСѓР»РёСЂСѓСЋС‰РёР№ Р»РѕРіРёРєСѓ РєСЂР°С„С‚Р°.
+ * Р’РґРѕС…РЅРѕРІР»С‘РЅ РѕСЂРёРіРёРЅР°Р»СЊРЅС‹Рј ModuleMachineBase РёР· HBM 1.7.10.
  *
- * Адаптирован для 1.20.1:
- * - Использует RecipeManager вместо GenericRecipes
- * - Работает с IItemHandler вместо массива слотов
- * - ОБНОВЛЕНО: Использует ILongEnergyStorage для поддержки больших значений энергии
+ * РђРґР°РїС‚РёСЂРѕРІР°РЅ РґР»СЏ 1.20.1:
+ * - РСЃРїРѕР»СЊР·СѓРµС‚ RecipeManager РІРјРµСЃС‚Рѕ GenericRecipes
+ * - Р Р°Р±РѕС‚Р°РµС‚ СЃ IItemHandler РІРјРµСЃС‚Рѕ РјР°СЃСЃРёРІР° СЃР»РѕС‚РѕРІ
+ * - РћР‘РќРћР’Р›Р•РќРћ: РСЃРїРѕР»СЊР·СѓРµС‚ ILongEnergyStorage РґР»СЏ РїРѕРґРґРµСЂР¶РєРё Р±РѕР»СЊС€РёС… Р·РЅР°С‡РµРЅРёР№ СЌРЅРµСЂРіРёРё
  */
 public abstract class MachineModuleBase<T extends Recipe<?>> {
     // === CONFIGURATION ===
     protected final int moduleIndex;
-    // ИЗМЕНЕНИЕ: Теперь используем ILongEnergyStorage вместо IEnergyStorage
+    // РР—РњР•РќР•РќРР•: РўРµРїРµСЂСЊ РёСЃРїРѕР»СЊР·СѓРµРј ILongEnergyStorage РІРјРµСЃС‚Рѕ IEnergyStorage
     protected final IEnergyReceiver energyStorage;
     protected final ModItemStackHandler itemHandler;
     protected Level level;
@@ -57,7 +59,7 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     public boolean didProcess = false;
     public boolean needsSync = false;
 
-    // ИЗМЕНЕНИЕ: Конструктор теперь принимает ILongEnergyStorage
+    // РР—РњР•РќР•РќРР•: РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ С‚РµРїРµСЂСЊ РїСЂРёРЅРёРјР°РµС‚ ILongEnergyStorage
     public MachineModuleBase(int moduleIndex, IEnergyReceiver energyStorage, ModItemStackHandler itemHandler, Level level) {
         this.moduleIndex = moduleIndex;
         this.energyStorage = energyStorage;
@@ -65,7 +67,7 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
         this.level = level;
     }
 
-    /** BlockEntity может создать модуль до установки level — обновляем ссылку при каждом тике. */
+    /** BlockEntity РјРѕР¶РµС‚ СЃРѕР·РґР°С‚СЊ РјРѕРґСѓР»СЊ РґРѕ СѓСЃС‚Р°РЅРѕРІРєРё level вЂ” РѕР±РЅРѕРІР»СЏРµРј СЃСЃС‹Р»РєСѓ РїСЂРё РєР°Р¶РґРѕРј С‚РёРєРµ. */
     public void setLevel(Level level) {
         this.level = level;
     }
@@ -83,31 +85,31 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
 
     protected abstract int getRecipeDuration(T recipe);
 
-    // ИЗМЕНЕНИЕ: Возвращаем long вместо int
+    // РР—РњР•РќР•РќРР•: Р’РѕР·РІСЂР°С‰Р°РµРј long РІРјРµСЃС‚Рѕ int
     protected abstract long getRecipeEnergyCost(T recipe);
 
     @Nullable
     protected abstract T findRecipeForItem(ItemStack stack);
 
     /**
-     * Optional hook: вызывается при смене рецепта (ID или auto-выбор).
-     * Например, машины с жидкостными баками могут сконфигурировать типы баков.
+     * Optional hook: РІС‹Р·С‹РІР°РµС‚СЃСЏ РїСЂРё СЃРјРµРЅРµ СЂРµС†РµРїС‚Р° (ID РёР»Рё auto-РІС‹Р±РѕСЂ).
+     * РќР°РїСЂРёРјРµСЂ, РјР°С€РёРЅС‹ СЃ Р¶РёРґРєРѕСЃС‚РЅС‹РјРё Р±Р°РєР°РјРё РјРѕРіСѓС‚ СЃРєРѕРЅС„РёРіСѓСЂРёСЂРѕРІР°С‚СЊ С‚РёРїС‹ Р±Р°РєРѕРІ.
      */
     protected void onRecipeChanged(@Nullable T previous, @Nullable T current) {
         // no-op by default
     }
 
     /**
-     * Хук семантики энергогейта:
-     * - true (default): как у ассемблера — при старте ждём энергию на весь цикл.
-     * - false: как у химмашины в 1.7.10 — достаточно энергии только на текущий тик.
+     * РҐСѓРє СЃРµРјР°РЅС‚РёРєРё СЌРЅРµСЂРіРѕРіРµР№С‚Р°:
+     * - true (default): РєР°Рє Сѓ Р°СЃСЃРµРјР±Р»РµСЂР° вЂ” РїСЂРё СЃС‚Р°СЂС‚Рµ Р¶РґС‘Рј СЌРЅРµСЂРіРёСЋ РЅР° РІРµСЃСЊ С†РёРєР».
+     * - false: РєР°Рє Сѓ С…РёРјРјР°С€РёРЅС‹ РІ 1.7.10 вЂ” РґРѕСЃС‚Р°С‚РѕС‡РЅРѕ СЌРЅРµСЂРіРёРё С‚РѕР»СЊРєРѕ РЅР° С‚РµРєСѓС‰РёР№ С‚РёРє.
      */
     protected boolean requiresFullEnergyBufferToStart() {
         return true;
     }
 
     /**
-     * Центральная проверка blueprint pool.
+     * Р¦РµРЅС‚СЂР°Р»СЊРЅР°СЏ РїСЂРѕРІРµСЂРєР° blueprint pool.
      */
     protected static boolean isBlueprintPoolAllowed(@Nullable String recipePool, ItemStack blueprint) {
         if (recipePool == null || recipePool.isEmpty()) return true;
@@ -115,7 +117,7 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
         return installed != null && !installed.isEmpty() && installed.equals(recipePool);
     }
 
-    /** Утилита для рецептов, которые имеют поле blueprintPool (как в 1.7.10 pooled recipes). */
+    /** РЈС‚РёР»РёС‚Р° РґР»СЏ СЂРµС†РµРїС‚РѕРІ, РєРѕС‚РѕСЂС‹Рµ РёРјРµСЋС‚ РїРѕР»Рµ blueprintPool (РєР°Рє РІ 1.7.10 pooled recipes). */
     protected static boolean isBlueprintAllowedForPool(@Nullable String recipePool, @Nullable ItemStack blueprint) {
         if (blueprint == null || blueprint.isEmpty()) {
             return recipePool == null || recipePool.isEmpty();
@@ -170,11 +172,11 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     }
 
     /**
-     * Энергетический гейт "как у ассемблера":
-     * - если крафт только начинается, машина ждёт пока накопится энергия на ВЕСЬ цикл;
-     * - если крафт уже идёт, и на текущий тик энергии не хватает — прогресс не сбрасываем, просто ждём.
+     * Р­РЅРµСЂРіРµС‚РёС‡РµСЃРєРёР№ РіРµР№С‚ "РєР°Рє Сѓ Р°СЃСЃРµРјР±Р»РµСЂР°":
+     * - РµСЃР»Рё РєСЂР°С„С‚ С‚РѕР»СЊРєРѕ РЅР°С‡РёРЅР°РµС‚СЃСЏ, РјР°С€РёРЅР° Р¶РґС‘С‚ РїРѕРєР° РЅР°РєРѕРїРёС‚СЃСЏ СЌРЅРµСЂРіРёСЏ РЅР° Р’Р•РЎР¬ С†РёРєР»;
+     * - РµСЃР»Рё РєСЂР°С„С‚ СѓР¶Рµ РёРґС‘С‚, Рё РЅР° С‚РµРєСѓС‰РёР№ С‚РёРє СЌРЅРµСЂРіРёРё РЅРµ С…РІР°С‚Р°РµС‚ вЂ” РїСЂРѕРіСЂРµСЃСЃ РЅРµ СЃР±СЂР°СЃС‹РІР°РµРј, РїСЂРѕСЃС‚Рѕ Р¶РґС‘Рј.
      *
-     * Вынесено в базовый модуль, чтобы разные машины могли переиспользовать одну логику.
+     * Р’С‹РЅРµСЃРµРЅРѕ РІ Р±Р°Р·РѕРІС‹Р№ РјРѕРґСѓР»СЊ, С‡С‚РѕР±С‹ СЂР°Р·РЅС‹Рµ РјР°С€РёРЅС‹ РјРѕРіР»Рё РїРµСЂРµРёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ РѕРґРЅСѓ Р»РѕРіРёРєСѓ.
      */
     public static boolean hasEnoughEnergyToStartCraft(double progress, long storedEnergy, long energyPerTick, int maxProgress) {
         if (energyPerTick <= 0) return true;
@@ -215,16 +217,16 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     }
 
     /**
-     * Возвращает список призрачных предметов для GUI
-     * Переопределите в дочерних классах для специфической логики
+     * Р’РѕР·РІСЂР°С‰Р°РµС‚ СЃРїРёСЃРѕРє РїСЂРёР·СЂР°С‡РЅС‹С… РїСЂРµРґРјРµС‚РѕРІ РґР»СЏ GUI
+     * РџРµСЂРµРѕРїСЂРµРґРµР»РёС‚Рµ РІ РґРѕС‡РµСЂРЅРёС… РєР»Р°СЃСЃР°С… РґР»СЏ СЃРїРµС†РёС„РёС‡РµСЃРєРѕР№ Р»РѕРіРёРєРё
      */
     public NonNullList<ItemStack> getGhostItems() {
         return NonNullList.create();
     }
 
     /**
-     * Сбрасывает прогресс крафта и текущий рецепт.
-     * Используется при принудительной смене рецепта через GUI.
+     * РЎР±СЂР°СЃС‹РІР°РµС‚ РїСЂРѕРіСЂРµСЃСЃ РєСЂР°С„С‚Р° Рё С‚РµРєСѓС‰РёР№ СЂРµС†РµРїС‚.
+     * РСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РїСЂРё РїСЂРёРЅСѓРґРёС‚РµР»СЊРЅРѕР№ СЃРјРµРЅРµ СЂРµС†РµРїС‚Р° С‡РµСЂРµР· GUI.
      */
     public void resetProgress() {
         this.progress = 0.0;
@@ -242,7 +244,7 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     @Nullable
     public T getCurrentRecipe() { return currentRecipe; }
     public boolean isProcessing() { return didProcess; }
-    /** Совместимость со старым API модулей/BE. */
+    /** РЎРѕРІРјРµСЃС‚РёРјРѕСЃС‚СЊ СЃРѕ СЃС‚Р°СЂС‹Рј API РјРѕРґСѓР»РµР№/BE. */
     public boolean getDidProcess() { return didProcess; }
 
     // === SERIALIZATION ===
@@ -258,7 +260,7 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
         readExtraFromNbt(nbt);
     }
 
-    /** Совместимость: старое имя NBT-сериализации (химмашина и др.). */
+    /** РЎРѕРІРјРµСЃС‚РёРјРѕСЃС‚СЊ: СЃС‚Р°СЂРѕРµ РёРјСЏ NBT-СЃРµСЂРёР°Р»РёР·Р°С†РёРё (С…РёРјРјР°С€РёРЅР° Рё РґСЂ.). */
     public final void writeNBT(CompoundTag tag) { writeToNBT(tag); }
     public final void readNBT(CompoundTag tag) { readFromNBT(tag); }
 
@@ -274,7 +276,7 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
         readExtraFromBuf(buf);
     }
 
-    /** Доп. состояние модуля, которое не относится к базовому прогрессу (например выбранный рецепт). */
+    /** Р”РѕРї. СЃРѕСЃС‚РѕСЏРЅРёРµ РјРѕРґСѓР»СЏ, РєРѕС‚РѕСЂРѕРµ РЅРµ РѕС‚РЅРѕСЃРёС‚СЃСЏ Рє Р±Р°Р·РѕРІРѕРјСѓ РїСЂРѕРіСЂРµСЃСЃСѓ (РЅР°РїСЂРёРјРµСЂ РІС‹Р±СЂР°РЅРЅС‹Р№ СЂРµС†РµРїС‚). */
     protected void writeExtraToNbt(CompoundTag nbt) {}
     protected void readExtraFromNbt(CompoundTag nbt) {}
     protected void writeExtraToBuf(FriendlyByteBuf buf) {}
@@ -312,13 +314,13 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     }
 
     /**
-     * Обновление с поддержкой blueprint
+     * РћР±РЅРѕРІР»РµРЅРёРµ СЃ РїРѕРґРґРµСЂР¶РєРѕР№ blueprint
      */
     public void update(double speedMultiplier, double powerMultiplier, boolean extraCondition, @Nullable ItemStack blueprint) {
         this.didProcess = false;
         this.needsSync = false;
 
-        // Поиск или валидация рецепта
+        // РџРѕРёСЃРє РёР»Рё РІР°Р»РёРґР°С†РёСЏ СЂРµС†РµРїС‚Р°
         if (currentRecipe == null || !matchesCurrentRecipe(currentRecipe)) {
             T prev = currentRecipe;
             currentRecipe = pickRecipeForTick();
@@ -330,7 +332,7 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
             }
         }
 
-        // Проверка blueprint pool
+        // РџСЂРѕРІРµСЂРєР° blueprint pool
         if (currentRecipe != null && !isRecipeAllowedByBlueprint(currentRecipe, blueprint)) {
             this.didProcess = false;
             this.progress = 0.0;
@@ -339,14 +341,14 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
             return;
         }
 
-        // Обработка крафта
+        // РћР±СЂР°Р±РѕС‚РєР° РєСЂР°С„С‚Р°
         if (extraCondition && currentRecipe != null && canProcess(currentRecipe)) {
-            // ИЗМЕНЕНИЕ: Используем long для энергии
+            // РР—РњР•РќР•РќРР•: РСЃРїРѕР»СЊР·СѓРµРј long РґР»СЏ СЌРЅРµСЂРіРёРё
             long energyPerTick = (long) (getRecipeEnergyCost(currentRecipe) * powerMultiplier);
 
             long storedEnergy = energyStorage.getEnergyStored();
 
-            // Ассемблер-логика ожидания энергии (общая для всех машин)
+            // РђСЃСЃРµРјР±Р»РµСЂ-Р»РѕРіРёРєР° РѕР¶РёРґР°РЅРёСЏ СЌРЅРµСЂРіРёРё (РѕР±С‰Р°СЏ РґР»СЏ РІСЃРµС… РјР°С€РёРЅ)
             if (requiresFullEnergyBufferToStart()
                     && !hasEnoughEnergyToStartCraft(progress, storedEnergy, energyPerTick, maxProgress)) {
                 return;
@@ -355,7 +357,7 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
                 return;
             }
 
-            // Потребляем энергию ПЕРЕД увеличением прогресса (как в оригинале)
+            // РџРѕС‚СЂРµР±Р»СЏРµРј СЌРЅРµСЂРіРёСЋ РџР•Р Р•Р” СѓРІРµР»РёС‡РµРЅРёРµРј РїСЂРѕРіСЂРµСЃСЃР° (РєР°Рє РІ РѕСЂРёРіРёРЅР°Р»Рµ)
             energyStorage.setEnergyStored(storedEnergy - energyPerTick);
 
             double step = Math.max(0.0, speedMultiplier);
@@ -364,8 +366,8 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
             this.progress += step;
             this.didProcess = true;
 
-            // В 1.7.10 overdrive мог "перескочить" несколько циклов за тик.
-            // Безопасный кап итераций — защита от бесконечного while при некорректном maxProgress.
+            // Р’ 1.7.10 overdrive РјРѕРі "РїРµСЂРµСЃРєРѕС‡РёС‚СЊ" РЅРµСЃРєРѕР»СЊРєРѕ С†РёРєР»РѕРІ Р·Р° С‚РёРє.
+            // Р‘РµР·РѕРїР°СЃРЅС‹Р№ РєР°Рї РёС‚РµСЂР°С†РёР№ вЂ” Р·Р°С‰РёС‚Р° РѕС‚ Р±РµСЃРєРѕРЅРµС‡РЅРѕРіРѕ while РїСЂРё РЅРµРєРѕСЂСЂРµРєС‚РЅРѕРј maxProgress.
             if (maxProgress > 0 && progress >= maxProgress) {
                 final int maxIterations = 64;
                 int it = 0;
@@ -420,7 +422,7 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
             if (incoming == null || incoming.isEmpty()) return true;
             if (slotStack == null || slotStack.isEmpty()) return true;
             //? if < 1.21.1 {
-            if (!ItemStack.isSameItemSameTags(slotStack, incoming)) return false;
+            if (!PlatformHooks.isSameItemSameTags(slotStack, incoming)) return false;
             //?} else {
             /*if (!ItemStack.isSameItemSameComponents(slotStack, incoming)) return false;
             *///?}

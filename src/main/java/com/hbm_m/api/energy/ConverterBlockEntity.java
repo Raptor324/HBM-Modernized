@@ -9,22 +9,22 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.blockentity.ModBlockEntities;
 //? if forge {
 import net.minecraftforge.common.capabilities.Capability;
-
-import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 //?}
 
 //? if fabric {
 /*import team.reborn.energy.api.EnergyStorage;
 import team.reborn.energy.api.base.SimpleEnergyStorage;
 *///?}
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 
 @SuppressWarnings("UnstableApiUsage")
 public class ConverterBlockEntity extends BlockEntity implements IEnergyReceiver, IEnergyProvider {
@@ -40,7 +40,9 @@ public class ConverterBlockEntity extends BlockEntity implements IEnergyReceiver
     private int ioMode = 0;
 
     // Capabilities
+    //? if forge {
     private final HbmForgeWrapper forgeWrapper = new HbmForgeWrapper(this);
+    //?}
 
     //? if forge {
     private LazyOptional<IEnergyStorage> forgeCap = LazyOptional.of(() -> forgeWrapper);
@@ -235,6 +237,7 @@ public class ConverterBlockEntity extends BlockEntity implements IEnergyReceiver
         return super.getCapability(cap, side);
     }//?}
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -242,7 +245,19 @@ public class ConverterBlockEntity extends BlockEntity implements IEnergyReceiver
         tag.putInt("tierIndex", tierIndex);
         tag.putInt("ioMode", ioMode);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        tag.putLong("energy", energy);
+        tag.putInt("tierIndex", tierIndex);
+        tag.putInt("ioMode", ioMode);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -253,4 +268,18 @@ public class ConverterBlockEntity extends BlockEntity implements IEnergyReceiver
         }
         if (tag.contains("ioMode")) ioMode = tag.getInt("ioMode");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        energy = tag.getLong("energy");
+        if (tag.contains("tierIndex")) {
+            tierIndex = tag.getInt("tierIndex");
+            if (tierIndex >= 0 && tierIndex < TIERS.length) currentLimit = TIERS[tierIndex];
+        }
+        if (tag.contains("ioMode")) ioMode = tag.getInt("ioMode");
+    
+    }
+    *///?}
 }

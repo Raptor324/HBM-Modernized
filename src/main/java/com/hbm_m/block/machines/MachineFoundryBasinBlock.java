@@ -87,4 +87,13 @@ public class MachineFoundryBasinBlock extends BaseEntityBlock {
         return createTickerHelper(type, ModBlockEntities.FOUNDRY_BASIN_BE.get(),
                 MachineFoundryBasinBlockEntity::tick);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineFoundryBasinBlock> CODEC = simpleCodec(MachineFoundryBasinBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

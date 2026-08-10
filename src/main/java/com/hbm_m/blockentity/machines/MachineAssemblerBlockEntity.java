@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -49,8 +51,8 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 //?} elif neoforge {
 /*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;*/
-//?}
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
@@ -65,15 +67,15 @@ import team.reborn.energy.api.EnergyStorage;
 *///?}
 
 /**
- * Сборочная машина (Assembler) - мультиблочная структура для автоматизированного крафта.
- * Адаптировано для long-энергосистемы с наследованием от BaseMachineBlockEntity.
+ * РЎР±РѕСЂРѕС‡РЅР°СЏ РјР°С€РёРЅР° (Assembler) - РјСѓР»СЊС‚РёР±Р»РѕС‡РЅР°СЏ СЃС‚СЂСѓРєС‚СѓСЂР° РґР»СЏ Р°РІС‚РѕРјР°С‚РёР·РёСЂРѕРІР°РЅРЅРѕРіРѕ РєСЂР°С„С‚Р°.
+ * РђРґР°РїС‚РёСЂРѕРІР°РЅРѕ РґР»СЏ long-СЌРЅРµСЂРіРѕСЃРёСЃС‚РµРјС‹ СЃ РЅР°СЃР»РµРґРѕРІР°РЅРёРµРј РѕС‚ BaseMachineBlockEntity.
  */
 @SuppressWarnings("UnstableApiUsage")
 public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
     private static final String ASSEMBLER_SOUND_INSTANCE = "com.hbm_m.sound.AssemblerSoundInstance";
 
-    // Слоты
+    // РЎР»РѕС‚С‹
     private static final int SLOT_COUNT = 18;
     private static final int ENERGY_SLOT = 0;
     private static final int TEMPLATE_SLOT = 4;
@@ -81,12 +83,12 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     private static final int INPUT_SLOT_START = 6;
     private static final int INPUT_SLOT_END = 17;
 
-    // Состояние крафта
+    // РЎРѕСЃС‚РѕСЏРЅРёРµ РєСЂР°С„С‚Р°
     private boolean isCrafting = false;
     private int progress = 0;
     private int maxProgress = 100;
 
-    // Proxy handlers для multiblock parts
+    // Proxy handlers РґР»СЏ multiblock parts
     //? if forge {
     private LazyOptional<IItemHandler> lazyInputProxy = LazyOptional.empty();
     private LazyOptional<IItemHandler> lazyOutputProxy = LazyOptional.empty();
@@ -97,17 +99,17 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     @Nullable private Storage<ItemVariant> outputProxy;
     *///?}
 
-    // Отслеживание источников предметов
+    // РћС‚СЃР»РµР¶РёРІР°РЅРёРµ РёСЃС‚РѕС‡РЅРёРєРѕРІ РїСЂРµРґРјРµС‚РѕРІ
     private final Set<BlockPos> lastPullSources = new HashSet<>();
 
-    // ContainerData для GUI с упаковкой long
+    // ContainerData РґР»СЏ GUI СЃ СѓРїР°РєРѕРІРєРѕР№ long
     protected final ContainerData data = new ContainerData() {
         @Override
         public int get(int index) {
             return switch (index) {
                 case 0 -> progress;
                 case 1 -> maxProgress;
-                case 2 -> isCrafting ? 1 : 0; // Индекс стал 2!
+                case 2 -> isCrafting ? 1 : 0; // РРЅРґРµРєСЃ СЃС‚Р°Р» 2!
                 default -> 0;
             };
         }
@@ -128,11 +130,11 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     };
 
     public MachineAssemblerBlockEntity(BlockPos pos, BlockState state) {
-        // Вызываем конструктор родителя с параметрами: (..., inventorySize, capacity, receiveRate)
+        // Р’С‹Р·С‹РІР°РµРј РєРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ СЂРѕРґРёС‚РµР»СЏ СЃ РїР°СЂР°РјРµС‚СЂР°РјРё: (..., inventorySize, capacity, receiveRate)
         super(ModBlockEntities.MACHINE_ASSEMBLER_BE.get(), pos, state,
                 SLOT_COUNT, // 18
-                100_000L,   // Емкость
-                100_000L);  // Скорость приема
+                100_000L,   // Р•РјРєРѕСЃС‚СЊ
+                100_000L);  // РЎРєРѕСЂРѕСЃС‚СЊ РїСЂРёРµРјР°
     }
 
     @Override
@@ -378,20 +380,20 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
     // ==================== ENERGY ====================
 
-    // В методе chargeFromEnergySlot():
+    // Р’ РјРµС‚РѕРґРµ chargeFromEnergySlot():
 
     private void chargeFromEnergySlot() {
         ItemStack energySourceStack = inventory.getStackInSlot(ENERGY_SLOT);
         if (energySourceStack.isEmpty()) return;
 
-        // Креативная батарея
+        // РљСЂРµР°С‚РёРІРЅР°СЏ Р±Р°С‚Р°СЂРµСЏ
         if (energySourceStack.getItem() instanceof ItemCreativeBattery) {
             this.setEnergyStored(this.getMaxEnergyStored());
             return;
         }
 
         //? if forge {
-        // Обычная батарея через HBM capability
+        // РћР±С‹С‡РЅР°СЏ Р±Р°С‚Р°СЂРµСЏ С‡РµСЂРµР· HBM capability
         energySourceStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).ifPresent(itemEnergy -> {
             long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
             if (energyNeeded <= 0) return;
@@ -408,7 +410,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             }
         });
 
-        // Fallback на Forge Energy для совместимости
+        // Fallback РЅР° Forge Energy РґР»СЏ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё
         if (!energySourceStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()) {
             energySourceStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
                 long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
@@ -463,7 +465,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         RecipeManager recipeManager = level.getRecipeManager();
         return recipeManager.getAllRecipesFor(AssemblerRecipe.Type.INSTANCE)
                 .stream()
-                .filter(r -> ItemStack.isSameItemSameTags(r.getResultItem(null), outputStack))
+                .filter(r -> PlatformHooks.isSameItemSameTags(r.getResultItem(null), outputStack))
                 .findFirst();
     }
 
@@ -490,7 +492,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     private boolean canInsertResult(ItemStack result) {
         ItemStack outputSlotStack = inventory.getStackInSlot(OUTPUT_SLOT);
         return outputSlotStack.isEmpty() ||
-                (ItemStack.isSameItemSameTags(outputSlotStack, result) &&
+                (PlatformHooks.isSameItemSameTags(outputSlotStack, result) &&
                         outputSlotStack.getCount() + result.getCount() <= outputSlotStack.getMaxStackSize());
     }
 
@@ -613,8 +615,8 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                 /*Storage<ItemVariant> cap = ItemStorage.SIDED.find(level, neighborPosGlobal, dirToNeighbor);
                 if (cap == null) continue;
 
-                // Вытаскиваем по одному до missing (Transfer API оперирует ItemVariant/count)
-                // и пытаемся вставить в наши входные слоты.
+                // Р’С‹С‚Р°СЃРєРёРІР°РµРј РїРѕ РѕРґРЅРѕРјСѓ РґРѕ missing (Transfer API РѕРїРµСЂРёСЂСѓРµС‚ ItemVariant/count)
+                // Рё РїС‹С‚Р°РµРјСЃСЏ РІСЃС‚Р°РІРёС‚СЊ РІ РЅР°С€Рё РІС…РѕРґРЅС‹Рµ СЃР»РѕС‚С‹.
                 for (int attempt = 0; attempt < missing; attempt++) {
                     boolean movedOne = false;
                     try (Transaction tx = Transaction.openOuter()) {
@@ -627,7 +629,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                             long extracted = view.extract(v, 1, tx);
                             if (extracted != 1) continue;
 
-                            // Вставляем 1 предмет во входные слоты (через ModItemStackHandler insertItem)
+                            // Р’СЃС‚Р°РІР»СЏРµРј 1 РїСЂРµРґРјРµС‚ РІРѕ РІС…РѕРґРЅС‹Рµ СЃР»РѕС‚С‹ (С‡РµСЂРµР· ModItemStackHandler insertItem)
                             ItemStack toInsert = one;
                             for (int dest = INPUT_SLOT_START; dest <= INPUT_SLOT_END && !toInsert.isEmpty(); dest++) {
                                 toInsert = inventory.insertItem(dest, toInsert, false);
@@ -637,7 +639,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                                 movedOne = true;
                                 break;
                             } else {
-                                // откатим (не коммитим)
+                                // РѕС‚РєР°С‚РёРј (РЅРµ РєРѕРјРјРёС‚РёРј)
                                 break;
                             }
                         }
@@ -729,30 +731,67 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
     // ==================== NBT ====================
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag); // Сохраняет инвентарь и ЭНЕРГИЮ
-        // Сохраняем только то, чего нет в родителе
+        super.saveAdditional(tag); // РЎРѕС…СЂР°РЅСЏРµС‚ РёРЅРІРµРЅС‚Р°СЂСЊ Рё Р­РќР•Р Р“РР®
+        // РЎРѕС…СЂР°РЅСЏРµРј С‚РѕР»СЊРєРѕ С‚Рѕ, С‡РµРіРѕ РЅРµС‚ РІ СЂРѕРґРёС‚РµР»Рµ
         tag.putInt("progress", progress);
         tag.putInt("maxProgress", maxProgress);
         tag.putBoolean("isCrafting", isCrafting);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries); // РЎРѕС…СЂР°РЅСЏРµС‚ РёРЅРІРµРЅС‚Р°СЂСЊ Рё Р­РќР•Р Р“РР®
+        // РЎРѕС…СЂР°РЅСЏРµРј С‚РѕР»СЊРєРѕ С‚Рѕ, С‡РµРіРѕ РЅРµС‚ РІ СЂРѕРґРёС‚РµР»Рµ
+        tag.putInt("progress", progress);
+        tag.putInt("maxProgress", maxProgress);
+        tag.putBoolean("isCrafting", isCrafting);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
-        super.load(tag); // Загружает инвентарь и ЭНЕРГИЮ
-        // Загружаем только то, чего нет в родителе
+        super.load(tag); // Р—Р°РіСЂСѓР¶Р°РµС‚ РёРЅРІРµРЅС‚Р°СЂСЊ Рё Р­РќР•Р Р“РР®
+        // Р—Р°РіСЂСѓР¶Р°РµРј С‚РѕР»СЊРєРѕ С‚Рѕ, С‡РµРіРѕ РЅРµС‚ РІ СЂРѕРґРёС‚РµР»Рµ
         progress = tag.getInt("progress");
         maxProgress = tag.getInt("maxProgress");
         isCrafting = tag.getBoolean("isCrafting");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.loadAdditional(tag, registries); // Р—Р°РіСЂСѓР¶Р°РµС‚ РёРЅРІРµРЅС‚Р°СЂСЊ Рё Р­РќР•Р Р“РР®
+        // Р—Р°РіСЂСѓР¶Р°РµРј С‚РѕР»СЊРєРѕ С‚Рѕ, С‡РµРіРѕ РЅРµС‚ РІ СЂРѕРґРёС‚РµР»Рµ
+        progress = tag.getInt("progress");
+        maxProgress = tag.getInt("maxProgress");
+        isCrafting = tag.getBoolean("isCrafting");
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public CompoundTag getUpdateTag() {
         CompoundTag tag = super.getUpdateTag();
         tag.putBoolean("isCrafting", isCrafting);
         return tag;
     }
+    //?} else {
+    /*@Override
+    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+
+        CompoundTag tag = super.getUpdateTag(registries);
+        tag.putBoolean("isCrafting", isCrafting);
+        return tag;
+    
+    }
+    *///?}
 
     //? if forge {
     @Override
@@ -827,13 +866,13 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         return isCrafting;
     }
 
-    // Куда больший AABB чем 1×1×1 cell контроллера: ассемблер - мультиблок
-    // 3×2×3 (см. MachineAssemblerBlock.defineStructureNew) с подвижными
-    // частями (slider, arm, 4 cogs), которые торчат за пределы статической
-    // footprint. Делегируем структурному helper'у - он кэширует AABB по
-    // facing один раз на ВЕСЬ helper и переиспользует для всех BE этого типа.
-    // Inflate 1.35: 1.0 давало пограничные ложные окклюжены + мигание при
-    // Iris shadow/main в одном кадре; advanced assembler использует 1.5.
+    // РљСѓРґР° Р±РѕР»СЊС€РёР№ AABB С‡РµРј 1Г—1Г—1 cell РєРѕРЅС‚СЂРѕР»Р»РµСЂР°: Р°СЃСЃРµРјР±Р»РµСЂ - РјСѓР»СЊС‚РёР±Р»РѕРє
+    // 3Г—2Г—3 (СЃРј. MachineAssemblerBlock.defineStructureNew) СЃ РїРѕРґРІРёР¶РЅС‹РјРё
+    // С‡Р°СЃС‚СЏРјРё (slider, arm, 4 cogs), РєРѕС‚РѕСЂС‹Рµ С‚РѕСЂС‡Р°С‚ Р·Р° РїСЂРµРґРµР»С‹ СЃС‚Р°С‚РёС‡РµСЃРєРѕР№
+    // footprint. Р”РµР»РµРіРёСЂСѓРµРј СЃС‚СЂСѓРєС‚СѓСЂРЅРѕРјСѓ helper'Сѓ - РѕРЅ РєСЌС€РёСЂСѓРµС‚ AABB РїРѕ
+    // facing РѕРґРёРЅ СЂР°Р· РЅР° Р’Р•РЎР¬ helper Рё РїРµСЂРµРёСЃРїРѕР»СЊР·СѓРµС‚ РґР»СЏ РІСЃРµС… BE СЌС‚РѕРіРѕ С‚РёРїР°.
+    // Inflate 1.35: 1.0 РґР°РІР°Р»Рѕ РїРѕРіСЂР°РЅРёС‡РЅС‹Рµ Р»РѕР¶РЅС‹Рµ РѕРєРєР»СЋР¶РµРЅС‹ + РјРёРіР°РЅРёРµ РїСЂРё
+    // Iris shadow/main РІ РѕРґРЅРѕРј РєР°РґСЂРµ; advanced assembler РёСЃРїРѕР»СЊР·СѓРµС‚ 1.5.
     @Override
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         BlockState state = getBlockState();
@@ -854,7 +893,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     public void setRemoved() {
-        super.setRemoved(); // Сначала вызываем super
+        super.setRemoved(); // РЎРЅР°С‡Р°Р»Р° РІС‹Р·С‹РІР°РµРј super
         //? if forge {
         if (this.level != null && this.level.isClientSide) {
             ClientSoundBootstrap.updateSound(this, false, null);
@@ -866,7 +905,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         }
         *///?}
 
-        // Удаление узла сети (у тебя это уже есть в конце файла, оставь как было)
+        // РЈРґР°Р»РµРЅРёРµ СѓР·Р»Р° СЃРµС‚Рё (Сѓ С‚РµР±СЏ СЌС‚Рѕ СѓР¶Рµ РµСЃС‚СЊ РІ РєРѕРЅС†Рµ С„Р°Р№Р»Р°, РѕСЃС‚Р°РІСЊ РєР°Рє Р±С‹Р»Рѕ)
         if (this.level != null && !this.level.isClientSide) {
             EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
         }

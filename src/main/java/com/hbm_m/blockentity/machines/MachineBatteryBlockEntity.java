@@ -295,6 +295,7 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         return new MachineBatteryMenu(windowId, playerInventory, this, this.data);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -304,7 +305,21 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         tag.putLong("lastEnergySample", this.lastEnergySample);
         tag.putLong("averagedEnergyDelta", this.averagedEnergyDelta);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        tag.putInt("modeOnNoSignal", this.modeOnNoSignal);
+        tag.putInt("modeOnSignal", this.modeOnSignal);
+        tag.putInt("priority", this.priority.ordinal());
+        tag.putLong("lastEnergySample", this.lastEnergySample);
+        tag.putLong("averagedEnergyDelta", this.averagedEnergyDelta);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -317,6 +332,22 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         this.lastEnergySample = tag.getLong("lastEnergySample");
         this.averagedEnergyDelta = tag.getLong("averagedEnergyDelta");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        this.modeOnNoSignal = tag.getInt("modeOnNoSignal");
+        this.modeOnSignal = tag.getInt("modeOnSignal");
+        if (tag.contains("priority")) {
+            int priorityIndex = tag.getInt("priority");
+            this.priority = Priority.values()[Math.max(0, Math.min(priorityIndex, Priority.values().length - 1))];
+        }
+        this.lastEnergySample = tag.getLong("lastEnergySample");
+        this.averagedEnergyDelta = tag.getLong("averagedEnergyDelta");
+    
+    }
+    *///?}
 
     //? if forge {
     @Override

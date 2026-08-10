@@ -36,12 +36,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.block.machines.FluidDuctBlock;
 //? if forge {
 import com.hbm_m.capability.ModCapabilities;
-import com.hbm_m.block.machines.FluidDuctBlock;
-import com.hbm_m.blockentity.ModBlockEntities;
-
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
@@ -589,6 +587,7 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
     }
     //?}
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag pTag) {
         super.saveAdditional(pTag);
@@ -613,7 +612,36 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
             pTag.putInt("FluidSides", mask);
         }
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag pTag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(pTag, registries);
+        if (this.controllerPos != null) {
+            pTag.put("ControllerPos", NbtUtils.writeBlockPos(this.controllerPos));
+        }
+        pTag.putString("PartRole", this.role.name());
+
+        if (!allowedClimbSides.isEmpty()) {
+            int mask = 0;
+            for (Direction dir : allowedClimbSides) mask |= (1 << dir.get3DDataValue());
+            pTag.putInt("ClimbSides", mask);
+        }
+        if (!allowedEnergySides.isEmpty()) {
+            int mask = 0;
+            for (Direction dir : allowedEnergySides) mask |= (1 << dir.get3DDataValue());
+            pTag.putInt("EnergySides", mask);
+        }
+        if (!allowedFluidSides.isEmpty()) {
+            int mask = 0;
+            for (Direction dir : allowedFluidSides) mask |= (1 << dir.get3DDataValue());
+            pTag.putInt("FluidSides", mask);
+        }
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag pTag) {
         super.load(pTag);
@@ -655,6 +683,51 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         }
         *///?}
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag pTag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(pTag, registries);
+        if (pTag.contains("ControllerPos")) {
+            this.controllerPos = NbtUtils.readBlockPos(pTag.getCompound("ControllerPos"));
+        }
+        if (pTag.contains("PartRole")) {
+            try {
+                this.role = PartRole.valueOf(pTag.getString("PartRole"));
+            } catch (IllegalArgumentException e) {
+                this.role = PartRole.DEFAULT;
+            }
+        }
+        if (pTag.contains("ClimbSides")) {
+            int mask = pTag.getInt("ClimbSides");
+            allowedClimbSides.clear();
+            for (Direction dir : Direction.values()) {
+                if ((mask & (1 << dir.get3DDataValue())) != 0) allowedClimbSides.add(dir);
+            }
+        }
+        if (pTag.contains("EnergySides")) {
+            int mask = pTag.getInt("EnergySides");
+            allowedEnergySides.clear();
+            for (Direction dir : Direction.values()) {
+                if ((mask & (1 << dir.get3DDataValue())) != 0) allowedEnergySides.add(dir);
+            }
+        }
+        if (pTag.contains("FluidSides")) {
+            int mask = pTag.getInt("FluidSides");
+            allowedFluidSides.clear();
+            for (Direction dir : Direction.values()) {
+                if ((mask & (1 << dir.get3DDataValue())) != 0) allowedFluidSides.add(dir);
+            }
+        }
+        //? if fabric {
+        /^if (level != null && !level.isClientSide()
+                && (isFluidConnector(this.role) || this.role.canReceiveEnergy() || this.role.canSendEnergy())) {
+            level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
+        }
+        ^///?}
+    
+    }
+    *///?}
 
     @Nullable
     @Override
@@ -662,10 +735,19 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
+    //? if < 1.21.1 {
     @Override
     public CompoundTag getUpdateTag() {
         return this.saveWithoutMetadata();
     }
+    //?} else {
+    /*@Override
+    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+
+        return this.saveWithoutMetadata();
+    
+    }
+    *///?}
 
     //? if forge {
     @Override

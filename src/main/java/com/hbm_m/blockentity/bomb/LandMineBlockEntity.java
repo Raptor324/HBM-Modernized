@@ -87,17 +87,39 @@ public class LandMineBlockEntity extends BlockEntity {
         }
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.putBoolean("primed", isPrimed);
         tag.putBoolean("waiting", waitingForPlayer);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        tag.putBoolean("primed", isPrimed);
+        tag.putBoolean("waiting", waitingForPlayer);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
         isPrimed = tag.getBoolean("primed");
         waitingForPlayer = tag.getBoolean("waiting");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        isPrimed = tag.getBoolean("primed");
+        waitingForPlayer = tag.getBoolean("waiting");
+    
+    }
+    *///?}
 }

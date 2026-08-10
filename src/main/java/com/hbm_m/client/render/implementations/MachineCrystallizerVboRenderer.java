@@ -36,7 +36,10 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.fluids.FluidStack;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
@@ -50,7 +53,7 @@ import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry
  * Спиннер — {@link MeshRenderCache} / instancing. Жидкость с подменой спрайта на блок —
  * вне instancing (как chemplant Fluid), через {@link MachineCrystallizerRenderer#presentDeferredFluids()}.
  */
-//? if forge {
+//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
 //?}
 //? if fabric {

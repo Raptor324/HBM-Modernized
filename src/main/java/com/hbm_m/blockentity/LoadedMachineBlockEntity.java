@@ -58,24 +58,55 @@ public abstract class LoadedMachineBlockEntity extends BlockEntity {
         return muffled ? baseVolume * 0.1F : baseVolume;
     }
     
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.putBoolean("muffled", muffled);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.saveAdditional(tag, registries);
+        tag.putBoolean("muffled", muffled);
     
+    }
+    *///?}
+    
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
         this.muffled = tag.getBoolean("muffled");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        this.muffled = tag.getBoolean("muffled");
     
+    }
+    *///?}
+    
+    //? if < 1.21.1 {
     @Override
     public CompoundTag getUpdateTag() {
         CompoundTag tag = super.getUpdateTag();
         saveAdditional(tag);
         return tag;
     }
+    //?} else {
+    /*@Override
+    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+
+        CompoundTag tag = super.getUpdateTag(registries);
+        saveAdditional(tag, registries);
+        return tag;
+    
+    }
+    *///?}
     
     @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {

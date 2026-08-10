@@ -195,6 +195,7 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
         return t;
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -203,7 +204,20 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
         tag.putInt("reasimSteam", reasimSteam);
         tag.putInt("lidState", lidState);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        tag.putDouble("heat", heat);
+        tag.putInt("reasimWater", reasimWater);
+        tag.putInt("reasimSteam", reasimSteam);
+        tag.putInt("lidState", lidState);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -212,6 +226,18 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
         reasimSteam = tag.getInt("reasimSteam");
         lidState    = tag.contains("lidState") ? tag.getInt("lidState") : 1;
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        heat        = tag.getDouble("heat");
+        reasimWater = tag.getInt("reasimWater");
+        reasimSteam = tag.getInt("reasimSteam");
+        lidState    = tag.contains("lidState") ? tag.getInt("lidState") : 1;
+    
+    }
+    *///?}
     //?} else {
     /*protected static CompoundTag safeItemSave(net.minecraft.world.item.ItemStack stack, net.minecraft.core.HolderLookup.Provider registries) {
         return (CompoundTag) stack.save(registries);

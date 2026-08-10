@@ -94,4 +94,13 @@ public class MachineSolarMirrorsBlock extends BaseEntityBlock implements IMultib
     public PartRole getPartRole(BlockPos localOffset) {
         return structureHelper.resolvePartRole(localOffset, this);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineSolarMirrorsBlock> CODEC = simpleCodec(MachineSolarMirrorsBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

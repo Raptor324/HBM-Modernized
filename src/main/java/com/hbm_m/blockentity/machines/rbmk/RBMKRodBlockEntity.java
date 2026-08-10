@@ -181,7 +181,8 @@ public class RBMKRodBlockEntity extends RBMKColumnBlockEntity
     // â"€â"€â"€ NBT â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     //? if < 1.21.1 {
-    @Override
+    //? if < 1.21.1 {
+@Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.putDouble("fluxQuantity", lastFluxQuantity);
@@ -190,7 +191,21 @@ public class RBMKRodBlockEntity extends RBMKColumnBlockEntity
         tag.putBoolean("explodeOnBroken", explodeOnBroken);
         if (!fuelSlot.isEmpty()) tag.put("fuelSlot", safeItemSave(fuelSlot));
     }
+//?} else {
+/*@Override
+protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        tag.putDouble("fluxQuantity", lastFluxQuantity);
+        tag.putDouble("fluxMod", lastFluxRatio);
+        tag.putBoolean("hasRod", hasRod);
+        tag.putBoolean("explodeOnBroken", explodeOnBroken);
+        if (!fuelSlot.isEmpty()) tag.put("fuelSlot", safeItemSave(fuelSlot));
+    
+}
+*///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -201,6 +216,20 @@ public class RBMKRodBlockEntity extends RBMKColumnBlockEntity
         if (tag.contains("fuelSlot"))
             fuelSlot = ItemStack.of(tag.getCompound("fuelSlot"));
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        fluxQuantity    = tag.getDouble("fluxQuantity");
+        fluxFastRatio   = tag.getDouble("fluxMod");
+        hasRod          = tag.getBoolean("hasRod");
+        explodeOnBroken = !tag.contains("explodeOnBroken") || tag.getBoolean("explodeOnBroken");
+        if (tag.contains("fuelSlot"))
+            fuelSlot = ItemStack.of(tag.getCompound("fuelSlot"));
+    
+    }
+    *///?}
     //?} else {
     /*@Override
     protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {

@@ -150,13 +150,13 @@ public class FluidBarrelItem extends Item {
 
     public static void setFluid(ItemStack stack, FluidStack fluid) {
         if (fluid.isEmpty() || fluid.getAmount() <= 0) {
-            stack.removeTagKey(NBT_FLUID);
+            PlatformHooks.remove(stack, NBT_FLUID);
             // Если после удаления тега он пустой — удаляем весь CompoundTag, чтобы стакалось с чистыми бочками
-            if (PlatformHooks.hasItemTag(stack) && stack.getTag().isEmpty()) {
+            CompoundTag existing = PlatformHooks.getItemTag(stack);
+            if (existing != null && existing.isEmpty()) {
                 PlatformHooks.setItemTag(stack, null);
             }
         } else {
-            CompoundTag tag = stack.getOrCreateTag();
             CompoundTag fluidTag = new CompoundTag();
 
             // Нормализация: вода всегда записывается как minecraft:water, чтобы бочки стакались
@@ -166,7 +166,7 @@ public class FluidBarrelItem extends Item {
             // Явно используем Long, чтобы NBT-тип всегда был одинаковым (Long)
             fluidTag.putLong("amount", fluid.getAmount());
 
-            tag.put(NBT_FLUID, fluidTag);
+            PlatformHooks.put(stack, NBT_FLUID, fluidTag);
         }
     }
 

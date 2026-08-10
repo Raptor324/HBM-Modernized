@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.MachineFractionTowerBlockEntity;
 import com.hbm_m.inventory.menu.MachineFractionTowerMenu;
@@ -60,7 +61,7 @@ public class GUIMachineFractionTower extends GuiInfoScreen<MachineFractionTowerM
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
         drawElectricityInfo(guiGraphics, mouseX, mouseY,

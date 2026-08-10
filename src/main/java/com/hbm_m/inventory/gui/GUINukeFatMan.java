@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,7 +42,7 @@ public class GUINukeFatMan extends GuiInfoScreen<NukeFatManMenu> {
 
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         
         this.renderTooltip(guiGraphics, mouseX, mouseY);

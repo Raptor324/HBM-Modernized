@@ -102,6 +102,7 @@ public class CargoElevatorBlockEntity extends LoadedMachineBlockEntity {
         }
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -109,7 +110,19 @@ public class CargoElevatorBlockEntity extends LoadedMachineBlockEntity {
         tag.putBoolean("isExtending", isExtending);
         tag.putInt("height", height);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        tag.putDouble("extension", extension);
+        tag.putBoolean("isExtending", isExtending);
+        tag.putInt("height", height);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -123,7 +136,25 @@ public class CargoElevatorBlockEntity extends LoadedMachineBlockEntity {
             this.sync = 3;
         }
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.loadAdditional(tag, registries);
+        this.extension = tag.getDouble("extension");
+        this.isExtending = tag.getBoolean("isExtending");
+        this.height = tag.getInt("height");
+        // Клиентская синхронизация: renderPlatform + syncExtension приходят через getUpdateTag
+        this.renderPlatform = tag.getBoolean("renderPlatform");
+        this.syncExtension = tag.getDouble("extension");
+        if (this.syncExtension > 0 && this.syncExtension < this.height) {
+            this.sync = 3;
+        }
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public CompoundTag getUpdateTag() {
         CompoundTag tag = super.getUpdateTag();
@@ -132,6 +163,18 @@ public class CargoElevatorBlockEntity extends LoadedMachineBlockEntity {
         tag.putDouble("extension", extension);
         return tag;
     }
+    //?} else {
+    /*@Override
+    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+
+        CompoundTag tag = super.getUpdateTag(registries);
+        tag.putBoolean("renderPlatform", renderPlatform);
+        tag.putInt("height", height);
+        tag.putDouble("extension", extension);
+        return tag;
+    
+    }
+    *///?}
 
     @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {

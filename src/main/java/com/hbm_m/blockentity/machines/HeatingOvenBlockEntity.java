@@ -165,6 +165,7 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
         sendUpdateToClient();
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -173,7 +174,20 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
         tag.putFloat("doorAngle", doorAngle);
         tag.putBoolean("doorOpen", doorOpen);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        tag.putInt("burnTime", burnTime);
+        tag.putBoolean("isOn", isOn);
+        tag.putFloat("doorAngle", doorAngle);
+        tag.putBoolean("doorOpen", doorOpen);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -184,7 +198,22 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
         doorOpen = tag.getBoolean("doorOpen");
         wasOn = isOn;
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.loadAdditional(tag, registries);
+        burnTime = tag.getInt("burnTime");
+        isOn = tag.getBoolean("isOn");
+        doorAngle = tag.getFloat("doorAngle");
+        prevDoorAngle = doorAngle;
+        doorOpen = tag.getBoolean("doorOpen");
+        wasOn = isOn;
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public CompoundTag getUpdateTag() {
         CompoundTag tag = super.getUpdateTag();
@@ -193,6 +222,18 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
         tag.putBoolean("doorOpen", doorOpen);
         return tag;
     }
+    //?} else {
+    /*@Override
+    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+
+        CompoundTag tag = super.getUpdateTag(registries);
+        tag.putBoolean("isOn", isOn);
+        tag.putFloat("doorAngle", doorAngle);
+        tag.putBoolean("doorOpen", doorOpen);
+        return tag;
+    
+    }
+    *///?}
 
     //? if forge {
     @Override

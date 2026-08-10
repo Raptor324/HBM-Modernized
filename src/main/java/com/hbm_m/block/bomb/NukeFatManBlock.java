@@ -224,4 +224,9 @@ public class NukeFatManBlock extends BaseEntityBlock implements IMultiblockContr
             collisionMap
         );
     }
+
+    //? if > 1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<NukeFatManBlock> CODEC = simpleCodec(NukeFatManBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

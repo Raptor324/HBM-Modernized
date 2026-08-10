@@ -413,7 +413,7 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity {
 
         for (int i = OUTPUT_START; i < OUTPUT_START + OUTPUT_COUNT && !toInsert.isEmpty(); i++) {
             ItemStack slotStack = inventory.getStackInSlot(i);
-            if (!slotStack.isEmpty() && ItemStack.isSameItemSameTags(slotStack, toInsert)) {
+            if (!slotStack.isEmpty() && PlatformHooks.isSameItemSameTags(slotStack, toInsert)) {
                 int room = slotStack.getMaxStackSize() - slotStack.getCount();
                 int move = Math.min(room, toInsert.getCount());
                 if (move > 0) {
@@ -470,6 +470,7 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity {
     public boolean hasDrillbitInstalled() { return !inventory.getStackInSlot(SLOT_DRILLBIT).isEmpty(); }
     public long getEnergyPerTick() { return ENERGY_PER_TICK; }
 
+    //? if < 1.21.1 {
     @Override
     public void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -482,7 +483,24 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity {
         tag.putBoolean("operational", operational);
         tank.writeToNBT(tag, "tank");
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        tag.putInt("target_depth", targetDepth);
+        tag.putBoolean("enable_drill", enableDrill);
+        tag.putBoolean("enable_crusher", enableCrusher);
+        tag.putBoolean("enable_walling", enableWalling);
+        tag.putBoolean("enable_veinminer", enableVeinMiner);
+        tag.putBoolean("enable_silktouch", enableSilkTouch);
+        tag.putBoolean("operational", operational);
+        tank.writeToNBT(tag, "tank");
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -495,6 +513,22 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity {
         enableSilkTouch = tag.getBoolean("enable_silktouch");
         operational = tag.getBoolean("operational");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        tank.readFromNBT(tag, "tank");
+        targetDepth = tag.getInt("target_depth");
+        enableDrill = tag.getBoolean("enable_drill");
+        enableCrusher = tag.getBoolean("enable_crusher");
+        enableWalling = tag.getBoolean("enable_walling");
+        enableVeinMiner = tag.getBoolean("enable_veinminer");
+        enableSilkTouch = tag.getBoolean("enable_silktouch");
+        operational = tag.getBoolean("operational");
+    
+    }
+    *///?}
 
     @Override
     protected Component getDefaultName() {

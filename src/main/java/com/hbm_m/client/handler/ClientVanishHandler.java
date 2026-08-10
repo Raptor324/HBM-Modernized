@@ -2,12 +2,17 @@ package com.hbm_m.client.handler;
 
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.world.entity.Entity;
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

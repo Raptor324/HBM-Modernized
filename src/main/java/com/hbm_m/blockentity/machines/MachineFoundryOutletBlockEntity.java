@@ -96,6 +96,7 @@ public class MachineFoundryOutletBlockEntity extends BlockEntity implements ICru
 
     /* ── NBT / sync ─────────────────────────────────────────────────────── */
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -103,7 +104,19 @@ public class MachineFoundryOutletBlockEntity extends BlockEntity implements ICru
         tag.putBoolean("invertFilter",   invertFilter);
         tag.putBoolean("invertRedstone", invertRedstone);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        if (filter != null) tag.putString("filter", filter.name);
+        tag.putBoolean("invertFilter",   invertFilter);
+        tag.putBoolean("invertRedstone", invertRedstone);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -112,9 +125,28 @@ public class MachineFoundryOutletBlockEntity extends BlockEntity implements ICru
         invertFilter   = tag.getBoolean("invertFilter");
         invertRedstone = tag.getBoolean("invertRedstone");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.loadAdditional(tag, registries);
+        if (tag.contains("filter")) filter = MaterialType.byName(tag.getString("filter"));
+        else filter = null;
+        invertFilter   = tag.getBoolean("invertFilter");
+        invertRedstone = tag.getBoolean("invertRedstone");
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public CompoundTag getUpdateTag() { CompoundTag t = super.getUpdateTag(); saveAdditional(t); return t; }
+    //?} else {
+    /*@Override
+    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+ CompoundTag t = super.getUpdateTag(registries); saveAdditional(t, registries); return t; 
+    }
+    *///?}
 
     @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {

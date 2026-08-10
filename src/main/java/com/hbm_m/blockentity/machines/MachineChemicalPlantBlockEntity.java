@@ -598,6 +598,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
         return Math.min(1.0F, Math.max(0.0F, inputTanks[0].getFluidAmountMb() / (float) inputTanks[0].getCapacityMb()));
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -609,7 +610,23 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
         module.writeNBT(tag);
         // anim/prevAnim только на клиенте — не писать в NBT: иначе при каждом sync с сервера (0,0) сбрасывают интерполяцию.
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        for (int i = 0; i < 3; i++) {
+            tag.put("inputTank" + i, inputTanks[i].writeNBT(new CompoundTag()));
+            tag.put("outputTank" + i, outputTanks[i].writeNBT(new CompoundTag()));
+        }
+        tag.putBoolean("didProcess", module.getDidProcess());
+        module.writeNBT(tag);
+        // anim/prevAnim только на клиенте — не писать в NBT: иначе при каждом sync с сервера (0,0) сбрасывают интерполяцию.
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -621,6 +638,21 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
         // didProcess хранится отдельно от module.writeNBT(); нужен на клиенте для звука/анимации.
         module.didProcess = tag.getBoolean("didProcess");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        for (int i = 0; i < 3; i++) {
+            if (tag.contains("inputTank" + i)) inputTanks[i].readNBT(tag.getCompound("inputTank" + i));
+            if (tag.contains("outputTank" + i)) outputTanks[i].readNBT(tag.getCompound("outputTank" + i));
+        }
+        module.readNBT(tag);
+        // didProcess хранится отдельно от module.writeNBT(); нужен на клиенте для звука/анимации.
+        module.didProcess = tag.getBoolean("didProcess");
+    
+    }
+    *///?}
 
     @Override
     public void setRemoved() {

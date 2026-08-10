@@ -21,9 +21,18 @@ public class ClusterRocketEntity extends Projectile {
         super(type, level);
     }
 
+    //? if < 1.21.1 {
+
     @Override
     protected void defineSynchedData() {
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+
+    
+    }
+    *///?}
 
     @Override
     public void recreateFromPacket(ClientboundAddEntityPacket packet) {

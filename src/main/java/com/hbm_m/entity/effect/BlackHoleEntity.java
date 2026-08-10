@@ -160,10 +160,20 @@ public class BlackHoleEntity extends Entity {
         this.setDeltaMovement(this.getDeltaMovement().multiply(0.99D, 0.99D, 0.99D));
     }
 
+    //? if < 1.21.1 {
+
     @Override
     protected void defineSynchedData() {
         this.entityData.define(SIZE, 0.5F);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+
+        builder.define(SIZE, 0.5F);
+    
+    }
+    *///?}
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {

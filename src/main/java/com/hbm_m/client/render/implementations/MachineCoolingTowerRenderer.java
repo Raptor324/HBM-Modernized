@@ -23,8 +23,13 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.phys.AABB;
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 @OnlyIn(Dist.CLIENT)
 public class MachineCoolingTowerRenderer extends AbstractPartBasedRenderer<MachineCoolingTowerBlockEntity, MachineCoolingTowerBakedModel> {

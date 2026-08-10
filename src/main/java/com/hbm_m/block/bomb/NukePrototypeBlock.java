@@ -152,4 +152,9 @@ public class NukePrototypeBlock extends BaseEntityBlock implements IBomb, IDeton
         }
         return BombReturnCode.UNDEFINED;
     }
+
+    //? if > 1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<NukePrototypeBlock> CODEC = simpleCodec(NukePrototypeBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

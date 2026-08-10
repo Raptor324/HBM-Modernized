@@ -1,5 +1,7 @@
 package com.hbm_m.inventory.fluid.tank;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -42,14 +44,14 @@ public class FluidTank implements Cloneable {
         boolean fillItem(ItemStack[] slots, int in, int out, FluidTank tank);
     }
 
-    /** 1.7.10 {@code public static final List<FluidLoadingHandler> loadingHandlers}: открытый список для регистрации сторонних обработчиков. */
+    /** 1.7.10 {@code public static final List<FluidLoadingHandler> loadingHandlers}: РѕС‚РєСЂС‹С‚С‹Р№ СЃРїРёСЃРѕРє РґР»СЏ СЂРµРіРёСЃС‚СЂР°С†РёРё СЃС‚РѕСЂРѕРЅРЅРёС… РѕР±СЂР°Р±РѕС‚С‡РёРєРѕРІ. */
     public static final List<LoadingHandler> loadingHandlers = new ArrayList<>();
 
-    /** 1.7.10 {@code public static final Set<Item> noDualUnload}: предметы, которые нельзя выгружать в дуальном режиме. */
+    /** 1.7.10 {@code public static final Set<Item> noDualUnload}: РїСЂРµРґРјРµС‚С‹, РєРѕС‚РѕСЂС‹Рµ РЅРµР»СЊР·СЏ РІС‹РіСЂСѓР¶Р°С‚СЊ РІ РґСѓР°Р»СЊРЅРѕРј СЂРµР¶РёРјРµ. */
     public static final Set<Item> noDualUnload = new HashSet<>();
 
     static {
-        // Порядок переноса из 1.7.10:
+        // РџРѕСЂСЏРґРѕРє РїРµСЂРµРЅРѕСЃР° РёР· 1.7.10:
         // Standard -> FillableItem -> Infinite
         loadingHandlers.add(new FluidLoaderStandard());
         loadingHandlers.add(new FluidLoaderFillableItem());
@@ -60,7 +62,7 @@ public class FluidTank implements Cloneable {
     protected int pressure = 0;
     protected Fluid conformedFluid = Fluids.EMPTY;
 
-    // ══════════════════ Platform Storage Backings ══════════════════
+    // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ Platform Storage Backings в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
     //? if forge {
     protected final net.minecraftforge.fluids.capability.templates.FluidTank forgeStorage;
@@ -97,9 +99,9 @@ public class FluidTank implements Cloneable {
             }
 
             /**
-             * При выдаче жидкости наружу приводим HBM-аналоги vanilla water/lava
-             * обратно к minecraft:water / minecraft:lava, иначе ванильные вёдра
-             * (и другие Forge-контейнеры) откажутся принимать drain.
+             * РџСЂРё РІС‹РґР°С‡Рµ Р¶РёРґРєРѕСЃС‚Рё РЅР°СЂСѓР¶Сѓ РїСЂРёРІРѕРґРёРј HBM-Р°РЅР°Р»РѕРіРё vanilla water/lava
+             * РѕР±СЂР°С‚РЅРѕ Рє minecraft:water / minecraft:lava, РёРЅР°С‡Рµ РІР°РЅРёР»СЊРЅС‹Рµ РІС‘РґСЂР°
+             * (Рё РґСЂСѓРіРёРµ Forge-РєРѕРЅС‚РµР№РЅРµСЂС‹) РѕС‚РєР°Р¶СѓС‚СЃСЏ РїСЂРёРЅРёРјР°С‚СЊ drain.
              */
             @Override
             public FluidStack drain(FluidStack resource, IFluidHandler.FluidAction action) {
@@ -147,9 +149,9 @@ public class FluidTank implements Cloneable {
 
     //? if forge {
     /**
-     * Vanilla Forge {@link net.minecraftforge.fluids.capability.templates.FluidTank} смешивает только при совпадении
-     * жидкости и NBT по {@link FluidStack#isFluidEqual(FluidStack)}; {@code minecraft:water} и {@code hbm_m:water} тогда блокируются.
-     * Подменяем тип входящего стека на уже хранимый или на логический {@link #conformedFluid} при эквивалентности.
+     * Vanilla Forge {@link net.minecraftforge.fluids.capability.templates.FluidTank} СЃРјРµС€РёРІР°РµС‚ С‚РѕР»СЊРєРѕ РїСЂРё СЃРѕРІРїР°РґРµРЅРёРё
+     * Р¶РёРґРєРѕСЃС‚Рё Рё NBT РїРѕ {@link FluidStack#isFluidEqual(FluidStack)}; {@code minecraft:water} Рё {@code hbm_m:water} С‚РѕРіРґР° Р±Р»РѕРєРёСЂСѓСЋС‚СЃСЏ.
+     * РџРѕРґРјРµРЅСЏРµРј С‚РёРї РІС…РѕРґСЏС‰РµРіРѕ СЃС‚РµРєР° РЅР° СѓР¶Рµ С…СЂР°РЅРёРјС‹Р№ РёР»Рё РЅР° Р»РѕРіРёС‡РµСЃРєРёР№ {@link #conformedFluid} РїСЂРё СЌРєРІРёРІР°Р»РµРЅС‚РЅРѕСЃС‚Рё.
      */
     private FluidStack harmonizeForgeFillResource(FluidStack storedFluid, FluidStack resource) {
         if (resource.isEmpty()) {
@@ -184,7 +186,7 @@ public class FluidTank implements Cloneable {
         return true;
     }
 
-    // ══════════════════ Modern Unified API ══════════════════
+    // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ Modern Unified API в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
     @NotNull
     public Fluid getStoredFluid() {
@@ -210,13 +212,13 @@ public class FluidTank implements Cloneable {
     public boolean isEmpty() { return getFluidAmountMb() <= 0; }
 
     /**
-     * Динамический лимит скорости для MK2-сети (анти-осцилляция).
+     * Р”РёРЅР°РјРёС‡РµСЃРєРёР№ Р»РёРјРёС‚ СЃРєРѕСЂРѕСЃС‚Рё РґР»СЏ MK2-СЃРµС‚Рё (Р°РЅС‚Рё-РѕСЃС†РёР»Р»СЏС†РёСЏ).
      *
-     * <p>Идея из оригинала: max transfer зависит от заполненности. Полный бак отдаёт быстрее, пустой — почти не отдаёт;
-     * пустой бак принимает быстро, полный — почти не принимает. Это снижает "пинг-понг" между двумя трансиверами.</p>
+     * <p>РРґРµСЏ РёР· РѕСЂРёРіРёРЅР°Р»Р°: max transfer Р·Р°РІРёСЃРёС‚ РѕС‚ Р·Р°РїРѕР»РЅРµРЅРЅРѕСЃС‚Рё. РџРѕР»РЅС‹Р№ Р±Р°Рє РѕС‚РґР°С‘С‚ Р±С‹СЃС‚СЂРµРµ, РїСѓСЃС‚РѕР№ вЂ” РїРѕС‡С‚Рё РЅРµ РѕС‚РґР°С‘С‚;
+     * РїСѓСЃС‚РѕР№ Р±Р°Рє РїСЂРёРЅРёРјР°РµС‚ Р±С‹СЃС‚СЂРѕ, РїРѕР»РЅС‹Р№ вЂ” РїРѕС‡С‚Рё РЅРµ РїСЂРёРЅРёРјР°РµС‚. Р­С‚Рѕ СЃРЅРёР¶Р°РµС‚ "РїРёРЅРі-РїРѕРЅРі" РјРµР¶РґСѓ РґРІСѓРјСЏ С‚СЂР°РЅСЃРёРІРµСЂР°РјРё.</p>
      *
-     * @param maxSpeedMbPerTick базовая скорость (верхний предел)
-     * @param sending true = отдача (providerSpeed), false = приём (receiverSpeed)
+     * @param maxSpeedMbPerTick Р±Р°Р·РѕРІР°СЏ СЃРєРѕСЂРѕСЃС‚СЊ (РІРµСЂС…РЅРёР№ РїСЂРµРґРµР»)
+     * @param sending true = РѕС‚РґР°С‡Р° (providerSpeed), false = РїСЂРёС‘Рј (receiverSpeed)
      */
     public long getDynamicNetworkSpeedMb(long maxSpeedMbPerTick, boolean sending) {
         if (maxSpeedMbPerTick <= 0) return 0L;
@@ -229,7 +231,7 @@ public class FluidTank implements Cloneable {
         if (weight <= 0) return 0L;
 
         long scaled = (maxSpeedMbPerTick * (long) weight) / (long) cap;
-        // Не даём "залипнуть" на 0 при малых объёмах, но и не превышаем max.
+        // РќРµ РґР°С‘Рј "Р·Р°Р»РёРїРЅСѓС‚СЊ" РЅР° 0 РїСЂРё РјР°Р»С‹С… РѕР±СЉС‘РјР°С…, РЅРѕ Рё РЅРµ РїСЂРµРІС‹С€Р°РµРј max.
         return Math.max(1L, Math.min(maxSpeedMbPerTick, scaled));
     }
 
@@ -241,8 +243,8 @@ public class FluidTank implements Cloneable {
 
     public int fillMb(Fluid fluid, int amountMb) {
         if (amountMb <= 0 || fluid == Fluids.EMPTY || fluid == null) return 0;
-        // Если бак был "без типа" (NONE) и пустой, но в него начали заливать жидкость,
-        // фиксируем тип, чтобы после опустошения он не терял "коммит" для труб/визуала/сети.
+        // Р•СЃР»Рё Р±Р°Рє Р±С‹Р» "Р±РµР· С‚РёРїР°" (NONE) Рё РїСѓСЃС‚РѕР№, РЅРѕ РІ РЅРµРіРѕ РЅР°С‡Р°Р»Рё Р·Р°Р»РёРІР°С‚СЊ Р¶РёРґРєРѕСЃС‚СЊ,
+        // С„РёРєСЃРёСЂСѓРµРј С‚РёРї, С‡С‚РѕР±С‹ РїРѕСЃР»Рµ РѕРїСѓСЃС‚РѕС€РµРЅРёСЏ РѕРЅ РЅРµ С‚РµСЂСЏР» "РєРѕРјРјРёС‚" РґР»СЏ С‚СЂСѓР±/РІРёР·СѓР°Р»Р°/СЃРµС‚Рё.
         if (getFluidAmountMb() <= 0 && !isFluidTypeExplicitlySet(conformedFluid) && fluid != ModFluids.NONE.getSource()) {
             this.conformedFluid = fluid;
         }
@@ -296,9 +298,9 @@ public class FluidTank implements Cloneable {
         forgeStorage.setFluid(fluid == Fluids.EMPTY || fluid == null ? FluidStack.EMPTY : new FluidStack(fluid, amountMb));
         //?}
         //? if fabric {
-        /*// Важно для Fabric: variant и amount живут отдельно. Если оставить variant != blank при amount == 0,
-        // то "пустой" бак будет считаться имеющим тип storedFluid, и conformedFluid (тип, заданный идентификатором)
-        // не сможет переопределить отображение/логику после перезахода в мир.
+        /*// Р’Р°Р¶РЅРѕ РґР»СЏ Fabric: variant Рё amount Р¶РёРІСѓС‚ РѕС‚РґРµР»СЊРЅРѕ. Р•СЃР»Рё РѕСЃС‚Р°РІРёС‚СЊ variant != blank РїСЂРё amount == 0,
+        // С‚Рѕ "РїСѓСЃС‚РѕР№" Р±Р°Рє Р±СѓРґРµС‚ СЃС‡РёС‚Р°С‚СЊСЃСЏ РёРјРµСЋС‰РёРј С‚РёРї storedFluid, Рё conformedFluid (С‚РёРї, Р·Р°РґР°РЅРЅС‹Р№ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂРѕРј)
+        // РЅРµ СЃРјРѕР¶РµС‚ РїРµСЂРµРѕРїСЂРµРґРµР»РёС‚СЊ РѕС‚РѕР±СЂР°Р¶РµРЅРёРµ/Р»РѕРіРёРєСѓ РїРѕСЃР»Рµ РїРµСЂРµР·Р°С…РѕРґР° РІ РјРёСЂ.
         if (fluid == null || fluid == Fluids.EMPTY || amountMb <= 0) {
             fabricStorage.variant = FluidVariant.blank();
             fabricStorage.amount = 0L;
@@ -309,7 +311,7 @@ public class FluidTank implements Cloneable {
         *///?}
     }
 
-    // ══════════════════ Capabilities Exposure ══════════════════
+    // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ Capabilities Exposure в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
     //? if forge {
     public LazyOptional<IFluidHandler> getCapability() { return lazyFluidHandler; }
@@ -318,7 +320,7 @@ public class FluidTank implements Cloneable {
     /*public SingleVariantStorage<FluidVariant> getStorage() { return fabricStorage; }
      *///?}
 
-    // ══════════════════ Legacy 1.7.10 Methods & Aliases ══════════════════
+    // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ Legacy 1.7.10 Methods & Aliases в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
     public void assignTypeAndZeroFluid(Fluid newType) {
         if (!isEmpty()) {
@@ -328,7 +330,7 @@ public class FluidTank implements Cloneable {
     }
 
     public FluidTank withPressure(int pressure) {
-        // 1.7.10: при смене давления зануляем только fill, тип НЕ трогаем.
+        // 1.7.10: РїСЂРё СЃРјРµРЅРµ РґР°РІР»РµРЅРёСЏ Р·Р°РЅСѓР»СЏРµРј С‚РѕР»СЊРєРѕ fill, С‚РёРї РќР• С‚СЂРѕРіР°РµРј.
         if (this.pressure != pressure) this.setFill(0);
         this.pressure = pressure;
         return this;
@@ -337,8 +339,8 @@ public class FluidTank implements Cloneable {
     public FluidTank conform(Fluid type) {
         if (type == null) type = Fluids.EMPTY;
         if (!isEmpty() && !VanillaFluidEquivalence.sameSubstance(getStoredFluid(), type)) {
-            // Важно: ванильные жидкости могут отличаться инстансом (source vs flowing),
-            // но при этом быть одной и той же "субстанцией". Такие переключения не должны дренить бак.
+            // Р’Р°Р¶РЅРѕ: РІР°РЅРёР»СЊРЅС‹Рµ Р¶РёРґРєРѕСЃС‚Рё РјРѕРіСѓС‚ РѕС‚Р»РёС‡Р°С‚СЊСЃСЏ РёРЅСЃС‚Р°РЅСЃРѕРј (source vs flowing),
+            // РЅРѕ РїСЂРё СЌС‚РѕРј Р±С‹С‚СЊ РѕРґРЅРѕР№ Рё С‚РѕР№ Р¶Рµ "СЃСѓР±СЃС‚Р°РЅС†РёРµР№". РўР°РєРёРµ РїРµСЂРµРєР»СЋС‡РµРЅРёСЏ РЅРµ РґРѕР»Р¶РЅС‹ РґСЂРµРЅРёС‚СЊ Р±Р°Рє.
             drainMb(getFluidAmountMb());
         }
         this.conformedFluid = type;
@@ -355,7 +357,7 @@ public class FluidTank implements Cloneable {
 
     public void resetTank() {
         // 1.7.10: type = Fluids.NONE; fluid = 0; pressure = 0;
-        // У нас "Fluids.NONE" — это {@code ModFluids.NONE.getSource()} (HBM-«пусто», не ваниль EMPTY).
+        // РЈ РЅР°СЃ "Fluids.NONE" вЂ” СЌС‚Рѕ {@code ModFluids.NONE.getSource()} (HBM-В«РїСѓСЃС‚РѕВ», РЅРµ РІР°РЅРёР»СЊ EMPTY).
         drainMb(getFluidAmountMb());
         this.conformedFluid = ModFluids.NONE.getSource();
         this.pressure = 0;
@@ -384,8 +386,8 @@ public class FluidTank implements Cloneable {
     public boolean loadTank(int in, int out, ItemStack[] slots) {
         if (slots[in] == null || slots[in].isEmpty()) return false;
 
-        // 1.7.10: проверка строго на универсальную бесконечную бочку (fluid_barrel_infinite),
-        // в 1.20.1 этому соответствует instant-network-инстанс {@link InfiniteFluidItem}.
+        // 1.7.10: РїСЂРѕРІРµСЂРєР° СЃС‚СЂРѕРіРѕ РЅР° СѓРЅРёРІРµСЂСЃР°Р»СЊРЅСѓСЋ Р±РµСЃРєРѕРЅРµС‡РЅСѓСЋ Р±РѕС‡РєСѓ (fluid_barrel_infinite),
+        // РІ 1.20.1 СЌС‚РѕРјСѓ СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓРµС‚ instant-network-РёРЅСЃС‚Р°РЅСЃ {@link InfiniteFluidItem}.
         boolean isInfiniteBarrel = slots[in].getItem() instanceof InfiniteFluidItem inf && inf.isInstantNetwork();
         if (!isInfiniteBarrel && pressure != 0) return false;
 
@@ -407,15 +409,15 @@ public class FluidTank implements Cloneable {
     }
 
     /**
-     * Прямой порт 1.7.10 {@code FluidTank.setType(in, out, slots)}.
+     * РџСЂСЏРјРѕР№ РїРѕСЂС‚ 1.7.10 {@code FluidTank.setType(in, out, slots)}.
      *
-     * <p>Семантика:
+     * <p>РЎРµРјР°РЅС‚РёРєР°:
      * <ul>
-     *   <li>{@code slots[in]} обязателен и должен быть {@link FluidIdentifierItem};</li>
-     *   <li>если новый тип совпадает с текущим — возвращается {@code false} без изменений;</li>
-     *   <li>если {@code in == out}: тип меняется, fluid обнуляется;</li>
-     *   <li>если {@code in != out}: дополнительно требуется, чтобы {@code slots[out]} был пустым,
-     *       иначе возвращается {@code false} без изменений; стэк копируется в out, in зануляется.</li>
+     *   <li>{@code slots[in]} РѕР±СЏР·Р°С‚РµР»РµРЅ Рё РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ {@link FluidIdentifierItem};</li>
+     *   <li>РµСЃР»Рё РЅРѕРІС‹Р№ С‚РёРї СЃРѕРІРїР°РґР°РµС‚ СЃ С‚РµРєСѓС‰РёРј вЂ” РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ {@code false} Р±РµР· РёР·РјРµРЅРµРЅРёР№;</li>
+     *   <li>РµСЃР»Рё {@code in == out}: С‚РёРї РјРµРЅСЏРµС‚СЃСЏ, fluid РѕР±РЅСѓР»СЏРµС‚СЃСЏ;</li>
+     *   <li>РµСЃР»Рё {@code in != out}: РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅРѕ С‚СЂРµР±СѓРµС‚СЃСЏ, С‡С‚РѕР±С‹ {@code slots[out]} Р±С‹Р» РїСѓСЃС‚С‹Рј,
+     *       РёРЅР°С‡Рµ РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ {@code false} Р±РµР· РёР·РјРµРЅРµРЅРёР№; СЃС‚СЌРє РєРѕРїРёСЂСѓРµС‚СЃСЏ РІ out, in Р·Р°РЅСѓР»СЏРµС‚СЃСЏ.</li>
      * </ul>
      */
     public boolean setType(int in, int out, ItemStack[] slots) {
@@ -446,7 +448,7 @@ public class FluidTank implements Cloneable {
         return setType(in, in, slots);
     }
 
-    // ══════════════════ NBT & Serialization ══════════════════
+    // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ NBT & Serialization в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
     public void writeToNBT(CompoundTag nbt, String prefix) {
         nbt.putInt(prefix + "_amount", getFluidAmountMb());
@@ -598,7 +600,7 @@ public class FluidTank implements Cloneable {
         ItemStack stackInSlot = slots[slotOut];
         if (stackInSlot == null || stackInSlot.isEmpty()) return true;
         //? if < 1.21.1 {
-        return ItemStack.isSameItemSameTags(stackInSlot, resultStack) &&
+        return PlatformHooks.isSameItemSameTags(stackInSlot, resultStack) &&
         //?} else {
         /*return ItemStack.isSameItemSameComponents(stackInSlot, resultStack) &&
         *///?}
@@ -614,9 +616,9 @@ public class FluidTank implements Cloneable {
         }
     }
 
-    // ══════════════════ Forge IFluidHandler wrapper ══════════════════
+    // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ Forge IFluidHandler wrapper в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
-    // ══════════════════ Client-side rendering ══════════════════
+    // в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ Client-side rendering в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ
 
     public static boolean isFluidTypeExplicitlySet(Fluid type) {
         if (type == null || type == Fluids.EMPTY) return false;

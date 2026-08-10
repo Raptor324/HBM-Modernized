@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity;
 import com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity.RBMKColumnData;
@@ -105,7 +106,7 @@ public class GUIMachineRbmkConsole extends AbstractContainerScreen<MachineRbmkCo
 
     @Override
     public void render(GuiGraphics g, int mx, int my, float pt) {
-        this.renderBackground(g);
+        GuiCompat.renderBackground(this, g, mx, my, pt);
         super.render(g, mx, my, pt);
         renderColumnTooltip(g, mx, my);
         renderButtonTooltips(g, mx, my);

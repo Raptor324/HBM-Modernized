@@ -20,12 +20,15 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+//? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
+//?}
+
 
 public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
 
@@ -118,7 +121,7 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
             return;
         }
 
-        stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).ifPresent(provider -> {
+        com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).ifPresent(provider -> {
             long needed = getMaxEnergyStored() - getEnergyStored();
             if (needed <= 0) return;
             long extracted = provider.extractEnergy(Math.min(needed, getReceiveSpeed()), false);
@@ -128,8 +131,8 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
             }
         });
 
-        if (!stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()) {
-            stack.getCapability(ForgeCapabilities.ENERGY).ifPresent(provider -> {
+        if (!com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).isPresent()) {
+            com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).ifPresent(provider -> {
                 long needed = getMaxEnergyStored() - getEnergyStored();
                 if (needed <= 0) return;
                 int extracted = provider.extractEnergy((int) Math.min(needed, getReceiveSpeed()), false);
@@ -202,8 +205,8 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_BATTERY) {
-            return stack.getCapability(ForgeCapabilities.ENERGY).isPresent()
-                || stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()
+            return com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent()
+                || com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).isPresent()
                 || stack.getItem() instanceof ItemCreativeBattery;
         }
         if (slot == SLOT_OUTPUT || slot == SLOT_FLUID_OUTPUT) {
@@ -228,6 +231,7 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
         return new MachineBreederMenu(containerId, playerInventory, this, data);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -236,7 +240,20 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
         tag.putInt("duration", duration);
         tag.putBoolean("isOn", isOn);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        tag.put("tank", tank.writeToNBT(new CompoundTag()));
+        tag.putInt("progress", progress);
+        tag.putInt("duration", duration);
+        tag.putBoolean("isOn", isOn);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -247,6 +264,20 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
         duration = tag.contains("duration") ? tag.getInt("duration") : DEFAULT_DURATION;
         isOn = tag.getBoolean("isOn");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        if (tag.contains("tank")) {
+            tank.readFromNBT(tag.getCompound("tank"));
+        }
+        progress = tag.getInt("progress");
+        duration = tag.contains("duration") ? tag.getInt("duration") : DEFAULT_DURATION;
+        isOn = tag.getBoolean("isOn");
+    
+    }
+    *///?}
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {

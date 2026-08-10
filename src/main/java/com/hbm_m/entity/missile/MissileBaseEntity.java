@@ -457,10 +457,20 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         return true;
     }
 
+    //? if < 1.21.1 {
+
     @Override
     protected void defineSynchedData() {
         this.entityData.define(DATA_LAUNCH_FACING, Direction.NORTH);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+
+        builder.define(DATA_LAUNCH_FACING, Direction.NORTH);
+    
+    }
+    *///?}
 
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {

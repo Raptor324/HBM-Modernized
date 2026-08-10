@@ -23,12 +23,14 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
+//? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
+//?}
 
 public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
 
@@ -149,6 +151,7 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity imp
         return false;
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -158,7 +161,21 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity imp
         tag.putInt("water_timer", waterTimer);
         tag.putInt("throughput", throughput);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        inputSteamTank.writeToNBT(tag, "input_steam");
+        outputWaterTank.writeToNBT(tag, "output_water");
+        tag.putInt("age", age);
+        tag.putInt("water_timer", waterTimer);
+        tag.putInt("throughput", throughput);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -168,6 +185,19 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity imp
         waterTimer = tag.getInt("water_timer");
         throughput = tag.getInt("throughput");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        inputSteamTank.readFromNBT(tag, "input_steam");
+        outputWaterTank.readFromNBT(tag, "output_water");
+        age = tag.getInt("age");
+        waterTimer = tag.getInt("water_timer");
+        throughput = tag.getInt("throughput");
+    
+    }
+    *///?}
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {

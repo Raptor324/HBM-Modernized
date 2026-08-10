@@ -246,6 +246,7 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
 
     // ── NBT ───────────────────────────────────────────────────────────────
 
+    //? if < 1.21.1 {
     @Override
     public void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -258,7 +259,24 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         tag.putBoolean("redstonePowered", redstonePowered);
         tag.putInt("output", output);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        CompoundTag wt = new CompoundTag(); waterTank.writeToNBT(wt, "water"); tag.put("WaterTank", wt);
+        CompoundTag ct = new CompoundTag(); co2Tank.writeToNBT(ct, "co2"); tag.put("Co2Tank", ct);
+        CompoundTag st = new CompoundTag(); steamTank.writeToNBT(st, "steam"); tag.put("SteamTank", st);
+        tag.putLong("heat", heat);
+        tag.putLong("pressure", pressure);
+        tag.putBoolean("isOn", isOn);
+        tag.putBoolean("redstonePowered", redstonePowered);
+        tag.putInt("output", output);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -274,6 +292,25 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         redstonePowered= tag.getBoolean("redstonePowered");
         output         = tag.getInt("output");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        if (tag.contains("WaterTank")) waterTank.readFromNBT(tag.getCompound("WaterTank"), "water");
+        if (tag.contains("Co2Tank")) co2Tank.readFromNBT(tag.getCompound("Co2Tank"), "co2");
+        if (tag.contains("SteamTank")) steamTank.readFromNBT(tag.getCompound("SteamTank"), "steam");
+        // Legacy migration: read old long-based values
+        if (tag.contains("water") && !tag.contains("WaterTank")) waterTank.fillMb(Fluids.WATER, (int) tag.getLong("water"));
+        if (tag.contains("co2") && !tag.contains("Co2Tank")) co2Tank.fillMb(ModFluids.CARBONDIOXIDE.getSource(), (int) tag.getLong("co2"));
+        heat           = tag.getLong("heat");
+        pressure       = tag.getLong("pressure");
+        isOn           = tag.getBoolean("isOn");
+        redstonePowered= tag.getBoolean("redstonePowered");
+        output         = tag.getInt("output");
+    
+    }
+    *///?}
 
     // ── Redstone ──────────────────────────────────────────────────────────
 

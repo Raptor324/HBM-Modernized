@@ -199,6 +199,7 @@ public class MachineRadarScreenBlockEntity extends BlockEntity {
         }
     }
 
+    //? if < 1.21.1 {
     @Override
     public CompoundTag getUpdateTag() {
         CompoundTag tag = super.getUpdateTag();
@@ -234,6 +235,45 @@ public class MachineRadarScreenBlockEntity extends BlockEntity {
         }
         return tag;
     }
+    //?} else {
+    /*@Override
+    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+
+        CompoundTag tag = super.getUpdateTag(registries);
+        tag.putBoolean("linked", linked);
+        tag.putInt("refX", refX);
+        tag.putInt("refY", refY);
+        tag.putInt("refZ", refZ);
+        tag.putInt("range", range);
+        tag.putBoolean("show_map", showMap);
+        if (showMap && level != null && !level.isClientSide
+                && heightMap != null && heightMap.length == MachineRadarBlockEntity.MAP_LENGTH) {
+            if (fullMapSyncPending) {
+                tag.putByteArray("mapFull", Arrays.copyOf(heightMap, MachineRadarBlockEntity.MAP_LENGTH));
+                fullMapSyncPending = false;
+            } else {
+                int start = (int) (level.getGameTime() % MachineRadarBlockEntity.MAP_SLICES);
+                byte[] slices = new byte[MAP_SYNC_SLICES * MachineRadarBlockEntity.MAP_SLICE_SIZE];
+                for (int i = 0; i < MAP_SYNC_SLICES; i++) {
+                    int slice = (start + i) % MachineRadarBlockEntity.MAP_SLICES;
+                    System.arraycopy(heightMap, slice * MachineRadarBlockEntity.MAP_SLICE_SIZE,
+                            slices, i * MachineRadarBlockEntity.MAP_SLICE_SIZE,
+                            MachineRadarBlockEntity.MAP_SLICE_SIZE);
+                }
+                tag.putInt("mapSliceStart", start);
+                tag.putInt("mapSliceCount", MAP_SYNC_SLICES);
+                tag.putByteArray("mapSlices", slices);
+            }
+        }
+        tag.putInt("count", entries.size());
+        for (int i = 0; i < entries.size(); i++) {
+            int[] e = entries.get(i);
+            tag.putIntArray("e" + i, e);
+        }
+        return tag;
+    
+    }
+    *///?}
 
     @Override
     public void handleUpdateTag(CompoundTag tag) {
@@ -291,6 +331,7 @@ public class MachineRadarScreenBlockEntity extends BlockEntity {
         }
     }
 
+    //? if < 1.21.1 {
     @Override
     public void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -306,7 +347,27 @@ public class MachineRadarScreenBlockEntity extends BlockEntity {
             tag.putByteArray("height_map", Arrays.copyOf(heightMap, MachineRadarBlockEntity.MAP_LENGTH));
         }
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        tag.putBoolean("linked", linked);
+        tag.putInt("refX", refX);
+        tag.putInt("refY", refY);
+        tag.putInt("refZ", refZ);
+        tag.putInt("range", range);
+        tag.putBoolean("show_map", showMap);
+        if (heightMap != null && heightMap.length == MachineRadarBlockEntity.MAP_LENGTH) {
+            // IOWorker пишет chunk NBT на отдельном потоке, а экран обновляет карту
+            // из радара каждые 5 тиков. Передаём только снимок массива.
+            tag.putByteArray("height_map", Arrays.copyOf(heightMap, MachineRadarBlockEntity.MAP_LENGTH));
+        }
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -326,6 +387,29 @@ public class MachineRadarScreenBlockEntity extends BlockEntity {
             }
         }
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        linked = tag.getBoolean("linked");
+        refX = tag.getInt("refX");
+        refY = tag.getInt("refY");
+        refZ = tag.getInt("refZ");
+        range = tag.getInt("range");
+        showMap = tag.getBoolean("show_map");
+        if (tag.contains("height_map")) {
+            byte[] savedMap = tag.getByteArray("height_map");
+            if (savedMap.length == MachineRadarBlockEntity.MAP_LENGTH) {
+                // clone() обязателен: массив принадлежит ByteArrayTag загруженного
+                // chunk NBT. Без копии receiveFromRadar правил бы тот же массив,
+                // который IOWorker сериализует в другом потоке.
+                heightMap = savedMap.clone();
+            }
+        }
+    
+    }
+    *///?}
 
     @Override
     public AABB getRenderBoundingBox() {

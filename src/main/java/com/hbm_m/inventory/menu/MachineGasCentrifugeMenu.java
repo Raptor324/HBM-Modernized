@@ -83,7 +83,7 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
                         .orElse(false);
                 if (hbm) return true;
                 //? if forge {
-                return stack.getCapability(ForgeCapabilities.ENERGY)
+                return com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack)
                         .map(storage -> storage.canExtract())
                         .orElse(false);
                 //?} else {
@@ -229,7 +229,7 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
                     .map(provider -> provider.canExtract())
                     .orElse(false);
             //? if forge {
-            isBattery = isBattery || slotStack.getCapability(ForgeCapabilities.ENERGY)
+            isBattery = isBattery || com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(slotStack)
                     .map(storage -> storage.canExtract())
                     .orElse(false);
             //?}

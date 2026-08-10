@@ -1395,7 +1395,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.STEAM_CONDENSER.get()));
         add.accept(new ItemStack(ModBlocks.SHREDDER.get()));
         add.accept(new ItemStack(ModBlocks.WOOD_BURNER.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_SIREN.get()));
+        // add.accept(new ItemStack(ModBlocks.MACHINE_SIREN.get()));
         add.accept(new ItemStack(ModBlocks.CHEMICAL_PLANT.get()));
         add.accept(new ItemStack(ModBlocks.CRUCIBLE.get()));
         add.accept(new ItemStack(ModBlocks.FOUNDRY_BASIN.get()));

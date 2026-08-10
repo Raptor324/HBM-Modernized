@@ -30,6 +30,9 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+*///?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 
 /**
@@ -43,7 +46,8 @@ import net.fabricmc.api.Environment;
  * <p>РЕГРЕССИЯ-СТОП: present here, not {@code AFTER_LEVEL} / {@code RenderTickEvent.END}
  * (dirty GL texture units → white lightmap).
  */
-//? if forge {
+
+//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
 //?}
 //? if fabric {
@@ -110,7 +114,7 @@ public final class InstancedRenderFrame {
             }
 
             // После flush instanced (или при выключенном batching): depth содержит все части BER.
-            // Chemplant/Crystallizer液体 — deferred: рисуется здесь, в AFTER_BLOCK_ENTITIES,
+            // Chemplant/Crystallizer — deferred: рисуется здесь, в AFTER_BLOCK_ENTITIES,
             // после closePersistentIfActive и instanced-flush, внутри IrisPhaseGuard
             // BLOCK_ENTITIES (см. MachineChemicalPlantRenderer.presentDeferredFluids).
             MachineChemicalPlantRenderer.presentDeferredFluids();

@@ -1,5 +1,7 @@
 package com.hbm_m.module.machine;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import com.hbm_m.interfaces.IEnergyReceiver;
 import com.hbm_m.recipe.AssemblerRecipe;
 import net.minecraft.core.NonNullList;
@@ -13,19 +15,19 @@ import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.recipe.index.ModRecipeIndex;
 
 /**
- * Модуль крафта для продвинутой сборочной машины.
- * Реализует логику обработки AssemblerRecipe.
+ * РњРѕРґСѓР»СЊ РєСЂР°С„С‚Р° РґР»СЏ РїСЂРѕРґРІРёРЅСѓС‚РѕР№ СЃР±РѕСЂРѕС‡РЅРѕР№ РјР°С€РёРЅС‹.
+ * Р РµР°Р»РёР·СѓРµС‚ Р»РѕРіРёРєСѓ РѕР±СЂР°Р±РѕС‚РєРё AssemblerRecipe.
  *
- * ОБНОВЛЕНО: Теперь использует ILongEnergyStorage для поддержки больших значений энергии
+ * РћР‘РќРћР’Р›Р•РќРћ: РўРµРїРµСЂСЊ РёСЃРїРѕР»СЊР·СѓРµС‚ ILongEnergyStorage РґР»СЏ РїРѕРґРґРµСЂР¶РєРё Р±РѕР»СЊС€РёС… Р·РЅР°С‡РµРЅРёР№ СЌРЅРµСЂРіРёРё
  */
 public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerRecipe> {
 
-    // ИЗМЕНЕНИЕ: Конструктор теперь принимает ILongEnergyStorage
+    // РР—РњР•РќР•РќРР•: РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ С‚РµРїРµСЂСЊ РїСЂРёРЅРёРјР°РµС‚ ILongEnergyStorage
     public MachineModuleAdvancedAssembler(int moduleIndex, IEnergyReceiver energyStorage,
                                           ModItemStackHandler itemHandler, Level level) {
         super(moduleIndex, energyStorage, itemHandler, level);
 
-        // Настройка по умолчанию: 12 входных (4-15), 1 выходной (16)
+        // РќР°СЃС‚СЂРѕР№РєР° РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ: 12 РІС…РѕРґРЅС‹С… (4-15), 1 РІС‹С…РѕРґРЅРѕР№ (16)
         this.inputSlots = new int[12];
         for (int i = 0; i < 12; i++) {
             this.inputSlots[i] = 4 + i;
@@ -48,7 +50,7 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
         return this;
     }
 
-    // ========== РЕАЛИЗАЦИЯ АБСТРАКТНЫХ МЕТОДОВ ==========
+    // ========== Р Р•РђР›РР—РђР¦РРЇ РђР‘РЎРўР РђРљРўРќР«РҐ РњР•РўРћР”РћР’ ==========
 
     @Override
     protected AssemblerRecipe.Type getRecipeType() {
@@ -60,7 +62,7 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
     public AssemblerRecipe findRecipeForInputs() {
         if (level == null) return null;
 
-        // В отличие от химмашины: здесь авто-выбор. Blueprint применяется как фильтр.
+        // Р’ РѕС‚Р»РёС‡РёРµ РѕС‚ С…РёРјРјР°С€РёРЅС‹: Р·РґРµСЃСЊ Р°РІС‚Рѕ-РІС‹Р±РѕСЂ. Blueprint РїСЂРёРјРµРЅСЏРµС‚СЃСЏ РєР°Рє С„РёР»СЊС‚СЂ.
         ItemStack blueprint = itemHandler.getStackInSlot(1);
         for (AssemblerRecipe recipe : ModRecipeIndex.of(level.getRecipeManager()).getAll(getRecipeType())) {
             if (matchesRecipe(recipe) && isRecipeAllowedByBlueprint(recipe, blueprint)) return recipe;
@@ -69,23 +71,23 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
     }
 
     /**
-     * Проверяет, соответствует ли инвентарь данному рецепту.
+     * РџСЂРѕРІРµСЂСЏРµС‚, СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓРµС‚ Р»Рё РёРЅРІРµРЅС‚Р°СЂСЊ РґР°РЅРЅРѕРјСѓ СЂРµС†РµРїС‚Сѓ.
      */
     private boolean matchesRecipe(AssemblerRecipe recipe) {
         NonNullList<Ingredient> ingredients = recipe.getIngredients();
 
-        // Создаём копию входных предметов
+        // РЎРѕР·РґР°С‘Рј РєРѕРїРёСЋ РІС…РѕРґРЅС‹С… РїСЂРµРґРјРµС‚РѕРІ
         ItemStack[] inputCopy = new ItemStack[inputSlots.length];
         for (int i = 0; i < inputSlots.length; i++) {
             inputCopy[i] = itemHandler.getStackInSlot(inputSlots[i]).copy();
         }
 
-        // Проверяем, что все ингредиенты присутствуют
+        // РџСЂРѕРІРµСЂСЏРµРј, С‡С‚Рѕ РІСЃРµ РёРЅРіСЂРµРґРёРµРЅС‚С‹ РїСЂРёСЃСѓС‚СЃС‚РІСѓСЋС‚
         for (Ingredient ingredient : ingredients) {
             boolean found = false;
             for (int i = 0; i < inputCopy.length; i++) {
                 if (!inputCopy[i].isEmpty() && ingredient.test(inputCopy[i])) {
-                    inputCopy[i].shrink(1); // Убираем один предмет
+                    inputCopy[i].shrink(1); // РЈР±РёСЂР°РµРј РѕРґРёРЅ РїСЂРµРґРјРµС‚
                     found = true;
                     break;
                 }
@@ -118,23 +120,23 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
     public boolean canProcess(AssemblerRecipe recipe) {
         if (recipe == null) return false;
 
-        // Проверяем входные предметы
+        // РџСЂРѕРІРµСЂСЏРµРј РІС…РѕРґРЅС‹Рµ РїСЂРµРґРјРµС‚С‹
         if (!matchesRecipe(recipe)) return false;
 
-        // Проверяем выходной слот
+        // РџСЂРѕРІРµСЂСЏРµРј РІС‹С…РѕРґРЅРѕР№ СЃР»РѕС‚
         ItemStack outputSlot = itemHandler.getStackInSlot(outputSlots[0]);
         ItemStack result = recipe.getResultItem(level.registryAccess());
 
-        if (outputSlot.isEmpty()) return true; // Слот пуст - ОК
+        if (outputSlot.isEmpty()) return true; // РЎР»РѕС‚ РїСѓСЃС‚ - РћРљ
 
-        // Проверяем совместимость
+        // РџСЂРѕРІРµСЂСЏРµРј СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚СЊ
         //? if < 1.21.1 {
-        if (!ItemStack.isSameItemSameTags(outputSlot, result)) return false;
+        if (!PlatformHooks.isSameItemSameTags(outputSlot, result)) return false;
         //?} else {
         /*if (!ItemStack.isSameItemSameComponents(outputSlot, result)) return false;
         *///?}
 
-        // Проверяем, поместится ли результат
+        // РџСЂРѕРІРµСЂСЏРµРј, РїРѕРјРµСЃС‚РёС‚СЃСЏ Р»Рё СЂРµР·СѓР»СЊС‚Р°С‚
         return outputSlot.getCount() + result.getCount() <= outputSlot.getMaxStackSize();
     }
 
@@ -142,7 +144,7 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
     protected void processCraft(AssemblerRecipe recipe) {
         NonNullList<Ingredient> ingredients = recipe.getIngredients();
 
-        // Забираем входные предметы
+        // Р—Р°Р±РёСЂР°РµРј РІС…РѕРґРЅС‹Рµ РїСЂРµРґРјРµС‚С‹
         for (Ingredient ingredient : ingredients) {
             for (int slot : inputSlots) {
                 ItemStack stack = itemHandler.getStackInSlot(slot);
@@ -155,7 +157,7 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
 
         ItemStack result = recipe.getResultItem(level.registryAccess()).copy();
 
-        // insertItem автоматически объединит стаки, если возможно
+        // insertItem Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РѕР±СЉРµРґРёРЅРёС‚ СЃС‚Р°РєРё, РµСЃР»Рё РІРѕР·РјРѕР¶РЅРѕ
         itemHandler.insertItem(outputSlots[0], result, false);
     }
 
@@ -164,7 +166,7 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
         return recipe.getDuration();
     }
 
-    // ИЗМЕНЕНИЕ: Возвращаем long вместо int
+    // РР—РњР•РќР•РќРР•: Р’РѕР·РІСЂР°С‰Р°РµРј long РІРјРµСЃС‚Рѕ int
     @Override
     protected long getRecipeEnergyCost(AssemblerRecipe recipe) {
         return recipe.getPowerConsumption();
@@ -187,8 +189,8 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
     }
 
     /**
-     * Реализация проверки blueprint pool
-     * Использует AssemblerRecipeConfig для валидации
+     * Р РµР°Р»РёР·Р°С†РёСЏ РїСЂРѕРІРµСЂРєРё blueprint pool
+     * РСЃРїРѕР»СЊР·СѓРµС‚ AssemblerRecipeConfig РґР»СЏ РІР°Р»РёРґР°С†РёРё
      */
     @Override
     protected boolean isRecipeAllowedByBlueprint(AssemblerRecipe recipe, @Nullable ItemStack blueprint) {

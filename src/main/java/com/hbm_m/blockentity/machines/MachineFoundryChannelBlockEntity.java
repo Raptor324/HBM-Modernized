@@ -188,6 +188,7 @@ public class MachineFoundryChannelBlockEntity extends BlockEntity implements ICr
 
     /* ── NBT / sync ─────────────────────────────────────────────────────── */
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -195,7 +196,19 @@ public class MachineFoundryChannelBlockEntity extends BlockEntity implements ICr
         tag.putInt("mat_amount", amount);
         tag.putInt("lastFlow", lastFlow);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        if (type != null) tag.putString("mat_type", type.name);
+        tag.putInt("mat_amount", amount);
+        tag.putInt("lastFlow", lastFlow);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -204,9 +217,28 @@ public class MachineFoundryChannelBlockEntity extends BlockEntity implements ICr
         amount   = tag.getInt("mat_amount");
         lastFlow = tag.getInt("lastFlow");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.loadAdditional(tag, registries);
+        if (tag.contains("mat_type")) type = MaterialType.byName(tag.getString("mat_type"));
+        else type = null;
+        amount   = tag.getInt("mat_amount");
+        lastFlow = tag.getInt("lastFlow");
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public CompoundTag getUpdateTag() { CompoundTag t = super.getUpdateTag(); saveAdditional(t); return t; }
+    //?} else {
+    /*@Override
+    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+ CompoundTag t = super.getUpdateTag(registries); saveAdditional(t, registries); return t; 
+    }
+    *///?}
 
     @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {

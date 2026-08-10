@@ -31,6 +31,7 @@ public class OreBedrockBlockEntity extends BlockEntity {
         super(ModBlockEntities.ORE_BEDROCK_BE.get(), pos, state);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -41,7 +42,22 @@ public class OreBedrockBlockEntity extends BlockEntity {
         tag.putInt("acid_amount", acidAmountMb);
         tag.putInt("tier", tier);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        if (!resource.isEmpty()) {
+            tag.put("resource", resource.save(new CompoundTag()));
+        }
+        tag.putString("acid_type", BuiltInRegistries.FLUID.getKey(acidType).toString());
+        tag.putInt("acid_amount", acidAmountMb);
+        tag.putInt("tier", tier);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -55,11 +71,39 @@ public class OreBedrockBlockEntity extends BlockEntity {
         acidAmountMb = tag.getInt("acid_amount");
         tier = tag.getInt("tier");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.loadAdditional(tag, registries);
+        if (tag.contains("resource")) {
+            resource = ItemStack.of(tag.getCompound("resource"));
+        }
+        if (tag.contains("acid_type")) {
+            ResourceLocation id = ResourceLocation.tryParse(tag.getString("acid_type"));
+            acidType = id != null ? BuiltInRegistries.FLUID.get(id) : Fluids.EMPTY;
+        }
+        acidAmountMb = tag.getInt("acid_amount");
+        tier = tag.getInt("tier");
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public CompoundTag getUpdateTag() {
         CompoundTag tag = super.getUpdateTag();
         saveAdditional(tag);
         return tag;
     }
+    //?} else {
+    /*@Override
+    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+
+        CompoundTag tag = super.getUpdateTag(registries);
+        saveAdditional(tag, registries);
+        return tag;
+    
+    }
+    *///?}
 }

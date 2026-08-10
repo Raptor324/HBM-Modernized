@@ -45,7 +45,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+//? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+//?}
 
 /**
  * Crucible machine block — GIT MachineCrucible multiblock (3×3 ring) with bowl collision on controller.
@@ -260,4 +262,13 @@ public class MachineCrucibleBlock extends BaseEntityBlock implements IMultiblock
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineCrucibleBlock> CODEC = simpleCodec(MachineCrucibleBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

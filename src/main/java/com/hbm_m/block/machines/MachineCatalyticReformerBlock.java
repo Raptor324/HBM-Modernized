@@ -43,7 +43,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+//? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+//?}
 
 public class MachineCatalyticReformerBlock extends BaseEntityBlock implements IMultiblockController {
 
@@ -234,4 +236,13 @@ public class MachineCatalyticReformerBlock extends BaseEntityBlock implements IM
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.CATALYTIC_REFORMER_BE.get(), MachineCatalyticReformerBlockEntity::tick);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineCatalyticReformerBlock> CODEC = simpleCodec(MachineCatalyticReformerBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -125,7 +126,7 @@ public class GUIScreenRecipeSelector extends Screen {
     
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         drawGuiBackground(guiGraphics, mouseX, mouseY);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         renderRecipes(guiGraphics, mouseX, mouseY);

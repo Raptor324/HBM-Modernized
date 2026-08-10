@@ -324,6 +324,7 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
     }
 
     // --- NBT ---
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -353,14 +354,50 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         lastEnergy = tag.getLong("lastEnergy");
         energyDelta = tag.getLong("energyDelta");
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        tag.put("inventory", inventory.serializeNBT(registries).copy());
+        tag.putLong("energy", energy);
+        tag.putLong("capacity", capacity);
+        tag.putLong("lastEnergy", lastEnergy);
+        tag.putLong("energyDelta", energyDelta);
+    }
+
+    @Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        CompoundTag inventoryTag = tag.getCompound("inventory");
+        if (inventoryTag.contains("Size")) {
+            inventoryTag.putInt("Size", inventory.getSlots());
+        }
+        inventory.deserializeNBT(registries, inventoryTag);
+        energy = tag.getLong("energy");
+        if (tag.contains("capacity")) {
+            capacity = Math.max(0L, tag.getLong("capacity"));
+        }
+        lastEnergy = tag.getLong("lastEnergy");
+        energyDelta = tag.getLong("energyDelta");
+    }
+    *///?}
 
     // --- Синхронизация ---
+    //? if < 1.21.1 {
     @Override
     public CompoundTag getUpdateTag() {
         CompoundTag tag = super.getUpdateTag();
         saveAdditional(tag);
         return tag;
     }
+    //?} else {
+    /*@Override
+    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+        CompoundTag tag = super.getUpdateTag(registries);
+        saveAdditional(tag, registries);
+        return tag;
+    }
+    *///?}
 
     //? if forge {
     @Override

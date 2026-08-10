@@ -18,10 +18,13 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+//? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
+//?}
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -273,10 +276,14 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
     private static long tryPull(Level level, BlockPos src, MachineCrucibleBlockEntity be) {
         BlockEntity te = level.getBlockEntity(src);
         if (te == null) return 0L;
+        //? if forge {
         return te.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, Direction.UP)
                 .map(p -> pullEnergy(p, be))
-                .orElseGet(() -> te.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
-                        .map(p -> pullEnergy(p, be)).orElse(0L));
+                .orElse(0L);
+        //?} elif neoforge {
+        /*IEnergyProvider p = te.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, Direction.UP);
+        return p != null ? pullEnergy(p, be) : 0L;
+        *///?}
     }
 
     @Override
@@ -287,6 +294,7 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
 
     @Override public void invalidateCaps() { super.invalidateCaps(); itemHandlerOpt.invalidate(); }
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -302,7 +310,27 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
         }
         tag.put("molten", list);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        tag.put("inventory", itemHandler.serializeNBT(registries));
+        tag.putInt("heat", heat); tag.putInt("progress", progress);
+        tag.putFloat("fillLevel", fillLevel); tag.putInt("fillColor", fillColor);
+
+        ListTag list = new ListTag();
+        for (MaterialStack ms : molten) {
+            CompoundTag entry = new CompoundTag();
+            ms.writeToNBT(entry);
+            list.add(entry);
+        }
+        tag.put("molten", list);
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -323,13 +351,48 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
             if (ms != null) molten.add(ms);
         }
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.loadAdditional(tag, registries);
+        if (tag.contains("inventory")) itemHandler.deserializeNBT(registries, tag.getCompound("inventory"));
+        heat = tag.getInt("heat"); progress = tag.getInt("progress");
+        fillLevel = tag.getFloat("fillLevel"); fillColor = tag.getInt("fillColor");
+
+        molten.clear();
+        if (tag.contains("molten")) {
+            ListTag list = tag.getList("molten", net.minecraft.nbt.Tag.TAG_COMPOUND);
+            for (int i = 0; i < list.size(); i++) {
+                MaterialStack ms = MaterialStack.readFromNBT(list.getCompound(i));
+                if (ms != null) molten.add(ms);
+            }
+        } else if (tag.contains("material")) {
+            // legacy single-material save format
+            MaterialStack ms = MaterialStack.readFromNBT(tag.getCompound("material"));
+            if (ms != null) molten.add(ms);
+        }
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public CompoundTag getUpdateTag() {
         CompoundTag tag = super.getUpdateTag();
         saveAdditional(tag);
         return tag;
     }
+    //?} else {
+    /*@Override
+    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+
+        CompoundTag tag = super.getUpdateTag(registries);
+        saveAdditional(tag, registries);
+        return tag;
+    
+    }
+    *///?}
 
     @Override
     public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> getUpdatePacket() {

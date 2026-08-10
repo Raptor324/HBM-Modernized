@@ -18,7 +18,9 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+//? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+//?}
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
@@ -134,8 +136,8 @@ public class MachineCrystallizerMenu extends AbstractContainerMenu implements IL
     }
 
     private static boolean isBattery(ItemStack stack) {
-        return stack.getCapability(ForgeCapabilities.ENERGY).isPresent()
-            || stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()
+        return com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent()
+            || com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).isPresent()
             || stack.getItem() instanceof ItemCreativeBattery;
     }
 

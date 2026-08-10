@@ -268,4 +268,13 @@ public class CargoElevatorBlock extends BaseEntityBlock implements IMultiblockCo
         result = Shapes.joinUnoptimized(result, platform, BooleanOp.OR);
         return result;
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<CargoElevatorBlock> CODEC = simpleCodec(CargoElevatorBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

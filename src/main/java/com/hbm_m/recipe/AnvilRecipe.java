@@ -1,5 +1,7 @@
 package com.hbm_m.recipe;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -80,8 +82,8 @@ public class AnvilRecipe implements Recipe<Container> {
     }
 
     private boolean matchesExact(ItemStack slotA, ItemStack slotB) {
-        return ItemStack.isSameItemSameTags(slotA, inputA) &&
-               ItemStack.isSameItemSameTags(slotB, inputB) &&
+        return PlatformHooks.isSameItemSameTags(slotA, inputA) &&
+               PlatformHooks.isSameItemSameTags(slotB, inputB) &&
                slotA.getCount() >= inputA.getCount() &&
                slotB.getCount() >= inputB.getCount();
     }
@@ -176,14 +178,14 @@ public class AnvilRecipe implements Recipe<Container> {
     }
     
 
-    // Возвращает входной предмет для отображения иконки при разборке
+    // Р’РѕР·РІСЂР°С‰Р°РµС‚ РІС…РѕРґРЅРѕР№ РїСЂРµРґРјРµС‚ РґР»СЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ РёРєРѕРЅРєРё РїСЂРё СЂР°Р·Р±РѕСЂРєРµ
 
     public ItemStack getRecyclingInputStack() {
         if (!isRecycling()) {
             return ItemStack.EMPTY;
         }
         
-        // Приоритет: inventoryInputs > inputA > inputB
+        // РџСЂРёРѕСЂРёС‚РµС‚: inventoryInputs > inputA > inputB
         if (!inventoryInputs.isEmpty()) {
             return inventoryInputs.get(0).copy();
         }

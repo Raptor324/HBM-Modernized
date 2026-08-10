@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.Map;
 
 import org.jetbrains.annotations.NotNull;
@@ -202,7 +204,7 @@ public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity impl
     }
 
     /**
-     * Subscribes this receiver directly into any adjacent duct's fluid network — mirrors the
+     * Subscribes this receiver directly into any adjacent duct's fluid network вЂ” mirrors the
      * original 1.7.10 {@code TileEntityMachineGasCent#updateConnections()}, which walked its own
      * exposed neighbor positions and called {@code trySubscribe}. Without this, no duct ever
      * discovers this machine: only dedicated multiblock connector cells auto-register themselves
@@ -250,7 +252,7 @@ public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity impl
         for (int slot = SLOT_OUTPUT_0; slot <= SLOT_OUTPUT_3; slot++) {
             ItemStack existing = inventory.getStackInSlot(slot);
             if (existing.isEmpty()) return true;
-            if (ItemStack.isSameItemSameTags(existing, stack)
+            if (PlatformHooks.isSameItemSameTags(existing, stack)
                     && existing.getCount() + stack.getCount() <= existing.getMaxStackSize()) {
                 return true;
             }
@@ -277,7 +279,7 @@ public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity impl
                 inventory.setStackInSlot(slot, stack);
                 return;
             }
-            if (ItemStack.isSameItemSameTags(existing, stack)
+            if (PlatformHooks.isSameItemSameTags(existing, stack)
                     && existing.getCount() + stack.getCount() <= existing.getMaxStackSize()) {
                 existing.grow(stack.getCount());
                 return;
@@ -414,6 +416,7 @@ public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity impl
         return fromDir != null && PseudoFluidType.FLUID_CONVERSIONS.containsKey(fluid);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -425,7 +428,23 @@ public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity impl
         inputTank.writeToNBT(tag, "inputTank");
         outputTank.writeToNBT(tag, "outputTank");
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        tag.putInt("progress", progress);
+        tag.putBoolean("isProgressing", isProgressing);
+        tag.putFloat("anim", anim);
+        tag.putFloat("prevAnim", prevAnim);
+        tank.writeToNBT(tag, "tank");
+        inputTank.writeToNBT(tag, "inputTank");
+        outputTank.writeToNBT(tag, "outputTank");
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -437,4 +456,19 @@ public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity impl
         inputTank.readFromNBT(tag, "inputTank");
         outputTank.readFromNBT(tag, "outputTank");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        progress = tag.getInt("progress");
+        isProgressing = tag.getBoolean("isProgressing");
+        anim = tag.getFloat("anim");
+        prevAnim = tag.getFloat("prevAnim");
+        tank.readFromNBT(tag, "tank");
+        inputTank.readFromNBT(tag, "inputTank");
+        outputTank.readFromNBT(tag, "outputTank");
+    
+    }
+    *///?}
 }

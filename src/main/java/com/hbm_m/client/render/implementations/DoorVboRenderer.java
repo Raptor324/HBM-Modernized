@@ -27,9 +27,13 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+//?} elif fabric {
+/*/^@Environment(EnvType.CLIENT)^/
+^///?} elif neoforge {
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+@OnlyIn(Dist.CLIENT)
+*///?}
 public class DoorVboRenderer extends SingleMeshVboRenderer {
 
     private final DoorBakedModel model;

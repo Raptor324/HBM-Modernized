@@ -4,17 +4,20 @@ package com.hbm_m.client.render.implementations;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?} elif fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+*///?}
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.client.model.CargoElevatorBakedModel;
 import com.hbm_m.client.render.MeshRenderCache;
 import com.mojang.blaze3d.vertex.PoseStack;
 
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
+
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
@@ -25,10 +28,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  * через {@link MeshRenderCache#getOrCreateRenderer}.
  * Аналог {@link MachineAssemblerVboRenderer}.
  */
-//? if forge {
+//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
+//?} elif fabric {
 /*@Environment(EnvType.CLIENT)*///?}
 public class CargoElevatorVboRenderer {
 

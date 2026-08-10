@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.MachineArcFurnaceBlockEntity;
 import com.hbm_m.inventory.menu.MachineArcFurnaceMenu;
@@ -89,7 +90,7 @@ public class GUIMachineArcFurnace extends GuiInfoScreen<MachineArcFurnaceMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, delta);
         super.render(guiGraphics, mouseX, mouseY, delta);
         renderTooltip(guiGraphics, mouseX, mouseY);
         renderCustomTooltips(guiGraphics, mouseX, mouseY);

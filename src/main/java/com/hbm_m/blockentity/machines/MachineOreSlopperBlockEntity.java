@@ -216,6 +216,7 @@ public class MachineOreSlopperBlockEntity extends BaseMachineBlockEntity {
 
     // ==================== NBT ====================
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -226,7 +227,22 @@ public class MachineOreSlopperBlockEntity extends BaseMachineBlockEntity {
         }
         tank.writeToNBT(tag, "tank");
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        tag.putInt("progress", progressTicks);
+        tag.putBoolean("active", active);
+        for (BedrockOreDensity.Type type : BedrockOreDensity.Type.values()) {
+            tag.putDouble("ores_" + type.name().toLowerCase(Locale.ROOT), ores[type.ordinal()]);
+        }
+        tank.writeToNBT(tag, "tank");
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -238,6 +254,21 @@ public class MachineOreSlopperBlockEntity extends BaseMachineBlockEntity {
         }
         tank.readFromNBT(tag, "tank");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        progressTicks = tag.getInt("progress");
+        active = tag.getBoolean("active");
+        for (BedrockOreDensity.Type type : BedrockOreDensity.Type.values()) {
+            String key = "ores_" + type.name().toLowerCase(Locale.ROOT);
+            ores[type.ordinal()] = tag.contains(key) ? tag.getDouble(key) : 0.0D;
+        }
+        tank.readFromNBT(tag, "tank");
+    
+    }
+    *///?}
 
     // ==================== GETTERS / MENU ====================
 

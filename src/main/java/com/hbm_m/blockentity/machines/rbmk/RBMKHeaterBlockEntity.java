@@ -39,18 +39,40 @@ public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity {
     @Override public RBMKType getRBMKType()      { return RBMKType.OTHER; }
     @Override public ColumnType getConsoleType() { return ColumnType.HEATER; }
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         inputTank.writeToNBT(tag, "input");
         outputTank.writeToNBT(tag, "output");
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
+        super.saveAdditional(tag, registries);
+        inputTank.writeToNBT(tag, "input");
+        outputTank.writeToNBT(tag, "output");
+    
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
         inputTank.readFromNBT(tag, "input");
         outputTank.readFromNBT(tag, "output");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+
+        super.loadAdditional(tag, registries);
+        inputTank.readFromNBT(tag, "input");
+        outputTank.readFromNBT(tag, "output");
+    
+    }
+    *///?}
 }
 

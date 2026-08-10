@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKRodBlockEntity;
 import com.hbm_m.inventory.menu.RBMKRodMenu;
@@ -46,7 +47,7 @@ public class GUIRBMKRod extends GuiInfoScreen<RBMKRodMenu> {
 
     @Override
     public void render(GuiGraphics g, int mx, int my, float partial) {
-        this.renderBackground(g);
+        GuiCompat.renderBackground(this, g, mx, my, partial);
         super.render(g, mx, my, partial);
 
         int x = leftPos + 30;

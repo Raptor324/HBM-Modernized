@@ -31,7 +31,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
+//? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+//?}
 import dev.architectury.registry.menu.MenuRegistry;
 
 public class MachineWatzPowerplantBlock extends BaseEntityBlock implements IMultiblockController {
@@ -96,4 +98,13 @@ public class MachineWatzPowerplantBlock extends BaseEntityBlock implements IMult
     public PartRole getPartRole(BlockPos localOffset) {
         return structureHelper.resolvePartRole(localOffset, this);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineWatzPowerplantBlock> CODEC = simpleCodec(MachineWatzPowerplantBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -155,7 +156,7 @@ public class GUIMachineFrackingTower extends AbstractContainerScreen<MachineFrac
     @Override
     public void render(@NotNull GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         // Сначала рендерим фон
-        this.renderBackground(graphics);
+        GuiCompat.renderBackground(this, graphics, mouseX, mouseY, partialTick);
         
         // Затем основной GUI
         super.render(graphics, mouseX, mouseY, partialTick);

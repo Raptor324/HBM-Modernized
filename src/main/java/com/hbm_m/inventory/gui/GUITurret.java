@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.inventory.menu.TurretMenu;
 import com.hbm_m.network.TurretControlPacket;
@@ -70,7 +71,7 @@ public class GUITurret extends AbstractContainerScreen<TurretMenu> {
 
     @Override
     public void render(GuiGraphics gui, int mouseX, int mouseY, float delta) {
-        this.renderBackground(gui);
+        GuiCompat.renderBackground(this, gui, mouseX, mouseY, delta);
         super.render(gui, mouseX, mouseY, delta);
         renderToggleButtons(gui, mouseX, mouseY);
         if (isArty()) renderModeButton(gui);

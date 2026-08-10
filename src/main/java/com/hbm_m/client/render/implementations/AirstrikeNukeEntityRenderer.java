@@ -52,7 +52,7 @@ public class AirstrikeNukeEntityRenderer extends EntityRenderer<AirstrikeNukeEnt
                 OverlayTexture.NO_OVERLAY
         );
 
-        poseStack.popPose(); // ← Соответствующий popPose()
+        poseStack.popPose();
     }
 
 

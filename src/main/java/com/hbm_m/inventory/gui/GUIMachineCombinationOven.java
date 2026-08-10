@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.MachineCombinationOvenBlockEntity;
 import com.hbm_m.inventory.menu.MachineCombinationOvenMenu;
@@ -82,7 +83,7 @@ public class GUIMachineCombinationOven extends GuiInfoScreen<MachineCombinationO
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, delta);
         super.render(guiGraphics, mouseX, mouseY, delta);
         renderTooltip(guiGraphics, mouseX, mouseY);
         renderCustomTooltips(guiGraphics, mouseX, mouseY);

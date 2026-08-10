@@ -147,8 +147,7 @@ public class MeshRenderCache {
     private static VertexBuffer uploadToGPU(List<BakedQuad> quads) {
         if (quads.isEmpty()) return null;
 
-        BufferBuilder builder = new BufferBuilder(quads.size() * 32);
-        IrisBufferHelper.begin(builder, VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
+        BufferBuilder builder = IrisBufferHelper.create(VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK, quads.size() * 32);
 
         PoseStack.Pose neutralPose = new PoseStack().last();
         float r = 1.0F, g = 1.0F, b = 1.0F, a = 1.0F;

@@ -181,7 +181,7 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu implements ILon
 
                 // Пробуем в СЛОТ ЗАРЯДКИ
                 //? if forge {
-                if (slotStack.getCapability(ForgeCapabilities.ENERGY).map(IEnergyStorage::canReceive).orElse(false) ||
+                if (com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(slotStack).map(IEnergyStorage::canReceive).orElse(false) ||
                     slotStack.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSBPowered) {
                 //?} else {
                 /*if (ItemEnergyAccess.getHbmReceiver(slotStack).isPresent() ||

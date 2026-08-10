@@ -27,6 +27,29 @@ public final class IrisBufferHelper {
     private static boolean irisChecked;
 
     /**
+     * Кросс-версионная фабрика {@link BufferBuilder}.
+     * <p>
+     * На 1.20.1 конструктор {@code new BufferBuilder(int capacity)}, а {@code begin(mode, format)}
+     * вызывается отдельно. На 1.21.1 конструктор требует {@code (VertexFormat, VertexFormat.Mode, int)}
+     * сразу. Этот метод инкапсулирует различие и возвращает builder, готовый к заполнению.
+     *
+     * @param mode     режим вершин (QUADS, TRIANGLES, …)
+     * @param format   формат вершин (DefaultVertexFormat.BLOCK, …)
+     * @param capacity начальная вместимость в байтах (хинт аллокации)
+     * @return новый BufferBuilder с уже вызванным {@code begin} (формат зафиксирован)
+     */
+    public static BufferBuilder create(VertexFormat.Mode mode, VertexFormat format, int capacity) {
+        //? if forge {
+        BufferBuilder buffer = new BufferBuilder(capacity);
+        buffer.begin(mode, format);
+        return buffer;
+        //?}
+        //? if neoforge {
+        /*return new BufferBuilder(format, mode, capacity);
+        *///?}
+    }
+
+    /**
      * Класс ExtendingBufferBuilder от Connector/FFAPI (Forgified Fabric API).
      * Connector использует тот же интерфейс что и Iris, но в другом пакете.
      */

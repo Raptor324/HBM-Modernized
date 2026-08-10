@@ -216,4 +216,13 @@ public class MachineRadarBlock extends BaseEntityBlock implements IMultiblockCon
     public int getLightBlock(BlockState state, BlockGetter level, BlockPos pos) {
         return 0;
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineRadarBlock> CODEC = simpleCodec(MachineRadarBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }
