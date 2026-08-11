@@ -98,11 +98,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         }
     };
 
-    //? if forge {
-    protected LazyOptional<IFluidHandler> fluidInputHandler = LazyOptional.empty();
-    protected LazyOptional<IFluidHandler> fluidOutputHandler = LazyOptional.empty();
-    //?}
-
     /** Разрешённые стороны прямого подключения к контроллеру (пусто = все). */
     private java.util.Set<Direction> allowedEnergySides = java.util.EnumSet.noneOf(Direction.class);
     /** Разрешённые стороны жидкости. Если {@link #fluidSidesFromMultiblockStructure} — пусто может означать «ни одной»; иначе пусто = все. */
@@ -199,8 +194,8 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     @Override
     protected void setupFluidCapability() {
         //? if forge {
-        fluidInputHandler = inputTank.getCapability();
-        fluidOutputHandler = outputTank.getCapability();
+        // Экспонируем входной бак (inputTank) через базовый fluidHandlerOpt.
+        setFluidHandler(inputTank);
         //?}
     }
 
@@ -822,9 +817,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             }
         }
 
-        if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            return fluidInputHandler.cast();
-        }
+        // FLUID_HANDLER для разрешённых сторон отдаёт базовый fluidHandlerOpt (см. setupFluidCapability).
         return super.getCapability(cap, side);
     }
     //?}
@@ -890,8 +883,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
-        fluidInputHandler.invalidate();
-        fluidOutputHandler.invalidate();
         clientTicker.invalidate();
     }
     //?}

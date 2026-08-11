@@ -83,7 +83,6 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
     protected final ContainerData data;
 
     //? if forge {
-    private final LazyOptional<IFluidHandler> lazyWaterHandler;
     private final LazyOptional<IFluidHandler> lazySteamHandler;
     //?}
 
@@ -95,7 +94,6 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
         this.steamTank = new FluidTank(Fluids.EMPTY, STEAM_CAPACITY);
 
         //? if forge {
-        this.lazyWaterHandler = LazyOptional.of(() -> new WaterFluidHandler(this));
         this.lazySteamHandler = LazyOptional.of(() -> new SteamFluidHandler(this));
         //?}
 
@@ -410,13 +408,16 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
     // --- Capabilities ---
     //? if forge {
     @Override
+    protected void setupFluidCapability() {
+        // Water — обработчик по умолчанию (все стороны, кроме UP) — через базовый fluidHandlerOpt.
+        setFluidHandler(new WaterFluidHandler(this));
+    }
+
+    @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            // Water input from sides and bottom, steam output from top
-            if (side == Direction.UP) {
-                return lazySteamHandler.cast();
-            }
-            return lazyWaterHandler.cast();
+        // Steam output from top; остальные стороны (water) отдаёт базовый fluidHandlerOpt.
+        if (cap == ForgeCapabilities.FLUID_HANDLER && side == Direction.UP) {
+            return lazySteamHandler.cast();
         }
         return super.getCapability(cap, side);
     }
@@ -424,7 +425,6 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
-        lazyWaterHandler.invalidate();
         lazySteamHandler.invalidate();
     }
     //?}

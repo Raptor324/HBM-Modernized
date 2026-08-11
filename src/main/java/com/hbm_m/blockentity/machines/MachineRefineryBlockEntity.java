@@ -104,10 +104,6 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
     private int sulfurProgress = 0;
     private boolean isOn = false;
 
-    //? if forge {
-    private LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
-    //?}
-
     public MachineRefineryBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.REFINERY_BE.get(), pos, state,
               INVENTORY_SIZE, ENERGY_CAPACITY, ENERGY_RECEIVE_RATE);
@@ -470,19 +466,7 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
     //? if forge {
     @Override
     protected void setupFluidCapability() {
-        fluidHandler = LazyOptional.of(() -> new RefineryFluidHandler(this));
-    }
-
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) return fluidHandler.cast();
-        return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        fluidHandler.invalidate();
+        setFluidHandler(new RefineryFluidHandler(this));
     }
     //?}
 

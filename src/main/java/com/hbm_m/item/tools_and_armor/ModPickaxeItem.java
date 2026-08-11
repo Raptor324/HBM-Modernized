@@ -1,5 +1,6 @@
 package com.hbm_m.item.tools_and_armor;
 
+import com.hbm_m.item.ITooltipProvider;
 import com.hbm_m.client.overlay.OverlayInfoToast;
 import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.ChatFormatting;
@@ -35,7 +36,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-public class ModPickaxeItem extends PickaxeItem {
+public class ModPickaxeItem extends PickaxeItem implements ITooltipProvider {
     private static final String NBT_VEIN_MINER = "VeinMinerEnabled";
     private static final String NBT_AOE = "AOEEnabled";
     private static final String NBT_AOE_LEVEL = "AOELevel";
@@ -70,8 +71,7 @@ public class ModPickaxeItem extends PickaxeItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHbmTooltip(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
 
         // Заголовок списка способностей
         tooltip.add(Component.translatable("tooltip.hbm_m.abilities").withStyle(ChatFormatting.BLUE));

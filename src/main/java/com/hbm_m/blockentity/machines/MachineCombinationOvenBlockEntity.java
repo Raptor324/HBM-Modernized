@@ -65,12 +65,8 @@ public class MachineCombinationOvenBlockEntity extends BaseMachineBlockEntity {
 
     //? if forge {
     @Override
-    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
-            net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable net.minecraft.core.Direction side) {
-        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return tank.getCapability().cast();
-        }
-        return super.getCapability(cap, side);
+    protected void setupFluidCapability() {
+        setFluidHandler(tank);
     }
     //?}
 

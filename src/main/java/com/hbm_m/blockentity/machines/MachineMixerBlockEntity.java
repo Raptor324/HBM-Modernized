@@ -82,10 +82,6 @@ public class MachineMixerBlockEntity extends BaseMachineBlockEntity implements I
     private int maxProgress = DEFAULT_MAX_PROGRESS;
     private boolean active = false;
 
-    //? if forge {
-    private LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
-    //?}
-
     protected final ContainerData data = new ContainerData() {
         @Override
         public int get(int index) {
@@ -370,19 +366,7 @@ public class MachineMixerBlockEntity extends BaseMachineBlockEntity implements I
     //? if forge {
     @Override
     protected void setupFluidCapability() {
-        fluidHandler = LazyOptional.of(() -> new MixerFluidHandler(this));
-    }
-
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) return fluidHandler.cast();
-        return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        fluidHandler.invalidate();
+        setFluidHandler(new MixerFluidHandler(this));
     }
 
     /**

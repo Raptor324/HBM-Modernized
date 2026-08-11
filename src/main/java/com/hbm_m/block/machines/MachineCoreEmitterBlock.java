@@ -66,13 +66,8 @@ public class MachineCoreEmitterBlock extends BaseEntityBlock implements IMultibl
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (state.getBlock() != newState.getBlock()) {
-            BlockEntity be = level.getBlockEntity(pos);
-            if (be != null) {
-                be.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(h -> {
-                    for (int i = 0; i < h.getSlots(); i++) {
-                        Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), h.getStackInSlot(i));
-                    }
-                });
+            if (level.getBlockEntity(pos) instanceof com.hbm_m.blockentity.BaseMachineBlockEntity machine) {
+                machine.dropInventoryContents();
             }
         }
         super.onRemove(state, level, pos, newState, isMoving);

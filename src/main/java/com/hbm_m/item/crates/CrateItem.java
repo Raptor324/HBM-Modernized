@@ -1,5 +1,6 @@
 package com.hbm_m.item.crates;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -27,7 +28,7 @@ import com.hbm_m.platform.ModItemStackHandler;
  * Базовый Item для ящиков HBM с отображением содержимого в тултипе.
  * Показывает первые 10 предметов + индикатор заполненности.
  */
-public class CrateItem extends BlockItem {
+public class CrateItem extends BlockItem implements ITooltipProvider {
 
     private static final int PREVIEW_LIMIT = 10;
     private final int totalSlots;
@@ -38,9 +39,8 @@ public class CrateItem extends BlockItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level,
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level,
                                 List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
 
         CrateTooltipData data = readTooltipData(stack);
         if (data == null) return;

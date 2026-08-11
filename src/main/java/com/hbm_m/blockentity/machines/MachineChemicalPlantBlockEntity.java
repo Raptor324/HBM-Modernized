@@ -100,11 +100,6 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
     private final FluidTank[] outputTanks = new FluidTank[3];
     private boolean tanksDirty = false;
 
-    //? if forge {
-    private final LazyOptional<IFluidHandler>[] inputTankHandlers = new LazyOptional[3];
-    private final LazyOptional<IFluidHandler>[] outputTankHandlers = new LazyOptional[3];
-    //?}
-
     private MachineModuleChemplant module;
     private final UpgradeManager upgradeManager = new UpgradeManager();
 
@@ -207,10 +202,6 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
                     tanksDirty = true;
                 }
             };
-            //? if forge {
-            inputTankHandlers[i] = inputTanks[i].getCapability();
-            outputTankHandlers[i] = outputTanks[i].getCapability();
-            //?}
         }
 
         this.module = new MachineModuleChemplant(
@@ -669,32 +660,21 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
     }
 
     //? if forge {
-    private LazyOptional<IFluidHandler> combinedFluidHandler = LazyOptional.empty();
     private static final LazyOptional<?> EMPTY_CAP = LazyOptional.empty();
 
     @Override
-    public void onLoad() {
-        super.onLoad();
-        combinedFluidHandler = LazyOptional.of(() -> new CombinedChemPlantFluidHandler(this));
+    protected void setupFluidCapability() {
+        setFluidHandler(new CombinedChemPlantFluidHandler(this));
     }
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            if (side == null || side.getAxis().isHorizontal()) return combinedFluidHandler.cast();
-            return (LazyOptional<T>) EMPTY_CAP;
+            // Только горизонтальные стороны (и null) получают объединённый обработчик;
+            // вертикальные стороны ничего не отдают.
+            if (side != null && !side.getAxis().isHorizontal()) return (LazyOptional<T>) EMPTY_CAP;
         }
         return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        combinedFluidHandler.invalidate();
-        for (int i = 0; i < 3; i++) {
-            inputTankHandlers[i].invalidate();
-            outputTankHandlers[i].invalidate();
-        }
     }
 
     private static class CombinedChemPlantFluidHandler implements net.minecraftforge.fluids.capability.IFluidHandler {

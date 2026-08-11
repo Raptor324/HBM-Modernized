@@ -59,10 +59,6 @@ public class MachineTowerSmallBlockEntity extends BaseMachineBlockEntity impleme
     private boolean isCooling = false;
     private int particleTimer = 0;
 
-    //? if forge {
-    private LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
-    //?}
-
     public MachineTowerSmallBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.TOWER_SMALL_BE.get(), pos, state, 0, 0L, 0L);
     }
@@ -207,19 +203,7 @@ public class MachineTowerSmallBlockEntity extends BaseMachineBlockEntity impleme
     //? if forge {
     @Override
     protected void setupFluidCapability() {
-        fluidHandler = LazyOptional.of(() -> new TowerSmallFluidHandler(this));
-    }
-
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) return fluidHandler.cast();
-        return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        fluidHandler.invalidate();
+        setFluidHandler(new TowerSmallFluidHandler(this));
     }
     //?}
 

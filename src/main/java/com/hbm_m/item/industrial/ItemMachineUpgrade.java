@@ -1,5 +1,6 @@
 package com.hbm_m.item.industrial;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -18,7 +19,7 @@ import net.minecraft.world.level.Level;
  * (Mk.I = 1, Mk.II = 2, Mk.III = 3). Уровень суммируется
  * в {@link com.hbm_m.inventory.UpgradeManager}.
  */
-public class ItemMachineUpgrade extends Item {
+public class ItemMachineUpgrade extends Item implements ITooltipProvider {
 
     public enum UpgradeType {
         SPEED,
@@ -55,8 +56,7 @@ public class ItemMachineUpgrade extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("tooltip.hbm_m.upgrade.type." + type.getTranslationKeySuffix())
                 .withStyle(ChatFormatting.GRAY));
         if (tier > 0) {

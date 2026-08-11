@@ -1,6 +1,7 @@
 package com.hbm_m.armormod.item;
 
 // Это базовый класс для всех предметов-модификаций брони.
+import com.hbm_m.item.ITooltipProvider;
 import com.google.common.collect.Multimap;
 import com.hbm_m.armormod.util.ArmorModificationHelper;
 
@@ -19,7 +20,7 @@ import java.util.UUID;
 
 import org.jetbrains.annotations.Nullable;
 
-public abstract class ItemArmorMod extends Item {
+public abstract class ItemArmorMod extends Item implements ITooltipProvider {
 
     // Тип слота, к которому привязан мод (0-8)
     public final int type;
@@ -51,8 +52,7 @@ public abstract class ItemArmorMod extends Item {
     }
     
     @Override
-    public void appendHoverText(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltip, TooltipFlag pIsAdvanced) {
-        super.appendHoverText(pStack, pLevel, pTooltip, pIsAdvanced);
+    public void appendHbmTooltip(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltip, TooltipFlag pIsAdvanced) {
         // Добавляем строки с эффектами, которые определены в дочерних классах.
         pTooltip.addAll(this.getEffectTooltipLines());
     }

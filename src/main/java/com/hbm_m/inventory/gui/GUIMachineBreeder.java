@@ -14,9 +14,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.InventoryMenu;
+import com.hbm_m.platform.ModFluidTank;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.templates.FluidTank;
 
 public class GUIMachineBreeder extends GuiInfoScreen<MachineBreederMenu> {
 
@@ -56,7 +56,7 @@ public class GUIMachineBreeder extends GuiInfoScreen<MachineBreederMenu> {
         renderFluidTank(guiGraphics, menu.getBlockEntity().getTank(), this.leftPos + 35, this.topPos + 70);
     }
 
-    private void renderFluidTank(GuiGraphics guiGraphics, FluidTank tank, int x, int y) {
+    private void renderFluidTank(GuiGraphics guiGraphics, ModFluidTank tank, int x, int y) {
         FluidStack fluid = tank.getFluid();
         if (fluid.isEmpty()) return;
 
@@ -118,7 +118,7 @@ public class GUIMachineBreeder extends GuiInfoScreen<MachineBreederMenu> {
         drawCustomInfoStat(guiGraphics, mouseX, mouseY, 117, 22, 8, 8, mouseX, mouseY, upgradeText);
     }
 
-    private void renderTankTooltip(GuiGraphics guiGraphics, FluidTank tank, int mouseX, int mouseY) {
+    private void renderTankTooltip(GuiGraphics guiGraphics, ModFluidTank tank, int mouseX, int mouseY) {
         FluidStack fluid = tank.getFluid();
         List<Component> tooltip = new ArrayList<>();
         if (fluid.isEmpty()) {

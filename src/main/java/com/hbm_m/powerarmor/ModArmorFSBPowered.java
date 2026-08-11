@@ -1,5 +1,6 @@
 package com.hbm_m.powerarmor;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -26,7 +27,7 @@ import net.minecraftforge.common.capabilities.ICapabilityProvider;
 //?}
 
 // Full Set Bonus Powered armor - combines FSB functionality with battery system
-public class ModArmorFSBPowered extends ModArmorFSB {
+public class ModArmorFSBPowered extends ModArmorFSB implements ITooltipProvider {
 
     public long maxPower = 1;
     public long chargeRate;
@@ -49,7 +50,7 @@ public class ModArmorFSBPowered extends ModArmorFSB {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, 
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, 
                                List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.literal("Charge: " + 
             EnergyFormatter.format(getCharge(stack)) + " / " + 
@@ -57,7 +58,6 @@ public class ModArmorFSBPowered extends ModArmorFSB {
             .withStyle(ChatFormatting.AQUA));
 
         ArmorTooltipHandler.getFSBTooltip(stack).ifPresent(tooltip::addAll);
-        super.appendHoverText(stack, level, tooltip, flag);
     }
 
     @Override

@@ -68,7 +68,6 @@ public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements
     private boolean active = false;
 
     //? if forge {
-    private LazyOptional<IFluidHandler> steamInputHandler = LazyOptional.empty();
     private LazyOptional<IFluidHandler> spentOutputHandler = LazyOptional.empty();
     //?}
 
@@ -329,15 +328,16 @@ public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements
     //? if forge {
     @Override
     protected void setupFluidCapability() {
-        steamInputHandler  = LazyOptional.of(() -> new SteamInputHandler(this));
+        // Steam input — обработчик по умолчанию — через базовый fluidHandlerOpt.
+        setFluidHandler(new SteamInputHandler(this));
         spentOutputHandler = LazyOptional.of(() -> new SpentOutputHandler(this));
     }
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            if (side == Direction.UP) return spentOutputHandler.cast();
-            return steamInputHandler.cast();
+        // UP = spent output; остальные стороны (steam input) отдаёт базовый fluidHandlerOpt.
+        if (cap == ForgeCapabilities.FLUID_HANDLER && side == Direction.UP) {
+            return spentOutputHandler.cast();
         }
         return super.getCapability(cap, side);
     }
@@ -345,7 +345,6 @@ public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
-        steamInputHandler.invalidate();
         spentOutputHandler.invalidate();
     }
 

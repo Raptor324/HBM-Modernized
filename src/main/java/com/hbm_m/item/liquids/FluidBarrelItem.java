@@ -1,5 +1,6 @@
 package com.hbm_m.item.liquids;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
@@ -46,7 +47,7 @@ import net.minecraft.world.level.Level;
  * Similar to a tank but as an item.
  */
 @SuppressWarnings("UnstableApiUsage")
-public class FluidBarrelItem extends Item {
+public class FluidBarrelItem extends Item implements ITooltipProvider {
 
     public static final int CAPACITY = 16000; // 16 buckets
     public static final String NBT_FLUID = "Fluid";
@@ -79,8 +80,7 @@ public class FluidBarrelItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
 
         FluidStack fluid = getFluid(stack);
         if (fluid.isEmpty()) {

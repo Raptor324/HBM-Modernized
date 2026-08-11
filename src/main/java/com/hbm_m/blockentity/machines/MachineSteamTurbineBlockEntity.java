@@ -59,10 +59,6 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
     private static final int MAX_PROGRESS = 200;
     private boolean active = false;
 
-    //? if forge {
-    private LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
-    //?}
-
     public MachineSteamTurbineBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.STEAM_TURBINE_BE.get(), pos, state, INVENTORY_SIZE, 1_000_000L, 0L, 50_000L);
     }
@@ -209,21 +205,7 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
     //? if forge {
     @Override
     protected void setupFluidCapability() {
-        fluidHandler = LazyOptional.of(() -> new UnifiedFluidHandler(this));
-    }
-
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            return fluidHandler.cast();
-        }
-        return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        fluidHandler.invalidate();
+        setFluidHandler(new UnifiedFluidHandler(this));
     }
 
     private static class UnifiedFluidHandler implements IFluidHandler {

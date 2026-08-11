@@ -40,8 +40,6 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity imp
     private final FluidTank inputSteamTank;
     private final FluidTank outputWaterTank;
 
-    private LazyOptional<IFluidHandler> lazyFluidHandler = LazyOptional.empty();
-
     private int age = 0;
     private int waterTimer = 0;
     private int throughput = 0;
@@ -54,7 +52,9 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity imp
 
     @Override
     protected void setupFluidCapability() {
-        lazyFluidHandler = LazyOptional.of(() -> new UnifiedFluidHandler(this));
+        //? if forge {
+        setFluidHandler(new UnifiedFluidHandler(this));
+        //?}
     }
 
     @Override
@@ -199,20 +199,7 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity imp
     }
     *///?}
 
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            return lazyFluidHandler.cast();
-        }
-        return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        lazyFluidHandler.invalidate();
-    }
-
+    //? if forge {
     private static class UnifiedFluidHandler implements IFluidHandler {
         private final MachineSteamCondenserBlockEntity be;
 
@@ -306,4 +293,5 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity imp
             return result;
         }
     }
+    //?}
 }

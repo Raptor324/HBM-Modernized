@@ -1,5 +1,6 @@
 package com.hbm_m.item.designator;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import com.hbm_m.api.item.IDesignatorItem;
@@ -23,14 +24,14 @@ import net.minecraft.world.phys.Vec3;
  * Basic designator: right-click on a block (except launch pad) to set target X/Z.
  * Port from 1.7.10 ItemDesingator.
  */
-public class ItemDesignator extends Item implements IDesignatorItem {
+public class ItemDesignator extends Item implements IDesignatorItem, ITooltipProvider {
 
     public ItemDesignator(Properties properties) {
         super(properties.stacksTo(1));
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHbmTooltip(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
         if (PlatformHooks.contains(stack, "xCoord")) {
             tooltip.add(Component.translatable("tooltip.hbm_m.designator.target"));
             tooltip.add(Component.literal("X: " + PlatformHooks.getInt(stack, "xCoord")).withStyle(ChatFormatting.GRAY));

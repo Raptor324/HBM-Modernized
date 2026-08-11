@@ -20,14 +20,20 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.ModFluidTank;
 //? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.templates.FluidTank;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.neoforge.common.capabilities.Capability;
+import net.neoforged.neoforge.common.capabilities.NeoForgeCapabilities;
+import net.neoforged.neoforge.common.util.LazyOptional;
+import net.neoforged.neoforge.fluids.FluidUtil;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+*///?}
 
 
 public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
@@ -45,7 +51,9 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
     private static final int TANK_CAPACITY = 8_000;
     private static final int DEFAULT_DURATION = 600;
 
-    private final FluidTank tank = new FluidTank(TANK_CAPACITY) {
+    // ModFluidTank — кросс-лоадерная (forge/neoforge/fabric) обёртка над native FluidTank.
+    // isFluidValid/onContentsChanged наследуются от native FluidTank (см. ModFluidTank).
+    private final ModFluidTank tank = new ModFluidTank(TANK_CAPACITY) {
         @Override
         protected void onContentsChanged() {
             setChanged();
@@ -54,7 +62,6 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
             }
         }
     };
-    private final LazyOptional<IFluidHandler> tankHandler = LazyOptional.of(() -> tank);
 
     private int progress = 0;
     private int duration = DEFAULT_DURATION;
@@ -184,7 +191,7 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
         return dur <= 0 ? 0 : (progress * scale) / dur;
     }
 
-    public FluidTank getTank() {
+    public ModFluidTank getTank() {
         return tank;
     }
 
@@ -235,7 +242,7 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        tag.put("tank", tank.writeToNBT(new CompoundTag()));
+        tag.put("tank", tank.writeNBT(new CompoundTag()));
         tag.putInt("progress", progress);
         tag.putInt("duration", duration);
         tag.putBoolean("isOn", isOn);
@@ -245,7 +252,7 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
     protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
         super.saveAdditional(tag, registries);
-        tag.put("tank", tank.writeToNBT(new CompoundTag()));
+        tag.put("tank", tank.writeNBT(registries, new CompoundTag()));
         tag.putInt("progress", progress);
         tag.putInt("duration", duration);
         tag.putBoolean("isOn", isOn);
@@ -258,7 +265,7 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
     public void load(CompoundTag tag) {
         super.load(tag);
         if (tag.contains("tank")) {
-            tank.readFromNBT(tag.getCompound("tank"));
+            tank.readNBT(tag.getCompound("tank"));
         }
         progress = tag.getInt("progress");
         duration = tag.contains("duration") ? tag.getInt("duration") : DEFAULT_DURATION;
@@ -270,7 +277,7 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
 
         super.loadAdditional(tag, registries);
         if (tag.contains("tank")) {
-            tank.readFromNBT(tag.getCompound("tank"));
+            tank.readNBT(registries, tag.getCompound("tank"));
         }
         progress = tag.getInt("progress");
         duration = tag.contains("duration") ? tag.getInt("duration") : DEFAULT_DURATION;
@@ -280,16 +287,12 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
     *///?}
 
     @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            return tankHandler.cast();
-        }
-        return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        tankHandler.invalidate();
+    protected void setupFluidCapability() {
+        //? if forge {
+        // ModFluidTank extends native FluidTank (IFluidHandler) — отдаём напрямую.
+        setFluidHandler(tank);
+        //?} elif neoforge {
+        /*setFluidHandler(tank);
+        *///?}
     }
 }

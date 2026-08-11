@@ -74,7 +74,6 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
     private final FluidTank spentSteamTank;
 
     //? if forge {
-    private LazyOptional<IFluidHandler> lazySteamHandler;
     private LazyOptional<IFluidHandler> lazySpentHandler;
     //?}
 
@@ -95,7 +94,6 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         this.spentSteamTank = new FluidTank(ModFluids.SPENTSTEAM.getSource(), SPENT_STEAM_CAPACITY);
 
         //? if forge {
-        this.lazySteamHandler = LazyOptional.empty();
         this.lazySpentHandler = LazyOptional.empty();
         //?}
     }
@@ -359,24 +357,23 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
     //? if forge {
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            // UP = spent output, остальное = steam input (gleiche Konvention wie Industrial Turbine)
-            if (side == Direction.UP) return lazySpentHandler.cast();
-            return lazySteamHandler.cast();
+        // UP = spent output; остальные стороны (steam input) отдаёт базовый fluidHandlerOpt.
+        if (cap == ForgeCapabilities.FLUID_HANDLER && side == Direction.UP) {
+            return lazySpentHandler.cast();
         }
         return super.getCapability(cap, side);
     }
 
     @Override
     protected void setupFluidCapability() {
-        lazySteamHandler = LazyOptional.of(() -> new SteamInputHandler(this));
+        // Steam input — обработчик по умолчанию — через базовый fluidHandlerOpt.
+        setFluidHandler(new SteamInputHandler(this));
         lazySpentHandler = LazyOptional.of(() -> new SpentSteamOutputHandler(this));
     }
 
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
-        lazySteamHandler.invalidate();
         lazySpentHandler.invalidate();
     }
 

@@ -1,5 +1,6 @@
 package com.hbm_m.item.fekal_electric;
 
+import com.hbm_m.item.ITooltipProvider;
 import com.hbm_m.platform.PlatformHooks;
 
 import java.util.List;
@@ -15,7 +16,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 
-public class MachineBatteryBlockItem extends BlockItem {
+public class MachineBatteryBlockItem extends BlockItem implements ITooltipProvider {
 
     private final long maxPower; // Меняем int на long
 
@@ -25,7 +26,7 @@ public class MachineBatteryBlockItem extends BlockItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltip, TooltipFlag pFlag) {
+    public void appendHbmTooltip(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltip, TooltipFlag pFlag) {
         // Используем long для вычислений
         // Если у тебя есть утилита EnergyFormatter.format(long), лучше использовать её для красивых чисел (1M, 1G и т.д.)
 
@@ -52,6 +53,5 @@ public class MachineBatteryBlockItem extends BlockItem {
             }
         }
 
-        super.appendHoverText(pStack, pLevel, pTooltip, pFlag);
     }
 }

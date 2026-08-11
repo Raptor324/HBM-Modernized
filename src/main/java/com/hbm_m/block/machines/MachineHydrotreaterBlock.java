@@ -35,6 +35,8 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
 
+import com.hbm_m.blockentity.BaseMachineBlockEntity;
+
 public class MachineHydrotreaterBlock extends BaseEntityBlock implements IMultiblockController {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     private final MultiblockStructureHelper structureHelper;
@@ -47,7 +49,9 @@ public class MachineHydrotreaterBlock extends BaseEntityBlock implements IMultib
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> b) { b.add(FACING); }
     @Nullable @Override public BlockState getStateForPlacement(BlockPlaceContext c) { return this.defaultBlockState().setValue(FACING, c.getHorizontalDirection().getOpposite()); }
     @Override public void onRemove(BlockState s, Level l, BlockPos p, BlockState ns, boolean m) {
-        if (s.getBlock() != ns.getBlock()) { BlockEntity be = l.getBlockEntity(p); if (be != null) be.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(h -> { for (int i = 0; i < h.getSlots(); i++) Containers.dropItemStack(l, p.getX(), p.getY(), p.getZ(), h.getStackInSlot(i)); }); }
+        if (s.getBlock() != ns.getBlock() && l.getBlockEntity(p) instanceof BaseMachineBlockEntity machine) {
+            machine.dropInventoryContents();
+        }
         super.onRemove(s, l, p, ns, m);
     }
     @Nullable @Override public BlockEntity newBlockEntity(BlockPos p, BlockState s) { return new MachineHydrotreaterBlockEntity(p, s); }

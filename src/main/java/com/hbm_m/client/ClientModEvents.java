@@ -9,6 +9,7 @@ import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.event.HazardTooltipHandler;
+import com.hbm_m.item.ITooltipProvider;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.particle.helper.ParticleEffectClient;
 
@@ -22,6 +23,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
@@ -43,35 +50,16 @@ public class ClientModEvents {
         if (initialized) return;
         initialized = true;
 
-        ClientTooltipEvent.ITEM.register((stack, lines, flag) -> {
-            if (stack.isEmpty() || stack.getItem() instanceof ArmorItem) {
-                return;
-            }
-
-            HazardTooltipHandler.appendHazardTooltips(stack, Minecraft.getInstance().player, lines);
-
-            boolean hasTags = stack.getTags().findAny().isPresent();
-            if (hasTags) {
-                if (Screen.hasShiftDown()) {
-                    lines.add(Component.empty());
-                    lines.add(Component.translatable("tooltip.hbm_m.tags").withStyle(ChatFormatting.GRAY));
-                    stack.getTags()
-                            .map(TagKey::location)
-                            .sorted(ResourceLocation::compareTo)
-                            .forEach(location -> {
-                                lines.add(
-                                        Component.literal("  - " + location.toString())
-                                                .withStyle(ChatFormatting.DARK_GRAY)
-                                );
-                            });
-                } else {
-                    lines.add(
-                            Component.translatable("tooltip.hbm_m.hold_shift_for_details")
-                                    .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC)
-                    );
-                }
-            }
-        });
+        // Версионно-зависимая регистрация тултипов: на 1.20.1 Architectury даёт 3-параметровый
+        // callback (stack, lines, flag), на 1.21.1+ — 4-параметровый с Item.TooltipContext.
+        // Тело вынесено в handleItemTooltip, чтобы логика не дублировалась.
+        //? if < 1.21.1 {
+        ClientTooltipEvent.ITEM.register((stack, lines, flag) ->
+                handleItemTooltip(stack, Minecraft.getInstance().level, lines, flag));
+        //?} else {
+        /*ClientTooltipEvent.ITEM.register((stack, lines, context, flag) ->
+                handleItemTooltip(stack, context.level(), lines, flag));
+        *///?}
 
         ClientTickEvent.CLIENT_POST.register(client -> {
             DoorAnimationDelayHelper.processQueue();
@@ -107,6 +95,52 @@ public class ClientModEvents {
             com.hbm_m.client.render.shader.IrisRenderBatch.closePersistentIfActive();
         });
         *///?}
+    }
+
+    /**
+     * Центральный обработчик предметных тултипов. Вызывается из версионно-зависимой
+     * регистрации {@code ClientTooltipEvent.ITEM} (см. {@link #init()}).
+     *
+     * <p>Сначала делегирует в {@link ITooltipProvider} — версионно-независимый механизм
+     * тултипов предмета (замена переопределению {@code Item.appendHoverText}). Затем,
+     * для не-брони, добавляет hazard-тултипы и список тегов.
+     */
+    private static void handleItemTooltip(ItemStack stack, @Nullable Level level, List<Component> lines, TooltipFlag flag) {
+        if (stack.isEmpty()) return;
+
+        // Версионно-независимые предметные тултипы.
+        if (stack.getItem() instanceof ITooltipProvider provider) {
+            provider.appendHbmTooltip(stack, level, lines, flag);
+        }
+
+        // Hazard-тултипы и теги не применяются к броне (у неё свой обработчик).
+        if (stack.getItem() instanceof ArmorItem) {
+            return;
+        }
+
+        HazardTooltipHandler.appendHazardTooltips(stack, Minecraft.getInstance().player, lines);
+
+        boolean hasTags = stack.getTags().findAny().isPresent();
+        if (hasTags) {
+            if (Screen.hasShiftDown()) {
+                lines.add(Component.empty());
+                lines.add(Component.translatable("tooltip.hbm_m.tags").withStyle(ChatFormatting.GRAY));
+                stack.getTags()
+                        .map(TagKey::location)
+                        .sorted(ResourceLocation::compareTo)
+                        .forEach(location -> {
+                            lines.add(
+                                    Component.literal("  - " + location.toString())
+                                            .withStyle(ChatFormatting.DARK_GRAY)
+                            );
+                        });
+            } else {
+                lines.add(
+                        Component.translatable("tooltip.hbm_m.hold_shift_for_details")
+                                .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC)
+                );
+            }
+        }
     }
 
     //? if forge {

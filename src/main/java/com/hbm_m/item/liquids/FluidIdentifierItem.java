@@ -1,5 +1,6 @@
 package com.hbm_m.item.liquids;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import dev.architectury.fluid.FluidStack;
@@ -40,7 +41,7 @@ import net.minecraft.world.level.material.Fluids;
  * RMB: swap primary and secondary. Shift+RMB in air: open GUI to select fluids.
  * Shift+RMB on a fluid duct: paint that fluid onto the entire connected duct network (same block type).
  */
-public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, IItemControlReceiver {
+public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, IItemControlReceiver, ITooltipProvider {
 
     private static final String NBT_FLUID1 = "fluid1";
     private static final String NBT_FLUID2 = "fluid2";
@@ -160,8 +161,7 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("item.hbm_m.fluid_identifier.info").withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal("   ").append(getFluidDisplayName(getType(stack, true)).copy().withStyle(ChatFormatting.AQUA)));
         

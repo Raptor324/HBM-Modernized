@@ -1,5 +1,6 @@
 package com.hbm_m.item.tools_and_armor;
 
+import com.hbm_m.item.ITooltipProvider;
 import com.hbm_m.client.overlay.OverlayInfoToast;
 import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.ChatFormatting;
@@ -29,7 +30,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-public class ModShovelItem extends ShovelItem {
+public class ModShovelItem extends ShovelItem implements ITooltipProvider {
     private static final String NBT_VEIN_MINER = "VeinMinerEnabled";
     private static final String NBT_SILK_TOUCH = "SilkTouchEnabled";
     private static final String NBT_FORTUNE = "FortuneEnabled";
@@ -55,9 +56,13 @@ public class ModShovelItem extends ShovelItem {
         this.fortuneLevel = Math.max(0, Math.min(5, fortuneLevel));
     }
 
+    // Простой конструктор без vein-miner/silk-touch/fortune (для рядовых лопат steel/titanium/starmetal).
+    public ModShovelItem(Tier tier, int attackDamage, float attackSpeed, Properties properties) {
+        this(tier, attackDamage, attackSpeed, properties, 0, 0, 0);
+    }
+
     @Override
-    public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHbmTooltip(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
 
         // Заголовок списка способностей
         tooltip.add(Component.translatable("tooltip.hbm_m.abilities").withStyle(ChatFormatting.BLUE));

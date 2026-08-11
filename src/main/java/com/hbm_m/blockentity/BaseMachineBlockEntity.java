@@ -79,7 +79,10 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
     private final LazyOptional<IEnergyProvider> hbmProvider = LazyOptional.of(() -> this);
     private final LazyOptional<IEnergyReceiver> hbmReceiver = LazyOptional.of(() -> this);
     private final LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
-    private final PackedEnergyCapabilityProvider feCapabilityProvider;//?}
+    private final PackedEnergyCapabilityProvider feCapabilityProvider;
+
+    // Fluid-капабилити (Forge). Подклассы регистрируют обработчик через setFluidHandler().
+    protected LazyOptional<net.minecraftforge.fluids.capability.IFluidHandler> fluidHandlerOpt = LazyOptional.empty();//?}
 
     // Провайдер TeamReborn Energy (Fabric)
     //? if fabric {
@@ -319,6 +322,28 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
     }
 
     // --- Настройка Fluid Capability (опционально) ---
+
+    /**
+     * Регистрирует обработчик жидкости, который BaseMachineBlockEntity будет отдавать через
+     * {@code ForgeCapabilities.FLUID_HANDLER}. Вызывать из {@link #setupFluidCapability()} подкласса.
+     * <p>Можно передать:
+     * <ul>
+     *   <li>HBM {@link com.hbm_m.inventory.fluid.tank.FluidTank} — тогда переиспользуется его
+     *       внутренний {@code LazyOptional<IFluidHandler>};</li>
+     *   <li>любой {@code net.minecraftforge.fluids.capability.IFluidHandler} — кастомный враппер,
+     *       Forge {@code FluidTank} и т.п.</li>
+     * </ul>
+     */
+    protected void setFluidHandler(Object handler) {
+        //? if forge {
+        if (handler instanceof com.hbm_m.inventory.fluid.tank.FluidTank tank) {
+            this.fluidHandlerOpt = tank.getCapability();
+        } else {
+            this.fluidHandlerOpt = LazyOptional.of(() -> (net.minecraftforge.fluids.capability.IFluidHandler) handler);
+        }
+        //?}
+    }
+
     protected void setupFluidCapability() {
         // Переопределяется в подклассах при необходимости
     }
@@ -434,6 +459,7 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         if (cap == ModCapabilities.HBM_ENERGY_RECEIVER)  return hbmReceiver.cast();
         if (cap == ModCapabilities.HBM_ENERGY_CONNECTOR) return hbmConnector.cast();
         if (cap == ForgeCapabilities.ITEM_HANDLER)        return itemHandler.cast();
+        if (cap == ForgeCapabilities.FLUID_HANDLER && fluidHandlerOpt.isPresent()) return fluidHandlerOpt.cast();
 
         LazyOptional<T> feCap = feCapabilityProvider.getCapability(cap, side);
         if (feCap.isPresent()) return feCap;
@@ -456,6 +482,7 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         hbmReceiver.invalidate();
         hbmConnector.invalidate();
         feCapabilityProvider.invalidate();
+        fluidHandlerOpt.invalidate();
     }
     //?}
 

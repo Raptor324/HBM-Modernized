@@ -1,5 +1,6 @@
 package com.hbm_m.item.grenades_and_activators;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -25,7 +26,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class DetonatorItem extends Item {
+public class DetonatorItem extends Item implements ITooltipProvider {
 
     private static final String NBT_POS_X = "DetPosX";
     private static final String NBT_POS_Y = "DetPosY";
@@ -38,8 +39,7 @@ public class DetonatorItem extends Item {
 
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
 
         if (PlatformHooks.hasItemTag(stack)) {
             CompoundTag nbt = PlatformHooks.getItemTag(stack);

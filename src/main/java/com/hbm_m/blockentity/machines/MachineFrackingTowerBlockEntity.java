@@ -79,10 +79,6 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
     // Танк для FrackSol (вход) - 64,000 mB
     protected final FluidTank fracksolTank;
 
-    //? if forge {
-    protected LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
-     //?}
-
     //=====================================================================================//
     // СОСТОЯНИЕ МАШИНЫ
     //=====================================================================================//
@@ -585,18 +581,9 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
     //=====================================================================================//
 
     //? if forge {
+    @Override
     protected void setupFluidCapability() {
-        fluidHandler = LazyOptional.of(() -> new FrackingTowerFluidHandler(this));
-    }
-
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) return fluidHandler.cast();
-        return super.getCapability(cap, side);
-    }
-
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        fluidHandler.invalidate();
+        setFluidHandler(new FrackingTowerFluidHandler(this));
     }
     //?}
 

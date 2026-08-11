@@ -1,5 +1,6 @@
 package com.hbm_m.item.grenades_and_activators;
 
+import com.hbm_m.item.ITooltipProvider;
 import net.minecraft.world.item.TooltipFlag;
 import java.util.List;
 
@@ -32,7 +33,7 @@ import org.jetbrains.annotations.Nullable;
  * При нажатии R открывается GUI для выбора активной точки
  * При ПКМ (без Shift) активирует текущую выбранную точку
  */
-public class MultiDetonatorItem extends Item {
+public class MultiDetonatorItem extends Item implements ITooltipProvider {
 
     // NBT константы для основных данных
     private static final String NBT_ACTIVE_POINT = "ActivePoint"; // 0-3
@@ -68,8 +69,7 @@ public class MultiDetonatorItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
 
         // Проходим по всем 4 точкам
         for (int i = 0; i < MAX_POINTS; i++) {

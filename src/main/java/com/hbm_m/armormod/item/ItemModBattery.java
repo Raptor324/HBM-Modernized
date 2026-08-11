@@ -1,5 +1,6 @@
 package com.hbm_m.armormod.item;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -16,7 +17,7 @@ import net.minecraft.world.level.Level;
 /**
  * Модификация батареи — увеличивает ёмкость силовой брони (аналог 1.7.10 {@code ItemModBattery}).
  */
-public class ItemModBattery extends ItemArmorMod {
+public class ItemModBattery extends ItemArmorMod implements ITooltipProvider {
 
     public double mod;
 
@@ -26,9 +27,9 @@ public class ItemModBattery extends ItemArmorMod {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("tooltip.hbm_m.mod.battery.description").withStyle(ChatFormatting.GRAY));
-        super.appendHoverText(stack, level, tooltip, flag);
+        super.appendHbmTooltip(stack, level, tooltip, flag);
     }
 
     @Override

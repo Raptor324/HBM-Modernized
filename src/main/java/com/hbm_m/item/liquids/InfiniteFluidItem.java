@@ -1,5 +1,6 @@
 package com.hbm_m.item.liquids;
 
+import com.hbm_m.item.ITooltipProvider;
 import com.hbm_m.platform.PlatformHooks;
 
 import java.util.List;
@@ -53,7 +54,7 @@ import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
  * - универсальным (fluid_barrel_infinite): тип по NBT (или по запросу), и может использоваться как "instant" для сети
  */
 @SuppressWarnings("UnstableApiUsage")
-public class InfiniteFluidItem extends Item {
+public class InfiniteFluidItem extends Item implements ITooltipProvider {
 
     private final int transferRate; // mB per transfer (e.g. 1_000_000_000 like 1.7.10)
     @Nullable
@@ -97,8 +98,7 @@ public class InfiniteFluidItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.literal("§bInfinite Fluid"));
         tooltip.add(Component.literal("§7Output Rate: §e" + transferRate + " mB/t"));
     }

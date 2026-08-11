@@ -13,15 +13,14 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 
-public class RbmkFuelDrxItem extends Item {
+public class RbmkFuelDrxItem extends Item implements ITooltipProvider {
 
     public RbmkFuelDrxItem(Properties properties) {
         super(properties);
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.literal("§4Self-combusting").withStyle(ChatFormatting.DARK_RED));
         tooltip.add(Component.literal("§2Crustyness! 0.0%").withStyle(ChatFormatting.DARK_GREEN));
         tooltip.add(Component.literal("§5Lead poison! 0.0%").withStyle(ChatFormatting.DARK_PURPLE));

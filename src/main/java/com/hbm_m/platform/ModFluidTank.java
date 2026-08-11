@@ -119,6 +119,18 @@ public class ModFluidTank extends FluidTank {
             conformedFluid = Fluids.EMPTY;
         }
     }
+
+    // ──────────────── NBT с HolderLookup.Provider (cross-version API) ────────────────
+    // На 1.20.1 forge провайдер игнорируется (форвард в без-providер версию),
+    // чтобы вызовы writeNBT(registries, tag) / readNBT(registries, tag) компилировались
+    // и работали одинаково на обеих версиях. См. hbm-original-fidelity: критический API gap.
+    public CompoundTag writeNBT(net.minecraft.core.HolderLookup.Provider provider, CompoundTag tag) {
+        return writeNBT(tag);
+    }
+
+    public void readNBT(net.minecraft.core.HolderLookup.Provider provider, CompoundTag tag) {
+        readNBT(tag);
+    }
 }
 //?} elif neoforge {
 /*import net.minecraft.core.HolderLookup;

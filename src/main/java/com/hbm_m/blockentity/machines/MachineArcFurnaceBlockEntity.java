@@ -72,14 +72,9 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity {
 
     //? if forge {
     @Override
-    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
-            net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable net.minecraft.core.Direction side) {
-        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            // Kombinierter Handler waere sauberer, aber fuer diese vereinfachte Maschine reicht
-            // es, den ersten (Haupt-)Tank fuer aussenliegende Pumpen/Rohre zu exponieren.
-            return tank1.getCapability().cast();
-        }
-        return super.getCapability(cap, side);
+    protected void setupFluidCapability() {
+        // Экспонируем главный бак (tank1) для внешних насосов/труб через базовый fluidHandlerOpt.
+        setFluidHandler(tank1);
     }
     //?}
 

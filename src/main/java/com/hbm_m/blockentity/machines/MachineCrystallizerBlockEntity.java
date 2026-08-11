@@ -106,10 +106,6 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
             }
         }
     };
-    //? if forge {
-    // FluidTank itself is NOT an IFluidHandler; it exposes Forge handler via getCapability().
-    private final LazyOptional<IFluidHandler> tankHandler = tank.getCapability();
-    //?}
 
     private int progress = 0;
     private int duration = DEFAULT_DURATION;
@@ -370,7 +366,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         if (fillStack.isEmpty()) return;
 
         //? if forge {
-        IFluidHandler tankH = tankHandler.orElse(null);
+        IFluidHandler tankH = tank.getCapability().orElse(null);
         if (tankH == null) return;
 
         // Р‘РµР· Р¶РёРґРєРѕСЃС‚РЅРѕРіРѕ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂР° Р±Р°Рє РЅРµ РїСЂРёРЅРёРјР°РµС‚ РЅРёС‡РµРіРѕ вЂ” РєР°Рє РІ РѕСЂРёРіРёРЅР°Р»Рµ 1.7.10.
@@ -730,17 +726,8 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
 
     //? if forge {
     @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            return tankHandler.cast();
-        }
-        return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        tankHandler.invalidate();
+    protected void setupFluidCapability() {
+        setFluidHandler(tank);
     }
     //?}
 }

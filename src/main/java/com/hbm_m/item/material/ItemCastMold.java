@@ -1,5 +1,6 @@
 package com.hbm_m.item.material;
 
+import com.hbm_m.item.ITooltipProvider;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
@@ -10,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class ItemCastMold extends Item {
+public class ItemCastMold extends Item implements ITooltipProvider {
 
     public enum MoldType {
         PLATE         ("Cast Plate Mold"),
@@ -78,12 +79,8 @@ public class ItemCastMold extends Item {
 
     public MoldType getMoldType() { return moldType; }
 
-    //? if < 1.21.1 {
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
-    //?} else {
-    /*@Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext ctx, List<Component> list, TooltipFlag flag) {
-    *///?}
+    @Override
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
         list.add(Component.literal(ChatFormatting.GRAY + moldType.label));
         list.add(Component.literal(ChatFormatting.DARK_GRAY + "Place in Foundry Basin"));
     }

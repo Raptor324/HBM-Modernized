@@ -83,10 +83,6 @@ public class MachineSolarBoilerBlockEntity extends BaseMachineBlockEntity implem
     // GUI data
     protected final ContainerData data;
 
-    //? if forge {
-    private LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
-    //?}
-
     public MachineSolarBoilerBlockEntity(BlockPos pos, BlockState state) {
         // No RF energy capacity/receive rate - solar powered
         super(ModBlockEntities.SOLAR_BOILER_BE.get(), pos, state, INVENTORY_SIZE, 0L, 0L);
@@ -368,19 +364,7 @@ public class MachineSolarBoilerBlockEntity extends BaseMachineBlockEntity implem
     //? if forge {
     @Override
     protected void setupFluidCapability() {
-        fluidHandler = LazyOptional.of(() -> new SolarBoilerFluidHandler(this));
-    }
-
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) return fluidHandler.cast();
-        return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        fluidHandler.invalidate();
+        setFluidHandler(new SolarBoilerFluidHandler(this));
     }
     //?}
 

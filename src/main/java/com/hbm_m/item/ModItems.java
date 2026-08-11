@@ -78,6 +78,7 @@ import com.hbm_m.item.tools_and_armor.ModArmorMaterialsAccess;
 import com.hbm_m.item.tools_and_armor.ModAxeItem;
 import com.hbm_m.item.tools_and_armor.ModPickaxeItem;
 import com.hbm_m.item.tools_and_armor.ModShovelItem;
+import com.hbm_m.item.tools_and_armor.ModSwordItem;
 import com.hbm_m.item.tools_and_armor.ModToolTiers;
 import com.hbm_m.item.tools_and_armor.ScrewdriverItem;
 import com.hbm_m.multiblock.DoorBlockItem;
@@ -336,18 +337,18 @@ public class ModItems {
 
     // РРќРЎРўР РЈРњР•РќРўР« Р“РћР РќРЇРљРђ:
     public static final RegistrySupplier<Item> STARMETAL_SWORD = ITEMS.register("starmetal_sword",
-            () -> new SwordItem(ModToolTiers.STARMETAL, 7, -2, new Item.Properties()));
+            () -> new ModSwordItem(ModToolTiers.STARMETAL, 7, -2, new Item.Properties()));
     public static final RegistrySupplier<Item> STARMETAL_AXE = ITEMS.register("starmetal_axe",
             () -> new ModAxeItem(ModToolTiers.STARMETAL, 15, 1, new Item.Properties()));
     public static final RegistrySupplier<Item> STARMETAL_PICKAXE = ITEMS.register("starmetal_pickaxe",
             () -> new ModPickaxeItem(ModToolTiers.STARMETAL, 3, 1, new Item.Properties(), 6, 3, 1, 5));
     public static final RegistrySupplier<Item> STARMETAL_SHOVEL = ITEMS.register("starmetal_shovel",
-            () -> new ShovelItem(ModToolTiers.STARMETAL, 0, 0, new Item.Properties()));
+            () -> new ModShovelItem(ModToolTiers.STARMETAL, 0, 0, new Item.Properties()));
     public static final RegistrySupplier<Item> STARMETAL_HOE = ITEMS.register("starmetal_hoe",
             () -> new HoeItem(ModToolTiers.STARMETAL, 0, 0f, new Item.Properties()));
 
     public static final RegistrySupplier<Item> ALLOY_SWORD = ITEMS.register("alloy_sword",
-        () -> new SwordItem(ModToolTiers.ALLOY, 5, 2, new Item.Properties()));
+        () -> new ModSwordItem(ModToolTiers.ALLOY, 5, 2, new Item.Properties()));
 
     public static final RegistrySupplier<Item> ALLOY_AXE = ITEMS.register("alloy_axe",
             () -> new ModAxeItem(ModToolTiers.ALLOY, 9, 1, new Item.Properties(), 3, 1));
@@ -362,32 +363,32 @@ public class ModItems {
             () -> new HoeItem(ModToolTiers.ALLOY, 0, 0f, new Item.Properties()));
 
     public static final RegistrySupplier<Item> STEEL_SWORD = ITEMS.register("steel_sword",
-            () -> new SwordItem(ModToolTiers.STEEL, 4, 2, new Item.Properties()));
+            () -> new ModSwordItem(ModToolTiers.STEEL, 4, 2, new Item.Properties()));
     public static final RegistrySupplier<Item> STEEL_AXE = ITEMS.register("steel_axe",
-            () -> new AxeItem(ModToolTiers.STEEL, 7, 1, new Item.Properties()));
+            () -> new ModAxeItem(ModToolTiers.STEEL, 7, 1, new Item.Properties()));
     public static final RegistrySupplier<Item> STEEL_PICKAXE = ITEMS.register("steel_pickaxe",
-            () -> new PickaxeItem(ModToolTiers.STEEL, 1, 1, new Item.Properties()));
+            () -> new ModPickaxeItem(ModToolTiers.STEEL, 1, 1, new Item.Properties()));
     public static final RegistrySupplier<Item> STEEL_SHOVEL = ITEMS.register("steel_shovel",
-            () -> new ShovelItem(ModToolTiers.STEEL, 0, 0, new Item.Properties()));
+            () -> new ModShovelItem(ModToolTiers.STEEL, 0, 0, new Item.Properties()));
     public static final RegistrySupplier<Item> STEEL_HOE = ITEMS.register("steel_hoe",
             () -> new HoeItem(ModToolTiers.STEEL, 0, 0, new Item.Properties()));
 
     public static final RegistrySupplier<Item> TITANIUM_SWORD = ITEMS.register("titanium_sword",
-            () -> new SwordItem(ModToolTiers.TITANIUM, 2, 3, new Item.Properties()));
+            () -> new ModSwordItem(ModToolTiers.TITANIUM, 2, 3, new Item.Properties()));
     public static final RegistrySupplier<Item> TITANIUM_AXE = ITEMS.register("titanium_axe",
-            () -> new AxeItem(ModToolTiers.TITANIUM, 8, 1, new Item.Properties()));
+            () -> new ModAxeItem(ModToolTiers.TITANIUM, 8, 1, new Item.Properties()));
 
     // Meteorite swords (registered so recipes can produce them)
     public static final RegistrySupplier<Item> METEORITE_SWORD = ITEMS.register("meteorite_sword",
-            () -> new SwordItem(ModToolTiers.TITANIUM, 3, -2, new Item.Properties()));
+            () -> new ModSwordItem(ModToolTiers.TITANIUM, 3, -2, new Item.Properties()));
     public static final RegistrySupplier<Item> METEORITE_SWORD_SEARED = ITEMS.register("meteorite_sword_seared",
-            () -> new SwordItem(ModToolTiers.TITANIUM, 3, -2, new Item.Properties()));
+            () -> new ModSwordItem(ModToolTiers.TITANIUM, 3, -2, new Item.Properties()));
     public static final RegistrySupplier<Item> TITANIUM_PICKAXE = ITEMS.register("titanium_pickaxe",
-            () -> new PickaxeItem(ModToolTiers.TITANIUM, 1, 1, new Item.Properties()));
+            () -> new ModPickaxeItem(ModToolTiers.TITANIUM, 1, 1, new Item.Properties()));
     public static final RegistrySupplier<Item> DRILL_TITANIUM = ITEMS.register("drill_titanium",
             () -> new Item(new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> TITANIUM_SHOVEL = ITEMS.register("titanium_shovel",
-            () -> new ShovelItem(ModToolTiers.TITANIUM, 0, 0, new Item.Properties()));
+            () -> new ModShovelItem(ModToolTiers.TITANIUM, 0, 0, new Item.Properties()));
     public static final RegistrySupplier<Item> TITANIUM_HOE = ITEMS.register("titanium_hoe",
             () -> new HoeItem(ModToolTiers.TITANIUM, 0, 0, new Item.Properties()));
 

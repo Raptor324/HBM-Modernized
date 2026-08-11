@@ -1,5 +1,6 @@
 package com.hbm_m.item.grenades_and_activators; // Замените на ваш пакет
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -24,7 +25,7 @@ import net.minecraft.world.level.Level;
 import dev.architectury.registry.registries.RegistrySupplier;
 
 
-public class GrenadeIfItem extends Item {
+public class GrenadeIfItem extends Item implements ITooltipProvider {
 
     private final GrenadeIfType grenadeType;
 
@@ -35,8 +36,7 @@ public class GrenadeIfItem extends Item {
 
     }
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
 
         // 1-я строка - общая для всех IF‑гранат
         tooltip.add(Component.translatable("tooltip.hbm_m.grenade_if.common.line1")

@@ -1,5 +1,6 @@
 package com.hbm_m.item.grenades_and_activators;
 
+import com.hbm_m.item.ITooltipProvider;
 import com.hbm_m.entity.grenades.AirstrikeAgentEntity;
 import com.hbm_m.entity.grenades.AirstrikeEntity;
 import com.hbm_m.entity.grenades.AirstrikeHeavyEntity;
@@ -22,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class AirstrikeItem extends Item {
+public class AirstrikeItem extends Item implements ITooltipProvider {
 
     private static final int MAX_RANGE = 256;
 
@@ -122,8 +123,7 @@ public class AirstrikeItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("tooltip.hbm_m.airstrike.common").withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable("tooltip.hbm_m.airstrike." + type.getName()).withStyle(ChatFormatting.GRAY));
     }

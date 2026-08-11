@@ -99,18 +99,11 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
     private Set<Direction> allowedFluidSides = EnumSet.noneOf(Direction.class);
     private boolean fluidSidesFromMultiblockStructure = false;
 
-    //? if forge {
-    private final LazyOptional<IFluidHandler> lazyFluidHandler;
-    //?}
-
     public MachineZirnoxBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ZIRNOX_BE.get(), pos, state, INVENTORY_SIZE, 0L, 0L);
         this.waterTank = new FluidTank(Fluids.WATER, WATER_MAX);
         this.co2Tank = new FluidTank(ModFluids.CARBONDIOXIDE.getSource(), CO2_MAX);
         this.steamTank = new FluidTank(ModFluids.SUPERHOTSTEAM.getSource(), STEAM_MAX);
-        //? if forge {
-        this.lazyFluidHandler = LazyOptional.of(() -> new UnifiedFluidHandler(this));
-        //?}
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineZirnoxBlockEntity be) {
@@ -544,25 +537,21 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
     // ── Forge fluid capabilities ──────────────────────────────────────────
     //? if forge {
     @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            if (side != null) {
-                if (fluidSidesFromMultiblockStructure && !allowedFluidSides.contains(side)) {
-                    return LazyOptional.empty();
-                }
-                if (!fluidSidesFromMultiblockStructure && !allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) {
-                    return LazyOptional.empty();
-                }
-            }
-            return lazyFluidHandler.cast();
-        }
-        return super.getCapability(cap, side);
+    protected void setupFluidCapability() {
+        setFluidHandler(new UnifiedFluidHandler(this));
     }
 
     @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        lazyFluidHandler.invalidate();
+    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+        if (cap == ForgeCapabilities.FLUID_HANDLER && side != null) {
+            if (fluidSidesFromMultiblockStructure && !allowedFluidSides.contains(side)) {
+                return LazyOptional.empty();
+            }
+            if (!fluidSidesFromMultiblockStructure && !allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) {
+                return LazyOptional.empty();
+            }
+        }
+        return super.getCapability(cap, side);
     }
 
     private static class UnifiedFluidHandler implements IFluidHandler {

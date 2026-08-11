@@ -1,5 +1,6 @@
 package com.hbm_m.item.industrial;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import org.jetbrains.annotations.NotNull;
@@ -18,7 +19,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 
-public class ItemBlueprintFolder extends Item {
+public class ItemBlueprintFolder extends Item implements ITooltipProvider {
 
     public ItemBlueprintFolder(Properties properties) {
         super(properties);
@@ -52,7 +53,7 @@ public class ItemBlueprintFolder extends Item {
     }
 
     @Override
-    public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level,
+    public void appendHbmTooltip(@NotNull ItemStack stack, @Nullable Level level,
                             @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
         String pool = getBlueprintPool(stack);
         

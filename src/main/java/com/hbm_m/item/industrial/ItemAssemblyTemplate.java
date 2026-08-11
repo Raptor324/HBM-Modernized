@@ -1,5 +1,6 @@
 package com.hbm_m.item.industrial;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import org.jetbrains.annotations.NotNull;
@@ -18,7 +19,7 @@ import net.minecraft.world.level.Level;
 // Предмет-шаблон для крафтов в сборочной машине.
 // Хранит в себе NBT с рецептом сборки (выходной предмет).
 
-public class ItemAssemblyTemplate extends Item {
+public class ItemAssemblyTemplate extends Item implements ITooltipProvider {
     public ItemAssemblyTemplate(Properties pProperties) {
         super(pProperties);
     }
@@ -51,7 +52,7 @@ public class ItemAssemblyTemplate extends Item {
     }
 
     @Override
-    public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel, @NotNull List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
+    public void appendHbmTooltip(@NotNull ItemStack pStack, @Nullable Level pLevel, @NotNull List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
         TemplateTooltipUtil.buildTemplateTooltip(pStack, pLevel, pTooltipComponents);
     }
 }
