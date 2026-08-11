@@ -3,35 +3,38 @@ package com.hbm_m.recipe;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.mojang.logging.LogUtils;
+import com.hbm_m.platform.recipe.PlatformRecipe;
+import com.hbm_m.platform.recipe.PlatformRecipeSerializer;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.platform.recipe.RecipeInputWrapper;
+
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
-import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.*;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
-public class PressRecipe implements Recipe<SimpleContainer> {
+public class PressRecipe extends PlatformRecipe {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private final NonNullList<Ingredient> inputItems;
     private final ItemStack output;
-    private final ResourceLocation id;
 
     public PressRecipe(NonNullList<Ingredient> inputItems, ItemStack output, ResourceLocation id) {
+        super(id);
         this.inputItems = inputItems;
         this.output = output;
-        this.id = id;
     }
 
     @Override
-    public boolean matches(SimpleContainer container, Level level) {
-        if(level.isClientSide()) {
+    public boolean matchesRecipe(RecipeInputWrapper container, Level level) {
+        if (level.isClientSide()) {
             return false;
         }
 
@@ -46,18 +49,6 @@ public class PressRecipe implements Recipe<SimpleContainer> {
         boolean stampMatches = inputItems.get(0).test(stamp);
         boolean materialMatches = inputItems.get(1).test(material);
 
-        // ОТЛАДКА
-        // LOGGER.info("=== Press Recipe Check ===");
-        // LOGGER.info("Recipe ID: {}", id);
-        // LOGGER.info("Stamp in slot: {} ({})", stamp.getItem(), stamp.getDisplayName().getString());
-        // LOGGER.info("Material in slot: {} ({})", material.getItem(), material.getDisplayName().getString());
-        // LOGGER.info("Expected stamp ingredient: {}", inputItems.get(0).toJson());
-        // LOGGER.info("Expected material ingredient: {}", inputItems.get(1).toJson());
-        // LOGGER.info("Stamp matches: {}", stampMatches);
-        // LOGGER.info("Material matches: {}", materialMatches);
-        // LOGGER.info("Overall result: {}", stampMatches && materialMatches);
-        // LOGGER.info("========================");
-
         return stampMatches && materialMatches;
     }
 
@@ -67,23 +58,13 @@ public class PressRecipe implements Recipe<SimpleContainer> {
     }
 
     @Override
-    public ItemStack assemble(SimpleContainer container, RegistryAccess registryAccess) {
+    public ItemStack assembleSafe() {
         return output.copy();
     }
 
     @Override
-    public boolean canCraftInDimensions(int width, int height) {
-        return true;
-    }
-
-    @Override
-    public @NotNull ItemStack getResultItem(RegistryAccess registryAccess) {
+    public ItemStack getResultItemSafe() {
         return output.copy();
-    }
-
-    @Override
-    public ResourceLocation getId() {
-        return id;
     }
 
     @Override
@@ -101,45 +82,44 @@ public class PressRecipe implements Recipe<SimpleContainer> {
         public static final String ID = "press";
     }
 
-    public static class Serializer implements RecipeSerializer<PressRecipe> {
+    public static class Serializer extends PlatformRecipeSerializer<PressRecipe> {
         public static final Serializer INSTANCE = new Serializer();
 
         @Override
-        public PressRecipe fromJson(ResourceLocation recipeId, JsonObject serializedRecipe) {
-            ItemStack output = ShapedRecipe.itemStackFromJson(GsonHelper.getAsJsonObject(serializedRecipe, "output"));
+        public PressRecipe readJson(ResourceLocation recipeId, JsonObject serializedRecipe) {
+            ItemStack output = RecipeHooks.itemStackFromJson(GsonHelper.getAsJsonObject(serializedRecipe, "output"));
 
             JsonArray ingredients = GsonHelper.getAsJsonArray(serializedRecipe, "ingredients");
             NonNullList<Ingredient> inputs = NonNullList.withSize(2, Ingredient.EMPTY);
 
-            for(int i = 0; i < inputs.size() && i < ingredients.size(); i++) {
-                inputs.set(i, Ingredient.fromJson(ingredients.get(i)));
+            for (int i = 0; i < inputs.size() && i < ingredients.size(); i++) {
+                inputs.set(i, RecipeHooks.ingredientFromJson(ingredients.get(i)));
             }
 
             return new PressRecipe(inputs, output, recipeId);
         }
 
         @Override
-        public @Nullable PressRecipe fromNetwork(ResourceLocation recipeId, FriendlyByteBuf buffer) {
+        public PressRecipe readNetwork(ResourceLocation recipeId, FriendlyByteBuf buffer) {
             NonNullList<Ingredient> inputs = NonNullList.withSize(buffer.readVarInt(), Ingredient.EMPTY);
 
-            for(int i = 0; i < inputs.size(); i++) {
-                inputs.set(i, Ingredient.fromNetwork(buffer));
+            for (int i = 0; i < inputs.size(); i++) {
+                inputs.set(i, RecipeHooks.readIngredient(buffer));
             }
 
-            ItemStack output = buffer.readItem();
+            ItemStack output = RecipeHooks.readItem(buffer);
             return new PressRecipe(inputs, output, recipeId);
         }
 
         @Override
-        public void toNetwork(FriendlyByteBuf buffer, PressRecipe recipe) {
+        public void writeNetwork(FriendlyByteBuf buffer, PressRecipe recipe) {
             buffer.writeVarInt(recipe.getIngredients().size());
 
             for (Ingredient ingredient : recipe.getIngredients()) {
-                ingredient.toNetwork(buffer);
+                RecipeHooks.writeIngredient(buffer, ingredient);
             }
 
-            // Заменяем writeItemStack(stack, false) на ванильный writeItem(stack)
-            buffer.writeItem(recipe.getResultItem(null));
+            RecipeHooks.writeItem(buffer, recipe.getResultItemSafe());
         }
     }
 }

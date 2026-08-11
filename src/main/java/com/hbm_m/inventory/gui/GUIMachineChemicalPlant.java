@@ -10,10 +10,12 @@ import com.hbm_m.inventory.menu.MachineChemicalPlantMenu;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.util.EnergyFormatter;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
@@ -177,8 +179,7 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
         if (this.minecraft == null || this.minecraft.level == null) return null;
         ResourceLocation id = menu.getBlockEntity().getSelectedRecipeId();
         if (id == null) return null;
-        return this.minecraft.level.getRecipeManager()
-                .byKey(id)
+        return RecipeHooks.getRecipeByKey(this.minecraft.level.getRecipeManager(), id)
                 .filter(r -> r instanceof ChemicalPlantRecipe)
                 .map(r -> (ChemicalPlantRecipe) r)
                 .orElse(null);
@@ -225,8 +226,8 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
             lines.add(Component.literal("  " + in.count() + "x " + name).withStyle(ChatFormatting.GRAY));
         }
         for (var fin : recipe.getFluidInputs()) {
-            lines.add(Component.literal("  " + fin.amount() + "mB ").withStyle(ChatFormatting.BLUE)
-                    .append(FluidLocalization.nameFromFluidId(fin.fluidId()).copy().withStyle(ChatFormatting.GRAY)));
+            lines.add(Component.literal("  " + fin.getAmount() + "mB ").withStyle(ChatFormatting.BLUE)
+                    .append(FluidLocalization.nameFromFluidId(BuiltInRegistries.FLUID.getKey(fin.getFluid())).copy().withStyle(ChatFormatting.GRAY)));
         }
 
         lines.add(Component.translatable("gui.recipe.output").withStyle(ChatFormatting.BOLD));

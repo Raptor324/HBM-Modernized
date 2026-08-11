@@ -12,6 +12,7 @@ import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.GiveTemplateC2SPacket;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.recipe.AssemblerRecipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.util.TemplateCraftingCosts;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -95,10 +96,9 @@ public class GUITemplateFolder extends Screen {
                 allRecipes.add(new ItemStack(ModItems.STAMP_DESH_357.get()));
 
                 // Затем добавляем рецепты сборочной машины
-                List<AssemblerRecipe> recipes = this.minecraft.level.getRecipeManager()
-                        .getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
+                List<AssemblerRecipe> recipes = RecipeHooks.getAllRecipes(this.minecraft.level, AssemblerRecipe.Type.INSTANCE);
                 for (AssemblerRecipe recipe : recipes) {
-                    allRecipes.add(recipe.getResultItem(null));
+                    allRecipes.add(recipe.getResultItemSafe());
                 }
             }
             this.filteredRecipes.clear();

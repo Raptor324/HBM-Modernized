@@ -49,6 +49,24 @@ public class ItemCastMold extends Item {
 
         public final String label;
         MoldType(String label) { this.label = label; }
+
+        /**
+         * Стоимость заливки в mB (ёмкость формы foundry basin).
+         * Порт прежнего {@code MoldCastingRecipes.getCost(mold)} — статическая таблица,
+         * не имеет data-driven источника правды (зависит только от типа формы, не от материала).
+         */
+        public int getCostMb() {
+            return switch (this) {
+                case NUGGET                        -> com.hbm_m.inventory.material.MaterialStack.MB_PER_NUGGET;
+                case PLATE, INGOT, WIRE, WIRE_DENSE,
+                     SHELL, PIPE, BILLET            -> com.hbm_m.inventory.material.MaterialStack.MB_PER_INGOT;
+                case PLATE_CAST                    -> com.hbm_m.inventory.material.MaterialStack.MB_PER_PLATE;
+                case PLATES_CAST                   -> com.hbm_m.inventory.material.MaterialStack.MB_PER_PLATE * 3;
+                case INGOTS, PLATES, WIRES_DENSE,
+                     BLOCK                          -> com.hbm_m.inventory.material.MaterialStack.MB_PER_INGOT * 9;
+                default                            -> 0;
+            };
+        }
     }
 
     private final MoldType moldType;

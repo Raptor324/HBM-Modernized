@@ -12,9 +12,6 @@ import com.hbm_m.item.fekal_electric.ModBatteryItem;
 import com.hbm_m.item.liquids.FluidBarrelItem;
 import com.hbm_m.item.liquids.InfiniteFluidItem;
 import com.hbm_m.radiation.ChunkRadiationManager;
-import com.hbm_m.recipe.ChemicalPlantRecipes;
-import com.hbm_m.recipe.CyclotronRecipes;
-import com.hbm_m.recipe.CrystallizerRecipes;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -138,9 +135,7 @@ public final class FabricEntrypoint implements ModInitializer {
                     return;
                 }
                 try {
-                    CyclotronRecipes.registerRecipes();
-                    ChemicalPlantRecipes.registerRecipes();
-                    CrystallizerRecipes.registerDefaults();
+                    // Рецепты Cyclotron и Crystallizer теперь data-driven (JSON); статические реестры удалены.
                     ModFluidTraitsBootstrap.registerAll();
                     FLUID_DEPENDENT_SETUP_DONE.set(true);
                 } catch (RuntimeException ex) {

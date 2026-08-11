@@ -6,9 +6,9 @@ import com.hbm_m.interfaces.IEnergyProvider;
 import com.hbm_m.inventory.material.MaterialStack;
 import com.hbm_m.inventory.material.MaterialType;
 import com.hbm_m.platform.ModItemStackHandler;
-import com.hbm_m.recipe.CrucibleSmeltingRecipes;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.CrucibleSmeltingRecipe;
 import com.hbm_m.recipe.MoltenAlloyRecipe;
-import com.hbm_m.recipe.MoltenAlloyRecipes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -116,8 +116,9 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
         boolean canSmelt = slot >= 0 && be.heat > 0;
         if (canSmelt) {
             ItemStack in = be.itemHandler.getStackInSlot(slot);
-            // smelt() scales with stack size, but only ONE item is consumed per cycle
-            MaterialStack ms = CrucibleSmeltingRecipes.smelt(in.copyWithCount(1));
+            // smelt() scales with stack size, but only ONE item is consumed per cycle.
+            // Рецепты data-driven (JSON) — поиск через RecipeManager (RecipeHooks).
+            MaterialStack ms = smeltCrucible(level, in.copyWithCount(1));
             if (ms != null && be.canAccept(ms)) {
                 be.progress++;
                 be.heat = Math.max(0, be.heat - 1);
@@ -191,19 +192,24 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
      */
     private void tryAlloy(Level level) {
         long time = level.getGameTime();
-        for (MoltenAlloyRecipe recipe : MoltenAlloyRecipes.getRecipes()) {
-            if (recipe.frequency > 0 && time % recipe.frequency != 0) continue;
-            if (!poolHasAll(recipe.inputs)) continue;
+        // MoltenAlloy теперь data-driven (JSON) — итерируем MoltenAlloyRecipe из RecipeManager
+        // через RecipeHooks (кросс-версионный мост). Статический MoltenAlloyRecipes удалён.
+        for (MoltenAlloyRecipe recipe : RecipeHooks.getAllRecipes(level, MoltenAlloyRecipe.Type.INSTANCE)) {
+            MaterialStack[] inputs  = recipe.getInputs();
+            MaterialStack[] outputs = recipe.getOutputs();
+            int frequency = recipe.getFrequency();
+            if (frequency > 0 && time % frequency != 0) continue;
+            if (!poolHasAll(inputs)) continue;
 
             int outputTotal = 0;
-            for (MaterialStack out : recipe.outputs) outputTotal += out.amount;
+            for (MaterialStack out : outputs) outputTotal += out.amount;
             int inputTotal = 0;
-            for (MaterialStack in : recipe.inputs) inputTotal += in.amount;
+            for (MaterialStack in : inputs) inputTotal += in.amount;
             // don't let the reaction overflow the tank
             if (totalMoltenAmount() - inputTotal + outputTotal > LIQUID_CAPACITY) continue;
 
-            for (MaterialStack in : recipe.inputs) poolConsume(in);
-            for (MaterialStack out : recipe.outputs) addMaterial(out.copy());
+            for (MaterialStack in : inputs) poolConsume(in);
+            for (MaterialStack out : outputs) addMaterial(out.copy());
         }
     }
 
@@ -211,11 +217,27 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
         for (int i = 0; i < INPUT_SLOTS; i++) {
             ItemStack s = itemHandler.getStackInSlot(i);
             if (s.isEmpty()) continue;
-            // only one item is smelted per cycle, so check a single-item copy
-            MaterialStack ms = CrucibleSmeltingRecipes.smelt(s.copyWithCount(1));
+            // only one item is smelted per cycle, so check a single-item copy.
+            // Рецепты data-driven (JSON) — поиск через RecipeManager (RecipeHooks); level из BlockEntity.
+            MaterialStack ms = smeltCrucible(this.level, s.copyWithCount(1));
             if (ms != null && canAccept(ms)) return i;
         }
         return -1;
+    }
+
+    /**
+     * Замена удалённому {@code CrucibleSmeltingRecipes.smelt(stack)}: итерация
+     * data-driven {@link CrucibleSmeltingRecipe} из {@code RecipeManager} через {@link RecipeHooks};
+     * первый {@code matchesInput(stack)} → {@code toMaterialStack(stack.count)}.
+     */
+    private static MaterialStack smeltCrucible(Level level, ItemStack stack) {
+        if (level == null || stack == null || stack.isEmpty()) return null;
+        for (CrucibleSmeltingRecipe recipe : RecipeHooks.getAllRecipes(level, CrucibleSmeltingRecipe.Type.INSTANCE)) {
+            if (recipe.matchesInput(stack)) {
+                return recipe.toMaterialStack(stack.getCount());
+            }
+        }
+        return null;
     }
 
     /**

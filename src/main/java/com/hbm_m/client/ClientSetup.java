@@ -177,6 +177,7 @@ import com.hbm_m.powerarmor.overlay.OverlayPowerArmor;
 import com.hbm_m.powerarmor.overlay.PowerArmorHardLandingCameraShakeClient;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
@@ -991,7 +992,7 @@ public class ClientSetup {
     public static void addTemplatesClient(java.util.function.Consumer<ItemStack> acceptor) {
         if (Minecraft.getInstance().level != null) {
             RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();
-            List<AssemblerRecipe> recipes = recipeManager.getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
+            List<AssemblerRecipe> recipes = RecipeHooks.getAllRecipes(recipeManager, AssemblerRecipe.Type.INSTANCE);
 
             // Собираем уникальные blueprint_pool из сборочной машины и химзавода
             Set<String> blueprintPools = new HashSet<>();
@@ -1001,7 +1002,7 @@ public class ClientSetup {
                     blueprintPools.add(pool);
                 }
             }
-            for (ChemicalPlantRecipe chem : recipeManager.getAllRecipesFor(ChemicalPlantRecipe.Type.INSTANCE)) {
+            for (ChemicalPlantRecipe chem : RecipeHooks.getAllRecipes(recipeManager, ChemicalPlantRecipe.Type.INSTANCE)) {
                 String pool = chem.getBlueprintPool();
                 if (pool != null && !pool.isEmpty()) {
                     blueprintPools.add(pool);
@@ -1022,7 +1023,7 @@ public class ClientSetup {
             // Добавляем шаблоны
             for (AssemblerRecipe recipe : recipes) {
                 ItemStack templateStack = new ItemStack(ModItems.ASSEMBLY_TEMPLATE.get());
-                ItemAssemblyTemplate.writeRecipeOutput(templateStack, recipe.getResultItem(null));
+                ItemAssemblyTemplate.writeRecipeOutput(templateStack, recipe.getResultItemSafe());
                 acceptor.accept(templateStack);
             }
 

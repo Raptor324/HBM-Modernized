@@ -6,7 +6,6 @@ import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineCentrifugeMenu;
-import com.hbm_m.recipe.CentrifugeRecipes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Containers;
@@ -142,19 +141,19 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
 
     private boolean canProcess() {
         ItemStack input = inventory.getStackInSlot(INPUT_SLOT);
-        if (input.isEmpty()) {
+        if (input.isEmpty() || level == null) {
             return false;
         }
 
-        if (level == null) {
+        com.hbm_m.recipe.CentrifugeRecipe recipe = level.getRecipeManager()
+                .getRecipeFor(com.hbm_m.recipe.ModRecipes.CENTRIFUGE_TYPE.get(), new net.minecraft.world.SimpleContainer(input), level)
+                .orElse(null);
+                
+        if (recipe == null) {
             return false;
         }
 
-        ItemStack[] outputs = CentrifugeRecipes.getOutput(input);
-        if (outputs == null) {
-            // No recipe found - cannot process
-            return false;
-        }
+        ItemStack[] outputs = recipe.getOutputs();
 
         for (int i = 0; i < OUTPUT_SLOTS && i < outputs.length; i++) {
             ItemStack result = outputs[i];
@@ -179,17 +178,21 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
         return true;
     }
 
-    private void finishCycle() {
+   private void finishCycle() {
         ItemStack input = inventory.getStackInSlot(INPUT_SLOT);
-        if (input.isEmpty()) {
+        if (input.isEmpty() || level == null) {
             return;
         }
 
-        ItemStack[] outputs = CentrifugeRecipes.getOutput(input);
-        if (outputs == null) {
-            // No recipe - should not happen if canProcess() was called first
+        com.hbm_m.recipe.CentrifugeRecipe recipe = level.getRecipeManager()
+                .getRecipeFor(com.hbm_m.recipe.ModRecipes.CENTRIFUGE_TYPE.get(), new net.minecraft.world.SimpleContainer(input), level)
+                .orElse(null);
+                
+        if (recipe == null) {
             return;
         }
+
+        ItemStack[] outputs = recipe.getOutputs();
 
         for (int i = 0; i < OUTPUT_SLOTS && i < outputs.length; i++) {
             ItemStack result = outputs[i];

@@ -21,6 +21,8 @@ import com.hbm_m.recipe.ModRecipes;
 import com.hbm_m.recipe.ShredderRecipe;
 import com.hbm_m.worldgen.BedrockOreDensity;
 import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.platform.recipe.RecipeInputWrapper;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -378,8 +380,10 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity {
         for (ItemStack stack : drops) {
             SimpleContainer container = new SimpleContainer(1);
             container.setItem(0, new ItemStack(stack.getItem(), 1));
-            Optional<ShredderRecipe> recipe = level.getRecipeManager()
-                    .getRecipeFor(ModRecipes.SHREDDER_TYPE.get(), container, level);
+            RecipeInputWrapper wrapper = new RecipeInputWrapper(container);
+            Optional<ShredderRecipe> recipe = RecipeHooks.getAllRecipes(level, ModRecipes.SHREDDER_TYPE.get()).stream()
+                    .filter(r -> r.matchesRecipe(wrapper, level))
+                    .findFirst();
             if (recipe.isPresent()) {
                 ItemStack crushed = recipe.get().getOutput();
                 crushed.setCount(crushed.getCount() * stack.getCount());

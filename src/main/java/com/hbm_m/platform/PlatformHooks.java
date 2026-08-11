@@ -6,6 +6,7 @@ import java.util.function.Consumer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.world.level.Level;
 
 /**
  * Платформенный слой Strategy B: тонкие адаптеры для API, которые НЕ покрывает Architectury.
@@ -244,6 +245,51 @@ public final class PlatformHooks {
 
     /** {@code stack.getTag().remove(key)} — read-modify-write, сохраняется на обеих версиях. */
     public static void remove(ItemStack stack, String key) { editItemTag(stack, t -> t.remove(key)); }
+
+    // =====================================================================================
+    //  Tooltip Level extraction (appendHoverText signature bridge).
+    //
+    //  1.20.1 (forge/fabric): Item.appendHoverText(ItemStack, @Nullable Level, List<Component>, TooltipFlag).
+    //  1.21.1 (neoforge):     Item.appendHoverText(ItemStack, Item.TooltipContext, List<Component>, TooltipFlag).
+    //      Item.TooltipContext.level() возвращает @Nullable Level (Neo patch).
+    //
+    //  Хелпер извлекает Level из аргумента tooltip-метода на обеих версиях.
+    //  Используется, когда тело appendHoverText действительно обращается к Level
+    //  (например, RecipeManager). В остальных случаях параметр не трогается телом.
+    // =====================================================================================
+
+    /**
+     * Извлекает {@link Level} из второго аргумента {@code appendHoverText}.
+     * Используйте ВНУТРИ тела tooltip-метода, если нужен Level (например, для
+     * {@code level.getRecipeManager()}).
+     *
+     * <p><b>Паттерн вызова:</b> сигнатура метода обёрнута через stonecutter, имя
+     * параметра сохранено как {@code level}; для извлечения собственно Level:
+     * <pre>{@code
+     * //? if < 1.21.1 {
+     * public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tip, TooltipFlag f) {
+     * //?} else {
+     * public void appendHoverText(ItemStack stack, Item.TooltipContext level, List<Component> tip, TooltipFlag f) {
+     * //?}
+     *     Level lvl = PlatformHooks.tooltipLevel(level);
+     *     ...
+     * }
+     * }</pre>
+     *
+     * @param levelOrContext на 1.20.1 — {@link Level}; на 1.21.1 — {@code Item.TooltipContext}
+     * @return {@link Level} или {@code null}, если контекст без level
+     */
+    public static Level tooltipLevel(Object levelOrContext) {
+        //? if forge || fabric {
+        return (Level) levelOrContext;
+        //?}
+        //? if neoforge {
+        /*if (levelOrContext instanceof net.minecraft.world.item.Item.TooltipContext ctx) {
+            return ctx.level();
+        }
+        return null;
+        *///?}
+    }
 
     // =====================================================================================
     //  Каталог конфигурации (config dir).

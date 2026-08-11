@@ -1178,13 +1178,13 @@ public final class AssemblerRecipeGenerator {
                         ModItems.getIngot(ModIngots.POLYMER).get(),
                         ModItems.getIngot(ModIngots.BAKELITE).get()), 4)
                 .addIngredient(ModItems.NEUTRON_REFLECTOR.get(), 2)
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "assembler/fat_man_explosive"));
+                .save(writer, "assembler/fat_man_explosive");
 
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.FAT_MAN_IGNITER.get(), 1), 200, 100)
                 .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 3)
                 .addIngredient(ModItems.WIRE_GOLD.get(), 24)
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "assembler/fat_man_igniter"));
+                .save(writer, "assembler/fat_man_igniter");
 
         AssemblerRecipeBuilder.assemblerRecipe(  //TODO: WIP RECIPES, NEEDS REWORK WHEN FULL PROCESSING IS PORTED
                         new ItemStack(ModItems.BALL_TNT.get(), 10), 80, 150)
@@ -1383,14 +1383,14 @@ public final class AssemblerRecipeGenerator {
                         ModItems.PLATE_IRON.get()), 16)
                 .addIngredient(Ingredient.of(ModBlocks.DECO_STEEL_SCAFFOLD.get()), 24)
                 .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 2)
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "assembler/launch_pad"));
+                .save(writer, "assembler/launch_pad");
 
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.WARHEAD_GENERIC_MEDIUM.get(), 1), 200, 100)
                 .addIngredient(ModItems.PLATE_TITANIUM.get(), 8)
                 .addIngredient(ModItems.BALL_TNT.get(), 4)
                 .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 1)
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "assembler/warhead_generic_medium"));
+                .save(writer, "assembler/warhead_generic_medium");
 
         // Tier 0 — micro / ABM (cheap test crafts)
         AssemblerRecipeBuilder.assemblerRecipe(

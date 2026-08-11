@@ -4,6 +4,8 @@ import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineArcWelderMenu;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.ArcWelderRecipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -60,15 +62,14 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity {
             if (got > 0) be.energy += got;
         });
 
-        var recipe = com.hbm_m.inventory.recipes.ArcWelderRecipes.getRecipe(
-                be.inventory.getStackInSlot(SLOT_IN1),
-                be.inventory.getStackInSlot(SLOT_IN2),
-                be.inventory.getStackInSlot(SLOT_IN3));
+        // Data-driven поиск рецепта: итерируем ArcWelderRecipe из RecipeManager (заменяет статику ArcWelderRecipes).
+        ArcWelderRecipe recipe = findArcWelderRecipe(level, be);
         if (recipe != null) {
-            be.processTime  = recipe.duration;
-            be.consumption  = recipe.consumption;
+            be.processTime  = recipe.getDuration();
+            be.consumption  = recipe.getConsumption();
         }
-        boolean hasRecipe  = recipe != null && (recipe.fluid == null || recipe.fluid.satisfiedBy(be.tank));
+        // matchesFluid на ArcWelderRecipe заменяет прежний recipe.fluid.satisfiedBy(tank) (теперь FluidStack-based).
+        boolean hasRecipe  = recipe != null && recipe.matchesFluid(be.tank);
         boolean canProcess = hasRecipe && be.energy >= be.consumption && be.canOutput();
 
         if (canProcess) {
@@ -77,7 +78,7 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity {
 
             if (be.progress >= be.processTime) {
                 be.progress = 0;
-                // be.processRecipe(...);
+                // be.processRecipe(...) — прежний заглушка оставлена без изменений (статический BE тоже не потреблял).
                 be.setChanged();
             }
         } else {
@@ -91,6 +92,18 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity {
         ItemStack out = inventory.getStackInSlot(SLOT_OUT);
         // null-output is always ok; filled output must match and have room
         return out.isEmpty();
+    }
+
+    /** Data-driven поиск ArcWelderRecipe по 3 входным слотам (заменяет статический ArcWelderRecipes.getRecipe). */
+    @org.jetbrains.annotations.Nullable
+    private static ArcWelderRecipe findArcWelderRecipe(Level level, MachineArcWelderBlockEntity be) {
+        ItemStack s0 = be.inventory.getStackInSlot(SLOT_IN1);
+        ItemStack s1 = be.inventory.getStackInSlot(SLOT_IN2);
+        ItemStack s2 = be.inventory.getStackInSlot(SLOT_IN3);
+        for (ArcWelderRecipe recipe : RecipeHooks.getAllRecipes(level, ArcWelderRecipe.Type.INSTANCE)) {
+            if (recipe.matchesInputs(s0, s1, s2)) return recipe;
+        }
+        return null;
     }
 
     // ─── Progress helpers (for GUI) ───────────────────────────────────────────

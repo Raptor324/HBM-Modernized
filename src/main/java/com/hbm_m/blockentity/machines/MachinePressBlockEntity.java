@@ -41,7 +41,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.item.crafting.RecipeType;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.platform.recipe.RecipeInputWrapper;
 
 public class MachinePressBlockEntity extends BaseMachineBlockEntity {
     
@@ -363,12 +364,9 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
             container.setItem(i, inventory.getStackInSlot(i));
         }
 
-        // getRecipeFor() иногда не сходится по дженерикам в зависимости от маппингов,
-        // поэтому берём список рецептов и матчим вручную.
-        @SuppressWarnings("rawtypes")
-        RecipeType type = (RecipeType) PressRecipe.Type.INSTANCE;
-        for (Object holderObj : level.getRecipeManager().getAllRecipesFor(type)) {
-            if (holderObj instanceof PressRecipe recipe && recipe.matches(container, level)) {
+        RecipeInputWrapper wrapper = new RecipeInputWrapper(container);
+        for (PressRecipe recipe : RecipeHooks.getAllRecipes(level, PressRecipe.Type.INSTANCE)) {
+            if (recipe.matchesRecipe(wrapper, level)) {
                 return Optional.of(recipe);
             }
         }

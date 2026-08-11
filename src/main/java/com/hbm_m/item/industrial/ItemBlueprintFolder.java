@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -67,13 +68,11 @@ public class ItemBlueprintFolder extends Item {
         
         // Проверяем, есть ли рецепты в этой группе (сборщик + химзавод используют один NBT pool)
         if (level != null && level.getRecipeManager() != null) {
-            List<AssemblerRecipe> assemblerRecipes = level.getRecipeManager()
-                .getAllRecipesFor(AssemblerRecipe.Type.INSTANCE)
+            List<AssemblerRecipe> assemblerRecipes = RecipeHooks.getAllRecipes(level, AssemblerRecipe.Type.INSTANCE)
                 .stream()
                 .filter(r -> pool.equals(r.getBlueprintPool()))
                 .toList();
-            List<ChemicalPlantRecipe> chemicalRecipes = level.getRecipeManager()
-                .getAllRecipesFor(ChemicalPlantRecipe.Type.INSTANCE)
+            List<ChemicalPlantRecipe> chemicalRecipes = RecipeHooks.getAllRecipes(level, ChemicalPlantRecipe.Type.INSTANCE)
                 .stream()
                 .filter(r -> pool.equals(r.getBlueprintPool()))
                 .toList();

@@ -9,7 +9,6 @@ import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
 import com.hbm_m.recipe.ChemicalPlantRecipe.CountedIngredient;
-import com.hbm_m.recipe.ChemicalPlantRecipe.FluidIngredient;
 
 import dev.architectury.fluid.FluidStack;
 import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
@@ -20,11 +19,8 @@ import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
 
 /**
  * JEI port of {@code ChemicalPlantRecipeHandler} (extends {@code NEIGenericRecipeHandler}).
@@ -108,8 +104,8 @@ public class ChemicalPlantJeiCategory extends JeiGenericRecipeCategory<ChemicalP
             slotIndex++;
         }
 
-        for (FluidIngredient fluidInput : recipe.getFluidInputs()) {
-            FluidStack fluid = toFluidStack(fluidInput);
+        // Жидкостные входы теперь List<FluidStack> — больше не нужны конверсии из FluidIngredient.
+        for (FluidStack fluid : recipe.getFluidInputs()) {
             if (fluid.isEmpty()) {
                 continue;
             }
@@ -179,9 +175,10 @@ public class ChemicalPlantJeiCategory extends JeiGenericRecipeCategory<ChemicalP
     }
 
     private static int countFluidInputs(ChemicalPlantRecipe recipe) {
+        // Жидкостные входы теперь List<FluidStack> — прямой предикат isEmpty().
         int count = 0;
-        for (FluidIngredient fluidInput : recipe.getFluidInputs()) {
-            if (!toFluidStack(fluidInput).isEmpty()) {
+        for (FluidStack fluid : recipe.getFluidInputs()) {
+            if (!fluid.isEmpty()) {
                 count++;
             }
         }
@@ -206,14 +203,6 @@ public class ChemicalPlantJeiCategory extends JeiGenericRecipeCategory<ChemicalP
             }
         }
         return count;
-    }
-
-    private static FluidStack toFluidStack(FluidIngredient fluidInput) {
-        Fluid fluid = BuiltInRegistries.FLUID.get(fluidInput.fluidId());
-        if (fluid == null || fluid == Fluids.EMPTY) {
-            return FluidStack.empty();
-        }
-        return FluidStack.create(fluid, fluidInput.amount());
     }
 }
 //?} else {

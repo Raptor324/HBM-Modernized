@@ -2,35 +2,25 @@ package com.hbm_m.datagen.recipes.custom;
 //? if forge {
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-// Билдер рецептов для AssemblerRecipe с поддержкой количества ингредиентов.
-// Позволяет легко создавать рецепты с несколькими ингредиентами, каждый из которых имеет свое количество.
-// Используется в классе генерации данных ModRecipeProvider.
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hbm_m.recipe.AssemblerRecipe;
 
-import net.minecraft.advancements.Advancement;
-import net.minecraft.advancements.CriterionTriggerInstance;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.data.recipes.FinishedRecipe;
-import net.minecraft.data.recipes.RecipeBuilder;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-public class AssemblerRecipeBuilder implements RecipeBuilder {
+public class AssemblerRecipeBuilder extends BaseRecipeBuilder<AssemblerRecipeBuilder> {
+
     private final ItemStack output;
     private final int duration;
     private final int power;
     private final List<CountableIngredient> ingredients = new ArrayList<>();
-    private final Advancement.Builder advancement = Advancement.Builder.advancement();
 
     @Nullable
     private String blueprintPool = null;
@@ -45,18 +35,11 @@ public class AssemblerRecipeBuilder implements RecipeBuilder {
         return new AssemblerRecipeBuilder(output, duration, power);
     }
 
-    
-    /**
-     * Добавляет ингредиент с указанным количеством.
-     */
     public AssemblerRecipeBuilder addIngredient(Ingredient ingredient, int count) {
         this.ingredients.add(new CountableIngredient(ingredient, count));
         return this;
     }
-    
-    /**
-     * Удобный метод для добавления ванильных предметов.
-     */
+
     public AssemblerRecipeBuilder addIngredient(Item item, int count) {
         return addIngredient(Ingredient.of(item), count);
     }
@@ -65,21 +48,8 @@ public class AssemblerRecipeBuilder implements RecipeBuilder {
         this.blueprintPool = pool;
         return this;
     }
-    
-    // Внутренний record для хранения пары "Ингредиент-Количество"
+
     private record CountableIngredient(Ingredient ingredient, int count) {}
-
-
-    @Override
-    public RecipeBuilder unlockedBy(@NotNull String pCriterionName, @NotNull CriterionTriggerInstance pCriterionTrigger) {
-        this.advancement.addCriterion(pCriterionName, pCriterionTrigger);
-        return this;
-    }
-
-    @Override
-    public RecipeBuilder group(@Nullable String pGroupName) {
-        return this;
-    }
 
     @Override
     public Item getResult() {
@@ -87,80 +57,33 @@ public class AssemblerRecipeBuilder implements RecipeBuilder {
     }
 
     @Override
-    public void save(@NotNull Consumer<FinishedRecipe> pFinishedRecipeConsumer, @NotNull ResourceLocation pRecipeId) {
-        pFinishedRecipeConsumer.accept(new Result(pRecipeId, this));
+    protected void serializeRecipeData(JsonObject json) {
+        JsonArray jsonIngredients = new JsonArray();
+
+        for (CountableIngredient countableIng : this.ingredients) {
+            jsonIngredients.add(AssemblerRecipe.toCountedIngredientJson(
+                    countableIng.ingredient(), countableIng.count()));
+        }
+        json.add("ingredients", jsonIngredients);
+
+        JsonObject jsonOutput = new JsonObject();
+        jsonOutput.addProperty("item", BuiltInRegistries.ITEM.getKey(this.output.getItem()).toString());
+        if (this.output.getCount() > 1) {
+            jsonOutput.addProperty("count", this.output.getCount());
+        }
+        json.add("output", jsonOutput);
+
+        json.addProperty("duration", this.duration);
+        json.addProperty("power", this.power);
+
+        if (this.blueprintPool != null) {
+            json.addProperty("blueprint_pool", this.blueprintPool);
+        }
     }
 
-    /**
-     * Overrides the vanilla {@code RecipeBuilder.save(Consumer, String)} default, which resolves a
-     * bare path string to the {@code minecraft} namespace (via {@code new ResourceLocation(path)}).
-     * Every assembler recipe must live under {@code hbm_m:...} instead.
-     */
     @Override
-    public void save(@NotNull Consumer<FinishedRecipe> pFinishedRecipeConsumer, @NotNull String pPath) {
-        save(pFinishedRecipeConsumer, ResourceLocation.fromNamespaceAndPath("hbm_m", pPath));
-    }
-
-    // Внутренний класс для сериализации
-    private static class Result implements FinishedRecipe {
-
-        private final ResourceLocation id;
-        private final AssemblerRecipeBuilder builder;
-
-        public Result(ResourceLocation id, AssemblerRecipeBuilder builder) {
-            this.id = id;
-            this.builder = builder;
-        }
-        
-
-        @Override
-        public void serializeRecipeData(@NotNull JsonObject pJson) {
-            JsonArray jsonIngredients = new JsonArray();
-
-            for (CountableIngredient countableIng : this.builder.ingredients) {
-                jsonIngredients.add(AssemblerRecipe.toCountedIngredientJson(
-                        countableIng.ingredient(), countableIng.count()));
-            }
-            pJson.add("ingredients", jsonIngredients);
-
-            JsonObject jsonOutput = new JsonObject();
-            jsonOutput.addProperty("item", BuiltInRegistries.ITEM.getKey(this.builder.output.getItem()).toString());
-            if (this.builder.output.getCount() > 1) {
-                jsonOutput.addProperty("count", this.builder.output.getCount());
-            }
-            pJson.add("output", jsonOutput);
-
-            pJson.addProperty("duration", this.builder.duration);
-            pJson.addProperty("power", this.builder.power);
-
-            if (this.builder.blueprintPool != null) {
-                pJson.addProperty("blueprint_pool", this.builder.blueprintPool);
-            }
-        }
-
-        @Override
-        public ResourceLocation getId() {
-            return this.id;
-        }
-
-        @Override
-        public RecipeSerializer<?> getType() {
-            return AssemblerRecipe.Serializer.INSTANCE;
-        }
-
-        @Nullable
-        @Override
-        public JsonObject serializeAdvancement() {
-            // Всегда возвращаем null, так как мы не хотим генерировать ачивку
-            return null;
-        }
-        
-        @Nullable
-        @Override
-        public ResourceLocation getAdvancementId() {
-            // Всегда возвращаем null
-            return null;
-        }
+    protected RecipeSerializer<?> getType() {
+        return AssemblerRecipe.Serializer.INSTANCE;
     }
 }
 //?}

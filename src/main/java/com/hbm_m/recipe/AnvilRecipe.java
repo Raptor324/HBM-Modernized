@@ -1,6 +1,10 @@
 package com.hbm_m.recipe;
 
 import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.recipe.PlatformRecipe;
+import com.hbm_m.platform.recipe.PlatformRecipeSerializer;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.platform.recipe.RecipeInputWrapper;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -13,22 +17,17 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hbm_m.block.machines.anvils.AnvilTier;
 
-import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.Mth;
-import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.level.Level;
 
-public class AnvilRecipe implements Recipe<Container> {
+public class AnvilRecipe extends PlatformRecipe {
 
-    private final ResourceLocation id;
     private final ItemStack inputA;
     private final ItemStack inputB;
     private final boolean consumeA;
@@ -47,7 +46,7 @@ public class AnvilRecipe implements Recipe<Container> {
                        List<ItemStack> inventoryInputs, List<ResultEntry> outputs,
                        AnvilTier requiredTier, @Nullable AnvilTier upperTier,
                        @Nullable String blueprintPool, OverlayType overlay, boolean consumeA, boolean consumeB) {
-        this.id = id;
+        super(id);
         this.inputA = inputA == null ? ItemStack.EMPTY : inputA;
         this.inputB = inputB == null ? ItemStack.EMPTY : inputB;
         this.consumeA = consumeA;
@@ -65,8 +64,8 @@ public class AnvilRecipe implements Recipe<Container> {
     }
 
     @Override
-    public boolean matches(Container container, Level level) {
-        if (container.getContainerSize() < 2) return false;
+    public boolean matchesRecipe(RecipeInputWrapper container, Level level) {
+        if (container.size() < 2) return false;
 
         if (!usesMachineInputs()) {
             return false;
@@ -101,23 +100,13 @@ public class AnvilRecipe implements Recipe<Container> {
     }
 
     @Override
-    public ItemStack assemble(Container container, RegistryAccess registryAccess) {
-        return getResultItem(registryAccess);
+    public ItemStack assembleSafe() {
+        return getResultItemSafe();
     }
 
     @Override
-    public boolean canCraftInDimensions(int width, int height) {
-        return true;
-    }
-
-    @Override
-    public ItemStack getResultItem(RegistryAccess registryAccess) {
+    public ItemStack getResultItemSafe() {
         return outputs.get(0).stack().copy();
-    }
-
-    @Override
-    public ResourceLocation getId() {
-        return id;
     }
 
     @Override
@@ -176,28 +165,26 @@ public class AnvilRecipe implements Recipe<Container> {
     public boolean isRecycling() {
         return overlay == OverlayType.RECYCLING;
     }
-    
 
-    // Р’РѕР·РІСЂР°С‰Р°РµС‚ РІС…РѕРґРЅРѕР№ РїСЂРµРґРјРµС‚ РґР»СЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ РёРєРѕРЅРєРё РїСЂРё СЂР°Р·Р±РѕСЂРєРµ
-
+    // Возвращает входной предмет для отображения иконки при разборке
     public ItemStack getRecyclingInputStack() {
         if (!isRecycling()) {
             return ItemStack.EMPTY;
         }
-        
-        // РџСЂРёРѕСЂРёС‚РµС‚: inventoryInputs > inputA > inputB
+
+        // Приоритет: inventoryInputs > inputA > inputB
         if (!inventoryInputs.isEmpty()) {
             return inventoryInputs.get(0).copy();
         }
-        
+
         if (!inputA.isEmpty()) {
             return inputA.copy();
         }
-        
+
         if (!inputB.isEmpty()) {
             return inputB.copy();
         }
-        
+
         return ItemStack.EMPTY;
     }
 
@@ -223,11 +210,11 @@ public class AnvilRecipe implements Recipe<Container> {
         public static final String ID = "anvil";
     }
 
-    public static class Serializer implements RecipeSerializer<AnvilRecipe> {
+    public static class Serializer extends PlatformRecipeSerializer<AnvilRecipe> {
         public static final Serializer INSTANCE = new Serializer();
 
         @Override
-        public AnvilRecipe fromJson(ResourceLocation id, JsonObject json) {
+        public AnvilRecipe readJson(ResourceLocation id, JsonObject json) {
             ItemStack inputA = json.has("input_a")
                     ? itemStackFromJson(GsonHelper.getAsJsonObject(json, "input_a"))
                     : ItemStack.EMPTY;
@@ -271,9 +258,9 @@ public class AnvilRecipe implements Recipe<Container> {
         }
 
         @Override
-        public AnvilRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            ItemStack inputA = buffer.readItem();
-            ItemStack inputB = buffer.readItem();
+        public AnvilRecipe readNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
+            ItemStack inputA = RecipeHooks.readItem(buffer);
+            ItemStack inputB = RecipeHooks.readItem(buffer);
 
             boolean consumeA = buffer.readBoolean();
             boolean consumeB = buffer.readBoolean();
@@ -281,13 +268,13 @@ public class AnvilRecipe implements Recipe<Container> {
             int size = buffer.readInt();
             List<ItemStack> inventoryInputs = new ArrayList<>();
             for (int i = 0; i < size; i++) {
-                inventoryInputs.add(buffer.readItem());
+                inventoryInputs.add(RecipeHooks.readItem(buffer));
             }
 
             int outputsSize = buffer.readInt();
             List<ResultEntry> outputs = new ArrayList<>();
             for (int i = 0; i < outputsSize; i++) {
-                ItemStack stack = buffer.readItem();
+                ItemStack stack = RecipeHooks.readItem(buffer);
                 float chance = buffer.readFloat();
                 outputs.add(new ResultEntry(stack, chance));
             }
@@ -305,21 +292,21 @@ public class AnvilRecipe implements Recipe<Container> {
         }
 
         @Override
-        public void toNetwork(FriendlyByteBuf buffer, AnvilRecipe recipe) {
-            buffer.writeItem(recipe.inputA);
-            buffer.writeItem(recipe.inputB);
+        public void writeNetwork(FriendlyByteBuf buffer, AnvilRecipe recipe) {
+            RecipeHooks.writeItem(buffer, recipe.inputA);
+            RecipeHooks.writeItem(buffer, recipe.inputB);
 
             buffer.writeBoolean(recipe.consumeA);
             buffer.writeBoolean(recipe.consumeB);
 
             buffer.writeInt(recipe.inventoryInputs.size());
             for (ItemStack item : recipe.inventoryInputs) {
-                buffer.writeItem(item);
+                RecipeHooks.writeItem(buffer, item);
             }
 
             buffer.writeInt(recipe.outputs.size());
             for (ResultEntry entry : recipe.outputs) {
-                buffer.writeItem(entry.stack());
+                RecipeHooks.writeItem(buffer, entry.stack());
                 buffer.writeFloat(entry.chance());
             }
 
@@ -335,7 +322,7 @@ public class AnvilRecipe implements Recipe<Container> {
         }
 
         private static ItemStack itemStackFromJson(JsonObject object) {
-            return ShapedRecipe.itemStackFromJson(object);
+            return RecipeHooks.itemStackFromJson(object);
         }
 
         private static ResultEntry outputFromJson(JsonObject object) {

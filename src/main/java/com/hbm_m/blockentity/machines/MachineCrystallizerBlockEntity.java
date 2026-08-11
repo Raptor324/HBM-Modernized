@@ -16,8 +16,8 @@ import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineCrystallizerMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
+import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.CrystallizerRecipe;
-import com.hbm_m.recipe.CrystallizerRecipes;
 
 import dev.architectury.fluid.FluidStack;
 
@@ -160,7 +160,11 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         // РџРѕРёСЃРє СЂРµС†РµРїС‚Р° РїРѕ РІС…РѕРґСѓ + С‚РµРєСѓС‰РµР№ Р¶РёРґРєРѕСЃС‚Рё РІ Р±Р°РєРµ.
         ItemStack inputStack = entity.inventory.getStackInSlot(SLOT_INPUT);
         FluidStack tankFluid = entity.getTankFluidStack();
-        CrystallizerRecipe recipe = CrystallizerRecipes.findRecipe(inputStack, tankFluid);
+        // Рецепты теперь data-driven (JSON) — поиск через RecipeManager (кросс-версионный RecipeHooks).
+        CrystallizerRecipe recipe = RecipeHooks.getAllRecipes(level, CrystallizerRecipe.Type.INSTANCE).stream()
+                .filter(r -> r.matchesInput(inputStack) && r.matchesAcid(tankFluid))
+                .findFirst()
+                .orElse(null);
 
         boolean wasOn = entity.isOn;
         entity.isOn = false;
@@ -628,7 +632,13 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_INPUT) {
             // РџСЂРёРЅРёРјР°РµРј С‚РѕР»СЊРєРѕ С‚Рѕ, С‡С‚Рѕ РїРѕРґС…РѕРґРёС‚ С…РѕС‚СЏ Р±С‹ РїРѕРґ РѕРґРёРЅ СЂРµС†РµРїС‚ СЃ С‚РµРєСѓС‰РµР№ Р¶РёРґРєРѕСЃС‚СЊСЋ.
-            return CrystallizerRecipes.findRecipe(stack, getTankFluidStack()) != null;
+            // Р РµС†РµРїС‚С‹ data-driven вЂ” РїРѕРёСЃРє С‡РµСЂРµР· RecipeManager (RecipeHooks.getAllRecipes).
+            for (CrystallizerRecipe r : RecipeHooks.getAllRecipes(level, CrystallizerRecipe.Type.INSTANCE)) {
+                if (r.matchesInput(stack) && r.matchesAcid(getTankFluidStack())) {
+                    return true;
+                }
+            }
+            return false;
         }
         if (slot == SLOT_BATTERY) {
             if (stack.getItem() instanceof ItemCreativeBattery) return true;

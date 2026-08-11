@@ -4,6 +4,7 @@ import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.recipe.AssemblerRecipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -84,8 +85,7 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
         ResourceLocation selectedRecipeId = this.menu.getBlockEntity().getSelectedRecipeId();
         AssemblerRecipe recipe = null;
         if (selectedRecipeId != null && this.minecraft != null && this.minecraft.level != null) {
-            recipe = this.minecraft.level.getRecipeManager()
-                    .byKey(selectedRecipeId)
+            recipe = RecipeHooks.getRecipeByKey(this.minecraft.level.getRecipeManager(), selectedRecipeId)
                     .filter(r -> r instanceof AssemblerRecipe)
                     .map(r -> (AssemblerRecipe) r)
                     .orElse(null);
@@ -244,12 +244,12 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
         if (isMouseOver(pMouseX, pMouseY, 7, 125, 18, 18)) {
             ResourceLocation selectedRecipeId = this.menu.getBlockEntity().getSelectedRecipeId();
             if (selectedRecipeId != null && this.minecraft != null && this.minecraft.level != null) {
-                this.minecraft.level.getRecipeManager().byKey(selectedRecipeId).ifPresent(recipe -> {
+                RecipeHooks.getRecipeByKey(this.minecraft.level.getRecipeManager(), selectedRecipeId).ifPresent(recipe -> {
                     if (recipe instanceof AssemblerRecipe assemblerRecipe) {
                         List<Component> tooltip = new ArrayList<>();
                         
                         // РќР°Р·РІР°РЅРёРµ РІС‹С…РѕРґРЅРѕРіРѕ РїСЂРµРґРјРµС‚Р°
-                        ItemStack output = assemblerRecipe.getResultItem(null);
+                        ItemStack output = assemblerRecipe.getResultItemSafe();
                         tooltip.add(output.getHoverName());
                         
                         // Р”РћР‘РђР’Р›РЇР•Рњ РџР РћР”Р’РРќРЈРўР«Р™ РўРЈР›РўРРџ РЎ Р”Р•РўРђР›РЇРњР Р Р•Р¦Р•РџРўРђ
@@ -326,9 +326,9 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
         if (this.minecraft != null && this.minecraft.screen == this) {
             ResourceLocation selectedRecipeId = this.menu.getBlockEntity().getSelectedRecipeId();
             if (selectedRecipeId != null && this.minecraft.level != null) {
-                this.minecraft.level.getRecipeManager().byKey(selectedRecipeId).ifPresent(recipe -> {
+                RecipeHooks.getRecipeByKey(this.minecraft.level.getRecipeManager(), selectedRecipeId).ifPresent(recipe -> {
                     if (recipe instanceof AssemblerRecipe assemblerRecipe) {
-                        ItemStack icon = assemblerRecipe.getResultItem(null);
+                        ItemStack icon = assemblerRecipe.getResultItemSafe();
                         guiGraphics.renderItem(icon, 8, 126);
                     }
                 });

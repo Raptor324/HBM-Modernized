@@ -103,9 +103,9 @@ public class MachineChemicalPlantVboRenderer {
         if (colorFluids.isEmpty() && !recipe.getFluidInputs().isEmpty()) {
             List<FluidStack> tmp = new ArrayList<>();
             for (var fin : recipe.getFluidInputs()) {
-                var fluid = BuiltInRegistries.FLUID.get(fin.fluidId());
+                var fluid = fin.getFluid();
                 if (fluid == null) continue;
-                tmp.add(FluidStack.create(fluid, (long) fin.amount()));
+                tmp.add(FluidStack.create(fluid, fin.getAmount()));
             }
             colorFluids = tmp;
         }
@@ -132,9 +132,9 @@ public class MachineChemicalPlantVboRenderer {
         }
         if (texFluid == null) {
             for (var fin : recipe.getFluidInputs()) {
-                var fluid = BuiltInRegistries.FLUID.get(fin.fluidId());
+                var fluid = fin.getFluid();
                 if (fluid == null) continue;
-                texFluid = FluidStack.create(fluid, (long) fin.amount());
+                texFluid = FluidStack.create(fluid, fin.getAmount());
                 break;
             }
         }

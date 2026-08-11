@@ -22,6 +22,7 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.recipe.RecipeHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -385,7 +386,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             boolean isCraftingNow = assemblerModule.isProcessing();
 
             if (isCraftingNow && assemblerModule.getPreferredRecipe() != null) {
-                ResourceLocation autoSelectedRecipeId = assemblerModule.getPreferredRecipe().getId();
+                ResourceLocation autoSelectedRecipeId = RecipeHooks.recipeId(level.getRecipeManager(), AssemblerRecipe.Type.INSTANCE, assemblerModule.getPreferredRecipe());
                 if (selectedRecipeId == null || !selectedRecipeId.equals(autoSelectedRecipeId)) {
                     selectedRecipeId = autoSelectedRecipeId;
                     cachedRecipe = assemblerModule.getPreferredRecipe();
@@ -395,7 +396,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             }
 
             if (assemblerModule.getCurrentRecipe() != null) {
-                ResourceLocation currentRecipeId = assemblerModule.getCurrentRecipe().getId();
+                ResourceLocation currentRecipeId = RecipeHooks.recipeId(level.getRecipeManager(), AssemblerRecipe.Type.INSTANCE, assemblerModule.getCurrentRecipe());
                 if (selectedRecipeId == null || !selectedRecipeId.equals(currentRecipeId)) {
                     selectedRecipeId = currentRecipeId;
                     cachedRecipe = assemblerModule.getCurrentRecipe();
@@ -480,8 +481,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             return null;
         }
         if (cachedRecipe == null || recipeCacheDirty) {
-            cachedRecipe = level.getRecipeManager()
-                    .byKey(selectedRecipeId)
+            cachedRecipe = RecipeHooks.getRecipeByKey(level.getRecipeManager(), selectedRecipeId)
                     .filter(recipe -> recipe instanceof AssemblerRecipe)
                     .map(recipe -> (AssemblerRecipe) recipe)
                     .orElse(null);
@@ -951,10 +951,9 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             clientRecipeIconCache = ItemStack.EMPTY;
             return ItemStack.EMPTY;
         }
-        clientRecipeIconCache = level.getRecipeManager()
-                .byKey(id)
+        clientRecipeIconCache = RecipeHooks.getRecipeByKey(level.getRecipeManager(), id)
                 .filter(r -> r instanceof AssemblerRecipe)
-                .map(r -> ((AssemblerRecipe) r).getResultItem(null))
+                .map(r -> ((AssemblerRecipe) r).getResultItemSafe())
                 .orElse(ItemStack.EMPTY);
         return clientRecipeIconCache;
     }
@@ -984,10 +983,9 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             clientRecipeIconCache = ItemStack.EMPTY;
             return ItemStack.EMPTY;
         }
-        clientRecipeIconCache = level.getRecipeManager()
-                .byKey(id)
+        clientRecipeIconCache = RecipeHooks.getRecipeByKey(level.getRecipeManager(), id)
                 .filter(r -> r instanceof AssemblerRecipe)
-                .map(r -> ((AssemblerRecipe) r).getResultItem(null))
+                .map(r -> ((AssemblerRecipe) r).getResultItemSafe())
                 .orElse(ItemStack.EMPTY);
         return clientRecipeIconCache;
     }

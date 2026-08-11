@@ -11,13 +11,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
-// Р‘Р»РѕРє-СЌРЅС‚РёС‚Рё РґР»СЏ РџР»Р°РІРёР»СЊРЅРѕР№ РџРµС‡Рё, РєРѕС‚РѕСЂР°СЏ РїРµСЂРµРїР»Р°РІР»СЏРµС‚ РґРІР° РІС…РѕРґРЅС‹С… РїСЂРµРґРјРµС‚Р° РІ РѕРґРёРЅ РІС‹С…РѕРґРЅРѕР№ СЃ РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРµРј С‚РѕРїР»РёРІР°.
 import com.hbm_m.block.machines.BlastFurnaceBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.BlastFurnaceMenu;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
 import com.hbm_m.recipe.BlastFurnaceRecipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.platform.recipe.RecipeInputWrapper;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -396,7 +397,13 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
         for (int i = 0; i < itemHandler.getSlots(); i++) {
             inventory.setItem(i, itemHandler.getStackInSlot(i));
         }
-        return level.getRecipeManager().getRecipeFor(BlastFurnaceRecipe.Type.INSTANCE, inventory, level);
+        RecipeInputWrapper wrapper = new RecipeInputWrapper(inventory);
+        for (BlastFurnaceRecipe recipe : RecipeHooks.getAllRecipes(level, BlastFurnaceRecipe.Type.INSTANCE)) {
+            if (recipe.matchesRecipe(wrapper, level)) {
+                return Optional.of(recipe);
+            }
+        }
+        return Optional.empty();
     }
 
     private void craftItem() {

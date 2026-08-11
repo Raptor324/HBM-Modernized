@@ -29,11 +29,8 @@ import com.hbm_m.powerarmor.PowerArmorHandlers;
 import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerHandler;
-import com.hbm_m.recipe.CentrifugeRecipes;
-import com.hbm_m.recipe.ChemicalPlantRecipes;
-import com.hbm_m.recipe.CyclotronRecipes;
+
 import com.hbm_m.recipe.ModRecipes;
-import com.hbm_m.recipe.CrystallizerRecipes;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.world.biome.ModBiomes;
 import com.mojang.logging.LogUtils;
@@ -129,19 +126,15 @@ public final class MainRegistry {
         com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity.registerLaunchables();
         com.hbm_m.satellite.Satellite.register();
 
-        CentrifugeRecipes.registerRecipes();
-        CyclotronRecipes.registerRecipes();
-        com.hbm_m.inventory.recipes.ArcWelderRecipes.registerDefaults();
-        com.hbm_m.recipe.CrucibleSmeltingRecipes.registerDefaults();
-        com.hbm_m.recipe.MoltenAlloyRecipes.registerDefaults();
-        com.hbm_m.inventory.recipes.SolderingRecipes.registerDefaults();
+        // CentrifugeRecipes.registerRecipes();
+        // Рецепты Cyclotron, CrucibleSmelting, MoltenAlloy, ArcWelder и Soldering теперь data-driven (JSON)
+        // — статические реестры (ArcWelderRecipes.registerDefaults / SolderingRecipes.registerDefaults) удалены.
 
         // На Fabric DeferredRegister жидкостей ещё не заполнил BuiltInRegistries на момент SETUP
         // (см. FabricEntrypoint#registerFluidDependentSetupWhenReady).
         
         //? if forge || neoforge {
-        ChemicalPlantRecipes.registerRecipes();
-        CrystallizerRecipes.registerDefaults();
+        // Рецепты Crystallizer теперь data-driven (JSON), CrystallizerRecipes.registerDefaults удалён.
         ModFluidTraitsBootstrap.registerAll();
         //?}
 

@@ -16,7 +16,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.RecipeManager;
+import com.hbm_m.platform.recipe.RecipeHooks;
 import net.minecraft.world.level.Level;
 
 public class TemplateTooltipUtil {
@@ -29,10 +29,9 @@ public class TemplateTooltipUtil {
             return;
         }
 
-        RecipeManager recipeManager = level.getRecipeManager();
-        Optional<AssemblerRecipe> recipeOpt = recipeManager.getAllRecipesFor(AssemblerRecipe.Type.INSTANCE)
+        Optional<AssemblerRecipe> recipeOpt = RecipeHooks.getAllRecipes(level, AssemblerRecipe.Type.INSTANCE)
                 .stream()
-                .filter(r -> PlatformHooks.isSameItemSameTags(r.getResultItem(null), output))
+                .filter(r -> PlatformHooks.isSameItemSameTags(r.getResultItemSafe(), output))
                 .findFirst();
         if (recipeOpt.isEmpty()) {
             return;
@@ -46,7 +45,7 @@ public class TemplateTooltipUtil {
 
     public static void buildRecipeTooltip(AssemblerRecipe recipe, List<Component> tooltip) {
         if (recipe == null) return;
-        ItemStack output = recipe.getResultItem(null);
+        ItemStack output = recipe.getResultItemSafe();
         if (output.isEmpty()) return;
         addRecipeDetails(recipe, output, tooltip);
     }

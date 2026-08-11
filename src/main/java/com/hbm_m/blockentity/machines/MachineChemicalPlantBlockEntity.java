@@ -554,10 +554,15 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
 
     /**
      * Клиентский звук BER, приращение {@code anim} и жидкость.
-     * {@code progress} синхронизируется через ContainerData и стабильнее однотick {@code didProcess}.
+     * Аналог {@code isProgressing} из 1.7.10: эффекты идут только когда крафт
+     * реально продвигается в этом тике (didProcess). Прогресс в одиночку не
+     * запускает эффекты — иначе при паузе из-за нехватки энергии звук/анимация
+     * продолжаются, что противоречит поведению оригинала.
+     * Синхронизация didProcess при переходе true→false гарантируется в
+     * {@link com.hbm_m.module.machine.MachineModuleChemplant#updateAndGetDirty}.
      */
     public boolean isChemplantEffectsActive() {
-        return module.getProgressInt() > 0 || module.getDidProcess();
+        return module.getDidProcess();
     }
 
     @Nullable

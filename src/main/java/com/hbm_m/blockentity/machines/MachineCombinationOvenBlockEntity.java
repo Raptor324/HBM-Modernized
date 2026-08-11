@@ -11,6 +11,7 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineCombinationOvenMenu;
 import com.hbm_m.recipe.CombinationOvenRecipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.ModRecipes;
 
 import net.minecraft.core.BlockPos;
@@ -20,7 +21,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -111,8 +111,7 @@ public class MachineCombinationOvenBlockEntity extends BaseMachineBlockEntity {
         ItemStack input = inventory.getStackInSlot(SLOT_INPUT);
         if (input.isEmpty()) return null;
 
-        RecipeType type = (RecipeType) CombinationOvenRecipe.Type.INSTANCE;
-        List<CombinationOvenRecipe> recipes = level.getRecipeManager().getAllRecipesFor(type);
+        List<CombinationOvenRecipe> recipes = RecipeHooks.getAllRecipes(level, CombinationOvenRecipe.Type.INSTANCE);
         for (CombinationOvenRecipe recipe : recipes) {
             if (recipe.matchesInput(input) && recipe.matchesFluid(tank.getStoredFluid())) {
                 return recipe;
@@ -214,7 +213,7 @@ public class MachineCombinationOvenBlockEntity extends BaseMachineBlockEntity {
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_INPUT) {
             if (level == null) return true;
-            List<CombinationOvenRecipe> recipes = level.getRecipeManager().getAllRecipesFor(CombinationOvenRecipe.Type.INSTANCE);
+            List<CombinationOvenRecipe> recipes = RecipeHooks.getAllRecipes(level, CombinationOvenRecipe.Type.INSTANCE);
             for (CombinationOvenRecipe recipe : recipes) {
                 if (recipe.matchesInput(stack)) return true;
             }

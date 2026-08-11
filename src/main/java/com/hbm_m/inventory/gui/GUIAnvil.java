@@ -21,6 +21,7 @@ import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.recipe.AnvilRecipe;
 import com.hbm_m.recipe.AnvilRecipeManager;
+import com.hbm_m.platform.recipe.RecipeHooks;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.ChatFormatting;
@@ -411,7 +412,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
     }
     
     private void notifyServerAboutSelection(@Nullable AnvilRecipe recipe) {
-        ResourceLocation id = recipe != null ? recipe.getId() : null;
+        ResourceLocation id = recipe != null ? RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), AnvilRecipe.Type.INSTANCE, recipe) : null;
         cachedServerSelection = id;
         menu.blockEntity.setSelectedRecipeId(id);
         ModPacketHandler.sendToServer(

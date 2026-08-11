@@ -13,6 +13,8 @@ import com.hbm_m.inventory.menu.MachineShredderMenu;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.industrial.ItemBlades;
 import com.hbm_m.recipe.ShredderRecipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.platform.recipe.RecipeInputWrapper;
 import com.hbm_m.sound.ClientSoundBootstrap;
 
 import dev.architectury.registry.registries.RegistrySupplier;
@@ -461,8 +463,10 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
 
         SimpleContainer container = new SimpleContainer(1);
         container.setItem(0, input);
-        Optional<ShredderRecipe> recipe = level.getRecipeManager()
-            .getRecipeFor(ShredderRecipe.Type.INSTANCE, container, level);
+        RecipeInputWrapper wrapper = new RecipeInputWrapper(container);
+        Optional<ShredderRecipe> recipe = RecipeHooks.getAllRecipes(level, ShredderRecipe.Type.INSTANCE).stream()
+                .filter(r -> r.matchesRecipe(wrapper, level))
+                .findFirst();
         
         if (recipe.isPresent()) {
             return recipe.get().getResultItem(level.registryAccess()).copy();

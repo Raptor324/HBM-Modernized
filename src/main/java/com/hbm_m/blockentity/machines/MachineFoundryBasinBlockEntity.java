@@ -5,6 +5,8 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.material.MaterialStack;
 import com.hbm_m.inventory.material.MaterialType;
 import com.hbm_m.item.material.ItemCastMold;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.MoldCastingRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -85,12 +87,20 @@ public class MachineFoundryBasinBlockEntity extends BlockEntity implements ICruc
     public int getCapacity() {
         ItemCastMold mold = getInstalledMold();
         if (mold == null) return 0;
-        return com.hbm_m.recipe.MoldCastingRecipes.getCost(mold.getMoldType());
+        return mold.getMoldType().getCostMb();
     }
 
     private @Nullable ItemStack getResultFor(MaterialType type, ItemCastMold.MoldType mold) {
-        ItemStack out = com.hbm_m.recipe.MoldCastingRecipes.getOutput(mold, type);
-        return out.isEmpty() ? null : out;
+        if (level == null) return null;
+        // MoldCasting теперь data-driven (JSON) — ищем MoldCastingRecipe по паре (mold, material)
+        // через RecipeHooks (кросс-версионный мост). Статический MoldCastingRecipes удалён.
+        for (MoldCastingRecipe r : RecipeHooks.getAllRecipes(level, MoldCastingRecipe.Type.INSTANCE)) {
+            if (r.matches(mold, type)) {
+                ItemStack out = r.getOutput();
+                return out.isEmpty() ? null : out;
+            }
+        }
+        return null;
     }
 
     /* ── tick ───────────────────────────────────────────────────────────── */

@@ -13,7 +13,8 @@ import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineCyclotronMenu;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
-import com.hbm_m.recipe.CyclotronRecipes;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.CyclotronRecipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -118,10 +119,19 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot >= SLOT_INPUT_START && slot < SLOT_INPUT_END_EXCLUSIVE) {
-            return CyclotronRecipes.isValidInput(stack);
+            // Рецепты data-driven — валидация по всем CyclotronRecipe через RecipeManager (RecipeHooks).
+            if (stack == null || stack.isEmpty() || level == null) return false;
+            for (CyclotronRecipe r : RecipeHooks.getAllRecipes(level, CyclotronRecipe.Type.INSTANCE)) {
+                if (r.getInput().test(stack)) return true;
+            }
+            return false;
         }
         if (slot >= SLOT_TARGET_START && slot < SLOT_TARGET_END_EXCLUSIVE) {
-            return CyclotronRecipes.isValidTarget(stack);
+            if (stack == null || stack.isEmpty() || level == null) return false;
+            for (CyclotronRecipe r : RecipeHooks.getAllRecipes(level, CyclotronRecipe.Type.INSTANCE)) {
+                if (r.getTarget().test(stack)) return true;
+            }
+            return false;
         }
         if (slot == SLOT_BATTERY) {
             return isCyclotronBatteryCandidate(stack);
@@ -166,12 +176,13 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
         for (int lane = 0; lane < 3; lane++) {
             ItemStack input = inventory.getStackInSlot(SLOT_INPUT_START + lane);
             ItemStack target = inventory.getStackInSlot(SLOT_TARGET_START + lane);
-            CyclotronRecipes.Output result = CyclotronRecipes.getOutput(target, input);
-            if (result == null) {
+            // Рецепты data-driven — поиск по двум стекам через RecipeManager (RecipeHooks).
+            CyclotronRecipe recipe = findCyclotronRecipe(target, input);
+            if (recipe == null) {
                 continue;
             }
 
-            ItemStack out = result.output();
+            ItemStack out = recipe.getOutput();
             if (out.isEmpty()) {
                 continue;
             }
@@ -202,12 +213,13 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
 
             ItemStack input = inventory.getStackInSlot(inputSlot);
             ItemStack target = inventory.getStackInSlot(targetSlot);
-            CyclotronRecipes.Output result = CyclotronRecipes.getOutput(target, input);
-            if (result == null) {
+            // Рецепты data-driven — поиск по двум стекам через RecipeManager (RecipeHooks).
+            CyclotronRecipe recipe = findCyclotronRecipe(target, input);
+            if (recipe == null) {
                 continue;
             }
 
-            ItemStack out = result.output().copy();
+            ItemStack out = recipe.getOutput();
             if (out.isEmpty()) {
                 continue;
             }
@@ -229,12 +241,29 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
 
             inventory.extractItem(inputSlot, 1, false);
             inventory.extractItem(targetSlot, 1, false);
-            tanks[TANK_AMAT].setFill(tanks[TANK_AMAT].getFill() + result.amatProduced());
+            tanks[TANK_AMAT].setFill(tanks[TANK_AMAT].getFill() + recipe.getAmatProduced());
         }
 
         if (tanks[TANK_AMAT].getFill() > tanks[TANK_AMAT].getMaxFill()) {
             tanks[TANK_AMAT].setFill(tanks[TANK_AMAT].getMaxFill());
         }
+    }
+
+    /**
+     * Линейный поиск {@link CyclotronRecipe} по паре target+input. Замена удалённому
+     * {@code CyclotronRecipes.getOutput(target, input)} — рецепты теперь data-driven (JSON),
+     * источник правды {@code RecipeManager}, доступ кросс-версионный через {@link RecipeHooks}.
+     */
+    private CyclotronRecipe findCyclotronRecipe(ItemStack target, ItemStack input) {
+        if (target == null || input == null || target.isEmpty() || input.isEmpty() || level == null) {
+            return null;
+        }
+        for (CyclotronRecipe r : RecipeHooks.getAllRecipes(level, CyclotronRecipe.Type.INSTANCE)) {
+            if (r.matches(target, input)) {
+                return r;
+            }
+        }
+        return null;
     }
 
     private void chargeFromBattery() {

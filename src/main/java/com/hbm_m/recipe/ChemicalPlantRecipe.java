@@ -12,21 +12,21 @@ import com.google.gson.JsonObject;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.recipe.PlatformRecipe;
+import com.hbm_m.platform.recipe.PlatformRecipeSerializer;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.platform.recipe.RecipeInputWrapper;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
-import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
@@ -34,19 +34,22 @@ import net.minecraft.world.level.material.Fluids;
 /**
  * Chemical Plant recipe (1.20.1).
  *
- * <p>Важно: {@link #matches(SimpleContainer, Level)} здесь не используется машиной напрямую — химзавод
+ * <p>Важно: {@link #matchesRecipe(RecipeInputWrapper, Level)} здесь не используется машиной напрямую — химзавод
  * работает позиционно по своим слотам/бакам и выбирает рецепт по ID. Тем не менее, рецепт должен быть
  * валиден для загрузки/показа/синхронизации и datagen.</p>
+ *
+ * <p><b>Унификация жидкостей:</b> жидкостные входы хранятся как {@link List}{@code <}{@link FluidStack}{@code >}
+ * (Architectury), в едином формате с жидкостными выходами. Сериализация ведётся через общие хелперы
+ * {@link RecipeHooks#readFluidStack}/{@link RecipeHooks#writeFluidStack} — те же, что у
+ * {@code ArcFurnaceRecipe}/{@code CombinationOvenRecipe}/{@code CrystallizerRecipe}/{@code MixerRecipe}.
+ * Прежний record {@code FluidIngredient(ResourceLocation, int)} удалён как дублирующий слой абстракции.</p>
  */
-public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
+public class ChemicalPlantRecipe extends PlatformRecipe {
 
     public record CountedIngredient(Ingredient ingredient, int count) {}
 
-    public record FluidIngredient(ResourceLocation fluidId, int amount) {}
-
-    private final ResourceLocation id;
     private final List<CountedIngredient> itemInputs;
-    private final List<FluidIngredient> fluidInputs;
+    private final List<FluidStack> fluidInputs;
     private final List<ItemStack> itemOutputs;
     private final List<FluidStack> fluidOutputs;
     private final int duration;
@@ -63,7 +66,7 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
 
     public ChemicalPlantRecipe(ResourceLocation id,
                                List<CountedIngredient> itemInputs,
-                               List<FluidIngredient> fluidInputs,
+                               List<FluidStack> fluidInputs,
                                List<ItemStack> itemOutputs,
                                List<FluidStack> fluidOutputs,
                                int duration,
@@ -71,7 +74,7 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
                                @Nullable ItemStack iconItem,
                                @Nullable ResourceLocation iconFluid,
                                @Nullable String blueprintPool) {
-        this.id = id;
+        super(id);
         this.itemInputs = itemInputs != null ? itemInputs : List.of();
         this.fluidInputs = fluidInputs != null ? fluidInputs : List.of();
         this.itemOutputs = itemOutputs != null ? itemOutputs : List.of();
@@ -87,7 +90,8 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
         return itemInputs;
     }
 
-    public List<FluidIngredient> getFluidInputs() {
+    /** Жидкостные входы — единый тип {@link FluidStack} (Architectury), как и выходы. */
+    public List<FluidStack> getFluidInputs() {
         return fluidInputs;
     }
 
@@ -117,23 +121,18 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
     }
 
     @Override
-    public boolean matches(@NotNull SimpleContainer container, @NotNull Level level) {
+    public boolean matchesRecipe(@NotNull RecipeInputWrapper container, @NotNull Level level) {
         // Машина не использует стандартный shaped-мэтчинг.
         return false;
     }
 
     @Override
-    public ItemStack assemble(@NotNull SimpleContainer container, @NotNull RegistryAccess registryAccess) {
+    public ItemStack assembleSafe() {
         return ItemStack.EMPTY;
     }
 
     @Override
-    public boolean canCraftInDimensions(int width, int height) {
-        return true;
-    }
-
-    @Override
-    public ItemStack getResultItem(@NotNull RegistryAccess registryAccess) {
+    public ItemStack getResultItemSafe() {
         if (iconItem != null && !iconItem.isEmpty()) {
             return iconItem.copy();
         }
@@ -163,11 +162,6 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
     }
 
     @Override
-    public ResourceLocation getId() {
-        return id;
-    }
-
-    @Override
     public RecipeSerializer<?> getSerializer() {
         return Serializer.INSTANCE;
     }
@@ -182,23 +176,23 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
         public static final String ID = "chemical_plant";
     }
 
-    public static final class Serializer implements RecipeSerializer<ChemicalPlantRecipe> {
+    public static final class Serializer extends PlatformRecipeSerializer<ChemicalPlantRecipe> {
         public static final Serializer INSTANCE = new Serializer();
         //? if fabric && < 1.21.1 {
         /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "chemical_plant");
         *///?} else {
-                public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "chemical_plant");
+        public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "chemical_plant");
         //?}
 
 
         @Override
-        public ChemicalPlantRecipe fromJson(@NotNull ResourceLocation recipeId, @NotNull JsonObject json) {
+        public ChemicalPlantRecipe readJson(@NotNull ResourceLocation recipeId, @NotNull JsonObject json) {
             int duration = GsonHelper.getAsInt(json, "duration", 100);
             int power = GsonHelper.getAsInt(json, "power", 1000);
             String blueprintPool = GsonHelper.getAsString(json, "blueprint_pool", null);
 
             List<CountedIngredient> itemInputs = readItemInputs(json);
-            List<FluidIngredient> fluidInputs = readFluidInputs(json);
+            List<FluidStack> fluidInputs = readFluidInputs(json);
             List<ItemStack> itemOutputs = readItemOutputs(json);
             List<FluidStack> fluidOutputs = readFluidOutputs(json);
 
@@ -209,48 +203,47 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
         }
 
         @Override
-        public @Nullable ChemicalPlantRecipe fromNetwork(@NotNull ResourceLocation recipeId, @NotNull FriendlyByteBuf buf) {
+        public ChemicalPlantRecipe readNetwork(@NotNull ResourceLocation recipeId, @NotNull FriendlyByteBuf buf) {
             int duration = buf.readVarInt();
             int power = buf.readVarInt();
             String blueprintPool = buf.readBoolean() ? buf.readUtf() : null;
 
-            ItemStack iconItem = buf.readBoolean() ? buf.readItem() : ItemStack.EMPTY;
+            ItemStack iconItem = buf.readBoolean() ? RecipeHooks.readItem(buf) : ItemStack.EMPTY;
             ResourceLocation iconFluid = buf.readBoolean() ? buf.readResourceLocation() : null;
             iconItem = finalizeIconStack(iconItem, iconFluid);
 
             int itemInCount = buf.readVarInt();
             List<CountedIngredient> itemInputs = new ArrayList<>(itemInCount);
             for (int i = 0; i < itemInCount; i++) {
-                Ingredient ing = Ingredient.fromNetwork(buf);
+                Ingredient ing = RecipeHooks.readIngredient(buf);
                 int count = buf.readVarInt();
                 itemInputs.add(new CountedIngredient(ing, count));
             }
 
+            // Жидкостные входы — единый кросс-лоадерный формат (RecipeHooks.readFluidStack).
             int fluidInCount = buf.readVarInt();
-            List<FluidIngredient> fluidInputs = new ArrayList<>(fluidInCount);
+            List<FluidStack> fluidInputs = new ArrayList<>(fluidInCount);
             for (int i = 0; i < fluidInCount; i++) {
-                ResourceLocation fluidId = buf.readResourceLocation();
-                int amount = buf.readVarInt();
-                fluidInputs.add(new FluidIngredient(fluidId, amount));
+                fluidInputs.add(RecipeHooks.readFluidStack(buf));
             }
 
             int itemOutCount = buf.readVarInt();
             List<ItemStack> itemOutputs = new ArrayList<>(itemOutCount);
             for (int i = 0; i < itemOutCount; i++) {
-                itemOutputs.add(buf.readItem());
+                itemOutputs.add(RecipeHooks.readItem(buf));
             }
 
             int fluidOutCount = buf.readVarInt();
             List<FluidStack> fluidOutputs = new ArrayList<>(fluidOutCount);
             for (int i = 0; i < fluidOutCount; i++) {
-                fluidOutputs.add(readFluidStack(buf));
+                fluidOutputs.add(RecipeHooks.readFluidStack(buf));
             }
 
             return new ChemicalPlantRecipe(recipeId, itemInputs, fluidInputs, itemOutputs, fluidOutputs, duration, power, iconItem, iconFluid, blueprintPool);
         }
 
         @Override
-        public void toNetwork(@NotNull FriendlyByteBuf buf, @NotNull ChemicalPlantRecipe recipe) {
+        public void writeNetwork(@NotNull FriendlyByteBuf buf, @NotNull ChemicalPlantRecipe recipe) {
             buf.writeVarInt(recipe.duration);
             buf.writeVarInt(recipe.powerConsumption);
 
@@ -263,7 +256,7 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
 
             if (recipe.iconItem != null && !recipe.iconItem.isEmpty()) {
                 buf.writeBoolean(true);
-                buf.writeItem(recipe.iconItem);
+                RecipeHooks.writeItem(buf, recipe.iconItem);
             } else {
                 buf.writeBoolean(false);
             }
@@ -277,31 +270,31 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
 
             buf.writeVarInt(recipe.itemInputs.size());
             for (CountedIngredient ci : recipe.itemInputs) {
-                ci.ingredient().toNetwork(buf);
+                RecipeHooks.writeIngredient(buf, ci.ingredient());
                 buf.writeVarInt(ci.count());
             }
 
+            // Жидкостные входы — единый кросс-лоадерный формат (RecipeHooks.writeFluidStack).
             buf.writeVarInt(recipe.fluidInputs.size());
-            for (FluidIngredient fi : recipe.fluidInputs) {
-                buf.writeResourceLocation(fi.fluidId());
-                buf.writeVarInt(fi.amount());
+            for (FluidStack fi : recipe.fluidInputs) {
+                RecipeHooks.writeFluidStack(buf, fi);
             }
 
             buf.writeVarInt(recipe.itemOutputs.size());
             for (ItemStack out : recipe.itemOutputs) {
-                buf.writeItem(out);
+                RecipeHooks.writeItem(buf, out);
             }
 
             buf.writeVarInt(recipe.fluidOutputs.size());
             for (FluidStack out : recipe.fluidOutputs) {
-                writeFluidStack(buf, out);
+                RecipeHooks.writeFluidStack(buf, out);
             }
         }
 
         private static ItemStack readIconItem(JsonObject json) {
             if (!json.has("icon_item")) return ItemStack.EMPTY;
             JsonObject obj = GsonHelper.getAsJsonObject(json, "icon_item");
-            return ShapedRecipe.itemStackFromJson(obj);
+            return RecipeHooks.itemStackFromJson(obj);
         }
 
         @Nullable
@@ -344,45 +337,6 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
             }
         }
 
-        /**
-         * Platform-agnostic сериализация FluidStack.
-         *
-         * Не используем Forge-specific {@code FriendlyByteBuf#readFluidStack}/{@code writeFluidStack}
-         * и {@code FluidStackHooksForge}, чтобы общий код компилировался на всех лоадерах.
-         *
-         * Формат:
-         * - boolean present
-         * - ResourceLocation fluidId
-         * - varLong amount (mB)
-         */
-        private static FluidStack readFluidStack(FriendlyByteBuf buf) {
-            boolean present = buf.readBoolean();
-            if (!present) {
-                return FluidStack.empty();
-            }
-            ResourceLocation id = buf.readResourceLocation();
-            long amount = buf.readVarLong();
-            var fluid = BuiltInRegistries.FLUID.get(id);
-            if (fluid == null) {
-                return FluidStack.empty();
-            }
-            if (amount <= 0) {
-                return FluidStack.empty();
-            }
-            return FluidStack.create(fluid, amount);
-        }
-
-        private static void writeFluidStack(FriendlyByteBuf buf, FluidStack stack) {
-            if (stack == null || stack.isEmpty()) {
-                buf.writeBoolean(false);
-                return;
-            }
-            buf.writeBoolean(true);
-            ResourceLocation id = BuiltInRegistries.FLUID.getKey(stack.getFluid());
-            buf.writeResourceLocation(id != null ? id : ResourceLocation.tryParse("minecraft:empty"));
-            buf.writeVarLong(stack.getAmount());
-        }
-
         private static List<CountedIngredient> readItemInputs(JsonObject json) {
             if (!json.has("item_inputs")) return List.of();
             JsonArray arr = GsonHelper.getAsJsonArray(json, "item_inputs");
@@ -392,27 +346,31 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
                 int count = GsonHelper.getAsInt(obj, "count", 1);
                 Ingredient ing;
                 if (obj.has("items")) {
-                    ing = Ingredient.fromJson(obj.get("items"));
+                    ing = RecipeHooks.ingredientFromJson(obj.get("items"));
                 } else {
                     JsonObject clone = obj.deepCopy();
                     clone.remove("count");
-                    ing = Ingredient.fromJson(clone);
+                    ing = RecipeHooks.ingredientFromJson(clone);
                 }
                 result.add(new CountedIngredient(ing, count));
             }
             return result;
         }
 
-        private static List<FluidIngredient> readFluidInputs(JsonObject json) {
+        /**
+         * Жидкостные входы — единый формат {@code { "fluid": <id>, "amount": <mB> }} через
+         * {@link RecipeHooks#fluidStackOf}. Совпадает с форматом fluid_outputs и других рецептов.
+         */
+        private static List<FluidStack> readFluidInputs(JsonObject json) {
             if (!json.has("fluid_inputs")) return List.of();
             JsonArray arr = GsonHelper.getAsJsonArray(json, "fluid_inputs");
-            List<FluidIngredient> result = new ArrayList<>(arr.size());
+            List<FluidStack> result = new ArrayList<>(arr.size());
             for (JsonElement el : arr) {
                 JsonObject obj = el.getAsJsonObject();
                 ResourceLocation id = ResourceLocation.tryParse(GsonHelper.getAsString(obj, "fluid"));
                 if (id == null) continue;
-                int amount = GsonHelper.getAsInt(obj, "amount", 0);
-                result.add(new FluidIngredient(id, amount));
+                long amount = GsonHelper.getAsLong(obj, "amount", 0L);
+                result.add(RecipeHooks.fluidStackOf(id, amount));
             }
             return result;
         }
@@ -422,7 +380,7 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
             JsonArray arr = GsonHelper.getAsJsonArray(json, "item_outputs");
             List<ItemStack> result = new ArrayList<>(arr.size());
             for (JsonElement el : arr) {
-                result.add(ShapedRecipe.itemStackFromJson(el.getAsJsonObject()));
+                result.add(RecipeHooks.itemStackFromJson(el.getAsJsonObject()));
             }
             return result;
         }
@@ -435,13 +393,10 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
                 JsonObject obj = el.getAsJsonObject();
                 ResourceLocation id = ResourceLocation.tryParse(GsonHelper.getAsString(obj, "fluid"));
                 if (id == null) continue;
-                var fluid = BuiltInRegistries.FLUID.get(id);
-                if (fluid == null) continue;
-                int amount = GsonHelper.getAsInt(obj, "amount", 0);
-                result.add(FluidStack.create(fluid, (long) amount));
+                long amount = GsonHelper.getAsLong(obj, "amount", 0L);
+                result.add(RecipeHooks.fluidStackOf(id, amount));
             }
             return result;
         }
     }
 }
-

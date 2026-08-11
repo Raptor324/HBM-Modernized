@@ -23,6 +23,7 @@ import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.recipe.AssemblerRecipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.sound.ClientSoundBootstrap;
 
 import net.minecraft.core.BlockPos;
@@ -38,7 +39,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -337,7 +337,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
         boolean hasRecipe = recipeOpt.isPresent();
         boolean hasResources = hasRecipe && hasResources(recipeOpt.get());
-        boolean canInsert = hasRecipe && canInsertResult(recipeOpt.get().getResultItem(null));
+        boolean canInsert = hasRecipe && canInsertResult(recipeOpt.get().getResultItemSafe());
 
         if (hasRecipe && hasResources && canInsert) {
             AssemblerRecipe recipe = recipeOpt.get();
@@ -462,10 +462,8 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             return Optional.empty();
         }
 
-        RecipeManager recipeManager = level.getRecipeManager();
-        return recipeManager.getAllRecipesFor(AssemblerRecipe.Type.INSTANCE)
-                .stream()
-                .filter(r -> PlatformHooks.isSameItemSameTags(r.getResultItem(null), outputStack))
+        return RecipeHooks.getAllRecipes(level, AssemblerRecipe.Type.INSTANCE).stream()
+                .filter(r -> PlatformHooks.isSameItemSameTags(r.getResultItemSafe(), outputStack))
                 .findFirst();
     }
 
@@ -498,7 +496,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
     private void craftItem(AssemblerRecipe recipe) {
         NonNullList<Ingredient> ingredients = recipe.getIngredients();
-        ItemStack result = recipe.getResultItem(null).copy();
+        ItemStack result = recipe.getResultItemSafe().copy();
 
         for (Ingredient ingredient : ingredients) {
             for (int i = INPUT_SLOT_START; i <= INPUT_SLOT_END; i++) {

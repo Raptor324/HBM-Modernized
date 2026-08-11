@@ -11,8 +11,8 @@ import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineMixerMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
-import com.hbm_m.recipe.MixerRecipes;
-import com.hbm_m.recipe.MixerRecipes.MixerRecipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.MixerRecipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -137,7 +137,19 @@ public class MachineMixerBlockEntity extends BaseMachineBlockEntity implements I
      * draining the inputs and filling the output.
      */
     private boolean mix() {
-        MixerRecipe recipe = MixerRecipes.findRecipe(tanks[TANK_INPUT_A].getTankType(), tanks[TANK_INPUT_B].getTankType());
+        // Рецепты data-driven (JSON) — поиск по двум бакам через RecipeManager (кросс-версионный RecipeHooks).
+        // level доступен из BaseMachineBlockEntity на момент serverTick().
+        MixerRecipe recipe = null;
+        if (level != null) {
+            Fluid tankAFluid = tanks[TANK_INPUT_A].getTankType();
+            Fluid tankBFluid = tanks[TANK_INPUT_B].getTankType();
+            for (MixerRecipe r : RecipeHooks.getAllRecipes(level, MixerRecipe.Type.INSTANCE)) {
+                if (r.matches(tankAFluid, tankBFluid)) {
+                    recipe = r;
+                    break;
+                }
+            }
+        }
 
         if (recipe == null) {
             if (active || progress != 0) {
@@ -151,14 +163,17 @@ public class MachineMixerBlockEntity extends BaseMachineBlockEntity implements I
         boolean directOrder = recipe.isDirectOrder(tanks[TANK_INPUT_A].getTankType());
         FluidTank tankA = directOrder ? tanks[TANK_INPUT_A] : tanks[TANK_INPUT_B];
         FluidTank tankB = directOrder ? tanks[TANK_INPUT_B] : tanks[TANK_INPUT_A];
-        int amountA = directOrder ? recipe.amountA() : recipe.amountB();
-        int amountB = directOrder ? recipe.amountB() : recipe.amountA();
+        int amountA = directOrder ? (int) recipe.getInputA().getAmount() : (int) recipe.getInputB().getAmount();
+        int amountB = directOrder ? (int) recipe.getInputB().getAmount() : (int) recipe.getInputA().getAmount();
+
+        Fluid outputFluid = recipe.getOutput().getFluid();
+        int outputAmount = (int) recipe.getOutput().getAmount();
 
         boolean hasFluids = tankA.getFill() >= amountA && tankB.getFill() >= amountB;
-        boolean hasEnergy = this.energy >= recipe.energyPerTick();
-        boolean hasOutputSpace = canFillOutput(recipe.output(), recipe.outputAmount());
+        boolean hasEnergy = this.energy >= recipe.getEnergyPerTick();
+        boolean hasOutputSpace = canFillOutput(outputFluid, outputAmount);
 
-        maxProgress = Math.max(1, recipe.duration());
+        maxProgress = Math.max(1, recipe.getDuration());
 
         if (!hasFluids || !hasEnergy || !hasOutputSpace) {
             if (active) {
@@ -173,14 +188,14 @@ public class MachineMixerBlockEntity extends BaseMachineBlockEntity implements I
 
         if (progress < maxProgress) {
             progress++;
-            this.energy -= recipe.energyPerTick();
+            this.energy -= recipe.getEnergyPerTick();
             changed = true;
         }
 
         if (progress >= maxProgress) {
             tankA.drainMb(amountA);
             tankB.drainMb(amountB);
-            tanks[TANK_OUTPUT].fillMb(recipe.output(), recipe.outputAmount());
+            tanks[TANK_OUTPUT].fillMb(outputFluid, outputAmount);
             progress = 0;
             changed = true;
         }

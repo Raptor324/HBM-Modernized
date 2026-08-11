@@ -74,6 +74,73 @@ public class ModRecipes {
     public static final RegistrySupplier<RecipeType<CombinationOvenRecipe>> COMBINATION_OVEN_TYPE =
             RECIPE_TYPES.register("combination_oven", () -> CombinationOvenRecipe.Type.INSTANCE);
 
+    // Crystallizer — рудный окислитель. ID сериализатора/типа = "crystallizer" (см. CrystallizerRecipe.Type.ID).
+    public static final RegistrySupplier<RecipeSerializer<CrystallizerRecipe>> CRYSTALLIZER_SERIALIZER =
+            SERIALIZERS.register("crystallizer", () -> CrystallizerRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<CrystallizerRecipe>> CRYSTALLIZER_TYPE =
+            RECIPE_TYPES.register("crystallizer", () -> CrystallizerRecipe.Type.INSTANCE);
+
+    // Cyclotron — циклотрон. ID = "cyclotron" (см. CyclotronRecipe.Type.ID).
+    public static final RegistrySupplier<RecipeSerializer<CyclotronRecipe>> CYCLOTRON_SERIALIZER =
+            SERIALIZERS.register("cyclotron", () -> CyclotronRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<CyclotronRecipe>> CYCLOTRON_TYPE =
+            RECIPE_TYPES.register("cyclotron", () -> CyclotronRecipe.Type.INSTANCE);
+
+    // Mixer — промышленный миксер. ID = "mixer" (см. MixerRecipe.Type.ID).
+    public static final RegistrySupplier<RecipeSerializer<MixerRecipe>> MIXER_SERIALIZER =
+            SERIALIZERS.register("mixer", () -> MixerRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<MixerRecipe>> MIXER_TYPE =
+            RECIPE_TYPES.register("mixer", () -> MixerRecipe.Type.INSTANCE);
+
+    // CrucibleSmelting — тигель-плавка предмета в расплавленный материал. ID = "crucible_smelting".
+    public static final RegistrySupplier<RecipeSerializer<CrucibleSmeltingRecipe>> CRUCIBLE_SMELTING_SERIALIZER =
+            SERIALIZERS.register("crucible_smelting", () -> CrucibleSmeltingRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<CrucibleSmeltingRecipe>> CRUCIBLE_SMELTING_TYPE =
+            RECIPE_TYPES.register("crucible_smelting", () -> CrucibleSmeltingRecipe.Type.INSTANCE);
+
+    // MoltenAlloy — тигель-сплавление расплавленных материалов (MaterialStack → MaterialStack[]).
+    // ID = "molten_alloy" (см. MoltenAlloyRecipe.Type.ID). Data-driven, material-based, не item/fluid.
+    public static final RegistrySupplier<RecipeSerializer<MoltenAlloyRecipe>> MOLTEN_ALLOY_SERIALIZER =
+            SERIALIZERS.register("molten_alloy", () -> MoltenAlloyRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<MoltenAlloyRecipe>> MOLTEN_ALLOY_TYPE =
+            RECIPE_TYPES.register("molten_alloy", () -> MoltenAlloyRecipe.Type.INSTANCE);
+
+    // MoldCasting — отливка в форме: пара (mold, material) → ItemStack. ID = "mold_casting".
+    public static final RegistrySupplier<RecipeSerializer<MoldCastingRecipe>> MOLD_CASTING_SERIALIZER =
+            SERIALIZERS.register("mold_casting", () -> MoldCastingRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<MoldCastingRecipe>> MOLD_CASTING_TYPE =
+            RECIPE_TYPES.register("mold_casting", () -> MoldCastingRecipe.Type.INSTANCE);
+
+    // ArcWelder — дуговая сварка. ID = "arc_welder" (см. ArcWelderRecipe.Type.ID).
+    // Замена статике ArcWelderRecipes.recipes — теперь data-driven (JSON).
+    public static final RegistrySupplier<RecipeSerializer<ArcWelderRecipe>> ARC_WELDER_SERIALIZER =
+            SERIALIZERS.register("arc_welder", () -> ArcWelderRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<ArcWelderRecipe>> ARC_WELDER_TYPE =
+            RECIPE_TYPES.register("arc_welder", () -> ArcWelderRecipe.Type.INSTANCE);
+
+    // SolderingStation — паяльная станция. ID = "soldering_station" (см. SolderingRecipe.Type.ID).
+    // Замена статике SolderingRecipes.recipes — теперь data-driven (JSON).
+    public static final RegistrySupplier<RecipeSerializer<SolderingRecipe>> SOLDERING_SERIALIZER =
+            SERIALIZERS.register("soldering_station", () -> SolderingRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<SolderingRecipe>> SOLDERING_TYPE =
+            RECIPE_TYPES.register("soldering_station", () -> SolderingRecipe.Type.INSTANCE);
+
+    // GasCentrifuge — газовый центрифуг (JEI-only). ID = "gas_centrifuge" (см. GasCentrifugeRecipe.Type.ID).
+    // Runtime использует cascade-enrichment через PseudoFluidType; этот рецепт — для статичного JEI-show.
+    public static final RegistrySupplier<RecipeSerializer<GasCentrifugeRecipe>> GAS_CENTRIFUGE_SERIALIZER =
+            SERIALIZERS.register("gas_centrifuge", () -> GasCentrifugeRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<GasCentrifugeRecipe>> GAS_CENTRIFUGE_TYPE =
+            RECIPE_TYPES.register("gas_centrifuge", () -> GasCentrifugeRecipe.Type.INSTANCE);
+
 
 
     public static void init() {
