@@ -32,14 +32,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.TextureAtlas;
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
 
 /**
  * Optional Multi-Draw Indirect aggregation path for {@link InstancedStaticPartRenderer}.
@@ -76,11 +68,14 @@ import net.fabricmc.api.Environment;
  * still routes to {@code flushBatchIris} when an external shader is active —
  * the coordinator's eligibility test rejects those flushes up front.
  */
+
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public final class MdiBatchCoordinator {
 
     /**
@@ -746,7 +741,12 @@ public final class MdiBatchCoordinator {
 
                 var mc = Minecraft.getInstance();
                 if (mc.gameRenderer != null) {
+                    //? if < 1.21.1 {
                     mc.gameRenderer.lightTexture().updateLightTexture(mc.getFrameTime());
+                    //?} else {
+                    /*// 1.21.1: getPartialTick() удалён — частичное время тика через DeltaTracker.Timer.
+                    mc.gameRenderer.lightTexture().updateLightTexture(mc.getTimer().getGameTimeDeltaPartialTick(true));
+                    *///?}
                 }
 
                 RenderSystem.setShader(() -> shader);

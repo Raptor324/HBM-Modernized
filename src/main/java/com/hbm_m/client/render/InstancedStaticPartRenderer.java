@@ -21,6 +21,7 @@ import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.platform.RenderHooks;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -33,14 +34,7 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
+
 /**
  * Instanced Renderer для статических частей (Base/Frame).
  * Без шейдеров рендерит все машины одного типа одним {@code glDrawElementsInstanced}.
@@ -53,10 +47,12 @@ import net.fabricmc.api.Environment;
  * GL compatibility helpers live in {@link InstancedGlCompat}.
  */
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class InstancedStaticPartRenderer extends AbstractGpuMesh
         implements VanillaInstancedMeshRenderer, IrisCompanionMeshRenderer {
 
@@ -386,11 +382,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
                 VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
                 var pose = poseStack.last();
                 for (BakedQuad quad : quadsForIris) {
-                    //? if forge {
-                    consumer.putBulkData(pose, quad, 1f, 1f, 1f, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
-                    //?} else {
-                    /*consumer.putBulkData(pose, quad, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY);
-                    *///?}
+                    RenderHooks.putBulkData(consumer, pose, quad, 1f, 1f, 1f, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
                 }
             }
             return;
@@ -639,7 +631,11 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(worldPose);
         } else {
             var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+            //? if < 1.21.1 {
             tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
+            //?} else {
+            /*tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
+            *///?}
             tmpLocalPose.set(tmpInvViewRot).mul(worldPose);
             tmpLocalPose.m30(tmpLocalPose.m30() - (float) (blockPos.getX() - cam.x));
             tmpLocalPose.m31(tmpLocalPose.m31() - (float) (blockPos.getY() - cam.y));

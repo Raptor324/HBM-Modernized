@@ -1,10 +1,5 @@
 package com.hbm_m.client.render;
 
-//? if fabric {
-
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.hbm_m.client.render.shader.IrisBufferHelper;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.platform.RenderHooks;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -23,15 +19,14 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
+
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class MeshRenderCache {
 
     private static final int MAX_CACHE_SIZE = 256;
@@ -154,18 +149,22 @@ public class MeshRenderCache {
         int neutralLight = 0;
 
         for (BakedQuad quad : quads) {
-            //? if forge {
-            builder.putBulkData(neutralPose, quad, r, g, b, a, neutralLight, OverlayTexture.NO_OVERLAY, false);
-            //?} else {
-            /*builder.putBulkData(neutralPose, quad, r, g, b, neutralLight, OverlayTexture.NO_OVERLAY);
-            *///?}
+            RenderHooks.putBulkData(builder, neutralPose, quad, r, g, b, a, neutralLight, OverlayTexture.NO_OVERLAY, false);
         }
 
+        //? if < 1.21.1 {
         BufferBuilder.RenderedBuffer renderedBuffer = builder.end();
         VertexBuffer vbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
         vbo.bind();
         vbo.upload(renderedBuffer);
         VertexBuffer.unbind();
+        //?} else {
+        /*com.mojang.blaze3d.vertex.MeshData renderedBuffer = builder.buildOrThrow();
+        VertexBuffer vbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
+        vbo.bind();
+        vbo.upload(renderedBuffer);
+        VertexBuffer.unbind();
+        *///?}
 
         return vbo;
     }

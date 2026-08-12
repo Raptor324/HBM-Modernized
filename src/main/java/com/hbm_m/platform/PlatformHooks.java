@@ -4,43 +4,15 @@ import java.nio.file.Path;
 import java.util.function.Consumer;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.Level;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
+import dev.architectury.platform.Platform;
 
-/**
- * Платформенный слой Strategy B: тонкие адаптеры для API, которые НЕ покрывает Architectury.
- *
- * <p>Архитектура (см. правило {@code platform-strategy-b.md}):
- * <ul>
- *   <li>Если Architectury уже даёт абстракцию — используем её напрямую (например, меню:
- *       {@code dev.architectury.registry.menu.MenuRegistry.openExtendedMenu}).</li>
- *   <li>Если абстракции нет — hook добавляется сюда с ветвлением через stonecutter
- *       {@code //? if forge/fabric/neoforge}.</li>
- * </ul>
- *
- * <h2>Item custom-NBT / DataComponents bridge</h2>
- * Кросс-версионный доступ к «произвольным данным предмета». Это главная разница 1.20.1 ↔ 1.21.1:
- * <ul>
- *   <li><b>1.20.1</b> (forge/fabric): {@code ItemStack.getTag()/getOrCreateTag()/setTag()} —
- *       живой {@link CompoundTag}, мутации сохраняются сразу.</li>
- *   <li><b>1.21.1+</b> (neoforge): {@code DataComponents.CUSTOM_DATA} ({@code CustomData}) —
- *       иммутабельное значение; чтение даёт <b>копию</b>, для сохранения изменений нужен
- *       {@code stack.set(DataComponents.CUSTOM_DATA, ...)}.</li>
- * </ul>
- *
- * <p><b>Следствие:</b> идеальной drop-in замены {@code getOrCreateTag()} (живая ссылка) на 1.21.1
- * не существует. Поэтому:
- * <ul>
- *   <li>Для мутаций используйте {@link #editItemTag} (read-modify-write, сохраняется на обеих версиях).</li>
- *   <li>Для чтения — {@link #getItemTag} (возвращает копию на 1.21.1; не мутируйте).</li>
- * </ul>
- *
- * <p><b>Gating-нюанс:</b> NBT→DataComponents — это ВЕРСИОННОЕ различие, но пока gated по loader'у
- * ({@code forge||fabric} = 1.20.1 NBT, {@code neoforge} = 1.21.1 DataComponents) — корректно для
- * текущего набора (1.20.1-forge/fabric, 1.21.1-neoforge). При активации 1.21.1-fabric потребуется
- * рефакторинг на version-gating (константа {@code data_components} в stonecutter.gradle.kts).
- */
 public final class PlatformHooks {
     private PlatformHooks() {}
 
@@ -53,10 +25,9 @@ public final class PlatformHooks {
      * @return тег или {@code null}, если у предмета нет custom-NBT
      */
     public static CompoundTag getItemTag(ItemStack stack) {
-        //? if forge || fabric {
+        //? if < 1.21.1 {
         return stack.getTag();
-        //?}
-        //? if neoforge {
+        //?} else {
         /*net.minecraft.world.item.component.CustomData data = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
         return data == null ? null : data.copyTag();
         *///?}
@@ -73,12 +44,10 @@ public final class PlatformHooks {
         return pkt.getTag();
     }
 
-    /** Есть ли у предмета custom-NBT. */
     public static boolean hasItemTag(ItemStack stack) {
-        //? if forge || fabric {
+        //? if < 1.21.1 {
         return stack.hasTag();
-        //?}
-        //? if neoforge {
+        //?} else {
         /*return stack.has(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
         *///?}
     }
@@ -95,10 +64,9 @@ public final class PlatformHooks {
      * }</pre>
      */
     public static void editItemTag(ItemStack stack, Consumer<CompoundTag> editor) {
-        //? if forge || fabric {
+        //? if < 1.21.1 {
         editor.accept(stack.getOrCreateTag());
-        //?}
-        //? if neoforge {
+        //?} else {
         /*net.minecraft.world.item.component.CustomData data = stack.getOrDefault(
                 net.minecraft.core.component.DataComponents.CUSTOM_DATA,
                 net.minecraft.world.item.component.CustomData.EMPTY);
@@ -114,10 +82,9 @@ public final class PlatformHooks {
      * {@code stack.setTag(null)} на 1.20.1).
      */
     public static void setItemTag(ItemStack stack, CompoundTag tag) {
-        //? if forge || fabric {
+        //? if < 1.21.1 {
         stack.setTag(tag);
-        //?}
-        //? if neoforge {
+        //?} else {
         /*if (tag == null || tag.isEmpty()) {
             stack.remove(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
         } else {
@@ -140,14 +107,13 @@ public final class PlatformHooks {
      * Заменяет {@code ItemStack.isSameItemSameTags(a, b)}.
      */
     public static boolean isSameItemSameTags(ItemStack a, ItemStack b) {
-        //? if forge || fabric {
+        //? if < 1.21.1 {
         return ItemStack.isSameItemSameTags(a, b);
-        //?}
-        //? if neoforge {
+        //?} else {
         /*return ItemStack.isSameItemSameComponents(a, b);
         *///?}
+    
     }
-
     /**
      * Создание ItemStack из NBT-тега. Заменяет {@code ItemStack.of(tag)} на 1.20.1.
      * На 1.21.1 требует {@code HolderLookup.Provider} (DataComponents несут реестровые ссылки).
@@ -155,25 +121,23 @@ public final class PlatformHooks {
      * @param provider реестры (передавайте {@code level.holderLookup()} или {@code player.registryAccess()})
      */
     public static ItemStack itemStackOf(CompoundTag tag, net.minecraft.core.HolderLookup.Provider provider) {
-        //? if forge || fabric {
+        //? if < 1.21.1 {
         return ItemStack.of(tag);
-        //?}
-        //? if neoforge {
+        //?} else {
         /*return ItemStack.parseOptional(provider, tag);
         *///?}
     }
-
     /**
      * Сохранение ItemStack в NBT-тег. Заменяет {@code stack.save(tag)} на 1.20.1.
      * Возвращает тот же (заполненный) тег на обеих версиях.
      *
      * @param provider реестры (на 1.21.1 обязателен)
      */
+
     public static CompoundTag saveItemStack(ItemStack stack, CompoundTag tag, net.minecraft.core.HolderLookup.Provider provider) {
-        //? if forge || fabric {
+        //? if < 1.21.1 {
         return stack.save(tag);
-        //?}
-        //? if neoforge {
+        //?} else {
         /*return (CompoundTag) stack.save(provider, tag);
         *///?}
     }
@@ -185,6 +149,30 @@ public final class PlatformHooks {
     public static CompoundTag safeItemSave(ItemStack stack, net.minecraft.core.HolderLookup.Provider provider) {
         return saveItemStack(stack, new CompoundTag(), provider);
     }
+
+    // =====================================================================================
+    //  Best-effort HolderLookup.Provider для item-NBT, когда Level/Player недоступны
+    //  (например статические Item-методы getName/tooltip без контекста Level).
+    //  ONLY 1.21.1 — на 1.20.1 stack.save(CompoundTag)/ItemStack.of(CompoundTag) провайдер не требуют.
+    //  Берётся из клиентского Level (tooltip/render — основной call-site таких Item-методов).
+    //  На dedicated server возвращает null — call-site'ы ItemAssemblyTemplate деградируют в EMPTY.
+    // =====================================================================================
+
+    //? if >= 1.21.1 {
+    /*//? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif fabric {
+    /^@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+    ^///?} elif neoforge {
+    /^@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    ^///?}
+    public static net.minecraft.core.HolderLookup.Provider clientProvider() {
+        var mc = net.minecraft.client.Minecraft.getInstance();
+        if (mc.level != null) return mc.level.registryAccess();
+        if (mc.getConnection() != null) return mc.getConnection().registryAccess();
+        return null;
+    }
+    *///?}
 
     // =====================================================================================
     //  Типизированные хелперы (COMMON — делегируют в getItemTag/editItemTag, без gating).
@@ -280,10 +268,9 @@ public final class PlatformHooks {
      * @return {@link Level} или {@code null}, если контекст без level
      */
     public static Level tooltipLevel(Object levelOrContext) {
-        //? if forge || fabric {
+        //? if < 1.21.1 {
         return (Level) levelOrContext;
-        //?}
-        //? if neoforge {
+        //?} else {
         /*if (levelOrContext instanceof net.minecraft.world.item.Item.TooltipContext ctx) {
             return ctx.level();
         }
@@ -301,14 +288,394 @@ public final class PlatformHooks {
 
     /** Глобальный каталог {@code <game>/config}. Подкаталог мода — {@code config/hbm_m}. */
     public static Path getConfigDir() {
-        //? if forge {
-        return net.minecraftforge.fml.loading.FMLPaths.CONFIGDIR.get();
-        //?}
-        //? if fabric {
-        /*return net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir();
+        return Platform.getConfigFolder();
+    }
+
+    // =====================================================================================
+    //  AttributeModifier constructors bridge.
+    //
+    //  1.20.1: (UUID, String, double, Operation) и (String, double, Operation).
+    //  1.21.1: UUID-конструктор deprecated (но работает с warning), String-only
+    //          конструктор удалён — нужно (ResourceLocation, double, Operation).
+    //  Хук позволяет ItemArmorMod не ветвиться stonecutter'ом.
+    // =====================================================================================
+
+    /**
+     * Создание {@link AttributeModifier} с UUID-идентификатором.
+     * Заменяет {@code new AttributeModifier(uuid, name, value, operation)} на 1.20.1.
+     *
+     * <p>На 1.21.1 UUID-конструктор deprecated (но работоспособен), хук делегирует
+     * в него, чтобы сохранить UUID-семантику привязки модификатора к слоту брони.
+     */
+
+    public static AttributeModifier attributeModifier(
+            java.util.UUID uuid, String name, double value, AttributeModifier.Operation operation) {
+        //? if < 1.21.1 {
+        return new AttributeModifier(uuid, name, value, operation);
+        //?} else {
+        /*// 1.21.1: UUID-конструктор удалён. Привязка модификатора к слоту брони теперь по
+        // ResourceLocation (производное от UUID, чтобы остаться уникальным и стабильным).
+        return new AttributeModifier(
+                com.hbm_m.lib.RefStrings.resourceLocation(
+                        "am_" + uuid.toString().replace('-', '_')),
+                value, operation);
         *///?}
-        //? if neoforge {
-        /*return net.neoforged.fml.loading.FMLPaths.CONFIGDIR.get();
+    }
+
+    /**
+     * Создание {@link AttributeModifier} с именем-идентификатором (без UUID).
+     * Заменяет {@code new AttributeModifier(name, value, operation)} на 1.20.1.
+     *
+     * <p>На 1.21.1 string-only конструктор удалён — нужно {@code ResourceLocation}.
+     * Хук стабильно генерирует RL из имени с {@code hbm_m:} namespace.
+     */
+    public static AttributeModifier attributeModifier(
+            String name, double value, AttributeModifier.Operation operation) {
+        //? if < 1.21.1 {
+        return new AttributeModifier(name, value, operation);
+        //?} else {
+        /*return new AttributeModifier(
+                com.hbm_m.lib.RefStrings.resourceLocation(
+                        name.toLowerCase(java.util.Locale.ROOT).replace(' ', '_').replace(':', '.')),
+                value, operation);
+        *///?}
+    }
+
+    // =====================================================================================
+    //  Model Registration & Handling Bridge
+    //
+    //  1.20.1: ModelResourceLocation extends ResourceLocation.
+    //  1.21.1: ModelResourceLocation is a record (does NOT extend ResourceLocation).
+    //          RegisterGeometryLoaders требует ResourceLocation, RegisterAdditional требует ModelResourceLocation.
+    // =====================================================================================
+
+    /**
+     * Создание ModelResourceLocation. Возвращает Object, чтобы не зависеть от изменения
+     * иерархии наследования.
+     */
+    public static Object createModelLocation(ResourceLocation id, String variant) {
+        return new net.minecraft.client.resources.model.ModelResourceLocation(id, variant);
+    }
+
+    /**
+     * Извлечение ResourceLocation (ID) из ModelResourceLocation.
+     */
+    public static ResourceLocation getModelId(Object modelResourceLocation) {
+        //? if < 1.21.1 {
+        return (ResourceLocation) modelResourceLocation;
+        //?} else {
+        /*return ((net.minecraft.client.resources.model.ModelResourceLocation) modelResourceLocation).id();
+        *///?}
+    }
+
+    /**
+     * Регистрация дополнительной standalone-модели.
+     */
+    public static void registerAdditionalModel(Object event, ResourceLocation loc) {
+        //? if < 1.21.1 {
+        ((net.minecraftforge.client.event.ModelEvent.RegisterAdditional) event).register(loc);
+        //?} else {
+        /*((net.neoforged.neoforge.client.event.ModelEvent.RegisterAdditional) event).register(
+                new net.minecraft.client.resources.model.ModelResourceLocation(loc, "standalone"));
+        *///?}
+    }
+
+    /**
+     * Регистрация Geometry Loader.
+     */
+    public static void registerGeometryLoader(Object event, String name, Object loader) {
+        //? if < 1.21.1 {
+        ((net.minecraftforge.client.event.ModelEvent.RegisterGeometryLoaders) event).register(
+                name, (net.minecraftforge.client.model.geometry.IGeometryLoader<?>) loader);
+        //?} else {
+        /*((net.neoforged.neoforge.client.event.ModelEvent.RegisterGeometryLoaders) event).register(
+                com.hbm_m.lib.RefStrings.resourceLocation(name),
+                (net.neoforged.neoforge.client.model.geometry.IGeometryLoader<?>) loader);
+        *///?}
+    }
+
+    /**
+     * Получение BakedModel из ModelManager по ResourceLocation.
+     * Используйте это в рендерерах (EntityRenderer/BlockEntityRenderer), чтобы не зависеть
+     * от изменения сигнатуры getModel() на 1.21.1.
+     */
+    public static net.minecraft.client.resources.model.BakedModel getModel(
+            net.minecraft.client.resources.model.ModelManager manager, ResourceLocation loc) {
+        //? if < 1.21.1 {
+        return manager.getModel(loc);
+        //?} else {
+        /*return manager.getModel(new net.minecraft.client.resources.model.ModelResourceLocation(loc, "standalone"));
+        *///?}
+    }
+    // =====================================================================================
+    //  VertexFormatElement Bridge
+    //
+    //  В 1.21.1 класс стал record и требует `id` первым параметром. 
+    //  В 1.20.1 это обычный класс без id.
+    // =====================================================================================
+
+    /**
+     * Создание VertexFormatElement (мост между 1.20.1 и 1.21.1).
+     */
+
+    public static com.mojang.blaze3d.vertex.VertexFormatElement createVertexFormatElement(
+            int index, com.mojang.blaze3d.vertex.VertexFormatElement.Type type,
+            com.mojang.blaze3d.vertex.VertexFormatElement.Usage usage, int count) {
+        //? if < 1.21.1 {
+        return new com.mojang.blaze3d.vertex.VertexFormatElement(index, type, usage, count);
+        //?} else {
+        /*return new com.mojang.blaze3d.vertex.VertexFormatElement(0, index, type, usage, count);
+        *///?}
+    }
+
+    // =====================================================================================
+    //  Food Properties Builder Bridge
+    //
+    //  Различия версий:
+    //  1.20.1: saturationMod(), meat(), effect(Supplier<MobEffectInstance>, float).
+    //  1.21.1: saturationModifier(), meat() удалён, effect(MobEffectInstance, float).
+    // =====================================================================================
+
+    /** 
+     * Создаёт билдер и применяет кросс-версионный параметр насыщения (saturation). 
+     */
+    public static net.minecraft.world.food.FoodProperties.Builder foodBuilder(int nutrition, float saturation) {
+        net.minecraft.world.food.FoodProperties.Builder builder = new net.minecraft.world.food.FoodProperties.Builder().nutrition(nutrition);
+        //? if < 1.21.1 {
+        return builder.saturationMod(saturation);
+        //?} else {
+        /*return builder.saturationModifier(saturation);
+        *///?}
+    }
+
+    /**
+     * Кросс-версионное добавление эффекта. 
+     * Параметр `effect` передается как Object, чтобы обходить разницу между MobEffect (1.20.1) и Holder<MobEffect> (1.21.1).
+     */
+    public static net.minecraft.world.food.FoodProperties.Builder addFoodEffect(
+            net.minecraft.world.food.FoodProperties.Builder builder,
+            Object effect, int duration, float probability) {
+        return addFoodEffect(builder, effect, duration, 0, probability);
+    }
+
+    /**
+     * Кросс-версионное добавление эффекта с усилителем (amplifier).
+     */
+    public static net.minecraft.world.food.FoodProperties.Builder addFoodEffect(
+            net.minecraft.world.food.FoodProperties.Builder builder,
+            Object effect, int duration, int amplifier, float probability) {
+        //? if < 1.21.1 {
+        return builder.effect(() -> new net.minecraft.world.effect.MobEffectInstance((net.minecraft.world.effect.MobEffect) effect, duration, amplifier), probability);
+        //?} else {
+        /*return builder.effect(new net.minecraft.world.effect.MobEffectInstance((net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>) effect, duration, amplifier), probability);
+        *///?}
+    }
+
+    /** 
+     * Помечает еду как мясо (на 1.21.1 игнорируется в коде, используйте теги minecraft:meat / minecraft:wolf_food). 
+     */
+    public static net.minecraft.world.food.FoodProperties.Builder setMeat(net.minecraft.world.food.FoodProperties.Builder builder) {
+        //? if < 1.21.1 {
+        return builder.meat();
+        //?} else {
+        /*return builder;
+        *///?}
+    }
+
+    // =====================================================================================
+    //  Block Construction Helpers
+    // =====================================================================================
+
+    /**
+     * Кросс-версионное создание DoorBlock (Properties, BlockSetType на 1.20.1 vs BlockSetType, Properties на 1.21.1).
+     */
+    public static net.minecraft.world.level.block.DoorBlock createDoorBlock(net.minecraft.world.level.block.state.BlockBehaviour.Properties props, net.minecraft.world.level.block.state.properties.BlockSetType type) {
+        //? if < 1.21.1 {
+        return new net.minecraft.world.level.block.DoorBlock(props, type);
+        //?} else {
+        /*return new net.minecraft.world.level.block.DoorBlock(type, props);
+        *///?}
+    }
+
+    /**
+     * Кросс-версионное создание DropExperienceBlock (Properties на 1.20.1 vs ConstantInt, Properties на 1.21.1).
+     */
+    public static net.minecraft.world.level.block.DropExperienceBlock createDropExperienceBlock(net.minecraft.world.level.block.state.BlockBehaviour.Properties props) {
+        //? if < 1.21.1 {
+        return new net.minecraft.world.level.block.DropExperienceBlock(props);
+        //?} else {
+        /*return new net.minecraft.world.level.block.DropExperienceBlock(net.minecraft.util.valueproviders.ConstantInt.of(0), props);
+        *///?}
+    }
+
+    /**
+     * Кросс-версионное создание FlowerBlock (MobEffect, int на 1.20.1 vs Holder<MobEffect>, float на 1.21.1).
+     */
+    public static net.minecraft.world.level.block.FlowerBlock createFlowerBlock(Object effect, int durationTicks, net.minecraft.world.level.block.state.BlockBehaviour.Properties props) {
+        //? if < 1.21.1 {
+        return new net.minecraft.world.level.block.FlowerBlock((net.minecraft.world.effect.MobEffect) effect, durationTicks, props);
+        //?} else {
+        /*return new net.minecraft.world.level.block.FlowerBlock((net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>) effect, (float) durationTicks, props);
+        *///?}
+    }
+    // =====================================================================================
+    //  Advancement & Entity Hooks
+    // =====================================================================================
+
+    /**
+     * Кросс-версионная проверка и выдача достижения игроку.
+     */
+    public static void awardAdvancementIfEligible(net.minecraft.server.level.ServerPlayer player, ResourceLocation id, boolean eligible) {
+        if (!eligible) return;
+        var server = player.getServer();
+        if (server == null) return;
+        var advancementManager = server.getAdvancements();
+        //? if < 1.21.1 {
+        net.minecraft.advancements.Advancement adv = advancementManager.getAdvancement(id);
+        if (adv != null) {
+            net.minecraft.advancements.AdvancementProgress progress = player.getAdvancements().getOrStartProgress(adv);
+            if (!progress.isDone()) {
+                for (String criterion : progress.getRemainingCriteria()) {
+                    player.getAdvancements().award(adv, criterion);
+                }
+            }
+        }
+        //?} else {
+        /*net.minecraft.advancements.AdvancementHolder holder = advancementManager.get(id);
+        if (holder != null) {
+            net.minecraft.advancements.AdvancementProgress progress = player.getAdvancements().getOrStartProgress(holder);
+            if (!progress.isDone()) {
+                for (String criterion : progress.getRemainingCriteria()) {
+                    player.getAdvancements().award(holder, criterion);
+                }
+            }
+        }
+        *///?}
+    }
+
+    /**
+     * Кросс-версионное поджигание сущности.
+     */
+    public static void setSecondsOnFire(net.minecraft.world.entity.Entity entity, int seconds) {
+        //? if < 1.21.1 {
+        entity.setSecondsOnFire(seconds);
+        //?} else {
+        /*entity.igniteForSeconds((float) seconds);
+        *///?}
+    }
+
+    /**
+     * Кросс-платформенная проверка, является ли предмет контейнером жидкости.
+     */
+    public static boolean isFluidContainer(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        //? if forge {
+        return stack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
+        //?} elif neoforge {
+        /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;
+        *///?} elif fabric {
+        /*return net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage.ITEM.find(stack, null) != null;
+        *///?}
+    }
+
+    // =====================================================================================
+    //  BlockEntity NBT Load & Component JSON Bridge
+    // =====================================================================================
+
+    /**
+     * Кросс-версионная загрузка NBT-данных в BlockEntity.
+     */
+    public static void loadBlockEntityTag(net.minecraft.world.level.block.entity.BlockEntity be, CompoundTag tag, net.minecraft.core.HolderLookup.Provider provider) {
+        //? if < 1.21.1 {
+        be.load(tag);
+        //?} else {
+        /*be.loadCustomOnly(tag, provider);
+        *///?}
+    }
+
+    /**
+     * Парсинг JSON-строки в Component (учитывает смену сигнатуры Serializer.fromJson в 1.21.1).
+     */
+    public static net.minecraft.network.chat.Component parseComponentJson(String json, net.minecraft.core.HolderLookup.Provider provider) {
+        if (json == null || json.isEmpty()) return null;
+        //? if < 1.21.1 {
+        return net.minecraft.network.chat.Component.Serializer.fromJson(com.google.gson.JsonParser.parseString(json));
+        //?} else {
+        /*return net.minecraft.network.chat.Component.Serializer.fromJson(json, provider);
+        *///?}
+    }
+
+    /**
+     * Сериализация Component в JSON-строку.
+     */
+    public static String componentToJson(net.minecraft.network.chat.Component component, net.minecraft.core.HolderLookup.Provider provider) {
+        if (component == null) return null;
+        //? if < 1.21.1 {
+        return net.minecraft.network.chat.Component.Serializer.toJson(component);
+        //?} else {
+        /*return net.minecraft.network.chat.Component.Serializer.toJson(component, provider);
+        *///?}
+    }
+
+    /**
+     * Кросс-версионный расчёт отбрасывания взрывом с учётом зачарований защиты.
+     * ProtectionEnchantment (1.20.1) -> EnchantmentHelper (1.21.1).
+     */
+    public static double getExplosionKnockbackAfterDampener(net.minecraft.world.entity.LivingEntity entity, double knockback) {
+        //? if < 1.21.1 {
+        return net.minecraft.world.item.enchantment.ProtectionEnchantment.getExplosionKnockbackAfterDampener(entity, knockback);
+        //?} else {
+        /*double res = entity.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.EXPLOSION_KNOCKBACK_RESISTANCE);
+        return knockback * (1.0 - res);
+        *///?}
+    }
+
+    // =====================================================================================
+    //  Entity riding offset bridge.
+    //
+    //  1.20.1: Entity.getMyRidingOffset() — высота смещения седока верхом.
+    //  1.21.1: переименован в getMyRidingOffset() -> удалён;取代 — rideHeight через
+    //          Entity.getPassengersRidingOffset() / снимается getMyRidingOffset.
+    // =====================================================================================
+    public static double getMyRidingOffset(net.minecraft.world.entity.Entity entity) {
+        //? if < 1.21.1 {
+        return entity.getMyRidingOffset();
+        //?} else {
+        /*// 1.21.1: Entity.getPassengersRidingOffset() и getMyRidingOffset() удалены —
+        // смещение пассажира теперь через EntityAttachments (getAttachments()).
+        // Возвращаем 0.0D как stub (оригинальное поведение по умолчанию для большинства сущностей).
+        return 0.0D;
+        *///?}
+    }
+
+    // =====================================================================================
+    //  Blocks renames bridge (1.20.1 -> 1.21.1).
+    //   Blocks.GLASS / Blocks.TALL_GRASS etc. перенесены/переименованы.
+    // =====================================================================================
+
+    /**
+     * Проверка «трава/короткая трава» с учётом ренейма Blocks.GRASS -> Blocks.SHORT_GRASS
+     * в 1.21.1 (тот же блок, новый идентификатор).
+     */
+    public static boolean isGrassBlock(net.minecraft.world.level.block.state.BlockState state) {
+        //? if < 1.21.1 {
+        return state.is(net.minecraft.world.level.block.Blocks.GRASS);
+        //?} else {
+        /*return state.is(net.minecraft.world.level.block.Blocks.SHORT_GRASS);
+        *///?}
+    }
+
+    // =====================================================================================
+    //  Blocks.GlassBlock constructor bridge.
+    //   1.20.1: net.minecraft.world.level.block.GlassBlock существует.
+    //   1.21.1: удалён — GlassBlock.if() помечен deprecated; используйте прямой Block.
+    //   Возвращаем Block (базовый класс), поведение стекло-props задаётся Properties.
+    // =====================================================================================
+    public static net.minecraft.world.level.block.Block createGlassBlock(net.minecraft.world.level.block.state.BlockBehaviour.Properties props) {
+        //? if < 1.21.1 {
+        return new net.minecraft.world.level.block.GlassBlock(props);
+        //?} else {
+        /*return new net.minecraft.world.level.block.Block(props);
         *///?}
     }
 }

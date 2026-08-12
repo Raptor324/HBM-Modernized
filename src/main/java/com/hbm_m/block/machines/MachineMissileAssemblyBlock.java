@@ -46,8 +46,19 @@ public class MachineMissileAssemblyBlock extends BaseEntityBlock {
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return openMenu(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider menuProvider && player instanceof ServerPlayer serverPlayer) {

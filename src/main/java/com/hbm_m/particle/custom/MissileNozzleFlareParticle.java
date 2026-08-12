@@ -22,6 +22,13 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Engine glare at the missile nozzle — flash + flare textures, yellow tint, flickering brightness.
  */
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class MissileNozzleFlareParticle extends TextureSheetParticle {
 
     /** 0 = flash.png, 1 = nuke_explosion_flare.png */
@@ -98,10 +105,12 @@ public class MissileNozzleFlareParticle extends TextureSheetParticle {
         return LongRangeParticleRenderType.INSTANCE;
     }
 
+    //? if < 1.21.1 {
     @Override
     public boolean shouldCull() {
         return false;
     }
+    //?}
 
     @Override
     public int getLightColor(float partialTick) {
@@ -139,14 +148,11 @@ public class MissileNozzleFlareParticle extends TextureSheetParticle {
         float v0 = this.getV0();
         float v1 = this.getV1();
         int light = LightTexture.FULL_BRIGHT;
-        buffer.vertex(corners[0].x(), corners[0].y(), corners[0].z()).uv(u1, v1)
-                .color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(light).endVertex();
-        buffer.vertex(corners[1].x(), corners[1].y(), corners[1].z()).uv(u1, v0)
-                .color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(light).endVertex();
-        buffer.vertex(corners[2].x(), corners[2].y(), corners[2].z()).uv(u0, v0)
-                .color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(light).endVertex();
-        buffer.vertex(corners[3].x(), corners[3].y(), corners[3].z()).uv(u0, v1)
-                .color(this.rCol, this.gCol, this.bCol, this.alpha).uv2(light).endVertex();
+        int ir = (int) (this.rCol * 255.0F), ig = (int) (this.gCol * 255.0F), ib = (int) (this.bCol * 255.0F), ia = (int) (this.alpha * 255.0F);
+        com.hbm_m.platform.RenderHooks.particleVertex(buffer, corners[0].x(), corners[0].y(), corners[0].z(), u1, v1, ir, ig, ib, ia, light);
+        com.hbm_m.platform.RenderHooks.particleVertex(buffer, corners[1].x(), corners[1].y(), corners[1].z(), u1, v0, ir, ig, ib, ia, light);
+        com.hbm_m.platform.RenderHooks.particleVertex(buffer, corners[2].x(), corners[2].y(), corners[2].z(), u0, v0, ir, ig, ib, ia, light);
+        com.hbm_m.platform.RenderHooks.particleVertex(buffer, corners[3].x(), corners[3].y(), corners[3].z(), u0, v1, ir, ig, ib, ia, light);
     }
 
     public static class Provider implements ParticleProvider<SimpleParticleType> {

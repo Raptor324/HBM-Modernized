@@ -181,9 +181,14 @@ public class WireBlock extends BaseEntityBlock {
         if (be.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, sideFromNeighbor).isPresent()) return true;
         if (be.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER, sideFromNeighbor).isPresent()) return true;
         return be.getCapability(ForgeCapabilities.ENERGY, sideFromNeighbor).isPresent();
-        //?}
-
-        //? if fabric {
+        //?} elif neoforge {
+        /*// NeoForge 1.21.1: Capabilities.EnergyStorage.BLOCK — capability через Level.getCapability.
+        // LevelAccessor не имеет getCapability — кастануть к Level; иначе fallback false.
+        if (world instanceof net.minecraft.world.level.Level level) {
+            return level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK, neighborPos, sideFromNeighbor) != null;
+        }
+        return false;
+        *///?} elif fabric {
         /*// Fabric: проверяем через cardinal-components
         return ModCapabilities.hasEnergyComponent(be);
         *///?}

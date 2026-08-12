@@ -233,27 +233,26 @@ public class GUIMachineRadarNT extends GuiInfoScreen<MachineRadarMenu> {
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         org.joml.Matrix4f matrix = guiGraphics.pose().last().pose();
-        BufferBuilder buffer = Tesselator.getInstance().getBuilder();
-        buffer.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder buffer = com.hbm_m.platform.RenderHooks.beginTesselator(Tesselator.getInstance(), VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         // Два треугольника вместо QUAD: так клин не зависит от winding/culling.
-        buffer.vertex(matrix, cx, cy, 0F).color(0, 255, 0, 0).endVertex();
-        buffer.vertex(matrix, cx + (float) tr[0], cy + (float) tr[1], 0F).color(0, 255, 0, 220).endVertex();
-        buffer.vertex(matrix, cx + (float) tl[0], cy + (float) tl[1], 0F).color(0, 255, 0, 0).endVertex();
-        buffer.vertex(matrix, cx, cy, 0F).color(0, 255, 0, 0).endVertex();
-        buffer.vertex(matrix, cx + (float) tl[0], cy + (float) tl[1], 0F).color(0, 255, 0, 0).endVertex();
-        buffer.vertex(matrix, cx + (float) bl[0], cy + (float) bl[1], 0F).color(0, 255, 0, 0).endVertex();
-        BufferUploader.drawWithShader(buffer.end());
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, cx, cy, 0F, 0, 255, 0, 0);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, cx + (float) tr[0], cy + (float) tr[1], 0F, 0, 255, 0, 220);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, cx + (float) tl[0], cy + (float) tl[1], 0F, 0, 255, 0, 0);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, cx, cy, 0F, 0, 255, 0, 0);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, cx + (float) tl[0], cy + (float) tl[1], 0F, 0, 255, 0, 0);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, cx + (float) bl[0], cy + (float) bl[1], 0F, 0, 255, 0, 0);
+        com.hbm_m.platform.RenderHooks.drawWithShader(buffer);
 
         // Яркая, четкая линия-указатель на ведущем крае радара
         double[] lineOffset1 = rotate(100, -0.5, rot);
         double[] lineOffset2 = rotate(100, 0.5, rot);
-        buffer.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-        buffer.vertex(matrix, cx, cy, 0F).color(0F, 1F, 0F, 1F).endVertex();
-        buffer.vertex(matrix, cx + (float) lineOffset1[0], cy + (float) lineOffset1[1], 0F).color(0F, 1F, 0F, 1F).endVertex();
-        buffer.vertex(matrix, cx + (float) lineOffset2[0], cy + (float) lineOffset2[1], 0F).color(0F, 1F, 0F, 1F).endVertex();
+        buffer = com.hbm_m.platform.RenderHooks.beginTesselator(Tesselator.getInstance(), VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, cx, cy, 0F, 0, 255, 0, 255);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, cx + (float) lineOffset1[0], cy + (float) lineOffset1[1], 0F, 0, 255, 0, 255);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, cx + (float) lineOffset2[0], cy + (float) lineOffset2[1], 0F, 0, 255, 0, 255);
 
-        BufferUploader.drawWithShader(buffer.end());
+        com.hbm_m.platform.RenderHooks.drawWithShader(buffer);
         RenderSystem.enableCull();
         RenderSystem.disableBlend();
         guiGraphics.pose().popPose();

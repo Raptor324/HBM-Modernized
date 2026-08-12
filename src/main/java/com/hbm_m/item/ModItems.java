@@ -101,20 +101,18 @@ import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.HoeItem;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.PickaxeItem;
 import net.minecraft.world.item.Rarity;
+//? if < 1.21.1 {
 import net.minecraft.world.item.RecordItem;
+//?}
 import net.minecraft.world.item.ShovelItem;
 import net.minecraft.world.item.SwordItem;
-import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.ForgeSpawnEggItem;
+import dev.architectury.core.item.ArchitecturySpawnEggItem;
 
 
 public class ModItems {
-    // РЎРѕР·РґР°РµРј РѕС‚Р»РѕР¶РµРЅРЅС‹Р№ СЂРµРіРёСЃС‚СЂР°С‚РѕСЂ РґР»СЏ РїСЂРµРґРјРµС‚РѕРІ.
-    // Р­С‚Рѕ СЃС‚Р°РЅРґР°СЂС‚РЅС‹Р№ СЃРїРѕСЃРѕР± СЂРµРіРёСЃС‚СЂР°С†РёРё РѕР±СЉРµРєС‚РѕРІ РІ Forge.
     public static final DeferredRegister<Item> ITEMS =
             DeferredRegister.create(MODID, Registries.ITEM);
 
@@ -345,7 +343,11 @@ public class ModItems {
     public static final RegistrySupplier<Item> STARMETAL_SHOVEL = ITEMS.register("starmetal_shovel",
             () -> new ModShovelItem(ModToolTiers.STARMETAL, 0, 0, new Item.Properties()));
     public static final RegistrySupplier<Item> STARMETAL_HOE = ITEMS.register("starmetal_hoe",
+            //? if < 1.21.1 {
             () -> new HoeItem(ModToolTiers.STARMETAL, 0, 0f, new Item.Properties()));
+            //?} else {
+            /*() -> new HoeItem(ModToolTiers.STARMETAL, new Item.Properties()));
+            *///?}
 
     public static final RegistrySupplier<Item> ALLOY_SWORD = ITEMS.register("alloy_sword",
         () -> new ModSwordItem(ModToolTiers.ALLOY, 5, 2, new Item.Properties()));
@@ -360,7 +362,11 @@ public class ModItems {
             () -> new ModShovelItem(ModToolTiers.ALLOY, 0, 0, new Item.Properties(), 3, 0, 2));
 
     public static final RegistrySupplier<Item> ALLOY_HOE = ITEMS.register("alloy_hoe",
+            //? if < 1.21.1 {
             () -> new HoeItem(ModToolTiers.ALLOY, 0, 0f, new Item.Properties()));
+            //?} else {
+            /*() -> new HoeItem(ModToolTiers.ALLOY, new Item.Properties()));
+            *///?}
 
     public static final RegistrySupplier<Item> STEEL_SWORD = ITEMS.register("steel_sword",
             () -> new ModSwordItem(ModToolTiers.STEEL, 4, 2, new Item.Properties()));
@@ -371,7 +377,11 @@ public class ModItems {
     public static final RegistrySupplier<Item> STEEL_SHOVEL = ITEMS.register("steel_shovel",
             () -> new ModShovelItem(ModToolTiers.STEEL, 0, 0, new Item.Properties()));
     public static final RegistrySupplier<Item> STEEL_HOE = ITEMS.register("steel_hoe",
+            //? if < 1.21.1 {
             () -> new HoeItem(ModToolTiers.STEEL, 0, 0, new Item.Properties()));
+            //?} else {
+            /*() -> new HoeItem(ModToolTiers.STEEL, new Item.Properties()));
+            *///?}
 
     public static final RegistrySupplier<Item> TITANIUM_SWORD = ITEMS.register("titanium_sword",
             () -> new ModSwordItem(ModToolTiers.TITANIUM, 2, 3, new Item.Properties()));
@@ -390,7 +400,11 @@ public class ModItems {
     public static final RegistrySupplier<Item> TITANIUM_SHOVEL = ITEMS.register("titanium_shovel",
             () -> new ModShovelItem(ModToolTiers.TITANIUM, 0, 0, new Item.Properties()));
     public static final RegistrySupplier<Item> TITANIUM_HOE = ITEMS.register("titanium_hoe",
+            //? if < 1.21.1 {
             () -> new HoeItem(ModToolTiers.TITANIUM, 0, 0, new Item.Properties()));
+            //?} else {
+            /*() -> new HoeItem(ModToolTiers.TITANIUM, new Item.Properties()));
+            *///?}
 
 
     public static final RegistrySupplier<Item> GRENADE = ITEMS.register("grenade",
@@ -428,27 +442,27 @@ public class ModItems {
     public static final RegistrySupplier<Item> AIRNUKEBOMB_A = ITEMS.register("airnukebomb_a",
             () -> new AirNukeBombItem(new Item.Properties(), ModEntities.AIRNUKEBOMB_PROJECTILE));
     public static final RegistrySupplier<Item> NOLO_SPAWN_EGG = ITEMS.register("nolo_spawn_egg",
-            () -> new ForgeSpawnEggItem(ModEntities.NOLO, 0x8b5e3c, 0xf0d8b0, new Item.Properties()));
+            () -> new ArchitecturySpawnEggItem(ModEntities.NOLO, 0x8b5e3c, 0xf0d8b0, new Item.Properties()));
 
     public static final RegistrySupplier<Item> ENTITY_MOB_TAINTED_CREEPER_SPAWN_EGG = ITEMS.register(
             "entity_mob_tainted_creeper_spawn_egg",
-            () -> new ForgeSpawnEggItem(ModEntities.ENTITY_MOB_TAINTED_CREEPER, 0x813b9b, 0xd71fdd, new Item.Properties()));
+            () -> new ArchitecturySpawnEggItem(ModEntities.ENTITY_MOB_TAINTED_CREEPER, 0x813b9b, 0xd71fdd, new Item.Properties()));
 
     public static final RegistrySupplier<Item> ENTITY_MOB_VOLATILE_CREEPER_SPAWN_EGG = ITEMS.register(
             "entity_mob_volatile_creeper_spawn_egg",
-            () -> new ForgeSpawnEggItem(ModEntities.ENTITY_MOB_VOLATILE_CREEPER, 0xC28153, 0x4D382C, new Item.Properties()));
+            () -> new ArchitecturySpawnEggItem(ModEntities.ENTITY_MOB_VOLATILE_CREEPER, 0xC28153, 0x4D382C, new Item.Properties()));
 
     public static final RegistrySupplier<Item> ENTITY_MOB_PHOSGENE_CREEPER_SPAWN_EGG = ITEMS.register(
             "entity_mob_phosgene_creeper_spawn_egg",
-            () -> new ForgeSpawnEggItem(ModEntities.ENTITY_MOB_PHOSGENE_CREEPER, 0xE3D398, 0xB8A06B, new Item.Properties()));
+            () -> new ArchitecturySpawnEggItem(ModEntities.ENTITY_MOB_PHOSGENE_CREEPER, 0xE3D398, 0xB8A06B, new Item.Properties()));
 
     public static final RegistrySupplier<Item> ENTITY_MOB_GOLD_CREEPER_SPAWN_EGG = ITEMS.register(
             "entity_mob_gold_creeper_spawn_egg",
-            () -> new ForgeSpawnEggItem(ModEntities.ENTITY_MOB_GOLD_CREEPER, 0xECC136, 0x9E8B3E, new Item.Properties()));
+            () -> new ArchitecturySpawnEggItem(ModEntities.ENTITY_MOB_GOLD_CREEPER, 0xECC136, 0x9E8B3E, new Item.Properties()));
 
     public static final RegistrySupplier<Item> ENTITY_MOB_NUCLEAR_CREEPER_SPAWN_EGG = ITEMS.register(
             "entity_mob_nuclear_creeper_spawn_egg",
-            () -> new ForgeSpawnEggItem(ModEntities.ENTITY_MOB_NUCLEAR_CREEPER, 0x204131, 0x75CE00, new Item.Properties()));
+            () -> new ArchitecturySpawnEggItem(ModEntities.ENTITY_MOB_NUCLEAR_CREEPER, 0x204131, 0x75CE00, new Item.Properties()));
 
     // Р‘Р РћРќРЇ Р“РћР РќРЇРљРђ:
     public static final RegistrySupplier<Item> ALLOY_HELMET = ITEMS.register("alloy_helmet",
@@ -604,9 +618,6 @@ public class ModItems {
     public static final RegistrySupplier<Item> BISMUTH_BOOTS = ITEMS.register("bismuth_boots",
             () -> new BismuthArmor(ModArmorMaterials.BISMUTH, ArmorItem.Type.BOOTS, new Item.Properties()));
 
-
-
-    // РРЅСЃС‚СЂСѓРјРµРЅС‚С‹
     public static final RegistrySupplier<Item> GEIGER_COUNTER = ITEMS.register("geiger_counter",
             () -> new ItemGeigerCounter(new Item.Properties().stacksTo(1)));
 
@@ -616,13 +627,18 @@ public class ModItems {
     public static final RegistrySupplier<Item> DIGAMMA_DIAGNOSTIC = ITEMS.register("digamma_diagnostic",
             () -> new ItemDigammaDiagnostic(new Item.Properties()));
 
-    public static final RegistrySupplier<Item> MUSIC_DISC_BUNKER = ITEMS.register("music_disc_bunker",
+     public static final RegistrySupplier<Item> MUSIC_DISC_BUNKER = ITEMS.register("music_disc_bunker",
+            //? if < 1.21.1 {
             () -> new RecordItem(
                     1,
                     ModSounds.MUSIC_DISC_BUNKER.get(),
                     new Item.Properties().stacksTo(1).rarity(Rarity.RARE),
                     20 * 120
-            ));
+            )
+            //?} else {
+            /*() -> new Item(new Item.Properties().stacksTo(1).rarity(Rarity.RARE).jukeboxPlayable(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.JUKEBOX_SONG, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("hbm_m", "music_disc_bunker"))))
+            *///?}
+    );
 
 
 
@@ -819,7 +835,11 @@ public class ModItems {
                     // 1. РќР°РєР»Р°РґС‹РІР°РµРј СЌС„С„РµРєС‚ РђРЅС‚РёСЂР°РґРёРЅР°.
                     //    Р”Р»РёС‚РµР»СЊРЅРѕСЃС‚СЊ: 200 С‚РёРєРѕРІ (10 СЃРµРєСѓРЅРґ)
                     //    РЈСЂРѕРІРµРЅСЊ: I (amplifier = 0)
+                    //? if < 1.21.1 {
                     player.addEffect(new MobEffectInstance(ModEffects.RADAWAY.get(), 120, 0));
+                    //?} else {
+                    /*player.addEffect(new MobEffectInstance((net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>)(Object)ModEffects.RADAWAY, 120, 0));
+                    *///?}
 
                     // 2. РџСЂРѕРёРіСЂС‹РІР°РµРј Р·РІСѓРє
                     player.level().playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.RADAWAY_USE.get(), player.getSoundSource(), 1.0F, 1.0F);
@@ -857,18 +877,10 @@ public class ModItems {
     public static final RegistrySupplier<Item> BALL_TNT = ITEMS.register("ball_tnt",
             () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> FAT_MAN_EXPLOSIVE = ITEMS.register("fat_man_explosive",
-            () -> new Item(new Item.Properties()) {
-                // РўСѓР»С‚РёРї-РѕРїРёСЃР°РЅРёРµ, РєР°Рє Сѓ РѕСЂРёРіРёРЅР°Р»СЊРЅРѕРіРѕ ItemCustomLore (early_explosive_lenses.desc, 1.7.10)
-                @Override
-                public void appendHoverText(ItemStack stack, @Nullable Level level,
-                                            @Nullable List<Component> tooltip, TooltipFlag flag) {
-                    if (tooltip == null) return;
-                    tooltip.add(Component.translatable("tooltip.hbm_m.fat_man_explosive.desc1")
-                            .withStyle(ChatFormatting.GRAY));
-                    tooltip.add(Component.translatable("tooltip.hbm_m.fat_man_explosive.desc2")
-                            .withStyle(ChatFormatting.GRAY));
-                }
-            });
+            () -> new LoreTooltipItem(List.of(
+                    Component.translatable("tooltip.hbm_m.fat_man_explosive.desc1").withStyle(ChatFormatting.GRAY),
+                    Component.translatable("tooltip.hbm_m.fat_man_explosive.desc2").withStyle(ChatFormatting.GRAY)),
+                    new Item.Properties()));
     public static final RegistrySupplier<Item> FAT_MAN_IGNITER = ITEMS.register("fat_man_igniter",
             () -> new Item(new Item.Properties()));
 
@@ -888,18 +900,10 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
 
     public static final RegistrySupplier<Item> CROWBAR = ITEMS.register("crowbar",
-            () -> new Item(new Item.Properties()) {
-                @Override
-                public void appendHoverText(ItemStack stack, @Nullable Level level,
-                                            @Nullable List<Component> tooltip, TooltipFlag flag) {
-                    if (tooltip == null) return;
-
-                    tooltip.add(Component.translatable("tooltip.hbm_m.crowbar.line1")
-                            .withStyle(ChatFormatting.GRAY));
-                    tooltip.add(Component.translatable("tooltip.hbm_m.crowbar.line2")
-                            .withStyle(ChatFormatting.GRAY));
-                }
-            });
+            () -> new LoreTooltipItem(List.of(
+                    Component.translatable("tooltip.hbm_m.crowbar.line1").withStyle(ChatFormatting.GRAY),
+                    Component.translatable("tooltip.hbm_m.crowbar.line2").withStyle(ChatFormatting.GRAY)),
+                    new Item.Properties()));
 
 
     public static final RegistrySupplier<Item> MALACHITE_CHUNK = ITEMS.register("malachite_chunk",
@@ -917,16 +921,9 @@ public class ModItems {
     public static final RegistrySupplier<Item> CAN_KEY = ITEMS.register("can_key",
             () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> DEFUSER = ITEMS.register("defuser",
-            () -> new Item(new Item.Properties()) {
-                @Override
-                public void appendHoverText(ItemStack stack, @Nullable Level level,
-                                            @Nullable List<Component> tooltip, TooltipFlag flag) {
-                    if (tooltip == null) return;
-
-                    tooltip.add(Component.translatable("tooltip.hbm_m.defuser.line1")
-                            .withStyle(ChatFormatting.GRAY));
-                }
-            });
+            () -> new LoreTooltipItem(List.of(
+                    Component.translatable("tooltip.hbm_m.defuser.line1").withStyle(ChatFormatting.GRAY)),
+                    new Item.Properties()));
 
     public static final RegistrySupplier<Item> GAS_EMPTY = ITEMS.register("gas_empty",
             () -> new Item(new Item.Properties()));

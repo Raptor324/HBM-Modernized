@@ -46,7 +46,11 @@ public final class MissileTrackWorldRender {
     private static MultiBufferSource.BufferSource missileBufferSource() {
         MultiBufferSource.BufferSource bs = missileBufferSource;
         if (bs == null) {
+            //? if < 1.21.1 {
             bs = MultiBufferSource.immediate(new com.mojang.blaze3d.vertex.BufferBuilder(256));
+            //?} else {
+            /*bs = MultiBufferSource.immediate(new com.mojang.blaze3d.vertex.ByteBufferBuilder(256));
+            *///?}
             missileBufferSource = bs;
         }
         return bs;

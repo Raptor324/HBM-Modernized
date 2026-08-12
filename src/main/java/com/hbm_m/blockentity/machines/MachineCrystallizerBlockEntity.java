@@ -1,6 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
 import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.FluidHooks;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -52,30 +53,7 @@ import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 *///?}
 
-/**
- * Crystallizer BlockEntity вЂ” СЂСѓРґРЅС‹Р№ РѕРєРёСЃР»РёС‚РµР»СЊ, РїРѕСЂС‚ СЃ 1.7.10.
- *
- * <p>РЎР»РѕС‚С‹:</p>
- * <ul>
- *   <li>0 вЂ” РІС…РѕРґ (СЂСѓРґР° / РїСЂРµРґРјРµС‚)</li>
- *   <li>1 вЂ” Р±Р°С‚Р°СЂРµСЏ</li>
- *   <li>2 вЂ” РІС‹С…РѕРґ (РєСЂРёСЃС‚Р°Р»Р»)</li>
- *   <li>3 вЂ” СЃР»РѕС‚ Р·Р°Р»РёРІРєРё Р¶РёРґРєРѕСЃС‚Рё (РІРµРґСЂРѕ/РєРѕРЅС‚РµР№РЅРµСЂ СЃ РєРёСЃР»РѕС‚РѕР№)</li>
- *   <li>4 вЂ” СЃР»РѕС‚ РІС‹С…РѕРґР° Р¶РёРґРєРѕСЃС‚Рё (РѕРїСѓСЃС‚РµРІС€РёР№ РєРѕРЅС‚РµР№РЅРµСЂ)</li>
- *   <li>5, 6 вЂ” Р°РїРіСЂРµР№РґС‹ (РїРѕРєР° РЅРµ СЂРµР°Р»РёР·РѕРІР°РЅРѕ)</li>
- *   <li>7 вЂ” СЃР»РѕС‚ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂР° Р¶РёРґРєРѕСЃС‚Рё (РїРѕРєР° РЅРµ СЂРµР°Р»РёР·РѕРІР°РЅРѕ)</li>
- * </ul>
- *
- * <p>Р›РѕРіРёРєР° РѕР±СЂР°Р±РѕС‚РєРё:</p>
- * <ol>
- *   <li>Р—Р°СЂСЏРґРєР° РѕС‚ Р±Р°С‚Р°СЂРµРё РІ СЃР»РѕС‚Рµ 1.</li>
- *   <li>РџРµСЂРµРЅРѕСЃ Р¶РёРґРєРѕСЃС‚Рё РёР· РєРѕРЅС‚РµР№РЅРµСЂР° РІ СЃР»РѕС‚Рµ 3 РІ РІРЅСѓС‚СЂРµРЅРЅРёР№ Р±Р°Рє.</li>
- *   <li>РџРѕРёСЃРє СЂРµС†РµРїС‚Р° РІ {@link CrystallizerRecipes} РїРѕ РІС…РѕРґСѓ Рё С‚РµРєСѓС‰РµР№ Р¶РёРґРєРѕСЃС‚Рё РІ Р±Р°РєРµ.</li>
- *   <li>Р•СЃР»Рё СЂРµС†РµРїС‚ РЅР°Р№РґРµРЅ Рё РµСЃС‚СЊ СЌРЅРµСЂРіРёСЏ / РєРёСЃР»РѕС‚Р° / РјРµСЃС‚Рѕ РІ РІС‹С…РѕРґРµ вЂ” РєСЂСѓС‚РёРј РїСЂРѕРіСЂРµСЃСЃ.</li>
- *   <li>РџРѕ РґРѕСЃС‚РёР¶РµРЅРёРё {@code duration} вЂ” РІС‹РґР°С‘Рј СЂРµР·СѓР»СЊС‚Р°С‚, С‚СЂР°С‚РёРј РєРёСЃР»РѕС‚Сѓ,
- *       СЃ СѓС‡С‘С‚РѕРј productivity С‚СЂР°С‚РёРј (РёР»Рё РЅРµ С‚СЂР°С‚РёРј) РІС…РѕРґ.</li>
- * </ol>
- */
+
 public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2 {
 
@@ -153,7 +131,6 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         entity.applyFluidIdentifier();
         entity.transferFluidsFromItems();
 
-        // РџРѕРёСЃРє СЂРµС†РµРїС‚Р° РїРѕ РІС…РѕРґСѓ + С‚РµРєСѓС‰РµР№ Р¶РёРґРєРѕСЃС‚Рё РІ Р±Р°РєРµ.
         ItemStack inputStack = entity.inventory.getStackInSlot(SLOT_INPUT);
         FluidStack tankFluid = entity.getTankFluidStack();
         // Рецепты теперь data-driven (JSON) — поиск через RecipeManager (кросс-версионный RecipeHooks).
@@ -166,7 +143,6 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         entity.isOn = false;
 
         if (recipe != null) {
-            // Р”Р»РёС‚РµР»СЊРЅРѕСЃС‚СЊ СЃ СѓС‡С‘С‚РѕРј Р°РїРіСЂРµР№РґР° СЃРєРѕСЂРѕСЃС‚Рё (РїРѕРєР° Р·Р°РіР»СѓС€РєР° вЂ” Р±РµСЂС‘Рј РёР· СЂРµС†РµРїС‚Р°).
             entity.duration = entity.calcDuration(recipe);
 
             if (entity.canProcess(recipe)) {
@@ -194,12 +170,10 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
             }
         }
 
-        // РћР±РЅРѕРІРёРј РєР»РёРµРЅС‚Р°, РµСЃР»Рё РїРѕРјРµРЅСЏР»СЃСЏ СЃС‚Р°С‚СѓСЃ "РІРєР»/РІС‹РєР»" (РґР»СЏ СЂРµРЅРґРµСЂР° Рё РёРЅРґРёРєР°С‚РѕСЂРѕРІ).
         if (wasOn != entity.isOn) {
             entity.sendUpdateToClient();
         }
     }
-
 
     /**
      * Client-side visuals: rotate the center part while the machine works and spawn
@@ -244,24 +218,17 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         }
     }
 
-    /**
-     * РџСЂРѕРІРµСЂСЏРµС‚, РјРѕР¶РЅРѕ Р»Рё Р·Р°РїСѓСЃС‚РёС‚СЊ РёР»Рё РїСЂРѕРґРѕР»Р¶РёС‚СЊ РєСЂР°С„С‚.
-     */
     private boolean canProcess(CrystallizerRecipe recipe) {
         ItemStack inputStack = inventory.getStackInSlot(SLOT_INPUT);
 
-        // РҐРІР°С‚Р°РµС‚ Р»Рё РєРѕР»РёС‡РµСЃС‚РІР° РІС…РѕРґРЅРѕРіРѕ РїСЂРµРґРјРµС‚Р°.
         if (inputStack.getCount() < recipe.getInputCount()) return false;
 
-        // РҐРІР°С‚Р°РµС‚ Р»Рё СЌРЅРµСЂРіРёРё РЅР° С‚РёРє.
         if (getEnergyStored() < getPowerRequired()) return false;
 
-        // РҐРІР°С‚Р°РµС‚ Р»Рё РєРёСЃР»РѕС‚С‹ РІ Р±Р°РєРµ.
         if (recipe.getAcid() != null && tank.getFluidAmountMb() < recipe.getAcidAmount()) {
             return false;
         }
 
-        // РџРѕРјРµСЃС‚РёС‚СЃСЏ Р»Рё СЂРµР·СѓР»СЊС‚Р°С‚ РІ РІС‹С…РѕРґРЅРѕР№ СЃР»РѕС‚.
         ItemStack outSlot = inventory.getStackInSlot(SLOT_OUTPUT);
         ItemStack out = recipe.getOutput();
         if (!outSlot.isEmpty()) {
@@ -272,9 +239,6 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         return true;
     }
 
-    /**
-     * Р—Р°РІРµСЂС€РµРЅРёРµ РєСЂР°С„С‚Р°: РІС‹РґР°С‚СЊ РІС‹С…РѕРґ, СЃР»РёС‚СЊ РєРёСЃР»РѕС‚Сѓ, РїРѕС‚СЂР°С‚РёС‚СЊ РІС…РѕРґ (СЃ СѓС‡С‘С‚РѕРј productivity).
-     */
     private void processItem(CrystallizerRecipe recipe) {
         ItemStack out = recipe.getOutput().copy();
         ItemStack outSlot = inventory.getStackInSlot(SLOT_OUTPUT);
@@ -284,13 +248,10 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
             outSlot.grow(out.getCount());
         }
 
-        // РЎР»РёС‚СЊ РєРёСЃР»РѕС‚Сѓ, РµСЃР»Рё СЂРµС†РµРїС‚ РµС‘ С‚СЂРµР±СѓРµС‚.
         if (recipe.getAcid() != null && recipe.getAcidAmount() > 0) {
             tank.drainMb(recipe.getAcidAmount());
         }
 
-        // Productivity: С€Р°РЅСЃ РЅРµ С‚СЂР°С‚РёС‚СЊ РІС…РѕРґ. РЎ Р°РїРіСЂРµР№РґРѕРј EFFECT С€Р°РЅСЃ СЂР°СЃС‚С‘С‚
-        // (РїРѕРєР° Р±РµР· Р°РїРіСЂРµР№РґРѕРІ вЂ” Р±РµСЂС‘Рј Р±Р°Р·РѕРІРѕРµ Р·РЅР°С‡РµРЅРёРµ РёР· СЂРµС†РµРїС‚Р°).
         float freeChance = recipe.getProductivity();
         if (freeChance <= 0f || level.random.nextFloat() >= freeChance) {
             inventory.getStackInSlot(SLOT_INPUT).shrink(recipe.getInputCount());
@@ -299,17 +260,6 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         setChanged();
     }
 
-    /**
-     * РџСЂРёРјРµРЅСЏРµС‚ Р¶РёРґРєРѕСЃС‚РЅС‹Р№ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РёР· СЃР»РѕС‚Р° 7 Рє Р±Р°РєСѓ.
-     *
-     * <p>Р•СЃР»Рё РІ СЃР»РѕС‚Рµ Р»РµР¶РёС‚ {@link IItemFluidIdentifier} (РёР»Рё {@link FluidIdentifierItem}),
-     * Р±РµСЂС‘С‚СЃСЏ РїРµСЂРІРёС‡РЅС‹Р№ С‚РёРї Р¶РёРґРєРѕСЃС‚Рё Рё СЃСЂР°РІРЅРёРІР°РµС‚СЃСЏ СЃ С‚РµРєСѓС‰РёРј С‚РёРїРѕРј Р±Р°РєР°. Р•СЃР»Рё РѕРЅРё СЂР°Р·Р»РёС‡Р°СЋС‚СЃСЏ вЂ”
-     * Р±Р°Рє РїРµСЂРµРєР»СЋС‡Р°РµС‚СЃСЏ РЅР° РЅРѕРІС‹Р№ С‚РёРї, РёРјРµСЋС‰Р°СЏСЃСЏ Р¶РёРґРєРѕСЃС‚СЊ СЃР»РёРІР°РµС‚СЃСЏ.</p>
-     *
-     * <p>Р’С‹Р·С‹РІР°РµС‚СЃСЏ РєР°Р¶РґС‹Р№ С‚РёРє, РїРѕСЌС‚РѕРјСѓ РґРѕСЃС‚Р°С‚РѕС‡РЅРѕ РїРѕР»РѕР¶РёС‚СЊ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РІ СЃР»РѕС‚ РѕРґРёРЅ СЂР°Р·
-     * (РґР°Р¶Рµ РЅР° 1 С‚РёРє): РјР°С€РёРЅР° РїРµСЂРµРєР»СЋС‡РёС‚СЃСЏ РјРіРЅРѕРІРµРЅРЅРѕ, РїРѕСЃР»Рµ С‡РµРіРѕ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РјРѕР¶РЅРѕ Р·Р°Р±СЂР°С‚СЊ
-     * Р±РµР· РїРѕСЃР»РµРґСЃС‚РІРёР№ вЂ” Р±Р°Рє СЃРѕС…СЂР°РЅСЏРµС‚ СЃРІРѕР№ С‚РёРї.</p>
-     */
     private void applyFluidIdentifier() {
         ItemStack idStack = inventory.getStackInSlot(SLOT_FLUID_ID);
         if (idStack.isEmpty()) return;
@@ -319,12 +269,10 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
 
         Fluid currentType = tank.getTankType();
 
-        // Р•СЃР»Рё С‚РёРї СѓР¶Рµ СЃРѕРІРїР°РґР°РµС‚ вЂ” РЅРёС‡РµРіРѕ РЅРµ РґРµР»Р°РµРј (РЅРµ С‚СЂРѕРіР°РµРј СЃРѕРґРµСЂР¶РёРјРѕРµ Р±Р°РєР°).
         if (VanillaFluidEquivalence.sameSubstance(resolved, currentType)) {
             return;
         }
 
-        // РџРµСЂРµРєР»СЋС‡Р°РµРј С‚РёРї Р±Р°РєР°. Р•СЃР»Рё РІ РЅС‘Рј РµСЃС‚СЊ В«СЃС‚Р°СЂР°СЏВ» Р¶РёРґРєРѕСЃС‚СЊ вЂ” РѕРЅР° СЃР»РёРІР°РµС‚СЃСЏ.
         tank.assignTypeAndZeroFluid(resolved);
         setChanged();
         if (level != null && !level.isClientSide) {
@@ -332,14 +280,9 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         }
     }
 
-    /**
-     * РР·РІР»РµРєР°РµС‚ РїРµСЂРІРёС‡РЅС‹Р№ С‚РёРї Р¶РёРґРєРѕСЃС‚Рё РёР· РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂР°. Р’РѕР·РІСЂР°С‰Р°РµС‚ {@code null}, РµСЃР»Рё СЃС‚СЌРє
-     * РЅРµ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РёР»Рё РµРіРѕ С‚РёРї РЅРµР»СЊР·СЏ РїСЂРµРІСЂР°С‚РёС‚СЊ РІ СЂРµР°Р»СЊРЅС‹Р№ {@link Fluid}.
-     */
     @Nullable
     private Fluid resolveIdentifierFluid(ItemStack stack) {
         if (stack.getItem() instanceof FluidIdentifierItem) {
-            // РЈ FluidIdentifierItem СѓР¶Рµ РµСЃС‚СЊ СѓРґРѕР±РЅС‹Р№ resolver: РІРѕР·РІСЂР°С‰Р°РµС‚ {@code ModFluids.NONE} РІРјРµСЃС‚Рѕ EMPTY.
             return FluidIdentifierItem.resolvePrimaryForTank(stack);
         }
         if (stack.getItem() instanceof IItemFluidIdentifier idItem) {
@@ -350,118 +293,55 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         return null;
     }
 
-    /**
-     * РџРѕСЃС‚РµРїРµРЅРЅР°СЏ РїРµСЂРµРєР°С‡РєР° Р¶РёРґРєРѕСЃС‚Рё РёР· РєРѕРЅС‚РµР№РЅРµСЂР° РІ СЃР»РѕС‚Рµ 3 РІ РІРЅСѓС‚СЂРµРЅРЅРёР№ Р±Р°Рє.
-     *
-     * <p>Р›РѕРіРёРєР°: РєР°Р¶РґС‹Р№ С‚РёРє РїС‹С‚Р°РµРјСЃСЏ РІС‹СЃРѕСЃР°С‚СЊ РјР°РєСЃРёРјСѓРј РёР· РєРѕРЅС‚РµР№РЅРµСЂР° РІ Р±Р°Рє (РЅРѕ РЅРµ Р±РѕР»РµРµ
-     * С‚РѕРіРѕ, С‡С‚Рѕ РІР»РµР·Р°РµС‚). Р•СЃР»Рё Р±Р°Рє РЅРµ РїСЂРёРЅРёРјР°РµС‚ (С‚РёРї Р¶РёРґРєРѕСЃС‚Рё РЅРµ СЃРѕРІРїР°РґР°РµС‚ РёР»Рё РЅРµС‚ РјРµСЃС‚Р°) вЂ”
-     * РЅРёС‡РµРіРѕ РЅРµ РґРµР»Р°РµРј. РљРѕРіРґР° РєРѕРЅС‚РµР№РЅРµСЂ СЃС‚Р°РЅРѕРІРёС‚СЃСЏ РїСѓСЃС‚ вЂ” РїРµСЂРµРјРµС‰Р°РµРј РµРіРѕ РІ СЃР»РѕС‚ 4 (РІС‹С…РѕРґ).</p>
-     *
-     * <p>Р­С‚Рѕ СЂРµС€Р°РµС‚ РїСЂРѕР±Р»РµРјСѓ СЃ Р±РѕР»СЊС€РёРјРё Р±РѕС‡РєР°РјРё (16 000 mB), РєРѕС‚РѕСЂС‹Рµ РЅРµ РїРѕРјРµС‰Р°СЋС‚СЃСЏ РІ Р±Р°Рє
-     * Р·Р° РѕРґРёРЅ РїСЂРёСЃРµСЃС‚: Р±РѕС‡РєР° РѕСЃС‚Р°С‘С‚СЃСЏ РІ РІРµСЂС…РЅРµРј СЃР»РѕС‚Рµ Рё РїСЂРѕРґРѕР»Р¶Р°РµС‚ РґРѕР»РёРІР°С‚СЊ РїРѕ РјРµСЂРµ С‚РѕРіРѕ,
-     * РєР°Рє РјР°С€РёРЅР° СЂР°СЃС…РѕРґСѓРµС‚ РєРёСЃР»РѕС‚Сѓ.</p>
-     */
     private void transferFluidsFromItems() {
         ItemStack fillStack = inventory.getStackInSlot(SLOT_FLUID_INPUT);
         if (fillStack.isEmpty()) return;
 
-        //? if forge {
-        IFluidHandler tankH = tank.getCapability().orElse(null);
-        if (tankH == null) return;
-
-        // Р‘РµР· Р¶РёРґРєРѕСЃС‚РЅРѕРіРѕ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂР° Р±Р°Рє РЅРµ РїСЂРёРЅРёРјР°РµС‚ РЅРёС‡РµРіРѕ вЂ” РєР°Рє РІ РѕСЂРёРіРёРЅР°Р»Рµ 1.7.10.
-        // Р•СЃР»Рё С‚РёРї Р±Р°РєР° РЅРµ Р·Р°РґР°РЅ (Fluids.EMPTY РёР»Рё ModFluids.NONE) вЂ” РІС‹С…РѕРґРёРј, РїСѓСЃС‚СЊ РёРіСЂРѕРє
-        // СЃРЅР°С‡Р°Р»Р° РїРѕСЃС‚Р°РІРёС‚ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ РІ СЃР»РѕС‚ 7.
+        // Кросс-платформенная реализация через FluidHooks + tank.fillMb.
+        // Заменяет прежние раздельные ветки Forge/Fabric/NeoForge.
         Fluid currentType = tank.getTankType();
         if (currentType == Fluids.EMPTY || currentType == ModFluids.NONE.getSource()) {
             return;
         }
 
-        // Р‘РµСЂС‘Рј РѕС‚РґРµР»СЊРЅС‹Р№ СЃС‚Р°Рє РЅР° 1 РїСЂРµРґРјРµС‚ вЂ” С‡С‚РѕР±С‹ РЅРµ РјРѕРґРёС„РёС†РёСЂРѕРІР°С‚СЊ С†РµР»С‹Р№ СЃС‚Р°Рє СЃСЂР°Р·Сѓ.
-        // (РҐРѕС‚СЏ РІ СЃР»РѕС‚ РјС‹ Рё С‚Р°Рє РїСѓСЃРєР°РµРј РјР°РєСЃРёРјСѓРј 1, РЅР° РІСЃСЏРєРёР№ СЃР»СѓС‡Р°Р№ СЃС‚СЂР°С…СѓРµРјСЃСЏ.)
-        ItemStack singleItem = fillStack.copy();
-        singleItem.setCount(1);
+        // Сначала пробуем извлечь жидкость из контейнера (simulate), чтобы узнать тип/объём.
+        int tankSpace = tank.getSpaceMb();
+        if (tankSpace <= 0) return;
 
-        var itemCapOpt = singleItem.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM);
-        var itemHandler = itemCapOpt.orElse(null);
-        if (itemHandler == null) return;
-
-        // РЎРѕСЃС‘Рј РёР· РєРѕРЅС‚РµР№РЅРµСЂР° СЃС‚РѕР»СЊРєРѕ, СЃРєРѕР»СЊРєРѕ РІР»РµР·Р°РµС‚ РІ Р±Р°Рє.
-        net.minecraftforge.fluids.FluidStack drained = itemHandler.drain(
-                tankH.getTankCapacity(0), IFluidHandler.FluidAction.SIMULATE);
-        if (drained.isEmpty()) {
-            // РљРѕРЅС‚РµР№РЅРµСЂ СѓР¶Рµ РїСѓСЃС‚ вЂ” РїСЂРѕР±СѓРµРј РїРµСЂРµРјРµСЃС‚РёС‚СЊ РµРіРѕ РІ РІС‹С…РѕРґРЅРѕР№ СЃР»РѕС‚ (СЃРѕ СЃС‚СЌРєРѕРІР°РЅРёРµРј).
-            tryMoveContainerToOutput(itemHandler.getContainer(), fillStack);
+        FluidHooks.FluidExtraction sim = FluidHooks.extractFluidFromItem(fillStack, tankSpace, true);
+        if (sim.amount() <= 0) {
+            // Контейнер пуст — отправляем его в выходной слот (воспроизводим forge-поведение).
+            FluidHooks.FluidExtraction probe = FluidHooks.extractFluidFromItem(fillStack, 1, true);
+            if (probe.amount() == 0) {
+                ItemStack singleEmpty = fillStack.copy();
+                singleEmpty.setCount(1);
+                tryMoveContainerToOutput(singleEmpty, fillStack);
+            }
             return;
         }
 
-        int filled = tankH.fill(drained, IFluidHandler.FluidAction.SIMULATE);
-        if (filled <= 0) return; // Р±Р°Рє РЅРµ РїСЂРёРЅРёРјР°РµС‚ (РґСЂСѓРіР°СЏ Р¶РёРґРєРѕСЃС‚СЊ / РЅРµС‚ РјРµСЃС‚Р°).
+        // Согласовываем тип жидкости с баком — заливаем только совместимую.
+        int toFill = sim.amount();
+        int accepted = tank.fillMb(sim.fluid(), toFill, true);
+        if (accepted <= 0) return;
 
-        // Р РµР°Р»СЊРЅРѕ РїРµСЂРµР»РёРІР°РµРј filled mB.
-        net.minecraftforge.fluids.FluidStack actuallyDrained = itemHandler.drain(filled, IFluidHandler.FluidAction.EXECUTE);
-        tankH.fill(actuallyDrained, IFluidHandler.FluidAction.EXECUTE);
+        // Реально извлекаем (execute) и заливаем в бак.
+        FluidHooks.FluidExtraction real = FluidHooks.extractFluidFromItem(fillStack, accepted, false);
+        if (real.amount() <= 0) return;
+        tank.fillMb(real.fluid(), real.amount(), false);
 
-        // РљРѕРЅС‚РµР№РЅРµСЂ РјРѕРі РѕР±РЅРѕРІРёС‚СЊСЃСЏ (РЅРѕРІС‹Р№ NBT, РЅР°РїСЂРёРјРµСЂ).
-        ItemStack updatedContainer = itemHandler.getContainer();
-
-        // Р•СЃР»Рё РїРѕСЃР»Рµ СЃР»РёРІР° РєРѕРЅС‚РµР№РЅРµСЂ РїСѓСЃС‚ вЂ” РІС‹РіРѕРЅСЏРµРј РµРіРѕ РІ РІС‹С…РѕРґРЅРѕР№ СЃР»РѕС‚.
-        var afterCapOpt = updatedContainer.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM);
-        var afterHandler = afterCapOpt.orElse(null);
-        boolean nowEmpty = afterHandler == null
-                || afterHandler.drain(1, IFluidHandler.FluidAction.SIMULATE).isEmpty();
-
-        if (nowEmpty) {
+        ItemStack updatedContainer = real.remainder();
+        if (updatedContainer.isEmpty() || FluidHooks.extractFluidFromItem(updatedContainer, 1, true).amount() == 0) {
+            // Контейнер опустел после перелива — отправляем в выходной слот.
             tryMoveContainerToOutput(updatedContainer, fillStack);
         } else {
-            // РљРѕРЅС‚РµР№РЅРµСЂ РµС‰С‘ РЅРµ РїСѓСЃС‚РѕР№ вЂ” РѕСЃС‚Р°РІР»СЏРµРј РІРѕ РІС…РѕРґРЅРѕРј СЃР»РѕС‚Рµ.
             inventory.setStackInSlot(SLOT_FLUID_INPUT, updatedContainer);
         }
         setChanged();
-        //?}
-
-        //? if fabric {
-        /*ItemStack one = fillStack.copy();
-        one.setCount(1);
-
-        Storage<FluidVariant> itemStorage = FluidStorage.ITEM.find(one, null);
-        if (itemStorage == null) return;
-
-        try (Transaction tx = Transaction.openOuter()) {
-            long moved = net.fabricmc.fabric.api.transfer.v1.storage.StorageUtil.move(
-                    itemStorage,
-                    tank.getStorage(),
-                    v -> true,
-                    Long.MAX_VALUE,
-                    tx
-            );
-            if (moved > 0) {
-                tx.commit();
-                inventory.setStackInSlot(SLOT_FLUID_INPUT, ItemStack.EMPTY);
-                inventory.setStackInSlot(SLOT_FLUID_OUTPUT, one);
-                setChanged();
-            }
-        }
-        *///?}
     }
 
     //? if forge {
-    /**
-     * РџС‹С‚Р°РµС‚СЃСЏ РїРѕР»РѕР¶РёС‚СЊ РѕРїСѓСЃС‚РѕС€С‘РЅРЅС‹Р№ РєРѕРЅС‚РµР№РЅРµСЂ РІ РІС‹С…РѕРґРЅРѕР№ СЃР»РѕС‚.
-     *
-     * <p>РЎС†РµРЅР°СЂРёРё:</p>
-     * <ul>
-     *   <li>РљРѕРЅС‚РµР№РЅРµСЂ РёСЃС‡РµР· (РЅР°РїСЂРёРјРµСЂ, РІРµРґСЂРѕ РІ Forge вЂ” drain СѓРЅРёС‡С‚РѕР¶Р°РµС‚ РІРµРґСЂРѕ) в†’ РїСЂРѕСЃС‚Рѕ
-     *       СѓР±РёСЂР°РµРј 1 РїСЂРµРґРјРµС‚ РёР· РІС…РѕРґРЅРѕРіРѕ СЃР»РѕС‚Р°, РІ РІС‹С…РѕРґ РЅРёС‡РµРіРѕ РЅРµ РєР»Р°РґС‘Рј.</li>
-     *   <li>Р’С‹С…РѕРґРЅРѕР№ СЃР»РѕС‚ РїСѓСЃС‚ в†’ РєР»Р°РґС‘Рј РєРѕРЅС‚РµР№РЅРµСЂ С‚СѓРґР°.</li>
-     *   <li>Р’ РІС‹С…РѕРґРµ СѓР¶Рµ Р»РµР¶РёС‚ РёРґРµРЅС‚РёС‡РЅС‹Р№ РїСѓСЃС‚РѕР№ РєРѕРЅС‚РµР№РЅРµСЂ СЃ РјРµСЃС‚РѕРј РґРѕ maxStackSize в†’
-     *       СЃС‚СЌРєСѓРµРј (СѓРІРµР»РёС‡РёРІР°РµРј count).</li>
-     *   <li>Р’ РІС‹С…РѕРґРµ Р»РµР¶РёС‚ РґСЂСѓРіРѕР№ РїСЂРµРґРјРµС‚ РёР»Рё СЃС‚СЌРє СѓР¶Рµ РїРѕР»РѕРЅ в†’ РЅРµ РґРµР»Р°РµРј РЅРёС‡РµРіРѕ,
-     *       РєРѕРЅС‚РµР№РЅРµСЂ РѕСЃС‚Р°С‘С‚СЃСЏ РІРѕ РІС…РѕРґРЅРѕРј СЃР»РѕС‚Рµ РґРѕ С‚РµС… РїРѕСЂ РїРѕРєР° РІС‹С…РѕРґ РЅРµ РѕСЃРІРѕР±РѕРґРёС‚СЃСЏ.</li>
-     * </ul>
-     */
     private void tryMoveContainerToOutput(ItemStack emptyContainer, ItemStack originalFillStack) {
-        // РЎР»СѓС‡Р°Р№ 0 вЂ” РєРѕРЅС‚РµР№РЅРµСЂ РёСЃС‡РµР·.
         if (emptyContainer.isEmpty()) {
             ItemStack remaining = originalFillStack.copy();
             remaining.shrink(1);
@@ -471,7 +351,6 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
 
         ItemStack outSlot = inventory.getStackInSlot(SLOT_FLUID_OUTPUT);
 
-        // РЎР»СѓС‡Р°Р№ 1 вЂ” РІС‹С…РѕРґ РїСѓСЃС‚РѕР№.
         if (outSlot.isEmpty()) {
             ItemStack remaining = originalFillStack.copy();
             remaining.shrink(1);
@@ -480,7 +359,6 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
             return;
         }
 
-        // РЎР»СѓС‡Р°Р№ 2 вЂ” РІС‹С…РѕРґ СЃРѕРґРµСЂР¶РёС‚ С‚Р°РєРѕР№ Р¶Рµ РїСЂРµРґРјРµС‚ СЃ РјРµСЃС‚РѕРј в†’ СЃС‚СЌРєСѓРµРј.
         if (PlatformHooks.isSameItemSameTags(outSlot, emptyContainer)) {
             int max = outSlot.getMaxStackSize();
             int totalAfter = outSlot.getCount() + emptyContainer.getCount();
@@ -493,13 +371,80 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
                 remaining.shrink(1);
                 inventory.setStackInSlot(SLOT_FLUID_INPUT, remaining);
             }
-            // Р•СЃР»Рё totalAfter > max вЂ” РІС‹С…РѕРґ РїРѕР»РѕРЅ, Р¶РґС‘Рј, РєРѕРЅС‚РµР№РЅРµСЂ РѕСЃС‚Р°С‘С‚СЃСЏ РІРѕ РІС…РѕРґРµ.
+            return;
+        }
+    }
+    //?}
+    //? if fabric {
+    /*private void tryMoveContainerToOutput(ItemStack emptyContainer, ItemStack originalFillStack) {
+        if (emptyContainer.isEmpty()) {
+            ItemStack remaining = originalFillStack.copy();
+            remaining.shrink(1);
+            inventory.setStackInSlot(SLOT_FLUID_INPUT, remaining);
             return;
         }
 
-        // РЎР»СѓС‡Р°Р№ 3 вЂ” РІС‹С…РѕРґ Р·Р°РЅСЏС‚ РґСЂСѓРіРёРј РїСЂРµРґРјРµС‚РѕРј в†’ Р¶РґС‘Рј, РєРѕРЅС‚РµР№РЅРµСЂ РѕСЃС‚Р°С‘С‚СЃСЏ РІРѕ РІС…РѕРґРµ.
+        ItemStack outSlot = inventory.getStackInSlot(SLOT_FLUID_OUTPUT);
+
+        if (outSlot.isEmpty()) {
+            ItemStack remaining = originalFillStack.copy();
+            remaining.shrink(1);
+            inventory.setStackInSlot(SLOT_FLUID_INPUT, remaining);
+            inventory.setStackInSlot(SLOT_FLUID_OUTPUT, emptyContainer);
+            return;
+        }
+
+        if (PlatformHooks.isSameItemSameTags(outSlot, emptyContainer)) {
+            int max = outSlot.getMaxStackSize();
+            int totalAfter = outSlot.getCount() + emptyContainer.getCount();
+            if (totalAfter <= max) {
+                ItemStack newOut = outSlot.copy();
+                newOut.setCount(totalAfter);
+                inventory.setStackInSlot(SLOT_FLUID_OUTPUT, newOut);
+
+                ItemStack remaining = originalFillStack.copy();
+                remaining.shrink(1);
+                inventory.setStackInSlot(SLOT_FLUID_INPUT, remaining);
+            }
+            return;
+        }
     }
-    //?}
+    *///?}
+    //? if neoforge {
+    /*private void tryMoveContainerToOutput(ItemStack emptyContainer, ItemStack originalFillStack) {
+        if (emptyContainer.isEmpty()) {
+            ItemStack remaining = originalFillStack.copy();
+            remaining.shrink(1);
+            inventory.setStackInSlot(SLOT_FLUID_INPUT, remaining);
+            return;
+        }
+
+        ItemStack outSlot = inventory.getStackInSlot(SLOT_FLUID_OUTPUT);
+
+        if (outSlot.isEmpty()) {
+            ItemStack remaining = originalFillStack.copy();
+            remaining.shrink(1);
+            inventory.setStackInSlot(SLOT_FLUID_INPUT, remaining);
+            inventory.setStackInSlot(SLOT_FLUID_OUTPUT, emptyContainer);
+            return;
+        }
+
+        if (PlatformHooks.isSameItemSameTags(outSlot, emptyContainer)) {
+            int max = outSlot.getMaxStackSize();
+            int totalAfter = outSlot.getCount() + emptyContainer.getCount();
+            if (totalAfter <= max) {
+                ItemStack newOut = outSlot.copy();
+                newOut.setCount(totalAfter);
+                inventory.setStackInSlot(SLOT_FLUID_OUTPUT, newOut);
+
+                ItemStack remaining = originalFillStack.copy();
+                remaining.shrink(1);
+                inventory.setStackInSlot(SLOT_FLUID_INPUT, remaining);
+            }
+            return;
+        }
+    }
+    *///?}
 
     private void chargeFromBattery() {
         ItemStack stack = inventory.getStackInSlot(SLOT_BATTERY);
@@ -514,7 +459,6 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         return recipe.getDuration();
     }
 
-    /** РЎРЅРёРјРѕРє Р±Р°РєР° РґР»СЏ СЃРѕРїРѕСЃС‚Р°РІР»РµРЅРёСЏ СЃ СЂРµС†РµРїС‚Р°РјРё (Architectury {@link FluidStack}, РјРёР»Р»РёР±Р°РєРµС‚С‹). */
     private FluidStack getTankFluidStack() {
         var fluid = tank.getStoredFluid();
         int amount = tank.getFluidAmountMb();
@@ -527,12 +471,10 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
     private boolean canProcess() {
         if (inventory.getStackInSlot(SLOT_INPUT).isEmpty()) return false;
         if (getEnergyStored() < getPowerRequired()) return false;
-        // Р—Р°РіР»СѓС€РєР°: CrystallizerRecipes.getOutput - РІСЃРµРіРґР° null
         return false;
     }
 
     private void processItem() {
-        // Р—Р°РіР»СѓС€РєР°: Р»РѕРіРёРєР° РєСЂР°С„С‚РѕРІ
     }
 
     public int getPowerRequired() {
@@ -565,14 +507,6 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         return data;
     }
 
-    // в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ IFluidStandardReceiverMK2 в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-    // Р РµРіРёСЃС‚СЂРёСЂСѓРµС‚ РѕРєРёСЃР»РёС‚РµР»СЊ РєР°Рє РїСЂРёС‘РјРЅРёРє РІ Р¶РёРґРєРѕСЃС‚РЅРѕР№ СЃРµС‚Рё MK2 (РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ
-    // UniversalMachinePartBlockEntity РІ СѓРіР»Р°С… РЅРёР¶РЅРµРіРѕ СЃР»РѕСЏ). Р‘РµР· СЌС‚РѕРіРѕ РёРЅС‚РµСЂС„РµР№СЃР° СЃРµС‚СЊ РЅРµ
-    // Р·РЅР°РµС‚ С‡С‚Рѕ РЅР°С€ Р±Р°Рє РіРѕС‚РѕРІ РїСЂРёРЅСЏС‚СЊ Р¶РёРґРєРѕСЃС‚СЊ, РїРѕРєР° РІ Р±Р°РєРµ РїСѓСЃС‚Рѕ вЂ” collectControllerFluidTypes
-    // РІ part-BE РІРѕР·РІСЂР°С‰Р°Р» Р±С‹ РїСѓСЃС‚РѕРµ РјРЅРѕР¶РµСЃС‚РІРѕ (РѕРЅ СЃРјРѕС‚СЂРёС‚ С‚РѕР»СЊРєРѕ РЅР° Р·Р°Р»РёС‚СѓСЋ Р¶РёРґРєРѕСЃС‚СЊ С‡РµСЂРµР·
-    // getFluidInTank). РЎ РёРЅС‚РµСЂС„РµР№СЃРѕРј same РїСѓС‚СЊ РёРґС‘С‚ С‡РµСЂРµР· mk2.getAllTanks() в†’ tank.getTankType(),
-    // РєРѕС‚РѕСЂРѕРµ РєРѕСЂСЂРµРєС‚РЅРѕ РІС‹РґР°С‘С‚ РЅР°СЃС‚СЂРѕРµРЅРЅС‹Р№ С‚РёРї РґР°Р¶Рµ РїСЂРё РїСѓСЃС‚РѕРј Р±Р°РєРµ.
-
     private final FluidTank[] receivingTanksArr = new FluidTank[] { tank };
 
     @Override
@@ -587,11 +521,9 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
 
     @Override
     public boolean isLoaded() {
-        // РўРѕС‡РЅР°СЏ РїСЂРѕРІРµСЂРєР° вЂ” РїРѕР·РёС†РёСЏ РґРµР№СЃС‚РІРёС‚РµР»СЊРЅРѕ РІ Р·Р°РіСЂСѓР¶РµРЅРЅРѕРј С‡Р°РЅРєРµ.
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
-    // в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-
+   
     /**
      * The controller BlockEntity is only one block, but the animated spinner/fluid BER is
      * rendered across the whole 3x3x6 multiblock. Without the expanded render bounds,
@@ -627,8 +559,6 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_INPUT) {
-            // РџСЂРёРЅРёРјР°РµРј С‚РѕР»СЊРєРѕ С‚Рѕ, С‡С‚Рѕ РїРѕРґС…РѕРґРёС‚ С…РѕС‚СЏ Р±С‹ РїРѕРґ РѕРґРёРЅ СЂРµС†РµРїС‚ СЃ С‚РµРєСѓС‰РµР№ Р¶РёРґРєРѕСЃС‚СЊСЋ.
-            // Р РµС†РµРїС‚С‹ data-driven вЂ” РїРѕРёСЃРє С‡РµСЂРµР· RecipeManager (RecipeHooks.getAllRecipes).
             for (CrystallizerRecipe r : RecipeHooks.getAllRecipes(level, CrystallizerRecipe.Type.INSTANCE)) {
                 if (r.matchesInput(stack) && r.matchesAcid(getTankFluidStack())) {
                     return true;
@@ -650,9 +580,11 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
             //? if fabric {
             /*return FluidStorage.ITEM.find(stack, null) != null;
             *///?}
+            //? if neoforge {
+            /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;
+            *///?}
         }
         if (slot == SLOT_FLUID_ID) {
-            // РџСЂРёРЅРёРјР°РµРј С‚РѕР»СЊРєРѕ РјСѓР»СЊС‚Рё-Р¶РёРґРєРѕСЃС‚РЅС‹Р№ РёРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ.
             return stack.getItem() instanceof IItemFluidIdentifier;
         }
         return true;

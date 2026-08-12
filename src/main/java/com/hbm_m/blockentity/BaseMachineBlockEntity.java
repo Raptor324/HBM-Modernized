@@ -7,10 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.api.energy.ItemEnergyAccess;
-//? if forge {
-import com.hbm_m.api.energy.PackedEnergyCapabilityProvider;
-import com.hbm_m.capability.ModCapabilities;
-//?}
+
 import com.hbm_m.interfaces.IEnergyConnector;
 import com.hbm_m.interfaces.IEnergyProvider;
 import com.hbm_m.interfaces.IEnergyReceiver;
@@ -36,11 +33,18 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
 //? if forge {
+import com.hbm_m.api.energy.PackedEnergyCapabilityProvider;
+import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 //?}
+
+//? if neoforge {
+/*import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.energy.IEnergyStorage;
+*///?}
 
 //? if fabric {
 /*import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
@@ -54,7 +58,7 @@ import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
  * Реализует хранение энергии, инвентарь и синхронизацию.
  */
 @SuppressWarnings("UnstableApiUsage")
-public abstract class BaseMachineBlockEntity extends BlockEntity implements MenuProvider, IEnergyProvider, IEnergyReceiver {
+public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implements MenuProvider, IEnergyProvider, IEnergyReceiver {
 
     // Инвентарь
     protected final ModItemStackHandler inventory;
@@ -337,7 +341,11 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
     protected void setFluidHandler(Object handler) {
         //? if forge {
         if (handler instanceof com.hbm_m.inventory.fluid.tank.FluidTank tank) {
-            this.fluidHandlerOpt = tank.getCapability();
+            //? if < 1.21.1 {
+            this.fluidHandlerOpt = (net.minecraftforge.common.util.LazyOptional<net.minecraftforge.fluids.capability.IFluidHandler>) tank.getCapability();
+            //?} else if neoforge {
+            /*this.fluidHandlerOpt = tank.getCapability();
+            *///?}
         } else {
             this.fluidHandlerOpt = LazyOptional.of(() -> (net.minecraftforge.fluids.capability.IFluidHandler) handler);
         }
@@ -349,15 +357,13 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
     }
 
     // --- NBT ---
-    //? if < 1.21.1 {
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        // copy() обязателен: ItemStack.save() кладёт в NBT ССЫЛКУ на живой ItemStack.tag.
-        // Chunk NBT сериализуется в потоке IOWorker, а машины продолжают менять теги
-        // предметов (зарядка батарей, счётчики) → ConcurrentModificationException
-        // в CompoundTag.write и незавершаемое "Saving worlds" при выходе из мира.
+    protected void writeNbtData(@NotNull CompoundTag tag, @Nullable net.minecraft.core.HolderLookup.Provider registries) {
+        //? if < 1.21.1 {
         tag.put("inventory", inventory.serializeNBT().copy());
+        //?} else {
+        /*tag.put("inventory", inventory.serializeNBT(registries).copy());
+        *///?}
         tag.putLong("energy", energy);
         tag.putLong("capacity", capacity);
         tag.putLong("lastEnergy", lastEnergy);
@@ -365,13 +371,16 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(@NotNull CompoundTag tag, @Nullable net.minecraft.core.HolderLookup.Provider registries) {
         CompoundTag inventoryTag = tag.getCompound("inventory");
         if (inventoryTag.contains("Size")) {
             inventoryTag.putInt("Size", inventory.getSlots());
         }
+        //? if < 1.21.1 {
         inventory.deserializeNBT(inventoryTag);
+        //?} else {
+        /*inventory.deserializeNBT(registries, inventoryTag);
+        *///?}
         energy = tag.getLong("energy");
         if (tag.contains("capacity")) {
             capacity = Math.max(0L, tag.getLong("capacity"));
@@ -379,70 +388,6 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         lastEnergy = tag.getLong("lastEnergy");
         energyDelta = tag.getLong("energyDelta");
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        tag.put("inventory", inventory.serializeNBT(registries).copy());
-        tag.putLong("energy", energy);
-        tag.putLong("capacity", capacity);
-        tag.putLong("lastEnergy", lastEnergy);
-        tag.putLong("energyDelta", energyDelta);
-    }
-
-    @Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        CompoundTag inventoryTag = tag.getCompound("inventory");
-        if (inventoryTag.contains("Size")) {
-            inventoryTag.putInt("Size", inventory.getSlots());
-        }
-        inventory.deserializeNBT(registries, inventoryTag);
-        energy = tag.getLong("energy");
-        if (tag.contains("capacity")) {
-            capacity = Math.max(0L, tag.getLong("capacity"));
-        }
-        lastEnergy = tag.getLong("lastEnergy");
-        energyDelta = tag.getLong("energyDelta");
-    }
-    *///?}
-
-    // --- Синхронизация ---
-    //? if < 1.21.1 {
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        saveAdditional(tag);
-        return tag;
-    }
-    //?} else {
-    /*@Override
-    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
-        CompoundTag tag = super.getUpdateTag(registries);
-        saveAdditional(tag, registries);
-        return tag;
-    }
-    *///?}
-
-    //? if forge {
-    @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        load(tag);
-    }//?}
-
-    @Nullable
-    @Override
-    public ClientboundBlockEntityDataPacket getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
-
-    //? if forge {
-    @Override
-    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
-        if (PlatformHooks.getItemTag(pkt) != null) {
-            load(PlatformHooks.getItemTag(pkt));
-        }
-    }//?}
 
     protected void sendUpdateToClient() {
         if (level != null && !level.isClientSide && !isRemoved()) {
@@ -537,6 +482,17 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
             }
         }
         *///?}
+
+        //? if neoforge {
+        /*IEnergyStorage itemEnergy = batteryStack.getCapability(Capabilities.EnergyStorage.ITEM);
+        if (itemEnergy == null || !itemEnergy.canExtract()) return;
+        int intTransfer = (int) Math.min(Integer.MAX_VALUE, maxTransfer);
+        if (intTransfer <= 0) return;
+        int extracted = itemEnergy.extractEnergy(intTransfer, false);
+        if (extracted > 0) {
+            setEnergyStored(energy + extracted);
+        }
+        *///?}
     }
 
     /**
@@ -590,6 +546,24 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
             }
         }
         *///?}
+
+        //? if neoforge {
+        /*// Сначала HBM-приёмник (кастомная capability предмета), затем FE через NeoForge Capabilities.
+        var hbm = ItemEnergyAccess.getHbmReceiver(itemToCharge);
+        if (hbm.isPresent()) {
+            var target = hbm.get();
+            if (!target.canReceive()) return;
+            long accepted = target.receiveEnergy(toTransfer, false);
+            if (accepted > 0) setEnergyStored(energy - accepted);
+            return;
+        }
+        IEnergyStorage target = itemToCharge.getCapability(Capabilities.EnergyStorage.ITEM);
+        if (target == null || !target.canReceive()) return;
+        int maxTransfer = (int) Math.min(toTransfer, Integer.MAX_VALUE);
+        if (maxTransfer <= 0) return;
+        int accepted = target.receiveEnergy(maxTransfer, false);
+        if (accepted > 0) setEnergyStored(energy - accepted);
+        *///?}
     }
 
     /**
@@ -607,6 +581,10 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         /*var es = EnergyStorage.ITEM.find(stack, null);
         return es != null && es.supportsExtraction();
         *///?}
+        //? if neoforge {
+        /*IEnergyStorage cap = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        return cap != null && cap.canExtract();
+        *///?}
     }
 
     /**
@@ -623,6 +601,10 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         //? if fabric {
         /*var es = EnergyStorage.ITEM.find(stack, null);
         return es != null && es.supportsInsertion();
+        *///?}
+        //? if neoforge {
+        /*IEnergyStorage cap = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        return cap != null && cap.canReceive();
         *///?}
     }
 

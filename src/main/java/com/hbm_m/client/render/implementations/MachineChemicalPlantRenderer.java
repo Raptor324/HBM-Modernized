@@ -18,9 +18,8 @@ import com.hbm_m.client.render.RenderDistanceHelper;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
-//? if forge {
 import com.hbm_m.client.render.shader.IrisPhaseGuard;
-//?}
+
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
@@ -29,18 +28,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 
 import org.lwjgl.opengl.GL11;
 
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -51,11 +38,14 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-//? if forge || neoforge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChemicalPlantBlockEntity, MachineChemicalPlantBakedModel> {
 
     private MachineChemicalPlantVboRenderer gpu;

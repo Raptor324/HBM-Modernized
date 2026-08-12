@@ -113,6 +113,7 @@ public class MachineBatteryBlock extends BaseEntityBlock {
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                  Player player, InteractionHand hand, BlockHitResult hit) {
@@ -125,6 +126,20 @@ public class MachineBatteryBlock extends BaseEntityBlock {
         }
         return InteractionResult.SUCCESS;
     }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
+                                                Player player, BlockHitResult hit) {
+        if (!level.isClientSide) {
+            BlockEntity entity = level.getBlockEntity(pos);
+            if (entity instanceof MachineBatteryBlockEntity battery) {
+                MenuRegistry.openExtendedMenu((ServerPlayer) player, battery, buf -> buf.writeBlockPos(pos));
+            }
+            return InteractionResult.CONSUME;
+        }
+        return InteractionResult.SUCCESS;
+    }
+    *///?}
 
     @Override
     public void setPlacedBy(Level pLevel, BlockPos pPos, BlockState pState, @Nullable LivingEntity pPlacer, ItemStack pStack) {
@@ -141,10 +156,11 @@ public class MachineBatteryBlock extends BaseEntityBlock {
                 if (itemNbt != null && itemNbt.contains("BlockEntityTag")) {
 
                     // Загружаем все данные из этого тега в наш BlockEntity
+                    //? if < 1.21.1 {
                     batteryBE.load(itemNbt.getCompound("BlockEntityTag"));
-
-                    // (Метод load() в MachineBatteryBlockEntity
-                    // уже содержит super.load(), так что мы просто передаем ему наши данные)
+                    //?} else {
+                    /*batteryBE.loadWithComponents(itemNbt.getCompound("BlockEntityTag"), pLevel.registryAccess());
+                    *///?}
 
                     batteryBE.setChanged(); // Уведомляем мир об изменениях
                 }
@@ -153,9 +169,15 @@ public class MachineBatteryBlock extends BaseEntityBlock {
     }
     
 
+    //? if < 1.21.1 {
     @Override
     public void appendHoverText(ItemStack pStack, @Nullable BlockGetter pLevel, List<Component> pTooltip, TooltipFlag pFlag) {
         super.appendHoverText(pStack, pLevel, pTooltip, pFlag);
+    //?} else {
+    /*@Override
+    public void appendHoverText(ItemStack pStack, net.minecraft.world.item.Item.TooltipContext pLevel, List<Component> pTooltip, TooltipFlag pFlag) {
+        super.appendHoverText(pStack, pLevel, pTooltip, pFlag);
+    *///?}
 
         // 1. Получаем сохраненную энергию из NBT
         long energy = 0;
@@ -176,8 +198,8 @@ public class MachineBatteryBlock extends BaseEntityBlock {
                 .withStyle(ChatFormatting.YELLOW));
     }
 
-    //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<MachineBatteryBlock> CODEC = simpleCodec(MachineBatteryBlock::new);
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineBatteryBlock> CODEC = simpleCodec(props -> new MachineBatteryBlock(props, 0L));
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {

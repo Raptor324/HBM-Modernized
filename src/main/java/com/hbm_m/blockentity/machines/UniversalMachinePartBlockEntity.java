@@ -689,7 +689,8 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
 
         super.loadAdditional(pTag, registries);
         if (pTag.contains("ControllerPos")) {
-            this.controllerPos = NbtUtils.readBlockPos(pTag.getCompound("ControllerPos"));
+            // 1.21.1: NbtUtils.readBlockPos(CompoundTag, String) возвращает Optional<BlockPos>.
+            this.controllerPos = NbtUtils.readBlockPos(pTag, "ControllerPos").orElse(null);
         }
         if (pTag.contains("PartRole")) {
             try {
@@ -744,7 +745,12 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
     /*@Override
     public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
 
+        //? if < 1.21.1 {
         return this.saveWithoutMetadata();
+        //?} else {
+        /^// 1.21.1: saveWithoutMetadata требует HolderLookup.Provider.
+        return this.saveWithoutMetadata(registries);
+        ^///?}
     
     }
     *///?}

@@ -12,13 +12,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
+
 import org.joml.Matrix4f;
 
 /**
@@ -39,7 +33,14 @@ import org.joml.Matrix4f;
  *   2. Set fillColor from the dominant material's moltenColor.
  *   3. The quad will automatically pick up both values.
  */
-@OnlyIn(Dist.CLIENT)
+
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class CrucibleRenderer implements BlockEntityRenderer<MachineCrucibleBlockEntity> {
 
     /** lava surface texture — re-uses the existing block/fluids/lava.png */
@@ -86,10 +87,17 @@ public class CrucibleRenderer implements BlockEntityRenderer<MachineCrucibleBloc
         // Flat quad: top face (normal Y+), counter-clockwise from south-west
         // (INNER, surfaceY, INNER) → (INNER, surfaceY, INNER_MAX)
         // → (INNER_MAX, surfaceY, INNER_MAX) → (INNER_MAX, surfaceY, INNER)
+        //? if < 1.21.1 {
         vc.vertex(m, INNER,     surfaceY, INNER    ).color(r, g, b, a).uv(0, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullbright).normal(0, 1, 0).endVertex();
         vc.vertex(m, INNER,     surfaceY, INNER_MAX).color(r, g, b, a).uv(0, 1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullbright).normal(0, 1, 0).endVertex();
         vc.vertex(m, INNER_MAX, surfaceY, INNER_MAX).color(r, g, b, a).uv(1, 1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullbright).normal(0, 1, 0).endVertex();
         vc.vertex(m, INNER_MAX, surfaceY, INNER    ).color(r, g, b, a).uv(1, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullbright).normal(0, 1, 0).endVertex();
+        //?} else {
+        /*vc.addVertex(m, INNER,     surfaceY, INNER    ).setColor(r, g, b, a).setUv(0, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(fullbright).setNormal(0, 1, 0);
+        vc.addVertex(m, INNER,     surfaceY, INNER_MAX).setColor(r, g, b, a).setUv(0, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(fullbright).setNormal(0, 1, 0);
+        vc.addVertex(m, INNER_MAX, surfaceY, INNER_MAX).setColor(r, g, b, a).setUv(1, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(fullbright).setNormal(0, 1, 0);
+        vc.addVertex(m, INNER_MAX, surfaceY, INNER    ).setColor(r, g, b, a).setUv(1, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(fullbright).setNormal(0, 1, 0);
+        *///?}
     }
 
     @Override

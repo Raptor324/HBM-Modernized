@@ -889,12 +889,16 @@ public class ConfigScreen extends Screen {
         private final int rowW;
 
         ConfigList(Minecraft mc, int leftPos, int rowW, int screenHeight, int y0, int y1, int itemHeight) {
+            //? if < 1.21.1 {
             super(mc, rowW, screenHeight, y0, y1, itemHeight);
-            this.rowW = rowW;
             setLeftPos(leftPos);
-            // Не рисуем ванильный dirt-фон списка — сквозь него виден наш тёмный оверлей.
             setRenderBackground(false);
             setRenderTopAndBottom(false);
+            //?} else {
+            /*super(mc, rowW, y1 - y0, y0, itemHeight);
+            this.setX(leftPos);
+            *///?}
+            this.rowW = rowW;
         }
 
         @Override

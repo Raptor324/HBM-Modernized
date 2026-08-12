@@ -167,7 +167,7 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
 
     //? if < 1.21.1 {
     @Override
-    protected void saveAdditional(CompoundTag tag) {
+    public void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.putInt("burnTime", burnTime);
         tag.putBoolean("isOn", isOn);
@@ -183,7 +183,7 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
         tag.putBoolean("isOn", isOn);
         tag.putFloat("doorAngle", doorAngle);
         tag.putBoolean("doorOpen", doorOpen);
-    
+
     }
     *///?}
 
@@ -209,48 +209,18 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
         prevDoorAngle = doorAngle;
         doorOpen = tag.getBoolean("doorOpen");
         wasOn = isOn;
-    
+
     }
     *///?}
-
-    //? if < 1.21.1 {
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        tag.putBoolean("isOn", isOn);
-        tag.putFloat("doorAngle", doorAngle);
-        tag.putBoolean("doorOpen", doorOpen);
-        return tag;
-    }
-    //?} else {
-    /*@Override
-    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
-
-        CompoundTag tag = super.getUpdateTag(registries);
-        tag.putBoolean("isOn", isOn);
-        tag.putFloat("doorAngle", doorAngle);
-        tag.putBoolean("doorOpen", doorOpen);
-        return tag;
-    
-    }
-    *///?}
-
-    //? if forge {
-    @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        // Forge-only hook; на Fabric используется стандартная синхронизация через load()
-        wasOn = tag.getBoolean("isOn");
-        doorAngle = tag.getFloat("doorAngle");
-        prevDoorAngle = doorAngle;
-        doorOpen = tag.getBoolean("doorOpen");
-    }
-    //?}
 
     @Override
     public AABB getRenderBoundingBox() {
         BlockState state = getBlockState();
         if (!(state.getBlock() instanceof com.hbm_m.block.machines.HeatingOvenBlock block)) {
-            return new AABB(worldPosition.offset(-1, 0, -1), worldPosition.offset(2, 2, 2));
+            return new AABB(
+                worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
+                worldPosition.getX() + 2, worldPosition.getY() + 2, worldPosition.getZ() + 2
+            );
         }
         Direction facing = state.getValue(com.hbm_m.block.machines.HeatingOvenBlock.FACING);
         return block.getStructureHelper().getRenderBoundingBox(worldPosition, facing, 0.0);

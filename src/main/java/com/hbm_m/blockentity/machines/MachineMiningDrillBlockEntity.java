@@ -317,11 +317,23 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity {
 
         ItemStack tool = new ItemStack(Items.DIAMOND_PICKAXE);
         boolean silk = enableSilkTouch && drill.silk();
+        //? if < 1.21.1 {
         if (silk) {
             tool.enchant(Enchantments.SILK_TOUCH, 1);
         } else if (drill.fortune() > 0) {
             tool.enchant(Enchantments.BLOCK_FORTUNE, drill.fortune());
         }
+        //?} else {
+        /*// 1.21.1: Enchantments.* теперь ResourceKey<Enchantment>, а enchant ждёт Holder<Enchantment>;
+        // BLOCK_FORTUNE переименован в FORTUNE. Резолв через реестр зачарований уровня.
+        net.minecraft.core.HolderLookup.RegistryLookup<net.minecraft.world.item.enchantment.Enchantment> enchReg =
+                level.registryAccess().lookup(net.minecraft.core.registries.Registries.ENCHANTMENT).orElseThrow();
+        if (silk) {
+            tool.enchant(enchReg.getOrThrow(Enchantments.SILK_TOUCH), 1);
+        } else if (drill.fortune() > 0) {
+            tool.enchant(enchReg.getOrThrow(Enchantments.FORTUNE), drill.fortune());
+        }
+        *///?}
 
         LootParams.Builder builder = new LootParams.Builder(level)
                 .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos))

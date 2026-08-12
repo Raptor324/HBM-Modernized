@@ -7,6 +7,7 @@ import com.hbm_m.blockentity.machines.MachineArcFurnaceBlockEntity;
 import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.PlatformHooks;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
@@ -26,6 +27,14 @@ import net.minecraft.resources.ResourceLocation;
  * Die statischen Teile (Furnace/Lid/Ring1-3/Cable1-3) kommen weiterhin ueber das normale gebackene
  * Blockmodell (siehe {@code arc_furnace.json}, dort sind alle Elektroden-Gruppen ausgeblendet).
  */
+
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class MachineArcFurnaceRenderer implements BlockEntityRenderer<MachineArcFurnaceBlockEntity> {
 
     private static final ResourceLocation COLD_MODEL_ID = id("arc_furnace_electrodes_cold");
@@ -84,7 +93,7 @@ public class MachineArcFurnaceRenderer implements BlockEntityRenderer<MachineArc
     @Nullable
     private static BakedModel getModel(ResourceLocation id) {
         var modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel model = modelManager.getModel(id);
+        BakedModel model = PlatformHooks.getModel(modelManager, id);
         return (model == null || model == modelManager.getMissingModel()) ? null : model;
     }
 }

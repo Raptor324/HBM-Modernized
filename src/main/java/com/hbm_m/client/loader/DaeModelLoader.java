@@ -1,4 +1,3 @@
-//? if forge {
 package com.hbm_m.client.loader;
 
 import java.util.List;
@@ -25,9 +24,16 @@ import net.minecraft.client.resources.model.ModelState;
 import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
+
+//? if < 1.21.1 {
 import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
 import net.minecraftforge.client.model.geometry.IGeometryLoader;
 import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
+//?} else {
+/*import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
+import net.neoforged.neoforge.client.model.geometry.IGeometryLoader;
+import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
+*///?}
 
 /**
  * Bakes a COLLADA (.dae) model into a static item model. The model is sampled at the
@@ -36,6 +42,7 @@ import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
  * which is only rendered as an item / particle — the in-world block goes through the
  * block entity renderer.
  */
+
 public class DaeModelLoader implements IGeometryLoader<DaeModelLoader.DaeUnbakedGeometry> {
 
     private static final String CLIP_NAME = "animation";
@@ -60,11 +67,20 @@ public class DaeModelLoader implements IGeometryLoader<DaeModelLoader.DaeUnbaked
         @Override
         public void resolveParents(Function<ResourceLocation, UnbakedModel> modelGetter, IGeometryBakingContext context) { }
 
+        //? if < 1.21.1 {
         @Override
-        public BakedModel bake(IGeometryBakingContext context, ModelBaker baker,
-                               Function<Material, TextureAtlasSprite> spriteGetter,
-                               ModelState modelState, ItemOverrides overrides,
-                               ResourceLocation modelName) {
+        public BakedModel bake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelName) {
+            return doBake(context, baker, spriteGetter, modelState, overrides, modelName);
+        }
+        //?} else {
+        /*@Override
+        public BakedModel bake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides) {
+            ResourceLocation modelName = ResourceLocation.parse(context.getModelName());
+            return doBake(context, baker, spriteGetter, modelState, overrides, modelName);
+        }
+        *///?}
+
+        private BakedModel doBake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelName) {
             Material material = context.hasMaterial("default")
                     ? context.getMaterial("default")
                     : new Material(TextureAtlas.LOCATION_BLOCKS, RefStrings.resourceLocation(FALLBACK_TEXTURE));
@@ -82,18 +98,3 @@ public class DaeModelLoader implements IGeometryLoader<DaeModelLoader.DaeUnbaked
         }
     }
 }
-//?}
-
-//? if fabric {
-/*package com.hbm_m.client.loader;
-
-/^*
- * Fabric: Forge geometry pipeline isn't available.
- * Stub to keep common code compiling across loaders.
- ^/
-public class DaeModelLoader {
-    public DaeModelLoader() {
-        throw new UnsupportedOperationException("DaeModelLoader is not implemented on Fabric yet.");
-    }
-}
-*///?}

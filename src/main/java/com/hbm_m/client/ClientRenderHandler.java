@@ -424,8 +424,13 @@ public class ClientRenderHandler {
     private static net.minecraft.client.renderer.MultiBufferSource.BufferSource highlightBufferSource() {
         net.minecraft.client.renderer.MultiBufferSource.BufferSource bs = highlightBufferSource;
         if (bs == null) {
+            //? if < 1.21.1 {
             bs = net.minecraft.client.renderer.MultiBufferSource.immediate(
                     new com.mojang.blaze3d.vertex.BufferBuilder(CustomRenderTypes.HIGHLIGHT_BOX_FILL.bufferSize()));
+            //?} else {
+            /*bs = net.minecraft.client.renderer.MultiBufferSource.immediate(
+                    new com.mojang.blaze3d.vertex.ByteBufferBuilder(CustomRenderTypes.HIGHLIGHT_BOX_FILL.bufferSize()));
+            *///?}
             highlightBufferSource = bs;
         }
         return bs;
@@ -534,47 +539,83 @@ public class ClientRenderHandler {
             maxX -= (float) cameraPos.x; maxY -= (float) cameraPos.y; maxZ -= (float) cameraPos.z;
         }
         
-        // Низ (Y-)
         if (drawDown) {
+            //? if < 1.21.1 {
             consumer.vertex(matrix, minX, minY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, minY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, minY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, minY, maxZ).color(r, g, b, alpha).endVertex();
+            //?} else {
+            /*consumer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, maxX, minY, minZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, minX, minY, maxZ).setColor(r, g, b, alpha);
+            *///?}
         }
-        // Верх (Y+)
         if (drawUp) {
+            //? if < 1.21.1 {
             consumer.vertex(matrix, minX, maxY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, maxY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, maxY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, maxY, minZ).color(r, g, b, alpha).endVertex();
+            //?} else {
+            /*consumer.addVertex(matrix, minX, maxY, maxZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, maxX, maxY, maxZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, maxX, maxY, minZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, minX, maxY, minZ).setColor(r, g, b, alpha);
+            *///?}
         }
-        // Север (Z-)
         if (drawNorth) {
+            //? if < 1.21.1 {
             consumer.vertex(matrix, minX, minY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, maxY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, maxY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, minY, minZ).color(r, g, b, alpha).endVertex();
+            //?} else {
+            /*consumer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, minX, maxY, minZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, maxX, maxY, minZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, maxX, minY, minZ).setColor(r, g, b, alpha);
+            *///?}
         }
-        // Юг (Z+)
         if (drawSouth) {
+            //? if < 1.21.1 {
             consumer.vertex(matrix, maxX, minY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, maxY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, maxY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, minY, maxZ).color(r, g, b, alpha).endVertex();
+            //?} else {
+            /*consumer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, maxX, maxY, maxZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, minX, maxY, maxZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, minX, minY, maxZ).setColor(r, g, b, alpha);
+            *///?}
         }
-        // Запад (X-)
         if (drawWest) {
+            //? if < 1.21.1 {
             consumer.vertex(matrix, minX, minY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, maxY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, maxY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, minY, minZ).color(r, g, b, alpha).endVertex();
+            //?} else {
+            /*consumer.addVertex(matrix, minX, minY, maxZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, minX, maxY, maxZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, minX, maxY, minZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, alpha);
+            *///?}
         }
-        // Восток (X+)
         if (drawEast) {
+            //? if < 1.21.1 {
             consumer.vertex(matrix, maxX, minY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, maxY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, maxY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, minY, maxZ).color(r, g, b, alpha).endVertex();
+            //?} else {
+            /*consumer.addVertex(matrix, maxX, minY, minZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, maxX, maxY, minZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, maxX, maxY, maxZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, alpha);
+            *///?}
         }
     }
 

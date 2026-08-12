@@ -294,6 +294,7 @@ public class GUIScreenRecipeSelector extends Screen {
         return super.mouseClicked(mouseX, mouseY, button);
     }
     
+    //? if < 1.21.1 {
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         if (delta > 0 && pageIndex > 0) {
@@ -303,6 +304,19 @@ public class GUIScreenRecipeSelector extends Screen {
         }
         return true;
     }
+    //?} else {
+    /*// 1.21.1: mouseScrolled получил 4-й параметр (horizontal scroll) — передаём 0.0.
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        double delta = scrollY;
+        if (delta > 0 && pageIndex > 0) {
+            pageIndex--;
+        } else if (delta < 0 && pageIndex < pageCount) {
+            pageIndex++;
+        }
+        return true;
+    }
+    *///?}
     
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {

@@ -300,8 +300,8 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
     }
 
     @Override
-    protected void saveAdditional(net.minecraft.nbt.CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", this.progress);
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].writeToNBT(tag, "t" + i);
@@ -309,8 +309,8 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
     }
 
     @Override
-    public void load(net.minecraft.nbt.CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         this.progress = tag.getInt("progress");
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].readFromNBT(tag, "t" + i);
@@ -326,7 +326,9 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         BlockState state = getBlockState();
         if (!(state.getBlock() instanceof com.hbm_m.block.machines.MachineCyclotronBlock block)) {
-            return new net.minecraft.world.phys.AABB(worldPosition.offset(-2, 0, -2), worldPosition.offset(3, 4, 3));
+            BlockPos p1 = worldPosition.offset(-2, 0, -2);
+            BlockPos p2 = worldPosition.offset(3, 4, 3);
+            return new net.minecraft.world.phys.AABB(p1.getX(), p1.getY(), p1.getZ(), p2.getX(), p2.getY(), p2.getZ());
         }
         net.minecraft.core.Direction facing = state.getValue(com.hbm_m.block.machines.MachineCyclotronBlock.FACING);
         return block.getStructureHelper().getRenderBoundingBox(worldPosition, facing, 0.0);

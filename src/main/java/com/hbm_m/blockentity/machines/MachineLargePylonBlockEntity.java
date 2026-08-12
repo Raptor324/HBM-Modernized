@@ -5,7 +5,6 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.inventory.menu.MachineLargePylonMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 
@@ -20,16 +19,7 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-//? if forge {
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-//?}
 
-/**
- * Large Pylon BlockEntity (WIP).
- * 3 слота: input, battery, output. Энергия 2M, без танка жидкостей.
- */
 public class MachineLargePylonBlockEntity extends BaseMachineBlockEntity {
 
     private static final int SLOT_INPUT   = 0;
@@ -180,7 +170,7 @@ public class MachineLargePylonBlockEntity extends BaseMachineBlockEntity {
 
     //? if < 1.21.1 {
     @Override
-    protected void saveAdditional(CompoundTag tag) {
+    public void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.putInt("progress", progress);
         tag.putInt("duration", duration);
@@ -194,7 +184,7 @@ public class MachineLargePylonBlockEntity extends BaseMachineBlockEntity {
         tag.putInt("progress", progress);
         tag.putInt("duration", duration);
         tag.putBoolean("isOn", isOn);
-    
+
     }
     *///?}
 
@@ -214,12 +204,7 @@ public class MachineLargePylonBlockEntity extends BaseMachineBlockEntity {
         progress = tag.getInt("progress");
         duration = tag.contains("duration") ? tag.getInt("duration") : DEFAULT_DURATION;
         isOn = tag.getBoolean("isOn");
-    
+
     }
     *///?}
-
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        return super.getCapability(cap, side);
-    }
 }

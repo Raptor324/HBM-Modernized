@@ -1,16 +1,5 @@
 package com.hbm_m.client.render.implementations;
 
-
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?} elif fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.client.model.CargoElevatorBakedModel;
@@ -28,10 +17,14 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  * через {@link MeshRenderCache#getOrCreateRenderer}.
  * Аналог {@link MachineAssemblerVboRenderer}.
  */
-//? if forge || neoforge {
-@OnlyIn(Dist.CLIENT)
+
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
 //?} elif fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class CargoElevatorVboRenderer {
 
     private final CargoElevatorBakedModel model;

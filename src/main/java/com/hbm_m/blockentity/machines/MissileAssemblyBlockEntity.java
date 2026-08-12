@@ -176,6 +176,7 @@ public class MissileAssemblyBlockEntity extends BlockEntity implements MenuProvi
         Containers.dropContents(level, worldPosition, c);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(@NotNull CompoundTag tag) {
         super.saveAdditional(tag);
@@ -185,8 +186,25 @@ public class MissileAssemblyBlockEntity extends BlockEntity implements MenuProvi
     @Override
     public void load(@NotNull CompoundTag tag) {
         super.load(tag);
-        inventory.deserializeNBT(tag.getCompound("inventory"));
+        if (tag.contains("inventory")) {
+            inventory.deserializeNBT(tag.getCompound("inventory"));
+        }
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(@NotNull CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        tag.put("inventory", inventory.serializeNBT(registries));
+    }
+
+    @Override
+    protected void loadAdditional(@NotNull CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        if (tag.contains("inventory")) {
+            inventory.deserializeNBT(registries, tag.getCompound("inventory"));
+        }
+    }
+    *///?}
 
     @Override
     public Component getDisplayName() {

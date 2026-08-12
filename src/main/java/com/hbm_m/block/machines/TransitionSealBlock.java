@@ -131,6 +131,7 @@ public class TransitionSealBlock extends BaseEntityBlock implements IMultiblockC
         return Shapes.empty();
     }
 
+    //? if < 1.21.1 {
     @Override
     public boolean isPathfindable(BlockState state, BlockGetter level, BlockPos pos, PathComputationType type) {
         if(level.getBlockEntity(pos) instanceof TransitionSealBlockEntity seal) {
@@ -141,6 +142,14 @@ public class TransitionSealBlock extends BaseEntityBlock implements IMultiblockC
         }
         return false;
     }
+    //?} else {
+    /*@Override
+    protected boolean isPathfindable(BlockState state, PathComputationType type) {
+        // 1.21.1: BlockGetter/BlockPos из сигнатуры убраны, BE-запрос недоступен.
+        // Возвращаем false — поведение по умолчанию (плотный блок).
+        return false;
+    }
+    *///?}
 
     @Override
     public boolean isCollisionShapeFullBlock(BlockState state, BlockGetter world, BlockPos pos) {

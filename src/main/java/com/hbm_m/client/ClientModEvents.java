@@ -35,13 +35,19 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+*///?}
 
 //? if forge {
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
-//?}
-
-@SuppressWarnings("UnstableApiUsage")
+//?} elif neoforge {
+/*@EventBusSubscriber(modid = RefStrings.MODID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+*///?}
+@SuppressWarnings({"UnstableApiUsage", "removal"})
 public class ClientModEvents {
 
     private static boolean initialized = false;
@@ -143,7 +149,7 @@ public class ClientModEvents {
         }
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @SubscribeEvent
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
         // РЕГРЕССИЯ СТОП: ПРЕДОТВРАЩЕНИЕ УТЕЧКИ SHADOW PASS:
@@ -170,7 +176,12 @@ public class ClientModEvents {
             InstancedRenderFrame.onBeforeBlockEntities(
                     event.getProjectionMatrix(), cameraPos, frustum);
 
+            //? if < 1.21.1 {
             MissileTrackWorldRender.render(mc.getFrameTime(), event.getPoseStack());
+            //?} else {
+            /*// 1.21.1: getPartialTick() удалён — частичное время тика через DeltaTracker.Timer.
+            MissileTrackWorldRender.render(mc.getTimer().getGameTimeDeltaPartialTick(true), event.getPoseStack());
+            *///?}
         }
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {

@@ -330,7 +330,8 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
     /** Tall missiles extend above the 1-block pad; default BE AABB would cull the BER. */
     @Override
     public AABB getRenderBoundingBox() {
-        return new AABB(worldPosition).inflate(1.0D, 7.0D, 1.0D);
+        return new AABB(worldPosition.getX() - 1, worldPosition.getY() - 1, worldPosition.getZ() - 1,
+                        worldPosition.getX() + 2, worldPosition.getY() + 8, worldPosition.getZ() + 2);
     }
 
     /**
@@ -373,7 +374,7 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
                 tanks[0].setTankType(ModFluids.KEROSENE_REFORM.getSource());
                 tanks[1].setTankType(ModFluids.OXYGEN.getSource());
             }
-            case SOLID -> { /* предзаправленные — баки не используются */ }
+            case SOLID -> { }
         }
         return tanks[0].getTankType() != prevFuel || tanks[1].getTankType() != prevOxidizer;
     }
@@ -673,14 +674,14 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
 
     //? if < 1.21.1 {
     @Override
-    protected void saveAdditional(CompoundTag tag) {
+    public void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.putInt("launchpad_state", state);
         tag.putInt("launchpad_redstone", redstonePower);
         tag.putInt("launchpad_prev_redstone", prevRedstonePower);
         tag.putInt("launchpad_delay", delay);
         ItemStack missile = inventory.getStackInSlot(SLOT_MISSILE);
-        tag.putInt("missile_preview_id", missile.isEmpty() ? -1 : BuiltInRegistries.ITEM.getId(missile.getItem()));
+        tag.putInt("missile_preview_id", missile.isEmpty() ? -1 : net.minecraft.core.registries.BuiltInRegistries.ITEM.getId(missile.getItem()));
         tanks[0].writeToNBT(tag, "T0");
         tanks[1].writeToNBT(tag, "T1");
     }
@@ -694,10 +695,10 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         tag.putInt("launchpad_prev_redstone", prevRedstonePower);
         tag.putInt("launchpad_delay", delay);
         ItemStack missile = inventory.getStackInSlot(SLOT_MISSILE);
-        tag.putInt("missile_preview_id", missile.isEmpty() ? -1 : BuiltInRegistries.ITEM.getId(missile.getItem()));
+        tag.putInt("missile_preview_id", missile.isEmpty() ? -1 : net.minecraft.core.registries.BuiltInRegistries.ITEM.getId(missile.getItem()));
         tanks[0].writeToNBT(tag, "T0");
         tanks[1].writeToNBT(tag, "T1");
-    
+
     }
     *///?}
 
@@ -733,7 +734,7 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
             tanks[1].readFromNBT(tag, "T1");
         }
         readMissilePreviewFromTag(tag);
-    
+
     }
     *///?}
 
@@ -746,35 +747,11 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         }
     }
 
-    //? if < 1.21.1 {
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = new CompoundTag();
-        saveAdditional(tag);
-        return tag;
-    }
-    //?} else {
-    /*@Override
-    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
-
-        CompoundTag tag = new CompoundTag();
-        saveAdditional(tag, registries);
-        return tag;
-    
-    }
-    *///?}
-
     @Override
     public ClientboundBlockEntityDataPacket getUpdatePacket() {
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
-    //? if forge {
-    @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        load(tag);
-    }
-    //?}
 
     // -----------------------
     // BaseMachineBlockEntity overrides
@@ -782,7 +759,6 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
 
     @Override
     protected boolean isItemValidForSlot(int slot, net.minecraft.world.item.ItemStack stack) {
-        // Пока никаких особых ограничений, кроме базового количества слотов.
         return slot >= 0 && slot < SLOT_COUNT;
     }
 

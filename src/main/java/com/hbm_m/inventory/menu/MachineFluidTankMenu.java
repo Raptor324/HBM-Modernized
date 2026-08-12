@@ -3,8 +3,10 @@ package com.hbm_m.inventory.menu;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.fluids.FluidItemAccess;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity;
+import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
 
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -109,8 +111,10 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
             });
         });
         //?} else {
-        /*// Fabric: слоты напрямую через ModItemStackHandler (без Forge capabilities)
-        Container handlerContainer = new HandlerContainer(blockEntity.getItemHandler());
+        /*// Fabric/NeoForge: слоты напрямую через ModItemStackHandler (без Forge SlotItemHandler).
+        // HandlerContainer был Fabric-only (gated) — на neoforge его нет, используем общий
+        // ModItemStackHandlerContainer (работает на всех загрузчиках).
+        Container handlerContainer = new ModItemStackHandlerContainer(blockEntity.getItemHandler(), blockEntity::setChanged);
 
         // Fluid identifier input: (8, 17)
         this.addSlot(new Slot(handlerContainer, MachineFluidTankBlockEntity.SLOT_ID_IN, 8, 17) {
@@ -287,7 +291,7 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
                     if (!moveItemStackTo(stackInSlot, MACHINE_SLOTS + 0, MACHINE_SLOTS + 1, false)) {
                         return ItemStack.EMPTY;
                     }
-                } else if (stackInSlot.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent()) {
+                } else if (FluidItemAccess.hasFluidHandler(stackInSlot)) {
                     // Try to put into LOAD_IN slot first
                     if (!moveItemStackTo(stackInSlot, MachineFluidTankBlockEntity.SLOT_LOAD_IN, MachineFluidTankBlockEntity.SLOT_LOAD_IN + 1, false)) {
                         // If that fails, try UNLOAD_IN slot

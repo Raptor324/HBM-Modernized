@@ -12,16 +12,6 @@ import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.mojang.blaze3d.vertex.PoseStack;
 
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?} elif fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
@@ -42,11 +32,14 @@ import net.minecraft.world.phys.AABB;
  *   <li>Piston — (extension+1) раз, стопка по Y (если renderPlatform)</li>
  * </ul>
  */
-//? if forge || neoforge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class CargoElevatorRenderer extends AbstractPartBasedRenderer<CargoElevatorBlockEntity, CargoElevatorBakedModel> {
 
     private CargoElevatorVboRenderer gpu;

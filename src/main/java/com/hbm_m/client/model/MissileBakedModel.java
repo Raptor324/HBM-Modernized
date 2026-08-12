@@ -82,6 +82,10 @@ public class MissileBakedModel extends AbstractMultipartBakedModel implements Ab
         return getQuads(state, side, rand, ModelData.EMPTY, null);
         //?}
 
+        //? if neoforge {
+        /*return super.getQuads(state, side, rand);
+        *///?}
+
         //? if fabric {
         /*if (state == null) {
             return getItemQuads(side, rand);

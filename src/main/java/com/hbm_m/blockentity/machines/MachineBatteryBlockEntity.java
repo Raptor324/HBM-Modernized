@@ -30,6 +30,11 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 //?}
 
+//? if neoforge {
+/*import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.energy.IEnergyStorage;
+*///?}
+
 //? if fabric {
 /*import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import team.reborn.energy.api.EnergyStorage;
@@ -129,6 +134,12 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         //? if fabric {
         /*return EnergyStorage.ITEM.find(stack, null) != null;
         *///?}
+        //? if neoforge {
+        /*// NeoForge: FE через Capabilities.EnergyStorage.ITEM + HBM через ItemEnergyAccess.
+        return stack.getCapability(Capabilities.EnergyStorage.ITEM) != null
+                || com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).isPresent()
+                || com.hbm_m.api.energy.ItemEnergyAccess.getHbmReceiver(stack).isPresent();
+        *///?}
     }
 
     @Override
@@ -219,6 +230,28 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
             }
         }
         *///?}
+
+        //? if neoforge {
+        /*// 1) HBM long-capability (через ItemEnergyAccess — использует ModCapabilities.HBM_ITEM_ENERGY_PROVIDER).
+        var hbmSource = com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack);
+        if (hbmSource.isPresent()) {
+            var source = hbmSource.get();
+            if (!source.canExtract()) return;
+            long toExtract = Math.min(getReceiveSpeed(), spaceAvailable);
+            long extracted = source.extractEnergy(toExtract, false);
+            if (extracted > 0) {
+                setEnergyStored(getEnergyStored() + extracted);
+            }
+            return;
+        }
+        // 2) NeoForge FE fallback (int-safe).
+        IEnergyStorage feSource = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        if (feSource == null || !feSource.canExtract()) return;
+        long wanted = Math.min(getReceiveSpeed(), spaceAvailable);
+        int maxTransfer = (int) Math.min(wanted, Integer.MAX_VALUE);
+        int extracted = feSource.extractEnergy(maxTransfer, false);
+        if (extracted > 0) setEnergyStored(getEnergyStored() + extracted);
+        *///?}
     }
 
     private void dischargeToItem() {
@@ -269,6 +302,26 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
                 tx.commit();
             }
         }
+        *///?}
+
+        //? if neoforge {
+        /*// 1) HBM long-capability (через ItemEnergyAccess — использует ModCapabilities.HBM_ITEM_ENERGY_RECEIVER).
+        var hbmTarget = com.hbm_m.api.energy.ItemEnergyAccess.getHbmReceiver(stack);
+        if (hbmTarget.isPresent()) {
+            var target = hbmTarget.get();
+            if (!target.canReceive()) return;
+            long toTransfer = Math.min(getProvideSpeed(), availableEnergy);
+            long accepted = target.receiveEnergy(toTransfer, false);
+            if (accepted > 0) setEnergyStored(getEnergyStored() - accepted);
+            return;
+        }
+        // 2) NeoForge FE fallback (int-safe).
+        IEnergyStorage feTarget = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        if (feTarget == null || !feTarget.canReceive()) return;
+        long wanted = Math.min(getProvideSpeed(), availableEnergy);
+        int maxTransfer = (int) Math.min(wanted, Integer.MAX_VALUE);
+        int accepted = feTarget.receiveEnergy(maxTransfer, false);
+        if (accepted > 0) setEnergyStored(getEnergyStored() - accepted);
         *///?}
     }
 

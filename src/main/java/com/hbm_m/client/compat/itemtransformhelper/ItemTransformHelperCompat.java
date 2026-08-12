@@ -1,5 +1,5 @@
 //? if forge {
-package com.hbm_m.client.compat;
+package com.hbm_m.client.compat.itemtransformhelper;
 
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;

@@ -119,8 +119,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     private boolean needsClientSync = false;
     private int ticksSinceLastSync = 0;
 
-    // Клиентский тикер (ленивая инициализация на клиенте) — тип Object, чтобы сервер не резолвил AdvancedAssemblerClientTicker
-    //? if forge {
     private static Object newAdvAssemblerClientTickerInstance() {
         try {
             return Class.forName("com.hbm_m.client.machine.AdvancedAssemblerClientTicker").getDeclaredConstructor().newInstance();
@@ -129,15 +127,8 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         }
     }
 
-    private final LazyOptional<Object> clientTicker = DistExecutor.unsafeRunForDist(
-            () -> () -> LazyOptional.of(MachineAdvancedAssemblerBlockEntity::newAdvAssemblerClientTickerInstance),
-            () -> () -> LazyOptional.empty()
-    );
-    //?}
-    //? if fabric {
-    /*@Nullable
-    private AdvancedAssemblerClientTicker clientTicker;
-    *///?}
+    @Nullable
+    private Object clientTicker = null;
 
     // ContainerData: упаковываем long как два int через LongDataPacker
     protected final ContainerData data = new ContainerData() {
@@ -229,7 +220,9 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     public AABB getRenderBoundingBox() {
         BlockState state = getBlockState();
         if (!(state.getBlock() instanceof MachineAdvancedAssemblerBlock block)) {
-            return new AABB(worldPosition.offset(-2, -1, -2), worldPosition.offset(3, 4, 3));
+            BlockPos min = worldPosition.offset(-2, -1, -2);
+            BlockPos max = worldPosition.offset(3, 4, 3);
+            return new AABB(min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ());
         }
         Direction facing = state.getValue(MachineAdvancedAssemblerBlock.FACING);
         return block.getStructureHelper().getRenderBoundingBox(worldPosition, facing, 1.5);
@@ -267,13 +260,10 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     // Tick-хуки
     public static void tick(Level level, BlockPos pos, BlockState state, MachineAdvancedAssemblerBlockEntity entity) {
         if (level.isClientSide) {
-            //? if forge {
-            entity.clientTicker.ifPresent(ticker -> invokeAdvAssemblerClientTick(ticker, level, pos, state, entity));
-            //?}
-            //? if fabric {
-            /*if (entity.clientTicker == null) entity.clientTicker = new AdvancedAssemblerClientTicker();
-            entity.clientTicker.clientTick(level, pos, state, entity);
-            *///?}
+            if (entity.clientTicker == null) {
+                entity.clientTicker = newAdvAssemblerClientTickerInstance();
+            }
+            invokeAdvAssemblerClientTick(entity.clientTicker, level, pos, state, entity);
         } else {
             entity.serverTick();
         }
@@ -464,6 +454,23 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
                 setEnergyStored(getEnergyStored() + extracted);
                 tx.commit();
             }
+        }
+        *///?}
+
+        //? if neoforge {
+        /*var itemEnergy = energySourceStack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
+        if (itemEnergy == null) return;
+
+        long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
+        if (energyNeeded <= 0) return;
+
+        int maxTransfer = (int) Math.min(Integer.MAX_VALUE, Math.min(energyNeeded, this.getReceiveSpeed()));
+        if (maxTransfer <= 0) return;
+
+        int extracted = itemEnergy.extractEnergy(maxTransfer, false);
+        if (extracted > 0) {
+            this.setEnergyStored(this.getEnergyStored() + extracted);
+            setChanged();
         }
         *///?}
     }
@@ -761,7 +768,16 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     // Пакеты синхронизации
     public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
-        load(PlatformHooks.getItemTag(pkt));
+        CompoundTag tag = PlatformHooks.getItemTag(pkt);
+        if (tag != null) {
+            //? if < 1.21.1 {
+            load(tag);
+            //?} else {
+            /*if (level != null) {
+                loadAdditional(tag, level.registryAccess());
+            }
+            *///?}
+        }
     }
 
     @Override
@@ -883,22 +899,14 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
-        clientTicker.invalidate();
     }
     //?}
 
     @Override
     public void setRemoved() {
-        //? if forge {
-        if (level != null && level.isClientSide) {
-            clientTicker.ifPresent(MachineAdvancedAssemblerBlockEntity::invokeAdvAssemblerClientTickerOnRemoved);
+        if (level != null && level.isClientSide && clientTicker != null) {
+            invokeAdvAssemblerClientTickerOnRemoved(clientTicker);
         }
-        //?}
-        //? if fabric {
-        /*if (level != null && level.isClientSide && clientTicker != null) {
-            clientTicker.onRemoved();
-        }
-        *///?}
         super.setRemoved();
     }
 
@@ -983,13 +991,12 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     @OnlyIn(Dist.CLIENT)
     public float getRingAngle() {
-        if (!clientTicker.isPresent()) {
+        if (clientTicker == null) {
             return 0f;
         }
         ensureAdvAssemblerReflectCache();
         try {
-            Object t = clientTicker.orElseThrow(IllegalStateException::new);
-            return (Float) cachedAdvAsmGetRingAngle.invoke(t);
+            return (Float) cachedAdvAsmGetRingAngle.invoke(clientTicker);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -997,13 +1004,12 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     @OnlyIn(Dist.CLIENT)
     public float getPrevRingAngle() {
-        if (!clientTicker.isPresent()) {
+        if (clientTicker == null) {
             return 0f;
         }
         ensureAdvAssemblerReflectCache();
         try {
-            Object t = clientTicker.orElseThrow(IllegalStateException::new);
-            return (Float) cachedAdvAsmGetPrevRingAngle.invoke(t);
+            return (Float) cachedAdvAsmGetPrevRingAngle.invoke(clientTicker);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -1011,13 +1017,12 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     @OnlyIn(Dist.CLIENT)
     public Object getArms() {
-        if (!clientTicker.isPresent()) {
+        if (clientTicker == null) {
             return emptyAssemblerArmsArray();
         }
         ensureAdvAssemblerReflectCache();
         try {
-            Object t = clientTicker.orElseThrow(IllegalStateException::new);
-            return cachedAdvAsmGetArms.invoke(t);
+            return cachedAdvAsmGetArms.invoke(clientTicker);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }

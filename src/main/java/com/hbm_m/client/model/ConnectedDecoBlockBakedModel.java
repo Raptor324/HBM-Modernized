@@ -26,12 +26,19 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+//? if forge {
 import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.BakedModelWrapper;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.client.model.data.ModelData.Builder;
 import net.minecraftforge.client.model.data.ModelProperty;
-import net.minecraftforge.client.model.pipeline.QuadBakingVertexConsumer;
+//?} else if neoforge {
+/*import net.neoforged.neoforge.client.ChunkRenderTypeSet;
+import net.neoforged.neoforge.client.model.BakedModelWrapper;
+import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.client.model.data.ModelData.Builder;
+import net.neoforged.neoforge.client.model.data.ModelProperty;
+*///?}
 
 /**
  * Connected-textures модель (как CT в 1.7.10): для каждой грани выбираются 4 фрагмента (TL/TR/BL/BR)
@@ -207,19 +214,10 @@ public class ConnectedDecoBlockBakedModel extends BakedModelWrapper<BakedModel> 
                                           TextureAtlasSprite sprite, ModelHelper.UVBox uv) {
         if (sprite == null) return null;
 
-        // ftl,ftr,fbl,fbr
-        Vector3f ftl = face[0];
-        Vector3f ftr = face[1];
-        Vector3f fbl = face[2];
-        Vector3f fbr = face[3];
+        Vector3f ftl = face[0], ftr = face[1], fbl = face[2], fbr = face[3];
+        Vector3f ftc = avg(ftl, ftr), fbc = avg(fbl, fbr), fcl = avg(ftl, fbl);
+        Vector3f fcr = avg(ftr, fbr), fcc = avg(ftc, fbc);
 
-        Vector3f ftc = avg(ftl, ftr);
-        Vector3f fbc = avg(fbl, fbr);
-        Vector3f fcl = avg(ftl, fbl);
-        Vector3f fcr = avg(ftr, fbr);
-        Vector3f fcc = avg(ftc, fbc);
-
-        // Под-грани как в RenderBlocksCT.drawFace (лексический порядок углов)
         Vector3f sftl, sftr, sfbl, sfbr;
         switch (sub) {
             case TL -> { sftl = ftl; sftr = ftc; sfbl = fcl; sfbr = fcc; }
@@ -234,33 +232,34 @@ public class ConnectedDecoBlockBakedModel extends BakedModelWrapper<BakedModel> 
         float u1 = sprite.getU(uv.u1());
         float v1 = sprite.getV(uv.v1());
 
-        // ROTATIONAL order (как в RenderBlocksCT.drawSubFace):
-        // ftr, ftl, fbl, fbr
-        QuadBakingVertexConsumer.Buffered b = new QuadBakingVertexConsumer.Buffered();
-        b.setSprite(sprite);
-        b.setDirection(dir);
-        b.setHasAmbientOcclusion(true);
-        var n = dir.step();
+        int[] data = new int[32];
+        putVertex(data, 0, sftr, u1, v0, dir);
+        putVertex(data, 1, sftl, u0, v0, dir);
+        putVertex(data, 2, sfbl, u0, v1, dir);
+        putVertex(data, 3, sfbr, u1, v1, dir);
 
-        put(b, n, sftr, u1, v0);
-        put(b, n, sftl, u0, v0);
-        put(b, n, sfbl, u0, v1);
-        put(b, n, sfbr, u1, v1);
-
-        return b.getQuad();
+        return new BakedQuad(data, -1, dir, sprite, true);
     }
 
     private static Vector3f avg(Vector3f a, Vector3f b) {
         return new Vector3f((a.x + b.x) * 0.5f, (a.y + b.y) * 0.5f, (a.z + b.z) * 0.5f);
     }
 
-    private static void put(QuadBakingVertexConsumer builder, org.joml.Vector3f normal, Vector3f p, float u, float v) {
-        builder.vertex(p.x, p.y, p.z)
-                .uv(u, v)
-                .uv2(0, 0)
-                .normal(normal.x(), normal.y(), normal.z())
-                .color(-1)
-                .endVertex();
+    private static void putVertex(int[] data, int vertexIndex, Vector3f p, float u, float v, Direction dir) {
+        int i = vertexIndex * 8;
+        data[i] = Float.floatToRawIntBits(p.x);
+        data[i + 1] = Float.floatToRawIntBits(p.y);
+        data[i + 2] = Float.floatToRawIntBits(p.z);
+        data[i + 3] = -1; // Color (White/Opaque)
+        data[i + 4] = Float.floatToRawIntBits(u);
+        data[i + 5] = Float.floatToRawIntBits(v);
+        data[i + 6] = 0; // Light/UV2
+        
+        // Normal encoding
+        int nx = (byte) (dir.getStepX() * 127) & 0xFF;
+        int ny = (byte) (dir.getStepY() * 127) & 0xFF;
+        int nz = (byte) (dir.getStepZ() * 127) & 0xFF;
+        data[i + 7] = nx | (ny << 8) | (nz << 16);
     }
 
     private TextureAtlasSprite spriteFor(int type) {

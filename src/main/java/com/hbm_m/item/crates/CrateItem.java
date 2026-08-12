@@ -84,7 +84,13 @@ public class CrateItem extends BlockItem implements ITooltipProvider {
             @Override
             protected void onContentsChanged(int slot) {}
         };
+        //? if < 1.21.1 {
         handler.deserializeNBT(inventoryTag);
+        //?} else {
+        /*// Tooltip-path — клиентский; провайдер из клиентского Level.
+        // ItemStackHandler.deserializeNBT в 1.21.1 требует HolderLookup.Provider.
+        handler.deserializeNBT(PlatformHooks.clientProvider(), inventoryTag);
+        *///?}
 
         Map<String, GroupData> groups = new LinkedHashMap<>();
         int occupiedSlots = 0;
@@ -121,7 +127,12 @@ public class CrateItem extends BlockItem implements ITooltipProvider {
     }
 
     private static String makeGroupingKey(ItemStack stack) {
+        //? if < 1.21.1 {
         CompoundTag keyTag = stack.copy().save(new CompoundTag());
+        //?} else {
+        /*// Tooltip-path — клиентский; провайдер из клиентского Level (1.21.1 требует Provider для save).
+        CompoundTag keyTag = PlatformHooks.safeItemSave(stack.copy(), PlatformHooks.clientProvider());
+        *///?}
         keyTag.remove("Count");
         return keyTag.toString();
     }

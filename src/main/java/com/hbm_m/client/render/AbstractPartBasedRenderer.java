@@ -1,12 +1,12 @@
 package com.hbm_m.client.render;
 
-
 import java.lang.reflect.Field;
 
 import org.joml.Matrix4f;
 
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.main.MainRegistry;
+
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.Minecraft;
@@ -17,18 +17,14 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends BakedModel>
         implements BlockEntityRenderer<T> {
 
@@ -144,6 +140,18 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
         //?}
         //? if fabric {
         /*if (blockEntity instanceof com.hbm_m.blockentity.BaseMachineBlockEntity b) {
+            return b.getRenderBoundingBox();
+        }
+        if (blockEntity instanceof com.hbm_m.block.entity.doors.DoorBlockEntity d) {
+            return d.getRenderBoundingBox();
+        }
+        return new AABB(blockEntity.getBlockPos()).inflate(1.0D);
+        *///?}
+
+        //? if neoforge {
+        /*// На 1.21.1 у BlockEntity есть ванильный getRenderBoundingBox(), но для HBM-машин
+        // используем явные переопределения (мультиблоки с увеличенным AABB), как на Fabric.
+        if (blockEntity instanceof com.hbm_m.blockentity.BaseMachineBlockEntity b) {
             return b.getRenderBoundingBox();
         }
         if (blockEntity instanceof com.hbm_m.block.entity.doors.DoorBlockEntity d) {

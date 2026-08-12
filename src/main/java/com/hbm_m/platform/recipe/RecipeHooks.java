@@ -147,7 +147,7 @@ public class RecipeHooks {
         //? if < 1.21.1 {
         return (List<R>) manager.getAllRecipesFor((RecipeType) type);
         //?} else {
-        /*return manager.getAllRecipesFor(type).stream()
+        /*return ((List<RecipeHolder<R>>) (Object) manager.getAllRecipesFor((RecipeType) type)).stream()
                 .map(RecipeHolder::value)
                 .toList();
         *///?}
@@ -171,7 +171,8 @@ public class RecipeHooks {
             map.put(r.getId(), r);
         }
         //?} else {
-        /*for (RecipeHolder<R> holder : manager.getAllRecipesFor(type)) {
+        /*List<RecipeHolder<R>> holders = (List<RecipeHolder<R>>) (Object) manager.getAllRecipesFor((RecipeType) type);
+        for (RecipeHolder<R> holder : holders) {
             map.put(holder.id(), holder.value());
         }
         *///?}
@@ -191,7 +192,7 @@ public class RecipeHooks {
         //? if < 1.21.1 {
         return (Optional<Recipe<?>>) (Object) manager.byKey(id);
         //?} else {
-        /*return manager.byKey(id).map(RecipeHolder::value);
+        /*return ((Optional<RecipeHolder<?>>) (Object) manager.byKey(id)).map(RecipeHolder::value);
         *///?}
     }
 

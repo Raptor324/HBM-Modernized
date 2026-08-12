@@ -23,6 +23,14 @@ import net.minecraft.world.level.material.Fluids;
  * Hazard diamonds on fluid tank sides (1.7.10 {@code RenderFluidTank} diamond pass).
  * Tank uses {@link com.hbm_m.client.model.MachineFluidTankBakedModel}.
  */
+
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class MachineFluidTankRenderer implements BlockEntityRenderer<MachineFluidTankBlockEntity> {
 
     public MachineFluidTankRenderer(BlockEntityRendererProvider.Context context) {}

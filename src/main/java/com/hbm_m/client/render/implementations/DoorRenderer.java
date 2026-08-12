@@ -31,15 +31,12 @@ import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.platform.PlatformHooks;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -56,15 +53,12 @@ import net.minecraft.world.phys.AABB;
 
 //? if forge {
 import net.minecraftforge.client.model.data.ModelData;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-@OnlyIn(Dist.CLIENT)
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-@OnlyIn(Dist.CLIENT)
-*///?} elif fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, BakedModel> {
 
     private static final ConcurrentHashMap<String, InstancedStaticPartRenderer> instancedFrameCache = new ConcurrentHashMap<>();
@@ -173,7 +167,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
         if (modelPath == null) return super.getModel(blockEntity);
         
         ModelManager modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel selectionModel = modelManager.getModel(modelPath);
+        BakedModel selectionModel = PlatformHooks.getModel(modelManager, modelPath);
         if (selectionModel == null || selectionModel == modelManager.getMissingModel()) {
             return super.getModel(blockEntity);
         }
@@ -325,7 +319,11 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
                                 DoorModelSelection selection, DoorDecl doorDecl) {
         for (DaeNode node : nodes) {
             poseStack.pushPose();
-            poseStack.mulPoseMatrix(node.localMatrix(time, clip));
+                //? if < 1.21.1 {
+                poseStack.mulPoseMatrix(node.localMatrix(time, clip));
+                //?} else {
+                /*poseStack.mulPose(node.localMatrix(time, clip));
+                *///?}
             if (node.mesh != null) {
                 SingleMeshVboRenderer renderer = getDaeRendererForNode(node, selection, doorDecl);
                 if (renderer != null) {
@@ -394,10 +392,9 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
             
             boolean useBatchingNow = ModClothConfig.useInstancedBatching();
             boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
-            //? if forge {
+            //? if forge || neoforge {
             boolean useIrisBatch = ShaderCompatibilityDetector.isExternalShaderActive() && (!useBatchingNow || shadowPass);
-            //?}
-            //? if fabric {
+            //?} elif fabric {
             /*boolean useIrisBatch = ShaderCompatibilityDetector.isExternalShaderActive();
             *///?}
             if (useIrisBatch) {

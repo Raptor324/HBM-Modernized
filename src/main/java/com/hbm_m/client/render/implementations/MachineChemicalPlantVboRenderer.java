@@ -1,7 +1,6 @@
 package com.hbm_m.client.render.implementations;
 
 
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,6 +15,7 @@ import com.hbm_m.client.model.MachineChemicalPlantBakedModel;
 import com.hbm_m.client.model.ModelHelper;
 import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
+import com.hbm_m.platform.RenderHooks;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -36,29 +36,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-
 //? if forge {
 import net.minecraftforge.client.model.data.ModelData;
 //?}
-
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
-//? if forge || neoforge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+
 /**
  * VBO рендер Base/Frame/Slider/Spinner; жидкость — как 1.7.10 {@code RenderChemicalPlant}:
  * только геометрия {@code Fluid}, отдельная карта {@code chemical_plant_fluid}, tint + alpha 0.5,
@@ -68,6 +51,14 @@ import net.fabricmc.api.Environment;
  * своё смещение UV от {@code anim}: для instancing нужен отдельный атрибут/uniform в instanced-шейдере
  * (см. {@code block_lit_instanced}). Рендер идёт через {@link RenderType#translucent()} вне Iris batch.
  */
+
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class MachineChemicalPlantVboRenderer {
 
     private static final String BASE = "Base";
@@ -210,14 +201,7 @@ public class MachineChemicalPlantVboRenderer {
      * translucent-compositing других модов на Create-поездах с дверьми copycat.
      */
     static final MultiBufferSource.BufferSource FLUID_BUFFER_SOURCE =
-            MultiBufferSource.immediate(
-                    //? if forge {
-                    new BufferBuilder(262144)
-                    //?}
-                    //? if neoforge {
-                    /*new BufferBuilder(com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_COLOR, com.mojang.blaze3d.vertex.VertexFormat.Mode.QUADS, 262144)
-                    *///?}
-            );
+            RenderHooks.immediateBufferSource(262144);
 
     //? if forge {
     /** Immediate draw used by {@link MachineChemicalPlantRenderer#presentDeferredFluids()}. */

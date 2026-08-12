@@ -139,8 +139,19 @@ public class CargoElevatorBlock extends BaseEntityBlock implements IMultiblockCo
         return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return handleUse(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return handleUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult handleUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (level.isClientSide) return InteractionResult.sidedSuccess(true);
         if (player.isShiftKeyDown()) return InteractionResult.PASS;
 

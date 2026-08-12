@@ -185,7 +185,9 @@ public class CargoElevatorBlockEntity extends LoadedMachineBlockEntity {
     /**
      * Render AABB: динамический по высоте (оригинал: {@code getRenderBoundingBox}).
      */
+    //? if forge {
     @Override
+    //?}
     public AABB getRenderBoundingBox() {
         int h = 1 + this.height;
         return new AABB(

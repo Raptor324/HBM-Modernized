@@ -119,16 +119,15 @@ public class ArmorModificationHelper {
             return;
         }
 
-        CompoundTag armorTag = armor.getOrCreateTag();
-        CompoundTag modsTag = armorTag.getCompound(MOD_COMPOUND_KEY);
+        CompoundTag modsTag = PlatformHooks.getCompound(armor, MOD_COMPOUND_KEY);
 
         // Сохраняем ItemStack модификации в NBT
         CompoundTag modTag = new CompoundTag();
-        mod.save(modTag);
+        PlatformHooks.saveItemStack(mod, modTag, null);
 
         int slot = modItem.type;
         modsTag.put(MOD_SLOT_KEY_PREFIX + slot, modTag);
-        armorTag.put(MOD_COMPOUND_KEY, modsTag);
+        PlatformHooks.put(armor, MOD_COMPOUND_KEY, modsTag);
         onPoweredArmorModsChanged(armor);
     }
 
@@ -228,7 +227,7 @@ public class ArmorModificationHelper {
         for (int i = 0; i < MOD_SLOTS; i++) {
             String key = MOD_SLOT_KEY_PREFIX + i;
             if (modsTag.contains(key)) {
-                slots[i] = ItemStack.of(modsTag.getCompound(key));
+                slots[i] = PlatformHooks.itemStackOf(modsTag.getCompound(key), null);
             }
         }
 
@@ -255,7 +254,7 @@ public class ArmorModificationHelper {
         String key = MOD_SLOT_KEY_PREFIX + slot;
 
         if (modsTag.contains(key)) {
-            return ItemStack.of(modsTag.getCompound(key));
+            return PlatformHooks.itemStackOf(modsTag.getCompound(key), null);
         }
 
         return ItemStack.EMPTY;
@@ -276,7 +275,7 @@ public class ArmorModificationHelper {
         for (int i = 0; i < 9; i++) { // 9 слотов модов
             String key = MOD_SLOT_KEY_PREFIX + i;
             if (mods.contains(key)) {
-                ItemStack modStack = ItemStack.of(mods.getCompound(key));
+                ItemStack modStack = PlatformHooks.itemStackOf(mods.getCompound(key), null);
                 tableInventory.setItem(i, modStack);
             }
         }
@@ -292,83 +291,90 @@ public class ArmorModificationHelper {
         }
 
         // final Multimap<Attribute, AttributeModifier> oldAttributeModifiers = armorStack.getAttributeModifiers(armorItem.getEquipmentSlot());
-        CompoundTag mainTag = armorStack.getOrCreateTag();
-        CompoundTag modsCompound = new CompoundTag();
+        PlatformHooks.editItemTag(armorStack, mainTag -> {
+            CompoundTag modsCompound = new CompoundTag();
 
-        // ШАГ 1: СОХРАНЕНИЕ КОНФИГУРАЦИИ МОДОВ В НАШ ТЕГ
-        // Слот стола — источник правды, если в нём лежит мод; иначе сохраняем уже записанный в NBT брони
-        // (applyMod пишет в NBT сразу; стол на сервере может отставать на один тик).
-        for (int i = 0; i < 9; i++) {
-            ItemStack modStack = tableInventory.getItem(i);
-            if (modStack.isEmpty()) {
-                modStack = pryMod(armorStack, i);
-            }
-            if (!modStack.isEmpty()) {
-                modsCompound.put(MOD_SLOT_KEY_PREFIX + i, modStack.save(new CompoundTag()));
-            }
-        }
-        if (modsCompound.isEmpty()) {
-            mainTag.remove(MOD_COMPOUND_KEY);
-        } else {
-            mainTag.put(MOD_COMPOUND_KEY, modsCompound);
-        }
-
-
-        // ШАГ 2: БЕЗОПАСНАЯ ПЕРЕСБОРКА СПИСКА АТРИБУТОВ
-
-        ListTag preservedModifiers = new ListTag();
-
-        // 2a: Фильтруем существующие атрибуты. Сохраняем все, что не помечено нашим маркером.
-        if (mainTag.contains("AttributeModifiers", 9)) { // 9 = ListTag.TAG_LIST
-            ListTag currentModifiers = mainTag.getList("AttributeModifiers", 10); // 10 = CompoundTag.TAG_COMPOUND
-            for (Tag tag : currentModifiers) {
-                if (tag instanceof CompoundTag compoundTag) {
-                    // Если у атрибута НЕТ нашего маркера, он от ванили или другого мода. Сохраняем его.
-                    if (!compoundTag.getBoolean(MODIFIER_MARKER_KEY)) {
-                        preservedModifiers.add(tag.copy());
-                    }
+            // ШАГ 1: СОХРАНЕНИЕ КОНФИГУРАЦИИ МОДОВ В НАШ ТЕГ
+            for (int i = 0; i < 9; i++) {
+                ItemStack modStack = tableInventory.getItem(i);
+                if (modStack.isEmpty()) {
+                    modStack = pryMod(armorStack, i);
+                }
+                if (!modStack.isEmpty()) {
+                    modsCompound.put(MOD_SLOT_KEY_PREFIX + i, PlatformHooks.saveItemStack(modStack, new CompoundTag(), player != null ? player.level().registryAccess() : null));
                 }
             }
-        } else {
-            // Если тега "AttributeModifiers" нет, добавляем ванильные по умолчанию. Они не будут иметь маркера.
-            Multimap<Attribute, AttributeModifier> defaultModifiers = armorItem.getDefaultAttributeModifiers(armorItem.getEquipmentSlot());
-            for (Map.Entry<Attribute, AttributeModifier> entry : defaultModifiers.entries()) {
-                CompoundTag modifierTag = entry.getValue().save();
-                var key = BuiltInRegistries.ATTRIBUTE.getKey(entry.getKey());
-                if (key == null) continue;
-                modifierTag.putString("AttributeName", key.toString());
-                modifierTag.putString("Slot", armorItem.getEquipmentSlot().getName());
-                preservedModifiers.add(modifierTag);
+            if (modsCompound.isEmpty()) {
+                mainTag.remove(MOD_COMPOUND_KEY);
+            } else {
+                mainTag.put(MOD_COMPOUND_KEY, modsCompound);
             }
-        }
 
-        // 2b: Добавляем атрибуты от наших модов, устанавливая им маркер.
-        for (int i = 0; i < 9; i++) {
-            ItemStack modStack = tableInventory.getItem(i);
-            if (modStack.isEmpty()) {
-                modStack = pryMod(armorStack, i);
+            // ШАГ 2: БЕЗОПАСНАЯ ПЕРЕСБОРКА СПИСКА АТРИБУТОВ
+            ListTag preservedModifiers = new ListTag();
+
+            // 2a: Фильтруем существующие атрибуты.
+            if (mainTag.contains("AttributeModifiers", 9)) {
+                ListTag currentModifiers = mainTag.getList("AttributeModifiers", 10);
+                for (Tag tag : currentModifiers) {
+                    if (tag instanceof CompoundTag compoundTag) {
+                        if (!compoundTag.getBoolean(MODIFIER_MARKER_KEY)) {
+                            preservedModifiers.add(tag.copy());
+                        }
+                    }
+                }
+            } else {
+                // Если тега "AttributeModifiers" нет, добавляем ванильные по умолчанию.
+                //? if < 1.21.1 {
+                Multimap<Attribute, AttributeModifier> defaultModifiers = armorItem.getDefaultAttributeModifiers(armorItem.getEquipmentSlot());
+                for (Map.Entry<Attribute, AttributeModifier> entry : defaultModifiers.entries()) {
+                    CompoundTag modifierTag = entry.getValue().save();
+                    var key = BuiltInRegistries.ATTRIBUTE.getKey(entry.getKey());
+                    if (key == null) continue;
+                    modifierTag.putString("AttributeName", key.toString());
+                    modifierTag.putString("Slot", armorItem.getEquipmentSlot().getName());
+                    preservedModifiers.add(modifierTag);
+                }
+                //?}
             }
-            if (modStack.getItem() instanceof ItemArmorMod mod) {
-                if (isApplicable(armorStack, modStack)) {
-                    Multimap<Attribute, AttributeModifier> modModifiers = mod.getModifiers(armorStack);
-                    if (modModifiers != null) {
-                        for (Map.Entry<Attribute, AttributeModifier> entry : modModifiers.entries()) {
-                            CompoundTag modifierTag = entry.getValue().save();
-                            var key = BuiltInRegistries.ATTRIBUTE.getKey(entry.getKey());
-                            if (key == null) continue;
-                            modifierTag.putString("AttributeName", key.toString());
-                            modifierTag.putString("Slot", armorItem.getEquipmentSlot().getName());
-                            // ВАЖНО: Добавляем наш маркер, чтобы идентифицировать этот атрибут в будущем.
-                            modifierTag.putBoolean(MODIFIER_MARKER_KEY, true);
-                            preservedModifiers.add(modifierTag);
+
+            // 2b: Добавляем атрибуты от наших модов, устанавливая им маркер.
+            //? if < 1.21.1 {
+            for (int i = 0; i < 9; i++) {
+                ItemStack modStack = tableInventory.getItem(i);
+                if (modStack.isEmpty()) {
+                    modStack = pryMod(armorStack, i);
+                }
+                if (modStack.getItem() instanceof ItemArmorMod mod) {
+                    if (isApplicable(armorStack, modStack)) {
+                        Multimap<Attribute, AttributeModifier> modModifiers = mod.getModifiers(armorStack);
+                        if (modModifiers != null) {
+                            for (Map.Entry<Attribute, AttributeModifier> entry : modModifiers.entries()) {
+                                CompoundTag modifierTag = entry.getValue().save();
+                                var key = BuiltInRegistries.ATTRIBUTE.getKey(entry.getKey());
+                                if (key == null) continue;
+                                modifierTag.putString("AttributeName", key.toString());
+                                modifierTag.putString("Slot", armorItem.getEquipmentSlot().getName());
+                                modifierTag.putBoolean(MODIFIER_MARKER_KEY, true);
+                                preservedModifiers.add(modifierTag);
+                            }
                         }
                     }
                 }
             }
-        }
+            //?} else {
 
-        // Заменяем старый список новым, отфильтрованным и дополненным.
-        mainTag.put("AttributeModifiers", preservedModifiers);
+            //?}
+            
+            // TODO 1.21.1: Для работы атрибутов брони на 1.21.1 нужно модифицировать DataComponents.ATTRIBUTE_MODIFIERS:
+            //  ItemAttributeModifiers current = armorStack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
+            //  ItemAttributeModifiers.Builder builder = ItemAttributeModifiers.builder();
+            //  ... занести атрибуты ...
+            //  armorStack.set(DataComponents.ATTRIBUTE_MODIFIERS, builder.build());
+
+            // Заменяем старый список новым, отфильтрованным и дополненным.
+            mainTag.put("AttributeModifiers", preservedModifiers);
+        });
 
         // ШАГ 3: ОБРЕЗАНИЕ ЗАРЯДА / capability (силовая броня)
         onPoweredArmorModsChanged(armorStack);
@@ -400,7 +406,7 @@ public class ArmorModificationHelper {
         for (int i = 0; i < 9; i++) { // Проверяем все 9 слотов
             String key = MOD_SLOT_KEY_PREFIX + i;
             if (modsCompound.contains(key)) {
-                ItemStack modStack = ItemStack.of(modsCompound.getCompound(key));
+                ItemStack modStack = PlatformHooks.itemStackOf(modsCompound.getCompound(key), null);
                 if (!modStack.isEmpty()) {
                     modsList.add(modStack);
                 }

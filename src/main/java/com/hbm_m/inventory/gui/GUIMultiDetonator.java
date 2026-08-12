@@ -192,7 +192,7 @@ public class GUIMultiDetonator extends Screen {
 
     @Override
     public void render(net.minecraft.client.gui.GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
         int centerX = this.width / 2;
@@ -247,7 +247,10 @@ public class GUIMultiDetonator extends Screen {
         super.tick();
 
         for (EditBox input : nameInputs) {
+            // EditBox.tick() удалён на 1.21.1 (мигание курсора теперь handled-by-render).
+            //? if < 1.21.1 {
             input.tick();
+            //?}
         }
     }
 

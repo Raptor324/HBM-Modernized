@@ -25,6 +25,13 @@ import java.util.Random;
  * Port of 1.7.10 {@code ParticleRocketFlame} (missileContrail effect): orange exhaust,
  * motion damping, multi-layer billboard, particle atlas alpha blend (FX layer 1).
  */
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class MissileContrailParticle extends TextureSheetParticle {
 
     /** Set by {@link com.hbm_m.entity.missile.MissileBaseEntity} before spawning contrail particles. */
@@ -147,10 +154,12 @@ public class MissileContrailParticle extends TextureSheetParticle {
         return LongRangeParticleRenderType.INSTANCE;
     }
 
+    //? if < 1.21.1 {
     @Override
     public boolean shouldCull() {
         return false;
     }
+    //?}
 
     @Override
     public int getLightColor(float partialTick) {
@@ -218,14 +227,11 @@ public class MissileContrailParticle extends TextureSheetParticle {
             float py = relY + this.layerGaussY[layer] * spread;
             float pz = relZ + this.layerGaussZ[layer] * spread;
 
-            buffer.vertex(px + cx0 * scale, py + cy0 * scale, pz + cz0 * scale)
-                    .uv(u1, v1).color(ir, ig, ib, iAlpha).uv2(lightU, lightV).endVertex();
-            buffer.vertex(px + cx1 * scale, py + cy1 * scale, pz + cz1 * scale)
-                    .uv(u1, v0).color(ir, ig, ib, iAlpha).uv2(lightU, lightV).endVertex();
-            buffer.vertex(px + cx2 * scale, py + cy2 * scale, pz + cz2 * scale)
-                    .uv(u0, v0).color(ir, ig, ib, iAlpha).uv2(lightU, lightV).endVertex();
-            buffer.vertex(px + cx3 * scale, py + cy3 * scale, pz + cz3 * scale)
-                    .uv(u0, v1).color(ir, ig, ib, iAlpha).uv2(lightU, lightV).endVertex();
+           int packedLight = (lightV << 16) | lightU;
+            com.hbm_m.platform.RenderHooks.particleVertex(buffer, px + cx0 * scale, py + cy0 * scale, pz + cz0 * scale, u1, v1, ir, ig, ib, iAlpha, packedLight);
+            com.hbm_m.platform.RenderHooks.particleVertex(buffer, px + cx1 * scale, py + cy1 * scale, pz + cz1 * scale, u1, v0, ir, ig, ib, iAlpha, packedLight);
+            com.hbm_m.platform.RenderHooks.particleVertex(buffer, px + cx2 * scale, py + cy2 * scale, pz + cz2 * scale, u0, v0, ir, ig, ib, iAlpha, packedLight);
+            com.hbm_m.platform.RenderHooks.particleVertex(buffer, px + cx3 * scale, py + cy3 * scale, pz + cz3 * scale, u0, v1, ir, ig, ib, iAlpha, packedLight);
         }
     }
 

@@ -19,6 +19,7 @@ import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.platform.RenderHooks;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -39,8 +40,6 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.model.data.ModelData;
 //?}
 
@@ -48,12 +47,13 @@ import net.minecraftforge.client.model.data.ModelData;
  * BER радара: при VBO — основание (instanced) + вращающаяся тарелка (instanced / single VBO).
  * Порт {@code RenderRadar} / {@code RenderRadarLarge} (1.7.10).
  */
+
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
 public class MachineRadarRenderer implements BlockEntityRenderer<MachineRadarBlockEntity> {
 
@@ -375,11 +375,7 @@ public class MachineRadarRenderer implements BlockEntityRenderer<MachineRadarBlo
                                     int packedLight, int packedOverlay) {
         var pose = poseStack.last();
         for (BakedQuad quad : quads) {
-            //? if forge {
-            buffer.putBulkData(pose, quad, 1.0F, 1.0F, 1.0F, 1.0F, packedLight, packedOverlay, true);
-            //?} else {
-            /*buffer.putBulkData(pose, quad, 1.0F, 1.0F, 1.0F, packedLight, packedOverlay);
-            *///?}
+            RenderHooks.putBulkData(buffer, pose, quad, 1.0F, 1.0F, 1.0F, 1.0F, packedLight, packedOverlay, true);
         }
     }
 

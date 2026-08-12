@@ -1,6 +1,7 @@
 package com.hbm_m.item.tools_and_armor;
 
 import com.hbm_m.item.ITooltipProvider;
+import com.hbm_m.platform.ItemHooks;
 import com.hbm_m.client.overlay.OverlayInfoToast;
 import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.ChatFormatting;
@@ -14,19 +15,14 @@ import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
@@ -36,7 +32,6 @@ public class ModShovelItem extends ShovelItem implements ITooltipProvider {
     private static final String NBT_FORTUNE = "FortuneEnabled";
     private static final String NBT_PRE_SILK = "PreModeSilk";
 
-    // Блоки, которые НЕ должны обрабатываться жилковым майнером
     private static final Set<Block> EXCLUDED_BLOCKS = Set.of(
             Blocks.STONE, Blocks.ANDESITE, Blocks.DIORITE, Blocks.GRANITE,
             Blocks.DEEPSLATE, Blocks.NETHERRACK, Blocks.END_STONE,
@@ -48,26 +43,28 @@ public class ModShovelItem extends ShovelItem implements ITooltipProvider {
     private final int fortuneLevel;
 
 
+    //? if < 1.21.1 {
     public ModShovelItem(Tier tier, int attackDamage, float attackSpeed, Properties properties,
                          int veinMinerLevel, int silkTouchLevel, int fortuneLevel) {
         super(tier, attackDamage, attackSpeed, properties);
+    //?} else {
+    /*public ModShovelItem(Tier tier, int attackDamage, float attackSpeed, Properties properties,
+                         int veinMinerLevel, int silkTouchLevel, int fortuneLevel) {
+        super(tier, properties.attributes(ShovelItem.createAttributes(tier, (float) attackDamage, attackSpeed)));
+    *///?}
         this.veinMinerLevel = Math.max(0, Math.min(6, veinMinerLevel));
         this.silkTouchLevel = Math.max(0, Math.min(1, silkTouchLevel));
         this.fortuneLevel = Math.max(0, Math.min(5, fortuneLevel));
     }
 
-    // Простой конструктор без vein-miner/silk-touch/fortune (для рядовых лопат steel/titanium/starmetal).
     public ModShovelItem(Tier tier, int attackDamage, float attackSpeed, Properties properties) {
         this(tier, attackDamage, attackSpeed, properties, 0, 0, 0);
     }
 
     @Override
     public void appendHbmTooltip(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
-
-        // Заголовок списка способностей
         tooltip.add(Component.translatable("tooltip.hbm_m.abilities").withStyle(ChatFormatting.BLUE));
 
-        // Vein Miner
         if (veinMinerLevel > 0) {
             boolean isActive = isVeinMinerEnabled(stack);
             ChatFormatting color = isActive ? ChatFormatting.YELLOW : ChatFormatting.GOLD;
@@ -76,7 +73,6 @@ public class ModShovelItem extends ShovelItem implements ITooltipProvider {
                             .withStyle(color)));
         }
 
-        // Silk Touch
         if (silkTouchLevel > 0) {
             boolean isActive = isSilkTouchEnabled(stack);
             ChatFormatting color = isActive ? ChatFormatting.YELLOW : ChatFormatting.GOLD;
@@ -85,7 +81,6 @@ public class ModShovelItem extends ShovelItem implements ITooltipProvider {
                             .withStyle(color)));
         }
 
-        // Инструкции по использованию
         tooltip.add(Component.literal(""));
         tooltip.add(Component.translatable("tooltip.hbm_m.right_click").withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable("tooltip.hbm_m.shift_right_click").withStyle(ChatFormatting.GRAY));
@@ -143,7 +138,7 @@ public class ModShovelItem extends ShovelItem implements ITooltipProvider {
         if (apply) {
             PlatformHooks.putBoolean(stack, NBT_VEIN_MINER, false);
             PlatformHooks.putBoolean(stack, NBT_SILK_TOUCH, false);
-            clearModeSilkTouch(stack);
+            clearModeSilkTouch(stack, player.level());
             playToggleSound(player, false);
         }
         return new ModeFeedback(
@@ -173,7 +168,7 @@ public class ModShovelItem extends ShovelItem implements ITooltipProvider {
             PlatformHooks.putBoolean(stack, NBT_VEIN_MINER, enable);
             if (enable) {
                 PlatformHooks.putBoolean(stack, NBT_SILK_TOUCH, false);
-                clearModeSilkTouch(stack);
+                clearModeSilkTouch(stack, player.level());
             }
             playToggleSound(player, enable);
         }
@@ -192,9 +187,9 @@ public class ModShovelItem extends ShovelItem implements ITooltipProvider {
             PlatformHooks.putBoolean(stack, NBT_SILK_TOUCH, enable);
             if (enable) {
                 PlatformHooks.putBoolean(stack, NBT_VEIN_MINER, false);
-                applyModeSilkTouch(stack);
+                applyModeSilkTouch(stack, player.level());
             } else {
-                clearModeSilkTouch(stack);
+                clearModeSilkTouch(stack, player.level());
             }
             playToggleSound(player, enable);
         }
@@ -207,38 +202,32 @@ public class ModShovelItem extends ShovelItem implements ITooltipProvider {
         );
     }
 
-    private void applyModeSilkTouch(ItemStack stack) {
-        int vanilla = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SILK_TOUCH, stack);
+    private void applyModeSilkTouch(ItemStack stack, Level level) {
+        int vanilla = ItemHooks.getEnchantmentLevel(stack, level, "minecraft:silk_touch");
         PlatformHooks.putInt(stack, NBT_PRE_SILK, vanilla);
-        Map<Enchantment, Integer> enchants = new HashMap<>(EnchantmentHelper.getEnchantments(stack));
-        enchants.put(Enchantments.SILK_TOUCH, Math.max(vanilla, 1));
-        EnchantmentHelper.setEnchantments(enchants, stack);
+        ItemHooks.setEnchantmentLevel(stack, level, "minecraft:silk_touch", Math.max(vanilla, 1));
     }
 
-    private void clearModeSilkTouch(ItemStack stack) {
+    private void clearModeSilkTouch(ItemStack stack, Level level) {
         if (!PlatformHooks.hasItemTag(stack) || !PlatformHooks.contains(stack, NBT_PRE_SILK)) {
             return;
         }
         int vanilla = PlatformHooks.getInt(stack, NBT_PRE_SILK);
-        Map<Enchantment, Integer> enchants = new HashMap<>(EnchantmentHelper.getEnchantments(stack));
         if (vanilla > 0) {
-            enchants.put(Enchantments.SILK_TOUCH, vanilla);
+            ItemHooks.setEnchantmentLevel(stack, level, "minecraft:silk_touch", vanilla);
         } else {
-            enchants.remove(Enchantments.SILK_TOUCH);
+            ItemHooks.removeEnchantment(stack, level, "minecraft:silk_touch");
         }
-        EnchantmentHelper.setEnchantments(enchants, stack);
         PlatformHooks.remove(stack, NBT_PRE_SILK);
     }
 
-    private ItemStack getToolForDrops(ItemStack stack) {
+    private ItemStack getToolForDrops(ItemStack stack, Level level) {
         ItemStack tool = stack.copy();
         if (!isSilkTouchEnabled(stack)) {
             return tool;
         }
-        Map<Enchantment, Integer> enchants = new HashMap<>(EnchantmentHelper.getEnchantments(stack));
-        int silk = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SILK_TOUCH, stack);
-        enchants.put(Enchantments.SILK_TOUCH, Math.max(silk, 1));
-        EnchantmentHelper.setEnchantments(enchants, tool);
+        int silk = ItemHooks.getEnchantmentLevel(stack, level, "minecraft:silk_touch");
+        ItemHooks.setEnchantmentLevel(tool, level, "minecraft:silk_touch", Math.max(silk, 1));
         return tool;
     }
 
@@ -314,15 +303,12 @@ public class ModShovelItem extends ShovelItem implements ITooltipProvider {
         if (!stack.isCorrectToolForDrops(blockState)) return;
 
         if (level instanceof ServerLevel serverLevel) {
-            Block.dropResources(blockState, level, pos, level.getBlockEntity(pos), entity, getToolForDrops(stack));
+            Block.dropResources(blockState, level, pos, level.getBlockEntity(pos), entity, getToolForDrops(stack, level));
             level.removeBlock(pos, false);
         }
 
-        // Урон инструменту (только если не в креативе)
         if (!(entity instanceof Player player && player.isCreative())) {
-            stack.hurtAndBreak(1, entity, (e) -> {
-                e.broadcastBreakEvent(InteractionHand.MAIN_HAND);
-            });
+            ItemHooks.hurtAndBreak(stack, 1, entity, InteractionHand.MAIN_HAND);
         }
     }
 }

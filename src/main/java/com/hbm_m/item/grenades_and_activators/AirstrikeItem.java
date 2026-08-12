@@ -128,7 +128,9 @@ public class AirstrikeItem extends Item implements ITooltipProvider {
         tooltip.add(Component.translatable("tooltip.hbm_m.airstrike." + type.getName()).withStyle(ChatFormatting.GRAY));
     }
 
-    protected static BlockHitResult getPlayerPOVHitResult(Level pLevel, Player pPlayer, ClipContext.Fluid pFluid) {
+    // На 1.21.1 Item.getPlayerPOVHitResult — public; protected дал бы weaker-access error.
+    // public совместим с обеими версиями (1.20.1 parent тоже public static).
+    public static BlockHitResult getPlayerPOVHitResult(Level pLevel, Player pPlayer, ClipContext.Fluid pFluid) {
         return pLevel.clip(new ClipContext(
                 pPlayer.getEyePosition(),
                 pPlayer.getEyePosition().add(pPlayer.getViewVector(1.0F).scale(MAX_RANGE)),

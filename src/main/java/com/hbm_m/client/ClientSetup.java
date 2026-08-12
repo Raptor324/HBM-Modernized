@@ -47,7 +47,6 @@ import com.hbm_m.client.loader.MachineHydraulicFrackiningTowerModelLoader;
 import com.hbm_m.client.loader.MachineRadarModelLoader;
 import com.hbm_m.client.loader.MissileModelLoader;
 import com.hbm_m.client.render.missile.MissileRenderHelper;
-import com.hbm_m.datagen.assets.MissileItemModelDefinitions;
 import com.hbm_m.client.loader.PressModelLoader;
 import com.hbm_m.client.loader.TemplateModelLoader;
 import com.hbm_m.client.model.ConnectedDecoBlockBakedModel;
@@ -167,6 +166,7 @@ import com.hbm_m.particle.custom.TownauraParticle;
 import com.hbm_m.particle.custom.MissileContrailParticle;
 import com.hbm_m.particle.custom.RadFogParticle;
 import com.hbm_m.particle.explosions.basic.CameraShakeHandler;
+import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.powerarmor.PowerArmorSounds;
 import com.hbm_m.powerarmor.PowerArmorStepSoundHandler;
 import com.hbm_m.powerarmor.layer.AbstractObjArmorLayer;
@@ -209,10 +209,6 @@ import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
 import net.minecraftforge.client.event.RegisterColorHandlersEvent;
-import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
-import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
-import net.minecraftforge.client.event.RegisterShadersEvent;
-import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.client.model.BakedModelWrapper;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.common.MinecraftForge;
@@ -220,12 +216,31 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-//?}
+import com.hbm_m.datagen.assets.MissileItemModelDefinitions;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.ChunkRenderTypeSet;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.ModelEvent;
+import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
+import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
+import net.neoforged.neoforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
+import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
+import net.neoforged.neoforge.client.model.BakedModelWrapper;
+import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+*///?}
 
 //? if forge {
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-//?}
-@SuppressWarnings("UnstableApiUsage")
+//?} elif neoforge {
+/*@EventBusSubscriber(modid = RefStrings.MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+*///?}
+@SuppressWarnings({"UnstableApiUsage", "removal"})
 public class ClientSetup {
 
     private static boolean initialized = false;
@@ -446,23 +461,23 @@ public class ClientSetup {
     }
     *///?}
 
-    //? if forge {
+    //? if forge || neoforge {
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         MainRegistry.LOGGER.info("FMLClientSetupEvent fired. Initializing client.");
         initClient();
 
-        // Forge-only: шина событий для тик/рендер-хендлеров.
-        MinecraftForge.EVENT_BUS.register(ChunkRadiationDebugRenderer.class);
-        MinecraftForge.EVENT_BUS.register(ClientRenderHandler.class);
-        MinecraftForge.EVENT_BUS.register(HbmThermalHandler.INSTANCE);
-
-        // Forge-only: дисконнект (на Fabric есть свой хук).
+        // Регистрация тик/рендер-хендлеров на game event bus (Forge/NeoForge).
+        //? if forge {
         MinecraftForge.EVENT_BUS.addListener(ClientSetup::onClientDisconnect);
+        MinecraftForge.EVENT_BUS.addListener(ClientSetup::registerDebugClientCommands);
+        //?} elif neoforge {
+        /*NeoForge.EVENT_BUS.addListener(ClientSetup::onClientDisconnect);
+        NeoForge.EVENT_BUS.addListener(ClientSetup::registerDebugClientCommands);
+        *///?}
 
         event.enqueueWork(ClientSetup::registerRadAbsorberItemProperties);
         event.enqueueWork(ClientSetup::registerRenderLayers);
-        MinecraftForge.EVENT_BUS.addListener(ClientSetup::registerDebugClientCommands);
     }
 
     private static void registerDebugClientCommands(RegisterClientCommandsEvent event) {
@@ -485,9 +500,11 @@ public class ClientSetup {
     }
 
     private static void registerRadAbsorberItemProperties() {
+        // RefStrings.resourceLocation инкапсулирует платформо-зависимый конструктор
+        // (new ResourceLocation на 1.20.1, ResourceLocation.fromNamespaceAndPath на 1.21.1+).
         net.minecraft.client.renderer.item.ItemProperties.register(
                 ModBlocks.RAD_ABSORBER.get().asItem(),
-                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "tier"),
+                RefStrings.resourceLocation("tier"),
                 (stack, level, entity, seed) -> BlockAbsorberItem.readTier(stack).ordinal()
         );
     }
@@ -561,7 +578,9 @@ public class ClientSetup {
     }
 
     private static void registerRenderersCommon() {
-        //? if forge {
+        // Forge + NeoForge используют один и тот же vanilla API (EntityRenderers.register /
+        // BlockEntityRenderers.register) — тело идентично, только imports пакетов различаются.
+        //? if forge || neoforge {
         ModEntities.SOYUZ.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.SoyuzEntityRenderer::new));
         ModEntities.SOYUZ_CAPSULE.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.SoyuzCapsuleEntityRenderer::new));
         ModEntities.ZIRNOX_DEBRIS.ifPresent(entityType -> EntityRenderers.register(entityType, ZirnoxDebrisRenderer::new));
@@ -1037,21 +1056,20 @@ public class ClientSetup {
         }
     }
 
-    //? if forge {
     @SubscribeEvent
     public static void onModelBake(ModelEvent.ModifyBakingResult event) {
-        Map<ResourceLocation, BakedModel> modelRegistry = event.getModels();
+        java.util.Map modelRegistry = event.getModels();
         
-        // Получаем ResourceLocation для нашего блока листвы
-        ResourceLocation leavesLocation = new ModelResourceLocation(ModBlocks.WASTE_LEAVES.getId(), "");
+        // Получаем объект локации для нашего блока листвы
+        Object leavesLocation = PlatformHooks.createModelLocation(ModBlocks.WASTE_LEAVES.getId(), "");
 
         // Находим оригинальную, "запеченную" модель в регистре
-        BakedModel originalModel = modelRegistry.get(leavesLocation);
+        BakedModel originalModel = (BakedModel) modelRegistry.get(leavesLocation);
         
         // Если модель найдена, заменяем ее на нашу обертку
         if (originalModel != null) {
             LeavesModelWrapper wrappedModel = new LeavesModelWrapper(originalModel);
-            event.getModels().put(leavesLocation, wrappedModel);
+            modelRegistry.put(leavesLocation, wrappedModel);
             if (ModClothConfig.get().enableDebugLogging) {
                 MainRegistry.LOGGER.debug("Successfully wrapped waste_leaves model for dynamic render types.");
             }
@@ -1062,7 +1080,7 @@ public class ClientSetup {
         }
     }
 
-    /**
+    /*
      * Continuity (через Connector/FFAPI) оборачивает все blockstate-модели в CtmBakedModel
      * (extends ForwardingBakedModel). Это ломает два поведения при активном шейдере:
      *
@@ -1074,26 +1092,33 @@ public class ClientSetup {
      * Решение: в LOWEST-приоритете (после Continuity) разворачиваем обёртки обратно
      * для всех моделей нашего мода, чтобы terrain-рендер использовал vanilla/Forge-путь.
      */
-    /**
+
+    /*
      * After bake (and after Item Transform Helper, if present): install Forge-safe display wrappers for
      * {@code isCustomRenderer} {@code hbm_m} item models so JSON {@code display} matches with/without ITH.
      */
+    //? if forge {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onBakingCompletedDisplayGuards(ModelEvent.BakingCompleted event) {
-        com.hbm_m.client.compat.ItemTransformHelperCompat.installDisplayTransformGuards(
+        com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.installDisplayTransformGuards(
                 event.getModelBakery().getBakedTopLevelModels());
     }
-
+    //?}
+    
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onModelBakeUnwrapContinuity(ModelEvent.ModifyBakingResult event) {
-        Map<ResourceLocation, BakedModel> models = event.getModels();
+        // Используем raw Map, чтобы обойти конфликт дженериков ключей между 1.20.1 и 1.21.1
+        java.util.Map models = event.getModels();
 
         // Собираем замены отдельно - не модифицируем map во время итерации
-        Map<ResourceLocation, BakedModel> replacements = new java.util.HashMap<>();
+        java.util.Map replacements = new java.util.HashMap<>();
 
-        for (Map.Entry<ResourceLocation, BakedModel> entry : models.entrySet()) {
-            if (!RefStrings.MODID.equals(entry.getKey().getNamespace())) continue;
-            BakedModel original = entry.getValue();
+        for (Object entryObj : models.entrySet()) {
+            java.util.Map.Entry entry = (java.util.Map.Entry) entryObj;
+            ResourceLocation keyLoc = PlatformHooks.getModelId(entry.getKey());
+            
+            if (!RefStrings.MODID.equals(keyLoc.getNamespace())) continue;
+            BakedModel original = (BakedModel) entry.getValue();
             BakedModel unwrapped = com.hbm_m.client.render.AbstractPartBasedRenderer
                     .unwrapFabricForwardingModels(original);
             if (unwrapped != original) {
@@ -1101,7 +1126,7 @@ public class ClientSetup {
                 if (ModClothConfig.get().enableDebugLogging) {
                     MainRegistry.LOGGER.debug(
                             "[HBM] Unwrapped Continuity model: {} ({} → {})",
-                            entry.getKey(),
+                            keyLoc,
                             original.getClass().getSimpleName(),
                             unwrapped.getClass().getSimpleName());
                 }
@@ -1114,15 +1139,21 @@ public class ClientSetup {
                     replacements.size());
         }
 
+        //? if forge {
         wrapConnectedDecoCtTerrainModels(models);
-        com.hbm_m.client.compat.ItemTransformHelperCompat.installDisplayTransformGuards(models);
+        
+        @SuppressWarnings("unchecked")
+        Map<ResourceLocation, BakedModel> typedModels = (Map<ResourceLocation, BakedModel>) models;
+        com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.installDisplayTransformGuards(typedModels);
+        //?}
     }
 
+    //? if forge {
     /**
      * Подменяет cube-модели деко-CT на {@link ConnectedDecoBlockBakedModel} (Forge ModelData + getQuads).
      * Делается после снятия Continuity-обёртки, иначе CT не получает корректный пайплайн.
      */
-    private static void wrapConnectedDecoCtTerrainModels(Map<ResourceLocation, BakedModel> models) {
+    private static void wrapConnectedDecoCtTerrainModels(java.util.Map models) {
         record CtEntry(RegistrySupplier<Block> block, String textureBase) {}
 
         CtEntry[] entries = {
@@ -1136,105 +1167,42 @@ public class ClientSetup {
         };
 
         for (CtEntry e : entries) {
-            ModelResourceLocation loc = new ModelResourceLocation(e.block.getId(), "");
-            BakedModel baked = models.get(loc);
+            Object loc = PlatformHooks.createModelLocation(e.block.getId(), "");
+            BakedModel baked = (BakedModel) models.get(loc);
             if (baked == null || baked instanceof ConnectedDecoBlockBakedModel) {
                 continue;
             }
-            ResourceLocation full = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/" + e.textureBase);
-            ResourceLocation ct = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/" + e.textureBase + "_ct");
+            
+            ResourceLocation full = RefStrings.resourceLocation("block/" + e.textureBase);
+            ResourceLocation ct = RefStrings.resourceLocation("block/" + e.textureBase + "_ct");
             models.put(loc, new ConnectedDecoBlockBakedModel(baked, full, ct));
         }
     }
-
-    
+    //?}
 
     @SubscribeEvent
     public static void onModelRegisterAdditional(ModelEvent.RegisterAdditional event) {
-        // Регистрируем модели вариантов дверей, чтобы они загружались в ModelManager
-        // round_airlock_door
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/round_airlock_door_legacy"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_legacy"));
-        //?}
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/round_airlock_door_legacy"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/machines/crystallizer_fluid"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/machines/crystallizer_spinner"));
 
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/machines/crystallizer_fluid"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/crystallizer_fluid"));
-        //?}
+        // mining_drill
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/machines/mining_drill_bit"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/machines/mining_drill_shaft"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/machines/mining_drill_crusher1"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/machines/mining_drill_crusher2"));
 
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/machines/crystallizer_spinner"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/crystallizer_spinner"));
-        //?}
+        // ore_slopper
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/machines/ore_slopper_fan"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/machines/ore_slopper_blades_left"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/machines/ore_slopper_blades_right"));
 
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/machines/mining_drill_bit"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/mining_drill_bit"));
-        //?}
+        // arc_furnace
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/machines/arc_furnace_electrodes_cold"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/machines/arc_furnace_electrodes_hot"));
 
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/machines/mining_drill_shaft"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/mining_drill_shaft"));
-        //?}
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/deco_soyuz_rocket"));
 
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/machines/mining_drill_crusher1"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/mining_drill_crusher1"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/machines/mining_drill_crusher2"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/mining_drill_crusher2"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/machines/ore_slopper_fan"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/ore_slopper_fan"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/machines/ore_slopper_blades_left"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/ore_slopper_blades_left"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/machines/ore_slopper_blades_right"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/ore_slopper_blades_right"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/machines/arc_furnace_electrodes_cold"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/arc_furnace_electrodes_cold"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/machines/arc_furnace_electrodes_hot"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/arc_furnace_electrodes_hot"));
-        //?}
-
-        // Soyuz rocket mesh - fetched directly via ModelManager for the launcher's mounted-rocket
-        // preview and the SoyuzEntity/SoyuzCapsuleEntity renderers (see SoyuzLauncherRenderer).
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/deco_soyuz_rocket"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_soyuz_rocket"));
-        //?}
-
-        // Turret-Animationsteile (siehe TurretModel / MachineTurretRenderer) - lose Modelle, per OBJ-"visibility"
-        // aus den geteilten turret_*.obj-Dateien herausgeloest, direkt per ModelManager im BER abgerufen.
         for (String part : new String[] {
                 "chekhov_carriage", "chekhov_carriage_friendly", "chekhov_body", "chekhov_barrels",
                 "jeremy_gun", "tauon_cannon", "tauon_rotor", "richard_launcher",
@@ -1244,295 +1212,91 @@ public class ClientSetup {
                 "himars_carriage", "himars_launcher", "himars_crane",
                 "sentry_pivot", "sentry_body", "sentry_drum", "sentry_barrell", "sentry_barrelr"
         }) {
-            event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/turret_parts/" + part));
+            PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/turret_parts/" + part));
         }
 
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/round_airlock_door_modern"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern"));
-        //?}
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/round_airlock_door_modern"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/round_airlock_door_modern_clean"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/round_airlock_door_modern_green"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/large_vehicle_door_legacy"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/large_vehicle_door_modern"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/large_vehicle_door_modern_rad"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/large_vehicle_door_modern_clean"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/fire_door_legacy"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/fire_door_modern"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/fire_door_modern_black"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/fire_door_modern_orange"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/fire_door_modern_trefoil"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/fire_door_modern_yellow"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/secure_access_door_legacy"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/secure_access_door_modern"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/secure_access_door_modern_gray"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/secure_access_door_modern_yellow"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/secure_access_door_modern_black"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/water_door_legacy"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/water_door_modern"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/water_door_clean"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/qe_containment_door_legacy"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/qe_containment_door_modern"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/qe_containment_door_modern_trefoil"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/qe_containment_door_modern_trefoil_yellow"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/qe_sliding_door_legacy"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/qe_sliding_door_modern"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/sliding_blast_door_legacy"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/sliding_blast_door_modern"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/sliding_blast_door_modern_variant1"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/sliding_blast_door_modern_variant2"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/sliding_seal_door_legacy"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/sliding_seal_door_modern"));
 
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/round_airlock_door_modern_clean"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern_clean"));
-        //?}
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/vault_door_skin_2"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/vault_door_skin_81"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/vault_door_skin_87"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/vault_door_skin_99"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/vault_door_skin_101"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/vault_door_skin_106"));
+        PlatformHooks.registerAdditionalModel(event, RefStrings.resourceLocation("block/doors/vault_door_skin_111"));
 
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/round_airlock_door_modern_green"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern_green"));
-        //?}
-
-        // large_vehicle_door
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/large_vehicle_door_legacy"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_legacy"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/large_vehicle_door_modern"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/large_vehicle_door_modern_rad"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern_rad"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/large_vehicle_door_modern_clean"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern_clean"));
-        //?}
-
-        // fire_door
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_legacy"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_legacy"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern_black"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_black"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern_orange"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_orange"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern_trefoil"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_trefoil"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern_yellow"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_yellow"));
-        //?}
-
-        // secure_access_door
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_legacy"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_legacy"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_modern"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_modern_gray"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_gray"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_modern_yellow"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_yellow"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_modern_black"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_black"));
-        //?}
-
-        // water_door
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/water_door_legacy"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_legacy"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/water_door_modern"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_modern"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/water_door_clean"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_clean"));
-        //?}
-
-        // qe_containment_door
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_containment_door_legacy"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_legacy"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_containment_door_modern"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil_yellow"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil_yellow"));
-        //?}
-
-        // qe_sliding_door
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_sliding_door_legacy"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_legacy"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_sliding_door_modern"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_modern"));
-        //?}
-
-        // sliding_blast_door
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_blast_door_legacy"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_legacy"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_blast_door_modern"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant1"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant1"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant2"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant2"));
-        //?}
-
-        // sliding_seal_door
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_seal_door_legacy"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_legacy"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_seal_door_modern"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_modern"));
-        //?}
-
-
-        // vault_door
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_2"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_2"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_81"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_81"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_87"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_87"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_99"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_99"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_101"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_101"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_106"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_106"));
-        //?}
-
-        //? if fabric && < 1.21.1 {
-        /*event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_111"));
-        *///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_111"));
-        //?}
-
-
+        //? if forge {
         for (MissileItemModelDefinitions.Definition definition : MissileItemModelDefinitions.all()) {
             ResourceLocation meshId = MissileRenderHelper.meshModelId(
-                    ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, definition.itemPath()));
-            //? if fabric && < 1.21.1 {
-            /*event.register(meshId);
-            *///?} else {
-            event.register(meshId);
-            //?}
+                    RefStrings.resourceLocation(definition.itemPath()));
+            PlatformHooks.registerAdditionalModel(event, meshId);
         }
+        //?}
 
         MainRegistry.LOGGER.debug("Registered door variant models for loading");
     }
 
     @SubscribeEvent
     public static void onModelRegister(ModelEvent.RegisterGeometryLoaders event) {
-        // DoorDeclRegistry.init();
         MainRegistry.LOGGER.info("DoorDeclRegistry initialized with {} doors", DoorDeclRegistry.getAll().size());
 
-        event.register("advanced_assembly_machine_loader", new MachineAdvancedAssemblerModelLoader());
-        event.register("chemical_plant_loader", new MachineChemicalPlantModelLoader());
-        event.register("machine_assembler_loader", new MachineAssemblerModelLoader());
-        event.register("hydraulic_frackining_tower_loader", new MachineHydraulicFrackiningTowerModelLoader());
-        event.register("fluid_tank_loader", new MachineFluidTankModelLoader());
-        event.register("battery_socket_loader", new MachineBatterySocketModelLoader());
-        event.register("door", new DoorModelLoader());
-        event.register("cargo_elevator", new CargoElevatorModelLoader());
-        event.register("dae", new DaeModelLoader());
-        event.register("template_loader", new TemplateModelLoader());
-        event.register("press_loader", new PressModelLoader());
-        event.register("missile_loader", new MissileModelLoader());
-        event.register("heating_oven_loader", new HeatingOvenModelLoader());
-        event.register("cooling_tower_loader", new MachineCoolingTowerModelLoader());
-        event.register("radar_loader", new MachineRadarModelLoader());
-        event.register("soyuz_launcher_loader", new com.hbm_m.client.loader.SoyuzLauncherModelLoader());
-        event.register("soyuz_rocket_loader", new com.hbm_m.client.loader.SoyuzRocketModelLoader());
+        // Заменяем все event.register(..) на PlatformHooks.registerGeometryLoader(event, ..)
+        PlatformHooks.registerGeometryLoader(event, "advanced_assembly_machine_loader", new MachineAdvancedAssemblerModelLoader());
+        PlatformHooks.registerGeometryLoader(event, "chemical_plant_loader", new MachineChemicalPlantModelLoader());
+        PlatformHooks.registerGeometryLoader(event, "machine_assembler_loader", new MachineAssemblerModelLoader());
+ 
+        PlatformHooks.registerGeometryLoader(event, "hydraulic_frackining_tower_loader", new MachineHydraulicFrackiningTowerModelLoader());
+        PlatformHooks.registerGeometryLoader(event, "fluid_tank_loader", new MachineFluidTankModelLoader());
+        PlatformHooks.registerGeometryLoader(event, "battery_socket_loader", new MachineBatterySocketModelLoader());
+        PlatformHooks.registerGeometryLoader(event, "door", new DoorModelLoader());
+        PlatformHooks.registerGeometryLoader(event, "cargo_elevator", new CargoElevatorModelLoader());
+        PlatformHooks.registerGeometryLoader(event, "dae", new DaeModelLoader());
+        PlatformHooks.registerGeometryLoader(event, "template_loader", new TemplateModelLoader());
+        PlatformHooks.registerGeometryLoader(event, "press_loader", new PressModelLoader());
+        PlatformHooks.registerGeometryLoader(event, "missile_loader", new MissileModelLoader());
+        PlatformHooks.registerGeometryLoader(event, "heating_oven_loader", new HeatingOvenModelLoader());
+
+        //? if neoforge {
+        /*event.register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("forge", "composite"), net.neoforged.neoforge.client.model.CompositeModel.Loader.INSTANCE);
+        event.register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("forge", "obj"), net.neoforged.neoforge.client.model.obj.ObjLoader.INSTANCE);
+        *///?}
+        
+        PlatformHooks.registerGeometryLoader(event, "cooling_tower_loader", new MachineCoolingTowerModelLoader());
+        PlatformHooks.registerGeometryLoader(event, "radar_loader", new MachineRadarModelLoader());
+        PlatformHooks.registerGeometryLoader(event, "soyuz_launcher_loader", new com.hbm_m.client.loader.SoyuzLauncherModelLoader());
+        PlatformHooks.registerGeometryLoader(event, "soyuz_rocket_loader", new com.hbm_m.client.loader.SoyuzRocketModelLoader());
 
         MainRegistry.LOGGER.info("Registered geometry loaders: advanced_assembly_machine_loader, chemical_plant_loader, machine_assembler_loader, hydraulic_frackining_tower_loader, template_loader, door, press_loader, heating_oven_loader, cooling_tower_loader, radar_loader, soyuz_launcher_loader");
     }
@@ -1695,38 +1459,85 @@ public class ClientSetup {
         });
     }
 
-    public static void onClientDisconnect(net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
+    //? if forge || neoforge {
+    public static void onClientDisconnect(
+            //? if forge {
+            net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingOut event
+            //?} elif neoforge {
+            /*net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event
+            *///?}
+    ) {
         clearClientCachesDeferred();
     }
+    //?}
 
+    //? if forge || neoforge {
     @SubscribeEvent
-    public static void onRegisterParticleProviders(RegisterParticleProvidersEvent event) {
+    public static void onRegisterParticleProviders(
+            //? if forge {
+            net.minecraftforge.client.event.RegisterParticleProvidersEvent event
+            //?} elif neoforge {
+            /*net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent event
+            *///?}
+    ) {
         // Связываем наш ТИП частицы с ее ФАБРИКОЙ.
         event.registerSpriteSet(ModParticleTypes.TOWNAURA.get(), TownauraParticle.Provider::new);
         event.registerSpriteSet(ModParticleTypes.SCHRABFOG.get(), SchrabfogParticle.Provider::new);
         event.registerSpriteSet(ModParticleTypes.RAD_FOG_PARTICLE.get(), RadFogParticle.Provider::new);
         MainRegistry.LOGGER.info("Registered custom particle providers.");
     }
+    //?}
 
+    //? if forge {
     @SubscribeEvent
-    public static void onRegisterGuiOverlays(RegisterGuiOverlaysEvent event) {
+    public static void onRegisterGuiOverlays(net.minecraftforge.client.event.RegisterGuiOverlaysEvent event) {
+        MainRegistry.LOGGER.info("Registering GUI overlays...");
+        event.registerAbove(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.HOTBAR.id(), "geiger_counter_hud", OverlayGeiger.GEIGER_HUD_OVERLAY);
+        event.registerAbove(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.ARMOR_LEVEL.id(), "power_armor_hud", OverlayPowerArmor.POWER_ARMOR_OVERLAY);
+        event.registerAbove(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.PORTAL.id(), "radiation_pixels", OverlayRadiationVisuals.RADIATION_PIXELS_OVERLAY);
+        event.registerAboveAll("info_toast", OverlayInfoToast.OVERLAY);
+        MainRegistry.LOGGER.info("GUI overlays registered.");
+    }
+    //?} elif neoforge {
+    /*@SubscribeEvent
+    public static void onRegisterGuiOverlays(net.neoforged.neoforge.client.event.RegisterGuiLayersEvent event) {
         MainRegistry.LOGGER.info("Registering GUI overlays...");
         
-        // Регистрируем оверлей.
-        // Мы говорим: "Нарисуй оверлей с ID 'geiger_counter_hud' НАД хотбаром,
-        // используя логику из объекта GeigerOverlay.GEIGER_HUD_OVERLAY".
-        event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "geiger_counter_hud", OverlayGeiger.GEIGER_HUD_OVERLAY);
-
-        event.registerAbove(VanillaGuiOverlay.ARMOR_LEVEL.id(), "power_armor_hud", OverlayPowerArmor.POWER_ARMOR_OVERLAY);
-
-        event.registerAboveAll("thermal_overlay", com.hbm_m.powerarmor.ModEventHandlerClient.THERMAL_OVERLAY);
-
-        event.registerAbove(VanillaGuiOverlay.PORTAL.id(), "radiation_pixels", OverlayRadiationVisuals.RADIATION_PIXELS_OVERLAY);
-
-        event.registerAboveAll("info_toast", OverlayInfoToast.OVERLAY);
+        event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.HOTBAR, com.hbm_m.lib.RefStrings.resourceLocation("geiger_counter_hud"), (guiGraphics, deltaTracker) -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc != null && mc.getWindow() != null) {
+                float tickDelta = deltaTracker.getGameTimeDeltaPartialTick(true);
+                OverlayGeiger.render(guiGraphics, tickDelta, mc.getWindow().getGuiScaledWidth(), mc.getWindow().getGuiScaledHeight());
+            }
+        });
+        
+        event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.ARMOR_LEVEL, com.hbm_m.lib.RefStrings.resourceLocation("power_armor_hud"), (guiGraphics, deltaTracker) -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc != null && mc.getWindow() != null) {
+                float tickDelta = deltaTracker.getGameTimeDeltaPartialTick(true);
+                OverlayPowerArmor.render(guiGraphics, tickDelta, mc.getWindow().getGuiScaledWidth(), mc.getWindow().getGuiScaledHeight());
+            }
+        });
+        
+        event.registerAboveAll(com.hbm_m.lib.RefStrings.resourceLocation("radiation_pixels"), (guiGraphics, deltaTracker) -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc != null && mc.getWindow() != null) {
+                float tickDelta = deltaTracker.getGameTimeDeltaPartialTick(true);
+                OverlayRadiationVisuals.render(guiGraphics, tickDelta, mc.getWindow().getGuiScaledWidth(), mc.getWindow().getGuiScaledHeight());
+            }
+        });
+        
+        event.registerAboveAll(com.hbm_m.lib.RefStrings.resourceLocation("info_toast"), (guiGraphics, deltaTracker) -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc != null && mc.getWindow() != null) {
+                float tickDelta = deltaTracker.getGameTimeDeltaPartialTick(true);
+                OverlayInfoToast.render(guiGraphics, tickDelta, mc.getWindow().getGuiScaledWidth(), mc.getWindow().getGuiScaledHeight());
+            }
+        });
         
         MainRegistry.LOGGER.info("GUI overlays registered.");
     }
+    *///?}
     
     @SubscribeEvent
     public static void registerTooltipFactories(RegisterClientTooltipComponentFactoriesEvent event) {
@@ -1734,10 +1545,16 @@ public class ClientSetup {
     }
 
     @SubscribeEvent
-    public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
+    public static void onRegisterShaders(
+            //? if forge {
+            net.minecraftforge.client.event.RegisterShadersEvent event
+            //?} elif neoforge {
+            /*net.neoforged.neoforge.client.event.RegisterShadersEvent event
+            *///?}
+    ) throws IOException {
         MainRegistry.LOGGER.info("Registering optimized shaders...");
 
-        // Simple variant: no per-instance attributes, no USE_INSTANCING define.
+        //? if < 1.21.1 {
         VertexFormat blockLitSimpleFormat = new VertexFormat(
             ImmutableMap.<String, VertexFormatElement>builder()
                 .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
@@ -1745,45 +1562,89 @@ public class ClientSetup {
                 .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
                 .build()
         );
+        //?} else {
+        /*VertexFormat blockLitSimpleFormat = VertexFormat.builder()
+                .add("Position", com.mojang.blaze3d.vertex.VertexFormatElement.POSITION)
+                .add("Normal",   com.mojang.blaze3d.vertex.VertexFormatElement.NORMAL)
+                .add("UV0",      com.mojang.blaze3d.vertex.VertexFormatElement.UV0)
+                .build();
+        *///?}
 
-        // Instanced variant: per-vertex BoneId + InstPos/InstRot/… (см. InstancedStaticPartRenderer VAO).
+        //? if < 1.21.1 {
         VertexFormat blockLitInstancedFormat = new VertexFormat(
             ImmutableMap.<String, VertexFormatElement>builder()
                 .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
                 .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
                 .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
-                .put("BoneId", new VertexFormatElement(0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.GENERIC, 1))
-                .put("InstPos", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
-                .put("InstRot", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstBboxMin", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
-                .put("InstBboxSize", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightC01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightC23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightC45", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightC67", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("BoneId", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.GENERIC, 1))
+                .put("InstPos", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .put("InstRot", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstBboxMin", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .put("InstBboxSize", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightC01", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightC23", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightC45", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightC67", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .build()
         );
+        //?} else {
+        /*VertexFormat blockLitInstancedFormat = VertexFormat.builder()
+                .add("Position", com.mojang.blaze3d.vertex.VertexFormatElement.POSITION)
+                .add("Normal",   com.mojang.blaze3d.vertex.VertexFormatElement.NORMAL)
+                .add("UV0",      com.mojang.blaze3d.vertex.VertexFormatElement.UV0)
+                .add("BoneId", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.GENERIC, 1))
+                .add("InstPos", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .add("InstRot", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .add("InstBboxMin", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .add("InstBboxSize", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .add("InstLightC01", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .add("InstLightC23", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .add("InstLightC45", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .add("InstLightC67", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .build();
+        *///?}
 
+        //? if < 1.21.1 {
         VertexFormat blockLitInstancedSlicedFormat = new VertexFormat(
             ImmutableMap.<String, VertexFormatElement>builder()
                 .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
                 .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
                 .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
-                .put("BoneId", new VertexFormatElement(0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.GENERIC, 1))
-                .put("InstPos", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
-                .put("InstRot", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstBboxMin", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
-                .put("InstBboxSize", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS0C01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS0C23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS1C01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS1C23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS2C01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS2C23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS3C01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS3C23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("BoneId", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.GENERIC, 1))
+                .put("InstPos", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .put("InstRot", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstBboxMin", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .put("InstBboxSize", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightS0C01", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightS0C23", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightS1C01", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightS1C23", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightS2C01", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightS2C23", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightS3C01", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightS3C23", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .build()
         );
+        //?} else {
+        /*VertexFormat blockLitInstancedSlicedFormat = VertexFormat.builder()
+                .add("Position", com.mojang.blaze3d.vertex.VertexFormatElement.POSITION)
+                .add("Normal",   com.mojang.blaze3d.vertex.VertexFormatElement.NORMAL)
+                .add("UV0",      com.mojang.blaze3d.vertex.VertexFormatElement.UV0)
+                .add("BoneId", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.GENERIC, 1))
+                .add("InstPos", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .add("InstRot", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .add("InstBboxMin", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .add("InstBboxSize", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .add("InstLightS0C01", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .add("InstLightS0C23", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .add("InstLightS1C01", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .add("InstLightS1C23", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .add("InstLightS2C01", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .add("InstLightS2C23", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .add("InstLightS3C01", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .add("InstLightS3C23", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .build();
+        *///?}
 
         // Both variants share the same .vsh source on disk, but vanilla Program.getOrCreate
         // caches the compiled GL program by NAME ("vertex"/"fragment" string from JSON). If both
@@ -1857,7 +1718,7 @@ public class ClientSetup {
             ModShaders::setBlockLitSimpleShader
         );
                 *///?} else {
-                                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_simple"),
+                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_simple"),
                 blockLitSimpleFormat
             ),
             ModShaders::setBlockLitSimpleShader
@@ -1876,7 +1737,7 @@ public class ClientSetup {
             ModShaders::setBlockLitInstancedShader
         );
                 *///?} else {
-                                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_instanced"),
+                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_instanced"),
                 blockLitInstancedFormat
             ),
             ModShaders::setBlockLitInstancedShader
@@ -1895,7 +1756,7 @@ public class ClientSetup {
             ModShaders::setBlockLitSimpleSlicedShader
         );
                 *///?} else {
-                                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_simple_sliced"),
+                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_simple_sliced"),
                 blockLitSimpleFormat
             ),
             ModShaders::setBlockLitSimpleSlicedShader
@@ -1914,7 +1775,7 @@ public class ClientSetup {
             ModShaders::setBlockLitInstancedSlicedShader
         );
                 *///?} else {
-                                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_instanced_sliced"),
+                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_instanced_sliced"),
                 blockLitInstancedSlicedFormat
             ),
             ModShaders::setBlockLitInstancedSlicedShader
@@ -1982,5 +1843,5 @@ public class ClientSetup {
         // Generic dummy armor model for all power armor items.
         event.registerLayerDefinition(ModModelLayers.POWER_ARMOR, PowerArmorEmptyModel::createBodyLayer);
     }
-    //?}
+    
 }

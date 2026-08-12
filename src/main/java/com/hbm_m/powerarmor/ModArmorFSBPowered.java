@@ -187,7 +187,11 @@ public class ModArmorFSBPowered extends ModArmorFSB implements ITooltipProvider 
             long maxCharge = getMaxCharge(stack);
 
             if (maxCharge > 0 && (Math.abs(newCharge - prevCharge) > maxCharge * 0.05 || newCharge == 0)) {
-                syncEnergyToClient(player, stack, world, LivingEntity.getEquipmentSlotForItem(stack));
+                //? if < 1.21.1 {
+                syncEnergyToClient(player, stack, world, net.minecraft.world.entity.Mob.getEquipmentSlotForItem(stack));
+                //?} else {
+                /*syncEnergyToClient(player, stack, world, player.getEquipmentSlotForItem(stack));
+                *///?}
             }
         }
     }

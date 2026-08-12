@@ -151,8 +151,8 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
     }
 
     @Override
-    protected void saveAdditional(net.minecraft.nbt.CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progress);
         tag.putBoolean("active", active);
         tanks[0].writeToNBT(tag, "input");
@@ -160,8 +160,8 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
     }
 
     @Override
-    public void load(net.minecraft.nbt.CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progress = tag.getInt("progress");
         active = tag.getBoolean("active");
         tanks[0].readFromNBT(tag, "input");
@@ -195,6 +195,9 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
                 //?}
                 //? if fabric {
                 /*yield net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage.ITEM.find(stack, null) != null;
+                *///?}
+                //? if neoforge {
+                /*yield stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;
                 *///?}
             }
             case SLOT_BATTERY -> stack.getItem() instanceof ItemCreativeBattery || isEnergyProviderItem(stack) || isEnergyReceiverItem(stack);

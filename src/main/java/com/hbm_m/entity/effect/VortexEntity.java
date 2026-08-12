@@ -50,7 +50,7 @@ public class VortexEntity extends BlackHoleEntity {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
-        super.defineSynchedData();
+        super.defineSynchedData(builder);
         builder.define(SHRINK_RATE, 0.0025F);
     
     }

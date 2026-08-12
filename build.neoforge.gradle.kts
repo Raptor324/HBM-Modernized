@@ -16,6 +16,12 @@ platform {
 			slug("architectury-api")
 			forgeVersionRange = "[${prop("deps.architectury")},)"
 		}
+		// Create — опциональная совместимость (рендер блоков на поездах + двери на контрапшенах).
+		// Зеркало optional-зависимости из src/main/resources/META-INF/mods.toml.
+		optional("create") {
+			slug("create")
+			forgeVersionRange = "[6.0.0,6.1.0)"
+		}
 	}
 }
 

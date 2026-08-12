@@ -1,14 +1,5 @@
 package com.hbm_m.client.render;
 
-
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
@@ -29,6 +20,7 @@ import org.lwjgl.system.MemoryUtil;
 
 import com.hbm_m.client.render.shader.IrisBufferHelper;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.platform.RenderHooks;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -56,11 +48,14 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
  * is marked failed and the calling code is expected to fall back to vanilla
  * paths.
  */
+
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public final class IrisCompanionMesh implements IrisCompanionMeshResource {
 
     /**
@@ -342,26 +337,26 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             // approximates the brightness of the baked-model path closely enough.
             final int fullBrightLight = LightTexture.pack(15, 15);
             for (BakedQuad quad : quads) {
-                //? if forge {
-                builder.putBulkData(neutralPose, quad,
-                        1.0F, 1.0F, 1.0F, 1.0F,
-                        fullBrightLight,
-                        OverlayTexture.NO_OVERLAY,
-                        false);
-                //?} else {
-                /*builder.putBulkData(neutralPose, quad,
-                        1.0F, 1.0F, 1.0F,
-                        fullBrightLight,
-                        OverlayTexture.NO_OVERLAY);
-                *///?}
+                RenderHooks.putBulkData(builder, neutralPose, quad, 
+                        1.0F, 1.0F, 1.0F, 1.0F, 
+                        fullBrightLight, OverlayTexture.NO_OVERLAY, false);
             }
 
+            //? if < 1.21.1 {
             BufferBuilder.RenderedBuffer rendered = builder.end();
             BufferBuilder.DrawState drawState = rendered.drawState();
             VertexFormat actualFormat = drawState.format();
             this.actualFormat = actualFormat;
             ByteBuffer vertexBytes = rendered.vertexBuffer();
             this.vertexCount = drawState.vertexCount();
+            //?} else {
+            /*var rendered = builder.buildOrThrow();
+            var drawState = rendered.drawState();
+            VertexFormat actualFormat = drawState.format();
+            this.actualFormat = actualFormat;
+            ByteBuffer vertexBytes = rendered.vertexBuffer();
+            this.vertexCount = drawState.vertexCount();
+            *///?}
 
             // Record byte offset of every named element in the format so
             // prepareForShader() can hand the linker-resolved locations a
@@ -373,7 +368,9 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             // которых нет на 1.20.1 Forge.
             elementOffsets.clear();
             elementByName.clear();
-            var elements = actualFormat.getElements();
+            
+            //? if < 1.21.1 {
+            var elements = RenderHooks.getElements(actualFormat);
             var names = actualFormat.getElementAttributeNames();
             int runningOffset = 0;
             for (int i = 0; i < elements.size(); i++) {
@@ -381,8 +378,22 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                 VertexFormatElement el = elements.get(i);
                 elementOffsets.put(name, runningOffset);
                 elementByName.put(name, el);
-                runningOffset += el.getByteSize();
+                runningOffset += RenderHooks.getByteSize(el);
             }
+            //?} else {
+            /*var elements = RenderHooks.getElements(actualFormat);
+            int runningOffset = 0;
+            for (int i = 0; i < elements.size(); i++) {
+                VertexFormatElement el = elements.get(i);
+                String name = "unknown_" + i;
+                if (el.id() == IRIS_ATTRIB_ENTITY) name = "iris_Entity";
+                else if (el.id() == IRIS_ATTRIB_MID_TEX) name = "mc_midTexCoord";
+                else if (el.id() == IRIS_ATTRIB_TANGENT) name = "at_tangent";
+                elementOffsets.put(name, runningOffset);
+                elementByName.put(name, el);
+                runningOffset += RenderHooks.getByteSize(el);
+            }
+            *///?}
 
             this.vaoId = GL30.glGenVertexArrays();
             this.vboId = GL15.glGenBuffers();
@@ -394,7 +405,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
             GL15.glBufferData(GL15.GL_ARRAY_BUFFER, vertexBytes, GL15.GL_STATIC_DRAW);
 
-            int stride = actualFormat.getVertexSize();
+            int stride = RenderHooks.getVertexSize(actualFormat);
             int offset = 0;
             int detectedUv2Location = -1;
             // We only enable the SIX standard Mojang attributes (locations 0..5:
@@ -420,20 +431,22 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             // prepareForShader(programId) bind them at the *correct*,
             // linker-resolved locations using the real per-vertex data Iris's
             // MixinBufferBuilder wrote into our VBO via iris$beforeNext.
-            int elementCount = actualFormat.getElements().size();
+            int elementCount = RenderHooks.getElements(actualFormat).size();
             for (int location = 0; location < elementCount; location++) {
-                VertexFormatElement element = actualFormat.getElements().get(location);
-                if (element.getUsage() == VertexFormatElement.Usage.PADDING) {
-                    offset += element.getByteSize();
+                VertexFormatElement element = RenderHooks.getElements(actualFormat).get(location);
+                //? if < 1.21.1 {
+                if (RenderHooks.getUsage(element) == VertexFormatElement.Usage.PADDING) {
+                    offset += RenderHooks.getByteSize(element);
                     continue;
                 }
+                //?}
                 if (location > 5) {
-                    offset += element.getByteSize();
+                    offset += RenderHooks.getByteSize(element);
                     continue;
                 }
                 GL20.glEnableVertexAttribArray(location);
-                int glType = element.getType().getGlType();
-                int count = element.getCount();
+                int glType = RenderHooks.getGlType(element);
+                int count = RenderHooks.getCount(element);
                 // Pack shaders declare UV1/UV2 as `ivec2` and Mojang itself binds
                 // them with glVertexAttribIPointer (integer pipeline). Using the
                 // float-converting glVertexAttribPointer for SHORT-typed integer
@@ -446,10 +459,10 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                     boolean normalize = shouldNormalize(element);
                     GL20.glVertexAttribPointer(location, count, glType, normalize, stride, offset);
                 }
-                if (element.getUsage() == VertexFormatElement.Usage.UV && element.getIndex() == 2) {
+                if (RenderHooks.getUsage(element) == VertexFormatElement.Usage.UV && RenderHooks.getIndex(element) == 2) {
                     detectedUv2Location = location;
                 }
-                offset += element.getByteSize();
+                offset += RenderHooks.getByteSize(element);
             }
 
             // Disable the per-vertex UV2 (lightmap) array inside this VAO so that
@@ -485,7 +498,12 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             // triggers GL_INVALID_OPERATION on glEnableVertexAttribArray.
             primeIrisExtendedVertexAttributes(stride);
 
+            //? if < 1.21.1 {
             rendered.release();
+            //?} else {
+            /*rendered.close();
+            *///?}
+            
             built = true;
             MainRegistry.LOGGER.debug(
                 "IrisCompanionMesh: built {} quads, format stride {} bytes, {} attribute(s)",
@@ -1249,7 +1267,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
     private static boolean shouldNormalize(VertexFormatElement element) {
         // Color (ubytes) and Normal (signed bytes) are conventionally normalized in
         // Mojang/Iris vertex formats; everything else (positions, ints, packed light) is not.
-        return switch (element.getUsage()) {
+        return switch (RenderHooks.getUsage(element)) {
             case COLOR, NORMAL -> true;
             default -> false;
         };
@@ -1265,8 +1283,8 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
      * silently breaks per-draw {@code glVertexAttrib*} overrides on these slots.
      */
     private static boolean isIntegerAttribute(VertexFormatElement element) {
-        if (element.getUsage() != VertexFormatElement.Usage.UV) return false;
-        int idx = element.getIndex();
+        if (RenderHooks.getUsage(element) != VertexFormatElement.Usage.UV) return false;
+        int idx = RenderHooks.getIndex(element);
         return idx == 1 || idx == 2;
     }
 
@@ -1328,7 +1346,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
             try {
                 GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
-                int stride = actualFormat.getVertexSize();
+                int stride = RenderHooks.getVertexSize(actualFormat);
                 bindIrisAttribute(programId, "iris_Entity", stride);
                 bindIrisAttribute(programId, "mc_midTexCoord", stride);
                 bindIrisAttribute(programId, "at_tangent", stride);
@@ -1387,8 +1405,8 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         VertexFormatElement element = elementByName.get(attributeName);
         if (offsetBoxed == null || element == null) return;
         int offset = offsetBoxed;
-        int glType = element.getType().getGlType();
-        int count = element.getCount();
+        int glType = RenderHooks.getGlType(element);
+        int count = RenderHooks.getCount(element);
         if (isIntegerGlType(glType)) {
             GL30.glVertexAttribIPointer(location, count, glType, stride, offset);
         } else {
@@ -1416,7 +1434,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
      */
     private static boolean shouldNormalizeForLinkerBind(String attributeName, VertexFormatElement element) {
         if ("at_tangent".equals(attributeName)) return true;
-        return element.getUsage() == VertexFormatElement.Usage.NORMAL;
+        return RenderHooks.getUsage(element) == VertexFormatElement.Usage.NORMAL;
     }
 
     public boolean isBuilt() {

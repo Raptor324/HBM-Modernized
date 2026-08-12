@@ -75,6 +75,11 @@ public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedMo
         }
         return List.of();
         *///?}
+
+        //? if neoforge {
+        /*// Делегируем в готовую neoforge-реализацию базового класса (собирает квады из parts).
+        return super.getQuads(state, side, rand);
+        *///?}
     }
 
     //? if forge {
@@ -173,6 +178,10 @@ public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedMo
         //?}
 
         //? if fabric {
+        /*return super.getParticleIcon();
+        *///?}
+
+        //? if neoforge {
         /*return super.getParticleIcon();
         *///?}
     }

@@ -56,7 +56,7 @@ public class PlayerHandler {
         PlayerEvent.PLAYER_QUIT.register(PlayerHandler::onPlayerQuit);
         PlayerEvent.PLAYER_RESPAWN.register(PlayerHandler::onPlayerRespawn);
         TickEvent.PLAYER_POST.register(PlayerHandler::onPlayerTick);
-        CommandRegistrationEvent.EVENT.register(PlayerHandler::onRegisterCommands);
+        CommandRegistrationEvent.EVENT.register((dispatcher, buildContext, selection) -> onRegisterCommands(dispatcher, buildContext, selection));
     }
 
     /**
@@ -162,7 +162,11 @@ public class PlayerHandler {
      * Игрок возродился — сбрасываем радиацию
      * (параметр keepInventory: если true — не сбрасываем, чтобы не злоупотребляли)
      */
+    //? if < 1.21.1 {
     private static void onPlayerRespawn(ServerPlayer serverPlayer, boolean conqueredEnd) {
+    //?} else {
+    /*private static void onPlayerRespawn(ServerPlayer serverPlayer, boolean conqueredEnd, net.minecraft.world.entity.Entity.RemovalReason reason) {
+    *///?}
         // Сброс при смерти, но не при телепортации через End
         if (!conqueredEnd) {
             setPlayerRads(serverPlayer, 0F);
@@ -256,64 +260,10 @@ public class PlayerHandler {
     private static void applyRadiationEffects(Player player) {
         float rads = getPlayerRads(player);
 
-        // Проверяем достижения
+        // Проверяем достижения через хук
         if (player instanceof ServerPlayer serverPlayer) {
-            var server = serverPlayer.getServer();
-            if (server != null) {
-                ServerAdvancementManager advancementManager = server.getAdvancements();
-
-                // Достижение "Ура, Радиация!" (200 РАД)
-                //? if fabric && < 1.21.1 {
-                /*Advancement rad200Advancement = advancementManager.getAdvancement(new ResourceLocation(RefStrings.MODID, "radiation_200"));
-                *///?} else {
-                Advancement rad200Advancement = advancementManager.getAdvancement(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radiation_200"));
-                 //?}
-
-                if (rad200Advancement != null) {
-                    AdvancementProgress progress = serverPlayer.getAdvancements().getOrStartProgress(rad200Advancement);
-                    if (!progress.isDone() && rads >= 200.0F) {
-                        if (ModClothConfig.get().enableDebugLogging) {
-                            MainRegistry.LOGGER.debug(
-                                    "SERVER: Checking radiation_200 advancement for player {}. Current rads: {}, isDone: {}",
-                                    serverPlayer.getName().getString(), rads, false);
-                        }
-                        for (String criterion : progress.getRemainingCriteria()) {
-                            serverPlayer.getAdvancements().award(rad200Advancement, criterion);
-                            if (ModClothConfig.get().enableDebugLogging) {
-                                MainRegistry.LOGGER.info(
-                                        "SERVER: Awarded radiation_200 advancement to player {} for criterion {}",
-                                        serverPlayer.getName().getString(), criterion);
-                            }
-                        }
-                    }
-                }
-
-                // Испытание "Ай, Радиация!" (1000 РАД)
-                //? if fabric && < 1.21.1 {
-                /*Advancement rad1000Advancement = advancementManager.getAdvancement(new ResourceLocation(RefStrings.MODID, "radiation_1000"));
-                *///?} else {
-                Advancement rad1000Advancement = advancementManager.getAdvancement(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radiation_1000"));
-                 //?}
-
-                if (rad1000Advancement != null) {
-                    AdvancementProgress progress = serverPlayer.getAdvancements().getOrStartProgress(rad1000Advancement);
-                    if (!progress.isDone() && rads >= ModClothConfig.get().maxPlayerRad) {
-                        if (ModClothConfig.get().enableDebugLogging) {
-                            MainRegistry.LOGGER.debug(
-                                    "SERVER: Checking radiation_1000 advancement for player {}. Current rads: {}, isDone: {}",
-                                    serverPlayer.getName().getString(), rads, false);
-                        }
-                        for (String criterion : progress.getRemainingCriteria()) {
-                            serverPlayer.getAdvancements().award(rad1000Advancement, criterion);
-                            if (ModClothConfig.get().enableDebugLogging) {
-                                MainRegistry.LOGGER.info(
-                                        "SERVER: Awarded radiation_1000 advancement to player {} for criterion {}",
-                                        serverPlayer.getName().getString(), criterion);
-                            }
-                        }
-                    }
-                }
-            }
+            com.hbm_m.platform.PlatformHooks.awardAdvancementIfEligible(serverPlayer, RefStrings.resourceLocation("radiation_200"), rads >= 200.0F);
+            com.hbm_m.platform.PlatformHooks.awardAdvancementIfEligible(serverPlayer, RefStrings.resourceLocation("radiation_1000"), rads >= ModClothConfig.get().maxPlayerRad);
         }
 
         // Летальный порог (конфиг maxPlayerRad; у мобов в EntityEffectHandler — 1000 RAD как в 1.7.10)

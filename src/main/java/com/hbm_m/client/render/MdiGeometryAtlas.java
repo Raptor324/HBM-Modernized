@@ -16,16 +16,8 @@ import org.lwjgl.opengl.GL40;
 import org.lwjgl.system.MemoryUtil;
 
 import com.hbm_m.main.MainRegistry;
-import com.mojang.blaze3d.systems.RenderSystem;
 
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
+import com.mojang.blaze3d.systems.RenderSystem;
 
 /**
  * Shared GPU geometry atlas backing the {@link MdiBatchCoordinator}.
@@ -61,11 +53,14 @@ import net.fabricmc.api.Environment;
  * second atlas + a second MDI dispatch later is mechanical, but out of scope
  * for the initial integration.
  */
+
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public final class MdiGeometryAtlas {
 
     /** Vertex stride in bytes — pos vec3 + normal vec3 + uv vec2 + int bone_id = 36. */

@@ -25,6 +25,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.ChunkPos;
 
 import dev.architectury.platform.Platform;
 import dev.architectury.utils.Env;
@@ -238,7 +239,13 @@ public class CraterGenerator {
         }
         try {
             Minecraft mc = Minecraft.getInstance();
-            return mc != null && mc.options.renderDebug;
+            //? if < 1.21.1 {
+            return mc != null && mc.options != null && mc.options.renderDebug;
+            //?} else {
+            /*// 1.21.1: Options.renderDebug удалён — F3 debug-экран больше не имеет публичного флага.
+            // TODO(fidelity-port): найти 1.21.1-аналог renderDebug. Пока дебаг-визуализация лучей отключена.
+            return false;
+            *///?}
         } catch (Exception e) {
             return false;
         }
@@ -679,7 +686,7 @@ public class CraterGenerator {
 
                         // [ИСПРАВЛЕНИЕ]: Мягкие блоки просто удаляются, а не превращаются в камень
                         if (state.is(BlockTags.LEAVES) || state.is(BlockTags.FLOWERS) ||
-                                state.is(Blocks.GRASS) || state.is(Blocks.TALL_GRASS) ||
+                                com.hbm_m.platform.PlatformHooks.isGrassBlock(state) || state.is(Blocks.TALL_GRASS) ||
                                 state.getCollisionShape(level, pos).isEmpty()) {
 
                             level.removeBlock(pos, false);
@@ -940,7 +947,7 @@ public class CraterGenerator {
         // Здесь мы удаляем всё, что имеет звук дерева, но НЕ является бревном/доской (например, забор)
         boolean isOtherWood = state.getSoundType() == net.minecraft.world.level.block.SoundType.WOOD;
 
-        boolean isFoliage = state.is(BlockTags.LEAVES) || state.is(BlockTags.FLOWERS) || state.is(Blocks.GRASS) || state.is(Blocks.TALL_GRASS) || state.is(Blocks.VINE);
+        boolean isFoliage = state.is(BlockTags.LEAVES) || state.is(BlockTags.FLOWERS) || com.hbm_m.platform.PlatformHooks.isGrassBlock(state) || state.is(Blocks.TALL_GRASS) || state.is(Blocks.VINE);
         boolean isWeak = state.getCollisionShape(level, pos).isEmpty() || state.is(Blocks.SNOW) || state.is(Blocks.SNOW_BLOCK) || state.is(BlockTags.WOOL);
 
         if (isFoliage || isWeak || isOtherWood) {
@@ -992,7 +999,7 @@ public class CraterGenerator {
         } else if (state.is(Blocks.DIRT) || state.is(Blocks.COARSE_DIRT) ||
                 state.is(Blocks.ROOTED_DIRT)) {
             level.setBlock(pos, deadDirtBlock.defaultBlockState(), 3);
-        } else if (state.is(Blocks.GRASS) || state.is(Blocks.TALL_GRASS) ||
+        } else if (com.hbm_m.platform.PlatformHooks.isGrassBlock(state) || state.is(Blocks.TALL_GRASS) ||
                 state.is(Blocks.SEAGRASS) || state.is(Blocks.TALL_SEAGRASS) ||
                 state.is(Blocks.SNOW) || state.is(Blocks.SNOW_BLOCK) ||
                 state.is(Blocks.ICE) || state.is(Blocks.FROSTED_ICE) ||
@@ -1173,13 +1180,13 @@ public class CraterGenerator {
         int maxRadiusBlocks = (int) Math.ceil(zone6Radius + 5.0);
 
         // Используем ChunkPos для перебора чанков, а не один гигантский AABB
-        net.minecraft.world.level.ChunkPos minChunk = new net.minecraft.world.level.ChunkPos(centerPos.offset(-maxRadiusBlocks, 0, -maxRadiusBlocks));
-        net.minecraft.world.level.ChunkPos maxChunk = new net.minecraft.world.level.ChunkPos(centerPos.offset(maxRadiusBlocks, 0, maxRadiusBlocks));
+        ChunkPos minChunk = new ChunkPos(centerPos.offset(-maxRadiusBlocks, 0, -maxRadiusBlocks));
+        ChunkPos maxChunk = new ChunkPos(centerPos.offset(maxRadiusBlocks, 0, maxRadiusBlocks));
 
-        List<net.minecraft.world.level.ChunkPos> chunksToProcess = new ArrayList<>();
+        List<ChunkPos> chunksToProcess = new ArrayList<>();
         for (int x = minChunk.x; x <= maxChunk.x; x++) {
             for (int z = minChunk.z; z <= maxChunk.z; z++) {
-                chunksToProcess.add(new net.minecraft.world.level.ChunkPos(x, z));
+                chunksToProcess.add(new ChunkPos(x, z));
             }
         }
 
@@ -1188,7 +1195,7 @@ public class CraterGenerator {
     }
 
     // ДОБАВИТЬ ЭТОТ НОВЫЙ МЕТОД
-    private static void processDamageChunkBatch(ServerLevel level, BlockPos centerPos, List<net.minecraft.world.level.ChunkPos> allChunks, int startIndex, double z3, double z4, RandomSource random, MinecraftServer server) {
+   private static void processDamageChunkBatch(ServerLevel level, BlockPos centerPos, List<ChunkPos> allChunks, int startIndex, double z3, double z4, RandomSource random, MinecraftServer server) {
         int BATCH_SIZE = 16;
         int endIndex = Math.min(startIndex + BATCH_SIZE, allChunks.size());
 
@@ -1216,15 +1223,15 @@ public class CraterGenerator {
 
                 if (distSq <= r3Sq) {
                     ent.hurt(level.damageSources().generic(), ZONE_3_DAMAGE);
-                    ent.setSecondsOnFire((int) FIRE_DURATION / 20);
+                    com.hbm_m.platform.PlatformHooks.setSecondsOnFire(ent, (int) FIRE_DURATION / 20);
                     applyExplosionKnockback(ent, centerPos, z3);
                 } else if (distSq <= r4Sq) {
                     ent.hurt(level.damageSources().generic(), ZONE_4_DAMAGE);
-                    ent.setSecondsOnFire((int) FIRE_DURATION / 20);
+                    com.hbm_m.platform.PlatformHooks.setSecondsOnFire(ent, (int) FIRE_DURATION / 20);
                     applyExplosionKnockback(ent, centerPos, z4);
                 } else if (distSq <= r5Sq) {
                     ent.hurt(level.damageSources().generic(), 500.0F);
-                    ent.setSecondsOnFire(10);
+                    com.hbm_m.platform.PlatformHooks.setSecondsOnFire(ent, 10);
                     applyExplosionKnockback(ent, centerPos, z5);
                 } else {
                     ent.hurt(level.damageSources().generic(), 100.0F);

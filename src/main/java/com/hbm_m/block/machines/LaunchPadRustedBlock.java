@@ -177,8 +177,19 @@ public class LaunchPadRustedBlock extends BaseEntityBlock implements IMultiblock
         return createTickerHelper(type, ModBlockEntities.LAUNCH_PAD_RUSTED_BE.get(), LaunchPadRustedBlockEntity::tick);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return openMenu(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide()) {
             if (level.getBlockEntity(pos) instanceof MenuProvider provider) {
                 MenuRegistry.openExtendedMenu((ServerPlayer) player, provider, buf -> buf.writeBlockPos(pos));

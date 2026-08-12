@@ -174,7 +174,7 @@ public final class IrisRenderBatch implements AutoCloseable {
      * @param projectionMatrix  projection matrix to upload once into the shader
      */
     public static IrisRenderBatch begin(boolean shadowPass, Matrix4f projectionMatrix) {
-        //? if forge {
+        //? if forge || neoforge {
         // Pass-change detection: if the active batch's pass differs from the
         // requested one, tear it down before opening the new one. The previous
         // batch's framebuffer/shader bindings are already invalidated by Iris's

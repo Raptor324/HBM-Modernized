@@ -150,9 +150,16 @@ public final class PowerArmorHandlers {
         }
 
         if (!ModPowerArmorItem.hasFSBArmor(player)) {
+            //? if < 1.21.1 {
             if (player.maxUpStep() > 0.6F) {
                 player.setMaxUpStep(0.6F);
             }
+            //?} else {
+            /*var attr = player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.STEP_HEIGHT);
+            if (attr != null && attr.getBaseValue() > 0.6) {
+                attr.setBaseValue(0.6);
+            }
+            *///?}
             return;
         }
 
@@ -162,7 +169,14 @@ public final class PowerArmorHandlers {
         var specs = armorItem.getSpecs();
         float stepHeight = specs.stepHeight;
         if (stepHeight > 0) {
+            //? if < 1.21.1 {
             player.setMaxUpStep(Math.max(0.6F, stepHeight));
+            //?} else {
+            /*var attr = player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.STEP_HEIGHT);
+            if (attr != null) {
+                attr.setBaseValue(Math.max(0.6, stepHeight));
+            }
+            *///?}
         }
     }
 

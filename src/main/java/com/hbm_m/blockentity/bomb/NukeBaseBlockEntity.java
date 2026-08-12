@@ -3,10 +3,15 @@ package com.hbm_m.blockentity.bomb;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
@@ -15,11 +20,10 @@ import net.minecraft.world.Nameable;
 import net.minecraft.world.WorldlyContainer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
-public abstract class NukeBaseBlockEntity extends BlockEntity implements WorldlyContainer, Nameable, MenuProvider {
+public abstract class NukeBaseBlockEntity extends BaseHbmBlockEntity implements WorldlyContainer, Nameable, MenuProvider {
 
     public final List<ItemStack> slots;
     @Nullable
@@ -116,91 +120,43 @@ public abstract class NukeBaseBlockEntity extends BlockEntity implements Worldly
         return out;
     }
 
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
         ListTag list = tag.getList("Items", 10);
         for (int i = 0; i < list.size(); i++) {
             CompoundTag itemTag = list.getCompound(i);
             byte b = itemTag.getByte("Slot");
             if (b >= 0 && b < slots.size()) {
-                slots.set(b, ItemStack.of(itemTag));
+                slots.set(b, PlatformHooks.itemStackOf(itemTag, registries));
             }
         }
         if (tag.contains("CustomName", 8)) {
             try {
-                customName = Component.Serializer.fromJson(com.google.gson.JsonParser.parseString(tag.getString("CustomName")));
+                customName = PlatformHooks.parseComponentJson(tag.getString("CustomName"), registries);
             } catch (Exception e) {
                 customName = null;
             }
         }
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.loadAdditional(tag, registries);
-        ListTag list = tag.getList("Items", 10);
-        for (int i = 0; i < list.size(); i++) {
-            CompoundTag itemTag = list.getCompound(i);
-            byte b = itemTag.getByte("Slot");
-            if (b >= 0 && b < slots.size()) {
-                slots.set(b, ItemStack.of(itemTag));
-            }
-        }
-        if (tag.contains("CustomName", 8)) {
-            try {
-                customName = Component.Serializer.fromJson(com.google.gson.JsonParser.parseString(tag.getString("CustomName")));
-            } catch (Exception e) {
-                customName = null;
-            }
-        }
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
         ListTag list = new ListTag();
         for (int i = 0; i < slots.size(); i++) {
             ItemStack stack = slots.get(i);
             if (!stack.isEmpty()) {
                 CompoundTag itemTag = new CompoundTag();
                 itemTag.putByte("Slot", (byte) i);
-                stack.save(itemTag);
+                PlatformHooks.saveItemStack(stack, itemTag, registries);
                 list.add(itemTag);
             }
         }
         tag.put("Items", list);
         if (customName != null) {
-            tag.putString("CustomName", net.minecraft.network.chat.Component.Serializer.toJson(customName));
+            String json = PlatformHooks.componentToJson(customName, registries);
+            if (json != null) tag.putString("CustomName", json);
         }
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.saveAdditional(tag, registries);
-        ListTag list = new ListTag();
-        for (int i = 0; i < slots.size(); i++) {
-            ItemStack stack = slots.get(i);
-            if (!stack.isEmpty()) {
-                CompoundTag itemTag = new CompoundTag();
-                itemTag.putByte("Slot", (byte) i);
-                stack.save(itemTag);
-                list.add(itemTag);
-            }
-        }
-        tag.put("Items", list);
-        if (customName != null) {
-            tag.putString("CustomName", net.minecraft.network.chat.Component.Serializer.toJson(customName));
-        }
-    
-    }
-    *///?}
 
     @Override
     public boolean isEmpty() {

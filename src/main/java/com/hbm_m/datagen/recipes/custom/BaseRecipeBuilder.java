@@ -61,6 +61,7 @@ public abstract class BaseRecipeBuilder<T extends BaseRecipeBuilder<T>> implemen
      * Универсальный метод сохранения рецепта по строковому пути.
      * No-op Stonecutter: датаген — только 1.20.1-forge, поэтому чистый ванильный код.
      */
+    @SuppressWarnings("removal") // ResourceLocation(String,String) deprecated в Forge 1.20.1 backport
     public void save(@NotNull Consumer<FinishedRecipe> consumer, @NotNull String path) {
         save(consumer, new ResourceLocation(RefStrings.MODID, path));
     }
@@ -78,6 +79,7 @@ public abstract class BaseRecipeBuilder<T extends BaseRecipeBuilder<T>> implemen
      *     .save(writer, BaseRecipeBuilder.resLoc("smelting/" + name));
      * }</pre>
      */
+    @SuppressWarnings("removal") // ResourceLocation(String,String) deprecated в Forge 1.20.1 backport
     public static ResourceLocation resLoc(@NotNull String path) {
         return new ResourceLocation(RefStrings.MODID, path);
     }

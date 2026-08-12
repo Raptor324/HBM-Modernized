@@ -31,18 +31,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -57,11 +45,13 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 
-//? if forge || neoforge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineAssemblerBlockEntity, MachineAssemblerBakedModel> {
 
     private MachineAssemblerVboRenderer gpu;
@@ -310,10 +300,9 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         // See MachineAdvancedAssemblerRenderer.renderWithVBO and IrisRenderBatch
         // for the full rationale.
         boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
-        //? if forge {
+        //? if forge || neoforge {
         boolean useIrisBatch = ShaderCompatibilityDetector.isExternalShaderActive() && (!useBatching || shadowPass);
-        //?}
-        //? if fabric {
+        //?} elif fabric {
         /*boolean useIrisBatch = ShaderCompatibilityDetector.isExternalShaderActive();
         *///?}
         if (useIrisBatch) {

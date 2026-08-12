@@ -6,6 +6,8 @@ import com.google.common.collect.Multimap;
 import com.hbm_m.armormod.util.ArmorModificationHelper;
 
 import net.minecraft.network.chat.Component;
+import com.hbm_m.platform.PlatformHooks;
+
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.ArmorItem;
@@ -37,7 +39,11 @@ public abstract class ItemArmorMod extends Item implements ITooltipProvider {
      * @return Multimap с атрибутами.
      */
     @Nullable
-    public Multimap<Attribute, AttributeModifier> getModifiers(ItemStack armor) {
+    public Multimap<
+            //? if < 1.21.1 {
+            Attribute//?} else {
+            /*net.minecraft.core.Holder<Attribute>*///?}
+            , AttributeModifier> getModifiers(ItemStack armor) {
         return null;
     }
 
@@ -71,10 +77,10 @@ public abstract class ItemArmorMod extends Item implements ITooltipProvider {
             // Получаем UUID, соответствующий слоту брони (шлем, ботинки и т.д.)
             UUID modifierUUID = ArmorModificationHelper.MODIFIER_UUIDS.get(armorItem.getType().getSlot().getIndex());
             if (modifierUUID != null) {
-                return new AttributeModifier(modifierUUID, name, value, operation);
+                return PlatformHooks.attributeModifier(modifierUUID, name, value, operation);
             }
         }
         // Возвращаем временный модификатор, если что-то пошло не так
-        return new AttributeModifier(name, value, operation);
+        return PlatformHooks.attributeModifier(name, value, operation);
     }
 }

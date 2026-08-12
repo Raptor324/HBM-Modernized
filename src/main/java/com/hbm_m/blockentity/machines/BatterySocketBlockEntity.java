@@ -182,6 +182,10 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
         //? if fabric {
         /*return Optional.empty();
         *///?}
+        //? if neoforge {
+        /*// NeoForge: HBM item-capability через ItemEnergyAccess (использует ModCapabilities.HBM_ITEM_ENERGY_PROVIDER).
+        return com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack);
+        *///?}
     }
 
     private Optional<IEnergyReceiver> stackReceiver() {
@@ -192,6 +196,10 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
         //?}
         //? if fabric {
         /*return Optional.empty();
+        *///?}
+        //? if neoforge {
+        /*// NeoForge: HBM item-capability через ItemEnergyAccess (использует ModCapabilities.HBM_ITEM_ENERGY_RECEIVER).
+        return com.hbm_m.api.energy.ItemEnergyAccess.getHbmReceiver(stack);
         *///?}
     }
 
@@ -477,7 +485,15 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
 
     @Override
     public AABB getRenderBoundingBox() {
+        //? if < 1.21.1 {
         return new AABB(worldPosition.offset(-1, 0, -1), worldPosition.offset(3, 3, 3));
+        //?} else {
+        /*// 1.21.1: AABB(BlockPos, BlockPos) удалён — используем Vec3.atLowerCornerOf для сохранения семантики.
+        return new AABB(
+                net.minecraft.world.phys.Vec3.atLowerCornerOf(worldPosition.offset(-1, 0, -1)),
+                net.minecraft.world.phys.Vec3.atLowerCornerOf(worldPosition.offset(3, 3, 3))
+        );
+        *///?}
     }
 
     @Override

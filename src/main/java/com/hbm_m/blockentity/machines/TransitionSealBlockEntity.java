@@ -98,9 +98,14 @@ public class TransitionSealBlockEntity extends BlockEntity {
         return level.hasNeighborSignal(pos);
     }
 
+    //? if forge {
     @Override
+    //?}
     public AABB getRenderBoundingBox() {
-        return new AABB(worldPosition, worldPosition.offset(0, 24, 0)).inflate(13);
+        // AABB(BlockPos, BlockPos) не существует — собираем через double-конструктор (версионно-инвариантно).
+        BlockPos top = worldPosition.offset(0, 24, 0);
+        return new AABB(worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(),
+                top.getX(), top.getY(), top.getZ()).inflate(13);
     }
 
     // Animation state

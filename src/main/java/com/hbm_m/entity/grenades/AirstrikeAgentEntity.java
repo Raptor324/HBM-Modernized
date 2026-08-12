@@ -319,11 +319,19 @@ public class AirstrikeAgentEntity extends Entity {
         tag.putInt("SprayTimer", sprayTimer);
     }
 
+    //? if < 1.21.1 {
     @NotNull
     @Override
     public Packet<ClientGamePacketListener> getAddEntityPacket() {
         return new net.minecraft.network.protocol.game.ClientboundAddEntityPacket(this);
     }
+    //?} else {
+    /*@NotNull
+    @Override
+    public Packet<ClientGamePacketListener> getAddEntityPacket(net.minecraft.server.level.ServerEntity serverEntity) {
+        return new net.minecraft.network.protocol.game.ClientboundAddEntityPacket(this, serverEntity);
+    }
+    *///?}
 
     @Override public boolean isPickable() { return false; }
     @Override public boolean isPushable() { return false; }

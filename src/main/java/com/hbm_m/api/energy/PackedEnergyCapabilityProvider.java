@@ -83,3 +83,25 @@ public final class PackedEnergyCapabilityProvider {
     }
 }
 *///?}
+
+//? if neoforge {
+/*package com.hbm_m.api.energy;
+
+import org.jetbrains.annotations.Nullable;
+
+import com.hbm_m.interfaces.IEnergyConnector;
+
+/^*
+ * NeoForge stub: на 1.21.1 NeoForge полностью убрал getCapability/invalidateCaps у BlockEntity,
+ * FE-капабилити регистрируются через RegisterCapabilitiesEvent + BlockCapability (в платформенном
+ * слое). Здесь — заглушка, чтобы общий код (BaseMachineBlockEntity, MachineBatteryBlockEntity),
+ * ссылающийся на класс через import, компилировался. Реальная FE-интеграция для NeoForge — TODO.
+ ^/
+public final class PackedEnergyCapabilityProvider {
+    public PackedEnergyCapabilityProvider(IEnergyConnector handler) {
+    }
+
+    public void invalidate() {
+    }
+}
+*///?}

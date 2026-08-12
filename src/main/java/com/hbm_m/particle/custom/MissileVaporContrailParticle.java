@@ -25,6 +25,13 @@ import java.util.Random;
  * Port of 1.7.10 {@code ParticleContrail}: lingering gray condensation trail behind rocket exhaust.
  * Stays in the air much longer than {@link MissileContrailParticle}, spreads and fades slowly.
  */
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class MissileVaporContrailParticle extends TextureSheetParticle {
 
     public static float currentSpawnScale = 1.0F;
@@ -124,10 +131,12 @@ public class MissileVaporContrailParticle extends TextureSheetParticle {
         return LongRangeParticleRenderType.INSTANCE;
     }
 
+    //? if < 1.21.1 {
     @Override
     public boolean shouldCull() {
         return false;
     }
+    //?}
 
     @Override
     public int getLightColor(float partialTick) {
@@ -193,14 +202,11 @@ public class MissileVaporContrailParticle extends TextureSheetParticle {
             int ig = this.layerG[layer];
             int ib = this.layerB[layer];
 
-            buffer.vertex(px + cx0, py + cy0, pz + cz0)
-                    .uv(u1, v1).color(ir, ig, ib, iAlpha).uv2(lightU, lightV).endVertex();
-            buffer.vertex(px + cx1, py + cy1, pz + cz1)
-                    .uv(u1, v0).color(ir, ig, ib, iAlpha).uv2(lightU, lightV).endVertex();
-            buffer.vertex(px + cx2, py + cy2, pz + cz2)
-                    .uv(u0, v0).color(ir, ig, ib, iAlpha).uv2(lightU, lightV).endVertex();
-            buffer.vertex(px + cx3, py + cy3, pz + cz3)
-                    .uv(u0, v1).color(ir, ig, ib, iAlpha).uv2(lightU, lightV).endVertex();
+            int packedLight = (lightV << 16) | lightU;
+            com.hbm_m.platform.RenderHooks.particleVertex(buffer, px + cx0, py + cy0, pz + cz0, u1, v1, ir, ig, ib, iAlpha, packedLight);
+            com.hbm_m.platform.RenderHooks.particleVertex(buffer, px + cx1, py + cy1, pz + cz1, u1, v0, ir, ig, ib, iAlpha, packedLight);
+            com.hbm_m.platform.RenderHooks.particleVertex(buffer, px + cx2, py + cy2, pz + cz2, u0, v0, ir, ig, ib, iAlpha, packedLight);
+            com.hbm_m.platform.RenderHooks.particleVertex(buffer, px + cx3, py + cy3, pz + cz3, u0, v1, ir, ig, ib, iAlpha, packedLight);
         }
     }
 

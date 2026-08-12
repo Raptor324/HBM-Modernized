@@ -60,7 +60,7 @@ public class GrenadeIfProjectileEntity extends ThrowableItemProjectile {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
-        super.defineSynchedData();
+        super.defineSynchedData(builder);
         builder.define(TIMER_ACTIVATED, false);
         builder.define(DETONATION_TIME, 0);
     

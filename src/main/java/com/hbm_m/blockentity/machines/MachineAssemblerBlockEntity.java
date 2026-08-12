@@ -24,6 +24,7 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.platform.recipe.RecipeInputWrapper;
 import com.hbm_m.sound.ClientSoundBootstrap;
 
 import net.minecraft.core.BlockPos;
@@ -380,8 +381,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
     // ==================== ENERGY ====================
 
-    // Р’ РјРµС‚РѕРґРµ chargeFromEnergySlot():
-
     private void chargeFromEnergySlot() {
         ItemStack energySourceStack = inventory.getStackInSlot(ENERGY_SLOT);
         if (energySourceStack.isEmpty()) return;
@@ -484,7 +483,8 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         for (int i = 0; i < container.getContainerSize(); i++) {
             container.setItem(i, inventory.getStackInSlot(INPUT_SLOT_START + i));
         }
-        return recipe.matches(container, level);
+        // 1.21.1: SimpleContainer больше не RecipeInput — используем RecipeInputWrapper + matchesRecipe.
+        return recipe.matchesRecipe(new RecipeInputWrapper(container), level);
     }
 
     private boolean canInsertResult(ItemStack result) {
@@ -860,24 +860,48 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     }
     //?}
 
+    //? if neoforge {
+    /*// NeoForge 1.21.1: повторяет forge-ветку getClientRecipeIcon()/setCrafting() с @OnlyIn(Dist.CLIENT).
+    private ItemStack clientRecipeIconTemplate = ItemStack.EMPTY;
+
+    private ItemStack clientRecipeIconCache = ItemStack.EMPTY;
+
+    /^* Cached recipe output icon for BER; refreshed when assembly template slot changes. ^/
+    @OnlyIn(Dist.CLIENT)
+    public ItemStack getClientRecipeIcon() {
+        ItemStack template = getInventory().getStackInSlot(TEMPLATE_SLOT);
+        if (ItemStack.matches(template, clientRecipeIconTemplate)) {
+            return clientRecipeIconCache;
+        }
+        clientRecipeIconTemplate = template.copy();
+        if (template.isEmpty() || !(template.getItem() instanceof ItemAssemblyTemplate)) {
+            clientRecipeIconCache = ItemStack.EMPTY;
+            return ItemStack.EMPTY;
+        }
+        clientRecipeIconCache = ItemAssemblyTemplate.getRecipeOutput(template);
+        return clientRecipeIconCache;
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public void setCrafting(boolean crafting) {
+        this.isCrafting = crafting;
+    }
+    *///?}
+
     public boolean isCrafting() {
         return isCrafting;
     }
 
-    // РљСѓРґР° Р±РѕР»СЊС€РёР№ AABB С‡РµРј 1Г—1Г—1 cell РєРѕРЅС‚СЂРѕР»Р»РµСЂР°: Р°СЃСЃРµРјР±Р»РµСЂ - РјСѓР»СЊС‚РёР±Р»РѕРє
-    // 3Г—2Г—3 (СЃРј. MachineAssemblerBlock.defineStructureNew) СЃ РїРѕРґРІРёР¶РЅС‹РјРё
-    // С‡Р°СЃС‚СЏРјРё (slider, arm, 4 cogs), РєРѕС‚РѕСЂС‹Рµ С‚РѕСЂС‡Р°С‚ Р·Р° РїСЂРµРґРµР»С‹ СЃС‚Р°С‚РёС‡РµСЃРєРѕР№
-    // footprint. Р”РµР»РµРіРёСЂСѓРµРј СЃС‚СЂСѓРєС‚СѓСЂРЅРѕРјСѓ helper'Сѓ - РѕРЅ РєСЌС€РёСЂСѓРµС‚ AABB РїРѕ
-    // facing РѕРґРёРЅ СЂР°Р· РЅР° Р’Р•РЎР¬ helper Рё РїРµСЂРµРёСЃРїРѕР»СЊР·СѓРµС‚ РґР»СЏ РІСЃРµС… BE СЌС‚РѕРіРѕ С‚РёРїР°.
-    // Inflate 1.35: 1.0 РґР°РІР°Р»Рѕ РїРѕРіСЂР°РЅРёС‡РЅС‹Рµ Р»РѕР¶РЅС‹Рµ РѕРєРєР»СЋР¶РµРЅС‹ + РјРёРіР°РЅРёРµ РїСЂРё
-    // Iris shadow/main РІ РѕРґРЅРѕРј РєР°РґСЂРµ; advanced assembler РёСЃРїРѕР»СЊР·СѓРµС‚ 1.5.
     @Override
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         BlockState state = getBlockState();
         if (!(state.getBlock() instanceof MachineAssemblerBlock block)) {
+            // AABB(Vec3, Vec3) не принимает BlockPos — собираем через double-конструктор (версионно-инвариантно).
+            net.minecraft.core.BlockPos min = worldPosition.offset(-2, -1, -2);
+            net.minecraft.core.BlockPos max = worldPosition.offset(3, 3, 3);
             return new net.minecraft.world.phys.AABB(
-                    worldPosition.offset(-2, -1, -2),
-                    worldPosition.offset(3, 3, 3));
+                    min.getX(), min.getY(), min.getZ(),
+                    max.getX(), max.getY(), max.getZ());
         }
         Direction facing = state.getValue(MachineAssemblerBlock.FACING);
         return block.getStructureHelper().getRenderBoundingBox(worldPosition, facing, 1.35);
@@ -891,7 +915,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     public void setRemoved() {
-        super.setRemoved(); // РЎРЅР°С‡Р°Р»Р° РІС‹Р·С‹РІР°РµРј super
+        super.setRemoved();
         //? if forge {
         if (this.level != null && this.level.isClientSide) {
             ClientSoundBootstrap.updateSound(this, false, null);
@@ -903,7 +927,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         }
         *///?}
 
-        // РЈРґР°Р»РµРЅРёРµ СѓР·Р»Р° СЃРµС‚Рё (Сѓ С‚РµР±СЏ СЌС‚Рѕ СѓР¶Рµ РµСЃС‚СЊ РІ РєРѕРЅС†Рµ С„Р°Р№Р»Р°, РѕСЃС‚Р°РІСЊ РєР°Рє Р±С‹Р»Рѕ)
         if (this.level != null && !this.level.isClientSide) {
             EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
         }

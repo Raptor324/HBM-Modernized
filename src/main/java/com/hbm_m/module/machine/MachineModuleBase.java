@@ -260,7 +260,6 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
         readExtraFromNbt(nbt);
     }
 
-    /** РЎРѕРІРјРµСЃС‚РёРјРѕСЃС‚СЊ: СЃС‚Р°СЂРѕРµ РёРјСЏ NBT-СЃРµСЂРёР°Р»РёР·Р°С†РёРё (С…РёРјРјР°С€РёРЅР° Рё РґСЂ.). */
     public final void writeNBT(CompoundTag tag) { writeToNBT(tag); }
     public final void readNBT(CompoundTag tag) { readFromNBT(tag); }
 
@@ -276,7 +275,6 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
         readExtraFromBuf(buf);
     }
 
-    /** Р”РѕРї. СЃРѕСЃС‚РѕСЏРЅРёРµ РјРѕРґСѓР»СЏ, РєРѕС‚РѕСЂРѕРµ РЅРµ РѕС‚РЅРѕСЃРёС‚СЃСЏ Рє Р±Р°Р·РѕРІРѕРјСѓ РїСЂРѕРіСЂРµСЃСЃСѓ (РЅР°РїСЂРёРјРµСЂ РІС‹Р±СЂР°РЅРЅС‹Р№ СЂРµС†РµРїС‚). */
     protected void writeExtraToNbt(CompoundTag nbt) {}
     protected void readExtraFromNbt(CompoundTag nbt) {}
     protected void writeExtraToBuf(FriendlyByteBuf buf) {}
@@ -332,7 +330,6 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
             }
         }
 
-        // РџСЂРѕРІРµСЂРєР° blueprint pool
         if (currentRecipe != null && !isRecipeAllowedByBlueprint(currentRecipe, blueprint)) {
             this.didProcess = false;
             this.progress = 0.0;
@@ -341,14 +338,11 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
             return;
         }
 
-        // РћР±СЂР°Р±РѕС‚РєР° РєСЂР°С„С‚Р°
         if (extraCondition && currentRecipe != null && canProcess(currentRecipe)) {
-            // РР—РњР•РќР•РќРР•: РСЃРїРѕР»СЊР·СѓРµРј long РґР»СЏ СЌРЅРµСЂРіРёРё
             long energyPerTick = (long) (getRecipeEnergyCost(currentRecipe) * powerMultiplier);
 
             long storedEnergy = energyStorage.getEnergyStored();
 
-            // РђСЃСЃРµРјР±Р»РµСЂ-Р»РѕРіРёРєР° РѕР¶РёРґР°РЅРёСЏ СЌРЅРµСЂРіРёРё (РѕР±С‰Р°СЏ РґР»СЏ РІСЃРµС… РјР°С€РёРЅ)
             if (requiresFullEnergyBufferToStart()
                     && !hasEnoughEnergyToStartCraft(progress, storedEnergy, energyPerTick, maxProgress)) {
                 return;
@@ -357,7 +351,6 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
                 return;
             }
 
-            // РџРѕС‚СЂРµР±Р»СЏРµРј СЌРЅРµСЂРіРёСЋ РџР•Р Р•Р” СѓРІРµР»РёС‡РµРЅРёРµРј РїСЂРѕРіСЂРµСЃСЃР° (РєР°Рє РІ РѕСЂРёРіРёРЅР°Р»Рµ)
             energyStorage.setEnergyStored(storedEnergy - energyPerTick);
 
             double step = Math.max(0.0, speedMultiplier);

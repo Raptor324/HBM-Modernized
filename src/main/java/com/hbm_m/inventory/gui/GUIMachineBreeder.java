@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+
 import com.hbm_m.client.GuiCompat;
 
 import java.util.ArrayList;
@@ -15,9 +16,22 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.InventoryMenu;
 import com.hbm_m.platform.ModFluidTank;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.fluids.FluidStack;
 
+//? if forge {
+import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+*///?}
+
+import dev.architectury.fluid.FluidStack;
+
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class GUIMachineBreeder extends GuiInfoScreen<MachineBreederMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
@@ -64,10 +78,12 @@ public class GUIMachineBreeder extends GuiInfoScreen<MachineBreederMenu> {
         if (pixelHeight == 0 && fluid.getAmount() > 0) pixelHeight = 1;
         if (pixelHeight > TANK_HEIGHT) pixelHeight = TANK_HEIGHT;
 
+        //? if forge || neoforge {
         IClientFluidTypeExtensions fluidProps = IClientFluidTypeExtensions.of(fluid.getFluid());
-        ResourceLocation fluidTextureId = fluidProps.getStillTexture(fluid);
+        ResourceLocation fluidTextureId = fluidProps.getStillTexture();
         var fluidSprite = this.minecraft.getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(fluidTextureId);
-        int fluidColor = fluidProps.getTintColor(fluid);
+        int fluidColor = fluidProps.getTintColor();
+        //?}
 
         float r = (fluidColor >> 16 & 255) / 255.0F;
         float g = (fluidColor >> 8 & 255) / 255.0F;
@@ -124,7 +140,7 @@ public class GUIMachineBreeder extends GuiInfoScreen<MachineBreederMenu> {
         if (fluid.isEmpty()) {
             tooltip.add(Component.translatable("gui.hbm_m.fluid.empty"));
         } else {
-            tooltip.add(fluid.getDisplayName());
+            tooltip.add(fluid.getName());
             tooltip.add(Component.literal(fluid.getAmount() + " / " + TANK_CAPACITY + " mB"));
         }
         guiGraphics.renderTooltip(this.font, tooltip, Optional.empty(), mouseX, mouseY);

@@ -5,7 +5,11 @@ import java.util.List;
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.client.gui.FluidGuiRendering;
 
-import dev.architectury.fluid.FluidStack;
+//? if forge {
+import net.minecraftforge.fluids.FluidStack;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.fluids.FluidStack;
+*///?}
 import mezz.jei.api.ingredients.IIngredientRenderer;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
@@ -23,7 +27,15 @@ import net.minecraft.world.level.material.Fluids;
  * fluids through {@link FluidGuiRendering} (backed by {@link HbmFluidRegistry} tint lookups)
  * instead of the vanilla extension mechanism; this renderer reuses that same path for JEI.
  */
-public class HbmFluidJeiRenderer implements IIngredientRenderer<net.minecraftforge.fluids.FluidStack> {
+
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
+public class HbmFluidJeiRenderer implements IIngredientRenderer<FluidStack> {
 
     private final int width;
     private final int height;
@@ -34,13 +46,13 @@ public class HbmFluidJeiRenderer implements IIngredientRenderer<net.minecraftfor
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, net.minecraftforge.fluids.FluidStack ingredient) {
+    public void render(GuiGraphics guiGraphics, FluidStack ingredient) {
         if (ingredient == null || ingredient.isEmpty()) return;
 
         Fluid fluid = ingredient.getFluid();
         if (fluid == null || fluid == Fluids.EMPTY) return;
 
-        FluidStack fStack = FluidStack.create(fluid, ingredient.getAmount());
+        dev.architectury.fluid.FluidStack fStack = dev.architectury.fluid.FluidStack.create(fluid, ingredient.getAmount());
         ResourceLocation fluidPng = FluidGuiRendering.guiTexturePngForFluid(fluid, fStack);
         if (fluidPng == null) return;
 
@@ -59,10 +71,10 @@ public class HbmFluidJeiRenderer implements IIngredientRenderer<net.minecraftfor
 
     @Override
     @SuppressWarnings("removal")
-    public List<Component> getTooltip(net.minecraftforge.fluids.FluidStack ingredient, TooltipFlag flag) {
+    public List<Component> getTooltip(FluidStack ingredient, TooltipFlag flag) {
         if (ingredient == null || ingredient.isEmpty()) return List.of();
         Fluid fluid = ingredient.getFluid();
-        Component name = FluidStack.create(fluid, ingredient.getAmount()).getName();
+        Component name = dev.architectury.fluid.FluidStack.create(fluid, ingredient.getAmount()).getName();
         return List.of(name, Component.literal(ingredient.getAmount() + " mB"));
     }
 }

@@ -155,13 +155,15 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
             //?}
     public AABB getRenderBoundingBox() {
         BlockState state = getBlockState();
+        BlockPos p1 = worldPosition.offset(-1, 0, -1);
+        BlockPos p2 = worldPosition.offset(2, 3, 2);
         if (!(state.getBlock() instanceof MachineChemicalPlantBlock block)) {
-            return new AABB(worldPosition.offset(-1, 0, -1), worldPosition.offset(2, 3, 2));
+            return new AABB(p1.getX(), p1.getY(), p1.getZ(), p2.getX(), p2.getY(), p2.getZ());
         }
         var structureHelper = block.getStructureHelper();
         var structureMap = structureHelper.getStructureMap();
         if (structureMap == null || structureMap.isEmpty()) {
-            return new AABB(worldPosition.offset(-1, 0, -1), worldPosition.offset(2, 3, 2));
+            return new AABB(p1.getX(), p1.getY(), p1.getZ(), p2.getX(), p2.getY(), p2.getZ());
         }
         int minX = 0, minY = 0, minZ = 0;
         int maxX = 0, maxY = 0, maxZ = 0;
@@ -482,33 +484,11 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
         if (slot >= SLOT_SOLID_OUTPUT_START && slot <= SLOT_SOLID_OUTPUT_END) {
             return false;
         }
-        if (slot >= SLOT_FLUID_INPUT_START && slot <= SLOT_FLUID_INPUT_END) {
-            //? if forge {
-            return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-            //?} else {
-            /*return FluidStorage.ITEM.find(stack, null) != null;
-             *///?}
-        }
-        if (slot >= SLOT_FLUID_OUTPUT_START && slot <= SLOT_FLUID_OUTPUT_END) {
-            //? if forge {
-            return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-            //?} else {
-            /*return FluidStorage.ITEM.find(stack, null) != null;
-             *///?}
-        }
-        if (slot >= SLOT_FLUID_INPUT_EMPTY_START && slot <= SLOT_FLUID_INPUT_EMPTY_END) {
-            //? if forge {
-            return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-            //?} else {
-            /*return FluidStorage.ITEM.find(stack, null) != null;
-             *///?}
-        }
-        if (slot >= SLOT_FLUID_OUTPUT_EMPTY_START && slot <= SLOT_FLUID_OUTPUT_EMPTY_END) {
-            //? if forge {
-            return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-            //?} else {
-            /*return FluidStorage.ITEM.find(stack, null) != null;
-             *///?}
+        if ((slot >= SLOT_FLUID_INPUT_START && slot <= SLOT_FLUID_INPUT_END) ||
+            (slot >= SLOT_FLUID_OUTPUT_START && slot <= SLOT_FLUID_OUTPUT_END) ||
+            (slot >= SLOT_FLUID_INPUT_EMPTY_START && slot <= SLOT_FLUID_INPUT_EMPTY_END) ||
+            (slot >= SLOT_FLUID_OUTPUT_EMPTY_START && slot <= SLOT_FLUID_OUTPUT_EMPTY_END)) {
+            return com.hbm_m.platform.PlatformHooks.isFluidContainer(stack);
         }
         return true;
     }

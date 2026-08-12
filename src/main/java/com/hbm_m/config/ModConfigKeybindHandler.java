@@ -1,6 +1,4 @@
 package com.hbm_m.config;
-// Обработчик привязки клавиш для открытия экрана конфигурации мода.
-// Использует AutoConfig для получения экрана настроек и регистрирует сочетание клавиш
 
 import org.lwjgl.glfw.GLFW;
 
@@ -17,29 +15,39 @@ import com.hbm_m.client.gui.ConfigScreen;
 import dev.architectury.registry.client.keymappings.KeyMappingRegistry;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-//? if forge || neoforge {
-import net.minecraftforge.client.settings.KeyConflictContext;
-import net.minecraftforge.client.settings.KeyModifier;
-//?}
 
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class ModConfigKeybindHandler {
     public static final String CATEGORY = "key.categories.hbm_m";
     private static boolean INITIALIZED = false;
 
     public static final KeyMapping OPEN_CONFIG =
-    //? if forge || neoforge {
+    //? if forge {
             new KeyMapping(
                     "key.hbm_m.open_config",
-                    KeyConflictContext.UNIVERSAL,
-                    KeyModifier.ALT,
+                    net.minecraftforge.client.settings.KeyConflictContext.UNIVERSAL,
+                    net.minecraftforge.client.settings.KeyModifier.ALT,
                     InputConstants.Type.KEYSYM,
                     GLFW.GLFW_KEY_0,
                     CATEGORY
             );
-    //?} else {
+    //?} elif neoforge {
+            /*new KeyMapping(
+                    "key.hbm_m.open_config",
+                    net.neoforged.neoforge.client.settings.KeyConflictContext.UNIVERSAL,
+                    net.neoforged.neoforge.client.settings.KeyModifier.ALT,
+                    InputConstants.Type.KEYSYM,
+                    GLFW.GLFW_KEY_0,
+                    CATEGORY
+            );
+    *///?} else {
     /*        new KeyMapping(
                     "key.hbm_m.open_config",
                     InputConstants.Type.KEYSYM,
@@ -50,21 +58,21 @@ public class ModConfigKeybindHandler {
     public static final KeyMapping POWER_ARMOR_DASH = new KeyMapping(
             "key.hbm_m.power_armor_dash",
             InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_V, // V key for dash
+            GLFW.GLFW_KEY_V,
             CATEGORY
     );
 
     public static final KeyMapping POWER_ARMOR_VATS = new KeyMapping(
             "key.hbm_m.power_armor_vats",
             InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_C, // C key for VATS
+            GLFW.GLFW_KEY_C,
             CATEGORY
     );
 
     public static final KeyMapping POWER_ARMOR_THERMAL = new KeyMapping(
             "key.hbm_m.power_armor_thermal",
             InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_X, // X key for thermal vision
+            GLFW.GLFW_KEY_X,
             CATEGORY
     );
 
@@ -96,7 +104,7 @@ public class ModConfigKeybindHandler {
         // Обработка открытия конфига
         if (OPEN_CONFIG.consumeClick()
         //? if fabric {
-                /*&& Screen.hasAltDown()
+                /*&& net.minecraft.client.gui.screens.Screen.hasAltDown()
         *///?}
         ) {
             if (mc.screen == null) {
@@ -175,6 +183,3 @@ public class ModConfigKeybindHandler {
         }
     }
 }
-        
-    
-

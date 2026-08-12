@@ -9,10 +9,6 @@ import net.minecraft.world.item.crafting.Ingredient;
 
 import java.util.function.Supplier;
 
-//? if forge {
-import net.minecraft.world.item.ArmorMaterial;
-//?}
-
 /**
  * Перечень материалов брони мода.
  *
@@ -26,12 +22,16 @@ import net.minecraft.world.item.ArmorMaterial;
  * через публичные геттеры — {@code ModArmorMaterialsAccess} использует их при сборке
  * материала на NeoForge.
  */
-//? if forge {
+
+//? if < 1.21.1 {
+import net.minecraft.world.item.ArmorMaterial;
+//?}
+
+//? if < 1.21.1 {
 public enum ModArmorMaterials implements ArmorMaterial {
-//?} elif neoforge {
+//?} else {
 /*public enum ModArmorMaterials {
 *///?}
-
 
     ALLOY("alloy", 26, new int[]{ 5, 7, 5, 4 }, 25,
             SoundEvents.ARMOR_EQUIP_IRON, 1.25f, 0.05f, () -> Ingredient.of(ModItems.PLATE_STEEL.get())),
@@ -66,24 +66,21 @@ public enum ModArmorMaterials implements ArmorMaterial {
     TITANIUM("titanium", 26, new int[]{ 5, 7, 5, 4 }, 15,
             SoundEvents.ARMOR_EQUIP_IRON, 1f, 0.05f, () -> Ingredient.of(ModItems.PLATE_IRON.get())),
 
-    // Used by Bismuth power armor (ported from 1.7.10 HBM_BISMUTH).
-    // Note: vanilla defense is ignored for power armor items (see ModPowerArmorItem#getDefense()).
     BISMUTH("bismuth", 100, new int[]{ 3, 8, 6, 3 }, 100,
             SoundEvents.ARMOR_EQUIP_IRON, 2f, 0.2f, () -> Ingredient.of(ModItems.PLATE_BISMUTH.get()));
-
 
     private final String name;
     private final int durabilityMultiplier;
     private final int[] protectionAmounts;
     private final int enchantmentValue;
-    private final SoundEvent equipSound;
+    private final Object equipSound;
     private final float toughness;
     private final float knockbackResistance;
     private final Supplier<Ingredient> repairIngredient;
 
     private static final int[] BASE_DURABILITY = { 11, 16, 16, 13 };
 
-    ModArmorMaterials(String name, int durabilityMultiplier, int[] protectionAmounts, int enchantmentValue, SoundEvent equipSound,
+    ModArmorMaterials(String name, int durabilityMultiplier, int[] protectionAmounts, int enchantmentValue, Object equipSound,
                       float toughness, float knockbackResistance, Supplier<Ingredient> repairIngredient) {
         this.name = name;
         this.durabilityMultiplier = durabilityMultiplier;
@@ -94,8 +91,6 @@ public enum ModArmorMaterials implements ArmorMaterial {
         this.knockbackResistance = knockbackResistance;
         this.repairIngredient = repairIngredient;
     }
-
-    // ---- Публичные геттеры для обеих версий (используются ModArmorMaterialsAccess на NeoForge) ----
 
     public String getName() {
         return MainRegistry.MOD_ID + ":" + this.name;
@@ -121,9 +116,13 @@ public enum ModArmorMaterials implements ArmorMaterial {
         return this.repairIngredient;
     }
 
-    // ---- Forge-only реализация ArmorMaterial (1.20.1) ----
+    //? if >= 1.21.1 {
+    /*public net.minecraft.core.Holder<SoundEvent> getEquipSound() {
+        return (net.minecraft.core.Holder<SoundEvent>) this.equipSound;
+    }
+    *///?}
 
-    //? if forge {
+    //? if < 1.21.1 {
     @Override
     public int getDurabilityForType(ArmorItem.Type pType) {
         return BASE_DURABILITY[pType.ordinal()] * this.durabilityMultiplier;
@@ -136,7 +135,7 @@ public enum ModArmorMaterials implements ArmorMaterial {
 
     @Override
     public SoundEvent getEquipSound() {
-        return this.equipSound;
+        return (SoundEvent) this.equipSound;
     }
 
     @Override

@@ -42,7 +42,9 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
     private final ModItemStackHandler itemHandler = new ModItemStackHandler(INPUT_SLOTS) {
         @Override protected void onContentsChanged(int slot) { setChanged(); }
     };
+    //? if forge {
     private final LazyOptional<IItemHandler> itemHandlerOpt = LazyOptional.of(() -> itemHandler);
+    //?}
 
     public  int   heat        = 0;
     private int   maxHeat     = MAX_HEAT;
@@ -77,7 +79,9 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
         super(ModBlockEntities.CRUCIBLE_BE.get(), pos, state);
     }
 
+    //? if forge {
     public IItemHandler          getItemHandler()        { return itemHandler; }
+    //?}
     public ModItemStackHandler   getModItemStackHandler() { return itemHandler; }
     public ContainerData         getData()               { return data; }
     public float                 getFillLevel()          { return fillLevel; }
@@ -280,7 +284,9 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
     }
 
     /** The crucible model spans 3×3 blocks — keep the molten surface visible (Forge render culling). */
+    //? if forge {
     @Override
+    //?}
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         return new net.minecraft.world.phys.AABB(
                 worldPosition.getX() - 1, worldPosition.getY(),     worldPosition.getZ() - 1,
@@ -303,11 +309,13 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
                 .map(p -> pullEnergy(p, be))
                 .orElse(0L);
         //?} elif neoforge {
-        /*IEnergyProvider p = te.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, Direction.UP);
+        /*// NeoForge: BlockEntity.getCapability удалён — запрос через level.getCapability(cap, pos, state, be, side).
+        IEnergyProvider p = level.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, src, level.getBlockState(src), te, Direction.UP);
         return p != null ? pullEnergy(p, be) : 0L;
         *///?}
     }
 
+    //? if forge {
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.ITEM_HANDLER) return itemHandlerOpt.cast();
@@ -315,6 +323,7 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
     }
 
     @Override public void invalidateCaps() { super.invalidateCaps(); itemHandlerOpt.invalidate(); }
+    //?}
 
     //? if < 1.21.1 {
     @Override

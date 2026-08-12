@@ -49,8 +49,13 @@ public class ClusterRocketEntity extends Projectile {
         this.xRotO = this.getXRot();
     }
 
+    //? if < 1.21.1 {
     @Override
     public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps, boolean teleport) {
+    //?} else {
+    /*@Override
+    public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps) {
+    *///?}
         this.setPos(x, y, z);
         this.setYRot(yRot);
         this.setXRot(xRot);

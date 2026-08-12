@@ -129,7 +129,7 @@ public class FireSparkParticle extends AbstractExplosionParticle {
             server.execute(() -> {
                 for (LivingEntity living : nearbyMobs) {
                     //  ПОДЖОГ НА 10 СЕКУНД (200 тиков)
-                    living.setSecondsOnFire(10);
+                    com.hbm_m.platform.PlatformHooks.setSecondsOnFire(living, 10);
                     System.out.println("[FireSpark] 🔥 Поджог: " + living.getName().getString());
                 }
             });

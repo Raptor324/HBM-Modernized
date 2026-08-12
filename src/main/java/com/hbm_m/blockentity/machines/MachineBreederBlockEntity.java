@@ -5,7 +5,6 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.inventory.menu.MachineBreederMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 
@@ -21,20 +20,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import com.hbm_m.platform.ModFluidTank;
+import com.hbm_m.platform.FluidHooks;
 //? if forge {
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 //?} elif neoforge {
-/*import net.neoforged.neoforge.common.capabilities.Capability;
-import net.neoforged.neoforge.common.capabilities.NeoForgeCapabilities;
-import net.neoforged.neoforge.common.util.LazyOptional;
-import net.neoforged.neoforge.fluids.FluidUtil;
-import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+/*import net.neoforged.neoforge.fluids.FluidUtil;
 *///?}
-
 
 public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
 
@@ -156,7 +147,7 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
         if (fillStack.isEmpty()) return;
         if (!inventory.getStackInSlot(SLOT_FLUID_OUTPUT).isEmpty()) return;
 
-        var result = FluidUtil.tryEmptyContainer(fillStack, tank, TANK_CAPACITY, null, false);
+        var result = FluidHooks.tryEmptyContainer(fillStack, tank.getBackend(), TANK_CAPACITY, false);
         if (result.isSuccess()) {
             inventory.setStackInSlot(SLOT_FLUID_INPUT, ItemStack.EMPTY);
             inventory.setStackInSlot(SLOT_FLUID_OUTPUT, result.getResult());
@@ -220,7 +211,11 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
             return false;
         }
         if (slot == SLOT_FLUID_INPUT) {
-            return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
+            //? if < 1.21.1 {
+            return stack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
+            //?} else {
+            /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;
+            *///?}
         }
         if (slot == SLOT_FLUID_ID) {
             return true;
@@ -240,7 +235,7 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
 
     //? if < 1.21.1 {
     @Override
-    protected void saveAdditional(CompoundTag tag) {
+    public void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.put("tank", tank.writeNBT(new CompoundTag()));
         tag.putInt("progress", progress);
@@ -256,7 +251,7 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
         tag.putInt("progress", progress);
         tag.putInt("duration", duration);
         tag.putBoolean("isOn", isOn);
-    
+
     }
     *///?}
 
@@ -282,17 +277,12 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
         progress = tag.getInt("progress");
         duration = tag.contains("duration") ? tag.getInt("duration") : DEFAULT_DURATION;
         isOn = tag.getBoolean("isOn");
-    
+
     }
     *///?}
 
     @Override
     protected void setupFluidCapability() {
-        //? if forge {
-        // ModFluidTank extends native FluidTank (IFluidHandler) — отдаём напрямую.
         setFluidHandler(tank);
-        //?} elif neoforge {
-        /*setFluidHandler(tank);
-        *///?}
     }
 }

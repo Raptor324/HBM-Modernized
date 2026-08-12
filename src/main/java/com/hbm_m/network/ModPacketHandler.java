@@ -27,6 +27,7 @@ import java.util.function.Function;
  *   sendToServer(packet)               — клиент → сервер
  */
 
+@SuppressWarnings("removal")
 public class ModPacketHandler {
 
     private static boolean REGISTERED = false;
@@ -317,8 +318,14 @@ public class ModPacketHandler {
             }
             return;
         }
+        //? if < 1.21.1 {
         FriendlyByteBuf buf = new FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
         packet.write(buf);
+        //?} else {
+        /*net.minecraft.network.RegistryFriendlyByteBuf buf = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), player.server.registryAccess());
+        packet.write(buf);
+        *///?}
+        
         if (NET_DEBUG_PACKETS) {
             com.hbm_m.main.MainRegistry.LOGGER.info(
                     "[NET-DBG] S2C -> {} id={} bytes={}",
@@ -361,13 +368,32 @@ public class ModPacketHandler {
         sendToPlayersNear(level, new Vec3(x, y, z), range, id, packet);
     }
 
+	//? if >= 1.21.1 {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    private static net.minecraft.core.RegistryAccess getClientRegistryAccess() {
+        if (net.minecraft.client.Minecraft.getInstance().level != null) {
+            return net.minecraft.client.Minecraft.getInstance().level.registryAccess();
+        }
+        if (net.minecraft.client.Minecraft.getInstance().getConnection() != null) {
+            return net.minecraft.client.Minecraft.getInstance().getConnection().registryAccess();
+        }
+        return net.minecraft.core.RegistryAccess.EMPTY;
+    }
+    *///?}
+
     /**
      * Отправить пакет на сервер (C2S).
      * Вызывается с клиентской стороны.
      */
     public static void sendToServer(ResourceLocation id, C2SPacket packet) {
+        //? if < 1.21.1 {
         FriendlyByteBuf buf = new FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
         packet.write(buf);
+        //?} else {
+        /*net.minecraft.network.RegistryFriendlyByteBuf buf = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), getClientRegistryAccess());
+        packet.write(buf);
+        *///?}
+        
         if (NET_DEBUG_PACKETS) {
             com.hbm_m.main.MainRegistry.LOGGER.info(
                     "[NET-DBG] C2S id={} bytes={}",

@@ -73,7 +73,7 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
     protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
         super.saveAdditional(tag, registries);
-        if (!rodSlot.isEmpty()) tag.put("rodSlot", safeItemSave(rodSlot));
+        if (!rodSlot.isEmpty()) tag.put("rodSlot", safeItemSave(rodSlot, registries));
         tag.putDouble("fluxBuffer", fluxBuffer);
     
     }
@@ -91,7 +91,7 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
     protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
         super.loadAdditional(tag, registries);
-        if (tag.contains("rodSlot")) rodSlot = ItemStack.of(tag.getCompound("rodSlot"));
+        if (tag.contains("rodSlot")) rodSlot = com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("rodSlot"), registries);
         fluxBuffer = tag.getDouble("fluxBuffer");
     
     }

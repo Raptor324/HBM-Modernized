@@ -14,7 +14,9 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
 import net.minecraftforge.client.model.data.ModelData;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.model.data.ModelData;
+*///?}
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -188,6 +190,59 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
 
     //?}
 
+    //? if neoforge {
+    /*// NeoForge 1.21.1: ванильный BakedModel.getQuads(BlockState, Direction, RandomSource)
+    // остаётся абстрактным методом интерфейса; расширение с ModelData/RenderType — NeoForge-specific.
+    @Override
+    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
+        // 3-arg vanilla контракт: ModelData.EMPTY,без RenderType (см. forge-ветку выше).
+        return getQuadsForModelDataNeo(state, side, rand, ModelData.EMPTY, null);
+    }
+
+    // NeoForge 1.21.1: BakedModel.getQuads(BlockState, Direction, RandomSource, ModelData, RenderType)
+    // — расширенная NeoForge-сигнатура. Реализация-делегат зеркалит forge-ветку.
+    @Override
+    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
+                                    RandomSource rand, ModelData modelData, @Nullable RenderType renderType) {
+        return getQuadsForModelDataNeo(state, side, rand, modelData, renderType);
+    }
+
+    /^*
+     * NeoForge-копия {@code getQuadsForModelData} (forge-ветка): дефолтная реализация
+     * собирает квады из всех частей без ModelData-логики; подклассы могут переопределять.
+     ^/
+    protected List<BakedQuad> getQuadsForModelDataNeo(
+        @Nullable BlockState state,
+        @Nullable Direction side,
+        RandomSource rand,
+        ModelData modelData,
+        @Nullable RenderType renderType
+    ) {
+        if (renderType == null) {
+            int idx = side == null ? 0 : side.ordinal() + 1;
+            List<BakedQuad>[] cache = sideQuadsCache;
+            if (cache == null) {
+                cache = (List<BakedQuad>[]) new List<?>[7];
+                sideQuadsCache = cache;
+            }
+            List<BakedQuad> cached = cache[idx];
+            if (cached != null) return cached;
+            List<BakedQuad> quads = new ArrayList<>();
+            for (BakedModel part : parts.values()) {
+                quads.addAll(part.getQuads(state, side, rand, modelData, renderType));
+            }
+            List<BakedQuad> result = quads.isEmpty() ? List.of() : List.copyOf(quads);
+            cache[idx] = result;
+            return result;
+        }
+        List<BakedQuad> quads = new ArrayList<>();
+        for (BakedModel part : parts.values()) {
+            quads.addAll(part.getQuads(state, side, rand, modelData, renderType));
+        }
+        return quads;
+    }
+    *///?}
+
     //? if fabric {
     /*@Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
@@ -287,6 +342,7 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
      * BEWLR items ({@link #isCustomRenderer}) apply {@code display} in {@code renderByItem}.
      * Forge {@code IForgeBakedModel#applyTransform} must stay a no-op for them.
      */
+
     //? if forge {
     @Override
     public BakedModel applyTransform(ItemDisplayContext transformType, PoseStack poseStack,

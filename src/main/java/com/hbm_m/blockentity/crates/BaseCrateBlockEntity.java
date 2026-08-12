@@ -127,11 +127,23 @@ public abstract class BaseCrateBlockEntity extends BlockEntity implements MenuPr
     }
 
     public void saveToItem(ItemStack stack) {
+        //? if < 1.21.1 {
         CompoundTag tag = new CompoundTag();
         this.saveAdditional(tag);
         if (!tag.isEmpty()) {
             stack.addTagElement("BlockEntityTag", tag);
         }
+        //?} else {
+        /*// 1.21.1: addTagElement/saveAdditional(CompoundTag) удалены — сохраняем через DataComponents.
+        // level.holderLookup() без аргументов и HolderLookup.direct() удалены в 1.21.1 —
+        // берём registryAccess() из level (this.level всегда доступен у размещённого BE).
+        net.minecraft.core.HolderLookup.Provider registries = this.level.registryAccess();
+        CompoundTag tag = this.saveWithoutMetadata(registries);
+        if (!tag.isEmpty()) {
+            stack.set(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA,
+                    net.minecraft.world.item.component.CustomData.of(tag));
+        }
+        *///?}
     }
 
     public ModItemStackHandler getItemHandler() {
@@ -154,7 +166,13 @@ public abstract class BaseCrateBlockEntity extends BlockEntity implements MenuPr
         if (this.level == null || this.level.isClientSide() || !(this.level instanceof ServerLevel serverLevel)) {
             return;
         }
+        //? if < 1.21.1 {
         LootTable table = serverLevel.getServer().getLootData().getLootTable(this.lootTable);
+        //?} else {
+        /*// 1.21.1: getLootData() → reloadableRegistries(); ключ лут-таблицы теперь ResourceKey<LootTable>.
+        LootTable table = serverLevel.getServer().reloadableRegistries().getLootTable(
+                net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.LOOT_TABLE, this.lootTable));
+        *///?}
         if (table == LootTable.EMPTY) {
             // Таблица не найдена — очищаем ссылку, чтобы не пытаться повторно.
             this.lootTable = null;

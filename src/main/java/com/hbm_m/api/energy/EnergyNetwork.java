@@ -15,9 +15,7 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 
-//? if forge {
 import com.hbm_m.capability.ModCapabilities;
-//?}
 import com.hbm_m.interfaces.IEnergyModeHolder;
 import com.hbm_m.interfaces.IEnergyProvider;
 import com.hbm_m.interfaces.IEnergyReceiver;
@@ -46,8 +44,6 @@ public class EnergyNetwork {
     }
 
     public void tick(ServerLevel level) {
-        // 1. Валидация узлов
-        // System.out.println("TEST HOTSWAP");
         int sizeBefore = nodes.size();
         nodes.removeIf(node -> !node.isValid(level) || node.getNetwork() != this);
 
@@ -81,14 +77,12 @@ public class EnergyNetwork {
             //? if forge {
             providerCap = be.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).resolve();
             receiverCap = be.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).resolve();
-            //?}
-            //? if neoforge {
+            //?} elif neoforge {
             /*IEnergyProvider p = level.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, node.getPos(), level.getBlockState(node.getPos()), be, null);
             providerCap = Optional.ofNullable(p);
             IEnergyReceiver r = level.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER, node.getPos(), level.getBlockState(node.getPos()), be, null);
             receiverCap = Optional.ofNullable(r);
-            *///?}
-            //? if fabric {
+            *///?} elif fabric {
             /*providerCap = be instanceof IEnergyProvider p ? Optional.of(p) : Optional.empty();
             receiverCap = be instanceof IEnergyReceiver r ? Optional.of(r) : Optional.empty();
             *///?}
@@ -107,7 +101,7 @@ public class EnergyNetwork {
                 if (mode == 2) {
                     // OUTPUT ONLY -> Чистый генератор
                     if (prov.canExtract()) {
-                        uniqueGenerators.add(prov); // Set сам отсеет дубли
+                        uniqueGenerators.add(prov);
                     }
                 } else {
                     // BOTH или INPUT -> Сохраняем (перезаписываем, если уже есть такой receiver)
@@ -141,7 +135,6 @@ public class EnergyNetwork {
         for (IEnergyReceiver.Priority p : IEnergyReceiver.Priority.values()) batteriesByPriority.put(p, new ArrayList<>());
         for (BatteryInfo b : uniqueBatteries.values()) batteriesByPriority.get(b.receiver.getPriority()).add(b);
 
-
         // ====================================================================
         // ШАГ 2: Сбор начальной энергии от чистых генераторов
         // ====================================================================
@@ -150,7 +143,6 @@ public class EnergyNetwork {
 
         Map<IEnergyProvider, Long> activeProviders = new IdentityHashMap<>();
         for (IEnergyProvider gen : pureGenerators) {
-            // ТЕПЕРЬ здесь нет дубликатов, сумма будет верной (1000, а не 3000)
             long cap = Math.min(gen.getEnergyStored(), gen.getProvideSpeed());
             if (cap > 0) {
                 activeProviders.put(gen, cap);
@@ -198,14 +190,12 @@ public class EnergyNetwork {
 
             if (totalLevelDemand == 0) continue;
 
-            // Если энергии не хватает, грабим нижние уровни
             if (floatingEnergy < totalLevelDemand) {
                 long deficit = totalLevelDemand - floatingEnergy;
                 long stolenEnergy = stealFromLowerPriorities(currentPriority, deficit, batteriesByPriority, activeProviders);
                 floatingEnergy += stolenEnergy;
             }
 
-            // Раздаем энергию
             long energyToDistribute = Math.min(floatingEnergy, totalLevelDemand);
 
             if (energyToDistribute > 0) {
@@ -231,7 +221,6 @@ public class EnergyNetwork {
                                           Map<IEnergyProvider, Long> providerPool) {
         long gathered = 0;
 
-        // Определяем, какие приоритеты ниже текущего
         List<IEnergyReceiver.Priority> lowerPriorities = new ArrayList<>();
         if (currentPriority == IEnergyReceiver.Priority.HIGH) {
             lowerPriorities.add(IEnergyReceiver.Priority.NORMAL);
@@ -246,17 +235,14 @@ public class EnergyNetwork {
             for (BatteryInfo bat : allBatteries.get(p)) {
                 if (gathered >= amountNeeded) break;
 
-                // Батарея должна уметь отдавать (BOTH или OUTPUT, но здесь у нас только BOTH/INPUT, так что BOTH)
                 if (bat.canOutput() && bat.provider.canExtract()) {
                     long available = Math.min(bat.provider.getEnergyStored(), bat.provider.getProvideSpeed());
 
-                    // Если эта батарея уже отдала что-то в этом тике (например, в providerPool), учитываем это
                     long alreadyPromised = providerPool.getOrDefault(bat.provider, 0L);
                     available -= alreadyPromised;
 
                     if (available > 0) {
                         long toTake = Math.min(available, amountNeeded - gathered);
-                        // Добавляем эту батарею в общий пул провайдеров для текущей раздачи
                         providerPool.merge(bat.provider, toTake, Long::sum);
                         gathered += toTake;
                     }
@@ -265,8 +251,6 @@ public class EnergyNetwork {
         }
         return gathered;
     }
-
-    // --- СТАНДАРТНЫЕ МЕТОДЫ (Без изменений логики, только копипаст для целостности) ---
 
     private long distributeProportionally(long amount, Set<IEnergyReceiver> consumers,
                                           Map<IEnergyReceiver, Long> consumerDemand,
@@ -278,19 +262,12 @@ public class EnergyNetwork {
         if (totalGroupDemand <= 0) return 0;
 
         long totalEnergyGiven = 0;
-
-        // [ВАЖНО] Запоминаем изначальное количество энергии для расчета долей.
-        // Если мы будем уменьшать amount в цикле и от него считать процент,
-        // последние в списке получат копейки.
         long initialPoolForCalculation = amount;
 
-        // Создаем копию списка, чтобы избежать ConcurrentModificationException (на всякий случай)
         List<IEnergyReceiver> sortedConsumers = new ArrayList<>(consumers);
-        // Опционально: можно сортировать по BlockPos, чтобы порядок был детерминированным (убирает мигание цифр)
-        // sortedConsumers.sort(Comparator.comparing(c -> ((BlockEntity)c).getBlockPos()));
 
         for (IEnergyReceiver consumer : sortedConsumers) {
-            if (amount <= 0) break; // Энергия кончилась физически
+            if (amount <= 0) break;
 
             long demand = consumerDemand.getOrDefault(consumer, 0L);
             if (demand <= 0) continue;
@@ -302,9 +279,7 @@ public class EnergyNetwork {
             // Math.ceil, чтобы не терять единицы энергии на округлении вниз при делении
             long energyForThis = (long) Math.ceil(initialPoolForCalculation * share);
 
-            // Обрезаем, чтобы не дать больше чем просит потребитель
             energyForThis = Math.min(energyForThis, demand);
-            // Обрезаем, чтобы не дать больше чем реально осталось в пуле (amount)
             energyForThis = Math.min(energyForThis, amount);
 
             if (energyForThis > 0) {
@@ -312,7 +287,7 @@ public class EnergyNetwork {
                 if (accepted > 0) {
                     extractFromProviders(accepted, providers);
                     totalEnergyGiven += accepted;
-                    amount -= accepted; // Уменьшаем реальный остаток
+                    amount -= accepted;
                     consumerDemand.put(consumer, demand - accepted);
                 }
             }
@@ -321,7 +296,6 @@ public class EnergyNetwork {
     }
 
     private void extractFromProviders(long amount, Map<IEnergyProvider, Long> providers) {
-        // Та же реализация, что и раньше
         if (amount <= 0 || providers.isEmpty()) return;
         long totalCapacity = providers.values().stream().mapToLong(Long::longValue).sum();
         if (totalCapacity <= 0) return;
@@ -368,7 +342,7 @@ public class EnergyNetwork {
      */
     private void balanceSamePriorityGroup(List<BatteryInfo> batteries) {
         List<BatteryInfo> bothModeBatteries = new ArrayList<>();
-        for(BatteryInfo b : batteries) if(b.mode == 0) bothModeBatteries.add(b); // Только BOTH
+        for(BatteryInfo b : batteries) if(b.mode == 0) bothModeBatteries.add(b);
 
         if (bothModeBatteries.size() < 2) return;
 
@@ -381,7 +355,7 @@ public class EnergyNetwork {
         if (totalCapacity == 0) return;
 
         double avgRatio = (double) totalEnergy / totalCapacity;
-        long transferBuffer = 100; // Минимальная разница для начала балансировки
+        long transferBuffer = 100;
 
         // Простой алгоритм: богатые дают, бедные берут
         for (BatteryInfo giver : bothModeBatteries) {
@@ -433,10 +407,6 @@ public class EnergyNetwork {
         boolean canInput() { return mode == 0 || mode == 1; }
         boolean canOutput() { return mode == 0 || mode == 2; }
     }
-
-    // --- Методы управления сетью (addNode, removeNode, merge, etc) ---
-    // Оставь их без изменений из предыдущей версии (v6.3 или той, что я кидал ранее)
-    // Главное изменение выше - в методе tick().
 
     public void addNode(EnergyNode node) {
         if (nodes.add(node)) {

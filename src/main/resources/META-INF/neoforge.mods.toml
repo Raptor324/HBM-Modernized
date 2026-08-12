@@ -1,0 +1,24 @@
+# NeoForge mod descriptor for HBM Nuclear Tech Modernized.
+# Формат соответствует NeoForge 1.21.1 (modLoader javafml поддерживается).
+# Плейсхолдеры раскрываются в ModPlatformPlugin.configureProcessResources (ветка isNeoForge).
+# Внимание: loaderVersion — версия language provider (javafml@1 для NeoForge), НЕ версия NeoForge.
+# Диапазон версии NeoForge задаётся в блоке [[dependencies.${mod_id}]] ниже (modId="neoforge").
+
+modLoader="javafml"
+loaderVersion="[1,)"
+license="${mod_license}"
+issueTrackerURL="${issues_url}"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+displayURL="${homepage_url}"
+logoFile="icon.png"
+authors="${mod_authors}"
+# Mixin config registration (имя из gradle: mod.mixin_config)
+mixins=["${mixin_config}"]
+# MATCH_VERSION — красный крест на screen-подключении, если версии на client/server различаются.
+displayTest="MATCH_VERSION"
+description='''${mod_description}'''
+${dependencies}

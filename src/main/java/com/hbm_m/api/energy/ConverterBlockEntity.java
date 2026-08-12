@@ -183,6 +183,20 @@ public class ConverterBlockEntity extends BlockEntity implements IEnergyReceiver
                     }
                 }
                 *///?}
+                //? if neoforge {
+                /*net.neoforged.neoforge.energy.IEnergyStorage storage = level.getCapability(
+                        net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK,
+                        pos.relative(dir), dir.getOpposite());
+                if (storage != null && storage.canReceive()) {
+                    long canExtract = Math.min(be.energy, be.currentLimit);
+                    int toPush = (int) Math.min(canExtract, Integer.MAX_VALUE);
+                    int accepted = storage.receiveEnergy(toPush, false);
+                    if (accepted > 0) {
+                        be.energy -= accepted;
+                        be.setChanged();
+                    }
+                }
+                *///?}
             }
         }
     }

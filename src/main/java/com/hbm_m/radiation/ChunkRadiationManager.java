@@ -116,7 +116,7 @@ public class ChunkRadiationManager {
         ServerChunkEvents.CHUNK_UNLOAD.register((level, chunk) -> {
             if (ModClothConfig.get().enableChunkRads && !level.isClientSide()) {
                 if (getProxy() instanceof ChunkRadiationHandlerSimple handler) {
-                    handler.receiveChunkUnloadFabric(chunk);
+                    handler.receiveChunkUnload(chunk);
                 }
             }
         });
@@ -137,9 +137,9 @@ public class ChunkRadiationManager {
         if (ModClothConfig.get().enableChunkRads && !event.getLevel().isClientSide() && event.getChunk() instanceof LevelChunk chunk) {
             //? if forge {
             getProxy().receiveChunkUnload(event);
-            //?} else if neoforge {
+            //?} else {
             /*if (getProxy() instanceof ChunkRadiationHandlerSimple handler) {
-                handler.receiveChunkUnloadFabric(chunk);
+                handler.receiveChunkUnload(chunk);
             }
             *///?}
         }

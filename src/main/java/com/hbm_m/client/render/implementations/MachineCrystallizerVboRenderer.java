@@ -10,6 +10,7 @@ import org.joml.Matrix4f;
 import com.hbm_m.blockentity.machines.MachineCrystallizerBlockEntity;
 import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.PlatformHooks;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -31,20 +32,15 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.material.Fluid;
 
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.fluids.FluidStack;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
+//?} elif fabric {
+/*import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
+*///?} elif neoforge {
+/*import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.fluids.FluidStack;
 *///?}
 
 /**
@@ -53,11 +49,14 @@ import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry
  * Спиннер — {@link MeshRenderCache} / instancing. Жидкость с подменой спрайта на блок —
  * вне instancing (как chemplant Fluid), через {@link MachineCrystallizerRenderer#presentDeferredFluids()}.
  */
-//? if forge || neoforge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class MachineCrystallizerVboRenderer {
 
     public static final String SPINNER_CACHE_KEY = "crystallizer:spinner";
@@ -80,14 +79,14 @@ public class MachineCrystallizerVboRenderer {
     @Nullable
     public static BakedModel getFluidModel() {
         var modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel model = modelManager.getModel(FLUID_MODEL_ID);
+        BakedModel model = PlatformHooks.getModel(modelManager, FLUID_MODEL_ID);
         return (model == null || model == modelManager.getMissingModel()) ? null : model;
     }
 
     @Nullable
     public static BakedModel getSpinnerModel() {
         var modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel model = modelManager.getModel(SPINNER_MODEL_ID);
+        BakedModel model = PlatformHooks.getModel(modelManager, SPINNER_MODEL_ID);
         return (model == null || model == modelManager.getMissingModel()) ? null : model;
     }
 
@@ -221,6 +220,13 @@ public class MachineCrystallizerVboRenderer {
         if (sprites == null || sprites.length == 0) return null;
         return sprites[0];
         *///?}
+        //? if neoforge {
+        /*IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid);
+        FluidStack stack = new FluidStack(fluid, be.getTank().getFluidAmountMb());
+        ResourceLocation stillTexture = ext.getStillTexture(stack);
+        if (stillTexture == null) return null;
+        return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(stillTexture);
+        *///?}
     }
 
     public static int getFluidTint(MachineCrystallizerBlockEntity be, Fluid fluid) {
@@ -235,6 +241,11 @@ public class MachineCrystallizerVboRenderer {
         var mc = Minecraft.getInstance();
         if (mc.level == null) return 0xFFFFFFFF;
         return handler.getFluidColor(mc.level, be.getBlockPos(), fluid.defaultFluidState()) | 0xFF000000;
+        *///?}
+        //? if neoforge {
+        /*IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid);
+        FluidStack stack = new FluidStack(fluid, be.getTank().getFluidAmountMb());
+        return ext.getTintColor(stack);
         *///?}
     }
 

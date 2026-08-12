@@ -7,6 +7,7 @@ import com.hbm_m.blockentity.machines.MachineMiningDrillBlockEntity;
 import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.PlatformHooks;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
@@ -33,6 +34,14 @@ import net.minecraft.util.Mth;
  * JSON-Modelle den {@code translate(0.5,0,0.5)}-Versatz bereits beim Backen einrechnen, muss hier bei
  * jeder Rotation der gleiche Versatz auf den Pivot addiert werden (siehe Konstanten unten).
  */
+
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class MachineMiningDrillRenderer implements BlockEntityRenderer<MachineMiningDrillBlockEntity> {
 
     private static final ResourceLocation DRILLBIT_MODEL_ID = id("mining_drill_bit");
@@ -133,7 +142,7 @@ public class MachineMiningDrillRenderer implements BlockEntityRenderer<MachineMi
     @Nullable
     private static BakedModel getModel(ResourceLocation id) {
         var modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel model = modelManager.getModel(id);
+        BakedModel model = PlatformHooks.getModel(modelManager, id);
         return (model == null || model == modelManager.getMissingModel()) ? null : model;
     }
 }

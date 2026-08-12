@@ -535,7 +535,12 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
     /*@Override
     public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
 
+        //? if < 1.21.1 {
         return saveWithoutMetadata();
+        //?} else {
+        /^// 1.21.1: saveWithoutMetadata требует HolderLookup.Provider.
+        return saveWithoutMetadata(registries);
+        ^///?}
     
     }
     *///?}

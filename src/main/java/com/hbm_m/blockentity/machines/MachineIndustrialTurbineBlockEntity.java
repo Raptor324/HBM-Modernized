@@ -485,10 +485,18 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
 
 
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        //? if < 1.21.1 {
         return new net.minecraft.world.phys.AABB(
                 worldPosition.offset(-2, -1, -4),
                 worldPosition.offset(3, 4, 8)
         );
+        //?} else {
+        /*// 1.21.1: AABB(BlockPos, BlockPos) удалён — Vec3.atLowerCornerOf сохраняет целочисленную семантику углов.
+        return new net.minecraft.world.phys.AABB(
+                net.minecraft.world.phys.Vec3.atLowerCornerOf(worldPosition.offset(-2, -1, -4)),
+                net.minecraft.world.phys.Vec3.atLowerCornerOf(worldPosition.offset(3, 4, 8))
+        );
+        *///?}
     }
 
     //? if fabric {

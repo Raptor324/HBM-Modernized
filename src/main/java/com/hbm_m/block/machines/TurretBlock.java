@@ -76,8 +76,19 @@ public class TurretBlock extends BaseEntityBlock {
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return hbmOnUse(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return hbmOnUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult hbmOnUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider menuProvider && player instanceof ServerPlayer serverPlayer) {
@@ -88,7 +99,7 @@ public class TurretBlock extends BaseEntityBlock {
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<TurretBlock> CODEC = simpleCodec(TurretBlock::new);
+    /*public static final com.mojang.serialization.MapCodec<TurretBlock> CODEC = simpleCodec(props -> new TurretBlock(props, () -> com.hbm_m.blockentity.ModBlockEntities.TURRET_SENTRY_BE.get()));
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {

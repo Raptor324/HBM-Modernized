@@ -22,6 +22,7 @@ import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -35,16 +36,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 // Forge-only model-data / distmarker imports intentionally removed for Fabric compilation.
 
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?} elif forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
 public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
     //? if fabric {
@@ -97,11 +88,14 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
     private Object loopingSound;
 
     /** Called from DoorAnimationDelayHelper when delay expires. Client-only. */
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+
+    //? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif fabric {
+    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+    *///?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    *///?}
     public void clearAnimationDelayClient() {
         this.cachedModelData = null;
         // requestModelDataUpdate() is Forge-only (model data system). On Fabric it's a no-op.
@@ -616,11 +610,13 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
     // }
 
     // ==================== Client Sound Handling ====================
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+    //? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif fabric {
+    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+    *///?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    *///?}
     private void handleNewState(byte oldState, byte newState) {
         if (oldState == newState) return;
         if (!isController()) return;
@@ -644,11 +640,13 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
             ClientSoundBootstrap.stopSound(level, worldPosition);
         }
     }
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+    //? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif fabric {
+    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+    *///?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    *///?}
     private void handleSoundTransition(SoundEvent startSound, SoundEvent loopSound, SoundEvent loopSound2) {
         // 1. Разовый звук старта
         if (startSound != null) {
@@ -665,11 +663,13 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
             ClientSoundBootstrap.updateDoorSoundRaw(level, worldPosition, "loop2", true, () -> createLoopingSoundReflect(loopSound2));
         }
     }
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+    //? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif fabric {
+    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+    *///?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    *///?}
     private void handleSoundEnd(SoundEvent endSound) {
         // Останавливаем ОБА цикла
         ClientSoundBootstrap.stopSpecificSound(level, worldPosition, "loop1");
@@ -680,11 +680,14 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
             ClientSoundBootstrap.playOneShotSound(level, worldPosition, endSound, getDoorDecl().getSoundVolume());
         }
     }
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+
+    //? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif fabric {
+    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+    *///?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    *///?}
     private Object createLoopingSoundReflect(SoundEvent sound) {
         try {
             return Class.forName(DOOR_LOOP_SOUND_FACTORY)
@@ -884,11 +887,14 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
      * Если hadModelSelectionInNbt=true - не перезаписывать: значение уже загружено из NBT
      * (в т.ч. явный выбор LEGACY, который равен DoorModelSelection.DEFAULT).
      */
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+
+    //? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif fabric {
+    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+    *///?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    *///?}
     public void initModelSelection(boolean applyConfigDefault) {
         if (!applyConfigDefault) {
             return; // Значение из NBT - не перезаписывать
@@ -928,7 +934,12 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
     //?}
 
     public void handleUpdateTag(CompoundTag tag) {
+        //? if < 1.21.1 {
         load(tag);
+        //?} else {
+        /*// 1.21.1: BlockEntity.load(CompoundTag) удалён — loadCustomOnly с registries из level.
+        PlatformHooks.loadBlockEntityTag(this, tag, this.level != null ? this.level.registryAccess() : RegistryAccess.EMPTY);
+        *///?}
     }
 
     @Nullable
@@ -951,7 +962,12 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
             byte prevState = this.state;
             DoorModelSelection prevSelection = this.modelSelection;
 
+            //? if < 1.21.1 {
             load(tag);
+            //?} else {
+            /*// 1.21.1: BlockEntity.load(CompoundTag) удалён — loadCustomOnly с registries из level.
+            PlatformHooks.loadBlockEntityTag(this, tag, this.level != null ? this.level.registryAccess() : RegistryAccess.EMPTY);
+            *///?}
 
             if (level != null && level.isClientSide) {
                 // Инвалидируем чанк только при реальном изменении видимого состояния:

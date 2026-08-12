@@ -55,7 +55,18 @@ public class MachineHydrotreaterBlock extends BaseEntityBlock implements IMultib
         super.onRemove(s, l, p, ns, m);
     }
     @Nullable @Override public BlockEntity newBlockEntity(BlockPos p, BlockState s) { return new MachineHydrotreaterBlockEntity(p, s); }
+    //? if < 1.21.1 {
     @Override public InteractionResult use(BlockState s, Level l, BlockPos p, Player pl, InteractionHand h, BlockHitResult r) {
+        return openMenu(s, l, p, pl, h, r);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState s, Level l, BlockPos p, Player pl, BlockHitResult r) {
+        return openMenu(s, l, p, pl, InteractionHand.MAIN_HAND, r);
+    }
+    *///?}
+
+    private InteractionResult openMenu(BlockState s, Level l, BlockPos p, Player pl, InteractionHand h, BlockHitResult r) {
         if (!l.isClientSide() && l.getBlockEntity(p) instanceof MenuProvider mp) MenuRegistry.openExtendedMenu((ServerPlayer) pl, mp, buf -> buf.writeBlockPos(p));
         return InteractionResult.sidedSuccess(l.isClientSide());
     }

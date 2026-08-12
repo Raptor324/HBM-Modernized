@@ -18,6 +18,7 @@ import net.minecraft.world.entity.animal.Ocelot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -175,7 +176,11 @@ public class ExplosionNukeGeneric {
                 new Vec3(a, b, c),
                 ClipContext.Block.VISUAL,
                 ClipContext.Fluid.NONE,
+                //? if < 1.21.1 {
                 null
+                //?} else {
+                /*net.minecraft.world.phys.shapes.CollisionContext.empty()
+                *///?}
         ));
         return hit.getType() != HitResult.Type.MISS;
     }

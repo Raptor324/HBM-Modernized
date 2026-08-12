@@ -268,8 +268,19 @@ public class MachineFrackingTowerBlock extends BaseEntityBlock implements IMulti
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
+        return hbmOnUse(pState, pLevel, pPos, pPlayer, pHand, pHit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, BlockHitResult pHit) {
+        return hbmOnUse(pState, pLevel, pPos, pPlayer, InteractionHand.MAIN_HAND, pHit);
+    }
+    *///?}
+
+    private InteractionResult hbmOnUse(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (!pLevel.isClientSide()) {
             if (pLevel.getBlockEntity(pPos) instanceof MenuProvider provider) {
                 MenuRegistry.openExtendedMenu((ServerPlayer) pPlayer, provider, buf -> buf.writeBlockPos(pPos));

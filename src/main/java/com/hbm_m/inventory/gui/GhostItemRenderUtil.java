@@ -25,6 +25,14 @@ import net.minecraft.world.item.ItemStack;
  * буфера и перехватываем {@code putBulkData}, умножая альфу в параметре {@code a},
  * плюс фильтруем {@code defaultColor} для возможных non-quad путей рендера.
  */
+
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public final class GhostItemRenderUtil {
 
     private GhostItemRenderUtil() {
@@ -45,7 +53,11 @@ public final class GhostItemRenderUtil {
         PoseStack pose = guiGraphics.pose();
         pose.pushPose();
         pose.translate(x + 8.0F, y + 8.0F, 150.0F);
+        //? if < 1.21.1 {
         pose.mulPoseMatrix(new org.joml.Matrix4f().scaling(1.0F, -1.0F, 1.0F));
+        //?} else {
+        /*pose.mulPose(new org.joml.Matrix4f().scaling(1.0F, -1.0F, 1.0F));
+        *///?}
         pose.scale(16.0F, 16.0F, 16.0F);
 
         MultiBufferSource tintedSource = tintBufferSource(guiGraphics.bufferSource(), alpha);
@@ -86,6 +98,7 @@ public final class GhostItemRenderUtil {
         // на лету в putBulkData и defaultColor.
         return new VertexConsumer() {
 
+            //? if < 1.21.1 {
             // ─── потоковые вызовы: просто фильтруем ───
             @Override
             public VertexConsumer vertex(double x, double y, double z) {
@@ -124,41 +137,20 @@ public final class GhostItemRenderUtil {
 
             // ─── критический путь для моделей ───
 
-            /**
-             * Vanilla ItemRenderer вызывает именно этот метод для передачи
-             * baked-квада с цветом и светом в буфер. Мы умножаем {@code a}
-             * таким образом, чтобы итоговая полупрозрачность применялась и
-             * к 3D-блокам, и к OBJ-моделям (через кастомные беры).
-             */
             //? if forge {
             @Override
-            public void putBulkData(PoseStack.Pose matrix, BakedQuad quad,
-                                    float r, float g, float b, float a,
-                                    int light, int overlay, boolean hasAmbientOcclusion) {
+            public void putBulkData(PoseStack.Pose matrix, BakedQuad quad, float r, float g, float b, float a, int light, int overlay, boolean hasAmbientOcclusion) {
                 inner.putBulkData(matrix, quad, r, g, b, a * alpha, light, overlay, hasAmbientOcclusion);
             }
 
-            // Упрощённый вариант без ambient occlusion. Alpha-канал здесь не
-            // передаётся явно, ванильная реализация просто вызывает полную
-            // сигнатуру с a=1.0F. Затемняем цвет, чтобы у полупрозрачной
-            // текстуры slot-подложки призрак «темнел» (визуальный fallback,
-            // так же поступают порты 1.7.10, где GL11.glColor4f влиял и на RGB).
             @Override
-            public void putBulkData(PoseStack.Pose matrix, BakedQuad quad,
-                                    float r, float g, float b,
-                                    int light, int overlay) {
+            public void putBulkData(PoseStack.Pose matrix, BakedQuad quad, float r, float g, float b, int light, int overlay) {
                 inner.putBulkData(matrix, quad, r * alpha, g * alpha, b * alpha, light, overlay);
             }
             //?}
 
             //? if fabric {
-            /*public void putBulkData(PoseStack.Pose matrix, BakedQuad quad,
-                                    float r, float g, float b,
-                                    int light, int overlay) {
-                // Fabric 1.20.x поддерживает только этот вариант, поэтому
-                // приходится разом затенять цвет — при альфе=0.5 фактычески
-                // получается затемнение. Это acceptable fallback на Fabric,
-                // где нет альфа-пути через putBulkData.
+            /*public void putBulkData(PoseStack.Pose matrix, BakedQuad quad, float r, float g, float b, int light, int overlay) {
                 inner.putBulkData(matrix, quad, r * alpha, g * alpha, b * alpha, light, overlay);
             }
             *///?}
@@ -174,5 +166,44 @@ public final class GhostItemRenderUtil {
                 inner.unsetDefaultColor();
             }
         };
+        //?} else {
+            /*@Override
+            public VertexConsumer addVertex(float x, float y, float z) {
+                return inner.addVertex(x, y, z);
+            }
+
+            @Override
+            public VertexConsumer setColor(int red, int green, int blue, int a) {
+                return inner.setColor(red, green, blue, (int) (a * alpha));
+            }
+
+            @Override
+            public VertexConsumer setUv(float u, float v) {
+                return inner.setUv(u, v);
+            }
+
+            @Override
+            public VertexConsumer setUv1(int u, int v) {
+                return inner.setUv1(u, v);
+            }
+
+            @Override
+            public VertexConsumer setUv2(int u, int v) {
+                return inner.setUv2(u, v);
+            }
+
+            @Override
+            public VertexConsumer setNormal(float x, float y, float z) {
+                return inner.setNormal(x, y, z);
+            }
+
+            @Override
+            public void putBulkData(PoseStack.Pose matrix, BakedQuad quad,
+                                    float r, float g, float b, float a,
+                                    int light, int overlay, boolean readExistingColor) {
+                inner.putBulkData(matrix, quad, r, g, b, a * alpha, light, overlay, readExistingColor);
+            }
+        };
+        *///?}
     }
 }

@@ -30,7 +30,7 @@ public class FallingSellafit extends FallingBlock {
                 .mapColor(MapColor.STONE)
                 .sound(SoundType.STONE)
                 .strength(3.0F, 3.0F)
-                .speedFactor(1.0F) // Нормальная скорость падения
+                .speedFactor(1.0F)
         );
         this.solidEquivalent = solidBlock;
     }
@@ -59,11 +59,15 @@ public class FallingSellafit extends FallingBlock {
         return this.solidEquivalent;
     }
 
-    //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<FallingSellafit> CODEC = simpleCodec(FallingSellafit::new);
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<FallingSellafit> CODEC = com.mojang.serialization.codecs.RecordCodecBuilder.mapCodec(instance -> 
+        instance.group(
+            net.minecraft.core.registries.BuiltInRegistries.BLOCK.byNameCodec().fieldOf("solid_equivalent").forGetter(FallingSellafit::getSolidEquivalent)
+        ).apply(instance, FallingSellafit::new)
+    );
 
     @Override
-    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+    public com.mojang.serialization.MapCodec<FallingSellafit> codec() {
         return CODEC;
     }
     *///?}

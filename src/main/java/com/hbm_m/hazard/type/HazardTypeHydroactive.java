@@ -27,7 +27,7 @@ public class HazardTypeHydroactive extends HazardTypeBase {
         Level levelWorld = target.level();
         if (target.isInWaterOrRain() && stack.getCount() > 0) {
             stack.shrink(stack.getCount());
-            levelWorld.explode(target, target.getX(), target.getY() + target.getEyeHeight() - target.getMyRidingOffset(),
+            levelWorld.explode(target, target.getX(), target.getY() + target.getEyeHeight() - com.hbm_m.platform.PlatformHooks.getMyRidingOffset(target),
                     target.getZ(), level, Level.ExplosionInteraction.TNT);
         }
     }

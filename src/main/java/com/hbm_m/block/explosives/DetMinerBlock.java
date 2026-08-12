@@ -35,6 +35,7 @@ public class DetMinerBlock extends Block implements IDetonatable {
     public DetMinerBlock(Properties properties) {
         super(properties);
     }
+    //? if < 1.21.1 {
     @Override
     public void appendHoverText(ItemStack stack,
                                 @Nullable net.minecraft.world.level.BlockGetter level,
@@ -45,6 +46,18 @@ public class DetMinerBlock extends Block implements IDetonatable {
         tooltip.add(Component.translatable("tooltip.hbm_m.detminer.line4")
                 .withStyle(ChatFormatting.GRAY));
     }
+    //?} else {
+    /*@Override
+    public void appendHoverText(ItemStack stack,
+                                net.minecraft.world.item.Item.TooltipContext level,
+                                List<Component> tooltip,
+                                TooltipFlag flag) {
+        tooltip.add(Component.translatable("tooltip.hbm_m.detminer.line1")
+                .withStyle(ChatFormatting.YELLOW));
+        tooltip.add(Component.translatable("tooltip.hbm_m.detminer.line4")
+                .withStyle(ChatFormatting.GRAY));
+    }
+    *///?}
     @Override
     public void neighborChanged(BlockState state, Level level, BlockPos pos,
                                 Block block, BlockPos fromPos, boolean isMoving) {
@@ -67,7 +80,12 @@ public class DetMinerBlock extends Block implements IDetonatable {
         triggerNearbyDetonations(serverLevel, pos, player);
 
         // 3. Звук взрыва
+        //? if < 1.21.1 {
         serverLevel.playSound(null, pos, SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 1.0F, 1.0F);
+        //?} else {
+        /*// 1.21.1: SoundEvents.GENERIC_EXPLODE — Holder<SoundEvent>, нужен .value() для playSound(BlockPos, SoundEvent, ...).
+        serverLevel.playSound(null, pos, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
+        *///?}
 
         // 4. Удаляем этот блок
         serverLevel.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());

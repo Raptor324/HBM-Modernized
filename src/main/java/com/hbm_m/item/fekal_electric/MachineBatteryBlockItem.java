@@ -36,7 +36,15 @@ public class MachineBatteryBlockItem extends BlockItem implements ITooltipProvid
 
         // Читаем энергию из NBT
         if (PlatformHooks.hasItemTag(pStack)) {
+            // BlockEntityTag на 1.20.1 — NBT-подтег (getTagElement); на 1.21.1 — тот же ключ
+            // "BlockEntityTag" внутри CUSTOM_DATA (BlockItem пишет туда BE-данные при placement-копии).
+            //? if < 1.21.1 {
             CompoundTag blockEntityTag = pStack.getTagElement("BlockEntityTag");
+            //?} else {
+            /*CompoundTag custom = PlatformHooks.getItemTag(pStack);
+            CompoundTag blockEntityTag = custom != null && custom.contains("BlockEntityTag")
+                    ? custom.getCompound("BlockEntityTag") : null;
+            *///?}
             // Важно: в MachineBatteryBlockEntity мы сохраняем как "Energy" (с большой буквы), проверь это!
             // В старом коде было "Energy", здесь "energy". Лучше проверять оба варианта или привести к одному.
             if (blockEntityTag != null) {

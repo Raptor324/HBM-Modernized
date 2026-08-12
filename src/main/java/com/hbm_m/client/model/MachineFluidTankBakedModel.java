@@ -192,6 +192,24 @@ public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel impl
             return newQuads;
         });
         *///?}
+
+        //? if neoforge {
+        /*Map<Object, List<BakedQuad>> directionalCache =
+                quadCache.computeIfAbsent(safeTexture, k -> new ConcurrentHashMap<>());
+        Object cacheKey = side == null ? NULL_SIDE_KEY : side;
+
+        return directionalCache.computeIfAbsent(cacheKey, k -> {
+            List<BakedQuad> newQuads = new ArrayList<>();
+            List<BakedQuad> originalQuads = originalTank.getQuads(null, side, rand);
+            TextureAtlasSprite newSprite = Minecraft.getInstance()
+                    .getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS)
+                    .apply(safeTexture);
+            for (BakedQuad quad : originalQuads) {
+                newQuads.add(retextureAndFixUV(quad, newSprite));
+            }
+            return newQuads;
+        });
+        *///?}
     }
 
     private BakedQuad retextureAndFixUV(BakedQuad original, TextureAtlasSprite newSprite) {

@@ -19,6 +19,14 @@ import net.minecraft.core.Direction;
  * multi-material mesh via the VBO path (see {@link SoyuzRocketBakedModel}
  * for why baked-quad world rendering is skipped).
  */
+
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class SoyuzRocketRenderer extends AbstractPartBasedRenderer<SoyuzRocketBlockEntity, SoyuzRocketBakedModel> {
 
     private static final String CACHE_PREFIX = "soyuz_rocket";

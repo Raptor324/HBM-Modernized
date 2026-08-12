@@ -110,35 +110,21 @@ public class GUIMachinePress extends AbstractContainerScreen<MachinePressMenu> {
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
         Matrix4f matrix = guiGraphics.pose().last().pose();
-        BufferBuilder buffer = Tesselator.getInstance().getBuilder();
-        
-        buffer.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder buffer = com.hbm_m.platform.RenderHooks.beginTesselator(Tesselator.getInstance(), VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         // Внешний слой (темный контур)
         double mult = 1.3;
-        
-        buffer.vertex(matrix, centerX + (float)(tip.x * mult), centerY + (float)(tip.y * mult), 0)
-              .color((colorOuter >> 16) & 0xFF, (colorOuter >> 8) & 0xFF, colorOuter & 0xFF, 255)
-              .endVertex();
-        buffer.vertex(matrix, centerX + (float)(left.x * mult), centerY + (float)(left.y * mult), 0)
-              .color((colorOuter >> 16) & 0xFF, (colorOuter >> 8) & 0xFF, colorOuter & 0xFF, 255)
-              .endVertex();
-        buffer.vertex(matrix, centerX + (float)(right.x * mult), centerY + (float)(right.y * mult), 0)
-              .color((colorOuter >> 16) & 0xFF, (colorOuter >> 8) & 0xFF, colorOuter & 0xFF, 255)
-              .endVertex();
+
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, centerX + (float)(tip.x * mult), centerY + (float)(tip.y * mult), 0, (colorOuter >> 16) & 0xFF, (colorOuter >> 8) & 0xFF, colorOuter & 0xFF, 255);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, centerX + (float)(left.x * mult), centerY + (float)(left.y * mult), 0, (colorOuter >> 16) & 0xFF, (colorOuter >> 8) & 0xFF, colorOuter & 0xFF, 255);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, centerX + (float)(right.x * mult), centerY + (float)(right.y * mult), 0, (colorOuter >> 16) & 0xFF, (colorOuter >> 8) & 0xFF, colorOuter & 0xFF, 255);
 
         // Внутренний слой (красная стрелка)
-        buffer.vertex(matrix, centerX + tip.x, centerY + tip.y, 0)
-              .color((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, 255)
-              .endVertex();
-        buffer.vertex(matrix, centerX + left.x, centerY + left.y, 0)
-              .color((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, 255)
-              .endVertex();
-        buffer.vertex(matrix, centerX + right.x, centerY + right.y, 0)
-              .color((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, 255)
-              .endVertex();
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, centerX + tip.x, centerY + tip.y, 0, (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, 255);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, centerX + left.x, centerY + left.y, 0, (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, 255);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, centerX + right.x, centerY + right.y, 0, (color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, 255);
 
-        BufferUploader.drawWithShader(buffer.end());
+        com.hbm_m.platform.RenderHooks.drawWithShader(buffer);
         RenderSystem.disableBlend();
     }
 

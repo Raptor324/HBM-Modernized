@@ -17,6 +17,13 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.*;
 
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class SU47TrophyRenderer implements BlockEntityRenderer<SU47TrophyBlockEntity> {
 
     // ─── OBJ geometry: material name → list of triangles [x,y,z,u,v,nx,ny,nz] × 3 ──
@@ -154,9 +161,16 @@ public class SU47TrophyRenderer implements BlockEntityRenderer<SU47TrophyBlockEn
                     float x = tri[base], y = tri[base+1], z = tri[base+2];
                     float u = tri[base+3], v = 1f - tri[base+4]; // flip V
                     float nx = tri[base+5], ny = tri[base+6], nz = tri[base+7];
+                    //? if < 1.21.1 {
                     vc.vertex(m, x, y, z).color(1f,1f,1f,1f)
                       .uv(u, v).overlayCoords(packedOverlay).uv2(packedLight)
                       .normal(nx, ny, nz).endVertex();
+                    //?} else {
+                    /*// 1.21.1: цвет float 0-1 -> setColor(int 0-255); uv->setUv, overlayCoords->setOverlay, uv2->setLight, normal->setNormal, без endVertex.
+                    vc.addVertex(m, x, y, z).setColor(255, 255, 255, 255)
+                      .setUv(u, v).setOverlay(packedOverlay).setLight(packedLight)
+                      .setNormal(nx, ny, nz);
+                    *///?}
                 }
             }
         }

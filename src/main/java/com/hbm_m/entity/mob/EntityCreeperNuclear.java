@@ -80,11 +80,19 @@ public class EntityCreeperNuclear extends Creeper {
         }
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void dropCustomDeathLoot(DamageSource source, int looting, boolean recentlyHit) {
         this.spawnAtLocation(new ItemStack(Blocks.TNT));
         // coin_creeper, NUKE_STANDARD ammo, bossCreeper — после порта соответствующих систем
     }
+    //?} else {
+    /*@Override
+    protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel serverLevel, DamageSource source, boolean recentlyHit) {
+        this.spawnAtLocation(new ItemStack(Blocks.TNT));
+        // coin_creeper, NUKE_STANDARD ammo, bossCreeper — после порта соответствующих систем
+    }
+    *///?}
 
     /** Взрыв (оригинал {@code func_146077_cc} / ExplosionNukeSmall). Вызывается из {@link com.hbm_m.mixin.CreeperMixin}. */
     public void nuclearExplode() {

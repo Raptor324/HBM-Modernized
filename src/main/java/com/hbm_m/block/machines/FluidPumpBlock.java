@@ -82,9 +82,22 @@ public class FluidPumpBlock extends BaseEntityBlock {
                 : createTickerHelper(type, ModBlockEntities.FLUID_PUMP_BE.get(), FluidPumpBlockEntity::tick);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                  Player player, InteractionHand hand, BlockHitResult hit) {
+        return handleUse(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
+                                               Player player, BlockHitResult hit) {
+        return handleUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult handleUse(BlockState state, Level level, BlockPos pos,
+                                        Player player, InteractionHand hand, BlockHitResult hit) {
         var stack = player.getItemInHand(hand);
         if (!stack.isEmpty() && stack.getItem() instanceof IItemFluidIdentifier idItem) {
             if (!level.isClientSide) {

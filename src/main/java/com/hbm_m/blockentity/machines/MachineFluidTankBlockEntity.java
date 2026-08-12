@@ -25,6 +25,8 @@ import com.hbm_m.item.liquids.InfiniteFluidItem;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.platform.ModItemStackHandler;
+import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.FluidHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -416,7 +418,14 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     //?}
 
     public void handleUpdateTag(CompoundTag tag) {
+        //? if < 1.21.1 {
         load(tag);
+        //?} else {
+        /*// 1.21.1: BlockEntity.load(CompoundTag) удалён — используем loadAdditional с registries.
+        // level.holderLookup() без аргументов и HolderLookup.direct() удалены в 1.21.1 —
+        // берём registryAccess() из level (this.level всегда доступен у размещённого BE).
+        loadAdditional(tag, this.level.registryAccess());
+        *///?}
         if (level != null && level.isClientSide) {
             //? if forge {
             requestModelDataUpdate();
@@ -722,7 +731,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             AABB fireBox = new AABB(worldPosition).inflate(2.5, 5.0, 2.5);
             List<LivingEntity> affected = level.getEntitiesOfClass(LivingEntity.class, fireBox);
             for (LivingEntity e : affected) {
-                e.setSecondsOnFire(5);
+                PlatformHooks.setSecondsOnFire(e, 5);
             }
             if (level instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(ParticleTypes.FLAME, worldPosition.getX() + level.random.nextDouble(), worldPosition.getY() + 0.5 + level.random.nextDouble(), worldPosition.getZ() + level.random.nextDouble(), 3, 0.1, 0.1, 0.1, 0.05);
@@ -1085,7 +1094,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
         public NetworkFluidHandlerWrapper(MachineFluidTankBlockEntity entity) {
             this.entity = entity;
-            this.internal = entity.fluidTank.getCapability().orElse(null);
+            this.internal = (IFluidHandler) FluidHooks.getRawFluidHandler(entity.fluidTank.getCapability());
         }
 
         @Override

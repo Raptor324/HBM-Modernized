@@ -1,8 +1,9 @@
 package com.hbm_m.datagen;
+//? if forge {
+
 import static com.hbm_m.block.ModBlocks.ENABLED_INGOT_BLOCKS;
 import static com.hbm_m.block.ModBlocks.getIngotBlock;
 
-//? if forge {
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -4530,7 +4531,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("commands.hbm_m.explosion.unsupported_key", "This explosion type does not support option: %s");
                 
                 // DEATH ATTACK MESSAGES
-                add("death.attack.radiation", "Player %s die from Digamma Poisoning");
+                add("death.attack.radiation", "%s died from radiation poisoning");
                 add("death.attack.hardlanding_smash", "%1$s was flattened by %2$s");
 
                 add("advancements.hbm_m.radiation_200.title", "Hooray, Radiation!");

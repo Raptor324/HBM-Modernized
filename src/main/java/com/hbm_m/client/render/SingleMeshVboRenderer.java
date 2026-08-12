@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
+
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
@@ -19,14 +20,12 @@ import com.hbm_m.client.render.shader.IrisPhaseGuard;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.platform.RenderHooks;
+
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
@@ -40,15 +39,14 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
+
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
 
     /**
@@ -524,11 +522,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         var consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.cutout());
         var pose = poseStack.last();
         for (BakedQuad quad : quads) {
-            //? if forge {
-            consumer.putBulkData(pose, quad, 1f, 1f, 1f, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
-            //?} else {
-            /*consumer.putBulkData(pose, quad, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY);
-            *///?}
+            RenderHooks.putBulkData(consumer, pose, quad, 1f, 1f, 1f, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
         }
     }
 
@@ -655,7 +649,11 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(poseStack.last().pose());
             } else {
                 var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+                //? if < 1.21.1 {
                 tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
+                //?} else {
+                /*tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
+                *///?}
                 tmpLocalPose.set(tmpInvViewRot).mul(poseStack.last().pose());
                 tmpLocalPose.m30(tmpLocalPose.m30() - (float) (blockPos.getX() - cam.x));
                 tmpLocalPose.m31(tmpLocalPose.m31() - (float) (blockPos.getY() - cam.y));
@@ -808,7 +806,11 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(poseStack.last().pose());
             } else {
                 var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+                //? if < 1.21.1 {
                 tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
+                //?} else {
+                /*tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
+                *///?}
                 tmpLocalPose.set(tmpInvViewRot).mul(poseStack.last().pose());
                 tmpLocalPose.m30(tmpLocalPose.m30() - (float) (anchor.getX() - cam.x));
                 tmpLocalPose.m31(tmpLocalPose.m31() - (float) (anchor.getY() - cam.y));

@@ -10,7 +10,7 @@ import net.minecraft.world.item.ItemStack;
 /**
  * Bismuth Power Armor (ported from 1.7.10 ArmorBismuth/ArmorFSB).
  *
- * Original gameplay highlights:
+ * Originаl gameplay highlights:
  * - Full set potion buffs: Jump VII, Speed VII, Regeneration II, Night Vision
  * - 3 dashes
  * - Full set resist profile:
@@ -62,11 +62,10 @@ public class BismuthArmor extends ModPowerArmorItem {
      * Иначе ванильный armor renderer пытается грузить несуществующие файлы и спамит WARN в лог.
      * (Forge/NeoForge: IForgeItem#getArmorTexture; на Fabric рендер через свои хуки.)
      */
-    //? if !fabric {
+    //? if forge {
     @Override
     public String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
         return "hbm_m:textures/block/armor/bismuth.png";
     }
     //?}
 }
-

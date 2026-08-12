@@ -9,6 +9,7 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.inventory.menu.TurretMenu;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -474,7 +475,7 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity {
         fritzFuelTicks--;
 
         setEnergyStored(getEnergyStored() - Math.max(1L, stats.energyPerShot / 20));
-        target.setSecondsOnFire(3);
+        PlatformHooks.setSecondsOnFire(target, 3);
         target.hurt(level.damageSources().generic(), stats.damage / 10.0F);
 
         if (level.getGameTime() % 5 == 0) {
@@ -505,7 +506,12 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity {
         var shell = com.hbm_m.entity.projectile.TurretRocketEntity.create(level,
                 muzzle.x, muzzle.y, muzzle.z, target, stats.damage, explosionRadiusFor(ammoItem), ammoItem);
         level.addFreshEntity(shell);
+        //? if < 1.21.1 {
         level.playSound(null, pos, SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 1.0F, 0.7F);
+        //?} else {
+        /*// 1.21.1: SoundEvents.GENERIC_EXPLODE — это Holder<SoundEvent>, нужен .value() для playSound(BlockPos, SoundEvent, ...).
+        level.playSound(null, pos, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 1.0F, 0.7F);
+        *///?}
         setChanged();
     }
 

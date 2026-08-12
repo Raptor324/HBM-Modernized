@@ -1,23 +1,22 @@
 package com.hbm_m.blockentity.machines;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.ConnectionPriority;
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.block.machines.FluidPumpBlock;
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
@@ -34,7 +33,7 @@ import net.minecraft.world.level.material.Fluids;
  * Ориентация: хранится в BlockState направление «вперёд» (direction.name() в NBT),
  * входная сторона — повёрнутая на 90° по часовой CW, выходная — её противоположность.
  */
-public class FluidPumpBlockEntity extends BlockEntity implements IFluidStandardTransceiverMK2 {
+public class FluidPumpBlockEntity extends BaseHbmBlockEntity implements IFluidStandardTransceiverMK2 {
 
     /** Размер буфера по умолчанию (мБ). */
     public int bufferSize = 100;
@@ -156,8 +155,7 @@ public class FluidPumpBlockEntity extends BlockEntity implements IFluidStandardT
     // =====================================================================================
 
     @Override
-    protected void saveAdditional(@NotNull CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
         tank.writeToNBT(tag, "t");
         tag.putByte("priority", (byte) priority.ordinal());
         tag.putInt("bufferSize", bufferSize);
@@ -165,8 +163,7 @@ public class FluidPumpBlockEntity extends BlockEntity implements IFluidStandardT
     }
 
     @Override
-    public void load(@NotNull CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
         tank.readFromNBT(tag, "t");
         fluidType = tank.getTankType();
         priority = fromOrdinal(ConnectionPriority.class, tag.getByte("priority"));
@@ -180,30 +177,7 @@ public class FluidPumpBlockEntity extends BlockEntity implements IFluidStandardT
 
     private static <E extends Enum<E>> E fromOrdinal(Class<E> clazz, byte ordinal) {
         E[] values = clazz.getEnumConstants();
-        if (ordinal < 0 || ordinal >= values.length) return values[2]; // NORMAL
+        if (ordinal < 0 || ordinal >= values.length) return values[2];
         return values[ordinal];
-    }
-
-    //? if < 1.21.1 {
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        saveAdditional(tag);
-        return tag;
-    }
-    //?} else {
-    /*@Override
-    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
-
-        CompoundTag tag = super.getUpdateTag(registries);
-        saveAdditional(tag, registries);
-        return tag;
-    
-    }
-    *///?}
-
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
     }
 }

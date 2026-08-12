@@ -174,6 +174,9 @@ public class CargoElevatorBakedModel extends AbstractMultipartBakedModel impleme
         //? if fabric {
         /*return super.getParticleIcon();
         *///?}
+        //? if neoforge {
+        /*return super.getParticleIcon();
+        *///?}
     }
 
     @Override

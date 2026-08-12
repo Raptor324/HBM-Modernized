@@ -20,7 +20,9 @@ public class SoyuzRocketBlockEntity extends BlockEntity {
         super(ModBlockEntities.DECO_SOYUZ_ROCKET_BE.get(), pos, state);
     }
 
+    //? if forge {
     @Override
+    //?}
     public AABB getRenderBoundingBox() {
         BlockPos p = this.getBlockPos();
         return new AABB(p.getX() - 6, p.getY(), p.getZ() - 6,

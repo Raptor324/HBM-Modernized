@@ -106,6 +106,10 @@ public class MachineRadarBakedModel extends AbstractMultipartBakedModel implemen
         return getQuads(state, side, rand, ModelData.EMPTY, null);
         //?}
 
+        //? if neoforge {
+        /*return super.getQuads(state, side, rand);
+        *///?}
+
         //? if fabric {
         /*if (state == null) {
             return getItemQuads(side, rand);

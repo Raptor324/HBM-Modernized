@@ -1,10 +1,5 @@
 package com.hbm_m.client.render.implementations;
 
-
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -27,10 +22,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -41,11 +32,14 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
+
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePressBlockEntity, PressBakedModel> {
 
     private static final String HEAD_PART = "Head";
@@ -150,10 +144,10 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
             // Under Iris/Oculus, the per-part extended-shader path is extremely sensitive to
             // apply()/clear() frequency. When instancing is disabled, we open an IrisRenderBatch
             // session so the head draw shares one apply()/clear() with other parts in this pass.
-            //? if forge {
+            
+            //? if forge || neoforge {
             boolean useIrisBatch = ShaderCompatibilityDetector.isExternalShaderActive() && (!useBatching || inShadowPass);
-            //?}
-            //? if fabric {
+            //?} elif fabric {
             /*boolean useIrisBatch = ShaderCompatibilityDetector.isExternalShaderActive();
             *///?}
             if (useIrisBatch) {

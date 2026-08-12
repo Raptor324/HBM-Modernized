@@ -1,5 +1,4 @@
 package com.hbm_m.client;
-import com.hbm_m.client.GuiCompat;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -16,6 +15,7 @@ import net.minecraft.client.gui.screens.Screen;
  * <p>Расставлять stonecutter-блоки в 64 Screen-классах нецелесообразно, поэтому весь call-site
  * сводится к этому статическому хелперу с внутренним version-gating.
  */
+
 public final class GuiCompat {
     private GuiCompat() {}
 
@@ -28,12 +28,12 @@ public final class GuiCompat {
      * @param mouseY       координата мыши Y
      * @param partialTick  partial tick
      */
+
     public static void renderBackground(Screen screen, GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        //? if forge {
+        //? if < 1.21.1 {
         screen.renderBackground(guiGraphics);
-        //?}
-        //? if neoforge {
-        /*screen.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
+        //?} else {
+        /*screen.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         *///?}
     }
 }

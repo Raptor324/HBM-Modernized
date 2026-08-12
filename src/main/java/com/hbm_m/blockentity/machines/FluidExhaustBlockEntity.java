@@ -7,17 +7,13 @@ import com.hbm_m.api.fluids.FluidNetProvider;
 import com.hbm_m.api.fluids.FluidNode;
 import com.hbm_m.api.fluids.IFluidPipeMK2;
 import com.hbm_m.api.network.UniNodespace;
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.ModFluids;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 
@@ -30,7 +26,7 @@ import net.minecraft.world.level.material.Fluid;
  *
  * Типы дыма задаются через ModFluids (аналог Fluids.SMOKE_* из 1.7.10).
  */
-public class FluidExhaustBlockEntity extends BlockEntity implements IFluidPipeMK2 {
+public class FluidExhaustBlockEntity extends BaseHbmBlockEntity implements IFluidPipeMK2 {
 
     /**
      * Типы дыма, через которые проходит выхлоп. Инициализируются при первом onLoad.
@@ -160,36 +156,4 @@ public class FluidExhaustBlockEntity extends BlockEntity implements IFluidPipeMK
         }
     }
 
-    // =====================================================================================
-    // NBT (нет собственных данных, только тип блока)
-    // =====================================================================================
-
-    @Override
-    protected void saveAdditional(@NotNull CompoundTag tag) {
-        super.saveAdditional(tag);
-    }
-
-    @Override
-    public void load(@NotNull CompoundTag tag) {
-        super.load(tag);
-    }
-
-    //? if < 1.21.1 {
-    @Override
-    public CompoundTag getUpdateTag() {
-        return super.getUpdateTag();
-    }
-    //?} else {
-    /*@Override
-    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
-
-        return super.getUpdateTag(registries);
-    
-    }
-    *///?}
-
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
 }

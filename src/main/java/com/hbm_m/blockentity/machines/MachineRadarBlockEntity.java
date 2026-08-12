@@ -1272,6 +1272,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
     }
     *///?}
 
+    //? if < 1.21.1 {
     @Override
     public void handleUpdateTag(CompoundTag tag) {
         if (tag.contains("energy")) {
@@ -1340,6 +1341,9 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             handleUpdateTag(PlatformHooks.getItemTag(pkt));
         }
     }
+    //?}
+    // На 1.21.1 neoforge handleUpdateTag(CompoundTag)/onDataPacket(Connection,pkt) удалены —
+    // клиентский sync идёт через getUpdateTag -> loadWithComponents -> loadAdditional (см. выше).
 
     /** Публичная обёртка над {@link #isItemValidForSlot} для слотов меню. */
     public boolean canPlaceItemInSlot(int slot, ItemStack stack) {
@@ -1381,6 +1385,9 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         //?}
         //? if fabric {
         /*return teamreborn.energy.api.EnergyStorage.ITEM.find(stack, null) != null;
+        *///?}
+        //? if neoforge {
+        /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
         *///?}
     }
 

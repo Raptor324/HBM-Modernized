@@ -8,6 +8,7 @@ import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,15 +21,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
-//? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-*///?}
 
-@SuppressWarnings("UnstableApiUsage")
 public class MachineBreederMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
     private static final int SLOT_INPUT = 0;
@@ -109,11 +102,7 @@ public class MachineBreederMenu extends AbstractContainerMenu implements ILongEn
     }
 
     private static boolean hasFluidStorageItem(ItemStack stack) {
-        //? if forge {
-        return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-        //?} else {
-        /*return FluidStorage.ITEM.find(stack, ContainerItemContext.withConstant(stack)) != null;
-        *///?}
+        return PlatformHooks.isFluidContainer(stack);
     }
 
     private static MachineBreederBlockEntity getBlockEntity(Inventory inv, FriendlyByteBuf data) {

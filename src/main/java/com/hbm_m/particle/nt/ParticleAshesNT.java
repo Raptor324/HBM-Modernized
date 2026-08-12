@@ -133,11 +133,19 @@ public class ParticleAshesNT extends ParticleNT {
             float u = (i == 0 || i == 1) ? 1F : 0F; // 0,1 -> MaxU; 2,3 -> MinU
             float v = (i == 0 || i == 3) ? 1F : 0F; // 0,3 -> MaxV; 1,2 -> MinV
             // Format = POSITION_COLOR_TEX_LIGHTMAP: position, color, UV0, UV2
+            //? if < 1.21.1 {
             consumer.vertex(pX + rx, pY, pZ + rz)
                     .color(r, g, b, a)
                     .uv(u, v)
                     .uv2(light)
                     .endVertex();
+            //?} else {
+            /*// 1.21.1: vertex->addVertex, color->setColor, uv->setUv, uv2->setLight, endVertex удалён.
+            consumer.addVertex(pX + rx, pY, pZ + rz)
+                    .setColor(r, g, b, a)
+                    .setUv(u, v)
+                    .setLight(light);
+            *///?}
             // повернуть (vx, vz) на +90°: (x,z) -> (-z, x)
             float nx = -vz, nz = vx;
             vx = nx; vz = nz;
@@ -167,11 +175,19 @@ public class ParticleAshesNT extends ParticleNT {
             float oy = left.y * cx + up.y * cyScreen;
             float oz = left.z * cx + up.z * cyScreen;
             // Format = POSITION_COLOR_TEX_LIGHTMAP: position, color, UV0, UV2
+            //? if < 1.21.1 {
             consumer.vertex(pX + ox, pY + oy, pZ + oz)
                     .color(r, g, b, a)
                     .uv(corner[0] * 0.5F + 0.5F, corner[1] * 0.5F + 0.5F)
                     .uv2(light)
                     .endVertex();
+            //?} else {
+            /*// 1.21.1: vertex->addVertex, color->setColor, uv->setUv, uv2->setLight, endVertex удалён.
+            consumer.addVertex(pX + ox, pY + oy, pZ + oz)
+                    .setColor(r, g, b, a)
+                    .setUv(corner[0] * 0.5F + 0.5F, corner[1] * 0.5F + 0.5F)
+                    .setLight(light);
+            *///?}
         }
     }
 

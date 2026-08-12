@@ -79,9 +79,21 @@ public abstract class EntityExplosionChunkloading extends Entity {
         }
     }
 
+    //? if < 1.21.1 {
     @Override
     public void onAddedToWorld() {
         super.onAddedToWorld();
+        onAddedToLevelHook();
+    }
+    //?} else {
+    /*@Override
+    public void onAddedToLevel() {
+        super.onAddedToLevel();
+        onAddedToLevelHook();
+    }
+    *///?}
+
+    private void onAddedToLevelHook() {
         if (!level().isClientSide && level() instanceof ServerLevel server && this.loadedChunk == null) {
             this.loadedChunk = new ChunkPos(this.blockPosition());
             this.activeTicketRadius = getChunkLoadRadius();
@@ -94,11 +106,23 @@ public abstract class EntityExplosionChunkloading extends Entity {
         }
     }
 
+    //? if < 1.21.1 {
     @Override
     public void onRemovedFromWorld() {
+        onRemovedFromLevelHook();
+        super.onRemovedFromWorld();
+    }
+    //?} else {
+    /*@Override
+    public void onRemovedFromLevel() {
+        onRemovedFromLevelHook();
+        super.onRemovedFromLevel();
+    }
+    *///?}
+
+    private void onRemovedFromLevelHook() {
         if (!level().isClientSide && level() instanceof ServerLevel server) {
             releaseChunkTicket(server);
         }
-        super.onRemovedFromWorld();
     }
 }

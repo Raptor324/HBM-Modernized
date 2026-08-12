@@ -100,7 +100,17 @@ public class ArmorTooltipHandler {
         for (int i = 0; i < 9; i++) {
             String key = ArmorModificationHelper.MOD_SLOT_KEY_PREFIX + i;
             if (modsCompound.contains(key)) {
+                
+                //? if < 1.21.1 {
                 ItemStack modStack = ItemStack.of(modsCompound.getCompound(key));
+                //?} else {
+                /*net.minecraft.core.HolderLookup.Provider provider = null;
+                if (dev.architectury.platform.Platform.getEnvironment() == dev.architectury.utils.Env.CLIENT) {
+                    provider = getClientProvider();
+                }
+                ItemStack modStack = provider != null ? ItemStack.parseOptional(provider, modsCompound.getCompound(key)) : ItemStack.EMPTY;
+                *///?}
+                
                 if (!modStack.isEmpty() && modStack.getItem() instanceof ItemArmorMod) {
                     ItemArmorMod mod = (ItemArmorMod) modStack.getItem();
                     
@@ -337,4 +347,20 @@ public class ArmorTooltipHandler {
             list.add(line.withStyle(ChatFormatting.GRAY));
         }
     }
+    
+    //? if >= 1.21.1 {
+    /*//? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif fabric {
+    /^@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+    ^///?} elif neoforge {
+    /^@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    ^///?}
+    private static net.minecraft.core.HolderLookup.Provider getClientProvider() {
+        var mc = net.minecraft.client.Minecraft.getInstance();
+        if (mc.level != null) return mc.level.registryAccess();
+        if (mc.getConnection() != null) return mc.getConnection().registryAccess();
+        return null;
+    }
+    *///?}
 }

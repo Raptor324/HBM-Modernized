@@ -33,7 +33,7 @@ public class RBMKControlAutoBlock extends RBMKColumnBlock {
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<RBMKControlAutoBlock> CODEC = simpleCodec(RBMKControlAutoBlock::new);
+    /*public static final com.mojang.serialization.MapCodec<RBMKControlAutoBlock> CODEC = simpleCodec(props -> new RBMKControlAutoBlock(false, props));
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {

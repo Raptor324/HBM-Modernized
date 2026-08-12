@@ -201,11 +201,13 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
     protected void containerTick() {
         super.containerTick();
         if (searchBox != null) {
+            //? if < 1.21.1 {
             searchBox.tick();
+            //?}
             if (searchBox.isFocused() && searchBox.getValue().isEmpty()) {
                 searchBox.setSuggestion("");
             } else if (!searchBox.isFocused() && searchBox.getValue().isEmpty()) {
-                // Р’РѕР·РІСЂР°С‰Р°РµРј РїРѕРґСЃРєР°Р·РєСѓ РєРѕРіРґР° С‚РµСЂСЏРµРј С„РѕРєСѓСЃ Рё РїРѕР»Рµ РїСѓСЃС‚РѕРµ
+                // Возвращаем подсказку когда теряем фокус и поле пустое
                 String hint = Component.translatable("gui.hbm_m.anvil.search_hint").getString();
                 if ("gui.hbm_m.anvil.search_hint".equals(hint)) {
                     hint = Component.translatable("gui.hbm_m.anvil.search").getString();
@@ -283,7 +285,11 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
     
     private int findRecipeIndex(ResourceLocation id) {
         for (int i = 0; i < filteredRecipes.size(); i++) {
+            //? if < 1.21.1 {
             if (filteredRecipes.get(i).getId().equals(id)) {
+            //?} else {
+            /*if (id.equals(RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), AnvilRecipe.Type.INSTANCE, filteredRecipes.get(i)))) {
+            *///?}
                 return i;
             }
         }
@@ -420,6 +426,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
             new AnvilSelectRecipeC2SPacket(menu.blockEntity.getBlockPos(), id));
     }
     
+    //? if < 1.21.1 {
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         if (isOverRecipeGrid(mouseX, mouseY)) {
@@ -432,6 +439,20 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         }
         return super.mouseScrolled(mouseX, mouseY, delta);
     }
+    //?} else {
+    /*@Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (isOverRecipeGrid(mouseX, mouseY)) {
+            if (scrollY > 0) {
+                scrollColumns(-1);
+            } else if (scrollY < 0) {
+                scrollColumns(1);
+            }
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+    }
+    *///?}
     
     private boolean isOverRecipeGrid(double mouseX, double mouseY) {
         int guiLeft = (width - imageWidth) / 2;

@@ -55,8 +55,21 @@ public class GeigerCounterBlock extends BaseEntityBlock {
         return new GeigerCounterBlockEntity(pos, state);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player,
+            @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
+        return printGeigerData(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player,
+            @NotNull BlockHitResult hit) {
+        return printGeigerData(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult printGeigerData(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player,
             @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
         if (level.isClientSide()) {
             return InteractionResult.SUCCESS;

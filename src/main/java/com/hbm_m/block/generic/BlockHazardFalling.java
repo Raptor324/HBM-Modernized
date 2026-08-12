@@ -51,11 +51,13 @@ public class BlockHazardFalling extends FallingBlock {
         }
     }
 
-    //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<BlockHazardFalling> CODEC = simpleCodec(BlockHazardFalling::new);
+    //? if >= 1.21.1 {
+    /*// 1.21.1: FallingBlock имеет абстрактный codec() -> MapCodec<? extends FallingBlock>.
+    // BlockHazardFalling extends FallingBlock (не BaseEntityBlock), поэтому возвращаем typed CODEC.
+    public static final com.mojang.serialization.MapCodec<BlockHazardFalling> CODEC = simpleCodec(BlockHazardFalling::new);
 
     @Override
-    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.FallingBlock> codec() {
         return CODEC;
     }
     *///?}

@@ -194,7 +194,16 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
         if (!icon.isEmpty()) {
             lines.add(icon.getHoverName().copy().withStyle(ChatFormatting.YELLOW));
         } else {
+            // На 1.20.1 id лежит на Recipe (getId()); на 1.21.1 — на RecipeHolder.
+            //? if < 1.21.1 {
             lines.add(Component.literal(recipe.getId().toString()).withStyle(ChatFormatting.YELLOW));
+            //?} else {
+            /*lines.add(Component.literal(
+                    RecipeHooks.recipeId(
+                            this.minecraft.level.getRecipeManager(),
+                            ChemicalPlantRecipe.Type.INSTANCE,
+                            recipe).toString()).withStyle(ChatFormatting.YELLOW));
+            *///?}
         }
 
         String pool = recipe.getBlueprintPool();

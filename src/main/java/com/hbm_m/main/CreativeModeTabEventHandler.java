@@ -31,7 +31,9 @@ import dev.architectury.utils.EnvExecutor;
 *///?}
 //? if forge {
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+*///?}
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.CreativeModeTab;
@@ -52,23 +54,9 @@ public final class CreativeModeTabEventHandler {
 
     //? if forge {
     public static void onBuildCreativeModeTabContents(BuildCreativeModeTabContentsEvent event) {
-        MainRegistry.LOGGER.info("Building creative tab contents for: " + event.getTabKey());
-        
-        if (event.getTab() == ModCreativeTabs.NTM_RESOURCES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateResourceTab((stack, vis) -> event.accept(stack, vis));
-        }
-
-        if (event.getTab() == ModCreativeTabs.NTM_FUEL_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateFuelTab((stack, vis) -> event.accept(stack, vis));
-        }
-
-        if (event.getTab() == ModCreativeTabs.NTM_TEMPLATES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateTemplatesTab((stack, vis) -> event.accept(stack, vis));
-        }
-
-        if (event.getTab() == ModCreativeTabs.NTM_WEAPONS_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateWeaponsTab((stack, vis) -> event.accept(stack, vis));
-        }
+        // Кастомные вкладки (NTM_*) уже наполняются через .displayItems(...) в ModCreativeTabs!
+        // Вкладка SEARCH тоже наполняется автоматически, т.к. мы везде используем PARENT_AND_SEARCH_TABS.
+        // Здесь мы перехватываем ТОЛЬКО ванильные вкладки.
 
         if (event.getTabKey() == CreativeModeTabs.COMBAT) {
             populateCombatTab((stack, vis) -> event.accept(stack, vis));
@@ -79,44 +67,27 @@ public final class CreativeModeTabEventHandler {
                     CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
 
-        if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS || event.getTabKey() == CreativeModeTabs.SEARCH) {
+        if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
             populateSpawnEggs((stack, vis) -> event.accept(stack, vis));
         }
-
-        if (event.getTab() == ModCreativeTabs.NTM_CONSUMABLES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateConsumablesTab((stack, vis) -> event.accept(stack, vis));
-        }
-
-        if (event.getTab() == ModCreativeTabs.NTM_SPAREPARTS_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateSparepartsTab((stack, vis) -> event.accept(stack, vis));
-        }
-
-        if (event.getTab() == ModCreativeTabs.NTM_ORES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateOresTab((stack, vis) -> event.accept(stack, vis));
-        }
-
-        if (event.getTab() == ModCreativeTabs.NTM_BUILDING_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateBuildingTab((stack, vis) -> event.accept(stack, vis));
-        }
-
-        if (event.getTab() == ModCreativeTabs.NTM_MACHINES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateMachinesTab((stack, vis) -> event.accept(stack, vis));
-        }
-
-        if (event.getTab() == ModCreativeTabs.NTM_BOMBS_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateNukeTab((stack, vis) -> event.accept(stack, vis));
-        }
-
-        if (event.getTab() == ModCreativeTabs.NTM_MISSILES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateMissilesTab((stack, vis) -> event.accept(stack, vis));
-        }
-
-        // if (event.getTab() == ModCreativeTabs.NTM_DEV_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-        //     populateDevItemsTab((stack, vis) -> event.accept(stack, vis));
-        // }
-
     }
-    //?}
+    //?} elif neoforge {
+    /*// На NeoForge 1.21.1 API идентичен Forge.
+    public static void onBuildCreativeModeTabContents(BuildCreativeModeTabContentsEvent event) {
+        if (event.getTabKey() == CreativeModeTabs.COMBAT) {
+            populateCombatTab((stack, vis) -> event.accept(stack, vis));
+        }
+
+        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
+            event.accept(new ItemStack(ModItems.MUSIC_DISC_BUNKER.get()),
+                    CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        }
+
+        if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
+            populateSpawnEggs((stack, vis) -> event.accept(stack, vis));
+        }
+    }
+    *///?}
 
     //? if fabric {
     /*public static void initFabric() {
@@ -376,8 +347,16 @@ public final class CreativeModeTabEventHandler {
 
     // БРОНЯ И ИНСТРУМЕНТЫ
     public static void populateCombatTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
-        // Упрощенный Consumer, по умолчанию использующий PARENT_AND_SEARCH_TABS
-        Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        // ДОБАВЛЕНА ЗАЩИТА ОТ ВНУТРЕННИХ ДУБЛИКАТОВ (поскольку в коде ниже много повторяющихся шлемов и мечей)
+        Set<String> seen = new HashSet<>();
+        Consumer<ItemStack> add = stack -> {
+            if (stack == null || stack.isEmpty()) return;
+            String itemId = String.valueOf(BuiltInRegistries.ITEM.getKey(stack.getItem()));
+            CompoundTag itemTag = PlatformHooks.getItemTag(stack);
+            String tag = itemTag == null ? "" : itemTag.toString();
+            if (!seen.add(itemId + "|" + tag)) return; // Игнорируем дубликат, чтобы не крашнуть 1.21.1
+            acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        };
 
         add.accept(new ItemStack(ModItems.ALLOY_SWORD.get()));
         add.accept(new ItemStack(ModItems.ALLOY_AXE.get()));

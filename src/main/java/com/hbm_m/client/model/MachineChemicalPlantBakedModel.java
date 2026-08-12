@@ -84,6 +84,10 @@ public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel 
         return getQuads(state, side, rand, ModelData.EMPTY, null);
         //?}
 
+        //? if neoforge {
+        /*return super.getQuads(state, side, rand);
+        *///?}
+
         //? if fabric {
         /*if (state == null) {
             return getItemQuads(side, rand);
@@ -173,6 +177,10 @@ public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel 
         //?}
 
         //? if fabric {
+        /*return super.getParticleIcon();
+        *///?}
+
+        //? if neoforge {
         /*return super.getParticleIcon();
         *///?}
     }

@@ -165,6 +165,30 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
             }
         };
         *///?}
+
+        //? if neoforge {
+        /*// NeoForge: HBM FluidTank и ModFluids — кросс-платформенные, инициализация идентична forge.
+        this.oilTank = new FluidTank(128_000) {
+            @Override
+            public boolean isFluidValid(Fluid fluid) {
+                return fluid.isSame(ModFluids.CRUDE_OIL.getSource());
+            }
+        };
+
+        this.gasTank = new FluidTank(128_000) {
+            @Override
+            public boolean isFluidValid(Fluid fluid) {
+                return fluid.isSame(ModFluids.GAS.getSource());
+            }
+        };
+
+        this.fracksolTank = new FluidTank(64_000) {
+            @Override
+            public boolean isFluidValid(Fluid fluid) {
+                return fluid.isSame(ModFluids.FRACKSOL.getSource());
+            }
+        };
+        *///?}
     }
 
     //=====================================================================================//

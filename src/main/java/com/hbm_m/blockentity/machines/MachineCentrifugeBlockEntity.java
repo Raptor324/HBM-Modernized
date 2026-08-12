@@ -145,8 +145,14 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
             return false;
         }
 
-        com.hbm_m.recipe.CentrifugeRecipe recipe = level.getRecipeManager()
-                .getRecipeFor(com.hbm_m.recipe.ModRecipes.CENTRIFUGE_TYPE.get(), new net.minecraft.world.SimpleContainer(input), level)
+        // 1.21.1: getRecipeFor требует RecipeInput, а SimpleContainer им не является —
+        // используем устоявшийся в проекте паттерн: getAllRecipes + matchesRecipe(RecipeInputWrapper).
+        com.hbm_m.platform.recipe.RecipeInputWrapper wrapper =
+                new com.hbm_m.platform.recipe.RecipeInputWrapper(new net.minecraft.world.SimpleContainer(input));
+        com.hbm_m.recipe.CentrifugeRecipe recipe = com.hbm_m.platform.recipe.RecipeHooks
+                .getAllRecipes(level, com.hbm_m.recipe.ModRecipes.CENTRIFUGE_TYPE.get()).stream()
+                .filter(r -> r.matchesRecipe(wrapper, level))
+                .findFirst()
                 .orElse(null);
                 
         if (recipe == null) {
@@ -184,8 +190,14 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
             return;
         }
 
-        com.hbm_m.recipe.CentrifugeRecipe recipe = level.getRecipeManager()
-                .getRecipeFor(com.hbm_m.recipe.ModRecipes.CENTRIFUGE_TYPE.get(), new net.minecraft.world.SimpleContainer(input), level)
+        // 1.21.1: getRecipeFor требует RecipeInput, а SimpleContainer им не является —
+        // используем устоявшийся в проекте паттерн: getAllRecipes + matchesRecipe(RecipeInputWrapper).
+        com.hbm_m.platform.recipe.RecipeInputWrapper wrapper =
+                new com.hbm_m.platform.recipe.RecipeInputWrapper(new net.minecraft.world.SimpleContainer(input));
+        com.hbm_m.recipe.CentrifugeRecipe recipe = com.hbm_m.platform.recipe.RecipeHooks
+                .getAllRecipes(level, com.hbm_m.recipe.ModRecipes.CENTRIFUGE_TYPE.get()).stream()
+                .filter(r -> r.matchesRecipe(wrapper, level))
+                .findFirst()
                 .orElse(null);
                 
         if (recipe == null) {

@@ -35,34 +35,10 @@ public final class DiamondPronter {
         Matrix4f matrix = poseStack.last().pose();
         VertexConsumer consumer = buffer.getBuffer(RenderType.entityTranslucent(TEXTURE));
 
-        consumer.vertex(matrix, 0.0F, 0.5F, -0.5F)
-                .color(255, 255, 255, 255)
-                .uv(p * 144, p * 45)
-                .overlayCoords(packedOverlay)
-                .uv2(packedLight)
-                .normal(0.0F, 1.0F, 0.0F)
-                .endVertex();
-        consumer.vertex(matrix, 0.0F, 0.5F, 0.5F)
-                .color(255, 255, 255, 255)
-                .uv(p * 5, p * 45)
-                .overlayCoords(packedOverlay)
-                .uv2(packedLight)
-                .normal(0.0F, 1.0F, 0.0F)
-                .endVertex();
-        consumer.vertex(matrix, 0.0F, -0.5F, 0.5F)
-                .color(255, 255, 255, 255)
-                .uv(p * 5, p * 184)
-                .overlayCoords(packedOverlay)
-                .uv2(packedLight)
-                .normal(0.0F, 1.0F, 0.0F)
-                .endVertex();
-        consumer.vertex(matrix, 0.0F, -0.5F, -0.5F)
-                .color(255, 255, 255, 255)
-                .uv(p * 144, p * 184)
-                .overlayCoords(packedOverlay)
-                .uv2(packedLight)
-                .normal(0.0F, 1.0F, 0.0F)
-                .endVertex();
+        com.hbm_m.platform.RenderHooks.vertexFull(consumer, matrix, 0.0F, 0.5F, -0.5F, 255, 255, 255, 255, p * 144, p * 45, packedOverlay, packedLight, 0.0F, 1.0F, 0.0F);
+        com.hbm_m.platform.RenderHooks.vertexFull(consumer, matrix, 0.0F, 0.5F, 0.5F, 255, 255, 255, 255, p * 5, p * 45, packedOverlay, packedLight, 0.0F, 1.0F, 0.0F);
+        com.hbm_m.platform.RenderHooks.vertexFull(consumer, matrix, 0.0F, -0.5F, 0.5F, 255, 255, 255, 255, p * 5, p * 184, packedOverlay, packedLight, 0.0F, 1.0F, 0.0F);
+        com.hbm_m.platform.RenderHooks.vertexFull(consumer, matrix, 0.0F, -0.5F, -0.5F, 255, 255, 255, 255, p * 144, p * 184, packedOverlay, packedLight, 0.0F, 1.0F, 0.0F);
 
         float width = 10F * s;
         float height = 14F * s;
@@ -118,34 +94,10 @@ public final class DiamondPronter {
             int x = symbol.x;
             int y = symbol.y;
 
-            consumer.vertex(matrix, 0.01F, symSize + oY, -symSize + oZ)
-                    .color(255, 255, 255, 255)
-                    .uv((x + 59) * p, y * p)
-                    .overlayCoords(packedOverlay)
-                    .uv2(packedLight)
-                    .normal(0.0F, 1.0F, 0.0F)
-                    .endVertex();
-            consumer.vertex(matrix, 0.01F, symSize + oY, symSize + oZ)
-                    .color(255, 255, 255, 255)
-                    .uv(x * p, y * p)
-                    .overlayCoords(packedOverlay)
-                    .uv2(packedLight)
-                    .normal(0.0F, 1.0F, 0.0F)
-                    .endVertex();
-            consumer.vertex(matrix, 0.01F, -symSize + oY, symSize + oZ)
-                    .color(255, 255, 255, 255)
-                    .uv(x * p, (y + 59) * p)
-                    .overlayCoords(packedOverlay)
-                    .uv2(packedLight)
-                    .normal(0.0F, 1.0F, 0.0F)
-                    .endVertex();
-            consumer.vertex(matrix, 0.01F, -symSize + oY, -symSize + oZ)
-                    .color(255, 255, 255, 255)
-                    .uv((x + 59) * p, (y + 59) * p)
-                    .overlayCoords(packedOverlay)
-                    .uv2(packedLight)
-                    .normal(0.0F, 1.0F, 0.0F)
-                    .endVertex();
+            com.hbm_m.platform.RenderHooks.vertexFull(consumer, matrix, 0.01F, symSize + oY, -symSize + oZ, 255, 255, 255, 255, (x + 59) * p, y * p, packedOverlay, packedLight, 0.0F, 1.0F, 0.0F);
+            com.hbm_m.platform.RenderHooks.vertexFull(consumer, matrix, 0.01F, symSize + oY, symSize + oZ, 255, 255, 255, 255, x * p, y * p, packedOverlay, packedLight, 0.0F, 1.0F, 0.0F);
+            com.hbm_m.platform.RenderHooks.vertexFull(consumer, matrix, 0.01F, -symSize + oY, symSize + oZ, 255, 255, 255, 255, x * p, (y + 59) * p, packedOverlay, packedLight, 0.0F, 1.0F, 0.0F);
+            com.hbm_m.platform.RenderHooks.vertexFull(consumer, matrix, 0.01F, -symSize + oY, -symSize + oZ, 255, 255, 255, 255, (x + 59) * p, (y + 59) * p, packedOverlay, packedLight, 0.0F, 1.0F, 0.0F);
         }
     }
 
@@ -162,33 +114,9 @@ public final class DiamondPronter {
             int packedLight,
             int packedOverlay
     ) {
-        consumer.vertex(matrix, 0.01F, height + oY, -width + oZ)
-                .color(255, 255, 255, 255)
-                .uv((x + 20) * p, y * p)
-                .overlayCoords(packedOverlay)
-                .uv2(packedLight)
-                .normal(0.0F, 1.0F, 0.0F)
-                .endVertex();
-        consumer.vertex(matrix, 0.01F, height + oY, width + oZ)
-                .color(255, 255, 255, 255)
-                .uv(x * p, y * p)
-                .overlayCoords(packedOverlay)
-                .uv2(packedLight)
-                .normal(0.0F, 1.0F, 0.0F)
-                .endVertex();
-        consumer.vertex(matrix, 0.01F, -height + oY, width + oZ)
-                .color(255, 255, 255, 255)
-                .uv(x * p, (y + 28) * p)
-                .overlayCoords(packedOverlay)
-                .uv2(packedLight)
-                .normal(0.0F, 1.0F, 0.0F)
-                .endVertex();
-        consumer.vertex(matrix, 0.01F, -height + oY, -width + oZ)
-                .color(255, 255, 255, 255)
-                .uv((x + 20) * p, (y + 28) * p)
-                .overlayCoords(packedOverlay)
-                .uv2(packedLight)
-                .normal(0.0F, 1.0F, 0.0F)
-                .endVertex();
+        com.hbm_m.platform.RenderHooks.vertexFull(consumer, matrix, 0.01F, height + oY, -width + oZ, 255, 255, 255, 255, (x + 20) * p, y * p, packedOverlay, packedLight, 0.0F, 1.0F, 0.0F);
+        com.hbm_m.platform.RenderHooks.vertexFull(consumer, matrix, 0.01F, height + oY, width + oZ, 255, 255, 255, 255, x * p, y * p, packedOverlay, packedLight, 0.0F, 1.0F, 0.0F);
+        com.hbm_m.platform.RenderHooks.vertexFull(consumer, matrix, 0.01F, -height + oY, width + oZ, 255, 255, 255, 255, x * p, (y + 28) * p, packedOverlay, packedLight, 0.0F, 1.0F, 0.0F);
+        com.hbm_m.platform.RenderHooks.vertexFull(consumer, matrix, 0.01F, -height + oY, -width + oZ, 255, 255, 255, 255, (x + 20) * p, (y + 28) * p, packedOverlay, packedLight, 0.0F, 1.0F, 0.0F);
     }
 }

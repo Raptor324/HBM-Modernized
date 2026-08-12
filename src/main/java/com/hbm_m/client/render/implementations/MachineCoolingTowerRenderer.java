@@ -23,15 +23,14 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.phys.AABB;
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
 
-@OnlyIn(Dist.CLIENT)
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class MachineCoolingTowerRenderer extends AbstractPartBasedRenderer<MachineCoolingTowerBlockEntity, MachineCoolingTowerBakedModel> {
 
     private MachineCoolingTowerVboRenderer gpu;
@@ -50,11 +49,20 @@ public class MachineCoolingTowerRenderer extends AbstractPartBasedRenderer<Machi
         instancersInitialized = false;
     }
 
+    //? if forge {
     public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
         if (instancedMain != null) {
             instancedMain.flush(event);
         }
     }
+    //?} elif neoforge {
+    /*public static void flushInstancedBatches(net.neoforged.neoforge.client.event.RenderLevelStageEvent event) {
+        if (instancedMain != null) {
+            // 1.21.1: нет перегрузки flush(RenderLevelStageEvent); готовая сигнатура — flush(Matrix4f).
+            instancedMain.flush(event.getProjectionMatrix());
+        }
+    }
+    *///?}
 
     private static synchronized void initializeInstancedRenderersSync(MachineCoolingTowerBakedModel model) {
         if (instancersInitialized) return;
@@ -139,4 +147,3 @@ public class MachineCoolingTowerRenderer extends AbstractPartBasedRenderer<Machi
 
     @Override public int getViewDistance() { return 128; }
 }
-

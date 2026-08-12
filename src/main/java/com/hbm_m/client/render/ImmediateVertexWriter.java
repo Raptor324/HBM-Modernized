@@ -10,6 +10,14 @@ import org.joml.Vector4f;
  * Безопасная запись {@code POSITION_TEX_COLOR} для Embeddium {@code SodiumBufferBuilder}:
  * int-цвет, {@code uv} перед {@code color}, либо полный {@code vertex(...)} через reflection.
  */
+
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public final class ImmediateVertexWriter {
 
     private static final String SODIUM_BUILDER =
@@ -57,9 +65,17 @@ public final class ImmediateVertexWriter {
             return;
         }
         if (matrix != null) {
+            //? if < 1.21.1 {
             consumer.vertex(matrix, x, y, z).uv(u, v).color(r, g, b, a).endVertex();
+            //?} else {
+            /*consumer.addVertex(matrix, x, y, z).setUv(u, v).setColor(r, g, b, a);
+            *///?}
         } else {
+            //? if < 1.21.1 {
             consumer.vertex(x, y, z).uv(u, v).color(r, g, b, a).endVertex();
+            //?} else {
+            /*consumer.addVertex(x, y, z).setUv(u, v).setColor(r, g, b, a);
+            *///?}
         }
     }
 

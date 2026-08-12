@@ -168,8 +168,19 @@ public class MachineTowerSmallBlock extends BaseEntityBlock implements IMultiblo
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return reportStatus(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return reportStatus(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult reportStatus(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         // No GUI - this multiblock is a purely passive fluid pipe-to-pipe converter.
         // Right-clicking just reports the current tank levels via an action bar message.
         if (!level.isClientSide()) {

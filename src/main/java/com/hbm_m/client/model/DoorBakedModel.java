@@ -78,6 +78,12 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         //? if fabric {
         /*return getQuadsFabric(state, side, rand, FabricRenderDataBridge.get());
         *///?}
+
+        //? if neoforge {
+        /*// Геометрия в мире предоставляется BER/VBO системой (как на forge/fabric).
+        // Для item-render возвращаем квады из частей через безаргументный путь.
+        return Collections.emptyList();
+        *///?}
     }
     
     //? if forge {
@@ -507,6 +513,10 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         //?}
 
         //? if fabric {
+        /*return super.getParticleIcon();
+        *///?}
+
+        //? if neoforge {
         /*return super.getParticleIcon();
         *///?}
     }

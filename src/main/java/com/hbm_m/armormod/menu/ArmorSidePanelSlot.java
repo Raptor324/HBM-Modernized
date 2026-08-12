@@ -29,7 +29,11 @@ public class ArmorSidePanelSlot extends Slot {
     @Override
     public void onTake(Player pPlayer, ItemStack pStack) {
         if (pStack.getItem() instanceof ArmorItem armorItem) {
+            //? if < 1.21.1 {
             playSound(armorItem.getEquipSound());
+            //?} else {
+            /*playSound(armorItem.getEquipSound().value());
+            *///?}
         }
         super.onTake(pPlayer, pStack);
     }
@@ -40,26 +44,30 @@ public class ArmorSidePanelSlot extends Slot {
      */
     @Override
     public void set(ItemStack pStack) {
-        // Мы хотим проиграть звук, только если предмет действительно изменился
         if (!ItemStack.isSameItem(this.getItem(), pStack) && pStack.getItem() instanceof ArmorItem armorItem) {
+            //? if < 1.21.1 {
             playSound(armorItem.getEquipSound());
+            //?} else {
+            /*playSound(armorItem.getEquipSound().value());
+            *///?}
         }
         super.set(pStack);
     }
 
     private void playSound(SoundEvent sound) {
-        // Воспроизводим звук на позиции игрока
         player.level().playSound(null, player.getX(), player.getY(), player.getZ(), sound, SoundSource.PLAYERS, 1.0F, 1.0F);
     }
-
-    // Валидация и прочие методы, как в ванильном слоте брони
 
     @Override
     public boolean mayPlace(ItemStack stack) {
         if (stack.isEmpty()) {
             return false;
         }
+        //? if < 1.21.1 {
         return Mob.getEquipmentSlotForItem(stack) == this.slotType;
+        //?} else {
+        /*return this.player.getEquipmentSlotForItem(stack) == this.slotType;
+        *///?}
     }
 
     @Override

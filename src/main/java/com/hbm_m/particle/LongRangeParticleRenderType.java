@@ -34,6 +34,7 @@ public class LongRangeParticleRenderType implements ParticleRenderType {
         return "long_range_particle";
     }
 
+    //? if < 1.21.1 {
     @Override
     public void begin(BufferBuilder buffer, TextureManager textureManager) {
         savedFogStart = RenderSystem.getShaderFogStart();
@@ -75,6 +76,37 @@ public class LongRangeParticleRenderType implements ParticleRenderType {
         buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.PARTICLE);
     }
 
+    @Override
+    public void end(Tesselator tesselator) {
+        tesselator.end();
+
+        RenderSystem.enableCull();
+        RenderSystem.depthMask(true);
+        RenderSystem.disableBlend();
+        RenderSystem.depthFunc(515);
+        RenderSystem.setShaderFogStart(savedFogStart);
+        RenderSystem.setShaderFogEnd(savedFogEnd);
+    }
+    //?} else {
+    /*@Override
+    public BufferBuilder begin(Tesselator tesselator, TextureManager textureManager) {
+        savedFogStart = RenderSystem.getShaderFogStart();
+        savedFogEnd = RenderSystem.getShaderFogEnd();
+
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.depthMask(false);
+        RenderSystem.setShader(GameRenderer::getParticleShader);
+        RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_PARTICLES);
+        disableParticleFog();
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthFunc(515);
+        RenderSystem.disableCull();
+
+        return tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.PARTICLE);
+    }
+    *///?}
+
     private static void disableParticleFog() {
         RenderSystem.setShaderFogStart(NO_FOG_START);
         RenderSystem.setShaderFogEnd(NO_FOG_END);
@@ -91,19 +123,5 @@ public class LongRangeParticleRenderType implements ParticleRenderType {
         if (fogEnd != null) {
             fogEnd.set(NO_FOG_END);
         }
-    }
-
-    @Override
-    public void end(Tesselator tesselator) {
-        //  Отправляем все вершины на рендер
-        tesselator.end();
-
-        //  ВОССТАНАВЛИВАЕМ состояние RenderSystem для остальной игры
-        RenderSystem.enableCull();           // Включаем face culling обратно
-        RenderSystem.depthMask(true);        // Включаем запись в depth buffer
-        RenderSystem.disableBlend();         // Отключаем альфа-блендинг
-        RenderSystem.depthFunc(515);         // Возвращаем стандартную функцию глубины
-        RenderSystem.setShaderFogStart(savedFogStart);
-        RenderSystem.setShaderFogEnd(savedFogEnd);
     }
 }

@@ -154,6 +154,7 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         return RadarTargetType.MISSILE_TIER0;
     }
 
+    //? if < 1.21.1 {
     @Override
     public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps, boolean teleport) {
         this.lerpX = x;
@@ -163,6 +164,17 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         this.lerpXRot = xRot;
         this.lerpSteps = steps + 1;
     }
+    //?} else {
+    /*@Override
+    public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps) {
+        this.lerpX = x;
+        this.lerpY = y;
+        this.lerpZ = z;
+        this.lerpYRot = yRot;
+        this.lerpXRot = xRot;
+        this.lerpSteps = steps + 1;
+    }
+    *///?}
 
     @Override
     public void recreateFromPacket(ClientboundAddEntityPacket packet) {
@@ -408,7 +420,6 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
     }
 
     protected void updateRotationFromMotion() {
-
         Vec3 motion = this.getDeltaMovement();
 
         // Защита от поворота на бок (pitch = -90) и случайного рыскания при нулевой скорости.
@@ -458,17 +469,24 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
     }
 
     //? if < 1.21.1 {
-
     @Override
     protected void defineSynchedData() {
         this.entityData.define(DATA_LAUNCH_FACING, Direction.NORTH);
     }
+
+    @Override
+    public Packet<ClientGamePacketListener> getAddEntityPacket() {
+        return new ClientboundAddEntityPacket(this, MobCategory.MISC.ordinal());
+    }
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-
         builder.define(DATA_LAUNCH_FACING, Direction.NORTH);
-    
+    }
+
+    @Override
+    public Packet<ClientGamePacketListener> getAddEntityPacket(net.minecraft.server.level.ServerEntity serverEntity) {
+        return new ClientboundAddEntityPacket(this, serverEntity);
     }
     *///?}
 
@@ -569,9 +587,21 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         this.loadedChunk = null;
     }
 
+    //? if < 1.21.1 {
     @Override
     public void onAddedToWorld() {
         super.onAddedToWorld();
+        onAddedToLevelHook();
+    }
+    //?} else {
+    /*@Override
+    public void onAddedToLevel() {
+        super.onAddedToLevel();
+        onAddedToLevelHook();
+    }
+    *///?}
+
+    private void onAddedToLevelHook() {
         if (!this.level().isClientSide && this.level() instanceof ServerLevel server) {
             // Ракета сама держит region‑тикет на свой чанк, чтобы летать сквозь выгруженные
             // чанки. Вдали от игрока PersistentEntitySectionManager изредка ре‑десериализует
@@ -593,22 +623,29 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         }
     }
 
+    //? if < 1.21.1 {
     @Override
     public void onRemovedFromWorld() {
+        onRemovedFromLevelHook();
+        super.onRemovedFromWorld();
+    }
+    //?} else {
+    /*@Override
+    public void onRemovedFromLevel() {
+        onRemovedFromLevelHook();
+        super.onRemovedFromLevel();
+    }
+    *///?}
+
+    private void onRemovedFromLevelHook() {
         if (!this.level().isClientSide) {
             com.hbm_m.server.missile.MissileTrackBroadcaster.onMissileRemoved(this);
         }
-        super.onRemovedFromWorld();
         releaseChunkTicket();
     }
 
     @Override
     public boolean shouldRenderAtSqrDistance(double distance) {
         return true;
-    }
-
-    @Override
-    public Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return new ClientboundAddEntityPacket(this, MobCategory.MISC.ordinal());
     }
 }

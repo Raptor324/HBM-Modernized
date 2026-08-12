@@ -2,6 +2,7 @@ package com.hbm_m.inventory.menu;
 
 import org.jetbrains.annotations.NotNull;
 
+import com.hbm_m.api.fluids.FluidItemAccess;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
@@ -168,7 +169,7 @@ public class BarrelIronMenu extends AbstractContainerMenu {
                     if (!moveItemStackTo(stackInSlot, MACHINE_SLOTS + 0, MACHINE_SLOTS + 1, false)) {
                         return ItemStack.EMPTY;
                     }
-                } else if (stackInSlot.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent()) {
+                } else if (FluidItemAccess.hasFluidHandler(stackInSlot)) {
                     if (!moveItemStackTo(stackInSlot, MachineFluidTankBlockEntity.SLOT_LOAD_IN, MachineFluidTankBlockEntity.SLOT_LOAD_IN + 1, false)) {
                         if (!moveItemStackTo(stackInSlot, MachineFluidTankBlockEntity.SLOT_UNLOAD_IN, MachineFluidTankBlockEntity.SLOT_UNLOAD_IN + 1, false)) {
                             return ItemStack.EMPTY;

@@ -51,11 +51,22 @@ public class EnergyNetworkManager extends SavedData {
     }
 
     public static EnergyNetworkManager get(ServerLevel level) {
+        //? if < 1.21.1 {
         return level.getDataStorage().computeIfAbsent(
                 (nbt) -> new EnergyNetworkManager(level, nbt),
                 () -> new EnergyNetworkManager(level),
                 DATA_NAME
         );
+        //?} else {
+        /*return level.getDataStorage().computeIfAbsent(
+                new net.minecraft.world.level.saveddata.SavedData.Factory<>(
+                        () -> new EnergyNetworkManager(level),
+                        (nbt, provider) -> new EnergyNetworkManager(level, nbt),
+                        null
+                ),
+                DATA_NAME
+        );
+        *///?}
     }
 
     /**
@@ -247,8 +258,13 @@ public class EnergyNetworkManager extends SavedData {
         addNode(pos, networkToAvoid); // Передаем "запрещенную" сеть
     }
 
+    //? if < 1.21.1 {
     @Override
     public CompoundTag save(CompoundTag nbt) {
+    //?} else {
+    /*@Override
+    public CompoundTag save(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider provider) {
+        *///?}
         // Сохраняем только позиции узлов
         long[] nodePositions = allNodes.keySet().toLongArray();
         nbt.putLongArray("nodes", nodePositions);

@@ -9,7 +9,11 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
+//? if forge {
 import net.minecraftforge.client.model.data.ModelData;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.model.data.ModelData;
+*///?}
 
 import org.jetbrains.annotations.Nullable;
 
@@ -20,6 +24,14 @@ import java.util.List;
  * {@code hbm_m:dae} geometry loader. Used for the transition seal item and particle
  * icon; the in-world block is rendered by the block entity renderer instead.
  */
+
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class DaeBakedModel implements BakedModel {
 
     private final List<BakedQuad> quads;
@@ -67,7 +79,7 @@ public class DaeBakedModel implements BakedModel {
         return transforms;
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand,
                                     ModelData modelData, @Nullable RenderType renderType) {

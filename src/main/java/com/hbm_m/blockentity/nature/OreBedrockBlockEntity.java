@@ -2,6 +2,7 @@ package com.hbm_m.blockentity.nature;
 
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.ModFluids;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -48,7 +49,7 @@ public class OreBedrockBlockEntity extends BlockEntity {
 
         super.saveAdditional(tag, registries);
         if (!resource.isEmpty()) {
-            tag.put("resource", resource.save(new CompoundTag()));
+            tag.put("resource", PlatformHooks.saveItemStack(resource, new CompoundTag(), registries));
         }
         tag.putString("acid_type", BuiltInRegistries.FLUID.getKey(acidType).toString());
         tag.putInt("acid_amount", acidAmountMb);
@@ -77,7 +78,7 @@ public class OreBedrockBlockEntity extends BlockEntity {
 
         super.loadAdditional(tag, registries);
         if (tag.contains("resource")) {
-            resource = ItemStack.of(tag.getCompound("resource"));
+            resource = PlatformHooks.itemStackOf(tag.getCompound("resource"), registries);
         }
         if (tag.contains("acid_type")) {
             ResourceLocation id = ResourceLocation.tryParse(tag.getString("acid_type"));

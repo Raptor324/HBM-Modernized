@@ -257,7 +257,15 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity {
     public AABB getRenderBoundingBox() {
         BlockState state = getBlockState();
         if (!(state.getBlock() instanceof com.hbm_m.block.machines.MachineArcFurnaceBlock block)) {
+            //? if < 1.21.1 {
             return new AABB(worldPosition.offset(-1, 0, -1), worldPosition.offset(2, 2, 2));
+            //?} else {
+            /*// 1.21.1: AABB(BlockPos, BlockPos) удалён — Vec3.atLowerCornerOf сохраняет целочисленную семантику углов.
+            return new AABB(
+                    net.minecraft.world.phys.Vec3.atLowerCornerOf(worldPosition.offset(-1, 0, -1)),
+                    net.minecraft.world.phys.Vec3.atLowerCornerOf(worldPosition.offset(2, 2, 2))
+            );
+            *///?}
         }
         Direction facing = state.getValue(com.hbm_m.block.machines.MachineArcFurnaceBlock.FACING);
         return block.getStructureHelper().getRenderBoundingBox(worldPosition, facing, 0.0);

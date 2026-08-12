@@ -458,6 +458,10 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
             /*case SLOT_WATER_IN -> FluidStorage.ITEM.find(stack, null) != null;
             case SLOT_STEAM_IN -> FluidStorage.ITEM.find(stack, null) != null;
             *///?}
+            //? if neoforge {
+            /*case SLOT_WATER_IN -> stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;
+            case SLOT_STEAM_IN -> stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;
+            *///?}
             case SLOT_WATER_OUT, SLOT_STEAM_OUT -> false; // Output slots
             default -> false;
         };

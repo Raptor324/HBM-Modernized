@@ -112,9 +112,7 @@ public class RenderBlackHole<T extends BlackHoleEntity> extends EntityRenderer<T
     }
 
     private static void emitSolidVertex(VertexConsumer consumer, Matrix4f matrix, float x, float y, float z) {
-        consumer.vertex(matrix, x, y, z)
-                .color(0, 0, 0, 255)
-                .endVertex();
+        com.hbm_m.platform.RenderHooks.vertexColor(consumer, matrix, x, y, z, 0, 0, 0, 255);
     }
 
     protected void renderDisc(T entity, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource) {
@@ -142,8 +140,7 @@ public class RenderBlackHole<T extends BlackHoleEntity> extends EntityRenderer<T
                     RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
                 }
 
-                BufferBuilder buffer = Tesselator.getInstance().getBuilder();
-                buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+                BufferBuilder buffer = com.hbm_m.platform.RenderHooks.beginTesselator(Tesselator.getInstance(), VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
                 for (int i = 0; i < count; i++) {
                     int[] color1 = (j == 0) ? colorFromIteration(k, 1F) : new int[]{255, 255, 255, (int) (glow * 255)};
                     int[] color2 = colorFromIteration(k, 0F);
@@ -153,7 +150,7 @@ public class RenderBlackHole<T extends BlackHoleEntity> extends EntityRenderer<T
                     addTexturedVertex(buffer, matrix, vec, s * 2, color2, 0.5);
                     addTexturedVertex(buffer, matrix, vec, s, color1, 0.25);
                 }
-                BufferUploader.drawWithShader(buffer.end());
+                com.hbm_m.platform.RenderHooks.drawWithShader(buffer);
             }
 
             setDiscBlendNormal();
@@ -184,8 +181,7 @@ public class RenderBlackHole<T extends BlackHoleEntity> extends EntityRenderer<T
             if (j == 1) {
                 RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
             }
-            BufferBuilder buffer = Tesselator.getInstance().getBuilder();
-            buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+            BufferBuilder buffer = com.hbm_m.platform.RenderHooks.beginTesselator(Tesselator.getInstance(), VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
             vec = new Vec3(1, 0, 0);
             for (int i = 0; i < count; i++) {
                 addTexturedVertex(buffer, matrix, vec, 0.9, new int[]{0, 0, 0, 255}, 0.25 / s * 0.9);
@@ -196,7 +192,7 @@ public class RenderBlackHole<T extends BlackHoleEntity> extends EntityRenderer<T
                 addTexturedVertex(buffer, matrix, vec, s, c2, 0.25);
                 addTexturedVertex(buffer, matrix, vec, 0.9, new int[]{0, 0, 0, 255}, 0.25 / s * 0.9);
             }
-            BufferUploader.drawWithShader(buffer.end());
+            com.hbm_m.platform.RenderHooks.drawWithShader(buffer);
         }
 
         setDiscBlendNormal();
@@ -204,8 +200,7 @@ public class RenderBlackHole<T extends BlackHoleEntity> extends EntityRenderer<T
             if (j == 1) {
                 RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
             }
-            BufferBuilder buffer = Tesselator.getInstance().getBuilder();
-            buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+            BufferBuilder buffer = com.hbm_m.platform.RenderHooks.beginTesselator(Tesselator.getInstance(), VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
             vec = new Vec3(1, 0, 0);
             for (int i = 0; i < count; i++) {
                 int[] c1 = (j == 0) ? colorFull : new int[]{255, 255, 255, (int) (glow * 255)};
@@ -216,7 +211,7 @@ public class RenderBlackHole<T extends BlackHoleEntity> extends EntityRenderer<T
                 int[] c2 = (j == 0) ? colorFull : new int[]{255, 255, 255, (int) (glow * 255)};
                 addTexturedVertex(buffer, matrix, vec, s, c2, 0.25);
             }
-            BufferUploader.drawWithShader(buffer.end());
+            com.hbm_m.platform.RenderHooks.drawWithShader(buffer);
         }
 
         endDiscPass();
@@ -242,9 +237,9 @@ public class RenderBlackHole<T extends BlackHoleEntity> extends EntityRenderer<T
             }
 
             for (int i = 0; i < 12; i++) {
-                consumer.vertex(matrix, 0, 0, 0).color(255, 255, 255, innerAlpha).endVertex();
-                consumer.vertex(matrix, (float) ring[i].x, 10 * j, (float) ring[i].z).color(255, 255, 255, 0).endVertex();
-                consumer.vertex(matrix, (float) ring[i + 1].x, 10 * j, (float) ring[i + 1].z).color(255, 255, 255, 0).endVertex();
+                com.hbm_m.platform.RenderHooks.vertexColor(consumer, matrix, 0, 0, 0, 255, 255, 255, innerAlpha);
+                com.hbm_m.platform.RenderHooks.vertexColor(consumer, matrix, (float) ring[i].x, 10 * j, (float) ring[i].z, 255, 255, 255, 0);
+                com.hbm_m.platform.RenderHooks.vertexColor(consumer, matrix, (float) ring[i + 1].x, 10 * j, (float) ring[i + 1].z, 255, 255, 255, 0);
             }
         }
         poseStack.popPose();
@@ -274,10 +269,9 @@ public class RenderBlackHole<T extends BlackHoleEntity> extends EntityRenderer<T
 
     private static void addTexturedVertex(BufferBuilder buffer, Matrix4f matrix, Vec3 vec, double scale,
                                           int[] color, double uvScale) {
-        buffer.vertex(matrix, (float) (vec.x * scale), 0, (float) (vec.z * scale))
-                .uv((float) (0.5 + vec.x * uvScale), (float) (0.5 + vec.z * uvScale))
-                .color(color[0], color[1], color[2], color[3])
-                .endVertex();
+        com.hbm_m.platform.RenderHooks.vertexTexColor(buffer, matrix, (float) (vec.x * scale), 0, (float) (vec.z * scale),
+                (float) (0.5 + vec.x * uvScale), (float) (0.5 + vec.z * uvScale),
+                color[0], color[1], color[2], color[3]);
     }
 
 

@@ -353,7 +353,9 @@ public class ModFluids {
     }
     //?}
 
-    //? if fabric {
+    // На Fabric и NeoForge параметр mod-bus не нужен: Architectury DeferredRegister
+    // сам резолвит шину по mod id. Подключается из FabricEntrypoint / NeoForgeEntrypoint.
+    //? if fabric || neoforge {
     /*public static void register() {
         FLUIDS.register();
     }

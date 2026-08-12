@@ -33,15 +33,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
-
 /**
  * Iris/Oculus companion-mesh renderer: handles {@code flushBatchIris},
  * single-instance Iris draws through {@code ExtendedShader}, and
@@ -50,11 +41,14 @@ import net.fabricmc.api.Environment;
  * Extracted from {@link InstancedStaticPartRenderer} to reduce
  * class complexity.
  */
+
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 final class IrisInstancedBatchRenderer {
 
     private final InstancedStaticPartRenderer parent;
@@ -142,10 +136,14 @@ final class IrisInstancedBatchRenderer {
         BlockPos anchor = (blockEntity != null) ? blockEntity.getBlockPos() : blockPos;
         if (anchor == null) anchor = BlockPos.ZERO;
         if (LightSampleCache.BASE_POSE_SET.get()) {
-            parent.tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(poseStack.last().pose());
+                parent.tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(poseStack.last().pose());
         } else {
             var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+            //? if < 1.21.1 {
             parent.tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
+            //?} else {
+            /*parent.tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
+            *///?}
             parent.tmpLocalPose.set(parent.tmpInvViewRot).mul(poseStack.last().pose());
             parent.tmpLocalPose.m30(parent.tmpLocalPose.m30() - (float) (anchor.getX() - cam.x));
             parent.tmpLocalPose.m31(parent.tmpLocalPose.m31() - (float) (anchor.getY() - cam.y));

@@ -39,9 +39,21 @@ public class MachineFoundryBasinBlock extends BaseEntityBlock {
     @Override public VoxelShape getCollisionShape(BlockState s, BlockGetter l, BlockPos p, CollisionContext c) { return SHAPE; }
     @Override public RenderShape getRenderShape(BlockState s) { return RenderShape.MODEL; }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                   Player player, InteractionHand hand, BlockHitResult hit) {
+        return handleUse(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return handleUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult handleUse(BlockState state, Level level, BlockPos pos,
+                                        Player player, InteractionHand hand, BlockHitResult hit) {
         if (level.isClientSide) return InteractionResult.SUCCESS;
         BlockEntity be = level.getBlockEntity(pos);
         if (!(be instanceof MachineFoundryBasinBlockEntity basin)) return InteractionResult.PASS;

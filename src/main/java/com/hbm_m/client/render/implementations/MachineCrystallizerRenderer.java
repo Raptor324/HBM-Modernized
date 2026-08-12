@@ -38,20 +38,11 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
-//? if forge {
 import com.hbm_m.client.render.shader.IrisPhaseGuard;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import com.hbm_m.platform.RenderHooks;
+//? if forge {
 import net.minecraftforge.client.model.data.ModelData;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-*///?}
-
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
+//?}
 
 /**
  * BER Crystallizer: вращающийся спиннер (VBO + instancing) и жидкость в баке
@@ -60,11 +51,13 @@ import net.fabricmc.api.Environment;
  * <p>Статическое тело — {@code crystallizer.json} в chunk mesh (Spinner/Fluid скрыты).
  * Под Iris/VBO путь совпадает с {@link MachineChemicalPlantRenderer} / {@link MachineAdvancedAssemblerRenderer}.</p>
  */
-//? if forge || neoforge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)
+
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
 public class MachineCrystallizerRenderer implements BlockEntityRenderer<MachineCrystallizerBlockEntity> {
 
@@ -393,11 +386,7 @@ public class MachineCrystallizerRenderer implements BlockEntityRenderer<MachineC
                                     float r, float g, float b, float a, int packedLight, int packedOverlay) {
         var pose = poseStack.last();
         for (BakedQuad quad : quads) {
-            //? if forge {
-            buffer.putBulkData(pose, quad, r, g, b, a, packedLight, packedOverlay, true);
-            //?} else {
-            /*buffer.putBulkData(pose, quad, r, g, b, packedLight, packedOverlay);
-            *///?}
+            RenderHooks.putBulkData(buffer, pose, quad, r, g, b, a, packedLight, packedOverlay, true);
         }
     }
 
@@ -407,11 +396,7 @@ public class MachineCrystallizerRenderer implements BlockEntityRenderer<MachineC
         var pose = poseStack.last();
         for (BakedQuad quad : quads) {
             BakedQuad reskinned = remapQuadSprite(quad, sprite);
-            //? if forge {
-            buffer.putBulkData(pose, reskinned, r, g, b, a, packedLight, packedOverlay, true);
-            //?} else {
-            /*buffer.putBulkData(pose, reskinned, r, g, b, packedLight, packedOverlay);
-            *///?}
+            RenderHooks.putBulkData(buffer, pose, reskinned, r, g, b, a, packedLight, packedOverlay, true);
         }
     }
 

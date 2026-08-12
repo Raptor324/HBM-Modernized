@@ -63,18 +63,22 @@ public final class ModArmorMaterialsAccess {
         defense.put(ArmorItem.Type.LEGGINGS,    p[2]);
         defense.put(ArmorItem.Type.BOOTS,       p[3]);
 
-        Holder<SoundEvent> equip = Holder.direct(switch (m.name()) {
+        // 1.21.1: SoundEvents.ARMOR_EQUIP_* уже Holder<SoundEvent> — обёртка Holder.direct() не нужна.
+        Holder<SoundEvent> equip = switch (m.name()) {
             case "STARMETAL" -> SoundEvents.ARMOR_EQUIP_GOLD;
             case "SECURITY"  -> SoundEvents.ARMOR_EQUIP_CHAIN;
             case "HAZMAT"    -> SoundEvents.ARMOR_EQUIP_LEATHER;
             case "PAA"       -> SoundEvents.ARMOR_EQUIP_GOLD;
             default          -> SoundEvents.ARMOR_EQUIP_IRON;
-        });
+        };
 
         var layers = java.util.List.of(
                 new ArmorMaterial.Layer(
-                        new ResourceLocation(MainRegistry.MOD_ID, m.name().toLowerCase()),
-                        "", false)
+                        //? if < 1.21.1 {
+                        new ResourceLocation(MainRegistry.MOD_ID, m.name().toLowerCase())//?} else {
+                        /^ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, m.name().toLowerCase())
+                        ^///?}
+                        , "", false)
         );
 
         return new ArmorMaterial(
@@ -90,7 +94,7 @@ public final class ModArmorMaterialsAccess {
 
     /^* Возвращает Holder<ArmorMaterial> для NeoForge — он передаётся в ArmorItem. ^/
     public static Holder<ArmorMaterial> holder(ModArmorMaterials m) {
-        return HOLDERS.get(m).getHolder();
+        return Holder.direct(HOLDERS.get(m).get());
     }
 
     /^* Регистрирует ARMOR_MATERIALS через Architectury (NeoForge). ^/

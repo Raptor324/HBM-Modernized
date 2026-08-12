@@ -146,6 +146,7 @@ import com.hbm_m.item.ModItems;
 import com.hbm_m.item.fekal_electric.MachineBatteryBlockItem;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.BlockItem;
@@ -530,7 +531,11 @@ public class ModBlocks {
             () -> new MachineSteamCondenserBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(3.0f, 4.0f).sound(SoundType.METAL)));
 
     public static final RegistrySupplier<Block> UNIVERSAL_MACHINE_PART = registerBlockWithoutItem("universal_machine_part",
+            //? if < 1.21.1 {
             () -> new UniversalMachinePartBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().isSuffocating((state, world, pos) -> false).noParticlesOnBreak()));
+            //?} else {
+            /*() -> new UniversalMachinePartBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+            *///?}
 
 	public static final RegistrySupplier<Block> FLUID_TANK = registerBlockWithoutItem("fluid_tank",
             () -> new MachineFluidTankBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f).requiresCorrectToolForDrops().noOcclusion().isSuffocating((state, world, pos) -> false)));
@@ -792,7 +797,7 @@ public class ModBlocks {
             () -> new Block(BlockProps.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 
     public static final RegistrySupplier<Block> REINFORCED_GLASS = registerBlock("reinforced_glass",
-            () -> new GlassBlock(BlockProps.copy(Blocks.GLASS).strength(4.0F, 12.0F)));
+            () -> com.hbm_m.platform.PlatformHooks.createGlassBlock(BlockProps.copy(Blocks.GLASS).strength(4.0F, 12.0F)));
 
     public static final RegistrySupplier<Block> MACHINE_SIREN = registerBlock("machine_siren",
             () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 10.0F).requiresCorrectToolForDrops()));
@@ -1000,13 +1005,13 @@ public class ModBlocks {
                     .sound(SoundType.GRAVEL)));
 
     public static final RegistrySupplier<Block> DOOR_BUNKER = registerBlock("door_bunker",
-            () -> new net.minecraft.world.level.block.DoorBlock(BlockProps.copy(Blocks.NETHERITE_BLOCK).sound(SoundType.NETHERITE_BLOCK).noOcclusion(), BlockSetType.STONE));
+            () -> PlatformHooks.createDoorBlock(BlockProps.copy(Blocks.NETHERITE_BLOCK).sound(SoundType.NETHERITE_BLOCK).noOcclusion(), BlockSetType.STONE));
 
     public static final RegistrySupplier<Block> DOOR_OFFICE = registerBlock("door_office",
-            () -> new net.minecraft.world.level.block.DoorBlock(BlockProps.copy(Blocks.CHERRY_WOOD).sound(SoundType.CHERRY_WOOD).noOcclusion(), BlockSetType.CHERRY));
+            () -> PlatformHooks.createDoorBlock(BlockProps.copy(Blocks.CHERRY_WOOD).sound(SoundType.CHERRY_WOOD).noOcclusion(), BlockSetType.CHERRY));
 
     public static final RegistrySupplier<Block> METAL_DOOR = registerBlock("metal_door",
-            () -> new net.minecraft.world.level.block.DoorBlock(BlockProps.copy(Blocks.CHAIN).sound(SoundType.CHAIN).noOcclusion(), BlockSetType.BIRCH));
+            () -> PlatformHooks.createDoorBlock(BlockProps.copy(Blocks.CHAIN).sound(SoundType.CHAIN).noOcclusion(), BlockSetType.BIRCH));
 
 
     // ============ ТЕХНИЧЕСКИЕ И ДЕКОРАТИВНЫЕ БЛОКИ ============
@@ -1759,7 +1764,7 @@ public class ModBlocks {
 
     // -----------------------<РАСТЕНИЯ>-----------------------------
     public static final RegistrySupplier<Block> STRAWBERRY_BUSH = registerBlock("strawberry_bush",
-            () -> new FlowerBlock(MobEffects.LUCK, 5,
+            () -> PlatformHooks.createFlowerBlock(MobEffects.LUCK, 5,
                     BlockProps.copy(Blocks.ALLIUM).noOcclusion().noCollission()));
 
 
@@ -1796,7 +1801,7 @@ public class ModBlocks {
 
 
 	public static final RegistrySupplier<Block> URANIUM_ORE = registerBlock("uranium_ore",
-            () -> new DropExperienceBlock(BlockProps.copy(Blocks.STONE).strength(3.0F, 3.0F).requiresCorrectToolForDrops()));
+            () -> PlatformHooks.createDropExperienceBlock(BlockProps.copy(Blocks.STONE).strength(3.0F, 3.0F).requiresCorrectToolForDrops()));
 
     public static final RegistrySupplier<Block> LEAD_ORE = registerBlock("lead_ore",
             () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
@@ -1864,7 +1869,7 @@ public class ModBlocks {
 
     /** Порт {@code ore_schrabidium} (GIT ModBlocks). */
     public static final RegistrySupplier<Block> SCHRABIDIUM_ORE = registerBlock("schrabidium_ore",
-            () -> new DropExperienceBlock(BlockProps.copy(Blocks.STONE)
+            () -> PlatformHooks.createDropExperienceBlock(BlockProps.copy(Blocks.STONE)
                     .strength(15.0F, 600.0F).requiresCorrectToolForDrops()));
 
     /** Порт {@code ore_nether_schrabidium}. */
@@ -1874,7 +1879,7 @@ public class ModBlocks {
 
     /** Порт {@code ore_gneiss_schrabidium}. */
     public static final RegistrySupplier<Block> SCHRABIDIUM_ORE_GNEISS = registerBlock("schrabidium_ore_gneiss",
-            () -> new DropExperienceBlock(BlockProps.copy(Blocks.STONE)
+            () -> PlatformHooks.createDropExperienceBlock(BlockProps.copy(Blocks.STONE)
                     .strength(1.5F, 10.0F).requiresCorrectToolForDrops()));
 
     /** Порт {@code block_schrabidium_cluster} ({@link com.hbm.blocks.generic.BlockRotatablePillar}). */

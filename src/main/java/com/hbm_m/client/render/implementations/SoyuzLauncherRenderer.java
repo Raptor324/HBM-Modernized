@@ -11,6 +11,7 @@ import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.PlatformHooks;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
@@ -34,6 +35,14 @@ import net.minecraft.resources.ResourceLocation;
  *       {@code glTranslate -> glRotate -> glTranslate} dance</li>
  * </ul>
  */
+
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class SoyuzLauncherRenderer extends AbstractPartBasedRenderer<SoyuzLauncherBlockEntity, SoyuzLauncherBakedModel> {
 
     private static final String CACHE_PREFIX = "soyuz_launcher";
@@ -124,7 +133,7 @@ public class SoyuzLauncherRenderer extends AbstractPartBasedRenderer<SoyuzLaunch
     @Nullable
     private static BakedModel getRocketModel() {
         var modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel model = modelManager.getModel(ROCKET_MODEL_ID);
+        BakedModel model = PlatformHooks.getModel(modelManager, ROCKET_MODEL_ID);
         return (model == null || model == modelManager.getMissingModel()) ? null : model;
     }
 }

@@ -40,6 +40,14 @@ import net.minecraft.resources.ResourceLocation;
  * DaeModelRenderer} transform chain exactly (no Z_UP -> Y_UP conversion, the DAE node
  * matrices are authored in Minecraft space).
  */
+
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class TransitionSealRenderer implements BlockEntityRenderer<TransitionSealBlockEntity> {
 
     private static final String CLIP_NAME = "animation";
@@ -99,7 +107,11 @@ public class TransitionSealRenderer implements BlockEntityRenderer<TransitionSea
                                     TransitionSealBlockEntity be, MultiBufferSource bufferSource) {
         for (DaeNode node : nodes) {
             poseStack.pushPose();
+            //? if < 1.21.1 {
             poseStack.mulPoseMatrix(node.localMatrix(time, clip));
+            //?} else {
+            /*poseStack.mulPose(node.localMatrix(time, clip));
+            *///?}
             if (node.mesh != null) {
                 SingleMeshVboRenderer renderer = getRendererForNode(node);
                 if (renderer != null) {

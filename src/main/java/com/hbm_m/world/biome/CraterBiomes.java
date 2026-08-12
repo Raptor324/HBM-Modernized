@@ -35,19 +35,32 @@ public final class CraterBiomes {
 
     public static final ResourceKey<Biome> INNER_CRATER_KEY =
             ResourceKey.create(Registries.BIOME,
-                    ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "inner_crater"));
+                    //? if fabric &&< 1.21.1 {
+                    /*new ResourceLocation(MainRegistry.MOD_ID, "inner_crater")
+                    *///?} else {
+                    ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "inner_crater")
+                    //?}
+            );
 
     public static final ResourceKey<Biome> CRATER_KEY =
             ResourceKey.create(Registries.BIOME,
-                    ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "crater"));
+                    //? if fabric &&< 1.21.1 {
+                    /*new ResourceLocation(MainRegistry.MOD_ID, "crater")
+                    *///?} else {
+                    ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "crater")
+                    //?}
+            );
 
     public static final ResourceKey<Biome> OUTER_CRATER_KEY =
             ResourceKey.create(Registries.BIOME,
-                    ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "outer_crater"));
-
-    /** Общий цвет воды (1.7.10 {@code BiomeGenCraterBase.waterColorMultiplier = 0xE0FFAE}). */
+                    //? if fabric &&< 1.21.1 {
+                    /*new ResourceLocation(MainRegistry.MOD_ID, "outer_crater")
+                    *///?} else {
+                    ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "outer_crater")
+                    //?}
+            );
+	/** Общий цвет воды (1.7.10 {@code BiomeGenCraterBase.waterColorMultiplier = 0xE0FFAE}). */
     private static final int WATER_COLOR = 0xE0FFAE;
-    /** Общий цвет листвы (1.7.10 {@code getBiomeFoliageColor = 0x6A7039}). */
     private static final int FOLIAGE_COLOR = 0x6A7039;
 
     private CraterBiomes() {}
@@ -98,7 +111,7 @@ public final class CraterBiomes {
                 .build();
     }
 
-    /**
+	/**
      * Внешний кратер (dist &ge; 55%, на границе зоны).
      * 1.7.10: grass 0x776F59/0x6F6752 → avg 0x736B55, sky 0x6B9189.
      */

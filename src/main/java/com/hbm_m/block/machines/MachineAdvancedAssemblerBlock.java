@@ -129,8 +129,19 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
         return createTickerHelper(pType, ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerBlockEntity::tick);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
+        return openMenu(pState, pLevel, pPos, pPlayer, pHand, pHit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, BlockHitResult pHit) {
+        return openMenu(pState, pLevel, pPos, pPlayer, InteractionHand.MAIN_HAND, pHit);
+    }
+    *///?}
+
+    private InteractionResult openMenu(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (!pLevel.isClientSide()) {
             if (pLevel.getBlockEntity(pPos) instanceof MenuProvider provider) {
                 MenuRegistry.openExtendedMenu((ServerPlayer) pPlayer, provider, buf -> buf.writeBlockPos(pPos));
