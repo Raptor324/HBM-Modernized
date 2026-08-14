@@ -2014,6 +2014,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.TURRET_HIMARS.get(), "Турель HIMARS");
                 add("container.hbm_m.turret_himars", "Турель HIMARS");
                 add("container.hbm_m.industrial_boiler", "Промышленный котел");
+                add("gui.hbm_m.industrial_boiler.water", "Вода");
+                add("gui.hbm_m.industrial_boiler.steam", "Пар");
+                add("gui.hbm_m.industrial_boiler.heat", "Тепло");
+                add("gui.hbm_m.solar_boiler.sunlight", "Солнечный свет");
+                add("gui.hbm_m.solar_boiler.mirrors", "Активные зеркала: %s");
                 add("container.hbm_m.solar_boiler", "Солнечный котел");
                 add("container.hbm_m.solar_mirrors", "Солнечные зеркала");
                 add("msg.hbm_m.solar_mirror.sky_access", "Зеркало освещено солнцем");
@@ -4260,6 +4265,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.TURRET_HIMARS.get(), "HIMARS Turret");
                 add("container.hbm_m.turret_himars", "HIMARS Turret");
                 add("container.hbm_m.industrial_boiler", "Industrial Boiler");
+                add("gui.hbm_m.industrial_boiler.water", "Water");
+                add("gui.hbm_m.industrial_boiler.steam", "Steam");
+                add("gui.hbm_m.industrial_boiler.heat", "Heat");
+                add("gui.hbm_m.solar_boiler.sunlight", "Sunlight");
+                add("gui.hbm_m.solar_boiler.mirrors", "Active mirrors: %s");
                 add("container.hbm_m.solar_boiler", "Solar Boiler");
                 add("container.hbm_m.solar_mirrors", "Solar Mirrors");
                 add("msg.hbm_m.solar_mirror.sky_access", "Mirror has sky access");

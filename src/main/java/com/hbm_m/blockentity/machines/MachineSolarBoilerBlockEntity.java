@@ -365,8 +365,7 @@ public class MachineSolarBoilerBlockEntity extends BaseMachineBlockEntity implem
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
-        // No GUI for the Solar Boiler - it operates passively.
-        return null;
+        return new com.hbm_m.inventory.menu.MachineSolarBoilerMenu(id, inv, this, data);
     }
 
     @Override

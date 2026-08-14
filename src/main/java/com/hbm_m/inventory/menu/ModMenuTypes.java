@@ -113,6 +113,12 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<MachineGasCentrifugeMenu>> GAS_CENTRIFUGE_MENU =
             MENUS.register("gas_centrifuge_menu", () -> MenuRegistry.ofExtended(MachineGasCentrifugeMenu::new));
 
+    public static final RegistrySupplier<MenuType<MachineIndustrialBoilerMenu>> INDUSTRIAL_BOILER_MENU =
+            MENUS.register("industrial_boiler_menu", () -> MenuRegistry.ofExtended(MachineIndustrialBoilerMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineSolarBoilerMenu>> SOLAR_BOILER_MENU =
+            MENUS.register("solar_boiler_menu", () -> MenuRegistry.ofExtended(MachineSolarBoilerMenu::new));
+
     public static final RegistrySupplier<MenuType<IronCrateMenu>> IRON_CRATE_MENU =
             MENUS.register("iron_crate_menu", () -> MenuRegistry.ofExtended(IronCrateMenu::new));
 

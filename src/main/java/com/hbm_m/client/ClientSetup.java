@@ -116,6 +116,8 @@ import com.hbm_m.inventory.gui.GUIMachineDerrick;
 import com.hbm_m.inventory.gui.GUIMachineFel;
 import com.hbm_m.inventory.gui.GUIMachineFlareStack;
 import com.hbm_m.inventory.gui.GUIMachineGasCentrifuge;
+import com.hbm_m.inventory.gui.GUIMachineIndustrialBoiler;
+import com.hbm_m.inventory.gui.GUIMachineSolarBoiler;
 import com.hbm_m.inventory.gui.GUIMachineFractionTower;
 import com.hbm_m.inventory.gui.GUIMachineLargePylon;
 import com.hbm_m.inventory.gui.GUIMachineMixer;
@@ -519,6 +521,8 @@ public class ClientSetup {
         MenuScreens.register(ModMenuTypes.FEL_MENU.get(), GUIMachineFel::new);
         MenuScreens.register(ModMenuTypes.SILEX_MENU.get(), GUIMachineSilex::new);
         MenuScreens.register(ModMenuTypes.GAS_CENTRIFUGE_MENU.get(), GUIMachineGasCentrifuge::new);
+        MenuScreens.register(ModMenuTypes.INDUSTRIAL_BOILER_MENU.get(), GUIMachineIndustrialBoiler::new);
+        MenuScreens.register(ModMenuTypes.SOLAR_BOILER_MENU.get(), GUIMachineSolarBoiler::new);
         MenuScreens.register(ModMenuTypes.TURBINE_MENU.get(), GUIMachineTurbine::new);
         MenuScreens.register(ModMenuTypes.LARGE_TURBINE_MENU.get(), com.hbm_m.inventory.gui.GUIMachineLargeTurbine::new);
         MenuScreens.register(ModMenuTypes.TURBINEGAS_MENU.get(), com.hbm_m.inventory.gui.GUIMachineTurbineGas::new);

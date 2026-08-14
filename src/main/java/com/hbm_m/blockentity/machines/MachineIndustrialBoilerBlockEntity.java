@@ -328,6 +328,10 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
     public int getSteamCapacity() { return steamTank.getMaxFill(); }
     public int getThermalUnits() { return heat; }
 
+    public net.minecraft.world.level.material.Fluid getTankFluid(boolean water) {
+        return water ? waterTank.getStoredFluid() : steamTank.getStoredFluid();
+    }
+
     // --- NBT ---
     @Override
     protected void saveAdditional(CompoundTag tag) {
@@ -395,8 +399,7 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
-        // TODO: Implement menu
-        return null;
+        return new com.hbm_m.inventory.menu.MachineIndustrialBoilerMenu(id, inv, this, data);
     }
 
     @Override
