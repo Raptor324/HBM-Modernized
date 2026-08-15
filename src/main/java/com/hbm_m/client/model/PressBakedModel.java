@@ -64,7 +64,27 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
         //?}
 
         //? if neoforge {
-        /*return super.getQuads(state, side, rand);
+        /*// 1.21.1 neoforge: чанк-бэкер вызывает 5-arg overload (см. ниже). 3-arg — item/BER hot path.
+        // Зеркалируем forge-логику: ITEM — приоритетные части (Base+Head), WORLD — только Base (translate+filter).
+        if (state == null) {
+            return buildItemQuadsFromRenderParts(side, rand);
+        }
+        BakedModel basePart = parts.get(BASE);
+        if (basePart != null) {
+            List<BakedQuad> partQuads = new ArrayList<>();
+            for (Direction d : Direction.values()) {
+                partQuads.addAll(basePart.getQuads(state, d, rand));
+            }
+            partQuads.addAll(basePart.getQuads(state, null, rand));
+            if (!partQuads.isEmpty()) {
+                List<BakedQuad> translated = ModelHelper.translateQuads(partQuads, 0.5f, 0f, 0.5f);
+                if (side != null) {
+                    return translated.stream().filter(q -> q.getDirection() == side).toList();
+                }
+                return translated;
+            }
+        }
+        return Collections.emptyList();
         *///?}
 
         //? if fabric {
@@ -92,6 +112,35 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
         return Collections.emptyList();
         *///?}
     }
+
+    //? if neoforge {
+    /*// NeoForge 1.21.1: 5-arg overload — вызывается чанк-бэкером. Зеркалируем forge-логику:
+    // ITEM (state == null) — приоритетные части (Base+Head). WORLD — только Base (translate + filter по side); Head — BER.
+    @Override
+    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
+                                    RandomSource rand, net.neoforged.neoforge.client.model.data.ModelData modelData,
+                                    @Nullable net.minecraft.client.renderer.RenderType renderType) {
+        if (state == null) {
+            return buildItemQuadsFromRenderParts(side, rand);
+        }
+        BakedModel basePart = parts.get(BASE);
+        if (basePart != null) {
+            List<BakedQuad> partQuads = new ArrayList<>();
+            for (Direction d : Direction.values()) {
+                partQuads.addAll(basePart.getQuads(state, d, rand, modelData, renderType));
+            }
+            partQuads.addAll(basePart.getQuads(state, null, rand, modelData, renderType));
+            if (!partQuads.isEmpty()) {
+                List<BakedQuad> translated = ModelHelper.translateQuads(partQuads, 0.5f, 0f, 0.5f);
+                if (side != null) {
+                    return translated.stream().filter(q -> q.getDirection() == side).toList();
+                }
+                return translated;
+            }
+        }
+        return Collections.emptyList();
+    }
+    *///?}
 
     //? if forge {
     @Override

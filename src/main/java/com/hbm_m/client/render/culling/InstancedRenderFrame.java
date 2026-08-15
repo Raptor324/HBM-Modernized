@@ -109,9 +109,17 @@ public final class InstancedRenderFrame {
                     flushAllInstanced(projection);
                 }
 
-                LightSampleCache.onFrameStart();
                 MdiRenderFrameGate.advanceAfterPresent();
             }
+
+            // БЕЗ guard'а useInstancedBatching: при выключенном инстансинге
+            // не-instanced путь (SingleMeshVboRenderer.render / renderSingle)
+            // всё равно ходит через LightSampleCache. Без инкремента currentFrame
+            // условие lastFrame == currentFrame остаётся true навсегда — свет машин
+            // замерзает на первом сэмпле, а fast-path слот lastQueriedBE навсегда
+            // удерживает сильную ссылку на последний BlockEntity (пиннит весь Level
+            // после выхода из мира).
+            LightSampleCache.onFrameStart();
 
             // После flush instanced (или при выключенном batching): depth содержит все части BER.
             // Chemplant/Crystallizer — deferred: рисуется здесь, в AFTER_BLOCK_ENTITIES,

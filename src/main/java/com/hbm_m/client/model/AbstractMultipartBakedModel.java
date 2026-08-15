@@ -243,33 +243,27 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
     }
     *///?}
 
-    //? if fabric {
-    /*@Override
-    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
-        return getQuadsForModelDataFabric(state, side, rand);
-    }
-
-    /^* Fabric: без Forge ModelData — делегируем частям vanilla getQuads. ^/
-    protected List<BakedQuad> getQuadsForModelDataFabric(
-            @Nullable BlockState state,
-            @Nullable Direction side,
-            RandomSource rand
-    ) {
-        int idx = side == null ? 0 : side.ordinal() + 1;
-        List<BakedQuad>[] cache = sideQuadsCache;
-        if (cache == null) {
-            cache = (List<BakedQuad>[]) new List<?>[7];
-            sideQuadsCache = cache;
+    /**
+     * NeoForge 1.21.1 ITEM-render helper: строит квады только из приоритетных
+     * частей ({@link #getItemRenderPartNames()}), а не из всех parts (как
+     * {@code super.getQuads}). Зеркалирует forge/fabric {@code buildItemQuads}.
+     * Возвращает {@code List.of()} если частей нет.
+     */
+    //? if neoforge {
+    /*protected List<BakedQuad> buildItemQuadsFromRenderParts(@Nullable Direction side, RandomSource rand) {
+        List<BakedQuad> allQuads = new ArrayList<>();
+        for (String partName : getItemRenderPartNames()) {
+            BakedModel part = parts.get(partName);
+            if (part == null) continue;
+            for (Direction dir : Direction.values()) {
+                allQuads.addAll(part.getQuads(null, dir, rand));
+            }
+            allQuads.addAll(part.getQuads(null, null, rand));
         }
-        List<BakedQuad> cached = cache[idx];
-        if (cached != null) return cached;
-        List<BakedQuad> quads = new ArrayList<>();
-        for (BakedModel part : parts.values()) {
-            quads.addAll(part.getQuads(state, side, rand));
+        if (side != null) {
+            return allQuads.stream().filter(q -> q.getDirection() == side).toList();
         }
-        List<BakedQuad> result = quads.isEmpty() ? List.of() : List.copyOf(quads);
-        cache[idx] = result;
-        return result;
+        return allQuads.isEmpty() ? List.of() : allQuads;
     }
     *///?}
 

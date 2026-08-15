@@ -18,7 +18,9 @@ import net.minecraft.util.RandomSource;
 
 //? if forge {
 import net.minecraftforge.client.model.data.ModelData;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.model.data.ModelData;
+*///?}
 
 
 /**
@@ -76,7 +78,7 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
         RandomSource random = RandomSource.create(BAKE_SEED);
 
         random.setSeed(BAKE_SEED);
-        //? if forge {
+        //? if forge || neoforge {
         quads.addAll(modelPart.getQuads(null, null, random, ModelData.EMPTY, RenderType.solid()));
         //?}
         //? if fabric {
@@ -85,7 +87,7 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
 
         for (Direction direction : Direction.values()) {
             random.setSeed(BAKE_SEED);
-            //? if forge {
+            //? if forge || neoforge {
             quads.addAll(modelPart.getQuads(null, direction, random, ModelData.EMPTY, RenderType.solid()));
             //?}
             //? if fabric {

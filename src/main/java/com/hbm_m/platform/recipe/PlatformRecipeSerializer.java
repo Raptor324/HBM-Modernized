@@ -42,7 +42,10 @@ public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements R
     }
     //?} else {
     
-    /*private final MapCodec<R> mapCodec = new MapCodec<R>() {
+    /*private static int decodeCallCount = 0;
+    private static int decodeSuccessCount = 0;
+
+    private final MapCodec<R> mapCodec = new MapCodec<R>() {
         @Override
         public <T> Stream<T> keys(com.mojang.serialization.DynamicOps<T> ops) {
             return Stream.empty();
@@ -50,12 +53,22 @@ public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements R
 
         @Override
         public <T> DataResult<R> decode(com.mojang.serialization.DynamicOps<T> ops, MapLike<T> input) {
+            decodeCallCount++;
+            if (decodeCallCount <= 5) {
+                System.err.println("[HBM DEBUG] PlatformRecipeSerializer.decode CALLED #" + decodeCallCount + " ops=" + ops.getClass().getSimpleName());
+            }
             try {
                 com.mojang.serialization.Dynamic<T> dynamic = new com.mojang.serialization.Dynamic<>(ops, ops.createMap(input.entries()));
                 com.google.gson.JsonElement json = dynamic.convert(JsonOps.INSTANCE).getValue();
                 R recipe = readJson(ResourceLocation.withDefaultNamespace("dummy"), json.getAsJsonObject());
+                decodeSuccessCount++;
+                if (decodeSuccessCount <= 5) {
+                    System.err.println("[HBM DEBUG] PlatformRecipeSerializer.decode SUCCESS #" + decodeSuccessCount + " recipe=" + recipe.getClass().getSimpleName());
+                }
                 return DataResult.success(recipe);
             } catch (Exception e) {
+                System.err.println("[HBM DEBUG] PlatformRecipeSerializer.decode FAILED #" + decodeCallCount + ": " + e.getClass().getSimpleName() + ": " + e.getMessage());
+                e.printStackTrace();
                 return DataResult.error(() -> "Failed to parse recipe: " + e.getMessage());
             }
         }

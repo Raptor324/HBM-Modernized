@@ -179,18 +179,21 @@ final class IrisInstancedBatchRenderer {
 
         IrisRenderBatch batch = IrisRenderBatch.active();
         if (batch != null) {
+            // R_cam живёт в RenderSystem.getModelViewMatrix() на ОБЕИХ версиях (см. фикс в
+            // InstancedStaticPartRenderer.addInstance) — композит обязателен, иначе модели летают.
+            Matrix4f fullModelView = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(poseStack.last().pose());
             LightSampleCache.getOrSample(blockEntity, packedLight, irisSingleUV, 0);
             int blockUInt = Math.max(0, Math.min(240, Math.round(irisSingleUV[0])));
             int skyVInt   = Math.max(0, Math.min(240, Math.round(irisSingleUV[1])));
             int packedSmoothLight = (skyVInt << 16) | blockUInt;
             if (haveCorners && parent.useSlicedLight && companion.supportsSlicedPerVertexLightmap()) {
-                batch.drawCompanionWithSlicedPerVertexLight(companion, poseStack.last().pose(),
+                batch.drawCompanionWithSlicedPerVertexLight(companion, fullModelView,
                         parent.tmpCornerUV, packedSmoothLight);
             } else if (haveCorners) {
-                batch.drawCompanionWithPerVertexLight(companion, poseStack.last().pose(),
+                batch.drawCompanionWithPerVertexLight(companion, fullModelView,
                         parent.tmpCornerUV, packedSmoothLight);
             } else {
-                batch.drawCompanion(companion, poseStack.last().pose(), packedSmoothLight);
+                batch.drawCompanion(companion, fullModelView, packedSmoothLight);
             }
             return true;
         }
@@ -208,7 +211,8 @@ final class IrisInstancedBatchRenderer {
 
             LightSampleCache.getOrSample(blockEntity, packedLight, irisSingleUV, 0);
 
-            parent.vanillaHelper.applyCommonUniforms(shader, RenderSystem.getProjectionMatrix(), poseStack.last().pose());
+            Matrix4f fullModelView = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(poseStack.last().pose());
+            parent.vanillaHelper.applyCommonUniforms(shader, RenderSystem.getProjectionMatrix(), fullModelView);
             if (parent.vanillaHelper.uBrightness != null) parent.vanillaHelper.uBrightness.set(
                     parent.vanillaHelper.brightnessFromUV(irisSingleUV[0], irisSingleUV[1], Float.NaN));
 
@@ -289,7 +293,9 @@ final class IrisInstancedBatchRenderer {
         try (IrisPhaseGuard ignored = IrisPhaseGuard.pushBlockEntities()) {
             RenderSystem.setShader(() -> shader);
 
-            parent.vanillaHelper.applyCommonUniforms(shader, projectionMatrix, IDENTITY);
+
+            parent.vanillaHelper.applyCommonUniforms(shader,
+                    parent.vanillaHelper.stripViewRotationForInstanced(projectionMatrix), IDENTITY);
 
             com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0,
                 net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS);

@@ -92,10 +92,11 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.interfaces.IEnergyConnector;
 
 /^*
- * NeoForge stub: на 1.21.1 NeoForge полностью убрал getCapability/invalidateCaps у BlockEntity,
- * FE-капабилити регистрируются через RegisterCapabilitiesEvent + BlockCapability (в платформенном
- * слое). Здесь — заглушка, чтобы общий код (BaseMachineBlockEntity, MachineBatteryBlockEntity),
- * ссылающийся на класс через import, компилировался. Реальная FE-интеграция для NeoForge — TODO.
+ * NeoForge stub (исторический): на 1.21.1 NeoForge полностью убрал getCapability/invalidateCaps
+ * у BlockEntity, поэтому этот Forge-style провайдер здесь не применяется. Реальная FE-интеграция
+ * для NeoForge живёт в ModCapabilities.registerEnergyForType (цикл по всем BlockEntityType с
+ * LongEnergyWrapper/HbmForgeWrapper). Класс сохранён как no-op заглушка для любого кода, который
+ * всё ещё ссылается на него через import на neoforge-ветке.
  ^/
 public final class PackedEnergyCapabilityProvider {
     public PackedEnergyCapabilityProvider(IEnergyConnector handler) {

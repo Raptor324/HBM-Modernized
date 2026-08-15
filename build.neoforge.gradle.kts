@@ -48,6 +48,21 @@ neoForge {
 			gameDirectory = file("run/")
 			ideName = "NeoForge Server (${stonecutter.active?.version})"
 		}
+		// GameTest-сервер: headless-прогон всех @GameTest без GUI.
+		// NeoForge 1.21.1 НЕ поддерживает аргумент CLI --gametest (это Forge-only).
+		// Вместо этого пропатченный Main.main() читает СИСТЕМНОЕ СВОЙСТВО JVM
+		// "neoforge.gameTestServer" и при true запускает GameTestServer.create(...)
+		// "neoforge.enableGameTest" дополнительно активирует регистрацию тестов в dev-среде.
+		// Шаблоны (empty3x3x3/empty5x5x5) — ванильные; RegisterGameTestsEvent регистрирует
+		// классы test-методов (тесты берутся из GameTestRegistry.getAllTestFunctions()).
+		// Запуск: ./gradlew :1.21.1-neoforge:runGameTestServer
+		register("gameTestServer") {
+			server()
+			gameDirectory = file("run/")
+			ideName = "NeoForge GameTest (${stonecutter.active?.version})"
+			systemProperty("neoforge.gameTestServer", "true")
+			systemProperty("neoforge.enableGameTest", "true")
+		}
 	}
 
 	mods {
@@ -65,20 +80,27 @@ repositories {
 	maven("https://maven.parchmentmc.org") { name = "ParchmentMC" }
 	maven("https://maven.createmod.net") { name = "CreateMod" }
 	strictMaven("https://cursemaven.com", "curse.maven") { name = "CurseForge" }
+	maven("https://maven.caffeinemc.net/releases") { name = "CaffeineMC" }
+
 }
 
 dependencies {
 	implementation(libs.moulberry.mixinconstraints)
 	jarJar(libs.moulberry.mixinconstraints)
+
+	// Architectury API — implementation + jarJar (встраивается в итоговый jar, как на Forge/Fabric).
 	implementation("dev.architectury:architectury-neoforge:${prop("deps.architectury")}")
+	jarJar("dev.architectury:architectury-neoforge:${prop("deps.architectury")}")
+
 	val mcVer = stonecutter.current.version
 	"compileOnly"("com.simibubi.create:create-$mcVer:${prop("deps.create")}:slim") {
 		isTransitive = false
 	}
-	// В NeoForge артефакт называется flywheel-neoforge-api 
+	// В NeoForge артефакт называется flywheel-neoforge-api
 	"compileOnly"("dev.engine-room.flywheel:flywheel-neoforge-api-$mcVer:${prop("deps.flywheel")}")
 	"compileOnly"("curse.maven:jei-238222:${prop("deps.jei")}")
 	"runtimeOnly"("curse.maven:jei-238222:${prop("deps.jei")}")
+
 }
 
 tasks.named("createMinecraftArtifacts") {

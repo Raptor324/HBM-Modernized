@@ -292,19 +292,10 @@ public final class IrisRenderBatch implements AutoCloseable {
         this.isOuter = true;
         this.shader = shader;
 
-        // Snapshot the VAO/array-buffer Iris/vanilla had before this batch. Must be
-        // captured BEFORE any glBindVertexArray — binding VAO 0 here and storing it
-        // as previousVao leaves core-profile GL without an active array object after
-        // teardown; Iris HandRenderer then hits GL_INVALID_OPERATION ("Array object is
-        // not active") and the first-person hand vanishes.
         this.previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         this.previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
         this.previousCullEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
 
-        // BSL et al. branch on `blockEntityId / 100`; force a neutral 0 so the
-        // pack shader does not take EMISSIVE_RECOLOR or DrawEndPortal branches
-        // based on whichever BE Iris last rendered. Same rationale as
-        // InstancedStaticPartRenderer.flushBatchIris.
         this.previousBlockEntityId = IrisExtendedShaderAccess.setCurrentRenderedBlockEntity(0);
 
         this.phaseGuard = IrisPhaseGuard.pushBlockEntities();
@@ -315,10 +306,9 @@ public final class IrisRenderBatch implements AutoCloseable {
             shader.PROJECTION_MATRIX.set(projectionMatrix);
         }
         if (shader.MODEL_VIEW_MATRIX != null) {
-            // Placeholder identity ModelView; per-draw drawCompanion() overrides via
-            // a direct upload of the per-instance matrix.
             shader.MODEL_VIEW_MATRIX.set(IDENTITY);
         }
+
         Uniform fogStart = shader.getUniform("FogStart");
         if (fogStart != null) fogStart.set(RenderSystem.getShaderFogStart());
         Uniform fogEnd = shader.getUniform("FogEnd");
@@ -331,11 +321,6 @@ public final class IrisRenderBatch implements AutoCloseable {
         Uniform sampler0 = shader.getUniform("Sampler0");
         if (sampler0 != null) sampler0.set(0);
 
-        // Same texture-slot rebinds as the per-call path. ExtendedShader.apply()
-        // copies these tracked slots onto the IrisSamplers ALBEDO/OVERLAY/LIGHTMAP
-        // texture units - if we leave a stale ID in slot 0 (e.g. from an Embeddium
-        // chunk re-bake) the pack shader samples the wrong image and the model
-        // appears solid orange.
         RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
         Minecraft.getInstance().gameRenderer.overlayTexture().setupOverlayColor();
         Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();
@@ -343,9 +328,7 @@ public final class IrisRenderBatch implements AutoCloseable {
                 .getTexture(TextureAtlas.LOCATION_BLOCKS);
         com.mojang.blaze3d.systems.RenderSystem.activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
         com.mojang.blaze3d.systems.RenderSystem.bindTexture(blockAtlas.getId());
-        // ONE heavy apply(): GlFramebuffer.bind() + Iris CustomUniforms.push() +
-        // uploadIfNotNull for every uniform. This is the single largest CPU cost
-        // we can amortise across multiple draws.
+
         if (!IrisShaderApply.tryApply(shader)) {
             throw new IllegalStateException("ExtendedShader.apply() failed (destroyed GlResource or invalid pipeline phase)");
         }
@@ -357,12 +340,6 @@ public final class IrisRenderBatch implements AutoCloseable {
 
         int programId = shader.getId();
         long currentGen = IrisExtendedShaderAccess.getPipelineGeneration();
-        // Re-resolve if ANY of: (1) pipeline rebuilt (generation bumped),
-        // (2) a different ShaderInstance was handed to us (main vs shadow,
-        // or fresh instance after rebuild), (3) program ID differs. The
-        // generation check is the authoritative signal against GL ID
-        // recycling; the other two are defense in depth for edge cases
-        // where the generation bump hasn't fired yet (e.g. mid-frame).
         if (cachedShaderProgram != programId
                 || cachedShaderInstance != shader
                 || cachedPipelineGeneration != currentGen) {
@@ -372,8 +349,6 @@ public final class IrisRenderBatch implements AutoCloseable {
             matrixLocs = IrisDerivedMatrixUniforms.resolve(shader);
         }
 
-        // Reset per-draw caches: a new batch may bind a different VAO first, and
-        // the previous batch's lightmap UV2 is no longer current.
         lastBoundVao = -1;
         lastBlockU = Integer.MIN_VALUE;
         lastSkyV = Integer.MIN_VALUE;

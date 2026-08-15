@@ -113,6 +113,34 @@ final class VanillaInstancedBatchRenderer {
         // Sampler0/Sampler2: {@link SingleMeshVboRenderer#prepareBlockLitSamplers} + bindBlockLitSamplerTextures.
     }
 
+    // ── 1.21.1 view-rotation stripping ────────────────────────────────
+
+    //? if >= 1.21.1 {
+    /*// На 1.21.1 Mojang переносит camera view rotation (R_cam) в projection matrix
+    // RenderLevelStageEvent'а: event.getProjectionMatrix() = P*R_cam. При этом BER
+    // poseStack, из которого addInstance извлекает InstPos/InstRot, тоже несёт R_cam
+    // (mat = R_cam * T(blockPos - cameraPos) * perBELocal — см. комментарий в
+    // SingleMeshVboRenderer.render и fillInstanceCornerLight, где R_cam invert'ится).
+    // Instanced VS собирает modelView = T(InstPos)*R(InstRot) ≡ R_cam*T(d)*localRot,
+    // и если ProjMat = P*R_cam, итог = P*R_cam*R_cam*T(d)*localRot = P*R_cam²*...
+    // → двойная ротация. Симптом: модель "летает" по экрану, корректно только при
+    // yaw=180/0 (где R_cam²≈I). Фикс: stripp'им R_cam из event projection перед upload'ом.
+    //
+    // ВАЖНО: stripp'им ТОЛЬКО event projection (из flushBatchVanilla/flushBatchIris).
+    // RenderSystem.getProjectionMatrix() на 1.21.1 НЕ содержит R_cam (там чистая P) —
+    // его использует renderSingleVanilla и SingleMeshVboRenderer.render (не-instanced BER),
+    // где R_cam применяется один раз через poseStack ModelViewMat. Стриппинг там ломает.
+    private final org.joml.Matrix4f strippedProjection = new org.joml.Matrix4f();
+    private final org.joml.Matrix4f invViewRotTmp = new org.joml.Matrix4f();
+    *///?}
+
+    Matrix4f stripViewRotationForInstanced(Matrix4f projection) {
+        // По ванильному GameRenderer.renderLevel 1.21.1 проекция события — это P*bob
+        // БЕЗ R_cam (R_cam передаётся отдельным аргументом frustumMatrix и живёт в modelViewStack).
+        // Умножение P * R_cam^-1 портило проекцию → instanced-модели летали по экрану.
+        return projection;
+    }
+
     /** Re-enable mesh + instance attribs (chunk/MDI passes may disable UV0). */
     void enableVertexAttribsForDraw() {
         for (int i = 0; i <= parent.instanceAttribLast; i++) {
@@ -194,21 +222,21 @@ final class VanillaInstancedBatchRenderer {
     void uploadSingleInstance(PoseStack poseStack, int packedLight,
                               @Nullable BlockEntity blockEntity) {
         parent.instanceBuffer.clear();
-        Matrix4f mat = poseStack.last().pose();
+        Matrix4f mat = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(poseStack.last().pose());
         mat.getTranslation(parent.posTmp);
         mat.getNormalizedRotation(parent.rotTmp);
 
         BlockPos blockPosForSample = (blockEntity != null) ? blockEntity.getBlockPos() : BlockPos.ZERO;
         if (LightSampleCache.BASE_POSE_SET.get()) {
-            parent.tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(mat);
+            parent.tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(poseStack.last().pose());
         } else {
             var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
             //? if < 1.21.1 {
             parent.tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
-            //?} else {
+             //?} else {
             /*parent.tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
             *///?}
-            parent.tmpLocalPose.set(parent.tmpInvViewRot).mul(mat);
+            parent.tmpLocalPose.set(parent.tmpInvViewRot).mul(poseStack.last().pose());
             parent.tmpLocalPose.m30(parent.tmpLocalPose.m30() - (float) (blockPosForSample.getX() - cam.x));
             parent.tmpLocalPose.m31(parent.tmpLocalPose.m31() - (float) (blockPosForSample.getY() - cam.y));
             parent.tmpLocalPose.m32(parent.tmpLocalPose.m32() - (float) (blockPosForSample.getZ() - cam.z));
@@ -217,10 +245,10 @@ final class VanillaInstancedBatchRenderer {
 
         if (parent.useSlicedLight) {
             LightSampleCache.getOrSample16(blockEntity, partHash, parent.objBbox, blockPosForSample,
-                                           parent.tmpLocalPose, packedLight, parent.tmpCornerUV);
+                    parent.tmpLocalPose, packedLight, parent.tmpCornerUV);
         } else {
             LightSampleCache.getOrSample8(blockEntity, partHash, parent.objBbox, blockPosForSample,
-                                          parent.tmpLocalPose, packedLight, parent.tmpCornerUV);
+                    parent.tmpLocalPose, packedLight, parent.tmpCornerUV);
         }
 
         parent.memPutInstanceRecordAtBaseFloat(0);
@@ -255,6 +283,9 @@ final class VanillaInstancedBatchRenderer {
             enableVertexAttribsForDraw();
 
             RenderSystem.setShader(() -> shader);
+            // renderSingle вызывается из BER (DoorRenderer) — projection из RenderSystem.getProjectionMatrix()
+            // НЕ содержит R_cam на 1.21.1 (R_cam только в event.getProjectionMatrix()). Stripp'им InstPos/InstRot
+            // из poseStack (тоже с R_cam), но ProjMat — как есть. На 1.20.1 тождественно.
             applyCommonUniforms(shader, RenderSystem.getProjectionMatrix(), new Matrix4f());
             SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
             shader.apply();
@@ -283,6 +314,9 @@ final class VanillaInstancedBatchRenderer {
     // РЕГРЕССИЯ-СТОП: порядок draw — VAO → shader → identity ModelView → prepareSamplers → apply → bind → draw.
     // НЕ менять порядок; НЕ рисовать без bindBlockLitSamplerTextures после apply (белые OBJ).
     void flushBatchVanilla(Matrix4f projectionMatrix) {
+        // 1.21.1: projection из event.getProjectionMatrix() несёт R_cam; instanced VS
+        // собирает modelView из InstPos/InstRot (тоже с R_cam) → двойная ротация. Stripp'им.
+        Matrix4f proj = stripViewRotationForInstanced(projectionMatrix);
         boolean alreadyFlipped = false;
 
         MdiBatchCoordinator coord = MdiBatchCoordinator.active();
@@ -354,7 +388,7 @@ final class VanillaInstancedBatchRenderer {
 
             RenderSystem.setShader(() -> shader);
             // Identity ModelView: instanced VS берёт позу из InstPos/InstRot. НЕ подставлять poseStack.last() — ломает batch.
-            applyCommonUniforms(shader, projectionMatrix, new Matrix4f());
+            applyCommonUniforms(shader, proj, new Matrix4f());
             // Текстуры: prepare → apply → bind (см. SingleMeshVboRenderer «РЕГРЕССИЯ-СТОП»). Только apply() = белые модели.
             SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
             shader.apply();

@@ -205,6 +205,17 @@ public class MeshRenderCache {
                 }
 
                 @Override
+                public void cleanup() {
+                    // См. cleanup() в createRendererForPart: закрываем нативный VboData,
+                    // если initVbo() ни разу не потребил его до очистки кэша.
+                    if (pendingData != null) {
+                        pendingData.close();
+                        pendingData = null;
+                    }
+                    super.cleanup();
+                }
+
+                @Override
                 protected List<BakedQuad> getQuadsForIrisPath() {
                     return quadsForIris;
                 }
@@ -227,30 +238,43 @@ public class MeshRenderCache {
         MainRegistry.LOGGER.debug("MeshRenderCache: renderer for part '{}', {} vertices",
             partName, prebuiltData.byteBuffer.remaining() / prebuiltData.bytesPerVertex);
 
-        final List<BakedQuad> quadsForIris = geo.solidQuads();
-        return new SingleMeshVboRenderer() {
-            // One-shot owner: holds VboData until initVbo consumes it, then nulled out.
-            // initVbo() is only ever called once per renderer (gated by `initialized`),
-            // but if a future bug causes a re-init after cleanup(), throwing here is
-            // safer than returning already-freed native buffers.
-            private SingleMeshVboRenderer.VboData pendingData = prebuiltData;
+            final List<BakedQuad> quadsForIris = geo.solidQuads();
+            return new SingleMeshVboRenderer() {
+                // One-shot owner: holds VboData until initVbo consumes it, then nulled out.
+                // initVbo() is only ever called once per renderer (gated by `initialized`),
+                // but if a future bug causes a re-init after cleanup(), throwing here is
+                // safer than returning already-freed native buffers.
+                private SingleMeshVboRenderer.VboData pendingData = prebuiltData;
 
-            @Override
-            protected SingleMeshVboRenderer.VboData buildVboData() {
-                SingleMeshVboRenderer.VboData data = pendingData;
-                if (data == null) {
-                    throw new IllegalStateException(
-                        "buildVboData() called twice for part '" + partName + "'; VboData is one-shot");
+                @Override
+                protected SingleMeshVboRenderer.VboData buildVboData() {
+                    SingleMeshVboRenderer.VboData data = pendingData;
+                    if (data == null) {
+                        throw new IllegalStateException(
+                                "buildVboData() called twice for part '" + partName + "'; VboData is one-shot");
+                    }
+                    pendingData = null;
+                    return data;
                 }
-                pendingData = null;
-                return data;
-            }
 
-            @Override
-            protected List<BakedQuad> getQuadsForIrisPath() {
-                return quadsForIris;
-            }
-        };
+                @Override
+                public void cleanup() {
+                    // Если initVbo() ни разу не выполнился (часть закэширована, но не
+                    // отрисована до reload/disconnect), super.cleanup() выходит рано по
+                    // !initialized — а pendingData держит native memAlloc-буферы вершин
+                    // и индексов. Закрываем явно; close() идемпотентен (флаг consumed).
+                    if (pendingData != null) {
+                        pendingData.close();
+                        pendingData = null;
+                    }
+                    super.cleanup();
+                }
+
+                @Override
+                protected List<BakedQuad> getQuadsForIrisPath() {
+                    return quadsForIris;
+                }
+            };
     }
 
     /**

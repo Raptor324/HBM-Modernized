@@ -1,7 +1,9 @@
 package com.hbm_m.blockentity.machines;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
+//? if forge {
 import com.hbm_m.api.energy.PackedEnergyCapabilityProvider;
+//?}
 import com.hbm_m.block.machines.MachineBatteryBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;

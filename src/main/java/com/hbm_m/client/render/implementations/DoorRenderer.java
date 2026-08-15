@@ -57,7 +57,8 @@ import net.minecraftforge.client.model.data.ModelData;
 //?} elif fabric {
 /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 *///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+/*import net.neoforged.neoforge.client.model.data.ModelData;
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
 public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, BakedModel> {
 
@@ -134,19 +135,9 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
         int count = 0;
         var rand = RandomSource.create(42);
         for (Direction d : Direction.values()) {
-            //? if forge {
             count += partModel.getQuads(null, d, rand, ModelData.EMPTY, RenderType.solid()).size();
-             //?}
-            //? if fabric {
-            /*count += partModel.getQuads(null, d, rand).size();
-            *///?}
         }
-        //? if forge {
         count += partModel.getQuads(null, null, rand, ModelData.EMPTY, RenderType.solid()).size();
-         //?}
-        //? if fabric {
-        /*count += partModel.getQuads(null, null, rand).size();
-        *///?}
         if (count == 0) {
             PARTS_WITHOUT_GEOMETRY.add(cacheKey);
             return false;
@@ -319,11 +310,11 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
                                 DoorModelSelection selection, DoorDecl doorDecl) {
         for (DaeNode node : nodes) {
             poseStack.pushPose();
-                //? if < 1.21.1 {
-                poseStack.mulPoseMatrix(node.localMatrix(time, clip));
-                //?} else {
-                /*poseStack.mulPose(node.localMatrix(time, clip));
-                *///?}
+            //? if < 1.21.1 {
+            poseStack.mulPoseMatrix(node.localMatrix(time, clip));
+             //?} else {
+            /*poseStack.last().pose().mul(node.localMatrix(time, clip));
+            *///?}
             if (node.mesh != null) {
                 SingleMeshVboRenderer renderer = getDaeRendererForNode(node, selection, doorDecl);
                 if (renderer != null) {
@@ -341,11 +332,27 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
 
         return DAE_RENDERER_CACHE.computeIfAbsent(key, k -> {
             try {
-                ResourceLocation texture = resolveDaeTexture(node, selection, doorDecl);
+                ResourceLocation rawTexture = resolveDaeTexture(node, selection, doorDecl);
+                
+                // Очищаем путь от "textures/" и ".png", чтобы атлас мог найти спрайт
+                String cleanPath = rawTexture.getPath();
+                if (cleanPath.startsWith("textures/")) {
+                    cleanPath = cleanPath.substring("textures/".length());
+                }
+                if (cleanPath.endsWith(".png")) {
+                    cleanPath = cleanPath.substring(0, cleanPath.length() - 4);
+                }
+                ResourceLocation spriteLocation = ResourceLocation.fromNamespaceAndPath(rawTexture.getNamespace(), cleanPath);
+
                 TextureAtlasSprite sprite = Minecraft.getInstance().getModelManager()
                         .getAtlas(TextureAtlas.LOCATION_BLOCKS)
-                        .getSprite(texture);
+                        .getSprite(spriteLocation);
                 
+                if (sprite == null) {
+                    MainRegistry.LOGGER.error("DoorRenderer: Sprite '{}' not found in block atlas!", spriteLocation);
+                    return null;
+                }
+
                 List<BakedQuad> quads = DaeQuadBaker.bakeNodeQuads(node.mesh, new Matrix4f(), sprite);
                 if (quads.isEmpty()) return null;
                 return MeshRenderCache.getOrCreateRendererFromQuadList(key, quads);
@@ -392,11 +399,8 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
             
             boolean useBatchingNow = ModClothConfig.useInstancedBatching();
             boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
-            //? if forge || neoforge {
             boolean useIrisBatch = ShaderCompatibilityDetector.isExternalShaderActive() && (!useBatchingNow || shadowPass);
-            //?} elif fabric {
-            /*boolean useIrisBatch = ShaderCompatibilityDetector.isExternalShaderActive();
-            *///?}
+
             if (useIrisBatch) {
                 try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
                     renderDoorVboParts(be, model, doorDecl, partNames, staticFramePart, doorType,

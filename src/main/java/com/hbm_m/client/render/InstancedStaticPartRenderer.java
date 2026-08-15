@@ -124,6 +124,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
 
     // ── Scratch for addInstanceGpuBones ─────────────────────────────────
     private final Matrix4f tmpInstanceMat = new Matrix4f();
+    private final Matrix4f tmpCompositeMat = new Matrix4f();
 
     // ── Constructors ───────────────────────────────────────────────────
 
@@ -314,6 +315,22 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
 
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Failed to initialize InstancedStaticPartRenderer", e);
+            // super.cleanup() (AbstractGpuMesh) выходит рано по !initialized — а в
+            // конструкторе initialized ещё false. Уже сгенерированные GL-объекты
+            // удаляем явно, иначе исключение между glGen* и концом try утекает
+            // VAO/vertex VBO/EBO (instanceVboId чистится в cleanup() ниже).
+            if (vaoId != -1) {
+                try { GL30.glDeleteVertexArrays(vaoId); } catch (Throwable ignored) {}
+                vaoId = -1;
+            }
+            if (vboId != -1) {
+                try { GL15.glDeleteBuffers(vboId); } catch (Throwable ignored) {}
+                vboId = -1;
+            }
+            if (eboId != -1) {
+                try { GL15.glDeleteBuffers(eboId); } catch (Throwable ignored) {}
+                eboId = -1;
+            }
             cleanup();
             initialized = false;
         } finally {
@@ -413,23 +430,6 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
                             @Nullable float[] sharedCornerUV8) {
         if (!initialized) return;
 
-        //? if fabric {
-        /*if (ShaderCompatibilityDetector.isExternalShaderActive()) {
-            if (irisHelper.drawSingleWithIrisExtended(poseStack, packedLight, blockPos, blockEntity)) {
-                return;
-            }
-            if (quadsForIris != null && !quadsForIris.isEmpty() && bufferSource != null) {
-                float fade = SingleMeshVboRenderer.getFadeAlpha();
-                VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
-                var pose = poseStack.last();
-                for (BakedQuad quad : quadsForIris) {
-                    consumer.putBulkData(pose, quad, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY);
-                }
-            }
-            return;
-        }
-        *///?}
-
         //? if forge {
         if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
             if (irisHelper.drawSingleWithIrisExtended(poseStack, packedLight, blockPos, blockEntity)) {
@@ -464,10 +464,16 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         }
 
         Matrix4f mat = poseStack.last().pose();
-        mat.getTranslation(posTmp);
-        mat.getNormalizedRotation(rotTmp);
+        // ВЕРДИКТ ПО ВАНИЛЬНЫМ ИСТОЧНИКАМ 1.21.1 (GameRenderer.renderLevel + LevelRenderer.renderLevel):
+        // R_cam (frustumMatrix) передаётся ОТДЕЛЬНО от проекции и пушится в RenderSystem.getModelViewStack()
+        // перед циклом BE — то есть RenderSystem.getModelViewMatrix() == R_cam на ОБЕИХ версиях,
+        // а poseStack несёт только T(blockPos - cam) * local. Предыдущая ветка "pose уже содержит камеру"
+        // была ложной и выбрасывала R_cam → модели летали по экрану. Стриппинг отменён.
+        tmpCompositeMat.set(RenderSystem.getModelViewMatrix()).mul(mat);
+        tmpCompositeMat.getTranslation(posTmp);
+        tmpCompositeMat.getNormalizedRotation(rotTmp);
 
-        fillInstanceCornerLight(blockEntity, packedLight, blockPos, mat, sharedCornerUV8);
+        fillInstanceCornerLight(blockEntity, packedLight, blockPos, poseStack.last().pose(), sharedCornerUV8);
 
         instanceCullIndices[instanceCount] = -1;
         instanceOcclusionKeys[instanceCount] = OcclusionCullingHelper.occlusionKeyForBlock(blockPos);
@@ -493,30 +499,6 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             addInstance(baseBlockPose, packedLight, blockPos, blockEntity, bufferSource, sharedCornerUV8);
             return;
         }
-
-        //? if fabric {
-        /*if (ShaderCompatibilityDetector.isExternalShaderActive()) {
-            PoseStack composed = new PoseStack();
-            composed.pushPose();
-            composed.last().pose().set(baseBlockPose.last().pose()).mul(partLocalToBlock);
-            try {
-                if (irisHelper.drawSingleWithIrisExtended(composed, packedLight, blockPos, blockEntity)) {
-                    return;
-                }
-                if (quadsForIris != null && !quadsForIris.isEmpty() && bufferSource != null) {
-                    float fade = SingleMeshVboRenderer.getFadeAlpha();
-                    VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
-                    var pose = composed.last();
-                    for (BakedQuad quad : quadsForIris) {
-                        consumer.putBulkData(pose, quad, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY);
-                    }
-                }
-            } finally {
-                composed.popPose();
-            }
-            return;
-        }
-        *///?}
 
         //? if forge {
         if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
@@ -587,8 +569,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
 
         Matrix4f mat = baseBlockPose.last().pose();
         tmpInstanceMat.set(mat).mul(partLocalToBlock);
-        tmpInstanceMat.getTranslation(posTmp);
-        tmpInstanceMat.getNormalizedRotation(rotTmp);
+        tmpCompositeMat.set(RenderSystem.getModelViewMatrix()).mul(tmpInstanceMat);
+        tmpCompositeMat.getTranslation(posTmp);
+        tmpCompositeMat.getNormalizedRotation(rotTmp);
 
         fillInstanceCornerLight(blockEntity, packedLight, blockPos, mat, sharedCornerUV8);
 

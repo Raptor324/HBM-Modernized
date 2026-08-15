@@ -48,6 +48,16 @@ legacyForge {
 			programArgument("--nogui")
 			jvmArguments.addAll("-Xmx4G", "-Xms2G")
 		}
+		// GameTest-сервер: headless-прогон всех @GameTest без GUI.
+		register("gameTestServer") {
+			server()
+			gameDirectory = file("run/")
+			ideName = "Forge GameTest (${stonecutter.active?.version})"
+			systemProperty("forge.gameTestServer", "true")
+			systemProperty("forge.enableGameTest", "true")
+			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8")
+		}
+
 		register("data") {
 			data()
 			gameDirectory = file("run/")
@@ -103,15 +113,13 @@ dependencies {
 
 	"modCompileOnly"("curse.maven:jei-238222:${prop("deps.jei")}")
 	"modRuntimeOnly"("curse.maven:jei-238222:${prop("deps.jei")}")
-	// Create compat — compile-only (мод опциональный, работает и без Create).
-	// slim-артефакт без транзитивных зависимостей; flywheel-api нужен только для
-	// сигнатур Create MovementBehaviour (VisualizationContext и т.п.).
+
 	"modCompileOnly"("com.simibubi.create:create-1.20.1:${prop("deps.create")}:slim") {
 		isTransitive = false
 	}
 	"modCompileOnly"("dev.engine-room.flywheel:flywheel-forge-api-1.20.1:${prop("deps.flywheel")}")
 	"modRuntimeOnly"("curse.maven:embeddium-908741:5681725")
-	"modRuntimeOnly"("curse.maven:oculus-581495:6020952")
+	// "modRuntimeOnly"("curse.maven:oculus-581495:6020952")
 	"modRuntimeOnly"("curse.maven:modernfix-790626:7515215")
 	"modRuntimeOnly"("curse.maven:smooth-boot-reloaded-633412:5016280")
 	

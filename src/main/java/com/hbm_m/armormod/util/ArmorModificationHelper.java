@@ -13,18 +13,26 @@ import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.armormod.item.ItemModBattery;
 import com.hbm_m.armormod.item.ItemModRadProtection;
 import com.hbm_m.hazard.HazardSystem;
+import com.hbm_m.lib.RefStrings;
 import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.Container;
+//? if >= 1.21.1 {
+/*import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.entity.EquipmentSlotGroup;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
+*///?}
 
 public class ArmorModificationHelper {
 
@@ -290,11 +298,10 @@ public class ArmorModificationHelper {
             return;
         }
 
-        // final Multimap<Attribute, AttributeModifier> oldAttributeModifiers = armorStack.getAttributeModifiers(armorItem.getEquipmentSlot());
+        // ШАГ 1: СОХРАНЕНИЕ КОНФИГУРАЦИИ МОДОВ В NBT (CUSTOM_DATA на 1.21.1).
+        // Этот тег — источник правды о том, какие моды установлены (читается pryMod/loadMods).
         PlatformHooks.editItemTag(armorStack, mainTag -> {
             CompoundTag modsCompound = new CompoundTag();
-
-            // ШАГ 1: СОХРАНЕНИЕ КОНФИГУРАЦИИ МОДОВ В НАШ ТЕГ
             for (int i = 0; i < 9; i++) {
                 ItemStack modStack = tableInventory.getItem(i);
                 if (modStack.isEmpty()) {
@@ -309,13 +316,18 @@ public class ArmorModificationHelper {
             } else {
                 mainTag.put(MOD_COMPOUND_KEY, modsCompound);
             }
+        });
 
-            // ШАГ 2: БЕЗОПАСНАЯ ПЕРЕСБОРКА СПИСКА АТРИБУТОВ
+        // ШАГ 2: ПЕРЕСБОРКА АТРИБУТОВ.
+        // 1.20.1: атрибуты живут в NBT-теге "AttributeModifiers" прямо на стаке.
+        // 1.21.1: атрибуты живут в DataComponents.ATTRIBUTE_MODIFIERS (immutable record).
+        //? if < 1.21.1 {
+        PlatformHooks.editItemTag(armorStack, mainTag -> {
             ListTag preservedModifiers = new ListTag();
 
-            // 2a: Фильтруем существующие атрибуты.
-            if (mainTag.contains("AttributeModifiers", 9)) {
-                ListTag currentModifiers = mainTag.getList("AttributeModifiers", 10);
+            // 2a: Сохраняем немаркированные (ванильные) модификаторы.
+            if (mainTag.contains("AttributeModifiers", Tag.TAG_LIST)) {
+                ListTag currentModifiers = mainTag.getList("AttributeModifiers", Tag.TAG_COMPOUND);
                 for (Tag tag : currentModifiers) {
                     if (tag instanceof CompoundTag compoundTag) {
                         if (!compoundTag.getBoolean(MODIFIER_MARKER_KEY)) {
@@ -324,8 +336,7 @@ public class ArmorModificationHelper {
                     }
                 }
             } else {
-                // Если тега "AttributeModifiers" нет, добавляем ванильные по умолчанию.
-                //? if < 1.21.1 {
+                // Нет тега — добавляем ванильные по умолчанию для этого слота.
                 Multimap<Attribute, AttributeModifier> defaultModifiers = armorItem.getDefaultAttributeModifiers(armorItem.getEquipmentSlot());
                 for (Map.Entry<Attribute, AttributeModifier> entry : defaultModifiers.entries()) {
                     CompoundTag modifierTag = entry.getValue().save();
@@ -335,11 +346,9 @@ public class ArmorModificationHelper {
                     modifierTag.putString("Slot", armorItem.getEquipmentSlot().getName());
                     preservedModifiers.add(modifierTag);
                 }
-                //?}
             }
 
-            // 2b: Добавляем атрибуты от наших модов, устанавливая им маркер.
-            //? if < 1.21.1 {
+            // 2b: Добавляем атрибуты от наших модов с маркером.
             for (int i = 0; i < 9; i++) {
                 ItemStack modStack = tableInventory.getItem(i);
                 if (modStack.isEmpty()) {
@@ -362,23 +371,54 @@ public class ArmorModificationHelper {
                     }
                 }
             }
-            //?} else {
 
-            //?}
-            
-            // TODO 1.21.1: Для работы атрибутов брони на 1.21.1 нужно модифицировать DataComponents.ATTRIBUTE_MODIFIERS:
-            //  ItemAttributeModifiers current = armorStack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
-            //  ItemAttributeModifiers.Builder builder = ItemAttributeModifiers.builder();
-            //  ... занести атрибуты ...
-            //  armorStack.set(DataComponents.ATTRIBUTE_MODIFIERS, builder.build());
-
-            // Заменяем старый список новым, отфильтрованным и дополненным.
             mainTag.put("AttributeModifiers", preservedModifiers);
         });
+        //?} else {
+        /*// 1.21.1: атрибуты живут в DataComponents.ATTRIBUTE_MODIFIERS (immutable ItemAttributeModifiers).
+        // Стратегия: начать с текущего компонента, удалить все ранее добавленные HBM-мод-модификаторы
+        // (по id-префиксу "am_", который PlatformHooks.attributeModifier ставит на 1.21.1),
+        // затем добавить свежие от установленных модов.
+        ItemAttributeModifiers current = armorStack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
+        ItemAttributeModifiers.Builder builder = ItemAttributeModifiers.builder();
+        for (ItemAttributeModifiers.Entry entry : current.modifiers()) {
+            if (!isHbmModAttribute(entry)) {
+                builder.add(entry.attribute(), entry.modifier(), entry.slot());
+            }
+        }
+        EquipmentSlotGroup slotGroup = EquipmentSlotGroup.bySlot(armorItem.getEquipmentSlot());
+        for (int i = 0; i < 9; i++) {
+            ItemStack modStack = tableInventory.getItem(i);
+            if (modStack.isEmpty()) {
+                modStack = pryMod(armorStack, i);
+            }
+            if (modStack.getItem() instanceof ItemArmorMod mod) {
+                if (isApplicable(armorStack, modStack)) {
+                    Multimap<Holder<Attribute>, AttributeModifier> modModifiers = mod.getModifiers(armorStack);
+                    if (modModifiers != null) {
+                        for (Map.Entry<Holder<Attribute>, AttributeModifier> entry : modModifiers.entries()) {
+                            builder.add(entry.getKey(), entry.getValue(), slotGroup);
+                        }
+                    }
+                }
+            }
+        }
+        armorStack.set(DataComponents.ATTRIBUTE_MODIFIERS, builder.build());
+        *///?}
 
         // ШАГ 3: ОБРЕЗАНИЕ ЗАРЯДА / capability (силовая броня)
         onPoweredArmorModsChanged(armorStack);
     }
+
+    //? if >= 1.21.1 {
+    /*/// true если запись атрибута — наш HBM-mod модификатор (id имеет префикс "am_",
+    /// который PlatformHooks.attributeModifier ставит при конструировании на 1.21.1).
+    /// Используется для дедупликации при перезаписи таблицы модов.
+    private static boolean isHbmModAttribute(ItemAttributeModifiers.Entry entry) {
+        ResourceLocation id = entry.modifier().id();
+        return id != null && id.getNamespace().equals(RefStrings.MODID) && id.getPath().startsWith("am_");
+    }
+    *///?}
 
     /** Записывает моды из стола в NBT брони (вызывать перед изъятием брони или закрытием GUI). */
     public static void flushTableToArmor(ItemStack armorStack, Container tableInventory, Player player) {

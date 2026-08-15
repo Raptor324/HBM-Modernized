@@ -54,16 +54,6 @@ import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 //?}
 
-//? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
-import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
-import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
-import team.reborn.energy.api.EnergyStorage;
-*///?}
-
 /**
  * Chemical Plant BlockEntity - порт с 1.7.10.
  * 22 слота, 6 FluidTank (3 input, 3 output), энергия.
@@ -744,61 +734,4 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
     }
 
     //?}
-
-    //? if fabric {
-    /*@SuppressWarnings("UnstableApiUsage")
-    @Nullable
-    public net.fabricmc.fabric.api.transfer.v1.storage.Storage<net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant> getFluidStorage(@Nullable Direction side) {
-        return new ChemPlantFabricFluidStorage(this);
-    }
-
-    @SuppressWarnings("UnstableApiUsage")
-    private static class ChemPlantFabricFluidStorage implements net.fabricmc.fabric.api.transfer.v1.storage.Storage<net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant> {
-        private final MachineChemicalPlantBlockEntity be;
-        ChemPlantFabricFluidStorage(MachineChemicalPlantBlockEntity be) { this.be = be; }
-
-        @Override
-        public long insert(net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant resource, long maxAmount,
-                           net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext transaction) {
-            if (resource.isBlank() || maxAmount <= 0) return 0;
-            int bound = be.getActiveFluidInputSlotCount();
-            for (int i = 0; i < bound; i++) {
-                FluidTank tank = be.inputTanks[i];
-                Fluid configured = tank.getConfiguredFluid();
-                if (configured == Fluids.EMPTY || configured == ModFluids.NONE.getSource()) continue;
-                if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(configured, resource.getFluid())) continue;
-                long spaceMb = tank.getCapacityMb() - tank.getFluidAmountMb();
-                if (spaceMb <= 0) continue;
-                long dropletsToFill = Math.min(maxAmount, spaceMb * 81L);
-                if (dropletsToFill <= 0) continue;
-                long inserted = tank.getStorage().insert(resource, dropletsToFill, transaction);
-                if (inserted > 0) be.setChanged();
-                return inserted;
-            }
-            return 0;
-        }
-
-        @Override
-        public long extract(net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant resource, long maxAmount,
-                            net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext transaction) {
-            if (resource.isBlank() || maxAmount <= 0) return 0;
-            for (int i = 0; i < 3; i++) {
-                FluidTank tank = be.outputTanks[i];
-                if (tank.isEmpty()) continue;
-                if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(tank.getStoredFluid(), resource.getFluid())) continue;
-                long availableDroplets = (long) tank.getFluidAmountMb() * 81L;
-                long dropletsToExtract = Math.min(maxAmount, availableDroplets);
-                if (dropletsToExtract <= 0) continue;
-                long extracted = tank.getStorage().extract(resource, dropletsToExtract, transaction);
-                if (extracted > 0) be.setChanged();
-                return extracted;
-            }
-            return 0;
-        }
-
-        @Override public java.util.Iterator<net.fabricmc.fabric.api.transfer.v1.storage.StorageView<net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant>> iterator() {
-            return java.util.Collections.emptyIterator();
-        }
-    }
-    *///?}
 }

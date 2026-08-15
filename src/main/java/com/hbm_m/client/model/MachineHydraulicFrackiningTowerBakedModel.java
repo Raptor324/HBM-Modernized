@@ -14,7 +14,9 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
 import net.minecraftforge.client.model.data.ModelData;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.model.data.ModelData;
+*///?}
 
 public class MachineHydraulicFrackiningTowerBakedModel extends AbstractMultipartBakedModel {
 
@@ -28,7 +30,7 @@ public class MachineHydraulicFrackiningTowerBakedModel extends AbstractMultipart
         // Наша модель 24 блока в высоту. Sodium вывернет её наизнанку из-за 16-битного лимита.
         // Мы будем рендерить её ИСКЛЮЧИТЕЛЬНО через VBO в BER, там используются 32-битные float.
         if (state == null) return false; // Предметы в инвентаре рендерим как обычно
-        return true; 
+        return true;
     }
 
     @Override
@@ -45,7 +47,7 @@ public class MachineHydraulicFrackiningTowerBakedModel extends AbstractMultipart
         return result;
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                      RandomSource rand, ModelData modelData, @Nullable net.minecraft.client.renderer.RenderType renderType) {

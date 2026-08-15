@@ -51,6 +51,11 @@ public class EnergyNetworkManager extends SavedData {
     }
 
     public static EnergyNetworkManager get(ServerLevel level) {
+
+        if (level == null) {
+            return new EnergyNetworkManager(null);
+        }
+
         //? if < 1.21.1 {
         return level.getDataStorage().computeIfAbsent(
                 (nbt) -> new EnergyNetworkManager(level, nbt),

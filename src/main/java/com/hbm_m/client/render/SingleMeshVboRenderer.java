@@ -360,46 +360,37 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         RenderSystem.assertOnRenderThread();
         Minecraft mc = Minecraft.getInstance();
 
-        // Same unit order as prepareBlockLitSamplers(): turnOnLightLayer() binds to the
-        // *active* GL unit — never call it before TEXTURE1 is active or the atlas on unit 0
-        // gets replaced by the lightmap (Sampler0 then samples lightmap → solid white).
-        RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
-        RenderSystem.activeTexture(GL13.GL_TEXTURE0);
-        mc.getTextureManager().bindForSetup(TextureAtlas.LOCATION_BLOCKS);
-
-        RenderSystem.activeTexture(GL13.GL_TEXTURE1);
-        mc.gameRenderer.lightTexture().turnOnLightLayer();
-
-        RenderSystem.activeTexture(GL13.GL_TEXTURE0);
-        mc.getTextureManager().bindForSetup(TextureAtlas.LOCATION_BLOCKS);
-
         int atlasGlId = resolveBlockAtlasGlId(mc);
         int lightmapGlId = resolveLightmapGlId(mc);
         if (atlasGlId <= 0 || lightmapGlId <= 0) {
-            MainRegistry.LOGGER.warn(
-                    "bindBlockLitSamplerTextures: invalid atlas/lightmap GL id (atlas={}, lightmap={})",
-                    atlasGlId, lightmapGlId);
             return;
         }
 
+        // Unit 0: Атлас блоков
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlasGlId);
+        RenderSystem.setShaderTexture(0, atlasGlId);
+
+        // Unit 1: Ванильный оверлей (чтобы не затирался свет)
         GL13.glActiveTexture(GL13.GL_TEXTURE1);
+        mc.gameRenderer.overlayTexture().setupOverlayColor();
+
+        // Unit 2: Карта света
+        GL13.glActiveTexture(GL13.GL_TEXTURE2);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, lightmapGlId);
+        RenderSystem.setShaderTexture(2, lightmapGlId);
+
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
 
         shader.setSampler("Sampler0", atlasGlId);
         shader.setSampler("Sampler2", lightmapGlId);
 
-        // JSON lists Sampler0 then Sampler2 → apply() uses texture units 0 and 1, not 0 and 2.
         var uSampler0 = shader.getUniform("Sampler0");
-        if (uSampler0 != null) {
-            uSampler0.set(0);
-        }
+        if (uSampler0 != null) uSampler0.set(0);
+        var uSampler1 = shader.getUniform("Sampler1");
+        if (uSampler1 != null) uSampler1.set(1);
         var uSampler2 = shader.getUniform("Sampler2");
-        if (uSampler2 != null) {
-            uSampler2.set(1);
-        }
+        if (uSampler2 != null) uSampler2.set(2);
     }
 
     private boolean shouldRenderWithCulling(BlockPos blockPos, @Nullable BlockEntity blockEntity) {
@@ -606,8 +597,9 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
 
         try {
             RenderSystem.setShader(() -> shader);
+            Matrix4f fullModelView = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(poseStack.last().pose());
             if (shader.MODEL_VIEW_MATRIX != null)
-                shader.MODEL_VIEW_MATRIX.set(poseStack.last().pose());
+                shader.MODEL_VIEW_MATRIX.set(fullModelView);
             if (shader.PROJECTION_MATRIX != null)
                 shader.PROJECTION_MATRIX.set(RenderSystem.getProjectionMatrix());
 
@@ -858,6 +850,11 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
         boolean previousCullFaceEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
+        // Тело try ставит depthFunc/depthMask/depthTest для обеих веток (overlay и
+        // обычной); раньше finally восстанавливал их только для overlay-пути.
+        int previousDepthFunc = GL11.glGetInteger(GL11.GL_DEPTH_FUNC);
+        boolean previousDepthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
+        boolean previousDepthTestEnabled = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
 
         // Neutral blockEntityId so BSL & co. don't take EMISSIVE_RECOLOR /
         // DrawEndPortal branches based on whatever BE Iris rendered last.
@@ -866,7 +863,11 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         try (IrisPhaseGuard ignored = IrisPhaseGuard.pushBlockEntities()) {
             RenderSystem.setShader(() -> shader);
 
-            if (shader.MODEL_VIEW_MATRIX != null) shader.MODEL_VIEW_MATRIX.set(poseStack.last().pose());
+            if (shader.MODEL_VIEW_MATRIX != null) {
+                // Композит с RenderSystem.getModelViewMatrix() (= R_cam в фазе BE) нужен на ОБЕИХ
+                // версиях: LevelRenderer пушит frustumMatrix в modelViewStack и на 1.20.1, и на 1.21.1.
+                shader.MODEL_VIEW_MATRIX.set(new Matrix4f(RenderSystem.getModelViewMatrix()).mul(poseStack.last().pose()));
+            }
             if (shader.PROJECTION_MATRIX != null) shader.PROJECTION_MATRIX.set(RenderSystem.getProjectionMatrix());
 
             var brightnessUniform = shader.getUniform("Brightness");
@@ -969,9 +970,12 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
             GlVaoSafety.bindVertexArray(previousVao);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
-            if (worldMissileOverlayDraw.get()) {
+            RenderSystem.depthFunc(previousDepthFunc);
+            GL11.glDepthMask(previousDepthMask);
+            if (previousDepthTestEnabled) {
                 RenderSystem.enableDepthTest();
-                GL11.glDepthMask(true);
+            } else {
+                RenderSystem.disableDepthTest();
             }
             if (previousCullFaceEnabled) RenderSystem.enableCull();
             else RenderSystem.disableCull();

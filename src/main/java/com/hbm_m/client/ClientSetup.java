@@ -274,8 +274,14 @@ public class ClientSetup {
         });
 
 
-        // Экраны меню - vanilla API, одинаково работает на обоих лоадерах.
+        // Экраны меню.
+        // На Forge/Fabric MenuRegistry.registerScreenFactory работает напрямую из любого момента.
+        // На NeoForge 1.21.1+ регистрация экранов обязана произойти ДО RegisterMenuScreensEvent
+        // (он стреляет во время Minecraft construction, раньше FMLClientSetupEvent) — там
+        // используется отдельный @SubscribeEvent onRegisterMenuScreens ниже, а сюда мы не заходим.
+        //? if forge || fabric {
         registerScreens();
+        //?}
 
         // Рендереры (entity + block entity) - loader-specific registration.
         registerRenderersCommon();
@@ -479,6 +485,19 @@ public class ClientSetup {
         event.enqueueWork(ClientSetup::registerRadAbsorberItemProperties);
         event.enqueueWork(ClientSetup::registerRenderLayers);
     }
+
+    //? if neoforge {
+    /*/// NeoForge 1.21.1+: RegisterMenuScreensEvent стреляет во время Minecraft construction,
+    /// РАНЬШЕ FMLClientSetupEvent. Поэтому экраны надо регистрировать здесь, а не в initClient().
+    /// Architectury MenuRegistry.registerScreenFactory на NeoForge подписывается на это же событие
+    /// через bus.addListener — вызов внутри @SubscribeEvent (зарегистрированного через
+    /// @EventBusSubscriber(Bus.MOD) во время mod loading) происходит до события, поэтому listener успевает.
+    @SubscribeEvent
+    public static void onRegisterMenuScreens(net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) {
+        MainRegistry.LOGGER.info("RegisterMenuScreensEvent fired. Registering HBM screens.");
+        registerScreens();
+    }
+    *///?}
 
     private static void registerDebugClientCommands(RegisterClientCommandsEvent event) {
         event.getDispatcher().register(
@@ -994,6 +1013,11 @@ public class ClientSetup {
     private static void clearClientCachesDeferred() {
         com.mojang.blaze3d.systems.RenderSystem.recordRenderCall(() -> {
             com.hbm_m.client.render.culling.InstancedRenderFrame.clear();
+            // Свет/окклюжен: ключи включают позицию (без измерения) и identityHashCode
+            // рендерера — после выхода из мира это мусор, а occlusion-данные другого
+            // измерения по той же позиции дают ложный куллинг до истечения TTL.
+            com.hbm_m.client.render.LightSampleCache.invalidateAll();
+            com.hbm_m.client.render.culling.OcclusionCullingHelper.clearCache();
             MachineAdvancedAssemblerRenderer.clearCaches();
             MachineAssemblerRenderer.clearCaches();
             MachineHydraulicFrackiningTowerRenderer.clearCaches();
@@ -1448,6 +1472,9 @@ public class ClientSetup {
                         MachineCrystallizerRenderer.clearCaches();
                         MachineRadarRenderer.clearCaches();
                         MeshRenderCache.clearAll();
+                        // F3+T пересоздаёт рендереры с новыми identityHashCode — ключи
+                        // CACHE8/CACHE16 от старых рендереров становятся вечным мусором.
+                        com.hbm_m.client.render.LightSampleCache.invalidateAll();
                         com.hbm_m.client.render.MdiGeometryAtlas.resetForResourceLifecycle();
                         AbstractObjArmorLayer.clearAllCaches();
                         MainRegistry.LOGGER.info("VBO cache cleanup completed (deferred to render thread)");

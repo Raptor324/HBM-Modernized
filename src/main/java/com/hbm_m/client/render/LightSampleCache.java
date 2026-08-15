@@ -150,6 +150,13 @@ public final class LightSampleCache {
         if ((currentFrame % PRUNE_EVERY) == 0) {
             CACHE.long2ObjectEntrySet().removeIf(e ->
                 e.getValue().lastFrame < currentFrame - STALE_AFTER_FRAMES);
+            // CACHE8/CACHE16 раньше не чистились вообще: ключи включают identityHashCode
+            // рендерера, который меняется на каждом reload/disconnect, — старые записи
+            // становились навсегда недостижимым мусором в map (неограниченный рост).
+            CACHE8.long2ObjectEntrySet().removeIf(e ->
+                e.getValue().lastFrame < currentFrame - STALE_AFTER_FRAMES);
+            CACHE16.long2ObjectEntrySet().removeIf(e ->
+                e.getValue().lastFrame < currentFrame - STALE_AFTER_FRAMES);
         }
     }
 

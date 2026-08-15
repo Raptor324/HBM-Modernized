@@ -85,7 +85,12 @@ public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel 
         //?}
 
         //? if neoforge {
-        /*return super.getQuads(state, side, rand);
+        /*// 1.21.1 neoforge: чанк-бэкер вызывает 5-arg overload (см. ниже). 3-arg — item/BER hot path.
+        // WORLD: геометрия полностью в BER/VBO (как на forge). ITEM: приоритетные части (как на forge).
+        if (state == null) {
+            return buildItemQuadsFromRenderParts(side, rand);
+        }
+        return List.of();
         *///?}
 
         //? if fabric {
@@ -95,6 +100,20 @@ public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel 
         return List.of();
         *///?}
     }
+
+    //? if neoforge {
+    /*// NeoForge 1.21.1: 5-arg overload — вызывается чанк-бэкером. Зеркалируем forge-логику:
+    // WORLD (state != null) — List.of() (геометрия в BER/VBO), ITEM (state == null) — приоритетные части.
+    @Override
+    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
+                                    RandomSource rand, net.neoforged.neoforge.client.model.data.ModelData modelData,
+                                    @Nullable net.minecraft.client.renderer.RenderType renderType) {
+        if (state == null) {
+            return buildItemQuadsFromRenderParts(side, rand);
+        }
+        return List.of();
+    }
+    *///?}
 
     //? if forge {
     @Override

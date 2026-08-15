@@ -94,11 +94,23 @@ public final class MainRegistry {
         LifecycleEvent.SETUP.register(MainRegistry::commonSetup);
 
         TickEvent.SERVER_POST.register(server -> {
+            // 1. Защита от фейковых/недогруженных серверов (Flashback)
+            if (server == null) {
+                return; 
+            }
+            
+            // 2. Защита от отсутствующего измерения
+            ServerLevel level = server.overworld();
+            if (level == null) {
+                return;
+            }
             EnergyNetworkManager.get(server.overworld()).tick();
             com.hbm_m.api.network.UniNodespace.updateNodespace(server);
             // Process RBMK neutron streams for every loaded server level
-            for (ServerLevel level : server.getAllLevels()) {
-                NeutronNodeWorld.tick(level);
+            for (ServerLevel lvl : server.getAllLevels()) {
+                if (lvl != null) {
+                    NeutronNodeWorld.tick(lvl);
+                }
             }
         });
 
@@ -125,6 +137,11 @@ public final class MainRegistry {
         DamageResistanceHandler.initArmorStats();
         com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity.registerLaunchables();
         com.hbm_m.satellite.Satellite.register();
+
+        // Диагностика загрузки рецептов на 1.21.1 — запускается ПОСЛЕ RegisterEvent.
+        //? if >= 1.21.1 {
+        /*com.hbm_m.recipe.ModRecipes.debugRecipeSerializerRegistry();
+        *///?}
 
         // CentrifugeRecipes.registerRecipes();
         // Рецепты Cyclotron, CrucibleSmelting, MoltenAlloy, ArcWelder и Soldering теперь data-driven (JSON)

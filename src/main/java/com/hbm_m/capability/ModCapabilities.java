@@ -63,10 +63,41 @@ public class ModCapabilities {
             if (!supplier.isPresent()) continue;
             net.minecraft.world.level.block.entity.BlockEntityType<?> type = supplier.get();
             registerEnergyForType(event, type);
+            registerItemAndFluidForType(event, type);
         }
 
         // Predмет-капабилити для батареек (FE + HBM), зеркально FabricEntrypoint.
         registerBatteryItemCaps(event);
+    }
+
+    /// Регистрация ItemHandler и FluidHandler capability для BE.
+    /// Item: экспонируется `ModItemStackHandler` (он уже extends NeoForge `ItemStackHandler`,
+    /// реализует `IItemHandler`) для машин с инвентарём (`BaseMachineBlockEntity.getInventory()`).
+    /// Fluid: экспонируется универсальный `NeoForgeFluidHandlerMK2` над `IFluidUserMK2`.
+    /// Обе лямбды возвращают null для BE, не реализующих соответствующие интерфейсы.
+    private static void registerItemAndFluidForType(RegisterCapabilitiesEvent event,
+                                                    net.minecraft.world.level.block.entity.BlockEntityType<?> type) {
+        // ITEM_HANDLER — машины с инвентарём.
+        event.registerBlockEntity(
+                net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK,
+                (BlockEntityType<net.minecraft.world.level.block.entity.BlockEntity>) type,
+                (be, side) -> {
+                    if (be instanceof com.hbm_m.blockentity.BaseMachineBlockEntity machine) {
+                        return machine.getInventory();
+                    }
+                    return null;
+                });
+
+        // FLUID_HANDLER — машины с флюидными баками.
+        event.registerBlockEntity(
+                net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK,
+                (BlockEntityType<net.minecraft.world.level.block.entity.BlockEntity>) type,
+                (be, side) -> {
+                    if (be instanceof com.hbm_m.api.fluids.IFluidUserMK2 fluidUser) {
+                        return new com.hbm_m.api.fluids.NeoForgeFluidHandlerMK2(fluidUser);
+                    }
+                    return null;
+                });
     }
 
     private static void registerEnergyForType(RegisterCapabilitiesEvent event,

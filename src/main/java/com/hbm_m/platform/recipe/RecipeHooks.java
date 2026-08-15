@@ -1,5 +1,6 @@
 package com.hbm_m.platform.recipe;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.minecraft.network.FriendlyByteBuf;
@@ -57,7 +58,9 @@ public class RecipeHooks {
         //? if < 1.21.1 {
         return Ingredient.fromJson(json);
         //?} else {
-        /*return Ingredient.CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE, json).getOrThrow();
+        /*// На 1.21.1 Ingredient.CODEC ожидает тот же формат, что и 1.20.1: "item" / "tag".
+        // Никакой нормализации не требуется — передаём JSON как есть.
+        return Ingredient.CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE, json).getOrThrow();
         *///?}
     }
 
@@ -73,9 +76,33 @@ public class RecipeHooks {
         //? if < 1.21.1 {
         return net.minecraft.world.item.crafting.ShapedRecipe.itemStackFromJson(json);
         //?} else {
-        /*return ItemStack.CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE, json).getOrThrow();
+        /*// На 1.21.1 ItemStack.CODEC ожидает "id" вместо "item" (Data Components).
+        // JSON-рецепты мода в формате 1.20.1 — нормализуем legacy-ключи перед парсингом.
+        return ItemStack.CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE, normalizeLegacyItemStackJson(json)).getOrThrow();
         *///?}
     }
+
+    //? if >= 1.21.1 {
+    
+
+    /*// =====================================================================================
+    //  Legacy JSON normalization (1.21.1 only).
+    //
+    //  Datagen генерирует рецепты в формате 1.20.1: {"item": "...", "count": N}.
+    //  На 1.21.1 ItemStack.CODEC ожидает {"id": "...", "count": N} (Data Components),
+    //  но Ingredient.CODEC по-прежнему ожидает "item"/"tag" (формат не изменился).
+    //  Поэтому нормализуем только ItemStack, а Ingredient передаётся как есть.
+    // =====================================================================================
+
+    private static JsonObject normalizeLegacyItemStackJson(JsonObject json) {
+        JsonObject copy = json.deepCopy();
+        if (copy.has("item") && !copy.has("id")) {
+            copy.add("id", copy.get("item"));
+            copy.remove("item");
+        }
+        return copy;
+    }
+    *///?}
 
     // =====================================================================================
     //  FluidStack (Architectury) — кросс-лоадерная сериализация жидкостных стаков.

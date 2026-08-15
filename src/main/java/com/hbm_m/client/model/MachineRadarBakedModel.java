@@ -107,7 +107,19 @@ public class MachineRadarBakedModel extends AbstractMultipartBakedModel implemen
         //?}
 
         //? if neoforge {
-        /*return super.getQuads(state, side, rand);
+        /*// 1.21.1 neoforge: чанк-бэкер вызывает 5-arg overload (см. ниже). 3-arg — item/BER hot path.
+        // Зеркалируем forge-логику: ITEM — приоритетные части, WORLD — staticPart или List.of() (VBO).
+        if (state == null) {
+            return buildItemQuadsFromRenderParts(side, rand);
+        }
+        if (ShaderCompatibilityDetector.useVboGeometry()) {
+            return List.of();
+        }
+        BakedModel staticPart = parts.get(getStaticPartName());
+        if (staticPart == null) {
+            return List.of();
+        }
+        return staticPart.getQuads(state, side, rand);
         *///?}
 
         //? if fabric {
@@ -124,6 +136,27 @@ public class MachineRadarBakedModel extends AbstractMultipartBakedModel implemen
         return staticPart.getQuads(state, side, rand);
         *///?}
     }
+
+    //? if neoforge {
+    /*// NeoForge 1.21.1: 5-arg overload — вызывается чанк-бэкером. Зеркалируем forge-логику:
+    // ITEM (state == null) — приоритетные части. WORLD — staticPart или List.of() если useVboGeometry.
+    @Override
+    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
+                                    RandomSource rand, net.neoforged.neoforge.client.model.data.ModelData modelData,
+                                    @Nullable net.minecraft.client.renderer.RenderType renderType) {
+        if (state == null) {
+            return buildItemQuadsFromRenderParts(side, rand);
+        }
+        if (ShaderCompatibilityDetector.useVboGeometry()) {
+            return List.of();
+        }
+        BakedModel staticPart = parts.get(getStaticPartName());
+        if (staticPart == null) {
+            return List.of();
+        }
+        return staticPart.getQuads(state, side, rand, modelData, renderType);
+    }
+    *///?}
 
     //? if forge {
     @Override

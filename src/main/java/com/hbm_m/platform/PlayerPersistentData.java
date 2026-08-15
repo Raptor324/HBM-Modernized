@@ -13,14 +13,14 @@ public final class PlayerPersistentData {
     private PlayerPersistentData() {}
 
     public static CompoundTag get(Player player) {
-        CompoundTag tag = new CompoundTag();
+        // Без ветки neoforge метод возвращал НОВЫЙ пустой тег, который никуда не сохраняется!
         //? if fabric {
-        /*tag = com.hbm_m.capability.FabricPlayerComponents.getPersistentData(player);
+        /*return com.hbm_m.capability.FabricPlayerComponents.getPersistentData(player);
+        *///?} elif forge {
+        return player.getPersistentData();
+        //?} elif neoforge {
+        /*return player.getPersistentData();
         *///?}
-        //? if forge {
-        tag = player.getPersistentData();
-        //?}
-        return tag;
     }
 }
 

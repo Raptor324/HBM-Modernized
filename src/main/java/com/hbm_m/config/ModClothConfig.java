@@ -125,7 +125,7 @@ public class ModClothConfig {
     public boolean useInstancedStaticRendering = true;
 
     /** Advanced assembler: при vanilla instanced использовать addInstanceGpuBones (матрица base×part на CPU). */
-    public boolean gpuBoneSkinning = true;
+    public boolean gpuBoneSkinning = false;
 
     /** 2×4×2 sliced light probes (16 UV). Несовместимо с useMultiDrawIndirect. */
     public boolean useSlicedLight = false;
