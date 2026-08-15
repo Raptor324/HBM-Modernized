@@ -832,6 +832,26 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.BarrelSteelBlockEntity::new,
                             ModBlocks.BARREL_STEEL.get()).build(null));
 
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.BarrelTcalloyBlockEntity>> BARREL_TCALLOY_BE =
+            BLOCK_ENTITIES.register("barrel_tcalloy_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.BarrelTcalloyBlockEntity::new,
+                            ModBlocks.BARREL_TCALLOY.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.BarrelCorrodedBlockEntity>> BARREL_CORRODED_BE =
+            BLOCK_ENTITIES.register("barrel_corroded_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.BarrelCorrodedBlockEntity::new,
+                            ModBlocks.BARREL_CORRODED.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.BarrelPlasticBlockEntity>> BARREL_PLASTIC_BE =
+            BLOCK_ENTITIES.register("barrel_plastic_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.BarrelPlasticBlockEntity::new,
+                            ModBlocks.BARREL_PLASTIC.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.BarrelAntimatterBlockEntity>> BARREL_ANTIMATTER_BE =
+            BLOCK_ENTITIES.register("barrel_antimatter_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.BarrelAntimatterBlockEntity::new,
+                            ModBlocks.BARREL_ANTIMATTER.get()).build(null));
+
     public static final RegistrySupplier<BlockEntityType<BatterySocketBlockEntity>> BATTERY_SOCKET_BE =
             BLOCK_ENTITIES.register("battery_socket_be", () ->
                     BlockEntityType.Builder.of(BatterySocketBlockEntity::new,

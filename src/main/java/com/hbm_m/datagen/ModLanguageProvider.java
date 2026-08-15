@@ -722,7 +722,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.PUTER.get(), "(PC) Personal Computer"); //NEEDS TRANSLATION
                 add(ModBlocks.BARREL_CORRODED.get(), "Проржавевшая бочка");
                 add(ModBlocks.BARREL_LOX.get(), "Бочка с жидким кислородом");
-                add(ModBlocks.BARREL_ANTIMATTER.get(), "Бочка с антиматерией");
+                add(ModBlocks.BARREL_ANTIMATTER.get(), "Магнитный контейнер антиматерии");
+                add(ModBlocks.BARREL_PLASTIC.get(), "Безопасная бочка™");
                 add(ModBlocks.BARREL_PINK.get(), "Бочка с керосином");
                 add(ModBlocks.BARREL_YELLOW.get(), "Бочка с ядерными отходами");
                 add(ModBlocks.BARREL_VITRIFIED.get(), "Бочка с остеклованными ядерными отходами");
@@ -2020,6 +2021,15 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.solar_boiler.sunlight", "Солнечный свет");
                 add("gui.hbm_m.solar_boiler.mirrors", "Активные зеркала: %s");
                 add("container.hbm_m.solar_boiler", "Солнечный котел");
+                add("tooltip.hbm_m.barrel.capacity", "Объём: %s мБ");
+                add("tooltip.hbm_m.barrel.hot.yes", "Может хранить горячие жидкости");
+                add("tooltip.hbm_m.barrel.hot.no", "Не может хранить горячие жидкости");
+                add("tooltip.hbm_m.barrel.corrosive.yes", "Может хранить едкие жидкости");
+                add("tooltip.hbm_m.barrel.corrosive.no", "Не может хранить едкие жидкости");
+                add("tooltip.hbm_m.barrel.highly_corrosive.yes", "Может хранить сильно едкие жидкости");
+                add("tooltip.hbm_m.barrel.highly_corrosive.no", "Не может хранить сильно едкие жидкости как следует");
+                add("tooltip.hbm_m.barrel.antimatter.yes", "Может хранить антиматерию");
+                add("tooltip.hbm_m.barrel.antimatter.no", "Не может хранить антиматерию");
                 add("container.hbm_m.solar_mirrors", "Солнечные зеркала");
                 add("msg.hbm_m.solar_mirror.sky_access", "Зеркало освещено солнцем");
                 add("msg.hbm_m.solar_mirror.no_sky_access", "Зеркало затенено");
@@ -3495,7 +3505,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.STEEL_WALL.get(), "Steel Wall(WIP)");
                 add(ModBlocks.BARREL_CORRODED.get(), "Corroded Barrel");
                 add(ModBlocks.BARREL_LOX.get(), "LOX Barrel");
-                add(ModBlocks.BARREL_ANTIMATTER.get(), "Antimatter Barrel");
+                add(ModBlocks.BARREL_ANTIMATTER.get(), "Magnetic Antimatter Container");
+                add(ModBlocks.BARREL_PLASTIC.get(), "Safe Barrel™");
                 add(ModBlocks.BARREL_PINK.get(), "Pink Barrel");
                 add(ModBlocks.BARREL_YELLOW.get(), "Yellow Barrel");
                 add(ModBlocks.BARREL_VITRIFIED.get(), "Vitrified Barrel");
@@ -3515,7 +3526,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("death.attack.taint", "%1$s died from flux tumors.");
                 add(ModBlocks.BARREL_IRON.get(), "Iron Barrel");
                 add(ModBlocks.BARREL_STEEL.get(), "Steel Barrel");
-                add(ModBlocks.BARREL_TCALLOY.get(), "Iron Barrel");
+                add(ModBlocks.BARREL_TCALLOY.get(), "Technetium Steel Barrel");
 
                 // MULTIBLOCK DOORS
                 add(ModBlocks.LARGE_VEHICLE_DOOR.get(), "Large Vehicle Door");
@@ -4271,6 +4282,15 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.solar_boiler.sunlight", "Sunlight");
                 add("gui.hbm_m.solar_boiler.mirrors", "Active mirrors: %s");
                 add("container.hbm_m.solar_boiler", "Solar Boiler");
+                add("tooltip.hbm_m.barrel.capacity", "Capacity: %s mB");
+                add("tooltip.hbm_m.barrel.hot.yes", "Can store hot fluids");
+                add("tooltip.hbm_m.barrel.hot.no", "Cannot store hot fluids");
+                add("tooltip.hbm_m.barrel.corrosive.yes", "Can store corrosive fluids");
+                add("tooltip.hbm_m.barrel.corrosive.no", "Cannot store corrosive fluids");
+                add("tooltip.hbm_m.barrel.highly_corrosive.yes", "Can store highly corrosive fluids");
+                add("tooltip.hbm_m.barrel.highly_corrosive.no", "Cannot store highly corrosive fluids properly");
+                add("tooltip.hbm_m.barrel.antimatter.yes", "Can store antimatter");
+                add("tooltip.hbm_m.barrel.antimatter.no", "Cannot store antimatter");
                 add("container.hbm_m.solar_mirrors", "Solar Mirrors");
                 add("msg.hbm_m.solar_mirror.sky_access", "Mirror has sky access");
                 add("msg.hbm_m.solar_mirror.no_sky_access", "Mirror is shaded");

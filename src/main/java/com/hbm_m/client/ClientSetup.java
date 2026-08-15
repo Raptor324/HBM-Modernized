@@ -571,6 +571,10 @@ public class ClientSetup {
         MenuScreens.register(ModMenuTypes.MACHINE_WASTE_DRUM_MENU.get(), com.hbm_m.inventory.gui.GUIMachineWasteDrum::new);
         MenuScreens.register(ModMenuTypes.BARREL_IRON_MENU.get(), com.hbm_m.inventory.gui.GUIBarrelIron::new);
         MenuScreens.register(ModMenuTypes.BARREL_STEEL_MENU.get(), com.hbm_m.inventory.gui.GUIBarrelSteel::new);
+        MenuScreens.register(ModMenuTypes.BARREL_TCALLOY_MENU.get(), com.hbm_m.inventory.gui.GUIBarrelTcalloy::new);
+        MenuScreens.register(ModMenuTypes.BARREL_CORRODED_MENU.get(), com.hbm_m.inventory.gui.GUIBarrelCorroded::new);
+        MenuScreens.register(ModMenuTypes.BARREL_PLASTIC_MENU.get(), com.hbm_m.inventory.gui.GUIBarrelPlastic::new);
+        MenuScreens.register(ModMenuTypes.BARREL_ANTIMATTER_MENU.get(), com.hbm_m.inventory.gui.GUIBarrelAntimatter::new);
         MenuScreens.register(ModMenuTypes.CHEMICAL_PLANT_MENU.get(), GUIMachineChemicalPlant::new);
         MenuScreens.register(ModMenuTypes.CHEMICAL_FACTORY_MENU.get(), GUIMachineChemicalFactory::new);
         MenuScreens.register(ModMenuTypes.SOYUZ_LAUNCHER_MENU.get(), com.hbm_m.inventory.gui.GUISoyuzLauncher::new);

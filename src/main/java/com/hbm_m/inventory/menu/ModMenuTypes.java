@@ -149,6 +149,18 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<BarrelSteelMenu>> BARREL_STEEL_MENU =
             MENUS.register("barrel_steel_menu", () -> MenuRegistry.ofExtended(BarrelSteelMenu::new));
 
+    public static final RegistrySupplier<MenuType<BarrelTcalloyMenu>> BARREL_TCALLOY_MENU =
+            MENUS.register("barrel_tcalloy_menu", () -> MenuRegistry.ofExtended(BarrelTcalloyMenu::new));
+
+    public static final RegistrySupplier<MenuType<BarrelCorrodedMenu>> BARREL_CORRODED_MENU =
+            MENUS.register("barrel_corroded_menu", () -> MenuRegistry.ofExtended(BarrelCorrodedMenu::new));
+
+    public static final RegistrySupplier<MenuType<BarrelPlasticMenu>> BARREL_PLASTIC_MENU =
+            MENUS.register("barrel_plastic_menu", () -> MenuRegistry.ofExtended(BarrelPlasticMenu::new));
+
+    public static final RegistrySupplier<MenuType<BarrelAntimatterMenu>> BARREL_ANTIMATTER_MENU =
+            MENUS.register("barrel_antimatter_menu", () -> MenuRegistry.ofExtended(BarrelAntimatterMenu::new));
+
     public static final RegistrySupplier<MenuType<MachineChemicalPlantMenu>> CHEMICAL_PLANT_MENU =
             MENUS.register("chemical_plant_menu", () -> MenuRegistry.ofExtended(MachineChemicalPlantMenu::new));
 

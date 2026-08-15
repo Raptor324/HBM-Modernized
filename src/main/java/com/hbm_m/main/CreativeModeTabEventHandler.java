@@ -247,7 +247,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.BARREL_VITRIFIED.get()));
         add.accept(new ItemStack(ModBlocks.BARREL_TAINT.get()));
         add.accept(new ItemStack(ModBlocks.BARREL_YELLOW.get()));
-        add.accept(new ItemStack(ModBlocks.BARREL_ANTIMATTER.get()));
 
         List<RegistrySupplier<Item>> batteriesToAdd = List.of(
             ModItems.BATTERY_SPARK,
@@ -1446,6 +1445,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.BARREL_CORRODED.get()));
         add.accept(new ItemStack(ModBlocks.BARREL_TCALLOY.get()));
         add.accept(new ItemStack(ModBlocks.BARREL_PLASTIC.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_ANTIMATTER.get()));
         add.accept(new ItemStack(ModBlocks.GAS_CENTRIFUGE.get()));
         add.accept(new ItemStack(ModBlocks.BREEDER.get()));
         add.accept(new ItemStack(ModBlocks.LARGE_PYLON.get()));

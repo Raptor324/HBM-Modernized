@@ -15,11 +15,14 @@ import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Small single-block steel fluid barrel — same logic as {@link MachineFluidTankBlockEntity},
- * just a much smaller capacity and no multiblock structure.
+ * just a much smaller capacity and no multiblock structure. Capacity/capability confirmed against
+ * the original's in-game tooltip: 16,000 mB; can store hot and (regular) corrosive fluids, but not
+ * highly corrosive ones "properly"; cannot store antimatter (matches this class's inherited
+ * defaults from {@link MachineFluidTankBlockEntity} - no overrides needed here).
  */
 public class BarrelSteelBlockEntity extends MachineFluidTankBlockEntity {
 
-    public static final int CAPACITY = 32_000;
+    public static final int CAPACITY = 16_000;
 
     public BarrelSteelBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.BARREL_STEEL_BE.get(), pos, state, CAPACITY);
