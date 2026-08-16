@@ -70,6 +70,7 @@ public class ModPacketHandler {
     public static final ResourceLocation WATZ_CONTROL          = id("watz_control");
     public static final ResourceLocation PWR_CONTROL           = id("pwr_control");
     public static final ResourceLocation RBMK_CONSOLE_CONTROL        = id("rbmk_console_control");
+    public static final ResourceLocation RBMK_CRANE_CONTROL          = id("rbmk_crane_control");
     public static final ResourceLocation SOYUZ_LAUNCHER_CONTROL      = id("soyuz_launcher_control");
     public static final ResourceLocation SOLDERING_STATION_CONTROL   = id("soldering_station_control");
     public static final ResourceLocation ORPHANED_PHANTOMS     = id("orphaned_phantoms");
@@ -242,6 +243,10 @@ public class ModPacketHandler {
         registerC2S(RBMK_CONSOLE_CONTROL,
                 RBMKConsoleControlPacket::decode,
                 RBMKConsoleControlPacket::handle);
+
+        registerC2S(RBMK_CRANE_CONTROL,
+                RBMKCraneControlPacket::decode,
+                RBMKCraneControlPacket::handle);
 
         registerC2S(SOYUZ_LAUNCHER_CONTROL,
                 SoyuzLauncherControlPacket::decode,

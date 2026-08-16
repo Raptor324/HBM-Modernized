@@ -382,6 +382,12 @@
       "hbm_m:tool/repair7"
     ]
   },
+  "tool.upgrade_plug": {
+    "subtitle": "sounds.hbm_m.subtitle.upgrade_plug",
+    "sounds": [
+      "hbm_m:tool/upgrade_plug"
+    ]
+  },
   "tool.extract1": {
     "subtitle": "sounds.hbm_m.subtitle.extract",
     "sounds": [

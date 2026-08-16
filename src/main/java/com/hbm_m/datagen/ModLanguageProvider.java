@@ -1863,6 +1863,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("key.hbm_m.power_armor_dash", "Рывок силовой брони");
                 add("key.hbm_m.power_armor_vats", "VATS силовой брони");
                 add("key.hbm_m.power_armor_thermal", "Тепловизор силовой брони");
+                add("key.hbm_m.rbmk_crane_up", "РБМК Кран: вверх");
+                add("key.hbm_m.rbmk_crane_down", "РБМК Кран: вниз");
+                add("key.hbm_m.rbmk_crane_left", "РБМК Кран: влево");
+                add("key.hbm_m.rbmk_crane_right", "РБМК Кран: вправо");
+                add("key.hbm_m.rbmk_crane_load", "РБМК Кран: загрузка");
 
                 add("hud.hbm_m.vats.on", "HUD: ON");
                 add("hud.hbm_m.vats.off", "HUD: OFF");
@@ -1938,6 +1943,17 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.DERRICK.get(), "Деррик (WIP)");
                 add(ModBlocks.RBMK_CONSOLE.get(), "Пульт РБМК (WIP)");
                 add("msg.hbm_m.rbmk_console.linked", "Привязано к пульту РБМК");
+                add("msg.hbm_m.rbmk_crane.linked", "Кран привязан к колонне");
+                add("gui.hbm_m.save", "Сохранить");
+                add("gui.hbm_m.close", "Закрыть");
+                add("gui.hbm_m.rbmk_gauge", "РБМК Манометр");
+                add("gui.hbm_m.rbmk_indicator", "РБМК Индикатор");
+                add("gui.hbm_m.rbmk_numitron", "РБМК Нумитрон");
+                add("gui.hbm_m.rbmk_graph", "РБМК График");
+                add("gui.hbm_m.rbmk_lever", "РБМК Рычаг");
+                add("gui.hbm_m.rbmk_keypad", "РБМК Клавиатура");
+                add("gui.hbm_m.rbmk_terminal", "РБМК Терминал");
+                add("sounds.hbm_m.subtitle.upgrade_plug", "Вставка топливного стержня");
                 add("msg.hbm_m.rbmk_console.no_console_found", "Поблизости нет пульта РБМК");
                 add("msg.hbm_m.rbmk_tool.stored", "Позиция сохранена: %s, %s, %s");
                 add("msg.hbm_m.rbmk_tool.no_position", "Сначала нажмите на колонну ПКМ");
@@ -1975,6 +1991,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.RBMK_DEBRIS_BURNING.get(),      "РБМК Горящие обломки");
                 add(ModBlocks.RBMK_DEBRIS_DIGAMMA.get(),      "РБМК Обломки (дигамма)");
                 add(ModBlocks.RBMK_DEBRIS_RADIATING.get(),    "РБМК Радиоактивные обломки");
+                add(ModBlocks.RBMK_CORIUM.get(),              "РБМК Кориум");
                 add(ModBlocks.RBMK_DISPLAY.get(),             "РБМК Дисплей");
                 add(ModBlocks.RBMK_GAUGE.get(),               "РБМК Манометр");
                 add(ModBlocks.RBMK_INDICATOR.get(),           "РБМК Индикатор");
@@ -3756,6 +3773,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("key.hbm_m.power_armor_dash", "Power Armor Dash");
                 add("key.hbm_m.power_armor_vats", "Power Armor VATS");
                 add("key.hbm_m.power_armor_thermal", "Power Armor Thermal Vision");
+                add("key.hbm_m.rbmk_crane_up", "RBMK Crane: Up");
+                add("key.hbm_m.rbmk_crane_down", "RBMK Crane: Down");
+                add("key.hbm_m.rbmk_crane_left", "RBMK Crane: Left");
+                add("key.hbm_m.rbmk_crane_right", "RBMK Crane: Right");
+                add("key.hbm_m.rbmk_crane_load", "RBMK Crane: Load/Unload");
 
                 // ARMOR BATTERIES
                 add("item.hbm_m.armor_battery", "Armor Battery");
@@ -3871,6 +3893,17 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.DERRICK.get(), "Derrick (WIP)");
                 add(ModBlocks.RBMK_CONSOLE.get(), "RBMK Console (WIP)");
                 add("msg.hbm_m.rbmk_console.linked", "Linked to RBMK console");
+                add("msg.hbm_m.rbmk_crane.linked", "Crane linked to column");
+                add("gui.hbm_m.save", "Save");
+                add("gui.hbm_m.close", "Close");
+                add("gui.hbm_m.rbmk_gauge", "RBMK Gauge");
+                add("gui.hbm_m.rbmk_indicator", "RBMK Indicator");
+                add("gui.hbm_m.rbmk_numitron", "RBMK Numitron");
+                add("gui.hbm_m.rbmk_graph", "RBMK Graph");
+                add("gui.hbm_m.rbmk_lever", "RBMK Lever");
+                add("gui.hbm_m.rbmk_keypad", "RBMK Keypad");
+                add("gui.hbm_m.rbmk_terminal", "RBMK Terminal");
+                add("sounds.hbm_m.subtitle.upgrade_plug", "Fuel rod inserted");
                 add("msg.hbm_m.rbmk_console.no_console_found", "No RBMK console found nearby");
                 add("msg.hbm_m.rbmk_tool.stored", "Stored position: %s, %s, %s");
                 add("msg.hbm_m.rbmk_tool.no_position", "No column linked yet - right-click a column first");
@@ -3908,6 +3941,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.RBMK_DEBRIS_BURNING.get(),      "RBMK Debris (Burning)");
                 add(ModBlocks.RBMK_DEBRIS_DIGAMMA.get(),      "RBMK Debris (Digamma)");
                 add(ModBlocks.RBMK_DEBRIS_RADIATING.get(),    "RBMK Debris (Radiating)");
+                add(ModBlocks.RBMK_CORIUM.get(),              "RBMK Corium");
                 add(ModBlocks.RBMK_DISPLAY.get(),             "RBMK Display");
                 add(ModBlocks.RBMK_GAUGE.get(),               "RBMK Gauge");
                 add(ModBlocks.RBMK_INDICATOR.get(),           "RBMK Indicator");

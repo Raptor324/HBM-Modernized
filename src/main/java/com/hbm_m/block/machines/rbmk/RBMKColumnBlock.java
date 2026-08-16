@@ -54,9 +54,9 @@ public abstract class RBMKColumnBlock extends BaseEntityBlock {
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
-        BlockEntity be = level.getBlockEntity(pos);
-        if (be instanceof RBMKColumnBlockEntity col && col.hasLid())
-            return Shapes.box(0, 0, 0, 1, 1.25, 1);
+        // The lid sits at the TOP of the column, not at the base - the extra 0.25 collision
+        // height (matching the original's getCollisionBoundingBoxFromPool) is applied to the
+        // topmost RBMKColumnFillerBlock instead, see that class.
         return Shapes.block();
     }
 
@@ -104,10 +104,15 @@ public abstract class RBMKColumnBlock extends BaseEntityBlock {
     // ─── Placement ────────────────────────────────────────────────────────────
 
     /**
-     * Places invisible {@link RBMKColumnFillerBlock} filler in the 2 positions above this column
-     * so the whole thing has a real 1x3 hitbox (see that class's javadoc) - matches the original
-     * 1.7.10 mod, which is a true 3-tall multiblock rather than a 1-tall block with an overdrawn
-     * visual.
+     * Places invisible {@link RBMKColumnFillerBlock} filler above this column so the whole thing
+     * has a real hitbox matching what's actually drawn - matches the original 1.7.10 mod, which
+     * is a true multiblock rather than a 1-tall block with an overdrawn visual.
+     * <p>
+     * The rendered column is {@code RBMKDials.getColumnHeight()+1} blocks tall (see
+     * {@code RBMKColumnRenderer}'s {@code height} and {@code RBMKColumnBlockEntity.standardMelt}'s
+     * {@code i=h..0} loop, both of which already use the +1) - this loop previously stopped one
+     * short of that (filling only {@code height} total blocks including the base), leaving the
+     * topmost rendered segment with no collision at all.
      */
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
@@ -115,7 +120,7 @@ public abstract class RBMKColumnBlock extends BaseEntityBlock {
         if (level.isClientSide) return;
         int height = RBMKDials.getColumnHeight(level);
         BlockState filler = ModBlocks.RBMK_COLUMN_FILLER.get().defaultBlockState();
-        for (int i = 1; i < height; i++) {
+        for (int i = 1; i <= height; i++) {
             level.setBlock(pos.above(i), filler, 3);
         }
     }
@@ -131,7 +136,7 @@ public abstract class RBMKColumnBlock extends BaseEntityBlock {
             }
             if (!level.isClientSide) {
                 int height = RBMKDials.getColumnHeight(level);
-                for (int i = 1; i < height; i++) {
+                for (int i = 1; i <= height; i++) {
                     BlockPos fillerPos = pos.above(i);
                     if (level.getBlockState(fillerPos).getBlock() instanceof RBMKColumnFillerBlock) {
                         level.removeBlock(fillerPos, false);

@@ -92,11 +92,18 @@ import com.hbm_m.blockentity.machines.rbmk.RBMKControlAutoBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKControlManualBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKCoolerBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKCraneConsoleBlockEntity;
+import com.hbm_m.blockentity.machines.rbmk.RBMKGaugeBlockEntity;
+import com.hbm_m.blockentity.machines.rbmk.RBMKGraphBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKHeaterBlockEntity;
+import com.hbm_m.blockentity.machines.rbmk.RBMKIndicatorBlockEntity;
+import com.hbm_m.blockentity.machines.rbmk.RBMKKeyPadBlockEntity;
+import com.hbm_m.blockentity.machines.rbmk.RBMKLeverBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKLoaderBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKModeratorBlockEntity;
+import com.hbm_m.blockentity.machines.rbmk.RBMKNumitronBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKOutgasserBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKPanelBlockEntity;
+import com.hbm_m.blockentity.machines.rbmk.RBMKTerminalBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKReflectorBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKRodBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKSteamInletBlockEntity;
@@ -1184,14 +1191,40 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(RBMKCraneConsoleBlockEntity::new,
                             ModBlocks.RBMK_CRANE_CONSOLE.get()).build(null));
 
+    // RBMK_DISPLAY / RBMK_DISPLAY_BLANK stay on the generic no-op panel BE (reactor-status link
+    // target only, like the original's console/crane targets - not one of the 7 RTTY devices).
     public static final RegistrySupplier<BlockEntityType<RBMKPanelBlockEntity>> RBMK_PANEL_BE =
             BLOCK_ENTITIES.register("rbmk_panel_be", () ->
                     BlockEntityType.Builder.of(RBMKPanelBlockEntity::new,
-                            ModBlocks.RBMK_DISPLAY.get(), ModBlocks.RBMK_GAUGE.get(),
-                            ModBlocks.RBMK_INDICATOR.get(), ModBlocks.RBMK_LEVER.get(),
-                            ModBlocks.RBMK_NUMITRON.get(), ModBlocks.RBMK_GRAPH.get(),
-                            ModBlocks.RBMK_TERMINAL.get(), ModBlocks.RBMK_KEYPAD.get(),
-                            ModBlocks.RBMK_DISPLAY_BLANK.get()).build(null));
+                            ModBlocks.RBMK_DISPLAY.get(), ModBlocks.RBMK_DISPLAY_BLANK.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<RBMKGaugeBlockEntity>> RBMK_GAUGE_BE =
+            BLOCK_ENTITIES.register("rbmk_gauge_be", () ->
+                    BlockEntityType.Builder.of(RBMKGaugeBlockEntity::new, ModBlocks.RBMK_GAUGE.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<RBMKIndicatorBlockEntity>> RBMK_INDICATOR_BE =
+            BLOCK_ENTITIES.register("rbmk_indicator_be", () ->
+                    BlockEntityType.Builder.of(RBMKIndicatorBlockEntity::new, ModBlocks.RBMK_INDICATOR.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<RBMKNumitronBlockEntity>> RBMK_NUMITRON_BE =
+            BLOCK_ENTITIES.register("rbmk_numitron_be", () ->
+                    BlockEntityType.Builder.of(RBMKNumitronBlockEntity::new, ModBlocks.RBMK_NUMITRON.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<RBMKGraphBlockEntity>> RBMK_GRAPH_BE =
+            BLOCK_ENTITIES.register("rbmk_graph_be", () ->
+                    BlockEntityType.Builder.of(RBMKGraphBlockEntity::new, ModBlocks.RBMK_GRAPH.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<RBMKLeverBlockEntity>> RBMK_LEVER_BE =
+            BLOCK_ENTITIES.register("rbmk_lever_be", () ->
+                    BlockEntityType.Builder.of(RBMKLeverBlockEntity::new, ModBlocks.RBMK_LEVER.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<RBMKKeyPadBlockEntity>> RBMK_KEYPAD_BE =
+            BLOCK_ENTITIES.register("rbmk_keypad_be", () ->
+                    BlockEntityType.Builder.of(RBMKKeyPadBlockEntity::new, ModBlocks.RBMK_KEYPAD.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<RBMKTerminalBlockEntity>> RBMK_TERMINAL_BE =
+            BLOCK_ENTITIES.register("rbmk_terminal_be", () ->
+                    BlockEntityType.Builder.of(RBMKTerminalBlockEntity::new, ModBlocks.RBMK_TERMINAL.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.SoyuzLauncherBlockEntity>> SOYUZ_LAUNCHER_BE =
             BLOCK_ENTITIES.register("soyuz_launcher_be", () ->

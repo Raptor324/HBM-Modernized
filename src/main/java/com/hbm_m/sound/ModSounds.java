@@ -79,6 +79,7 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> BOUNCE2 = registerSoundEvents("item.bounce2");
     public static final RegistrySupplier<SoundEvent> BOUNCE3 = registerSoundEvents("item.bounce3");
 
+    public static final RegistrySupplier<SoundEvent> UPGRADE_PLUG = registerSoundEvents("tool.upgrade_plug");
     public static final RegistrySupplier<SoundEvent> EXTRACT_1 = registerSoundEvents("tool.extract1");
     public static final RegistrySupplier<SoundEvent> EXTRACT_2 = registerSoundEvents("tool.extract2");
 

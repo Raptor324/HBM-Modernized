@@ -59,7 +59,8 @@ public class RBMKRodBlock extends RBMKColumnBlock {
             rod.fuelSlot.setCount(1);
             if (!player.isCreative()) held.shrink(1);
             rod.setChanged();
-            level.playSound(player, pos, SoundEvents.METAL_PLACE, SoundSource.BLOCKS, 1.0F, 1.2F);
+            // 1:1 with the original's "hbm:item.upgradePlug" sound on fuel insertion.
+            level.playSound(player, pos, com.hbm_m.sound.ModSounds.UPGRADE_PLUG.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
             return InteractionResult.SUCCESS;
         }
 
@@ -74,7 +75,7 @@ public class RBMKRodBlock extends RBMKColumnBlock {
                     && rod.fuelSlot.getItem() instanceof RBMKRodItem
                     && RBMKRodItem.getHullHeat(rod.fuelSlot) >= rod.maxHeat();
             if (meltdown) {
-                rod.onMelt(level, 1);
+                RBMKColumnBlockEntity.meltdownReactor(level, rod);
             } else {
                 Block.popResource(level, pos, rod.fuelSlot);
             }

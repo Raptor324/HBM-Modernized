@@ -5,9 +5,11 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity;
+import com.hbm_m.blockentity.machines.rbmk.RBMKCraneConsoleBlockEntity;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
@@ -61,13 +63,39 @@ public class RBMKToolItem extends Item {
             return;
         }
 
+        // Use the linked column's OWN Y, not the console's - the console is very often placed at
+        // a different Y than the reactor's column base (different terrain height, a floor below/
+        // above, etc.), so scanning at the console's Y silently found zero columns and left the
+        // whole grid/screen blank even though "linking" reported success.
         BlockPos linked = new BlockPos(tag.getInt(NBT_X), tag.getInt(NBT_Y), tag.getInt(NBT_Z));
-        BlockPos origin = new BlockPos(linked.getX(), console.getBlockPos().getY(), linked.getZ());
-        console.reactorOrigin = origin;
+        console.reactorOrigin = linked;
         console.setChanged();
         level.sendBlockUpdated(console.getBlockPos(), console.getBlockState(), console.getBlockState(), 3);
         player.displayClientMessage(
                 Component.translatable("msg.hbm_m.rbmk_console.linked").withStyle(ChatFormatting.GREEN), true);
+    }
+
+    /**
+     * Right-click a crane console with a stored position -&gt; links the crane to that reactor
+     * column (see {@code RBMKCraneConsoleBlock#use}). Matches the original tool's second target
+     * type alongside the console; the crane's own facing/scan directions are captured from
+     * the linking player's orientation, since - unlike the original block - this port's crane
+     * console has no blockstate facing property to read from.
+     */
+    public static void linkCrane(ItemStack stack, Level level, RBMKCraneConsoleBlockEntity crane, Player player) {
+        if (level.isClientSide) return;
+        CompoundTag tag = stack.getTag();
+        if (tag == null || !tag.contains(NBT_X)) {
+            player.displayClientMessage(
+                    Component.translatable("msg.hbm_m.rbmk_tool.no_position").withStyle(ChatFormatting.RED), true);
+            return;
+        }
+
+        BlockPos linked = new BlockPos(tag.getInt(NBT_X), tag.getInt(NBT_Y), tag.getInt(NBT_Z));
+        Direction facing = player.getDirection().getOpposite();
+        crane.setTarget(level, linked, facing);
+        player.displayClientMessage(
+                Component.translatable("msg.hbm_m.rbmk_crane.linked").withStyle(ChatFormatting.GREEN), true);
     }
 
     @Override

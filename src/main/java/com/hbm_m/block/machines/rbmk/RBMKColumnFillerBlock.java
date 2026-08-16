@@ -1,5 +1,6 @@
 package com.hbm_m.block.machines.rbmk;
 
+import com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -28,6 +29,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 public class RBMKColumnFillerBlock extends Block {
 
     private static final VoxelShape SHAPE = Shapes.block();
+    /** Matches the original's {@code getCollisionBoundingBoxFromPool} extra 0.25 lid height. */
+    private static final VoxelShape SHAPE_WITH_LID = Shapes.box(0, 0, 0, 1, 1.25, 1);
 
     public RBMKColumnFillerBlock(Properties props) {
         super(props);
@@ -60,6 +63,15 @@ public class RBMKColumnFillerBlock extends Block {
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
+        // 1:1 with the original's getCollisionBoundingBoxFromPool: the lid slab pokes up an extra
+        // 0.25 blocks above the column's topmost segment. Only the topmost filler (nothing of this
+        // column continues above it) gets the taller box - the ones below stay a plain full block.
+        if (!(level.getBlockState(pos.above()).getBlock() instanceof RBMKColumnFillerBlock)) {
+            BlockPos basePos = findBase(level, pos);
+            if (basePos != null && level.getBlockEntity(basePos) instanceof RBMKColumnBlockEntity col && col.hasLid()) {
+                return SHAPE_WITH_LID;
+            }
+        }
         return SHAPE;
     }
 

@@ -1275,8 +1275,14 @@ public class ModItems {
             () -> new com.hbm_m.item.industrial.ItemPlateFuel(new Item.Properties().stacksTo(1),
                     2_200_000L, com.hbm_m.item.industrial.ItemPlateFuel.FunctionEnum.SQUARE_ROOT, 40));
 
+    // 1:1 with the original's ItemRBMKRod stat block for rbmk_fuel_drx (items/ModItems.java:3307-3313):
+    // yield 10,000,000 / reactivity 1000 / selfRate 10 / QUADRATIC burn / heat 0.1 / melting point
+    // 100,000. Was previously registered as a plain flavor-text Item, meaning it could never
+    // actually be loaded as reactor fuel (RBMKRodBlock#use gates on `instanceof RBMKRodItem`).
     public static final RegistrySupplier<Item> RBMK_FUEL_DRX = ITEMS.register("rbmk_fuel_drx",
-            () -> new RbmkFuelDrxItem(new Item.Properties()));
+            () -> new RbmkFuelDrxItem(new Item.Properties())
+                    .setYield(10_000_000).setStats(1000, 10).setFunction(RBMKRodItem.EnumBurnFunc.QUADRATIC)
+                    .setHeat(0.1).setMeltingPoint(100_000).setTint(0xD77276));
 
     public static final RegistrySupplier<Item> ROD_ZIRNOX_EMPTY = ITEMS.register("rod_zirnox_empty",
             () -> new Item(new Item.Properties()));

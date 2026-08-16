@@ -1980,17 +1980,72 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> RBMK_DEBRIS_DIGAMMA    = registerBlock("rbmk_debris_digamma",    () -> new Block(BlockBehaviour.Properties.copy(Blocks.GRAVEL).strength(0.5f).lightLevel(s -> 8)));
     public static final RegistrySupplier<Block> RBMK_DEBRIS_RADIATING  = registerBlock("rbmk_debris_radiating",  () -> new Block(BlockBehaviour.Properties.copy(Blocks.GRAVEL).strength(0.5f).lightLevel(s -> 4)));
 
+    // ── Corium (molten reactor core, 1:1 with the original's ModBlocks.corium_block) ──────────
+    public static final RegistrySupplier<Block> RBMK_CORIUM = registerBlock("rbmk_corium",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.MAGMA_BLOCK).strength(3.0f).lightLevel(s -> 15)));
+
     // ── Panel / Display Blocks ──────────────────────────────────────────────
+    // RBMK_DISPLAY / RBMK_DISPLAY_BLANK: reactor-status link target (like the console/crane
+    // targets), not one of the 7 RTTY devices below - stays on the generic no-op panel BE.
     public static final RegistrySupplier<Block> RBMK_DISPLAY   = registerBlock("rbmk_display",   () -> new RBMKPanelBlock(rbmkProps()));
-    public static final RegistrySupplier<Block> RBMK_GAUGE     = registerBlock("rbmk_gauge",     () -> new RBMKPanelBlock(rbmkProps()));
-    public static final RegistrySupplier<Block> RBMK_INDICATOR = registerBlock("rbmk_indicator", () -> new RBMKPanelBlock(rbmkProps()));
-    public static final RegistrySupplier<Block> RBMK_LEVER     = registerBlock("rbmk_lever",     () -> new RBMKPanelBlock(rbmkProps()));
-    public static final RegistrySupplier<Block> RBMK_NUMITRON  = registerBlock("rbmk_numitron",  () -> new RBMKPanelBlock(rbmkProps()));
-    public static final RegistrySupplier<Block> RBMK_GRAPH     = registerBlock("rbmk_graph",     () -> new RBMKPanelBlock(rbmkProps()));
-    public static final RegistrySupplier<Block> RBMK_TERMINAL  = registerBlock("rbmk_terminal",  () -> new RBMKPanelBlock(rbmkProps()));
-    public static final RegistrySupplier<Block> RBMK_KEYPAD    = registerBlock("rbmk_keypad",    () -> new RBMKPanelBlock(rbmkProps()));
     /** Blank decorative panel, reuses the rbmk_display texture (matches the original, which had no dedicated texture for it either). */
     public static final RegistrySupplier<Block> RBMK_DISPLAY_BLANK = registerBlock("rbmk_display_blank", () -> new RBMKPanelBlock(rbmkProps()));
+
+    // The 7 RTTY-driven panel devices - each wired to its own block entity, config screen and
+    // (Lever/KeyPad) primary-click action via the shared RBMKPanelDeviceBlock (see that class).
+    public static final RegistrySupplier<Block> RBMK_GAUGE = registerBlock("rbmk_gauge", () ->
+            new com.hbm_m.block.machines.rbmk.RBMKPanelDeviceBlock(rbmkProps(),
+                    com.hbm_m.blockentity.machines.rbmk.RBMKGaugeBlockEntity::new,
+                    () -> com.hbm_m.blockentity.ModBlockEntities.RBMK_GAUGE_BE.get(),
+                    "gauge", true, null));
+
+    public static final RegistrySupplier<Block> RBMK_INDICATOR = registerBlock("rbmk_indicator", () ->
+            new com.hbm_m.block.machines.rbmk.RBMKPanelDeviceBlock(rbmkProps(),
+                    com.hbm_m.blockentity.machines.rbmk.RBMKIndicatorBlockEntity::new,
+                    () -> com.hbm_m.blockentity.ModBlockEntities.RBMK_INDICATOR_BE.get(),
+                    "indicator", true, null));
+
+    public static final RegistrySupplier<Block> RBMK_NUMITRON = registerBlock("rbmk_numitron", () ->
+            new com.hbm_m.block.machines.rbmk.RBMKPanelDeviceBlock(rbmkProps(),
+                    com.hbm_m.blockentity.machines.rbmk.RBMKNumitronBlockEntity::new,
+                    () -> com.hbm_m.blockentity.ModBlockEntities.RBMK_NUMITRON_BE.get(),
+                    "numitron", true, null));
+
+    public static final RegistrySupplier<Block> RBMK_GRAPH = registerBlock("rbmk_graph", () ->
+            new com.hbm_m.block.machines.rbmk.RBMKPanelDeviceBlock(rbmkProps(),
+                    com.hbm_m.blockentity.machines.rbmk.RBMKGraphBlockEntity::new,
+                    () -> com.hbm_m.blockentity.ModBlockEntities.RBMK_GRAPH_BE.get(),
+                    "graph", true, null));
+
+    public static final RegistrySupplier<Block> RBMK_LEVER = registerBlock("rbmk_lever", () ->
+            new com.hbm_m.block.machines.rbmk.RBMKPanelDeviceBlock(rbmkProps(),
+                    com.hbm_m.blockentity.machines.rbmk.RBMKLeverBlockEntity::new,
+                    () -> com.hbm_m.blockentity.ModBlockEntities.RBMK_LEVER_BE.get(),
+                    "lever", false,
+                    (be, level, pos, player, hit) -> {
+                        if (be instanceof com.hbm_m.blockentity.machines.rbmk.RBMKLeverBlockEntity lever) {
+                            lever.flipLever(level, pos, player,
+                                    com.hbm_m.blockentity.machines.rbmk.RBMKLeverBlockEntity.unitFromHit(pos, hit));
+                        }
+                    }));
+
+    public static final RegistrySupplier<Block> RBMK_KEYPAD = registerBlock("rbmk_keypad", () ->
+            new com.hbm_m.block.machines.rbmk.RBMKPanelDeviceBlock(rbmkProps(),
+                    com.hbm_m.blockentity.machines.rbmk.RBMKKeyPadBlockEntity::new,
+                    () -> com.hbm_m.blockentity.ModBlockEntities.RBMK_KEYPAD_BE.get(),
+                    "keypad", false,
+                    (be, level, pos, player, hit) -> {
+                        if (be instanceof com.hbm_m.blockentity.machines.rbmk.RBMKKeyPadBlockEntity keypad) {
+                            keypad.click(level, pos, player,
+                                    com.hbm_m.blockentity.machines.rbmk.RBMKKeyPadBlockEntity.unitFromHit(hit));
+                        }
+                    }));
+
+    public static final RegistrySupplier<Block> RBMK_TERMINAL = registerBlock("rbmk_terminal", () ->
+            new com.hbm_m.block.machines.rbmk.RBMKPanelDeviceBlock(rbmkProps(),
+                    com.hbm_m.blockentity.machines.rbmk.RBMKTerminalBlockEntity::new,
+                    () -> com.hbm_m.blockentity.ModBlockEntities.RBMK_TERMINAL_BE.get(),
+                    "terminal", false, null));
 
     // ══════════════════════════════════════════════════════════════════════
     // DEV: Blöcke aus dem Original-HBM-Mod, die hier noch fehlen (zur Sichtung)
@@ -2727,7 +2782,18 @@ public class ModBlocks {
     }
 
     private static <T extends Block> RegistrySupplier<Item> registerBlockItem(String name, RegistrySupplier<T> block) {
-        return ModItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties()));
+        return ModItems.ITEMS.register(name, () -> {
+            T b = block.get();
+            // RBMK column blocks (fuel/moderator/control/console/panels/...) get a custom item
+            // that renders through the same block entity renderer used in-world instead of a
+            // static baked model - see RBMKColumnItemRenderer for why plain BlockItem doesn't
+            // work for them.
+            if (b instanceof com.hbm_m.block.machines.rbmk.RBMKColumnBlock
+                    || b instanceof com.hbm_m.block.machines.MachineRbmkConsoleBlock) {
+                return new com.hbm_m.item.rbmk.RBMKColumnBlockItem(b, new Item.Properties());
+            }
+            return new BlockItem(b, new Item.Properties());
+        });
     }
 
     public static void init() {

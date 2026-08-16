@@ -16,6 +16,14 @@ public class RBMKAbsorberBlockEntity extends RBMKColumnBlockEntity {
         baseTick(level, pos, state, be);
     }
 
+    /** 1:1 with the original's {@code TileEntityRBMKAbsorber.onMelt}: 1-2 BLANK debris before the standard melt. */
+    @Override
+    public void onMelt(Level level, int reduce) {
+        int count = 1 + level.random.nextInt(2);
+        for (int i = 0; i < count; i++) spawnDebris(level, "blank");
+        super.onMelt(level, reduce);
+    }
+
     @Override public RBMKType getRBMKType()      { return RBMKType.ABSORBER; }
     @Override public ColumnType getConsoleType() { return ColumnType.ABSORBER; }
 }

@@ -21,8 +21,12 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public abstract class RBMKColumnBlockEntity extends BlockEntity {
 
@@ -43,15 +47,44 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
         super(type, pos, state);
     }
 
+    /**
+     * Matches the original's node-invalidation on tile removal/unload (see
+     * {@code TileEntity.invalidate()}/{@code onChunkUnload()} in the source mod): whenever a
+     * column block entity is removed - block broken, replaced with a different RBMK type, or
+     * the block otherwise swapped out - its cached {@link RBMKNeutronHandler.RBMKNeutronNode}
+     * must be evicted immediately. Without this, {@code RBMKNeutronNode.checkNode()}'s periodic
+     * sweep only ever evicts nodes downstream of a dead fuel rod, leaving stale type/hasLid data
+     * behind whenever a moderator/reflector/absorber/control column is swapped for another type.
+     */
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        if (level != null && !level.isClientSide) {
+            NeutronNodeWorld.removeNode(level, getBlockPos());
+        }
+    }
+
     // â"€â"€â"€ Base Tick â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     protected static void baseTick(Level level, BlockPos pos, BlockState state, RBMKColumnBlockEntity be) {
         if (level.isClientSide) return;
         if (be.craneIndicator > 0) be.craneIndicator--;
-        be.moveHeat(level);
-        if (RBMKDials.getReasimBoilers(level)) be.boilWater(level);
+        if (be.participatesInHeatNetwork()) {
+            be.moveHeat(level);
+            if (RBMKDials.getReasimBoilers(level)) be.boilWater(level);
+        }
         level.sendBlockUpdated(pos, state, state, 3);
     }
+
+    /**
+     * Whether this column takes part in the reactor's column-to-column heat equalization
+     * network (see {@link #moveHeat}). True for every real reactor column (fuel/moderator/
+     * cooler/etc); false for control-room devices like the RTTY panels or crane console that
+     * happen to share this base class for placement/registration convenience but aren't
+     * physically part of the fuel-channel grid, so they must never siphon or donate heat just
+     * because a player placed one next to a reactor.
+     */
+    protected boolean participatesInHeatNetwork() { return true; }
 
     // â"€â"€â"€ Heat â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
@@ -64,7 +97,7 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
 
         for (Direction dir : NEIGHBOR_DIRS) {
             BlockPos np = getBlockPos().offset(dir.getStepX(), 0, dir.getStepZ());
-            if (level.getBlockEntity(np) instanceof RBMKColumnBlockEntity n) {
+            if (level.getBlockEntity(np) instanceof RBMKColumnBlockEntity n && n.participatesInHeatNetwork()) {
                 rec.add(n);
                 heatTot += n.heat;
                 if (reasim) { waterTot += n.reasimWater; steamTot += n.reasimSteam; }
@@ -109,6 +142,88 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
 
     public double maxHeat() { return 1500.0; }
 
+    /**
+     * 1:1 port of the original's static {@code RBMKBase.digamma} flag: set when a Digamma-fuel
+     * (rbmk_fuel_drx) rod melts down, checked/reset once per {@link #meltdownReactor} call to
+     * decide whether corium-adjacent debris becomes {@code pribris_digamma} (severe) or the
+     * ordinary {@code pribris_radiating}.
+     */
+    public static boolean digamma = false;
+
+    /**
+     * 1:1 port of the original's {@code TileEntityRBMKBase.meltdown()}: a meltdown is never
+     * confined to the single overheated column. It flood-fills every RBMK column block entity
+     * connected (via the 4 cardinal neighbors) to {@code origin}, forming the "reactor" as one
+     * contiguous group, then melts every column in that group together. Severity scales with
+     * distance from the group's bounding-box edge - columns near the edge get a small
+     * {@code reduce} (less destruction), columns near the center get a larger one (more
+     * destruction), matching the original's {@code minDist+1} computation.
+     */
+    public static void meltdownReactor(Level level, RBMKColumnBlockEntity origin) {
+        if (level.isClientSide) return;
+
+        BlockPos originPos = origin.getBlockPos();
+        Set<BlockPos> visited = new HashSet<>();
+        Deque<RBMKColumnBlockEntity> queue = new ArrayDeque<>();
+        List<RBMKColumnBlockEntity> columns = new ArrayList<>();
+
+        visited.add(originPos);
+        queue.add(origin);
+
+        int minX = originPos.getX(), maxX = originPos.getX();
+        int minZ = originPos.getZ(), maxZ = originPos.getZ();
+
+        while (!queue.isEmpty()) {
+            RBMKColumnBlockEntity col = queue.poll();
+            columns.add(col);
+            BlockPos p = col.getBlockPos();
+            minX = Math.min(minX, p.getX()); maxX = Math.max(maxX, p.getX());
+            minZ = Math.min(minZ, p.getZ()); maxZ = Math.max(maxZ, p.getZ());
+
+            for (Direction dir : NEIGHBOR_DIRS) {
+                BlockPos np = p.relative(dir);
+                if (visited.contains(np)) continue;
+                if (level.getBlockEntity(np) instanceof RBMKColumnBlockEntity n) {
+                    visited.add(np);
+                    queue.add(n);
+                }
+            }
+        }
+
+        for (RBMKColumnBlockEntity col : columns) {
+            BlockPos p = col.getBlockPos();
+            int minDist = Math.min(
+                    Math.min(p.getX() - minX, maxX - p.getX()),
+                    Math.min(p.getZ() - minZ, maxZ - p.getZ()));
+            col.onMelt(level, minDist + 1);
+        }
+
+        // Corium infection pass: every column that fully melted down to corium "infects" its
+        // 3x3x3 neighborhood with a 1-in-3 chance of turning ordinary/burning debris into the
+        // more severe digamma or radiating variant, matching the original's post-meltdown sweep.
+        for (RBMKColumnBlockEntity col : columns) {
+            BlockPos p = col.getBlockPos();
+            if (!level.getBlockState(p).is(com.hbm_m.block.ModBlocks.RBMK_CORIUM.get())) continue;
+
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        BlockPos np = p.offset(dx, dy, dz);
+                        BlockState bs = level.getBlockState(np);
+                        if (level.random.nextInt(3) != 0) continue;
+                        if (bs.is(com.hbm_m.block.ModBlocks.RBMK_DEBRIS.get())
+                                || bs.is(com.hbm_m.block.ModBlocks.RBMK_DEBRIS_BURNING.get())) {
+                            level.setBlock(np, digamma
+                                    ? com.hbm_m.block.ModBlocks.RBMK_DEBRIS_DIGAMMA.get().defaultBlockState()
+                                    : com.hbm_m.block.ModBlocks.RBMK_DEBRIS_RADIATING.get().defaultBlockState(), 3);
+                        }
+                    }
+                }
+            }
+        }
+        digamma = false;
+    }
+
     public void onMelt(Level level, int reduce) {
         standardMelt(level, reduce);
         if (lidState == 1) spawnDebris(level, "lid");
@@ -122,9 +237,13 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
         int burningLayer = h + 1 - reduce;
         for (int i = h; i >= 0; i--) {
             if (i <= burningLayer) {
-                level.setBlock(base.above(i), Blocks.GRAVEL.defaultBlockState(), 3);
-                if (i == burningLayer && level.getBlockState(base.above(i + 1)).isAir())
-                    level.setBlock(base.above(i + 1), Blocks.FIRE.defaultBlockState(), 3);
+                // 1:1 with the original: the boundary layer becomes the glowing "burning" rubble
+                // variant, everything below it plain rubble - both real pribris blocks, not a
+                // vanilla gravel/fire stand-in.
+                BlockState debris = (reduce > 1 && i == burningLayer)
+                        ? com.hbm_m.block.ModBlocks.RBMK_DEBRIS_BURNING.get().defaultBlockState()
+                        : com.hbm_m.block.ModBlocks.RBMK_DEBRIS.get().defaultBlockState();
+                level.setBlock(base.above(i), debris, 3);
             } else {
                 level.setBlock(base.above(i), Blocks.AIR.defaultBlockState(), 3);
             }
@@ -157,12 +276,19 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
         level.addFreshEntity(debris);
     }
 
+    /**
+     * 1:1 with the original's {@code EntityRBMKDebris} pickup mapping: BLANK/ELEMENT/ROD debris
+     * all drop the same plain {@code debris_metal} beam item (not a dedicated "element" item -
+     * that registration exists but the original never actually uses it for this), and LID debris
+     * drops the real, placeable {@code rbmk_lid} item (recoverable even after a meltdown),
+     * not a decorative stand-in.
+     */
     private static Item debrisItem(String type) {
         return switch (type) {
-            case "fuel"     -> ModItems.DEBRIS_FUEL.get();
-            case "graphite" -> ModItems.DEBRIS_GRAPHITE.get();
-            case "element"  -> ModItems.DEBRIS_ELEMENT.get();
-            case "lid"      -> ModItems.DEBRIS_CONCRETE.get();
+            case "fuel"                      -> ModItems.DEBRIS_FUEL.get();
+            case "graphite"                  -> ModItems.DEBRIS_GRAPHITE.get();
+            case "blank", "element", "rod"    -> ModItems.DEBRIS_METAL.get();
+            case "lid"                        -> ModItems.RBMK_LID.get();
             default -> null;
         };
     }
