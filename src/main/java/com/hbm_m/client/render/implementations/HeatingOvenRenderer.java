@@ -33,7 +33,7 @@ import net.minecraftforge.client.model.data.ModelData;
 *///?} elif neoforge {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
-public class HeatingOvenRenderer implements BlockEntityRenderer<HeatingOvenBlockEntity> {
+public class HeatingOvenRenderer implements com.hbm_m.client.render.HbmBerBounds<HeatingOvenBlockEntity> {
 
     private static final RandomSource RANDOM = RandomSource.create(42);
 

@@ -227,10 +227,12 @@ public class ConnectedDecoBlockBakedModel extends BakedModelWrapper<BakedModel> 
             default -> { return null; }
         }
 
-        float u0 = sprite.getU(uv.u0());
-        float v0 = sprite.getV(uv.v0());
-        float u1 = sprite.getU(uv.u1());
-        float v1 = sprite.getV(uv.v1());
+        // UVBox хранит тексели 0..16; getU/getV на 1.21.1 ждут 0..1 (на 1.20.1 — тексели).
+        // Ремап через getU0/getU1 корректен на обеих версиях.
+        float u0 = net.minecraft.util.Mth.lerp(uv.u0() / 16f, sprite.getU0(), sprite.getU1());
+        float v0 = net.minecraft.util.Mth.lerp(uv.v0() / 16f, sprite.getV0(), sprite.getV1());
+        float u1 = net.minecraft.util.Mth.lerp(uv.u1() / 16f, sprite.getU0(), sprite.getU1());
+        float v1 = net.minecraft.util.Mth.lerp(uv.v1() / 16f, sprite.getV0(), sprite.getV1());
 
         int[] data = new int[32];
         putVertex(data, 0, sftr, u1, v0, dir);

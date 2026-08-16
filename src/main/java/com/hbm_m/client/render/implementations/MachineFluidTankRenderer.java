@@ -2,7 +2,16 @@ package com.hbm_m.client.render.implementations;
 
 import com.hbm_m.block.machines.MachineFluidTankBlock;
 import com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity;
+import com.hbm_m.client.model.MachineFluidTankBakedModel;
+import com.hbm_m.client.render.AbstractPartBasedRenderer;
+import com.hbm_m.client.render.LegacyAnimator;
+import com.hbm_m.client.render.RenderDistanceHelper;
+import com.hbm_m.client.render.SingleMeshVboRenderer;
+import com.hbm_m.client.render.culling.OcclusionCullingHelper;
+import com.hbm_m.client.render.shader.IrisRenderBatch;
+import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.client.render.util.DiamondPronter;
+import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.util.MultipartFacingTransforms;
@@ -10,20 +19,33 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-/**
- * Hazard diamonds on fluid tank sides (1.7.10 {@code RenderFluidTank} diamond pass).
- * Tank uses {@link com.hbm_m.client.model.MachineFluidTankBakedModel}.
- */
+import net.minecraft.world.phys.AABB;
 
+/**
+ * Fluid Tank BlockEntityRenderer на VBO (аналог {@link MachineAssemblerRenderer}).
+ * <p>
+ * Геометрия: Frame (статический VBO) + Tank (VBO с ретекстурой под жидкость) —
+ * вся геометрия в BER/VBO, chunk mesh пуст ({@link MachineFluidTankBakedModel#getQuads} = List.of()).
+ * <p>
+ * Алмазы опасности (NFPA): 1.7.10 {@code RenderFluidTank} diamond pass —
+ * рендерятся через {@link DiamondPronter#pront} на двух боковых гранях бака.
+ * <p>
+ * BAT9000 переиспользует этот рендерер (см. {@link com.hbm_m.client.ClientSetup} —
+ * {@code BlockEntityRenderers.register(BAT9000_BE, MachineFluidTankRenderer::new)}).
+ */
 //? if forge {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
 //?} elif fabric {
@@ -31,19 +53,102 @@ import net.minecraft.world.level.material.Fluids;
 *///?} elif neoforge {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
-public class MachineFluidTankRenderer implements BlockEntityRenderer<MachineFluidTankBlockEntity> {
+public class MachineFluidTankRenderer extends AbstractPartBasedRenderer<MachineFluidTankBlockEntity, MachineFluidTankBakedModel> {
 
-    public MachineFluidTankRenderer(BlockEntityRendererProvider.Context context) {}
+    private MachineFluidTankVboRenderer gpu;
+    private MachineFluidTankBakedModel cachedModel;
+
+    public MachineFluidTankRenderer(BlockEntityRendererProvider.Context ctx) {}
 
     @Override
-    public void render(
-            MachineFluidTankBlockEntity be,
-            float partialTick,
-            PoseStack poseStack,
-            MultiBufferSource buffer,
-            int packedLight,
-            int packedOverlay
-    ) {
+    protected MachineFluidTankBakedModel getModelType(BakedModel rawModel) {
+        return rawModel instanceof MachineFluidTankBakedModel m ? m : null;
+    }
+
+    @Override
+    protected Direction getFacing(MachineFluidTankBlockEntity be) {
+        return be.getBlockState().getValue(MachineFluidTankBlock.FACING);
+    }
+
+    @Override
+    protected void renderParts(MachineFluidTankBlockEntity be, MachineFluidTankBakedModel model,
+                              LegacyAnimator animator, float partialTick,
+                              int packedLight, int packedOverlay, PoseStack poseStack,
+                              MultiBufferSource bufferSource) {
+        var state = be.getBlockState();
+        Direction facing = getFacing(be);
+        BlockPos blockPos = be.getBlockPos();
+
+        // Occlusion cull: AABB бака inflate(3) как в BE.getRenderBoundingBox().
+        AABB renderBounds = be.getRenderBoundingBox();
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || !OcclusionCullingHelper.shouldRender(blockPos, mc.level, renderBounds)) {
+            return;
+        }
+
+        float staticFade = RenderDistanceHelper.computeStaticFade(be);
+        if (staticFade < 0) return;
+        SingleMeshVboRenderer.setFadeAlpha(staticFade);
+
+        int blockLight = LightTexture.block(packedLight);
+        int skyLight = LightTexture.sky(packedLight);
+        int dynamicLight = LightTexture.pack(blockLight, skyLight);
+
+        renderWithVBO(be, model, poseStack, dynamicLight, blockPos, bufferSource);
+
+        // Алмазы опасности рисуются после VBO-частей, в той же PoseStack-ветке
+        // (после setupBlockTransform → translate(0.5,0,0.5) + rotateY).
+        renderHazardDiamonds(be, poseStack, bufferSource, packedLight, packedOverlay);
+    }
+
+    private void renderWithVBO(MachineFluidTankBlockEntity be, MachineFluidTankBakedModel model,
+                               PoseStack poseStack, int dynamicLight, BlockPos blockPos,
+                               MultiBufferSource bufferSource) {
+        if (cachedModel != model || gpu == null) {
+            cachedModel = model;
+            gpu = new MachineFluidTankVboRenderer(model);
+        }
+
+        // Iris batching: один apply()/clear() на Frame + Tank.
+        boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
+        boolean useIrisBatch = ShaderCompatibilityDetector.isExternalShaderActive();
+        if (useIrisBatch) {
+            try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
+                renderTankPartsInternal(be, model, poseStack, dynamicLight, blockPos, bufferSource);
+            }
+        } else {
+            renderTankPartsInternal(be, model, poseStack, dynamicLight, blockPos, bufferSource);
+        }
+    }
+
+    private void renderTankPartsInternal(MachineFluidTankBlockEntity be, MachineFluidTankBakedModel model,
+                                         PoseStack poseStack, int dynamicLight, BlockPos blockPos,
+                                         MultiBufferSource bufferSource) {
+        // setupBlockTransform уже применил translate(0.5,0,0.5)+rotateY (90° + legacy facing).
+        // VBO-меши запечены в OBJ-координатах (0..1 блок). Компенсируем pivot: translate(-0.5,0,-0.5).
+        poseStack.pushPose();
+        poseStack.translate(-0.5f, 0.0f, -0.5f);
+
+        // Frame — статический VBO.
+        gpu.renderFrame(poseStack, dynamicLight, blockPos, be, bufferSource);
+
+        // Tank — VBO с ретекстурой под текущую жидкость.
+        ResourceLocation fluidTex = be.getTankTextureLocation();
+        gpu.renderTankRetextured(poseStack, dynamicLight, blockPos, fluidTex, be, bufferSource);
+
+        poseStack.popPose();
+    }
+
+    /**
+     * Алмазы опасности (NFPA) на двух боковых гранях бака.
+     * 1.7.10 {@code RenderFluidTank}: translate(-0.25, 0.5, -1.501) / (0.25, 0.5, 1.501),
+     * rotateY ±90°, scale(1, 0.375, 0.375).
+     * <p>
+     * PoseStack здесь уже после {@code setupBlockTransform} (translate(0.5,0,0.5)+rotateY),
+     * поэтому смещения -1.501/+1.501 в локальных координатахモデルа.
+     */
+    private void renderHazardDiamonds(MachineFluidTankBlockEntity be, PoseStack poseStack,
+                                     MultiBufferSource buffer, int packedLight, int packedOverlay) {
         Fluid fluid = be.getFluidTank().getTankType();
         if (fluid == null || fluid == Fluids.EMPTY || fluid == ModFluids.NONE.getSource()) {
             return;
@@ -53,17 +158,6 @@ public class MachineFluidTankRenderer implements BlockEntityRenderer<MachineFlui
 
         BlockPos pos = be.getBlockPos();
         int light = LevelRenderer.getLightColor(be.getLevel(), pos.above(2));
-
-        poseStack.pushPose();
-        poseStack.translate(0.5F, 0.0F, 0.5F);
-
-        BlockState state = be.getBlockState();
-        if (state.hasProperty(MachineFluidTankBlock.FACING)) {
-            Direction facing = state.getValue(MachineFluidTankBlock.FACING);
-            // Chunk quads (MachineFluidTankBakedModel) vs PoseStack rotate opposite conventions.
-            int chunkYaw = MultipartFacingTransforms.vanillaChunkMeshRotationY(facing);
-            poseStack.mulPose(Axis.YP.rotationDegrees(MultipartFacingTransforms.poseYawFromChunkYaw(chunkYaw)));
-        }
 
         RenderSystem.disableCull();
 
@@ -82,6 +176,21 @@ public class MachineFluidTankRenderer implements BlockEntityRenderer<MachineFlui
         poseStack.popPose();
 
         RenderSystem.enableCull();
-        poseStack.popPose();
+    }
+
+    // ==================== CLEANUP ====================
+
+    public static void clearCaches() {
+        MachineFluidTankVboRenderer.clearTankTextureCache();
+    }
+
+    @Override
+    public boolean shouldRenderOffScreen(MachineFluidTankBlockEntity be) {
+        return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
+    }
+
+    @Override
+    public int getViewDistance() {
+        return RenderDistanceHelper.getStaticViewDistanceBlocks();
     }
 }

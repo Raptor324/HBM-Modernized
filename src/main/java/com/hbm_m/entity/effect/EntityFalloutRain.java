@@ -19,6 +19,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -32,6 +33,7 @@ import net.minecraft.world.phys.Vec3;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -46,6 +48,11 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
     private static final EntityDataAccessor<Integer> SCALE = SynchedEntityData.defineId(EntityFalloutRain.class, EntityDataSerializers.INT);
 
+    /** Точечный тикет прогрузки чанка под обработку fallout; снимается сразу после stomp. */
+    private static final TicketType<ChunkPos> FALLOUT_LOAD =
+            TicketType.create("hbm_m_fallout_load", Comparator.comparingLong(p -> (long) p.x << 32 ^ p.z));
+
+    private final Map<ChunkPos, ChunkPos> issuedTickets = new HashMap<>();
     private boolean firstTick = true;
     private int tickDelay;
     private final Map<ResourceKey<Biome>, Holder<Biome>> biomeCache = new HashMap<>();
@@ -109,22 +116,40 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
             if (tickDelay == 0) {
                 tickDelay = getFalloutDelay();
                 int budget = getMk5BudgetMs();
+                int deferred = 0;
 
                 while (System.currentTimeMillis() < start + budget) {
+                    boolean outer;
+                    long chunkPos;
                     if (!chunksToProcess.isEmpty()) {
-                        long chunkPos = chunksToProcess.remove(chunksToProcess.size() - 1);
-                        int chunkPosX = (int) (chunkPos & 4294967295L);
-                        int chunkPosZ = (int) (chunkPos >> 32 & 4294967295L);
-                        processChunkColumns(chunkPosX, chunkPosZ, false);
+                        chunkPos = chunksToProcess.remove(chunksToProcess.size() - 1);
+                        outer = false;
                     } else if (!outerChunksToProcess.isEmpty()) {
-                        long chunkPos = outerChunksToProcess.remove(outerChunksToProcess.size() - 1);
-                        int chunkPosX = (int) (chunkPos & 4294967295L);
-                        int chunkPosZ = (int) (chunkPos >> 32 & 4294967295L);
-                        processChunkColumns(chunkPosX, chunkPosZ, true);
+                        chunkPos = outerChunksToProcess.remove(outerChunksToProcess.size() - 1);
+                        outer = true;
                     } else {
                         clearChunkTicket();
                         discard();
                         break;
+                    }
+                    int chunkPosX = (int) (chunkPos & 4294967295L);
+                    int chunkPosZ = (int) (chunkPos >> 32 & 4294967295L);
+
+                    if (processChunkColumns(chunkPosX, chunkPosZ, outer)) {
+                        deferred = 0;
+                    } else {
+                        // чанк не загружен: вернуть в очередь и повторить в следующих тиках.
+                        // если ВСЕ оставшиеся чанки не загружены — выходим из тика, чтобы не крутиться впустую
+                        if (outer) {
+                            outerChunksToProcess.add(0, chunkPos);
+                        } else {
+                            chunksToProcess.add(0, chunkPos);
+                        }
+                        deferred++;
+                        int remaining = chunksToProcess.size() + outerChunksToProcess.size();
+                        if (deferred >= remaining) {
+                            break;
+                        }
                     }
                 }
             }
@@ -133,10 +158,30 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         }
     }
 
-    private void processChunkColumns(int chunkPosX, int chunkPosZ, boolean outerRing) {
-        if (!(level() instanceof ServerLevel serverLevel)) return;
+    /**
+     * @return true — чанк обработан; false — чанк не готов (обработка отложена,
+     *         тикет прогрузки запрошен).
+     * Готовность проверяется через getChunkNow(): он возвращает чанк только если тот
+     * уже сгенерирован до FULL, иначе null — без шедулинга генерации и без блокировки.
+     * hasChunk() для этого НЕ годится: он смотрит только ticket level холдера и возвращает
+     * true сразу после применения тикета, ещё ДО завершения генерации — а последующий
+     * getChunk(x, z) с requireChunk=true тогда паркует серверный поток в managedBlock
+     * на всю генерацию чанка (в профиле — до 40% времени тика сервера).
+     */
+    private boolean processChunkColumns(int chunkPosX, int chunkPosZ, boolean outerRing) {
+        if (!(level() instanceof ServerLevel serverLevel)) return true;
 
-        LevelChunk chunk = serverLevel.getChunk(chunkPosX, chunkPosZ);
+        LevelChunk chunk = serverLevel.getChunkSource().getChunkNow(chunkPosX, chunkPosZ);
+        if (chunk == null) {
+            // запросим асинхронную прогрузку точечным тикетом; снимем после обработки
+            ChunkPos cp = new ChunkPos(chunkPosX, chunkPosZ);
+            if (issuedTickets.putIfAbsent(cp, cp) == null) {
+                serverLevel.getChunkSource().addRegionTicket(FALLOUT_LOAD, cp, 2, cp);
+            }
+            return false;
+        }
+        releaseTicket(new ChunkPos(chunkPosX, chunkPosZ));
+
         boolean biomeModified = false;
 
         for (int x = chunkPosX << 4; x < (chunkPosX << 4) + 16; x++) {
@@ -171,6 +216,13 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         }
 
         ChunkRadiationManager.getProxy().recalculateChunkRadiation(chunk);
+        return true;
+    }
+
+    private void releaseTicket(ChunkPos cp) {
+        if (issuedTickets.remove(cp) != null && level() instanceof ServerLevel serverLevel) {
+            serverLevel.getChunkSource().removeRegionTicket(FALLOUT_LOAD, cp, 2, cp);
+        }
     }
 
     /**
@@ -343,6 +395,13 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
     @Override
     public void remove(RemovalReason reason) {
         clearChunkTicket();
+        // снять незакрытые точечные тикеты, иначе чанки зависнут загруженными
+        if (!issuedTickets.isEmpty() && level() instanceof ServerLevel serverLevel) {
+            for (ChunkPos cp : issuedTickets.keySet()) {
+                serverLevel.getChunkSource().removeRegionTicket(FALLOUT_LOAD, cp, 2, cp);
+            }
+            issuedTickets.clear();
+        }
         super.remove(reason);
     }
 

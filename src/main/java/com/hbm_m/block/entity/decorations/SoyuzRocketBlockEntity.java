@@ -14,7 +14,7 @@ import net.minecraft.world.phys.AABB;
  * baked block model can't be used (the rocket is ~52 blocks tall, far past
  * the 16-bit chunk-mesh vertex range).
  */
-public class SoyuzRocketBlockEntity extends BlockEntity {
+public class SoyuzRocketBlockEntity extends BlockEntity implements com.hbm_m.api.render.RenderBoundsProvider {
 
     public SoyuzRocketBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.DECO_SOYUZ_ROCKET_BE.get(), pos, state);

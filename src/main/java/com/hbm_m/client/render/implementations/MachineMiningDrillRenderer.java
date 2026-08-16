@@ -42,7 +42,7 @@ import net.minecraft.util.Mth;
 *///?} elif neoforge {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
-public class MachineMiningDrillRenderer implements BlockEntityRenderer<MachineMiningDrillBlockEntity> {
+public class MachineMiningDrillRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineMiningDrillBlockEntity> {
 
     private static final ResourceLocation DRILLBIT_MODEL_ID = id("mining_drill_bit");
     private static final ResourceLocation SHAFT_MODEL_ID = id("mining_drill_shaft");

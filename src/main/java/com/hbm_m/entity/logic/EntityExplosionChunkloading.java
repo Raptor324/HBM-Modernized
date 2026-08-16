@@ -3,6 +3,7 @@ package com.hbm_m.entity.logic;
 import java.util.Comparator;
 import java.util.UUID;
 
+import com.hbm_m.config.ModClothConfig;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.world.entity.Entity;
@@ -47,6 +48,14 @@ public abstract class EntityExplosionChunkloading extends Entity {
 
         ChunkPos newPos = new ChunkPos(this.blockPosition());
         int radius = getChunkLoadRadius();
+        if (!ModClothConfig.get().enableChunkLoading) {
+            // конфиг выключен: освободить возможный старый тикет и не выставлять новый
+            if (this.loadedChunk == null && radius == this.activeTicketRadius) {
+                return;
+            }
+            releaseChunkTicket(server);
+            return;
+        }
         if (this.loadedChunk != null && newPos.equals(this.loadedChunk) && radius == this.activeTicketRadius) {
             return;
         }
@@ -95,6 +104,9 @@ public abstract class EntityExplosionChunkloading extends Entity {
 
     private void onAddedToLevelHook() {
         if (!level().isClientSide && level() instanceof ServerLevel server && this.loadedChunk == null) {
+            if (!ModClothConfig.get().enableChunkLoading) {
+                return;
+            }
             this.loadedChunk = new ChunkPos(this.blockPosition());
             this.activeTicketRadius = getChunkLoadRadius();
             server.getChunkSource().addRegionTicket(

@@ -172,7 +172,7 @@ public class GUIFluidIdentifier extends Screen {
             }
         }
 
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        GuiCompat.renderWidgetsOnly(this, guiGraphics, mouseX, mouseY, partialTick);
     }
 
     @Override

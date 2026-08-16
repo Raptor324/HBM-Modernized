@@ -24,7 +24,7 @@ import java.util.*;
 *///?} elif neoforge {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
-public class SU47TrophyRenderer implements BlockEntityRenderer<SU47TrophyBlockEntity> {
+public class SU47TrophyRenderer implements com.hbm_m.client.render.HbmBerBounds<SU47TrophyBlockEntity> {
 
     // ─── OBJ geometry: material name → list of triangles [x,y,z,u,v,nx,ny,nz] × 3 ──
     private static final Map<String, List<float[]>> OBJ_DATA = new LinkedHashMap<>();

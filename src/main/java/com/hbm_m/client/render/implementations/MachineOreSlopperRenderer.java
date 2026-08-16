@@ -35,7 +35,7 @@ import net.minecraft.util.Mth;
 *///?} elif neoforge {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
-public class MachineOreSlopperRenderer implements BlockEntityRenderer<MachineOreSlopperBlockEntity> {
+public class MachineOreSlopperRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineOreSlopperBlockEntity> {
 
     private static final ResourceLocation FAN_MODEL_ID = id("ore_slopper_fan");
     private static final ResourceLocation BLADES_LEFT_MODEL_ID = id("ore_slopper_blades_left");

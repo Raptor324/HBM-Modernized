@@ -163,6 +163,14 @@ final class IrisInstancedBatchRenderer {
 
     boolean drawSingleWithIrisExtended(PoseStack poseStack, int packedLight,
                                        BlockPos blockPos, @Nullable BlockEntity blockEntity) {
+        // Shadow pass: только через АКТИВНЫЙ per-BE батч (см. SingleMeshVboRenderer
+        // .renderWithIrisExtended и IrisRenderBatch.begin). Standalone-путь в
+        // shadow запрещён. Без батча — false, вызывающий addInstance/renderSingle
+        // уйдёт в putBulkData через bufferSource (SHADOW_BLOCK на endBatch).
+        if (ShaderCompatibilityDetector.isRenderingShadowPass() && IrisRenderBatch.active() == null) {
+            return false;
+        }
+
         IrisCompanionMesh companion = getOrBuildIrisCompanion();
         if (companion == null) return false;
 
@@ -262,6 +270,15 @@ final class IrisInstancedBatchRenderer {
     // ── Batch flush (Iris) ─────────────────────────────────────────────
 
     void flushBatchIris(Matrix4f projectionMatrix) {
+        // Instanced-flush только основной проход: в shadow инстансы НЕ
+        // накапливаются, а рисуются немедленно через активный per-BE батч
+        // (addInstance → drawSingleWithIrisExtended). Выход и для случая, если
+        // stage-событие придёт во время shadow-прохода (Embeddium диспатчит
+        // их из теневых terrain-слоёв) — там флашить нельзя.
+        if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
+            return;
+        }
+
         IrisCompanionMesh companion = getOrBuildIrisCompanion();
 
         boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();

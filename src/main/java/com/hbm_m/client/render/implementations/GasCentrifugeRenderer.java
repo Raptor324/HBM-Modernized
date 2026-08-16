@@ -15,7 +15,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 *///?} elif neoforge {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
-public class GasCentrifugeRenderer implements BlockEntityRenderer<MachineGasCentrifugeBlockEntity> {
+public class GasCentrifugeRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineGasCentrifugeBlockEntity> {
 
     public GasCentrifugeRenderer(BlockEntityRendererProvider.Context context) {
     }

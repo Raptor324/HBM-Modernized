@@ -4,6 +4,7 @@ import com.hbm_m.blockentity.machines.MachineMixerBlockEntity;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -40,8 +41,12 @@ public class MachineMixerMenu extends AbstractContainerMenu {
         this.blockEntity = blockEntity;
         this.data = data;
 
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
+        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
         ModItemStackHandlerContainer machineInventory =
-                new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
+                new ModItemStackHandlerContainer(
+                        blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOTS),
+                        blockEntity != null ? blockEntity::setChanged : null);
 
         // Battery slot, positioned over the battery icon under input tank A.
         this.addSlot(new Slot(machineInventory, SLOT_BATTERY, 23, 95) {
@@ -83,6 +88,11 @@ public class MachineMixerMenu extends AbstractContainerMenu {
         BlockEntity blockEntity = inventory.player.level().getBlockEntity(pos);
         if (blockEntity instanceof MachineMixerBlockEntity mixerBlockEntity) {
             return mixerBlockEntity;
+        }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inventory.player.level().isClientSide) {
+            return null;
         }
         throw new IllegalStateException("No MachineMixerBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":mixer_menu");
     }

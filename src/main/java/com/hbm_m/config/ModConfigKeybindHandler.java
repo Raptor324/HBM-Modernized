@@ -87,14 +87,34 @@ public class ModConfigKeybindHandler {
         if (INITIALIZED) return;
         INITIALIZED = true;
 
+        //? if fabric {
+        /*// Fabric: KeyBindingHelper-обвязка Architectury, регистрация в любой момент валидна.
         KeyMappingRegistry.register(OPEN_CONFIG);
         KeyMappingRegistry.register(POWER_ARMOR_DASH);
         KeyMappingRegistry.register(POWER_ARMOR_VATS);
         KeyMappingRegistry.register(POWER_ARMOR_THERMAL);
         KeyMappingRegistry.register(OPEN_MULTI_DETONATOR);
+        *///?}
 
         // Аналог END-фазы ClientTickEvent на Forge: выполняем после стандартного тика клиента.
         ClientTickEvent.CLIENT_POST.register(client -> onClientPostTick());
+    }
+
+    /**
+     * Регистрация биндов на Forge/NeoForge — ТОЛЬКО из RegisterKeyMappingsEvent
+     * (см. ClientSetup.onRegisterKeyMappings). Регистрация из FMLClientSetupEvent
+     * слишком поздна: на Forge 1.20.1 событие уже прошло, а на NeoForge 1.21.1
+     * стреляет раньше client setup. Architectury KeyMappingRegistry в обоих случаях
+     * лишь добавляет бинд в options.keyMappings в обход события — таблица ввода
+     * (KeyMapping.MAP) не пересобирается, нажатия не приходят в consumeClick,
+     * а сам бинд не появляется в настройках управления.
+     */
+    public static void registerAll(java.util.function.Consumer<KeyMapping> registrar) {
+        registrar.accept(OPEN_CONFIG);
+        registrar.accept(POWER_ARMOR_DASH);
+        registrar.accept(POWER_ARMOR_VATS);
+        registrar.accept(POWER_ARMOR_THERMAL);
+        registrar.accept(OPEN_MULTI_DETONATOR);
     }
 
     private static void onClientPostTick() {

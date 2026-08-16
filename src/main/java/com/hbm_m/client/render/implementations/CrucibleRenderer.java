@@ -41,7 +41,7 @@ import org.joml.Matrix4f;
 *///?} elif neoforge {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
-public class CrucibleRenderer implements BlockEntityRenderer<MachineCrucibleBlockEntity> {
+public class CrucibleRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineCrucibleBlockEntity> {
 
     /** lava surface texture — re-uses the existing block/fluids/lava.png */
     private static final ResourceLocation LAVA_TEXTURE =

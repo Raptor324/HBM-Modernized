@@ -1,4 +1,6 @@
 package com.hbm_m.client.gui;
+import com.hbm_m.client.GuiCompat;
+
 
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.config.schema.ConfigField;
@@ -444,6 +446,11 @@ public class ConfigScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partial) {
+        //? if >=1.21.1 {
+        /*// Blur мира под ВСЕМ меню (как vanilla renderBackground 1.21.1), но без
+        // dirt-текстуры — поверх блюра рисуем собственный полупрозрачный оверлей.
+        this.renderBlurredBackground(partial);
+        *///?}
         // Фон: только полупрозрачный тёмный оверлей (без земляного dirt-фона).
         g.fill(0, 0, this.width, this.height, COL_OVERLAY);
 
@@ -477,7 +484,7 @@ public class ConfigScreen extends Screen {
         this.list.render(g, mouseX, mouseY, partial);
 
         // Кнопки (sidebar/tabs/bottom).
-        super.render(g, mouseX, mouseY, partial);
+        GuiCompat.renderWidgetsOnly(this, g, mouseX, mouseY, partial);
 
         // Маленькая красная кнопка «Сбросить всё» в дальнем углу.
         drawResetAllButton(g, mouseX, mouseY);
@@ -900,6 +907,20 @@ public class ConfigScreen extends Screen {
             *///?}
             this.rowW = rowW;
         }
+
+        //? if >=1.21.1 {
+        /*/// В 1.21.1 у AbstractSelectionList нет setRenderBackground(false) — вместо этого
+        /// он всегда рисует полупрозрачную текстуру inworld_menu_list_background и
+        /// сепараторы сверху/снизу. Через них просвечивает «каша» из мира/блюра —
+        /// отключаем, фон под списком рисует сам ConfigScreen.
+        @Override
+        protected void renderListBackground(net.minecraft.client.gui.GuiGraphics g) {
+        }
+
+        @Override
+        protected void renderListSeparators(net.minecraft.client.gui.GuiGraphics g) {
+        }
+        *///?}
 
         @Override
         public int getRowWidth() {

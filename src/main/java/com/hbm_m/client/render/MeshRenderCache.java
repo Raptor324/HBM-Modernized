@@ -116,6 +116,17 @@ public class MeshRenderCache {
         });
     }
 
+    /**
+     * Возвращает уже кешированный {@link SingleMeshVboRenderer} по ключу или {@code null},
+     * если VBO ещё не создан. В отличие от {@link #getOrCreateRenderer}, НЕ строит новый
+     * рендерер — используется для ретекстурированных мешей, где квады собирает caller
+     * (см. {@link #getOrCreateRendererFromQuads}), чтобы избежать повторной ретекстуризации
+     * каждый кадр.
+     */
+    public static @org.jetbrains.annotations.Nullable SingleMeshVboRenderer peekRenderer(String partKey) {
+        return PART_RENDERERS.get(partKey);
+    }
+
     public static List<BakedQuad> getOrCompile(String entityType, String partName, BakedModel modelPart) {
         String cacheKey = entityType + ":" + partName;
         return getOrCompile(cacheKey, modelPart);

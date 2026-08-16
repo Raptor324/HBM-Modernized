@@ -26,7 +26,7 @@ import org.joml.Matrix4f;
 *///?} elif neoforge {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
-public class FoundryBasinRenderer implements BlockEntityRenderer<MachineFoundryBasinBlockEntity> {
+public class FoundryBasinRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineFoundryBasinBlockEntity> {
 
     private static final ResourceLocation LAVA_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/fluids/lava.png");

@@ -35,7 +35,7 @@ import net.minecraft.resources.ResourceLocation;
 *///?} elif neoforge {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
-public class MachineArcFurnaceRenderer implements BlockEntityRenderer<MachineArcFurnaceBlockEntity> {
+public class MachineArcFurnaceRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineArcFurnaceBlockEntity> {
 
     private static final ResourceLocation COLD_MODEL_ID = id("arc_furnace_electrodes_cold");
     private static final ResourceLocation HOT_MODEL_ID = id("arc_furnace_electrodes_hot");

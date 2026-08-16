@@ -54,8 +54,11 @@ public class ModelHelper {
         float x1 = to.x() / 16f,   y1 = to.y() / 16f,   z1 = to.z() / 16f;
 
         UVBox uv = spec.box();
-        float u0 = sprite.getU(uv.u0), v0 = sprite.getV(uv.v0);
-        float u1 = sprite.getU(uv.u1), v1 = sprite.getV(uv.v1);
+        // UVBox в текселях 0..16; getU/getV на 1.21.1 ждут 0..1, поэтому ремапим сами.
+        float u0 = net.minecraft.util.Mth.lerp(uv.u0() / 16f, sprite.getU0(), sprite.getU1());
+        float v0 = net.minecraft.util.Mth.lerp(uv.v0() / 16f, sprite.getV0(), sprite.getV1());
+        float u1 = net.minecraft.util.Mth.lerp(uv.u1() / 16f, sprite.getU0(), sprite.getU1());
+        float v1 = net.minecraft.util.Mth.lerp(uv.v1() / 16f, sprite.getV0(), sprite.getV1());
 
         switch (direction) {
             case DOWN  -> putVertices(builder, normal, spec.rotate90(),
@@ -92,7 +95,11 @@ public class ModelHelper {
         Vector3f normal = direction.step();
         float x0 = from.x() / 16f, y0 = from.y() / 16f, z0 = from.z() / 16f;
         float x1 = to.x() / 16f, y1 = to.y() / 16f, z1 = to.z() / 16f;
-        float u0 = spec.box().u0(), u1 = spec.box().u1(), v0 = spec.box().v0(), v1 = spec.box().v1();
+        // UVBox в текселях 0..16; setUv ждёт атласные UV, поэтому ремапим через спрайт.
+        float u0 = net.minecraft.util.Mth.lerp(spec.box().u0() / 16f, sprite.getU0(), sprite.getU1());
+        float u1 = net.minecraft.util.Mth.lerp(spec.box().u1() / 16f, sprite.getU0(), sprite.getU1());
+        float v0 = net.minecraft.util.Mth.lerp(spec.box().v0() / 16f, sprite.getV0(), sprite.getV1());
+        float v1 = net.minecraft.util.Mth.lerp(spec.box().v1() / 16f, sprite.getV0(), sprite.getV1());
 
         switch (direction) {
             case DOWN  -> putVertices(builder, normal, spec.rotate90(),

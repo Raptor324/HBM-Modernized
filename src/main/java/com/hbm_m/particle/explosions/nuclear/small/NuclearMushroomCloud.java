@@ -77,7 +77,7 @@ public class NuclearMushroomCloud {
     }
 
     /**
-     * ⚓ ОСНОВАНИЕ "АЙСБЕРГ" (ШИРОКОЕ X2)
+     * ОСНОВАНИЕ "АЙСБЕРГ" (ШИРОКОЕ X2)
      */
     private static void spawnMushroomBase(ServerLevel level, double centerX, double centerY, double centerZ, RandomSource random) {
         for (int i = 0; i < 200; i++) {
@@ -86,7 +86,6 @@ public class NuclearMushroomCloud {
             double angle = random.nextDouble() * Math.PI * 2;
             double widthFactor = 1.0 - (depth / 20.0);
 
-            // ↔️ РАДИУС X2 (12-18 блоков)
             double maxRadius = (12.0 + random.nextDouble() * 6.0) * widthFactor;
 
             double radius = random.nextDouble() * maxRadius;

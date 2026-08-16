@@ -105,8 +105,10 @@ public final class DaeQuadBaker {
                 data[base + 1] = Float.floatToIntBits(v.y);
                 data[base + 2] = Float.floatToIntBits(v.z);
                 data[base + 3] = 0xFFFFFFFF;
-                data[base + 4] = Float.floatToIntBits(sprite.getU(u * 16.0F));
-                data[base + 5] = Float.floatToIntBits(sprite.getV(w * 16.0F));
+                // 1.21.1+: getU/getV принимают нормализованные 0..1 UV; на 1.20.1 — тексели 0..16.
+                // getU0/getU1/getV0/getV1 имеют одинаковую семантику на обеих версиях.
+                data[base + 4] = Float.floatToIntBits(net.minecraft.util.Mth.lerp(u, sprite.getU0(), sprite.getU1()));
+                data[base + 5] = Float.floatToIntBits(net.minecraft.util.Mth.lerp(w, sprite.getV0(), sprite.getV1()));
                 data[base + 6] = 0;
                 data[base + 7] = packNormal(nrmX, nrmY, nrmZ);
             }

@@ -175,13 +175,24 @@ public final class IrisRenderBatch implements AutoCloseable {
      */
     public static IrisRenderBatch begin(boolean shadowPass, Matrix4f projectionMatrix) {
         //? if forge || neoforge {
+        // Shadow pass открывает NON-PERSISTENT батч: он живёт строго внутри
+        // одного BER (try-with-resources вызывающего закрывает его до
+        // возврата из render()). Раньше существовал персистентный shadow-батч,
+        // переживавший границу проходов: его ленивый teardown (ExtendedShader
+        // .clear() ребиндит MAIN FBO + восстановление устаревшей фазы) падал
+        // на произвольные моменты основного прохода — на 1.20.1 это задваивало
+        // анимированную растительность. Полный запрет кастомного GL в shadow
+        // лечил это, но putBulkData на каждую часть стоил ~80% кадра (spark:
+        // цепочки BufferBuilder.vertex). Компромисс: apply()/clear() ОДИН раз
+        // теневого цикла BE (ровно как ванильные BE на endBatch), без
+        // накопления инстансов и без состояния через границу проходов.
+        // Fallback без батча — putBulkData через bufferSource.
+
         // Pass-change detection: if the active batch's pass differs from the
-        // requested one, tear it down before opening the new one. The previous
-        // batch's framebuffer/shader bindings are already invalidated by Iris's
-        // own pass switch, but our cached uniform handles still match the
-        // previous shader and our ACTIVE pointer still holds it; closing here
-        // flushes that state properly so the next setupOuter() sees a clean slate.
-        if (ACTIVE != null && ACTIVE.isPersistent && ACTIVE.isShadowPass != shadowPass) {
+        // requested one, tear it down before opening the new one. Covers BOTH
+        // persistent (main lingering into next frame's shadow) and non-persistent
+        // (leaked shadow batch) — a stale cross-pass ACTIVE must never survive.
+        if (ACTIVE != null && ACTIVE.isShadowPass != shadowPass) {
             ACTIVE.actuallyClose();
         }
 
@@ -191,8 +202,9 @@ public final class IrisRenderBatch implements AutoCloseable {
             return NOOP_NESTED;
         }
 
-        // Defensive: a non-persistent batch should never be ACTIVE here (we never
-        // open one anymore) but if some legacy path is left, we don't trample it.
+        // Defensive: a non-persistent (shadow) batch is ACTIVE - nested call
+        // within the same BER piggy-backs; only the outer try-with-resources
+        // (which received the real INSTANCE) closes it.
         if (ACTIVE != null) {
             return NOOP_NESTED;
         }
@@ -203,10 +215,13 @@ public final class IrisRenderBatch implements AutoCloseable {
         }
         try {
             INSTANCE.setupOuter(shader, projectionMatrix);
-            INSTANCE.isPersistent = true;
+            // Main pass — персистентный (одно apply на кадр, закрытие в
+            // presentAfterBlockEntities / AFTER_LEVEL / при смене фазы).
+            // Shadow pass — только на время BER (закрывается close()).
+            INSTANCE.isPersistent = !shadowPass;
             INSTANCE.isShadowPass = shadowPass;
             ACTIVE = INSTANCE;
-            return NOOP_NESTED;
+            return shadowPass ? INSTANCE : NOOP_NESTED;
         } catch (Throwable t) {
             MainRegistry.LOGGER.warn("IrisRenderBatch.begin ({}) failed ({}), falling back to per-call path",
                     shadowPass ? "shadow" : "main", t.toString());
@@ -261,15 +276,16 @@ public final class IrisRenderBatch implements AutoCloseable {
     }
 
     /**
-     * Closes any persistent batch (shadow or main) still active at end-of-frame.
-     * Called from {@code RenderLevelStageEvent.AFTER_LEVEL} as the safety net for
-     * the LAST batch of every frame — its pass-change close in {@link #begin}
-     * never fires because no follow-up begin() happens this frame. Also covers
-     * leak-into-next-frame edge cases (e.g. player turned away so no main BE
-     * dispatch but shadow camera still captured them).
+     * Closes any batch (persistent main or leaked non-persistent shadow) still
+     * active at end-of-frame checkpoints. Called from {@code RenderLevelStageEvent
+     * .AFTER_BLOCK_ENTITIES}/{@code AFTER_LEVEL} as the safety net for the LAST
+     * batch of every frame. A non-persistent shadow batch is normally closed by
+     * its BER's try-with-resources; if an exceptional path leaked one, closing
+     * it here prevents a stale shadow-programmed ACTIVE from servicing the next
+     * frame's main-pass BEs.
      */
     public static void closePersistentIfActive() {
-        if (ACTIVE != null && ACTIVE.isPersistent) {
+        if (ACTIVE != null) {
             ACTIVE.actuallyClose();
         }
     }

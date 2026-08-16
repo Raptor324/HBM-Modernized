@@ -128,9 +128,9 @@ public class GUIScreenRecipeSelector extends Screen {
     
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
+        GuiCompat.renderFlatBlurredBackground(this, guiGraphics, partialTick);
         drawGuiBackground(guiGraphics, mouseX, mouseY);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        GuiCompat.renderWidgetsOnly(this, guiGraphics, mouseX, mouseY, partialTick);
         renderRecipes(guiGraphics, mouseX, mouseY);
         renderTooltips(guiGraphics, mouseX, mouseY);
     }

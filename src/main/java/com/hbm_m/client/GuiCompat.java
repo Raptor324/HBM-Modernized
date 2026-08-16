@@ -36,4 +36,36 @@ public final class GuiCompat {
         /*screen.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         *///?}
     }
+
+    /**
+     * Рендер виджетов экрана БЕЗ фона — замена {@code super.render(...)} в кастомных
+     * Screen'ах, которые рисуют фон сами. В 1.21.1 {@code Screen.render} вызывает
+     * {@code renderBackground} (blur + тёмная меню-текстура) ПОВЕРХ всего, что уже
+     * нарисовано до {@code super.render} — из-за этого панели/текстуры GUI оказывались
+     * «под блюром». В 1.20.1 {@code Screen.render} только перебирает renderables,
+     * поэтому здесь поведение идентично vanilla.
+     */
+    public static void renderWidgetsOnly(Screen screen, GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        for (net.minecraft.client.gui.components.Renderable renderable : screen.renderables) {
+            renderable.render(guiGraphics, mouseX, mouseY, partialTick);
+        }
+    }
+
+    /**
+     * Фон «blur + плоский градиент»: в отличие от {@link #renderBackground} на 1.21.1
+     * НЕ рисует полупрозрачную менюшную текстуру (inworld_menu_list/menu_background),
+     * сквозь которую просвечивает «каша» из блюренного мира. Блюр остаётся под всем
+     * меню, поверх — только чистый тёмный градиент.
+     */
+    public static void renderFlatBlurredBackground(Screen screen, GuiGraphics guiGraphics, float partialTick) {
+        //? if < 1.21.1 {
+        screen.renderBackground(guiGraphics);
+        //?} else {
+        /*// Эквивалент protected Screen.renderBlurredBackground, недоступного извне.
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        mc.gameRenderer.processBlurEffect(partialTick);
+        mc.getMainRenderTarget().bindWrite(false);
+        screen.renderTransparentBackground(guiGraphics);
+        *///?}
+    }
 }

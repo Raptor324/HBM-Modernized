@@ -43,10 +43,23 @@ import com.hbm_m.platform.PlatformHooks;
  * используйте {@link #applyClientUpdate(CompoundTag)} (метод для переопределения, вызывается
  * прослойкой при получении пакета) — он должен делегировать в {@link #readNbtData}.
  */
-public abstract class BaseHbmBlockEntity extends BlockEntity {
+public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_m.api.render.RenderBoundsProvider {
 
     public BaseHbmBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
+    }
+
+    /**
+     * Render bounding box по умолчанию — 1 блок (чуть расширенный).
+     * На 1.21.1 NeoForge BER-пасс зовёт его через {@link com.hbm_m.api.render.RenderBoundsProvider}
+     * (ванильного BlockEntity#getRenderBoundingBox там нет); на 1.20.1 Forge это @Override.
+     * Мультиблоки переопределяют на AABB всей структуры.
+     */
+    //? if forge {
+    @Override
+    //?}
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition).inflate(0.5D);
     }
 
     // ═════════════════════════════════════════════════════════════════════════════════════

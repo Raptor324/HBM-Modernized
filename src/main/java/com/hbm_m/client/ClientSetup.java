@@ -5,26 +5,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-//? if fabric {
-/*import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRegistry;
-import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
-import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.MenuScreens;
-import net.minecraft.client.renderer.entity.FallingBlockRenderer;
-import net.minecraft.client.renderer.entity.ThrownItemRenderer;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.PackType;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeManager;
-import static dev.architectury.registry.client.rendering.BlockEntityRendererRegistry.register;
-*///?}
 
 import org.jetbrains.annotations.NotNull;
 
@@ -308,166 +288,6 @@ public class ClientSetup {
         OcclusionCullingHelper.setTransparentBlocksTag(ModTags.Blocks.NON_OCCLUDING);
     }
 
-    //? if fabric {
-    /*private static volatile boolean fabricShadersLoaded = false;
-
-    private static void registerFabricRenderLayers() {
-        BlockRenderLayerMap.INSTANCE.putBlocks(RenderType.cutout(),
-                ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get(),
-                ModBlocks.MACHINE_ASSEMBLER.get(),
-                ModBlocks.CHEMICAL_PLANT.get(),
-                ModBlocks.CRYSTALLIZER.get(),
-                // Multipart base (solid) + overlay (cutout) в Forge; на Fabric без слоя cutout оверлей с альфой не рисуется.
-                ModBlocks.FLUID_DUCT.get(),
-                ModBlocks.FLUID_DUCT_COLORED.get(),
-                ModBlocks.FLUID_DUCT_SILVER.get());
-    }
-
-    private static void registerFabricShaders() {
-        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(
-            new net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener() {
-                @Override
-                public net.minecraft.resources.ResourceLocation getFabricId() {
-                    return new ResourceLocation(MainRegistry.MOD_ID, "shader_loader");
-                }
-
-                @Override
-                public void onResourceManagerReload(net.minecraft.server.packs.resources.ResourceManager manager) {
-                    loadFabricShaders(manager);
-                }
-            }
-        );
-    }
-
-    private static void loadFabricShaders(net.minecraft.server.packs.resources.ResourceManager manager) {
-        MainRegistry.LOGGER.info("Registering optimized shaders (Fabric)...");
-
-        VertexFormat blockLitSimpleFormat = new VertexFormat(
-            ImmutableMap.<String, VertexFormatElement>builder()
-                .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
-                .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
-                .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
-                .build()
-        );
-
-        VertexFormat blockLitInstancedFormat = new VertexFormat(
-            ImmutableMap.<String, VertexFormatElement>builder()
-                .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
-                .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
-                .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
-                .put("BoneId", new VertexFormatElement(0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.GENERIC, 1))
-                .put("InstPos", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
-                .put("InstRot", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstBboxMin", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
-                .put("InstBboxSize", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightC01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightC23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightC45", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightC67", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .build()
-        );
-
-        VertexFormat blockLitInstancedSlicedFormat = new VertexFormat(
-            ImmutableMap.<String, VertexFormatElement>builder()
-                .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
-                .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
-                .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
-                .put("BoneId", new VertexFormatElement(0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.GENERIC, 1))
-                .put("InstPos", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
-                .put("InstRot", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstBboxMin", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
-                .put("InstBboxSize", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS0C01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS0C23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS1C01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS1C23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS2C01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS2C23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS3C01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS3C23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .build()
-        );
-
-        ResourceLocation realVsh = new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit.vsh");
-        ResourceLocation virtualInstancedVsh = new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced.vsh");
-        ResourceLocation virtualSlicedVsh = new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit_sliced.vsh");
-        ResourceLocation virtualInstancedSlicedVsh = new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced_sliced.vsh");
-        net.minecraft.server.packs.resources.ResourceProvider hbmCoreShaderProvider = location -> {
-            if ("minecraft".equals(location.getNamespace()) && location.getPath().startsWith("shaders/core/block_lit")) {
-                ResourceLocation modLocation = new ResourceLocation(MainRegistry.MOD_ID, location.getPath());
-                return manager.getResource(modLocation);
-            }
-            return manager.getResource(location);
-        };
-
-        com.hbm_m.client.render.shader.modification.ShaderModification instancingDefine =
-            com.hbm_m.client.render.shader.modification.ShaderModification.builder()
-                .define("USE_INSTANCING")
-                .define("USE_VERTEX_BONE_ID");
-
-        com.hbm_m.client.render.shader.modification.ShaderModification slicedDefine =
-            com.hbm_m.client.render.shader.modification.ShaderModification.builder()
-                .define("USE_SLICED_LIGHT");
-
-        com.hbm_m.client.render.shader.modification.ShaderModification instancedSlicedDefine =
-            com.hbm_m.client.render.shader.modification.ShaderModification.builder()
-                .define("USE_INSTANCING")
-                .define("USE_SLICED_LIGHT")
-                .define("USE_VERTEX_BONE_ID");
-
-        net.minecraft.server.packs.resources.ResourceProvider instancedProvider =
-            com.hbm_m.client.render.shader.modification.ShaderPreDefinitions.wrapRedirect(
-                hbmCoreShaderProvider, virtualInstancedVsh, realVsh, instancingDefine);
-
-        net.minecraft.server.packs.resources.ResourceProvider slicedProvider =
-            com.hbm_m.client.render.shader.modification.ShaderPreDefinitions.wrapRedirect(
-                hbmCoreShaderProvider, virtualSlicedVsh, realVsh, slicedDefine);
-
-        net.minecraft.server.packs.resources.ResourceProvider instancedSlicedProvider =
-            com.hbm_m.client.render.shader.modification.ShaderPreDefinitions.wrapRedirect(
-                hbmCoreShaderProvider, virtualInstancedSlicedVsh, realVsh, instancedSlicedDefine);
-
-        try {
-            ShaderInstance simpleShader = new ShaderInstance(
-                hbmCoreShaderProvider,
-                "block_lit_simple",
-                blockLitSimpleFormat
-            );
-            ModShaders.setBlockLitSimpleShader(simpleShader);
-            MainRegistry.LOGGER.info("Successfully registered block_lit_simple shader (Fabric)");
-
-            ShaderInstance instancedShader = new ShaderInstance(
-                instancedProvider,
-                "block_lit_instanced",
-                blockLitInstancedFormat
-            );
-            ModShaders.setBlockLitInstancedShader(instancedShader);
-            MainRegistry.LOGGER.info("Successfully registered block_lit_instanced shader (Fabric)");
-
-            ShaderInstance slicedShader = new ShaderInstance(
-                slicedProvider,
-                "block_lit_simple_sliced",
-                blockLitSimpleFormat
-            );
-            ModShaders.setBlockLitSimpleSlicedShader(slicedShader);
-            MainRegistry.LOGGER.info("Successfully registered block_lit_simple_sliced shader (Fabric)");
-
-            ShaderInstance instancedSlicedShader = new ShaderInstance(
-                instancedSlicedProvider,
-                "block_lit_instanced_sliced",
-                blockLitInstancedSlicedFormat
-            );
-            ModShaders.setBlockLitInstancedSlicedShader(instancedSlicedShader);
-            MainRegistry.LOGGER.info("Successfully registered block_lit_instanced_sliced shader (Fabric)");
-
-            fabricShadersLoaded = true;
-        } catch (IOException e) {
-            MainRegistry.LOGGER.error("Failed to register shaders on Fabric", e);
-        }
-    }
-    *///?}
-
-    //? if forge || neoforge {
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         MainRegistry.LOGGER.info("FMLClientSetupEvent fired. Initializing client.");
@@ -485,6 +305,22 @@ public class ClientSetup {
         event.enqueueWork(ClientSetup::registerRadAbsorberItemProperties);
         event.enqueueWork(ClientSetup::registerRenderLayers);
     }
+
+    // Регистрация биндов: RegisterKeyMappingsEvent стреляет РАНЬШЕ FMLClientSetupEvent
+    // (на Forge 1.20.1 — уже до него, на NeoForge 1.21.1 — во время Minecraft construction),
+    // поэтому бинды нельзя регистрировать из initClient()/Architectury KeyMappingRegistry —
+    // они «регистрируются после события», не попадают в таблицу ввода и не видны в настройках.
+    //? if forge {
+    @net.minecraftforge.eventbus.api.SubscribeEvent
+    public static void onRegisterKeyMappings(net.minecraftforge.client.event.RegisterKeyMappingsEvent event) {
+        ModConfigKeybindHandler.registerAll(event::register);
+    }
+    //?} elif neoforge {
+    /*@SubscribeEvent
+    public static void onRegisterKeyMappings(net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent event) {
+        ModConfigKeybindHandler.registerAll(event::register);
+    }
+    *///?}
 
     //? if neoforge {
     /*/// NeoForge 1.21.1+: RegisterMenuScreensEvent стреляет во время Minecraft construction,
@@ -527,7 +363,6 @@ public class ClientSetup {
                 (stack, level, entity, seed) -> BlockAbsorberItem.readTier(stack).ordinal()
         );
     }
-    //?}
 
     private static void registerScreens() {
         MenuRegistry.registerScreenFactory(ModMenuTypes.CRYSTALLIZER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCrystallizer::new);
@@ -599,7 +434,6 @@ public class ClientSetup {
     private static void registerRenderersCommon() {
         // Forge + NeoForge используют один и тот же vanilla API (EntityRenderers.register /
         // BlockEntityRenderers.register) — тело идентично, только imports пакетов различаются.
-        //? if forge || neoforge {
         ModEntities.SOYUZ.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.SoyuzEntityRenderer::new));
         ModEntities.SOYUZ_CAPSULE.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.SoyuzCapsuleEntityRenderer::new));
         ModEntities.ZIRNOX_DEBRIS.ifPresent(entityType -> EntityRenderers.register(entityType, ZirnoxDebrisRenderer::new));
@@ -710,190 +544,14 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.RBMK_CRANE_CONSOLE_BE.get(), RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_PANEL_BE.get(),         RBMKColumnRenderer::new);
         // Steam inlet/outlet are floor blocks (not columns) — rendered via MODEL + JSON
-        //?}
-
-        //? if fabric {
-        /*ModEntities.TURRET_BULLET.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
-        ModEntities.TURRET_ROCKET.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
-        ModEntities.GRENADE_NUC_PROJECTILE.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
-        ModEntities.GRENADE_IF_FIRE_PROJECTILE.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
-        ModEntities.GRENADE_IF_SLIME_PROJECTILE.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
-        ModEntities.GRENADE_IF_HE_PROJECTILE.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
-        ModEntities.GRENADE_PROJECTILE.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
-        ModEntities.GRENADEHE_PROJECTILE.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
-        ModEntities.GRENADEFIRE_PROJECTILE.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
-        ModEntities.GRENADESMART_PROJECTILE.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
-        ModEntities.GRENADESLIME_PROJECTILE.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
-        ModEntities.GRENADE_IF_PROJECTILE.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
-        ModEntities.MISSILE_TEST.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_ABM.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_MICRO.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_SCHRABIDIUM.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_BHOLE.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_TAINT.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_EMP.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_GENERIC.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_INCENDIARY.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_CLUSTER.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_BUSTER.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_DECOY.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_STEALTH.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_STRONG.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_INCENDIARY_STRONG.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_CLUSTER_STRONG.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_BUSTER_STRONG.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_EMP_STRONG.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_BURST.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_INFERNO.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_RAIN.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_DRILL.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_SHUTTLE.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_NUCLEAR.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_NUCLEAR_CLUSTER.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_VOLCANO.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_DOOMSDAY.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.MISSILE_DOOMSDAY_RUSTED.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, MissileEntityRenderer::new));
-        ModEntities.CLUSTER_ROCKET.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, com.hbm_m.client.render.projectile.ClusterRocketEntityRenderer::new));
-        ModEntities.EMP_PULSE.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, EmptyEntityRenderer::new));
-        ModEntities.BLACK_HOLE.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, RenderBlackHole::new));
-        ModEntities.VORTEX.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, RenderBlackHole::new));
-        ModEntities.RAGING_VORTEX.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, RenderBlackHole::new));
-        ModEntities.DIGAMMA_QUASAR.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, RenderQuasar::new));
-        ModEntities.RUBBLE.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, RubbleEntityRenderer::new));
-        ModEntities.NOLO.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, NoloEntityRenderer::new));
-        ModEntities.ENTITY_MOB_TAINTED_CREEPER.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, RenderCreeperUniversal::tainted));
-        ModEntities.ENTITY_MOB_VOLATILE_CREEPER.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, RenderCreeperUniversal::volatileCreeper));
-        ModEntities.ENTITY_MOB_PHOSGENE_CREEPER.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, RenderCreeperUniversal::phosgene));
-        ModEntities.ENTITY_MIST.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, EmptyEntityRenderer::new));
-        ModEntities.ENTITY_MOB_GOLD_CREEPER.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, RenderCreeperUniversal::goldCreeper));
-        ModEntities.ENTITY_MOB_NUCLEAR_CREEPER.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, RenderCreeperUniversal::nuclear));
-
-        // Airstrike + авиационные бомбы (иначе на Fabric entityRenderer == null → краш при рендере)
-        ModEntities.AIRNUKEBOMB_PROJECTILE.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, AirNukeBombProjectileEntityRenderer::new));
-        ModEntities.AIRBOMB_PROJECTILE.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, AirBombProjectileEntityRenderer::new));
-        ModEntities.AIRSTRIKE_NUKE_ENTITY.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, AirstrikeNukeEntityRenderer::new));
-        ModEntities.AIRSTRIKE_ENTITY.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, AirstrikeEntityRenderer::new));
-        ModEntities.AIRSTRIKE_AGENT_ENTITY.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, ctx -> new EmptyEntityRenderer<>(ctx)));
-
-        ModEntities.NUKE_FALLOUT_RAIN.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, RenderFallout::new));
-        ModEntities.NUKE_MK3.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, ctx -> new EmptyEntityRenderer<>(ctx)));
-        ModEntities.CLOUD_FLEIJA.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, RenderCloudFleija::new));
-        ModEntities.NUKE_MK5.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, ctx -> new EmptyEntityRenderer<>(ctx)));
-        ModEntities.FALLING_SELLAFIT_ENTITY_TYPE.ifPresent(entityType ->
-                EntityRendererRegistry.register(entityType, FallingBlockRenderer::new));
-
-        register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
-        register(ModBlockEntities.MACHINE_ASSEMBLER_BE.get(), MachineAssemblerRenderer::new);
-        register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
-        register(ModBlockEntities.PRESS_BE.get(), MachinePressRenderer::new);
-        register(ModBlockEntities.CHEMICAL_PLANT_BE.get(), MachineChemicalPlantRenderer::new);
-        register(ModBlockEntities.HYDRAULIC_FRACKINING_TOWER_BE.get(), MachineHydraulicFrackiningTowerRenderer::new);
-        register(ModBlockEntities.CRYSTALLIZER.get(), MachineCrystallizerRenderer::new);
-        register(ModBlockEntities.HEATING_OVEN_BE.get(), HeatingOvenRenderer::new);
-        register(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), IndustrialTurbineRenderer::new);
-        register(ModBlockEntities.BATTERY_SOCKET_BE.get(), BatterySocketCreativeRenderer::new);
-        register(ModBlockEntities.COOLING_TOWER_BE.get(), MachineCoolingTowerRenderer::new);
-        register(ModBlockEntities.GAS_CENTRIFUGE_BE.get(), GasCentrifugeRenderer::new);
-        register(ModBlockEntities.MINING_DRILL_BE.get(), com.hbm_m.client.render.implementations.MachineMiningDrillRenderer::new);
-        register(ModBlockEntities.ORE_SLOPPER_BE.get(), com.hbm_m.client.render.implementations.MachineOreSlopperRenderer::new);
-        register(ModBlockEntities.ARC_FURNACE_BE.get(), com.hbm_m.client.render.implementations.MachineArcFurnaceRenderer::new);
-        register(ModBlockEntities.TURRET_SENTRY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
-        register(ModBlockEntities.TURRET_CHEKHOV_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
-        register(ModBlockEntities.TURRET_FRIENDLY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
-        register(ModBlockEntities.TURRET_JEREMY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
-        register(ModBlockEntities.TURRET_TAUON_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
-        register(ModBlockEntities.TURRET_RICHARD_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
-        register(ModBlockEntities.TURRET_HOWARD_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
-        register(ModBlockEntities.TURRET_MAXWELL_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
-        register(ModBlockEntities.TURRET_FRITZ_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
-        register(ModBlockEntities.TURRET_ARTY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
-        register(ModBlockEntities.TURRET_HIMARS_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
-        register(ModBlockEntities.RADAR_BE.get(), MachineRadarRenderer::new);
-        register(ModBlockEntities.RADAR_SCREEN_BE.get(), com.hbm_m.client.render.implementations.MachineRadarScreenRenderer::new);
-        register(ModBlockEntities.LAUNCH_PAD_BE.get(), LaunchPadMissileRenderer::new);
-        register(ModBlockEntities.LAUNCH_PAD_RUSTED_BE.get(), LaunchPadMissileRenderer::new);
-        register(ModBlockEntities.CRUCIBLE_BE.get(), CrucibleRenderer::new);
-        register(ModBlockEntities.FOUNDRY_BASIN_BE.get(), com.hbm_m.client.render.implementations.FoundryBasinRenderer::new);
-        register(ModBlockEntities.FOUNDRY_CHANNEL_BE.get(), com.hbm_m.client.render.implementations.FoundryChannelRenderer::new);
-        register(ModBlockEntities.FLUID_TANK_BE.get(), MachineFluidTankRenderer::new);
-        *///?}
     }
 
     private static void registerParticlesCommon() {
-//        Particles registered via Forge event below.
+        //Particles registered via Forge event below.
         //? if forge {
 
         //?}
 
-        //? if fabric {
-        /*ParticleFactoryRegistry.getInstance().register(ModParticleTypes.TOWNAURA.get(), TownauraParticle.Provider::new);
-        ParticleFactoryRegistry.getInstance().register(ModParticleTypes.SCHRABFOG.get(), SchrabfogParticle.Provider::new);
-        ParticleFactoryRegistry.getInstance().register(ModParticleTypes.RAD_FOG_PARTICLE.get(), RadFogParticle.Provider::new);
-        ParticleFactoryRegistry.getInstance().register(ModParticleTypes.MISSILE_CONTRAIL.get(), MissileContrailParticle.Provider::new);
-        *///?}
     }
 
     private static void registerColorsCommon() {
@@ -902,72 +560,11 @@ public class ClientSetup {
 
         //?}
 
-        //? if fabric {
-        /*ColorProviderRegistry.ITEM.register((stack, tintIndex) -> {
-            if (tintIndex == 0) return 0xFFFFFF;
-            return com.hbm_m.item.liquids.FluidIdentifierItem.getTintColor(stack);
-        }, ModItems.FLUID_IDENTIFIER.get());
-        ColorProviderRegistry.ITEM.register((stack, tintIndex) -> {
-            if (tintIndex == 0) return 0xFFFFFF;
-            return com.hbm_m.item.liquids.FluidBarrelItem.getTintColor(stack);
-        }, ModItems.FLUID_BARREL.get());
-        ColorProviderRegistry.ITEM.register((stack, tintIndex) -> {
-            if (tintIndex == 0) return 0xFFFFFF;
-            return com.hbm_m.item.liquids.FluidDuctItem.getTintColor(stack);
-        }, ModItems.FLUID_DUCT.get(), ModItems.FLUID_DUCT_COLORED.get(), ModItems.FLUID_DUCT_SILVER.get());
-        ColorProviderRegistry.ITEM.register((stack, tintIndex) -> {
-            if (stack.getItem() instanceof com.hbm_m.item.MineralPipeItem pipe) {
-                return pipe.getTintColor();
-            }
-            return 0xFFFFFF;
-        }, ModItems.PIPE_IRON.get(), ModItems.PIPE_COPPER.get(), ModItems.PIPE_GOLD.get(),
-           ModItems.PIPE_LEAD.get(), ModItems.PIPE_STEEL.get(), ModItems.PIPE_TUNGSTEN.get(),
-           ModItems.PIPE_TITANIUM.get(), ModItems.PIPE_ALUMINUM.get(), ModItems.PIPE_DURA_STEEL.get());
-
-        ColorProviderRegistry.BLOCK.register((state, level, pos, tintIndex) -> {
-            if (tintIndex == 0) return 0xFFFFFF;
-            if (tintIndex != 1 || level == null || pos == null) return 0xFFFFFF;
-            var be = level.getBlockEntity(pos);
-            if (be instanceof com.hbm_m.blockentity.machines.FluidDuctBlockEntity ductBe) {
-                var fluid = ductBe.getFluidType();
-                if (fluid != net.minecraft.world.level.material.Fluids.EMPTY) {
-                    return com.hbm_m.api.fluids.HbmFluidRegistry.getTintColor(fluid);
-                }
-            }
-            return 0xFFFFFF;
-        }, com.hbm_m.block.ModBlocks.FLUID_DUCT.get(),
-                com.hbm_m.block.ModBlocks.FLUID_DUCT_COLORED.get(),
-                com.hbm_m.block.ModBlocks.FLUID_DUCT_SILVER.get());
-        *///?}
+        
     }
 
     private static void registerReloadListenersCommon() {
-        //? if fabric {
-        /*// Критично: без вызова registerFabricShaders на Fabric не выполнялся loadFabricShaders — instanced shader == null,
-        // flushBatchVanilla молча сбрасывал батч (машины пропадали), renderSingle уходил в putBulkData с WARN на каждый quad.
-        registerFabricRenderLayers();
-        registerFabricShaders();
-        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(
-                new com.hbm_m.client.reload.IdentifiableReloadListenerAdapter(
-                        new ResourceLocation(RefStrings.MODID, "shader_reload_listener"),
-                        new ShaderReloadListener()));
-        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(
-                new com.hbm_m.client.reload.IdentifiableReloadListenerAdapter(
-                        new ResourceLocation(RefStrings.MODID, "thermal_handler_reload_listener"),
-                        HbmThermalHandler.INSTANCE));
-        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(
-                new com.hbm_m.client.reload.IdentifiableReloadListenerAdapter(
-                        new ResourceLocation(RefStrings.MODID, "door_model_registry_reload_listener"),
-                        com.hbm_m.client.model.variant.DoorModelRegistry.getInstance()));
-        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(
-                new com.hbm_m.client.reload.IdentifiableReloadListenerAdapter(
-                        new ResourceLocation(RefStrings.MODID, "deferred_cache_cleanup_reload_listener"),
-                        new com.hbm_m.client.reload.DeferredCacheCleanupReloadListener()));
-        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(
-                new com.hbm_m.client.reload.IdentifiableReloadListenerAdapter(
-                        new ResourceLocation(RefStrings.MODID, "dae_model_reload_listener"),
-                        new com.hbm_m.client.loader.dae.DaeModelReloader()));
-        *///?}
+        
     }
 
     private static void registerHudCommon() {
@@ -976,27 +573,12 @@ public class ClientSetup {
 
         //?}
 
-        //? if fabric {
-        /*HudRenderCallback.EVENT.register((gfx, tickDelta) -> {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc == null || mc.getWindow() == null) return;
-            int w = mc.getWindow().getGuiScaledWidth();
-            int h = mc.getWindow().getGuiScaledHeight();
-
-            OverlayGeiger.render(gfx, tickDelta, w, h);
-            OverlayPowerArmor.render(gfx, tickDelta, w, h);
-            OverlayRadiationVisuals.render(gfx, tickDelta, w, h);
-            OverlayInfoToast.render(gfx, tickDelta, w, h);
-            com.hbm_m.client.overlay.BlockLookOverlayHud.render(gfx);
-        });
-        *///?}
+    
     }
 
     private static void registerWorldRenderHooksCommon() {
         // Forge: ClientModEvents.onRenderLevelStage(AFTER_BLOCK_ENTITIES)
-        //? if fabric {
-        /*ClientRenderHandlerFabric.register();
-        *///?}
+
     }
 
     private static void registerDisconnectHandlerCommon() {
@@ -1005,9 +587,7 @@ public class ClientSetup {
 
         //?}
 
-        //? if fabric {
-        /*ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> clearClientCachesDeferred());
-        *///?}
+        
     }
 
     private static void clearClientCachesDeferred() {
@@ -1026,6 +606,7 @@ public class ClientSetup {
             MachineChemicalPlantRenderer.clearCaches();
             MachineCrystallizerRenderer.clearCaches();
             MachineRadarRenderer.clearCaches();
+            MachineFluidTankRenderer.clearCaches();
             MeshRenderCache.clearAll();
             com.hbm_m.client.render.MdiGeometryAtlas.resetForResourceLifecycle();
             AbstractObjArmorLayer.clearAllCaches();
@@ -1163,18 +744,19 @@ public class ClientSetup {
                     replacements.size());
         }
 
-        //? if forge {
+        // CT-обёртка деко-блоков работает и на forge, и на neoforge
+        // (ConnectedDecoBlockBakedModel имеет ветки под оба лоадера).
         wrapConnectedDecoCtTerrainModels(models);
-        
+
+        //? if forge {
         @SuppressWarnings("unchecked")
         Map<ResourceLocation, BakedModel> typedModels = (Map<ResourceLocation, BakedModel>) models;
         com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.installDisplayTransformGuards(typedModels);
         //?}
     }
 
-    //? if forge {
     /**
-     * Подменяет cube-модели деко-CT на {@link ConnectedDecoBlockBakedModel} (Forge ModelData + getQuads).
+     * Подменяет cube-модели деко-CT на {@link ConnectedDecoBlockBakedModel} (ModelData + getQuads).
      * Делается после снятия Continuity-обёртки, иначе CT не получает корректный пайплайн.
      */
     private static void wrapConnectedDecoCtTerrainModels(java.util.Map models) {
@@ -1202,7 +784,6 @@ public class ClientSetup {
             models.put(loc, new ConnectedDecoBlockBakedModel(baked, full, ct));
         }
     }
-    //?}
 
     @SubscribeEvent
     public static void onModelRegisterAdditional(ModelEvent.RegisterAdditional event) {
@@ -1486,7 +1067,6 @@ public class ClientSetup {
         });
     }
 
-    //? if forge || neoforge {
     public static void onClientDisconnect(
             //? if forge {
             net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingOut event
@@ -1496,24 +1076,7 @@ public class ClientSetup {
     ) {
         clearClientCachesDeferred();
     }
-    //?}
 
-    //? if forge || neoforge {
-    @SubscribeEvent
-    public static void onRegisterParticleProviders(
-            //? if forge {
-            net.minecraftforge.client.event.RegisterParticleProvidersEvent event
-            //?} elif neoforge {
-            /*net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent event
-            *///?}
-    ) {
-        // Связываем наш ТИП частицы с ее ФАБРИКОЙ.
-        event.registerSpriteSet(ModParticleTypes.TOWNAURA.get(), TownauraParticle.Provider::new);
-        event.registerSpriteSet(ModParticleTypes.SCHRABFOG.get(), SchrabfogParticle.Provider::new);
-        event.registerSpriteSet(ModParticleTypes.RAD_FOG_PARTICLE.get(), RadFogParticle.Provider::new);
-        MainRegistry.LOGGER.info("Registered custom particle providers.");
-    }
-    //?}
 
     //? if forge {
     @SubscribeEvent

@@ -334,7 +334,23 @@ public class ModPacketHandler {
                     buf.readableBytes()
             );
         }
-        NetworkManager.sendToPlayer(player, id, buf);
+        // Защита S2C-отправки для «неполноценных» соединений (напр. Flashback ReplayServer):
+        // ReplayServer создаёт игрока через placeNewPlayer без полноценного config-handshake,
+        // поэтому NeoForge NetworkRegistry.checkPacket бросает UnsupportedOperationException
+        // для кастомных пэйлоадов, не прошедших negotiation (config_sync на join,
+        // chunk_rad_debug_batch на тике и т.д.). В обычной игре исключение никогда не срабатывает.
+        try {
+            NetworkManager.sendToPlayer(player, id, buf);
+        } catch (UnsupportedOperationException e) {
+            if (NET_DEBUG_PACKETS) {
+                com.hbm_m.main.MainRegistry.LOGGER.info(
+                        "[NET-DBG] S2C dropped for {} id={}: {}",
+                        player.getGameProfile().getName(),
+                        id,
+                        e.getMessage()
+                );
+            }
+        }
     }
 
     /**

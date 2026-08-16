@@ -22,7 +22,7 @@ import net.minecraft.world.phys.AABB;
  * clip runs exactly 24 seconds, i.e. 480 ticks, with the frame ring spaced around the
  * core.
  */
-public class TransitionSealBlockEntity extends BlockEntity {
+public class TransitionSealBlockEntity extends BlockEntity implements com.hbm_m.api.render.RenderBoundsProvider {
 
     /** The transition_seal.dae clip is exactly 24 seconds long (577 LINEAR keyframes at 1/24 s). */
     public static final float DURATION_TICKS = 24F * 20F;

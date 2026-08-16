@@ -119,7 +119,7 @@ dependencies {
 	}
 	"modCompileOnly"("dev.engine-room.flywheel:flywheel-forge-api-1.20.1:${prop("deps.flywheel")}")
 	"modRuntimeOnly"("curse.maven:embeddium-908741:5681725")
-	// "modRuntimeOnly"("curse.maven:oculus-581495:6020952")
+	"modRuntimeOnly"("curse.maven:oculus-581495:6020952")
 	"modRuntimeOnly"("curse.maven:modernfix-790626:7515215")
 	"modRuntimeOnly"("curse.maven:smooth-boot-reloaded-633412:5016280")
 	

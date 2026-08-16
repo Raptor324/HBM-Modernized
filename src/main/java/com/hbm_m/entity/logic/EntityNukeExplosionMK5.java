@@ -69,7 +69,12 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
         if (this.length <= 0) {
             return super.getChunkLoadRadius();
         }
-        return Math.min(12, Math.max(super.getChunkLoadRadius(), (this.length + 15) >> 4) + 1);
+        // Тикет должен покрывать кратер, НО уровень тикета = 33 - radius, и отрицательные
+        // уровни системой тикетов не поддерживаются (ванильный FORCED использует максимум 31):
+        // при радиусе >33 внешнее кольцо области вообще не догружается (замерено: 128 чанков
+        // висели незагруженными вечно). Поэтому кап 31, а недостающие внешние чанки
+        // NukeMk5ChunkEater догружает сам точечными тикетами радиуса 2 (уровень 31 = FULL).
+        return Math.max(super.getChunkLoadRadius(), Math.min(31, ((this.length + 15) >> 4) + 3));
     }
 
     //? if < 1.21.1 {
@@ -114,16 +119,32 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
         // лениво инициализируем лучевой движок
         if (explosion == null) {
             explosionStart = System.currentTimeMillis();
+            MainRegistry.LOGGER.info("[NUKE MK5] Explosion entity started: algorithm={}, strength={}, speed={}, length={} at ({},{},{})",
+                    ModClothConfig.get().explosionAlgorithm, strength, speed, length,
+                    (int) getX(), (int) getY(), (int) getZ());
             if (destroyTerrain) {
-                explosion = new NukeMk5ChunkEater(
-                        level(),
-                        (int) getX(),
-                        (int) getY(),
-                        (int) getZ(),
-                        strength,
-                        speed,
-                        length
-                );
+                // 6.06_explosionAlgorithm: 0 = Legacy (Batched, однопоточный),
+                // 1 = Threaded DDA, 2 = Threaded DDA с накоплением урона.
+                // В оригинале 1.7.10 ветка 1/2 (ExplosionNukeRayParallelized) была закомментирована
+                // и конфиг фактически не работал — здесь подключён по назначению.
+                int algorithm = ModClothConfig.get().explosionAlgorithm;
+                if ((algorithm == 1 || algorithm == 2) && level() instanceof ServerLevel server) {
+                    explosion = new com.hbm_m.explosion.ExplosionNukeRayParallelized(
+                            server,
+                            getX(), getY(), getZ(),
+                            strength, speed, length
+                    );
+                } else {
+                    explosion = new NukeMk5ChunkEater(
+                            level(),
+                            (int) getX(),
+                            (int) getY(),
+                            (int) getZ(),
+                            strength,
+                            speed,
+                            length
+                    );
+                }
             } else {
                 explosion = NoOpExplosionRay.INSTANCE;
             }
@@ -135,7 +156,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
             explosion.cacheChunksTick(timeBudgetMs);
             explosion.destructionTick(timeBudgetMs);
         } else {
-            if (ModClothConfig.get().enableDebugLogging && explosionStart != 0) {
+            if (explosionStart != 0) {
                 MainRegistry.LOGGER.info("[NUKE MK5] Explosion complete. Time elapsed: {}ms",
                         (System.currentTimeMillis() - explosionStart));
             }

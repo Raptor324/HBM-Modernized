@@ -10,7 +10,7 @@ import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-//?} else if neoforge {
+//?} elif neoforge {
 /*import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.EventPriority;
@@ -22,20 +22,12 @@ import net.neoforged.neoforge.client.event.RenderLivingEvent;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Скрывает рендер «мёртвых» сущностей на клиенте, чтобы эффект скелетонизации
- * (ParticleSkeletonNT) не дублировался с нормальным рендером трупа.
- *
- * Порт {@code ClientProxy.vanish/isVanished} из HBM 1.7.10.
- *
- * Сущность помечается "vanished" на 2 секунды по умолчанию
- * (этого хватает, пока сервер не удалит мёртвую сущность из списка трекинга).
- */
-@OnlyIn(Dist.CLIENT)
 //? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
-//?} else if neoforge {
-/*@EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
+//?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+@EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.GAME)
 *///?}
 public class ClientVanishHandler {
 

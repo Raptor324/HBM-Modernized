@@ -59,7 +59,7 @@ import net.minecraftforge.client.model.data.ModelData;
 *///?} elif neoforge {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
-public class MachineCrystallizerRenderer implements BlockEntityRenderer<MachineCrystallizerBlockEntity> {
+public class MachineCrystallizerRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineCrystallizerBlockEntity> {
 
     private static final RandomSource RANDOM = RandomSource.create(42L);
     private static final float DEG_TO_RAD = (float) (Math.PI / 180.0);

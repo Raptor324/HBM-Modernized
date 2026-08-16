@@ -61,6 +61,10 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
 //?}
+//? if neoforge {
+/*import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.client.model.data.ModelProperty;
+*///?}
 
 @SuppressWarnings("UnstableApiUsage")
 public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProvider, IMultiblockSidedIO, IFluidStandardTransceiverMK2
@@ -116,7 +120,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     /** Набор из tuple fluidSideMap символа контроллера при постройке мультиблока. */
     private boolean fluidSidesFromMultiblockStructure = false;
 
-    //? if forge {
+    //? if forge || neoforge {
     public static final ModelProperty<ResourceLocation> FLUID_TEXTURE_PROPERTY = new ModelProperty<>();
     //?}
 
@@ -178,7 +182,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         //?}
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public void onLoad() {
         super.onLoad();
@@ -417,6 +421,22 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     }
     //?}
 
+    //? if neoforge {
+    /*// NeoForge 1.21.1: сигнатура onDataPacket — 3 аргумента (с HolderLookup.Provider).
+    @Override
+    public void onDataPacket(net.minecraft.network.Connection net, net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket pkt, net.minecraft.core.HolderLookup.Provider registries) {
+        final boolean clientNeo = level != null && level.isClientSide;
+        final ResourceLocation prevTankTextureNeo = clientNeo ? getTankTextureLocation() : null;
+
+        super.onDataPacket(net, pkt, registries);
+
+        if (clientNeo && prevTankTextureNeo != null && !prevTankTextureNeo.equals(getTankTextureLocation())) {
+            requestModelDataUpdate();
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
+        }
+    }
+    *///?}
+
     public void handleUpdateTag(CompoundTag tag) {
         //? if < 1.21.1 {
         load(tag);
@@ -427,7 +447,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         loadAdditional(tag, this.level.registryAccess());
         *///?}
         if (level != null && level.isClientSide) {
-            //? if forge {
+            //? if forge || neoforge {
             requestModelDataUpdate();
             //?}
             // На Forge для корректной перерисовки нужен UPDATE_CLIENTS (иначе baked model может не обновиться).
@@ -526,7 +546,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public @NotNull ModelData getModelData() {
         return ModelData.builder()
@@ -659,7 +679,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             fluidSidesFromMultiblockStructure = tag.getBoolean("FluidSidesFromMbStructure");
         }
 
-        //? if forge {
+        //? if forge || neoforge {
         if (clientForge && prevTankTextureForge != null && !prevTankTextureForge.equals(getTankTextureLocation())) {
             requestModelDataUpdate();
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
@@ -679,7 +699,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         final boolean clientFabric = level != null && level.isClientSide;
         final ResourceLocation prevTankTexture = clientFabric ? getTankTextureLocation() : null;
         ^///?}
-        //? if forge {
+        //? if forge || neoforge {
         final boolean clientForge = level != null && level.isClientSide;
         final ResourceLocation prevTankTextureForge = clientForge ? getTankTextureLocation() : null;
         //?}
@@ -711,7 +731,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             fluidSidesFromMultiblockStructure = tag.getBoolean("FluidSidesFromMbStructure");
         }
 
-        //? if forge {
+        //? if forge || neoforge {
         if (clientForge && prevTankTextureForge != null && !prevTankTextureForge.equals(getTankTextureLocation())) {
             requestModelDataUpdate();
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);

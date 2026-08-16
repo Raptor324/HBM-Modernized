@@ -37,7 +37,7 @@ import net.minecraft.world.phys.AABB;
 // Forge-only model-data / distmarker imports intentionally removed for Fabric compilation.
 
 
-public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
+public class DoorBlockEntity extends BlockEntity implements IMultiblockPart, com.hbm_m.api.render.RenderBoundsProvider
     //? if fabric {
     /*, net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity
     *///?}

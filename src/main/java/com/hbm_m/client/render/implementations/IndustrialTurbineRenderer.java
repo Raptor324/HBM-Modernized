@@ -20,7 +20,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 *///?} elif neoforge {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
-public class IndustrialTurbineRenderer implements BlockEntityRenderer<MachineIndustrialTurbineBlockEntity> {
+public class IndustrialTurbineRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineIndustrialTurbineBlockEntity> {
 
     public IndustrialTurbineRenderer(BlockEntityRendererProvider.Context context) {
     }

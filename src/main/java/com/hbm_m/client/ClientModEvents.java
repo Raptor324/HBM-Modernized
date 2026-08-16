@@ -165,6 +165,7 @@ public class ClientModEvents {
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SKY) {
             MissileTrackClient.beginRenderFrame();
+            logShadowBerDiagnostics();
         }
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
@@ -205,4 +206,25 @@ public class ClientModEvents {
      * на {@code AFTER_BLOCK_ENTITIES}. {@code RenderTickEvent.END} / отложенный flush → белые модели.
      */
     //?}
+
+    // ── Диагностика shadow pass (1.21.1: машины не отбрасывают теней) ──
+    /** Предыдущее значение счётчика; логируем только первое значение и смены 0↔N. */
+    private static int lastLoggedShadowBerCount = -2;
+
+    private static void logShadowBerDiagnostics() {
+        if (!ShaderCompatibilityDetector.isExternalShaderActive()) {
+            return;
+        }
+        int count = com.hbm_m.client.render.AbstractPartBasedRenderer.drainShadowBerInvocations();
+        boolean zero = count == 0;
+        boolean wasZero = lastLoggedShadowBerCount == 0;
+        if (lastLoggedShadowBerCount == -2 || zero != wasZero) {
+            com.hbm_m.main.MainRegistry.LOGGER.info(
+                    "[HBM] Iris shadow pass: {} block-entity renderer invocations last frame{}",
+                    count,
+                    zero ? " — BERs are NOT called in the shadow pass (empty shadow BE list / terrain-mod interop), shadows impossible"
+                         : " — shadow draw path active");
+            lastLoggedShadowBerCount = count;
+        }
+    }
 }

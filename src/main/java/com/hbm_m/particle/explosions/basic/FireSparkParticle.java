@@ -14,7 +14,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * 🔥 ОГНЕННАЯ ИСКРА
+ * ОГНЕННАЯ ИСКРА
  *
  * Оранжевые искры с физикой падения, которые:
  * - Поджигают мобов на 10 секунд при контакте
@@ -63,10 +63,7 @@ public class FireSparkParticle extends AbstractExplosionParticle {
             return;
         }
 
-        // ════════════════════════════════════════════════════════════════
-        // 🔥 ПОДЖОГ МОБОВ И БЛОКОВ
-        // ════════════════════════════════════════════════════════════════
-
+        // ПОДЖОГ МОБОВ И БЛОКОВ
         if (igniteCheckCooldown > 0) {
             igniteCheckCooldown--;
         } else {
@@ -74,10 +71,8 @@ public class FireSparkParticle extends AbstractExplosionParticle {
             igniteCheckCooldown = 3; // Проверяем каждые 3 тика
         }
 
-        // ════════════════════════════════════════════════════════════════
-        //  ФИЗИКА
-        // ════════════════════════════════════════════════════════════════
 
+        //  ФИЗИКА
         this.yd -= this.gravity;
 
         // Сохраняем старую позицию для определения направления
@@ -105,9 +100,9 @@ public class FireSparkParticle extends AbstractExplosionParticle {
         this.quadSize *= 0.98F;
     }
 
-    /**
-     * 🔥 ПОДЖОГ МОБОВ В РАДИУСЕ
-     */
+
+//   ПОДЖОГ МОБОВ В РАДИУСЕ
+
     private void igniteMobs() {
         Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.getSingleplayerServer() == null) return;
@@ -137,7 +132,7 @@ public class FireSparkParticle extends AbstractExplosionParticle {
     }
 
     /**
-     * 🔥 ПРОВЕРКА СТОЛКНОВЕНИЯ С БЛОКАМИ (для поджога)
+     *  ПРОВЕРКА СТОЛКНОВЕНИЯ С БЛОКАМИ (для поджога)
      *
      * Определяет сторону столкновения и ставит огонь
      */
@@ -147,21 +142,21 @@ public class FireSparkParticle extends AbstractExplosionParticle {
 
         //  Если попали в твёрдый блок
         if (!blockState.isAir() && blockState.isSolidRender(this.level, currentPos)) {
-            // 🔥 Определяем сторону столкновения
+            // Определяем сторону столкновения
             Direction hitSide = determineHitSide(oldX, oldY, oldZ, currentPos);
 
-            // 🔥 Пытаемся поджечь с этой стороны
+            //  Пытаемся поджечь с этой стороны
             if (hitSide != null) {
                 igniteBlockSide(currentPos, hitSide);
             }
 
-            // 💨 Исчезаем после столкновения
+            // Исчезаем после столкновения
             this.remove();
         }
     }
 
     /**
-     * 🧭 ОПРЕДЕЛИТЬ СТОРОНУ СТОЛКНОВЕНИЯ
+     * ОПРЕДЕЛИТЬ СТОРОНУ СТОЛКНОВЕНИЯ
      *
      * @param oldX, oldY, oldZ - старая позиция частицы
      * @param blockPos - позиция блока
@@ -189,7 +184,7 @@ public class FireSparkParticle extends AbstractExplosionParticle {
     }
 
     /**
-     * 🔥 ПОДЖЕЧЬ БЛОК С ОПРЕДЕЛЁННОЙ СТОРОНЫ
+     *  ПОДЖЕЧЬ БЛОК С ОПРЕДЕЛЁННОЙ СТОРОНЫ
      *
      * @param blockPos Позиция блока
      * @param side Сторона, с которой прилетела искра
@@ -207,20 +202,20 @@ public class FireSparkParticle extends AbstractExplosionParticle {
 
         //  Проверяем, можно ли поставить огонь
         if (serverLevel.isEmptyBlock(firePos) || serverLevel.getBlockState(firePos).canBeReplaced()) {
-            // 🔥 Проверяем, что под огнём есть блок (если ставим сверху)
+            //  Проверяем, что под огнём есть блок (если ставим сверху)
             if (side == Direction.UP) {
                 BlockState belowState = serverLevel.getBlockState(blockPos);
                 if (!belowState.isAir() && belowState.isSolidRender(serverLevel, blockPos)) {
                     server.execute(() -> {
                         serverLevel.setBlock(firePos, Blocks.FIRE.defaultBlockState(), 3);
-                        System.out.println("[FireSpark] 🔥 Огонь поставлен: " + firePos + " (сверху)");
+                        System.out.println("[FireSpark]  Огонь поставлен: " + firePos + " (сверху)");
                     });
                 }
             } else {
                 // Для других сторон просто ставим огонь
                 server.execute(() -> {
                     serverLevel.setBlock(firePos, Blocks.FIRE.defaultBlockState(), 3);
-                    System.out.println("[FireSpark] 🔥 Огонь поставлен: " + firePos + " (с " + side + ")");
+                    System.out.println("[FireSpark]  Огонь поставлен: " + firePos + " (с " + side + ")");
                 });
             }
         }

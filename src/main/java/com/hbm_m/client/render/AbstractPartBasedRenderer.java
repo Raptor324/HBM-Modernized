@@ -26,7 +26,7 @@ import net.minecraft.world.phys.AABB;
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
 public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends BakedModel>
-        implements BlockEntityRenderer<T> {
+        implements com.hbm_m.client.render.HbmBerBounds<T> {
 
     /**
      * Получает модель для рендеринга. По умолчанию - из blockstate.
@@ -71,7 +71,14 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
                        MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
         // Frustum cull FIRST for the main pass. Shadow pass uses light-space
         // bounds; the main-camera frustum here would drop off-screen casters.
-        if (!ShaderCompatibilityDetector.isRenderingShadowPass() && !isInViewFrustum(blockEntity)) {
+        if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
+            // ── Диагностика 1.21.1 (машины не отбрасывают теней под Iris):
+            // счётчик вызовов BER внутри теневого прохода; логируется из
+            // ClientModEvents (AFTER_SKY основного прохода). 0 вызовов =
+            // Iris вообще не зовёт BER в shadow (пустой список теневых BE,
+            // интероп terrain-мода) — тогда проблема не в нашем draw-пути.
+            SHADOW_BER_INVOCATIONS++;
+        } else if (!isInViewFrustum(blockEntity)) {
             return;
         }
 
@@ -107,6 +114,16 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
 
     protected final Minecraft getMinecraft() {
         return Minecraft.getInstance();
+    }
+
+    /** Диагностика shadow pass: вызовы BER с прошлого сброса. См. render(). */
+    private static int SHADOW_BER_INVOCATIONS = 0;
+
+    /** Читает и обнуляет счётчик вызовов BER в shadow pass (раз в кадр из AFTER_SKY). */
+    public static int drainShadowBerInvocations() {
+        int v = SHADOW_BER_INVOCATIONS;
+        SHADOW_BER_INVOCATIONS = 0;
+        return v;
     }
 
     protected boolean isInViewFrustum(T blockEntity) {

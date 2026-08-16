@@ -144,7 +144,8 @@ public class SkeletonCreator implements IParticleCreator {
         SKULLANIZER.put(EntityType.PLAYER, BONES_BIPED);
 
         SKULLANIZER.put(EntityType.ZOMBIE, BONES_ZOMBIE);
-        SKULLANIZER.put(EntityType.ZOMBIE_VILLAGER, BONES_ZOMBIE);
+        SKULLANIZER.put(EntityType.GIANT, BONES_ZOMBIE);
+        SKULLANIZER.put(EntityType.ZOMBIE_VILLAGER, BONES_VILLAGER);
         SKULLANIZER.put(EntityType.HUSK, BONES_ZOMBIE);
         SKULLANIZER.put(EntityType.DROWNED, BONES_ZOMBIE);
         SKULLANIZER.put(EntityType.SKELETON, BONES_ZOMBIE);
@@ -155,6 +156,10 @@ public class SkeletonCreator implements IParticleCreator {
         SKULLANIZER.put(EntityType.ZOMBIFIED_PIGLIN, BONES_ZOMBIE);
 
         SKULLANIZER.put(EntityType.VILLAGER, BONES_VILLAGER);
+        SKULLANIZER.put(EntityType.PILLAGER, BONES_VILLAGER);
+        SKULLANIZER.put(EntityType.EVOKER, BONES_VILLAGER);
+        SKULLANIZER.put(EntityType.ILLUSIONER, BONES_VILLAGER);
+        SKULLANIZER.put(EntityType.VINDICATOR, BONES_VILLAGER);
         SKULLANIZER.put(EntityType.WANDERING_TRADER, BONES_VILLAGER);
         SKULLANIZER.put(EntityType.WITCH, BONES_VILLAGER);
     }

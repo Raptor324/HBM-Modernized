@@ -1110,7 +1110,7 @@
   "damage.type.radiation": "Radiation",
   "death.attack.black_hole": "%1$s was spaghettified.",
   "death.attack.hardlanding_smash": "%1$s was flattened by %2$s",
-  "death.attack.radiation": "Player %s die from Digamma Poisoning",
+  "death.attack.radiation": "%s died from radiation poisoning",
   "death.attack.taint": "%1$s died from flux tumors.",
   "desc.gui.assembler.warning": "No valid template!",
   "desc.gui.gasCent.enrichment": "Enrichment",

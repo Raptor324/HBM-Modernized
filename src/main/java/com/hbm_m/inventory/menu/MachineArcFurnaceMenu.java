@@ -3,6 +3,7 @@ package com.hbm_m.inventory.menu;
 import com.hbm_m.blockentity.machines.MachineArcFurnaceBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -31,7 +32,11 @@ public class MachineArcFurnaceMenu extends AbstractContainerMenu {
         super(ModMenuTypes.ARC_FURNACE_MENU.get(), id);
         this.blockEntity = blockEntity;
 
-        var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
+        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
+        var container = new ModItemStackHandlerContainer(
+                blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOT_COUNT),
+                blockEntity != null ? blockEntity::setChanged : null);
 
         // Kompaktes Einzelblock-Layout (eigenes Design, das Original ist ein Multiblock mit
         // anderen Koordinaten - siehe Klassenkommentar in MachineArcFurnaceBlockEntity).
@@ -62,6 +67,11 @@ public class MachineArcFurnaceMenu extends AbstractContainerMenu {
         BlockEntity blockEntity = inventory.player.level().getBlockEntity(pos);
         if (blockEntity instanceof MachineArcFurnaceBlockEntity arcFurnace) {
             return arcFurnace;
+        }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inventory.player.level().isClientSide) {
+            return null;
         }
         throw new IllegalStateException("No MachineArcFurnaceBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":arc_furnace_menu");
     }

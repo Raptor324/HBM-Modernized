@@ -172,16 +172,29 @@ public class ShaderCompatibilityDetector {
         if (!initialized) init();
         if (irisApiInstance == null) return false;
         try {
+            boolean result;
             if (irisIsRenderingShadowPassMH != null) {
-                return (boolean) irisIsRenderingShadowPassMH.invokeExact((Object) irisApiInstance);
+                result = (boolean) irisIsRenderingShadowPassMH.invokeExact((Object) irisApiInstance);
+            } else if (irisIsRenderingShadowPass != null) {
+                Boolean boxed = (Boolean) irisIsRenderingShadowPass.invoke(irisApiInstance);
+                result = boxed != null && boxed;
+            } else {
+                return false;
             }
-            if (irisIsRenderingShadowPass == null) return false;
-            Boolean result = (Boolean) irisIsRenderingShadowPass.invoke(irisApiInstance);
-            return result != null && result;
+            // Диагностика 1.21.1 (тени не отбрасываются): подтверждаем, что
+            // shadow pass вообще детектится через IrisApi на этом лоадере.
+            if (result && !loggedShadowPassDetected) {
+                loggedShadowPassDetected = true;
+                MainRegistry.LOGGER.info(
+                        "ShaderCompatibilityDetector: Iris shadow pass detected (isRenderingShadowPass=true) — API works on this loader");
+            }
+            return result;
         } catch (Throwable e) {
             return false;
         }
     }
+
+    private static boolean loggedShadowPassDetected = false;
 
     /**
      * {@link net.minecraft.client.renderer.blockentity.BlockEntityRenderer#shouldRenderOffScreen}.

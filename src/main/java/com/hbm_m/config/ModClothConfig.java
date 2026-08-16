@@ -216,8 +216,8 @@ public class ModClothConfig {
     public int falloutDelay = 4;
     /** Включить принудительную прогрузку чанков взрывом (chunk ticket). Ориг. ключ: 6.05_enableChunkLoading = true */
     public boolean enableChunkLoading = true;
-    /** Алгоритм взрыва: 0 = Legacy, 1 = Threaded DDA, 2 = Threaded DDA с накоплением урона. Ориг. ключ: 6.06_explosionAlgorithm = 2 */
-    public int explosionAlgorithm = 2;
+    /** Алгоритм взрыва: 0 = Legacy (однопоточный), 1/2 = многопоточный движок с той же энергомоделью Legacy (идентичны). Ориг. ключ: 6.06_explosionAlgorithm (в 1.7.10 дефолт 2, но фактически всегда работал Legacy). */
+    public int explosionAlgorithm = 0;
     /** Лимит жизни невыгруженного взрыва в секундах; 0 = без лимита (ориг. BombConfig.limitExplosionLifespan, ключ 6.00). */
     public int limitExplosionLifespan = 0;
 

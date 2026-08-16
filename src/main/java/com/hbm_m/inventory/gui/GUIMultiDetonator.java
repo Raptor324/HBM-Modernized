@@ -193,7 +193,7 @@ public class GUIMultiDetonator extends Screen {
     @Override
     public void render(net.minecraft.client.gui.GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        com.hbm_m.client.GuiCompat.renderWidgetsOnly(this, guiGraphics, mouseX, mouseY, partialTick);
 
         int centerX = this.width / 2;
         int startY = 30;

@@ -44,6 +44,11 @@ public class MachineFelMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineFelBlockEntity felBlockEntity) {
             return felBlockEntity;
         }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inventory.player.level().isClientSide) {
+            return null;
+        }
         throw new IllegalStateException("No MachineFelBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":fel_menu");
     }
 

@@ -237,6 +237,13 @@ public final class EntityEffectHandler {
                 entity.getBlockZ()
         );
 
+        // Диагностика цепочки чанк→сущность (гейтится enableDebugLogging, раз в 5 сек на сущность)
+        if (ModClothConfig.get().enableDebugLogging && rad > 0F && entity.tickCount % 100 == 0) {
+            com.hbm_m.main.MainRegistry.LOGGER.debug(
+                    "[RadChain] {} at [{}, {}, {}] chunkRad={} → radEnv accumulation active",
+                    entity.getName().getString(), entity.getBlockX(), entity.getBlockY(), entity.getBlockZ(), rad);
+        }
+
         if (rad > 0F) {
             ContaminationUtil.contaminate(entity, HazardType.RADIATION, ContaminationType.CREATIVE, rad / 20F);
         }

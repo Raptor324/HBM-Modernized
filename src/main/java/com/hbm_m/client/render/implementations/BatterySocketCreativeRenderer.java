@@ -30,7 +30,7 @@ import net.minecraft.world.level.Level;
 *///?} elif neoforge {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
-public class BatterySocketCreativeRenderer implements BlockEntityRenderer<BatterySocketBlockEntity> {
+public class BatterySocketCreativeRenderer implements com.hbm_m.client.render.HbmBerBounds<BatterySocketBlockEntity> {
 
     private static final ResourceLocation MOD_SKIN =
             //? if fabric && < 1.21.1 {

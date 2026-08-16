@@ -88,7 +88,7 @@ dependencies {
 	implementation(libs.moulberry.mixinconstraints)
 	jarJar(libs.moulberry.mixinconstraints)
 
-	// Architectury API — implementation + jarJar (встраивается в итоговый jar, как на Forge/Fabric).
+	// Architectury API — implementation + jarJar (встраивается в итоговый jar, как на Forge).
 	implementation("dev.architectury:architectury-neoforge:${prop("deps.architectury")}")
 	jarJar("dev.architectury:architectury-neoforge:${prop("deps.architectury")}")
 
@@ -100,11 +100,101 @@ dependencies {
 	"compileOnly"("dev.engine-room.flywheel:flywheel-neoforge-api-$mcVer:${prop("deps.flywheel")}")
 	"compileOnly"("curse.maven:jei-238222:${prop("deps.jei")}")
 	"runtimeOnly"("curse.maven:jei-238222:${prop("deps.jei")}")
-
+	"runtimeOnly"("maven.modrinth:l6YH9Als:v5qtqRQi") // spark
+	
 }
 
 tasks.named("createMinecraftArtifacts") {
 	dependsOn(tasks.named("stonecutterGenerate"))
+}
+
+// 1.21+ переименовала папки дата-паков из множественного числа в единственное
+// (recipes → recipe, tags/blocks → tags/block и т.д.), ItemStack-кодек сменил
+// ключ "item" на "id" (у варочных рецептов result стал объектом вместо строки),
+// а конвенциональные теги Forge переехали из неймспейса forge: в c:.
+// Датаген — 1.20.1-only и пишет во всём старом формате, поэтому нормализуем
+// ресурсы на выходе processResources, не трогая датаген.
+tasks.named<ProcessResources>("processResources") {
+	doLast {
+		val dataDir = File(destinationDir, "data")
+		if (!dataDir.isDirectory) return@doLast
+
+		fun moveInto(source: File, target: File) {
+			target.mkdirs()
+			source.listFiles()!!.forEach { child ->
+				val dest = File(target, child.name)
+				if (dest.exists()) {
+					if (child.isDirectory) moveInto(child, dest) else child.delete()
+				} else {
+					child.renameTo(dest)
+				}
+			}
+			source.deleteRecursively()
+		}
+
+		// Переименование переименованных в 1.21 директорий (merge при коллизии).
+		val dirRenames = mapOf(
+			"recipes" to "recipe", "advancements" to "advancement",
+			"loot_tables" to "loot_table", "structures" to "structure",
+		)
+		val tagRenames = mapOf(
+			"blocks" to "block", "items" to "item", "entity_types" to "entity_type",
+			"fluids" to "fluid", "game_events" to "game_event",
+		)
+
+		dataDir.listFiles()!!.filter { it.isDirectory }.forEach { nsDir ->
+			// Теги forge: → c: (конвенциональные теги на NeoForge 1.21+ живут в c:).
+			if (nsDir.name == "forge") {
+				moveInto(nsDir, File(dataDir, "c"))
+			}
+			for ((old, new) in dirRenames) {
+				val plural = File(nsDir, old)
+				if (plural.isDirectory) moveInto(plural, File(nsDir, new))
+			}
+			val tags = File(nsDir, "tags")
+			if (tags.isDirectory) {
+				for ((old, new) in tagRenames) {
+					val plural = File(tags, old)
+					if (plural.isDirectory) moveInto(plural, File(tags, new))
+				}
+			}
+		}
+
+		// Нормализация ванильных рецептов (minecraft:*) в формат 1.21.x:
+		// "result": {"item": X} → {"id": X};  "result": "X" → {"id": X}.
+		// Кастомные рецепты (hbm_m:*) не трогаем — их нормализует RecipeHooks.
+		val recipeRoots = dataDir.listFiles()!!.mapNotNull { File(it, "recipe").takeIf(File::isDirectory) }
+		val slurper = groovy.json.JsonSlurper()
+		recipeRoots.forEach { root ->
+			root.walkTopDown().filter { it.isFile && it.extension == "json" }.forEach { file ->
+				val tree = slurper.parse(file) as? Map<*, *> ?: return@forEach
+				if ((tree["type"] as? String)?.startsWith("minecraft:") != true) return@forEach
+				val result = tree["result"]
+				val normalized: Any? = when (result) {
+					is String -> mapOf("id" to result)
+					is Map<*, *> ->
+						if (result.containsKey("item") && !result.containsKey("id"))
+							result.entries.associate { (k, v) -> if (k == "item") "id" to v else k to v }
+						else null
+					else -> null
+				}
+				if (normalized != null) {
+					val copy = tree.toMutableMap()
+					copy["result"] = normalized
+					file.writeText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(copy)))
+				}
+			}
+		}
+
+		// Ссылки на теги forge:* внутри рецептов → c:* (неймспейс переименован выше).
+		dataDir.resolve("hbm_m").resolve("recipe").walkTopDown()
+			.filter { it.isFile && it.extension == "json" }.forEach { file ->
+				val text = file.readText()
+				if (text.contains("\"forge:")) {
+					file.writeText(text.replace(Regex("\"(tag)\"\\s*:\\s*\"forge:"), "\"$1\": \"c:"))
+				}
+			}
+	}
 }
 
 sourceSets {

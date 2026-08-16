@@ -163,7 +163,7 @@ public class GUITemplateFolder extends Screen {
             guiGraphics.blit(TEXTURE, this.leftPos + 45, this.topPos + 211, 176, 54, 72, 12);
         }
 
-        super.render(guiGraphics, pMouseX, pMouseY, pPartialTick);
+        GuiCompat.renderWidgetsOnly(this, guiGraphics, pMouseX, pMouseY, pPartialTick);
 
         renderRecipes(guiGraphics, pMouseX, pMouseY);
 

@@ -767,6 +767,17 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
      */
     private boolean renderWithIrisExtended(PoseStack poseStack, int packedLight,
                                            BlockPos blockPos, @Nullable BlockEntity blockEntity) {
+        // Shadow pass: только через АКТИВНЫЙ per-BE батч (см. IrisRenderBatch
+        // .begin — неперсистентный, закрывается до возврата из BER). Standalone
+        // путь (apply на каждую часть) в shadow запрещён: teardown ExtendedShader
+        // .clear() ребиндит MAIN FBO, а его случайные срабатывания по ходу
+        // основного прохода задваивали растительность на 1.20.1. Без батча —
+        // возвращаем false, вызывающий {@link #render} уйдёт в putBulkData
+        // через bufferSource (Iris нарисует SHADOW_BLOCK-программой на endBatch).
+        if (ShaderCompatibilityDetector.isRenderingShadowPass() && IrisRenderBatch.active() == null) {
+            return false;
+        }
+
         IrisCompanionMesh companion = getOrBuildIrisCompanion();
         if (companion == null) {
             return false;

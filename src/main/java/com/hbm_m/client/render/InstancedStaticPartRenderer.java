@@ -430,7 +430,11 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
                             @Nullable float[] sharedCornerUV8) {
         if (!initialized) return;
 
-        //? if forge {
+        // Shadow pass (обе платформы): немедленная отрисовка через АКТИВНЫЙ
+        // per-BE батч (быстрый путь, см. IrisRenderBatch.begin). Раньше блок
+        // был forge-only: на neoforge 1.21.1 инстансы накапливались в shadow
+        // с теневыми матрицами и затем флашились в основном проходе. Fallback
+        // без батча — putBulkData через bufferSource (SHADOW_BLOCK на endBatch).
         if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
             if (irisHelper.drawSingleWithIrisExtended(poseStack, packedLight, blockPos, blockEntity)) {
                 return;
@@ -440,12 +444,11 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
                 VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
                 var pose = poseStack.last();
                 for (BakedQuad quad : quadsForIris) {
-                    consumer.putBulkData(pose, quad, 1f, 1f, 1f, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
+                    RenderHooks.putBulkData(consumer, pose, quad, 1f, 1f, 1f, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
                 }
             }
             return;
         }
-        //?}
 
         if (instanceCount >= maxInstances) {
             OVERFLOW_ADD_COUNT.incrementAndGet();
@@ -500,29 +503,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             return;
         }
 
-        //? if forge {
-        if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
-            PoseStack composed = new PoseStack();
-            composed.pushPose();
-            composed.last().pose().set(baseBlockPose.last().pose()).mul(partLocalToBlock);
-            try {
-                if (irisHelper.drawSingleWithIrisExtended(composed, packedLight, blockPos, blockEntity)) {
-                    return;
-                }
-                if (quadsForIris != null && !quadsForIris.isEmpty() && bufferSource != null) {
-                    float fade = SingleMeshVboRenderer.getFadeAlpha();
-                    VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
-                    var pose = composed.last();
-                    for (BakedQuad quad : quadsForIris) {
-                        consumer.putBulkData(pose, quad, 1f, 1f, 1f, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
-                    }
-                }
-            } finally {
-                composed.popPose();
-            }
-            return;
-        }
-        //?}
+        // Shadow pass идёт через общий Iris-путь ниже: при активном per-BE
+        // батче drawSingleWithIrisExtended рисует немедленно (быстрый путь),
+        // без батча возвращает false — и квады уходят через bufferSource
+        // (SHADOW_BLOCK на endBatch).
 
         if (ShaderCompatibilityDetector.isExternalShaderActive()) {
             PoseStack composed = new PoseStack();
@@ -537,12 +521,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
                     VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
                     var pose = composed.last();
                     for (BakedQuad quad : quadsForIris) {
-                        //? if forge {
-                        consumer.putBulkData(pose, quad, 1f, 1f, 1f, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
-                        //?}
-                        //? if fabric {
-                        /*consumer.putBulkData(pose, quad, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY);
-                        *///?}
+                        // Раньше на neoforge тело цикла было ПУСТЫМ (putBulkData
+                        // только в forge/fabric ветках) — fallback не рисовал ничего.
+                        RenderHooks.putBulkData(consumer, pose, quad, 1f, 1f, 1f, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
                     }
                 }
             } finally {

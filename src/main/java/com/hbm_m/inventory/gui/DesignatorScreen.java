@@ -100,7 +100,7 @@ public class DesignatorScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
+        GuiCompat.renderFlatBlurredBackground(this, guiGraphics, partialTick);
         guiGraphics.blit(TEXTURE, leftPos, topPos, 0, 0, WIDTH, HEIGHT);
         for (FolderButton b : buttons) {
             b.drawButton(guiGraphics, b.isMouseOnButton(mouseX, mouseY));
@@ -114,7 +114,7 @@ public class DesignatorScreen extends Screen {
                 b.drawTooltip(guiGraphics, mouseX, mouseY);
             }
         }
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        GuiCompat.renderWidgetsOnly(this, guiGraphics, mouseX, mouseY, partialTick);
     }
 
     @Override

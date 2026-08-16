@@ -180,7 +180,7 @@ public class GUIDoorModelSelection extends Screen {
         renderSkinButtons(guiGraphics, localMouseX, localMouseY);
         renderPageButtons(guiGraphics, localMouseX, localMouseY);
         guiGraphics.pose().popPose();
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        GuiCompat.renderWidgetsOnly(this, guiGraphics, mouseX, mouseY, partialTick);
     }
 
     private void renderMenuPanel(GuiGraphics guiGraphics) {

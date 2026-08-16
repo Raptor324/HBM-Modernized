@@ -87,15 +87,15 @@ public class DetonatorItem extends Item implements ITooltipProvider {
 
         // Если игрок присел - сохраняем позицию
         if (player.isCrouching()) {
-            if (!PlatformHooks.hasItemTag(stack)) {
-                PlatformHooks.setItemTag(stack, new CompoundTag());
-            }
-
-            CompoundTag nbt = PlatformHooks.getItemTag(stack);
-            nbt.putInt(NBT_POS_X, pos.getX());
-            nbt.putInt(NBT_POS_Y, pos.getY());
-            nbt.putInt(NBT_POS_Z, pos.getZ());
-            nbt.putBoolean(NBT_HAS_TARGET, true);
+            // На 1.21.1 getItemTag() возвращает КОПИЮ (DataComponents.CUSTOM_DATA),
+            // а setItemTag с пустым тегом удаляет компонент — поэтому мутации должны
+            // идти через editItemTag (read-modify-write), иначе NPE/потеря данных.
+            PlatformHooks.editItemTag(stack, nbt -> {
+                nbt.putInt(NBT_POS_X, pos.getX());
+                nbt.putInt(NBT_POS_Y, pos.getY());
+                nbt.putInt(NBT_POS_Z, pos.getZ());
+                nbt.putBoolean(NBT_HAS_TARGET, true);
+            });
 
             if (!level.isClientSide) {
                 player.displayClientMessage(

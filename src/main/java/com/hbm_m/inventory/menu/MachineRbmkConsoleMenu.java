@@ -44,6 +44,11 @@ public class MachineRbmkConsoleMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineRbmkConsoleBlockEntity rbmkConsoleBlockEntity) {
             return rbmkConsoleBlockEntity;
         }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inventory.player.level().isClientSide) {
+            return null;
+        }
         throw new IllegalStateException("No MachineRbmkConsoleBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":rbmk_console_menu");
     }
 

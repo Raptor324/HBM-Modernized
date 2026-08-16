@@ -43,7 +43,7 @@ import net.minecraft.util.Mth;
 *///?} elif neoforge {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
-public class MachineTurretRenderer implements BlockEntityRenderer<TurretBaseBlockEntity> {
+public class MachineTurretRenderer implements com.hbm_m.client.render.HbmBerBounds<TurretBaseBlockEntity> {
 
     private static final Map<String, ResourceLocation> MODEL_IDS = new HashMap<>();
 

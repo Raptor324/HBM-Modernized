@@ -21,7 +21,7 @@ public class NuclearExplosionExtensions {
     private static final Logger LOGGER = LoggerFactory.getLogger(NuclearExplosionExtensions.class);
 
     // ════════════════════════════════════════════════════════════════════════
-    // 🔴 УВЕЛИЧЕННЫЕ ИСКРЫ (LargeExplosionSpark)
+    // УВЕЛИЧЕННЫЕ ИСКРЫ (LargeExplosionSpark)
     // ════════════════════════════════════════════════════════════════════════
 
     /**
@@ -60,7 +60,7 @@ public class NuclearExplosionExtensions {
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    // ⚫ УВЕЛИЧЕННЫЙ ДЫМ (LargeDarkSmoke)
+    // УВЕЛИЧЕННЫЙ ДЫМ (LargeDarkSmoke)
     // ════════════════════════════════════════════════════════════════════════
 
     /**
@@ -97,7 +97,7 @@ public class NuclearExplosionExtensions {
     }
 
     // ════════════════════════════════════════════════════════════════════════
-    // 🍄 ПОЛНОЕ ЯДЕРНОЕ ГРИБНОЕ ОБЛАКО
+    // ПОЛНОЕ ЯДЕРНОЕ ГРИБНОЕ ОБЛАКО
     // ════════════════════════════════════════════════════════════════════════
 
     /**
@@ -120,7 +120,7 @@ public class NuclearExplosionExtensions {
         //  Запускаем спавн грибного облака
         NuclearMushroomCloud.spawnNuclearMushroom(level, x, y, z, level.random);
         
-        // 🔊 Звуковой эффект (опционально)
+        // Звуковой эффект (опционально)
         // level.playSound(null, x, y, z, SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 2.0F, 1.0F);
     }
 
@@ -154,7 +154,6 @@ public class NuclearExplosionExtensions {
     /**
      *  КОМБО: Полный ядерный взрыв (гриб + ударная волна + искры)
      * 
-     * Это最полный эффект - используй это в блоке!
      */
     public static void spawnFullNuclearExplosion(ServerLevel level, double x, double y, double z) {
         

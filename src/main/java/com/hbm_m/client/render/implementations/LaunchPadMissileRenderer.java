@@ -23,7 +23,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 *///?} elif neoforge {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
-public class LaunchPadMissileRenderer implements BlockEntityRenderer<LaunchPadBaseBlockEntity> {
+public class LaunchPadMissileRenderer implements com.hbm_m.client.render.HbmBerBounds<LaunchPadBaseBlockEntity> {
 
     public LaunchPadMissileRenderer(BlockEntityRendererProvider.Context context) {
     }

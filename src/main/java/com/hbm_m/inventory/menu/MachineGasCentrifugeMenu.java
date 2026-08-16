@@ -8,6 +8,7 @@ import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;
+import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -59,7 +60,11 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
 
         addDataSlots(data);
 
-        this.machineInventory = new ModItemStackHandlerContainer(this.blockEntity.getInventory(), this.blockEntity::setChanged);
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
+        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
+        this.machineInventory = new ModItemStackHandlerContainer(
+                this.blockEntity != null ? this.blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOTS),
+                this.blockEntity != null ? this.blockEntity::setChanged : null);
 
         // Enrichment product outputs (2x2 grid), auto-filled only.
         int[][] outputPos = { {71, 53}, {89, 53}, {71, 71}, {89, 71} };
@@ -134,6 +139,11 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
         if (blockEntity instanceof MachineGasCentrifugeBlockEntity gasCentrifuge) {
             return gasCentrifuge;
         }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (playerInventory.player.level().isClientSide) {
+            return null;
+        }
         throw new IllegalStateException("BlockEntity is not a Gas Centrifuge");
     }
 
@@ -167,12 +177,13 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
 
     @Override
     public long getEnergyStatic() {
-        return blockEntity.getEnergyStored();
+        // тайл может отсутствовать на клиенте (реплей Flashback)
+        return blockEntity != null ? blockEntity.getEnergyStored() : 0L;
     }
 
     @Override
     public long getMaxEnergyStatic() {
-        return blockEntity.getMaxEnergyStored();
+        return blockEntity != null ? blockEntity.getMaxEnergyStored() : 0L;
     }
 
     @Override
@@ -265,6 +276,9 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
 
     @Override
     public boolean stillValid(Player player) {
+        if (blockEntity == null) {
+            return false; // тайл может отсутствовать на клиенте (реплей Flashback)
+        }
         return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.GAS_CENTRIFUGE.get());
     }
 }

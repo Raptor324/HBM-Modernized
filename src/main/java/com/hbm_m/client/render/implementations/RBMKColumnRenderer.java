@@ -37,7 +37,7 @@ import java.util.*;
 *///?} elif neoforge {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
-public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements BlockEntityRenderer<T> {
+public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements com.hbm_m.client.render.HbmBerBounds<T> {
 
     // ─── Caches ──────────────────────────────────────────────────────────────
 

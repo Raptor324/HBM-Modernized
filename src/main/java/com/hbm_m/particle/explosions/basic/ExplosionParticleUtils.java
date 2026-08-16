@@ -22,9 +22,7 @@ public class ExplosionParticleUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ExplosionParticleUtils.class);
 
-    // ════════════════════════════════════════════════════════════════════════
-    // 💣 ФУГАСНЫЙ ВЗРЫВ (AIR BOMB)
-    // ════════════════════════════════════════════════════════════════════════
+    // ФУГАСНЫЙ ВЗРЫВ (AIR BOMB)
 
     /**
      *  ПОЛНЫЙ ЭФФЕКТ ФУГАСНОГО ВЗРЫВА
@@ -172,7 +170,7 @@ public class ExplosionParticleUtils {
     }
 
     /**
-     * ☠️ СПАВН AGENT ORANGE
+     * СПАВН AGENT ORANGE
      */
     public static void spawnAgentOrange(ServerLevel level, double x, double y, double z, int particleCount) {
         SimpleParticleType type = (SimpleParticleType) ModExplosionParticles.AGENT_ORANGE.get();
@@ -190,7 +188,7 @@ public class ExplosionParticleUtils {
     }
 
     /**
-     * ☠️ СПАВН AGENT ORANGE ДЛЯ ГЕЙЗЕРА (вертикальная струя)
+     * СПАВН AGENT ORANGE ДЛЯ ГЕЙЗЕРА (вертикальная струя)
      *
      * @param verticalSpeed Скорость вверх (0.1 - 0.3)
      */
@@ -198,11 +196,9 @@ public class ExplosionParticleUtils {
                                               int particleCount, double verticalSpeed) {
         spawnAgentOrangeGeyser(level, x, y, z, particleCount, verticalSpeed, 0.5);
     }
-    // ════════════════════════════════════════════════════════════════════════════════════════════════════════════
-    // 🌋 ЯДЕРНЫЙ ВЗРЫВ (NUCLEAR BOMB) - НОВЫЕ МЕТОДЫ С УЛУЧШЕННОЙ ШАПКОЙ
-    // ════════════════════════════════════════════════════════════════════════════════════════════════════════════
+    
 
-
+    // ЯДЕРНЫЙ ВЗРЫВ 
 
     /**
      *  Спавн одной крупной дымовой частицы
@@ -240,9 +236,8 @@ public class ExplosionParticleUtils {
     }
 
     /**
-     *  УЛУЧШЕННОЕ ЯДЕРНОЕ ГРИБНОЕ ОБЛАКО (100 блоков высоты, с реалистичной шапкой!)
+     *  ЯДЕРНОЕ ГРИБНОЕ ОБЛАКО
      *
-     * НОВАЯ СТРУКТУРА:
      * - НОЖКА (0-12): Толстый столб со скоростью вверх
      * - ОСНОВАНИЕ (12-30): Быстрое расширение
      * - ШАПКА (25-60): Реалистичная полусфера, растёт ВМЕСТЕ со столбом
@@ -287,7 +282,7 @@ public class ExplosionParticleUtils {
      * Это ГЛАВНЫЙ метод для вызова из блока!
      */
     public static void spawnFullNuclearExplosion(ServerLevel level, double x, double y, double z) {
-        LOGGER.info("[NUCLEAR] 🌋 Spawning FULL nuclear explosion with cap at ({}, {}, {})", x, y, z);
+        LOGGER.info("[NUCLEAR]  Spawning FULL nuclear explosion with cap at ({}, {}, {})", x, y, z);
 
         // Фаза 2: усиленная ударная волна (через 2 тика)
         level.getServer().tell(new net.minecraft.server.TickTask(2,
@@ -300,7 +295,7 @@ public class ExplosionParticleUtils {
 
 
     /**
-     * ☠️ СПАВН AGENT ORANGE ДЛЯ ГЕЙЗЕРА (с горизонтальным разбросом)
+     * СПАВН AGENT ORANGE ДЛЯ ГЕЙЗЕРА (с горизонтальным разбросом)
      *
      * @param verticalSpeed Скорость вверх
      * @param horizontalSpread Радиус горизонтального разброса

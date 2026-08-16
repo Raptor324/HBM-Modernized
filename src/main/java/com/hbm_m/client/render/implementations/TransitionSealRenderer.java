@@ -48,7 +48,7 @@ import net.minecraft.resources.ResourceLocation;
 *///?} elif neoforge {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
-public class TransitionSealRenderer implements BlockEntityRenderer<TransitionSealBlockEntity> {
+public class TransitionSealRenderer implements com.hbm_m.client.render.HbmBerBounds<TransitionSealBlockEntity> {
 
     private static final String CLIP_NAME = "animation";
     private static final ResourceLocation MODEL_ID = RefStrings.resourceLocation("models/block/doors/transition_seal");

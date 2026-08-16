@@ -23,10 +23,9 @@ import net.minecraft.world.level.material.Fluids;
 
 import dev.architectury.fluid.FluidStack;
 
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.SlotItemHandler;
-//?}
+import com.hbm_m.inventory.ModItemStackHandlerContainer;
+
+import net.minecraft.world.Container;
 
 /**
  * Direct clone of {@link Bat9000Menu} (same slot layout/logic as {@link MachineFluidTankMenu}),
@@ -55,51 +54,50 @@ public class BarrelSteelMenu extends AbstractContainerMenu {
 
         checkContainerDataCount(data, 7);
 
-        //? if forge {
-        this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
-            this.addSlot(new SlotItemHandler(handler, MachineFluidTankBlockEntity.SLOT_ID_IN, 8, 17) {
-                @Override
-                public boolean mayPlace(@NotNull ItemStack stack) {
-                    return stack.getItem() instanceof IItemFluidIdentifier;
-                }
-            });
+        // Слоты машины напрямую через ModItemStackHandler (кросс-платформенно, без Forge SlotItemHandler).
+        Container handlerContainer = new ModItemStackHandlerContainer(blockEntity.getItemHandler(), blockEntity::setChanged);
 
-            this.addSlot(new SlotItemHandler(handler, MachineFluidTankBlockEntity.SLOT_ID_OUT, 8, 53) {
-                @Override
-                public boolean mayPlace(@NotNull ItemStack stack) {
-                    return false;
-                }
-            });
-
-            this.addSlot(new SlotItemHandler(handler, MachineFluidTankBlockEntity.SLOT_LOAD_IN, 35, 17) {
-                @Override
-                public boolean mayPlace(@NotNull ItemStack stack) {
-                    return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-                }
-            });
-
-            this.addSlot(new SlotItemHandler(handler, MachineFluidTankBlockEntity.SLOT_LOAD_OUT, 35, 53) {
-                @Override
-                public boolean mayPlace(@NotNull ItemStack stack) {
-                    return false;
-                }
-            });
-
-            this.addSlot(new SlotItemHandler(handler, MachineFluidTankBlockEntity.SLOT_UNLOAD_IN, 125, 17) {
-                @Override
-                public boolean mayPlace(@NotNull ItemStack stack) {
-                    return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-                }
-            });
-
-            this.addSlot(new SlotItemHandler(handler, MachineFluidTankBlockEntity.SLOT_UNLOAD_OUT, 125, 53) {
-                @Override
-                public boolean mayPlace(@NotNull ItemStack stack) {
-                    return false;
-                }
-            });
+        this.addSlot(new Slot(handlerContainer, MachineFluidTankBlockEntity.SLOT_ID_IN, 8, 17) {
+            @Override
+            public boolean mayPlace(@NotNull ItemStack stack) {
+                return stack.getItem() instanceof IItemFluidIdentifier;
+            }
         });
-        //?}
+
+        this.addSlot(new Slot(handlerContainer, MachineFluidTankBlockEntity.SLOT_ID_OUT, 8, 53) {
+            @Override
+            public boolean mayPlace(@NotNull ItemStack stack) {
+                return false;
+            }
+        });
+
+        this.addSlot(new Slot(handlerContainer, MachineFluidTankBlockEntity.SLOT_LOAD_IN, 35, 17) {
+            @Override
+            public boolean mayPlace(@NotNull ItemStack stack) {
+                return FluidItemAccess.hasFluidHandler(stack);
+            }
+        });
+
+        this.addSlot(new Slot(handlerContainer, MachineFluidTankBlockEntity.SLOT_LOAD_OUT, 35, 53) {
+            @Override
+            public boolean mayPlace(@NotNull ItemStack stack) {
+                return false;
+            }
+        });
+
+        this.addSlot(new Slot(handlerContainer, MachineFluidTankBlockEntity.SLOT_UNLOAD_IN, 125, 17) {
+            @Override
+            public boolean mayPlace(@NotNull ItemStack stack) {
+                return FluidItemAccess.hasFluidHandler(stack);
+            }
+        });
+
+        this.addSlot(new Slot(handlerContainer, MachineFluidTankBlockEntity.SLOT_UNLOAD_OUT, 125, 53) {
+            @Override
+            public boolean mayPlace(@NotNull ItemStack stack) {
+                return false;
+            }
+        });
 
         addDataSlots(data);
 
