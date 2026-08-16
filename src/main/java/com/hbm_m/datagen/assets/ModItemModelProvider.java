@@ -279,6 +279,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         // Music disc
         withExistingParent(ModItems.MUSIC_DISC_BUNKER.getId().getPath(), "item/generated")
                 .texture("layer0", mcLoc("item/music_disc_13"));
+        withExistingParent(ModItems.MUSIC_DISC_GLASS.getId().getPath(), "item/generated")
+                .texture("layer0", mcLoc("item/music_disc_11"));
 
         simpleItem(ModItems.HEART_PIECE);
         simpleItem(ModItems.HEART_CONTAINER);

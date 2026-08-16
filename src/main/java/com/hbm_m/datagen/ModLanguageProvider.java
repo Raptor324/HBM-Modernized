@@ -446,6 +446,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.geiger_counter", "Счетчик Гейгера");
                 add("item.hbm_m.dosimeter", "Дозиметр");
                 add(ModItems.DIGAMMA_DIAGNOSTIC.get(), "Диагностика Диггама");
+                add(ModItems.MUSIC_DISC_GLASS.get(), "Стеклянная пластинка");
+                add("item.hbm_m.music_disc_glass.desc", "Увертюра 1812 года");
                 add("item.hbm_m.battery_creative", "Бесконечная батарейка");
                 add("tooltip.hbm_m.creative_battery_desc","Предоставляет бесконечное количество энергии");
                 add("tooltip.hbm_m.creative_battery_flavor","Бесконечность - не предел!!");
@@ -1935,6 +1937,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.MIXER.get(), "Промышленный миксер (WIP)");
                 add(ModBlocks.DERRICK.get(), "Деррик (WIP)");
                 add(ModBlocks.RBMK_CONSOLE.get(), "Пульт РБМК (WIP)");
+                add("msg.hbm_m.rbmk_console.linked", "Привязано к пульту РБМК");
+                add("msg.hbm_m.rbmk_console.no_console_found", "Поблизости нет пульта РБМК");
+                add("msg.hbm_m.rbmk_tool.stored", "Позиция сохранена: %s, %s, %s");
+                add("msg.hbm_m.rbmk_tool.no_position", "Сначала нажмите на колонну ПКМ");
+                add("tooltip.hbm_m.rbmk_tool.stored", "Сохранённая позиция: %s, %s, %s");
+                add("tooltip.hbm_m.rbmk_tool.empty", "Позиция не сохранена");
                 add(ModBlocks.RBMK_ROD.get(), "РБМК Топливный канал");
                 add(ModBlocks.RBMK_ROD_MOD.get(), "РБМК Топливный канал (с замедлителем)");
                 add(ModBlocks.RBMK_ROD_REASIM.get(), "РБМК Топливный канал (ReaSim)");
@@ -2799,6 +2807,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.geiger_counter", "Geiger Counter");
                 add("item.hbm_m.dosimeter", "Dosimeter");
                 add(ModItems.DIGAMMA_DIAGNOSTIC.get(), "Digamma Diagnostic");
+                add(ModItems.MUSIC_DISC_GLASS.get(), "Glass Disc");
+                add("item.hbm_m.music_disc_glass.desc", "1812 Overture");
                 add("item.hbm_m.battery_creative", "Creative Battery");
                 add("tooltip.hbm_m.creative_battery_desc","Provides an infinite amount of power");
                 add("tooltip.hbm_m.creative_battery_flavor","To infinity... and beyond!!");
@@ -3860,6 +3870,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.BAT9000.get(), "BAT9000");
                 add(ModBlocks.DERRICK.get(), "Derrick (WIP)");
                 add(ModBlocks.RBMK_CONSOLE.get(), "RBMK Console (WIP)");
+                add("msg.hbm_m.rbmk_console.linked", "Linked to RBMK console");
+                add("msg.hbm_m.rbmk_console.no_console_found", "No RBMK console found nearby");
+                add("msg.hbm_m.rbmk_tool.stored", "Stored position: %s, %s, %s");
+                add("msg.hbm_m.rbmk_tool.no_position", "No column linked yet - right-click a column first");
+                add("tooltip.hbm_m.rbmk_tool.stored", "Linked position: %s, %s, %s");
+                add("tooltip.hbm_m.rbmk_tool.empty", "No position stored");
                 add(ModBlocks.RBMK_ROD.get(), "RBMK Fuel Channel");
                 add(ModBlocks.RBMK_ROD_MOD.get(), "RBMK Fuel Channel (Moderated)");
                 add(ModBlocks.RBMK_ROD_REASIM.get(), "RBMK Fuel Channel (ReaSim)");

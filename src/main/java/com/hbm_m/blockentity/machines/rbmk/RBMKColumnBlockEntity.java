@@ -4,6 +4,7 @@ import com.hbm_m.handler.rbmk.NeutronNodeWorld;
 import com.hbm_m.handler.rbmk.RBMKDials;
 import com.hbm_m.handler.rbmk.RBMKNeutronHandler;
 import com.hbm_m.handler.rbmk.RBMKNeutronHandler.RBMKType;
+import com.hbm_m.item.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.phys.AABB;
@@ -11,6 +12,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -115,12 +119,53 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
         int h = RBMKDials.getColumnHeight(level);
         reduce = Math.max(1, Math.min(reduce, h));
         if (level.random.nextInt(3) == 0) reduce++;
-        for (int i = h; i >= 0; i--)
-            level.setBlock(base.above(i),
-                i <= h + 1 - reduce ? Blocks.GRAVEL.defaultBlockState() : Blocks.AIR.defaultBlockState(), 3);
+        int burningLayer = h + 1 - reduce;
+        for (int i = h; i >= 0; i--) {
+            if (i <= burningLayer) {
+                level.setBlock(base.above(i), Blocks.GRAVEL.defaultBlockState(), 3);
+                if (i == burningLayer && level.getBlockState(base.above(i + 1)).isAir())
+                    level.setBlock(base.above(i + 1), Blocks.FIRE.defaultBlockState(), 3);
+            } else {
+                level.setBlock(base.above(i), Blocks.AIR.defaultBlockState(), 3);
+            }
+        }
+        // Cosmetic-only blast (matches the original's newExplosion(...,5F,false,false)): sound and
+        // particles to sell the meltdown without double-damaging terrain we already rewrote above.
+        level.explode(null, base.getX() + 0.5, base.getY() + 0.5, base.getZ() + 0.5, 5F, Level.ExplosionInteraction.NONE);
     }
 
-    protected void spawnDebris(Level level, String type) { /* stub */ }
+    /**
+     * Flings a piece of debris outward from the top of the column, matching the original's
+     * {@code EntityRBMKDebris} arc (gaussian horizontal spread, strong upward kick). Reuses vanilla
+     * {@link ItemEntity} physics rather than a bespoke entity class - visually equivalent (tumbling,
+     * bouncing, gravity) since the debris items themselves are wrapped as ItemStacks.
+     */
+    protected void spawnDebris(Level level, String type) {
+        if (level.isClientSide) return;
+        Item item = debrisItem(type);
+        if (item == null) return;
+
+        BlockPos base = getBlockPos();
+        ItemEntity debris = new ItemEntity(level,
+                base.getX() + 0.5, base.getY() + 4.0, base.getZ() + 0.5, new ItemStack(item));
+        double vx = level.random.nextGaussian() * 0.25;
+        double vz = level.random.nextGaussian() * 0.25;
+        double vy = 0.25 + level.random.nextDouble() * 1.25;
+        if (type.equals("lid")) { vx *= 0.5; vz *= 0.5; vy += 0.5; }
+        debris.setDeltaMovement(vx, vy, vz);
+        debris.setPickUpDelay(100);
+        level.addFreshEntity(debris);
+    }
+
+    private static Item debrisItem(String type) {
+        return switch (type) {
+            case "fuel"     -> ModItems.DEBRIS_FUEL.get();
+            case "graphite" -> ModItems.DEBRIS_GRAPHITE.get();
+            case "element"  -> ModItems.DEBRIS_ELEMENT.get();
+            case "lid"      -> ModItems.DEBRIS_CONCRETE.get();
+            default -> null;
+        };
+    }
 
     // â"€â"€â"€ Lid â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 

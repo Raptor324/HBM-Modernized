@@ -398,7 +398,8 @@ public class ModItemTagProvider extends ItemTagsProvider {
 
         // Vanilla jukebox accepts only items in this tag (1.20.1)
         this.tag(ItemTags.MUSIC_DISCS)
-                .add(ModItems.MUSIC_DISC_BUNKER.get());
+                .add(ModItems.MUSIC_DISC_BUNKER.get())
+                .add(ModItems.MUSIC_DISC_GLASS.get());
 
         // Forge dye tags used by assembler recipes (JEI + crafting)
         this.tag(Tags.Items.DYES_GREEN).add(Items.GREEN_DYE);

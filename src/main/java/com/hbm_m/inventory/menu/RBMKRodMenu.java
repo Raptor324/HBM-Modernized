@@ -68,6 +68,23 @@ public class RBMKRodMenu extends AbstractContainerMenu {
 
     public RBMKRodBlockEntity getBlockEntity() { return blockEntity; }
 
+    /**
+     * The fuel slot's displayed stack was previously a one-time snapshot taken when the menu
+     * opened ({@code container.setItem(0, be.fuelSlot.copy())} in the constructor) and never
+     * refreshed - heat/xenon/depletion kept updating on {@code blockEntity.fuelSlot} in the
+     * background, but the tooltip you'd actually see stayed frozen at whatever it was when you
+     * opened the GUI. Re-sync every server tick (this is called automatically while the menu is
+     * open) so the live values are visible.
+     */
+    @Override
+    public void broadcastChanges() {
+        Slot slot = this.slots.get(0);
+        if (!ItemStack.matches(slot.getItem(), blockEntity.fuelSlot)) {
+            slot.set(blockEntity.fuelSlot.copy());
+        }
+        super.broadcastChanges();
+    }
+
     @Override
     public boolean stillValid(Player player) {
         return blockEntity.getLevel() == player.level()

@@ -1381,6 +1381,10 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.CRATE_TEMPLATE.get()));
         add.accept(new ItemStack(ModBlocks.BARREL_IRON.get()));
         add.accept(new ItemStack(ModBlocks.BARREL_STEEL.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_TCALLOY.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_CORRODED.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_PLASTIC.get()));
+        add.accept(new ItemStack(ModBlocks.BARREL_ANTIMATTER.get()));
         add.accept(new ItemStack(ModBlocks.ANVIL_IRON.get()));
         add.accept(new ItemStack(ModBlocks.ANVIL_LEAD.get()));
         add.accept(new ItemStack(ModBlocks.ANVIL_STEEL.get()));
@@ -1442,10 +1446,6 @@ public final class CreativeModeTabEventHandler {
     public static void populateDevItemsTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
         Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
 
-        add.accept(new ItemStack(ModBlocks.BARREL_CORRODED.get()));
-        add.accept(new ItemStack(ModBlocks.BARREL_TCALLOY.get()));
-        add.accept(new ItemStack(ModBlocks.BARREL_PLASTIC.get()));
-        add.accept(new ItemStack(ModBlocks.BARREL_ANTIMATTER.get()));
         add.accept(new ItemStack(ModBlocks.GAS_CENTRIFUGE.get()));
         add.accept(new ItemStack(ModBlocks.BREEDER.get()));
         add.accept(new ItemStack(ModBlocks.LARGE_PYLON.get()));

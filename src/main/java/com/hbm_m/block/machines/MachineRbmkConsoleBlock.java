@@ -123,6 +123,14 @@ public class MachineRbmkConsoleBlock extends BaseEntityBlock implements IMultibl
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide) {
             BlockEntity entity = level.getBlockEntity(pos);
+
+            net.minecraft.world.item.ItemStack held = player.getItemInHand(hand);
+            if (held.getItem() instanceof com.hbm_m.item.rbmk.RBMKToolItem
+                    && entity instanceof MachineRbmkConsoleBlockEntity console) {
+                com.hbm_m.item.rbmk.RBMKToolItem.linkConsole(held, level, console, player);
+                return InteractionResult.SUCCESS;
+            }
+
             if (entity instanceof MenuProvider menuProvider) {
                 NetworkHooks.openScreen((ServerPlayer) player, menuProvider, pos);
             }

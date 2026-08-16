@@ -1967,6 +1967,13 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> RBMK_AUTOLOADER   = registerBlock("rbmk_autoloader",   () -> new RBMKAutoloaderBlock(rbmkProps()));
     public static final RegistrySupplier<Block> RBMK_CRANE_CONSOLE= registerBlock("rbmk_crane_console",() -> new RBMKCraneConsoleBlock(rbmkProps()));
 
+    /** Invisible solid filler placed above every column so it has a real 1x3 hitbox (see
+     *  {@link com.hbm_m.block.machines.rbmk.RBMKColumnFillerBlock}). Not directly placeable;
+     *  breaking it cascades into destroying the real column below (same feel/hardness as the
+     *  column itself, matched via {@link #rbmkProps()}). */
+    public static final RegistrySupplier<Block> RBMK_COLUMN_FILLER = registerBlockWithoutItem("rbmk_column_filler",
+            () -> new com.hbm_m.block.machines.rbmk.RBMKColumnFillerBlock(rbmkProps().noLootTable()));
+
     // ── Debris ──────────────────────────────────────────────────────────────
     public static final RegistrySupplier<Block> RBMK_DEBRIS            = registerBlock("rbmk_debris",            () -> new Block(BlockBehaviour.Properties.copy(Blocks.GRAVEL).strength(0.5f)));
     public static final RegistrySupplier<Block> RBMK_DEBRIS_BURNING    = registerBlock("rbmk_debris_burning",    () -> new Block(BlockBehaviour.Properties.copy(Blocks.GRAVEL).strength(0.5f).lightLevel(s -> 10)));

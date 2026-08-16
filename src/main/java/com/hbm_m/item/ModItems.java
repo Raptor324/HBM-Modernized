@@ -634,6 +634,21 @@ public class ModItems {
                     20 * 120
             ));
 
+    /**
+     * Original ({@code ItemModRecord("glass")}) is registered with {@code setCreativeTab(null)} -
+     * absent from every creative tab entirely, but still indexed by NEI since that scans the item
+     * registry rather than tab contents. Matched here by simply never adding it to a
+     * {@code CreativeModeTabEventHandler} entry - JEI does the same registry-wide scan, so it stays
+     * discoverable there while staying out of the tabs, same as the original.
+     */
+    public static final RegistrySupplier<Item> MUSIC_DISC_GLASS = ITEMS.register("music_disc_glass",
+            () -> new RecordItem(
+                    2,
+                    ModSounds.MUSIC_DISC_GLASS.get(),
+                    new Item.Properties().stacksTo(1).rarity(Rarity.RARE),
+                    20 * 62
+            ));
+
 
 
 
@@ -3770,7 +3785,8 @@ public class ModItems {
     public static final RegistrySupplier<Item> RBMK_PELLET_ZFB_PU241 = ITEMS.register("rbmk_pellet_zfb_pu241",
             () -> new RBMKPelletItem(new Item.Properties()).setFullName("Zirconium Fast Breeder - HEU-235/HEP-240#Pu-241")
                     .setYield(50_000_000).setReactivity(20).setMeltingPoint(2865).setTint(0xAAA36A));
-    public static final RegistrySupplier<Item> RBMK_TOOL = ITEMS.register("rbmk_tool", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> RBMK_TOOL = ITEMS.register("rbmk_tool",
+            () -> new com.hbm_m.item.rbmk.RBMKToolItem(new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> REACHER = ITEMS.register("reacher", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> REACTOR_CORE = ITEMS.register("reactor_core", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> REACTOR_SENSOR = ITEMS.register("reactor_sensor", () -> new Item(new Item.Properties()));

@@ -56,8 +56,8 @@ public class MachineBreederBlock extends BaseEntityBlock implements IMultiblockC
      * column with the core at the bottom and 2 dummy blocks stacked directly above it (3 blocks
      * tall total - see the original's {@code getRenderBoundingBox()}, which spans
      * {@code yCoord..yCoord+3}). No fluid/energy side connectors are needed since there are no
-     * neighboring cells in a 1x1 footprint; the controller itself already exposes the fluid tank
-     * capability directly (see {@link com.hbm_m.blockentity.machines.MachineBreederBlockEntity#getCapability}).
+     * neighboring cells in a 1x1 footprint; the controller draws power purely from the wired
+     * HBM/FE energy network (no item/fluid capability of its own).
      */
     private static MultiblockStructureHelper defineStructureNew() {
         String[] layer0 = { "C" };

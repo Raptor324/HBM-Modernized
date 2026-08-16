@@ -13,10 +13,9 @@ import net.minecraftforge.fluids.FluidStack;
  * In the original mod this class exists but is never actually consumed by
  * {@code TileEntityMachineReactorBreeding} (only {@code TileEntityFusionBreeder}, the separate Fusion
  * Breeder, calls fluid-irradiation code, and even that class's own comment admits "i forgot what fluid
- * irradiation was even supposed to be for"). Since this port's {@code MachineBreederBlockEntity} already
- * has a {@code FluidTank} and fluid input/output item slots wired up in its menu/GUI, this registry is
- * used to give that tank a real purpose: in-place fluid-to-fluid conversion, mirroring the original's
- * defaults 1:1 (all three registered fluids already exist in this port's {@link ModFluids}).
+ * irradiation was even supposed to be for"). Kept registered (see {@link com.hbm_m.main.MainRegistry})
+ * for parity with the original, but - matching the original 1:1 - nothing in this port consumes it
+ * either; {@code MachineBreederBlockEntity} has no fluid tank.
  */
 public class FluidBreederRecipes {
 

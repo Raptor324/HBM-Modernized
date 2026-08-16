@@ -720,6 +720,8 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.RBMK_AUTOLOADER_BE.get(),    RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_CRANE_CONSOLE_BE.get(), RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_PANEL_BE.get(),         RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_CONSOLE_BE.get(),
+                com.hbm_m.client.render.implementations.MachineRbmkConsoleRenderer::new);
         // Steam inlet/outlet are floor blocks (not columns) — rendered via MODEL + JSON
         //?}
 

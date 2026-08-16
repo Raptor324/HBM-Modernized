@@ -86,6 +86,15 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
         level.sendBlockUpdated(pos, state, state, 3);
     }
 
+    /**
+     * Half of {@link #GRID} (integer division) - the scan below is centered on {@link #reactorOrigin}
+     * rather than treating it as the grid's corner, so linking works no matter which column of the
+     * build the player happened to right-click with the {@code RBMKToolItem} (previously the linked
+     * column always ended up pinned to the grid's top-left cell, so anything outside the +X/+Z
+     * quadrant from it silently fell off the scanned area and never showed up).
+     */
+    private static final int GRID_HALF = GRID / 2;
+
     private void scanReactor(Level level) {
         if (reactorOrigin == null) {
             Arrays.fill(columns, null);
@@ -97,7 +106,7 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
         for (int z = 0; z < GRID; z++) {
             for (int x = 0; x < GRID; x++) {
                 int     idx    = z * GRID + x;
-                BlockPos cPos  = reactorOrigin.offset(x, 0, z);
+                BlockPos cPos  = reactorOrigin.offset(x - GRID_HALF, 0, z - GRID_HALF);
 
                 if (level.getBlockEntity(cPos) instanceof RBMKColumnBlockEntity col) {
                     CompoundTag d = col.getNBTForConsole();
@@ -172,7 +181,7 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
 
     private BlockPos idxToPos(int idx) {
         if (reactorOrigin == null || idx < 0 || idx >= AREA) return null;
-        return reactorOrigin.offset(idx % GRID, 0, idx / GRID);
+        return reactorOrigin.offset((idx % GRID) - GRID_HALF, 0, (idx / GRID) - GRID_HALF);
     }
 
     // ─── MenuProvider ─────────────────────────────────────────────────────────

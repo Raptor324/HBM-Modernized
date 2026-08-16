@@ -145,6 +145,7 @@ public class ModSounds {
 
     // Music discs
     public static final RegistrySupplier<SoundEvent> MUSIC_DISC_BUNKER = registerSoundEvents("music_disc.bunker");
+    public static final RegistrySupplier<SoundEvent> MUSIC_DISC_GLASS = registerSoundEvents("music_disc.glass");
 
     // Siren cassette tracks
     public static final RegistrySupplier<SoundEvent> SIREN_AMS = registerSoundEvents("alarm.amssiren");

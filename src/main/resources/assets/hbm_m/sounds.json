@@ -721,5 +721,15 @@
     "sounds": [
       "hbm_m:messages/bunker"
     ]
+  },
+  "music_disc.glass": {
+    "category": "record",
+    "subtitle": "item.hbm_m.music_disc_glass.desc",
+    "sounds": [
+      {
+        "name": "hbm_m:music/record_glass",
+        "stream": true
+      }
+    ]
   }
 }
