@@ -1942,7 +1942,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.MIXER.get(), "Промышленный миксер (WIP)");
                 add(ModBlocks.DERRICK.get(), "Деррик (WIP)");
                 add(ModBlocks.RBMK_CONSOLE.get(), "Пульт РБМК (WIP)");
-                add("msg.hbm_m.rbmk_console.linked", "Привязано к пульту РБМК");
+                add("msg.hbm_m.rbmk_console.linked", "Привязано к пульту РБМК: %s, %s, %s");
+                add("msg.hbm_m.rbmk_console.linked_invalid", "Колонна РБМК не найдена в %s, %s, %s - нажмите ПКМ на колонну снова");
                 add("msg.hbm_m.rbmk_crane.linked", "Кран привязан к колонне");
                 add("gui.hbm_m.save", "Сохранить");
                 add("gui.hbm_m.close", "Закрыть");
@@ -3892,7 +3893,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.BAT9000.get(), "BAT9000");
                 add(ModBlocks.DERRICK.get(), "Derrick (WIP)");
                 add(ModBlocks.RBMK_CONSOLE.get(), "RBMK Console (WIP)");
-                add("msg.hbm_m.rbmk_console.linked", "Linked to RBMK console");
+                add("msg.hbm_m.rbmk_console.linked", "Linked to RBMK console at %s, %s, %s");
+                add("msg.hbm_m.rbmk_console.linked_invalid", "No RBMK column found at %s, %s, %s - right-click a column again");
                 add("msg.hbm_m.rbmk_crane.linked", "Crane linked to column");
                 add("gui.hbm_m.save", "Save");
                 add("gui.hbm_m.close", "Close");

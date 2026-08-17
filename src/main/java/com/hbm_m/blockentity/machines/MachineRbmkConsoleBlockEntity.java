@@ -348,6 +348,15 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
     public void handleUpdateTag(CompoundTag tag) {
         applyUpdateTag(tag);
     }
+
+    // Forge's default IForgeBlockEntity#onDataPacket calls load(tag) instead of handleUpdateTag(tag)
+    // for LIVE re-sync packets (handleUpdateTag is only ever invoked for the one-time initial
+    // chunk-load sync) - since load()/readExtra() never parsed the "cols" list, every column the
+    // console scanned was silently dropped on every periodic sync, permanently leaving the GUI's
+    // column grid empty even though the server-side scan was finding columns correctly every tick.
+    public void onDataPacket(net.minecraft.network.Connection connection, ClientboundBlockEntityDataPacket packet) {
+        if (packet.getTag() != null) applyUpdateTag(packet.getTag());
+    }
     //?} else {
     /*public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
         return buildUpdateTag(super.getUpdateTag(registries));

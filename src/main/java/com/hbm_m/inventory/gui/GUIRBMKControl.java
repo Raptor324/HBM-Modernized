@@ -3,6 +3,7 @@ package com.hbm_m.inventory.gui;
 import com.hbm_m.blockentity.machines.rbmk.RBMKControlBlockEntity;
 import com.hbm_m.inventory.menu.RBMKControlMenu;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.network.RBMKControlPacket;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -67,7 +68,9 @@ public class GUIRBMKControl extends GuiInfoScreen<RBMKControlMenu> {
             // Manual rod-level presets (100%, 75%, 50%, 25%, 0%), stacked column of 5 buttons.
             if (isPointInRect(118, 26 + k * 11, 30, 10, (int) mouseX, (int) mouseY)) {
                 playClickSound();
-                be.setTarget(1.0 - k * 0.25);
+                double target = 1.0 - k * 0.25;
+                be.setTarget(target); // client-side prediction so the bar/label update immediately
+                RBMKControlPacket.sendSetTarget(be.getBlockPos(), target);
                 return true;
             }
 
@@ -75,6 +78,7 @@ public class GUIRBMKControl extends GuiInfoScreen<RBMKControlMenu> {
             if (isPointInRect(28, 26 + k * 11, 12, 10, (int) mouseX, (int) mouseY)) {
                 playClickSound();
                 be.color = (short) k;
+                RBMKControlPacket.sendSetColor(be.getBlockPos(), k);
                 return true;
             }
         }

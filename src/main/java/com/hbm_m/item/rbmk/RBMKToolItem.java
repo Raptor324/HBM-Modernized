@@ -68,11 +68,25 @@ public class RBMKToolItem extends Item {
         // above, etc.), so scanning at the console's Y silently found zero columns and left the
         // whole grid/screen blank even though "linking" reported success.
         BlockPos linked = new BlockPos(tag.getInt(NBT_X), tag.getInt(NBT_Y), tag.getInt(NBT_Z));
+
+        // Validate before accepting: a stale stored position (e.g. left over on the tool from an
+        // earlier test, or a column that has since been broken) previously still reported success
+        // and silently left the console's grid empty with no indication why. Surfacing the actual
+        // coordinates in both the success and failure message lets a wrong link be diagnosed at a
+        // glance instead of just staring at a blank grid.
+        if (!(level.getBlockEntity(linked) instanceof com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity)) {
+            player.displayClientMessage(
+                    Component.translatable("msg.hbm_m.rbmk_console.linked_invalid",
+                            linked.getX(), linked.getY(), linked.getZ()).withStyle(ChatFormatting.RED), true);
+            return;
+        }
+
         console.reactorOrigin = linked;
         console.setChanged();
         level.sendBlockUpdated(console.getBlockPos(), console.getBlockState(), console.getBlockState(), 3);
         player.displayClientMessage(
-                Component.translatable("msg.hbm_m.rbmk_console.linked").withStyle(ChatFormatting.GREEN), true);
+                Component.translatable("msg.hbm_m.rbmk_console.linked",
+                        linked.getX(), linked.getY(), linked.getZ()).withStyle(ChatFormatting.GREEN), true);
     }
 
     /**
