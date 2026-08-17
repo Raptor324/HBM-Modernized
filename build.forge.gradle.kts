@@ -140,5 +140,7 @@ tasks.named("createMinecraftArtifacts") {
 	dependsOn(tasks.named("stonecutterGenerate"))
 }
 
+tasks.withType<JavaCompile>().configureEach { options.encoding = "UTF-8" }
+
 stonecutter {
 }

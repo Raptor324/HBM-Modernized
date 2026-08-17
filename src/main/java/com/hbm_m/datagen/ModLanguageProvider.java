@@ -1598,7 +1598,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.depth_stone_slab", "Плита из глубинного камня");
                 add("block.hbm_m.depth_stone_nether_slab", "Плита из адского глубинного камня");
                 add("block.hbm_m.depth_stone_stairs", "Ступеньки из глубинных кирпичей");
-                add("block.hbm_m.barrel_plastic", "Пластиковая бочка");
                 add("block.hbm_m.barrel_red", "Красная бочка");
                 add("block.hbm_m.airbomb", "Авиабомба");
                 add("block.hbm_m.balebomb_test", "Жар-бомба");
@@ -4238,7 +4237,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.depth_stone_slab", "Depth Stone Slab");
                 add("block.hbm_m.depth_stone_nether_slab", "Nether Depth Stone Slab");
                 add("block.hbm_m.depth_stone_stairs", "Depth Stone Stairs");
-                add("block.hbm_m.barrel_plastic", "Plastic Barrel");
                 add("block.hbm_m.barrel_red", "Red Barrel");
                 add("block.hbm_m.airbomb", "Airbomb");
                 add("block.hbm_m.balebomb_test", "Balebomb");
