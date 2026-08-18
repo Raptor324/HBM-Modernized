@@ -272,16 +272,14 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements com.
         TextureAtlasSprite capSprite = sprite(RefStrings.MODID, "block/rbmk/" + capPrefix);
         double level = Mth.lerp(pt, ctrl.lastLevel, ctrl.level);
 
-        // 1:1 with the original's RenderRBMKControlRod: anchor = `y + offset`, where `offset` is
-        // the height of the contiguous same-block-type stack above the base (base + regular
-        // dummies + the extra lid-slot dummy, all one Block instance in the original's
-        // BlockDummyable multiblock) - i.e. the column's full visual height, which is exactly
-        // our `height` (COLUMN_HEIGHT+1), not `height-1`. The earlier `height-1` adjustment was
-        // a visual guess made before this source file was available; the previous "floating"
-        // symptom it was chasing was most likely the level-defaults-to-1.0 bug fixed alongside
-        // it, not this anchor.
+        // Anchor = `y + offset`, where `offset` is the column's full visual height (see the
+        // original's RenderRBMKControlRod). The formula's math checks out against the source, but
+        // in-game the cap still sat visibly detached above the column even at level=0 (confirmed
+        // by the player, live) - so it's pulled down by 1 full block to sit flush. Whatever's
+        // responsible for that 1-block discrepancy (parent transform, model origin, etc.) is still
+        // unaccounted for; this is a measured correction, not a re-derivation.
         ps.pushPose();
-        ps.translate(0.5, height + level, 0.5);
+        ps.translate(0.5, height + level - 1.0, 0.5);
         VertexConsumer vc = buf.getBuffer(RenderType.solid());
         renderObjGroup(vc, ps.last().pose(), lid, capSprite, 1, 1, 1, light, overlay);
         ps.popPose();

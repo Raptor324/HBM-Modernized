@@ -4,6 +4,7 @@ import com.hbm_m.blockentity.machines.rbmk.RBMKControlAutoBlockEntity;
 import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.RBMKControlAutoMenu;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.network.RBMKControlPacket;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -19,10 +20,12 @@ import net.minecraft.world.entity.player.Inventory;
  * a settings/status screen (no machine item slots) for the automated control
  * rod's level/heat curve.
  *
- * <p>Value edits mutate the {@link RBMKControlAutoBlockEntity} fields directly
- * on click (same non-networked, client-field-mutation pattern already used by
- * the manual {@link GUIRBMKControl} sibling in this codebase) rather than
- * inventing a new network packet.
+ * <p>Value edits mutate the {@link RBMKControlAutoBlockEntity} fields directly for
+ * immediate client-side feedback, then send an {@code RBMKControlPacket} so the
+ * change actually reaches the server (a purely client-side mutation is invisible to
+ * the server and gets overwritten on the next sync - this bit both this GUI and the
+ * manual {@link GUIRBMKControl} sibling, where it manifested as the rod level being
+ * stuck at 0% and unselectable).
  *
  * <p>Not restored from the original: the power icon/tooltip (the modernized
  * {@code RBMKControlBlockEntity} hierarchy has no {@code power}/{@code maxPower}/
@@ -138,6 +141,7 @@ public class GUIRBMKControlAuto extends GuiInfoScreen<RBMKControlAutoMenu> {
             if (isPointInRect(61, 48 + k * 11, 22, 10, (int) mouseX, (int) mouseY)) {
                 playClickSound();
                 be.function = RBMKControlAutoBlockEntity.RBMKFunction.values()[k];
+                RBMKControlPacket.sendSetFunction(be.getBlockPos(), k);
                 return true;
             }
         }
@@ -165,6 +169,7 @@ public class GUIRBMKControlAuto extends GuiInfoScreen<RBMKControlAutoMenu> {
         be.levelLower = vals[1];
         be.heatUpper = vals[2];
         be.heatLower = vals[3];
+        RBMKControlPacket.sendSetParams(be.getBlockPos(), vals[0], vals[1], vals[2], vals[3]);
     }
 
     @Override
