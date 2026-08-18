@@ -51,8 +51,8 @@ import net.minecraft.resources.ResourceLocation;
 public class TransitionSealRenderer implements com.hbm_m.client.render.HbmBerBounds<TransitionSealBlockEntity> {
 
     private static final String CLIP_NAME = "animation";
-    private static final ResourceLocation MODEL_ID = RefStrings.resourceLocation("models/block/doors/transition_seal");
-    private static final ResourceLocation SEAL_TEX = RefStrings.resourceLocation("block/doors/transition_seal");
+    private static final ResourceLocation MODEL_ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/doors/transition_seal");
+    private static final ResourceLocation SEAL_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/transition_seal");
 
     private static DaeModel model;
     private static boolean modelFailed;

@@ -35,14 +35,28 @@ public class RBMKRodMenu extends AbstractContainerMenu {
         };
         container.setItem(0, be.fuelSlot.copy());
 
-        // Fuel rod slot — centered in the info panel (slot 0)
-        addSlot(new Slot(container, 0, 8, 35) {
+        // Fuel rod slot — matches the real gui_rbmk_element.png layout (slot 0)
+        addSlot(new Slot(container, 0, 80, 45) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return stack.getItem() instanceof RBMKRodItem;
             }
+
+            @Override
+            public boolean mayPickup(Player player) {
+                return player.isCreative() || be.coldEnoughForManual();
+            }
         });
-        // No player inventory: rod insertion happens via right-click in world or drag onto the slot above
+
+        // Player inventory
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 9; col++) {
+                addSlot(new Slot(inv, col + row * 9 + 9, 8 + col * 18, 104 + row * 18));
+            }
+        }
+        for (int col = 0; col < 9; col++) {
+            addSlot(new Slot(inv, col, 8 + col * 18, 162));
+        }
     }
 
     private static RBMKRodBlockEntity getBlockEntity(Inventory inv, FriendlyByteBuf buf) {
@@ -53,6 +67,23 @@ public class RBMKRodMenu extends AbstractContainerMenu {
     }
 
     public RBMKRodBlockEntity getBlockEntity() { return blockEntity; }
+
+    /**
+     * The fuel slot's displayed stack was previously a one-time snapshot taken when the menu
+     * opened ({@code container.setItem(0, be.fuelSlot.copy())} in the constructor) and never
+     * refreshed - heat/xenon/depletion kept updating on {@code blockEntity.fuelSlot} in the
+     * background, but the tooltip you'd actually see stayed frozen at whatever it was when you
+     * opened the GUI. Re-sync every server tick (this is called automatically while the menu is
+     * open) so the live values are visible.
+     */
+    @Override
+    public void broadcastChanges() {
+        Slot slot = this.slots.get(0);
+        if (!ItemStack.matches(slot.getItem(), blockEntity.fuelSlot)) {
+            slot.set(blockEntity.fuelSlot.copy());
+        }
+        super.broadcastChanges();
+    }
 
     @Override
     public boolean stillValid(Player player) {
@@ -69,6 +100,33 @@ public class RBMKRodMenu extends AbstractContainerMenu {
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        return ItemStack.EMPTY; // no player inventory in this menu
+        ItemStack result = ItemStack.EMPTY;
+        Slot slot = this.slots.get(index);
+
+        if (slot != null && slot.hasItem()) {
+            ItemStack stackInSlot = slot.getItem();
+            result = stackInSlot.copy();
+
+            if (index == 0) {
+                // Moving fuel rod out into the player inventory
+                if (!blockEntity.coldEnoughForManual() && !player.isCreative()) return ItemStack.EMPTY;
+                if (!this.moveItemStackTo(stackInSlot, 1, this.slots.size(), true)) {
+                    return ItemStack.EMPTY;
+                }
+            } else {
+                // Moving a rod from the player inventory into the fuel slot
+                if (!this.moveItemStackTo(stackInSlot, 0, 1, false)) {
+                    return ItemStack.EMPTY;
+                }
+            }
+
+            if (stackInSlot.isEmpty()) {
+                slot.set(ItemStack.EMPTY);
+            } else {
+                slot.setChanged();
+            }
+        }
+
+        return result;
     }
 }

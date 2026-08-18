@@ -83,8 +83,6 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
         this.addSlot(new Slot(machineInventory, BATTERY_SLOT, 182, 71) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                // On neoforge ModCapabilities.HBM_ENERGY_PROVIDER — это BlockCapability (block-side),
-                // для предмета нужен item-cap: ItemEnergyAccess.getHbmProvider(stack) (gated forge/neoforge/fabric).
                 boolean hbm = com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack)
                         .map(provider -> provider.canExtract())
                         .orElse(false);
@@ -93,7 +91,9 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
                 return com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack)
                         .map(storage -> storage.canExtract())
                         .orElse(false);
-                //?} else {
+                //?} elif neoforge {
+                /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
+                *///?} else {
                 /*return false;
                 *///?}
             }
@@ -245,7 +245,9 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
             isBattery = isBattery || com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(slotStack)
                     .map(storage -> storage.canExtract())
                     .orElse(false);
-            //?}
+            //?} elif neoforge {
+            /*isBattery = isBattery || slotStack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
+            *///?}
 
             if (isBattery) {
                 if (!this.moveItemStackTo(slotStack, BATTERY_SLOT, BATTERY_SLOT + 1, false)) {

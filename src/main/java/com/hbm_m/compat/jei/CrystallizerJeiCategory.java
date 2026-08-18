@@ -10,7 +10,11 @@ import net.minecraft.world.item.ItemStack;
 //? if forge {
 import dev.architectury.fluid.FluidStack;
 import mezz.jei.api.constants.VanillaTypes;
+//? if forge {
 import mezz.jei.api.forge.ForgeTypes;
+//?} elif neoforge {
+/*import mezz.jei.api.neoforge.NeoForgeTypes;
+*///?}
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.helpers.IGuiHelper;

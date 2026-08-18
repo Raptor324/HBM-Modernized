@@ -12,6 +12,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import dev.architectury.platform.Platform;
+import net.minecraft.resources.ResourceLocation;
+import com.hbm_m.lib.RefStrings;
 
 public final class PlatformHooks {
     private PlatformHooks() {}
@@ -103,9 +105,63 @@ public final class PlatformHooks {
     // =====================================================================================
 
     /**
-     * Сравнение двух ItemStack по предмету и данным (NBT на 1.20.1 / DataComponents на 1.21.1).
-     * Заменяет {@code ItemStack.isSameItemSameTags(a, b)}.
+     * Заменяет {@code NbtUtils.readBlockPos(tag.getCompound(key))}.
+     * 1.21.1: NbtUtils.readBlockPos(CompoundTag, String) возвращает Optional.
      */
+    public static net.minecraft.core.BlockPos readBlockPos(net.minecraft.nbt.CompoundTag tag, String key) {
+        //? if < 1.21.1 {
+        return net.minecraft.nbt.NbtUtils.readBlockPos(tag.getCompound(key));
+        //?} else {
+        /*return net.minecraft.nbt.NbtUtils.readBlockPos(tag, key).orElse(net.minecraft.core.BlockPos.ZERO);
+        *///?}
+    }
+
+    /**
+     * Кросс-версионная проверка на съедобность предмета.
+     */
+    public static boolean isEdible(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        //? if < 1.21.1 {
+        return stack.getItem().isEdible();
+        //?} else {
+        /*return stack.has(net.minecraft.core.component.DataComponents.FOOD);
+        *///?}
+    }
+
+    public static boolean isEdible(net.minecraft.world.item.Item item) {
+        //? if < 1.21.1 {
+        return item.isEdible();
+        //?} else {
+        /*return item.components().has(net.minecraft.core.component.DataComponents.FOOD);
+        *///?}
+    }
+
+    /**
+     * Кросс-версионное проигрывание звука (скрывает SoundEvent vs Holder<SoundEvent>).
+     */
+    public static void playSound(Level level, net.minecraft.core.BlockPos pos, Object sound, net.minecraft.sounds.SoundSource source, float volume, float pitch) {
+        net.minecraft.sounds.SoundEvent se = null;
+        if (sound instanceof net.minecraft.core.Holder<?> holder) {
+            se = (net.minecraft.sounds.SoundEvent) holder.value();
+        } else if (sound instanceof net.minecraft.sounds.SoundEvent s) {
+            se = s;
+        }
+        if (se != null) {
+            level.playSound(null, pos, se, source, volume, pitch);
+        }
+    }
+
+    /**
+     * Кросс-версионная фабрика музыкальных пластинок.
+     */
+    public static net.minecraft.world.item.Item createRecordItem(int comparatorValue, Object sound, net.minecraft.world.item.Item.Properties properties, int lengthInSeconds) {
+        //? if < 1.21.1 {
+        return new net.minecraft.world.item.RecordItem(comparatorValue, (net.minecraft.sounds.SoundEvent) sound, properties, lengthInSeconds * 20);
+        //?} else {
+        /*return new net.minecraft.world.item.Item(properties);
+        *///?}
+    }
+
     public static boolean isSameItemSameTags(ItemStack a, ItemStack b) {
         //? if < 1.21.1 {
         return ItemStack.isSameItemSameTags(a, b);
@@ -161,9 +217,7 @@ public final class PlatformHooks {
     //? if >= 1.21.1 {
     /*//? if forge {
     @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif fabric {
-    /^@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-    ^///?} elif neoforge {
+    //?} elif neoforge {
     /^@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
     ^///?}
     public static net.minecraft.core.HolderLookup.Provider clientProvider() {
@@ -316,7 +370,7 @@ public final class PlatformHooks {
         /*// 1.21.1: UUID-конструктор удалён. Привязка модификатора к слоту брони теперь по
         // ResourceLocation (производное от UUID, чтобы остаться уникальным и стабильным).
         return new AttributeModifier(
-                com.hbm_m.lib.RefStrings.resourceLocation(
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, 
                         "am_" + uuid.toString().replace('-', '_')),
                 value, operation);
         *///?}
@@ -335,7 +389,7 @@ public final class PlatformHooks {
         return new AttributeModifier(name, value, operation);
         //?} else {
         /*return new AttributeModifier(
-                com.hbm_m.lib.RefStrings.resourceLocation(
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, 
                         name.toLowerCase(java.util.Locale.ROOT).replace(' ', '_').replace(':', '.')),
                 value, operation);
         *///?}
@@ -389,7 +443,7 @@ public final class PlatformHooks {
                 name, (net.minecraftforge.client.model.geometry.IGeometryLoader<?>) loader);
         //?} else {
         /*((net.neoforged.neoforge.client.event.ModelEvent.RegisterGeometryLoaders) event).register(
-                com.hbm_m.lib.RefStrings.resourceLocation(name),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, name),
                 (net.neoforged.neoforge.client.model.geometry.IGeometryLoader<?>) loader);
         *///?}
     }
@@ -573,8 +627,6 @@ public final class PlatformHooks {
         return stack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
         //?} elif neoforge {
         /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;
-        *///?} elif fabric {
-        /*return net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage.ITEM.find(stack, null) != null;
         *///?}
     }
 

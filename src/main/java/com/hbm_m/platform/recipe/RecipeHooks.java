@@ -212,6 +212,22 @@ public class RecipeHooks {
     }
 
     /**
+     * Vanilla-поиск рецепта по одному входному слоту (SMELTING/CUTTING и т.п.).
+     * Заменяет {@code manager.getRecipeFor(type, new SimpleContainer(input), level)} в потребителях:
+     * на 1.21.1 нужен {@code SingleRecipeInput}, а результат завёрнут в {@code RecipeHolder}.
+     */
+    @SuppressWarnings("unchecked")
+    public static <R extends Recipe<?>> Optional<R> getRecipeFor(Level level, RecipeType<R> type, ItemStack input) {
+        //? if < 1.21.1 {
+        return (Optional<R>) (Object) level.getRecipeManager().getRecipeFor((RecipeType) type, new net.minecraft.world.SimpleContainer(input), level);
+        //?} else {
+        /*return ((Optional<net.minecraft.world.item.crafting.RecipeHolder<R>>) (Object)
+                level.getRecipeManager().getRecipeFor((RecipeType) type, new net.minecraft.world.item.crafting.SingleRecipeInput(input), level))
+                .map(net.minecraft.world.item.crafting.RecipeHolder::value);
+        *///?}
+    }
+
+    /**
      * {@code RecipeManager.byKey(id)}, развёрнутый из {@code Optional<RecipeHolder>} на 1.21.1.
      */
     @SuppressWarnings("unchecked")
@@ -220,6 +236,34 @@ public class RecipeHooks {
         return (Optional<Recipe<?>>) (Object) manager.byKey(id);
         //?} else {
         /*return ((Optional<RecipeHolder<?>>) (Object) manager.byKey(id)).map(RecipeHolder::value);
+        *///?}
+    }
+
+    /**
+     * Поиск vanilla-крафтового рецепта (RecipeType.CRAFTING) по сетке из {@link
+     * com.hbm_m.util.SimpleCraftingContainer}: на 1.21.1 нужен {@code CraftingInput},
+     * а результат завёрнут в {@code RecipeHolder}.
+     */
+    @SuppressWarnings("unchecked")
+    public static Optional<net.minecraft.world.item.crafting.CraftingRecipe> getCraftingRecipeFor(
+            Level level, com.hbm_m.util.SimpleCraftingContainer grid) {
+        //? if < 1.21.1 {
+        return (Optional<net.minecraft.world.item.crafting.CraftingRecipe>) (Object)
+                level.getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, grid, level);
+        //?} else {
+        /*return ((Optional<net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>>) (Object)
+                level.getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, grid.toCraftingInput(), level))
+                .map(net.minecraft.world.item.crafting.RecipeHolder::value);
+        *///?}
+    }
+
+    /** {@code CraftingRecipe.assemble} с кросс-версионным входом (Container vs CraftingInput). */
+    public static ItemStack assembleCrafting(net.minecraft.world.item.crafting.CraftingRecipe recipe,
+                                             com.hbm_m.util.SimpleCraftingContainer grid, Level level) {
+        //? if < 1.21.1 {
+        return recipe.assemble(grid, level.registryAccess());
+        //?} else {
+        /*return recipe.assemble(grid.toCraftingInput(), level.registryAccess());
         *///?}
     }
 

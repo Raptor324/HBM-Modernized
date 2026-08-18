@@ -30,7 +30,7 @@ public class ModWorldGen {
             DeferredRegister.create(RefStrings.MODID, Registries.STRUCTURE_PROCESSOR);
 
     public static final ResourceKey<ConfiguredFeature<?, ?>> URANIUM_ORE_CONFIGURED_KEY =
-            ResourceKey.create(Registries.CONFIGURED_FEATURE, RefStrings.resourceLocation("ore_uranium"));
+            ResourceKey.create(Registries.CONFIGURED_FEATURE, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "ore_uranium"));
 
     public static final RegistrySupplier<StructureProcessorType<StructureFoundationProcessor>>
             FOUNDATION_PROCESSOR = PROCESSORS.register("foundation_processor",
@@ -55,19 +55,19 @@ public class ModWorldGen {
             FEATURES.register("ore_bedrock_mineral", () -> new BedrockOreFeature(NoneFeatureConfiguration.CODEC));
 
     public static final ResourceKey<ConfiguredFeature<?, ?>> BEDROCK_ORE_CONFIGURED_KEY =
-            ResourceKey.create(Registries.CONFIGURED_FEATURE, RefStrings.resourceLocation("ore_bedrock_mineral"));
+            ResourceKey.create(Registries.CONFIGURED_FEATURE, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "ore_bedrock_mineral"));
 
     public static final ResourceKey<PlacedFeature> BEDROCK_ORE_PLACED_KEY =
-            ResourceKey.create(Registries.PLACED_FEATURE, RefStrings.resourceLocation("ore_bedrock_mineral_placed"));
+            ResourceKey.create(Registries.PLACED_FEATURE, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "ore_bedrock_mineral_placed"));
 
     public static final ResourceKey<ConfiguredFeature<?, ?>> BEDROCK_OIL_ORE_CONFIGURED_KEY =
-            ResourceKey.create(Registries.CONFIGURED_FEATURE, RefStrings.resourceLocation("ore_bedrock_oil"));
+            ResourceKey.create(Registries.CONFIGURED_FEATURE, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "ore_bedrock_oil"));
 
     public static final ResourceKey<PlacedFeature> BEDROCK_OIL_ORE_PLACED_KEY =
-            ResourceKey.create(Registries.PLACED_FEATURE, RefStrings.resourceLocation("ore_bedrock_oil_placed"));
+            ResourceKey.create(Registries.PLACED_FEATURE, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "ore_bedrock_oil_placed"));
 
     public static final ResourceKey<PlacedFeature> URANIUM_ORE_PLACED_KEY =
-            ResourceKey.create(Registries.PLACED_FEATURE, RefStrings.resourceLocation("ore_uranium_placed"));
+            ResourceKey.create(Registries.PLACED_FEATURE, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "ore_uranium_placed"));
 
     public static final ResourceKey<PlacedFeature> STRAWBERRY_BUSH_PLACED =
             ResourceKey.create(Registries.PLACED_FEATURE,

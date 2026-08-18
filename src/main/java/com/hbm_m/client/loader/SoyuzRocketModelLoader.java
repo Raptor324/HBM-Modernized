@@ -43,11 +43,7 @@ import net.neoforged.neoforge.client.model.obj.ObjModel;
 
 public class SoyuzRocketModelLoader implements IGeometryLoader<SoyuzRocketModelLoader.Geometry> {
 
-    //? if < 1.21.1 {
-    private static final ResourceLocation MODEL = new ResourceLocation(RefStrings.MODID, "models/soyuz/soyuz.obj");
-    //?} else {
-    /*private static final ResourceLocation MODEL = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/soyuz/soyuz.obj");
-    *///?}
+    private static final ResourceLocation MODEL = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/soyuz/soyuz.obj");
 
     @Override
     public Geometry read(JsonObject jsonObject, JsonDeserializationContext deserializationContext) {

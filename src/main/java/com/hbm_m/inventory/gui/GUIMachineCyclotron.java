@@ -37,13 +37,18 @@ public class GUIMachineCyclotron extends GuiInfoScreen<MachineCyclotronMenu> {
             guiGraphics.blit(TEXTURE, this.leftPos + 168, this.topPos + 80 - powerBarHeight, 190, 62 - powerBarHeight, 16, powerBarHeight);
         }
 
-        int progressWidth = cyclotron.getProgressScaled(79);
+        int progressWidth = cyclotron.getProgressScaled(34);
         if (progressWidth > 0) {
             guiGraphics.blit(TEXTURE, this.leftPos + 48, this.topPos + 27, 206, 0, progressWidth, 34);
             guiGraphics.blit(TEXTURE, this.leftPos + 172, this.topPos + 4, 190, 63, 9, 12);
         }
 
         drawInfoPanel(guiGraphics, 49, 85, PanelType.SMALL_BLUE_INFO);
+
+        var tanks = cyclotron.getAllTanks();
+        tanks[0].renderTank(guiGraphics, this.leftPos + 11, this.topPos + 88, 34, 7, 1);
+        tanks[1].renderTank(guiGraphics, this.leftPos + 11, this.topPos + 97, 34, 7, 1);
+        tanks[2].renderTank(guiGraphics, this.leftPos + 107, this.topPos + 97, 34, 16, 1);
     }
 
     @Override
@@ -69,6 +74,11 @@ public class GUIMachineCyclotron extends GuiInfoScreen<MachineCyclotronMenu> {
                 Component.translatable("desc.gui.upgrade.speed"),
                 Component.translatable("desc.gui.upgrade.effectiveness"),
                 Component.translatable("desc.gui.upgrade.power"));
+
+        var tanks = cyclotron.getAllTanks();
+        tanks[0].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 11, this.topPos + 81, 34, 7);
+        tanks[1].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 11, this.topPos + 90, 34, 7);
+        tanks[2].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 107, this.topPos + 81, 34, 16);
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

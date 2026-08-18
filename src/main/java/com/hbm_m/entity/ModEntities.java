@@ -472,6 +472,42 @@ public class ModEntities {
                             .updateInterval(1)
                             .build("entity_mist"));
 
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.conveyor.MovingConveyorItemEntity>> MOVING_CONVEYOR_ITEM =
+            ENTITY_TYPES.register("moving_conveyor_item",
+                    () -> EntityType.Builder.<com.hbm_m.entity.conveyor.MovingConveyorItemEntity>of(
+                                    com.hbm_m.entity.conveyor.MovingConveyorItemEntity::new, MobCategory.MISC)
+                            .sized(0.375F, 0.375F)
+                            .clientTrackingRange(8)
+                            .updateInterval(20)
+                            .build("moving_conveyor_item"));
+
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.conveyor.MovingConveyorPackageEntity>> MOVING_CONVEYOR_PACKAGE =
+            ENTITY_TYPES.register("moving_conveyor_package",
+                    () -> EntityType.Builder.<com.hbm_m.entity.conveyor.MovingConveyorPackageEntity>of(
+                                    com.hbm_m.entity.conveyor.MovingConveyorPackageEntity::new, MobCategory.MISC)
+                            .sized(0.5F, 0.5F)
+                            .clientTrackingRange(8)
+                            .updateInterval(20)
+                            .build("moving_conveyor_package"));
+
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.drone.EntityDeliveryDrone>> DELIVERY_DRONE =
+            ENTITY_TYPES.register("delivery_drone",
+                    () -> EntityType.Builder.<com.hbm_m.entity.drone.EntityDeliveryDrone>of(
+                                    com.hbm_m.entity.drone.EntityDeliveryDrone::new, MobCategory.MISC)
+                            .sized(0.75F, 0.75F)
+                            .clientTrackingRange(10)
+                            .updateInterval(3)
+                            .build("delivery_drone"));
+
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.drone.EntityRequestDrone>> REQUEST_DRONE =
+            ENTITY_TYPES.register("request_drone",
+                    () -> EntityType.Builder.<com.hbm_m.entity.drone.EntityRequestDrone>of(
+                                    com.hbm_m.entity.drone.EntityRequestDrone::new, MobCategory.MISC)
+                            .sized(0.75F, 0.75F)
+                            .clientTrackingRange(10)
+                            .updateInterval(3)
+                            .build("request_drone"));
+
     public static final RegistrySupplier<EntityType<ZirnoxDebrisEntity>> ZIRNOX_DEBRIS =
             ENTITY_TYPES.register("zirnox_debris",
                     () -> EntityType.Builder.<ZirnoxDebrisEntity>of(ZirnoxDebrisEntity::new, MobCategory.MISC)

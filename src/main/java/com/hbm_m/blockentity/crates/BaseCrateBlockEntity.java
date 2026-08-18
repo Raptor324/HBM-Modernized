@@ -98,7 +98,11 @@ public abstract class BaseCrateBlockEntity extends BlockEntity implements MenuPr
             this.lootTableSeed = tag.getLong("LootTableSeed");
         }
         if (tag.contains("inventory")) {
+            //? if < 1.21.1 {
             itemHandler.deserializeNBT(tag.getCompound("inventory"));
+            //?} else {
+            /*itemHandler.deserializeNBT(registries, tag.getCompound("inventory"));
+            *///?}
         }
     }
     //?} else {

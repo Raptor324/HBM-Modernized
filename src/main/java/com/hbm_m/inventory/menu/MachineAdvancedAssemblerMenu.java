@@ -39,7 +39,12 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
 
     // Конструктор, вызываемый с сервера
     public MachineAdvancedAssemblerMenu(int pContainerId, Inventory pPlayerInventory, MachineAdvancedAssemblerBlockEntity pBlockEntity, ContainerData pData) {
-        super(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), pContainerId);
+        this(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), pContainerId, pPlayerInventory, pBlockEntity, pData);
+    }
+
+    /** Used by {@code MachinePrecAssMenu} - see {@code MachineAdvancedAssemblerBlockEntity}'s matching protected constructor. */
+    protected MachineAdvancedAssemblerMenu(net.minecraft.world.inventory.MenuType<?> type, int pContainerId, Inventory pPlayerInventory, MachineAdvancedAssemblerBlockEntity pBlockEntity, ContainerData pData) {
+        super(type, pContainerId);
         // Убедимся, что данных пришло нужное количество
         checkContainerDataCount(pData, 2);
         this.blockEntity = pBlockEntity;
@@ -56,11 +61,10 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
         this.addSlot(new Slot(container, 0, 152, 81) { // Energy
             @Override public boolean mayPlace(ItemStack stack) {
                 if (ItemEnergyAccess.getHbmProvider(stack).isPresent() || ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
-                //? if fabric {
-                /*return EnergyStorage.ITEM.find(stack, null) != null;
-                *///?} else {
+                //? if neoforge {
+                /*if (stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null) return true;
+                *///?}
                 return false;
-                //?}
             }
         });
         this.addSlot(new Slot(container, 1, 35, 126)); // Blueprint

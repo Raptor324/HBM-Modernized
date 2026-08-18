@@ -83,6 +83,22 @@ public class ModConfigKeybindHandler {
             CATEGORY
     );
 
+    // RBMK crane console controls (1:1 with the original's EnumKeybind.CRANE_UP/DOWN/LEFT/RIGHT/LOAD) -
+    // held continuously while standing in a crane's detection zone, reported to the server every
+    // tick the combined state changes (see onClientPostTick below).
+    public static final KeyMapping RBMK_CRANE_UP = new KeyMapping(
+            "key.hbm_m.rbmk_crane_up", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_UP, CATEGORY);
+    public static final KeyMapping RBMK_CRANE_DOWN = new KeyMapping(
+            "key.hbm_m.rbmk_crane_down", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_DOWN, CATEGORY);
+    public static final KeyMapping RBMK_CRANE_LEFT = new KeyMapping(
+            "key.hbm_m.rbmk_crane_left", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_LEFT, CATEGORY);
+    public static final KeyMapping RBMK_CRANE_RIGHT = new KeyMapping(
+            "key.hbm_m.rbmk_crane_right", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT, CATEGORY);
+    public static final KeyMapping RBMK_CRANE_LOAD = new KeyMapping(
+            "key.hbm_m.rbmk_crane_load", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_SHIFT, CATEGORY);
+
+    private static boolean lastCraneUp, lastCraneDown, lastCraneLeft, lastCraneRight, lastCraneLoad;
+
     public static void init() {
         if (INITIALIZED) return;
         INITIALIZED = true;
@@ -94,6 +110,11 @@ public class ModConfigKeybindHandler {
         KeyMappingRegistry.register(POWER_ARMOR_VATS);
         KeyMappingRegistry.register(POWER_ARMOR_THERMAL);
         KeyMappingRegistry.register(OPEN_MULTI_DETONATOR);
+        KeyMappingRegistry.register(RBMK_CRANE_UP);
+        KeyMappingRegistry.register(RBMK_CRANE_DOWN);
+        KeyMappingRegistry.register(RBMK_CRANE_LEFT);
+        KeyMappingRegistry.register(RBMK_CRANE_RIGHT);
+        KeyMappingRegistry.register(RBMK_CRANE_LOAD);
         *///?}
 
         // Аналог END-фазы ClientTickEvent на Forge: выполняем после стандартного тика клиента.
@@ -200,6 +221,18 @@ public class ModConfigKeybindHandler {
                     mc.setScreen(new GUIMultiDetonator(off));
                 }
             }
+        }
+
+        // RBMK crane control: report held state to the server only when it changes.
+        boolean up    = RBMK_CRANE_UP.isDown();
+        boolean down  = RBMK_CRANE_DOWN.isDown();
+        boolean left  = RBMK_CRANE_LEFT.isDown();
+        boolean right = RBMK_CRANE_RIGHT.isDown();
+        boolean load  = RBMK_CRANE_LOAD.isDown();
+        if (mc.player != null && (up != lastCraneUp || down != lastCraneDown || left != lastCraneLeft
+                || right != lastCraneRight || load != lastCraneLoad)) {
+            lastCraneUp = up; lastCraneDown = down; lastCraneLeft = left; lastCraneRight = right; lastCraneLoad = load;
+            com.hbm_m.network.RBMKCraneControlPacket.send(up, down, left, right, load);
         }
     }
 }

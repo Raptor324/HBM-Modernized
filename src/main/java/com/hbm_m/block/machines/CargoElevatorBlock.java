@@ -1,39 +1,25 @@
 package com.hbm_m.block.machines;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Supplier;
-
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.CargoElevatorBlockEntity;
-import com.hbm_m.interfaces.IMultiblockController;
-import com.hbm_m.multiblock.MultiblockStructureHelper;
-import com.hbm_m.multiblock.PartRole;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -41,69 +27,20 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * Порт {@code BlockCargoElevator} из 1.7.10 (extends BlockDummyable).
- * <p>
- * 3×3 база-мультиблок с вертикально-выдвижной платформой.
- * ПКМ с блоком лифта → увеличение высоты (добавление слоёв сверху).
- * ПКМ без блока → toggle (выдвинуть/задвинуть платформу).
- * <p>
- * API gap: оригинал использует {@code BlockDummyable} (метаданные для core/dummy).
- * В Modernized — {@link MultiblockStructureHelper} с {@code UNIVERSAL_MACHINE_PART}
- * как filler. Это стандартный паттерн проекта.
+ * Self-stacking 3x3-footprint elevator shaft. Right-clicking with another elevator block in hand
+ * adds a floor (a new 3x3 layer above the current top); right-clicking otherwise toggles the
+ * platform between fully extended and fully retracted. Only the bottom-center block of the shaft
+ * is the {@link CargoElevatorBlockEntity} core — every other cell is a dummy part pointing back at
+ * it (see {@link com.hbm_m.multiblock.DummyCoreBlockEntity}). Visuals are drawn entirely by
+ * {@code CargoElevatorRenderer} from the core; collision is computed per-cell in {@link #getShape}.
  */
-public class CargoElevatorBlock extends BaseEntityBlock implements IMultiblockController {
+public class CargoElevatorBlock extends BaseEntityBlock {
 
-    public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
-
-    private final MultiblockStructureHelper structureHelper;
+    private static final double POST = 0.25;
+    private static final double PLATFORM_THICKNESS = 0.125;
 
     public CargoElevatorBlock(Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-        this.structureHelper = defineStructure();
-    }
-
-    /**
-     * Оригинал: {@code getDimensions() = {0, 0, 1, 1, 1, 1}}, {@code getOffset() = 1}.
-     * 3×3×1 база (1 блок в каждую сторону по горизонтали).
-     */
-    private static MultiblockStructureHelper defineStructure() {
-        String[] controllerLayer = {
-            "OOO",
-            "OEO",
-            "OOO"
-        };
-        String[] fillerLayer = {
-            "OOO",
-            "OOO",
-            "OOO"
-        };
-
-        Map<Character, PartRole> roleMap = Map.of(
-                'O', PartRole.DEFAULT,
-                'E', PartRole.CONTROLLER
-        );
-
-        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
-
-        return MultiblockStructureHelper.createFromLayersWithRoles(
-                new String[][] { controllerLayer, fillerLayer },
-                symbolMap,
-                () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-                roleMap,
-                null,
-                null
-        );
-    }
-
-    @Override
-    public MultiblockStructureHelper getStructureHelper() {
-        return this.structureHelper;
-    }
-
-    @Override
-    public PartRole getPartRole(BlockPos localOffset) {
-        return structureHelper.resolvePartRole(localOffset, this);
     }
 
     @Nullable
@@ -119,165 +56,152 @@ public class CargoElevatorBlock extends BaseEntityBlock implements IMultiblockCo
     }
 
     @Override
-    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-        super.onPlace(state, level, pos, oldState, isMoving);
-        if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            structureHelper.placeStructure(level, pos, state.getValue(FACING), this);
-        }
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock()) && !level.isClientSide()) {
-            structureHelper.destroyStructure(level, pos, state.getValue(FACING));
-        }
-        super.onRemove(state, level, pos, newState, isMoving);
+    public VoxelShape getShape(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos, CollisionContext context) {
+        return computeShape(level, pos);
     }
 
     @Override
-    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
-        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
+    public VoxelShape getCollisionShape(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos, CollisionContext context) {
+        return computeShape(level, pos);
+    }
+
+    private VoxelShape computeShape(net.minecraft.world.level.BlockGetter level, BlockPos pos) {
+        if (!(level.getBlockEntity(pos) instanceof CargoElevatorBlockEntity elevator)) {
+            return Shapes.block();
+        }
+        BlockPos corePos = elevator.getCorePos();
+        int dx = pos.getX() - corePos.getX();
+        int dz = pos.getZ() - corePos.getZ();
+        if (dx < -1 || dx > 1 || dz < -1 || dz > 1) {
+            return Shapes.block();
+        }
+
+        VoxelShape shape = Shapes.empty();
+
+        // Corner guide posts: always present, one per floor, thin verticals at the 4 outer corners.
+        if (Math.abs(dx) == 1 && Math.abs(dz) == 1) {
+            double x0 = dx < 0 ? 0.0 : 1.0 - POST;
+            double x1 = dx < 0 ? POST : 1.0;
+            double z0 = dz < 0 ? 0.0 : 1.0 - POST;
+            double z1 = dz < 0 ? POST : 1.0;
+            shape = Shapes.join(shape, Shapes.box(x0, 0, z0, x1, 1, z1), BooleanOp.OR);
+        }
+
+        // Moving platform: a thin slab that lives in whichever floor currently contains it.
+        CargoElevatorBlockEntity core = elevator.resolveCore(CargoElevatorBlockEntity.class);
+        if (core != null) {
+            double platformWorldY = corePos.getY() + 1 + core.extension;
+            double localY = platformWorldY - pos.getY();
+            if (localY > -PLATFORM_THICKNESS && localY < 1.0) {
+                double y0 = Mth.clamp(localY, 0.0, 1.0 - PLATFORM_THICKNESS);
+                double y1 = Mth.clamp(localY + PLATFORM_THICKNESS, PLATFORM_THICKNESS, 1.0);
+                shape = Shapes.join(shape, Shapes.box(0, y0, 0, 1, y1, 1), BooleanOp.OR);
+            }
+        }
+
+        return shape;
     }
 
     //? if < 1.21.1 {
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return handleUse(state, level, pos, player, hand, hit);
-    }
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
+                                  InteractionHand hand, BlockHitResult hit) {
+
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
+        }
+        if (player.isShiftKeyDown()) {
+            return InteractionResult.PASS;
+        }
+        if (!(level.getBlockEntity(pos) instanceof CargoElevatorBlockEntity elevator)) {
+            return InteractionResult.PASS;
+        }
+        CargoElevatorBlockEntity core = elevator.resolveCore(CargoElevatorBlockEntity.class);
+        if (core == null) {
+            return InteractionResult.PASS;
+        }
+
+        ItemStack held = player.getItemInHand(hand);
+        if (!held.isEmpty() && held.getItem() == this.asItem()) {
+            if (tryAddFloor(level, core)) {
+                if (!player.getAbilities().instabuild) {
+                    held.shrink(1);
+                }
+                level.playSound(null, core.getBlockPos(), SoundEvents.PISTON_EXTEND, SoundSource.BLOCKS, 1.0F, 0.8F);
+                return InteractionResult.CONSUME;
+            }
+            return InteractionResult.FAIL;
+        }
+
+        core.toggleElevator();
+        return InteractionResult.SUCCESS;
+        }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        return handleUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
-    }
+
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
+        }
+        if (player.isShiftKeyDown()) {
+            return InteractionResult.PASS;
+        }
+        if (!(level.getBlockEntity(pos) instanceof CargoElevatorBlockEntity elevator)) {
+            return InteractionResult.PASS;
+        }
+        CargoElevatorBlockEntity core = elevator.resolveCore(CargoElevatorBlockEntity.class);
+        if (core == null) {
+            return InteractionResult.PASS;
+        }
+
+        ItemStack held = player.getItemInHand(InteractionHand.MAIN_HAND);
+        if (!held.isEmpty() && held.getItem() == this.asItem()) {
+            if (tryAddFloor(level, core)) {
+                if (!player.getAbilities().instabuild) {
+                    held.shrink(1);
+                }
+                level.playSound(null, core.getBlockPos(), SoundEvents.PISTON_EXTEND, SoundSource.BLOCKS, 1.0F, 0.8F);
+                return InteractionResult.CONSUME;
+            }
+            return InteractionResult.FAIL;
+        }
+
+        core.toggleElevator();
+        return InteractionResult.SUCCESS;
+        }
     *///?}
 
-    private InteractionResult handleUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (level.isClientSide) return InteractionResult.sidedSuccess(true);
-        if (player.isShiftKeyDown()) return InteractionResult.PASS;
 
-        BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof CargoElevatorBlockEntity elevator)) return InteractionResult.PASS;
+    private boolean tryAddFloor(Level level, CargoElevatorBlockEntity core) {
+        BlockPos corePos = core.getBlockPos();
+        int newY = corePos.getY() + core.height + 1;
 
-        ItemStack heldItem = player.getItemInHand(hand);
-
-        // ПКМ с блоком лифта → увеличение высоты
-        if (!heldItem.isEmpty() && heldItem.getItem() instanceof BlockItem bi && bi.getBlock() == this) {
-            int targetY = pos.getY() + elevator.height + 1;
-            boolean replaceable = true;
-            for (int x = pos.getX() - 1; x <= pos.getX() + 1; x++) {
-                for (int z = pos.getZ() - 1; z <= pos.getZ() + 1; z++) {
-                    BlockState targetState = level.getBlockState(new BlockPos(x, targetY, z));
-                    if (!targetState.canBeReplaced()) {
-                        replaceable = false;
-                        break;
-                    }
-                }
-                if (!replaceable) break;
-            }
-
-            if (replaceable) {
-                for (int x = pos.getX() - 1; x <= pos.getX() + 1; x++) {
-                    for (int z = pos.getZ() - 1; z <= pos.getZ() + 1; z++) {
-                        level.setBlock(new BlockPos(x, targetY, z), ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(), 3);
-                    }
-                }
-                elevator.height++;
-                elevator.setChanged();
-                level.sendBlockUpdated(pos, state, state, 3);
-                if (!player.getAbilities().instabuild) {
-                    heldItem.shrink(1);
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                BlockPos p = new BlockPos(corePos.getX() + dx, newY, corePos.getZ() + dz);
+                if (!level.getBlockState(p).canBeReplaced()) {
+                    return false;
                 }
             }
-            return InteractionResult.CONSUME;
-        } else {
-            // ПКМ без блока → toggle
-            elevator.toggleElevator();
-            elevator.setChanged();
-            level.sendBlockUpdated(pos, state, state, 3);
-            return InteractionResult.CONSUME;
         }
-    }
 
-    @Override
-    public List<ItemStack> getDrops(BlockState state, net.minecraft.world.level.storage.loot.LootParams.Builder builder) {
-        // Оригинал: getDrops → (height + 1) предметов
-        BlockEntity be = builder.getOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.BLOCK_ENTITY);
-        if (be instanceof CargoElevatorBlockEntity elevator) {
-            int toDrop = elevator.height + 1;
-            List<ItemStack> drops = new ArrayList<>();
-            while (toDrop > 0) {
-                int perStack = Math.min(toDrop, 64);
-                toDrop -= perStack;
-                drops.add(new ItemStack(this, perStack));
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                BlockPos p = new BlockPos(corePos.getX() + dx, newY, corePos.getZ() + dz);
+                level.setBlock(p, this.defaultBlockState(), 3);
+                if (level.getBlockEntity(p) instanceof CargoElevatorBlockEntity part && !p.equals(corePos)) {
+                    part.setCorePos(corePos);
+                }
             }
-            return drops;
         }
-        return super.getDrops(state, builder);
-    }
 
-    /**
-     * Кастомные collision boxes: 4 угловых столба + плита платформы.
-     * Оригинал: {@code addCollisionBoxesToList} → {@code getAABBs(elevator, x, y, z)}.
-     */
-    @Override
-    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof CargoElevatorBlockEntity elevator)) {
-            return Shapes.empty();
-        }
-        return getElevatorCollisionShape(elevator);
-    }
-
-    @Override
-    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return Shapes.block();
-    }
-
-    @Override
-    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        return Shapes.empty();
-    }
-
-    @Override
-    public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
-    }
-
-    @Nullable
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
-    }
-
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
-    }
-
-    /**
-     * 4 угловых столба (0.25×height×0.25) + плита платформы (3×0.25×3 на высоте extension).
-     */
-    private static VoxelShape getElevatorCollisionShape(CargoElevatorBlockEntity elevator) {
-        int h = elevator.height + 1;
-        double ext = elevator.extension;
-
-        VoxelShape cornerNW = Block.box(0, 0, 0, 4, h * 16, 4);
-        VoxelShape cornerNE = Block.box(12, 0, 0, 16, h * 16, 4);
-        VoxelShape cornerSW = Block.box(0, 0, 12, 4, h * 16, 16);
-        VoxelShape cornerSE = Block.box(12, 0, 12, 16, h * 16, 16);
-
-        // Плита платформы: 3×0.25×3 на высоте (0.75 + extension)
-        double slabY = (0.75 + ext) * 16.0;
-        int slabYInt = (int) Math.floor(slabY);
-        int slabHeight = (int) Math.ceil((1.0 + ext) * 16.0) - slabYInt;
-        if (slabHeight < 1) slabHeight = 1;
-        VoxelShape platform = Block.box(0, slabYInt, 0, 16, Math.min(slabYInt + slabHeight, 256), 16);
-
-        VoxelShape result = Shapes.joinUnoptimized(cornerNW, cornerNE, BooleanOp.OR);
-        result = Shapes.joinUnoptimized(result, cornerSW, BooleanOp.OR);
-        result = Shapes.joinUnoptimized(result, cornerSE, BooleanOp.OR);
-        result = Shapes.joinUnoptimized(result, platform, BooleanOp.OR);
-        return result;
+        core.addFloor();
+        return true;
     }
 
     //? if >1.20.1 {

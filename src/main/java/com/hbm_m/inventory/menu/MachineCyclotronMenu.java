@@ -50,15 +50,15 @@ public class MachineCyclotronMenu extends AbstractContainerMenu {
                 ? blockEntity.getInventory()
                 : new DummyItemStackHandler(SLOT_MACHINE_END_EXCLUSIVE));
 
-        // Input (rendered on the right, next to its matching powder column)
-        this.addSlot(new Slot(machineInventory, 0, 101, 18));
-        this.addSlot(new Slot(machineInventory, 1, 101, 36));
-        this.addSlot(new Slot(machineInventory, 2, 101, 54));
+        // Input (rendered on the left, as in the 1.7.10 original)
+        this.addSlot(new Slot(machineInventory, 0, 11, 18));
+        this.addSlot(new Slot(machineInventory, 1, 11, 36));
+        this.addSlot(new Slot(machineInventory, 2, 11, 54));
 
-        // Targets (rendered on the left, matching the part_ icon artwork)
-        this.addSlot(new Slot(machineInventory, 3, 11, 18));
-        this.addSlot(new Slot(machineInventory, 4, 11, 36));
-        this.addSlot(new Slot(machineInventory, 5, 11, 54));
+        // Targets (rendered on the right, as in the 1.7.10 original)
+        this.addSlot(new Slot(machineInventory, 3, 101, 18));
+        this.addSlot(new Slot(machineInventory, 4, 101, 36));
+        this.addSlot(new Slot(machineInventory, 5, 101, 54));
 
         // Output (take only)
         this.addSlot(new TakeOnlySlot(machineInventory, 6, 131, 18));

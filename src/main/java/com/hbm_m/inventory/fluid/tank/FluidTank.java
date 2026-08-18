@@ -126,6 +126,14 @@ public class FluidTank implements Cloneable {
 
     public Object getCapability() { return backend.getCapability(); }
 
+    //? if forge {
+    /** Типизированный forge-доступ к капабилити бака (LazyOptional&lt;IFluidHandler&gt;) для BE.getCapability. */
+    @SuppressWarnings("unchecked")
+    public net.minecraftforge.common.util.LazyOptional<net.minecraftforge.fluids.capability.IFluidHandler> getForgeFluidCapability() {
+        return (net.minecraftforge.common.util.LazyOptional<net.minecraftforge.fluids.capability.IFluidHandler>) getCapability();
+    }
+    //?}
+
     public void assignTypeAndZeroFluid(Fluid newType) {
         if (!isEmpty()) drainMb(getFluidAmountMb());
         this.conformedFluid = newType == null ? Fluids.EMPTY : newType;

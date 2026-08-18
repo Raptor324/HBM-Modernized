@@ -1,18 +1,14 @@
-//? if forge {
 package com.hbm_m.api.energy;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import net.minecraft.server.level.ServerLevel;
+
+//? if forge {
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = "hbm_m")
 public class EnergyNetworkTickHandler {
-
-    private static final Logger LOGGER = LogManager.getLogger();
 
     @SubscribeEvent
     public static void onLevelTick(TickEvent.LevelTickEvent event) {
@@ -23,17 +19,21 @@ public class EnergyNetworkTickHandler {
         }
     }
 }
-//?}
-//? if fabric {
-/*package com.hbm_m.api.energy;
+//?} elif neoforge {
+/*import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
-import dev.architectury.event.events.common.TickEvent;
-import net.minecraft.server.level.ServerLevel;
-
+@EventBusSubscriber(modid = "hbm_m")
 public class EnergyNetworkTickHandler {
 
-    public static void init() {
-        TickEvent.SERVER_LEVEL_POST.register((ServerLevel level) -> EnergyNetworkManager.get(level).tick());
+    @SubscribeEvent
+    public static void onLevelTick(LevelTickEvent.Post event) {
+        if (event.getLevel().isClientSide()) return;
+
+        if (event.getLevel() instanceof ServerLevel serverLevel) {
+            EnergyNetworkManager.get(serverLevel).tick();
+        }
     }
 }
 *///?}

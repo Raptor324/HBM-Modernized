@@ -8,9 +8,14 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
+/**
+ * The RBMK Console is a pure status/control panel - no inventory of its own, matching the
+ * original 1.7.10 {@code ContainerRBMKConsole}. Previously had a leftover copy-pasted 27+9 player
+ * inventory grid that didn't match the GUI texture (hotbar row rendered below the visible panel
+ * entirely) and served no purpose since the BlockEntity has no item storage.
+ */
 public class MachineRbmkConsoleMenu extends AbstractContainerMenu {
 
     private final MachineRbmkConsoleBlockEntity blockEntity;
@@ -22,16 +27,6 @@ public class MachineRbmkConsoleMenu extends AbstractContainerMenu {
     public MachineRbmkConsoleMenu(int id, Inventory inventory, MachineRbmkConsoleBlockEntity blockEntity) {
         super(ModMenuTypes.RBMK_CONSOLE_MENU.get(), id);
         this.blockEntity = blockEntity;
-
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 122 + row * 18));
-            }
-        }
-
-        for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(inventory, col, 8 + col * 18, 180));
-        }
     }
 
     public static MachineRbmkConsoleMenu create(int id, Inventory inventory, MachineRbmkConsoleBlockEntity blockEntity) {

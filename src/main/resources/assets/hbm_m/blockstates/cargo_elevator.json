@@ -1,8 +1,0 @@
-{
-  "variants": {
-    "facing=north": { "model": "hbm_m:block/cargo_elevator" },
-    "facing=east": { "model": "hbm_m:block/cargo_elevator", "y": 90 },
-    "facing=south": { "model": "hbm_m:block/cargo_elevator", "y": 180 },
-    "facing=west": { "model": "hbm_m:block/cargo_elevator", "y": 270 }
-  }
-}

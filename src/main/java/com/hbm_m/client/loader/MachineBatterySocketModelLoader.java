@@ -9,14 +9,12 @@ import com.hbm_m.client.model.MachineBatterySocketBakedModel;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
+import com.hbm_m.lib.RefStrings;
 
 public class MachineBatterySocketModelLoader extends AbstractObjPartModelLoader<MachineBatterySocketBakedModel> {
 
-    //? if < 1.21.1 {
-    public static final ResourceLocation ID = new ResourceLocation("hbm_m", "battery_socket");
-    //?} else {
-    /*public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath("hbm_m", "battery_socket");
-    *///?}
+    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "battery_socket");
+
 
     @Override
     protected Set<String> getPartNames(JsonObject jsonObject) {

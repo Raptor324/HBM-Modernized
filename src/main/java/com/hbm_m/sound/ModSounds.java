@@ -85,6 +85,7 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> BOUNCE2 = registerSoundEvents("item.bounce2");
     public static final RegistrySupplier<SoundEvent> BOUNCE3 = registerSoundEvents("item.bounce3");
 
+    public static final RegistrySupplier<SoundEvent> UPGRADE_PLUG = registerSoundEvents("tool.upgrade_plug");
     public static final RegistrySupplier<SoundEvent> EXTRACT_1 = registerSoundEvents("tool.extract1");
     public static final RegistrySupplier<SoundEvent> EXTRACT_2 = registerSoundEvents("tool.extract2");
 
@@ -131,6 +132,12 @@ public class ModSounds {
 
     public static final RegistrySupplier<SoundEvent> SWITCH_ON = registerSoundEvents("block.switch.on");
 
+    // Broadcaster ambient loop - Minecraft picks one of the 3 variants at random each play.
+    public static final RegistrySupplier<SoundEvent> BROADCAST1 = registerSoundEvents("block.broadcast1");
+    public static final RegistrySupplier<SoundEvent> BROADCAST2 = registerSoundEvents("block.broadcast2");
+    public static final RegistrySupplier<SoundEvent> BROADCAST3 = registerSoundEvents("block.broadcast3");
+    public static final RegistrySupplier<SoundEvent> BROADCAST_RANDOM = registerSoundEvents("block.broadcast_random");
+
     // РЕГИСТРАЦИЯ АБСТРАКТНОГО СОБЫТИЯ 
     // Это тот самый звук, который мы будем вызывать в коде.
     // Minecraft сам выберет один из 7 реальных звуков случайным образом.
@@ -148,6 +155,16 @@ public class ModSounds {
 
     // Эффект скелетонизации (порт из HBM 1.7.10 — weapon.fire.disintegration)
     public static final RegistrySupplier<SoundEvent> DISINTEGRATION = registerSoundEvents("weapon.disintegration");
+    public static final RegistrySupplier<SoundEvent> MUSIC_DISC_GLASS = registerSoundEvents("music_disc.glass");
+
+    // Siren cassette tracks
+    public static final RegistrySupplier<SoundEvent> SIREN_AMS = registerSoundEvents("alarm.amssiren");
+    public static final RegistrySupplier<SoundEvent> SIREN_BEEP = registerSoundEvents("alarm.beepsiren");
+    public static final RegistrySupplier<SoundEvent> SIREN_CLASSIC = registerSoundEvents("alarm.classicsiren");
+    public static final RegistrySupplier<SoundEvent> SIREN_NOSTROMO = registerSoundEvents("alarm.nostromosiren");
+    public static final RegistrySupplier<SoundEvent> SIREN_REGULAR = registerSoundEvents("alarm.regularsiren");
+    public static final RegistrySupplier<SoundEvent> SIREN_STRIDER = registerSoundEvents("alarm.stridersiren");
+    public static final RegistrySupplier<SoundEvent> SIREN_SWEEP = registerSoundEvents("alarm.sweepsiren");
     
     // Вспомогательный метод для регистрации
     private static RegistrySupplier<SoundEvent> registerSoundEvents(String name) {

@@ -43,6 +43,11 @@ public class MachineFoundryOutletBlockEntity extends BlockEntity implements ICru
         super(ModBlockEntities.FOUNDRY_OUTLET_BE.get(), pos, state);
     }
 
+    /** Used by {@link MachineFoundrySlagtapBlockEntity}, which reuses this class's filter/redstone logic under a different registered type. */
+    protected MachineFoundryOutletBlockEntity(net.minecraft.world.level.block.entity.BlockEntityType<?> type, BlockPos pos, BlockState state) {
+        super(type, pos, state);
+    }
+
     public boolean isClosed() {
         if (level == null) return true;
         boolean powered = level.hasNeighborSignal(worldPosition);

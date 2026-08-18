@@ -23,9 +23,26 @@ public final class PressRecipeGenerator {
     }
 
     public static void generate(Consumer<FinishedRecipe> writer) {
+        generateFlat(writer);
         generatePlates(writer);
         generateWires(writer);
         generateCircuits(writer);
+    }
+
+    private static void generateFlat(Consumer<FinishedRecipe> writer) {
+        // Ported from 1.7.10 PressRecipes.java (StampType.FLAT).
+        // Only recipes whose input AND output items both exist in this port were ported;
+        // see task summary for the recipes that were skipped (dusts, briquettes, pages, etc. don't exist here).
+
+        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.BIOMASS_COMPRESSED.get()))
+                .stamp(ModTags.Items.STAMPS_FLAT)
+                .material(ModItems.BIOMASS.get())
+                .save(writer, "biomass_compressed");
+
+        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.BALL_RESIN.get()))
+                .stamp(ModTags.Items.STAMPS_FLAT)
+                .material(net.minecraft.world.level.block.Blocks.JUNGLE_LOG)
+                .save(writer, "ball_resin");
     }
 
     private static void generatePlates(Consumer<FinishedRecipe> writer) {
@@ -93,6 +110,11 @@ public final class PressRecipeGenerator {
                 .stamp(ModTags.Items.STAMPS_PLATE)
                 .material(ModItems.getIngot(ModIngots.GUNMETAL).get())
                 .save(writer, "plate_gunmetal");
+
+        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_DURA_STEEL.get()))
+                .stamp(ModTags.Items.STAMPS_PLATE)
+                .material(ModItems.getIngot(ModIngots.DURA_STEEL).get())
+                .save(writer, "plate_dura_steel");
     }
 
     private static void generateWires(Consumer<FinishedRecipe> writer) {

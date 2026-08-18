@@ -60,6 +60,7 @@ public class ModTags {
 
         // --- ПРОЧЕЕ ---
         public static final TagKey<Item> BLADES = tag("blades");
+        public static final TagKey<Item> STAMPS_FLAT = tag("stamps/flat");
         public static final TagKey<Item> STAMPS_PLATE = tag("stamps/plate");
         public static final TagKey<Item> STAMPS_WIRE = tag("stamps/wire");
         public static final TagKey<Item> STAMPS_CIRCUIT = tag("stamps/circuit");

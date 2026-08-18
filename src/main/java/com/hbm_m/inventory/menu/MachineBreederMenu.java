@@ -2,14 +2,10 @@ package com.hbm_m.inventory.menu;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.machines.MachineBreederBlockEntity;
-import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
-import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;
-import com.hbm_m.platform.DummyItemStackHandler;
-import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -18,23 +14,21 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.ContainerLevelAccess;
-import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
+/**
+ * Two-slot menu (input/output) matching {@code gui_breeder.png}'s actual layout 1:1 - slot
+ * coordinates reverse-engineered from the texture itself (input at 35,35; output at 125,35;
+ * flanking a vertical flux-progress bar at 73,19).
+ */
 public class MachineBreederMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
     private static final int SLOT_INPUT = 0;
-    private static final int SLOT_BATTERY = 1;
-    private static final int SLOT_OUTPUT = 2;
-    private static final int SLOT_FLUID_INPUT = 3;
-    private static final int SLOT_FLUID_OUTPUT = 4;
-    private static final int SLOT_UPGRADE_1 = 5;
-    private static final int SLOT_UPGRADE_2 = 6;
-    private static final int SLOT_FLUID_ID = 7;
-    private static final int MACHINE_SLOTS = 8;
+    private static final int SLOT_OUTPUT = 1;
+    private static final int MACHINE_SLOTS = 2;
 
     private final MachineBreederBlockEntity blockEntity;
     private final Level level;
@@ -50,8 +44,7 @@ public class MachineBreederMenu extends AbstractContainerMenu implements ILongEn
     }
 
     public MachineBreederMenu(int id, Inventory inv, MachineBreederBlockEntity blockEntity) {
-        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустые данные
-        this(id, inv, blockEntity, blockEntity != null ? blockEntity.getContainerData() : new SimpleContainerData(2));
+        this(id, inv, blockEntity, blockEntity.getContainerData());
     }
 
     public MachineBreederMenu(int id, Inventory inv, BlockEntity entity, ContainerData data) {
@@ -64,63 +57,30 @@ public class MachineBreederMenu extends AbstractContainerMenu implements ILongEn
         checkContainerDataCount(data, 2);
         addDataSlots(data);
 
-        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
-        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
-        this.machineInventory = new ModItemStackHandlerContainer(
-                this.blockEntity != null ? this.blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOTS),
-                this.blockEntity != null ? this.blockEntity::setChanged : null);
+        this.machineInventory = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
 
-        this.addSlot(new Slot(machineInventory, SLOT_INPUT, 62, 45));
-        this.addSlot(new Slot(machineInventory, SLOT_BATTERY, 152, 72) {
-            @Override
-            public boolean mayPlace(ItemStack stack) {
-                //? if forge {
-                if (com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent()) return true;
-                //?}
-                return com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).isPresent()
-                    || stack.getItem() instanceof ItemCreativeBattery;
-            }
-        });
-        this.addSlot(new Slot(machineInventory, SLOT_OUTPUT, 113, 45) {
+        this.addSlot(new Slot(machineInventory, SLOT_INPUT, 35, 35));
+        this.addSlot(new Slot(machineInventory, SLOT_OUTPUT, 125, 35) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false;
             }
         });
-        this.addSlot(new Slot(machineInventory, SLOT_FLUID_INPUT, 17, 18));
-        this.addSlot(new Slot(machineInventory, SLOT_FLUID_OUTPUT, 17, 54) {
-            @Override
-            public boolean mayPlace(ItemStack stack) {
-                return false;
-            }
-        });
-        this.addSlot(new Slot(machineInventory, SLOT_UPGRADE_1, 80, 18));
-        this.addSlot(new Slot(machineInventory, SLOT_UPGRADE_2, 98, 18));
-        this.addSlot(new Slot(machineInventory, SLOT_FLUID_ID, 35, 72));
 
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 9; j++) {
-                this.addSlot(new Slot(inv, j + i * 9 + 9, 8 + j * 18, 122 + i * 18));
+                this.addSlot(new Slot(inv, j + i * 9 + 9, 8 + j * 18, 84 + i * 18));
             }
         }
         for (int i = 0; i < 9; i++) {
-            this.addSlot(new Slot(inv, i, 8 + i * 18, 180));
+            this.addSlot(new Slot(inv, i, 8 + i * 18, 142));
         }
-    }
-
-    private static boolean hasFluidStorageItem(ItemStack stack) {
-        return PlatformHooks.isFluidContainer(stack);
     }
 
     private static MachineBreederBlockEntity getBlockEntity(Inventory inv, FriendlyByteBuf data) {
         BlockEntity be = inv.player.level().getBlockEntity(data.readBlockPos());
         if (be instanceof MachineBreederBlockEntity breeder) {
             return breeder;
-        }
-        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
-        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
-        if (inv.player.level().isClientSide) {
-            return null;
         }
         throw new IllegalStateException("BlockEntity is not a Breeder");
     }
@@ -150,13 +110,12 @@ public class MachineBreederMenu extends AbstractContainerMenu implements ILongEn
 
     @Override
     public long getEnergyStatic() {
-        // тайл может отсутствовать на клиенте (реплей Flashback)
-        return blockEntity != null ? blockEntity.getEnergyStored() : 0L;
+        return blockEntity.getEnergyStored();
     }
 
     @Override
     public long getMaxEnergyStatic() {
-        return blockEntity != null ? blockEntity.getMaxEnergyStored() : 0L;
+        return blockEntity.getMaxEnergyStored();
     }
 
     @Override
@@ -205,28 +164,8 @@ public class MachineBreederMenu extends AbstractContainerMenu implements ILongEn
                 return ItemStack.EMPTY;
             }
         } else {
-            boolean isBattery = com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).isPresent()
-                || stack.getItem() instanceof ItemCreativeBattery;
-            //? if forge {
-            isBattery = isBattery || com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent();
-            //?}
-
-            if (isBattery) {
-                if (!moveItemStackTo(stack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {
-                    return ItemStack.EMPTY;
-                }
-            } else if (hasFluidStorageItem(stack)) {
-                if (!moveItemStackTo(stack, SLOT_FLUID_INPUT, SLOT_FLUID_INPUT + 1, false)) {
-                    return ItemStack.EMPTY;
-                }
-            } else {
-                if (!moveItemStackTo(stack, SLOT_UPGRADE_1, SLOT_UPGRADE_2 + 1, false)) {
-                    if (!moveItemStackTo(stack, SLOT_FLUID_ID, SLOT_FLUID_ID + 1, false)) {
-                        if (!moveItemStackTo(stack, SLOT_INPUT, SLOT_INPUT + 1, false)) {
-                            return ItemStack.EMPTY;
-                        }
-                    }
-                }
+            if (!moveItemStackTo(stack, SLOT_INPUT, SLOT_INPUT + 1, false)) {
+                return ItemStack.EMPTY;
             }
         }
 
@@ -241,9 +180,6 @@ public class MachineBreederMenu extends AbstractContainerMenu implements ILongEn
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null) {
-            return false; // тайл может отсутствовать на клиенте (реплей Flashback)
-        }
         return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.BREEDER.get());
     }
 }

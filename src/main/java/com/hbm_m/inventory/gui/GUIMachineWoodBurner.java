@@ -70,7 +70,7 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
 
         int energyHeight = menu.getEnergyScaled(34);
         if (energyHeight > 0) {
-            gui.blit(TEXTURE, x + 143, y + 18 + 34 - energyHeight, 176, 34 - energyHeight, 16, energyHeight); // Energy bar
+            gui.blit(TEXTURE, x + 143, y + 18 + 34 - energyHeight, 176, 52 - energyHeight, 16, energyHeight); // Energy bar
         }
 
         if (!menu.isEnabled()) {

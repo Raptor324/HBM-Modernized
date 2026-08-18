@@ -134,6 +134,14 @@ public class MachineRbmkConsoleBlock extends BaseEntityBlock implements IMultibl
     private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide) {
             BlockEntity entity = level.getBlockEntity(pos);
+
+            net.minecraft.world.item.ItemStack held = player.getItemInHand(hand);
+            if (held.getItem() instanceof com.hbm_m.item.rbmk.RBMKToolItem
+                    && entity instanceof MachineRbmkConsoleBlockEntity console) {
+                com.hbm_m.item.rbmk.RBMKToolItem.linkConsole(held, level, console, player);
+                return InteractionResult.SUCCESS;
+            }
+
             if (entity instanceof MenuProvider menuProvider) {
                 MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));
             }
@@ -153,7 +161,16 @@ public class MachineRbmkConsoleBlock extends BaseEntityBlock implements IMultibl
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        // The console's real geometry is a single large hand-modeled mesh (spans ~2x4x5 blocks,
+        // not a 1-block cube) shipped as models/block/rbmk_console.obj and loaded/rendered
+        // directly by MachineRbmkConsoleRenderer (matching the pattern already used for every
+        // other RBMK OBJ mesh in this mod, e.g. RBMKColumnRenderer's fuel channel). It was
+        // previously wired through a static "forge:composite"/"forge:obj" block model instead,
+        // which is a Forge-only custom model loader that isn't reliably available in this
+        // multi-loader (Forge+Fabric) build - the model silently failed to bake into anything
+        // but a bare cube, which is why the console rendered as a featureless slab in-game
+        // despite the correct mesh and texture both being present as assets.
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Override

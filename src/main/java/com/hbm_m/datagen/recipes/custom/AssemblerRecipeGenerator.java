@@ -43,6 +43,7 @@ public final class AssemblerRecipeGenerator {
         registerAmmo(writer);
         registerSpace(writer);
         registerTurrets(writer);
+        registerGapMachines(writer);
 
         // Genuinely blocked — original recipe needs an item/block/enum system that doesn't exist in this
         // port yet (ItemExpensive, colored keys, BLOCK_CAP, modular missile parts, nuke output
@@ -146,6 +147,363 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 4)
                 .addIngredient(ModItems.CRT_DISPLAY.get(), 3)
                 .save(writer, "turret_himars");
+    }
+
+    /**
+     * Gap-fill: machines that were fully implemented (block/blockentity/menu/GUI) but had no way to be
+     * crafted in survival. Ported from 1.7.10 AssemblyMachineRecipes.java where a matching ass.* entry
+     * exists; ANY_RESISTANTALLOY is substituted with ADVANCED_ALLOY (no oredict tag-aggregate equivalent
+     * in this port, same substitution convention as elsewhere in this file), ANY_TAR with RUBBER (no
+     * tar-specific material exists in this port). ass.combinationoven / ass.deuttower did not exist as
+     * Assembler recipes in the original — the combination oven was an Anvil-construction recipe and the
+     * fraction tower a plain shaped crafting-table recipe; both are adapted here into Assembler recipes
+     * using their original ingredient lists (fluid costs, where present, are omitted, matching how
+     * registerAmmo() already handles gas-fluid costs elsewhere in this file). The plain reactor Breeder
+     * (not Fusion Breeder) had no craftable recipe anywhere in the original (loot/starter-kit only) — its
+     * recipe below is invented, scaled to the same tier as the other reactor multiblock parts in
+     * registerReactors().
+     */
+    private static void registerGapMachines(Consumer<FinishedRecipe> writer) {
+        // Arc Furnace — port of 1.7.10 ass.arcfurnace.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.ARC_FURNACE.get(), 1), 200, 100)
+                .addIngredient(Ingredient.of(ModBlocks.CONCRETE.get().asItem()), 12)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.POLYMER).get(),
+                        ModItems.getIngot(ModIngots.BAKELITE).get()), 8)
+                .addIngredient(ModItems.FIREBRICK.get(), 16)
+                .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 8)
+                .addIngredient(ModItems.CAPACITOR_TANTALUM.get(), 1)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 1)
+                .save(writer, "arcfurnace");
+
+        // Hydrotreater — port of 1.7.10 ass.hydrotreater.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.HYDROTREATER.get(), 1), 200, 100)
+                .addIngredient(ModItems.PLATE_WELDED_STEEL.get(), 8)
+                .addIngredient(ModItems.PLATE_CAST_COPPER.get(), 4)
+                .addIngredient(ModItems.getIngot(ModIngots.NIOBIUM).get(), 8)
+                .addIngredient(ModItems.getIngot(ModIngots.ADVANCED_ALLOY).get(), 4)
+                .addIngredient(ModItems.SHELL_STEEL.get(), 2)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 8)
+                .addIngredient(ModItems.MOTOR_DESH.get(), 2)
+                .addIngredient(ModItems.BISMOID_CIRCUIT.get(), 1)
+                .save(writer, "hydrotreater");
+
+        // Furnace Iron — no ass.* recipe existed in the original 1.7.10 (was likely obtainable
+        // through other means); a plausible Assembler recipe is invented here, tiered below the
+        // Blast Furnace equivalent, consistent with the iron-tier ingredient style used nearby.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.FURNACE_IRON.get(), 1), 100, 60)
+                .addIngredient(ModItems.PLATE_IRON.get(), 24)
+                .addIngredient(ModItems.FIREBRICK.get(), 8)
+                .addIngredient(Ingredient.of(net.minecraft.world.item.Items.IRON_INGOT), 16)
+                .save(writer, "furnace_iron");
+
+        // Furnace Steel — no ass.* recipe existed in the original 1.7.10 either; invented here,
+        // tiered above the Iron Furnace, using the same steel-ingot ingredient style as Liquefactor
+        // below.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.FURNACE_STEEL.get(), 1), 150, 80)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 24)
+                .addIngredient(ModItems.FIREBRICK.get(), 16)
+                .addIngredient(ModItems.PLATE_IRON.get(), 16)
+                .save(writer, "furnace_steel");
+
+        // Rotary Furnace — no ass.* recipe existed in the original 1.7.10 either; invented here,
+        // tiered above Furnace Steel given the extra fluid-tank/motor complexity.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.ROTARY_FURNACE.get(), 1), 200, 120)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 32)
+                .addIngredient(ModItems.FIREBRICK.get(), 24)
+                .addIngredient(ModItems.PLATE_CAST_COPPER.get(), 8)
+                .addIngredient(ModItems.MOTOR_BISMUTH.get(), 2)
+                .save(writer, "rotary_furnace");
+
+        // Conveyor belts — the original obtains these exclusively via the "Conveyor Wand" tool
+        // (right-click placement, ItemConveyorWand, hidden from NEI), which this port doesn't have;
+        // ported instead as ordinary placeable blocks (matching this port's existing convention for
+        // the other machine blocks), so a plausible Assembler recipe is invented here to make them
+        // obtainable in survival.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CONVEYOR.get(), 4), 80, 40)
+                .addIngredient(ModItems.PLATE_IRON.get(), 4)
+                .addIngredient(Ingredient.of(Items.REDSTONE), 2)
+                .save(writer, "conveyor");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CONVEYOR_DOUBLE.get(), 4), 100, 50)
+                .addIngredient(ModItems.PLATE_IRON.get(), 8)
+                .addIngredient(Ingredient.of(Items.REDSTONE), 3)
+                .save(writer, "conveyor_double");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CONVEYOR_TRIPLE.get(), 4), 120, 60)
+                .addIngredient(ModItems.PLATE_IRON.get(), 12)
+                .addIngredient(Ingredient.of(Items.REDSTONE), 4)
+                .save(writer, "conveyor_triple");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CONVEYOR_EXPRESS.get(), 4), 100, 60)
+                .addIngredient(ModItems.PLATE_IRON.get(), 4)
+                .addIngredient(ModItems.getIngot(ModIngots.RED_COPPER).get(), 2)
+                .addIngredient(Ingredient.of(Items.REDSTONE), 4)
+                .save(writer, "conveyor_express");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CONVEYOR_LIFT.get(), 2), 100, 60)
+                .addIngredient(ModItems.PLATE_IRON.get(), 6)
+                .addIngredient(Ingredient.of(Items.REDSTONE), 2)
+                .save(writer, "conveyor_lift");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CONVEYOR_CHUTE.get(), 2), 80, 40)
+                .addIngredient(ModItems.PLATE_IRON.get(), 6)
+                .save(writer, "conveyor_chute");
+
+        // Microwave — no ass.* recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.MICROWAVE.get(), 1), 120, 60)
+                .addIngredient(ModItems.PLATE_IRON.get(), 12)
+                .addIngredient(ModItems.getIngot(ModIngots.RED_COPPER).get(), 4)
+                .addIngredient(Ingredient.of(Items.REDSTONE), 4)
+                .save(writer, "microwave");
+
+        // Exposure Chamber — no ass.* recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.EXPOSURE_CHAMBER.get(), 1), 150, 80)
+                .addIngredient(ModItems.PLATE_LEAD.get(), 16)
+                .addIngredient(ModItems.getIngot(ModIngots.ADVANCED_ALLOY).get(), 6)
+                .addIngredient(ModItems.CIRCUIT_STAR.get(), 2)
+                .save(writer, "exposure_chamber");
+
+        // Radiolysis Collector — no ass.* recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.RADIOLYSIS.get(), 1), 150, 80)
+                .addIngredient(ModItems.PLATE_LEAD.get(), 12)
+                .addIngredient(ModItems.getIngot(ModIngots.ADVANCED_ALLOY).get(), 8)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 6)
+                .save(writer, "radiolysis");
+
+        // Electrolyser — no ass.* recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.ELECTROLYSER.get(), 1), 200, 100)
+                .addIngredient(ModItems.PLATE_LEAD.get(), 16)
+                .addIngredient(ModItems.getIngot(ModIngots.ADVANCED_ALLOY).get(), 10)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 8)
+                .addIngredient(ModItems.CIRCUIT_STAR.get(), 2)
+                .save(writer, "electrolyser");
+
+        // Compressor already has an Assembler recipe registered further down this file (from an
+        // earlier pass) - not duplicating it here.
+
+        // Sawmill — no ass.* recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.SAWMILL.get(), 1), 100, 60)
+                .addIngredient(ModItems.PLATE_IRON.get(), 12)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 4)
+                .save(writer, "sawmill");
+
+        // Autosaw — no ass.* recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.AUTOSAW.get(), 1), 150, 80)
+                .addIngredient(ModItems.PLATE_IRON.get(), 16)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 8)
+                .addIngredient(ModItems.PISTON_SET_STEEL.get(), 2)
+                .save(writer, "autosaw");
+
+        // Thresher — no ass.* recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.THRESHER.get(), 1), 100, 60)
+                .addIngredient(ModItems.PLATE_IRON.get(), 10)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 4)
+                .addIngredient(ModItems.PISTON_SET_STEEL.get(), 1)
+                .save(writer, "thresher");
+
+        // Ammo Press — no ass.* recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.AMMO_PRESS.get(), 1), 150, 90)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 20)
+                .addIngredient(ModItems.PLATE_IRON.get(), 12)
+                .addIngredient(ModItems.PISTON_SET_STEEL.get(), 1)
+                .save(writer, "ammo_press");
+
+        // E-Press — no ass.* recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.EPRESS.get(), 1), 150, 90)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 20)
+                .addIngredient(ModItems.PLATE_IRON.get(), 12)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .addIngredient(ModItems.PISTON_SET_STEEL.get(), 1)
+                .save(writer, "epress");
+
+        // Conveyor Press — no ass.* recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CONVEYOR_PRESS.get(), 1), 150, 90)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 16)
+                .addIngredient(ModItems.PLATE_IRON.get(), 10)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .save(writer, "conveyor_press");
+
+        // Autocrafter — no ass.* recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.MACHINE_AUTOCRAFTER.get(), 1), 150, 90)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 12)
+                .addIngredient(ModItems.PLATE_IRON.get(), 8)
+                .addIngredient(ModItems.CIRCUIT_STAR.get(), 2)
+                .save(writer, "machine_autocrafter");
+
+        // Funnel — no ass.* recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.MACHINE_FUNNEL.get(), 1), 100, 60)
+                .addIngredient(ModItems.PLATE_IRON.get(), 8)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 4)
+                .save(writer, "machine_funnel");
+
+        // PUREX — no ass.* recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.PUREX.get(), 1), 250, 150)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 32)
+                .addIngredient(ModItems.PLATE_LEAD.get(), 16)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 8)
+                .addIngredient(ModItems.CIRCUIT_STAR.get(), 4)
+                .save(writer, "purex");
+
+        // Stirling Engine (regular/steel) — no ass.* recipe existed in the original 1.7.10 either;
+        // invented here. STIRLING_CREATIVE is intentionally NOT craftable (creative-tab-only debug
+        // variant, consistent with how this generator treats every other "_CREATIVE" item).
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.STIRLING.get(), 1), 150, 90)
+                .addIngredient(Items.IRON_INGOT, 16)
+                .addIngredient(ModItems.PLATE_IRON.get(), 8)
+                .addIngredient(ModItems.GEAR_LARGE.get(), 1)
+                .save(writer, "stirling");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.STIRLING_STEEL.get(), 1), 200, 120)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 16)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 8)
+                .addIngredient(ModItems.GEAR_LARGE.get(), 1)
+                .save(writer, "stirling_steel");
+
+        // Industrial Generator — no ass.* recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.INDUSTRIAL_GENERATOR.get(), 1), 200, 120)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 24)
+                .addIngredient(ModItems.PLATE_IRON.get(), 12)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 4)
+                .save(writer, "industrial_generator");
+
+        // Combustion Engine — no ass.* recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.COMBUSTION_ENGINE.get(), 1), 250, 150)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 32)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 16)
+                .addIngredient(ModItems.PISTON_SET_STEEL.get(), 1)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 6)
+                .save(writer, "combustion_engine");
+
+        // Steam Engine — no ass.* recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.STEAM_ENGINE.get(), 1), 200, 120)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 24)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 12)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 4)
+                .save(writer, "steam_engine");
+
+        // Basic Boiler — no ass.* recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.BOILER.get(), 1), 150, 90)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 20)
+                .addIngredient(ModItems.PLATE_IRON.get(), 16)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 4)
+                .save(writer, "boiler");
+
+        // Chimney (Brick/Industrial) — no ass.* recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CHIMNEY_BRICK.get(), 1), 100, 60)
+                .addIngredient(net.minecraft.world.item.Items.BRICKS, 16)
+                .addIngredient(ModItems.PLATE_IRON.get(), 4)
+                .save(writer, "chimney_brick");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CHIMNEY_INDUSTRIAL.get(), 1), 150, 90)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 16)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 8)
+                .save(writer, "chimney_industrial");
+
+        // Annihilator — no ass.* recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.ANNIHILATOR.get(), 1), 200, 120)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 24)
+                .addIngredient(ModItems.PLATE_IRON.get(), 16)
+                .addIngredient(ModItems.MOTOR_BISMUTH.get(), 2)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 6)
+                .addIngredient(ModItems.CIRCUIT_STAR.get(), 2)
+                .save(writer, "annihilator");
+
+        // Strand Caster — no ass.* recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.STRAND_CASTER.get(), 1), 200, 120)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 32)
+                .addIngredient(ModItems.PLATE_CAST_COPPER.get(), 12)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 8)
+                .addIngredient(ModItems.MOTOR_BISMUTH.get(), 2)
+                .save(writer, "strand_caster");
+
+        // Liquefactor — port of 1.7.10 ass.liquefactor.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.LIQUEFACTOR.get(), 1), 200, 100)
+                .addIngredient(ModItems.SHELL_STEEL.get(), 4)
+                .addIngredient(ModItems.PLATE_COPPER.get(), 12)
+                .addIngredient(ModItems.getIngot(ModIngots.RUBBER).get(), 4)
+                .addIngredient(ModItems.CAPACITOR_BOARD.get(), 12)
+                .addIngredient(ModItems.COIL_TUNGSTEN.get(), 8)
+                .save(writer, "liquefactor");
+
+        // Catalytic Reformer — port of 1.7.10 ass.reformer.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CATALYTIC_REFORMER.get(), 1), 200, 100)
+                .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 12)
+                .addIngredient(ModItems.PLATE_COPPER.get(), 8)
+                .addIngredient(ModItems.getIngot(ModIngots.NIOBIUM).get(), 8)
+                .addIngredient(ModItems.getIngot(ModIngots.ADVANCED_ALLOY).get(), 4)
+                .addIngredient(ModItems.SHELL_STEEL.get(), 3)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 8)
+                .addIngredient(ModItems.MOTOR.get(), 1)
+                .addIngredient(ModItems.BISMOID_CIRCUIT.get(), 1)
+                .save(writer, "reformer");
+
+        // Vacuum Distill — port of 1.7.10 ass.vaccumrefinery.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.VACUUM_DISTILL.get(), 1), 200, 100)
+                .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 16)
+                .addIngredient(ModItems.PLATE_COPPER.get(), 16)
+                .addIngredient(ModItems.getIngot(ModIngots.ADVANCED_ALLOY).get(), 4)
+                .addIngredient(ModItems.SPHERE_STEEL.get(), 1)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 12)
+                .addIngredient(ModItems.MOTOR_DESH.get(), 3)
+                .addIngredient(ModItems.BISMOID_CHIP.get(), 4)
+                .save(writer, "vaccumrefinery");
+
+        // Turbofan — port of 1.7.10 ass.turbofan.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.TURBOFAN.get(), 1), 300, 100)
+                .addIngredient(ModItems.SHELL_TITANIUM.get(), 8)
+                .addIngredient(ModItems.PIPE_DURA_STEEL.get(), 4)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.POLYMER).get(),
+                        ModItems.getIngot(ModIngots.BAKELITE).get()), 12)
+                .addIngredient(ModItems.TURBINE_TUNGSTEN.get(), 1)
+                .addIngredient(ModItems.WIRE_DENSE_GOLD.get(), 12)
+                .addIngredient(ModItems.SILICON_CIRCUIT.get(), 3)
+                .save(writer, "turbofan");
+
+        // Combination Oven — the original had no Assembler recipe; it was built via an Anvil-construction
+        // recipe (8x stonebrick, 16x log, 2x CU.plateCast(), 16x bricks). Adapted here into an Assembler
+        // recipe using the same ingredient list.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.COMBINATION_OVEN.get(), 1), 200, 100)
+                .addIngredient(Items.STONE_BRICKS, 8)
+                .addIngredient(Items.OAK_LOG, 16)
+                .addIngredient(ModItems.PLATE_CAST_COPPER.get(), 2)
+                .addIngredient(Items.BRICK, 16)
+                .save(writer, "combinationoven");
+
+        // Deuterium Tower — the original had no Assembler recipe; it was built via an Anvil-construction
+        // recipe (2x deuterium_filter, 5x STEEL.shell(), 12x STEEL.pipe(), 8x concrete_asbestos,
+        // 16x steel_scaffold, 8000mB sourgas). Adapted here into an Assembler recipe; the fluid cost is
+        // omitted (this port's assembler recipes have no fluid-input support, same as registerAmmo()).
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.DEUTERIUM_TOWER.get(), 1), 400, 100)
+                .addIngredient(ModItems.DEUTERIUM_FILTER.get(), 2)
+                .addIngredient(ModItems.SHELL_STEEL.get(), 5)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 12)
+                .addIngredient(ModBlocks.CONCRETE_ASBESTOS.get().asItem(), 8)
+                .addIngredient(ModBlocks.STEEL_SCAFFOLD.get().asItem(), 16)
+                .save(writer, "deuttower");
+
+        // Fraction Tower — the original had no Assembler recipe; it was a plain shaped crafting-table
+        // recipe (H/G/H with H=STEEL.plateWelded(), G=steel_grate). No steel_grate equivalent exists in
+        // this port, substituted with STEEL_SCAFFOLD; ingredient counts scaled up to Assembler tier.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.FRACTION_TOWER.get(), 1), 200, 100)
+                .addIngredient(ModItems.PLATE_WELDED_STEEL.get(), 6)
+                .addIngredient(ModBlocks.STEEL_SCAFFOLD.get().asItem(), 4)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 4)
+                .save(writer, "fractiontower");
+
+        // Breeder (plain fission reactor breeder, not Fusion Breeder) — genuinely had no craftable recipe
+        // anywhere in the original (obtainable only via loot/starter kit). Invented here, scaled to the
+        // same tier as the other reactor multiblock components in registerReactors().
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.BREEDER.get(), 1), 300, 100)
+                .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 8)
+                .addIngredient(ModItems.PLATE_LEAD.get(), 8)
+                .addIngredient(ModItems.NEUTRON_REFLECTOR.get(), 4)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 6)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 2)
+                .save(writer, "breeder");
     }
 
     /** Cloth / small parts — port of 1.7.10 ass.platemixed, ass.hazcloth, ass.firecloth, ass.filtercoal. */
@@ -594,6 +952,20 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.getIngot(ModIngots.RUBBER).get(), 2)
                 .save(writer, "watzcooler");
 
+        // Watz Powerplant controller - the original 1.7.10 mod had no craftable recipe for the
+        // Watz multiblock controller itself (loot/creative only, same situation as the plain
+        // Breeder handled elsewhere in this file); this recipe is therefore invented, scaled to
+        // the same reactor-multiblock tier as "zirnox" above.
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.WATZ_POWERPLANT.get(), 1), 240, 400)
+                .addIngredient(ModItems.SHELL_STEEL.get(), 4)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 8)
+                .addIngredient(ModItems.getIngot(ModIngots.ZIRCONIUM).get(), 8)
+                .addIngredient(ModItems.getIngot(ModIngots.SATURNITE).get(), 8)
+                .addIngredient(Ingredient.of(ModBlocks.CONCRETE.get()), 16)
+                .addIngredient(ModItems.INTEGRATED_CIRCUIT.get(), 4)
+                .save(writer, "watz_powerplant");
+
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.UPGRADE_OVERDRIVE_1.get(), 1), 200, 100)
                 .addIngredient(ModItems.UPGRADE_SPEED_3.get(), 1)
@@ -917,6 +1289,81 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.PIPE_DURA_STEEL.get(), 4)
                 .addIngredient(ModItems.INTEGRATED_CIRCUIT.get(), 2)
                 .save(writer, "industrial_turbine");
+
+        // machine_large_turbine — no ass.machineLargeTurbine recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.MACHINE_LARGE_TURBINE.get(), 1), 320, 500)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 24)
+                .addIngredient(ModItems.getIngot(ModIngots.RUBBER).get(), 8)
+                .addIngredient(ModItems.TURBINE_TUNGSTEN.get(), 4)
+                .addIngredient(ModItems.WIRE_DENSE_GOLD.get(), 8)
+                .addIngredient(ModItems.PIPE_DURA_STEEL.get(), 8)
+                .addIngredient(ModItems.INTEGRATED_CIRCUIT.get(), 4)
+                .save(writer, "machine_large_turbine");
+
+        // turbinegas — no ass.turbinegas recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.TURBINEGAS.get(), 1), 280, 450)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 16)
+                .addIngredient(ModItems.getIngot(ModIngots.RUBBER).get(), 6)
+                .addIngredient(ModItems.TURBINE_TITANIUM.get(), 4)
+                .addIngredient(ModItems.WIRE_DENSE_GOLD.get(), 4)
+                .addIngredient(ModItems.PIPE_DURA_STEEL.get(), 6)
+                .addIngredient(ModItems.INTEGRATED_CIRCUIT.get(), 2)
+                .save(writer, "turbinegas");
+
+        // condenser_powered — no ass.condenserPowered recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.CONDENSER_POWERED.get(), 1), 200, 300)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 12)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 6)
+                .addIngredient(ModItems.WIRE_DENSE_COPPER.get(), 6)
+                .addIngredient(ModItems.INTEGRATED_CIRCUIT.get(), 1)
+                .save(writer, "condenser_powered");
+
+        // pyrooven — no ass.pyrooven recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.PYROOVEN.get(), 1), 240, 400)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 16)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 8)
+                .addIngredient(ModItems.getIngot(ModIngots.RUBBER).get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .addIngredient(ModItems.INTEGRATED_CIRCUIT.get(), 2)
+                .save(writer, "pyrooven");
+
+        // solidifier — no ass.solidifier recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.SOLIDIFIER.get(), 1), 160, 250)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 10)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 1)
+                .addIngredient(ModItems.INTEGRATED_CIRCUIT.get(), 1)
+                .save(writer, "solidifier");
+
+        // ashpit — no ass.ashpit recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.ASHPIT.get(), 1), 100, 150)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 6)
+                .addIngredient(Ingredient.of(net.minecraft.world.item.Items.BRICKS), 4)
+                .save(writer, "ashpit");
+
+        // reactor_research — no ass.reactorResearch recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.REACTOR_RESEARCH.get(), 1), 200, 350)
+                .addIngredient(ModItems.PLATE_LEAD.get(), 8)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 8)
+                .addIngredient(ModItems.getIngot(ModIngots.GRAPHITE).get(), 8)
+                .addIngredient(ModItems.INTEGRATED_CIRCUIT.get(), 2)
+                .save(writer, "reactor_research");
+
+        // machine_radgen — no ass.radgen recipe existed in the original 1.7.10 either; invented here.
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.MACHINE_RADGEN.get(), 1), 200, 300)
+                .addIngredient(ModItems.PLATE_LEAD.get(), 12)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 6)
+                .addIngredient(ModItems.WIRE_DENSE_COPPER.get(), 6)
+                .addIngredient(ModItems.INTEGRATED_CIRCUIT.get(), 2)
+                .save(writer, "machine_radgen");
 
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.RADAR.get(), 1), 160, 250)

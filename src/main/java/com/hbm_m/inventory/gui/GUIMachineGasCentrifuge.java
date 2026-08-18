@@ -7,7 +7,6 @@ import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.menu.MachineGasCentrifugeMenu;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.PseudoFluidTank;
-import com.hbm_m.recipe.PseudoFluidType;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import dev.architectury.fluid.FluidStack;
@@ -113,7 +112,7 @@ public class GUIMachineGasCentrifuge extends GuiInfoScreen<MachineGasCentrifugeM
     /** Renders a pseudo-fluid tank's fill level using the real piped fluid's texture/tint,
      *  matching the original's behavior of always binding {@code gasCent.tank}'s texture. */
     private void renderPseudoTank(GuiGraphics guiGraphics, int relX, PseudoFluidTank tank, Fluid realFluid) {
-        if (tank.getTankType() == PseudoFluidType.NONE || tank.getFill() <= 0) return;
+        if (tank.getFill() <= 0) return;
         if (realFluid == null || realFluid == Fluids.EMPTY || realFluid == ModFluids.NONE.getSource()) return;
 
         int filled = (int) ((long) tank.getFill() * TANK_HEIGHT / tank.getMaxFill());

@@ -68,7 +68,8 @@ public class GUIMachineShredder extends GuiInfoScreen<MachineShredderMenu> {
     @Override
     protected void init() {
         super.init();
-        this.titleLabelX = (this.imageWidth - this.font.width(this.title)) / 2;
+        // Original: fontRendererObj.drawString(name, 106 - width / 2, 6, ...)
+        this.titleLabelX = 106 - this.font.width(this.title) / 2;
     }
 
     @Override

@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "hbm_m:block/machines/foundry_slagtap"
+    },
+    "facing=south": {
+      "model": "hbm_m:block/machines/foundry_slagtap",
+      "y": 180
+    },
+    "facing=east": {
+      "model": "hbm_m:block/machines/foundry_slagtap",
+      "y": 90
+    },
+    "facing=west": {
+      "model": "hbm_m:block/machines/foundry_slagtap",
+      "y": 270
+    }
+  }
+}

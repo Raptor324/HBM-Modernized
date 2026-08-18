@@ -27,7 +27,9 @@ public class ItemMachineUpgrade extends Item implements ITooltipProvider {
         POWER,
         FORTUNE,
         AFTERBURN,
-        OVERDRIVE;
+        OVERDRIVE,
+        STACK,
+        EJECTOR;
 
         public String getTranslationKeySuffix() {
             return name().toLowerCase();

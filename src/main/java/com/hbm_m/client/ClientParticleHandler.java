@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.client;
 
 import com.hbm_m.lib.RefStrings;
@@ -33,6 +32,7 @@ import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 //?} elif neoforge {
 /*import net.neoforged.api.distmarker.Dist;
@@ -40,7 +40,8 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
 
-@EventBusSubscriber(modid = RefStrings.MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+@EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
 *///?}
 public class ClientParticleHandler {
 
@@ -141,4 +142,3 @@ public class ClientParticleHandler {
                 RadFogParticle.Provider::new);
     }
 }
-//?}

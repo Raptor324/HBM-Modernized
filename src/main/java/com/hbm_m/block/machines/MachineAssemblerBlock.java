@@ -223,7 +223,7 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
                 MultiblockStructureHelper helper = getStructureHelper();
                 Direction facing = state.getValue(FACING);
 
-                // Удаляем из энергосети (этот код у нас уже правильный)
+                // Удаляем из энергосети
                 for (BlockPos localPos : helper.getStructureMap().keySet()) {
                     if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
                         BlockPos worldPos = helper.getRotatedPos(pos, localPos, facing);

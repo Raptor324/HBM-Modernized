@@ -382,12 +382,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         .renderType("cutout"));
 
         simpleBlockWithItem(ModBlocks.MACHINE_SIREN.get(),
-                models().cubeAll(ModBlocks.MACHINE_SIREN.getId().getPath(),
-                        blockTexture(ModBlocks.MACHINE_SIREN.get())));
-
-        simpleBlockWithItem(ModBlocks.BROADCASTER.get(),
-                models().cubeAll(ModBlocks.BROADCASTER.getId().getPath(),
-                        modLoc("block/broadcaster")));
+                models().cubeBottomTop(
+                        ModBlocks.MACHINE_SIREN.getId().getPath(),
+                        blockTexture(ModBlocks.MACHINE_SIREN.get()),
+                        modLoc("block/block_steel_machine"),
+                        modLoc("block/block_steel_machine")
+                ));
 
         simpleBlockWithItem(ModBlocks.BARBED_WIRE.get(),
                 models().cubeAll(ModBlocks.BARBED_WIRE.getId().getPath(),
@@ -504,66 +504,85 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleMachineBlock(ModBlocks.FOUNDRY_BASIN);
 
         // --- WIP Machines (3D OBJ models) ---
-        simpleMachineBlock(ModBlocks.AMMO_PRESS);
-        simpleMachineBlock(ModBlocks.ANNIHILATOR);
+        customMachineBlock(ModBlocks.AMMO_PRESS);
+        customMachineBlock(ModBlocks.ANNIHILATOR);
         customMachineBlock(ModBlocks.ARC_FURNACE);
         simpleMachineBlock(ModBlocks.ASSEMBLY_FACTORY);
-        simpleMachineBlock(ModBlocks.AUTOSAW);
+        horizontalBlock(ModBlocks.AUTOSAW.get(),
+            models().getExistingFile(modLoc("block/machines/autosaw")));
+        horizontalBlock(ModBlocks.THRESHER.get(),
+            models().getExistingFile(modLoc("block/machines/thresher")));
         simpleMachineBlock(ModBlocks.BEAMLINE);
-        simpleMachineBlock(ModBlocks.BOILER);
+        customMachineBlock(ModBlocks.BOILER);
+        horizontalBlock(ModBlocks.PUMP_STEAM.get(),
+            models().cubeAll(ModBlocks.PUMP_STEAM.getId().getPath(), modLoc("block/machine/pump_steam")));
+        horizontalBlock(ModBlocks.PUMP_ELECTRIC.get(),
+            models().cubeAll(ModBlocks.PUMP_ELECTRIC.getId().getPath(), modLoc("block/machine/pump_electric")));
         simpleMachineBlock(ModBlocks.BOILER_FUSION);
         simpleMachineBlock(ModBlocks.BREEDER_FUSION);
-        simpleMachineBlock(ModBlocks.CHIMNEY_BRICK);
-        simpleMachineBlock(ModBlocks.CHIMNEY_INDUSTRIAL);
-        simpleMachineBlock(ModBlocks.COKER);
+        customMachineBlock(ModBlocks.CHIMNEY_BRICK);
+        customMachineBlock(ModBlocks.CHIMNEY_INDUSTRIAL);
+        customMachineBlock(ModBlocks.COKER);
         simpleMachineBlock(ModBlocks.COLLECTOR);
         simpleMachineBlock(ModBlocks.COMBINATION_OVEN);
-        simpleMachineBlock(ModBlocks.COMBUSTION_ENGINE);
-        simpleMachineBlock(ModBlocks.COMPRESSOR);
-        simpleMachineBlock(ModBlocks.CONDENSER_POWERED);
-        simpleMachineBlock(ModBlocks.CONVEYOR_PRESS);
+        customMachineBlock(ModBlocks.COMBUSTION_ENGINE);
+        horizontalBlock(ModBlocks.COMPRESSOR.get(),
+            models().getExistingFile(modLoc("block/machines/compressor")));
+        horizontalBlock(ModBlocks.MACHINE_COMPRESSOR_COMPACT.get(),
+            models().cubeAll(ModBlocks.MACHINE_COMPRESSOR_COMPACT.getId().getPath(), modLoc("block/machine/compressor_compact")));
+        customMachineBlock(ModBlocks.CONDENSER_POWERED);
+        customMachineBlock(ModBlocks.LPW2);
+        customMachineBlock(ModBlocks.CONVEYOR_PRESS);
         simpleMachineBlock(ModBlocks.COUPLER);
         simpleMachineBlock(ModBlocks.DETECTOR);
-        simpleMachineBlock(ModBlocks.DIESELGEN);
+        customMachineBlock(ModBlocks.DIESELGEN);
         simpleMachineBlock(ModBlocks.DIPOLE);
         simpleMachineBlock(ModBlocks.DRONE);
         simpleMachineBlock(ModBlocks.ELECTRIC_HEATER);
-        simpleMachineBlock(ModBlocks.ELECTROLYSER);
-        simpleMachineBlock(ModBlocks.EPRESS);
-        simpleMachineBlock(ModBlocks.EXPOSURE_CHAMBER);
+        horizontalBlock(ModBlocks.ELECTROLYSER.get(),
+            models().getExistingFile(modLoc("block/machines/electrolyser")));
+        customMachineBlock(ModBlocks.EPRESS);
+        horizontalBlock(ModBlocks.EXPOSURE_CHAMBER.get(),
+            models().getExistingFile(modLoc("block/machines/exposure_chamber")));
         simpleMachineBlock(ModBlocks.FENSU);
-        simpleMachineBlock(ModBlocks.FENSU2);
+        // FENSU2 (machine_battery_redd) is a MachineBatteryBlock (FACING-Blockstate) - see orientableBlockWithItem below.
         simpleMachineBlock(ModBlocks.FIREBOX);
         simpleMachineBlock(ModBlocks.FRACTION_SPACER);
-        simpleMachineBlock(ModBlocks.FURNACE_IRON);
-        simpleMachineBlock(ModBlocks.FURNACE_STEEL);
         simpleMachineBlock(ModBlocks.HEATEX);
-        simpleMachineBlock(ModBlocks.HEPHAESTUS);
+        customMachineBlock(ModBlocks.HEPHAESTUS);
         simpleMachineBlock(ModBlocks.ICF);
         simpleMachineBlock(ModBlocks.INTAKE);
         simpleMachineBlock(ModBlocks.KLYSTRON);
         simpleMachineBlock(ModBlocks.MHDT);
-        simpleMachineBlock(ModBlocks.MICROWAVE);
-        simpleMachineBlock(ModBlocks.MINING_LASER);
+        horizontalBlock(ModBlocks.MICROWAVE.get(),
+            models().getExistingFile(modLoc("block/machines/microwave")));
+        customMachineBlock(ModBlocks.MINING_LASER);
         simpleMachineBlock(ModBlocks.OILBURNER);
         simpleMachineBlock(ModBlocks.OILBURNER_HP);
-        simpleMachineBlock(ModBlocks.ORBUS);
+        // ORBUS is now a BarrelTankBlock (FACING blockstate) instead of a static "" variant.
+        horizontalBlock(ModBlocks.ORBUS.get(), models().getExistingFile(modLoc("block/machines/orbus")));
         simpleMachineBlock(ModBlocks.ORE_SLOPPER);
         simpleMachineBlock(ModBlocks.PLASMA_FORGE);
-        simpleMachineBlock(ModBlocks.PYROOVEN);
+        customMachineBlock(ModBlocks.PYROOVEN);
         simpleMachineBlock(ModBlocks.QUADRUPOLE);
         simpleMachineBlock(ModBlocks.RADGEN);
-        simpleMachineBlock(ModBlocks.RADIOLYSIS);
+        horizontalBlock(ModBlocks.RADIOLYSIS.get(),
+            models().getExistingFile(modLoc("block/machines/radiolysis")));
         simpleMachineBlock(ModBlocks.REACTOR_SMALL);
         simpleMachineBlock(ModBlocks.RFC);
-        simpleMachineBlock(ModBlocks.ROTARY_FURNACE);
-        simpleMachineBlock(ModBlocks.SAWMILL);
-        simpleMachineBlock(ModBlocks.SOLIDIFIER);
+        horizontalBlock(ModBlocks.SAWMILL.get(),
+            models().getExistingFile(modLoc("block/machines/sawmill")));
+        customMachineBlock(ModBlocks.SOLIDIFIER);
+        simpleMachineBlock(ModBlocks.ASHPIT);
+        simpleMachineBlock(ModBlocks.REACTOR_RESEARCH);
         simpleMachineBlock(ModBlocks.SOURCE);
-        simpleMachineBlock(ModBlocks.STIRLING);
-        simpleMachineBlock(ModBlocks.STIRLING_CREATIVE);
-        simpleMachineBlock(ModBlocks.STIRLING_STEEL);
-        simpleMachineBlock(ModBlocks.STRAND_CASTER);
+        customMachineBlock(ModBlocks.STEAM_ENGINE);
+        customMachineBlock(ModBlocks.STIRLING);
+        customMachineBlock(ModBlocks.STIRLING_CREATIVE);
+        customMachineBlock(ModBlocks.STIRLING_STEEL);
+        // Strand Caster: eigenes OBJ-Modell bereits vorhanden (block/machines/strand_caster.json), FACING-Rotation.
+        horizontalBlock(ModBlocks.STRAND_CASTER.get(),
+            models().getExistingFile(modLoc("block/machines/strand_caster")));
         simpleMachineBlock(ModBlocks.TORUS);
         simpleMachineBlock(ModBlocks.TURBINEGAS);
         simpleMachineBlock(ModBlocks.WATZ_PUMP);
@@ -594,9 +613,34 @@ public class ModBlockStateProvider extends BlockStateProvider {
         registerLitMachineBlock(ModBlocks.BLAST_FURNACE, 
             BlastFurnaceBlock.FACING, BlastFurnaceBlock.LIT, 
             "blast_furnace", "blast_furnace_on");
-        registerLitMachineBlock(ModBlocks.WOOD_BURNER, 
-            MachineWoodBurnerBlock.FACING, MachineWoodBurnerBlock.LIT, 
+        registerLitMachineBlock(ModBlocks.WOOD_BURNER,
+            MachineWoodBurnerBlock.FACING, MachineWoodBurnerBlock.LIT,
             "wood_burner", "wood_burner");
+        // Furnace Iron/Steel: kein separates lit-Modell portiert (siehe Aufgabenbeschreibung:
+        // "Skip any lit/unlit block-swap") - dasselbe Modell wird fuer beide LIT-Zustaende
+        // registriert, damit registerLitMachineBlock trotzdem alle FACING x LIT Kombinationen
+        // fuer den Blockstate abdeckt.
+        registerLitMachineBlock(ModBlocks.FURNACE_IRON,
+            com.hbm_m.block.machines.MachineFurnaceIronBlock.FACING, com.hbm_m.block.machines.MachineFurnaceIronBlock.LIT,
+            "furnace_iron", "furnace_iron");
+        registerLitMachineBlock(ModBlocks.FURNACE_STEEL,
+            com.hbm_m.block.machines.MachineFurnaceSteelBlock.FACING, com.hbm_m.block.machines.MachineFurnaceSteelBlock.LIT,
+            "furnace_steel", "furnace_steel");
+        // Electric Furnace / Brick Furnace: kein eigenes Modell/Textur-Set portiert (nicht in den
+        // vorhandenen Assets vorhanden) - als Platzhalter wird das bereits existierende
+        // furnace_iron-Modell (inkl. Textur) wiederverwendet, damit die Bloecke kompilieren und
+        // sichtbar sind. Sollte spaeter durch dedizierte Modelle ersetzt werden.
+        registerLitMachineBlock(ModBlocks.ELECTRIC_FURNACE,
+            com.hbm_m.block.machines.MachineElectricFurnaceBlock.FACING, com.hbm_m.block.machines.MachineElectricFurnaceBlock.LIT,
+            "furnace_iron", "furnace_iron");
+        registerLitMachineBlock(ModBlocks.FURNACE_BRICK,
+            com.hbm_m.block.machines.MachineFurnaceBrickBlock.FACING, com.hbm_m.block.machines.MachineFurnaceBrickBlock.LIT,
+            "furnace_iron", "furnace_iron");
+        // Rotary Furnace: eigenes OBJ-Modell bereits vorhanden (block/machines/rotary_furnace.json),
+        // kein separates LIT-Modell portiert - gleiches Modell fuer beide Zustaende.
+        registerLitMachineBlock(ModBlocks.ROTARY_FURNACE,
+            com.hbm_m.block.machines.MachineRotaryFurnaceBlock.FACING, com.hbm_m.block.machines.MachineRotaryFurnaceBlock.LIT,
+            "rotary_furnace", "rotary_furnace");
 
         // FluidTank - только FACING
         horizontalBlock(ModBlocks.FLUID_TANK.get(),
@@ -655,6 +699,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlock(ModBlocks.BARREL_CORRODED);
         customObjBlock(ModBlocks.BARREL_IRON);
         customObjBlock(ModBlocks.BARREL_LOX);
+        customObjBlock(ModBlocks.BARREL_ANTIMATTER);
         customObjBlock(ModBlocks.BARREL_PINK);
         customObjBlock(ModBlocks.BARREL_RED);
         customObjBlock(ModBlocks.BARREL_PLASTIC);
@@ -704,6 +749,21 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 modLoc("block/machine_battery_dineutronium_side"),
                 modLoc("block/machine_battery_dineutronium_front"),
                 modLoc("block/machine_battery_dineutronium_top")
+        );
+
+        // FENSU / machine_battery_redd: nur eine flache Textur vorhanden (kein separates side/front/top-Set,
+        // Original nutzte ein rotierendes OBJ-Modell) - dieselbe Textur fuer alle drei Seiten.
+        orientableBlockWithItem(
+                ModBlocks.MACHINE_FENSU,
+                modLoc("block/machine_fensu"),
+                modLoc("block/machine_fensu"),
+                modLoc("block/machine_fensu")
+        );
+        orientableBlockWithItem(
+                ModBlocks.FENSU2,
+                modLoc("block/machine/fensu2"),
+                modLoc("block/machine/fensu2"),
+                modLoc("block/machine/fensu2")
         );
 
         // Генерация моделей для ступенек
@@ -1529,12 +1589,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/brick_red_top")
                 )
         );
-        simpleBlockWithItem(ModBlocks.BROADCASTER_PC.get(),
-                models().cubeAll(
-                        ModBlocks.BROADCASTER_PC.getId().getPath(),
-                        modLoc("block/broadcaster_pc")
-                )
-        );
+        simpleBlock(ModBlocks.BROADCASTER_PC.get(),
+                models().getExistingFile(modLoc("block/machines/broadcaster_pc")));
+        simpleBlockItem(ModBlocks.BROADCASTER_PC.get(),
+                models().getExistingFile(modLoc("block/machines/broadcaster_pc")));
         simpleBlockWithItem(ModBlocks.CABLE_DETECTOR.get(),
                 models().cubeAll(
                         ModBlocks.CABLE_DETECTOR.getId().getPath(),
@@ -1777,18 +1835,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/conveyor_triple")
                 )
         );
-        simpleBlockWithItem(ModBlocks.CRANE_BOXER.get(),
-                models().cubeAll(
-                        ModBlocks.CRANE_BOXER.getId().getPath(),
-                        modLoc("block/crane_boxer_top")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.CRANE_GRABBER.get(),
-                models().cubeAll(
-                        ModBlocks.CRANE_GRABBER.getId().getPath(),
-                        modLoc("block/crane_grabber_top")
-                )
-        );
         simpleBlockWithItem(ModBlocks.CRANE_PARTITIONER.get(),
                 models().cubeAll(
                         ModBlocks.CRANE_PARTITIONER.getId().getPath(),
@@ -1801,18 +1847,16 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/crane_router_overlay")
                 )
         );
-        simpleBlockWithItem(ModBlocks.CRANE_SPLITTER.get(),
-                models().cubeAll(
+        horizontalBlock(ModBlocks.CRANE_SPLITTER.get(),
+                models().cubeBottomTop(
                         ModBlocks.CRANE_SPLITTER.getId().getPath(),
-                        modLoc("block/crane_splitter_back_left")
+                        modLoc("block/crane_splitter_inner_side"),
+                        modLoc("block/crane_splitter_inner"),
+                        modLoc("block/crane_splitter_belt")
                 )
         );
-        simpleBlockWithItem(ModBlocks.CRANE_UNBOXER.get(),
-                models().cubeAll(
-                        ModBlocks.CRANE_UNBOXER.getId().getPath(),
-                        modLoc("block/crane_unboxer_top")
-                )
-        );
+        simpleBlockItem(ModBlocks.CRANE_SPLITTER.get(),
+                models().getExistingFile(modLoc(ModBlocks.CRANE_SPLITTER.getId().getPath())));
         simpleBlockWithItem(ModBlocks.CRATE_AMMO.get(),
                 models().cubeBottomTop(
                         ModBlocks.CRATE_AMMO.getId().getPath(),
@@ -1947,16 +1991,52 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/drone_dock_top")
                 )
         );
-        simpleBlockWithItem(ModBlocks.DRONE_WAYPOINT.get(),
+        directionlessFacingBlock(ModBlocks.DRONE_WAYPOINT.get(),
                 models().cubeAll(
                         ModBlocks.DRONE_WAYPOINT.getId().getPath(),
                         modLoc("block/drone_waypoint")
                 )
         );
-        simpleBlockWithItem(ModBlocks.DRONE_WAYPOINT_REQUEST.get(),
+        directionlessFacingBlock(ModBlocks.DRONE_WAYPOINT_REQUEST.get(),
                 models().cubeAll(
                         ModBlocks.DRONE_WAYPOINT_REQUEST.getId().getPath(),
                         modLoc("block/drone_waypoint_request")
+                )
+        );
+        directionlessFacingBlock(ModBlocks.RADIO_TORCH_SENDER.get(),
+                models().cubeAll(
+                        ModBlocks.RADIO_TORCH_SENDER.getId().getPath(),
+                        modLoc("block/rtty_sender_off")
+                )
+        );
+        directionlessFacingBlock(ModBlocks.RADIO_TORCH_RECEIVER.get(),
+                models().cubeAll(
+                        ModBlocks.RADIO_TORCH_RECEIVER.getId().getPath(),
+                        modLoc("block/rtty_rec_off")
+                )
+        );
+        directionlessFacingBlock(ModBlocks.RADIO_TORCH_LOGIC.get(),
+                models().cubeAll(
+                        ModBlocks.RADIO_TORCH_LOGIC.getId().getPath(),
+                        modLoc("block/rtty_logic_off")
+                )
+        );
+        directionlessFacingBlock(ModBlocks.RADIO_TORCH_READER.get(),
+                models().cubeAll(
+                        ModBlocks.RADIO_TORCH_READER.getId().getPath(),
+                        modLoc("block/rtty_reader")
+                )
+        );
+        directionlessFacingBlock(ModBlocks.RADIO_TORCH_CONTROLLER.get(),
+                models().cubeAll(
+                        ModBlocks.RADIO_TORCH_CONTROLLER.getId().getPath(),
+                        modLoc("block/rtty_controller")
+                )
+        );
+        directionlessFacingBlock(ModBlocks.RADIO_TORCH_COUNTER.get(),
+                models().cubeAll(
+                        ModBlocks.RADIO_TORCH_COUNTER.getId().getPath(),
+                        modLoc("block/rtty_counter")
                 )
         );
         simpleBlockWithItem(ModBlocks.DUCRETE.get(),
@@ -2043,6 +2123,18 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/fluid_duct_box")
                 )
         );
+        simpleBlockWithItem(ModBlocks.FLUID_DUCT_EXHAUST.get(),
+                models().cubeAll(
+                        ModBlocks.FLUID_DUCT_EXHAUST.getId().getPath(),
+                        modLoc("block/fluid_duct_box")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.PIPE_ANCHOR.get(),
+                models().cubeAll(
+                        ModBlocks.PIPE_ANCHOR.getId().getPath(),
+                        modLoc("block/block_steel")
+                )
+        );
         simpleBlockWithItem(ModBlocks.FLUID_DUCT_PAINTABLE.get(),
                 models().cubeAll(
                         ModBlocks.FLUID_DUCT_PAINTABLE.getId().getPath(),
@@ -2055,6 +2147,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/fluid_switch_off")
                 )
         );
+        simpleBlock(ModBlocks.SLAG_DYNAMIC.get(),
+                models().cubeAll(
+                        ModBlocks.SLAG_DYNAMIC.getId().getPath(),
+                        modLoc("block/slag_dynamic")
+                )
+        );
         simpleBlockWithItem(ModBlocks.FOUNDRY_MOLD.get(),
                 models().cubeBottomTop(
                         ModBlocks.FOUNDRY_MOLD.getId().getPath(),
@@ -2063,14 +2161,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/foundry_mold_top")
                 )
         );
-        simpleBlockWithItem(ModBlocks.FOUNDRY_SLAGTAP.get(),
-                models().cubeBottomTop(
-                        ModBlocks.FOUNDRY_SLAGTAP.getId().getPath(),
-                        modLoc("block/foundry_slagtap_side"),
-                        modLoc("block/foundry_slagtap_bottom"),
-                        modLoc("block/foundry_slagtap_top")
-                )
-        );
+        // foundry_slagtap uses a hand-written static blockstate+model (directional spout shape,
+        // matching foundry_outlet's precedent - see assets/hbm_m/blockstates/foundry_slagtap.json).
         simpleBlockWithItem(ModBlocks.FOUNDRY_TANK.get(),
                 models().cubeBottomTop(
                         ModBlocks.FOUNDRY_TANK.getId().getPath(),
@@ -2545,12 +2637,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/machine_epress")
                 )
         );
-        simpleBlockWithItem(ModBlocks.MACHINE_FENSU.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_FENSU.getId().getPath(),
-                        modLoc("block/machine_fensu")
-                )
-        );
+        // MachineBatteryBlock (FACING-Blockstate) statt simpleBlockWithItem - siehe orientableBlockWithItem-Aufrufe fuer MACHINE_BATTERY etc.
         simpleBlockWithItem(ModBlocks.MACHINE_FLUIDTANK.get(),
                 models().cubeAll(
                         ModBlocks.MACHINE_FLUIDTANK.getId().getPath(),
@@ -2569,6 +2656,18 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/machine_funnel_side"),
                         modLoc("block/machine_funnel_bottom"),
                         modLoc("block/machine_funnel_top")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.PUREX.get(),
+                models().cubeAll(
+                        ModBlocks.PUREX.getId().getPath(),
+                        modLoc("block/machine/purex")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.INDUSTRIAL_GENERATOR.get(),
+                models().cubeAll(
+                        ModBlocks.INDUSTRIAL_GENERATOR.getId().getPath(),
+                        modLoc("block/block_steel_machine")
                 )
         );
         simpleBlockWithItem(ModBlocks.MACHINE_GASCENT.get(),
@@ -2593,12 +2692,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/machine_keyforge_top")
                 )
         );
-        simpleBlockWithItem(ModBlocks.MACHINE_LARGE_TURBINE.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_LARGE_TURBINE.getId().getPath(),
-                        modLoc("block/machine_large_turbine")
-                )
-        );
+        simpleMachineBlock(ModBlocks.MACHINE_LARGE_TURBINE);
         simpleBlockWithItem(ModBlocks.MACHINE_MICROWAVE.get(),
                 models().cubeAll(
                         ModBlocks.MACHINE_MICROWAVE.getId().getPath(),
@@ -2629,18 +2723,62 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/machine_puf6_tank")
                 )
         );
-        simpleBlockWithItem(ModBlocks.MACHINE_RADAR.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_RADAR.getId().getPath(),
-                        modLoc("block/machine_radar")
+        plainFacingBlock(ModBlocks.MACHINE_FAN.get(),
+                models().cubeAll(ModBlocks.MACHINE_FAN.getId().getPath(), modLoc("block/machine/fan")));
+        simpleBlockWithItem(ModBlocks.MACHINE_DRAIN.get(),
+                models().cubeAll(ModBlocks.MACHINE_DRAIN.getId().getPath(), modLoc("block/concrete")));
+        orientableBlockWithItem(
+                ModBlocks.MACHINE_DIFURNACE_RTG,
+                modLoc("block/difurnace_side_tall"),
+                modLoc("block/difurnace_front_off_tall"),
+                modLoc("block/difurnace_top_off_alt")
+        );
+        simpleBlockWithItem(ModBlocks.MACHINE_TELEPORTER.get(),
+                models().cubeBottomTop(
+                        ModBlocks.MACHINE_TELEPORTER.getId().getPath(),
+                        modLoc("block/teleporter_side"),
+                        modLoc("block/teleporter_bottom"),
+                        modLoc("block/teleporter_top")
                 )
         );
-        simpleBlockWithItem(ModBlocks.MACHINE_RADGEN.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_RADGEN.getId().getPath(),
-                        modLoc("block/machine_radgen")
+        simpleBlockWithItem(ModBlocks.TELEANCHOR.get(),
+                models().cubeBottomTop(
+                        ModBlocks.TELEANCHOR.getId().getPath(),
+                        modLoc("block/tele_anchor_side"),
+                        modLoc("block/tele_anchor_side"),
+                        modLoc("block/tele_anchor_top")
                 )
         );
+        simpleBlockWithItem(ModBlocks.MACHINE_PRECASS.get(),
+                models().cubeAll(ModBlocks.MACHINE_PRECASS.getId().getPath(), modLoc("block/machine/precass")));
+        simpleBlockWithItem(ModBlocks.MACHINE_TRANSFORMER.get(),
+                models().cubeBottomTop(
+                        ModBlocks.MACHINE_TRANSFORMER.getId().getPath(),
+                        modLoc("block/machine_transformer_iron"),
+                        modLoc("block/machine_transformer_top_iron"),
+                        modLoc("block/machine_transformer_top_iron")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.MACHINE_RTG.get(),
+                models().cubeAll(
+                        ModBlocks.MACHINE_RTG.getId().getPath(),
+                        modLoc("block/machine/rtg")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.MACHINE_WASTE_DRUM.get(),
+                models().cubeBottomTop(
+                        ModBlocks.MACHINE_WASTE_DRUM.getId().getPath(),
+                        modLoc("block/machine/waste_drum_side"),
+                        modLoc("block/machine/waste_drum_top"),
+                        modLoc("block/machine/waste_drum_top")
+                )
+        );
+        customMachineBlock(ModBlocks.MACHINE_RADGEN);
+        craneDirectionalBlock(ModBlocks.CRANE_INSERTER, "crane");
+        craneDirectionalBlock(ModBlocks.CRANE_EXTRACTOR, "crane");
+        craneDirectionalBlock(ModBlocks.CRANE_GRABBER, "crane");
+        craneDirectionalBlock(ModBlocks.CRANE_BOXER, "crane");
+        craneDirectionalBlock(ModBlocks.CRANE_UNBOXER, "crane");
         simpleBlockWithItem(ModBlocks.MACHINE_REACTOR.get(),
                 models().cubeBottomTop(
                         ModBlocks.MACHINE_REACTOR.getId().getPath(),
@@ -2865,11 +3003,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/pwr_control_top")
                 )
         );
-        simpleBlockWithItem(ModBlocks.PWR_CONTROLLER.get(),
-                models().cubeAll(
-                        ModBlocks.PWR_CONTROLLER.getId().getPath(),
-                        modLoc("block/pwr_controller")
-                )
+        orientableBlockWithItem(ModBlocks.PWR_CONTROLLER,
+                modLoc("block/pwr_casing"),
+                modLoc("block/pwr_controller"),
+                modLoc("block/pwr_casing")
         );
         simpleBlockWithItem(ModBlocks.PWR_FUEL.get(),
                 models().cubeBottomTop(
@@ -2927,6 +3064,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/radiorec")
                 )
         );
+        simpleBlockWithItem(ModBlocks.RADIO_AUTOCAL.get(),
+                models().cubeAll(
+                        ModBlocks.RADIO_AUTOCAL.getId().getPath(),
+                        modLoc("block/radio_autocal")
+                )
+        );
         simpleBlockWithItem(ModBlocks.RAIL_BOOSTER.get(),
                 models().cubeAll(
                         ModBlocks.RAIL_BOOSTER.getId().getPath(),
@@ -2969,9 +3112,33 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/red_connector")
                 )
         );
+        simpleBlockWithItem(ModBlocks.RED_CONNECTOR_SUPER.get(),
+                models().cubeAll(
+                        ModBlocks.RED_CONNECTOR_SUPER.getId().getPath(),
+                        modLoc("block/red_connector")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.RED_CABLE_BOX.get(),
+                models().cubeAll(
+                        ModBlocks.RED_CABLE_BOX.getId().getPath(),
+                        modLoc("block/fluid_duct_box")
+                )
+        );
         simpleBlockWithItem(ModBlocks.RED_PYLON.get(),
                 models().cubeAll(
                         ModBlocks.RED_PYLON.getId().getPath(),
+                        modLoc("block/red_pylon")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.RED_PYLON_MEDIUM_WOOD.get(),
+                models().cubeAll(
+                        ModBlocks.RED_PYLON_MEDIUM_WOOD.getId().getPath(),
+                        modLoc("block/red_pylon")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.RED_PYLON_MEDIUM_STEEL.get(),
+                models().cubeAll(
+                        ModBlocks.RED_PYLON_MEDIUM_STEEL.getId().getPath(),
                         modLoc("block/red_pylon")
                 )
         );
@@ -3315,6 +3482,18 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/struct_watz_core")
                 )
         );
+        simpleBlockWithItem(ModBlocks.WATZ_END.get(),
+                models().cubeAll(
+                        ModBlocks.WATZ_END.getId().getPath(),
+                        modLoc("block/watz_end")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.WATZ_END_BOLTED.get(),
+                models().cubeAll(
+                        ModBlocks.WATZ_END_BOLTED.getId().getPath(),
+                        modLoc("block/watz_end_bolted")
+                )
+        );
         simpleBlockWithItem(ModBlocks.TEKTITE.get(),
                 models().cubeAll(
                         ModBlocks.TEKTITE.getId().getPath(),
@@ -3628,6 +3807,80 @@ public class ModBlockStateProvider extends BlockStateProvider {
     private <T extends Block> void simpleMachineBlock(RegistrySupplier<T> blockObject) {
         simpleBlock(blockObject.get(),
                 models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath())));
+    }
+
+    /**
+     * Crane-Block mit voller 6-Richtungs-{@link net.minecraft.world.level.block.state.properties.BlockStateProperties#FACING}
+     * (wie ein Kolben/Dropper) statt der interaktiven Screwdriver-Ausgabeseite des Originals
+     * ({@code BlockCraneBase}). Ausgabeseite ist immer die der Eingabeseite (FACING) gegenueberliegende
+     * Seite - deshalb werden nur die "Default"-Icons (in/out/top/side) gebraucht, nicht die ~20
+     * Turn-Varianten fuer eine per Screwdriver ueberschriebene Ausgabeseite (siehe Klassenkommentar
+     * an {@code MachineCraneInserterBlockEntity} fuer die volle Scope-Begruendung).
+     */
+    private <T extends Block> void craneDirectionalBlock(RegistrySupplier<T> blockObject, String texturePrefix) {
+        ResourceLocation inTex = modLoc("block/" + texturePrefix + "_in");
+        ResourceLocation outTex = modLoc("block/" + texturePrefix + "_out");
+        ResourceLocation topTex = modLoc("block/" + texturePrefix + "_top");
+        ResourceLocation sideTex = modLoc("block/" + texturePrefix + "_side");
+
+        VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
+        String basePath = blockObject.getId().getPath();
+
+        for (Direction facing : Direction.values()) {
+            Direction outputSide = facing.getOpposite();
+
+            var model = models().withExistingParent(basePath + "_" + facing.getSerializedName(), mcLoc("block/block"))
+                    .texture("particle", sideTex);
+
+            model.element()
+                    .from(0, 0, 0).to(16, 16, 16)
+                    .face(Direction.DOWN).texture("#" + faceKey(Direction.DOWN, facing, outputSide)).cullface(Direction.DOWN).end()
+                    .face(Direction.UP).texture("#" + faceKey(Direction.UP, facing, outputSide)).cullface(Direction.UP).end()
+                    .face(Direction.NORTH).texture("#" + faceKey(Direction.NORTH, facing, outputSide)).cullface(Direction.NORTH).end()
+                    .face(Direction.SOUTH).texture("#" + faceKey(Direction.SOUTH, facing, outputSide)).cullface(Direction.SOUTH).end()
+                    .face(Direction.EAST).texture("#" + faceKey(Direction.EAST, facing, outputSide)).cullface(Direction.EAST).end()
+                    .face(Direction.WEST).texture("#" + faceKey(Direction.WEST, facing, outputSide)).cullface(Direction.WEST).end()
+                    .end();
+
+            model.texture("in", inTex).texture("out", outTex).texture("top", topTex).texture("side", sideTex);
+
+            builder.partialState()
+                    .with(com.hbm_m.block.machines.MachineCraneInserterBlock.FACING, facing)
+                    .modelForState().modelFile(model).addModel();
+        }
+    }
+
+    /**
+     * Fuer Bloecke mit einer 6-Wege-{@code FACING}-Property, deren Modell aber visuell symmetrisch
+     * ist (z.B. ein kleiner zentrierter Marker-Wuerfel wie {@code MachineDroneWaypointBlock}) - jede
+     * Facing-Variante zeigt dasselbe unrotierte Modell, spart damit 6 separate Modell-Dateien.
+     */
+    private <T extends Block> void directionlessFacingBlock(T block, ModelFile model) {
+        VariantBlockStateBuilder builder = getVariantBuilder(block);
+        for (Direction facing : Direction.values()) {
+            builder.partialState()
+                    .with(com.hbm_m.block.machines.MachineDroneWaypointBlock.FACING, facing)
+                    .modelForState().modelFile(model).addModel();
+        }
+        simpleBlockItem(block, model);
+    }
+
+    /** Same as {@link #directionlessFacingBlock} but for the vanilla FACING property. */
+    private <T extends Block> void plainFacingBlock(T block, ModelFile model) {
+        VariantBlockStateBuilder builder = getVariantBuilder(block);
+        for (Direction facing : Direction.values()) {
+            builder.partialState()
+                    .with(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING, facing)
+                    .modelForState().modelFile(model).addModel();
+        }
+        simpleBlockItem(block, model);
+    }
+
+    private static String faceKey(Direction face, Direction in, Direction out) {
+        if (face == in) return "in";
+        if (face == out) return "out";
+        if (face == Direction.UP) return "top";
+        return "side";
     }
 
     private <T extends Block> void customBombBlock(RegistrySupplier<T> blockObject) {

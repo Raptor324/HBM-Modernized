@@ -72,11 +72,13 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu implements ILon
                 // HBM батарейки (NBT на Fabric / capability на Forge внутри ItemEnergyAccess)
                 if (ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
 
-                //? if fabric {
-                /*return EnergyStorage.ITEM.find(stack, null) != null;
-                *///?} else {
-                return false;
+                //? if forge {
+                if (com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).map(IEnergyStorage::canReceive).orElse(false)) return true;
                 //?}
+                //? if neoforge {
+                /*if (stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null) return true;
+                *///?}
+                return false;
             }
         });
 

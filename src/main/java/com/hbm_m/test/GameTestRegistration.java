@@ -19,6 +19,7 @@ import com.hbm_m.lib.RefStrings;
  * {@link com.hbm_m.radiation.ChunkRadiationManager} / {@link com.hbm_m.client.ClientSetup}:
  * Forge — {@code @Mod.EventBusSubscriber}; NeoForge — {@code @EventBusSubscriber}.
  */
+
 //? if forge {
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -30,7 +31,7 @@ import net.minecraftforge.event.RegisterGameTestsEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 
-@EventBusSubscriber(modid = RefStrings.MODID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = RefStrings.MODID)
 *///?}
 public final class GameTestRegistration {
 

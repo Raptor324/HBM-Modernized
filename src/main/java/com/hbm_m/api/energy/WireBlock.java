@@ -34,15 +34,12 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-//? if forge {
 import com.hbm_m.capability.ModCapabilities;
+//? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 //?}
 
-//? if fabric {
-/*import com.hbm_m.capability.ModCapabilities;
-*///?}
 
 public class WireBlock extends BaseEntityBlock {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -156,7 +153,6 @@ public class WireBlock extends BaseEntityBlock {
     }
 
     private boolean canVisuallyConnectTo(LevelAccessor world, BlockPos neighborPos, Direction sideFromNeighbor, BlockState neighborState) {
-
         if (neighborState.is(this)) {
             return true;
         }
@@ -176,21 +172,18 @@ public class WireBlock extends BaseEntityBlock {
         }
 
         //? if forge {
-        // Forge: дополнительная проверка через Capability для совместимости со сторонними модами
         if (be.getCapability(ModCapabilities.HBM_ENERGY_CONNECTOR, sideFromNeighbor).isPresent()) return true;
         if (be.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, sideFromNeighbor).isPresent()) return true;
         if (be.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER, sideFromNeighbor).isPresent()) return true;
         return be.getCapability(ForgeCapabilities.ENERGY, sideFromNeighbor).isPresent();
-        //?} elif neoforge {
-        /*// NeoForge 1.21.1: Capabilities.EnergyStorage.BLOCK — capability через Level.getCapability.
-        // LevelAccessor не имеет getCapability — кастануть к Level; иначе fallback false.
-        if (world instanceof net.minecraft.world.level.Level level) {
-            return level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK, neighborPos, sideFromNeighbor) != null;
+        //?} else {
+        /*if (world instanceof net.minecraft.world.level.Level level) {
+            if (level.getCapability(ModCapabilities.HBM_ENERGY_CONNECTOR, neighborPos, neighborState, be, sideFromNeighbor) != null) return true;
+            if (level.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, neighborPos, neighborState, be, sideFromNeighbor) != null) return true;
+            if (level.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER, neighborPos, neighborState, be, sideFromNeighbor) != null) return true;
+            return level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK, neighborPos, neighborState, be, sideFromNeighbor) != null;
         }
         return false;
-        *///?} elif fabric {
-        /*// Fabric: проверяем через cardinal-components
-        return ModCapabilities.hasEnergyComponent(be);
         *///?}
     }
 

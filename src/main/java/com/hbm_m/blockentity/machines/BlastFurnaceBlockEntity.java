@@ -273,7 +273,11 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
+        //? if < 1.21.1 {
         itemHandler.deserializeNBT(tag.getCompound("inventory"));
+        //?} else {
+        /*itemHandler.deserializeNBT(registries, tag.getCompound("inventory"));
+        *///?}
         progress = tag.getInt("blast_furnace.progress");
         fuel = tag.getInt("blast_furnace.fuel");
         sideUpper = tag.getInt("blast_furnace.side_upper");

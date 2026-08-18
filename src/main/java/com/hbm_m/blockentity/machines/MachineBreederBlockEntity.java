@@ -1,12 +1,12 @@
 package com.hbm_m.blockentity.machines;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineBreederMenu;
-import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.BreederRecipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -19,43 +19,38 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import com.hbm_m.platform.ModFluidTank;
-import com.hbm_m.platform.FluidHooks;
-//? if forge {
-import net.minecraftforge.fluids.FluidUtil;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.fluids.FluidUtil;
-*///?}
+import net.minecraft.world.phys.AABB;
 
+/**
+ * Breeder - true multiblock port of the original 1.7.10 {@code MachineReactorBreeding}/
+ * {@code TileEntityMachineReactorBreeding}: a simple two-slot (input/output) item transmutation
+ * machine (see {@link BreederRecipe} for the exact material substitutions, since the original's
+ * {@code ItemBreedingRod} meta-item system does not exist in this port).
+ * <p>
+ * SCOPE-Vereinfachung: the original drew "neutron flux" from an adjacent
+ * {@code TileEntityReactorResearch} (Research Reactor), which was never ported to this codebase.
+ * Power here instead comes purely from the wired HBM/FE energy network (no battery item slot,
+ * matching {@code gui_breeder.png}'s simple 2-slot layout, which has no art for one).
+ * <p>
+ * Earlier revisions of this port had grown a battery slot, a fluid tank (driven by
+ * {@code FluidBreederRecipes}), and upgrade slots bolted on - none of which exist in the original
+ * (its own source comments admit fluid irradiation was never actually wired to this machine, only
+ * to the separate Fusion Breeder) and none of which the GUI texture has art for. Removed to match
+ * the original 1:1.
+ */
 public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
 
     private static final int SLOT_INPUT = 0;
-    private static final int SLOT_BATTERY = 1;
-    private static final int SLOT_OUTPUT = 2;
-    private static final int SLOT_FLUID_INPUT = 3;
-    private static final int SLOT_FLUID_OUTPUT = 4;
-    private static final int SLOT_FLUID_ID = 7;
+    private static final int SLOT_OUTPUT = 1;
 
-    private static final int SLOT_COUNT = 8;
+    private static final int SLOT_COUNT = 2;
     private static final long MAX_POWER = 1_000_000;
     private static final long MAX_RECEIVE = 1_000;
-    private static final int TANK_CAPACITY = 8_000;
-    private static final int DEFAULT_DURATION = 600;
-
-    // ModFluidTank — кросс-лоадерная (forge/neoforge/fabric) обёртка над native FluidTank.
-    // isFluidValid/onContentsChanged наследуются от native FluidTank (см. ModFluidTank).
-    private final ModFluidTank tank = new ModFluidTank(TANK_CAPACITY) {
-        @Override
-        protected void onContentsChanged() {
-            setChanged();
-            if (level != null && !level.isClientSide) {
-                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-            }
-        }
-    };
+    /** GIT original: progress += 0.0025F per tick at the minimum required flux -> 1.0F / 0.0025F = 400 ticks. */
+    private static final int DEFAULT_DURATION = 400;
 
     private int progress = 0;
-    private int duration = DEFAULT_DURATION;
+    private final int duration = DEFAULT_DURATION;
     private boolean isOn = false;
 
     protected final ContainerData data = new ContainerData() {
@@ -87,8 +82,6 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
         }
 
         entity.ensureNetworkInitialized();
-        entity.chargeFromBattery();
-        entity.transferFluidsFromItems();
 
         entity.isOn = false;
         if (entity.canProcess()) {
@@ -110,62 +103,54 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
         }
     }
 
-    private void chargeFromBattery() {
-        ItemStack stack = inventory.getStackInSlot(SLOT_BATTERY);
-        if (stack.isEmpty()) return;
-
-        if (stack.getItem() instanceof ItemCreativeBattery) {
-            setEnergyStored(getMaxEnergyStored());
-            return;
-        }
-
-        com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).ifPresent(provider -> {
-            long needed = getMaxEnergyStored() - getEnergyStored();
-            if (needed <= 0) return;
-            long extracted = provider.extractEnergy(Math.min(needed, getReceiveSpeed()), false);
-            if (extracted > 0) {
-                setEnergyStored(getEnergyStored() + extracted);
-                setChanged();
-            }
-        });
-
-        if (!com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).isPresent()) {
-            com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).ifPresent(provider -> {
-                long needed = getMaxEnergyStored() - getEnergyStored();
-                if (needed <= 0) return;
-                int extracted = provider.extractEnergy((int) Math.min(needed, getReceiveSpeed()), false);
-                if (extracted > 0) {
-                    setEnergyStored(getEnergyStored() + extracted);
-                    setChanged();
-                }
-            });
-        }
-    }
-
-    private void transferFluidsFromItems() {
-        ItemStack fillStack = inventory.getStackInSlot(SLOT_FLUID_INPUT);
-        if (fillStack.isEmpty()) return;
-        if (!inventory.getStackInSlot(SLOT_FLUID_OUTPUT).isEmpty()) return;
-
-        var result = FluidHooks.tryEmptyContainer(fillStack, tank.getBackend(), TANK_CAPACITY, false);
-        if (result.isSuccess()) {
-            inventory.setStackInSlot(SLOT_FLUID_INPUT, ItemStack.EMPTY);
-            inventory.setStackInSlot(SLOT_FLUID_OUTPUT, result.getResult());
-            setChanged();
-        }
-    }
-
     private boolean canProcess() {
-        if (inventory.getStackInSlot(SLOT_INPUT).isEmpty()) return false;
-        if (getEnergyStored() < getPowerRequired()) return false;
-        return false;
+        ItemStack input = inventory.getStackInSlot(SLOT_INPUT);
+        if (input.isEmpty()) return false;
+
+        BreederRecipe recipe = findRecipe(input);
+        if (recipe == null) return false;
+
+        if (getEnergyStored() < recipe.getEnergyPerTick()) return false;
+
+        ItemStack output = inventory.getStackInSlot(SLOT_OUTPUT);
+        if (output.isEmpty()) return true;
+
+        ItemStack result = recipe.getOutput();
+        if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(output, result)) return false;
+        return output.getCount() < output.getMaxStackSize();
     }
 
     private void processItem() {
+        ItemStack input = inventory.getStackInSlot(SLOT_INPUT);
+        BreederRecipe recipe = findRecipe(input);
+        if (recipe == null) return;
+
+        ItemStack result = recipe.getOutput();
+        ItemStack output = inventory.getStackInSlot(SLOT_OUTPUT);
+        if (output.isEmpty()) {
+            inventory.setStackInSlot(SLOT_OUTPUT, result);
+        } else if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(output, result)) {
+            output.grow(result.getCount());
+        }
+
+        input.shrink(1);
     }
 
+    /** Data-driven поиск BreederRecipe по входному слоту (заменяет статический BreederRecipes.getOutput). */
+    @Nullable
+    private BreederRecipe findRecipe(ItemStack input) {
+        Level level = getLevel();
+        if (level == null || input.isEmpty()) return null;
+        for (BreederRecipe recipe : RecipeHooks.getAllRecipes(level, BreederRecipe.Type.INSTANCE)) {
+            if (recipe.matches(input)) return recipe;
+        }
+        return null;
+    }
+
+    /** Reuses the current recipe's "flux" balance number 1:1 as an FE-per-tick draw (see class javadoc). */
     public int getPowerRequired() {
-        return 1000;
+        BreederRecipe recipe = findRecipe(inventory.getStackInSlot(SLOT_INPUT));
+        return recipe != null ? recipe.getEnergyPerTick() : 0;
     }
 
     public int getDuration() {
@@ -182,8 +167,8 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
         return dur <= 0 ? 0 : (progress * scale) / dur;
     }
 
-    public ModFluidTank getTank() {
-        return tank;
+    public boolean isOn() {
+        return isOn;
     }
 
     public ContainerData getContainerData() {
@@ -202,25 +187,23 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        if (slot == SLOT_BATTERY) {
-            return com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent()
-                || com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).isPresent()
-                || stack.getItem() instanceof ItemCreativeBattery;
-        }
-        if (slot == SLOT_OUTPUT || slot == SLOT_FLUID_OUTPUT) {
+        if (slot == SLOT_OUTPUT) {
             return false;
         }
-        if (slot == SLOT_FLUID_INPUT) {
-            //? if < 1.21.1 {
-            return stack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-            //?} else {
-            /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;
-            *///?}
-        }
-        if (slot == SLOT_FLUID_ID) {
-            return true;
+        if (slot == SLOT_INPUT) {
+            return findRecipe(stack) != null;
         }
         return true;
+    }
+
+    @Override
+    public AABB getRenderBoundingBox() {
+        BlockState state = getBlockState();
+        if (!(state.getBlock() instanceof com.hbm_m.block.machines.MachineBreederBlock block)) {
+            return super.getRenderBoundingBox();
+        }
+        Direction facing = state.getValue(com.hbm_m.block.machines.MachineBreederBlock.FACING);
+        return block.getStructureHelper().getRenderBoundingBox(worldPosition, facing, 0.0);
     }
 
     public boolean stillValid(Player player) {
@@ -233,56 +216,15 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
         return new MachineBreederMenu(containerId, playerInventory, this, data);
     }
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.put("tank", tank.writeNBT(new CompoundTag()));
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         tag.putInt("progress", progress);
-        tag.putInt("duration", duration);
         tag.putBoolean("isOn", isOn);
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.saveAdditional(tag, registries);
-        tag.put("tank", tank.writeNBT(registries, new CompoundTag()));
-        tag.putInt("progress", progress);
-        tag.putInt("duration", duration);
-        tag.putBoolean("isOn", isOn);
-
-    }
-    *///?}
-
-    //? if < 1.21.1 {
-    @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        if (tag.contains("tank")) {
-            tank.readNBT(tag.getCompound("tank"));
-        }
-        progress = tag.getInt("progress");
-        duration = tag.contains("duration") ? tag.getInt("duration") : DEFAULT_DURATION;
-        isOn = tag.getBoolean("isOn");
-    }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        if (tag.contains("tank")) {
-            tank.readNBT(registries, tag.getCompound("tank"));
-        }
-        progress = tag.getInt("progress");
-        duration = tag.contains("duration") ? tag.getInt("duration") : DEFAULT_DURATION;
-        isOn = tag.getBoolean("isOn");
-
-    }
-    *///?}
 
     @Override
-    protected void setupFluidCapability() {
-        setFluidHandler(tank);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        progress = tag.getInt("progress");
+        isOn = tag.getBoolean("isOn");
     }
 }

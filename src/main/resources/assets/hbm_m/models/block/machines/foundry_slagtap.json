@@ -1,0 +1,50 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "top": "hbm_m:block/foundry_slagtap_top",
+    "side": "hbm_m:block/foundry_slagtap_side",
+    "bottom": "hbm_m:block/foundry_slagtap_bottom",
+    "inner": "hbm_m:block/foundry_slagtap_inner",
+    "front": "hbm_m:block/foundry_slagtap_front",
+    "particle": "hbm_m:block/foundry_slagtap_side"
+  },
+  "elements": [
+    {
+      "name": "floor",
+      "from": [5, 0, 10],
+      "to": [11, 2, 16],
+      "faces": {
+        "up":    { "uv": [5, 10, 11, 16], "texture": "#inner" },
+        "down":  { "uv": [5, 0, 11, 6],   "texture": "#bottom" },
+        "north": { "uv": [5, 14, 11, 16], "texture": "#front" },
+        "south": { "uv": [5, 14, 11, 16], "texture": "#side" },
+        "west":  { "uv": [10, 14, 16, 16],"texture": "#side" },
+        "east":  { "uv": [0, 14, 6, 16],  "texture": "#side" }
+      }
+    },
+    {
+      "name": "wall_west",
+      "from": [5, 2, 10],
+      "to": [6.5, 8, 16],
+      "faces": {
+        "up":    { "uv": [5, 10, 6.5, 16],  "texture": "#top" },
+        "north": { "uv": [9.5, 8, 11, 14],  "texture": "#front" },
+        "south": { "uv": [5, 8, 6.5, 14],   "texture": "#side" },
+        "west":  { "uv": [10, 8, 16, 14],   "texture": "#side" },
+        "east":  { "uv": [0, 8, 6, 14],     "texture": "#inner" }
+      }
+    },
+    {
+      "name": "wall_east",
+      "from": [9.5, 2, 10],
+      "to": [11, 8, 16],
+      "faces": {
+        "up":    { "uv": [9.5, 10, 11, 16], "texture": "#top" },
+        "north": { "uv": [5, 8, 6.5, 14],   "texture": "#front" },
+        "south": { "uv": [9.5, 8, 11, 14],  "texture": "#side" },
+        "west":  { "uv": [10, 8, 16, 14],   "texture": "#inner" },
+        "east":  { "uv": [0, 8, 6, 14],     "texture": "#side" }
+      }
+    }
+  ]
+}

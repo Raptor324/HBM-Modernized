@@ -365,7 +365,11 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-        if (tag.contains("inventory")) itemHandler.deserializeNBT(tag.getCompound("inventory"));
+        if (tag.contains("inventory")) //? if < 1.21.1 {
+ itemHandler.deserializeNBT(tag.getCompound("inventory"));
+ //?} else {
+ /*itemHandler.deserializeNBT(registries, tag.getCompound("inventory"));
+ *///?}
         heat = tag.getInt("heat"); progress = tag.getInt("progress");
         fillLevel = tag.getFloat("fillLevel"); fillColor = tag.getInt("fillColor");
 

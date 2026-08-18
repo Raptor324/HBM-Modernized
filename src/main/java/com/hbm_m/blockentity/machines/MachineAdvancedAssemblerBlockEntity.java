@@ -153,7 +153,18 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     };
 
     public MachineAdvancedAssemblerBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), pos, state, 17, 100_000L, 100_000L);
+        this(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), pos, state);
+    }
+
+    /**
+     * Used by {@code MachinePrecAssBlockEntity} - the original ("Precision Assembler") is, per the
+     * original author's own comment ("horribly copy-pasted crap device"), mechanically a near-clone
+     * of the Advanced Assembler (same blueprint-folder-driven recipe selection, same 4000mB fluid
+     * I/O tanks) with a different multiblock shell and animated arms; this port reuses this class
+     * wholesale, only capacity/registration differ - same pattern as Bat9000/Orbus in this port.
+     */
+    protected MachineAdvancedAssemblerBlockEntity(net.minecraft.world.level.block.entity.BlockEntityType<?> type, BlockPos pos, BlockState state) {
+        super(type, pos, state, 17, 100_000L, 100_000L);
 
         // Инициализируем модуль здесь, передавая СЕБЯ (this) как IEnergyReceiver
         if (this.level != null && !this.level.isClientSide) {

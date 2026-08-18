@@ -60,7 +60,9 @@ public class MachineMixerMenu extends AbstractContainerMenu {
                 return com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack)
                         .map(storage -> storage.canExtract())
                         .orElse(false);
-                //?} else {
+                //?} elif neoforge {
+                /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
+                *///?} else {
                 /*return false;
                 *///?}
             }
@@ -135,7 +137,9 @@ public class MachineMixerMenu extends AbstractContainerMenu {
             isBattery = isBattery || com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(slotStack)
                     .map(storage -> storage.canExtract())
                     .orElse(false);
-            //?}
+            //?} elif neoforge {
+            /*isBattery = isBattery || slotStack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
+            *///?}
 
             if (isBattery) {
                 if (!this.moveItemStackTo(slotStack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {

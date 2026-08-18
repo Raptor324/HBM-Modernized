@@ -50,12 +50,14 @@ public class GUIMachineArcWelder extends GuiInfoScreen<MachineArcWelderMenu> {
         }
 
         drawInfoPanel(guiGraphics, 78, 67, PanelType.SMALL_BLUE_INFO);
+
+        arcWelder.tank.renderTank(guiGraphics, this.leftPos + 35, this.topPos + 79, 34, 16);
     }
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         Component title = this.title;
-        guiGraphics.drawString(this.font, title, this.imageWidth / 2 - this.font.width(title) / 2, 6, 0x404040, false);
+        guiGraphics.drawString(this.font, title, this.imageWidth / 2 - this.font.width(title) / 2 - 18, 6, 0x404040, false);
         guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 0x404040, false);
     }
 
@@ -73,6 +75,11 @@ public class GUIMachineArcWelder extends GuiInfoScreen<MachineArcWelderMenu> {
             this.leftPos + 78, this.topPos + 67,
                 Component.literal("Progress:"),
                 Component.literal("   " + arcWelder.getProgress() + " / " + arcWelder.getMaxProgress()));
+
+        if (isPointInRect(35, 63, 34, 16, mouseX, mouseY)) {
+            arcWelder.tank.renderTankInfo(guiGraphics, this.font, mouseX, mouseY,
+                this.leftPos + 35, this.topPos + 63, 34, 16);
+        }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

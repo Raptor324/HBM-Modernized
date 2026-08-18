@@ -1,7 +1,6 @@
 package com.hbm_m.api.energy;
 
 import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.interfaces.IEnergyConnector;
 
 import net.minecraft.core.BlockPos;
@@ -12,23 +11,19 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
 //? if forge {
 import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
 //?}
 
-//? if fabric {
-/*import dev.onyxstudios.cca.api.v3.component.ComponentKey;
-import dev.onyxstudios.cca.api.v3.component.ComponentProvider;
-*///?}
-
 public class SwitchBlockEntity extends BlockEntity implements IEnergyConnector {
 
-    // Capability всегда "живая", но доступ к ней регулируется через getCapability
     //? if forge {
     private final LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
-     //?}
+    //?}
+
     public SwitchBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.SWITCH_BE.get(), pos, state);
     }
@@ -36,7 +31,6 @@ public class SwitchBlockEntity extends BlockEntity implements IEnergyConnector {
     public static void tick(Level level, BlockPos pos, BlockState state, SwitchBlockEntity entity) {
         if (level.isClientSide) return;
 
-        // Если рубильник включен, он ОБЯЗАН быть в сети
         if (state.getValue(SwitchBlock.POWERED)) {
             ServerLevel serverLevel = (ServerLevel) level;
             EnergyNetworkManager manager = EnergyNetworkManager.get(serverLevel);
@@ -48,13 +42,9 @@ public class SwitchBlockEntity extends BlockEntity implements IEnergyConnector {
     }
 
     private boolean isValidSide(@Nullable Direction side) {
-        // [ИСПРАВЛЕНО] Добавлена проверка POWERED.
-        // Теперь, если рубильник выключен, он не отдает Capability.
-        // Это синхронизирует логику EnergyNetworkManager с состоянием блока.
         BlockState state = this.getBlockState();
         if (!(state.getBlock() instanceof SwitchBlock)) return false;
-
-        if (!state.getValue(SwitchBlock.POWERED)) return false; // <--- ВОТ ЭТОГО НЕ ХВАТАЛО
+        if (!state.getValue(SwitchBlock.POWERED)) return false;
 
         if (side == null) return true;
         Direction facing = state.getValue(SwitchBlock.FACING);
@@ -89,13 +79,7 @@ public class SwitchBlockEntity extends BlockEntity implements IEnergyConnector {
 
     @Override
     public boolean canConnectEnergy(Direction side) {
-        // Используем ту же логику проверки
         return isValidSide(side);
-    }
-
-    @Override
-    public void setLevel(Level pLevel) {
-        super.setLevel(pLevel);
     }
 
     @Override
@@ -106,6 +90,6 @@ public class SwitchBlockEntity extends BlockEntity implements IEnergyConnector {
         }
         //? if forge {
         hbmConnector.invalidate();
-         //?}
+        //?}
     }
 }

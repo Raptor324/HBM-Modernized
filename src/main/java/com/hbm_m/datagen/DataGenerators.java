@@ -71,8 +71,8 @@ public class DataGenerators {
         generator.addProvider(event.includeServer(), new ModDamageTypeTagProvider(packOutput, newLookupProvider, existingFileHelper));
         generator.addProvider(event.includeClient(), new ModBlockStateProvider(packOutput, existingFileHelper));
         generator.addProvider(event.includeClient(), new ModItemModelProvider(packOutput, existingFileHelper));
-        generator.addProvider(event.includeClient(), new ModLanguageProvider(packOutput, "ru_ru"));
-        generator.addProvider(event.includeClient(), new ModLanguageProvider(packOutput, "en_us"));
+        generator.addProvider(event.includeClient(), new ModLanguageProviderRu(packOutput));
+        generator.addProvider(event.includeClient(), new ModLanguageProviderEn(packOutput));
     }
 
     public static RegistrySetBuilder getRegistrySetBuilder() {

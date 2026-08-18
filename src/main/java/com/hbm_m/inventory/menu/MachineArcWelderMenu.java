@@ -13,7 +13,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
 import net.minecraftforge.items.SlotItemHandler;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.neoforge.items.SlotItemHandler;
+*///?}
 
 public class MachineArcWelderMenu extends AbstractContainerMenu {
 
@@ -30,7 +32,6 @@ public class MachineArcWelderMenu extends AbstractContainerMenu {
         super(ModMenuTypes.ARC_WELDER_MENU.get(), id);
         this.blockEntity = be;
 
-        //? if forge {
         // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку
         var handler = be != null ? be.getItemHandler() : new DummyItemStackHandler(MACHINE_SLOTS);
         // ── Machine slots (0-7) ──────────────────────────────────────────────
@@ -44,7 +45,7 @@ public class MachineArcWelderMenu extends AbstractContainerMenu {
         addSlot(new SlotItemHandler(handler, 5,  17, 63)); // Fluid-ID item
         addSlot(new SlotItemHandler(handler, 6,  89, 63)); // Upgrade 1
         addSlot(new SlotItemHandler(handler, 7, 107, 63)); // Upgrade 2
-        //?}
+
 
         // ── Player inventory (8-34) ──────────────────────────────────────────
         for (int row = 0; row < 3; row++)

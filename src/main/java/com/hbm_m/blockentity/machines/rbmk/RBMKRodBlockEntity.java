@@ -115,16 +115,34 @@ public class RBMKRodBlockEntity extends RBMKColumnBlockEntity
             sw.addStream(new RBMKNeutronStream(node, new Vec3(dir.getStepX(), 0, dir.getStepZ()), flux, ratio));
     }
 
-    private void meltdown(Level level) { onMelt(level, 1); }
+    private void meltdown(Level level) { RBMKColumnBlockEntity.meltdownReactor(level, this); }
 
     @Override
     public void onMelt(Level level, int reduce) {
         boolean hadFuel = !fuelSlot.isEmpty();
+        boolean isDigammaFuel = hadFuel && fuelSlot.getItem() == com.hbm_m.item.ModItems.RBMK_FUEL_DRX.get();
+        if (isDigammaFuel) RBMKColumnBlockEntity.digamma = true;
         fuelSlot = ItemStack.EMPTY;
-        // TODO: replace column with corium when corium blocks are added
-        standardMelt(level, reduce);
-        if (hadFuel)   spawnDebris(level, "fuel");
-        if (moderated) { spawnDebris(level, "graphite"); spawnDebris(level, "graphite"); }
+
+        if (hadFuel) {
+            // A rod that was actively fueled melts down into corium top-to-bottom rather than
+            // the ordinary rubble/air split used by passive columns - 1:1 with the original's
+            // TileEntityRBMKRod.onMelt.
+            int h = RBMKDials.getColumnHeight(level);
+            BlockPos base = getBlockPos();
+            for (int i = h; i >= 0; i--) {
+                level.setBlock(base.above(i), com.hbm_m.block.ModBlocks.RBMK_CORIUM.get().defaultBlockState(), 3);
+            }
+            int count = 1 + level.random.nextInt(h);
+            for (int i = 0; i < count; i++) spawnDebris(level, "fuel");
+        } else {
+            standardMelt(level, reduce);
+        }
+
+        if (moderated) {
+            int count = 2 + level.random.nextInt(2);
+            for (int i = 0; i < count; i++) spawnDebris(level, "graphite");
+        }
         spawnDebris(level, "element");
         if (getLidState() == 1) spawnDebris(level, "lid");
     }

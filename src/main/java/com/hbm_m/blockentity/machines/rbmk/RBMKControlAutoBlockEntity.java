@@ -1,9 +1,14 @@
 package com.hbm_m.blockentity.machines.rbmk;
 
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.inventory.menu.RBMKControlAutoMenu;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.util.Mth;
@@ -28,6 +33,18 @@ public class RBMKControlAutoBlockEntity extends RBMKControlBlockEntity {
 
     @Override public boolean isModerated()             { return moderated; }
     @Override public String  getRenderTexturePrefix() { return "rbmk_control_auto"; }
+
+    /** Lets the console mini-map tell auto rods apart from manual ones (purple dot vs yellow),
+     *  matching the original's separate CONTROL/CONTROL_AUTO console column types. */
+    @Override
+    public net.minecraft.nbt.CompoundTag getNBTForConsole() {
+        net.minecraft.nbt.CompoundTag d = super.getNBTForConsole();
+        d.putBoolean("auto", true);
+        return d;
+    }
+
+    @Override public Component getDisplayName() { return Component.translatable("block.hbm_m.rbmk_control_auto"); }
+    @Override public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) { return new RBMKControlAutoMenu(id, inv, this); }
 
     public static void tick(Level level, BlockPos pos, BlockState state, RBMKControlAutoBlockEntity be) {
         baseTick(level, pos, state, be);

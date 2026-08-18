@@ -5,17 +5,15 @@ import com.hbm_m.client.model.MachineFluidTankBakedModel;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
+import com.hbm_m.lib.RefStrings;
 
 import java.util.HashMap;
 import java.util.Set;
 
 public class MachineFluidTankModelLoader extends AbstractObjPartModelLoader<MachineFluidTankBakedModel> {
 
-    //? if < 1.21.1 {
-    public static final ResourceLocation ID = new ResourceLocation("hbm_m", "tank");
-    //?} else {
-    /*public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath("hbm_m", "tank");
-    *///?}
+    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "tank");
+
 
     @Override
     protected Set<String> getPartNames(JsonObject jsonObject) {

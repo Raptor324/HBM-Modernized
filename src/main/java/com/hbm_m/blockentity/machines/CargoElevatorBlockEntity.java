@@ -2,200 +2,165 @@ package com.hbm_m.blockentity.machines;
 
 import java.util.List;
 
-import com.hbm_m.blockentity.LoadedMachineBlockEntity;
+import javax.annotation.Nullable;
+
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.multiblock.IDummyCorePart;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.nbt.NbtUtils;
+import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
 /**
- * Порт {@code TileEntityCargoElevator} из 1.7.10.
- * <p>
- * Грузовой лифт: 3×3 база-мультиблок, платформа выдвигается вверх
- * на {@code height} блоков. Коллизия с сущностями — ручное перемещение
- * через {@code getEntitiesOfClass} + {@code moveTo} (не через entity-хитбокс).
+ * Cargo elevator: a self-stacking 3x3 shaft (see {@link com.hbm_m.block.machines.CargoElevatorBlock})
+ * with a platform that slides up/down the shaft. Only the core instance (bottom-center block)
+ * carries real state; every other block of the shaft just points at the core via
+ * {@link IDummyCorePart#getCorePos()}.
  */
-public class CargoElevatorBlockEntity extends LoadedMachineBlockEntity {
+public class CargoElevatorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IDummyCorePart {
 
+    public static final double SPEED = 2.0 / 20.0; // 2 blocks/second
+
+    @Nullable
+    private BlockPos corePos;
+
+    /** Core-only: number of floors above the core (0 = single floor, no extra height). */
     public int height = 0;
-
-    public double extension;
-    public double prevExtension;
-    public double syncExtension;
-    private int sync;
-
-    public boolean isExtending;
-    /** 2 блока в секунду (оригинал: {@code speed = 2D / 20D}). */
-    public static final double speed = 2D / 20D;
-    public boolean renderPlatform = false;
+    public double extension = 0;
+    public double prevExtension = 0;
+    public boolean isExtending = false;
 
     public CargoElevatorBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CARGO_ELEVATOR_BE.get(), pos, state);
     }
 
+    @Nullable
+    @Override
+    public BlockPos getRawCorePos() {
+        return corePos;
+    }
+
+    @Override
+    public void setRawCorePos(@Nullable BlockPos pos) {
+        this.corePos = pos;
+        setChanged();
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, CargoElevatorBlockEntity be) {
-        be.prevExtension = be.extension;
-
-        if (!level.isClientSide) {
-            // Сервер: анимация выдвижения
-            if (be.isExtending && be.extension < be.height) {
-                be.extension += be.speed;
-            }
-            if (!be.isExtending && be.extension > 0) {
-                be.extension -= be.speed;
-            }
-            be.extension = Mth.clamp(be.extension, 0, be.height);
-
-            // Существуем хотя бы один тик перед рендером платформы —
-            // фикс короткого мерцания из оригинала
-            be.renderPlatform = true;
-
-            be.setChanged();
-            be.sendUpdateToClient();
-        } else {
-            // Клиент: интерполяция extension к syncExtension
-            if (be.sync > 0) {
-                be.extension = be.extension + ((be.syncExtension - be.extension) / (float) be.sync);
-                --be.sync;
-            } else {
-                be.extension = be.syncExtension;
-            }
+        if (!be.isCore()) {
+            return;
         }
 
-        // Обе стороны: перемещение сущностей на платформе
-        if (be.extension != be.prevExtension) {
-            double liftUpper = be.worldPosition.getY() + 1 + Math.max(be.extension, be.prevExtension);
-            double liftLower = be.worldPosition.getY() + 1 + Math.min(be.extension, be.prevExtension);
-            AABB box = new AABB(
-                    be.worldPosition.getX() - 0.99, liftLower, be.worldPosition.getZ() - 0.99,
-                    be.worldPosition.getX() + 1.99, liftUpper, be.worldPosition.getZ() + 1.99);
+        be.prevExtension = be.extension;
 
-            List<Entity> toLift = level.getEntitiesOfClass(Entity.class, box);
-            for (Entity e : toLift) {
-                // Игроки перемещаются только на клиенте (как в оригинале)
-                if (e instanceof net.minecraft.world.entity.player.Player && !level.isClientSide) continue;
-                double entityBottom = e.getBoundingBox().minY;
-                if (entityBottom >= liftLower && entityBottom <= liftUpper) {
-                    double delta = entityBottom - (be.worldPosition.getY() + 1 + be.extension);
-                    e.moveTo(e.getX(), e.getY() - delta, e.getZ());
+        if (be.isExtending && be.extension < be.height) {
+            be.extension = Math.min(be.height, be.extension + SPEED);
+        } else if (!be.isExtending && be.extension > 0) {
+            be.extension = Math.max(0, be.extension - SPEED);
+        }
+
+        if (!level.isClientSide) {
+            if (be.extension != be.prevExtension) {
+                be.liftEntities(level, pos);
+                be.setChanged();
+                be.sendUpdateToClient();
+            }
+        }
+    }
+
+    private void liftEntities(Level level, BlockPos corePos) {
+        double liftLower = corePos.getY() + 1 + Math.min(extension, prevExtension);
+        double liftUpper = corePos.getY() + 1 + Math.max(extension, prevExtension) + 1;
+        AABB scanBox = new AABB(
+                corePos.getX() - 1, liftLower, corePos.getZ() - 1,
+                corePos.getX() + 2, liftUpper, corePos.getZ() + 2);
+
+        List<Entity> toLift = level.getEntitiesOfClass(Entity.class, scanBox);
+        double platformY = corePos.getY() + 1 + extension;
+        for (Entity e : toLift) {
+            double feetY = e.getBoundingBox().minY;
+            if (feetY >= liftLower - 0.5 && feetY <= liftUpper) {
+                double delta = feetY - platformY;
+                if (Math.abs(delta) < 1.0) {
+                    e.setPos(e.getX(), platformY, e.getZ());
                     e.setOnGround(true);
-                    e.moveTo(e.getX(), e.getY() - 0.125, e.getZ());
                 }
             }
         }
     }
 
+    /** Toggles the platform between fully extended and fully retracted. Only meaningful on the core. */
     public void toggleElevator() {
-        if (this.extension >= this.height) {
-            this.isExtending = false;
+        if (extension >= height) {
+            isExtending = false;
         }
-        if (this.extension <= 0) {
-            this.isExtending = true;
+        if (extension <= 0) {
+            isExtending = true;
+        }
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    /** Adds one floor to the shaft (called after a new 3x3 layer has been placed above the current top). */
+    public void addFloor() {
+        height++;
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    /** Interpolated extension for rendering, in blocks above the core's own cell. */
+    public double getRenderExtension(float partialTick) {
+        return Mth.lerp(partialTick, prevExtension, extension);
+    }
+
+    protected void sendUpdateToClient() {
+        if (level != null && !level.isClientSide && !isRemoved()) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
     }
 
-    //? if < 1.21.1 {
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        if (corePos != null) {
+            tag.put("CorePos", NbtUtils.writeBlockPos(corePos));
+        }
+        tag.putInt("height", height);
         tag.putDouble("extension", extension);
         tag.putBoolean("isExtending", isExtending);
-        tag.putInt("height", height);
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.saveAdditional(tag, registries);
-        tag.putDouble("extension", extension);
-        tag.putBoolean("isExtending", isExtending);
-        tag.putInt("height", height);
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
-    @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        this.extension = tag.getDouble("extension");
-        this.isExtending = tag.getBoolean("isExtending");
-        this.height = tag.getInt("height");
-        // Клиентская синхронизация: renderPlatform + syncExtension приходят через getUpdateTag
-        this.renderPlatform = tag.getBoolean("renderPlatform");
-        this.syncExtension = tag.getDouble("extension");
-        if (this.syncExtension > 0 && this.syncExtension < this.height) {
-            this.sync = 3;
-        }
-    }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        this.extension = tag.getDouble("extension");
-        this.isExtending = tag.getBoolean("isExtending");
-        this.height = tag.getInt("height");
-        // Клиентская синхронизация: renderPlatform + syncExtension приходят через getUpdateTag
-        this.renderPlatform = tag.getBoolean("renderPlatform");
-        this.syncExtension = tag.getDouble("extension");
-        if (this.syncExtension > 0 && this.syncExtension < this.height) {
-            this.sync = 3;
-        }
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        tag.putBoolean("renderPlatform", renderPlatform);
-        tag.putInt("height", height);
-        tag.putDouble("extension", extension);
-        return tag;
-    }
-    //?} else {
-    /*@Override
-    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
-
-        CompoundTag tag = super.getUpdateTag(registries);
-        tag.putBoolean("renderPlatform", renderPlatform);
-        tag.putInt("height", height);
-        tag.putDouble("extension", extension);
-        return tag;
-    
-    }
-    *///?}
 
     @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        corePos = tag.contains("CorePos") ? com.hbm_m.platform.PlatformHooks.readBlockPos(tag, "CorePos") : null;
+        height = tag.getInt("height");
+        extension = tag.getDouble("extension");
+        prevExtension = extension;
+        isExtending = tag.getBoolean("isExtending");
     }
 
 
-    /**
-     * Render AABB: динамический по высоте (оригинал: {@code getRenderBoundingBox}).
-     */
     //? if forge {
     @Override
-    //?}
-    public AABB getRenderBoundingBox() {
-        int h = 1 + this.height;
-        return new AABB(
-                worldPosition.getX() - 1,
-                worldPosition.getY(),
-                worldPosition.getZ() - 1,
-                worldPosition.getX() + 2,
-                worldPosition.getY() + h,
-                worldPosition.getZ() + 2);
+    public void handleUpdateTag(CompoundTag tag) {
+        load(tag);
     }
+    //?}
+
+
+    //? if forge {
+    @Override
+    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
+        if (pkt.getTag() != null) {
+            load(pkt.getTag());
+        }
+    }
+    //?}
 }

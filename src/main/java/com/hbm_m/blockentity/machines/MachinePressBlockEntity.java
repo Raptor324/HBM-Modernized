@@ -198,7 +198,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         }
 
         boolean canProcess = canProcess();
-        boolean preheated = false; // TODO: проверка на press_preheater если нужно
+        boolean preheated = level.getBlockState(worldPosition.below()).is(com.hbm_m.block.ModBlocks.PRESS_PREHEATER.get());
 
         // Логика ускорения/замедления (как в 1.7.10)
         if ((canProcess || isRetracting) && burnTime >= FUEL_PER_OPERATION) {

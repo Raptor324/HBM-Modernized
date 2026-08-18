@@ -34,6 +34,16 @@ import com.hbm_m.recipe.GasCentrifugeRecipe;
 import com.hbm_m.recipe.PressRecipe;
 import com.hbm_m.recipe.ShredderRecipe;
 import com.hbm_m.recipe.SolderingRecipe;
+import com.hbm_m.recipe.ArcFurnaceRecipe;
+import com.hbm_m.recipe.AmmoPressRecipe;
+import com.hbm_m.recipe.PurexRecipe;
+import com.hbm_m.recipe.ExposureChamberRecipe;
+import com.hbm_m.recipe.RotaryFurnaceRecipe;
+import com.hbm_m.recipe.CompressorRecipe;
+import com.hbm_m.recipe.CrackingTowerRecipe;
+import com.hbm_m.recipe.RadiolysisRecipe;
+import com.hbm_m.recipe.ElectrolyserFluidRecipe;
+import com.hbm_m.recipe.ElectrolyserMetalRecipe;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.item.liquids.FluidBarrelItem;
 import com.hbm_m.item.liquids.FluidDuctItem;
@@ -92,6 +102,16 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCategories(new ShredderJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new BlastFurnaceJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new GasCentrifugeJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new ArcFurnaceJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new AmmoPressJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new PurexJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new ExposureChamberJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new RotaryFurnaceJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new CompressorJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new ElectrolyserFluidJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new ElectrolyserMetalJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new CrackingTowerJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new RadiolysisJeiCategory(registration.getJeiHelpers().getGuiHelper()));
     }
 
     @Override
@@ -119,6 +139,19 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipes(ArcWelderJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, ArcWelderRecipe.Type.INSTANCE));
         registration.addRecipes(SolderingStationJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, SolderingRecipe.Type.INSTANCE));
         registration.addRecipes(GasCentrifugeJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, GasCentrifugeRecipe.Type.INSTANCE));
+
+        // FFA: дополнительные категории (машины, добавленные в FFA-ветке)
+        registration.addRecipes(ArcFurnaceJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, ArcFurnaceRecipe.Type.INSTANCE));
+        registration.addRecipes(AmmoPressJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, AmmoPressRecipe.Type.INSTANCE));
+        registration.addRecipes(PurexJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, PurexRecipe.Type.INSTANCE));
+        registration.addRecipes(ExposureChamberJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, ExposureChamberRecipe.Type.INSTANCE));
+        registration.addRecipes(RotaryFurnaceJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, RotaryFurnaceRecipe.Type.INSTANCE));
+        // Compressor / CrackingTower / Radiolysis / Electrolyser — теперь data-driven (JSON), раньше — статика.
+        registration.addRecipes(CompressorJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, CompressorRecipe.Type.INSTANCE));
+        registration.addRecipes(CrackingTowerJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, CrackingTowerRecipe.Type.INSTANCE));
+        registration.addRecipes(RadiolysisJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, RadiolysisRecipe.Type.INSTANCE));
+        registration.addRecipes(ElectrolyserFluidJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, ElectrolyserFluidRecipe.Type.INSTANCE));
+        registration.addRecipes(ElectrolyserMetalJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, ElectrolyserMetalRecipe.Type.INSTANCE));
     }
 
     @Override
@@ -141,6 +174,21 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.SHREDDER.get()), ShredderJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.BLAST_FURNACE.get()), BlastFurnaceJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.GAS_CENTRIFUGE.get()), GasCentrifugeJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.ARC_FURNACE.get()), ArcFurnaceJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.AMMO_PRESS.get()), AmmoPressJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.PUREX.get()), PurexJeiCategory.RECIPE_TYPE);
+        // E-Press und Conveyor Press teilen sich PressRecipe mit dem Basis-Press.
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.EPRESS.get()), PressJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.CONVEYOR_PRESS.get()), PressJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.EXPOSURE_CHAMBER.get()), ExposureChamberJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.ROTARY_FURNACE.get()), RotaryFurnaceJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.COMPRESSOR.get()), CompressorJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.ELECTROLYSER.get()), ElectrolyserFluidJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.ELECTROLYSER.get()), ElectrolyserMetalJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.CRACKING_TOWER.get()), CrackingTowerJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.RADIOLYSIS.get()), RadiolysisJeiCategory.RECIPE_TYPE);
+        // Microwave teilt sich Vanilla-Ofen-Rezepte mit dem eingebauten JEI-Ofen-Kategorie.
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.MACHINE_MICROWAVE.get()), mezz.jei.api.constants.RecipeTypes.SMELTING);
     }
 
     @Override
@@ -169,6 +217,9 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeClickArea(GUIMachineShredder.class, 63, 89, 34, 18, ShredderJeiCategory.RECIPE_TYPE);
         // Blast Furnace: progress arrow area
         registration.addRecipeClickArea(GUIBlastFurnace.class, 101, 35, 24, 17, BlastFurnaceJeiCategory.RECIPE_TYPE);
+        registration.addRecipeClickArea(com.hbm_m.inventory.gui.GUIMachineArcFurnace.class, 45, 37, 38, 5, ArcFurnaceJeiCategory.RECIPE_TYPE);
+        registration.addRecipeClickArea(com.hbm_m.inventory.gui.GUIMachineAmmoPress.class, 96, 20, 20, 32, AmmoPressJeiCategory.RECIPE_TYPE);
+        registration.addRecipeClickArea(com.hbm_m.inventory.gui.GUIMachinePUREX.class, 45, 40, 24, 8, PurexJeiCategory.RECIPE_TYPE);
     }
 
     @Override

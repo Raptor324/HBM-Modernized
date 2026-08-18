@@ -29,6 +29,7 @@ bin/
 .zcode
 .roo
 .rooignore
+.claudeignore
 # ================= Generated Files =================
 src/generated/resources/.cache
 src/generated/resources/assets/hbm_m/blockstates/
@@ -105,3 +106,4 @@ HBM-Modernized.code-workspace
 java_pid*
 AGENTS.md
 libs/
+.aider*

@@ -16,6 +16,11 @@ import net.minecraft.client.gui.screens.Screen;
  * сводится к этому статическому хелперу с внутренним version-gating.
  */
 
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public final class GuiCompat {
     private GuiCompat() {}
 
@@ -34,6 +39,21 @@ public final class GuiCompat {
         screen.renderBackground(guiGraphics);
         //?} else {
         /*screen.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        *///?}
+    }
+
+    /**
+     * Кросс-версионный конструктор {@code Checkbox}.
+     * 1.20.1: {@code new Checkbox(x, y, w, h, message, selected)};
+     * 1.21.1: только builder (шрифт обязателен).
+     */
+    public static net.minecraft.client.gui.components.Checkbox checkbox(
+            int x, int y, int width, int height, net.minecraft.network.chat.Component message, boolean selected) {
+        //? if < 1.21.1 {
+        return new net.minecraft.client.gui.components.Checkbox(x, y, width, height, message, selected);
+        //?} else {
+        /*return net.minecraft.client.gui.components.Checkbox.builder(message, net.minecraft.client.Minecraft.getInstance().font)
+                .pos(x, y).selected(selected).build();
         *///?}
     }
 

@@ -38,7 +38,7 @@ public class RenderBlackHole<T extends BlackHoleEntity> extends EntityRenderer<T
     private static final int SPHERE_STACKS = 16;
     private static final int SPHERE_SLICES = 16;
 
-    protected static final ResourceLocation SWIRL = RefStrings.resourceLocation("textures/entity/bhole.png");
+    protected static final ResourceLocation SWIRL = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/entity/bhole.png");
 
     public RenderBlackHole(EntityRendererProvider.Context context) {
         super(context);
@@ -332,7 +332,7 @@ public class RenderBlackHole<T extends BlackHoleEntity> extends EntityRenderer<T
     }
 
     protected ResourceLocation discTex() {
-        return RefStrings.resourceLocation("textures/entity/bhole_disc.png");
+        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/entity/bhole_disc.png");
     }
 
 
@@ -346,7 +346,7 @@ public class RenderBlackHole<T extends BlackHoleEntity> extends EntityRenderer<T
 
     @Override
     public ResourceLocation getTextureLocation(T entity) {
-        return RefStrings.resourceLocation("textures/models/blackhole.png");
+        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/blackhole.png");
     }
 
     @Override

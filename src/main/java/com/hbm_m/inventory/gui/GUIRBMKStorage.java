@@ -1,13 +1,22 @@
 package com.hbm_m.inventory.gui;
-import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKStorageBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.RBMKStorageMenu;
+import com.hbm_m.lib.RefStrings;
+import com.mojang.blaze3d.systems.RenderSystem;
+
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
+/** Port of {@code GUIRBMKStorage} (1.7.10 Original). */
 public class GUIRBMKStorage extends GuiInfoScreen<RBMKStorageMenu> {
+
+    private static final ResourceLocation TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/reactors/gui_rbmk_storage.png");
 
     private final RBMKStorageBlockEntity be;
 
@@ -15,31 +24,26 @@ public class GUIRBMKStorage extends GuiInfoScreen<RBMKStorageMenu> {
         super(menu, inv, title);
         this.be = menu.getBlockEntity();
         this.imageWidth  = 176;
-        this.imageHeight = 166;
+        this.imageHeight = 186;
+        this.inventoryLabelY = this.imageHeight - 96 + 2;
     }
 
     @Override
-    protected void renderBg(GuiGraphics g, float partial, int mx, int my) {
-        g.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, 0xFF2B2B2B);
-        g.fill(leftPos + 1, topPos + 1, leftPos + imageWidth - 1, topPos + imageHeight - 1, 0xFFC6C6C6);
-
-        for (int i = 0; i < RBMKStorageBlockEntity.SLOTS; i++) {
-            int sx = leftPos + 44 + i * 22;
-            int sy = topPos + 35;
-            g.fill(sx - 1, sy - 1, sx + 17, sy + 17, 0xFF888888);
-            g.renderItem(be.slots[i], sx, sy);
-            g.renderItemDecorations(font, be.slots[i], sx, sy);
-        }
+    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+        // Item icons are rendered automatically by AbstractContainerScreen using the
+        // Menu's real slot positions (32 + 32*j, 29 + 16*i) - no manual icon drawing needed here.
     }
 
     @Override
-    public void render(GuiGraphics g, int mx, int my, float partial) {
-        GuiCompat.renderBackground(this, g, mx, my, partial);
-        super.render(g, mx, my, partial);
+    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
+        super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        g.drawString(font, "RBMK Storage Column", leftPos + 8, topPos + 8, 0x333333, false);
-        g.drawString(font, String.format("Heat: %.1f°C", be.heat), leftPos + 8, topPos + 20, 0x990000, false);
+        guiGraphics.drawString(this.font, String.format("Heat: %.1f°C", be.heat), leftPos + 8, topPos + 6, 0x990000, false);
 
-        renderTooltip(g, mx, my);
+        this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
 }

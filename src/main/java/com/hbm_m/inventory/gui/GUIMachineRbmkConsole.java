@@ -38,37 +38,43 @@ public class GUIMachineRbmkConsole extends AbstractContainerScreen<MachineRbmkCo
     private static final int GRID      = 15;   // 15×15 columns
 
     // ─── Type → texture UV offset (10-px icons at y=172, 18-px at y=238) ────
-
+    //
+    // These offsets are taken 1:1 from the real gui_rbmk_console.png sprite
+    // sheet (verified against the original 1.7.10 GUIRBMKConsole.java /
+    // TileEntityRBMKConsole.ColumnType.offset values). The original enum had
+    // extra members (FUEL_SIM, CONTROL_AUTO, BREEDER, HEATEX) that the
+    // modernized ColumnType enum collapsed away; where that happened we point
+    // at the closest matching icon (e.g. HEATER -> the original "HEATEX"
+    // heat-exchanger icon at 130).
     private static int typeOffset10(ColumnType t) {
         return switch (t) {
             case BLANK     -> 0;
             case FUEL      -> 10;
             case CONTROL   -> 20;
-            case MODERATOR -> 30;
-            case ABSORBER  -> 40;
-            case REFLECTOR -> 50;
-            case COOLER    -> 60;
-            case BOILER    -> 70;
-            case HEATER    -> 80;
-            case OUTGASSER -> 90;
-            case STORAGE   -> 100;
+            case BOILER    -> 40;
+            case MODERATOR -> 50;
+            case ABSORBER  -> 60;
+            case REFLECTOR -> 70;
+            case OUTGASSER -> 80;
+            case STORAGE   -> 110;
+            case COOLER    -> 120;
+            case HEATER    -> 130;
         };
     }
 
+    // The original texture only has 6 mini-screen mode icons at y=238
+    // (NONE/COL_TEMP/ROD_EXTRACTION/FUEL_DEPLETION/FUEL_POISON/FUEL_TEMP —
+    // see original ScreenType enum), because the original console's 6 mini
+    // screens cycled through *display modes*, not column types. The
+    // modernized BlockEntity has no ScreenType/RBMKScreen equivalent and
+    // instead cycles `screenTypes[]` through ColumnType (11 values) — a
+    // deliberate, out-of-scope data-model difference noted by the prior
+    // audit. We can't restore the original 6 display-mode icons since that
+    // data doesn't exist here, so we wrap ColumnType's ordinal into the 6
+    // available icon slots to stay within the texture's actual bounds
+    // instead of sampling garbage pixels past x=108.
     private static int typeOffset18(ColumnType t) {
-        return switch (t) {
-            case BLANK     -> 0;
-            case FUEL      -> 18;
-            case CONTROL   -> 36;
-            case MODERATOR -> 54;
-            case ABSORBER  -> 72;
-            case REFLECTOR -> 90;
-            case COOLER    -> 108;
-            case BOILER    -> 126;
-            case HEATER    -> 144;
-            case OUTGASSER -> 162;
-            case STORAGE   -> 180;
-        };
+        return (t.ordinal() % 6) * 18;
     }
 
     // ─── State ───────────────────────────────────────────────────────────────
@@ -219,6 +225,22 @@ public class GUIMachineRbmkConsole extends AbstractContainerScreen<MachineRbmkCo
                 if (grade >= 0 && grade < 4)
                     g.blit(TEXTURE, cx + 4, cy + 1 + grade * 2, 44, 183 + grade * 2, 2, 2);
             }
+            case HEATER -> {
+                // Matches the original HEATEX case (heat exchanger water/steam gauges).
+                // NOTE: RBMKHeaterBlockEntity currently doesn't populate "water"/"steam"/
+                // "maxWater"/"maxSteam" in getNBTForConsole() (out of scope to add here —
+                // that's BlockEntity data, not rendering), so this overlay is a no-op
+                // until that data is exposed; kept guarded so it activates automatically
+                // once it is.
+                if (col.data.contains("maxWater") && col.data.contains("maxSteam")) {
+                    int maxWater = col.data.getInt("maxWater");
+                    int maxSteam = col.data.getInt("maxSteam");
+                    int cc = maxWater > 0 ? Mth.clamp((int) Math.ceil((float) col.data.getInt("water") * 8 / maxWater), 0, 8) : 0;
+                    int hc = maxSteam > 0 ? Mth.clamp((int) Math.ceil((float) col.data.getInt("steam") * 8 / maxSteam), 0, 8) : 0;
+                    if (cc > 0) g.blit(TEXTURE, cx + 1, cy + CELL - cc - 1, 131, 191 - cc, 3, cc);
+                    if (hc > 0) g.blit(TEXTURE, cx + 6, cy + CELL - hc - 1, 136, 191 - hc, 3, hc);
+                }
+            }
             default -> {}
         }
     }
@@ -249,13 +271,19 @@ public class GUIMachineRbmkConsole extends AbstractContainerScreen<MachineRbmkCo
             }
         }
 
-        // Labels (half-scale)
+        // Labels (half-scale), mirrored on both edges of the graph like the original
+        String hiStr = String.valueOf(highest);
+        String loStr = String.valueOf(lowest);
+        int hiW = this.font.width(hiStr);
+        int loW = this.font.width(loStr);
+        int rightX = gx0 + gW - 1;
+
         g.pose().pushPose();
         g.pose().scale(0.5f, 0.5f, 1f);
-        g.drawString(this.font, String.valueOf(highest),
-                (int)((gx0)      * 2f), (int)((topPos + 98) * 2f), 0x00ff00, false);
-        g.drawString(this.font, String.valueOf(lowest),
-                (int)((gx0)      * 2f), (int)((topPos + 127) * 2f), 0x00ff00, false);
+        g.drawString(this.font, hiStr, (int) (gx0 * 2f), (int) ((topPos + 98) * 2f), 0x00ff00, false);
+        g.drawString(this.font, hiStr, (int) ((rightX - hiW * 0.5f) * 2f), (int) ((topPos + 98) * 2f), 0x00ff00, false);
+        g.drawString(this.font, loStr, (int) (gx0 * 2f), (int) ((topPos + 127) * 2f), 0x00ff00, false);
+        g.drawString(this.font, loStr, (int) ((rightX - loW * 0.5f) * 2f), (int) ((topPos + 127) * 2f), 0x00ff00, false);
         g.pose().popPose();
     }
 

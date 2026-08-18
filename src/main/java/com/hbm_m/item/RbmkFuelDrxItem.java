@@ -4,23 +4,29 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.lib.RefStrings;
+import com.hbm_m.item.rbmk.RBMKRodItem;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 
-public class RbmkFuelDrxItem extends Item implements ITooltipProvider {
+/**
+ * Digamma ("DRX") RBMK fuel - a real, loadable {@link RBMKRodItem} (see stat block at its
+ * {@code ModItems.RBMK_FUEL_DRX} registration) with the original's over-the-top flavor tooltip
+ * kept as-is. Previously registered as a plain {@code Item}, which meant it could never actually
+ * be inserted into a fuel channel; now behaves like the other 32 RBMK fuels.
+ */
+public class RbmkFuelDrxItem extends RBMKRodItem {
 
     public RbmkFuelDrxItem(Properties properties) {
-        super(properties);
+        super("Digamma Fuel Rod", properties);
     }
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+        super.appendHbmTooltip(stack, level, tooltip, flag);
         tooltip.add(Component.literal("§4Self-combusting").withStyle(ChatFormatting.DARK_RED));
         tooltip.add(Component.literal("§2Crustyness! 0.0%").withStyle(ChatFormatting.DARK_GREEN));
         tooltip.add(Component.literal("§5Lead poison! 0.0%").withStyle(ChatFormatting.DARK_PURPLE));

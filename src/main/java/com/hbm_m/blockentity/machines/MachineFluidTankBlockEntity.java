@@ -346,16 +346,19 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             if (entity.fluidTank.getFill() > 0) {
                 Fluid type = entity.fluidTank.getTankType();
                 FluidType ftype = FluidType.forFluid(type);
-                if (ftype.isAntimatter()) {
-                    entity.explode();
+                if (ftype.isAntimatter() && !entity.canStoreAntimatter()) {
+                    if (entity.handleIncompatibleFluid(ftype)) return;
                     entity.fluidTank.fill(0);
                     level.explode(null, pos.getX() + 0.5, pos.getY() + 1.5, pos.getZ() + 0.5, 5F, Level.ExplosionInteraction.BLOCK);
-                }
-                if (ftype.isCorrosive()) {
+                } else if (ftype.isCorrosive()) {
                     FT_Corrosive corrosive = ftype.getTrait(FT_Corrosive.class);
-                    if (corrosive != null && corrosive.isHighlyCorrosive()) {
-                        entity.explode();
+                    boolean highly = corrosive != null && corrosive.isHighlyCorrosive();
+                    boolean incompatible = highly ? !entity.canStoreHighlyCorrosive() : !entity.canStoreCorrosive();
+                    if (incompatible) {
+                        if (entity.handleIncompatibleFluid(ftype)) return;
                     }
+                } else if (ftype.isHot() && !entity.canStoreHot()) {
+                    if (entity.handleIncompatibleFluid(ftype)) return;
                 }
             }
 
@@ -569,7 +572,30 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         this.setChanged();
     }
 
-    private int calculateLeakAmount() {
+    // ═══════════════════════════ Material fluid-storage capability (barrel tiers) ════════════════
+    // Defaults match this base tank's pre-existing behavior: tolerates regular corrosive fluids and
+    // hot fluids fine, but not highly corrosive or antimatter. Subclasses (barrel material variants)
+    // override to widen/narrow this per the original mod's per-material tooltip ("Can/cannot store
+    // hot/corrosive/highly corrosive fluids/antimatter").
+
+    protected boolean canStoreHot() { return true; }
+    protected boolean canStoreCorrosive() { return true; }
+    protected boolean canStoreHighlyCorrosive() { return false; }
+    protected boolean canStoreAntimatter() { return false; }
+
+    /**
+     * Called when the currently-stored fluid exceeds this tank's material capability (see above).
+     * Default behavior matches the pre-existing generic tank damage: mark {@link #hasExploded} and
+     * start slowly leaking in place. Subclasses may instead replace the block/BlockEntity entirely
+     * (e.g. Iron Barrel turning into a Corroded Barrel) - return {@code true} in that case so the
+     * caller (the static {@link #tick}) stops touching this now-stale BlockEntity instance.
+     */
+    protected boolean handleIncompatibleFluid(FluidType ftype) {
+        explode();
+        return false;
+    }
+
+    protected int calculateLeakAmount() {
         Fluid type = fluidTank.getTankType();
         FluidType ftype = FluidType.forFluid(type);
         int max = fluidTank.getMaxFill();
@@ -584,7 +610,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         }
     }
 
-    private void updateLeak(int amount) {
+    protected void updateLeak(int amount) {
         if (!hasExploded || amount <= 0) return;
 
         fluidTank.fill(Math.max(0, fluidTank.getFill() - amount));
@@ -653,7 +679,11 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         //?}
 
         super.load(tag);
+        //? if < 1.21.1 {
         itemHandler.deserializeNBT(tag.getCompound("Inventory"));
+        //?} else {
+        /*itemHandler.deserializeNBT(registries, tag.getCompound("Inventory"));
+        *///?}
         fluidTank.readFromNBT(tag, "tank");
         // Старые миры могли не иметь этого поля — по умолчанию нужен режим, который умеет и fill и drain.
         mode = tag.contains("mode") ? tag.getShort("mode") : 1;

@@ -53,19 +53,11 @@ public class SoyuzLauncherModelLoader implements IGeometryLoader<SoyuzLauncherMo
     private static final String TEX_DIR = "block/soyuz/";
 
     private static ResourceLocation model(String path) {
-        //? if < 1.21.1 {
-        return new ResourceLocation(RefStrings.MODID, MODEL_DIR + path);
-        //?} else {
-        /*return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, MODEL_DIR + path);
-        *///?}
+        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, MODEL_DIR + path);
     }
 
     private static ResourceLocation tex(String path) {
-        //? if < 1.21.1 {
-        return new ResourceLocation(RefStrings.MODID, TEX_DIR + path);
-        //?} else {
-        /*return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, TEX_DIR + path);
-        *///?}
+        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, TEX_DIR + path);
     }
 
     private static final PartDef[] PARTS = new PartDef[] {

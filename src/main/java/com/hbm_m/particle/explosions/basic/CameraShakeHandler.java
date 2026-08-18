@@ -147,9 +147,11 @@ public class CameraShakeHandler {
     // Forge/NeoForge: direct camera + GUI hooks via ViewportEvent / RenderGuiEvent.
 
     //? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
     @Mod.EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
     //?} elif neoforge {
-    /*@EventBusSubscriber(modid = RefStrings.MODID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    @EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
     *///?}
     public static final class ShakeHooks {
 

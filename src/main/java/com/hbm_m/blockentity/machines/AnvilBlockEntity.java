@@ -98,7 +98,11 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
+        //? if < 1.21.1 {
         itemHandler.deserializeNBT(tag.getCompound("inventory"));
+        //?} else {
+        /*itemHandler.deserializeNBT(registries, tag.getCompound("inventory"));
+        *///?}
         selectedRecipeId = tag.contains("SelectedRecipe") ? 
             ResourceLocation.tryParse(tag.getString("SelectedRecipe")) : null;
     }

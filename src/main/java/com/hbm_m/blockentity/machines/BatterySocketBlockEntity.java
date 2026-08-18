@@ -38,19 +38,11 @@ import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
 
-//? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
-import team.reborn.energy.api.EnergyStorage;
-*///?}
 /**
  * Battery socket: one portable battery slot, modes like machine battery, energy from item capabilities.
  */
 @SuppressWarnings("UnstableApiUsage")
-public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder
-    //? if fabric {
-    /*, net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity
-    *///?}
-{
+public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder {
 
     //? if forge {
     public static final ModelProperty<Boolean> HAS_INSERT = new ModelProperty<>();

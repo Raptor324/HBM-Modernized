@@ -1,79 +1,77 @@
 package com.hbm_m.inventory.gui;
-import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKRodBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.RBMKRodMenu;
 import com.hbm_m.item.rbmk.RBMKRodItem;
+import com.hbm_m.lib.RefStrings;
+import com.mojang.blaze3d.systems.RenderSystem;
+
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
+/** Port of {@code GUIRBMKRod} (1.7.10 Original). */
 public class GUIRBMKRod extends GuiInfoScreen<RBMKRodMenu> {
+
+    private static final ResourceLocation TEXTURE =
+            //? if fabric && < 1.21.1 {
+            /*new ResourceLocation(RefStrings.MODID, "textures/gui/reactors/gui_rbmk_element.png");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/reactors/gui_rbmk_element.png");
+            //?}
 
     private final RBMKRodBlockEntity be;
 
     public GUIRBMKRod(RBMKRodMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
         this.be = menu.getBlockEntity();
-        this.imageWidth  = 200;
-        this.imageHeight = 130;
-        // Suppress the vanilla "Inventory" label offset check
-        this.inventoryLabelY = imageHeight + 10;
+        this.imageWidth  = 176;
+        this.imageHeight = 186;
+        this.inventoryLabelY = this.imageHeight - 96 + 2;
     }
 
     @Override
-    protected void renderBg(GuiGraphics g, float partial, int mx, int my) {
-        // Background
-        g.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, 0xFF2B2B2B);
-        g.fill(leftPos + 1, topPos + 1, leftPos + imageWidth - 1, topPos + imageHeight - 1, 0xFFC6C6C6);
-
-        // Fuel slot background
-        g.fill(leftPos + 6, topPos + 33, leftPos + 24, topPos + 51, 0xFF8B8B8B);
-        g.fill(leftPos + 7, topPos + 34, leftPos + 23, topPos + 50, 0xFF3F3F3F);
-
-        // Render the fuel rod item inside the slot
-        ItemStack rod = be.fuelSlot;
-        if (!rod.isEmpty()) {
-            g.renderItem(rod, leftPos + 8, topPos + 35);
-            g.renderItemDecorations(font, rod, leftPos + 8, topPos + 35);
-        }
-    }
-
-    @Override
-    protected void renderLabels(GuiGraphics g, int mx, int my) {
-        // Suppress default title/inventory labels
-    }
-
-    @Override
-    public void render(GuiGraphics g, int mx, int my, float partial) {
-        GuiCompat.renderBackground(this, g, mx, my, partial);
-        super.render(g, mx, my, partial);
-
-        int x = leftPos + 30;
-        int y = topPos + 8;
-
-        g.drawString(font, "RBMK Fuel Channel", x, y,      0x333333, false);
-        g.drawString(font, String.format("Heat: %.1f / %.0f°C", be.heat, be.maxHeat()),
-                     x, y + 14, 0x990000, false);
-        g.drawString(font, String.format("Flux in:    %.2f", be.lastFluxQuantity),
-                     x, y + 24, 0x004499, false);
-        g.drawString(font, String.format("Flux ratio: %.2f", be.lastFluxRatio),
-                     x, y + 34, 0x004499, false);
+    protected void renderBg(GuiGraphics g, float partial, int mouseX, int mouseY) {
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
 
         ItemStack rod = be.fuelSlot;
-        if (!rod.isEmpty() && rod.getItem() instanceof RBMKRodItem ri) {
-            y += 52;
-            g.drawString(font, String.format("Depletion: %.1f%%",
-                    (1.0 - RBMKRodItem.getEnrichment(rod)) * 100), x, y,      0x006600, false);
-            g.drawString(font, String.format("Xenon:     %.2f%%",
-                    RBMKRodItem.getPoison(rod)),                   x, y + 10, 0x660066, false);
-            g.drawString(font, String.format("Hull:      %.1f / %.0f°C",
-                    RBMKRodItem.getHullHeat(rod), ri.meltingPoint),x, y + 20, 0xAA4400, false);
-        } else {
-            g.drawString(font, "No fuel rod", x, topPos + 66, 0x888888, false);
+        if (!rod.isEmpty() && rod.getItem() instanceof RBMKRodItem) {
+            // Depletion bar background + fill
+            g.blit(TEXTURE, leftPos + 34, topPos + 21, 176, 0, 18, 67);
+            double depletion = 1D - RBMKRodItem.getEnrichment(rod);
+            int d = (int) (depletion * 67);
+            if (d > 0) g.blit(TEXTURE, leftPos + 34, topPos + 21, 194, 0, 18, d);
+
+            // Xenon bar (fills bottom-up)
+            double xenon = RBMKRodItem.getPoisonLevel(rod);
+            int x = (int) (xenon * 58);
+            if (x > 0) g.blit(TEXTURE, leftPos + 126, topPos + 82 - x, 212, 58 - x, 14, x);
         }
 
-        this.renderTooltip(g, mx, my);
+        if (!be.coldEnoughForAutoloader()) drawInfoPanel(g, -16, 20, PanelType.LARGE_YELLOW_EXCLAMATION);
+        if (!be.coldEnoughForManual())     drawInfoPanel(g, -16, 36, PanelType.LARGE_RED_EXCLAMATION);
+    }
+
+    @Override
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partial) {
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, mouseX, mouseY, partial);
+        super.render(g, mouseX, mouseY, partial);
+
+        if (!be.coldEnoughForAutoloader())
+            drawCustomInfoStat(g, mouseX, mouseY, -16, 20, 16, 16, leftPos - 8, topPos + 36,
+                    Component.literal("Fuel skin temperature has exceeded 1,000°C,"),
+                    Component.literal("autoloaders can no longer cycle fuel!"));
+        if (!be.coldEnoughForManual())
+            drawCustomInfoStat(g, mouseX, mouseY, -16, 36, 16, 16, leftPos - 8, topPos + 52,
+                    Component.literal("Fuel skin temperature has exceeded 200°C,"),
+                    Component.literal("fuel can no longer be removed by hand!"));
+
+        this.renderTooltip(g, mouseX, mouseY);
     }
 }

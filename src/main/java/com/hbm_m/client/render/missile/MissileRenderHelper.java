@@ -207,9 +207,6 @@ public final class MissileRenderHelper {
         quads = model.getQuads(null, null, random, net.minecraftforge.client.model.data.ModelData.EMPTY,
                 RenderType.solid());
         //?}
-        //? if fabric {
-        /*quads = model.getQuads(null, null, random);
-        *///?}
         //? if neoforge {
         /*quads = model.getQuads(null, null, random);
         *///?}
@@ -224,9 +221,7 @@ public final class MissileRenderHelper {
             //? if forge {
             consumer.putBulkData(pose, quad, 1.0F, 1.0F, 1.0F, 1.0F, packedLight, overlay, false);
             //?}
-            //? if fabric {
-            /*consumer.putBulkData(pose, quad, 1.0F, 1.0F, 1.0F, packedLight, overlay);
-            *///?}
+            // TODO Neoforge branch
         }
     }
 

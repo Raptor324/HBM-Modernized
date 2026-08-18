@@ -83,7 +83,7 @@ public class DaeModelLoader implements IGeometryLoader<DaeModelLoader.DaeUnbaked
         private BakedModel doBake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelName) {
             Material material = context.hasMaterial("default")
                     ? context.getMaterial("default")
-                    : new Material(TextureAtlas.LOCATION_BLOCKS, RefStrings.resourceLocation(FALLBACK_TEXTURE));
+                    : new Material(TextureAtlas.LOCATION_BLOCKS, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, FALLBACK_TEXTURE));
             TextureAtlasSprite sprite = spriteGetter.apply(material);
 
             DaeModel model = DaeModel.load(modelLocation);

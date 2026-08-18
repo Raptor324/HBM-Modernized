@@ -1,4 +1,46 @@
 {
+  "alarm.amssiren": {
+    "category": "blocks",
+    "sounds": [
+      "hbm_m:alarm/amsSiren"
+    ]
+  },
+  "alarm.beepsiren": {
+    "category": "blocks",
+    "sounds": [
+      "hbm_m:alarm/beepSiren"
+    ]
+  },
+  "alarm.classicsiren": {
+    "category": "blocks",
+    "sounds": [
+      "hbm_m:alarm/classicSiren"
+    ]
+  },
+  "alarm.nostromosiren": {
+    "category": "blocks",
+    "sounds": [
+      "hbm_m:alarm/nostromoSiren"
+    ]
+  },
+  "alarm.regularsiren": {
+    "category": "blocks",
+    "sounds": [
+      "hbm_m:alarm/regularSiren"
+    ]
+  },
+  "alarm.stridersiren": {
+    "category": "blocks",
+    "sounds": [
+      "hbm_m:alarm/striderSiren"
+    ]
+  },
+  "alarm.sweepsiren": {
+    "category": "blocks",
+    "sounds": [
+      "hbm_m:alarm/sweepSiren"
+    ]
+  },
   "soyuz.alarm": {
     "category": "blocks",
     "sounds": [
@@ -374,6 +416,12 @@
       "hbm_m:tool/repair7"
     ]
   },
+  "tool.upgrade_plug": {
+    "subtitle": "sounds.hbm_m.subtitle.upgrade_plug",
+    "sounds": [
+      "hbm_m:tool/upgrade_plug"
+    ]
+  },
   "tool.extract1": {
     "subtitle": "sounds.hbm_m.subtitle.extract",
     "sounds": [
@@ -610,6 +658,36 @@
       "hbm_m:block/switch_on"
     ]
   },
+  "block.broadcast1": {
+    "category": "block",
+    "subtitle": "sounds.hbm_m.subtitle.broadcast",
+    "sounds": [
+      "hbm_m:broadcast1"
+    ]
+  },
+  "block.broadcast2": {
+    "category": "block",
+    "subtitle": "sounds.hbm_m.subtitle.broadcast",
+    "sounds": [
+      "hbm_m:broadcast2"
+    ]
+  },
+  "block.broadcast3": {
+    "category": "block",
+    "subtitle": "sounds.hbm_m.subtitle.broadcast",
+    "sounds": [
+      "hbm_m:broadcast3"
+    ]
+  },
+  "block.broadcast_random": {
+    "category": "block",
+    "subtitle": "sounds.hbm_m.subtitle.broadcast",
+    "sounds": [
+      "hbm_m:broadcast1",
+      "hbm_m:broadcast2",
+      "hbm_m:broadcast3"
+    ]
+  },
   "step.powered": {
     "category": "player",
     "sounds": [
@@ -688,6 +766,16 @@
     "category": "player",
     "sounds": [
       "hbm_m:weapon/disintegration"
+    ]
+  },
+  "music_disc.glass": {
+    "category": "record",
+    "subtitle": "item.hbm_m.music_disc_glass.desc",
+    "sounds": [
+      {
+        "name": "hbm_m:music/record_glass",
+        "stream": true
+      }
     ]
   }
 }

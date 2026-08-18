@@ -13,7 +13,6 @@ public class HbmForgeWrapper implements IEnergyStorage {
 
     @Override
     public int receiveEnergy(int maxReceive, boolean simulate) {
-        // Просто заливаем в буфер тайла
         long space = tile.getMaxEnergyStored() - tile.getEnergyStored();
         long amount = Math.min(maxReceive, space);
         if (!simulate) {
@@ -24,7 +23,6 @@ public class HbmForgeWrapper implements IEnergyStorage {
 
     @Override
     public int extractEnergy(int maxExtract, boolean simulate) {
-        // Просто забираем из буфера тайла
         long amount = Math.min(maxExtract, tile.getEnergyStored());
         if (!simulate) {
             tile.setEnergyStored(tile.getEnergyStored() - amount);
@@ -49,92 +47,10 @@ public class HbmForgeWrapper implements IEnergyStorage {
     public boolean canReceive() { return true; }
 }
 //?}
-//? if fabric {
-/*package com.hbm_m.api.energy;
-
-import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
-import net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant;
-import team.reborn.energy.api.EnergyStorage;
-
-@SuppressWarnings("UnstableApiUsage")
-public class HbmForgeWrapper extends SnapshotParticipant<Long> implements EnergyStorage {
-
-    private final ConverterBlockEntity tile;
-
-    public HbmForgeWrapper(ConverterBlockEntity tile) {
-        this.tile = tile;
-    }
-
-    @Override
-    protected Long createSnapshot() {
-        // Сохраняем текущее количество энергии до транзакции
-        return tile.getEnergyStored();
-    }
-
-    @Override
-    protected void readSnapshot(Long snapshot) {
-        // Восстанавливаем энергию, если транзакция отменена
-        tile.setEnergyStored(snapshot);
-    }
-
-    @Override
-    protected void onFinalCommit() {
-        // Вызывается при успешном применении транзакции
-        tile.setChanged();
-    }
-
-    @Override
-    public long insert(long maxAmount, TransactionContext transaction) {
-        if (!supportsInsertion()) return 0;
-        long space = tile.getMaxEnergyStored() - tile.getEnergyStored();
-        long amount = Math.min(maxAmount, space);
-        if (amount > 0) {
-            updateSnapshots(transaction);
-            tile.setEnergyStored(tile.getEnergyStored() + amount);
-        }
-        return amount;
-    }
-
-    @Override
-    public long extract(long maxAmount, TransactionContext transaction) {
-        if (!supportsExtraction()) return 0;
-        long amount = Math.min(maxAmount, tile.getEnergyStored());
-        if (amount > 0) {
-            updateSnapshots(transaction);
-            tile.setEnergyStored(tile.getEnergyStored() - amount);
-        }
-        return amount;
-    }
-
-    @Override
-    public long getAmount() {
-        return tile.getEnergyStored();
-    }
-
-    @Override
-    public long getCapacity() {
-        return tile.getMaxEnergyStored();
-    }
-
-    @Override
-    public boolean supportsInsertion() {
-        return tile.canReceive();
-    }
-
-    @Override
-    public boolean supportsExtraction() {
-        return tile.canExtract();
-    }
-}
-*///?}
-
 //? if neoforge {
 /*package com.hbm_m.api.energy;
 
 import net.neoforged.neoforge.energy.IEnergyStorage;
-
-// NeoForge-версия HbmForgeWrapper: FE-интерфейс идентичен forge (отличается только пакет).
-// Используется ConverterBlockEntity как явный мост HBM long-энергии ↔ FE int.
 
 public class HbmForgeWrapper implements IEnergyStorage {
 

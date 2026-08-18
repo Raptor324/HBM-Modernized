@@ -23,7 +23,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.Arrays;
 
-public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuProvider {
+public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements MenuProvider {
 
     // ─── Column data ──────────────────────────────────────────────────────────
 
@@ -64,6 +64,15 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
     public int[]            fluxBuffer = new int[FLUX_BUF];
     /** Console display screen cycle types. */
     public ColumnType[]     screenTypes;
+    /**
+     * Per-screen aggregate readout text, recomputed in {@link #scanReactor} - 1:1 in spirit with
+     * the original's 5 {@code ScreenType} averages (column temp / rod extraction / fuel
+     * depletion / fuel poison / fuel temp), adapted to this port's screen model where each of the
+     * 6 screens already picks a {@link ColumnType} to filter on (via control action 3) rather than
+     * an explicit column selection: the screen shows the average of whichever stats are relevant
+     * to that column type across every column of it currently on the grid.
+     */
+    public String[] screenText;
     /** Bottom-left corner of the reactor grid (same Y as console). Null = not configured. */
     public BlockPos reactorOrigin = null;
 
@@ -75,6 +84,8 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
         super(ModBlockEntities.RBMK_CONSOLE_BE.get(), pos, state);
         screenTypes = new ColumnType[SCREENS];
         Arrays.fill(screenTypes, ColumnType.FUEL);
+        screenText = new String[SCREENS];
+        Arrays.fill(screenText, "");
     }
 
     // ─── Tick ─────────────────────────────────────────────────────────────────
@@ -87,6 +98,15 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
         level.sendBlockUpdated(pos, state, state, 3);
     }
 
+    /**
+     * Half of {@link #GRID} (integer division) - the scan below is centered on {@link #reactorOrigin}
+     * rather than treating it as the grid's corner, so linking works no matter which column of the
+     * build the player happened to right-click with the {@code RBMKToolItem} (previously the linked
+     * column always ended up pinned to the grid's top-left cell, so anything outside the +X/+Z
+     * quadrant from it silently fell off the scanned area and never showed up).
+     */
+    private static final int GRID_HALF = GRID / 2;
+
     private void scanReactor(Level level) {
         if (reactorOrigin == null) {
             Arrays.fill(columns, null);
@@ -98,13 +118,16 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
         for (int z = 0; z < GRID; z++) {
             for (int x = 0; x < GRID; x++) {
                 int     idx    = z * GRID + x;
-                BlockPos cPos  = reactorOrigin.offset(x, 0, z);
+                BlockPos cPos  = reactorOrigin.offset(x - GRID_HALF, 0, z - GRID_HALF);
 
                 if (level.getBlockEntity(cPos) instanceof RBMKColumnBlockEntity col) {
                     CompoundTag d = col.getNBTForConsole();
-                    d.putDouble("heat",    col.heat);
-                    d.putDouble("maxHeat", col.maxHeat());
-                    d.putInt("lid",        col.getLidState());
+                    d.putDouble("heat",      col.heat);
+                    d.putDouble("maxHeat",   col.maxHeat());
+                    d.putInt("lid",          col.getLidState());
+                    // 1:1 with the original's RenderRBMKConsole: a column the crane is currently
+                    // hovering flashes yellow on the mini-map, driven by this counter.
+                    d.putInt("indicator",    col.craneIndicator);
 
                     if (col instanceof RBMKRodBlockEntity rod)
                         totalFlux += (int) rod.lastFluxQuantity;
@@ -120,7 +143,43 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
         System.arraycopy(fluxBuffer, 1, fluxBuffer, 0, FLUX_BUF - 1);
         fluxBuffer[FLUX_BUF - 1] = totalFlux;
 
+        computeScreenText();
         setChanged();
+    }
+
+    /** Recomputes {@link #screenText}: averages of every stat relevant to each screen's {@link ColumnType} filter. */
+    private void computeScreenText() {
+        for (int s = 0; s < SCREENS; s++) {
+            ColumnType filter = screenTypes[s];
+            int count = 0;
+            double heatSum = 0, enrichSum = 0, xenonSum = 0, coreHeatSum = 0, levelSum = 0;
+
+            for (RBMKColumnData col : columns) {
+                if (col == null || col.type != filter) continue;
+                count++;
+                heatSum += col.data.getDouble("heat");
+                if (filter == ColumnType.FUEL) {
+                    enrichSum   += col.data.getDouble("enrichment") * 100.0;
+                    xenonSum    += col.data.getDouble("xenon");
+                    coreHeatSum += col.data.getDouble("c_coreHeat");
+                } else if (filter == ColumnType.CONTROL) {
+                    levelSum += col.data.getDouble("level") * 100.0;
+                }
+            }
+
+            if (count == 0) {
+                screenText[s] = filter.name() + ": --";
+                continue;
+            }
+
+            String text = switch (filter) {
+                case FUEL -> String.format("FUEL  T:%.0f  E:%.0f%%  Xe:%.0f%%  Core:%.0f",
+                        heatSum / count, enrichSum / count, xenonSum / count, coreHeatSum / count);
+                case CONTROL -> String.format("CTRL  T:%.0f  Lvl:%.0f%%", heatSum / count, levelSum / count);
+                default -> String.format("%s  T:%.0f  n=%d", filter.name(), heatSum / count, count);
+            };
+            screenText[s] = text;
+        }
     }
 
     // ─── Control handling (called by packet) ──────────────────────────────────
@@ -165,7 +224,12 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
                     reactorOrigin = new BlockPos(selected[0], selected[1], selected[2]);
                 setChanged();
             }
-            case 5 -> { // assign selected columns to screen (for future status panel use)
+            case 5 -> {
+                // No-op: this port's screens already aggregate "every column of the selected
+                // ColumnType" (see computeScreenText/action 3) rather than an explicit
+                // player-picked column subset like the original's ScreenType selection, so
+                // there's nothing to assign here. Kept as a reserved action id for compatibility
+                // with existing client packet senders.
                 setChanged();
             }
         }
@@ -173,7 +237,7 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
 
     private BlockPos idxToPos(int idx) {
         if (reactorOrigin == null || idx < 0 || idx >= AREA) return null;
-        return reactorOrigin.offset(idx % GRID, 0, idx / GRID);
+        return reactorOrigin.offset((idx % GRID) - GRID_HALF, 0, (idx / GRID) - GRID_HALF);
     }
 
     // ─── MenuProvider ─────────────────────────────────────────────────────────
@@ -199,6 +263,14 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
         }
         tag.put("screens", screens);
         tag.putIntArray("flux", fluxBuffer);
+
+        ListTag texts = new ListTag();
+        for (String t : screenText) {
+            CompoundTag ct = new CompoundTag();
+            ct.putString("v", t != null ? t : "");
+            texts.add(ct);
+        }
+        tag.put("screenText", texts);
     }
 
     private void readExtra(CompoundTag tag) {
@@ -211,30 +283,21 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
         }
         fluxBuffer = tag.getIntArray("flux");
         if (fluxBuffer.length != FLUX_BUF) fluxBuffer = new int[FLUX_BUF];
+
+        ListTag texts = tag.getList("screenText", 10);
+        for (int i = 0; i < Math.min(texts.size(), SCREENS); i++) {
+            screenText[i] = texts.getCompound(i).getString("v");
+        }
     }
 
-    //? if < 1.21.1 {
     // @Override omitted intentionally
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         writeExtra(tag);
     }
 
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         readExtra(tag);
     }
-    //?} else {
-    /*protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        writeExtra(tag);
-    }
-
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        readExtra(tag);
-    }
-    *///?}
 
     // ─── Sync ─────────────────────────────────────────────────────────────────
 
@@ -265,9 +328,6 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
 
     //? if < 1.21.1 {
     // @Override omitted intentionally
-    public CompoundTag getUpdateTag() {
-        return buildUpdateTag(super.getUpdateTag());
-    }
 
     public void handleUpdateTag(CompoundTag tag) {
         applyUpdateTag(tag);
@@ -282,8 +342,4 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
     }
     *///?}
 
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
 }

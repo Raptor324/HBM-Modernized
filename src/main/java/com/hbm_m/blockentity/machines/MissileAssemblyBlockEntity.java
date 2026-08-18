@@ -187,7 +187,11 @@ public class MissileAssemblyBlockEntity extends BlockEntity implements MenuProvi
     public void load(@NotNull CompoundTag tag) {
         super.load(tag);
         if (tag.contains("inventory")) {
+            //? if < 1.21.1 {
             inventory.deserializeNBT(tag.getCompound("inventory"));
+            //?} else {
+            /*inventory.deserializeNBT(registries, tag.getCompound("inventory"));
+            *///?}
         }
     }
     //?} else {

@@ -16,6 +16,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.resources.ResourceLocation;
 //? if forge {
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
@@ -722,7 +723,7 @@ public final class PlatformHooksGameTest {
         var mock = helper.makeMockPlayer();
         if (mock instanceof ServerPlayer sp) {
             PlatformHooks.awardAdvancementIfEligible(
-                    sp, RefStrings.resourceLocation("nonexistent_advancement"), false);
+                    sp, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "nonexistent_advancement"), false);
         }
         //?}
         helper.succeed();

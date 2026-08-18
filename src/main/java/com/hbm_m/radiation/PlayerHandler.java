@@ -262,8 +262,8 @@ public class PlayerHandler {
 
         // Проверяем достижения через хук
         if (player instanceof ServerPlayer serverPlayer) {
-            com.hbm_m.platform.PlatformHooks.awardAdvancementIfEligible(serverPlayer, RefStrings.resourceLocation("radiation_200"), rads >= 200.0F);
-            com.hbm_m.platform.PlatformHooks.awardAdvancementIfEligible(serverPlayer, RefStrings.resourceLocation("radiation_1000"), rads >= ModClothConfig.get().maxPlayerRad);
+            com.hbm_m.platform.PlatformHooks.awardAdvancementIfEligible(serverPlayer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radiation_200"), rads >= 200.0F);
+            com.hbm_m.platform.PlatformHooks.awardAdvancementIfEligible(serverPlayer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radiation_1000"), rads >= ModClothConfig.get().maxPlayerRad);
         }
 
         // Летальный порог (конфиг maxPlayerRad; у мобов в EntityEffectHandler — 1000 RAD как в 1.7.10)

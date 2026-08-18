@@ -44,6 +44,7 @@ public class ModPacketHandler {
     public static final ResourceLocation HIGHLIGHT_BLOCKS      = id("highlight_blocks");
     public static final ResourceLocation SYNC_ENERGY           = id("sync_energy");
     public static final ResourceLocation AUX_PARTICLE          = id("aux_particle");
+    public static final ResourceLocation PWR_PRINTER_SCAN      = id("pwr_printer_scan");
     public static final ResourceLocation VANILLA_EXPLOSION     = id("vanilla_explosion");
     public static final ResourceLocation DOOR_CONTRAPTION_STATE = id("door_contrap_state");
     public static final ResourceLocation CONFIG_SYNC           = id("config_sync");
@@ -68,7 +69,10 @@ public class ModPacketHandler {
     public static final ResourceLocation ITEM_DESIGNATOR       = id("item_designator");
     public static final ResourceLocation UPDATE_RADAR          = id("update_radar");
         public static final ResourceLocation ZIRNOX_CONTROL        = id("zirnox_control");
+    public static final ResourceLocation WATZ_CONTROL          = id("watz_control");
+    public static final ResourceLocation PWR_CONTROL           = id("pwr_control");
     public static final ResourceLocation RBMK_CONSOLE_CONTROL        = id("rbmk_console_control");
+    public static final ResourceLocation RBMK_CRANE_CONTROL          = id("rbmk_crane_control");
     public static final ResourceLocation SOYUZ_LAUNCHER_CONTROL      = id("soyuz_launcher_control");
     public static final ResourceLocation SOLDERING_STATION_CONTROL   = id("soldering_station_control");
     public static final ResourceLocation ORPHANED_PHANTOMS     = id("orphaned_phantoms");
@@ -78,6 +82,10 @@ public class ModPacketHandler {
     public static final ResourceLocation TURRET_CONTROL        = id("turret_control");
     public static final ResourceLocation MINING_DRILL_TOGGLE   = id("mining_drill_toggle");
     public static final ResourceLocation CONFIG_EDIT           = id("config_edit");
+    public static final ResourceLocation MICROWAVE_SPEED       = id("microwave_speed");
+    public static final ResourceLocation ANNIHILATOR_POOL      = id("annihilator_pool");
+    public static final ResourceLocation FUNNEL_MODE            = id("funnel_mode");
+    public static final ResourceLocation RADIO_TORCH_CONTROL    = id("radio_torch_control");
 
 
     // ══════════════════════════ Регистрация ═══════════════════════════════════
@@ -114,6 +122,10 @@ public class ModPacketHandler {
         registerS2C(AUX_PARTICLE,
                 AuxParticlePacket::decode,
                 AuxParticlePacket::handle);
+
+        registerS2C(PWR_PRINTER_SCAN,
+                PWRPrinterScanPacket::decode,
+                PWRPrinterScanPacket::handle);
 
         registerS2C(VANILLA_EXPLOSION,
                 VanillaExplosionPacket::decode,
@@ -227,9 +239,21 @@ public class ModPacketHandler {
                 ZirnoxControlPacket::decode,
                 ZirnoxControlPacket::handle);
 
+        registerC2S(WATZ_CONTROL,
+                WatzControlPacket::decode,
+                WatzControlPacket::handle);
+
+        registerC2S(PWR_CONTROL,
+                PWRControlPacket::decode,
+                PWRControlPacket::handle);
+
         registerC2S(RBMK_CONSOLE_CONTROL,
                 RBMKConsoleControlPacket::decode,
                 RBMKConsoleControlPacket::handle);
+
+        registerC2S(RBMK_CRANE_CONTROL,
+                RBMKCraneControlPacket::decode,
+                RBMKCraneControlPacket::handle);
 
         registerC2S(SOYUZ_LAUNCHER_CONTROL,
                 SoyuzLauncherControlPacket::decode,
@@ -250,6 +274,22 @@ public class ModPacketHandler {
         registerC2S(CONFIG_EDIT,
                 ConfigEditC2SPacket::decode,
                 ConfigEditC2SPacket::handle);
+
+        registerC2S(MICROWAVE_SPEED,
+                MicrowaveSpeedC2SPacket::decode,
+                MicrowaveSpeedC2SPacket::handle);
+
+        registerC2S(ANNIHILATOR_POOL,
+                AnnihilatorPoolC2SPacket::decode,
+                AnnihilatorPoolC2SPacket::handle);
+
+        registerC2S(FUNNEL_MODE,
+                FunnelModeC2SPacket::decode,
+                FunnelModeC2SPacket::handle);
+
+        registerC2S(RADIO_TORCH_CONTROL,
+                RadioTorchControlPacket::decode,
+                RadioTorchControlPacket::handle);
     }
 
     // ══════════════════════ Вспомогательные методы ════════════════════════════

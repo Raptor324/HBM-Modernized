@@ -34,16 +34,16 @@ public class RBMKOutgasserMenu extends AbstractContainerMenu {
         };
         container.setItem(0, be.rodSlot.copy());
 
-        addSlot(new Slot(container, 0, 80, 35) {
+        addSlot(new Slot(container, 0, 48, 45) {
             @Override
             public boolean mayPlace(ItemStack stack) { return stack.getItem() instanceof RBMKRodItem; }
         });
 
         for (int row = 0; row < 3; row++)
             for (int col = 0; col < 9; col++)
-                addSlot(new Slot(inv, col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
+                addSlot(new Slot(inv, col + row * 9 + 9, 8 + col * 18, 84 + row * 18 + 20));
         for (int col = 0; col < 9; col++)
-            addSlot(new Slot(inv, col, 8 + col * 18, 142));
+            addSlot(new Slot(inv, col, 8 + col * 18, 142 + 20));
     }
 
     private static RBMKOutgasserBlockEntity getBlockEntity(Inventory inv, FriendlyByteBuf buf) {
