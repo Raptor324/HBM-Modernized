@@ -92,14 +92,14 @@ public class GUILaunchPadLarge extends GuiInfoScreen<LaunchPadLargeMenu> {
         tanks[0].renderTank(guiGraphics, this.leftPos + TANK_X, this.topPos + TANK_TOP_Y, TANK_W, TANK_H);
         tanks[1].renderTank(guiGraphics, this.leftPos + OXIDIZER_TANK_X, this.topPos + TANK_TOP_Y, TANK_W, TANK_H);
 
-        //? if forge {
+        //? if forge || neoforge {
         renderMissilePreview(guiGraphics, be);
         //?}
 
         renderStatusLabel(guiGraphics, be);
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     private void renderMissilePreview(GuiGraphics guiGraphics, LaunchPadBaseBlockEntity be) {
         ItemStack missileStack = be.getMissilePreviewStack();
         if (missileStack.isEmpty() || !(missileStack.getItem() instanceof MissileItem missileItem)) {

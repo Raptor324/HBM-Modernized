@@ -39,7 +39,9 @@ public class ModCapabilities {
 //?}
 
 //? if neoforge {
-/*public class ModCapabilities {
+/*import com.hbm_m.blockentity.BaseHbmBlockEntity;
+
+public class ModCapabilities {
     public static final BlockCapability<IEnergyProvider, Direction> HBM_ENERGY_PROVIDER =
         BlockCapability.createSided(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "energy_provider"), IEnergyProvider.class);
 

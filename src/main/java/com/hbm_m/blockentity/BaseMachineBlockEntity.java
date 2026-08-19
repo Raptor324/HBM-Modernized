@@ -44,6 +44,7 @@ import net.minecraftforge.items.IItemHandler;
 //? if neoforge {
 /*import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 *///?}
 
 /**
@@ -81,6 +82,10 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
     // Fluid-капабилити (Forge). Подклассы регистрируют обработчик через setFluidHandler().
     protected LazyOptional<net.minecraftforge.fluids.capability.IFluidHandler> fluidHandlerOpt = LazyOptional.empty();
     //?}
+    //? if neoforge {
+    /*// Fluid-капабилити (NeoForge): без LazyOptional, храним сам объект-обработчик.
+    protected Object fluidHandlerNeo;
+    *///?}
 
 
     /** Общий доступ к инвентарю машины (loader-agnostic). */
@@ -301,6 +306,15 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
             this.fluidHandlerOpt = LazyOptional.of(() -> (net.minecraftforge.fluids.capability.IFluidHandler) handler);
         }
         //?}
+        //? if neoforge {
+        /*// На NeoForge нет LazyOptional — капабилити это обычный объект.
+        // HBM FluidTank отдаёт свой backend напрямую, иначе храним переданный handler как есть.
+        if (handler instanceof com.hbm_m.inventory.fluid.tank.FluidTank tank) {
+            this.fluidHandlerNeo = tank.getCapability();
+        } else {
+            this.fluidHandlerNeo = handler;
+        }
+        *///?}
     }
 
     protected void setupFluidCapability() {
@@ -414,18 +428,6 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
         });
         //?}
 
-        //? if fabric {
-        /*var fabricEnergy = EnergyStorage.ITEM.find(batteryStack, null);
-        if (fabricEnergy == null || !fabricEnergy.supportsExtraction()) return;
-        try (var tx = net.fabricmc.fabric.api.transfer.v1.transaction.Transaction.openOuter()) {
-            long extracted = fabricEnergy.extract(maxTransfer, tx);
-            if (extracted > 0) {
-                setEnergyStored(energy + extracted);
-                tx.commit();
-            }
-        }
-        *///?}
-
         //? if neoforge {
         /*IEnergyStorage itemEnergy = batteryStack.getCapability(Capabilities.EnergyStorage.ITEM);
         if (itemEnergy == null || !itemEnergy.canExtract()) return;
@@ -470,26 +472,6 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
         });
         //?}
 
-        //? if fabric {
-        /*var hbm = ItemEnergyAccess.getHbmReceiver(itemToCharge);
-        if (hbm.isPresent()) {
-            var target = hbm.get();
-            if (!target.canReceive()) return;
-            long accepted = target.receiveEnergy(toTransfer, false);
-            if (accepted > 0) setEnergyStored(energy - accepted);
-            return;
-        }
-        var target = EnergyStorage.ITEM.find(itemToCharge, null);
-        if (target == null || !target.supportsInsertion()) return;
-        try (var tx = net.fabricmc.fabric.api.transfer.v1.transaction.Transaction.openOuter()) {
-            long accepted = target.insert(toTransfer, tx);
-            if (accepted > 0) {
-                setEnergyStored(energy - accepted);
-                tx.commit();
-            }
-        }
-        *///?}
-
         //? if neoforge {
         /*// Сначала HBM-приёмник (кастомная capability предмета), затем FE через NeoForge Capabilities.
         var hbm = ItemEnergyAccess.getHbmReceiver(itemToCharge);
@@ -520,10 +502,6 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
         return stack.getCapability(ForgeCapabilities.ENERGY)
                 .map(net.minecraftforge.energy.IEnergyStorage::canExtract).orElse(false);
         //?}
-        //? if fabric {
-        /*var es = EnergyStorage.ITEM.find(stack, null);
-        return es != null && es.supportsExtraction();
-        *///?}
         //? if neoforge {
         /*IEnergyStorage cap = stack.getCapability(Capabilities.EnergyStorage.ITEM);
         return cap != null && cap.canExtract();
@@ -541,10 +519,6 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
         return stack.getCapability(ForgeCapabilities.ENERGY)
                 .map(net.minecraftforge.energy.IEnergyStorage::canReceive).orElse(false);
         //?}
-        //? if fabric {
-        /*var es = EnergyStorage.ITEM.find(stack, null);
-        return es != null && es.supportsInsertion();
-        *///?}
         //? if neoforge {
         /*IEnergyStorage cap = stack.getCapability(Capabilities.EnergyStorage.ITEM);
         return cap != null && cap.canReceive();
@@ -619,8 +593,8 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
 
         // Если у машины есть локальный бак через setFluidHandler
         //? if neoforge {
-        /*if (this.fluidHandlerOpt != null && this.fluidHandlerOpt.isPresent()) {
-            return this.fluidHandlerOpt.resolve().orElse(null);
+        /*if (this.fluidHandlerNeo instanceof net.neoforged.neoforge.fluids.capability.IFluidHandler neoHandler) {
+            return neoHandler;
         }
         *///?}
         return null;

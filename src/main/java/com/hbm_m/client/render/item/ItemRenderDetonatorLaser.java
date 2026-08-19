@@ -80,7 +80,10 @@ public class ItemRenderDetonatorLaser extends BlockEntityWithoutLevelRenderer {
                 .apply(leftHand, poseStack);
         //?}
         //? if neoforge {
-        /*displayModel.applyTransform(displayContext, poseStack, leftHand);
+        /*/// applyTransform у MissileBakedModel — no-op (display применяет сам BEWLR),
+        /// поэтому применяем JSON display напрямую, как в фордж-ветке через resolveDisplayTransforms.
+        model.getBewlrDisplayTransforms().getTransform(displayContext)
+                .apply(leftHand, poseStack);
         *///?}
         poseStack.scale(BASE_MESH_SCALE, BASE_MESH_SCALE, BASE_MESH_SCALE);
 

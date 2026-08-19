@@ -531,7 +531,7 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
         if (side == null) return this.itemHandler;
         return this.sidedItemHandlers.getOrDefault(side, this.lazyItemHandler).resolve().orElse(null);
         //?} else {
-        return this.itemHandler;
-        //?}
+        /*return this.itemHandler;
+        *///?}
     }
 }

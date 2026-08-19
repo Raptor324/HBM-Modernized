@@ -83,7 +83,17 @@ public class MissileItem extends Item implements ITooltipProvider {
             }
         });
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public void initializeClient(Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.render.item.ItemRenderMissileGeneric.INSTANCE;
+            }
+        });
+    }
+    *///?}
 
     public enum MissileFormFactor {
         ABM(MissileFuel.SOLID),

@@ -49,11 +49,3 @@ public class MissileModelLoader extends AbstractObjPartModelLoader<MissileBakedM
         return null;
     }
 }
-
-
-//? if fabric {
-/*package com.hbm_m.client.loader;
-
-public class MissileModelLoader extends AbstractObjPartModelLoader<Object> {
-}
-*///?}

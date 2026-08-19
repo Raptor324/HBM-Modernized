@@ -117,30 +117,18 @@ public class MissileBakedModel extends AbstractMultipartBakedModel implements Ab
             // Кэш собираем один раз для ВСЕХ направлений + unsided, иначе первый вызов
             // с конкретным side затравит кэш только одной стороной и getQuads(null) вернёт
             // плоский «блин». В item-проходах vanilla перебирает все Direction.values()+null.
+            // Кросс-лоадерный доступ к квадам части — через RenderHooks.getPartQuads
+            // (forge: ModelData+RenderType; neoforge: то же с нео-ModelData; fabric: 3-arg).
             List<BakedQuad> all = new ArrayList<>();
-            //? if forge {
-            ModelData modelData = ModelData.EMPTY;
-            RenderType renderType = RenderType.solid();
-            //?}
             for (String partName : getItemRenderPartNames()) {
                 BakedModel part = parts.get(partName);
                 if (part == null) {
                     continue;
                 }
                 for (Direction d : Direction.values()) {
-                    //? if forge {
-                    all.addAll(part.getQuads(null, d, rand, modelData, renderType));
-                    //?}
-                    //? if fabric {
-                    /*all.addAll(part.getQuads(null, d, rand));
-                    *///?}
+                    all.addAll(com.hbm_m.platform.RenderHooks.getPartQuads(part, null, d, rand));
                 }
-                //? if forge {
-                all.addAll(part.getQuads(null, null, rand, modelData, renderType));
-                //?}
-                //? if fabric {
-                /*all.addAll(part.getQuads(null, null, rand));
-                *///?}
+                all.addAll(com.hbm_m.platform.RenderHooks.getPartQuads(part, null, null, rand));
             }
             cachedItemQuads = all;
             itemQuadsCached = true;

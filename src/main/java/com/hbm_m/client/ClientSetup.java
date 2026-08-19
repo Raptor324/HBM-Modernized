@@ -893,27 +893,33 @@ public class ClientSetup {
         MainRegistry.LOGGER.info("Registered geometry loaders successfully");
     }
 
+    // 1.21.1: тинт применяется как полный ARGB (альфа тоже умножается), а HBM-тинты хранятся
+    // как RGB без альфы → 0x00RRGGBB делал иконку полностью прозрачной. Форсируем непрозрачную альфу.
+    private static int opaqueTint(int rgb) {
+        return 0xFF000000 | (rgb & 0xFFFFFF);
+    }
+
     @SubscribeEvent
     public static void onRegisterItemColors(RegisterColorHandlersEvent.Item event) {
         event.register((stack, tintIndex) -> {
-            if (tintIndex == 0) return 0xFFFFFF;
-            return com.hbm_m.item.liquids.FluidIdentifierItem.getTintColor(stack);
+            if (tintIndex == 0) return opaqueTint(0xFFFFFF);
+            return opaqueTint(com.hbm_m.item.liquids.FluidIdentifierItem.getTintColor(stack));
         }, ModItems.FLUID_IDENTIFIER.get());
         event.register((stack, tintIndex) -> {
-            if (tintIndex == 0) return 0xFFFFFF;
-            return com.hbm_m.item.liquids.FluidBarrelItem.getTintColor(stack);
+            if (tintIndex == 0) return opaqueTint(0xFFFFFF);
+            return opaqueTint(com.hbm_m.item.liquids.FluidBarrelItem.getTintColor(stack));
         }, ModItems.FLUID_BARREL.get());
         // Fluid Duct - tint overlay layer with fluid color
         event.register((stack, tintIndex) -> {
-            if (tintIndex == 0) return 0xFFFFFF;
-            return com.hbm_m.item.liquids.FluidDuctItem.getTintColor(stack);
+            if (tintIndex == 0) return opaqueTint(0xFFFFFF);
+            return opaqueTint(com.hbm_m.item.liquids.FluidDuctItem.getTintColor(stack));
         }, ModItems.FLUID_DUCT.get(), ModItems.FLUID_DUCT_COLORED.get(), ModItems.FLUID_DUCT_SILVER.get());
         // Mineral Pipes - tint layer0 with the pipe's mineral color
         event.register((stack, tintIndex) -> {
             if (stack.getItem() instanceof com.hbm_m.item.MineralPipeItem pipe) {
-                return pipe.getTintColor();
+                return opaqueTint(pipe.getTintColor());
             }
-            return 0xFFFFFF;
+            return opaqueTint(0xFFFFFF);
         }, ModItems.PIPE_IRON.get(), ModItems.PIPE_COPPER.get(), ModItems.PIPE_GOLD.get(),
            ModItems.PIPE_LEAD.get(), ModItems.PIPE_STEEL.get(), ModItems.PIPE_TUNGSTEN.get(),
            ModItems.PIPE_TITANIUM.get(), ModItems.PIPE_ALUMINUM.get(), ModItems.PIPE_DURA_STEEL.get());
@@ -936,16 +942,16 @@ public class ClientSetup {
 
         // Fluid Duct block - tint with the fluid's color from the BlockEntity
         event.register((state, level, pos, tintIndex) -> {
-            if (tintIndex == 0) return 0xFFFFFF;
-            if (tintIndex != 1 || level == null || pos == null) return 0xFFFFFF;
+            if (tintIndex == 0) return opaqueTint(0xFFFFFF);
+            if (tintIndex != 1 || level == null || pos == null) return opaqueTint(0xFFFFFF);
             var be = level.getBlockEntity(pos);
             if (be instanceof com.hbm_m.blockentity.machines.FluidDuctBlockEntity ductBe) {
                 var fluid = ductBe.getFluidType();
                 if (fluid != net.minecraft.world.level.material.Fluids.EMPTY) {
-                    return com.hbm_m.api.fluids.HbmFluidRegistry.getTintColor(fluid);
+                    return opaqueTint(com.hbm_m.api.fluids.HbmFluidRegistry.getTintColor(fluid));
                 }
             }
-            return 0xFFFFFF;
+            return opaqueTint(0xFFFFFF);
         }, com.hbm_m.block.ModBlocks.FLUID_DUCT.get(),
                 com.hbm_m.block.ModBlocks.FLUID_DUCT_COLORED.get(),
                 com.hbm_m.block.ModBlocks.FLUID_DUCT_SILVER.get());
@@ -953,10 +959,8 @@ public class ClientSetup {
 
     @SubscribeEvent
     public static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerEntityRenderer(ModEntities.AIRNUKEBOMB_PROJECTILE.get(),
-                AirNukeBombProjectileEntityRenderer::new);
-        event.registerEntityRenderer(ModEntities.AIRBOMB_PROJECTILE.get(),
-                AirBombProjectileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.AIRNUKEBOMB_PROJECTILE.get(), AirNukeBombProjectileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.AIRBOMB_PROJECTILE.get(), AirBombProjectileEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.AIRSTRIKE_NUKE_ENTITY.get(), AirstrikeNukeEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.AIRSTRIKE_ENTITY.get(), AirstrikeEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.AIRSTRIKE_AGENT_ENTITY.get(), ctx -> new EmptyEntityRenderer<>(ctx));

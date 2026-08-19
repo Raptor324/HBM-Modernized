@@ -171,6 +171,28 @@ public final class RenderHooks {
     }
 
     /**
+     * Кросс-платформенное получение квадов из части BakedModel.
+     * Forge/NeoForge: 5-аргументный вызов (ModelData.EMPTY + RenderType.solid()).
+     * Fabric: ванильный 3-аргументный вызов.
+     */
+    public static java.util.List<BakedQuad> getPartQuads(net.minecraft.client.resources.model.BakedModel model,
+                                                         net.minecraft.world.level.block.state.BlockState state,
+                                                         net.minecraft.core.Direction side,
+                                                         net.minecraft.util.RandomSource rand) {
+        //? if forge {
+        return model.getQuads(state, side, rand,
+                net.minecraftforge.client.model.data.ModelData.EMPTY,
+                net.minecraft.client.renderer.RenderType.solid());
+        //?} elif neoforge {
+        /*return model.getQuads(state, side, rand,
+                net.neoforged.neoforge.client.model.data.ModelData.EMPTY,
+                net.minecraft.client.renderer.RenderType.solid());
+        *///?} else {
+        /*return model.getQuads(state, side, rand);
+        *///?}
+    }
+
+    /**
      * Кросс-версионная вершина для частиц (PARTICLE format).
      */
     public static void particleVertex(VertexConsumer consumer, float x, float y, float z, float u, float v, int r, int g, int b, int a, int packedLight) {

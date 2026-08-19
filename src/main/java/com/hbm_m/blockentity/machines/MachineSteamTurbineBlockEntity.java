@@ -13,6 +13,7 @@ import com.hbm_m.interfaces.IEnergyModeHolder;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
