@@ -68,6 +68,7 @@ public class ClientModEvents {
         *///?}
 
         ClientTickEvent.CLIENT_POST.register(client -> {
+            com.hbm_m.client.overlay.OverlayInfoToast.tick();
             DoorAnimationDelayHelper.processQueue();
             DoorChunkInvalidationHelper.processPendingInvalidations();
             ShaderCompatibilityDetector.processPendingChunkInvalidation();

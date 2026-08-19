@@ -86,6 +86,8 @@ out vec2 texCoord;
 out vec2 lightmapUV;
 out float vertexDistance;
 out vec3 fragNormal;
+// Мировая нормаль (поворот инстанса/модели без view-матрицы) для направленного затенения.
+out vec3 worldNormal;
 // Per-vertex fade: InstBboxSize.w when instancing (batched flush reads stale uniform otherwise).
 out float vFadeAlpha;
 
@@ -147,6 +149,7 @@ vec2 bilinearLightUv(vec2 wxz, vec4 c01, vec4 c23) {
 
 void main() {
     mat4 modelView;
+    mat4 worldRot = mat4(1.0);
     vec3 bboxMin;
     vec3 bboxSize;
     vec4 lc01;
@@ -160,6 +163,7 @@ void main() {
     translation[3] = vec4(InstPos, 1.0);
     mat4 instBase = translation * rotMatrix;
     modelView = instBase;
+    worldRot = rotMatrix;
     bboxMin = InstBboxMin;
     bboxSize = InstBboxSize.xyz;
 #ifndef USE_SLICED_LIGHT
@@ -183,6 +187,10 @@ void main() {
 
     fragNormal = mat3(modelView) * Normal;
 #endif
+
+    // Мировая нормаль: только поворот инстанса (или identity для не-instanced пути),
+    // без view-матрицы — затенение не зависит от поворота камеры.
+    worldNormal = mat3(worldRot) * Normal;
 
     // Safeguard: when bboxSize has a zero axis the division below would NaN the
     // whole vertex. Clamp to a tiny epsilon per-axis so degenerate meshes still
