@@ -38,7 +38,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
 import net.minecraftforge.client.model.data.ModelData;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.model.data.ModelData;
+*///?}
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 
@@ -203,7 +205,7 @@ public class MachineChemicalPlantVboRenderer {
     static final MultiBufferSource.BufferSource FLUID_BUFFER_SOURCE =
             RenderHooks.immediateBufferSource(262144);
 
-    //? if forge {
+    //? if forge || neoforge {
     /** Immediate draw used by {@link MachineChemicalPlantRenderer#presentDeferredFluids()}. */
     public static void drawChemplantFluidBaked(MachineChemicalPlantBakedModel model, BlockState state, float anim,
                                                PoseStack poseStack, MultiBufferSource bufferSource,
@@ -236,7 +238,11 @@ public class MachineChemicalPlantVboRenderer {
         PoseStack.Pose pose = poseStack.last();
         float r = visual.r(), g = visual.g(), b = visual.b(), a = 0.5f;
         for (BakedQuad quad : quads) {
+            //? if forge {
             vc.putBulkData(pose, quad, r, g, b, a, packedLight, packedOverlay, false);
+            //?} else {
+            /*vc.putBulkData(pose, quad, r, g, b, a, packedLight, packedOverlay);
+            *///?}
         }
         return true;
     }

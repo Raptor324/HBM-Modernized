@@ -98,6 +98,20 @@ public class ModCapabilities {
         for (var supplier : com.hbm_m.item.ModItems.ITEMS) {
             if (!supplier.isPresent()) continue;
             net.minecraft.world.item.Item item = supplier.get();
+
+            // Fluid Barrel / Infinite Fluid Barrel: NeoForge-аналог forge initCapabilities.
+            if (item instanceof com.hbm_m.item.liquids.FluidBarrelItem) {
+                event.registerItem(Capabilities.FluidHandler.ITEM,
+                        (stack, ctx) -> new com.hbm_m.item.liquids.FluidBarrelItem.FluidBarrelCapabilityHandler(stack), item);
+                continue;
+            }
+            if (item instanceof com.hbm_m.item.liquids.InfiniteFluidItem infinite) {
+                event.registerItem(Capabilities.FluidHandler.ITEM,
+                        (stack, ctx) -> new com.hbm_m.item.liquids.InfiniteFluidItem.InfiniteFluidCapabilityHandler(
+                                stack, infinite.getTransferRate(), infinite.getFixedFluid()), item);
+                continue;
+            }
+
             if (!(item instanceof com.hbm_m.item.fekal_electric.ModBatteryItem battery)) continue;
 
             event.registerItem(HBM_ITEM_ENERGY_PROVIDER, (stack, ctx) ->

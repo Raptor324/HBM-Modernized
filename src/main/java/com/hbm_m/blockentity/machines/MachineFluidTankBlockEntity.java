@@ -56,18 +56,12 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
 //? if forge {
-import net.minecraftforge.client.model.data.ModelData;
-import net.minecraftforge.client.model.data.ModelProperty;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
 //?}
-//? if neoforge {
-/*import net.neoforged.neoforge.client.model.data.ModelData;
-import net.neoforged.neoforge.client.model.data.ModelProperty;
-*///?}
 
 @SuppressWarnings("UnstableApiUsage")
 public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements MenuProvider, IMultiblockSidedIO, IFluidStandardTransceiverMK2
@@ -111,10 +105,6 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
     private java.util.Set<Direction> allowedFluidSides = java.util.EnumSet.noneOf(Direction.class);
     /** Набор из tuple fluidSideMap символа контроллера при постройке мультиблока. */
     private boolean fluidSidesFromMultiblockStructure = false;
-
-    //? if forge || neoforge {
-    public static final ModelProperty<ResourceLocation> FLUID_TEXTURE_PROPERTY = new ModelProperty<>();
-    //?}
 
     public MachineFluidTankBlockEntity(BlockPos pos, BlockState state) {
         this(ModBlockEntities.FLUID_TANK_BE.get(), pos, state, TANK_CAPACITY);
@@ -174,21 +164,14 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
         //?}
     }
 
-    //? if forge || neoforge {
     @Override
     public void onLoad() {
         super.onLoad();
-        // На Forge ModelData кешируется отдельно от NBT; при загрузке чанка гарантируем первичную инициализацию.
-        if (level != null && level.isClientSide) {
-            requestModelDataUpdate();
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL_IMMEDIATE);
-        }
         // Важно: при загрузке чанка load(NBT) может отработать до установки level у BE,
         // поэтому refreshAdjacentFluidDuctConnections() там иногда пропускается.
         // Дёргаем повторно здесь, чтобы визуальные соединения труб всегда пересчитались после перезахода.
         refreshAdjacentFluidDuctConnections();
     }
-    //?}
 
     // =====================================================================================
     // IFluidStandardTransceiverMK2 — нативное участие в MK2-сети.
@@ -399,47 +382,11 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
         }
     }
 
-    //? if forge {
-    @Override
-    public void onDataPacket(net.minecraft.network.Connection net, net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket pkt) {
-        // Важно: super.onDataPacket вызывает load(tag). Нам нужно сравнить старое/новое и
-        // при смене текстуры попросить Forge обновить ModelData и пересобрать меш чанка.
-        final boolean clientForge = level != null && level.isClientSide;
-        final ResourceLocation prevTankTextureForge = clientForge ? getTankTextureLocation() : null;
-
-        super.onDataPacket(net, pkt);
-
-        if (clientForge && prevTankTextureForge != null && !prevTankTextureForge.equals(getTankTextureLocation())) {
-            requestModelDataUpdate();
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
-        }
-    }
-    //?}
-
-    //? if neoforge {
-    /*// NeoForge 1.21.1: сигнатура onDataPacket — 3 аргумента (с HolderLookup.Provider).
-    @Override
-    public void onDataPacket(net.minecraft.network.Connection net, net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket pkt, net.minecraft.core.HolderLookup.Provider registries) {
-        final boolean clientNeo = level != null && level.isClientSide;
-        final ResourceLocation prevTankTextureNeo = clientNeo ? getTankTextureLocation() : null;
-
-        super.onDataPacket(net, pkt, registries);
-
-        if (clientNeo && prevTankTextureNeo != null && !prevTankTextureNeo.equals(getTankTextureLocation())) {
-            requestModelDataUpdate();
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
-        }
-    }
-    *///?}
-
     @Override
     protected void applyClientUpdate(@NotNull CompoundTag tag) {
         // Применяем NBT (аналог старого handleUpdateTag → load/readNbtData)
         super.applyClientUpdate(tag);
         if (level != null && level.isClientSide) {
-            //? if forge || neoforge {
-            requestModelDataUpdate();
-            //?}
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
             refreshAdjacentFluidDuctConnections();
         }
@@ -532,16 +479,6 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
         //?}
 
     }
-
-    //? if forge || neoforge {
-    @Override
-    public @NotNull ModelData getModelData() {
-        return ModelData.builder()
-                .with(FLUID_TEXTURE_PROPERTY, getTankTextureLocation())
-                .build();
-    }
-    //?}
-
 
     public void explode() {
         if (this.hasExploded) return;

@@ -204,16 +204,13 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         renderWithVBO(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource);
 
         if (visual != null) {
-            //? if forge {
+            //? if forge || neoforge {
             // Только запись в очередь; draw — в presentDeferredFluids (AFTER_BLOCK_ENTITIES),
             // см. комментарий у DeferredChemplantFluid.
             scheduleDeferredFluid(model, be.getBlockState(), poseStack, be.getAnim(partialTick),
                     packedLight, packedOverlay, visual);
-            
-           //?} else { 
-             
             //?}
-            // Fabric: deferred-fluid путь требует forge-only IrisPhaseGuard, на fabric жидкость не рисуется.
+            // Fabric: deferred-fluid путь требует Forge/NeoForge getQuads(ModelData, RenderType), на fabric жидкость не рисуется.
         }
     }
 
@@ -355,7 +352,7 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
      * В shadow-pass не планируем (жидкость translucent, в shadow не видна и
      * только дропает depth).
      */
-    //? if forge {
+    //? if forge || neoforge {
     static void scheduleDeferredFluid(MachineChemicalPlantBakedModel model,
                                       net.minecraft.world.level.block.state.BlockState state,
                                       PoseStack poseStack, float anim,
@@ -380,7 +377,7 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
      */
     public static void presentDeferredFluids() {
         if (DEFERRED_FLUIDS.isEmpty()) return;
-        //? if forge {
+        //? if forge || neoforge {
         try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
             boolean depthMaskWas = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
             PoseStack poseStack = new PoseStack();
