@@ -61,40 +61,19 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
     @Override public RBMKType getRBMKType()      { return RBMKType.OUTGASSER; }
     @Override public ColumnType getConsoleType() { return ColumnType.OUTGASSER; }
 
-    //? if < 1.21.1 {
-    @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        if (!rodSlot.isEmpty()) tag.put("rodSlot", safeItemSave(rodSlot));
-        tag.putDouble("fluxBuffer", fluxBuffer);
-    }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.saveAdditional(tag, registries);
-        if (!rodSlot.isEmpty()) tag.put("rodSlot", safeItemSave(rodSlot, registries));
-        tag.putDouble("fluxBuffer", fluxBuffer);
     
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        if (tag.contains("rodSlot")) rodSlot = ItemStack.of(tag.getCompound("rodSlot"));
-        fluxBuffer = tag.getDouble("fluxBuffer");
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        if (!rodSlot.isEmpty()) tag.put("rodSlot", com.hbm_m.platform.PlatformHooks.safeItemSave(rodSlot, registries));
+        tag.putDouble("fluxBuffer", fluxBuffer);
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.loadAdditional(tag, registries);
+    @Override
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         if (tag.contains("rodSlot")) rodSlot = com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("rodSlot"), registries);
         fluxBuffer = tag.getDouble("fluxBuffer");
-    
     }
-    *///?}
 }
 

@@ -118,26 +118,18 @@ public class MachineTeleporterBlockEntity extends BaseMachineBlockEntity {
         return null;
     }
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("targetX", targetX);
         tag.putInt("targetY", targetY);
         tag.putInt("targetZ", targetZ);
         tag.putString("targetDim", targetDim);
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    tag.putInt("targetX", targetX);
-    tag.putInt("targetY", targetY);
-    tag.putInt("targetZ", targetZ);
-    tag.putString("targetDim", targetDim);
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         targetX = tag.getInt("targetX");
         targetY = tag.contains("targetY") ? tag.getInt("targetY") : -1;
         targetZ = tag.getInt("targetZ");

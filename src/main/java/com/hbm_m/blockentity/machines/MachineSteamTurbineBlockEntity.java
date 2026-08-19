@@ -189,17 +189,7 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
         return switch (slot) {
             case SLOT_FLUID_ID_IN -> stack.getItem() instanceof IItemFluidIdentifier || stack.getItem() instanceof FluidIdentifierItem;
             case SLOT_FLUID_ID_OUT, SLOT_INPUT_IO_OUT, SLOT_OUTPUT_IO_OUT -> false;
-            case SLOT_INPUT_IO_IN, SLOT_OUTPUT_IO_IN -> {
-                //? if forge {
-                yield stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-                //?}
-                //? if fabric {
-                /*yield net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage.ITEM.find(stack, null) != null;
-                *///?}
-                //? if neoforge {
-                /*yield stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;
-                *///?}
-            }
+            case SLOT_INPUT_IO_IN, SLOT_OUTPUT_IO_IN -> PlatformHooks.isFluidContainer(stack);
             case SLOT_BATTERY -> stack.getItem() instanceof ItemCreativeBattery || isEnergyProviderItem(stack) || isEnergyReceiverItem(stack);
             default -> false;
         };

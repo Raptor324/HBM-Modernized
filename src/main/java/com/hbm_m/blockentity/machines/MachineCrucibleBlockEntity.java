@@ -1,5 +1,6 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.interfaces.IEnergyProvider;
@@ -31,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MachineCrucibleBlockEntity extends BlockEntity {
+public class MachineCrucibleBlockEntity extends BaseHbmBlockEntity {
 
     public static final int INPUT_SLOTS    = 9;
     public static final int LIQUID_CAPACITY = 18_000;
@@ -325,51 +326,27 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
     @Override public void invalidateCaps() { super.invalidateCaps(); itemHandlerOpt.invalidate(); }
     //?}
 
-    //? if < 1.21.1 {
-    @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.put("inventory", itemHandler.serializeNBT());
-        tag.putInt("heat", heat); tag.putInt("progress", progress);
-        tag.putFloat("fillLevel", fillLevel); tag.putInt("fillColor", fillColor);
-
-        ListTag list = new ListTag();
-        for (MaterialStack ms : molten) {
-            CompoundTag entry = new CompoundTag();
-            ms.writeToNBT(entry);
-            list.add(entry);
-        }
-        tag.put("molten", list);
-    }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.saveAdditional(tag, registries);
-        tag.put("inventory", itemHandler.serializeNBT(registries));
-        tag.putInt("heat", heat); tag.putInt("progress", progress);
-        tag.putFloat("fillLevel", fillLevel); tag.putInt("fillColor", fillColor);
-
-        ListTag list = new ListTag();
-        for (MaterialStack ms : molten) {
-            CompoundTag entry = new CompoundTag();
-            ms.writeToNBT(entry);
-            list.add(entry);
-        }
-        tag.put("molten", list);
     
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        if (tag.contains("inventory")) //? if < 1.21.1 {
- itemHandler.deserializeNBT(tag.getCompound("inventory"));
- //?} else {
- /*itemHandler.deserializeNBT(registries, tag.getCompound("inventory"));
- *///?}
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(itemHandler, registries));
+        tag.putInt("heat", heat); tag.putInt("progress", progress);
+        tag.putFloat("fillLevel", fillLevel); tag.putInt("fillColor", fillColor);
+
+        ListTag list = new ListTag();
+        for (MaterialStack ms : molten) {
+            CompoundTag entry = new CompoundTag();
+            ms.writeToNBT(entry);
+            list.add(entry);
+        }
+        tag.put("molten", list);
+    }
+
+    @Override
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
+        if (tag.contains("inventory")) com.hbm_m.platform.ItemStackSerialization.deserialize(itemHandler, tag.getCompound("inventory"), registries);
         heat = tag.getInt("heat"); progress = tag.getInt("progress");
         fillLevel = tag.getFloat("fillLevel"); fillColor = tag.getInt("fillColor");
 
@@ -386,51 +363,9 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
             if (ms != null) molten.add(ms);
         }
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        if (tag.contains("inventory")) itemHandler.deserializeNBT(registries, tag.getCompound("inventory"));
-        heat = tag.getInt("heat"); progress = tag.getInt("progress");
-        fillLevel = tag.getFloat("fillLevel"); fillColor = tag.getInt("fillColor");
-
-        molten.clear();
-        if (tag.contains("molten")) {
-            ListTag list = tag.getList("molten", net.minecraft.nbt.Tag.TAG_COMPOUND);
-            for (int i = 0; i < list.size(); i++) {
-                MaterialStack ms = MaterialStack.readFromNBT(list.getCompound(i));
-                if (ms != null) molten.add(ms);
-            }
-        } else if (tag.contains("material")) {
-            // legacy single-material save format
-            MaterialStack ms = MaterialStack.readFromNBT(tag.getCompound("material"));
-            if (ms != null) molten.add(ms);
-        }
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        saveAdditional(tag);
-        return tag;
-    }
-    //?} else {
-    /*@Override
-    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
-
-        CompoundTag tag = super.getUpdateTag(registries);
-        saveAdditional(tag, registries);
-        return tag;
-    
-    }
-    *///?}
 
     @Override
-    public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> getUpdatePacket() {
-        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
+    public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
+        return this.itemHandler;
     }
 }

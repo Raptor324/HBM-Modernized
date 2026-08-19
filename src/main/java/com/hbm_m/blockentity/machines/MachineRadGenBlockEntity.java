@@ -145,28 +145,9 @@ public class MachineRadGenBlockEntity extends BaseMachineBlockEntity implements 
 
     // ── NBT ─────────────────────────────────────────────────────────────────
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        tag.putIntArray("progress", progress);
-        tag.putIntArray("max_progress", maxProgress);
-        tag.putIntArray("production", production);
-        tag.putBoolean("is_on", isOn);
-
-        ListTag list = new ListTag();
-        for (int i = 0; i < QUEUE_COUNT; i++) {
-            if (processing[i] != null) {
-                CompoundTag entry = new CompoundTag();
-                entry.putByte("slot", (byte) i);
-                entry.put("stack", com.hbm_m.platform.PlatformHooks.safeItemSave(processing[i], null));
-                list.add(entry);
-            }
-        }
-        tag.put("processing", list);
-    }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putIntArray("progress", progress);
         tag.putIntArray("max_progress", maxProgress);
         tag.putIntArray("production", production);
@@ -183,10 +164,10 @@ public class MachineRadGenBlockEntity extends BaseMachineBlockEntity implements 
         }
         tag.put("processing", list);
     }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         int[] p = tag.getIntArray("progress");
         int[] mp = tag.getIntArray("max_progress");
         int[] pr = tag.getIntArray("production");

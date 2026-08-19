@@ -73,12 +73,14 @@ public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tanks[TANK_DEUTERIUM].writeToNBT(tag, "deuterium");
         tanks[TANK_TRITIUM].writeToNBT(tag, "tritium");
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         tanks[TANK_DEUTERIUM].readFromNBT(tag, "deuterium");
         tanks[TANK_TRITIUM].readFromNBT(tag, "tritium");
     }

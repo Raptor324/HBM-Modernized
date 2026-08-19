@@ -317,23 +317,11 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity {
 
         ItemStack tool = new ItemStack(Items.DIAMOND_PICKAXE);
         boolean silk = enableSilkTouch && drill.silk();
-        //? if < 1.21.1 {
         if (silk) {
-            tool.enchant(Enchantments.SILK_TOUCH, 1);
+            com.hbm_m.platform.ItemHooks.setEnchantmentLevel(tool, level, "silk_touch", 1);
         } else if (drill.fortune() > 0) {
-            tool.enchant(Enchantments.BLOCK_FORTUNE, drill.fortune());
+            com.hbm_m.platform.ItemHooks.setEnchantmentLevel(tool, level, "fortune", drill.fortune());
         }
-        //?} else {
-        /*// 1.21.1: Enchantments.* теперь ResourceKey<Enchantment>, а enchant ждёт Holder<Enchantment>;
-        // BLOCK_FORTUNE переименован в FORTUNE. Резолв через реестр зачарований уровня.
-        net.minecraft.core.HolderLookup.RegistryLookup<net.minecraft.world.item.enchantment.Enchantment> enchReg =
-                level.registryAccess().lookup(net.minecraft.core.registries.Registries.ENCHANTMENT).orElseThrow();
-        if (silk) {
-            tool.enchant(enchReg.getOrThrow(Enchantments.SILK_TOUCH), 1);
-        } else if (drill.fortune() > 0) {
-            tool.enchant(enchReg.getOrThrow(Enchantments.FORTUNE), drill.fortune());
-        }
-        *///?}
 
         LootParams.Builder builder = new LootParams.Builder(level)
                 .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos))
@@ -482,10 +470,9 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity {
     public boolean hasDrillbitInstalled() { return !inventory.getStackInSlot(SLOT_DRILLBIT).isEmpty(); }
     public long getEnergyPerTick() { return ENERGY_PER_TICK; }
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("target_depth", targetDepth);
         tag.putBoolean("enable_drill", enableDrill);
         tag.putBoolean("enable_crusher", enableCrusher);
@@ -495,27 +482,10 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity {
         tag.putBoolean("operational", operational);
         tank.writeToNBT(tag, "tank");
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.saveAdditional(tag, registries);
-        tag.putInt("target_depth", targetDepth);
-        tag.putBoolean("enable_drill", enableDrill);
-        tag.putBoolean("enable_crusher", enableCrusher);
-        tag.putBoolean("enable_walling", enableWalling);
-        tag.putBoolean("enable_veinminer", enableVeinMiner);
-        tag.putBoolean("enable_silktouch", enableSilkTouch);
-        tag.putBoolean("operational", operational);
-        tank.writeToNBT(tag, "tank");
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         tank.readFromNBT(tag, "tank");
         targetDepth = tag.getInt("target_depth");
         enableDrill = tag.getBoolean("enable_drill");
@@ -525,22 +495,6 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity {
         enableSilkTouch = tag.getBoolean("enable_silktouch");
         operational = tag.getBoolean("operational");
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        tank.readFromNBT(tag, "tank");
-        targetDepth = tag.getInt("target_depth");
-        enableDrill = tag.getBoolean("enable_drill");
-        enableCrusher = tag.getBoolean("enable_crusher");
-        enableWalling = tag.getBoolean("enable_walling");
-        enableVeinMiner = tag.getBoolean("enable_veinminer");
-        enableSilkTouch = tag.getBoolean("enable_silktouch");
-        operational = tag.getBoolean("operational");
-    
-    }
-    *///?}
 
     @Override
     protected Component getDefaultName() {

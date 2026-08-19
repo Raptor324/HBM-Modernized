@@ -37,7 +37,7 @@ import net.minecraft.world.phys.AABB;
 // Forge-only model-data / distmarker imports intentionally removed for Fabric compilation.
 
 
-public class DoorBlockEntity extends BlockEntity implements IMultiblockPart, com.hbm_m.api.render.RenderBoundsProvider
+public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IMultiblockPart
     //? if fabric {
     /*, net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity
     *///?}
@@ -707,56 +707,31 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart, com
     }
 
     // ==================== NBT & Sync ====================
-    //? if < 1.21.1 {
-    @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.putByte("state", state);
-        tag.putInt("openTicks", openTicks);
-        tag.putLong("animStartTime", animStartTime);
-        tag.putString("doorDeclId", doorDeclId);
-        tag.putBoolean("locked", locked);
-        tag.putBoolean("redstoneState", lastRedstoneState);
-        modelSelection.save(tag);
-        if (controllerPos != null) {
-            tag.putLong("controllerPos", controllerPos.asLong());
-        }
-        if (!allowedClimbSides.isEmpty()) {
-            int mask = 0;
-            for (Direction dir : allowedClimbSides) mask |= (1 << dir.get3DDataValue());
-            tag.putInt("climbSides", mask);
-        }
-        tag.putString("partRole", partRole.name());
-    }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.saveAdditional(tag, registries);
-        tag.putByte("state", state);
-        tag.putInt("openTicks", openTicks);
-        tag.putLong("animStartTime", animStartTime);
-        tag.putString("doorDeclId", doorDeclId);
-        tag.putBoolean("locked", locked);
-        tag.putBoolean("redstoneState", lastRedstoneState);
-        modelSelection.save(tag);
-        if (controllerPos != null) {
-            tag.putLong("controllerPos", controllerPos.asLong());
-        }
-        if (!allowedClimbSides.isEmpty()) {
-            int mask = 0;
-            for (Direction dir : allowedClimbSides) mask |= (1 << dir.get3DDataValue());
-            tag.putInt("climbSides", mask);
-        }
-        tag.putString("partRole", partRole.name());
     
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        tag.putByte("state", state);
+        tag.putInt("openTicks", openTicks);
+        tag.putLong("animStartTime", animStartTime);
+        tag.putString("doorDeclId", doorDeclId);
+        tag.putBoolean("locked", locked);
+        tag.putBoolean("redstoneState", lastRedstoneState);
+        modelSelection.save(tag);
+        if (controllerPos != null) {
+            tag.putLong("controllerPos", controllerPos.asLong());
+        }
+        if (!allowedClimbSides.isEmpty()) {
+            int mask = 0;
+            for (Direction dir : allowedClimbSides) mask |= (1 << dir.get3DDataValue());
+            tag.putInt("climbSides", mask);
+        }
+        tag.putString("partRole", partRole.name());
+    }
+
+    @Override
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         byte oldState = this.state; // Запоминаем старое состояние
         
         this.state = tag.getByte("state");
@@ -780,7 +755,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart, com
 
         if (tag.contains("doorDeclId")) {
             this.doorDeclId = tag.getString("doorDeclId");
-        }        
+        }
         
         if (tag.contains("partRole")) {
             try {
@@ -814,70 +789,6 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart, com
             }
         }
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        byte oldState = this.state; // Запоминаем старое состояние
-        
-        this.state = tag.getByte("state");
-        this.openTicks = tag.getInt("openTicks");
-        this.animStartTime = tag.getLong("animStartTime");
-        this.locked = tag.getBoolean("locked");
-        this.lastRedstoneState = tag.getBoolean("redstoneState");
-
-        boolean hadModelSelectionInNbt = tag.contains("modelType");
-        if (hadModelSelectionInNbt) {
-            this.modelSelection = DoorModelSelection.load(tag);
-        } else {
-            // Совместимость со старыми сохранениями
-            this.modelSelection = DoorModelSelection.DEFAULT;
-        }
-        this.cachedModelData = null;
-        
-        if (tag.contains("controllerPos")) {
-            this.controllerPos = BlockPos.of(tag.getLong("controllerPos"));
-        }
-
-        if (tag.contains("doorDeclId")) {
-            this.doorDeclId = tag.getString("doorDeclId");
-        }        
-        
-        if (tag.contains("partRole")) {
-            try {
-                this.partRole = PartRole.valueOf(tag.getString("partRole"));
-            } catch (IllegalArgumentException e) {
-                this.partRole = PartRole.DEFAULT;
-            }
-        }
-        
-        if (tag.contains("climbSides")) {
-            int mask = tag.getInt("climbSides");
-            allowedClimbSides.clear();
-            for (Direction dir : Direction.values()) {
-                if ((mask & (1 << dir.get3DDataValue())) != 0) {
-                    allowedClimbSides.add(dir);
-                }
-            }
-        }
-
-        if (level != null && level.isClientSide) {
-            initModelSelection(!hadModelSelectionInNbt);
-            handleNewState(oldState, this.state);
-            // ИСПРАВЛЕНИЕ МОРГАНИЯ: при получении state 2/3 (движение) используем клиентское время.
-            // Серверный animStartTime приводит к рассинхрону часов и скачкам прогресса анимации.
-            if (this.state == 2 || this.state == 3) {
-                this.animStartTime = System.currentTimeMillis();
-            }
-            // Задержка: при переходе из moving (2/3) в static (0/1) - анимированная часть остаётся ещё 500ms
-            if ((oldState == 2 || oldState == 3) && (this.state == 0 || this.state == 1)) {
-                DoorAnimationDelayHelper.addToQueue(this, 500);
-            }
-        }
-    
-    }
-    *///?}
     // Forge-only ModelData hook removed for Fabric compilation.
 
     /**
@@ -912,23 +823,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart, com
         }
     }
 
-    //? if < 1.21.1 {
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        saveAdditional(tag);
-        return tag;
-    }
-    //?} else {
-    /*@Override
-    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
-
-        CompoundTag tag = super.getUpdateTag(registries);
-        saveAdditional(tag, registries);
-        return tag;
-    
-    }
-    *///?}
+    // getUpdateTag: удалён — BaseHbmBlockEntity уже делает super + writeNbtData.
     //? if forge {
     @Override
     //?}
@@ -942,11 +837,6 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart, com
         *///?}
     }
 
-    @Nullable
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
 
     public int getOpenTicks() {
         return this.openTicks;

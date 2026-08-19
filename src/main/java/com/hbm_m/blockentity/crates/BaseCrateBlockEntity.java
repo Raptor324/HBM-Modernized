@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.machines.crates.CrateValidation;
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.platform.ModItemStackHandler;
 
 import net.minecraft.core.BlockPos;
@@ -34,7 +35,7 @@ import net.minecraft.world.phys.Vec3;
  * {@code WeightedRandomChestContent.generateChestContents}; современный эквивалент —
  * JSON лут-таблица, назначаемая {@link com.hbm_m.worldgen.StructureLootProcessor}.</p>
  */
-public abstract class BaseCrateBlockEntity extends BlockEntity implements MenuProvider {
+public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements MenuProvider {
 
     protected final ModItemStackHandler itemHandler;
 
@@ -61,65 +62,31 @@ public abstract class BaseCrateBlockEntity extends BlockEntity implements MenuPr
 
     // Forge item handler capabilities removed for Fabric compilation.
 
-    //? if < 1.21.1 {
+    
+    // (устраняет вложенный stonecutter-баг в load())
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         if (this.lootTable != null) {
             tag.putString("LootTable", this.lootTable.toString());
             if (this.lootTableSeed != 0L) {
                 tag.putLong("LootTableSeed", this.lootTableSeed);
             }
         }
-        tag.put("inventory", itemHandler.serializeNBT());
+        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(itemHandler, registries));
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.saveAdditional(tag, registries);
-        if (this.lootTable != null) {
-            tag.putString("LootTable", this.lootTable.toString());
-            if (this.lootTableSeed != 0L) {
-                tag.putLong("LootTableSeed", this.lootTableSeed);
-            }
-        }
-        tag.put("inventory", itemHandler.serializeNBT(registries));
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         if (tag.contains("LootTable", 8)) {
             this.lootTable = ResourceLocation.parse(tag.getString("LootTable"));
             this.lootTableSeed = tag.getLong("LootTableSeed");
         }
         if (tag.contains("inventory")) {
-            //? if < 1.21.1 {
-            itemHandler.deserializeNBT(tag.getCompound("inventory"));
-            //?} else {
-            /*itemHandler.deserializeNBT(registries, tag.getCompound("inventory"));
-            *///?}
+            com.hbm_m.platform.ItemStackSerialization.deserialize(itemHandler, tag.getCompound("inventory"), registries);
         }
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        if (tag.contains("LootTable", 8)) {
-            this.lootTable = ResourceLocation.parse(tag.getString("LootTable"));
-            this.lootTableSeed = tag.getLong("LootTableSeed");
-        }
-        if (tag.contains("inventory")) {
-            itemHandler.deserializeNBT(registries, tag.getCompound("inventory"));
-        }
-    
-    }
-    *///?}
 
     public boolean isEmpty() {
         for (int i = 0; i < itemHandler.getSlots(); i++) {

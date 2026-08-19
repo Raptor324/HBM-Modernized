@@ -92,44 +92,21 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity implements Menu
         return d;
     }
 
-    //? if < 1.21.1 {
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         waterTank.writeToNBT(tag, "water");
         steamTank.writeToNBT(tag, "steam");
         tag.putInt("steamGrade", steamGrade);
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.saveAdditional(tag, registries);
-        waterTank.writeToNBT(tag, "water");
-        steamTank.writeToNBT(tag, "steam");
-        tag.putInt("steamGrade", steamGrade);
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         waterTank.readFromNBT(tag, "water");
         steamTank.readFromNBT(tag, "steam");
         steamGrade = tag.getInt("steamGrade");
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        waterTank.readFromNBT(tag, "water");
-        steamTank.readFromNBT(tag, "steam");
-        steamGrade = tag.getInt("steamGrade");
-    
-    }
-    *///?}
 }
 

@@ -17,7 +17,7 @@ import com.hbm_m.platform.PlatformHooks;
  * Верхняя прослойка над {@link BlockEntity} с минимальным набором stonecutter-ветвлений
  * для версионно-зависимых override'ов ({@code saveAdditional}/{@code load}/{@code getUpdateTag}).
  *
- * <p><b>Цель (Strategy B, см. platform-strategy-b.md):</b> убрать дублирование каменной-ножничной
+ * <p><b>Цель:</b> убрать дублирование каменной-ножничной
  * логики в каждом BlockEntity. Логика персистенции вынесена в два НЕ-override метода —
  * {@link #writeNbtData(CompoundTag, Provider)} и {@link #readNbtData(CompoundTag, Provider)} —
  * которые дочерние классы реализуют <b>один раз</b> без ветвлений. Прослойка берет на себя
@@ -147,7 +147,14 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
         writeNbtData(tag, null);
         return tag;
     }
-    //?} else {
+    //?} elif neoforge {
+    /*@Override
+    public @NotNull CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+        CompoundTag tag = super.getUpdateTag(registries);
+        writeNbtData(tag, registries);
+        return tag;
+    }
+    *///?} else {
     /*@Override
     public @NotNull CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
@@ -174,4 +181,36 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
         if (tag != null) applyClientUpdate(tag);
     }
     //?}
+
+    // ═══════════════════════════════════════════════════════════════════════════════════════════
+    //  Capability Providers (Автоматизация для NeoForge и платформенных адаптеров)
+    // ═══════════════════════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Возвращает IItemHandler (или ModItemStackHandler) для указанной стороны
+     */
+    public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
+        return null;
+    }
+
+    /**
+     * Возвращает IFluidHandler (NeoForge / Forge) для указанной стороны
+     */
+    public @Nullable Object getFluidHandler(@Nullable net.minecraft.core.Direction side) {
+        if (this instanceof com.hbm_m.api.fluids.IFluidUserMK2 mk2) {
+            //? if forge {
+            return null; // На Forge разруливается через getCapability
+            //?} elif neoforge {
+            /*return new com.hbm_m.api.fluids.NeoForgeFluidHandlerMK2(mk2);
+            *///?}
+        }
+        return null;
+    }
+
+    /**
+     * Возвращает IEnergyStorage для указанной стороны
+     */
+    public @Nullable Object getEnergyStorage(@Nullable net.minecraft.core.Direction side) {
+        return null;
+    }
 }

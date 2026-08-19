@@ -125,11 +125,13 @@ public class MachineFunnelBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("mode", mode);
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         mode = tag.getInt("mode");
     }
 

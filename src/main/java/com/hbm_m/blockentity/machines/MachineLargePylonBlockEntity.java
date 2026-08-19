@@ -168,43 +168,19 @@ public class MachineLargePylonBlockEntity extends BaseMachineBlockEntity {
         return new MachineLargePylonMenu(containerId, playerInventory, this, data);
     }
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progress);
         tag.putInt("duration", duration);
         tag.putBoolean("isOn", isOn);
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.saveAdditional(tag, registries);
-        tag.putInt("progress", progress);
-        tag.putInt("duration", duration);
-        tag.putBoolean("isOn", isOn);
-
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progress = tag.getInt("progress");
         duration = tag.contains("duration") ? tag.getInt("duration") : DEFAULT_DURATION;
         isOn = tag.getBoolean("isOn");
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        progress = tag.getInt("progress");
-        duration = tag.contains("duration") ? tag.getInt("duration") : DEFAULT_DURATION;
-        isOn = tag.getBoolean("isOn");
-
-    }
-    *///?}
 }

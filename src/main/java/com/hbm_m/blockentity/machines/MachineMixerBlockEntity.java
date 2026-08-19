@@ -275,10 +275,9 @@ public class MachineMixerBlockEntity extends BaseMachineBlockEntity implements I
         setChanged();
     }
 
-    //? if < 1.21.1 {
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progress);
         tag.putInt("max_progress", maxProgress);
         tag.putBoolean("active", active);
@@ -286,25 +285,10 @@ public class MachineMixerBlockEntity extends BaseMachineBlockEntity implements I
             tag.put("tank_" + i, tanks[i].writeNBT(new CompoundTag()));
         }
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.saveAdditional(tag, registries);
-        tag.putInt("progress", progress);
-        tag.putInt("max_progress", maxProgress);
-        tag.putBoolean("active", active);
-        for (int i = 0; i < tanks.length; i++) {
-            tag.put("tank_" + i, tanks[i].writeNBT(new CompoundTag()));
-        }
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progress = tag.getInt("progress");
         maxProgress = tag.getInt("max_progress");
         if (maxProgress <= 0) {
@@ -318,26 +302,6 @@ public class MachineMixerBlockEntity extends BaseMachineBlockEntity implements I
             }
         }
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        progress = tag.getInt("progress");
-        maxProgress = tag.getInt("max_progress");
-        if (maxProgress <= 0) {
-            maxProgress = DEFAULT_MAX_PROGRESS;
-        }
-        active = tag.getBoolean("active");
-        for (int i = 0; i < tanks.length; i++) {
-            String key = "tank_" + i;
-            if (tag.contains(key)) {
-                tanks[i].readNBT(tag.getCompound(key));
-            }
-        }
-    
-    }
-    *///?}
 
     @Override
     protected Component getDefaultName() {

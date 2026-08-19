@@ -174,13 +174,7 @@ public class MachineStrandCasterBlockEntity extends com.hbm_m.blockentity.BaseHb
         int freeSpace;
         if (existing.isEmpty()) {
             freeSpace = out.getMaxStackSize();
-        } else if (
-        //? if < 1.21.1 {
-        com.hbm_m.platform.PlatformHooks.isSameItemSameTags(existing, out)
-        //?} else {
-        /*ItemStack.isSameItemSameComponents(existing, out)
-        *///?}
-        ) {
+        } else if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(existing, out)) {
             freeSpace = existing.getMaxStackSize() - existing.getCount();
         } else {
             freeSpace = 0;
@@ -264,11 +258,7 @@ public class MachineStrandCasterBlockEntity extends com.hbm_m.blockentity.BaseHb
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        //? if < 1.21.1 {
-        inventory.deserializeNBT(tag.getCompound("inventory"));
-        //?} else {
-        /*inventory.deserializeNBT(registries, tag.getCompound("inventory"));
-        *///?}
+        com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, tag.getCompound("inventory"), registries);
         type = tag.contains("mat_type") ? MaterialType.byName(tag.getString("mat_type")) : null;
         amount = tag.getInt("mat_amount");
         ticksSinceProgress = tag.getInt("ticksSinceProgress");

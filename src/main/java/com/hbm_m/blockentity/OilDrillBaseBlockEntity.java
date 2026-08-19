@@ -53,49 +53,23 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity imp
         return getMaxPower();
     }
 
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        this.energy = tag.getLong("power"); // для обратной совместимости логики
-        for (int i = 0; i < this.tanks.length; i++) {
-            this.tanks[i].readFromNBT(tag, "t" + i);
-        }
-    }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        this.energy = tag.getLong("power"); // для обратной совместимости логики
-        for (int i = 0; i < this.tanks.length; i++) {
-            this.tanks[i].readFromNBT(tag, "t" + i);
-        }
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
-    @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putLong("power", this.energy);
         for (int i = 0; i < this.tanks.length; i++) {
             this.tanks[i].writeToNBT(tag, "t" + i);
         }
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.saveAdditional(tag, registries);
-        tag.putLong("power", this.energy);
+    @Override
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
+        this.energy = tag.getLong("power"); // для обратной совместимости логики
         for (int i = 0; i < this.tanks.length; i++) {
-            this.tanks[i].writeToNBT(tag, "t" + i);
+            this.tanks[i].readFromNBT(tag, "t" + i);
         }
-    
     }
-    *///?}
 
     public static void tick(Level level, BlockPos pos, BlockState state, OilDrillBaseBlockEntity entity) {
         if (level.isClientSide) return;

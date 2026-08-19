@@ -208,9 +208,9 @@ public class MachineReactorResearchBlockEntity extends BaseMachineBlockEntity {
 
     // ── NBT ─────────────────────────────────────────────────────────────────
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("heat", heat);
         tag.putInt("water", water);
         tag.putDouble("level", level);
@@ -218,20 +218,10 @@ public class MachineReactorResearchBlockEntity extends BaseMachineBlockEntity {
         tag.putBoolean("exploded", exploded);
         tag.putIntArray("slot_flux", slotFlux);
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    tag.putInt("heat", heat);
-    tag.putInt("water", water);
-    tag.putDouble("level", level);
-    tag.putDouble("target_level", targetLevel);
-    tag.putBoolean("exploded", exploded);
-    tag.putIntArray("slot_flux", slotFlux);
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         heat = tag.getInt("heat");
         water = tag.getInt("water");
         level = tag.getDouble("level");

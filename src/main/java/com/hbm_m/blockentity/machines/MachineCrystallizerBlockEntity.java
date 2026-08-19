@@ -340,7 +340,6 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         setChanged();
     }
 
-    //? if forge {
     private void tryMoveContainerToOutput(ItemStack emptyContainer, ItemStack originalFillStack) {
         if (emptyContainer.isEmpty()) {
             ItemStack remaining = originalFillStack.copy();
@@ -374,77 +373,6 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
             return;
         }
     }
-    //?}
-    //? if fabric {
-    /*private void tryMoveContainerToOutput(ItemStack emptyContainer, ItemStack originalFillStack) {
-        if (emptyContainer.isEmpty()) {
-            ItemStack remaining = originalFillStack.copy();
-            remaining.shrink(1);
-            inventory.setStackInSlot(SLOT_FLUID_INPUT, remaining);
-            return;
-        }
-
-        ItemStack outSlot = inventory.getStackInSlot(SLOT_FLUID_OUTPUT);
-
-        if (outSlot.isEmpty()) {
-            ItemStack remaining = originalFillStack.copy();
-            remaining.shrink(1);
-            inventory.setStackInSlot(SLOT_FLUID_INPUT, remaining);
-            inventory.setStackInSlot(SLOT_FLUID_OUTPUT, emptyContainer);
-            return;
-        }
-
-        if (PlatformHooks.isSameItemSameTags(outSlot, emptyContainer)) {
-            int max = outSlot.getMaxStackSize();
-            int totalAfter = outSlot.getCount() + emptyContainer.getCount();
-            if (totalAfter <= max) {
-                ItemStack newOut = outSlot.copy();
-                newOut.setCount(totalAfter);
-                inventory.setStackInSlot(SLOT_FLUID_OUTPUT, newOut);
-
-                ItemStack remaining = originalFillStack.copy();
-                remaining.shrink(1);
-                inventory.setStackInSlot(SLOT_FLUID_INPUT, remaining);
-            }
-            return;
-        }
-    }
-    *///?}
-    //? if neoforge {
-    /*private void tryMoveContainerToOutput(ItemStack emptyContainer, ItemStack originalFillStack) {
-        if (emptyContainer.isEmpty()) {
-            ItemStack remaining = originalFillStack.copy();
-            remaining.shrink(1);
-            inventory.setStackInSlot(SLOT_FLUID_INPUT, remaining);
-            return;
-        }
-
-        ItemStack outSlot = inventory.getStackInSlot(SLOT_FLUID_OUTPUT);
-
-        if (outSlot.isEmpty()) {
-            ItemStack remaining = originalFillStack.copy();
-            remaining.shrink(1);
-            inventory.setStackInSlot(SLOT_FLUID_INPUT, remaining);
-            inventory.setStackInSlot(SLOT_FLUID_OUTPUT, emptyContainer);
-            return;
-        }
-
-        if (PlatformHooks.isSameItemSameTags(outSlot, emptyContainer)) {
-            int max = outSlot.getMaxStackSize();
-            int totalAfter = outSlot.getCount() + emptyContainer.getCount();
-            if (totalAfter <= max) {
-                ItemStack newOut = outSlot.copy();
-                newOut.setCount(totalAfter);
-                inventory.setStackInSlot(SLOT_FLUID_OUTPUT, newOut);
-
-                ItemStack remaining = originalFillStack.copy();
-                remaining.shrink(1);
-                inventory.setStackInSlot(SLOT_FLUID_INPUT, remaining);
-            }
-            return;
-        }
-    }
-    *///?}
 
     private void chargeFromBattery() {
         ItemStack stack = inventory.getStackInSlot(SLOT_BATTERY);
@@ -466,15 +394,6 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
             return FluidStack.empty();
         }
         return FluidStack.create(fluid, amount);
-    }
-
-    private boolean canProcess() {
-        if (inventory.getStackInSlot(SLOT_INPUT).isEmpty()) return false;
-        if (getEnergyStored() < getPowerRequired()) return false;
-        return false;
-    }
-
-    private void processItem() {
     }
 
     public int getPowerRequired() {
@@ -574,15 +493,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
             return false;
         }
         if (slot == SLOT_FLUID_INPUT) {
-            //? if forge {
-            return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-            //?}
-            //? if fabric {
-            /*return FluidStorage.ITEM.find(stack, null) != null;
-            *///?}
-            //? if neoforge {
-            /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;
-            *///?}
+            return PlatformHooks.isFluidContainer(stack);
         }
         if (slot == SLOT_FLUID_ID) {
             return stack.getItem() instanceof IItemFluidIdentifier;
@@ -600,32 +511,18 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         return new MachineCrystallizerMenu(containerId, playerInventory, this, data);
     }
 
-    //? if < 1.21.1 {
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.put("tank", tank.writeNBT(new CompoundTag()));
         tag.putInt("progress", progress);
         tag.putInt("duration", duration);
         tag.putBoolean("isOn", isOn);
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.saveAdditional(tag, registries);
-        tag.put("tank", tank.writeNBT(new CompoundTag()));
-        tag.putInt("progress", progress);
-        tag.putInt("duration", duration);
-        tag.putBoolean("isOn", isOn);
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         if (tag.contains("tank")) {
             tank.readNBT(tag.getCompound("tank"));
         }
@@ -633,20 +530,6 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         duration = tag.contains("duration") ? tag.getInt("duration") : DEFAULT_DURATION;
         isOn = tag.getBoolean("isOn");
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        if (tag.contains("tank")) {
-            tank.readNBT(tag.getCompound("tank"));
-        }
-        progress = tag.getInt("progress");
-        duration = tag.contains("duration") ? tag.getInt("duration") : DEFAULT_DURATION;
-        isOn = tag.getBoolean("isOn");
-    
-    }
-    *///?}
 
     @Override
     public void setRemoved() {

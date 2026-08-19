@@ -240,24 +240,17 @@ public class MachineElectrolyserBlockEntity extends BaseMachineBlockEntity imple
 
     // ==================== NBT ====================
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progressFluid", progressFluid);
         tag.putInt("progressMetal", progressMetal);
         for (int i = 0; i < tanks.length; i++) tanks[i].writeToNBT(tag, "tank" + i);
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    tag.putInt("progressFluid", progressFluid);
-    tag.putInt("progressMetal", progressMetal);
-    for (int i = 0; i < tanks.length; i++) tanks[i].writeToNBT(tag, "tank" + i);
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progressFluid = tag.getInt("progressFluid");
         progressMetal = tag.getInt("progressMetal");
         for (int i = 0; i < tanks.length; i++) tanks[i].readFromNBT(tag, "tank" + i);

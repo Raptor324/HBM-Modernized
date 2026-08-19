@@ -18,10 +18,10 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -264,11 +264,9 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
             sendUpdateToClient();
         }
     }
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+    //? if forge || neoforge {
+    @OnlyIn(Dist.CLIENT)
+    //?}
     private void clientTick() {
         float target = convertPressToProgress();
         if (!clientPressInitialized) {
@@ -279,11 +277,9 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         prevVisualPressPosition = visualPressPosition;
         visualPressPosition = Mth.lerp(0.25F, visualPressPosition, target);
     }
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+    //? if forge || neoforge {
+    @OnlyIn(Dist.CLIENT)
+    //?}
     public float getPressAnimationProgress(float partialTick) {
         float interpolated = Mth.lerp(partialTick, prevVisualPressPosition, visualPressPosition);
         return Mth.clamp(interpolated, 0.0F, 1.0F);
@@ -410,10 +406,9 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
     
     // ==================== NBT ====================
     
-    //? if < 1.21.1 {
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag); // ОБЯЗАТЕЛЬНО ПЕРВЫМ
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries); // ОБЯЗАТЕЛЬНО ПЕРВЫМ
         tag.putInt("press", press);
         tag.putInt("burnTime", burnTime);
         tag.putInt("speed", speed);
@@ -422,26 +417,10 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         tag.putInt("heatState", heatState);
         tag.putInt("pressPosition", pressPosition);
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.saveAdditional(tag, registries); // ОБЯЗАТЕЛЬНО ПЕРВЫМ
-        tag.putInt("press", press);
-        tag.putInt("burnTime", burnTime);
-        tag.putInt("speed", speed);
-        tag.putBoolean("isRetracting", isRetracting);
-        tag.putInt("delay", delay);
-        tag.putInt("heatState", heatState);
-        tag.putInt("pressPosition", pressPosition);
     
-    }
-    *///?}
-    
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         press = tag.getInt("press");
         burnTime = tag.getInt("burnTime");
         speed = tag.getInt("speed");
@@ -456,27 +435,6 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         visualPressPosition = progress;
         prevVisualPressPosition = progress;
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        press = tag.getInt("press");
-        burnTime = tag.getInt("burnTime");
-        speed = tag.getInt("speed");
-        isRetracting = tag.getBoolean("isRetracting");
-        delay = tag.getInt("delay");
-        heatState = tag.getInt("heatState");
-        pressPosition = tag.getInt("pressPosition");
-
-        float progress = convertPressToProgress(); // press / (float) MAX_PRESS
-
-        clientPressInitialized = true;
-        visualPressPosition = progress;
-        prevVisualPressPosition = progress;
-    
-    }
-    *///?}
 
 
     public ItemStack getMaterialStack() {

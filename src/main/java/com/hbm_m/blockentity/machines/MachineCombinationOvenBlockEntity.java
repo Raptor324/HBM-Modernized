@@ -153,45 +153,21 @@ public class MachineCombinationOvenBlockEntity extends BaseMachineBlockEntity {
 
     // ==================== NBT ====================
 
-    //? if < 1.21.1 {
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progressTicks);
         tag.putInt("duration", currentDuration);
         tank.writeToNBT(tag, "tank");
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.saveAdditional(tag, registries);
-        tag.putInt("progress", progressTicks);
-        tag.putInt("duration", currentDuration);
-        tank.writeToNBT(tag, "tank");
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progressTicks = tag.getInt("progress");
         currentDuration = tag.contains("duration") ? Math.max(1, tag.getInt("duration")) : 1;
         tank.readFromNBT(tag, "tank");
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        progressTicks = tag.getInt("progress");
-        currentDuration = tag.contains("duration") ? Math.max(1, tag.getInt("duration")) : 1;
-        tank.readFromNBT(tag, "tank");
-    
-    }
-    *///?}
 
     // ==================== GETTERS / MENU ====================
 

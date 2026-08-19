@@ -32,10 +32,10 @@ public class RBMKPanelBlockEntity extends RBMKColumnBlockEntity {
     @Override public ColumnType getConsoleType() { return ColumnType.BLANK; }
     @Override protected boolean participatesInHeatNetwork() { return false; }
 
-    //? if < 1.21.1 {
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         if (linkedConsole != null) {
             tag.putInt("lx", linkedConsole.getX());
             tag.putInt("ly", linkedConsole.getY());
@@ -44,44 +44,15 @@ public class RBMKPanelBlockEntity extends RBMKColumnBlockEntity {
         tag.putDouble("displayValue", displayValue);
         tag.putInt("channel", channel);
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.saveAdditional(tag, registries);
-        if (linkedConsole != null) {
-            tag.putInt("lx", linkedConsole.getX());
-            tag.putInt("ly", linkedConsole.getY());
-            tag.putInt("lz", linkedConsole.getZ());
-        }
-        tag.putDouble("displayValue", displayValue);
-        tag.putInt("channel", channel);
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         if (tag.contains("lx")) {
             linkedConsole = new BlockPos(tag.getInt("lx"), tag.getInt("ly"), tag.getInt("lz"));
         }
         displayValue = tag.getDouble("displayValue");
         channel      = tag.getInt("channel");
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        if (tag.contains("lx")) {
-            linkedConsole = new BlockPos(tag.getInt("lx"), tag.getInt("ly"), tag.getInt("lz"));
-        }
-        displayValue = tag.getDouble("displayValue");
-        channel      = tag.getInt("channel");
-    
-    }
-    *///?}
 }
 

@@ -149,22 +149,16 @@ public class MachineLiquefactorBlockEntity extends BaseMachineBlockEntity implem
 
     // ==================== NBT ====================
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tank.writeToNBT(tag, "tank");
         tag.putInt("progress", progress);
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    tank.writeToNBT(tag, "tank");
-    tag.putInt("progress", progress);
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         tank.readFromNBT(tag, "tank");
         progress = tag.getInt("progress");
     }

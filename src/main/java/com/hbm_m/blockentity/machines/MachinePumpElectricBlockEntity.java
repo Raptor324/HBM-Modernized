@@ -132,6 +132,7 @@ public class MachinePumpElectricBlockEntity extends BaseMachineBlockEntity imple
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         water.writeToNBT(tag, "tank_water");
         tag.putBoolean("isOn", isOn);
         tag.putBoolean("onGround", onGround);
@@ -139,6 +140,7 @@ public class MachinePumpElectricBlockEntity extends BaseMachineBlockEntity imple
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         water.readFromNBT(tag, "tank_water");
         isOn = tag.getBoolean("isOn");
         onGround = tag.getBoolean("onGround");

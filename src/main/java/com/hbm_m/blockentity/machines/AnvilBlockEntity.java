@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.machines.anvils.AnvilBlock;
 import com.hbm_m.block.machines.anvils.AnvilTier;
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.AnvilMenu;
 import com.hbm_m.item.fekal_electric.ModBatteryItem;
@@ -39,7 +40,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
+public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider {
 
     private final ModItemStackHandler itemHandler = new ModItemStackHandler(3) {
         @Override
@@ -66,57 +67,27 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
 
     // Forge item handler capabilities removed for Fabric compilation.
 
-    //? if < 1.21.1 {
+    
+    // (устраняет вложенный stonecutter-баг в load())
     @Override
-    protected void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         // РџСЂРѕСЃС‚Рѕ СЃРѕС…СЂР°РЅСЏРµРј РІРµСЃСЊ РёРЅРІРµРЅС‚Р°СЂСЊ РєР°Рє РµСЃС‚СЊ, РІРєР»СЋС‡Р°СЏ СЃР»РѕС‚ 2
-        tag.put("inventory", itemHandler.serializeNBT());
+        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(itemHandler, registries));
 
         if (selectedRecipeId != null) {
             tag.putString("SelectedRecipe", selectedRecipeId.toString());
         }
 
-        super.saveAdditional(tag);
+        super.writeNbtData(tag, registries);
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        // РџСЂРѕСЃС‚Рѕ СЃРѕС…СЂР°РЅСЏРµРј РІРµСЃСЊ РёРЅРІРµРЅС‚Р°СЂСЊ РєР°Рє РµСЃС‚СЊ, РІРєР»СЋС‡Р°СЏ СЃР»РѕС‚ 2
-        tag.put("inventory", itemHandler.serializeNBT(registries));
-
-        if (selectedRecipeId != null) {
-            tag.putString("SelectedRecipe", selectedRecipeId.toString());
-        }
-
-        super.saveAdditional(tag, registries);
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        //? if < 1.21.1 {
-        itemHandler.deserializeNBT(tag.getCompound("inventory"));
-        //?} else {
-        /*itemHandler.deserializeNBT(registries, tag.getCompound("inventory"));
-        *///?}
-        selectedRecipeId = tag.contains("SelectedRecipe") ? 
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
+        com.hbm_m.platform.ItemStackSerialization.deserialize(itemHandler, tag.getCompound("inventory"), registries);
+        selectedRecipeId = tag.contains("SelectedRecipe") ?
             ResourceLocation.tryParse(tag.getString("SelectedRecipe")) : null;
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        itemHandler.deserializeNBT(registries, tag.getCompound("inventory"));
-        selectedRecipeId = tag.contains("SelectedRecipe") ? 
-            ResourceLocation.tryParse(tag.getString("SelectedRecipe")) : null;
-    
-    }
-    *///?}
 
     public void drops() {
         SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
@@ -806,35 +777,12 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
         NONE
     }
 
-    //? if < 1.21.1 {
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        saveAdditional(tag);
-        return tag;
-    }
-    //?} else {
-    /*@Override
-    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+    // getUpdateTag / getUpdatePacket / handleUpdateTag удалены:
+    // их семантика (super + saveAdditional / load) полностью покрывается BaseHbmBlockEntity.
 
-        CompoundTag tag = super.getUpdateTag(registries);
-        saveAdditional(tag, registries);
-        return tag;
-    
-    }
-    *///?}
-
-    @Nullable
     @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
+    public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
+        return this.itemHandler;
     }
-
-    //? if forge {
-    @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        load(tag);
-    }
-    //?}
 }
 

@@ -98,24 +98,17 @@ public class MachineAshpitBlockEntity extends BaseMachineBlockEntity {
 
     // ── NBT ─────────────────────────────────────────────────────────────────
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         for (AshType type : AshType.values()) {
             tag.putInt("ash_" + type.name(), ashLevel[type.ordinal()]);
         }
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    for (AshType type : AshType.values()) {
-    tag.putInt("ash_" + type.name(), ashLevel[type.ordinal()]);
-    }
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         for (AshType type : AshType.values()) {
             ashLevel[type.ordinal()] = tag.getInt("ash_" + type.name());
         }

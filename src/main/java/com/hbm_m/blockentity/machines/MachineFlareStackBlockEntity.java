@@ -149,27 +149,19 @@ public class MachineFlareStackBlockEntity extends BaseMachineBlockEntity impleme
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("fluidUsed", fluidUsed);
         tag.putLong("lastOutput", lastOutput);
         tank.writeToNBT(tag, "tank");
     }
 
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         fluidUsed = tag.getInt("fluidUsed");
         lastOutput = tag.getLong("lastOutput");
         tank.readFromNBT(tag, "tank");
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        fluidUsed = tag.getInt("fluidUsed");
-        lastOutput = tag.getLong("lastOutput");
-        tank.readFromNBT(tag, "tank");
-    }
-    *///?}
 
     @Override
     protected Component getDefaultName() {

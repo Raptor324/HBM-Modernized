@@ -165,6 +165,7 @@ public class MachineStirlingBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("heat", heat);
         tag.putInt("overspeed_ticks", overspeedTicks);
         tag.putBoolean("has_cog", hasCog);
@@ -172,6 +173,7 @@ public class MachineStirlingBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         heat = tag.getInt("heat");
         overspeedTicks = tag.getInt("overspeed_ticks");
         hasCog = !tag.contains("has_cog") || tag.getBoolean("has_cog");

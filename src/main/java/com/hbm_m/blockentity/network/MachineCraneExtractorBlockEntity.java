@@ -253,24 +253,17 @@ public class MachineCraneExtractorBlockEntity extends BaseMachineBlockEntity imp
 
     // ── NBT ─────────────────────────────────────────────────────────────────
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putBoolean("isWhitelist", isWhitelist);
         tag.putBoolean("maxEject", maxEject);
         matcher.writeToNBT(tag);
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    tag.putBoolean("isWhitelist", isWhitelist);
-    tag.putBoolean("maxEject", maxEject);
-    matcher.writeToNBT(tag);
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         isWhitelist = tag.getBoolean("isWhitelist");
         maxEject = tag.getBoolean("maxEject");
         matcher.readFromNBT(tag);

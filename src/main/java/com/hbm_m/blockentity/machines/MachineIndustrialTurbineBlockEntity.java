@@ -31,10 +31,9 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 
 /**
@@ -79,10 +78,6 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
     private LazyOptional<IFluidHandler> lazySpentHandler;
     //?}
 
-    //? if fabric {
-    /*private final Storage<FluidVariant> steamStorage;
-    private final Storage<FluidVariant> spentStorage;
-    *///?}
 
     private boolean isActive = false;
     private float anim = 0.0F;
@@ -101,10 +96,6 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
         //? if forge {
         this.lazySpentHandler = LazyOptional.empty();
         //?}
-        //? if fabric {
-        /*this.steamStorage = new TankStorage(steamTank, true, false);
-        this.spentStorage = new TankStorage(spentSteamTank, false, true);
-        *///?}
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineIndustrialTurbineBlockEntity be) {
@@ -263,11 +254,9 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
 
     private static final String TURBINE_LOOP_SOUND_FACTORY = "com.hbm_m.client.sound.TurbineLoopSoundFactory";
 
-    //? if forge {
+    //? if forge || neoforge {
     @OnlyIn(Dist.CLIENT)
     //?}
-    //? if fabric {
-    /*@Environment(EnvType.CLIENT)*///?}
     private Object createLoopingSoundReflect(SoundEvent sound) {
         try {
             return Class.forName(TURBINE_LOOP_SOUND_FACTORY)
@@ -284,10 +273,9 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
 
     // --- NBT ---
 
-    //? if < 1.21.1 {
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         steamTank.writeToNBT(tag, "steam");
         spentSteamTank.writeToNBT(tag, "spent");
         tag.putBoolean("active", isActive);
@@ -297,27 +285,10 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
         tag.putLong("maxPower", maxPower);
         tag.putDouble("spin", spin);
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.saveAdditional(tag, registries);
-        steamTank.writeToNBT(tag, "steam");
-        spentSteamTank.writeToNBT(tag, "spent");
-        tag.putBoolean("active", isActive);
-        tag.putFloat("anim", anim);
-        tag.putFloat("prevAnim", prevAnim);
-        tag.putLong("flywheelEnergy", flywheelEnergy);
-        tag.putLong("maxPower", maxPower);
-        tag.putDouble("spin", spin);
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         steamTank.readFromNBT(tag, "steam");
         spentSteamTank.readFromNBT(tag, "spent");
         isActive = tag.getBoolean("active");
@@ -327,22 +298,6 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
         maxPower = tag.getLong("maxPower");
         spin = tag.getDouble("spin");
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        steamTank.readFromNBT(tag, "steam");
-        spentSteamTank.readFromNBT(tag, "spent");
-        isActive = tag.getBoolean("active");
-        anim = tag.getFloat("anim");
-        prevAnim = tag.getFloat("prevAnim");
-        flywheelEnergy = tag.getLong("flywheelEnergy");
-        maxPower = tag.getLong("maxPower");
-        spin = tag.getDouble("spin");
-    
-    }
-    *///?}
 
     // --- Capabilities ---
 
@@ -474,99 +429,11 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
     }
     //?}
 
-    //? if fabric {
-    /*@Nullable
-    public Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
-        // UP: spent out, иначе steam in
-        if (side == Direction.UP) return spentStorage;
-        return steamStorage;
-    }
-    *///?}
-
 
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
-        //? if < 1.21.1 {
         return new net.minecraft.world.phys.AABB(
-                worldPosition.offset(-2, -1, -4),
-                worldPosition.offset(3, 4, 8)
+            worldPosition.getX() - 2, worldPosition.getY() - 1, worldPosition.getZ() - 4,
+            worldPosition.getX() + 3, worldPosition.getY() + 4, worldPosition.getZ() + 8
         );
-        //?} else {
-        /*// 1.21.1: AABB(BlockPos, BlockPos) удалён — Vec3.atLowerCornerOf сохраняет целочисленную семантику углов.
-        return new net.minecraft.world.phys.AABB(
-                net.minecraft.world.phys.Vec3.atLowerCornerOf(worldPosition.offset(-2, -1, -4)),
-                net.minecraft.world.phys.Vec3.atLowerCornerOf(worldPosition.offset(3, 4, 8))
-        );
-        *///?}
     }
-
-    //? if fabric {
-    /*@SuppressWarnings("UnstableApiUsage")
-    private static final class TankStorage extends SnapshotParticipant<TankStorage.Snapshot>
-            implements SingleSlotStorage<FluidVariant> {
-
-        private static final long DROPLETS_PER_MB = 81L;
-
-        private final FluidTank tank;
-        private final boolean allowInsert;
-        private final boolean allowExtract;
-
-        private TankStorage(FluidTank tank, boolean allowInsert, boolean allowExtract) {
-            this.tank = tank;
-            this.allowInsert = allowInsert;
-            this.allowExtract = allowExtract;
-        }
-
-        @Override
-        public long insert(FluidVariant resource, long maxAmount, TransactionContext transaction) {
-            if (!allowInsert) return 0;
-            if (resource.isBlank() || maxAmount <= 0) return 0;
-
-            long spaceMb = tank.getMaxFill() - tank.getFill();
-            if (spaceMb <= 0) return 0;
-
-            if (tank.getFill() > 0 && tank.getTankType() != resource.getFluid()) {
-                return 0;
-            }
-
-            long toFillMb = Math.min(spaceMb, maxAmount / DROPLETS_PER_MB);
-            if (toFillMb <= 0) return 0;
-
-            updateSnapshots(transaction);
-            if (tank.getTankType() == net.minecraft.world.level.material.Fluids.EMPTY) {
-                tank.setTankType(resource.getFluid());
-            }
-            tank.fill(tank.getFill() + (int) toFillMb);
-            return toFillMb * DROPLETS_PER_MB;
-        }
-
-        @Override
-        public long extract(FluidVariant resource, long maxAmount, TransactionContext transaction) {
-            if (!allowExtract) return 0;
-            if (resource.isBlank() || maxAmount <= 0) return 0;
-            if (tank.getFill() <= 0) return 0;
-            if (tank.getTankType() != resource.getFluid()) return 0;
-
-            long toDrainMb = Math.min(tank.getFill(), (int) (maxAmount / DROPLETS_PER_MB));
-            if (toDrainMb <= 0) return 0;
-
-            updateSnapshots(transaction);
-            tank.fill(tank.getFill() - (int) toDrainMb);
-            return toDrainMb * DROPLETS_PER_MB;
-        }
-
-        @Override public boolean isResourceBlank() { return tank.getFill() <= 0 || tank.getTankType() == net.minecraft.world.level.material.Fluids.EMPTY; }
-        @Override public FluidVariant getResource() { return isResourceBlank() ? FluidVariant.blank() : FluidVariant.of(tank.getTankType()); }
-        @Override public long getAmount() { return (long) tank.getFill() * DROPLETS_PER_MB; }
-        @Override public long getCapacity() { return (long) tank.getMaxFill() * DROPLETS_PER_MB; }
-
-        @Override protected Snapshot createSnapshot() { return new Snapshot(tank.getTankType(), tank.getFill()); }
-        @Override protected void readSnapshot(Snapshot snapshot) {
-            tank.setTankType(snapshot.type);
-            tank.fill(snapshot.amountMb);
-        }
-        @Override protected void onFinalCommit() {}
-
-        private record Snapshot(net.minecraft.world.level.material.Fluid type, int amountMb) {}
-    }
-    *///?}
 }

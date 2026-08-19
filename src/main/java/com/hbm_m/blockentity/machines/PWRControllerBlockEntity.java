@@ -514,11 +514,11 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
 
         tag.putInt("portCount", ports.size());
         for (int i = 0; i < ports.size(); i++) {
-            tag.put("port" + i, NbtUtils.writeBlockPos(ports.get(i)));
+            com.hbm_m.platform.PlatformHooks.writeBlockPos(tag, "port" + i, ports.get(i));
         }
         tag.putInt("rodPosCount", rods.size());
         for (int i = 0; i < rods.size(); i++) {
-            tag.put("rodPos" + i, NbtUtils.writeBlockPos(rods.get(i)));
+            com.hbm_m.platform.PlatformHooks.writeBlockPos(tag, "rodPos" + i, rods.get(i));
         }
     }
 

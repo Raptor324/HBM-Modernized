@@ -80,80 +80,17 @@ public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements 
     @Override public RBMKType getRBMKType()      { return RBMKType.OTHER; }
     @Override public ColumnType getConsoleType() { return ColumnType.STORAGE; }
 
-    //? if < 1.21.1 {
-    //? if < 1.21.1 {
-@Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        ListTag list = new ListTag();
-        for (int i = 0; i < SLOTS; i++) {
-            if (!slots[i].isEmpty()) {
-                CompoundTag s = new CompoundTag();
-                s.putByte("s", (byte) i);
-                s.put("item", safeItemSave(slots[i]));
-                list.add(s);
-            }
-        }
-        tag.put("slots", list);
-    }
-//?} else {
-/*@Override
-protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.saveAdditional(tag, registries);
-        ListTag list = new ListTag();
-        for (int i = 0; i < SLOTS; i++) {
-            if (!slots[i].isEmpty()) {
-                CompoundTag s = new CompoundTag();
-                s.putByte("s", (byte) i);
-                s.put("item", safeItemSave(slots[i]));
-                list.add(s);
-            }
-        }
-        tag.put("slots", list);
     
-}
-*///?}
-
-    //? if < 1.21.1 {
+    // (консолидировала задвоенные stonecutter-кластеры save/load)
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        for (int i = 0; i < SLOTS; i++) slots[i] = ItemStack.EMPTY;
-        ListTag list = tag.getList("slots", 10);
-        for (int i = 0; i < list.size(); i++) {
-            CompoundTag s = list.getCompound(i);
-            int idx = s.getByte("s") & 0xFF;
-            if (idx < SLOTS && s.contains("item"))
-                slots[idx] = ItemStack.of(s.getCompound("item"));
-        }
-    }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        for (int i = 0; i < SLOTS; i++) slots[i] = ItemStack.EMPTY;
-        ListTag list = tag.getList("slots", 10);
-        for (int i = 0; i < list.size(); i++) {
-            CompoundTag s = list.getCompound(i);
-            int idx = s.getByte("s") & 0xFF;
-            if (idx < SLOTS && s.contains("item"))
-                slots[idx] = ItemStack.of(s.getCompound("item"));
-        }
-    
-    }
-    *///?}
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         ListTag list = new ListTag();
         for (int i = 0; i < SLOTS; i++) {
             if (!slots[i].isEmpty()) {
                 CompoundTag s = new CompoundTag();
                 s.putByte("s", (byte) i);
-                s.put("item", safeItemSave(slots[i], registries));
+                s.put("item", com.hbm_m.platform.PlatformHooks.safeItemSave(slots[i], registries));
                 list.add(s);
             }
         }
@@ -161,17 +98,16 @@ protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.P
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         for (int i = 0; i < SLOTS; i++) slots[i] = ItemStack.EMPTY;
         ListTag list = tag.getList("slots", 10);
         for (int i = 0; i < list.size(); i++) {
             CompoundTag s = list.getCompound(i);
             int idx = s.getByte("s") & 0xFF;
             if (idx < SLOTS && s.contains("item"))
-                slots[idx] = ItemStack.parseOptional(registries, s.getCompound("item"));
+                slots[idx] = com.hbm_m.platform.PlatformHooks.itemStackOf(s.getCompound("item"), registries);
         }
     }
-    *///?}
 }
 

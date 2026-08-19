@@ -236,6 +236,7 @@ public class MachineEPressBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("press", press);
         tag.putBoolean("isRetracting", isRetracting);
         tag.putInt("delay", delay);
@@ -244,6 +245,7 @@ public class MachineEPressBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         press = tag.getInt("press");
         isRetracting = tag.getBoolean("isRetracting");
         delay = tag.getInt("delay");

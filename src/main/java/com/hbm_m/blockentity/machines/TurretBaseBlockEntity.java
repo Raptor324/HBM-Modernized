@@ -506,12 +506,7 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity {
         var shell = com.hbm_m.entity.projectile.TurretRocketEntity.create(level,
                 muzzle.x, muzzle.y, muzzle.z, target, stats.damage, explosionRadiusFor(ammoItem), ammoItem);
         level.addFreshEntity(shell);
-        //? if < 1.21.1 {
-        level.playSound(null, pos, SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 1.0F, 0.7F);
-        //?} else {
-        /*// 1.21.1: SoundEvents.GENERIC_EXPLODE — это Holder<SoundEvent>, нужен .value() для playSound(BlockPos, SoundEvent, ...).
-        level.playSound(null, pos, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 1.0F, 0.7F);
-        *///?}
+        com.hbm_m.platform.PlatformHooks.playSound(level, pos, SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 1.0F, 0.7F);
         setChanged();
     }
 
@@ -677,60 +672,33 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity {
 
     public int getFireMode() { return fireMode; }
 
-    //? if < 1.21.1 {
-    @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.putInt("cooldown", cooldown);
-        tag.putFloat("yaw", yaw);
-        tag.putFloat("prev_yaw", prevYaw);
-        tag.putFloat("pitch", pitch);
-        tag.putFloat("prev_pitch", prevPitch);
-        tag.putBoolean("is_on", isOn);
-        tag.putBoolean("target_players", targetPlayers);
-        tag.putBoolean("target_animals", targetAnimals);
-        tag.putBoolean("target_mobs", targetMobs);
-        tag.putBoolean("target_machines", targetMachines);
-        tag.putFloat("spin", spin);
-        tag.putFloat("barrel_spin_angle", barrelSpinAngle);
-        tag.putInt("howard_loaded", howardLoaded);
-        tag.putInt("howard_reload_cooldown", howardReloadCooldown);
-        tag.putInt("richard_loaded", richardLoaded);
-        tag.putInt("richard_reload_cooldown", richardReloadCooldown);
-        tag.putFloat("himars_crane_progress", himarsCraneProgress);
-        tag.putInt("fire_mode", fireMode);
-    }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.saveAdditional(tag, registries);
-        tag.putInt("cooldown", cooldown);
-        tag.putFloat("yaw", yaw);
-        tag.putFloat("prev_yaw", prevYaw);
-        tag.putFloat("pitch", pitch);
-        tag.putFloat("prev_pitch", prevPitch);
-        tag.putBoolean("is_on", isOn);
-        tag.putBoolean("target_players", targetPlayers);
-        tag.putBoolean("target_animals", targetAnimals);
-        tag.putBoolean("target_mobs", targetMobs);
-        tag.putBoolean("target_machines", targetMachines);
-        tag.putFloat("spin", spin);
-        tag.putFloat("barrel_spin_angle", barrelSpinAngle);
-        tag.putInt("howard_loaded", howardLoaded);
-        tag.putInt("howard_reload_cooldown", howardReloadCooldown);
-        tag.putInt("richard_loaded", richardLoaded);
-        tag.putInt("richard_reload_cooldown", richardReloadCooldown);
-        tag.putFloat("himars_crane_progress", himarsCraneProgress);
-        tag.putInt("fire_mode", fireMode);
     
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        tag.putInt("cooldown", cooldown);
+        tag.putFloat("yaw", yaw);
+        tag.putFloat("prev_yaw", prevYaw);
+        tag.putFloat("pitch", pitch);
+        tag.putFloat("prev_pitch", prevPitch);
+        tag.putBoolean("is_on", isOn);
+        tag.putBoolean("target_players", targetPlayers);
+        tag.putBoolean("target_animals", targetAnimals);
+        tag.putBoolean("target_mobs", targetMobs);
+        tag.putBoolean("target_machines", targetMachines);
+        tag.putFloat("spin", spin);
+        tag.putFloat("barrel_spin_angle", barrelSpinAngle);
+        tag.putInt("howard_loaded", howardLoaded);
+        tag.putInt("howard_reload_cooldown", howardReloadCooldown);
+        tag.putInt("richard_loaded", richardLoaded);
+        tag.putInt("richard_reload_cooldown", richardReloadCooldown);
+        tag.putFloat("himars_crane_progress", himarsCraneProgress);
+        tag.putInt("fire_mode", fireMode);
+    }
+
+    @Override
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         cooldown = tag.getInt("cooldown");
         yaw = tag.getFloat("yaw");
         prevYaw = tag.getFloat("prev_yaw");
@@ -752,34 +720,6 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity {
         prevHimarsCraneProgress = himarsCraneProgress;
         fireMode = tag.getInt("fire_mode");
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        cooldown = tag.getInt("cooldown");
-        yaw = tag.getFloat("yaw");
-        prevYaw = tag.getFloat("prev_yaw");
-        pitch = tag.getFloat("pitch");
-        prevPitch = tag.getFloat("prev_pitch");
-        isOn = !tag.contains("is_on") || tag.getBoolean("is_on");
-        targetPlayers = tag.getBoolean("target_players");
-        targetAnimals = tag.getBoolean("target_animals");
-        targetMobs = !tag.contains("target_mobs") || tag.getBoolean("target_mobs");
-        targetMachines = !tag.contains("target_machines") || tag.getBoolean("target_machines");
-        spin = tag.getFloat("spin");
-        barrelSpinAngle = tag.getFloat("barrel_spin_angle");
-        prevBarrelSpinAngle = barrelSpinAngle;
-        howardLoaded = tag.getInt("howard_loaded");
-        howardReloadCooldown = tag.getInt("howard_reload_cooldown");
-        richardLoaded = tag.getInt("richard_loaded");
-        richardReloadCooldown = tag.getInt("richard_reload_cooldown");
-        himarsCraneProgress = tag.getFloat("himars_crane_progress");
-        prevHimarsCraneProgress = himarsCraneProgress;
-        fireMode = tag.getInt("fire_mode");
-    
-    }
-    *///?}
 
     @Override
     protected Component getDefaultName() {

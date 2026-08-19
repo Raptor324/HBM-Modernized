@@ -59,11 +59,8 @@ public class MachineMassStorageBlockEntity extends BaseMachineBlockEntity {
         }
 
         ItemStack output = be.inventory.getStackInSlot(SLOT_OUTPUT);
-        //? if < 1.21.1 {
-        int outputSpace = output.isEmpty() ? type.getMaxStackSize() : (output.getItem() == type ? type.getMaxStackSize() - output.getCount() : 0);
-        //?} else {
-        /*int outputSpace = output.isEmpty() ? type.getMaxStackSize(ItemStack.EMPTY) : (output.getItem() == type ? type.getMaxStackSize(ItemStack.EMPTY) - output.getCount() : 0);
-        *///?}
+        int maxStack = com.hbm_m.platform.ItemHooks.getItemMaxStackSize(type);
+        int outputSpace = output.isEmpty() ? maxStack : (output.getItem() == type ? maxStack - output.getCount() : 0);
         if (outputSpace > 0 && be.stockpile > 0) {
             int toRelease = (int) Math.min(outputSpace, be.stockpile);
             if (toRelease > 0) {
@@ -110,20 +107,15 @@ public class MachineMassStorageBlockEntity extends BaseMachineBlockEntity {
         return com.hbm_m.inventory.menu.MachineMassStorageMenu.create(id, inventory, this);
     }
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putLong("stockpile", stockpile);
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    tag.putLong("stockpile", stockpile);
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         stockpile = tag.getLong("stockpile");
     }
 }

@@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
  *   sideways flow from channels
  * - casts once the basin is completely full, after a cool-off period
  */
-public class MachineFoundryBasinBlockEntity extends BlockEntity implements ICrucibleAcceptor {
+public class MachineFoundryBasinBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements ICrucibleAcceptor {
 
     /** Original: cooloff starts at 100 and resets to 200 after each cast. */
     public static final int COOLOFF_TIME = 200;
@@ -209,76 +209,29 @@ public class MachineFoundryBasinBlockEntity extends BlockEntity implements ICruc
 
     /* ── NBT / sync ─────────────────────────────────────────────────────── */
 
-    //? if < 1.21.1 {
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         if (type != null) tag.putString("mat_type", type.name);
         tag.putInt("mat_amount", amount);
-        if (!moldSlot.isEmpty())   tag.put("mold",   moldSlot.save(new CompoundTag()));
-        if (!outputSlot.isEmpty()) tag.put("output", outputSlot.save(new CompoundTag()));
+        if (!moldSlot.isEmpty())   tag.put("mold",   com.hbm_m.platform.PlatformHooks.saveItemStack(moldSlot, new CompoundTag(), registries));
+        if (!outputSlot.isEmpty()) tag.put("output", com.hbm_m.platform.PlatformHooks.saveItemStack(outputSlot, new CompoundTag(), registries));
         tag.putInt("cooloff", cooloff);
         tag.putFloat("fillLevel", fillLevel);
         tag.putInt("fillColor", fillColor);
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.saveAdditional(tag, registries);
-        if (type != null) tag.putString("mat_type", type.name);
-        tag.putInt("mat_amount", amount);
-        if (!moldSlot.isEmpty())   tag.put("mold",   PlatformHooks.saveItemStack(moldSlot, new CompoundTag(), registries));
-        if (!outputSlot.isEmpty()) tag.put("output", PlatformHooks.saveItemStack(outputSlot, new CompoundTag(), registries));
-        tag.putInt("cooloff", cooloff);
-        tag.putFloat("fillLevel", fillLevel);
-        tag.putInt("fillColor", fillColor);
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         if (tag.contains("mat_type")) type = MaterialType.byName(tag.getString("mat_type"));
         else type = null;
         amount = tag.getInt("mat_amount");
-        moldSlot   = tag.contains("mold")   ? ItemStack.of(tag.getCompound("mold"))   : ItemStack.EMPTY;
-        outputSlot = tag.contains("output") ? ItemStack.of(tag.getCompound("output")) : ItemStack.EMPTY;
+        moldSlot   = tag.contains("mold")   ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("mold"), registries)   : ItemStack.EMPTY;
+        outputSlot = tag.contains("output") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("output"), registries) : ItemStack.EMPTY;
         cooloff = tag.contains("cooloff") ? tag.getInt("cooloff") : 100;
         fillLevel = tag.getFloat("fillLevel");
         fillColor = tag.getInt("fillColor");
-    }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        if (tag.contains("mat_type")) type = MaterialType.byName(tag.getString("mat_type"));
-        else type = null;
-        amount = tag.getInt("mat_amount");
-        moldSlot   = tag.contains("mold")   ? PlatformHooks.itemStackOf(tag.getCompound("mold"), registries)   : ItemStack.EMPTY;
-        outputSlot = tag.contains("output") ? PlatformHooks.itemStackOf(tag.getCompound("output"), registries) : ItemStack.EMPTY;
-        cooloff = tag.contains("cooloff") ? tag.getInt("cooloff") : 100;
-        fillLevel = tag.getFloat("fillLevel");
-        fillColor = tag.getInt("fillColor");
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
-    @Override
-    public CompoundTag getUpdateTag() { CompoundTag t = super.getUpdateTag(); saveAdditional(t); return t; }
-    //?} else {
-    /*@Override
-    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
- CompoundTag t = super.getUpdateTag(registries); saveAdditional(t, registries); return t; 
-    }
-    *///?}
-
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
     }
 }

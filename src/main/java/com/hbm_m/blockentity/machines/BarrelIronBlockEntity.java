@@ -62,11 +62,7 @@ public class BarrelIronBlockEntity extends MachineFluidTankBlockEntity {
             newState = newState.setValue(BarrelTankBlock.FACING, oldState.getValue(BarrelTankBlock.FACING));
         }
 
-        //? if < 1.21.1 {
-        CompoundTag savedTag = saveWithoutMetadata();
-        //?} else {
-        /*CompoundTag savedTag = saveWithoutMetadata(level.registryAccess());
-        *///?}
+        CompoundTag savedTag = PlatformHooks.saveBlockEntityWithoutMetadata(this, level.registryAccess());
         level.setBlock(worldPosition, newState, 3);
 
         BlockEntity newBe = level.getBlockEntity(worldPosition);

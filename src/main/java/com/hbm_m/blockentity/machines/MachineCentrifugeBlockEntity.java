@@ -140,21 +140,7 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
     }
 
     private boolean canProcess() {
-        ItemStack input = inventory.getStackInSlot(INPUT_SLOT);
-        if (input.isEmpty() || level == null) {
-            return false;
-        }
-
-        // 1.21.1: getRecipeFor требует RecipeInput, а SimpleContainer им не является —
-        // используем устоявшийся в проекте паттерн: getAllRecipes + matchesRecipe(RecipeInputWrapper).
-        com.hbm_m.platform.recipe.RecipeInputWrapper wrapper =
-                new com.hbm_m.platform.recipe.RecipeInputWrapper(new net.minecraft.world.SimpleContainer(input));
-        com.hbm_m.recipe.CentrifugeRecipe recipe = com.hbm_m.platform.recipe.RecipeHooks
-                .getAllRecipes(level, com.hbm_m.recipe.ModRecipes.CENTRIFUGE_TYPE.get()).stream()
-                .filter(r -> r.matchesRecipe(wrapper, level))
-                .findFirst()
-                .orElse(null);
-                
+        var recipe = findMatchingRecipe();
         if (recipe == null) {
             return false;
         }
@@ -184,22 +170,8 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
         return true;
     }
 
-   private void finishCycle() {
-        ItemStack input = inventory.getStackInSlot(INPUT_SLOT);
-        if (input.isEmpty() || level == null) {
-            return;
-        }
-
-        // 1.21.1: getRecipeFor требует RecipeInput, а SimpleContainer им не является —
-        // используем устоявшийся в проекте паттерн: getAllRecipes + matchesRecipe(RecipeInputWrapper).
-        com.hbm_m.platform.recipe.RecipeInputWrapper wrapper =
-                new com.hbm_m.platform.recipe.RecipeInputWrapper(new net.minecraft.world.SimpleContainer(input));
-        com.hbm_m.recipe.CentrifugeRecipe recipe = com.hbm_m.platform.recipe.RecipeHooks
-                .getAllRecipes(level, com.hbm_m.recipe.ModRecipes.CENTRIFUGE_TYPE.get()).stream()
-                .filter(r -> r.matchesRecipe(wrapper, level))
-                .findFirst()
-                .orElse(null);
-                
+    private void finishCycle() {
+        var recipe = findMatchingRecipe();
         if (recipe == null) {
             return;
         }
@@ -219,7 +191,25 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
             }
         }
 
-        input.shrink(1);
+        inventory.getStackInSlot(INPUT_SLOT).shrink(1);
+    }
+
+    @Nullable
+    private com.hbm_m.recipe.CentrifugeRecipe findMatchingRecipe() {
+        ItemStack input = inventory.getStackInSlot(INPUT_SLOT);
+        if (input.isEmpty() || level == null) {
+            return null;
+        }
+
+        // 1.21.1: getRecipeFor требует RecipeInput, а SimpleContainer им не является —
+        // используем устоявшийся в проекте паттерн: getAllRecipes + matchesRecipe(RecipeInputWrapper).
+        com.hbm_m.platform.recipe.RecipeInputWrapper wrapper =
+                new com.hbm_m.platform.recipe.RecipeInputWrapper(new net.minecraft.world.SimpleContainer(input));
+        return com.hbm_m.platform.recipe.RecipeHooks
+                .getAllRecipes(level, com.hbm_m.recipe.ModRecipes.CENTRIFUGE_TYPE.get()).stream()
+                .filter(r -> r.matchesRecipe(wrapper, level))
+                .findFirst()
+                .orElse(null);
     }
 
     private void chargeFromBattery() {

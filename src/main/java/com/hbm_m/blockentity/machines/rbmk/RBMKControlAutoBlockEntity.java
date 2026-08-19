@@ -86,34 +86,20 @@ public class RBMKControlAutoBlockEntity extends RBMKControlBlockEntity {
 
     // ─── NBT ─────────────────────────────────────────────────────────────────
 
-    //? if < 1.21.1 {
-    @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.putInt("function",    function.ordinal());
-        tag.putDouble("levelLower", levelLower);
-        tag.putDouble("levelUpper", levelUpper);
-        tag.putDouble("heatLower",  heatLower);
-        tag.putDouble("heatUpper",  heatUpper);
-    }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.saveAdditional(tag, registries);
-        tag.putInt("function",    function.ordinal());
-        tag.putDouble("levelLower", levelLower);
-        tag.putDouble("levelUpper", levelUpper);
-        tag.putDouble("heatLower",  heatLower);
-        tag.putDouble("heatUpper",  heatUpper);
     
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        tag.putInt("function",    function.ordinal());
+        tag.putDouble("levelLower", levelLower);
+        tag.putDouble("levelUpper", levelUpper);
+        tag.putDouble("heatLower",  heatLower);
+        tag.putDouble("heatUpper",  heatUpper);
+    }
+
+    @Override
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         if (tag.contains("function"))
             function = RBMKFunction.values()[Mth.clamp(tag.getInt("function"), 0, RBMKFunction.values().length - 1)];
         levelLower = tag.getDouble("levelLower");
@@ -121,20 +107,6 @@ public class RBMKControlAutoBlockEntity extends RBMKControlBlockEntity {
         heatLower  = tag.getDouble("heatLower");
         heatUpper  = tag.getDouble("heatUpper");
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        if (tag.contains("function"))
-            function = RBMKFunction.values()[Mth.clamp(tag.getInt("function"), 0, RBMKFunction.values().length - 1)];
-        levelLower = tag.getDouble("levelLower");
-        levelUpper = tag.getDouble("levelUpper");
-        heatLower  = tag.getDouble("heatLower");
-        heatUpper  = tag.getDouble("heatUpper");
-    
-    }
-    *///?}
 
     public enum RBMKFunction { LINEAR, QUAD_UP, QUAD_DOWN }
 }

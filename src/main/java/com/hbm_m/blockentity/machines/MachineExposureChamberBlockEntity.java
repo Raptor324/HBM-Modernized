@@ -151,28 +151,19 @@ public class MachineExposureChamberBlockEntity extends BaseMachineBlockEntity {
 
     // ==================== NBT ====================
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progress);
         tag.putInt("savedParticles", savedParticles);
         if (cachedParticle != null) {
             tag.putString("cachedParticle", net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(cachedParticle).toString());
         }
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    tag.putInt("progress", progress);
-    tag.putInt("savedParticles", savedParticles);
-    if (cachedParticle != null) {
-    tag.putString("cachedParticle", net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(cachedParticle).toString());
-    }
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progress = tag.getInt("progress");
         savedParticles = tag.getInt("savedParticles");
         cachedParticle = tag.contains("cachedParticle")

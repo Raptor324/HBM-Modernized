@@ -382,34 +382,21 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
         return Math.min(15, Math.max(0, (int) Math.round(frac)));
     }
 
-    //? if < 1.21.1 {
-    @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.putInt("modeOnNoSignal", modeOnNoSignal);
-        tag.putInt("modeOnSignal", modeOnSignal);
-        tag.putInt("priority", priority.ordinal());
-        tag.putLong("energyDelta", energyDelta);
-        tag.putLong("lastEnergySample", lastEnergySample);
-    }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.saveAdditional(tag, registries);
-        tag.putInt("modeOnNoSignal", modeOnNoSignal);
-        tag.putInt("modeOnSignal", modeOnSignal);
-        tag.putInt("priority", priority.ordinal());
-        tag.putLong("energyDelta", energyDelta);
-        tag.putLong("lastEnergySample", lastEnergySample);
     
-    }
-    *///?}
-
-    //? if < 1.21.1 {
+    // (кастомный лёгкий getUpdateTag ниже сохранён как есть)
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        tag.putInt("modeOnNoSignal", modeOnNoSignal);
+        tag.putInt("modeOnSignal", modeOnSignal);
+        tag.putInt("priority", priority.ordinal());
+        tag.putLong("energyDelta", energyDelta);
+        tag.putLong("lastEnergySample", lastEnergySample);
+    }
+
+    @Override
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         modeOnNoSignal = tag.getInt("modeOnNoSignal");
         modeOnSignal = tag.getInt("modeOnSignal");
         if (tag.contains("priority")) {
@@ -425,67 +412,18 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
         }
         *///?}
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        modeOnNoSignal = tag.getInt("modeOnNoSignal");
-        modeOnSignal = tag.getInt("modeOnSignal");
-        if (tag.contains("priority")) {
-            int p = tag.getInt("priority");
-            IEnergyReceiver.Priority[] vals = IEnergyReceiver.Priority.values();
-            priority = vals[Math.max(0, Math.min(p, vals.length - 1))];
-        }
-        energyDelta = tag.getLong("energyDelta");
-        lastEnergySample = tag.getLong("lastEnergySample");
-        //? if fabric {
-        /^if (level != null && level.isClientSide) {
-            com.hbm_m.client.render.DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
-        }
-        ^///?}
-    
-    }
-    *///?}
 
     @Override
     public ClientboundBlockEntityDataPacket getUpdatePacket() {
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
-    //? if < 1.21.1 {
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        tag.putInt("modeOnNoSignal", modeOnNoSignal);
-        tag.putInt("modeOnSignal", modeOnSignal);
-        tag.putInt("priority", priority.ordinal());
-        return tag;
-    }
-    //?} else {
-    /*@Override
-    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
-
-        CompoundTag tag = super.getUpdateTag(registries);
-        tag.putInt("modeOnNoSignal", modeOnNoSignal);
-        tag.putInt("modeOnSignal", modeOnSignal);
-        tag.putInt("priority", priority.ordinal());
-        return tag;
-    
-    }
-    *///?}
-
     @Override
     public AABB getRenderBoundingBox() {
-        //? if < 1.21.1 {
-        return new AABB(worldPosition.offset(-1, 0, -1), worldPosition.offset(3, 3, 3));
-        //?} else {
-        /*// 1.21.1: AABB(BlockPos, BlockPos) удалён — используем Vec3.atLowerCornerOf для сохранения семантики.
         return new AABB(
-                net.minecraft.world.phys.Vec3.atLowerCornerOf(worldPosition.offset(-1, 0, -1)),
-                net.minecraft.world.phys.Vec3.atLowerCornerOf(worldPosition.offset(3, 3, 3))
+            worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
+            worldPosition.getX() + 3, worldPosition.getY() + 3, worldPosition.getZ() + 3
         );
-        *///?}
     }
 
     @Override

@@ -81,33 +81,21 @@ public abstract class RBMKControlBlockEntity extends RBMKColumnBlockEntity imple
         return d;
     }
 
-    //? if < 1.21.1 {
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putDouble("level", level);
         tag.putDouble("lastLevel", lastLevel);
         tag.putDouble("targetLevel", targetLevel);
         tag.putShort("color", color);
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.saveAdditional(tag, registries);
-        tag.putDouble("level", level);
-        tag.putDouble("targetLevel", targetLevel);
-        tag.putShort("color", color);
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         level       = tag.getDouble("level");
-        // lastLevel was never sent to the client before (this same saveAdditional/load pair
+        // lastLevel was never sent to the client before (this same save/load pair
         // backs both disk NBT and the per-tick network sync packet) - the renderer's
         // level/lastLevel partial-tick interpolation was lerping toward a client-side value
         // that never updated, then snapping back to it at every tick boundary. That snap-back,
@@ -116,16 +104,5 @@ public abstract class RBMKControlBlockEntity extends RBMKColumnBlockEntity imple
         targetLevel = tag.getDouble("targetLevel");
         color       = tag.getShort("color");
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        level       = tag.getDouble("level");
-        targetLevel = tag.getDouble("targetLevel");
-        color       = tag.getShort("color");
-    
-    }
-    *///?}
 }
 

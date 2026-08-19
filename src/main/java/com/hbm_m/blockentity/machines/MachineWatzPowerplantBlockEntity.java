@@ -377,9 +377,9 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
 
     // ── NBT ───────────────────────────────────────────────────────────────
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         CompoundTag ct = new CompoundTag(); coolantTank.writeToNBT(ct, "coolant"); tag.put("CoolantTank", ct);
         CompoundTag ht = new CompoundTag(); coolantHotTank.writeToNBT(ht, "coolantHot"); tag.put("CoolantHotTank", ht);
         CompoundTag wt = new CompoundTag(); wasteTank.writeToNBT(wt, "waste"); tag.put("WasteTank", wt);
@@ -389,22 +389,10 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
         tag.putBoolean("isOn", isOn);
         tag.putBoolean("redstonePowered", redstonePowered);
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    CompoundTag ct = new CompoundTag(); coolantTank.writeToNBT(ct, "coolant"); tag.put("CoolantTank", ct);
-    CompoundTag ht = new CompoundTag(); coolantHotTank.writeToNBT(ht, "coolantHot"); tag.put("CoolantHotTank", ht);
-    CompoundTag wt = new CompoundTag(); wasteTank.writeToNBT(wt, "waste"); tag.put("WasteTank", wt);
-    tag.putDouble("heat", heat);
-    tag.putDouble("fluxLastBase", fluxLastBase);
-    tag.putDouble("fluxLastReaction", fluxLastReaction);
-    tag.putBoolean("isOn", isOn);
-    tag.putBoolean("redstonePowered", redstonePowered);
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         if (tag.contains("CoolantTank")) coolantTank.readFromNBT(tag.getCompound("CoolantTank"), "coolant");
         if (tag.contains("CoolantHotTank")) coolantHotTank.readFromNBT(tag.getCompound("CoolantHotTank"), "coolantHot");
         if (tag.contains("WasteTank")) wasteTank.readFromNBT(tag.getCompound("WasteTank"), "waste");

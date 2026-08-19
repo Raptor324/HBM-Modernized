@@ -232,9 +232,9 @@ public class MachineTurbineGasBlockEntity extends BaseMachineBlockEntity impleme
 
     // ── NBT ─────────────────────────────────────────────────────────────────
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putBoolean("active", active);
         tag.putDouble("fuel_to_consume", fuelToConsume);
         tag.putDouble("water_to_boil_acc", waterToBoilAcc);
@@ -243,21 +243,10 @@ public class MachineTurbineGasBlockEntity extends BaseMachineBlockEntity impleme
         waterTank.writeToNBT(tag, "water");
         hotsteamTank.writeToNBT(tag, "hotsteam");
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    tag.putBoolean("active", active);
-    tag.putDouble("fuel_to_consume", fuelToConsume);
-    tag.putDouble("water_to_boil_acc", waterToBoilAcc);
-    gasTank.writeToNBT(tag, "gas");
-    lubeTank.writeToNBT(tag, "lube");
-    waterTank.writeToNBT(tag, "water");
-    hotsteamTank.writeToNBT(tag, "hotsteam");
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         active = tag.getBoolean("active");
         fuelToConsume = tag.getDouble("fuel_to_consume");
         waterToBoilAcc = tag.getDouble("water_to_boil_acc");

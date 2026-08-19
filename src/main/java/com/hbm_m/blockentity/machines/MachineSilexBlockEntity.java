@@ -208,27 +208,19 @@ public class MachineSilexBlockEntity extends BaseMachineBlockEntity implements I
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progress);
         tag.putBoolean("active", active);
         tank.writeToNBT(tag, "tank");
     }
 
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progress = tag.getInt("progress");
         active = tag.getBoolean("active");
         tank.readFromNBT(tag, "tank");
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        progress = tag.getInt("progress");
-        active = tag.getBoolean("active");
-        tank.readFromNBT(tag, "tank");
-    }
-    *///?}
 
     @Override
     protected Component getDefaultName() {

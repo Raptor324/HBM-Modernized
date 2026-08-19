@@ -130,7 +130,7 @@ public class CargoElevatorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlock
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         if (corePos != null) {
-            tag.put("CorePos", NbtUtils.writeBlockPos(corePos));
+            com.hbm_m.platform.PlatformHooks.writeBlockPos(tag, "CorePos", corePos);
         }
         tag.putInt("height", height);
         tag.putDouble("extension", extension);
@@ -147,20 +147,4 @@ public class CargoElevatorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlock
     }
 
 
-    //? if forge {
-    @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        load(tag);
-    }
-    //?}
-
-
-    //? if forge {
-    @Override
-    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
-        if (pkt.getTag() != null) {
-            load(pkt.getTag());
-        }
-    }
-    //?}
 }

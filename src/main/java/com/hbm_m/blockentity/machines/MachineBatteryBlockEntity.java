@@ -1,9 +1,6 @@
 package com.hbm_m.blockentity.machines;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
-//? if forge {
-import com.hbm_m.api.energy.PackedEnergyCapabilityProvider;
-//?}
 import com.hbm_m.block.machines.MachineBatteryBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -23,24 +20,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-//? if forge {
-import com.hbm_m.capability.ModCapabilities;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandler;
-//?}
-
-//? if neoforge {
-/*import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.energy.IEnergyStorage;
-*///?}
-
-//? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
-import team.reborn.energy.api.EnergyStorage;
-*///?}
 
 /**
  * Энергохранилище с настраиваемыми режимами работы.
@@ -63,11 +42,6 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
 
     private long lastEnergySample = 0;
     private long averagedEnergyDelta = 0;
-
-    //? if forge {
-    private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
-    private final PackedEnergyCapabilityProvider feCapabilityProvider = new PackedEnergyCapabilityProvider(this);
-    //?}
 
     protected final ContainerData data;
 
@@ -129,16 +103,16 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         if (stack.isEmpty()) return false;
         if (stack.getItem() instanceof ItemCreativeBattery) return true;
         //? if forge {
-        return stack.getCapability(ForgeCapabilities.ENERGY).isPresent()
-                || stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()
-                || stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).isPresent();
+        return stack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY).isPresent()
+                || stack.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()
+                || stack.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_RECEIVER).isPresent();
         //?}
         //? if fabric {
-        /*return EnergyStorage.ITEM.find(stack, null) != null;
+        /*return team.reborn.energy.api.EnergyStorage.ITEM.find(stack, null) != null;
         *///?}
         //? if neoforge {
         /*// NeoForge: FE через Capabilities.EnergyStorage.ITEM + HBM через ItemEnergyAccess.
-        return stack.getCapability(Capabilities.EnergyStorage.ITEM) != null
+        return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null
                 || com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).isPresent()
                 || com.hbm_m.api.energy.ItemEnergyAccess.getHbmReceiver(stack).isPresent();
         *///?}
@@ -176,155 +150,13 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
             be.lastEnergySample = cur;
         }
 
-        be.chargeFromItem();
-        be.dischargeToItem();
-    }
-
-    private void chargeFromItem() {
-        ItemStack stack = inventory.getStackInSlot(SLOT_CHARGE);
-        if (stack.isEmpty()) return;
-
-        long spaceAvailable = capacity - energy;
-        if (spaceAvailable <= 0) return;
-
-        if (stack.getItem() instanceof ItemCreativeBattery) {
-            setEnergyStored(getMaxEnergyStored());
-            return;
+        int mode = be.getCurrentMode();
+        if (mode == 0 || mode == 1) {
+            be.chargeFromBatterySlot(SLOT_CHARGE);
         }
-
-        //? if forge {
-        // 1) HBM long
-        var hbmCap = stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER);
-        if (hbmCap.isPresent()) {
-            hbmCap.ifPresent(source -> {
-                if (!source.canExtract()) return;
-                long toExtract = Math.min(getReceiveSpeed(), spaceAvailable);
-                long extracted = source.extractEnergy(toExtract, false);
-                if (extracted > 0) {
-                    setEnergyStored(getEnergyStored() + extracted);
-                }
-            });
-            return;
+        if (mode == 0 || mode == 2) {
+            be.chargeItemInSlot(SLOT_DISCHARGE);
         }
-
-        // 2) Forge Energy fallback (int-safe)
-        stack.getCapability(ForgeCapabilities.ENERGY).ifPresent(source -> {
-            if (!source.canExtract()) return;
-            long wanted = Math.min(getReceiveSpeed(), spaceAvailable);
-            int maxTransfer = (int) Math.min(wanted, Integer.MAX_VALUE);
-            int extracted = source.extractEnergy(maxTransfer, false);
-            if (extracted > 0) setEnergyStored(getEnergyStored() + extracted);
-        });
-        //?}
-
-        //? if fabric {
-        /*var source = EnergyStorage.ITEM.find(stack, null);
-        if (source == null || !source.supportsExtraction()) return;
-
-        long toExtract = Math.min(getReceiveSpeed(), spaceAvailable);
-        if (toExtract <= 0) return;
-
-        try (Transaction tx = Transaction.openOuter()) {
-            long extracted = source.extract(toExtract, tx);
-            if (extracted > 0) {
-                setEnergyStored(getEnergyStored() + extracted);
-                tx.commit();
-            }
-        }
-        *///?}
-
-        //? if neoforge {
-        /*// 1) HBM long-capability (через ItemEnergyAccess — использует ModCapabilities.HBM_ITEM_ENERGY_PROVIDER).
-        var hbmSource = com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack);
-        if (hbmSource.isPresent()) {
-            var source = hbmSource.get();
-            if (!source.canExtract()) return;
-            long toExtract = Math.min(getReceiveSpeed(), spaceAvailable);
-            long extracted = source.extractEnergy(toExtract, false);
-            if (extracted > 0) {
-                setEnergyStored(getEnergyStored() + extracted);
-            }
-            return;
-        }
-        // 2) NeoForge FE fallback (int-safe).
-        IEnergyStorage feSource = stack.getCapability(Capabilities.EnergyStorage.ITEM);
-        if (feSource == null || !feSource.canExtract()) return;
-        long wanted = Math.min(getReceiveSpeed(), spaceAvailable);
-        int maxTransfer = (int) Math.min(wanted, Integer.MAX_VALUE);
-        int extracted = feSource.extractEnergy(maxTransfer, false);
-        if (extracted > 0) setEnergyStored(getEnergyStored() + extracted);
-        *///?}
-    }
-
-    private void dischargeToItem() {
-        ItemStack stack = inventory.getStackInSlot(SLOT_DISCHARGE);
-        if (stack.isEmpty()) return;
-
-        long availableEnergy = energy;
-        if (availableEnergy <= 0) return;
-
-        if (stack.getItem() instanceof ItemCreativeBattery) {
-            return;
-        }
-
-        //? if forge {
-        // 1) HBM long
-        var hbmCap = stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER);
-        if (hbmCap.isPresent()) {
-            hbmCap.ifPresent(target -> {
-                if (!target.canReceive()) return;
-                long toTransfer = Math.min(getProvideSpeed(), availableEnergy);
-                long accepted = target.receiveEnergy(toTransfer, false);
-                if (accepted > 0) setEnergyStored(getEnergyStored() - accepted);
-            });
-            return;
-        }
-
-        // 2) Forge Energy fallback (int-safe)
-        stack.getCapability(ForgeCapabilities.ENERGY).ifPresent(target -> {
-            if (!target.canReceive()) return;
-            long wanted = Math.min(getProvideSpeed(), availableEnergy);
-            int maxTransfer = (int) Math.min(wanted, Integer.MAX_VALUE);
-            int accepted = target.receiveEnergy(maxTransfer, false);
-            if (accepted > 0) setEnergyStored(getEnergyStored() - accepted);
-        });
-        //?}
-
-        //? if fabric {
-        /*var target = EnergyStorage.ITEM.find(stack, null);
-        if (target == null || !target.supportsInsertion()) return;
-
-        long toTransfer = Math.min(getProvideSpeed(), availableEnergy);
-        if (toTransfer <= 0) return;
-
-        try (Transaction tx = Transaction.openOuter()) {
-            long accepted = target.insert(toTransfer, tx);
-            if (accepted > 0) {
-                setEnergyStored(getEnergyStored() - accepted);
-                tx.commit();
-            }
-        }
-        *///?}
-
-        //? if neoforge {
-        /*// 1) HBM long-capability (через ItemEnergyAccess — использует ModCapabilities.HBM_ITEM_ENERGY_RECEIVER).
-        var hbmTarget = com.hbm_m.api.energy.ItemEnergyAccess.getHbmReceiver(stack);
-        if (hbmTarget.isPresent()) {
-            var target = hbmTarget.get();
-            if (!target.canReceive()) return;
-            long toTransfer = Math.min(getProvideSpeed(), availableEnergy);
-            long accepted = target.receiveEnergy(toTransfer, false);
-            if (accepted > 0) setEnergyStored(getEnergyStored() - accepted);
-            return;
-        }
-        // 2) NeoForge FE fallback (int-safe).
-        IEnergyStorage feTarget = stack.getCapability(Capabilities.EnergyStorage.ITEM);
-        if (feTarget == null || !feTarget.canReceive()) return;
-        long wanted = Math.min(getProvideSpeed(), availableEnergy);
-        int maxTransfer = (int) Math.min(wanted, Integer.MAX_VALUE);
-        int accepted = feTarget.receiveEnergy(maxTransfer, false);
-        if (accepted > 0) setEnergyStored(getEnergyStored() - accepted);
-        *///?}
     }
 
     public void handleButtonPress(int buttonId) {
@@ -350,34 +182,19 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         return new MachineBatteryMenu(windowId, playerInventory, this, this.data);
     }
 
-    //? if < 1.21.1 {
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("modeOnNoSignal", this.modeOnNoSignal);
         tag.putInt("modeOnSignal", this.modeOnSignal);
         tag.putInt("priority", this.priority.ordinal());
         tag.putLong("lastEnergySample", this.lastEnergySample);
         tag.putLong("averagedEnergyDelta", this.averagedEnergyDelta);
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.saveAdditional(tag, registries);
-        tag.putInt("modeOnNoSignal", this.modeOnNoSignal);
-        tag.putInt("modeOnSignal", this.modeOnSignal);
-        tag.putInt("priority", this.priority.ordinal());
-        tag.putLong("lastEnergySample", this.lastEnergySample);
-        tag.putLong("averagedEnergyDelta", this.averagedEnergyDelta);
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         this.modeOnNoSignal = tag.getInt("modeOnNoSignal");
         this.modeOnSignal = tag.getInt("modeOnSignal");
         if (tag.contains("priority")) {
@@ -387,43 +204,4 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         this.lastEnergySample = tag.getLong("lastEnergySample");
         this.averagedEnergyDelta = tag.getLong("averagedEnergyDelta");
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        this.modeOnNoSignal = tag.getInt("modeOnNoSignal");
-        this.modeOnSignal = tag.getInt("modeOnSignal");
-        if (tag.contains("priority")) {
-            int priorityIndex = tag.getInt("priority");
-            this.priority = Priority.values()[Math.max(0, Math.min(priorityIndex, Priority.values().length - 1))];
-        }
-        this.lastEnergySample = tag.getLong("lastEnergySample");
-        this.averagedEnergyDelta = tag.getLong("averagedEnergyDelta");
-    
-    }
-    *///?}
-
-    //? if forge {
-    @Override
-    public void onLoad() {
-        super.onLoad();
-        lazyItemHandler = LazyOptional.of(() -> inventory);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        lazyItemHandler.invalidate();
-        feCapabilityProvider.invalidate();
-    }
-
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable net.minecraft.core.Direction side) {
-        if (cap == ForgeCapabilities.ITEM_HANDLER) return lazyItemHandler.cast();
-        LazyOptional<T> feCap = feCapabilityProvider.getCapability(cap, side);
-        if (feCap.isPresent()) return feCap;
-        return super.getCapability(cap, side);
-    }
-    //?}
 }

@@ -174,26 +174,18 @@ public class MachineDroneCrateBlockEntity extends BaseMachineBlockEntity impleme
 
     // ── NBT ─────────────────────────────────────────────────────────────────
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putBoolean("sendingMode", sendingMode);
         tag.putBoolean("itemType", itemType);
         if (nextTarget != null) tag.putLong("nextTarget", nextTarget.asLong());
         tag.put("fluidTank", fluidTank.writeNBT(new CompoundTag()));
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    tag.putBoolean("sendingMode", sendingMode);
-    tag.putBoolean("itemType", itemType);
-    if (nextTarget != null) tag.putLong("nextTarget", nextTarget.asLong());
-    tag.put("fluidTank", fluidTank.writeNBT(new CompoundTag()));
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         sendingMode = tag.getBoolean("sendingMode");
         itemType = tag.getBoolean("itemType");
         nextTarget = tag.contains("nextTarget") ? BlockPos.of(tag.getLong("nextTarget")) : null;

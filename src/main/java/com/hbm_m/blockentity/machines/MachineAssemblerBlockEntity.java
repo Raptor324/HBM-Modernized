@@ -729,67 +729,24 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
     // ==================== NBT ====================
 
-    //? if < 1.21.1 {
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag); // РЎРѕС…СЂР°РЅСЏРµС‚ РёРЅРІРµРЅС‚Р°СЂСЊ Рё Р­РќР•Р Р“РР®
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries); // РЎРѕС…СЂР°РЅСЏРµС‚ РёРЅРІРµРЅС‚Р°СЂСЊ Рё Р­РќР•Р Р“РР®
         // РЎРѕС…СЂР°РЅСЏРµРј С‚РѕР»СЊРєРѕ С‚Рѕ, С‡РµРіРѕ РЅРµС‚ РІ СЂРѕРґРёС‚РµР»Рµ
         tag.putInt("progress", progress);
         tag.putInt("maxProgress", maxProgress);
         tag.putBoolean("isCrafting", isCrafting);
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.saveAdditional(tag, registries); // РЎРѕС…СЂР°РЅСЏРµС‚ РёРЅРІРµРЅС‚Р°СЂСЊ Рё Р­РќР•Р Р“РР®
-        // РЎРѕС…СЂР°РЅСЏРµРј С‚РѕР»СЊРєРѕ С‚Рѕ, С‡РµРіРѕ РЅРµС‚ РІ СЂРѕРґРёС‚РµР»Рµ
-        tag.putInt("progress", progress);
-        tag.putInt("maxProgress", maxProgress);
-        tag.putBoolean("isCrafting", isCrafting);
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag); // Р—Р°РіСЂСѓР¶Р°РµС‚ РёРЅРІРµРЅС‚Р°СЂСЊ Рё Р­РќР•Р Р“РР®
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries); // Р—Р°РіСЂСѓР¶Р°РµС‚ РёРЅРІРµРЅС‚Р°СЂСЊ Рё Р­РќР•Р Р“РР®
         // Р—Р°РіСЂСѓР¶Р°РµРј С‚РѕР»СЊРєРѕ С‚Рѕ, С‡РµРіРѕ РЅРµС‚ РІ СЂРѕРґРёС‚РµР»Рµ
         progress = tag.getInt("progress");
         maxProgress = tag.getInt("maxProgress");
         isCrafting = tag.getBoolean("isCrafting");
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.loadAdditional(tag, registries); // Р—Р°РіСЂСѓР¶Р°РµС‚ РёРЅРІРµРЅС‚Р°СЂСЊ Рё Р­РќР•Р Р“РР®
-        // Р—Р°РіСЂСѓР¶Р°РµРј С‚РѕР»СЊРєРѕ С‚Рѕ, С‡РµРіРѕ РЅРµС‚ РІ СЂРѕРґРёС‚РµР»Рµ
-        progress = tag.getInt("progress");
-        maxProgress = tag.getInt("maxProgress");
-        isCrafting = tag.getBoolean("isCrafting");
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        tag.putBoolean("isCrafting", isCrafting);
-        return tag;
-    }
-    //?} else {
-    /*@Override
-    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
-
-        CompoundTag tag = super.getUpdateTag(registries);
-        tag.putBoolean("isCrafting", isCrafting);
-        return tag;
-    
-    }
-    *///?}
 
     //? if forge {
     @Override
@@ -810,30 +767,8 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
     // ==================== CLIENT ====================
 
-    //? if fabric {
-    /*@Environment(EnvType.CLIENT)
-    private ItemStack clientRecipeIconTemplate = ItemStack.EMPTY;
 
-    @Environment(EnvType.CLIENT)
-    private ItemStack clientRecipeIconCache = ItemStack.EMPTY;
-
-    @Environment(EnvType.CLIENT)
-    public ItemStack getClientRecipeIcon() {
-        ItemStack template = getInventory().getStackInSlot(TEMPLATE_SLOT);
-        if (ItemStack.matches(template, clientRecipeIconTemplate)) {
-            return clientRecipeIconCache;
-        }
-        clientRecipeIconTemplate = template.copy();
-        if (template.isEmpty() || !(template.getItem() instanceof ItemAssemblyTemplate)) {
-            clientRecipeIconCache = ItemStack.EMPTY;
-            return ItemStack.EMPTY;
-        }
-        clientRecipeIconCache = ItemAssemblyTemplate.getRecipeOutput(template);
-        return clientRecipeIconCache;
-    }
-    *///?}
-
-    //? if forge {
+    //? if forge || neoforge {
     private ItemStack clientRecipeIconTemplate = ItemStack.EMPTY;
 
     private ItemStack clientRecipeIconCache = ItemStack.EMPTY;
@@ -859,34 +794,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         this.isCrafting = crafting;
     }
     //?}
-
-    //? if neoforge {
-    /*// NeoForge 1.21.1: повторяет forge-ветку getClientRecipeIcon()/setCrafting() с @OnlyIn(Dist.CLIENT).
-    private ItemStack clientRecipeIconTemplate = ItemStack.EMPTY;
-
-    private ItemStack clientRecipeIconCache = ItemStack.EMPTY;
-
-    /^* Cached recipe output icon for BER; refreshed when assembly template slot changes. ^/
-    @OnlyIn(Dist.CLIENT)
-    public ItemStack getClientRecipeIcon() {
-        ItemStack template = getInventory().getStackInSlot(TEMPLATE_SLOT);
-        if (ItemStack.matches(template, clientRecipeIconTemplate)) {
-            return clientRecipeIconCache;
-        }
-        clientRecipeIconTemplate = template.copy();
-        if (template.isEmpty() || !(template.getItem() instanceof ItemAssemblyTemplate)) {
-            clientRecipeIconCache = ItemStack.EMPTY;
-            return ItemStack.EMPTY;
-        }
-        clientRecipeIconCache = ItemAssemblyTemplate.getRecipeOutput(template);
-        return clientRecipeIconCache;
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public void setCrafting(boolean crafting) {
-        this.isCrafting = crafting;
-    }
-    *///?}
 
     public boolean isCrafting() {
         return isCrafting;
@@ -921,11 +828,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             ClientSoundBootstrap.updateSound(this, false, null);
         }
         //?}
-        //? if fabric {
-        /*if (level != null && level.isClientSide) {
-            ClientSoundBootstrap.updateSound(this, false, null);
-        }
-        *///?}
 
         if (this.level != null && !this.level.isClientSide) {
             EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());

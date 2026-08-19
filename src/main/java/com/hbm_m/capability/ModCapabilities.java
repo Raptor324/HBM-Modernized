@@ -55,64 +55,41 @@ public class ModCapabilities {
     public static final ItemCapability<IEnergyReceiver, Void> HBM_ITEM_ENERGY_RECEIVER =
         ItemCapability.createVoid(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "item_energy_receiver"), IEnergyReceiver.class);
 
+    @SuppressWarnings("unchecked")
     public static void register(RegisterCapabilitiesEvent event) {
         for (var supplier : com.hbm_m.blockentity.ModBlockEntities.BLOCK_ENTITIES) {
             if (!supplier.isPresent()) continue;
-            net.minecraft.world.level.block.entity.BlockEntityType<?> type = supplier.get();
-            registerEnergyForType(event, type);
-            registerItemAndFluidForType(event, type);
-        }
+            var type = (BlockEntityType<BlockEntity>) supplier.get();
 
-        registerBatteryItemCaps(event);
-    }
+            // 1. Предметы (ItemHandler)
+            event.registerBlockEntity(
+                Capabilities.ItemHandler.BLOCK, type,
+                (be, side) -> (be instanceof BaseHbmBlockEntity hbm) ? (net.neoforged.neoforge.items.IItemHandler) hbm.getItemHandler(side) : null
+            );
 
-    @SuppressWarnings("unchecked")
-    private static void registerItemAndFluidForType(RegisterCapabilitiesEvent event,
-                                                    net.minecraft.world.level.block.entity.BlockEntityType<?> type) {
-        event.registerBlockEntity(
-                net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK,
-                (BlockEntityType<net.minecraft.world.level.block.entity.BlockEntity>) type,
-                (be, side) -> {
-                    if (be instanceof com.hbm_m.blockentity.BaseMachineBlockEntity machine) {
-                        return machine.getInventory();
-                    }
-                    return null;
-                });
+            // 2. Жидкости (FluidHandler)
+            event.registerBlockEntity(
+                Capabilities.FluidHandler.BLOCK, type,
+                (be, side) -> (be instanceof BaseHbmBlockEntity hbm) ? (net.neoforged.neoforge.fluids.capability.IFluidHandler) hbm.getFluidHandler(side) : null
+            );
 
-        event.registerBlockEntity(
-                net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK,
-                (BlockEntityType<net.minecraft.world.level.block.entity.BlockEntity>) type,
-                (be, side) -> {
-                    if (be instanceof com.hbm_m.api.fluids.IFluidUserMK2 fluidUser) {
-                        return new com.hbm_m.api.fluids.NeoForgeFluidHandlerMK2(fluidUser);
-                    }
-                    return null;
-                });
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void registerEnergyForType(RegisterCapabilitiesEvent event,
-                                              net.minecraft.world.level.block.entity.BlockEntityType<?> type) {
-        event.registerBlockEntity(HBM_ENERGY_PROVIDER,  (BlockEntityType<net.minecraft.world.level.block.entity.BlockEntity>) type,
-                (be, side) -> (be instanceof IEnergyProvider p) ? p : null);
-        event.registerBlockEntity(HBM_ENERGY_RECEIVER,  (BlockEntityType<net.minecraft.world.level.block.entity.BlockEntity>) type,
-                (be, side) -> (be instanceof IEnergyReceiver r) ? r : null);
-        event.registerBlockEntity(HBM_ENERGY_CONNECTOR, (BlockEntityType<net.minecraft.world.level.block.entity.BlockEntity>) type,
-                (be, side) -> (be instanceof IEnergyConnector c && c.canConnectEnergy(side)) ? c : null);
-
-        event.registerBlockEntity(
-                net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK,
-                (BlockEntityType<net.minecraft.world.level.block.entity.BlockEntity>) type,
+            // 3. Энергия (EnergyStorage)
+            event.registerBlockEntity(
+                Capabilities.EnergyStorage.BLOCK, type,
                 (be, side) -> {
                     if (be instanceof com.hbm_m.api.energy.ConverterBlockEntity conv)
                         return new com.hbm_m.api.energy.HbmForgeWrapper(conv);
-                    if (be instanceof IEnergyConnector c && c.canConnectEnergy(side))
-                        return new com.hbm_m.api.energy.LongEnergyWrapper(c,
-                                side == net.minecraft.core.Direction.DOWN
-                                        ? com.hbm_m.api.energy.LongEnergyWrapper.BitMode.HIGH
-                                        : com.hbm_m.api.energy.LongEnergyWrapper.BitMode.LOW);
-                    return null;
-                });
+                    return (be instanceof BaseHbmBlockEntity hbm) ? (net.neoforged.neoforge.energy.IEnergyStorage) hbm.getEnergyStorage(side) : null;
+                }
+            );
+
+            // 4. HBM Custom Energy
+            event.registerBlockEntity(HBM_ENERGY_PROVIDER, type, (be, side) -> (be instanceof IEnergyProvider p) ? p : null);
+            event.registerBlockEntity(HBM_ENERGY_RECEIVER, type, (be, side) -> (be instanceof IEnergyReceiver r) ? r : null);
+            event.registerBlockEntity(HBM_ENERGY_CONNECTOR, type, (be, side) -> (be instanceof IEnergyConnector c && c.canConnectEnergy(side)) ? c : null);
+        }
+
+        registerBatteryItemCaps(event);
     }
 
     private static void registerBatteryItemCaps(RegisterCapabilitiesEvent event) {
@@ -128,7 +105,7 @@ public class ModCapabilities {
                     new com.hbm_m.api.energy.EnergyCapabilityProvider.ItemEnergyStorage(
                             stack, battery.getCapacity(), battery.getMaxReceive(), battery.getMaxExtract()), item);
 
-            event.registerItem(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM, (stack, ctx) ->
+            event.registerItem(Capabilities.EnergyStorage.ITEM, (stack, ctx) ->
                     new com.hbm_m.api.energy.LongEnergyWrapper(
                             new com.hbm_m.api.energy.EnergyCapabilityProvider.ItemEnergyStorage(
                                     stack, battery.getCapacity(), battery.getMaxReceive(), battery.getMaxExtract()),

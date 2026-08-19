@@ -269,6 +269,7 @@ public class MachineFurnaceSteelBlockEntity extends com.hbm_m.blockentity.BaseHb
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(inventory, registries));
         tag.putInt("litTime", litTime);
         tag.putInt("litDuration", litDuration);
@@ -279,11 +280,8 @@ public class MachineFurnaceSteelBlockEntity extends com.hbm_m.blockentity.BaseHb
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        //? if < 1.21.1 {
-        inventory.deserializeNBT(tag.getCompound("inventory"));
-        //?} else {
-        /*inventory.deserializeNBT(registries, tag.getCompound("inventory"));
-        *///?}
+        super.readNbtData(tag, registries);
+        com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, tag.getCompound("inventory"), registries);
         litTime = tag.getInt("litTime");
         litDuration = tag.getInt("litDuration");
         for (int lane = 0; lane < LANE_COUNT; lane++) {

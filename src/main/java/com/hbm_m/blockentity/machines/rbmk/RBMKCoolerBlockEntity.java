@@ -69,39 +69,18 @@ public class RBMKCoolerBlockEntity extends RBMKColumnBlockEntity {
     @Override public RBMKType getRBMKType()      { return RBMKType.OTHER; }
     @Override public ColumnType getConsoleType() { return ColumnType.COOLER; }
 
-    //? if < 1.21.1 {
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         coldTank.writeToNBT(tag, "t0");
         hotTank.writeToNBT(tag, "t1");
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.saveAdditional(tag, registries);
-        coldTank.writeToNBT(tag, "t0");
-        hotTank.writeToNBT(tag, "t1");
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         coldTank.readFromNBT(tag, "t0");
         hotTank.readFromNBT(tag, "t1");
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        coldTank.readFromNBT(tag, "t0");
-        hotTank.readFromNBT(tag, "t1");
-    
-    }
-    *///?}
 }

@@ -193,26 +193,18 @@ public class MachineSolidifierBlockEntity extends BaseMachineBlockEntity impleme
 
     // ── NBT ─────────────────────────────────────────────────────────────────
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progress);
         tag.putInt("usage", usage);
         tag.putInt("process_time", processTime);
         tank.writeToNBT(tag, "tank");
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    tag.putInt("progress", progress);
-    tag.putInt("usage", usage);
-    tag.putInt("process_time", processTime);
-    tank.writeToNBT(tag, "tank");
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progress = tag.getInt("progress");
         usage = tag.getInt("usage");
         processTime = tag.getInt("process_time");

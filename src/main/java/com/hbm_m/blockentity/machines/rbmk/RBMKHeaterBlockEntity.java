@@ -48,40 +48,19 @@ public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity implements Menu
     @Override public Component getDisplayName() { return Component.translatable("block.hbm_m.rbmk_heater"); }
     @Override public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) { return new RBMKHeaterMenu(id, inv, this); }
 
-    //? if < 1.21.1 {
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         inputTank.writeToNBT(tag, "input");
         outputTank.writeToNBT(tag, "output");
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.saveAdditional(tag, registries);
-        inputTank.writeToNBT(tag, "input");
-        outputTank.writeToNBT(tag, "output");
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         inputTank.readFromNBT(tag, "input");
         outputTank.readFromNBT(tag, "output");
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        inputTank.readFromNBT(tag, "input");
-        outputTank.readFromNBT(tag, "output");
-    
-    }
-    *///?}
 }
 

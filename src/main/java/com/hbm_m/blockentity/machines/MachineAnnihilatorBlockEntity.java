@@ -177,6 +177,7 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putString("pool_name", poolName);
         tag.putString("monitor_display", monitorDisplay);
         tank.writeToNBT(tag, "tank");
@@ -184,6 +185,7 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         poolName = tag.contains("pool_name") ? tag.getString("pool_name") : DEFAULT_POOL;
         monitorDisplay = tag.getString("monitor_display");
         tank.readFromNBT(tag, "tank");

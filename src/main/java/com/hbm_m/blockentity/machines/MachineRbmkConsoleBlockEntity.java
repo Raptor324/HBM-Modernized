@@ -292,16 +292,9 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
 
     // @Override omitted intentionally
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         writeExtra(tag);
-    }
-
-    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        readExtra(tag);
-    }
-
-    // ─── Sync ─────────────────────────────────────────────────────────────────
-
-    private CompoundTag buildUpdateTag(CompoundTag tag) {
+        
         ListTag cols = new ListTag();
         for (int i = 0; i < AREA; i++) {
             if (columns[i] != null) {
@@ -311,44 +304,26 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
             }
         }
         tag.put("cols", cols);
-        writeExtra(tag);
-        return tag;
     }
 
-    private void applyUpdateTag(CompoundTag tag) {
-        Arrays.fill(columns, null);
-        ListTag cols = tag.getList("cols", 10);
-        for (int i = 0; i < cols.size(); i++) {
-            CompoundTag c = cols.getCompound(i);
-            int idx = c.getShort("i") & 0xFFFF;
-            if (idx < AREA) columns[idx] = RBMKColumnData.fromNBT(c);
-        }
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         readExtra(tag);
+        
+        if (tag.contains("cols")) {
+            Arrays.fill(columns, null);
+            ListTag cols = tag.getList("cols", 10);
+            for (int i = 0; i < cols.size(); i++) {
+                CompoundTag c = cols.getCompound(i);
+                int idx = c.getShort("i") & 0xFFFF;
+                if (idx < AREA) columns[idx] = RBMKColumnData.fromNBT(c);
+            }
+        }
     }
 
-    //? if < 1.21.1 {
-    // @Override omitted intentionally
-
-    public void handleUpdateTag(CompoundTag tag) {
-        applyUpdateTag(tag);
+    @Override
+    protected void applyClientUpdate(@NotNull CompoundTag tag) {
+        readNbtData(tag, null);
     }
-
-    // Forge's default IForgeBlockEntity#onDataPacket calls load(tag) instead of handleUpdateTag(tag)
-    // for LIVE re-sync packets (handleUpdateTag is only ever invoked for the one-time initial
-    // chunk-load sync) - since load()/readExtra() never parsed the "cols" list, every column the
-    // console scanned was silently dropped on every periodic sync, permanently leaving the GUI's
-    // column grid empty even though the server-side scan was finding columns correctly every tick.
-    public void onDataPacket(net.minecraft.network.Connection connection, ClientboundBlockEntityDataPacket packet) {
-        if (packet.getTag() != null) applyUpdateTag(packet.getTag());
-    }
-    //?} else {
-    /*public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
-        return buildUpdateTag(super.getUpdateTag(registries));
-    }
-
-    public void onDataPacket(net.minecraft.network.Connection connection, ClientboundBlockEntityDataPacket packet, net.minecraft.core.HolderLookup.Provider registries) {
-        if (PlatformHooks.getItemTag(packet) != null) applyUpdateTag(PlatformHooks.getItemTag(packet));
-    }
-    *///?}
 
 }

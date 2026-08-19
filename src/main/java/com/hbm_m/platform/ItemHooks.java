@@ -80,4 +80,17 @@ public final class ItemHooks {
         }
         *///?}
     }
+
+    /**
+     * Кросс-версионное получение максимального размера стака для предмета (Item).
+     * 1.20.1: item.getMaxStackSize()
+     * 1.21.1: item.getDefaultMaxStackSize()
+     */
+    public static int getItemMaxStackSize(net.minecraft.world.item.Item item) {
+        //? if < 1.21.1 {
+        return item.getMaxStackSize();
+        //?} else {
+        /*return item.getDefaultMaxStackSize();
+        *///?}
+    }
 }

@@ -171,22 +171,16 @@ public class MachineHephaestusBlockEntity extends BaseMachineBlockEntity impleme
 
     // ── NBT ─────────────────────────────────────────────────────────────────
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         inputTank.writeToNBT(tag, "input");
         outputTank.writeToNBT(tag, "output");
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    inputTank.writeToNBT(tag, "input");
-    outputTank.writeToNBT(tag, "output");
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         inputTank.readFromNBT(tag, "input");
         outputTank.readFromNBT(tag, "output");
     }

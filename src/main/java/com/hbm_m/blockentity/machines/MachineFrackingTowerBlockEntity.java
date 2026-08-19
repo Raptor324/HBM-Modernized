@@ -32,13 +32,6 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 
 //?}
 
-//? if fabric {
-/*import dev.architectury.fluid.FluidStack;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
-*///?}
-
 /**
  * BlockEntity для Fracking Tower (Гидроразрывная вышка).
  * Порт из версии 1.7.10 (TileEntityMachineFrackingTower).
@@ -116,43 +109,21 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
     //=====================================================================================//
 
     public MachineFrackingTowerBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.HYDRAULIC_FRACKINING_TOWER_BE.get(), pos, state, 
+        super(ModBlockEntities.HYDRAULIC_FRACKINING_TOWER_BE.get(), pos, state,
               INVENTORY_SIZE, maxPower, consumption * 2, 0L);
         
-        // Инициализация танков
-        //? if forge {
+        // Инициализация танков - единая инициализация для всех лоадеров
+        // Capacities: oil/gas = 128_000 mB (Forge/NeoForge) / 64_000 mB (Fabric), fracksol = 64_000 mB
+        // Using 128_000 as base capacity - Fabric will handle droplet conversion via FluidTank
         this.oilTank = new FluidTank(128_000) {
             @Override
-            public boolean isFluidValid(Fluid fluid) {
+            public boolean isFluidValid(net.minecraft.world.level.material.Fluid fluid) {
                 return fluid.isSame(ModFluids.CRUDE_OIL.getSource());
             }
         };
 
         this.gasTank = new FluidTank(128_000) {
             @Override
-            public boolean isFluidValid(Fluid fluid) {
-                return fluid.isSame(ModFluids.GAS.getSource());
-            }
-        };
-
-        this.fracksolTank = new FluidTank(64_000) {
-            @Override
-            public boolean isFluidValid(Fluid fluid) {
-                return fluid.isSame(ModFluids.FRACKSOL.getSource());
-            }
-        };
-        //?}
-
-        //? if fabric {
-        /*this.oilTank = new FluidTank(64_000) {
-            @Override
-            public boolean isFluidValid(net.minecraft.world.level.material.Fluid fluid) {
-                return fluid.isSame(ModFluids.CRUDE_OIL.getSource());
-            }
-        };
-
-        this.gasTank = new FluidTank(64_000) {
-            @Override
             public boolean isFluidValid(net.minecraft.world.level.material.Fluid fluid) {
                 return fluid.isSame(ModFluids.GAS.getSource());
             }
@@ -164,31 +135,6 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
                 return fluid.isSame(ModFluids.FRACKSOL.getSource());
             }
         };
-        *///?}
-
-        //? if neoforge {
-        /*// NeoForge: HBM FluidTank и ModFluids — кросс-платформенные, инициализация идентична forge.
-        this.oilTank = new FluidTank(128_000) {
-            @Override
-            public boolean isFluidValid(Fluid fluid) {
-                return fluid.isSame(ModFluids.CRUDE_OIL.getSource());
-            }
-        };
-
-        this.gasTank = new FluidTank(128_000) {
-            @Override
-            public boolean isFluidValid(Fluid fluid) {
-                return fluid.isSame(ModFluids.GAS.getSource());
-            }
-        };
-
-        this.fracksolTank = new FluidTank(64_000) {
-            @Override
-            public boolean isFluidValid(Fluid fluid) {
-                return fluid.isSame(ModFluids.FRACKSOL.getSource());
-            }
-        };
-        *///?}
     }
 
     //=====================================================================================//
@@ -362,26 +308,27 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
 
     /**
      * Перелив из танка машины в контейнер в слоте инвентаря.
-     * На Forge — через FLUID_HANDLER_ITEM capability.
-     * На Fabric — через FluidStorage.ITEM.
+     * Кросс-платформенная реализация через FluidHooks.
      */
     protected void processContainerPair(int inputSlot, int outputSlot, FluidTank sourceTank) {
-        ItemStack inputStack  = inventory.getStackInSlot(inputSlot);
+        ItemStack inputStack = inventory.getStackInSlot(inputSlot);
         if (inputStack.isEmpty() || sourceTank.isEmpty()) return;
 
-        //? if fabric {
-        /*var containerStorage = FluidStorage.ITEM.find(inputStack, net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext.withConstant(inputStack));
-        if (containerStorage == null) return;
-        FluidVariant variant = FluidVariant.of(sourceTank.getStoredFluid());
-        long toTransfer = (long) sourceTank.getFluidAmountMb() * FluidTank.DROPLETS_PER_MB;
-        try (var tx = net.fabricmc.fabric.api.transfer.v1.transaction.Transaction.openOuter()) {
-            long inserted = containerStorage.insert(variant, toTransfer, tx);
-            if (inserted > 0) {
-                sourceTank.getStorage().extract(variant, inserted, tx);
-                tx.commit();
+        int drainable = sourceTank.getFluidAmountMb();
+        var result = com.hbm_m.platform.FluidHooks.insertFluidIntoItem(inputStack, sourceTank.getStoredFluid(), drainable, false);
+        if (result.amountInserted() > 0) {
+            sourceTank.drainMb(result.amountInserted());
+            ItemStack outStack = inventory.getStackInSlot(outputSlot);
+            if (outStack.isEmpty()) {
+                inventory.setStackInSlot(outputSlot, result.remainder());
+                inputStack.shrink(1);
+            } else if (com.hbm_m.platform.FluidHooks.areItemsStackable(outStack, result.remainder())
+                    && outStack.getCount() + result.remainder().getCount() <= outStack.getMaxStackSize()) {
+                outStack.grow(result.remainder().getCount());
+                inputStack.shrink(1);
             }
+            setChanged();
         }
-        *///?}
     }
 
     /**
@@ -540,10 +487,9 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
     }
     *///?}
 
-    //? if < 1.21.1 {
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.put("oilTank", oilTank.writeNBT(new CompoundTag()));
         tag.put("gasTank", gasTank.writeNBT(new CompoundTag()));
         tag.put("fracksolTank", fracksolTank.writeNBT(new CompoundTag()));
@@ -553,27 +499,10 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
         tag.putInt("powerUpgrade", powerUpgradeLevel);
         tag.putInt("afterburnerUpgrade", afterburnerUpgradeLevel);
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.saveAdditional(tag, registries);
-        tag.put("oilTank", oilTank.writeNBT(new CompoundTag()));
-        tag.put("gasTank", gasTank.writeNBT(new CompoundTag()));
-        tag.put("fracksolTank", fracksolTank.writeNBT(new CompoundTag()));
-        tag.putInt("progressTimer", progressTimer);
-        tag.putInt("indicator", indicator);
-        tag.putInt("speedUpgrade", speedUpgradeLevel);
-        tag.putInt("powerUpgrade", powerUpgradeLevel);
-        tag.putInt("afterburnerUpgrade", afterburnerUpgradeLevel);
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         oilTank.readNBT(tag.getCompound("oilTank"));
         gasTank.readNBT(tag.getCompound("gasTank"));
         fracksolTank.readNBT(tag.getCompound("fracksolTank"));
@@ -583,22 +512,6 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
         powerUpgradeLevel = tag.getInt("powerUpgrade");
         afterburnerUpgradeLevel = tag.getInt("afterburnerUpgrade");
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        oilTank.readNBT(tag.getCompound("oilTank"));
-        gasTank.readNBT(tag.getCompound("gasTank"));
-        fracksolTank.readNBT(tag.getCompound("fracksolTank"));
-        progressTimer = tag.getInt("progressTimer");
-        indicator = tag.getInt("indicator");
-        speedUpgradeLevel = tag.getInt("speedUpgrade");
-        powerUpgradeLevel = tag.getInt("powerUpgrade");
-        afterburnerUpgradeLevel = tag.getInt("afterburnerUpgrade");
-    
-    }
-    *///?}
 
     //=====================================================================================//
     // CAPABILITIES

@@ -3,6 +3,7 @@ package com.hbm_m.blockentity.machines;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.network.radio.IRadioTorchConfigurable;
 import com.hbm_m.blockentity.network.radio.RTTYNetwork;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -43,7 +44,7 @@ public class RadioRecBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntit
         RTTYNetwork.RttyChannel sig = RTTYNetwork.listen(level, be.channel);
         if (sig != null && sig.timeStamp != be.lastPlayedTick && sig.signal != null) {
             be.lastPlayedTick = sig.timeStamp;
-            level.playSound(null, pos, SoundEvents.NOTE_BLOCK_HARP.value(), SoundSource.RECORDS, 3.0F, 1.0F);
+            PlatformHooks.playSound(level, pos, SoundEvents.NOTE_BLOCK_HARP, SoundSource.RECORDS, 3.0F, 1.0F);
         }
     }
 

@@ -94,12 +94,14 @@ public class MachineDeuteriumTowerBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tanks[TANK_WATER].writeToNBT(tag, "water");
         tanks[TANK_HEAVY_WATER].writeToNBT(tag, "heavyWater");
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         tanks[TANK_WATER].readFromNBT(tag, "water");
         tanks[TANK_HEAVY_WATER].readFromNBT(tag, "heavyWater");
     }

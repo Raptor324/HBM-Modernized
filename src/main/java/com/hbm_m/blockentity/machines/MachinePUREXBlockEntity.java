@@ -238,6 +238,7 @@ public class MachinePUREXBlockEntity extends BaseMachineBlockEntity implements I
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progressTicks);
         tag.putInt("duration", currentDuration);
         for (int i = 0; i < inputTanks.length; i++) {
@@ -248,6 +249,7 @@ public class MachinePUREXBlockEntity extends BaseMachineBlockEntity implements I
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progressTicks = tag.getInt("progress");
         currentDuration = tag.contains("duration") ? Math.max(1, tag.getInt("duration")) : 1;
         for (int i = 0; i < inputTanks.length; i++) {

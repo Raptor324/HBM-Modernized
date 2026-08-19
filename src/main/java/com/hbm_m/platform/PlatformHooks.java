@@ -12,7 +12,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import dev.architectury.platform.Platform;
-import net.minecraft.resources.ResourceLocation;
 import com.hbm_m.lib.RefStrings;
 
 public final class PlatformHooks {
@@ -114,6 +113,13 @@ public final class PlatformHooks {
         //?} else {
         /*return net.minecraft.nbt.NbtUtils.readBlockPos(tag, key).orElse(net.minecraft.core.BlockPos.ZERO);
         *///?}
+    }
+
+    /**
+     * Заменяет {@code tag.put(key, NbtUtils.writeBlockPos(pos))}.
+     */
+    public static void writeBlockPos(net.minecraft.nbt.CompoundTag tag, String key, net.minecraft.core.BlockPos pos) {
+        tag.put(key, net.minecraft.nbt.NbtUtils.writeBlockPos(pos));
     }
 
     /**
@@ -728,6 +734,19 @@ public final class PlatformHooks {
         return new net.minecraft.world.level.block.GlassBlock(props);
         //?} else {
         /*return new net.minecraft.world.level.block.Block(props);
+        *///?}
+    }
+
+    /**
+     * Кросс-версионное сохранение BlockEntity без метаданных (позиция, тип).
+     * На 1.20.1: {@code BlockEntity.saveWithoutMetadata()}.
+     * На 1.21.1: {@code BlockEntity.saveWithoutMetadata(HolderLookup.Provider)}.
+     */
+    public static CompoundTag saveBlockEntityWithoutMetadata(net.minecraft.world.level.block.entity.BlockEntity be, net.minecraft.core.HolderLookup.Provider provider) {
+        //? if < 1.21.1 {
+        return be.saveWithoutMetadata();
+        //?} else {
+        /*return be.saveWithoutMetadata(provider);
         *///?}
     }
 }

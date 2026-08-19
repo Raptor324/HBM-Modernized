@@ -226,28 +226,19 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
 
     // ── NBT ─────────────────────────────────────────────────────────────────
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("heat", heat);
         tag.putInt("progress", progress);
         tag.putBoolean("wasOn", wasOn);
         tank0.writeToNBT(tag, "tank0");
         tank1.writeToNBT(tag, "tank1");
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    tag.putInt("heat", heat);
-    tag.putInt("progress", progress);
-    tag.putBoolean("wasOn", wasOn);
-    tank0.writeToNBT(tag, "tank0");
-    tank1.writeToNBT(tag, "tank1");
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         heat = tag.getInt("heat");
         progress = tag.getInt("progress");
         wasOn = tag.getBoolean("wasOn");

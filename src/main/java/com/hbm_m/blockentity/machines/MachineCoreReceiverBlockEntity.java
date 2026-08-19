@@ -103,11 +103,13 @@ public class MachineCoreReceiverBlockEntity extends BaseMachineBlockEntity imple
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         coolantTank.writeToNBT(tag, "coolant");
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         coolantTank.readFromNBT(tag, "coolant");
     }
 

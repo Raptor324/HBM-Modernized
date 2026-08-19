@@ -12,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.machines.BlastFurnaceBlock;
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.BlastFurnaceMenu;
 import com.hbm_m.item.ModItems;
@@ -58,7 +59,7 @@ import java.util.List;
 *///?}
 
 @SuppressWarnings("UnstableApiUsage")
-public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider {
+public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuProvider {
 
     private static final int FUEL_SLOT = 0;
     private static final int INPUT_SLOT_TOP = 1;
@@ -243,61 +244,29 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
         return new BlastFurnaceMenu(containerId, playerInventory, this, this.data);
     }
 
-    //? if < 1.21.1 {
-    @Override
-    protected void saveAdditional(CompoundTag tag) {
-        tag.put("inventory", itemHandler.serializeNBT());
-        tag.putInt("blast_furnace.progress", progress);
-        tag.putInt("blast_furnace.fuel", fuel);
-        tag.putInt("blast_furnace.side_upper", sideUpper);
-        tag.putInt("blast_furnace.side_lower", sideLower);
-        tag.putInt("blast_furnace.side_fuel", sideFuel);
-        super.saveAdditional(tag);
-    }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        tag.put("inventory", itemHandler.serializeNBT(registries));
-        tag.putInt("blast_furnace.progress", progress);
-        tag.putInt("blast_furnace.fuel", fuel);
-        tag.putInt("blast_furnace.side_upper", sideUpper);
-        tag.putInt("blast_furnace.side_lower", sideLower);
-        tag.putInt("blast_furnace.side_fuel", sideFuel);
-        super.saveAdditional(tag, registries);
     
-    }
-    *///?}
-
-    //? if < 1.21.1 {
+    // (устраняет вложенный stonecutter-баг в load())
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        //? if < 1.21.1 {
-        itemHandler.deserializeNBT(tag.getCompound("inventory"));
-        //?} else {
-        /*itemHandler.deserializeNBT(registries, tag.getCompound("inventory"));
-        *///?}
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(itemHandler, registries));
+        tag.putInt("blast_furnace.progress", progress);
+        tag.putInt("blast_furnace.fuel", fuel);
+        tag.putInt("blast_furnace.side_upper", sideUpper);
+        tag.putInt("blast_furnace.side_lower", sideLower);
+        tag.putInt("blast_furnace.side_fuel", sideFuel);
+        super.writeNbtData(tag, registries);
+    }
+
+    @Override
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
+        com.hbm_m.platform.ItemStackSerialization.deserialize(itemHandler, tag.getCompound("inventory"), registries);
         progress = tag.getInt("blast_furnace.progress");
         fuel = tag.getInt("blast_furnace.fuel");
         sideUpper = tag.getInt("blast_furnace.side_upper");
         sideLower = tag.getInt("blast_furnace.side_lower");
         sideFuel = tag.getInt("blast_furnace.side_fuel");
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        itemHandler.deserializeNBT(registries, tag.getCompound("inventory"));
-        progress = tag.getInt("blast_furnace.progress");
-        fuel = tag.getInt("blast_furnace.fuel");
-        sideUpper = tag.getInt("blast_furnace.side_upper");
-        sideLower = tag.getInt("blast_furnace.side_lower");
-        sideFuel = tag.getInt("blast_furnace.side_fuel");
-    
-    }
-    *///?}
 
     public void tick(Level level, BlockPos pos, BlockState state) {
         if (level.isClientSide()) {
@@ -524,33 +493,6 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
         return slot == OUTPUT_SLOT;
     }
 
-    @Nullable
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
-
-    //? if < 1.21.1 {
-    @Override
-    public CompoundTag getUpdateTag() {
-        return saveWithoutMetadata();
-    }
-    //?} else {
-    /*@Override
-    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
-
-        //? if < 1.21.1 {
-        return saveWithoutMetadata();
-        //?} else {
-        /^// 1.21.1: saveWithoutMetadata требует HolderLookup.Provider.
-        return saveWithoutMetadata(registries);
-        ^///?}
-    
-    }
-    *///?}
-
-    // в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ DirectionalItemHandler (Forge only) в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
-
     //? if forge {
     private class DirectionalItemHandler implements IItemHandler {
         private final Direction direction;
@@ -582,4 +524,14 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
         }
     }
     //?}
+
+    @Override
+    public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
+        //? if forge {
+        if (side == null) return this.itemHandler;
+        return this.sidedItemHandlers.getOrDefault(side, this.lazyItemHandler).resolve().orElse(null);
+        //?} else {
+        return this.itemHandler;
+        //?}
+    }
 }

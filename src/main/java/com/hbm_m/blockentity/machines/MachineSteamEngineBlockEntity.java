@@ -127,12 +127,14 @@ public class MachineSteamEngineBlockEntity extends BaseMachineBlockEntity implem
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         steamTank.writeToNBT(tag, "tank_steam");
         spentSteamTank.writeToNBT(tag, "tank_spentsteam");
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         steamTank.readFromNBT(tag, "tank_steam");
         spentSteamTank.readFromNBT(tag, "tank_spentsteam");
     }

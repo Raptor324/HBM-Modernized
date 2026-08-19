@@ -319,6 +319,7 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity im
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         for (int i = 0; i < inputTanks.length; i++) tag.put("inputTank" + i, inputTanks[i].writeNBT(new CompoundTag()));
         for (int i = 0; i < outputTanks.length; i++) tag.put("outputTank" + i, outputTanks[i].writeNBT(new CompoundTag()));
         tag.put("water", water.writeNBT(new CompoundTag()));
@@ -333,6 +334,7 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity im
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         for (int i = 0; i < inputTanks.length; i++) if (tag.contains("inputTank" + i)) inputTanks[i].readNBT(tag.getCompound("inputTank" + i));
         for (int i = 0; i < outputTanks.length; i++) if (tag.contains("outputTank" + i)) outputTanks[i].readNBT(tag.getCompound("outputTank" + i));
         if (tag.contains("water")) water.readNBT(tag.getCompound("water"));

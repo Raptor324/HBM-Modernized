@@ -672,10 +672,10 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
     // NBT
     // -----------------------
 
-    //? if < 1.21.1 {
+    
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("launchpad_state", state);
         tag.putInt("launchpad_redstone", redstonePower);
         tag.putInt("launchpad_prev_redstone", prevRedstonePower);
@@ -685,27 +685,10 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         tanks[0].writeToNBT(tag, "T0");
         tanks[1].writeToNBT(tag, "T1");
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.saveAdditional(tag, registries);
-        tag.putInt("launchpad_state", state);
-        tag.putInt("launchpad_redstone", redstonePower);
-        tag.putInt("launchpad_prev_redstone", prevRedstonePower);
-        tag.putInt("launchpad_delay", delay);
-        ItemStack missile = inventory.getStackInSlot(SLOT_MISSILE);
-        tag.putInt("missile_preview_id", missile.isEmpty() ? -1 : net.minecraft.core.registries.BuiltInRegistries.ITEM.getId(missile.getItem()));
-        tanks[0].writeToNBT(tag, "T0");
-        tanks[1].writeToNBT(tag, "T1");
-
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         state = tag.getInt("launchpad_state");
         redstonePower = tag.getInt("launchpad_redstone");
         prevRedstonePower = tag.getInt("launchpad_prev_redstone");
@@ -718,25 +701,6 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         }
         readMissilePreviewFromTag(tag);
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        state = tag.getInt("launchpad_state");
-        redstonePower = tag.getInt("launchpad_redstone");
-        prevRedstonePower = tag.getInt("launchpad_prev_redstone");
-        delay = tag.getInt("launchpad_delay");
-        if (tag.contains("T0")) {
-            tanks[0].readFromNBT(tag, "T0");
-        }
-        if (tag.contains("T1")) {
-            tanks[1].readFromNBT(tag, "T1");
-        }
-        readMissilePreviewFromTag(tag);
-
-    }
-    *///?}
 
     private void readMissilePreviewFromTag(CompoundTag tag) {
         int itemId = tag.getInt("missile_preview_id");

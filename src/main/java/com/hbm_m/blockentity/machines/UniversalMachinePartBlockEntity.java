@@ -20,9 +20,11 @@ import com.hbm_m.api.network.UniNodespace;
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.Connection;
@@ -47,15 +49,9 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 //?}
 
-//? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
-*///?}
 
 @SuppressWarnings("UnstableApiUsage")
-public class UniversalMachinePartBlockEntity extends BlockEntity implements IMultiblockPart, IEnergyConnector, IFluidConnectorMK2 {
+public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implements IMultiblockPart, IEnergyConnector, IFluidConnectorMK2 {
 
     // Виртуальные узлы жидкостной сети на позиции коннектора, по одному на тип жидкости контроллера.
     // Используется для "коннектор-к-коннектору" без труб: переносы делает FluidNet,
@@ -434,52 +430,6 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         return allowedEnergySides.contains(side);
     }
 
-    /**
-     * Fabric Transfer API: делегирование энергии в контроллер (аналог Forge {@code getCapability(ENERGY, side)}).
-     * Зарегистрирован через {@code EnergyStorage.SIDED.registerForBlockEntity} в FabricEntrypoint.
-     */
-    //? if fabric {
-    /*@Nullable
-    public team.reborn.energy.api.EnergyStorage getEnergyStorageSided(@Nullable Direction side) {
-        if (this.controllerPos == null || this.level == null) return null;
-        if (!this.role.canReceiveEnergy() && !this.role.canSendEnergy()) return null;
-        boolean energySideOk = side == null
-                || allowedEnergySides.isEmpty()
-                || allowedEnergySides.contains(side);
-        if (!energySideOk) return null;
-        BlockEntity ctrl = this.level.getBlockEntity(this.controllerPos);
-        if (ctrl == null) return null;
-        return team.reborn.energy.api.EnergyStorage.SIDED.find(this.level, this.controllerPos, ctrl.getBlockState(), ctrl, null);
-    }
-    *///?}
-
-    /**
-     * Fabric Transfer API: делегирование жидкости в контроллер (аналог Forge {@code getCapability(FLUID_HANDLER, null)}).
-     */
-    //? if fabric {
-    /*@SuppressWarnings("UnstableApiUsage")
-    @Nullable
-    public Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
-        if (this.controllerPos == null || this.level == null) {
-            return null;
-        }
-        if (!isFluidConnector(this.role)) {
-            return null;
-        }
-        boolean fluidSideOk = side == null
-                || allowedFluidSides.isEmpty()
-                || allowedFluidSides.contains(side);
-        if (!fluidSideOk) {
-            return null;
-        }
-        BlockEntity ctrl = this.level.getBlockEntity(this.controllerPos);
-        if (ctrl == null) {
-            return null;
-        }
-        return FluidStorage.SIDED.find(this.level, this.controllerPos, ctrl.getBlockState(), ctrl, null);
-    }
-    *///?}
-
     //? if forge {
     @Override
     public void onLoad() {
@@ -587,12 +537,11 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
     }
     //?}
 
-    //? if < 1.21.1 {
     @Override
-    protected void saveAdditional(CompoundTag pTag) {
-        super.saveAdditional(pTag);
+    protected void writeNbtData(@NotNull CompoundTag pTag, @Nullable HolderLookup.Provider registries) {
+        super.writeNbtData(pTag, registries);
         if (this.controllerPos != null) {
-            pTag.put("ControllerPos", NbtUtils.writeBlockPos(this.controllerPos));
+            com.hbm_m.platform.PlatformHooks.writeBlockPos(pTag, "ControllerPos", this.controllerPos);
         }
         pTag.putString("PartRole", this.role.name());
 
@@ -612,41 +561,12 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
             pTag.putInt("FluidSides", mask);
         }
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag pTag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.saveAdditional(pTag, registries);
-        if (this.controllerPos != null) {
-            pTag.put("ControllerPos", NbtUtils.writeBlockPos(this.controllerPos));
-        }
-        pTag.putString("PartRole", this.role.name());
-
-        if (!allowedClimbSides.isEmpty()) {
-            int mask = 0;
-            for (Direction dir : allowedClimbSides) mask |= (1 << dir.get3DDataValue());
-            pTag.putInt("ClimbSides", mask);
-        }
-        if (!allowedEnergySides.isEmpty()) {
-            int mask = 0;
-            for (Direction dir : allowedEnergySides) mask |= (1 << dir.get3DDataValue());
-            pTag.putInt("EnergySides", mask);
-        }
-        if (!allowedFluidSides.isEmpty()) {
-            int mask = 0;
-            for (Direction dir : allowedFluidSides) mask |= (1 << dir.get3DDataValue());
-            pTag.putInt("FluidSides", mask);
-        }
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag pTag) {
-        super.load(pTag);
+    protected void readNbtData(@NotNull CompoundTag pTag, @Nullable HolderLookup.Provider registries) {
+        super.readNbtData(pTag, registries);
         if (pTag.contains("ControllerPos")) {
-            this.controllerPos = NbtUtils.readBlockPos(pTag.getCompound("ControllerPos"));
+            this.controllerPos = com.hbm_m.platform.PlatformHooks.readBlockPos(pTag, "ControllerPos");
         }
         if (pTag.contains("PartRole")) {
             try {
@@ -676,97 +596,64 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
                 if ((mask & (1 << dir.get3DDataValue())) != 0) allowedFluidSides.add(dir);
             }
         }
-        //? if fabric {
-        /*if (level != null && !level.isClientSide()
-                && (isFluidConnector(this.role) || this.role.canReceiveEnergy() || this.role.canSendEnergy())) {
-            level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
-        }
-        *///?}
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag pTag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.loadAdditional(pTag, registries);
-        if (pTag.contains("ControllerPos")) {
-            // 1.21.1: NbtUtils.readBlockPos(CompoundTag, String) возвращает Optional<BlockPos>.
-            this.controllerPos = NbtUtils.readBlockPos(pTag, "ControllerPos").orElse(null);
-        }
-        if (pTag.contains("PartRole")) {
-            try {
-                this.role = PartRole.valueOf(pTag.getString("PartRole"));
-            } catch (IllegalArgumentException e) {
-                this.role = PartRole.DEFAULT;
-            }
-        }
-        if (pTag.contains("ClimbSides")) {
-            int mask = pTag.getInt("ClimbSides");
-            allowedClimbSides.clear();
-            for (Direction dir : Direction.values()) {
-                if ((mask & (1 << dir.get3DDataValue())) != 0) allowedClimbSides.add(dir);
-            }
-        }
-        if (pTag.contains("EnergySides")) {
-            int mask = pTag.getInt("EnergySides");
-            allowedEnergySides.clear();
-            for (Direction dir : Direction.values()) {
-                if ((mask & (1 << dir.get3DDataValue())) != 0) allowedEnergySides.add(dir);
-            }
-        }
-        if (pTag.contains("FluidSides")) {
-            int mask = pTag.getInt("FluidSides");
-            allowedFluidSides.clear();
-            for (Direction dir : Direction.values()) {
-                if ((mask & (1 << dir.get3DDataValue())) != 0) allowedFluidSides.add(dir);
-            }
-        }
-        //? if fabric {
-        /^if (level != null && !level.isClientSide()
-                && (isFluidConnector(this.role) || this.role.canReceiveEnergy() || this.role.canSendEnergy())) {
-            level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
-        }
-        ^///?}
-    
-    }
-    *///?}
-
-    @Nullable
     @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
-
-    //? if < 1.21.1 {
-    @Override
-    public CompoundTag getUpdateTag() {
-        return this.saveWithoutMetadata();
-    }
-    //?} else {
-    /*@Override
-    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
-
-        //? if < 1.21.1 {
-        return this.saveWithoutMetadata();
-        //?} else {
-        /^// 1.21.1: saveWithoutMetadata требует HolderLookup.Provider.
-        return this.saveWithoutMetadata(registries);
-        ^///?}
-    
-    }
-    *///?}
-
-    //? if forge {
-    @Override
-    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
-        CompoundTag tag = PlatformHooks.getItemTag(pkt);
-        if (tag != null) {
-            handleUpdateTag(tag);
-            
-            // Принудительно обновляем состояние блока на клиенте, чтобы обновилась визуализация/логика
-            if (level != null && level.isClientSide) {
-                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
-            }
+    protected void applyClientUpdate(@NotNull CompoundTag tag) {
+        super.applyClientUpdate(tag);
+        
+        // Принудительно обновляем состояние блока на клиенте, чтобы обновилась визуализация/логика
+        if (level != null && level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
         }
     }
-    //?}
+
+    // ═════════════════════════════════════════════════════════════════════════════════════════════
+    //  Polymorphic Capability Delegation (для NeoForge автоматической регистрации)
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+    @Override
+    public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
+        if (level == null || controllerPos == null) return null;
+        if (this.role != PartRole.ITEM_INPUT && this.role != PartRole.ITEM_OUTPUT) return null;
+
+        BlockEntity ctrl = level.getBlockEntity(controllerPos);
+        if (ctrl instanceof MachineAssemblerBlockEntity assembler) {
+            //? if forge {
+            return assembler.getItemHandlerForPart(this.role).resolve().orElse(null);
+            //?} elif neoforge {
+            /*return assembler.getItemHandler();
+            *///?}
+        }
+        if (ctrl instanceof BaseHbmBlockEntity hbm) {
+            return hbm.getItemHandler(side);
+        }
+        return null;
+    }
+
+    @Override
+    public @Nullable Object getFluidHandler(@Nullable net.minecraft.core.Direction side) {
+        if (level == null || controllerPos == null) return null;
+        if (this.role != PartRole.FLUID_CONNECTOR && this.role != PartRole.UNIVERSAL_CONNECTOR) return null;
+        if (allowedFluidSides != null && !allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) return null;
+
+        BlockEntity ctrl = level.getBlockEntity(controllerPos);
+        if (ctrl instanceof BaseHbmBlockEntity hbm) {
+            return hbm.getFluidHandler(null);
+        }
+        return null;
+    }
+
+    @Override
+    public @Nullable Object getEnergyStorage(@Nullable net.minecraft.core.Direction side) {
+        if (level == null || controllerPos == null) return null;
+        if (!this.role.canReceiveEnergy() && !this.role.canSendEnergy()) return null;
+        if (allowedEnergySides != null && !allowedEnergySides.isEmpty() && !allowedEnergySides.contains(side)) return null;
+
+        BlockEntity ctrl = level.getBlockEntity(controllerPos);
+        if (ctrl instanceof BaseHbmBlockEntity hbm) {
+            return hbm.getEnergyStorage(side);
+        }
+        return null;
+    }
 }

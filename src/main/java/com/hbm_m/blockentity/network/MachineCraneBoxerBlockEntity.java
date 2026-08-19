@@ -168,22 +168,16 @@ public class MachineCraneBoxerBlockEntity extends BaseMachineBlockEntity impleme
 
     // ── NBT ─────────────────────────────────────────────────────────────────
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putByte("mode", mode);
         tag.putBoolean("lastRedstone", lastRedstone);
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    tag.putByte("mode", mode);
-    tag.putBoolean("lastRedstone", lastRedstone);
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         mode = tag.getByte("mode");
         lastRedstone = tag.getBoolean("lastRedstone");
     }

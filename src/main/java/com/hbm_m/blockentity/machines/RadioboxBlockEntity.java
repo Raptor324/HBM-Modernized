@@ -89,22 +89,16 @@ public class RadioboxBlockEntity extends BaseMachineBlockEntity {
         return null;
     }
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putBoolean("isOn", isOn);
         tag.putBoolean("infinite", infinite);
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    tag.putBoolean("isOn", isOn);
-    tag.putBoolean("infinite", infinite);
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         isOn = tag.getBoolean("isOn");
         infinite = tag.getBoolean("infinite");
     }

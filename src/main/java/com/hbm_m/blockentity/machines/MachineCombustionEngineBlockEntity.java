@@ -144,11 +144,13 @@ public class MachineCombustionEngineBlockEntity extends BaseMachineBlockEntity i
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tank.writeToNBT(tag, "tank");
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         tank.readFromNBT(tag, "tank");
     }
 

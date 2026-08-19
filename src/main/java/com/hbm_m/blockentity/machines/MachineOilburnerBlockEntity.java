@@ -178,26 +178,18 @@ public class MachineOilburnerBlockEntity extends BaseMachineBlockEntity implemen
         return com.hbm_m.inventory.menu.MachineOilburnerMenu.create(id, inventory, this);
     }
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("setting", setting);
         tag.putInt("heat", heat);
         tag.putBoolean("burning", burning);
         tag.put("oilTank", oilTank.writeNBT(new CompoundTag()));
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    tag.putInt("setting", setting);
-    tag.putInt("heat", heat);
-    tag.putBoolean("burning", burning);
-    tag.put("oilTank", oilTank.writeNBT(new CompoundTag()));
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         setting = tag.contains("setting") ? tag.getInt("setting") : 1;
         heat = tag.getInt("heat");
         burning = tag.getBoolean("burning");

@@ -251,22 +251,16 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity {
     public int getDrillDepth() { return targetDepth; }
     public boolean isActive() { return operational; }
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("target_depth", targetDepth);
         tag.putBoolean("operational", operational);
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    tag.putInt("target_depth", targetDepth);
-    tag.putBoolean("operational", operational);
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         targetDepth = tag.getInt("target_depth");
         operational = tag.getBoolean("operational");
     }

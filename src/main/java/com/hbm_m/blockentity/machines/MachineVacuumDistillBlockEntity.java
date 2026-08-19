@@ -155,26 +155,18 @@ public class MachineVacuumDistillBlockEntity extends BaseMachineBlockEntity impl
 
     // ==================== NBT ====================
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].writeToNBT(tag, "tank" + i);
         }
         tag.putBoolean("isOn", isOn);
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    for (int i = 0; i < tanks.length; i++) {
-    tanks[i].writeToNBT(tag, "tank" + i);
-    }
-    tag.putBoolean("isOn", isOn);
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].readFromNBT(tag, "tank" + i);
         }

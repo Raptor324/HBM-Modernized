@@ -120,24 +120,17 @@ public class MachineFireboxBlockEntity extends BaseMachineBlockEntity implements
         return com.hbm_m.inventory.menu.MachineFireboxMenu.create(id, inventory, this);
     }
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("burnTime", burnTime);
         tag.putInt("maxBurnTime", maxBurnTime);
         tag.putInt("heat", heat);
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    tag.putInt("burnTime", burnTime);
-    tag.putInt("maxBurnTime", maxBurnTime);
-    tag.putInt("heat", heat);
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         burnTime = tag.getInt("burnTime");
         maxBurnTime = tag.getInt("maxBurnTime");
         heat = tag.getInt("heat");

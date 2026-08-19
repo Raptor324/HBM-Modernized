@@ -46,13 +46,6 @@ import net.minecraftforge.items.IItemHandler;
 import net.neoforged.neoforge.energy.IEnergyStorage;
 *///?}
 
-//? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import team.reborn.energy.api.EnergyStorage;
-import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
-*///?}
-
 /**
  * Базовый класс для всех машин с энергией.
  * Реализует хранение энергии, инвентарь и синхронизацию.
@@ -86,47 +79,9 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
     private final PackedEnergyCapabilityProvider feCapabilityProvider;
 
     // Fluid-капабилити (Forge). Подклассы регистрируют обработчик через setFluidHandler().
-    protected LazyOptional<net.minecraftforge.fluids.capability.IFluidHandler> fluidHandlerOpt = LazyOptional.empty();//?}
+    protected LazyOptional<net.minecraftforge.fluids.capability.IFluidHandler> fluidHandlerOpt = LazyOptional.empty();
+    //?}
 
-    // Провайдер TeamReborn Energy (Fabric)
-    //? if fabric {
-    /*private final EnergyStorage energyStorage = new EnergyStorage() {
-        @Override
-        public long insert(long maxAmount, TransactionContext transaction) {
-            if (!canReceive()) return 0;
-            long amount = Math.min(capacity - energy, Math.min(maxReceive, maxAmount));
-            if (amount > 0) {
-                transaction.addCloseCallback((ctx, result) -> {
-                    if (result.wasCommitted()) setEnergyStored(energy + amount);
-                });
-            }
-            return amount;
-        }
-
-        @Override
-        public long extract(long maxAmount, TransactionContext transaction) {
-            if (!canExtract()) return 0;
-            long amount = Math.min(energy, Math.min(maxExtract, maxAmount));
-            if (amount > 0) {
-                transaction.addCloseCallback((ctx, result) -> {
-                    if (result.wasCommitted()) setEnergyStored(energy - amount);
-                });
-            }
-            return amount;
-        }
-
-        @Override public long getAmount()   { return energy; }
-        @Override public long getCapacity() { return capacity; }
-    };
-
-    public EnergyStorage getEnergyStorage() { return energyStorage; }
-
-    /^* Возвращает Transfer API Storage для предметов. Переопределяй в подклассах для sided-логики. ^/
-    @Nullable
-    public Storage<ItemVariant> getItemStorage(@Nullable Direction side) {
-        return inventory.getStorage();
-    }
-    *///?}
 
     /** Общий доступ к инвентарю машины (loader-agnostic). */
     public ModItemStackHandler getInventory() {
@@ -341,11 +296,7 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
     protected void setFluidHandler(Object handler) {
         //? if forge {
         if (handler instanceof com.hbm_m.inventory.fluid.tank.FluidTank tank) {
-            //? if < 1.21.1 {
             this.fluidHandlerOpt = (net.minecraftforge.common.util.LazyOptional<net.minecraftforge.fluids.capability.IFluidHandler>) tank.getCapability();
-            //?} else if neoforge {
-            /*this.fluidHandlerOpt = tank.getCapability();
-            *///?}
         } else {
             this.fluidHandlerOpt = LazyOptional.of(() -> (net.minecraftforge.fluids.capability.IFluidHandler) handler);
         }
@@ -359,11 +310,7 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
     // --- NBT ---
     @Override
     protected void writeNbtData(@NotNull CompoundTag tag, @Nullable net.minecraft.core.HolderLookup.Provider registries) {
-        //? if < 1.21.1 {
-        tag.put("inventory", inventory.serializeNBT().copy());
-        //?} else {
-        /*tag.put("inventory", inventory.serializeNBT(registries).copy());
-        *///?}
+        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(inventory, registries));
         tag.putLong("energy", energy);
         tag.putLong("capacity", capacity);
         tag.putLong("lastEnergy", lastEnergy);
@@ -376,11 +323,7 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
         if (inventoryTag.contains("Size")) {
             inventoryTag.putInt("Size", inventory.getSlots());
         }
-        //? if < 1.21.1 {
-        inventory.deserializeNBT(inventoryTag);
-        //?} else {
-        /*inventory.deserializeNBT(registries, inventoryTag);
-        *///?}
+        com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, inventoryTag, registries);
         energy = tag.getLong("energy");
         if (tag.contains("capacity")) {
             capacity = Math.max(0L, tag.getLong("capacity"));
@@ -644,8 +587,42 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
     @Override
     public void setLevel(Level pLevel) {
         super.setLevel(pLevel);
-        //? if fabric {
-        /*setupFluidCapability();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════════════════
+    //  Polymorphic Capability Providers (для NeoForge автоматической регистрации)
+    // ════════════════════════════════════════════════════════════════════════════════════════════
+
+    @Override
+    public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
+        return this.inventory;
+    }
+
+    @Override
+    public @Nullable Object getEnergyStorage(@Nullable net.minecraft.core.Direction side) {
+        if (!canConnectEnergy(side)) return null;
+        //? if neoforge {
+        /*return new com.hbm_m.api.energy.LongEnergyWrapper(this,
+                side == Direction.DOWN
+                        ? com.hbm_m.api.energy.LongEnergyWrapper.BitMode.HIGH
+                        : com.hbm_m.api.energy.LongEnergyWrapper.BitMode.LOW);
+        *///?} else {
+        return null;
+        //?}
+    }
+
+    @Override
+    public @Nullable Object getFluidHandler(@Nullable net.minecraft.core.Direction side) {
+        // Если машина реализует IFluidUserMK2 — super вернёт NeoForgeFluidHandlerMK2
+        Object superHandler = super.getFluidHandler(side);
+        if (superHandler != null) return superHandler;
+
+        // Если у машины есть локальный бак через setFluidHandler
+        //? if neoforge {
+        /*if (this.fluidHandlerOpt != null && this.fluidHandlerOpt.isPresent()) {
+            return this.fluidHandlerOpt.resolve().orElse(null);
+        }
         *///?}
+        return null;
     }
 }

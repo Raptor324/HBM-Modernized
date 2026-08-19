@@ -1404,6 +1404,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.CENTRIFUGE.get()));
         add.accept(new ItemStack(ModBlocks.CRYSTALLIZER.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_ASSEMBLER.get()));
+        add.accept(new ItemStack(ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get()));
         add.accept(new ItemStack(ModBlocks.ARC_WELDER.get()));
         add.accept(new ItemStack(ModBlocks.SOLDERING_STATION.get()));
         add.accept(new ItemStack(ModBlocks.DERRICK.get()));

@@ -3,6 +3,7 @@ package com.hbm_m.blockentity.machines;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineSatLinkerMenu;
 import com.hbm_m.item.ISatChip;
@@ -27,7 +28,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * frequency onto slot 1 (so a designator can be matched to a payload before launch); slot 2
  * assigns a fresh random unused frequency to whatever chip is placed there.
  */
-public class MachineSatLinkerBlockEntity extends BlockEntity implements MenuProvider {
+public class MachineSatLinkerBlockEntity extends BaseHbmBlockEntity implements MenuProvider {
 
     public static final int SLOT_COPY_SOURCE = 0;
     public static final int SLOT_COPY_TARGET = 1;
@@ -70,45 +71,21 @@ public class MachineSatLinkerBlockEntity extends BlockEntity implements MenuProv
         }
     }
 
-    //? if < 1.21.1 {
-    @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.put("inventory", inventory.serializeNBT());
-    }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.saveAdditional(tag, registries);
-        tag.put("inventory", inventory.serializeNBT(registries));
     
-    }
-    *///?}
-
-    //? if < 1.21.1 {
+    // (устраняет вложенный stonecutter-баг в load())
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(inventory, registries));
+    }
+
+    @Override
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         if (tag.contains("inventory")) {
-            //? if < 1.21.1 {
-            inventory.deserializeNBT(tag.getCompound("inventory"));
-            //?} else {
-            /*inventory.deserializeNBT(registries, tag.getCompound("inventory"));
-            *///?}
+            com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, tag.getCompound("inventory"), registries);
         }
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        if (tag.contains("inventory")) {
-            inventory.deserializeNBT(registries, tag.getCompound("inventory"));
-        }
-    
-    }
-    *///?}
 
     @Override
     public Component getDisplayName() {

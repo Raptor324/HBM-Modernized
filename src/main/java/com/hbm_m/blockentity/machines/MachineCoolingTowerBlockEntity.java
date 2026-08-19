@@ -157,49 +157,23 @@ public class MachineCoolingTowerBlockEntity extends BaseMachineBlockEntity imple
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
-    //? if < 1.21.1 {
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].writeToNBT(tag, "tank_" + i);
         }
         tag.putBoolean("isCooling", isCooling);
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.saveAdditional(tag, registries);
-        for (int i = 0; i < tanks.length; i++) {
-            tanks[i].writeToNBT(tag, "tank_" + i);
-        }
-        tag.putBoolean("isCooling", isCooling);
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].readFromNBT(tag, "tank_" + i);
         }
         isCooling = tag.getBoolean("isCooling");
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        for (int i = 0; i < tanks.length; i++) {
-            tanks[i].readFromNBT(tag, "tank_" + i);
-        }
-        isCooling = tag.getBoolean("isCooling");
-    
-    }
-    *///?}
 
     //? if forge {
     @Override

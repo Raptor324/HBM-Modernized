@@ -198,77 +198,27 @@ public class RBMKRodBlockEntity extends RBMKColumnBlockEntity
 
     // â"€â"€â"€ NBT â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
-    //? if < 1.21.1 {
-    //? if < 1.21.1 {
-@Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.putDouble("fluxQuantity", lastFluxQuantity);
-        tag.putDouble("fluxMod", lastFluxRatio);
-        tag.putBoolean("hasRod", hasRod);
-        tag.putBoolean("explodeOnBroken", explodeOnBroken);
-        if (!fuelSlot.isEmpty()) tag.put("fuelSlot", safeItemSave(fuelSlot));
-    }
-//?} else {
-/*@Override
-protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.saveAdditional(tag, registries);
-        tag.putDouble("fluxQuantity", lastFluxQuantity);
-        tag.putDouble("fluxMod", lastFluxRatio);
-        tag.putBoolean("hasRod", hasRod);
-        tag.putBoolean("explodeOnBroken", explodeOnBroken);
-        if (!fuelSlot.isEmpty()) tag.put("fuelSlot", safeItemSave(fuelSlot));
     
-}
-*///?}
-
-    //? if < 1.21.1 {
+    // (консолидировала задвоенные stonecutter-кластеры save/load)
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        fluxQuantity    = tag.getDouble("fluxQuantity");
-        fluxFastRatio   = tag.getDouble("fluxMod");
-        hasRod          = tag.getBoolean("hasRod");
-        explodeOnBroken = !tag.contains("explodeOnBroken") || tag.getBoolean("explodeOnBroken");
-        if (tag.contains("fuelSlot"))
-            fuelSlot = ItemStack.of(tag.getCompound("fuelSlot"));
-    }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        fluxQuantity    = tag.getDouble("fluxQuantity");
-        fluxFastRatio   = tag.getDouble("fluxMod");
-        hasRod          = tag.getBoolean("hasRod");
-        explodeOnBroken = !tag.contains("explodeOnBroken") || tag.getBoolean("explodeOnBroken");
-        if (tag.contains("fuelSlot"))
-            fuelSlot = ItemStack.of(tag.getCompound("fuelSlot"));
-    
-    }
-    *///?}
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putDouble("fluxQuantity", lastFluxQuantity);
         tag.putDouble("fluxMod", lastFluxRatio);
         tag.putBoolean("hasRod", hasRod);
         tag.putBoolean("explodeOnBroken", explodeOnBroken);
-        if (!fuelSlot.isEmpty()) tag.put("fuelSlot", safeItemSave(fuelSlot, registries));
+        if (!fuelSlot.isEmpty()) tag.put("fuelSlot", com.hbm_m.platform.PlatformHooks.safeItemSave(fuelSlot, registries));
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         fluxQuantity    = tag.getDouble("fluxQuantity");
         fluxFastRatio   = tag.getDouble("fluxMod");
         hasRod          = tag.getBoolean("hasRod");
         explodeOnBroken = !tag.contains("explodeOnBroken") || tag.getBoolean("explodeOnBroken");
         if (tag.contains("fuelSlot"))
-            fuelSlot = ItemStack.parseOptional(registries, tag.getCompound("fuelSlot"));
+            fuelSlot = com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("fuelSlot"), registries);
     }
-    *///?}
 }
 

@@ -121,20 +121,15 @@ public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements I
         return null;
     }
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.put("tank", tank.writeNBT(new CompoundTag()));
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    tag.put("tank", tank.writeNBT(new CompoundTag()));
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         if (tag.contains("tank")) tank.readNBT(tag.getCompound("tank"));
     }
 }

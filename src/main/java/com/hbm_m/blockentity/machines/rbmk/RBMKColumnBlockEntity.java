@@ -1,12 +1,15 @@
 package com.hbm_m.blockentity.machines.rbmk;
 
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.handler.rbmk.NeutronNodeWorld;
 import com.hbm_m.handler.rbmk.RBMKDials;
 import com.hbm_m.handler.rbmk.RBMKNeutronHandler;
 import com.hbm_m.handler.rbmk.RBMKNeutronHandler.RBMKType;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
@@ -17,7 +20,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -27,8 +29,10 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public abstract class RBMKColumnBlockEntity extends BlockEntity {
+public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
 
     public double heat        = 20.0;
     public int reasimWater    = 0;
@@ -64,8 +68,6 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
         }
     }
 
-    // â"€â"€â"€ Base Tick â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
-
     protected static void baseTick(Level level, BlockPos pos, BlockState state, RBMKColumnBlockEntity be) {
         if (level.isClientSide) return;
         if (be.craneIndicator > 0) be.craneIndicator--;
@@ -85,8 +87,6 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
      * because a player placed one next to a reactor.
      */
     protected boolean participatesInHeatNetwork() { return true; }
-
-    // â"€â"€â"€ Heat â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     private void moveHeat(Level level) {
         boolean reasim = RBMKDials.getReasimBoilers(level);
@@ -137,8 +137,6 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
         heat -= min + (max - min) * ((4 - Math.min(neighbors, 4)) / 4.0);
         if (heat < 20) heat = 20.0;
     }
-
-    // â"€â"€â"€ Melt â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     public double maxHeat() { return 1500.0; }
 
@@ -293,8 +291,6 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
         };
     }
 
-    // â"€â"€â"€ Lid â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
-
     public boolean hasLid()         { return lidState != 0; }
     public int    getLidState()     { return lidState; }
     public boolean isLidRemovable() { return true; }
@@ -309,12 +305,8 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
         setChanged();
     }
 
-    // â"€â"€â"€ Neutron â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
-
     public RBMKType getRBMKType()  { return RBMKType.OTHER; }
     public boolean  isModerated()  { return false; }
-
-    // â"€â"€â"€ Console â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     public enum ColumnType {
         BLANK, FUEL, CONTROL, MODERATOR, ABSORBER, REFLECTOR, COOLER, BOILER, HEATER, OUTGASSER, STORAGE
@@ -359,64 +351,17 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
 
     // ─── NBT ─────────────────────────────────────────────────────────────────────
 
-    //? if < 1.21.1 {
-    protected static CompoundTag safeItemSave(net.minecraft.world.item.ItemStack stack) {
-        CompoundTag t = new CompoundTag();
-        stack.save(t);
-        return t;
-    }
-
-    //? if < 1.21.1 {
-    @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.putDouble("heat", heat);
-        tag.putInt("reasimWater", reasimWater);
-        tag.putInt("reasimSteam", reasimSteam);
-        tag.putInt("lidState", lidState);
-    }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.saveAdditional(tag, registries);
-        tag.putDouble("heat", heat);
-        tag.putInt("reasimWater", reasimWater);
-        tag.putInt("reasimSteam", reasimSteam);
-        tag.putInt("lidState", lidState);
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
-    @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        heat        = tag.getDouble("heat");
-        reasimWater = tag.getInt("reasimWater");
-        reasimSteam = tag.getInt("reasimSteam");
-        lidState    = tag.contains("lidState") ? tag.getInt("lidState") : 1;
-    }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        heat        = tag.getDouble("heat");
-        reasimWater = tag.getInt("reasimWater");
-        reasimSteam = tag.getInt("reasimSteam");
-        lidState    = tag.contains("lidState") ? tag.getInt("lidState") : 1;
-    
-    }
-    *///?}
-    //?} else {
-    /*protected static CompoundTag safeItemSave(net.minecraft.world.item.ItemStack stack, net.minecraft.core.HolderLookup.Provider registries) {
-        return (CompoundTag) stack.save(registries);
+    /**
+     * Версионно-независимое сохранение ItemStack в новый CompoundTag.
+     * Делегирует в {@link PlatformHooks#safeItemSave} (наследники RBMK используют в своём NBT).
+     */
+    protected static CompoundTag safeItemSave(ItemStack stack) {
+        return PlatformHooks.safeItemSave(stack, null);
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
+    protected void writeNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putDouble("heat", heat);
         tag.putInt("reasimWater", reasimWater);
         tag.putInt("reasimSteam", reasimSteam);
@@ -424,36 +369,13 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    protected void readNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         heat        = tag.getDouble("heat");
         reasimWater = tag.getInt("reasimWater");
         reasimSteam = tag.getInt("reasimSteam");
         lidState    = tag.contains("lidState") ? tag.getInt("lidState") : 1;
     }
-    *///?}
 
-    // ─── Sync ─────────────────────────────────────────────────────────────────────
-
-    //? if < 1.21.1 {
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        saveAdditional(tag);
-        return tag;
-    }
-    //?} else {
-    /*@Override
-    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
-        CompoundTag tag = super.getUpdateTag(registries);
-        saveAdditional(tag, registries);
-        return tag;
-    }
-    *///?}
-
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
 }
 

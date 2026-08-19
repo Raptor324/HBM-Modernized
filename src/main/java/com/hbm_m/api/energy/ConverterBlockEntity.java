@@ -9,6 +9,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 
 //? if forge {
@@ -21,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 //?}
 
-public class ConverterBlockEntity extends BlockEntity implements IEnergyReceiver, IEnergyProvider {
+public class ConverterBlockEntity extends BaseHbmBlockEntity implements IEnergyReceiver, IEnergyProvider {
 
     private long energy = 0;
 
@@ -175,18 +176,18 @@ public class ConverterBlockEntity extends BlockEntity implements IEnergyReceiver
     @Override public Priority getPriority() { return Priority.NORMAL; }
     @Override public boolean canConnectEnergy(Direction side) { return true; }
 
-    //? if < 1.21.1 {
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putLong("energy", energy);
         tag.putInt("tierIndex", tierIndex);
         tag.putInt("ioMode", ioMode);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         energy = tag.getLong("energy");
         if (tag.contains("tierIndex")) {
             tierIndex = tag.getInt("tierIndex");
@@ -194,24 +195,4 @@ public class ConverterBlockEntity extends BlockEntity implements IEnergyReceiver
         }
         if (tag.contains("ioMode")) ioMode = tag.getInt("ioMode");
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        tag.putLong("energy", energy);
-        tag.putInt("tierIndex", tierIndex);
-        tag.putInt("ioMode", ioMode);
-    }
-
-    @Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        energy = tag.getLong("energy");
-        if (tag.contains("tierIndex")) {
-            tierIndex = tag.getInt("tierIndex");
-            if (tierIndex >= 0 && tierIndex < TIERS.length) currentLimit = TIERS[tierIndex];
-        }
-        if (tag.contains("ioMode")) ioMode = tag.getInt("ioMode");
-    }
-    *///?}
 }

@@ -143,22 +143,16 @@ public class MachineMicrowaveBlockEntity extends BaseMachineBlockEntity {
 
     // ==================== NBT ====================
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("time", time);
         tag.putInt("speed", speed);
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    tag.putInt("time", time);
-    tag.putInt("speed", speed);
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         time = tag.getInt("time");
         speed = tag.getInt("speed");
     }

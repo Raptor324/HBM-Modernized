@@ -152,24 +152,17 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
 
     // ==================== NBT ====================
 
-    //? if < 1.21.1 {
     @Override
-    public void saveAdditional(CompoundTag tag) {
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tanks[0].writeToNBT(tag, "tank0");
         tanks[1].writeToNBT(tag, "tank1");
         tanks[2].writeToNBT(tag, "tank2");
     }
-    //?} else {
-    /*@Override
-    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-    tanks[0].writeToNBT(tag, "tank0");
-    tanks[1].writeToNBT(tag, "tank1");
-    tanks[2].writeToNBT(tag, "tank2");
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         tanks[0].readFromNBT(tag, "tank0");
         tanks[1].readFromNBT(tag, "tank1");
         tanks[2].readFromNBT(tag, "tank2");

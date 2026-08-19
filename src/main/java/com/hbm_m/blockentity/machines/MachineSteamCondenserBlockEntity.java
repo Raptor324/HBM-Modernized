@@ -151,53 +151,25 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity imp
         return false;
     }
 
-    //? if < 1.21.1 {
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         inputSteamTank.writeToNBT(tag, "input_steam");
         outputWaterTank.writeToNBT(tag, "output_water");
         tag.putInt("age", age);
         tag.putInt("water_timer", waterTimer);
         tag.putInt("throughput", throughput);
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
 
-        super.saveAdditional(tag, registries);
-        inputSteamTank.writeToNBT(tag, "input_steam");
-        outputWaterTank.writeToNBT(tag, "output_water");
-        tag.putInt("age", age);
-        tag.putInt("water_timer", waterTimer);
-        tag.putInt("throughput", throughput);
-    
-    }
-    *///?}
-
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         inputSteamTank.readFromNBT(tag, "input_steam");
         outputWaterTank.readFromNBT(tag, "output_water");
         age = tag.getInt("age");
         waterTimer = tag.getInt("water_timer");
         throughput = tag.getInt("throughput");
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-
-        super.loadAdditional(tag, registries);
-        inputSteamTank.readFromNBT(tag, "input_steam");
-        outputWaterTank.readFromNBT(tag, "output_water");
-        age = tag.getInt("age");
-        waterTimer = tag.getInt("water_timer");
-        throughput = tag.getInt("throughput");
-    
-    }
-    *///?}
 
     //? if forge {
     private static class UnifiedFluidHandler implements IFluidHandler {
