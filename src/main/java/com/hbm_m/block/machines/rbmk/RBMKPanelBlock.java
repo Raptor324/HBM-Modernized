@@ -12,7 +12,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /** Shared block class for all RBMK panel blocks (gauge, indicator, lever, numitron, etc.). */
-public class RBMKPanelBlock extends RBMKColumnBlock {
+public class RBMKPanelBlock extends RBMKMiniPanelBlock {
 
     public RBMKPanelBlock(Properties props) { super(props); }
 

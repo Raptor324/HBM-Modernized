@@ -125,6 +125,17 @@ public class MachineRbmkConsoleBlock extends BaseEntityBlock implements IMultibl
             BlockEntity entity = level.getBlockEntity(pos);
 
             net.minecraft.world.item.ItemStack held = player.getItemInHand(hand);
+
+            // 1:1 with RBMKConsole.onScrew: a screwdriver turns the scanned grid a quarter turn,
+            // so a console standing on any side of the reactor can read it the right way round.
+            if (held.getItem() instanceof com.hbm_m.item.tools_and_armor.ScrewdriverItem
+                    && entity instanceof MachineRbmkConsoleBlockEntity rotatable) {
+                rotatable.rotate();
+                player.displayClientMessage(net.minecraft.network.chat.Component.literal(
+                        "Grid rotation: " + (rotatable.rotation * 90) + "°"), true);
+                return InteractionResult.SUCCESS;
+            }
+
             if (held.getItem() instanceof com.hbm_m.item.rbmk.RBMKToolItem
                     && entity instanceof MachineRbmkConsoleBlockEntity console) {
                 com.hbm_m.item.rbmk.RBMKToolItem.linkConsole(held, level, console, player);

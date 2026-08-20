@@ -39,8 +39,12 @@ public class RBMKIndicatorBlockEntity extends RBMKPanelDeviceBlockEntity {
         }
     }
 
+    /** Original per-unit array size (see the matching *Unit inner class). */
+    @Override public int unitCount() { return UNITS; }
+
     @Override
     public void receiveControl(CompoundTag data) {
+        receiveSharedControl(data);
         for (int i = 0; i < UNITS; i++) {
             if (data.contains("channel" + i)) channel[i] = data.getString("channel" + i);
             if (data.contains("min" + i))     min[i]     = data.getDouble("min" + i);

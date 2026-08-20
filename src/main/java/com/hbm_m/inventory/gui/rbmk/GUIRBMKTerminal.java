@@ -62,9 +62,24 @@ public class GUIRBMKTerminal extends Screen {
         data.putString("cmd", line);
         RadioTorchControlPacket.sendToServer(pos, data);
 
+        // Local echo only; the authoritative scrollback comes back from the block entity, which
+        // is also what the in-world panel renderer draws.
         log.addFirst("> " + line);
         while (log.size() > MAX_LOG_LINES) log.removeLast();
         inputBox.setValue("");
+    }
+
+    /**
+     * The block entity's own scrollback, newest first, once the server has echoed it back. Until
+     * the first sync arrives this is empty and the local echo above carries the display.
+     */
+    private java.util.List<String> serverLog() {
+        java.util.List<String> lines = new java.util.ArrayList<>();
+        for (String line : be.history) {
+            if (line != null && !line.isEmpty()) lines.add("> " + line);
+            if (lines.size() >= MAX_LOG_LINES) break;
+        }
+        return lines;
     }
 
     @Override
@@ -85,8 +100,13 @@ public class GUIRBMKTerminal extends Screen {
         g.drawCenteredString(this.font, this.title, cx, this.height / 2 - 60, 0xFFFFFF);
 
         int lineY = this.height / 2 - 40;
-        for (String line : log) {
-            g.drawString(this.font, line, cx - 100, lineY, 0xAAFFAA);
+        java.util.List<String> synced = serverLog();
+        Iterable<String> lines = synced.isEmpty() ? log : synced;
+        // Amber while the terminal is repeating a broadcast, green otherwise - same signal the
+        // in-world renderer uses.
+        int color = be.doesRepeat ? 0xFFB060 : 0xAAFFAA;
+        for (String line : lines) {
+            g.drawString(this.font, line, cx - 100, lineY, color);
             lineY += 10;
         }
     }

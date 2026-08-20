@@ -106,14 +106,38 @@ public class RBMKRodBlockEntity extends RBMKColumnBlockEntity
         fluxFastRatio  = fluxQuantity > 0 ? (fastIn + fastNew) / fluxQuantity : 0;
     }
 
+    /**
+     * Normal channels emit along the four cardinal directions; ReaSim channels
+     * ({@code TileEntityRBMKRodReaSim.spreadFlux}) instead fan out eight streams 45 degrees apart
+     * at 75% flux each, with the whole fan jittered by a random multiple of 9 degrees so the
+     * pattern is not axis-locked. That is the entire behavioural difference between the two rod
+     * types, and without it a ReaSim channel is just an ordinary one.
+     */
     private void spreadFlux(Level level, double flux, double ratio) {
         if (flux == 0) { NeutronNodeWorld.removeNode(level, getBlockPos()); return; }
         NeutronNodeWorld.StreamWorld sw = NeutronNodeWorld.getOrAddWorld(level);
         RBMKNeutronNode node = sw.getNode(getBlockPos());
         if (node == null) { node = RBMKNeutronHandler.makeNode(sw, this); sw.addNode(node); }
+
+        if (isReaSim()) {
+            double angle = level.random.nextInt(4) * 9.0D;
+            for (int i = 0; i < 8; i++) {
+                double rad = Math.toRadians(angle);
+                sw.addStream(new RBMKNeutronStream(node,
+                        new Vec3(Math.cos(rad), 0, Math.sin(rad)), flux * 0.75, ratio));
+                angle += 45.0D;
+            }
+            return;
+        }
+
         for (Direction dir : FLUX_DIRS)
             sw.addStream(new RBMKNeutronStream(node, new Vec3(dir.getStepX(), 0, dir.getStepZ()), flux, ratio));
     }
+
+    /** Set from the block variant, see {@link com.hbm_m.block.machines.rbmk.RBMKRodBlock}. */
+    public boolean reaSim = false;
+
+    public boolean isReaSim() { return reaSim; }
 
     private void meltdown(Level level) { RBMKColumnBlockEntity.meltdownReactor(level, this); }
 

@@ -69,19 +69,18 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         registerBilletNuggetPairs(writer);
         registerTurretRecipes(writer);
         registerRbmkFuelRecipes(writer);
+        registerRbmkBlockRecipes(writer);
     }
 
     /**
-     * RBMK fuel chain - 1:1 in structure to the original's {@code RodRecipes.addRBMKRod}/
-     * {@code addPellet} (empty casing + 8 loaded units -&gt; rod), adapted to this port's item
-     * model: the original loaded rods directly from ore-dict billets; this port has an explicit
-     * pellet item as the rod's stated precursor (see {@code RBMKPelletItem}'s class doc), so each
-     * pellet is first crafted from the matching billet (1:1), then 8 pellets + the empty casing
-     * assemble into the rod (matching the original's 8-billet loading pattern exactly, just with
-     * the pellet as the intermediate unit). The empty casing recipe (zirconium + rod_quad_empty)
-     * is a 1:1 port of the original's own {@code rbmk_fuel_empty} recipe.
+     * RBMK fuel chain, 1:1 with the original's {@code crafting/RodRecipes.java:89-121}:
+     * an empty zirconium casing plus eight billets of the matching material assemble
+     * shapelessly into the loaded rod. The original has no billet-to-pellet step - pellets
+     * only ever come *out* of a rod via the disassembly recipe, ported from
+     * {@code crafting/handlers/RBMKFuelCraftingHandler.java}.
      */
     private void registerRbmkFuelRecipes(Consumer<FinishedRecipe> writer) {
+        // RodRecipes.java:89
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.RBMK_FUEL_EMPTY.get())
                 .pattern("ZRZ")
                 .pattern("Z Z")
@@ -91,85 +90,356 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModItems.ROD_QUAD_EMPTY.get()), has(ModItems.ROD_QUAD_EMPTY.get()))
                 .save(writer, recipeId("crafting/rbmk_fuel_empty"));
 
-        rbmkPellet(writer, ModItems.RBMK_PELLET_UEU, ModItems.BILLET_URANIUM);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_MEU, ModItems.BILLET_URANIUM_FUEL);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_HEU233, ModItems.BILLET_U233);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_HEU235, ModItems.BILLET_U235);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_UZH, ModItems.BILLET_UZH);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_THMEU, ModItems.BILLET_THORIUM_FUEL);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_LEP, ModItems.BILLET_PLUTONIUM_FUEL);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_MEP, ModItems.BILLET_PU_MIX);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_HEP, ModItems.BILLET_PU239);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_HEP241, ModItems.BILLET_PU241);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_LEA, ModItems.BILLET_AMERICIUM_FUEL);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_MEA, ModItems.BILLET_AM_MIX);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_HEA241, ModItems.BILLET_AM241);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_HEA242, ModItems.BILLET_AM242);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_MEN, ModItems.BILLET_NEPTUNIUM_FUEL);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_HEN, ModItems.BILLET_NEPTUNIUM);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_MOX, ModItems.BILLET_MOX_FUEL);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_LES, ModItems.BILLET_LES);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_MES, ModItems.BILLET_SCHRABIDIUM_FUEL);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_HES, ModItems.BILLET_HES);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_LEAUS, ModItems.BILLET_AUSTRALIUM_LESSER);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_HEAUS, ModItems.BILLET_AUSTRALIUM_GREATER);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_PO210BE, ModItems.BILLET_PO210BE);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_RA226BE, ModItems.BILLET_RA226BE);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_PU238BE, ModItems.BILLET_PU238BE);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_BALEFIRE_GOLD, ModItems.BILLET_BALEFIRE_GOLD);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_FLASHLEAD, ModItems.BILLET_FLASHLEAD);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_ZFB_BISMUTH, ModItems.BILLET_ZFB_BISMUTH);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_ZFB_PU241, ModItems.BILLET_ZFB_PU241);
-        rbmkPellet(writer, ModItems.RBMK_PELLET_ZFB_AM_MIX, ModItems.BILLET_ZFB_AM_MIX);
+        // RodRecipes.java:90-120 - addRBMKRod(billet, rod)
+        rbmkRod(writer, ModItems.RBMK_FUEL_UEU,            ModItems.BILLET_URANIUM);
+        rbmkRod(writer, ModItems.RBMK_FUEL_MEU,            ModItems.BILLET_URANIUM_FUEL);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEU233,         ModItems.BILLET_U233);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEU235,         ModItems.BILLET_U235);
+        rbmkRod(writer, ModItems.RBMK_FUEL_UZH,            ModItems.BILLET_UZH);
+        rbmkRod(writer, ModItems.RBMK_FUEL_THMEU,          ModItems.BILLET_THORIUM_FUEL);
+        rbmkRod(writer, ModItems.RBMK_FUEL_MOX,            ModItems.BILLET_MOX_FUEL);
+        rbmkRod(writer, ModItems.RBMK_FUEL_LEP,            ModItems.BILLET_PLUTONIUM_FUEL);
+        rbmkRod(writer, ModItems.RBMK_FUEL_MEP,            ModItems.BILLET_PU_MIX);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEP,            ModItems.BILLET_PU239);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEP241,         ModItems.BILLET_PU241);
+        rbmkRod(writer, ModItems.RBMK_FUEL_LEA,            ModItems.BILLET_AMERICIUM_FUEL);
+        rbmkRod(writer, ModItems.RBMK_FUEL_MEA,            ModItems.BILLET_AM_MIX);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEA241,         ModItems.BILLET_AM241);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEA242,         ModItems.BILLET_AM242);
+        rbmkRod(writer, ModItems.RBMK_FUEL_MEN,            ModItems.BILLET_NEPTUNIUM_FUEL);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEN,            ModItems.BILLET_NEPTUNIUM);
+        rbmkRod(writer, ModItems.RBMK_FUEL_PO210BE,        ModItems.BILLET_PO210BE);
+        rbmkRod(writer, ModItems.RBMK_FUEL_RA226BE,        ModItems.BILLET_RA226BE);
+        rbmkRod(writer, ModItems.RBMK_FUEL_PU238BE,        ModItems.BILLET_PU238BE);
+        rbmkRod(writer, ModItems.RBMK_FUEL_LEAUS,          ModItems.BILLET_AUSTRALIUM_LESSER);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HEAUS,          ModItems.BILLET_AUSTRALIUM_GREATER);
+        rbmkRod(writer, ModItems.RBMK_FUEL_BALEFIRE,       ModItems.EGG_BALEFIRE_SHARD);
+        rbmkRod(writer, ModItems.RBMK_FUEL_LES,            ModItems.BILLET_LES);
+        rbmkRod(writer, ModItems.RBMK_FUEL_MES,            ModItems.BILLET_SCHRABIDIUM_FUEL);
+        rbmkRod(writer, ModItems.RBMK_FUEL_HES,            ModItems.BILLET_HES);
+        rbmkRod(writer, ModItems.RBMK_FUEL_BALEFIRE_GOLD,  ModItems.BILLET_BALEFIRE_GOLD);
+        rbmkRod(writer, ModItems.RBMK_FUEL_FLASHLEAD,      ModItems.BILLET_FLASHLEAD);
+        rbmkRod(writer, ModItems.RBMK_FUEL_ZFB_BISMUTH,    ModItems.BILLET_ZFB_BISMUTH);
+        rbmkRod(writer, ModItems.RBMK_FUEL_ZFB_PU241,      ModItems.BILLET_ZFB_PU241);
+        rbmkRod(writer, ModItems.RBMK_FUEL_ZFB_AM_MIX,     ModItems.BILLET_ZFB_AM_MIX);
 
-        rbmkRod(writer, ModItems.RBMK_FUEL_UEU, ModItems.RBMK_PELLET_UEU);
-        rbmkRod(writer, ModItems.RBMK_FUEL_MEU, ModItems.RBMK_PELLET_MEU);
-        rbmkRod(writer, ModItems.RBMK_FUEL_HEU233, ModItems.RBMK_PELLET_HEU233);
-        rbmkRod(writer, ModItems.RBMK_FUEL_HEU235, ModItems.RBMK_PELLET_HEU235);
-        rbmkRod(writer, ModItems.RBMK_FUEL_UZH, ModItems.RBMK_PELLET_UZH);
-        rbmkRod(writer, ModItems.RBMK_FUEL_THMEU, ModItems.RBMK_PELLET_THMEU);
-        rbmkRod(writer, ModItems.RBMK_FUEL_LEP, ModItems.RBMK_PELLET_LEP);
-        rbmkRod(writer, ModItems.RBMK_FUEL_MEP, ModItems.RBMK_PELLET_MEP);
-        rbmkRod(writer, ModItems.RBMK_FUEL_HEP, ModItems.RBMK_PELLET_HEP);
-        rbmkRod(writer, ModItems.RBMK_FUEL_HEP_ALT, ModItems.RBMK_PELLET_HEP);
-        rbmkRod(writer, ModItems.RBMK_FUEL_HEP241, ModItems.RBMK_PELLET_HEP241);
-        rbmkRod(writer, ModItems.RBMK_FUEL_LEA, ModItems.RBMK_PELLET_LEA);
-        rbmkRod(writer, ModItems.RBMK_FUEL_MEA, ModItems.RBMK_PELLET_MEA);
-        rbmkRod(writer, ModItems.RBMK_FUEL_HEA241, ModItems.RBMK_PELLET_HEA241);
-        rbmkRod(writer, ModItems.RBMK_FUEL_HEA242, ModItems.RBMK_PELLET_HEA242);
-        rbmkRod(writer, ModItems.RBMK_FUEL_MEN, ModItems.RBMK_PELLET_MEN);
-        rbmkRod(writer, ModItems.RBMK_FUEL_HEN, ModItems.RBMK_PELLET_HEN);
-        rbmkRod(writer, ModItems.RBMK_FUEL_MOX, ModItems.RBMK_PELLET_MOX);
-        rbmkRod(writer, ModItems.RBMK_FUEL_LES, ModItems.RBMK_PELLET_LES);
-        rbmkRod(writer, ModItems.RBMK_FUEL_MES, ModItems.RBMK_PELLET_MES);
-        rbmkRod(writer, ModItems.RBMK_FUEL_HES, ModItems.RBMK_PELLET_HES);
-        rbmkRod(writer, ModItems.RBMK_FUEL_LEAUS, ModItems.RBMK_PELLET_LEAUS);
-        rbmkRod(writer, ModItems.RBMK_FUEL_HEAUS, ModItems.RBMK_PELLET_HEAUS);
-        rbmkRod(writer, ModItems.RBMK_FUEL_PO210BE, ModItems.RBMK_PELLET_PO210BE);
-        rbmkRod(writer, ModItems.RBMK_FUEL_RA226BE, ModItems.RBMK_PELLET_RA226BE);
-        rbmkRod(writer, ModItems.RBMK_FUEL_PU238BE, ModItems.RBMK_PELLET_PU238BE);
-        rbmkRod(writer, ModItems.RBMK_FUEL_BALEFIRE_GOLD, ModItems.RBMK_PELLET_BALEFIRE_GOLD);
-        rbmkRod(writer, ModItems.RBMK_FUEL_FLASHLEAD, ModItems.RBMK_PELLET_FLASHLEAD);
-        rbmkRod(writer, ModItems.RBMK_FUEL_BALEFIRE, ModItems.RBMK_PELLET_BALEFIRE);
-        rbmkRod(writer, ModItems.RBMK_FUEL_ZFB_BISMUTH, ModItems.RBMK_PELLET_ZFB_BISMUTH);
-        rbmkRod(writer, ModItems.RBMK_FUEL_ZFB_PU241, ModItems.RBMK_PELLET_ZFB_PU241);
-        rbmkRod(writer, ModItems.RBMK_FUEL_ZFB_AM_MIX, ModItems.RBMK_PELLET_ZFB_AM_MIX);
-        rbmkRod(writer, ModItems.RBMK_FUEL_LEU235, ModItems.RBMK_PELLET_LEU235);
+        // RodRecipes.java:121
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.RBMK_FUEL_DRX.get())
+                .requires(ModItems.RBMK_FUEL_BALEFIRE.get())
+                .requires(ModItems.PARTICLE_DIGAMMA.get())
+                .unlockedBy(getHasName(ModItems.PARTICLE_DIGAMMA.get()), has(ModItems.PARTICLE_DIGAMMA.get()))
+                .save(writer, recipeId("crafting/rbmk_fuel_drx"));
+
+        // RBMKFuelCraftingHandler - a lone rod disassembles back into 8 pellets.
+        net.minecraft.data.recipes.SpecialRecipeBuilder
+                .special((net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer<?>)
+                        com.hbm_m.recipe.RBMKFuelDisassemblyRecipe.SERIALIZER)
+                .save(writer, recipeId("crafting/rbmk_fuel_disassembly").toString());
     }
 
-    private void rbmkPellet(Consumer<FinishedRecipe> writer, RegistrySupplier<Item> pellet, RegistrySupplier<Item> billet) {
-        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, pellet.get())
-                .requires(billet.get())
-                .unlockedBy(getHasName(billet.get()), has(billet.get()))
-                .save(writer, recipeId("crafting/" + pellet.getId().getPath()));
-    }
-
-    private void rbmkRod(Consumer<FinishedRecipe> writer, RegistrySupplier<Item> rod, RegistrySupplier<Item> pellet) {
+    /** RodRecipes.java:246 - empty casing + 8 billets, shapeless. */
+    private void rbmkRod(Consumer<FinishedRecipe> writer, RegistrySupplier<Item> rod, RegistrySupplier<Item> billet) {
         ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, rod.get())
                 .requires(ModItems.RBMK_FUEL_EMPTY.get())
-                .requires(pellet.get(), 8)
-                .unlockedBy(getHasName(pellet.get()), has(pellet.get()))
+                .requires(billet.get(), 8)
+                .unlockedBy(getHasName(billet.get()), has(billet.get()))
                 .save(writer, recipeId("crafting/" + rod.getId().getPath()));
+    }
+
+    /**
+     * Every RBMK block/panel/lid/tool recipe, 1:1 with the original's
+     * {@code main/CraftingManager.java:751-793 and 987-993} plus {@code crafting/ToolRecipes.java:133}.
+     */
+    private void registerRbmkBlockRecipes(Consumer<FinishedRecipe> writer) {
+        Ingredient steelPlate  = Ingredient.of(ModItems.PLATE_STEEL.get());
+        Ingredient graphiteIng = Ingredient.of(ModItems.getIngot(ModIngots.GRAPHITE).get());
+        Ingredient boronIngot  = Ingredient.of(ModItems.getIngot(ModIngots.BORON).get());
+
+        // :751 - rbmk_lid x4
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.RBMK_LID.get(), 4)
+                .pattern("PPP").pattern("CCC").pattern("PPP")
+                .define('P', steelPlate)
+                .define('C', ModBlocks.CONCRETE_ASBESTOS.get())
+                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .save(writer, recipeId("crafting/rbmk_lid"));
+
+        // :752 and :753 - rbmk_lid_glass x4, two layer orders
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.RBMK_LID_GLASS.get(), 4)
+                .pattern("LLL").pattern("BBB").pattern("P P")
+                .define('P', steelPlate)
+                .define('L', ModBlocks.GLASS_LEAD.get())
+                .define('B', ModBlocks.GLASS_BORON.get())
+                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .save(writer, recipeId("crafting/rbmk_lid_glass"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.RBMK_LID_GLASS.get(), 4)
+                .pattern("BBB").pattern("LLL").pattern("P P")
+                .define('P', steelPlate)
+                .define('L', ModBlocks.GLASS_LEAD.get())
+                .define('B', ModBlocks.GLASS_BORON.get())
+                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .save(writer, recipeId("crafting/rbmk_lid_glass_alt"));
+
+        // :755
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_MODERATOR.get())
+                .pattern(" G ").pattern("GRG").pattern(" G ")
+                .define('G', ModBlocks.BLOCK_GRAPHITE.get())
+                .define('R', ModBlocks.RBMK_BLANK.get())
+                .unlockedBy(getHasName(ModBlocks.RBMK_BLANK.get()), has(ModBlocks.RBMK_BLANK.get()))
+                .save(writer, recipeId("crafting/rbmk_moderator"));
+        // :756
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_ABSORBER.get())
+                .pattern("GGG").pattern("GRG").pattern("GGG")
+                .define('G', boronIngot)
+                .define('R', ModBlocks.RBMK_BLANK.get())
+                .unlockedBy(getHasName(ModBlocks.RBMK_BLANK.get()), has(ModBlocks.RBMK_BLANK.get()))
+                .save(writer, recipeId("crafting/rbmk_absorber"));
+        // :757
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_REFLECTOR.get())
+                .pattern("GGG").pattern("GRG").pattern("GGG")
+                .define('G', ModItems.NEUTRON_REFLECTOR.get())
+                .define('R', ModBlocks.RBMK_BLANK.get())
+                .unlockedBy(getHasName(ModBlocks.RBMK_BLANK.get()), has(ModBlocks.RBMK_BLANK.get()))
+                .save(writer, recipeId("crafting/rbmk_reflector"));
+
+        // :759
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_CONTROL.get())
+                .pattern(" B ").pattern("GRG").pattern(" B ")
+                .define('G', graphiteIng)
+                .define('B', ModItems.MOTOR.get())
+                .define('R', ModBlocks.RBMK_ABSORBER.get())
+                .unlockedBy(getHasName(ModBlocks.RBMK_ABSORBER.get()), has(ModBlocks.RBMK_ABSORBER.get()))
+                .save(writer, recipeId("crafting/rbmk_control"));
+        // :760
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_CONTROL_MOD.get())
+                .pattern("BGB").pattern("GRG").pattern("BGB")
+                .define('G', ModBlocks.BLOCK_GRAPHITE.get())
+                .define('R', ModBlocks.RBMK_CONTROL.get())
+                .define('B', ModItems.NUGGET_BISMUTH.get())
+                .unlockedBy(getHasName(ModBlocks.RBMK_CONTROL.get()), has(ModBlocks.RBMK_CONTROL.get()))
+                .save(writer, recipeId("crafting/rbmk_control_mod"));
+        // :761
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_CONTROL_AUTO.get())
+                .pattern("C").pattern("R").pattern("D")
+                .define('C', ModItems.ADVANCED_CIRCUIT.get())
+                .define('R', ModBlocks.RBMK_CONTROL.get())
+                .define('D', ModItems.CRT_DISPLAY.get())
+                .unlockedBy(getHasName(ModBlocks.RBMK_CONTROL.get()), has(ModBlocks.RBMK_CONTROL.get()))
+                .save(writer, recipeId("crafting/rbmk_control_auto"));
+        // :763
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_CONTROL_REASIM.get())
+                .pattern(" B ").pattern("GRG").pattern(" B ")
+                .define('G', graphiteIng)
+                .define('B', ModItems.MOTOR.get())
+                .define('R', ModBlocks.RBMK_ABSORBER.get())
+                .unlockedBy(getHasName(ModBlocks.RBMK_ABSORBER.get()), has(ModBlocks.RBMK_ABSORBER.get()))
+                .save(writer, recipeId("crafting/rbmk_control_reasim"));
+        // :764
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_CONTROL_REASIM_AUTO.get())
+                .pattern("C").pattern("R").pattern("D")
+                .define('C', ModItems.ADVANCED_CIRCUIT.get())
+                .define('R', ModBlocks.RBMK_CONTROL.get())
+                .define('D', ModItems.CRT_DISPLAY.get())
+                .unlockedBy(getHasName(ModBlocks.RBMK_CONTROL.get()), has(ModBlocks.RBMK_CONTROL.get()))
+                .save(writer, recipeId("crafting/rbmk_control_reasim_auto"));
+
+        // :766
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_ROD_REASIM.get())
+                .pattern("ZCZ").pattern("ZRZ").pattern("ZCZ")
+                .define('C', ModItems.SHELL_STEEL.get())
+                .define('R', ModBlocks.RBMK_BLANK.get())
+                .define('Z', ModItems.getIngot(ModIngots.ZIRCONIUM).get())
+                .unlockedBy(getHasName(ModBlocks.RBMK_BLANK.get()), has(ModBlocks.RBMK_BLANK.get()))
+                .save(writer, recipeId("crafting/rbmk_element_reasim"));
+        // :767
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_ROD_REASIM_MOD.get())
+                .pattern("BGB").pattern("GRG").pattern("BGB")
+                .define('G', ModBlocks.BLOCK_GRAPHITE.get())
+                .define('R', ModBlocks.RBMK_ROD_REASIM.get())
+                .define('B', ModItems.getIngot(ModIngots.TCALLOY).get())
+                .unlockedBy(getHasName(ModBlocks.RBMK_ROD_REASIM.get()), has(ModBlocks.RBMK_ROD_REASIM.get()))
+                .save(writer, recipeId("crafting/rbmk_element_reasim_mod"));
+        // :768
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_OUTGASSER.get())
+                .pattern("GHG").pattern("GRG").pattern("GTG")
+                .define('G', ModBlocks.STEEL_GRATE.get())
+                .define('H', Items.HOPPER)
+                .define('T', ModItems.TANK_STEEL.get())
+                .define('R', ModBlocks.RBMK_BLANK.get())
+                .unlockedBy(getHasName(ModBlocks.RBMK_BLANK.get()), has(ModBlocks.RBMK_BLANK.get()))
+                .save(writer, recipeId("crafting/rbmk_outgasser"));
+        // :769
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_STORAGE.get())
+                .pattern("C").pattern("R").pattern("C")
+                .define('C', ModItems.CRATE_STEEL.get())
+                .define('R', ModBlocks.RBMK_BLANK.get())
+                .unlockedBy(getHasName(ModBlocks.RBMK_BLANK.get()), has(ModBlocks.RBMK_BLANK.get()))
+                .save(writer, recipeId("crafting/rbmk_storage"));
+        // :770
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_LOADER.get())
+                .pattern("SCS").pattern("CBC").pattern("SCS")
+                .define('S', steelPlate)
+                .define('C', Items.COPPER_INGOT)
+                .define('B', ModItems.TANK_STEEL.get())
+                .unlockedBy(getHasName(ModItems.TANK_STEEL.get()), has(ModItems.TANK_STEEL.get()))
+                .save(writer, recipeId("crafting/rbmk_loader"));
+        // :771
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_STEAM_INLET.get())
+                .pattern("SCS").pattern("CBC").pattern("SCS")
+                .define('S', ModItems.getIngot(ModIngots.STEEL).get())
+                .define('C', ModItems.PLATE_IRON.get())
+                .define('B', ModItems.TANK_STEEL.get())
+                .unlockedBy(getHasName(ModItems.TANK_STEEL.get()), has(ModItems.TANK_STEEL.get()))
+                .save(writer, recipeId("crafting/rbmk_steam_inlet"));
+        // :772
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_STEAM_OUTLET.get())
+                .pattern("SCS").pattern("CBC").pattern("SCS")
+                .define('S', ModItems.getIngot(ModIngots.STEEL).get())
+                .define('C', ModItems.PLATE_COPPER.get())
+                .define('B', ModItems.TANK_STEEL.get())
+                .unlockedBy(getHasName(ModItems.TANK_STEEL.get()), has(ModItems.TANK_STEEL.get()))
+                .save(writer, recipeId("crafting/rbmk_steam_outlet"));
+
+        // :774 - rbmk_display_blank x8
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_DISPLAY_BLANK.get(), 8)
+                .pattern("B").pattern("D")
+                .define('B', boronIngot)
+                .define('D', ModBlocks.CONCRETE_ASBESTOS.get())
+                .unlockedBy(getHasName(ModBlocks.CONCRETE_ASBESTOS.get()), has(ModBlocks.CONCRETE_ASBESTOS.get()))
+                .save(writer, recipeId("crafting/rbmk_display_blank"));
+        // :775
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_DISPLAY.get())
+                .pattern("C").pattern("B")
+                .define('C', ModItems.CRT_DISPLAY.get())
+                .define('B', ModBlocks.RBMK_DISPLAY_BLANK.get())
+                .unlockedBy(getHasName(ModBlocks.RBMK_DISPLAY_BLANK.get()), has(ModBlocks.RBMK_DISPLAY_BLANK.get()))
+                .save(writer, recipeId("crafting/rbmk_display"));
+        // :776
+        rbmkPanel(writer, ModBlocks.RBMK_KEYPAD, ModBlocks.RADIO_TORCH_SENDER, Ingredient.of(ModItems.VACUUM_TUBE.get()));
+        // :777
+        rbmkPanel(writer, ModBlocks.RBMK_GAUGE, ModBlocks.RADIO_TORCH_RECEIVER, Ingredient.of(ModItems.VACUUM_TUBE.get()));
+        // :778 - the numitron uses its own 3-circuit pattern
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_NUMITRON.get())
+                .pattern(" R ").pattern("CCC").pattern(" B ")
+                .define('R', ModBlocks.RADIO_TORCH_RECEIVER.get())
+                .define('B', ModBlocks.RBMK_DISPLAY_BLANK.get())
+                .define('C', ModItems.CIRCUIT_NUMITRON.get())
+                .unlockedBy(getHasName(ModBlocks.RBMK_DISPLAY_BLANK.get()), has(ModBlocks.RBMK_DISPLAY_BLANK.get()))
+                .save(writer, recipeId("crafting/rbmk_numitron"));
+        // :779
+        rbmkPanel(writer, ModBlocks.RBMK_GRAPH, ModBlocks.RADIO_TORCH_RECEIVER, Ingredient.of(ModItems.CRT_DISPLAY.get()));
+        // :780
+        rbmkPanel(writer, ModBlocks.RBMK_LEVER, ModBlocks.RADIO_TORCH_SENDER, Ingredient.of(Items.COPPER_INGOT));
+        // :781
+        rbmkPanel(writer, ModBlocks.RBMK_INDICATOR, ModBlocks.RADIO_TORCH_RECEIVER, Ingredient.of(ModItems.COIL_TUNGSTEN.get()));
+        // :782
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_TERMINAL.get())
+                .pattern("R ").pattern("CD").pattern("B ")
+                .define('R', ModBlocks.RADIO_TORCH_SENDER.get())
+                .define('B', ModBlocks.RBMK_DISPLAY_BLANK.get())
+                .define('C', ModItems.ANALOG_CIRCUIT.get())
+                .define('D', ModItems.CRT_DISPLAY.get())
+                .unlockedBy(getHasName(ModBlocks.RBMK_DISPLAY_BLANK.get()), has(ModBlocks.RBMK_DISPLAY_BLANK.get()))
+                .save(writer, recipeId("crafting/rbmk_terminal"));
+
+        // :786-789 - deco blocks and the blank column
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.BUILDING_BLOCKS, ModBlocks.DECO_RBMK.get(), 8)
+                .requires(ModBlocks.RBMK_BLANK.get())
+                .unlockedBy(getHasName(ModBlocks.RBMK_BLANK.get()), has(ModBlocks.RBMK_BLANK.get()))
+                .save(writer, recipeId("crafting/deco_rbmk"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.BUILDING_BLOCKS, ModBlocks.DECO_RBMK_SMOOTH.get())
+                .requires(ModBlocks.DECO_RBMK.get())
+                .unlockedBy(getHasName(ModBlocks.DECO_RBMK.get()), has(ModBlocks.DECO_RBMK.get()))
+                .save(writer, recipeId("crafting/deco_rbmk_smooth"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_BLANK.get())
+                .pattern("RRR").pattern("R R").pattern("RRR")
+                .define('R', ModBlocks.DECO_RBMK.get())
+                .unlockedBy(getHasName(ModBlocks.DECO_RBMK.get()), has(ModBlocks.DECO_RBMK.get()))
+                .save(writer, recipeId("crafting/rbmk_blank"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_BLANK.get())
+                .pattern("RRR").pattern("R R").pattern("RRR")
+                .define('R', ModBlocks.DECO_RBMK_SMOOTH.get())
+                .unlockedBy(getHasName(ModBlocks.DECO_RBMK_SMOOTH.get()), has(ModBlocks.DECO_RBMK_SMOOTH.get()))
+                .save(writer, recipeId("crafting/rbmk_blank_from_smooth"));
+
+        // :987
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.RBMK_CONSOLE.get())
+                .pattern("BBB").pattern("DGD").pattern("DCD")
+                .define('B', boronIngot)
+                .define('D', ModBlocks.DECO_RBMK.get())
+                .define('G', Ingredient.of(Tags.Items.GLASS_PANES))
+                .define('C', ModItems.ANALOG_CIRCUIT.get())
+                .unlockedBy(getHasName(ModBlocks.DECO_RBMK.get()), has(ModBlocks.DECO_RBMK.get()))
+                .save(writer, recipeId("crafting/rbmk_console"));
+        // :988
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_CRANE_CONSOLE.get())
+                .pattern("BCD").pattern("DDD")
+                .define('B', boronIngot)
+                .define('D', ModBlocks.DECO_RBMK.get())
+                .define('C', ModItems.ANALOG_CIRCUIT.get())
+                .unlockedBy(getHasName(ModBlocks.DECO_RBMK.get()), has(ModBlocks.DECO_RBMK.get()))
+                .save(writer, recipeId("crafting/rbmk_crane_console"));
+        // :989
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_ROD.get())
+                .pattern("C").pattern("R").pattern("C")
+                .define('C', ModItems.SHELL_STEEL.get())
+                .define('R', ModBlocks.RBMK_BLANK.get())
+                .unlockedBy(getHasName(ModBlocks.RBMK_BLANK.get()), has(ModBlocks.RBMK_BLANK.get()))
+                .save(writer, recipeId("crafting/rbmk_element"));
+        // :990
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_ROD_MOD.get())
+                .pattern("BGB").pattern("GRG").pattern("BGB")
+                .define('G', ModBlocks.BLOCK_GRAPHITE.get())
+                .define('R', ModBlocks.RBMK_ROD.get())
+                .define('B', ModItems.NUGGET_BISMUTH.get())
+                .unlockedBy(getHasName(ModBlocks.RBMK_ROD.get()), has(ModBlocks.RBMK_ROD.get()))
+                .save(writer, recipeId("crafting/rbmk_element_mod"));
+        // :991
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_BOILER.get())
+                .pattern("CPC").pattern("CRC").pattern("CPC")
+                .define('C', ModItems.PIPE_COPPER.get())
+                .define('P', ModItems.SHELL_COPPER.get())
+                .define('R', ModBlocks.RBMK_BLANK.get())
+                .unlockedBy(getHasName(ModBlocks.RBMK_BLANK.get()), has(ModBlocks.RBMK_BLANK.get()))
+                .save(writer, recipeId("crafting/rbmk_boiler"));
+        // :992
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_HEATER.get())
+                .pattern("CIC").pattern("PRP").pattern("CIC")
+                .define('C', ModItems.PIPE_COPPER.get())
+                .define('P', ModItems.SHELL_STEEL.get())
+                .define('R', ModBlocks.RBMK_BLANK.get())
+                .define('I', ModItems.getIngot(ModIngots.POLYMER).get())
+                .unlockedBy(getHasName(ModBlocks.RBMK_BLANK.get()), has(ModBlocks.RBMK_BLANK.get()))
+                .save(writer, recipeId("crafting/rbmk_heater"));
+        // :993
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_COOLER.get())
+                .pattern("IGI").pattern("GCG").pattern("IGI")
+                .define('C', ModBlocks.RBMK_BLANK.get())
+                .define('I', ModItems.PLATE_POLYMER.get())
+                .define('G', ModBlocks.STEEL_GRATE.get())
+                .unlockedBy(getHasName(ModBlocks.RBMK_BLANK.get()), has(ModBlocks.RBMK_BLANK.get()))
+                .save(writer, recipeId("crafting/rbmk_cooler"));
+
+        // ToolRecipes.java:133
+        ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, ModItems.RBMK_TOOL.get())
+                .pattern(" A ").pattern(" IA").pattern("I  ")
+                .define('A', ModItems.getIngot(ModIngots.LEAD).get())
+                .define('I', Items.IRON_INGOT)
+                .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
+                .save(writer, recipeId("crafting/rbmk_tool"));
+    }
+
+    /** The shared radio-torch + circuit + blank-panel column used by most RBMK panel devices. */
+    private void rbmkPanel(Consumer<FinishedRecipe> writer,
+            RegistrySupplier<net.minecraft.world.level.block.Block> panel,
+            RegistrySupplier<net.minecraft.world.level.block.Block> torch,
+            Ingredient circuit) {
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, panel.get())
+                .pattern("R").pattern("C").pattern("B")
+                .define('R', torch.get())
+                .define('C', circuit)
+                .define('B', ModBlocks.RBMK_DISPLAY_BLANK.get())
+                .unlockedBy(getHasName(ModBlocks.RBMK_DISPLAY_BLANK.get()), has(ModBlocks.RBMK_DISPLAY_BLANK.get()))
+                .save(writer, recipeId("crafting/" + panel.getId().getPath()));
     }
 
     //Sentry-Turret + MVP-Munition (Original-Rezept aus WeaponRecipes.java, GUNMETAL.mechanism() -> generisches PART_MECHANISM)

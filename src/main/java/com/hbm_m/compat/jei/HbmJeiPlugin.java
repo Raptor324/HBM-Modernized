@@ -102,6 +102,8 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCategories(new CrystallizerJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new PressJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new ShredderJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new RBMKDisassemblyJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new RBMKWasteDecayJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new BlastFurnaceJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new GasCentrifugeJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new ArcFurnaceJeiCategory(registration.getJeiHelpers().getGuiHelper()));
@@ -129,6 +131,8 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipes(CrucibleAlloyingJeiCategory.RECIPE_TYPE, getCrucibleAlloyingRecipes());
         registration.addRecipes(CrucibleSmeltingJeiCategory.RECIPE_TYPE, getCrucibleSmeltingRecipes());
         registration.addRecipes(ArcWelderJeiCategory.RECIPE_TYPE, ArcWelderJeiRecipe.fromRecipes());
+        registration.addRecipes(RBMKDisassemblyJeiCategory.RECIPE_TYPE, RBMKDisassemblyJeiRecipe.all());
+        registration.addRecipes(RBMKWasteDecayJeiCategory.RECIPE_TYPE, RBMKWasteDecayJeiCategory.all());
         registration.addRecipes(SolderingStationJeiCategory.RECIPE_TYPE, SolderingStationJeiRecipe.fromRecipes());
         registration.addRecipes(CrystallizerJeiCategory.RECIPE_TYPE, CrystallizerJeiRecipe.fromAll());
         registration.addRecipes(PressJeiCategory.RECIPE_TYPE, getPressRecipes());

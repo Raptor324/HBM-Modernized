@@ -87,6 +87,9 @@ public class ModRecipes {
             RECIPE_TYPES.register("combination_oven", () -> CombinationOvenRecipe.Type.INSTANCE);
 
 
+    // 1:1 port of the original's RBMKFuelCraftingHandler (rod -> 8 pellets, see that class).
+    public static final RegistrySupplier<RecipeSerializer<?>> RBMK_FUEL_DISASSEMBLY_SERIALIZER =
+            SERIALIZERS.register("rbmk_fuel_disassembly", () -> RBMKFuelDisassemblyRecipe.SERIALIZER);
 
     public static void init() {
         SERIALIZERS.register();

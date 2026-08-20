@@ -20,7 +20,7 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public class RBMKSteamInletBlockEntity extends BlockEntity {
 
-    public final FluidTank waterTank = new FluidTank(32_000);
+    public final FluidTank waterTank = new FluidTank(com.hbm_m.inventory.fluid.ModFluids.WATER.getSource(), 32_000);
 
     public RBMKSteamInletBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.RBMK_STEAM_INLET_BE.get(), pos, state);
@@ -28,6 +28,10 @@ public class RBMKSteamInletBlockEntity extends BlockEntity {
 
     public static void tick(Level level, BlockPos pos, BlockState state, RBMKSteamInletBlockEntity be) {
         if (level.isClientSide) return;
+
+        // 1:1 with the original: the whole transfer only runs while the ReaSim boiler dial is on
+        // (TileEntityRBMKInlet/Outlet.updateEntity both gate on getReasimBoilers).
+        if (!com.hbm_m.handler.rbmk.RBMKDials.getReasimBoilers(level)) return;
 
         // Distribute water to adjacent RBMK columns (horizontal directions only)
         for (Direction dir : new Direction[]{ Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST }) {
@@ -41,6 +45,22 @@ public class RBMKSteamInletBlockEntity extends BlockEntity {
             }
         }
     }
+
+
+    //? if forge {
+    /**
+     * Without this the tank existed but nothing could ever reach it - pipes and tanks had no
+     * handler to talk to, so the channel simply refused every connection.
+     */
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
+            net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
+            return waterTank.getCapability().cast();
+        }
+        return super.getCapability(cap, side);
+    }
+    //?}
 
     // ─── NBT / Sync ──────────────────────────────────────────────────────────
 

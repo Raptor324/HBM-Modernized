@@ -41,6 +41,15 @@ public class ModEntities {
 
 
 
+    /** 1:1 with the original's "entity_rbmk_debris" - meltdown wreckage, see RBMKDebrisEntity. */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.rbmk.RBMKDebrisEntity>> RBMK_DEBRIS =
+        ENTITY_TYPES.register("rbmk_debris",
+            () -> EntityType.Builder.<com.hbm_m.entity.rbmk.RBMKDebrisEntity>of(
+                        com.hbm_m.entity.rbmk.RBMKDebrisEntity::new, MobCategory.MISC)
+                .sized(1f, 1f)
+                .clientTrackingRange(8)
+                .build("rbmk_debris"));
+
     public static final RegistrySupplier<EntityType<TurretBulletEntity>> TURRET_BULLET =
         ENTITY_TYPES.register("turret_bullet",
             () -> EntityType.Builder.<TurretBulletEntity>of(TurretBulletEntity::new, MobCategory.MISC)

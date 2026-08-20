@@ -112,6 +112,24 @@ public class RBMKToolItem extends Item {
                 Component.translatable("msg.hbm_m.rbmk_crane.linked").withStyle(ChatFormatting.GREEN), true);
     }
 
+    /**
+     * The original tool's third target ({@code ItemRBMKTool}, the {@code rbmk_display} branch):
+     * hands the stored column position to a display panel as the center of its 7x7 view.
+     */
+    public static void linkDisplay(ItemStack stack, Level level,
+            com.hbm_m.blockentity.machines.rbmk.RBMKDisplayBlockEntity display, Player player) {
+        if (level.isClientSide) return;
+        CompoundTag tag = stack.getTag();
+        if (tag == null || !tag.contains(NBT_X)) {
+            player.displayClientMessage(
+                    Component.translatable("msg.hbm_m.rbmk_tool.no_position").withStyle(ChatFormatting.RED), true);
+            return;
+        }
+        display.setTarget(new BlockPos(tag.getInt(NBT_X), tag.getInt(NBT_Y), tag.getInt(NBT_Z)));
+        player.displayClientMessage(
+                Component.translatable("msg.hbm_m.rbmk_tool.set").withStyle(ChatFormatting.YELLOW), true);
+    }
+
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);

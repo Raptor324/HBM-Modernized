@@ -18,6 +18,11 @@ public class GUIRBMKKeyPad extends Screen {
     private final BlockPos pos;
     private final RBMKKeyPadBlockEntity be;
 
+    /** Label, tint and on/off toggle - the three fields every original *Unit carries. */
+    private final EditBox[] labelBoxes    = new EditBox[RBMKKeyPadBlockEntity.UNITS];
+    private final EditBox[] colorBoxes    = new EditBox[RBMKKeyPadBlockEntity.UNITS];
+    private final Button[]  activeButtons = new Button[RBMKKeyPadBlockEntity.UNITS];
+    private final boolean[] unitActive    = new boolean[RBMKKeyPadBlockEntity.UNITS];
     private final EditBox[]  channelBoxes = new EditBox[RBMKKeyPadBlockEntity.UNITS];
     private final EditBox[]  commandBoxes = new EditBox[RBMKKeyPadBlockEntity.UNITS];
     private final Checkbox[] pollingBoxes = new Checkbox[RBMKKeyPadBlockEntity.UNITS];
@@ -49,7 +54,29 @@ public class GUIRBMKKeyPad extends Screen {
             pollingBoxes[i] = polling;
             addRenderableWidget(polling);
 
-            y += 20;
+            y += 19;
+
+            final int idx = i;
+            unitActive[i] = be.isUnitActive(i);
+            
+            EditBox lbl = new EditBox(this.font, cx - 100, y, 95, 16, Component.literal("label"));
+            lbl.setMaxLength(24);
+            lbl.setValue(be.getUnitLabel(i));
+            labelBoxes[i] = lbl;
+            addRenderableWidget(lbl);
+            
+            EditBox col = new EditBox(this.font, cx + 5, y, 45, 16, Component.literal("color"));
+            col.setMaxLength(7);
+            col.setValue(String.format("%06X", be.getUnitColor(i) & 0xFFFFFF));
+            colorBoxes[i] = col;
+            addRenderableWidget(col);
+            
+            activeButtons[i] = Button.builder(GUIRBMKGauge.activeLabel(unitActive[i]), b -> {
+                unitActive[idx] = !unitActive[idx];
+                activeButtons[idx].setMessage(GUIRBMKGauge.activeLabel(unitActive[idx]));
+            }).bounds(cx + 78, y, 22, 16).build();
+            addRenderableWidget(activeButtons[i]);
+            y += 24;
         }
 
         addRenderableWidget(Button.builder(Component.translatable("gui.hbm_m.save"), b -> save())
@@ -60,6 +87,9 @@ public class GUIRBMKKeyPad extends Screen {
         CompoundTag data = new CompoundTag();
         for (int i = 0; i < RBMKKeyPadBlockEntity.UNITS; i++) {
             data.putString("channel" + i, channelBoxes[i].getValue());
+            data.putString("ulabel" + i, labelBoxes[i].getValue());
+            data.putBoolean("active" + i, unitActive[i]);
+            data.putInt("ucolor" + i, GUIRBMKGauge.parseColor(colorBoxes[i].getValue()));
             data.putString("command" + i, commandBoxes[i].getValue());
             data.putBoolean("polling" + i, pollingBoxes[i].selected());
         }

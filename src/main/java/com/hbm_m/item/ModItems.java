@@ -1102,6 +1102,10 @@ public class ModItems {
     public static final RegistrySupplier<Item> VACUUM_TUBE = ITEMS.register("vacuum_tube",
             () -> new Item(new Item.Properties()));
 
+    // EnumCircuitType.NUMITRON from the original's ItemCircuit - needed by the rbmk_numitron recipe.
+    public static final RegistrySupplier<Item> CIRCUIT_NUMITRON = ITEMS.register("circuit_numitron",
+            () -> new Item(new Item.Properties()));
+
     public static final RegistrySupplier<Item> CAPACITOR = ITEMS.register("capacitor",
             () -> new Item(new Item.Properties()));
 
@@ -1282,7 +1286,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> RBMK_FUEL_DRX = ITEMS.register("rbmk_fuel_drx",
             () -> new RbmkFuelDrxItem(new Item.Properties())
                     .setYield(10_000_000).setStats(1000, 10).setFunction(RBMKRodItem.EnumBurnFunc.QUADRATIC)
-                    .setHeat(0.1).setMeltingPoint(100_000).setTint(0xD77276));
+                    .setHeat(0.1).setMeltingPoint(100_000).setTint(0xD77276).setPellet(() -> ModItems.RBMK_PELLET_DRX.get()));
 
     public static final RegistrySupplier<Item> ROD_ZIRNOX_EMPTY = ITEMS.register("rod_zirnox_empty",
             () -> new Item(new Item.Properties()));
@@ -2512,11 +2516,6 @@ public class ModItems {
     // Pellets - stats mirror the matching rod's, 1:1 with the original's ItemRBMKRod definitions
     // in ModItems.java (see RBMKRodItem's class doc / this port's convention of duplicating stats
     // onto the pellet rather than deriving the rod from it).
-    public static final RegistrySupplier<Item> RBMK_PELLET_LEU235 = ITEMS.register("rbmk_pellet_leu235",
-            () -> new RBMKPelletItem(new Item.Properties())
-                    .setFullName("Low-Enriched Uranium-235").setYield(100_000_000).setReactivity(20)
-                    .setHeat(0.65).setMeltingPoint(2865).setTint(0x868D82));
-
     public static final RegistrySupplier<Item> RBMK_PELLET_HEU235 = ITEMS.register("rbmk_pellet_heu235",
             () -> new RBMKPelletItem(new Item.Properties())
                     .setFullName("High-Enriched Uranium-235").setYield(100_000_000).setReactivity(50)
@@ -2538,33 +2537,27 @@ public class ModItems {
                     .setMeltingPoint(2815).setTint(0x868D82));
 
     // Fuel Rods (assembled from pellets) - 1:1 port of the original's ItemRBMKRod stat blocks.
-    public static final RegistrySupplier<Item> RBMK_FUEL_LEU235 = ITEMS.register("rbmk_fuel_leu235",
-            () -> new RBMKRodItem("Low-Enriched Uranium-235 Rod", new Item.Properties())
-                    .setYield(100_000_000).setStats(20).setFunction(RBMKRodItem.EnumBurnFunc.LOG_TEN)
-                    .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.RAISING_SLOPE)
-                    .setHeat(0.65).setMeltingPoint(2865).setTint(0x868D82));
-
     public static final RegistrySupplier<Item> RBMK_FUEL_HEU235 = ITEMS.register("rbmk_fuel_heu235",
             () -> new RBMKRodItem("High-Enriched Uranium-235 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(50).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
-                    .setMeltingPoint(2865).setTint(0x868D82));
+                    .setMeltingPoint(2865).setTint(0x868D82).setPellet(() -> ModItems.RBMK_PELLET_HEU235.get()));
 
     public static final RegistrySupplier<Item> RBMK_FUEL_LEP = ITEMS.register("rbmk_fuel_lep",
             () -> new RBMKRodItem("Low-Enriched Plutonium Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(35).setFunction(RBMKRodItem.EnumBurnFunc.LOG_TEN)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.RAISING_SLOPE)
-                    .setHeat(0.75).setMeltingPoint(2744).setTint(0x656E6B));
+                    .setHeat(0.75).setMeltingPoint(2744).setTint(0x656E6B).setPellet(() -> ModItems.RBMK_PELLET_LEP.get()));
 
-    public static final RegistrySupplier<Item> RBMK_FUEL_HEP = ITEMS.register("rbmk_fuel_hep239",
+    public static final RegistrySupplier<Item> RBMK_FUEL_HEP = ITEMS.register("rbmk_fuel_hep",
             () -> new RBMKRodItem("High-Enriched Plutonium-239 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(30).setFunction(RBMKRodItem.EnumBurnFunc.LINEAR)
-                    .setHeat(1.25).setMeltingPoint(2744).setTint(0x656E6B));
+                    .setHeat(1.25).setMeltingPoint(2744).setTint(0x656E6B).setPellet(() -> ModItems.RBMK_PELLET_HEP.get()));
 
     public static final RegistrySupplier<Item> RBMK_FUEL_MOX = ITEMS.register("rbmk_fuel_mox",
             () -> new RBMKRodItem("Mixed Oxide Fuel Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(40).setFunction(RBMKRodItem.EnumBurnFunc.LOG_TEN)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.RAISING_SLOPE)
-                    .setMeltingPoint(2815).setTint(0x868D82));
+                    .setMeltingPoint(2815).setTint(0x868D82).setPellet(() -> ModItems.RBMK_PELLET_MOX.get()));
 
     public static final RegistrySupplier<Item> RBMK_FUEL_EMPTY = ITEMS.register("rbmk_fuel_empty",
             () -> new Item(new Item.Properties()));
@@ -3575,142 +3568,145 @@ public class ModItems {
     public static final RegistrySupplier<Item> RBMK_FUEL_BALEFIRE = ITEMS.register("rbmk_fuel_balefire",
             () -> new RBMKRodItem("Draconic Flames", new Item.Properties())
                     .setYield(100_000_000).setStats(100, 35).setFunction(RBMKRodItem.EnumBurnFunc.LINEAR)
-                    .setXenon(0.0, 50).setHeat(3.0).setMeltingPoint(3652).setTint(0xB2FF1B));
+                    .setXenon(0.0, 50).setHeat(3.0).setMeltingPoint(3652).setTint(0xB2FF1B).setPellet(() -> ModItems.RBMK_PELLET_BALEFIRE.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_BALEFIRE_GOLD = ITEMS.register("rbmk_fuel_balefire_gold",
             () -> new RBMKRodItem("Antihydrogen in a Magnetized Gold-198 Lattice", new Item.Properties())
                     .setYield(100_000_000).setStats(50, 10).setFunction(RBMKRodItem.EnumBurnFunc.ARCH)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.LINEAR).setXenon(0.0, 50)
-                    .setMeltingPoint(2000).setTint(0xDC9613));
+                    .setMeltingPoint(2000).setTint(0xDC9613).setPellet(() -> ModItems.RBMK_PELLET_BALEFIRE_GOLD.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_FLASHLEAD = ITEMS.register("rbmk_fuel_flashlead",
             () -> new RBMKRodItem("Antihydrogen confined by a Magnetized Gold-198 and Lead-209 Lattice", new Item.Properties())
                     .setYield(250_000_000).setStats(40, 50).setFunction(RBMKRodItem.EnumBurnFunc.ARCH)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.LINEAR).setXenon(0.0, 50)
-                    .setMeltingPoint(2050).setTint(0x7B7B87));
+                    .setMeltingPoint(2050).setTint(0x7B7B87).setPellet(() -> ModItems.RBMK_PELLET_FLASHLEAD.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_HEA241 = ITEMS.register("rbmk_fuel_hea241",
             () -> new RBMKRodItem("Highly Enriched Americium-241 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(65, 15).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
-                    .setHeat(1.85).setMeltingPoint(2386).setNeutronTypes(NType.FAST, NType.FAST).setTint(0xA88A8F));
+                    .setHeat(1.85).setMeltingPoint(2386).setNeutronTypes(NType.FAST, NType.FAST).setTint(0xA88A8F).setPellet(() -> ModItems.RBMK_PELLET_HEA241.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_HEA242 = ITEMS.register("rbmk_fuel_hea242",
             () -> new RBMKRodItem("Highly Enriched Americium-242 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(45).setFunction(RBMKRodItem.EnumBurnFunc.LINEAR)
-                    .setHeat(2.0).setMeltingPoint(2386).setTint(0xA88A8F));
+                    .setHeat(2.0).setMeltingPoint(2386).setTint(0xA88A8F).setPellet(() -> ModItems.RBMK_PELLET_HEA242.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_HEAUS = ITEMS.register("rbmk_fuel_heaus",
             () -> new RBMKRodItem("Highly Enriched Australium (Ayerite) Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(35).setFunction(RBMKRodItem.EnumBurnFunc.LINEAR)
-                    .setXenon(0.05, 50).setHeat(1.5).setMeltingPoint(5211).setTint(0xFFEE00));
+                    .setXenon(0.05, 50).setHeat(1.5).setMeltingPoint(5211).setTint(0xFFEE00).setPellet(() -> ModItems.RBMK_PELLET_HEAUS.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_HEN = ITEMS.register("rbmk_fuel_hen",
             () -> new RBMKRodItem("Highly Enriched Neptunium-237 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(40).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
-                    .setMeltingPoint(2800).setNeutronTypes(NType.FAST, NType.FAST).setTint(0x757E73));
-    public static final RegistrySupplier<Item> RBMK_FUEL_HEP_ALT = ITEMS.register("rbmk_fuel_hep",
-            () -> new RBMKRodItem("High-Enriched Plutonium-239 Rod", new Item.Properties())
-                    .setYield(100_000_000).setStats(30).setFunction(RBMKRodItem.EnumBurnFunc.LINEAR)
-                    .setHeat(1.25).setMeltingPoint(2744).setTint(0x656E6B));
+                    .setMeltingPoint(2800).setNeutronTypes(NType.FAST, NType.FAST).setTint(0x757E73).setPellet(() -> ModItems.RBMK_PELLET_HEN.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_HEP241 = ITEMS.register("rbmk_fuel_hep241",
             () -> new RBMKRodItem("High-Enriched Plutonium-241 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(40).setFunction(RBMKRodItem.EnumBurnFunc.LINEAR)
-                    .setHeat(1.75).setMeltingPoint(2744).setTint(0x656E6B));
+                    .setHeat(1.75).setMeltingPoint(2744).setTint(0x656E6B).setPellet(() -> ModItems.RBMK_PELLET_HEP241.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_HES = ITEMS.register("rbmk_fuel_hes",
             () -> new RBMKRodItem("Highly Enriched Schrabidium-326 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(90).setFunction(RBMKRodItem.EnumBurnFunc.LINEAR)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.LINEAR)
-                    .setHeat(1.75).setMeltingPoint(3000).setTint(0x2D9A94));
+                    .setHeat(1.75).setMeltingPoint(3000).setTint(0x2D9A94).setPellet(() -> ModItems.RBMK_PELLET_HES.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_HEU233 = ITEMS.register("rbmk_fuel_heu233",
             () -> new RBMKRodItem("Highly Enriched Uranium-233 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(27.5).setFunction(RBMKRodItem.EnumBurnFunc.LINEAR)
-                    .setHeat(1.25).setMeltingPoint(2865).setTint(0x868D82));
+                    .setHeat(1.25).setMeltingPoint(2865).setTint(0x868D82).setPellet(() -> ModItems.RBMK_PELLET_HEU233.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_LEA = ITEMS.register("rbmk_fuel_lea",
             () -> new RBMKRodItem("Low Enriched Americium-242 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(60, 10).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.RAISING_SLOPE)
-                    .setHeat(1.5).setMeltingPoint(2386).setTint(0xA88A8F));
+                    .setHeat(1.5).setMeltingPoint(2386).setTint(0xA88A8F).setPellet(() -> ModItems.RBMK_PELLET_LEA.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_LEAUS = ITEMS.register("rbmk_fuel_leaus",
             () -> new RBMKRodItem("Low Enriched Australium (Tasmanite) Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(30).setFunction(RBMKRodItem.EnumBurnFunc.SIGMOID)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.LINEAR).setXenon(0.05, 50)
-                    .setHeat(1.5).setMeltingPoint(7029).setTint(0xFFEE00));
+                    .setHeat(1.5).setMeltingPoint(7029).setTint(0xFFEE00).setPellet(() -> ModItems.RBMK_PELLET_LEAUS.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_LES = ITEMS.register("rbmk_fuel_les",
             () -> new RBMKRodItem("Low Enriched Schrabidium-326 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(50).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
-                    .setHeat(1.25).setMeltingPoint(2500).setNeutronTypes(NType.SLOW, NType.SLOW).setTint(0x2D9A94));
+                    .setHeat(1.25).setMeltingPoint(2500).setNeutronTypes(NType.SLOW, NType.SLOW).setTint(0x2D9A94).setPellet(() -> ModItems.RBMK_PELLET_LES.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_MEA = ITEMS.register("rbmk_fuel_mea",
             () -> new RBMKRodItem("Medium Enriched Americium-242 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(35, 20).setFunction(RBMKRodItem.EnumBurnFunc.ARCH)
-                    .setHeat(1.75).setMeltingPoint(2386).setTint(0xA88A8F));
+                    .setHeat(1.75).setMeltingPoint(2386).setTint(0xA88A8F).setPellet(() -> ModItems.RBMK_PELLET_MEA.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_MEN = ITEMS.register("rbmk_fuel_men",
             () -> new RBMKRodItem("Medium Enriched Neptunium-237 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(30).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.RAISING_SLOPE)
-                    .setHeat(0.75).setMeltingPoint(2800).setNeutronTypes(NType.ANY, NType.FAST).setTint(0x757E73));
+                    .setHeat(0.75).setMeltingPoint(2800).setNeutronTypes(NType.ANY, NType.FAST).setTint(0x757E73).setPellet(() -> ModItems.RBMK_PELLET_MEN.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_MEP = ITEMS.register("rbmk_fuel_mep",
             () -> new RBMKRodItem("Medium Enriched Plutonium-239 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(35).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
-                    .setMeltingPoint(2744).setTint(0x656E6B));
+                    .setMeltingPoint(2744).setTint(0x656E6B).setPellet(() -> ModItems.RBMK_PELLET_MEP.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_MES = ITEMS.register("rbmk_fuel_mes",
             () -> new RBMKRodItem("Medium Enriched Schrabidium-326 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(75).setFunction(RBMKRodItem.EnumBurnFunc.ARCH)
-                    .setHeat(1.5).setMeltingPoint(2750).setTint(0x2D9A94));
+                    .setHeat(1.5).setMeltingPoint(2750).setTint(0x2D9A94).setPellet(() -> ModItems.RBMK_PELLET_MES.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_MEU = ITEMS.register("rbmk_fuel_meu",
             () -> new RBMKRodItem("Medium Enriched Uranium-235 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(20).setFunction(RBMKRodItem.EnumBurnFunc.LOG_TEN)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.RAISING_SLOPE)
-                    .setHeat(0.65).setMeltingPoint(2865).setTint(0x868D82));
+                    .setHeat(0.65).setMeltingPoint(2865).setTint(0x868D82).setPellet(() -> ModItems.RBMK_PELLET_MEU.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_PO210BE = ITEMS.register("rbmk_fuel_po210be",
             () -> new RBMKRodItem("Polonium-210 & Beryllium Neutron Source", new Item.Properties())
                     .setYield(25_000_000).setStats(0, 50).setFunction(RBMKRodItem.EnumBurnFunc.PASSIVE)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.LINEAR).setXenon(0.0, 50)
                     .setHeat(0.1).setDiffusion(0.05).setMeltingPoint(1287)
-                    .setNeutronTypes(NType.SLOW, NType.SLOW).setTint(0x563A26));
+                    .setNeutronTypes(NType.SLOW, NType.SLOW).setTint(0x563A26).setPellet(() -> ModItems.RBMK_PELLET_PO210BE.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_PU238BE = ITEMS.register("rbmk_fuel_pu238be",
             () -> new RBMKRodItem("Plutonium-238 & Beryllium Neutron Source", new Item.Properties())
                     .setYield(50_000_000).setStats(40, 40).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
                     .setHeat(0.1).setDiffusion(0.05).setMeltingPoint(1287)
-                    .setNeutronTypes(NType.SLOW, NType.SLOW).setTint(0x656E6B));
+                    .setNeutronTypes(NType.SLOW, NType.SLOW).setTint(0x656E6B).setPellet(() -> ModItems.RBMK_PELLET_PU238BE.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_RA226BE = ITEMS.register("rbmk_fuel_ra226be",
             () -> new RBMKRodItem("Radium-226 & Beryllium Neutron Source", new Item.Properties())
                     .setYield(100_000_000).setStats(0, 20).setFunction(RBMKRodItem.EnumBurnFunc.PASSIVE)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.LINEAR).setXenon(0.0, 50)
                     .setHeat(0.035).setDiffusion(0.5).setMeltingPoint(700)
-                    .setNeutronTypes(NType.SLOW, NType.SLOW).setTint(0xB3B6AD));
+                    .setNeutronTypes(NType.SLOW, NType.SLOW).setTint(0xB3B6AD).setPellet(() -> ModItems.RBMK_PELLET_RA226BE.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_THMEU = ITEMS.register("rbmk_fuel_thmeu",
             () -> new RBMKRodItem("Thorium with MEU Driver Fuel Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(20).setFunction(RBMKRodItem.EnumBurnFunc.PLATEU)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.BOOSTED_SLOPE)
-                    .setHeat(0.65).setMeltingPoint(3350).setTint(0x665448));
+                    .setHeat(0.65).setMeltingPoint(3350).setTint(0x665448).setPellet(() -> ModItems.RBMK_PELLET_THMEU.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_UEU = ITEMS.register("rbmk_fuel_ueu",
             () -> new RBMKRodItem("Unenriched Uranium Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(15).setFunction(RBMKRodItem.EnumBurnFunc.LOG_TEN)
                     .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.RAISING_SLOPE)
-                    .setHeat(0.65).setMeltingPoint(2865).setTint(0x868D82));
+                    .setHeat(0.65).setMeltingPoint(2865).setTint(0x868D82).setPellet(() -> ModItems.RBMK_PELLET_UEU.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_UZH = ITEMS.register("rbmk_fuel_uzh",
             () -> new RBMKRodItem("Uranium Zirconium Hydride Rod", new Item.Properties())
                     .setYield(50_000_000).setStats(30).setFunction(RBMKRodItem.EnumBurnFunc.LOG_TEN)
+                    .setDepletionFunction(RBMKRodItem.EnumDepleteFunc.GENTLE_SLOPE)
                     .setHeat(0.75).setHeatCoeff(1000, 500).setDiffusion(0.1)
-                    .setMeltingPoint(1845).setTint(0x7077AF));
+                    .setMeltingPoint(1845).setTint(0x7077AF).setPellet(() -> ModItems.RBMK_PELLET_UZH.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_ZFB_AM_MIX = ITEMS.register("rbmk_fuel_zfb_am_mix",
             () -> new RBMKRodItem("Zirconium Fast Breeder - HEP-241#MEA Rod", new Item.Properties())
                     .setYield(50_000_000).setStats(20).setFunction(RBMKRodItem.EnumBurnFunc.LINEAR)
-                    .setHeat(1.75).setMeltingPoint(2744).setTint(0xAAA36A));
+                    .setHeat(1.75).setMeltingPoint(2744).setTint(0xAAA36A).setPellet(() -> ModItems.RBMK_PELLET_ZFB_AM_MIX.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_ZFB_BISMUTH = ITEMS.register("rbmk_fuel_zfb_bismuth",
             () -> new RBMKRodItem("Zirconium Fast Breeder - LEU/HEP-241#Bi Rod", new Item.Properties())
                     .setYield(50_000_000).setStats(20).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
-                    .setHeat(1.75).setMeltingPoint(2744).setTint(0xAAA36A));
+                    .setHeat(1.75).setMeltingPoint(2744).setTint(0xAAA36A).setPellet(() -> ModItems.RBMK_PELLET_ZFB_BISMUTH.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_ZFB_PU241 = ITEMS.register("rbmk_fuel_zfb_pu241",
             () -> new RBMKRodItem("Zirconium Fast Breeder - HEU-235/HEP-240#Pu-241 Rod", new Item.Properties())
                     .setYield(50_000_000).setStats(20).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
-                    .setMeltingPoint(2865).setTint(0xAAA36A));
+                    .setMeltingPoint(2865).setTint(0xAAA36A).setPellet(() -> ModItems.RBMK_PELLET_ZFB_PU241.get()));
+
+    // Original ModItems.java:3314 - the debug rod, no pellet (cannot be disassembled).
+    public static final RegistrySupplier<Item> RBMK_FUEL_TEST = ITEMS.register("rbmk_fuel_test",
+            () -> new RBMKRodItem("THE VOICES", new Item.Properties())
+                    .setYield(1_000_000).setStats(100).setFunction(RBMKRodItem.EnumBurnFunc.EXPERIMENTAL)
+                    .setHeat(1.0).setMeltingPoint(100_000));
 
     public static final RegistrySupplier<Item> RBMK_PELLET_BALEFIRE = ITEMS.register("rbmk_pellet_balefire",
-            () -> new RBMKPelletItem(new Item.Properties()).setFullName("Draconic Flames")
+            () -> new RBMKPelletItem(new Item.Properties()).disableXenon().setFullName("Draconic Flames")
                     .setYield(100_000_000).setReactivity(100).setHeat(3.0).setMeltingPoint(3652).setTint(0xB2FF1B));
     public static final RegistrySupplier<Item> RBMK_PELLET_BALEFIRE_GOLD = ITEMS.register("rbmk_pellet_balefire_gold",
-            () -> new RBMKPelletItem(new Item.Properties()).setFullName("Antihydrogen in a Magnetized Gold-198 Lattice")
+            () -> new RBMKPelletItem(new Item.Properties()).disableXenon().setFullName("Antihydrogen in a Magnetized Gold-198 Lattice")
                     .setYield(100_000_000).setReactivity(50).setMeltingPoint(2000).setTint(0xDC9613));
     public static final RegistrySupplier<Item> RBMK_PELLET_DRX = ITEMS.register("rbmk_pellet_drx",
             () -> new RBMKPelletItem(new Item.Properties()).setFullName("can't you hear, can't you hear the thunder?")
                     .setYield(10_000_000).setReactivity(1000).setHeat(0.1).setMeltingPoint(100_000).setTint(0xD77276));
     public static final RegistrySupplier<Item> RBMK_PELLET_FLASHLEAD = ITEMS.register("rbmk_pellet_flashlead",
-            () -> new RBMKPelletItem(new Item.Properties()).setFullName("Antihydrogen confined by a Magnetized Gold-198 and Lead-209 Lattice")
+            () -> new RBMKPelletItem(new Item.Properties()).disableXenon().setFullName("Antihydrogen confined by a Magnetized Gold-198 and Lead-209 Lattice")
                     .setYield(250_000_000).setReactivity(40).setMeltingPoint(2050).setTint(0x7B7B87));
     public static final RegistrySupplier<Item> RBMK_PELLET_HEA241 = ITEMS.register("rbmk_pellet_hea241",
             () -> new RBMKPelletItem(new Item.Properties()).setFullName("Highly Enriched Americium-241")
@@ -3762,7 +3758,7 @@ public class ModItems {
             () -> new RBMKPelletItem(new Item.Properties()).setFullName("Medium Enriched Uranium-235")
                     .setYield(100_000_000).setReactivity(20).setHeat(0.65).setMeltingPoint(2865).setTint(0x868D82));
     public static final RegistrySupplier<Item> RBMK_PELLET_PO210BE = ITEMS.register("rbmk_pellet_po210be",
-            () -> new RBMKPelletItem(new Item.Properties()).setFullName("Polonium-210 & Beryllium Neutron Source")
+            () -> new RBMKPelletItem(new Item.Properties()).disableXenon().setFullName("Polonium-210 & Beryllium Neutron Source")
                     .setYield(25_000_000).setReactivity(0).setXenon(0.0, 50).setHeat(0.1).setDiffusion(0.05)
                     .setMeltingPoint(1287).setNeutronTypes(NType.SLOW, NType.SLOW).setTint(0x563A26));
     public static final RegistrySupplier<Item> RBMK_PELLET_PU238BE = ITEMS.register("rbmk_pellet_pu238be",
@@ -3770,7 +3766,7 @@ public class ModItems {
                     .setYield(50_000_000).setReactivity(40).setHeat(0.1).setDiffusion(0.05)
                     .setMeltingPoint(1287).setNeutronTypes(NType.SLOW, NType.SLOW).setTint(0x656E6B));
     public static final RegistrySupplier<Item> RBMK_PELLET_RA226BE = ITEMS.register("rbmk_pellet_ra226be",
-            () -> new RBMKPelletItem(new Item.Properties()).setFullName("Radium-226 & Beryllium Neutron Source")
+            () -> new RBMKPelletItem(new Item.Properties()).disableXenon().setFullName("Radium-226 & Beryllium Neutron Source")
                     .setYield(100_000_000).setReactivity(0).setXenon(0.0, 50).setHeat(0.035).setDiffusion(0.5)
                     .setMeltingPoint(700).setNeutronTypes(NType.SLOW, NType.SLOW).setTint(0xB3B6AD));
     public static final RegistrySupplier<Item> RBMK_PELLET_THMEU = ITEMS.register("rbmk_pellet_thmeu",

@@ -18,6 +18,11 @@ public class GUIRBMKIndicator extends Screen {
     private final BlockPos pos;
     private final RBMKIndicatorBlockEntity be;
 
+    /** Label, tint and on/off toggle - the three fields every original *Unit carries. */
+    private final EditBox[] labelBoxes    = new EditBox[RBMKIndicatorBlockEntity.UNITS];
+    private final EditBox[] colorBoxes    = new EditBox[RBMKIndicatorBlockEntity.UNITS];
+    private final Button[]  activeButtons = new Button[RBMKIndicatorBlockEntity.UNITS];
+    private final boolean[] unitActive    = new boolean[RBMKIndicatorBlockEntity.UNITS];
     private final EditBox[] channelBoxes = new EditBox[RBMKIndicatorBlockEntity.UNITS];
     private final EditBox[] minBoxes     = new EditBox[RBMKIndicatorBlockEntity.UNITS];
     private final EditBox[] maxBoxes     = new EditBox[RBMKIndicatorBlockEntity.UNITS];
@@ -55,7 +60,29 @@ public class GUIRBMKIndicator extends Screen {
             invertBoxes[i] = invert;
             addRenderableWidget(invert);
 
-            y += 20;
+            y += 19;
+
+            final int idx = i;
+            unitActive[i] = be.isUnitActive(i);
+            
+            EditBox lbl = new EditBox(this.font, cx - 100, y, 95, 16, Component.literal("label"));
+            lbl.setMaxLength(24);
+            lbl.setValue(be.getUnitLabel(i));
+            labelBoxes[i] = lbl;
+            addRenderableWidget(lbl);
+            
+            EditBox col = new EditBox(this.font, cx + 5, y, 45, 16, Component.literal("color"));
+            col.setMaxLength(7);
+            col.setValue(String.format("%06X", be.getUnitColor(i) & 0xFFFFFF));
+            colorBoxes[i] = col;
+            addRenderableWidget(col);
+            
+            activeButtons[i] = Button.builder(GUIRBMKGauge.activeLabel(unitActive[i]), b -> {
+                unitActive[idx] = !unitActive[idx];
+                activeButtons[idx].setMessage(GUIRBMKGauge.activeLabel(unitActive[idx]));
+            }).bounds(cx + 78, y, 22, 16).build();
+            addRenderableWidget(activeButtons[i]);
+            y += 24;
         }
 
         addRenderableWidget(Button.builder(Component.translatable("gui.hbm_m.save"), b -> save())
@@ -66,6 +93,9 @@ public class GUIRBMKIndicator extends Screen {
         CompoundTag data = new CompoundTag();
         for (int i = 0; i < RBMKIndicatorBlockEntity.UNITS; i++) {
             data.putString("channel" + i, channelBoxes[i].getValue());
+            data.putString("ulabel" + i, labelBoxes[i].getValue());
+            data.putBoolean("active" + i, unitActive[i]);
+            data.putInt("ucolor" + i, GUIRBMKGauge.parseColor(colorBoxes[i].getValue()));
             data.putDouble("min" + i, parse(minBoxes[i].getValue()));
             data.putDouble("max" + i, parse(maxBoxes[i].getValue()));
             data.putBoolean("invert" + i, invertBoxes[i].selected());

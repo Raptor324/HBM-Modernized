@@ -125,6 +125,7 @@ import com.hbm_m.block.machines.rbmk.RBMKSteamOutletBlock;
 import com.hbm_m.block.machines.rbmk.RBMKLoaderBlock;
 import com.hbm_m.block.machines.rbmk.RBMKAutoloaderBlock;
 import com.hbm_m.block.machines.rbmk.RBMKCraneConsoleBlock;
+import com.hbm_m.block.machines.rbmk.RBMKDisplayBlock;
 import com.hbm_m.block.machines.rbmk.RBMKPanelBlock;
 import com.hbm_m.block.machines.anvils.AnvilBlock;
 import com.hbm_m.block.machines.anvils.AnvilTier;
@@ -1932,20 +1933,15 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> RBMK_ROD          = registerBlock("rbmk_element",      () -> new RBMKRodBlock(false, rbmkProps()));
     public static final RegistrySupplier<Block> RBMK_ROD_MOD      = registerBlock("rbmk_element_mod",  () -> new RBMKRodBlock(true,  rbmkProps()));
     /** ReaSim variants: same logic/BlockEntity as the base rod, distinct skin only (matches the rbmk_control_reasim precedent). */
-    public static final RegistrySupplier<Block> RBMK_ROD_REASIM       = registerBlock("rbmk_element_reasim",       () -> new RBMKRodBlock(false, rbmkProps()));
-    public static final RegistrySupplier<Block> RBMK_ROD_REASIM_MOD   = registerBlock("rbmk_element_reasim_mod",   () -> new RBMKRodBlock(true,  rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_ROD_REASIM       = registerBlock("rbmk_element_reasim",       () -> new RBMKRodBlock(false, true, rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_ROD_REASIM_MOD   = registerBlock("rbmk_element_reasim_mod",   () -> new RBMKRodBlock(true,  true, rbmkProps()));
 
     // ── Control Rods ────────────────────────────────────────────────────────
     public static final RegistrySupplier<Block> RBMK_CONTROL               = registerBlock("rbmk_control",               () -> new RBMKControlManualBlock(false, rbmkProps()));
-    public static final RegistrySupplier<Block> RBMK_CONTROL_BLUE          = registerBlock("rbmk_control_blue",          () -> new RBMKControlManualBlock(false, rbmkProps()));
-    public static final RegistrySupplier<Block> RBMK_CONTROL_GREEN         = registerBlock("rbmk_control_green",         () -> new RBMKControlManualBlock(false, rbmkProps()));
-    public static final RegistrySupplier<Block> RBMK_CONTROL_YELLOW        = registerBlock("rbmk_control_yellow",        () -> new RBMKControlManualBlock(false, rbmkProps()));
-    public static final RegistrySupplier<Block> RBMK_CONTROL_PURPLE        = registerBlock("rbmk_control_purple",        () -> new RBMKControlManualBlock(false, rbmkProps()));
     public static final RegistrySupplier<Block> RBMK_CONTROL_MOD           = registerBlock("rbmk_control_mod",           () -> new RBMKControlManualBlock(true,  rbmkProps()));
     public static final RegistrySupplier<Block> RBMK_CONTROL_AUTO          = registerBlock("rbmk_control_auto",          () -> new RBMKControlAutoBlock(false, rbmkProps()));
-    public static final RegistrySupplier<Block> RBMK_CONTROL_MOD_AUTO      = registerBlock("rbmk_control_mod_auto",      () -> new RBMKControlAutoBlock(true,  rbmkProps()));
-    public static final RegistrySupplier<Block> RBMK_CONTROL_REASIM        = registerBlock("rbmk_control_reasim",        () -> new RBMKControlManualBlock(false, rbmkProps()));
-    public static final RegistrySupplier<Block> RBMK_CONTROL_REASIM_AUTO   = registerBlock("rbmk_control_reasim_auto",   () -> new RBMKControlAutoBlock(false,  rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_CONTROL_REASIM        = registerBlock("rbmk_control_reasim",        () -> new RBMKControlManualBlock(false, "rbmk_control_reasim", rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_CONTROL_REASIM_AUTO   = registerBlock("rbmk_control_reasim_auto",   () -> new RBMKControlAutoBlock(false, "rbmk_control_reasim_auto", rbmkProps()));
 
     // ── Passive Columns ─────────────────────────────────────────────────────
     public static final RegistrySupplier<Block> RBMK_MODERATOR    = registerBlock("rbmk_moderator",    () -> new RBMKModeratorBlock(rbmkProps()));
@@ -1974,11 +1970,20 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> RBMK_COLUMN_FILLER = registerBlockWithoutItem("rbmk_column_filler",
             () -> new com.hbm_m.block.machines.rbmk.RBMKColumnFillerBlock(rbmkProps().noLootTable()));
 
+    // ── Decorative / support blocks used by the original's RBMK recipes ──────
+    // com.hbm.blocks.ModBlocks:1436-1437 - plain deco blocks reusing the rbmk column textures.
+    public static final RegistrySupplier<Block> DECO_RBMK        = registerBlock("deco_rbmk",        () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 100.0f)));
+    public static final RegistrySupplier<Block> DECO_RBMK_SMOOTH = registerBlock("deco_rbmk_smooth", () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 100.0f)));
+    // com.hbm.blocks.ModBlocks:1571 - graphite storage block, used by the moderator/control recipes.
+    public static final RegistrySupplier<Block> BLOCK_GRAPHITE   = registerBlock("block_graphite",   () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f)));
+    // com.hbm.blocks.ModBlocks:1598 - steel grate, used by the cooler/outgasser recipes.
+    public static final RegistrySupplier<Block> STEEL_GRATE      = registerBlock("steel_grate",      () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BARS).strength(2.0f, 5.0f).noOcclusion()));
+
     // ── Debris ──────────────────────────────────────────────────────────────
     public static final RegistrySupplier<Block> RBMK_DEBRIS            = registerBlock("rbmk_debris",            () -> new Block(BlockBehaviour.Properties.copy(Blocks.GRAVEL).strength(0.5f)));
-    public static final RegistrySupplier<Block> RBMK_DEBRIS_BURNING    = registerBlock("rbmk_debris_burning",    () -> new Block(BlockBehaviour.Properties.copy(Blocks.GRAVEL).strength(0.5f).lightLevel(s -> 10)));
+    public static final RegistrySupplier<Block> RBMK_DEBRIS_BURNING    = registerBlock("rbmk_debris_burning",    () -> new com.hbm_m.block.machines.rbmk.RBMKDebrisBurningBlock(BlockBehaviour.Properties.copy(Blocks.GRAVEL).strength(0.5f).lightLevel(s -> 10).randomTicks()));
     public static final RegistrySupplier<Block> RBMK_DEBRIS_DIGAMMA    = registerBlock("rbmk_debris_digamma",    () -> new Block(BlockBehaviour.Properties.copy(Blocks.GRAVEL).strength(0.5f).lightLevel(s -> 8)));
-    public static final RegistrySupplier<Block> RBMK_DEBRIS_RADIATING  = registerBlock("rbmk_debris_radiating",  () -> new Block(BlockBehaviour.Properties.copy(Blocks.GRAVEL).strength(0.5f).lightLevel(s -> 4)));
+    public static final RegistrySupplier<Block> RBMK_DEBRIS_RADIATING  = registerBlock("rbmk_debris_radiating",  () -> new com.hbm_m.block.machines.rbmk.RBMKDebrisRadiatingBlock(BlockBehaviour.Properties.copy(Blocks.GRAVEL).strength(0.5f).lightLevel(s -> 4).randomTicks()));
 
     // ── Corium (molten reactor core, 1:1 with the original's ModBlocks.corium_block) ──────────
     public static final RegistrySupplier<Block> RBMK_CORIUM = registerBlock("rbmk_corium",
@@ -1987,7 +1992,7 @@ public class ModBlocks {
     // ── Panel / Display Blocks ──────────────────────────────────────────────
     // RBMK_DISPLAY / RBMK_DISPLAY_BLANK: reactor-status link target (like the console/crane
     // targets), not one of the 7 RTTY devices below - stays on the generic no-op panel BE.
-    public static final RegistrySupplier<Block> RBMK_DISPLAY   = registerBlock("rbmk_display",   () -> new RBMKPanelBlock(rbmkProps()));
+    public static final RegistrySupplier<Block> RBMK_DISPLAY   = registerBlock("rbmk_display",   () -> new RBMKDisplayBlock(rbmkProps()));
     /** Blank decorative panel, reuses the rbmk_display texture (matches the original, which had no dedicated texture for it either). */
     public static final RegistrySupplier<Block> RBMK_DISPLAY_BLANK = registerBlock("rbmk_display_blank", () -> new RBMKPanelBlock(rbmkProps()));
 
@@ -2029,7 +2034,7 @@ public class ModBlocks {
                         }
                     }));
 
-    public static final RegistrySupplier<Block> RBMK_KEYPAD = registerBlock("rbmk_keypad", () ->
+    public static final RegistrySupplier<Block> RBMK_KEYPAD = registerBlock("rbmk_key_pad", () ->
             new com.hbm_m.block.machines.rbmk.RBMKPanelDeviceBlock(rbmkProps(),
                     com.hbm_m.blockentity.machines.rbmk.RBMKKeyPadBlockEntity::new,
                     () -> com.hbm_m.blockentity.ModBlockEntities.RBMK_KEYPAD_BE.get(),

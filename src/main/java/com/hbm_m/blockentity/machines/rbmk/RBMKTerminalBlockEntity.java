@@ -24,8 +24,22 @@ public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity {
     public boolean running = false;
     public String runningValue = "0";
 
+    /** TileEntityRBMKTerminal.history - the 17-line scrollback the renderer prints under the
+     *  working line. Newest entry first, exactly like the original's shift-and-insert. */
+    public final String[] history = new String[17];
+
+    /** TileEntityRBMKTerminal.doesRepeat - drives the terminal text amber instead of green. */
+    public boolean doesRepeat = false;
+
+    /** Original: shift everything down one slot and put the new message at the top. */
+    public void pushHistory(String msg) {
+        for (int i = history.length - 2; i > 0; i--) history[i] = history[i - 1];
+        history[0] = msg == null ? "" : msg;
+    }
+
     public RBMKTerminalBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.RBMK_TERMINAL_BE.get(), pos, state);
+        java.util.Arrays.fill(history, "");
     }
 
     @Override
@@ -68,13 +82,23 @@ public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity {
             default -> "unknown command: " + cmd;
         };
 
+        // The original echoes both the command and its response into the panel's scrollback
+        // (TileEntityRBMKTerminal:126-129); history[0] is the newest line.
+        pushHistory(line.trim());
+        if (result != null && !result.isEmpty()) pushHistory(result);
+        doesRepeat = running;
+
         setChanged();
         syncToClient();
         return result;
     }
 
+    /** Original per-unit array size (see the matching *Unit inner class). */
+    @Override public int unitCount() { return 0; }
+
     @Override
     public void receiveControl(CompoundTag data) {
+        receiveSharedControl(data);
         if (data.contains("cmd") && level != null) {
             eval(level, data.getString("cmd"));
             return; // eval() already calls setChanged()/syncToClient()
@@ -90,6 +114,9 @@ public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity {
         super.saveAdditional(tag);
         tag.putString("channel", channel);
         tag.putBoolean("running", running);
+        tag.putBoolean("doesRepeat", doesRepeat);
+        for (int i = 0; i < history.length; i++)
+            tag.putString("history" + i, history[i] == null ? "" : history[i]);
         tag.putString("runningValue", runningValue);
     }
 
@@ -98,6 +125,8 @@ public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity {
         super.load(tag);
         channel = tag.getString("channel");
         running = tag.getBoolean("running");
+        doesRepeat = tag.getBoolean("doesRepeat");
+        for (int i = 0; i < history.length; i++) history[i] = tag.getString("history" + i);
         runningValue = tag.contains("runningValue") ? tag.getString("runningValue") : "0";
     }
     //?} else {
@@ -106,6 +135,9 @@ public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity {
         super.saveAdditional(tag, registries);
         tag.putString("channel", channel);
         tag.putBoolean("running", running);
+        tag.putBoolean("doesRepeat", doesRepeat);
+        for (int i = 0; i < history.length; i++)
+            tag.putString("history" + i, history[i] == null ? "" : history[i]);
         tag.putString("runningValue", runningValue);
     }
 
@@ -114,6 +146,8 @@ public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity {
         super.loadAdditional(tag, registries);
         channel = tag.getString("channel");
         running = tag.getBoolean("running");
+        doesRepeat = tag.getBoolean("doesRepeat");
+        for (int i = 0; i < history.length; i++) history[i] = tag.getString("history" + i);
         runningValue = tag.contains("runningValue") ? tag.getString("runningValue") : "0";
     }
     *///?}

@@ -21,6 +21,9 @@ public class RBMKControlAutoBlockEntity extends RBMKControlBlockEntity {
 
     public boolean moderated  = false;
 
+    /** Set from the block variant; see {@link com.hbm_m.block.machines.rbmk.RBMKControlAutoBlock}. */
+    public String texturePrefix = null;
+
     public RBMKFunction function  = RBMKFunction.LINEAR;
     public double levelLower = 0.0;    // percent 0-100
     public double levelUpper = 100.0;  // percent 0-100
@@ -32,7 +35,9 @@ public class RBMKControlAutoBlockEntity extends RBMKControlBlockEntity {
     }
 
     @Override public boolean isModerated()             { return moderated; }
-    @Override public String  getRenderTexturePrefix() { return "rbmk_control_auto"; }
+    @Override public String  getRenderTexturePrefix() {
+        return texturePrefix != null ? texturePrefix : "rbmk_control_auto";
+    }
 
     /** Lets the console mini-map tell auto rods apart from manual ones (purple dot vs yellow),
      *  matching the original's separate CONTROL/CONTROL_AUTO console column types. */

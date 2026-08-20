@@ -106,6 +106,43 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
      */
     private static final int GRID_HALF = GRID / 2;
 
+    /**
+     * Which way the scanned grid is turned, 0-3 for 0/90/180/270 degrees. 1:1 with the original's
+     * {@code rotation} byte: a screwdriver on the console steps it round, so the same physical
+     * reactor can be read from a console standing on any side of it. Without this the scan was
+     * locked to one fixed orientation and a console placed on the "wrong" side showed the reactor
+     * mirrored.
+     */
+    public byte rotation = 0;
+
+    /** {@code TileEntityRBMKConsole.rotate()} - screwdriver steps the grid a quarter turn. */
+    public void rotate() {
+        rotation = (byte) ((rotation + 1) % 4);
+        setChanged();
+        if (level != null && !level.isClientSide) level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
+    }
+
+    /** Original getXFromIndex: the grid offset after the rotation is applied. */
+    protected int rotatedX(int i, int j) {
+        return switch (rotation) {
+            case 1 -> -j;
+            case 2 -> -i;
+            case 3 -> j;
+            default -> i;
+        };
+    }
+
+    /** Original getZFromIndex. */
+    protected int rotatedZ(int i, int j) {
+        return switch (rotation) {
+            case 1 -> i;
+            case 2 -> -j;
+            case 3 -> -i;
+            default -> j;
+        };
+    }
+
+
     private void scanReactor(Level level) {
         if (reactorOrigin == null) {
             Arrays.fill(columns, null);
@@ -117,7 +154,8 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
         for (int z = 0; z < GRID; z++) {
             for (int x = 0; x < GRID; x++) {
                 int     idx    = z * GRID + x;
-                BlockPos cPos  = reactorOrigin.offset(x - GRID_HALF, 0, z - GRID_HALF);
+                int      ri    = x - GRID_HALF, rj = z - GRID_HALF;
+                BlockPos cPos  = reactorOrigin.offset(rotatedX(ri, rj), 0, rotatedZ(ri, rj));
 
                 if (level.getBlockEntity(cPos) instanceof RBMKColumnBlockEntity col) {
                     CompoundTag d = col.getNBTForConsole();
@@ -236,7 +274,8 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
 
     private BlockPos idxToPos(int idx) {
         if (reactorOrigin == null || idx < 0 || idx >= AREA) return null;
-        return reactorOrigin.offset((idx % GRID) - GRID_HALF, 0, (idx / GRID) - GRID_HALF);
+        int i = (idx % GRID) - GRID_HALF, j = (idx / GRID) - GRID_HALF;
+        return reactorOrigin.offset(rotatedX(i, j), 0, rotatedZ(i, j));
     }
 
     // ─── MenuProvider ─────────────────────────────────────────────────────────
@@ -249,6 +288,7 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
     // ─── NBT ──────────────────────────────────────────────────────────────────
 
     private void writeExtra(CompoundTag tag) {
+        tag.putByte("rotation", rotation);
         if (reactorOrigin != null) {
             tag.putInt("ox", reactorOrigin.getX());
             tag.putInt("oy", reactorOrigin.getY());
@@ -273,6 +313,7 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
     }
 
     private void readExtra(CompoundTag tag) {
+        rotation = tag.getByte("rotation");
         if (tag.contains("ox"))
             reactorOrigin = new BlockPos(tag.getInt("ox"), tag.getInt("oy"), tag.getInt("oz"));
         ListTag screens = tag.getList("screens", 10);

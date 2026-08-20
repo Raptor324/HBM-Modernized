@@ -1,12 +1,7 @@
-﻿{
-  "parent": "minecraft:block/cube",
+{
+  "parent": "minecraft:block/cube_all",
   "textures": {
-    "down":  "hbm_m:block/rbmk/rbmk_boiler_pipe_top",
-    "up":    "hbm_m:block/rbmk/rbmk_boiler_pipe_top",
-    "north": "hbm_m:block/rbmk/rbmk_boiler_pipe_side",
-    "south": "hbm_m:block/rbmk/rbmk_boiler_pipe_side",
-    "east":  "hbm_m:block/rbmk/rbmk_boiler_pipe_side",
-    "west":  "hbm_m:block/rbmk/rbmk_boiler_pipe_side",
-    "particle": "hbm_m:block/rbmk/rbmk_boiler_pipe_side"
+    "all": "hbm_m:block/rbmk/standalone_rbmk_steam_inlet",
+    "particle": "hbm_m:block/rbmk/standalone_rbmk_steam_inlet"
   }
 }

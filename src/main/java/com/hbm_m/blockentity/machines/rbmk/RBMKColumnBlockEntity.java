@@ -254,41 +254,46 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
     }
 
     /**
-     * Flings a piece of debris outward from the top of the column, matching the original's
-     * {@code EntityRBMKDebris} arc (gaussian horizontal spread, strong upward kick). Reuses vanilla
-     * {@link ItemEntity} physics rather than a bespoke entity class - visually equivalent (tumbling,
-     * bouncing, gravity) since the debris items themselves are wrapped as ItemStacks.
+     * Flings a piece of debris outward from the top of the column, 1:1 with the original's
+     * {@code TileEntityRBMKBase.spawnDebris}: gaussian horizontal spread, strong upward kick, and
+     * a lid that gets a softer sideways push but a harder one upward so it clears the building.
+     *
+     * <p>This used to drop a plain vanilla {@link ItemEntity} as a stand-in, which looked roughly
+     * right but lost everything that makes the debris matter: the lid no longer punched through
+     * the ceiling, fuel and graphite chunks stopped irradiating anyone near them, and the
+     * per-type lifetimes and models were gone. It now spawns the real
+     * {@link com.hbm_m.entity.rbmk.RBMKDebrisEntity}.</p>
      */
     protected void spawnDebris(Level level, String type) {
         if (level.isClientSide) return;
-        Item item = debrisItem(type);
-        if (item == null) return;
+
+        com.hbm_m.entity.rbmk.RBMKDebrisEntity.DebrisType debrisType = debrisType(type);
+        if (debrisType == null) return;
 
         BlockPos base = getBlockPos();
-        ItemEntity debris = new ItemEntity(level,
-                base.getX() + 0.5, base.getY() + 4.0, base.getZ() + 0.5, new ItemStack(item));
+        com.hbm_m.entity.rbmk.RBMKDebrisEntity debris = com.hbm_m.entity.rbmk.RBMKDebrisEntity.create(
+                level, base.getX() + 0.5, base.getY() + 4.0, base.getZ() + 0.5, debrisType);
+
         double vx = level.random.nextGaussian() * 0.25;
         double vz = level.random.nextGaussian() * 0.25;
         double vy = 0.25 + level.random.nextDouble() * 1.25;
-        if (type.equals("lid")) { vx *= 0.5; vz *= 0.5; vy += 0.5; }
+        if (debrisType == com.hbm_m.entity.rbmk.RBMKDebrisEntity.DebrisType.LID) {
+            vx *= 0.5;
+            vz *= 0.5;
+            vy += 0.5;
+        }
         debris.setDeltaMovement(vx, vy, vz);
-        debris.setPickUpDelay(100);
         level.addFreshEntity(debris);
     }
 
-    /**
-     * 1:1 with the original's {@code EntityRBMKDebris} pickup mapping: BLANK/ELEMENT/ROD debris
-     * all drop the same plain {@code debris_metal} beam item (not a dedicated "element" item -
-     * that registration exists but the original never actually uses it for this), and LID debris
-     * drops the real, placeable {@code rbmk_lid} item (recoverable even after a meltdown),
-     * not a decorative stand-in.
-     */
-    private static Item debrisItem(String type) {
+    private static com.hbm_m.entity.rbmk.RBMKDebrisEntity.DebrisType debrisType(String type) {
         return switch (type) {
-            case "fuel"                      -> ModItems.DEBRIS_FUEL.get();
-            case "graphite"                  -> ModItems.DEBRIS_GRAPHITE.get();
-            case "blank", "element", "rod"    -> ModItems.DEBRIS_METAL.get();
-            case "lid"                        -> ModItems.RBMK_LID.get();
+            case "fuel"     -> com.hbm_m.entity.rbmk.RBMKDebrisEntity.DebrisType.FUEL;
+            case "graphite" -> com.hbm_m.entity.rbmk.RBMKDebrisEntity.DebrisType.GRAPHITE;
+            case "element"  -> com.hbm_m.entity.rbmk.RBMKDebrisEntity.DebrisType.ELEMENT;
+            case "rod"      -> com.hbm_m.entity.rbmk.RBMKDebrisEntity.DebrisType.ROD;
+            case "lid"      -> com.hbm_m.entity.rbmk.RBMKDebrisEntity.DebrisType.LID;
+            case "blank"    -> com.hbm_m.entity.rbmk.RBMKDebrisEntity.DebrisType.BLANK;
             default -> null;
         };
     }

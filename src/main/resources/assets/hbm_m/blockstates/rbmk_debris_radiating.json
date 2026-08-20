@@ -1,5 +1,52 @@
-﻿{
+{
   "variants": {
-    "": { "model": "hbm_m:block/rbmk/rbmk_debris_radiating" }
+    "decay=0": {
+      "model": "hbm_m:block/rbmk/rbmk_debris_radiating"
+    },
+    "decay=1": {
+      "model": "hbm_m:block/rbmk/rbmk_debris_radiating"
+    },
+    "decay=2": {
+      "model": "hbm_m:block/rbmk/rbmk_debris_radiating"
+    },
+    "decay=3": {
+      "model": "hbm_m:block/rbmk/rbmk_debris_radiating"
+    },
+    "decay=4": {
+      "model": "hbm_m:block/rbmk/rbmk_debris_radiating"
+    },
+    "decay=5": {
+      "model": "hbm_m:block/rbmk/rbmk_debris_radiating"
+    },
+    "decay=6": {
+      "model": "hbm_m:block/rbmk/rbmk_debris_radiating"
+    },
+    "decay=7": {
+      "model": "hbm_m:block/rbmk/rbmk_debris_radiating"
+    },
+    "decay=8": {
+      "model": "hbm_m:block/rbmk/rbmk_debris_radiating"
+    },
+    "decay=9": {
+      "model": "hbm_m:block/rbmk/rbmk_debris_radiating"
+    },
+    "decay=10": {
+      "model": "hbm_m:block/rbmk/rbmk_debris_radiating"
+    },
+    "decay=11": {
+      "model": "hbm_m:block/rbmk/rbmk_debris_radiating"
+    },
+    "decay=12": {
+      "model": "hbm_m:block/rbmk/rbmk_debris_radiating"
+    },
+    "decay=13": {
+      "model": "hbm_m:block/rbmk/rbmk_debris_radiating"
+    },
+    "decay=14": {
+      "model": "hbm_m:block/rbmk/rbmk_debris_radiating"
+    },
+    "decay=15": {
+      "model": "hbm_m:block/rbmk/rbmk_debris_radiating"
+    }
   }
 }

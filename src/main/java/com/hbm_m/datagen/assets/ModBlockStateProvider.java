@@ -3347,6 +3347,17 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/steel_roof")
                 )
         );
+        // RBMK support/deco blocks (1:1 with com.hbm.blocks.ModBlocks - deco_rbmk reuses
+        // rbmk/rbmk_top, deco_rbmk_smooth reuses rbmk/rbmk_blank_top).
+        simpleBlockWithItem(ModBlocks.DECO_RBMK.get(),
+                models().cubeAll(ModBlocks.DECO_RBMK.getId().getPath(), modLoc("block/rbmk/rbmk_top")));
+        simpleBlockWithItem(ModBlocks.DECO_RBMK_SMOOTH.get(),
+                models().cubeAll(ModBlocks.DECO_RBMK_SMOOTH.getId().getPath(), modLoc("block/rbmk/rbmk_blank_top")));
+        simpleBlockWithItem(ModBlocks.BLOCK_GRAPHITE.get(),
+                models().cubeAll(ModBlocks.BLOCK_GRAPHITE.getId().getPath(), modLoc("block/block_graphite")));
+        simpleBlockWithItem(ModBlocks.STEEL_GRATE.get(),
+                models().cubeBottomTop(ModBlocks.STEEL_GRATE.getId().getPath(),
+                        modLoc("block/grate_side"), modLoc("block/grate_top"), modLoc("block/grate_top")));
         simpleBlockWithItem(ModBlocks.STEEL_SCAFFOLD.get(),
                 models().cubeAll(
                         ModBlocks.STEEL_SCAFFOLD.getId().getPath(),

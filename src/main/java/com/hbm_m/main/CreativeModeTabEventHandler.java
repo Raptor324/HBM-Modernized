@@ -893,6 +893,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.MAGNETRON.get()));
         add.accept(new ItemStack(ModItems.TURBINE_TITANIUM.get()));
         add.accept(new ItemStack(ModItems.VACUUM_TUBE.get()));
+        add.accept(new ItemStack(ModItems.CIRCUIT_NUMITRON.get()));
         add.accept(new ItemStack(ModItems.CAPACITOR.get()));
         add.accept(new ItemStack(ModItems.MICROCHIP.get()));
         add.accept(new ItemStack(ModItems.ANALOG_CIRCUIT.get()));
@@ -2775,7 +2776,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.RBMK_FUEL_HEA242.get()));
         add.accept(new ItemStack(ModItems.RBMK_FUEL_HEAUS.get()));
         add.accept(new ItemStack(ModItems.RBMK_FUEL_HEN.get()));
-        add.accept(new ItemStack(ModItems.RBMK_FUEL_HEP_ALT.get()));
         add.accept(new ItemStack(ModItems.RBMK_FUEL_HEP241.get()));
         add.accept(new ItemStack(ModItems.RBMK_FUEL_HES.get()));
         add.accept(new ItemStack(ModItems.RBMK_FUEL_HEU233.get()));
@@ -3025,12 +3025,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.RBMK_ROD_REASIM.get()));
         add.accept(new ItemStack(ModBlocks.RBMK_ROD_REASIM_MOD.get()));
         add.accept(new ItemStack(ModBlocks.RBMK_CONTROL.get()));
-        add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_BLUE.get()));
-        add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_GREEN.get()));
-        add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_YELLOW.get()));
-        add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_PURPLE.get()));
         add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_MOD.get()));
-        add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_MOD_AUTO.get()));
         add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_AUTO.get()));
         add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_REASIM.get()));
         add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_REASIM_AUTO.get()));
@@ -3043,6 +3038,10 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.RBMK_OUTGASSER.get()));
         add.accept(new ItemStack(ModBlocks.RBMK_STORAGE.get()));
         add.accept(new ItemStack(ModBlocks.RBMK_BLANK.get()));
+        add.accept(new ItemStack(ModBlocks.DECO_RBMK.get()));
+        add.accept(new ItemStack(ModBlocks.DECO_RBMK_SMOOTH.get()));
+        add.accept(new ItemStack(ModBlocks.BLOCK_GRAPHITE.get()));
+        add.accept(new ItemStack(ModBlocks.STEEL_GRATE.get()));
         add.accept(new ItemStack(ModBlocks.RBMK_STEAM_INLET.get()));
         add.accept(new ItemStack(ModBlocks.RBMK_STEAM_OUTLET.get()));
         add.accept(new ItemStack(ModBlocks.RBMK_LOADER.get()));
@@ -3064,12 +3063,11 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.RBMK_LID.get()));
         add.accept(new ItemStack(ModItems.RBMK_LID_GLASS.get()));
         add.accept(new ItemStack(ModItems.RBMK_FUEL_EMPTY.get()));
-        add.accept(new ItemStack(ModItems.RBMK_FUEL_LEU235.get()));
+        add.accept(new ItemStack(ModItems.RBMK_FUEL_TEST.get()));
         add.accept(new ItemStack(ModItems.RBMK_FUEL_HEU235.get()));
         add.accept(new ItemStack(ModItems.RBMK_FUEL_LEP.get()));
         add.accept(new ItemStack(ModItems.RBMK_FUEL_HEP.get()));
         add.accept(new ItemStack(ModItems.RBMK_FUEL_MOX.get()));
-        add.accept(new ItemStack(ModItems.RBMK_PELLET_LEU235.get()));
         add.accept(new ItemStack(ModItems.RBMK_PELLET_HEU235.get()));
         add.accept(new ItemStack(ModItems.RBMK_PELLET_LEP.get()));
         add.accept(new ItemStack(ModItems.RBMK_PELLET_HEP.get()));

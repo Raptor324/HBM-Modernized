@@ -11,6 +11,9 @@ public class RBMKControlManualBlockEntity extends RBMKControlBlockEntity {
 
     public boolean moderated = false;
 
+    /** Set from the block variant; see {@link com.hbm_m.block.machines.rbmk.RBMKControlManualBlock}. */
+    public String texturePrefix = null;
+
     /** Snapshot of {@link #level} taken when a withdrawal ({@code setTarget}) begins - drives the surge in {@link #getMult}. */
     private double startingLevel = 1.0;
 
@@ -32,6 +35,7 @@ public class RBMKControlManualBlockEntity extends RBMKControlBlockEntity {
      */
     @Override
     public String getRenderTexturePrefix() {
+        if (texturePrefix != null) return texturePrefix;
         return moderated ? "rbmk_control_mod" : super.getRenderTexturePrefix();
     }
 

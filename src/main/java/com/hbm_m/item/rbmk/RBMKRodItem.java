@@ -45,6 +45,13 @@ public class RBMKRodItem extends Item {
     public double heatCoeffLength = 0;
     public boolean specialFluxCurve = false;
 
+    /**
+     * The pellet this rod disassembles back into (original: {@code ItemRBMKRod.pellet}).
+     * Held as a supplier because pellets are registered after some rods in {@link
+     * com.hbm_m.item.ModItems}; a null supplier means the rod cannot be disassembled.
+     */
+    private java.util.function.Supplier<Item> pelletSupplier;
+
     private BiFunction<Double, Double, Double> ratioCurve;
     private BiFunction<Double, Double, Double> fluxCurve;
 
@@ -62,6 +69,22 @@ public class RBMKRodItem extends Item {
     public RBMKRodItem(String fullName, Properties props) {
         super(props.stacksTo(1));
         this.fullName = fullName;
+    }
+
+    public RBMKRodItem setPellet(java.util.function.Supplier<Item> pellet) {
+        this.pelletSupplier = pellet;
+        // Rods built through the string constructor + setPellet never reached craftableRods, so
+        // that list sat permanently empty and anything driven off it (recipe listings, creative
+        // helpers) silently had nothing to show.
+        if (!craftableRods.contains(this)) craftableRods.add(this);
+        return this;
+    }
+
+    /** The pellet this rod yields when disassembled, or null if it has none. */
+    public RBMKPelletItem getPellet() {
+        if (pelletSupplier == null) return null;
+        Item item = pelletSupplier.get();
+        return item instanceof RBMKPelletItem pellet ? pellet : null;
     }
 
     // ─── Craft remainder (returns empty rod casing) ───────────────────────────

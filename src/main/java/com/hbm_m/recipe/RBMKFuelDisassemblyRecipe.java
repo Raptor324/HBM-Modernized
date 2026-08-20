@@ -1,0 +1,93 @@
+package com.hbm_m.recipe;
+
+import com.hbm_m.item.rbmk.RBMKPelletItem;
+import com.hbm_m.item.rbmk.RBMKRodItem;
+
+import net.minecraft.core.NonNullList;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
+import net.minecraft.world.inventory.CraftingContainer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.CraftingBookCategory;
+import net.minecraft.world.item.crafting.CustomRecipe;
+import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer;
+import net.minecraft.world.level.Level;
+
+/**
+ * 1:1 port of the original's {@code com.hbm.crafting.handlers.RBMKFuelCraftingHandler}.
+ *
+ * <p>A single RBMK fuel rod placed alone in the crafting grid disassembles into eight pellets,
+ * provided both its hull and core are below 50 °C. The resulting pellets carry the rod's condition:
+ * the enrichment tier is {@code 4 - clamp(ceil(enrichment * 5 - 1), 0, 4)} and a poison level of
+ * 50 % or more adds 5, exactly matching the original's output metadata.</p>
+ */
+public class RBMKFuelDisassemblyRecipe extends CustomRecipe {
+
+    public RBMKFuelDisassemblyRecipe(ResourceLocation id, CraftingBookCategory category) {
+        super(id, category);
+    }
+
+    @Override
+    public boolean matches(CraftingContainer container, Level level) {
+        ItemStack stack = getOnlyStack(container);
+        if (stack == null || !(stack.getItem() instanceof RBMKRodItem rod)) return false;
+        return rod.getPellet() != null
+                && RBMKRodItem.getHullHeat(stack) < 50
+                && RBMKRodItem.getCoreHeat(stack) < 50;
+    }
+
+    @Override
+    public ItemStack assemble(CraftingContainer container, RegistryAccess registries) {
+        ItemStack stack = getOnlyStack(container);
+        if (stack == null || !(stack.getItem() instanceof RBMKRodItem rod)) return ItemStack.EMPTY;
+
+        RBMKPelletItem pellet = rod.getPellet();
+        if (pellet == null) return ItemStack.EMPTY;
+
+        double enrichment = RBMKRodItem.getEnrichment(stack);
+        if (enrichment > 0.99D) return ItemStack.EMPTY;
+
+        if (RBMKRodItem.getHullHeat(stack) >= 50 || RBMKRodItem.getCoreHeat(stack) >= 50)
+            return ItemStack.EMPTY;
+
+        int tier = 4 - Mth.clamp((int) Math.ceil(enrichment * 5 - 1), 0, 4);
+        int state = tier + (RBMKRodItem.getPoisonLevel(stack) >= 0.5D ? 5 : 0);
+        // Pellets without xenon variants only have the five enrichment states.
+        if (!pellet.isXenonEnabled()) state = tier;
+
+        return pellet.withState(8, state);
+    }
+
+    @Override
+    public boolean canCraftInDimensions(int width, int height) {
+        return width * height >= 1;
+    }
+
+    @Override
+    public NonNullList<ItemStack> getRemainingItems(CraftingContainer container) {
+        // The rod itself is consumed; the original leaves nothing behind here either.
+        return NonNullList.withSize(container.getContainerSize(), ItemStack.EMPTY);
+    }
+
+    @Override
+    public RecipeSerializer<?> getSerializer() {
+        return ModRecipes.RBMK_FUEL_DISASSEMBLY_SERIALIZER.get();
+    }
+
+    /** RBMKFuelCraftingHandler.hasExactlyOneStack + getFirstStack, combined. */
+    private static ItemStack getOnlyStack(CraftingContainer container) {
+        ItemStack found = null;
+        for (int i = 0; i < container.getContainerSize(); i++) {
+            ItemStack stack = container.getItem(i);
+            if (stack.isEmpty()) continue;
+            if (found != null) return null;
+            found = stack;
+        }
+        return found;
+    }
+
+    public static final SimpleCraftingRecipeSerializer<RBMKFuelDisassemblyRecipe> SERIALIZER =
+            new SimpleCraftingRecipeSerializer<>(RBMKFuelDisassemblyRecipe::new);
+}

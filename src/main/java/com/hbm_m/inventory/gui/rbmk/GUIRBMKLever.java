@@ -17,6 +17,11 @@ public class GUIRBMKLever extends Screen {
     private final BlockPos pos;
     private final RBMKLeverBlockEntity be;
 
+    /** Label, tint and on/off toggle - the three fields every original *Unit carries. */
+    private final EditBox[] labelBoxes    = new EditBox[RBMKLeverBlockEntity.UNITS];
+    private final Button[]  activeButtons = new Button[RBMKLeverBlockEntity.UNITS];
+    private final boolean[] unitActive    = new boolean[RBMKLeverBlockEntity.UNITS];
+    private final net.minecraft.client.gui.components.Checkbox[] pollingBoxes = new net.minecraft.client.gui.components.Checkbox[RBMKLeverBlockEntity.UNITS];
     private final EditBox[] channelBoxes = new EditBox[RBMKLeverBlockEntity.UNITS];
     private final EditBox[] onBoxes      = new EditBox[RBMKLeverBlockEntity.UNITS];
     private final EditBox[] offBoxes     = new EditBox[RBMKLeverBlockEntity.UNITS];
@@ -38,7 +43,23 @@ public class GUIRBMKLever extends Screen {
             channel.setValue(be.channel[i] != null ? be.channel[i] : "");
             channelBoxes[i] = channel;
             addRenderableWidget(channel);
-            y += 18;
+            y += 19;
+
+            final int idx = i;
+            unitActive[i] = be.isUnitActive(i);
+            
+            EditBox lbl = new EditBox(this.font, cx - 100, y, 95, 16, Component.literal("label"));
+            lbl.setMaxLength(24);
+            lbl.setValue(be.getUnitLabel(i));
+            labelBoxes[i] = lbl;
+            addRenderableWidget(lbl);
+            
+            activeButtons[i] = Button.builder(GUIRBMKGauge.activeLabel(unitActive[i]), b -> {
+                unitActive[idx] = !unitActive[idx];
+                activeButtons[idx].setMessage(GUIRBMKGauge.activeLabel(unitActive[idx]));
+            }).bounds(cx + 78, y, 22, 16).build();
+            addRenderableWidget(activeButtons[i]);
+            y += 19;
 
             EditBox on = new EditBox(this.font, cx - 110, y, 105, 16, Component.literal("on"));
             on.setValue(be.commandOn[i] != null ? be.commandOn[i] : "");
@@ -49,6 +70,11 @@ public class GUIRBMKLever extends Screen {
             off.setValue(be.commandOff[i] != null ? be.commandOff[i] : "");
             offBoxes[i] = off;
             addRenderableWidget(off);
+            y += 19;
+
+            pollingBoxes[i] = new net.minecraft.client.gui.components.Checkbox(
+                    cx - 110, y, 90, 16, Component.literal("repeat"), be.polling[i]);
+            addRenderableWidget(pollingBoxes[i]);
             y += 24;
         }
 
@@ -60,8 +86,11 @@ public class GUIRBMKLever extends Screen {
         CompoundTag data = new CompoundTag();
         for (int i = 0; i < RBMKLeverBlockEntity.UNITS; i++) {
             data.putString("channel" + i, channelBoxes[i].getValue());
+            data.putString("ulabel" + i, labelBoxes[i].getValue());
+            data.putBoolean("active" + i, unitActive[i]);
             data.putString("commandOn" + i, onBoxes[i].getValue());
             data.putString("commandOff" + i, offBoxes[i].getValue());
+            data.putBoolean("lpolling" + i, pollingBoxes[i].selected());
         }
         RadioTorchControlPacket.sendToServer(pos, data);
         onClose();

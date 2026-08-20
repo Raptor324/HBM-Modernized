@@ -1,6 +1,3 @@
-﻿{
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "hbm_m:block/rbmk/rbmk_control_side"
-  }
+{
+  "parent": "hbm_m:block/rbmk/rbmk_panel"
 }

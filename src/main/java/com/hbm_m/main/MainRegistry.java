@@ -58,6 +58,8 @@ public final class MainRegistry {
         LOGGER.info("Initializing {}", RefStrings.NAME);
 
         // Registries (common)
+        // Must run before any world loads: the RBMK dials are world game rules in the original.
+        com.hbm_m.handler.rbmk.RBMKGameRules.register();
         DoorDeclRegistry.init();
         ModBiomes.init();
         ModBlocks.init();

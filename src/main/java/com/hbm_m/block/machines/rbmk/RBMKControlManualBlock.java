@@ -14,16 +14,26 @@ import org.jetbrains.annotations.Nullable;
 public class RBMKControlManualBlock extends RBMKColumnBlock {
 
     public final boolean moderated;
+    /** Texture set for this variant. The original registers rbmk_control, rbmk_control_mod and
+     *  rbmk_control_reasim as separate blocks, each with its own texture (ModBlocks.java:2104-2107);
+     *  null means "derive from the moderated flag" for the two non-reasim variants. */
+    private final String texturePrefix;
 
     public RBMKControlManualBlock(boolean moderated, Properties props) {
+        this(moderated, null, props);
+    }
+
+    public RBMKControlManualBlock(boolean moderated, String texturePrefix, Properties props) {
         super(props);
         this.moderated = moderated;
+        this.texturePrefix = texturePrefix;
     }
 
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         RBMKControlManualBlockEntity be = new RBMKControlManualBlockEntity(pos, state);
         be.moderated = moderated;
+        be.texturePrefix = texturePrefix;
         return be;
     }
 
