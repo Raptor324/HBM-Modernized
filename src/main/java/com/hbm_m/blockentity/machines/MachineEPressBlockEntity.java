@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
+import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineEPressMenu;
 import com.hbm_m.recipe.PressRecipe;
@@ -46,11 +47,20 @@ import net.minecraft.world.phys.AABB;
  */
 public class MachineEPressBlockEntity extends BaseMachineBlockEntity {
 
-    private static final int SLOT_COUNT = 4;
+    /** ContainerMachineEPress carries a SlotUpgrade (index 4); this port had none, so the press
+     *  could never take speed or power upgrades even though the upgrade system exists. */
+    private static final int SLOT_COUNT = 5;
+    private static final int SLOT_UPGRADE = 4;
     private static final int SLOT_BATTERY = 0;
     private static final int SLOT_STAMP = 1;
     private static final int SLOT_MATERIAL = 2;
     private static final int SLOT_OUTPUT = 3;
+
+    private static final java.util.Map<UpgradeType, Integer> VALID_UPGRADES = java.util.Map.of(
+            UpgradeType.SPEED, 3,
+            UpgradeType.POWER, 3);
+
+    private final com.hbm_m.inventory.UpgradeManager upgradeManager = new com.hbm_m.inventory.UpgradeManager();
 
     private static final long MAX_POWER = 50_000L;
     private static final long POWER_PER_TICK = 100L;
@@ -106,22 +116,30 @@ public class MachineEPressBlockEntity extends BaseMachineBlockEntity {
 
         boolean needsSync = false;
         chargeFromBatterySlot(SLOT_BATTERY);
+        upgradeManager.checkSlots(inventory, SLOT_UPGRADE, SLOT_UPGRADE, VALID_UPGRADES);
+
+        // Speed makes the ram travel further per tick and draw proportionally more; power
+        // upgrades take a quarter off the draw per level - same curve the chemical factory uses.
+        int speedLevel = Math.min(upgradeManager.getLevel(UpgradeType.SPEED), 3);
+        int powerLevel = Math.min(upgradeManager.getLevel(UpgradeType.POWER), 3);
+        int speedMult = 1 + speedLevel;
+        long drawPerTick = Math.max(1L, (long) (POWER_PER_TICK * speedMult * (1.0 - 0.25 * powerLevel)));
 
         boolean canProcess = canProcess();
 
         if (delay <= 0) {
-            if ((canProcess || isRetracting) && getEnergyStored() >= POWER_PER_TICK) {
-                setEnergyStored(getEnergyStored() - POWER_PER_TICK);
+            if ((canProcess || isRetracting) && getEnergyStored() >= drawPerTick) {
+                setEnergyStored(getEnergyStored() - drawPerTick);
 
                 if (isRetracting) {
-                    press -= RETRACT_SPEED;
+                    press -= RETRACT_SPEED * speedMult;
                     if (press <= 0) {
                         press = 0;
                         isRetracting = false;
                         delay = 5;
                     }
                 } else {
-                    press += EXTEND_SPEED;
+                    press += EXTEND_SPEED * speedMult;
                     if (press >= MAX_PRESS) {
                         press = MAX_PRESS;
                         craftItem();

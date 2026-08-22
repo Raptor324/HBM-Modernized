@@ -158,10 +158,16 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
         }
     }
 
+    /**
+     * The energy delta comes straight off the block entity. This used to unpack it from container
+     * data slots 6 and 7, but this menu only ever carries two data entries
+     * ({@code checkContainerDataCount(pData, 2)}), so any call threw an
+     * {@link ArrayIndexOutOfBoundsException} - it survived only because nothing called it. The
+     * slot-based delta was left over from an earlier sync design; energy now travels via
+     * {@code PacketSyncEnergy}, and the running delta is tracked in {@code BaseMachineBlockEntity}.
+     */
     public long getEnergyDeltaLong() {
-        int high = this.data.get(6); // Индекс 7: delta high
-        int low = this.data.get(7);  // Индекс 6: delta low
-        return LongDataPacker.unpack(high, low);
+        return blockEntity != null ? blockEntity.getEnergyDelta() : 0L;
     }
 
     @Override

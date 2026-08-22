@@ -159,8 +159,21 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
      * {@code reduce} (less destruction), columns near the center get a larger one (more
      * destruction), matching the original's {@code minDist+1} computation.
      */
+    /**
+     * {@code TileEntityRBMKBase.pipes}: every steam network a melting boiler channel was feeding.
+     * Collected during the onMelt pass and consumed once at the end of the meltdown, so a network
+     * shared by several channels is only torn apart once.
+     */
+    public static final Set<com.hbm_m.api.fluids.FluidNet> overpressureNets = new HashSet<>();
+
     public static void meltdownReactor(Level level, RBMKColumnBlockEntity origin) {
         if (level.isClientSide) return;
+
+        // The original brackets the whole meltdown with RBMKBase.dropLids = false/true. Without
+        // it every column that still had a lid dropped it as an item *and* launched it as debris,
+        // so a meltdown quietly duplicated the entire reactor's lids across the crater floor.
+        com.hbm_m.block.machines.rbmk.RBMKColumnBlock.dropLids = false;
+        overpressureNets.clear();
 
         BlockPos originPos = origin.getBlockPos();
         Set<BlockPos> visited = new HashSet<>();
@@ -221,7 +234,95 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
                 }
             }
         }
+
+        handleOverpressure(level);
+
+        // The meltdown's own effect: one mushroom cloud scaled to the reactor's smaller footprint,
+        // centred on the group rather than on whichever column happened to trigger it, plus the
+        // explosion report. Both were missing - the RBMK_MUSH particle was registered but never
+        // spawned by anything, so a meltdown was silent and left no cloud at all.
+        int smallDim = Math.min(maxX - minX, maxZ - minZ);
+        double avgX = minX + (maxX - minX) / 2 + 0.5;
+        double avgZ = minZ + (maxZ - minZ) / 2 + 0.5;
+        double cloudY = originPos.getY() + 1;
+
+        if (level instanceof net.minecraft.server.level.ServerLevel server) {
+            // Count 0 makes the client take xd/yd/zd as literal values instead of a random
+            // spread, which is how the provider receives the cloud's scale.
+            server.sendParticles(com.hbm_m.particle.ModParticleTypes.RBMK_MUSH.get(),
+                    avgX, cloudY, avgZ, 0, smallDim, 0, 0, 1);
+        }
+        level.playSound(null, avgX, cloudY, avgZ,
+                com.hbm_m.sound.ModSounds.RBMK_EXPLOSION.get(),
+                net.minecraft.sounds.SoundSource.BLOCKS, 50.0F, 1.0F);
+
+        // A meltdown carrying digamma fuel calls down the lance, a hundred blocks above the
+        // reactor's centre. Note the original reads the flag here, *after* onMelt has run - the
+        // reset below is what stops it firing again on the next, ordinary meltdown.
+        if (digamma) {
+            com.hbm_m.entity.effect.SpearEntity spear =
+                    com.hbm_m.entity.ModEntities.DIGAMMA_SPEAR.get().create(level);
+            if (spear != null) {
+                spear.setPos(avgX, originPos.getY() + 100, avgZ);
+                level.addFreshEntity(spear);
+            }
+        }
+
+        com.hbm_m.block.machines.rbmk.RBMKColumnBlock.dropLids = true;
         digamma = false;
+    }
+
+    /**
+     * 1:1 port of the original's overpressure event. A meltdown does not stop at the reactor: the
+     * steam still in the pipework has to go somewhere, so the networks the melting channels were
+     * feeding rupture too.
+     *
+     * <p>Pipes go first, but only a fraction of them - {@code min(count / 5, 100)} - so a long
+     * run is left mangled rather than erased, and a huge network cannot stall the server. Every
+     * receiver on those networks is then destroyed: machines that implement
+     * {@link com.hbm_m.api.tile.IOverpressurable} decide for themselves what that looks like,
+     * anything else is removed and replaced with a plain five-power explosion.</p>
+     */
+    private static void handleOverpressure(Level level) {
+        if (!RBMKDials.getOverpressure(level) || overpressureNets.isEmpty()) {
+            overpressureNets.clear();
+            return;
+        }
+
+        // Unify first: two channels feeding one network must not process it twice.
+        Set<com.hbm_m.api.network.GenNode<?>> pipeNodes = new java.util.LinkedHashSet<>();
+        Set<com.hbm_m.api.fluids.IFluidReceiverMK2> receivers = new java.util.LinkedHashSet<>();
+        for (com.hbm_m.api.fluids.FluidNet net : overpressureNets) {
+            if (net == null) continue;
+            pipeNodes.addAll(net.links);
+            receivers.addAll(net.receiverEntries.keySet());
+        }
+
+        int max = Math.min(pipeNodes.size() / 5, 100);
+        int count = 0;
+        for (com.hbm_m.api.network.GenNode<?> node : pipeNodes) {
+            if (count >= max) break;
+            for (BlockPos pos : node.positions) {
+                if (level.getBlockEntity(pos) != null) {
+                    level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+                }
+            }
+            count++;
+        }
+
+        for (com.hbm_m.api.fluids.IFluidReceiverMK2 receiver : receivers) {
+            if (!(receiver instanceof BlockEntity be)) continue;
+            BlockPos pos = be.getBlockPos();
+            if (receiver instanceof com.hbm_m.api.tile.IOverpressurable overpressurable) {
+                overpressurable.explode(level, pos);
+            } else {
+                level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+                level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                        5F, Level.ExplosionInteraction.NONE);
+            }
+        }
+
+        overpressureNets.clear();
     }
 
     public void onMelt(Level level, int reduce) {

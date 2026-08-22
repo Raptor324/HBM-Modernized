@@ -22,10 +22,47 @@ import net.minecraft.world.level.block.state.BlockState;
  */
 public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements MenuProvider {
 
-    public static final int SLOTS = 9;
+    /**
+     * 1:1 with {@code TileEntityRBMKAutoloader}: eighteen slots, split in two halves. Slots 0-8
+     * hold fresh rods waiting to go in, slots 9-17 collect the spent ones pulled back out. This
+     * port previously had a single nine-slot buffer used for both directions, so recovered rods
+     * were dropped back into the same pool the loader feeds from and could be re-inserted.
+     */
+    public static final int SLOTS = 18;
+    public static final int INPUT_SLOTS = 9;
     public final ItemStack[] slots = new ItemStack[SLOTS];
+
+    /**
+     * Minimum enrichment, in percent, a rod must still have to be worth loading - and equally the
+     * point below which a rod in the reactor counts as spent. The original exposes this as a
+     * per-machine setting; the default is 50.
+     */
+    public int cycle = 50;
+
     private int cooldown = 0;
     private static final int COOLDOWN_TICKS = 20;
+
+    /** Original hasFuel(): is there anything in the input half still rich enough to load? */
+    public boolean hasFuel() {
+        for (int i = 0; i < INPUT_SLOTS; i++) {
+            ItemStack stack = slots[i];
+            if (!stack.isEmpty() && stack.getItem() instanceof RBMKRodItem
+                    && RBMKRodItem.getEnrichment(stack) * 100 >= cycle) return true;
+        }
+        return false;
+    }
+
+    /** Original hasSpace(): is there room left in the output half for a spent rod? */
+    public boolean hasSpace() {
+        for (int i = INPUT_SLOTS; i < SLOTS; i++) if (slots[i].isEmpty()) return true;
+        return false;
+    }
+
+    /** Original isItemValidForSlot: only rich-enough rods, and only into the input half. */
+    public boolean isItemValidForSlot(int slot, ItemStack stack) {
+        return slot < INPUT_SLOTS && stack.getItem() instanceof RBMKRodItem
+                && RBMKRodItem.getEnrichment(stack) * 100 >= cycle;
+    }
 
     public RBMKAutoloaderBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.RBMK_AUTOLOADER_BE.get(), pos, state);
@@ -39,39 +76,40 @@ public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements 
         if (--be.cooldown > 0) return;
         be.cooldown = COOLDOWN_TICKS;
 
-        // Try to load/unload rods from all 4 horizontal neighbors
-        for (Direction dir : new Direction[]{ Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST }) {
-            if (level.getBlockEntity(pos.relative(dir)) instanceof IRBMKLoadable loadable) {
-                // Unload depleted rod if column has one and it is cool enough
-                if (loadable.canUnload()
-                        && (!(loadable instanceof RBMKRodBlockEntity rodBE) || rodBE.coldEnoughForAutoloader())) {
-                    ItemStack rod = loadable.provideNext();
-                    if (rod.getItem() instanceof RBMKRodItem && RBMKRodItem.getEnrichment(rod) < 0.05) {
-                        // Take depleted rod if we have a slot
-                        for (int i = 0; i < SLOTS; i++) {
-                            if (be.slots[i].isEmpty()) {
-                                be.slots[i] = rod.copy();
-                                loadable.unload();
-                                be.setChanged();
-                                break;
-                            }
-                        }
-                    }
-                }
-                // Load a fresh rod if column is empty
-                if (loadable.canLoad(ItemStack.EMPTY.copy()) || !loadable.canUnload()) {
-                    for (int i = 0; i < SLOTS; i++) {
-                        if (!be.slots[i].isEmpty() && be.slots[i].getItem() instanceof RBMKRodItem
-                                && RBMKRodItem.getEnrichment(be.slots[i]) > 0.1
-                                && loadable.canLoad(be.slots[i])) {
-                            loadable.load(be.slots[i]);
-                            be.slots[i] = ItemStack.EMPTY;
-                            be.setChanged();
-                            break;
-                        }
+        // The original drives the column directly BELOW the loader, not its horizontal
+        // neighbours - the autoloader sits on top of a fuel channel like a cap.
+        if (!(level.getBlockEntity(pos.below()) instanceof IRBMKLoadable loadable)) return;
+
+        boolean coldEnough = !(loadable instanceof RBMKRodBlockEntity rodBE) || rodBE.coldEnoughForAutoloader();
+        if (!coldEnough) return;
+
+        // Pull the spent rod out into the output half first, so the freed channel can be refilled
+        // in the same pass - same order as the original.
+        if (loadable.canUnload() && be.hasSpace()) {
+            ItemStack spent = loadable.provideNext();
+            if (!spent.isEmpty()) {
+                for (int i = INPUT_SLOTS; i < SLOTS; i++) {
+                    if (be.slots[i].isEmpty()) {
+                        be.slots[i] = spent.copy();
+                        loadable.unload();
+                        be.setChanged();
+                        break;
                     }
                 }
             }
+        }
+
+        // Then feed a fresh rod in, but only one still above the cycle threshold.
+        for (int i = 0; i < INPUT_SLOTS; i++) {
+            ItemStack stack = be.slots[i];
+            if (stack.isEmpty() || !(stack.getItem() instanceof RBMKRodItem)) continue;
+            if (RBMKRodItem.getEnrichment(stack) * 100 < be.cycle) continue;
+            if (!loadable.canLoad(stack)) continue;
+
+            loadable.load(stack);
+            be.slots[i] = ItemStack.EMPTY;
+            be.setChanged();
+            break;
         }
     }
 
@@ -94,11 +132,13 @@ public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements 
             }
         }
         tag.put("slots", list);
+        tag.putInt("cycle", cycle);
     }
 
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
+        if (tag.contains("cycle")) cycle = tag.getInt("cycle");
         for (int i = 0; i < SLOTS; i++) slots[i] = ItemStack.EMPTY;
         ListTag list = tag.getList("slots", 10);
         for (int i = 0; i < list.size(); i++) {
@@ -122,11 +162,13 @@ public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements 
             }
         }
         tag.put("slots", list);
+        tag.putInt("cycle", cycle);
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        if (tag.contains("cycle")) cycle = tag.getInt("cycle");
         for (int i = 0; i < SLOTS; i++) slots[i] = ItemStack.EMPTY;
         ListTag list = tag.getList("slots", 10);
         for (int i = 0; i < list.size(); i++) {

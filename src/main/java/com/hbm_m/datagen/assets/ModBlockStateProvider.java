@@ -199,7 +199,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 ModBlocks.TURRET_SENTRY, ModBlocks.TURRET_CHEKHOV, ModBlocks.TURRET_FRIENDLY, ModBlocks.TURRET_JEREMY,
                 ModBlocks.TURRET_TAUON, ModBlocks.TURRET_RICHARD, ModBlocks.TURRET_HOWARD,
                 ModBlocks.TURRET_MAXWELL, ModBlocks.TURRET_FRITZ, ModBlocks.TURRET_ARTY, ModBlocks.TURRET_HIMARS)) {
-            simpleBlockWithItem(turretBlock.get(),
+            // Blockstate only. The item model is hand-written under models/item/turret_<name>.json
+            // because it needs per-turret display transforms: these composite OBJ models carry no
+            // "display" section, so the items rendered at full world scale and spilled far out of
+            // their inventory slots (the artillery mesh alone spans over four blocks).
+            simpleBlock(turretBlock.get(),
                     models().getExistingFile(modLoc("block/" + turretBlock.getId().getPath())));
         }
 

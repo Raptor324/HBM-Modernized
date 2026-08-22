@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.machines.MachineFurnaceIronBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
 import com.hbm_m.inventory.menu.MachineFurnaceIronMenu;
 import com.hbm_m.platform.ModItemStackHandler;
 
@@ -47,7 +48,14 @@ public class MachineFurnaceIronBlockEntity extends BlockEntity implements MenuPr
     public static final int SLOT_FUEL_1 = 1;
     public static final int SLOT_FUEL_2 = 2;
     public static final int SLOT_OUTPUT = 3;
-    private static final int SLOT_COUNT = 4;
+    /** ContainerFurnaceIron places a SlotUpgrade at index 4 (17, 35). */
+    public static final int SLOT_UPGRADE = 4;
+    private static final int SLOT_COUNT = 5;
+
+    private static final java.util.Map<UpgradeType, Integer> VALID_UPGRADES =
+            java.util.Map.of(UpgradeType.SPEED, 3);
+
+    private final com.hbm_m.inventory.UpgradeManager upgradeManager = new com.hbm_m.inventory.UpgradeManager();
 
     private static final int PROCESSING_TIME = 160;
 
@@ -131,7 +139,8 @@ public class MachineFurnaceIronBlockEntity extends BlockEntity implements MenuPr
         if (be.litTime > 0) {
             be.litTime--;
             if (be.canSmelt(level)) {
-                be.progress++;
+                be.upgradeManager.checkSlots(be.inventory, SLOT_UPGRADE, SLOT_UPGRADE, VALID_UPGRADES);
+                be.progress += 1 + Math.min(be.upgradeManager.getLevel(UpgradeType.SPEED), 3);
                 if (be.progress >= PROCESSING_TIME) {
                     be.craftItem(level);
                     be.progress = 0;

@@ -51,10 +51,17 @@ public class MachineTurretRenderer implements BlockEntityRenderer<TurretBaseBloc
 
         poseStack.pushPose();
 
-        // Yaw-Gruppe (Carriage/Pivot) - dreht sich um Y, Modell-Konvention: -yaw - 90 (siehe Original RenderTurretX)
+        // The OBJ is modelled around its own origin (Base spans -0.5..+0.5 in X/Z), so the block
+        // model carries a "translation": [0.5, 0, 0.5] to seat it in the block. The moving parts
+        // are separate part models WITHOUT that transform, so the renderer has to supply it here.
+        //
+        // This used to be translate(+0.5) -> rotate -> translate(-0.5), which is a pivot change
+        // with zero net translation: the moving parts stayed half a block off the base plate in
+        // both X and Z, and swung around a point beside their own axis instead of spinning in
+        // place. Translating once and then rotating puts the model axis on the block centre and
+        // turns it about itself.
         poseStack.translate(0.5, 0.0, 0.5);
         poseStack.mulPose(Axis.YP.rotationDegrees(-yaw - 90.0F));
-        poseStack.translate(-0.5, 0.0, -0.5);
         renderPart(stats.yawPartKey, be, poseStack, bufferSource, packedLight);
 
         // Pitch-Gruppe - dreht sich um den konfigurierten Drehpunkt/Achse

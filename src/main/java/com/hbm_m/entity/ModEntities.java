@@ -363,6 +363,17 @@ public class ModEntities {
                             .updateInterval(1)
                             .build("digamma_quasar"));
 
+    /** The digamma lance dropped on a reactor that melted down carrying digamma fuel. */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.effect.SpearEntity>> DIGAMMA_SPEAR =
+            ENTITY_TYPES.register("digamma_spear",
+                    () -> EntityType.Builder.<com.hbm_m.entity.effect.SpearEntity>of(
+                                    com.hbm_m.entity.effect.SpearEntity::new, MobCategory.MISC)
+                            .sized(2.0F, 10.0F)
+                            .clientTrackingRange(256)
+                            .updateInterval(1)
+                            .fireImmune()
+                            .build("digamma_spear"));
+
     /** Tracking range in chunks; server multiplies by 16 for blocks (see ChunkMap.TrackedEntity). */
     private static final int MISSILE_TRACKING_CHUNKS = 512;
 

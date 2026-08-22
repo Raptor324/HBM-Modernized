@@ -39,6 +39,10 @@ public class ModParticleTypes {
     public static final RegistrySupplier<SimpleParticleType> RBMK_MUSH = PARTICLES.register("rbmk_mush",
             () -> createParticle(true));
 
+    /** {@code mode: "radialDigamma"} - the digamma spear's dark red pall. */
+    public static final RegistrySupplier<SimpleParticleType> DIGAMMA_SMOKE = PARTICLES.register("digamma_smoke",
+            () -> createParticle(true));
+
     public static final RegistrySupplier<SimpleParticleType> EXPLOSION_WAVE = PARTICLES.register("explosion_wave",
             () -> createParticle(false));
 

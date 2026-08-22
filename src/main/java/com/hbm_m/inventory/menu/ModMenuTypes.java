@@ -122,9 +122,6 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<IronCrateMenu>> IRON_CRATE_MENU =
             MENUS.register("iron_crate_menu", () -> MenuRegistry.ofExtended(IronCrateMenu::new));
 
-    public static final RegistrySupplier<MenuType<IronCrateMenu>> PORTABLE_IRON_CRATE_MENU =
-            MENUS.register("portable_iron_crate_menu", () -> MenuRegistry.ofExtended(IronCrateMenu::new));
-
     public static final RegistrySupplier<MenuType<SteelCrateMenu>> STEEL_CRATE_MENU =
             MENUS.register("steel_crate_menu", () -> MenuRegistry.ofExtended(SteelCrateMenu::new));
 

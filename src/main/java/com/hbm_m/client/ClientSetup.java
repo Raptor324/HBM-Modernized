@@ -672,6 +672,7 @@ public class ClientSetup {
         ModEntities.VORTEX.ifPresent(entityType -> EntityRenderers.register(entityType, RenderBlackHole::new));
         ModEntities.RAGING_VORTEX.ifPresent(entityType -> EntityRenderers.register(entityType, RenderBlackHole::new));
         ModEntities.DIGAMMA_QUASAR.ifPresent(entityType -> EntityRenderers.register(entityType, RenderQuasar::new));
+        ModEntities.DIGAMMA_SPEAR.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.effect.SpearRenderer::new));
         ModEntities.RUBBLE.ifPresent(entityType -> EntityRenderers.register(entityType, RubbleEntityRenderer::new));
 
         BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
@@ -932,6 +933,7 @@ public class ClientSetup {
         ParticleFactoryRegistry.getInstance().register(ModParticleTypes.RBMK_FLAME.get(), com.hbm_m.particle.custom.RBMKFlameParticle.Provider::new);
         ParticleFactoryRegistry.getInstance().register(ModParticleTypes.RBMK_STEAM.get(), com.hbm_m.particle.custom.RBMKSteamParticle.Provider::new);
         ParticleFactoryRegistry.getInstance().register(ModParticleTypes.RBMK_MUSH.get(), com.hbm_m.particle.custom.RBMKMushParticle.Provider::new);
+        ParticleFactoryRegistry.getInstance().register(ModParticleTypes.DIGAMMA_SMOKE.get(), com.hbm_m.particle.custom.DigammaSmokeParticle.Provider::new);
         ParticleFactoryRegistry.getInstance().register(ModParticleTypes.MISSILE_CONTRAIL.get(), MissileContrailParticle.Provider::new);
         *///?}
     }
@@ -1713,6 +1715,7 @@ public class ClientSetup {
         event.registerEntityRenderer(ModEntities.VORTEX.get(), RenderBlackHole::new);
         event.registerEntityRenderer(ModEntities.RAGING_VORTEX.get(), RenderBlackHole::new);
         event.registerEntityRenderer(ModEntities.DIGAMMA_QUASAR.get(), RenderQuasar::new);
+        event.registerEntityRenderer(ModEntities.DIGAMMA_SPEAR.get(), com.hbm_m.client.render.effect.SpearRenderer::new);
         event.registerEntityRenderer(ModEntities.RUBBLE.get(), RubbleEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.NOLO.get(), NoloEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.ENTITY_MOB_TAINTED_CREEPER.get(), RenderCreeperUniversal::tainted);
@@ -1773,6 +1776,7 @@ public class ClientSetup {
         event.registerSpriteSet(ModParticleTypes.RBMK_FLAME.get(), com.hbm_m.particle.custom.RBMKFlameParticle.Provider::new);
         event.registerSpriteSet(ModParticleTypes.RBMK_STEAM.get(), com.hbm_m.particle.custom.RBMKSteamParticle.Provider::new);
         event.registerSpriteSet(ModParticleTypes.RBMK_MUSH.get(), com.hbm_m.particle.custom.RBMKMushParticle.Provider::new);
+        event.registerSpriteSet(ModParticleTypes.DIGAMMA_SMOKE.get(), com.hbm_m.particle.custom.DigammaSmokeParticle.Provider::new);
         MainRegistry.LOGGER.info("Registered custom particle providers.");
     }
 

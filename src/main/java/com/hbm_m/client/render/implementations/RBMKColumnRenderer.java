@@ -322,6 +322,13 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements Bloc
     public static void renderObjGroup(VertexConsumer vc, Matrix4f m,
                                         List<float[]> triangles, TextureAtlasSprite sprite,
                                         float r, float g, float b, int light, int overlay) {
+        renderObjGroup(vc, m, triangles, sprite, r, g, b, light, overlay, 1f);
+    }
+
+    /** Alpha overload, for meshes drawn on a translucent layer (e.g. a fade-in overlay pass). */
+    public static void renderObjGroup(VertexConsumer vc, Matrix4f m,
+                                        List<float[]> triangles, TextureAtlasSprite sprite,
+                                        float r, float g, float b, int light, int overlay, float a) {
         if (triangles == null || sprite == null) return;
         float u0 = sprite.getU0(), u1 = sprite.getU1();
         float v0 = sprite.getV0(), v1 = sprite.getV1();
@@ -333,7 +340,7 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements Bloc
                 float nx = tri[base+5], ny = tri[base+6], nz = tri[base+7];
                 float au = u0 + u * (u1 - u0);
                 float av = v0 + (1f - v) * (v1 - v0); // V flipped
-                vc.vertex(m, x, y, z).color(r,g,b,1f).uv(au,av).overlayCoords(overlay).uv2(light).normal(nx,ny,nz).endVertex();
+                vc.vertex(m, x, y, z).color(r,g,b,a).uv(au,av).overlayCoords(overlay).uv2(light).normal(nx,ny,nz).endVertex();
             }
         }
     }

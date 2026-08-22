@@ -72,7 +72,7 @@ public class GUIRBMKBoiler extends GuiInfoScreen<RBMKBoilerMenu> {
         }
 
         // Dampfsorten-Anzeige je nach Kompressionsstufe (194/208/222/236, 0, 14, 58)
-        int grade = Math.min(Math.max(be.steamGrade, 0), 3);
+        int grade = Math.min(Math.max(be.getSteamGrade(), 0), 3);
         g.blit(TEXTURE, x + TYPE_TEX_X, y + TYPE_TEX_Y, 194 + grade * 14, 0, TYPE_TEX_W, TYPE_TEX_H);
     }
 
@@ -89,7 +89,7 @@ public class GUIRBMKBoiler extends GuiInfoScreen<RBMKBoilerMenu> {
                     be.steamTank.getFill() + " / " + be.steamTank.getMaxFill() + " mB Steam"), mx, my);
         } else if (isPointInRect(TYPE_X, TYPE_Y, TYPE_W, TYPE_H, mx, my)) {
             g.renderTooltip(font, java.util.List.of(
-                    Component.literal("Type: " + GRADE_NAMES[Math.min(Math.max(be.steamGrade, 0), 3)]),
+                    Component.literal("Type: " + GRADE_NAMES[Math.min(Math.max(be.getSteamGrade(), 0), 3)]),
                     Component.literal(String.format("Heat: %.1f°C", be.heat)),
                     Component.literal("Click to cycle steam grade")
             ), java.util.Optional.empty(), mx, my);
@@ -107,7 +107,9 @@ public class GUIRBMKBoiler extends GuiInfoScreen<RBMKBoilerMenu> {
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
         if (isPointInRect(TYPE_X, TYPE_Y, TYPE_W, TYPE_H, (int) mx, (int) my)) {
-            be.cycleCompressor();
+            // The screen's block entity is the client-side copy; the change has to go to the
+            // server or it is reverted by the next sync.
+            com.hbm_m.network.RBMKBoilerPacket.sendCycleCompressor(be.getBlockPos());
             playClickSound();
             return true;
         }

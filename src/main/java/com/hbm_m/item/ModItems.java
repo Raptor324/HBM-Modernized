@@ -845,6 +845,14 @@ public class ModItems {
     public static final RegistrySupplier<Item> UPGRADE_OVERDRIVE_3 = ITEMS.register("upgrade_overdrive_3",
             () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.OVERDRIVE, 3));
 
+    // Maxwell accepts the full upgrade range in the original (TileEntityTurretMaxwell's
+    // getAmmoTypesForDisplay lists seventeen); these last two were never registered here, so the
+    // turret was missing two of its ammo types outright. Textures were already in the repo.
+    public static final RegistrySupplier<Item> UPGRADE_5G = ITEMS.register("upgrade_5g",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> UPGRADE_SCREM = ITEMS.register("upgrade_screm",
+            () -> new Item(new Item.Properties()));
+
     // ═══════════════════ END MACHINE UPGRADES ═══════════════════
 
     public static final RegistrySupplier<Item> RADAWAY = ITEMS.register("radaway",
@@ -3958,6 +3966,25 @@ public class ModItems {
     public static final RegistrySupplier<Item> ROCKET_TURRET_STANDARD = ITEMS.register("rocket_turret_standard", () -> new Item(new Item.Properties()));
     /** Gelenkte Raketenvarianten fuer den Himars-Turret (Original: {@code ItemAmmoHIMARS}). */
     public static final RegistrySupplier<Item> ROCKET_HIMARS_STANDARD = ITEMS.register("rocket_himars_standard", () -> new Item(new Item.Properties()));
+    // The original's ItemAmmoHIMARS ships eight variants; the port was missing the two
+    // large-calibre ones (LARGE / LARGE_TB, "single" and "single_tb").
+    public static final RegistrySupplier<Item> ROCKET_HIMARS_SINGLE = ITEMS.register("rocket_himars_single",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ROCKET_HIMARS_SINGLE_TB = ITEMS.register("rocket_himars_single_tb",
+            () -> new Item(new Item.Properties()));
+
+    // Richard fires the full five-type ML rocket family in the original
+    // (XFactoryRocket.rocket_ml -> HE / HEAT / DEMO / INC / PHOSPHORUS). Only one existed here,
+    // so four of the five rocket types simply could not be loaded.
+    public static final RegistrySupplier<Item> ROCKET_TURRET_HEAT = ITEMS.register("rocket_turret_heat",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ROCKET_TURRET_DEMO = ITEMS.register("rocket_turret_demo",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ROCKET_TURRET_INC = ITEMS.register("rocket_turret_inc",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ROCKET_TURRET_PHOSPHORUS = ITEMS.register("rocket_turret_phosphorus",
+            () -> new Item(new Item.Properties()));
+
     public static final RegistrySupplier<Item> ROCKET_HIMARS_HE = ITEMS.register("rocket_himars_he", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> ROCKET_HIMARS_LAVA = ITEMS.register("rocket_himars_lava", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> ROCKET_HIMARS_MINI_NUKE = ITEMS.register("rocket_himars_mini_nuke", () -> new Item(new Item.Properties()));

@@ -365,7 +365,22 @@ public class FluidTank implements Cloneable {
     public int getMaxFill() { return getCapacityMb(); }
     public int getPressure() { return pressure; }
 
-    public void setFill(int amount) { setFluid(getStoredFluid(), Mth.clamp(amount, 0, capacity)); }
+    /**
+     * 1.7.10 tanks always carry a type, so {@code setFill} on an empty one simply filled it.
+     * Here {@link #getStoredFluid()} returns {@link Fluids#EMPTY} while the tank is empty, which
+     * made {@code setFill} on an empty-but-typed tank a silent no-op - a boiler starting from
+     * zero could never accumulate its first millibucket of steam. Fall back to the configured
+     * type so a typed tank behaves the way the original's callers expect. An untyped tank has no
+     * configured fluid either, so it is unaffected.
+     */
+    public void setFill(int amount) {
+        Fluid target = getStoredFluid();
+        if (target == Fluids.EMPTY) {
+            Fluid configured = getConfiguredFluid();
+            if (configured != Fluids.EMPTY && configured != ModFluids.NONE.getSource()) target = configured;
+        }
+        setFluid(target, Mth.clamp(amount, 0, capacity));
+    }
     public void fill(int amount) { setFill(amount); }
 
     public int changeTankSize(int size) {

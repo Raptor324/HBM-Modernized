@@ -94,6 +94,14 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> MOTOR = registerSoundEvents("block.motor");
     public static final RegistrySupplier<SoundEvent> LARGE_TURBINE = registerSoundEvents("block.large_turbine");
     public static final RegistrySupplier<SoundEvent> CHUNGUS_TURBINE = registerSoundEvents("block.chungus_turbine");
+
+    // RBMK meltdown / boiler venting - the 1.7.10 originals are hbm:block.rbmk_explosion,
+    // hbm:block.rbmk_az5_cover and hbm:block.steamEngineOperate.
+    public static final RegistrySupplier<SoundEvent> RBMK_EXPLOSION = registerSoundEvents("block.rbmk_explosion");
+    public static final RegistrySupplier<SoundEvent> RBMK_AZ5_COVER = registerSoundEvents("block.rbmk_az5_cover");
+    public static final RegistrySupplier<SoundEvent> STEAM_ENGINE_OPERATE = registerSoundEvents("block.steam_engine_operate");
+    /** {@code hbm:weapon.dFlash}: the digamma spear discharging. */
+    public static final RegistrySupplier<SoundEvent> D_FLASH = registerSoundEvents("weapon.d_flash");
     public static final RegistrySupplier<SoundEvent> METAL_BOX_OPEN = registerSoundEvents("block.metal_box_open");
     public static final RegistrySupplier<SoundEvent> METAL_BOX_CLOSE = registerSoundEvents("block.metal_box_close");
     public static final RegistrySupplier<SoundEvent> PRESS_OPERATE = registerSoundEvents("block.press_operate");

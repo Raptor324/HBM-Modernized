@@ -1,0 +1,141 @@
+{
+  "parent": "hbm_m:block/turret_howard",
+  "display": {
+    "gui": {
+      "rotation": [
+        30,
+        225,
+        0
+      ],
+      "translation": [
+        0.0,
+        3.5,
+        0.0
+      ],
+      "scale": [
+        0.2778,
+        0.2778,
+        0.2778
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "translation": [
+        0.0,
+        3.5,
+        0.0
+      ],
+      "scale": [
+        0.2778,
+        0.2778,
+        0.2778
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "translation": [
+        0.0,
+        2.45,
+        0.0
+      ],
+      "scale": [
+        0.1945,
+        0.1945,
+        0.1945
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "translation": [
+        0.0,
+        2.45,
+        0.0
+      ],
+      "scale": [
+        0.1945,
+        0.1945,
+        0.1945
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "translation": [
+        0.0,
+        2.45,
+        0.0
+      ],
+      "scale": [
+        0.1945,
+        0.1945,
+        0.1945
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "translation": [
+        0.0,
+        2.45,
+        0.0
+      ],
+      "scale": [
+        0.1945,
+        0.1945,
+        0.1945
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0.0,
+        1.75,
+        0.0
+      ],
+      "scale": [
+        0.1389,
+        0.1389,
+        0.1389
+      ]
+    },
+    "head": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0.0,
+        1.75,
+        0.0
+      ],
+      "scale": [
+        0.1389,
+        0.1389,
+        0.1389
+      ]
+    }
+  }
+}
