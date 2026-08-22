@@ -56,9 +56,12 @@ public class MaskManRenderer extends EntityRenderer<EntityMaskMan> {
         float headYaw = Mth.rotLerp(partialTick, man.yHeadRotO, man.yHeadRot) - bodyYaw;
 
         ps.pushPose();
-        // The model is authored upside down and facing sideways.
+        // The original's glRotatef(180, 1, 0, 0) is not a model flip - it cancels the
+        // scale(-1, -1, 1) that 1.7.10's RendererLivingEntity applies before calling the model.
+        // Net effect of that pair is a 180 degree turn about Y. A modern EntityRenderer has no
+        // such pre-flip, so copying the X rotation literally stood the boss on his head.
         ps.mulPose(Axis.YP.rotationDegrees(-bodyYaw));
-        ps.mulPose(Axis.XP.rotationDegrees(180));
+        ps.mulPose(Axis.YP.rotationDegrees(180));
         ps.translate(0, -1.5F, 0);
         ps.mulPose(Axis.YP.rotationDegrees(-90));
         ps.mulPose(Axis.XP.rotationDegrees(swing * -0.1F));

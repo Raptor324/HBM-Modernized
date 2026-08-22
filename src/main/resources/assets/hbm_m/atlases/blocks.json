@@ -19,11 +19,6 @@
       "type": "directory",
       "source": "block/doors",
       "prefix": "block/doors/"
-    },
-    {
-      "type": "directory",
-      "source": "entity_obj",
-      "prefix": "entity_obj/"
     }
   ]
 }
