@@ -1,15 +1,29 @@
 {
-
   "sources": [
-
-    { "type": "directory", "source": "block", "prefix": "block/" },
-    { "type": "directory", "source": "gui/fluids", "prefix": "gui/fluids/" },
-    { "type": "directory", "source": "fluid_barrel", "prefix": "fluid_barrel/" },
-    { "type": "directory", "source": "block/doors", "prefix": "block/doors/" }
-
+    {
+      "type": "directory",
+      "source": "block",
+      "prefix": "block/"
+    },
+    {
+      "type": "directory",
+      "source": "gui/fluids",
+      "prefix": "gui/fluids/"
+    },
+    {
+      "type": "directory",
+      "source": "fluid_barrel",
+      "prefix": "fluid_barrel/"
+    },
+    {
+      "type": "directory",
+      "source": "block/doors",
+      "prefix": "block/doors/"
+    },
+    {
+      "type": "directory",
+      "source": "entity_obj",
+      "prefix": "entity_obj/"
+    }
   ]
-
 }
-
-
-

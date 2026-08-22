@@ -83,7 +83,12 @@ public class EntityCreeperNuclear extends Creeper {
     @Override
     protected void dropCustomDeathLoot(DamageSource source, int looting, boolean recentlyHit) {
         this.spawnAtLocation(new ItemStack(Blocks.TNT));
-        // coin_creeper, NUKE_STANDARD ammo, bossCreeper — после порта соответствующих систем
+        this.spawnAtLocation(new ItemStack(com.hbm_m.item.ModItems.COIN_CREEPER.get()));
+        // Everyone within 50 blocks is credited, as in the original - the kill may well have been
+        // a group effort, or nobody's in particular.
+        com.hbm_m.advancement.ModAdvancements.grantNearby(this, 50D,
+                com.hbm_m.advancement.ModAdvancements.BOSS_CREEPER);
+        // TODO: NUKE_STANDARD ammo drop still needs the ammo system.
     }
 
     /** Взрыв (оригинал {@code func_146077_cc} / ExplosionNukeSmall). Вызывается из {@link com.hbm_m.mixin.CreeperMixin}. */

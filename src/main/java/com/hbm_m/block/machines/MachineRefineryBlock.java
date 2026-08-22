@@ -49,7 +49,17 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
  * Refinery - processes crude oil into various petroleum products.
  * Multiblock structure: 3x10x3 (10 слоёв по вертикали, сетка 3x3).
  */
+import net.minecraft.world.level.Explosion;
+
 public class MachineRefineryBlock extends BaseEntityBlock implements IMultiblockController {
+
+    /**
+     * Whether this machine has been blown up. Drives the model swap to the wrecked variant - the
+     * original renders {@code *_exploded.obj} in its place - and is set from the block entity's
+     * {@code explode()} / {@code repair()}.
+     */
+    public static final net.minecraft.world.level.block.state.properties.BooleanProperty EXPLODED =
+            net.minecraft.world.level.block.state.properties.BooleanProperty.create("exploded");
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
@@ -58,7 +68,7 @@ public class MachineRefineryBlock extends BaseEntityBlock implements IMultiblock
     public MachineRefineryBlock(BlockBehaviour.Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any()
-                .setValue(FACING, Direction.NORTH));
+                .setValue(FACING, Direction.NORTH).setValue(EXPLODED, false));
         this.structureHelper = defineStructure();
     }
 
@@ -101,7 +111,7 @@ public class MachineRefineryBlock extends BaseEntityBlock implements IMultiblock
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, EXPLODED);
     }
 
     @Nullable
@@ -214,4 +224,45 @@ public class MachineRefineryBlock extends BaseEntityBlock implements IMultiblock
     public PartRole getPartRole(BlockPos localOffset) {
         return structureHelper.resolvePartRole(localOffset, this);
     }
+
+    /**
+     * 1:1 port of {@code MachineRefinery.onBlockExploded}. A blast anywhere on the structure sets
+     * the whole thing alight rather than knocking out a single block; a second blast on an already
+     * burning refinery finishes it off.
+     *
+     * <p>Doing this with a bomblet zeta is the original's {@code achInferno}, which is the only
+     * way that advancement can be earned.</p>
+     */
+    @Override
+    public void onBlockExploded(BlockState state, Level level, BlockPos pos, Explosion explosion) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof com.hbm_m.blockentity.machines.MachineRefineryBlockEntity core)) {
+            super.onBlockExploded(state, level, pos, explosion);
+            return;
+        }
+
+        // One explosion touches many blocks of the same machine; only the first one counts.
+        if (core.lastExplosion == explosion) return;
+        core.lastExplosion = explosion;
+
+        if (core.hasExploded) {
+            level.removeBlock(pos, false);
+            return;
+        }
+
+        core.explode();
+
+        if (explosion.getDirectSourceEntity() instanceof com.hbm_m.entity.projectile.EntityBombletZeta) {
+            com.hbm_m.advancement.ModAdvancements.grantNearby(level,
+                    pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 100D,
+                    com.hbm_m.advancement.ModAdvancements.INFERNO);
+        }
+    }
+
+    /** {@code canDropFromExplosion}: a bombed refinery leaves nothing to pick up. */
+    @Override
+    public boolean dropFromExplosion(Explosion explosion) {
+        return false;
+    }
+
 }

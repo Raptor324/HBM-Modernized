@@ -93,6 +93,8 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
      */
     private short mode = 1;
     public boolean hasExploded = false;
+    /** Guards against one blast calling into every block of the tank in turn. */
+    public Object lastExplosion = null;
     public boolean onFire = false;
     private byte lastRedstone = 0;
     private int age = 0;
@@ -689,12 +691,26 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         this.hasExploded = true;
         this.onFire = FluidType.forFluid(fluidTank.getTankType()).hasTrait(FT_Flammable.class);
         this.setChanged();
+        syncExplodedState();
     }
+    /**
+     * Pushes {@code hasExploded} into the blockstate so the wrecked model is used. The state is
+     * the single source of truth for rendering; the field stays authoritative for behaviour.
+     */
+    private void syncExplodedState() {
+        if (level == null || level.isClientSide) return;
+        net.minecraft.world.level.block.state.BlockState state = getBlockState();
+        if (!state.hasProperty(com.hbm_m.block.machines.MachineFluidTankBlock.EXPLODED)) return;
+        if (state.getValue(com.hbm_m.block.machines.MachineFluidTankBlock.EXPLODED) == this.hasExploded) return;
+        level.setBlock(worldPosition, state.setValue(com.hbm_m.block.machines.MachineFluidTankBlock.EXPLODED, this.hasExploded), 3);
+    }
+
 
     public void repair() {
         this.hasExploded = false;
         this.onFire = false;
         this.setChanged();
+        syncExplodedState();
     }
 
     // ═══════════════════════════ Material fluid-storage capability (barrel tiers) ════════════════

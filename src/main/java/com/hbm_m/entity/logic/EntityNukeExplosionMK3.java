@@ -49,6 +49,8 @@ public class EntityNukeExplosionMK3 extends EntityExplosionChunkloading {
         }
 
         if (!this.did) {
+            com.hbm_m.advancement.ModAdvancements.grantAll(level(),
+                    com.hbm_m.advancement.ModAdvancements.MANHATTAN);
             this.expl = new ExplosionFleija(
                     (int) getX(), (int) getY(), (int) getZ(),
                     level(), this.destructionRange, this.coefficient, this.coefficient2);

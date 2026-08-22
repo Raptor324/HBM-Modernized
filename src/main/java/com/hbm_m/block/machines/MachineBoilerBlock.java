@@ -43,13 +43,21 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  */
 public class MachineBoilerBlock extends BaseEntityBlock implements IMultiblockController {
 
+    /**
+     * Whether this machine has been blown up. Drives the model swap to the wrecked variant - the
+     * original renders {@code *_exploded.obj} in its place - and is set from the block entity's
+     * {@code explode()} / {@code repair()}.
+     */
+    public static final net.minecraft.world.level.block.state.properties.BooleanProperty EXPLODED =
+            net.minecraft.world.level.block.state.properties.BooleanProperty.create("exploded");
+
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
     private final MultiblockStructureHelper structureHelper;
 
     public MachineBoilerBlock(Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(EXPLODED, false));
         this.structureHelper = defineStructure();
     }
 
@@ -85,7 +93,7 @@ public class MachineBoilerBlock extends BaseEntityBlock implements IMultiblockCo
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, EXPLODED);
     }
 
     @Override

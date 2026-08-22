@@ -161,6 +161,10 @@ public final class CreativeModeTabEventHandler {
     /** Яйца призыва и связанное (ванильная вкладка + поиск на Fabric). */
     public static void populateSpawnEggs(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
         Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        add.accept(new ItemStack(ModItems.BOT_PRIME_SPAWN_EGG.get()));
+        add.accept(new ItemStack(ModItems.UFO_SPAWN_EGG.get()));
+        add.accept(new ItemStack(ModItems.RAD_BEAST_SPAWN_EGG.get()));
+        add.accept(new ItemStack(ModItems.MASKMAN_SPAWN_EGG.get()));
         add.accept(new ItemStack(ModItems.NOLO_SPAWN_EGG.get()));
         add.accept(new ItemStack(ModItems.ENTITY_MOB_TAINTED_CREEPER_SPAWN_EGG.get()));
         add.accept(new ItemStack(ModItems.ENTITY_MOB_GOLD_CREEPER_SPAWN_EGG.get()));
@@ -2177,6 +2181,9 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.BOLT_SPIKE.get()));
         add.accept(new ItemStack(ModItems.BOLTGUN.get()));
         add.accept(new ItemStack(ModItems.BOMB_CALLER.get()));
+        add.accept(new ItemStack(ModItems.BOMB_CALLER_NAPALM.get()));
+        add.accept(new ItemStack(ModItems.BOMB_CALLER_CHLORINE.get()));
+        add.accept(new ItemStack(ModItems.BOMB_CALLER_ATOMIC.get()));
         add.accept(new ItemStack(ModItems.BOMB_WAFFLE.get()));
         add.accept(new ItemStack(ModItems.BOOK_GUIDE.get()));
         add.accept(new ItemStack(ModItems.BOOK_LEMEGETON.get()));

@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:shimmer_sledge"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.fiend.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.fiend.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "hbm_m:root"
+}

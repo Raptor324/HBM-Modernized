@@ -448,6 +448,81 @@ public class ModEntities {
                     .clientTrackingRange(10)
                     .build("nolo"));
 
+    /** 1:1 port of {@code EntityBomber}: the plane a bomb caller brings in. */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.logic.EntityBomber>> BOMBER =
+            ENTITY_TYPES.register("bomber",
+                    () -> EntityType.Builder.<com.hbm_m.entity.logic.EntityBomber>of(
+                                    com.hbm_m.entity.logic.EntityBomber::new, MobCategory.MISC)
+                            .sized(8.0F, 4.0F)
+                            .fireImmune()
+                            .clientTrackingRange(256)
+                            .updateInterval(1)
+                            .build("bomber"));
+
+    /** 1:1 port of {@code EntityBombletZeta}: the bomber's free-falling payload. */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.EntityBombletZeta>> BOMBLET_ZETA =
+            ENTITY_TYPES.register("bomblet_zeta",
+                    () -> EntityType.Builder.<com.hbm_m.entity.projectile.EntityBombletZeta>of(
+                                    com.hbm_m.entity.projectile.EntityBombletZeta::new, MobCategory.MISC)
+                            .sized(0.5F, 0.5F)
+                            .clientTrackingRange(128)
+                            .updateInterval(1)
+                            .build("bomblet_zeta"));
+
+    /** 1:1 port of {@code EntityUFO}: 15x4 flying fortress, 20000 HP. */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.mob.EntityUFO>> UFO =
+            ENTITY_TYPES.register("ufo",
+                    () -> EntityType.Builder.<com.hbm_m.entity.mob.EntityUFO>of(
+                                    com.hbm_m.entity.mob.EntityUFO::new, MobCategory.MONSTER)
+                            .sized(15.0F, 4.0F)
+                            .fireImmune()
+                            .clientTrackingRange(64)
+                            .updateInterval(1)
+                            .build("ufo"));
+
+    /** 1:1 port of {@code EntityBOTPrimeHead}: the 15000 HP worm boss. */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.mob.botprime.EntityBOTPrimeHead>> BOT_PRIME_HEAD =
+            ENTITY_TYPES.register("bot_prime_head",
+                    () -> EntityType.Builder.<com.hbm_m.entity.mob.botprime.EntityBOTPrimeHead>of(
+                                    com.hbm_m.entity.mob.botprime.EntityBOTPrimeHead::new, MobCategory.MONSTER)
+                            .sized(3.0F, 3.0F)
+                            .fireImmune()
+                            .clientTrackingRange(32)
+                            .updateInterval(1)
+                            .build("bot_prime_head"));
+
+    /** One of the head's 74 trailing segments; never spawned on its own. */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.mob.botprime.EntityBOTPrimeBody>> BOT_PRIME_BODY =
+            ENTITY_TYPES.register("bot_prime_body",
+                    () -> EntityType.Builder.<com.hbm_m.entity.mob.botprime.EntityBOTPrimeBody>of(
+                                    com.hbm_m.entity.mob.botprime.EntityBOTPrimeBody::new, MobCategory.MONSTER)
+                            .sized(2.0F, 2.0F)
+                            .fireImmune()
+                            .noSummon()
+                            .clientTrackingRange(32)
+                            .updateInterval(1)
+                            .build("bot_prime_body"));
+
+    /** 1:1 port of {@code EntityRADBeast}: 2x2 blaze-alike, leader variant at 360 HP. */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.mob.EntityRADBeast>> RAD_BEAST =
+            ENTITY_TYPES.register("rad_beast",
+                    () -> EntityType.Builder.<com.hbm_m.entity.mob.EntityRADBeast>of(
+                                    com.hbm_m.entity.mob.EntityRADBeast::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.8F)
+                            .fireImmune()
+                            .clientTrackingRange(8)
+                            .build("rad_beast"));
+
+    /** 1:1 port of {@code EntityMaskMan}: 2x5 boss, 1000 HP. */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.mob.EntityMaskMan>> MASKMAN =
+            ENTITY_TYPES.register("maskman",
+                    () -> EntityType.Builder.<com.hbm_m.entity.mob.EntityMaskMan>of(
+                                    com.hbm_m.entity.mob.EntityMaskMan::new, MobCategory.MONSTER)
+                            .sized(2.0F, 5.0F)
+                            .fireImmune()
+                            .clientTrackingRange(16)
+                            .build("maskman"));
+
     public static final RegistrySupplier<EntityType<EntityCreeperTainted>> ENTITY_MOB_TAINTED_CREEPER =
             ENTITY_TYPES.register("entity_mob_tainted_creeper",
                     () -> EntityType.Builder.of(EntityCreeperTainted::new, MobCategory.MONSTER)

@@ -200,6 +200,14 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent(ModItems.INGOT_TUNGSTEN_CARBIDE.getId().getPath(), "item/generated")
                 .texture("layer0", modLoc("item/ingot/ingot_tungsten_carbide"));
 
+        // The original is a single damage-variant item with one texture; the port splits it into
+        // four items, so they all share that texture rather than inventing three new ones.
+        for (var caller : java.util.List.of(ModItems.BOMB_CALLER_NAPALM,
+                ModItems.BOMB_CALLER_CHLORINE, ModItems.BOMB_CALLER_ATOMIC)) {
+            withExistingParent(caller.getId().getPath(), "item/generated")
+                    .texture("layer0", modLoc("item/bomb_caller"));
+        }
+
         registerRadAbsorberItemModels();
 
         withExistingParent("large_vehicle_door", 
@@ -990,6 +998,10 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModel(ModBlocks.TUNGSTEN_ORE);
         blockItemFromBlockModel(ModBlocks.WASTE_CHARGE);
 
+        withExistingParent(ModItems.BOT_PRIME_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.UFO_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.RAD_BEAST_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.MASKMAN_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
         withExistingParent(ModItems.NOLO_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
         withExistingParent(ModItems.ENTITY_MOB_TAINTED_CREEPER_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
         withExistingParent(ModItems.ENTITY_MOB_VOLATILE_CREEPER_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));

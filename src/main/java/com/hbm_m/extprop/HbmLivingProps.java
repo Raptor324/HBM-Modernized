@@ -104,6 +104,14 @@ public final class HbmLivingProps {
     }
 
     public static void incrementDigamma(LivingEntity entity, float amount) {
-        livingTag(entity).putFloat(NBT_DIGAMMA, getDigamma(entity) + amount);
+        float total = getDigamma(entity) + amount;
+        livingTag(entity).putFloat(NBT_DIGAMMA, total);
+
+        // The original checks these three thresholds every time a player's digamma changes.
+        if (entity instanceof net.minecraft.world.entity.player.Player player) {
+            if (total > 0F)   com.hbm_m.advancement.ModAdvancements.grant(player, com.hbm_m.advancement.ModAdvancements.DIGAMMA_SEE);
+            if (total >= 2F)  com.hbm_m.advancement.ModAdvancements.grant(player, com.hbm_m.advancement.ModAdvancements.DIGAMMA_FEEL);
+            if (total >= 10F) com.hbm_m.advancement.ModAdvancements.grant(player, com.hbm_m.advancement.ModAdvancements.DIGAMMA_KNOW);
+        }
     }
 }

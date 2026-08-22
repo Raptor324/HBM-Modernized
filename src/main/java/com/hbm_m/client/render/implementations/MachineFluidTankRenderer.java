@@ -36,6 +36,10 @@ public class MachineFluidTankRenderer implements BlockEntityRenderer<MachineFlui
             int packedLight,
             int packedOverlay
     ) {
+        // A burst tank shows no hazard placard: its contents are on the floor, and the wrecked
+        // model has no panel to put one on.
+        if (be.hasExploded) return;
+
         Fluid fluid = be.getFluidTank().getTankType();
         if (fluid == null || fluid == Fluids.EMPTY || fluid == ModFluids.NONE.getSource()) {
             return;

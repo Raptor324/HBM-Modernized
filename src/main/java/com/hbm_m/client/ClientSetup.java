@@ -845,6 +845,13 @@ public class ClientSetup {
                 EntityRendererRegistry.register(entityType, RenderQuasar::new));
         ModEntities.RUBBLE.ifPresent(entityType ->
                 EntityRendererRegistry.register(entityType, RubbleEntityRenderer::new));
+        ModEntities.RAD_BEAST.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.mob.RADBeastRenderer::new));
+        ModEntities.BOT_PRIME_HEAD.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.mob.BOTPrimeRenderer::head));
+        ModEntities.BOT_PRIME_BODY.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.mob.BOTPrimeRenderer::body));
+        ModEntities.UFO.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.mob.UFORenderer::new));
+        ModEntities.BOMBER.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.plane.BomberRenderer::new));
+        ModEntities.BOMBLET_ZETA.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.EmptyEntityRenderer::new));
+        ModEntities.MASKMAN.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.mob.MaskManRenderer::new));
         ModEntities.NOLO.ifPresent(entityType ->
                 EntityRendererRegistry.register(entityType, NoloEntityRenderer::new));
         ModEntities.ENTITY_MOB_TAINTED_CREEPER.ifPresent(entityType ->
@@ -1717,6 +1724,15 @@ public class ClientSetup {
         event.registerEntityRenderer(ModEntities.DIGAMMA_QUASAR.get(), RenderQuasar::new);
         event.registerEntityRenderer(ModEntities.DIGAMMA_SPEAR.get(), com.hbm_m.client.render.effect.SpearRenderer::new);
         event.registerEntityRenderer(ModEntities.RUBBLE.get(), RubbleEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.RAD_BEAST.get(), com.hbm_m.client.render.mob.RADBeastRenderer::new);
+        event.registerEntityRenderer(ModEntities.BOT_PRIME_HEAD.get(), com.hbm_m.client.render.mob.BOTPrimeRenderer::head);
+        event.registerEntityRenderer(ModEntities.BOT_PRIME_BODY.get(), com.hbm_m.client.render.mob.BOTPrimeRenderer::body);
+        event.registerEntityRenderer(ModEntities.UFO.get(), com.hbm_m.client.render.mob.UFORenderer::new);
+        event.registerEntityRenderer(ModEntities.BOMBER.get(), com.hbm_m.client.render.plane.BomberRenderer::new);
+        // The bomblet is a 0.5-block object falling at terminal velocity; the original renders a
+        // small model, but it is on screen for a fraction of a second either way.
+        event.registerEntityRenderer(ModEntities.BOMBLET_ZETA.get(), com.hbm_m.client.render.EmptyEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MASKMAN.get(), com.hbm_m.client.render.mob.MaskManRenderer::new);
         event.registerEntityRenderer(ModEntities.NOLO.get(), NoloEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.ENTITY_MOB_TAINTED_CREEPER.get(), RenderCreeperUniversal::tainted);
         event.registerEntityRenderer(ModEntities.ENTITY_MOB_VOLATILE_CREEPER.get(), RenderCreeperUniversal::volatileCreeper);

@@ -514,7 +514,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         horizontalBlock(ModBlocks.THRESHER.get(),
             models().getExistingFile(modLoc("block/machines/thresher")));
         simpleMachineBlock(ModBlocks.BEAMLINE);
-        customMachineBlock(ModBlocks.BOILER);
+        explodableMachineBlock(ModBlocks.BOILER,
+                "block/machines/boiler", "block/machines/boiler_burst");
         horizontalBlock(ModBlocks.PUMP_STEAM.get(),
             models().cubeAll(ModBlocks.PUMP_STEAM.getId().getPath(), modLoc("block/machine/pump_steam")));
         horizontalBlock(ModBlocks.PUMP_ELECTRIC.get(),
@@ -643,9 +644,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
             com.hbm_m.block.machines.MachineRotaryFurnaceBlock.FACING, com.hbm_m.block.machines.MachineRotaryFurnaceBlock.LIT,
             "rotary_furnace", "rotary_furnace");
 
-        // FluidTank - только FACING
-        horizontalBlock(ModBlocks.FLUID_TANK.get(),
-            models().getExistingFile(modLoc("block/machines/fluid_tank")));
+        // FluidTank - FACING plus the wrecked variant
+        explodableMachineBlock(ModBlocks.FLUID_TANK,
+                "block/machines/fluid_tank", "block/machines/fluid_tank_exploded");
 
         // BAT9000 - uses its own pre-existing dedicated model/texture (static, no fluid-tint swap)
         horizontalBlock(ModBlocks.BAT9000.get(),
@@ -3807,6 +3808,33 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 }
             }
         }
+    }
+
+    /**
+     * A horizontally-placed machine that has a wrecked model for when it has been blown up.
+     *
+     * <p>Emits the usual four facings twice over, keyed on the block's {@code exploded} property,
+     * so the model swaps the moment the block entity flips that flag. The original does the same
+     * swap inside its tile-entity renderer; the port has these on plain baked models, so the
+     * blockstate is the place for it.</p>
+     */
+    private <T extends Block> void explodableMachineBlock(RegistrySupplier<T> blockObject,
+                                                          String intactModel, String explodedModel) {
+        var intact = models().getExistingFile(modLoc(intactModel));
+        var wrecked = models().getExistingFile(modLoc(explodedModel));
+
+        getVariantBuilder(blockObject.get()).forAllStates(state -> {
+            var facing = state.getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
+            // Each block declares its own BooleanProperty instance, so the property has to be
+            // taken from the state itself - passing another block's instance to getValue throws.
+            var property = state.getBlock().getStateDefinition().getProperty("exploded");
+            boolean exploded = property instanceof net.minecraft.world.level.block.state.properties.BooleanProperty flag
+                    && state.getValue(flag);
+            return net.minecraftforge.client.model.generators.ConfiguredModel.builder()
+                    .modelFile(exploded ? wrecked : intact)
+                    .rotationY(((int) facing.toYRot() + 180) % 360)
+                    .build();
+        });
     }
 
     private <T extends Block> void customMachineBlock(RegistrySupplier<T> blockObject) {

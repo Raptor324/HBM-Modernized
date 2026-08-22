@@ -88,6 +88,10 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 
         if (!level().isClientSide) {
             updateChunkTicket();
+            if (this.tickCount <= 1) {
+                com.hbm_m.advancement.ModAdvancements.grantAll(level(),
+                        com.hbm_m.advancement.ModAdvancements.MANHATTAN);
+            }
         }
 
         // радиация в первые тики после начала взрыва

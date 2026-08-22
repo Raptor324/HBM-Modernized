@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:nugget_schrabidium"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.taste_of_blood.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.taste_of_blood.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "hbm_m:root"
+}

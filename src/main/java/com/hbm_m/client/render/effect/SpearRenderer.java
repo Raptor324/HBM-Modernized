@@ -42,7 +42,7 @@ public class SpearRenderer extends EntityRenderer<SpearEntity> {
         List<float[]> mesh = obj.get("Spear");
         if (mesh == null) return;
 
-        TextureAtlasSprite sprite = RBMKColumnRenderer.sprite(RefStrings.MODID, "block/lance");
+        TextureAtlasSprite sprite = RBMKColumnRenderer.sprite(RefStrings.MODID, "entity_obj/lance");
 
         ps.pushPose();
         ps.translate(0, 15, 0);

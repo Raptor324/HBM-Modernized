@@ -347,6 +347,11 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
             level.explode(null,
                 worldPosition.getX() + 0.5D, worldPosition.getY() + 1.0D, worldPosition.getZ() + 0.5D,
                 8.0F, Level.ExplosionInteraction.BLOCK);
+            // Everyone within 100 blocks gets credited, exactly as the original does - there is
+            // no single player to blame for a runaway reactor.
+            com.hbm_m.advancement.ModAdvancements.grantNearby(level,
+                worldPosition.getX() + 0.5D, worldPosition.getY() + 0.5D, worldPosition.getZ() + 0.5D,
+                100D, com.hbm_m.advancement.ModAdvancements.ZIRNOX_BOOM);
         }
     }
 

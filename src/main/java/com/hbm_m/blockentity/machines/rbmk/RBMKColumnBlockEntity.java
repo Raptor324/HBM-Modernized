@@ -256,6 +256,9 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
                 com.hbm_m.sound.ModSounds.RBMK_EXPLOSION.get(),
                 net.minecraft.sounds.SoundSource.BLOCKS, 50.0F, 1.0F);
 
+        com.hbm_m.advancement.ModAdvancements.grantNearby(level, avgX, cloudY, avgZ, 50D,
+                com.hbm_m.advancement.ModAdvancements.RBMK_BOOM);
+
         // A meltdown carrying digamma fuel calls down the lance, a hundred blocks above the
         // reactor's centre. Note the original reads the flag here, *after* onMelt has run - the
         // reset below is what stops it firing again on the next, ordinary meltdown.

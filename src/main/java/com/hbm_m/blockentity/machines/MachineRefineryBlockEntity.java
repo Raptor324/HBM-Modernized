@@ -104,6 +104,44 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
     private int sulfurProgress = 0;
     private boolean isOn = false;
 
+    /**
+     * {@code hasExploded} / {@code onFire}: a refinery that has been blown up stops working and
+     * burns until someone puts it out. The port had neither - a bomb landing on a refinery simply
+     * broke the block like any other, which is also why {@code inferno} had no trigger.
+     */
+    public boolean hasExploded = false;
+    public boolean onFire = false;
+    /** Guards against one blast calling into every block of the multiblock in turn. */
+    public Object lastExplosion = null;
+
+    public void explode() {
+        if (this.hasExploded) return;
+        this.hasExploded = true;
+        this.onFire = true;
+        this.isOn = false;
+        this.setChanged();
+        syncExplodedState();
+    }
+
+    public void repair() {
+        this.hasExploded = false;
+        this.onFire = false;
+        this.setChanged();
+        syncExplodedState();
+    }
+    /**
+     * Pushes {@code hasExploded} into the blockstate so the wrecked model is used. The state is
+     * the single source of truth for rendering; the field stays authoritative for behaviour.
+     */
+    private void syncExplodedState() {
+        if (level == null || level.isClientSide) return;
+        net.minecraft.world.level.block.state.BlockState state = getBlockState();
+        if (!state.hasProperty(com.hbm_m.block.machines.MachineRefineryBlock.EXPLODED)) return;
+        if (state.getValue(com.hbm_m.block.machines.MachineRefineryBlock.EXPLODED) == this.hasExploded) return;
+        level.setBlock(worldPosition, state.setValue(com.hbm_m.block.machines.MachineRefineryBlock.EXPLODED, this.hasExploded), 3);
+    }
+
+
     //? if forge {
     private LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
     //?}
@@ -395,6 +433,8 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
+        tag.putBoolean("hasExploded", hasExploded);
+        tag.putBoolean("onFire", onFire);
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].writeToNBT(tag, "tank_" + i);
         }
@@ -405,6 +445,8 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
+        hasExploded = tag.getBoolean("hasExploded");
+        onFire = tag.getBoolean("onFire");
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].readFromNBT(tag, "tank_" + i);
         }

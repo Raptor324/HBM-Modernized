@@ -58,6 +58,19 @@ public abstract class ItemArmorMod extends Item {
     }
 
     /**
+     * Per-tick hook for mods whose effect is not expressible as an attribute modifier.
+     *
+     * <p>1.7.10's {@code ItemArmorMod.modUpdate} - the port's mod system was attribute-only, so a
+     * mod that has to actively do something every tick (the knife, for instance) had nowhere to
+     * live. Driven by {@link com.hbm_m.armormod.event.ArmorModTickHandler}.</p>
+     *
+     * @param entity the wearer
+     * @param armor  the armour piece this mod is installed in
+     */
+    public void modUpdate(net.minecraft.world.entity.LivingEntity entity, ItemStack armor) {
+    }
+
+    /**
      * Вспомогательный метод для создания модификатора с корректным UUID.
      * @param armorStack Броня, для которой создается модификатор.
      * @param attribute Сам атрибут (например, Attributes.MAX_HEALTH).

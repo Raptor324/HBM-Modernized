@@ -78,6 +78,8 @@ public class SpearEntity extends Entity {
                 descentBlast(server);
                 for (net.minecraft.world.entity.player.Player player : server.players()) {
                     ContaminationUtil.contaminate(player, HazardType.DIGAMMA, ContaminationType.DIGAMMA, 0.05F);
+                    com.hbm_m.advancement.ModAdvancements.grant(player,
+                            com.hbm_m.advancement.ModAdvancements.DIGAMMA_KAUAI_MOHO);
                 }
                 spawnSmoke(server, groundHeight(server, this.getX(), this.getZ()) + 2, 5);
             }

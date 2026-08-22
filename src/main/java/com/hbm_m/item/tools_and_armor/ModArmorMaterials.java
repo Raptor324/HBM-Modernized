@@ -36,6 +36,15 @@ public enum ModArmorMaterials implements ArmorMaterial {
     STEEL("steel", 26, new int[]{ 4, 5, 3, 2 }, 25,
             SoundEvents.ARMOR_EQUIP_IRON, 1f, 0.03f, () -> Ingredient.of(ModItems.PLATE_STEEL.get())),
 
+    // The two jackts are steel-tier in the original (aMatSteel) but carry their own skin, and
+    // the shimmer weapons check for them by identity - so they need their own material rather
+    // than sharing STEEL's texture.
+    JACKT("jackt", 26, new int[]{ 4, 5, 3, 2 }, 25,
+            SoundEvents.ARMOR_EQUIP_LEATHER, 1f, 0.03f, () -> Ingredient.of(ModItems.PLATE_STEEL.get())),
+
+    JACKT2("jackt2", 26, new int[]{ 4, 5, 3, 2 }, 25,
+            SoundEvents.ARMOR_EQUIP_LEATHER, 1f, 0.03f, () -> Ingredient.of(ModItems.PLATE_STEEL.get())),
+
     COBALT("cobalt", 26, new int[]{ 2, 4, 2, 1 }, 25,
             SoundEvents.ARMOR_EQUIP_IRON, 0.25f, 0f, () -> Ingredient.of(ModItems.PLATE_STEEL.get())),
 

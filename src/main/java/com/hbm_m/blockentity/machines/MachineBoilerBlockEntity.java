@@ -143,7 +143,20 @@ public class MachineBoilerBlockEntity extends BaseMachineBlockEntity implements 
         level.playSound(null, pos, SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 2.0F, 1.0F);
         hasExploded = true;
         heat = 0;
+        syncExplodedState();
     }
+    /**
+     * Pushes {@code hasExploded} into the blockstate so the wrecked model is used. The state is
+     * the single source of truth for rendering; the field stays authoritative for behaviour.
+     */
+    private void syncExplodedState() {
+        if (level == null || level.isClientSide) return;
+        net.minecraft.world.level.block.state.BlockState state = getBlockState();
+        if (!state.hasProperty(com.hbm_m.block.machines.MachineBoilerBlock.EXPLODED)) return;
+        if (state.getValue(com.hbm_m.block.machines.MachineBoilerBlock.EXPLODED) == this.hasExploded) return;
+        level.setBlock(worldPosition, state.setValue(com.hbm_m.block.machines.MachineBoilerBlock.EXPLODED, this.hasExploded), 3);
+    }
+
 
     // ==================== IFluidUserMK2 / MK2-Netz ====================
 
