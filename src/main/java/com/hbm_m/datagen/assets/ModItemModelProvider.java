@@ -208,6 +208,10 @@ public class ModItemModelProvider extends ItemModelProvider {
                     .texture("layer0", modLoc("item/bomb_caller"));
         }
 
+
+
+
+
         registerRadAbsorberItemModels();
 
         withExistingParent("large_vehicle_door", 

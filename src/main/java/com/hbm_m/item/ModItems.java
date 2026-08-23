@@ -2948,6 +2948,10 @@ public class ModItems {
     public static final RegistrySupplier<Item> BOLT_SPIKE = ITEMS.register("bolt_spike", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> BOLTGUN = ITEMS.register("boltgun",
             () -> new com.hbm_m.item.tool.ItemBoltgun(new Item.Properties()));
+
+
+
+
     public static final RegistrySupplier<Item> BOMB_CALLER = ITEMS.register("bomb_caller",
             () -> new com.hbm_m.item.tool.ItemBombCaller(com.hbm_m.item.tool.ItemBombCaller.Strike.CARPET, new Item.Properties()));
     public static final RegistrySupplier<Item> BOMB_CALLER_NAPALM = ITEMS.register("bomb_caller_napalm",

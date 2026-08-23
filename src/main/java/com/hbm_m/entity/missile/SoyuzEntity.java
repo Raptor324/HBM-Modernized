@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.entity.ModEntities;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.particle.ModParticleTypes;
 
@@ -82,6 +83,13 @@ public class SoyuzEntity extends Entity {
                 DamageSource exhaust = ModDamageSources.exhaust(level());
                 e.hurt(exhaust, 100.0F);
                 firedOnce = true;
+
+                // "Potato In Space": the original awards this to whoever stands in the plume,
+                // which is the joke - you are the potato.
+                if (e instanceof net.minecraft.world.entity.player.Player player) {
+                    com.hbm_m.advancement.ModAdvancements.grant(player,
+                            com.hbm_m.advancement.ModAdvancements.SOYUZ);
+                }
             }
         } else {
             spawnExhaust(getX(), getY(), getZ());
@@ -132,6 +140,14 @@ public class SoyuzEntity extends Entity {
                     server.sendParticles(net.minecraft.core.particles.ParticleTypes.FIREWORK,
                             getX(), getY(), getZ(), 40, 1.0, 1.0, 1.0, 0.1);
                 }
+                com.hbm_m.advancement.ModAdvancements.grantAll(level(),
+                        com.hbm_m.advancement.ModAdvancements.SPACE);
+            } else if (!chip.isEmpty() && chip.is(ModBlocks.SAT_FOEQ.get().asItem())
+                    && level() instanceof ServerLevel server) {
+                com.hbm_m.advancement.ModAdvancements.grantAll(level(),
+                        com.hbm_m.advancement.ModAdvancements.FOEQ);
+                com.hbm_m.satellite.SatelliteManager.get(server).orbit(
+                        server, com.hbm_m.item.ISatChip.getFreqS(chip), chip.getItem(), getX(), getY(), getZ());
             } else if (!chip.isEmpty() && chip.getItem() instanceof com.hbm_m.item.ISatChip
                     && level() instanceof ServerLevel server) {
                 com.hbm_m.satellite.SatelliteManager.get(server).orbit(

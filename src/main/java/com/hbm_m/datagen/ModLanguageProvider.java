@@ -3983,6 +3983,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.RBMK_HEATER.get(), "RBMK Heater");
                 add(ModBlocks.RBMK_OUTGASSER.get(), "RBMK Irradiation Channel");
                 add(ModBlocks.RBMK_STORAGE.get(), "RBMK Storage");
+                addPortedBlockNames();
                 add(ModBlocks.RBMK_BLANK.get(), "RBMK Blank");
                 add("entity.hbm_m.digamma_spear", "Digamma Lance");
                 add(ModBlocks.BLOCK_SLAG.get(), "Slag Block");
@@ -5653,6 +5654,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.BOBMAZON.get(), "Bobmazon");
                 add(ModItems.BOLT_SPIKE.get(), "Railroad Spike");
                 add(ModItems.BOLTGUN.get(), "Pneumatic Rivet Gun");
+
                 add(ModItems.BOMB_CALLER.get(), "Airstrike Designator");
                 add(ModItems.BOMB_CALLER_NAPALM.get(), "Airstrike Designator (Napalm)");
                 add(ModItems.BOMB_CALLER_CHLORINE.get(), "Airstrike Designator (Poison Gas)");
@@ -6761,6 +6763,116 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("advancements.hbm_m.some_wounds.title", "Some Wounds Never Heal");
                 add("advancements.hbm_m.some_wounds.description", "Use a knife injector");
     }
+
+    /**
+     * Split out of addTranslations: the auto-ported name list pushes that method past the JVM's
+     * 64KB per-method bytecode limit on its own.
+     */
+    private void addPortedBlockNames() {
+                // ─── AUTO-PORT Block-Namen ───
+                add(ModBlocks.BALEFIRE.get(), "Balefire");
+                add(ModBlocks.BLOCK_ASBESTOS.get(), "Block Asbestos");
+                add(ModBlocks.BLOCK_BAKELITE.get(), "Block Bakelite");
+                add(ModBlocks.BLOCK_C4.get(), "Block C4");
+                add(ModBlocks.BLOCK_COLTAN.get(), "Block Coltan");
+                add(ModBlocks.BLOCK_CORIUM.get(), "Block Corium");
+                add(ModBlocks.BLOCK_CORIUM_COBBLE.get(), "Block Corium Cobble");
+                add(ModBlocks.BLOCK_EUPHEMIUM_CLUSTER.get(), "Block Euphemium Cluster");
+                add(ModBlocks.BLOCK_FIBERGLASS.get(), "Block Fiberglass");
+                add(ModBlocks.BLOCK_FLUORITE.get(), "Block Fluorite");
+                add(ModBlocks.BLOCK_GRAPHITE_DETECTOR.get(), "Block Graphite Detector");
+                add(ModBlocks.BLOCK_GRAPHITE_DRILLED.get(), "Block Graphite Drilled");
+                add(ModBlocks.BLOCK_GRAPHITE_FUEL.get(), "Block Graphite Fuel");
+                add(ModBlocks.BLOCK_GRAPHITE_LITHIUM.get(), "Block Graphite Lithium");
+                add(ModBlocks.BLOCK_GRAPHITE_PLUTONIUM.get(), "Block Graphite Plutonium");
+                add(ModBlocks.BLOCK_GRAPHITE_SOURCE.get(), "Block Graphite Source");
+                add(ModBlocks.BLOCK_GRAPHITE_TRITIUM.get(), "Block Graphite Tritium");
+                add(ModBlocks.BLOCK_INSULATOR.get(), "Block Insulator");
+                add(ModBlocks.BLOCK_LITHIUM.get(), "Block Lithium");
+                add(ModBlocks.BLOCK_MAGNETIZED_TUNGSTEN.get(), "Block Magnetized Tungsten");
+                add(ModBlocks.BLOCK_METEOR.get(), "Block Meteor");
+                add(ModBlocks.BLOCK_METEOR_BROKEN.get(), "Block Meteor Broken");
+                add(ModBlocks.BLOCK_METEOR_COBBLE.get(), "Block Meteor Cobble");
+                add(ModBlocks.BLOCK_METEOR_MOLTEN.get(), "Block Meteor Molten");
+                add(ModBlocks.BLOCK_METEOR_TREASURE.get(), "Block Meteor Treasure");
+                add(ModBlocks.BLOCK_NITER.get(), "Block Niter");
+                add(ModBlocks.BLOCK_POLONIUM.get(), "Block Polonium");
+                add(ModBlocks.BLOCK_POLYMER.get(), "Block Polymer");
+                add(ModBlocks.BLOCK_PU_MIX.get(), "Block Pu Mix");
+                add(ModBlocks.BLOCK_RED_PHOSPHORUS.get(), "Block Red Phosphorus");
+                add(ModBlocks.BLOCK_RUBBER.get(), "Block Rubber");
+                add(ModBlocks.BLOCK_SCRAP.get(), "Block Scrap");
+                add(ModBlocks.BLOCK_SEMTEX.get(), "Block Semtex");
+                add(ModBlocks.BLOCK_SMORE.get(), "Block Smore");
+                add(ModBlocks.BLOCK_SULFUR.get(), "Block Sulfur");
+                add(ModBlocks.BLOCK_TANTALIUM.get(), "Block Tantalium");
+                add(ModBlocks.BLOCK_TRINITITE.get(), "Block Trinitite");
+                add(ModBlocks.BLOCK_TRITIUM.get(), "Block Tritium");
+                add(ModBlocks.BLOCK_WASTE.get(), "Block Waste");
+                add(ModBlocks.BLOCK_WASTE_VITRIFIED.get(), "Block Waste Vitrified");
+                add(ModBlocks.BLOCK_WHITE_PHOSPHORUS.get(), "Block White Phosphorus");
+                add(ModBlocks.BLOCK_YELLOWCAKE.get(), "Block Yellowcake");
+                add(ModBlocks.BRICK_FORGOTTEN.get(), "Brick Forgotten");
+                add(ModBlocks.CONCRETE_LIQUID.get(), "Concrete Liquid");
+                add(ModBlocks.DIGAMMA_MATTER.get(), "Digamma Matter");
+                add(ModBlocks.DUNGEON_SPAWNER.get(), "Dungeon Spawner");
+                add(ModBlocks.EVENT_TESTER.get(), "Event Tester");
+                add(ModBlocks.FLUID_DUCT_PAINTABLE_BLOCK_EXHAUST.get(), "Fluid Duct Paintable Block Exhaust");
+                add(ModBlocks.GEIGER.get(), "Geiger");
+                add(ModBlocks.GEYSIR_NETHER.get(), "Geysir Nether");
+                add(ModBlocks.ICF_BLOCK.get(), "Icf Block");
+                add(ModBlocks.LAUNCH_TABLE.get(), "Launch Table");
+                add(ModBlocks.LOGIC_BLOCK.get(), "Logic Block");
+                add(ModBlocks.MACHINE_RADAR.get(), "Machine Radar");
+                add(ModBlocks.MUSH_BLOCK_STEM.get(), "Mush Block Stem");
+                add(ModBlocks.ORE_ALEXANDRITE.get(), "Ore Alexandrite");
+                add(ModBlocks.ORE_ALUMINIUM.get(), "Ore Aluminium");
+                add(ModBlocks.ORE_AUSTRALIUM.get(), "Ore Australium");
+                add(ModBlocks.ORE_CINNEBAR.get(), "Ore Cinnebar");
+                add(ModBlocks.ORE_COLTAN.get(), "Ore Coltan");
+                add(ModBlocks.ORE_COPPER.get(), "Ore Copper");
+                add(ModBlocks.ORE_DEPTH_BORAX.get(), "Ore Depth Borax");
+                add(ModBlocks.ORE_DEPTH_CINNEBAR.get(), "Ore Depth Cinnebar");
+                add(ModBlocks.ORE_DEPTH_NETHER_NEODYMIUM.get(), "Ore Depth Nether Neodymium");
+                add(ModBlocks.ORE_DEPTH_ZIRCONIUM.get(), "Ore Depth Zirconium");
+                add(ModBlocks.ORE_GNEISS_ASBESTOS.get(), "Ore Gneiss Asbestos");
+                add(ModBlocks.ORE_GNEISS_COPPER.get(), "Ore Gneiss Copper");
+                add(ModBlocks.ORE_GNEISS_GAS.get(), "Ore Gneiss Gas");
+                add(ModBlocks.ORE_GNEISS_GOLD.get(), "Ore Gneiss Gold");
+                add(ModBlocks.ORE_GNEISS_IRON.get(), "Ore Gneiss Iron");
+                add(ModBlocks.ORE_GNEISS_LITHIUM.get(), "Ore Gneiss Lithium");
+                add(ModBlocks.ORE_GNEISS_RARE.get(), "Ore Gneiss Rare");
+                add(ModBlocks.ORE_GNEISS_URANIUM.get(), "Ore Gneiss Uranium");
+                add(ModBlocks.ORE_GNEISS_URANIUM_SCORCHED.get(), "Ore Gneiss Uranium Scorched");
+                add(ModBlocks.ORE_NETHER_COAL.get(), "Ore Nether Coal");
+                add(ModBlocks.ORE_NETHER_COBALT.get(), "Ore Nether Cobalt");
+                add(ModBlocks.ORE_NETHER_FIRE.get(), "Ore Nether Fire");
+                add(ModBlocks.ORE_NETHER_PLUTONIUM.get(), "Ore Nether Plutonium");
+                add(ModBlocks.ORE_NETHER_SMOLDERING.get(), "Ore Nether Smoldering");
+                add(ModBlocks.ORE_NETHER_SULFUR.get(), "Ore Nether Sulfur");
+                add(ModBlocks.ORE_NETHER_TUNGSTEN.get(), "Ore Nether Tungsten");
+                add(ModBlocks.ORE_NETHER_URANIUM.get(), "Ore Nether Uranium");
+                add(ModBlocks.ORE_NETHER_URANIUM_SCORCHED.get(), "Ore Nether Uranium Scorched");
+                add(ModBlocks.ORE_NITER.get(), "Ore Niter");
+                add(ModBlocks.ORE_OIL_SAND.get(), "Ore Oil Sand");
+                add(ModBlocks.ORE_RARE.get(), "Ore Rare");
+                add(ModBlocks.ORE_TEKTITE_OSMIRIDIUM.get(), "Ore Tektite Osmiridium");
+                add(ModBlocks.ORE_TIKITE.get(), "Ore Tikite");
+                add(ModBlocks.ORE_URANIUM_SCORCHED.get(), "Ore Uranium Scorched");
+                add(ModBlocks.PILE_BLOCK.get(), "Pile Block");
+                add(ModBlocks.PILE_BRICK.get(), "Pile Brick");
+                add(ModBlocks.PNEUMATIC_STORAGE_ACCESS.get(), "Pneumatic Storage Access");
+                add(ModBlocks.PNEUMATIC_STORAGE_CLUTTER.get(), "Pneumatic Storage Clutter");
+                add(ModBlocks.PNEUMATIC_STORAGE_EXPORTER.get(), "Pneumatic Storage Exporter");
+                add(ModBlocks.PNEUMATIC_STORAGE_IMPORTER.get(), "Pneumatic Storage Importer");
+                add(ModBlocks.PNEUMATIC_STORAGE_MONO.get(), "Pneumatic Storage Mono");
+                add(ModBlocks.SOLAR_MIRROR.get(), "Solar Mirror");
+                add(ModBlocks.STEEL_BEAM.get(), "Steel Beam");
+                add(ModBlocks.STRUCTURE_ANCHOR.get(), "Structure Anchor");
+                add(ModBlocks.WAND_TANDEM.get(), "Wand Tandem");
+                // ─── ENDE AUTO-PORT Block-Namen ───
+    }
+
 
 }
 //?}

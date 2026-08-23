@@ -124,8 +124,11 @@ public class EntityMaskMan extends Monster implements IRadiationImmune {
         // A thrown egg has a one-in-ten chance to end it outright, worth no XP at all.
         if (source.getDirectEntity() instanceof ThrownEgg && this.random.nextInt(EGG_KILL_CHANCE) == 0) {
             this.xpReward = 0;
-            this.setHealth(0);
-            return true;
+            // 1.7.10 runs die() out of its own tick once health hits zero, so setHealth(0) was
+            // enough there. 1.20 only calls die() from hurt(), so setting health directly left a
+            // corpse that never dropped its mask and never awarded the advancement. Route the
+            // kill through super.hurt instead, which skips the damage table below by design.
+            return super.hurt(source, Float.MAX_VALUE);
         }
 
         if (source.is(DamageTypes.IN_FIRE) || source.is(DamageTypes.ON_FIRE)
@@ -163,6 +166,8 @@ public class EntityMaskMan extends Monster implements IRadiationImmune {
         this.lastHealth = this.getHealth();
 
         if (!this.level().isClientSide) {
+            updateBossBar();
+
             LivingEntity target = this.getTarget();
             if (target != null && this.hasLineOfSight(target)) {
                 this.getLookControl().setLookAt(target, 15F, 15F);
@@ -265,4 +270,56 @@ public class EntityMaskMan extends Monster implements IRadiationImmune {
         this.spawnAtLocation(new ItemStack(ModItems.BOTTLED_CLOUD.get()));
         this.spawnAtLocation(new ItemStack(Items.SKELETON_SKULL));
     }
+
+    /**
+     * Without persisting these, a reloaded MaskMan below half health starts with lastHealth at
+     * full and the flag cleared, so he detonates over his own head again on the first tick after
+     * every world load.
+     */
+    @Override
+    public void addAdditionalSaveData(@NotNull net.minecraft.nbt.CompoundTag tag) {
+        super.addAdditionalSaveData(tag);
+        tag.putBoolean("halfHealthBlown", this.halfHealthBlown);
+    }
+
+    @Override
+    public void readAdditionalSaveData(@NotNull net.minecraft.nbt.CompoundTag tag) {
+        super.readAdditionalSaveData(tag);
+        this.halfHealthBlown = tag.getBoolean("halfHealthBlown");
+        this.lastHealth = this.getHealth();
+    }
+
+    // ─── Boss bar ────────────────────────────────────────────────────────────
+    // The original calls BossStatus.setBossStatus from its renderer every frame, which is how
+    // 1.7.10 did boss bars. 1.20 has a real server-side ServerBossEvent instead, so the bar is
+    // driven from the entity and correctly disappears when it dies or unloads.
+
+    private final net.minecraft.server.level.ServerBossEvent bossEvent =
+            new net.minecraft.server.level.ServerBossEvent(this.getDisplayName(),
+                    net.minecraft.world.BossEvent.BossBarColor.RED,
+                    net.minecraft.world.BossEvent.BossBarOverlay.PROGRESS);
+
+    @Override
+    public void startSeenByPlayer(@NotNull net.minecraft.server.level.ServerPlayer player) {
+        super.startSeenByPlayer(player);
+        this.bossEvent.addPlayer(player);
+    }
+
+    @Override
+    public void stopSeenByPlayer(@NotNull net.minecraft.server.level.ServerPlayer player) {
+        super.stopSeenByPlayer(player);
+        this.bossEvent.removePlayer(player);
+    }
+
+    @Override
+    public void setCustomName(@org.jetbrains.annotations.Nullable net.minecraft.network.chat.Component name) {
+        super.setCustomName(name);
+        this.bossEvent.setName(this.getDisplayName());
+    }
+
+    /** Keeps the bar in step with the health bar; call once per server tick. */
+    protected void updateBossBar() {
+        this.bossEvent.setProgress(this.getHealth() / this.getMaxHealth());
+    }
+
 }

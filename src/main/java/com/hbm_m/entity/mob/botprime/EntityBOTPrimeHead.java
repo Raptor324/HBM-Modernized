@@ -114,6 +114,7 @@ public class EntityBOTPrimeHead extends EntityBOTPrimeBase {
         updateActionState();
         super.customServerAiStep();
         updateHeadMovement();
+        updateBossBar();
 
         // Regenerates slowly while hunting, fast while left alone.
         if (this.getHealth() < this.getMaxHealth() && this.tickCount % 6 == 0) {
@@ -243,4 +244,38 @@ public class EntityBOTPrimeHead extends EntityBOTPrimeBase {
         level.addFreshEntity(head);
         head.spawnSegments();
     }
+
+    // ─── Boss bar ────────────────────────────────────────────────────────────
+    // The original calls BossStatus.setBossStatus from its renderer every frame, which is how
+    // 1.7.10 did boss bars. 1.20 has a real server-side ServerBossEvent instead, so the bar is
+    // driven from the entity and correctly disappears when it dies or unloads.
+
+    private final net.minecraft.server.level.ServerBossEvent bossEvent =
+            new net.minecraft.server.level.ServerBossEvent(this.getDisplayName(),
+                    net.minecraft.world.BossEvent.BossBarColor.PURPLE,
+                    net.minecraft.world.BossEvent.BossBarOverlay.PROGRESS);
+
+    @Override
+    public void startSeenByPlayer(@NotNull net.minecraft.server.level.ServerPlayer player) {
+        super.startSeenByPlayer(player);
+        this.bossEvent.addPlayer(player);
+    }
+
+    @Override
+    public void stopSeenByPlayer(@NotNull net.minecraft.server.level.ServerPlayer player) {
+        super.stopSeenByPlayer(player);
+        this.bossEvent.removePlayer(player);
+    }
+
+    @Override
+    public void setCustomName(@org.jetbrains.annotations.Nullable net.minecraft.network.chat.Component name) {
+        super.setCustomName(name);
+        this.bossEvent.setName(this.getDisplayName());
+    }
+
+    /** Keeps the bar in step with the health bar; call once per server tick. */
+    protected void updateBossBar() {
+        this.bossEvent.setProgress(this.getHealth() / this.getMaxHealth());
+    }
+
 }

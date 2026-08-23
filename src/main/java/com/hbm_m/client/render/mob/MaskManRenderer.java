@@ -62,7 +62,10 @@ public class MaskManRenderer extends EntityRenderer<EntityMaskMan> {
         // such pre-flip, so copying the X rotation literally stood the boss on his head.
         ps.mulPose(Axis.YP.rotationDegrees(-bodyYaw));
         ps.mulPose(Axis.YP.rotationDegrees(180));
-        ps.translate(0, -1.5F, 0);
+        // No vertical offset: the original's translate(0, -1.5, 0) compensated for the
+        // -24/16 shift RendererLivingEntity applies before a ModelBase draws. Nothing does that
+        // here, so keeping it just buried him to the knees. The mesh already has the soles at
+        // local Y 0 once the legs take their own +1.75 offset.
         ps.mulPose(Axis.YP.rotationDegrees(-90));
         ps.mulPose(Axis.XP.rotationDegrees(swing * -0.1F));
 
