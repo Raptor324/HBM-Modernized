@@ -290,7 +290,9 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         }
         cachedRenderBounds = renderBounds;
 
-        if (minecraft.level == null || !OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, renderBounds)) {
+        // Куллинг + fade: в контрапшене Create shouldRender() пропускает
+        // frustum/ray-march кулинг.
+        if (applyCullingAndStaticFade(be, renderBounds) < 0) {
             cachedFacing = null;
             cachedRenderBounds = null;
             return;
@@ -299,10 +301,6 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         // visibleThisFrame is reset to false at the top of render() before
         // super.render() runs, so this only stays true when culling passes.
         visibleThisFrame = true;
-
-        float staticFade = RenderDistanceHelper.computeStaticFade(be);
-        if (staticFade < 0) return;
-        SingleMeshVboRenderer.setFadeAlpha(staticFade);
 
         int blockLight = LightTexture.block(packedLight);
         int skyLight = LightTexture.sky(packedLight);
@@ -395,7 +393,9 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         var blockState = be.getBlockState();
 
         float staticFade = SingleMeshVboRenderer.getFadeAlpha();
-        float animFade = RenderDistanceHelper.computeAnimatedFade(blockPos);
+        // BE-оверлоад: bypass fade/cull для контрапшенов и Sable sublevel
+        // (raw BlockPos в sublevel ~40M от origin → distanceSqToCamera гигантский → fade=-1).
+        float animFade = RenderDistanceHelper.computeAnimatedFade(be);
 
         boolean anyFading = staticFade < 0.99f || (animFade >= 0 && animFade < 0.99f);
         boolean effectiveBatching = useBatching && !anyFading;
@@ -629,8 +629,12 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
                                         MultiBufferSource bufferSource,
                                         int packedLight, int packedOverlay) {
         BlockPos blockPos = be.getBlockPos();
-        if (RenderDistanceHelper.computeAnimatedFade(blockPos) < 0) return;
-        if (RenderDistanceHelper.distanceSqToCamera(blockPos) > RECIPE_ICON_MAX_DIST_SQ) return;
+        // BE-оверлоад: bypass fade/cull для контрапшенов и Sable sublevel.
+        if (RenderDistanceHelper.computeAnimatedFade(be) < 0) return;
+        // В sublevel/контрапшене raw BlockPos далеко от камеры → distanceSqToCamera огромно.
+        // Иконка рецепта — косметика, пропускаем distance-кулл вне ClientLevel.
+        if (!com.hbm_m.compat.ContraptionRenderCompat.isContraptionRender(be)
+                && RenderDistanceHelper.distanceSqToCamera(blockPos) > RECIPE_ICON_MAX_DIST_SQ) return;
 
         var mc = Minecraft.getInstance();
         if (mc.player == null) return;
@@ -673,12 +677,5 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
 
         poseStack.popPose();
     }
-
-    @Override 
-    public boolean shouldRenderOffScreen(MachineAdvancedAssemblerBlockEntity be) {
-        return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
-    }
-
-    @Override public int getViewDistance() { return RenderDistanceHelper.getStaticViewDistanceBlocks(); }
 }
 

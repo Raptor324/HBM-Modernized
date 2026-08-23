@@ -44,13 +44,15 @@ public class GUIMachineCoreInjector extends GuiInfoScreen<MachineCoreInjectorMen
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
 
-        FluidTank deuterium = be.getTank(MachineCoreInjectorBlockEntity.TANK_DEUTERIUM);
-        FluidTank tritium = be.getTank(MachineCoreInjectorBlockEntity.TANK_TRITIUM);
-        if (deuterium != null) {
-            deuterium.renderTank(guiGraphics, leftPos + TANK_DEUTERIUM_X, topPos + TANK_Y, TANK_W, TANK_H);
-        }
-        if (tritium != null) {
-            tritium.renderTank(guiGraphics, leftPos + TANK_TRITIUM_X, topPos + TANK_Y, TANK_W, TANK_H);
+        if (be != null) { // тайл может отсутствовать в реплее Flashback
+            FluidTank deuterium = be.getTank(MachineCoreInjectorBlockEntity.TANK_DEUTERIUM);
+            FluidTank tritium = be.getTank(MachineCoreInjectorBlockEntity.TANK_TRITIUM);
+            if (deuterium != null) {
+                deuterium.renderTank(guiGraphics, leftPos + TANK_DEUTERIUM_X, topPos + TANK_Y, TANK_W, TANK_H);
+            }
+            if (tritium != null) {
+                tritium.renderTank(guiGraphics, leftPos + TANK_TRITIUM_X, topPos + TANK_Y, TANK_W, TANK_H);
+            }
         }
     }
 
@@ -65,13 +67,15 @@ public class GUIMachineCoreInjector extends GuiInfoScreen<MachineCoreInjectorMen
         com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        FluidTank deuterium = be.getTank(MachineCoreInjectorBlockEntity.TANK_DEUTERIUM);
-        FluidTank tritium = be.getTank(MachineCoreInjectorBlockEntity.TANK_TRITIUM);
-        if (deuterium != null && isPointInRect(TANK_DEUTERIUM_X, TANK_Y, TANK_W, TANK_H, mouseX, mouseY)) {
-            deuterium.renderTankInfo(guiGraphics, font, mouseX, mouseY, leftPos + TANK_DEUTERIUM_X, topPos + TANK_Y, TANK_W, TANK_H);
-        }
-        if (tritium != null && isPointInRect(TANK_TRITIUM_X, TANK_Y, TANK_W, TANK_H, mouseX, mouseY)) {
-            tritium.renderTankInfo(guiGraphics, font, mouseX, mouseY, leftPos + TANK_TRITIUM_X, topPos + TANK_Y, TANK_W, TANK_H);
+        if (be != null) {
+            FluidTank deuterium = be.getTank(MachineCoreInjectorBlockEntity.TANK_DEUTERIUM);
+            FluidTank tritium = be.getTank(MachineCoreInjectorBlockEntity.TANK_TRITIUM);
+            if (deuterium != null && isPointInRect(TANK_DEUTERIUM_X, TANK_Y, TANK_W, TANK_H, mouseX, mouseY)) {
+                deuterium.renderTankInfo(guiGraphics, font, mouseX, mouseY, leftPos + TANK_DEUTERIUM_X, topPos + TANK_Y, TANK_W, TANK_H);
+            }
+            if (tritium != null && isPointInRect(TANK_TRITIUM_X, TANK_Y, TANK_W, TANK_H, mouseX, mouseY)) {
+                tritium.renderTankInfo(guiGraphics, font, mouseX, mouseY, leftPos + TANK_TRITIUM_X, topPos + TANK_Y, TANK_W, TANK_H);
+            }
         }
 
         renderTooltip(guiGraphics, mouseX, mouseY);

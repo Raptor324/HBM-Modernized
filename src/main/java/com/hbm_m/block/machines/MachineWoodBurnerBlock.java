@@ -6,7 +6,6 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.ImmutableMap;
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineWoodBurnerBlockEntity;
@@ -87,32 +86,16 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
         return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 
-    //  ИСПРАВЛЕНО: Регистрация ВСЕХ блоков структуры в энергосети
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
 
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            MultiblockStructureHelper helper = getStructureHelper();
-            BlockPos core = placeMultiblockStructure(level, pos, state);
-            if (core == null) {
-                return;
-            }
-            Direction facing = state.getValue(FACING);
-            //  Регистрируем КОНТРОЛЛЕР в сети (он IEnergyProvider)
-            EnergyNetworkManager.get((ServerLevel) level).addNode(core);
-
-            //  Регистрируем энергетические коннекторы (parts с PartRole.ENERGY_CONNECTOR)
-            for (BlockPos localPos : helper.getStructureMap().keySet()) {
-                if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
-                    BlockPos worldPos = helper.getRotatedPos(core, localPos, facing);
-                    EnergyNetworkManager.get((ServerLevel) level).addNode(worldPos);
-                }
-            }
+            placeMultiblockStructure(level, pos, state);
         }
     }
 
-    //  ИСПРАВЛЕНО: Удаление из сети при разрушении
+    //  Удаление из сети больше не требуется: узлами управляет Nodespace (BaseMachineBlockEntity)
 
     @Override
     public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
@@ -124,17 +107,6 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
         if (state.getBlock() != newState.getBlock() && !level.isClientSide()) {
             MultiblockStructureHelper helper = getStructureHelper();
             Direction facing = state.getValue(FACING);
-
-            //  Удаляем контроллер из сети
-            EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
-
-            //  Удаляем энергетические коннекторы
-            for (BlockPos localPos : helper.getStructureMap().keySet()) {
-                if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
-                    BlockPos worldPos = helper.getRotatedPos(pos, localPos, facing);
-                    EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
-                }
-            }
 
             // Дроп предметов
             BlockEntity blockEntity = level.getBlockEntity(pos);

@@ -51,6 +51,8 @@ public class DesignatorScreen extends Screen {
     @Override
     protected void init() {
         super.init();
+        // игрок может отсутствовать в реплее Flashback
+        if (player == null) return;
         leftPos = (width - WIDTH) / 2;
         topPos = (height - HEIGHT) / 2;
         shownX = 0;
@@ -131,6 +133,8 @@ public class DesignatorScreen extends Screen {
     @Override
     public void tick() {
         super.tick();
+        // игрок может отсутствовать в реплее Flashback
+        if (player == null) return;
         ItemStack stack = player.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND);
         if (stack.isEmpty() || !stack.is(ModItems.DESIGNATOR_MANUAL.get())) {
             onClose();

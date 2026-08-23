@@ -5,7 +5,6 @@ import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineMiningDrillBlockEntity;
@@ -122,7 +121,6 @@ public class MachineMiningDrillBlock extends BaseEntityBlock implements IMultibl
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
             structureHelper.placeStructure(level, pos, state.getValue(FACING), this);
-            EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
         }
     }
 
@@ -136,7 +134,6 @@ public class MachineMiningDrillBlock extends BaseEntityBlock implements IMultibl
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide()) {
             structureHelper.destroyStructure(level, pos, state.getValue(FACING));
-            EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
             if (level.getBlockEntity(pos) instanceof com.hbm_m.blockentity.BaseMachineBlockEntity be) {
                 be.dropInventoryContents();
             }

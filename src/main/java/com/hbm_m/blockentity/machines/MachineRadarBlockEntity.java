@@ -1289,4 +1289,23 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return MachineRadarMenu.create(id, inventory, this);
     }
-}
+
+    // Большой радар (MachineLargeRadarBlock) регистрировал ENERGY-части структуры;
+    // обычный радар узлов частей не создавал. Ядро подписывается базовым классом.
+    @Override
+    protected BlockPos[] getExtraEnergyPorts() {
+        if (level == null || level.isClientSide) return new BlockPos[0];
+        if (!(getBlockState().getBlock() instanceof com.hbm_m.block.machines.MachineLargeRadarBlock block)) {
+            return new BlockPos[0];
+        }
+        var helper = block.getStructureHelper();
+        Direction facing = getBlockState().getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
+
+        java.util.List<BlockPos> ports = new java.util.ArrayList<>();
+        for (BlockPos localPos : helper.getStructureMap().keySet()) {
+            if (block.getPartRole(localPos).canReceiveEnergy()) {
+                ports.add(helper.getRotatedPos(worldPosition, localPos, facing));
+            }
+        }
+        return ports.toArray(new BlockPos[0]);
+    }}

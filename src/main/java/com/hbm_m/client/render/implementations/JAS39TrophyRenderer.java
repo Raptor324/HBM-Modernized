@@ -29,7 +29,7 @@ import com.hbm_m.platform.RenderHooks;
  * hochaufloesenden Modell spuerbar teurer als bei Su-47) - eine sichere GPU-Cache-Loesung braeuchte
  * mehr Test-/Debug-Zeit als hier verfuegbar war.
  */
-public class JAS39TrophyRenderer implements BlockEntityRenderer<JAS39TrophyBlockEntity> {
+public class JAS39TrophyRenderer implements com.hbm_m.client.render.HbmBerBounds<JAS39TrophyBlockEntity> {
 
     private static final Map<String, List<float[]>> OBJ_DATA = new LinkedHashMap<>();
     private static final Map<String, ResourceLocation> MTL_MAP = new HashMap<>();

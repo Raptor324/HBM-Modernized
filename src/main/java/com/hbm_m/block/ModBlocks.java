@@ -1084,6 +1084,25 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> NUKE_PROTOTYPE = registerBlockWithoutItem("nuke_prototype",
             () -> new com.hbm_m.block.bomb.NukePrototypeBlock(BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
 
+    public static final RegistrySupplier<Block> NUKE_GADGET = registerBlock("nuke_gadget",
+            () -> new com.hbm_m.block.bomb.LargeNukeBlock(com.hbm_m.block.bomb.LargeNukeType.GADGET,
+                    BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+
+    public static final RegistrySupplier<Block> NUKE_BOY = registerBlock("nuke_boy",
+            () -> new com.hbm_m.block.bomb.LargeNukeBlock(com.hbm_m.block.bomb.LargeNukeType.BOY,
+                    BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+
+    public static final RegistrySupplier<Block> NUKE_MIKE = registerBlock("nuke_mike",
+            () -> new com.hbm_m.block.bomb.LargeNukeBlock(com.hbm_m.block.bomb.LargeNukeType.MIKE,
+                    BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+
+    public static final RegistrySupplier<Block> NUKE_TSAR = registerBlock("nuke_tsar",
+            () -> new com.hbm_m.block.bomb.LargeNukeBlock(com.hbm_m.block.bomb.LargeNukeType.TSAR,
+                    BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+
+    public static final RegistrySupplier<Block> NUKE_FLEIJA = registerBlock("nuke_fleija",
+            () -> new com.hbm_m.block.bomb.NukeFleijaBlock(BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+
     public static final RegistrySupplier<Block> MINE_AP = registerBlock("mine_ap",
             () -> new LandmineBlock(BlockProps.copy(Blocks.STONE).strength(1.0F, 6.0F).noOcclusion(), 1.5D, 1D));
 
@@ -2395,9 +2414,18 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> MINE_SHRAP = registerBlock("mine_shrap", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MOON_TURF = registerBlock("moon_turf", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MUSH = registerBlock("mush", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> NUKE_FSTBMB = registerBlock("nuke_fstbmb", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> NUKE_N2 = registerBlock("nuke_n2", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> NUKE_SOLINIUM = registerBlock("nuke_solinium", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> NUKE_FSTBMB = registerBlock("nuke_fstbmb",
+            () -> new com.hbm_m.block.bomb.NukeFstbmbBlock(BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+
+    public static final RegistrySupplier<Block> NUKE_CUSTOM = registerBlock("nuke_custom",
+            () -> new com.hbm_m.block.bomb.NukeCustomBlock(BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+
+    public static final RegistrySupplier<Block> BOMB_MULTI = registerBlock("bomb_multi",
+            () -> new com.hbm_m.block.bomb.BombMultiBlock(BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+    public static final RegistrySupplier<Block> NUKE_N2 = registerBlock("nuke_n2",
+            () -> new com.hbm_m.block.bomb.NukeN2Block(BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+    public static final RegistrySupplier<Block> NUKE_SOLINIUM = registerBlock("nuke_solinium",
+            () -> new com.hbm_m.block.bomb.NukeSoliniumBlock(BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> OIL_SPILL = registerBlock("oil_spill", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> PEDESTAL = registerBlock("pedestal", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> PINK_LOG = registerBlock("pink_log", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -2776,6 +2804,9 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> CHUNGUS = registerBlock("chungus",
             () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+
+    public static final RegistrySupplier<Block> TEST_BLOCK = registerBlock("test_block",
+            () -> new TestBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
     private static <T extends Block> RegistrySupplier<T> registerBlock(String name, Supplier<T> block) {
         RegistrySupplier<T> toReturn = BLOCKS.register(name, block);

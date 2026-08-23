@@ -113,9 +113,11 @@ public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTan
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (isHovering(MODE_BUTTON_X, MODE_BUTTON_Y, MODE_BUTTON_SIZE, MODE_BUTTON_SIZE, (int) mouseX, (int) mouseY)) {
+        if (menu.blockEntity != null) {
             ModPacketHandler.sendToServer(ModPacketHandler.FLUID_TANK_MODE,
                     new FluidTankModePacket(menu.blockEntity.getBlockPos()));
             return true;
+        }
         }
         return super.mouseClicked(mouseX, mouseY, button);
     }

@@ -59,7 +59,7 @@ import net.minecraftforge.client.model.data.ModelData;
 *///?} elif neoforge {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
-public class MachineCrystallizerRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineCrystallizerBlockEntity> {
+public class MachineCrystallizerRenderer extends com.hbm_m.client.render.AbstractPartBasedRenderer<MachineCrystallizerBlockEntity, BakedModel> {
 
     private static final RandomSource RANDOM = RandomSource.create(42L);
     private static final float DEG_TO_RAD = (float) (Math.PI / 180.0);
@@ -85,6 +85,30 @@ public class MachineCrystallizerRenderer implements com.hbm_m.client.render.HbmB
     public MachineCrystallizerRenderer(BlockEntityRendererProvider.Context context) {}
 
     @Override
+    protected BakedModel getModelType(BakedModel rawModel) {
+        // Модель blockstate не используется напрямую (спиннер/жидкость берутся из VBO-рендерера).
+        return rawModel;
+    }
+
+    @Override
+    protected Direction getFacing(MachineCrystallizerBlockEntity blockEntity) {
+        BlockState state = blockEntity.getBlockState();
+        return state.hasProperty(HorizontalDirectionalBlock.FACING)
+                ? state.getValue(HorizontalDirectionalBlock.FACING)
+                : Direction.NORTH;
+    }
+
+    @Override
+    protected void renderParts(MachineCrystallizerBlockEntity blockEntity, BakedModel model,
+                               com.hbm_m.client.render.LegacyAnimator animator, float partialTick,
+                               int packedLight, int packedOverlay, PoseStack poseStack,
+                               MultiBufferSource bufferSource) {
+        // Не используется: render() переопределён целиком (собственная работа с BASE_POSE
+        // и отложенной жидкостью).
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void render(MachineCrystallizerBlockEntity blockEntity, float partialTick, PoseStack poseStack,
                        MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
 
@@ -93,12 +117,9 @@ public class MachineCrystallizerRenderer implements com.hbm_m.client.render.HbmB
         try {
             var minecraft = Minecraft.getInstance();
             BlockPos blockPos = blockEntity.getBlockPos();
-            if (minecraft.level == null
-                    || !OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, blockEntity.getRenderBoundingBox())) {
-                return;
-            }
-
-            float staticFade = RenderDistanceHelper.computeStaticFade(blockEntity);
+            // Куллинг + fade: в контрапшене Create shouldRender() пропускает
+            // frustum/ray-march кулинг.
+            float staticFade = applyCullingAndStaticFade(blockEntity);
             if (staticFade < 0) return;
 
             poseStack.pushPose();
@@ -189,7 +210,9 @@ public class MachineCrystallizerRenderer implements com.hbm_m.client.render.HbmB
             .translate(-0.5f, 0f, -0.5f);
 
         boolean useBatching = ModClothConfig.useInstancedBatching();
-        float animFade = RenderDistanceHelper.computeAnimatedFade(blockPos);
+        // BE-оверлоад: bypass fade/cull для контрапшенов и Sable sublevel
+        // (raw BlockPos в sublevel ~40M от origin → distanceSqToCamera гигантский → fade=-1).
+        float animFade = RenderDistanceHelper.computeAnimatedFade(be);
         boolean anyFading = staticFade < 0.99f || (animFade >= 0 && animFade < 0.99f);
         boolean effectiveBatching = useBatching && !anyFading;
 
@@ -422,15 +445,5 @@ public class MachineCrystallizerRenderer implements com.hbm_m.client.render.HbmB
 
         return new BakedQuad(vertices, source.getTintIndex(), source.getDirection(),
                 newSprite, source.isShade());
-    }
-
-    @Override
-    public boolean shouldRenderOffScreen(MachineCrystallizerBlockEntity blockEntity) {
-        return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
-    }
-
-    @Override
-    public int getViewDistance() {
-        return RenderDistanceHelper.getStaticViewDistanceBlocks();
     }
 }

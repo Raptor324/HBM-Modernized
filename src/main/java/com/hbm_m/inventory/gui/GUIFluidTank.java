@@ -55,7 +55,9 @@ public class GUIFluidTank extends AbstractContainerScreen<FluidTankMenu> {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         renderTooltip(guiGraphics, mouseX, mouseY);
 
-        getTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + tankX, this.topPos + tankY, tankWidth, tankHeight);
+        if (menu.blockEntity != null) {
+            getTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + tankX, this.topPos + tankY, tankWidth, tankHeight);
+        }
         renderModeButtonTooltip(guiGraphics, mouseX, mouseY);
     }
 
@@ -70,7 +72,9 @@ public class GUIFluidTank extends AbstractContainerScreen<FluidTankMenu> {
         guiGraphics.blit(TEXTURE, this.leftPos + MODE_BUTTON_X, this.topPos + MODE_BUTTON_Y,
                 176, spriteRow * MODE_BUTTON_SIZE, MODE_BUTTON_SIZE, MODE_BUTTON_SIZE);
 
-        getTank().renderTank(guiGraphics, this.leftPos + tankX, this.topPos + tankY, tankWidth, tankHeight);
+        if (menu.blockEntity != null) { // тайл может отсутствовать в реплее Flashback
+            getTank().renderTank(guiGraphics, this.leftPos + tankX, this.topPos + tankY, tankWidth, tankHeight);
+        }
     }
 
     private FluidTank getTank() {
@@ -98,9 +102,11 @@ public class GUIFluidTank extends AbstractContainerScreen<FluidTankMenu> {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (isHovering(MODE_BUTTON_X, MODE_BUTTON_Y, MODE_BUTTON_SIZE, MODE_BUTTON_SIZE, (int) mouseX, (int) mouseY)) {
+        if (menu.blockEntity != null) {
             ModPacketHandler.sendToServer(ModPacketHandler.FLUID_TANK_MODE,
                     new FluidTankModePacket(menu.blockEntity.getBlockPos()));
             return true;
+        }
         }
         return super.mouseClicked(mouseX, mouseY, button);
     }

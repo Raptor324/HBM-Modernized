@@ -237,7 +237,10 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
             renderBounds = be.getRenderBoundingBox();
         }
 
-        if (!OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, renderBounds)) {
+        // Куллинг + fade: в контрапшене Create shouldRender() пропускает
+        // frustum/ray-march кулинг (frustum/ray-march оперируют world-space координатами
+        // реальной BlockPos, которая в контрапшене далеко от камеры).
+        if (applyCullingAndStaticFade(be, renderBounds) < 0) {
             return;
         }
 
@@ -245,10 +248,6 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         // visibleThisFrame is reset to false at the top of render() before
         // super.render() runs, so this only stays true when culling passes.
         visibleThisFrame = true;
-
-        float staticFade = RenderDistanceHelper.computeStaticFade(be);
-        if (staticFade < 0) return;
-        SingleMeshVboRenderer.setFadeAlpha(staticFade);
 
         renderWithVBO(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource);
     }
@@ -323,7 +322,9 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
                                               MultiBufferSource bufferSource,
                                               boolean useBatching) {
         float staticFade = SingleMeshVboRenderer.getFadeAlpha();
-        float animFade = RenderDistanceHelper.computeAnimatedFade(blockPos);
+        // BE-оверлоад: bypass fade/cull для контрапшенов и Sable sublevel
+        // (raw BlockPos в sublevel ~40M от origin → distanceSqToCamera гигантский → fade=-1).
+        float animFade = RenderDistanceHelper.computeAnimatedFade(be);
         boolean anyFading = staticFade < 0.99f || (animFade >= 0 && animFade < 0.99f);
         boolean effectiveBatching = useBatching && !anyFading;
 
@@ -497,7 +498,8 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
                                         PoseStack poseStack,
                                         MultiBufferSource bufferSource,
                                         int packedLight, int packedOverlay) {
-        if (shouldSkipAnimatedRender(be.getBlockPos())) return;
+        // BE-оверлоад: bypass fade/cull для контрапшенов и Sable sublevel.
+        if (RenderDistanceHelper.computeAnimatedFade(be) < 0) return;
 
         ItemStack icon = be.getClientRecipeIcon();
         if (icon.isEmpty()) return;
@@ -569,13 +571,5 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
     private static void cleanupInstanced(InstancedStaticPartRenderer r) {
         if (r != null) r.cleanup();
     }
-
-    @Override
-    public boolean shouldRenderOffScreen(MachineAssemblerBlockEntity be) {
-        return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
-    }
-
-    @Override
-    public int getViewDistance() { return RenderDistanceHelper.getStaticViewDistanceBlocks(); }
 }
 

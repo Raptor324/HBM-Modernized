@@ -593,6 +593,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.LAUNCH_PAD);
         customMachineBlock(ModBlocks.LAUNCH_PAD_RUSTED);
         customBombBlock(ModBlocks.NUKE_FAT_MAN);
+        customBombBlock(ModBlocks.NUKE_GADGET);
+        customBombBlock(ModBlocks.NUKE_BOY);
+        customBombBlock(ModBlocks.NUKE_MIKE);
+        customBombBlock(ModBlocks.NUKE_TSAR);
+        customBombBlock(ModBlocks.NUKE_FLEIJA);
         customMachineBlock(ModBlocks.CORE_EMITTER);
         customMachineBlock(ModBlocks.CORE_INJECTOR);
         customMachineBlock(ModBlocks.CORE_RECEIVER);
@@ -610,9 +615,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.PRESS);
 
         // Машины со свойством LIT (включен/выключен)
-        registerLitMachineBlock(ModBlocks.BLAST_FURNACE, 
-            BlastFurnaceBlock.FACING, BlastFurnaceBlock.LIT, 
-            "blast_furnace", "blast_furnace_on");
+        // Доменная печь: в мире невидима (рендерит BER), blockstate указывает на частицу-модель.
+        registerLitMachineBlock(ModBlocks.BLAST_FURNACE,
+            BlastFurnaceBlock.FACING, BlastFurnaceBlock.LIT,
+            "blast_furnace", "blast_furnace");
         registerLitMachineBlock(ModBlocks.WOOD_BURNER,
             MachineWoodBurnerBlock.FACING, MachineWoodBurnerBlock.LIT,
             "wood_burner", "wood_burner");
@@ -2871,24 +2877,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/mush")
                 )
         );
-        simpleBlockWithItem(ModBlocks.NUKE_FSTBMB.get(),
-                models().cubeAll(
-                        ModBlocks.NUKE_FSTBMB.getId().getPath(),
-                        modLoc("block/nuke_fstbmb")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.NUKE_N2.get(),
-                models().cubeAll(
-                        ModBlocks.NUKE_N2.getId().getPath(),
-                        modLoc("block/nuke_n2")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.NUKE_SOLINIUM.get(),
-                models().cubeAll(
-                        ModBlocks.NUKE_SOLINIUM.getId().getPath(),
-                        modLoc("block/nuke_solinium")
-                )
-        );
+        customBombBlock(ModBlocks.NUKE_N2);
+        customBombBlock(ModBlocks.NUKE_SOLINIUM);
+        customBombBlock(ModBlocks.NUKE_FSTBMB);
+        customBombBlock(ModBlocks.NUKE_CUSTOM);
+        customBombBlock(ModBlocks.BOMB_MULTI);
         simpleBlockWithItem(ModBlocks.OIL_SPILL.get(),
                 models().cubeAll(
                         ModBlocks.OIL_SPILL.getId().getPath(),

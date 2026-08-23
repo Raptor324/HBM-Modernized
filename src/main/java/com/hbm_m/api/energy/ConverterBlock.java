@@ -26,26 +26,9 @@ public class ConverterBlock extends BaseEntityBlock {
         super(properties);
     }
 
-    // --- ВАЖНО: УВЕДОМЛЕНИЕ СЕТИ ПРИ УСТАНОВКЕ ---
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-        if (!level.isClientSide) {
-            // Говорим менеджеру: "Тут появился новый узел, подключи его!"
-            EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
-        }
         super.onPlace(state, level, pos, oldState, isMoving);
-    }
-
-    // --- ВАЖНО: УВЕДОМЛЕНИЕ СЕТИ ПРИ УДАЛЕНИИ ---
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (state.getBlock() != newState.getBlock()) {
-            if (!level.isClientSide) {
-                // Говорим менеджеру: "Узел исчез, перестрой сеть!"
-                EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
-            }
-            super.onRemove(state, level, pos, newState, isMoving);
-        }
     }
 
     // --- ВЗАИМОДЕЙСТВИЕ ---

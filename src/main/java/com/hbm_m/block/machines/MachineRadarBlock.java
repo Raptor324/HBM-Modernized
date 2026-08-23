@@ -5,7 +5,6 @@ import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineRadarBlockEntity;
@@ -95,11 +94,7 @@ public class MachineRadarBlock extends BaseEntityBlock implements IMultiblockCon
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            BlockPos core = placeMultiblockStructure(level, pos, state);
-            if (core == null) {
-                return;
-            }
-            EnergyNetworkManager.get((ServerLevel) level).addNode(core);
+            placeMultiblockStructure(level, pos, state);
         }
     }
 
@@ -124,7 +119,6 @@ public class MachineRadarBlock extends BaseEntityBlock implements IMultiblockCon
             }
             if (!level.isClientSide()) {
                 structureHelper.destroyStructure(level, pos, state.getValue(FACING));
-                EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
             }
         }
         super.onRemove(state, level, pos, newState, isMoving);

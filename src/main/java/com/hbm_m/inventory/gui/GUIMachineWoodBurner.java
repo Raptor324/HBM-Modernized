@@ -139,9 +139,13 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (isMouseOver(mouseX, mouseY, 53, 17, 16, 16)) {
             // Отправка пакета на сервер для переключения 'enabled'
-            ModPacketHandler.sendToServer(ModPacketHandler.TOGGLE_WOOD_BURNER,
-                new ToggleWoodBurnerPacket(menu.blockEntity.getBlockPos()));
-            return true;
+            // тайл может отсутствовать в реплее Flashback
+            if (menu.blockEntity != null) {
+                ModPacketHandler.sendToServer(ModPacketHandler.TOGGLE_WOOD_BURNER,
+                    new ToggleWoodBurnerPacket(menu.blockEntity.getBlockPos()));
+                return true;
+            }
+            return super.mouseClicked(mouseX, mouseY, button);
         }
         return super.mouseClicked(mouseX, mouseY, button);
     }

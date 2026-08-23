@@ -35,8 +35,10 @@ public class GUIMachineMassStorage extends AbstractContainerScreen<MachineMassSt
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
-        String count = massStorage.getStockpile() + " / " + massStorage.getCapacity();
-        guiGraphics.drawString(this.font, count, this.leftPos + 90, this.topPos + 55, 0x404040, false);
+        if (massStorage != null) { // тайл может отсутствовать в реплее Flashback
+            String count = massStorage.getStockpile() + " / " + massStorage.getCapacity();
+            guiGraphics.drawString(this.font, count, this.leftPos + 90, this.topPos + 55, 0x404040, false);
+        }
     }
 
     @Override

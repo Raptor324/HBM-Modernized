@@ -32,7 +32,7 @@ public class GUIMachineCraneInserter extends GuiInfoScreen<MachineCraneInserterM
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
-        if (inserter.isDestroyer()) {
+        if (inserter != null && inserter.isDestroyer()) { // тайл может отсутствовать в реплее Flashback
             guiGraphics.blit(TEXTURE, this.leftPos + 151, this.topPos + 34, 176, 0, 18, 18);
         }
     }
@@ -49,7 +49,7 @@ public class GUIMachineCraneInserter extends GuiInfoScreen<MachineCraneInserterM
         com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        if (isHovering(151, 34, 18, 18, mouseX, mouseY)) {
+        if (inserter != null && isHovering(151, 34, 18, 18, mouseX, mouseY)) {
             drawCustomInfoStat(guiGraphics, mouseX, mouseY, 151, 34, 18, 18, mouseX, mouseY,
                     Component.literal("Destroy overflow: " + (inserter.isDestroyer() ? "ON" : "OFF")));
         }
@@ -59,7 +59,7 @@ public class GUIMachineCraneInserter extends GuiInfoScreen<MachineCraneInserterM
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (isHovering(151, 34, 18, 18, (int) mouseX, (int) mouseY)) {
+        if (inserter != null && isHovering(151, 34, 18, 18, (int) mouseX, (int) mouseY)) {
             inserter.toggleDestroyer();
             return true;
         }

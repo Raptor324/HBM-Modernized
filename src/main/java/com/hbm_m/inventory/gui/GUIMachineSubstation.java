@@ -31,6 +31,8 @@ public class GUIMachineSubstation extends GuiInfoScreen<MachineSubstationMenu> {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (substation == null) return;
 
         int power = (int) (substation.getEnergyStored() * 52L / Math.max(substation.getMaxEnergyStored(), 1L));
         if (power > 52) {
@@ -64,6 +66,8 @@ public class GUIMachineSubstation extends GuiInfoScreen<MachineSubstationMenu> {
         GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (substation != null) {
         drawElectricityInfo(guiGraphics, mouseX, mouseY,
                 152, 18, 6, 52,
                 substation.getEnergyStored(), substation.getMaxEnergyStored());
@@ -73,6 +77,7 @@ public class GUIMachineSubstation extends GuiInfoScreen<MachineSubstationMenu> {
                 this.leftPos + 78, this.topPos + 58,
                 Component.literal("Load:"),
                 Component.literal("   " + substation.getProgress() + " / " + substation.getMaxProgress()));
+        }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

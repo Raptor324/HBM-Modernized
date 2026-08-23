@@ -29,6 +29,8 @@ public class GUIMachineStrandCaster extends AbstractContainerScreen<MachineStran
         int x = leftPos;
         int y = topPos;
         guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (menu.blockEntity == null) return;
 
         int capacity = menu.blockEntity.getCapacity();
         if (capacity > 0) {

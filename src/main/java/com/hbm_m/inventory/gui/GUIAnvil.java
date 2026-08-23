@@ -93,7 +93,9 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         
         this.addRenderableWidget(searchBox);
         
-        cachedServerSelection = menu.blockEntity.getSelectedRecipeId().orElse(null);
+        if (menu.blockEntity != null) { // тайл может отсутствовать в реплее Flashback
+            cachedServerSelection = menu.blockEntity.getSelectedRecipeId().orElse(null);
+        }
         applySearch("");
     }
     
@@ -102,7 +104,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         RegistryAccess access = getRegistryAccess();
         originRecipes.addAll(
             AnvilRecipeManager.getClientRecipes().stream()
-                .filter(recipe -> recipe.canCraftOn(menu.blockEntity.getTier()))
+                .filter(recipe -> menu.blockEntity == null || recipe.canCraftOn(menu.blockEntity.getTier()))
                 .sorted(Comparator.comparing(recipe ->
                     recipe.getResultItem(access).getHoverName().getString().toLowerCase(Locale.ROOT)))
                 .toList()
@@ -129,7 +131,9 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         }
         
         resetPagination();
-        cachedServerSelection = menu.blockEntity.getSelectedRecipeId().orElse(null);
+        if (menu.blockEntity != null) {
+            cachedServerSelection = menu.blockEntity.getSelectedRecipeId().orElse(null);
+        }
         followSelection = true;
         refreshSelectionFromCache(false);
     }
@@ -223,6 +227,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
     }
     
     private void syncSelectionFromServer() {
+        if (menu.blockEntity == null) return; // тайл может отсутствовать в реплее Flashback
         ResourceLocation serverSelection = menu.blockEntity.getSelectedRecipeId().orElse(null);
         if (!Objects.equals(serverSelection, cachedServerSelection)) {
             cachedServerSelection = serverSelection;
@@ -338,7 +343,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
             return true;
         }
         
-        if (isOverCraftButton(mouseX, mouseY) && isCraftButtonEnabled()) {
+        if (isOverCraftButton(mouseX, mouseY) && isCraftButtonEnabled() && menu.blockEntity != null) {
             playClickSound();
             boolean craftAll = hasShiftDown();
             ModPacketHandler.sendToServer(
@@ -420,6 +425,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
     private void notifyServerAboutSelection(@Nullable AnvilRecipe recipe) {
         ResourceLocation id = recipe != null ? RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), AnvilRecipe.Type.INSTANCE, recipe) : null;
         cachedServerSelection = id;
+        if (menu.blockEntity == null) return; // тайл может отсутствовать в реплее Flashback
         menu.blockEntity.setSelectedRecipeId(id);
         ModPacketHandler.sendToServer(
             ModPacketHandler.ANVIL_SELECT_RECIPE,
@@ -519,7 +525,9 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
     
     @Override
     protected void renderLabels(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        Component titleText = Component.translatable("container.hbm_m.anvil", menu.blockEntity.getTier().getDisplayName());
+        Component titleText = menu.blockEntity != null
+                ? Component.translatable("container.hbm_m.anvil", menu.blockEntity.getTier().getDisplayName())
+                : Component.translatable("container.hbm_m.anvil"); // тайл может отсутствовать в реплее Flashback
         int titleWidth = this.font.width(titleText);
         int x = 61 - titleWidth / 2;
         int y = 8;
@@ -806,10 +814,10 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
     }
     
     private int getMachineItemCount(ItemStack stack) {
-        if (stack.isEmpty()) {
+        if (stack.isEmpty() || menu.blockEntity == null) {
             return 0;
         }
-        
+
         ModItemStackHandler handler = menu.blockEntity.getItemHandler();
         int count = 0;
         int slotLimit = Math.min(handler.getSlots(), 2);

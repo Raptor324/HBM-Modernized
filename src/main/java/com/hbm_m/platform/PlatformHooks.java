@@ -158,6 +158,21 @@ public final class PlatformHooks {
     }
 
     /**
+     * Кросс-версионное проигрывание звука по координатам (скрывает SoundEvent vs Holder<SoundEvent>).
+     */
+    public static void playSound(Level level, double x, double y, double z, Object sound, net.minecraft.sounds.SoundSource source, float volume, float pitch) {
+        net.minecraft.sounds.SoundEvent se = null;
+        if (sound instanceof net.minecraft.core.Holder<?> holder) {
+            se = (net.minecraft.sounds.SoundEvent) holder.value();
+        } else if (sound instanceof net.minecraft.sounds.SoundEvent s) {
+            se = s;
+        }
+        if (se != null) {
+            level.playSound(null, x, y, z, se, source, volume, pitch);
+        }
+    }
+
+    /**
      * Кросс-версионная фабрика музыкальных пластинок.
      */
     public static net.minecraft.world.item.Item createRecordItem(int comparatorValue, Object sound, net.minecraft.world.item.Item.Properties properties, int lengthInSeconds) {

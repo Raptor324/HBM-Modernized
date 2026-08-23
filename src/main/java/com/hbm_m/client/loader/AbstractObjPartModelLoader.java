@@ -2,6 +2,7 @@ package com.hbm_m.client.loader;
 
 import java.util.HashMap;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import org.jetbrains.annotations.NotNull;
@@ -61,6 +62,9 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
         private final Set<String> partNames;
         private final boolean flipV;
         private final AbstractObjPartModelLoader<T> loader;
+        
+        // Кэшируем загруженную модель, чтобы не парсить OBJ повторно при множественных bake()
+        private volatile ObjModel cachedObjModel;
 
         public ObjPartGeometry(ResourceLocation modelLocation, Set<String> partNames, boolean flipV,
                                AbstractObjPartModelLoader<T> loader) {
@@ -88,7 +92,7 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
         *///?}
 
         private BakedModel doBake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelName) {
-            ObjModel model = loadObjModel();
+            ObjModel model = getOrLoadObjModel();
             HashMap<String, BakedModel> bakedParts = bakeParts(model, context, baker, spriteGetter, overrides, modelName);
             ensureBasePart(model, bakedParts, context, baker, spriteGetter, overrides, modelName);
 
@@ -96,43 +100,46 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
             return loader.createBakedModel(bakedParts, context.getTransforms(), modelName);
         }
 
-        private ObjModel loadObjModel() {
-            try {
-                ObjModel model = LoaderHooks.loadObjModel(modelLocation, flipV);
-                MainRegistry.LOGGER.info("{}: Successfully loaded OBJ model: {}", loader.getClass().getSimpleName(), modelLocation);
-                return model;
-            } catch (Exception e) {
-                MainRegistry.LOGGER.error("Failed to load OBJ model: " + modelLocation, e);
-                throw new RuntimeException("Не удалось загрузить OBJ модель: " + modelLocation, e);
+        private ObjModel getOrLoadObjModel() {
+            ObjModel model = this.cachedObjModel;
+            if (model == null) {
+                synchronized (this) {
+                    model = this.cachedObjModel;
+                    if (model == null) {
+                        try {
+                            model = LoaderHooks.loadObjModel(modelLocation, flipV);
+                            this.cachedObjModel = model;
+                            MainRegistry.LOGGER.info("{}: Successfully loaded OBJ model: {}", loader.getClass().getSimpleName(), modelLocation);
+                        } catch (Exception e) {
+                            MainRegistry.LOGGER.error("Failed to load OBJ model: " + modelLocation, e);
+                            throw new RuntimeException("Не удалось загрузить OBJ модель: " + modelLocation, e);
+                        }
+                    }
+                }
             }
+            return model;
         }
 
         private HashMap<String, BakedModel> bakeParts(ObjModel model, IGeometryBakingContext context,
                                                       ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter,
                                                       ItemOverrides overrides, ResourceLocation modelName) {
-            HashMap<String, BakedModel> bakedParts = new HashMap<>();
+            ConcurrentHashMap<String, BakedModel> bakedParts = new ConcurrentHashMap<>();
             ModelState identityState = createIdentityState();
 
-            MainRegistry.LOGGER.info("{}: Baking {} parts: {}", loader.getClass().getSimpleName(), partNames.size(), partNames);
+            MainRegistry.LOGGER.info("{}: Baking {} parts in parallel: {}", loader.getClass().getSimpleName(), partNames.size(), partNames);
 
-            for (String partName : partNames) {
+            // Параллельное запекание геометрии всех составных частей модели
+            partNames.parallelStream().forEach(partName -> {
                 SinglePartBakingContext partContext = new SinglePartBakingContext(context, partName, loader);
                 BakedModel bakedPart = LoaderHooks.bakeObjModel(model, partContext, baker, spriteGetter, identityState, overrides, modelName);
-                bakedParts.put(partName, bakedPart);
-                
                 if (bakedPart != null) {
-                    int quadCount = 0;
-                    for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.values()) {
-                        quadCount += bakedPart.getQuads(null, dir, net.minecraft.util.RandomSource.create(42)).size();
-                    }
-                    quadCount += bakedPart.getQuads(null, null, net.minecraft.util.RandomSource.create(42)).size();
-                    MainRegistry.LOGGER.info("{}: Baked part '{}' -> {} quads", loader.getClass().getSimpleName(), partName, quadCount);
+                    bakedParts.put(partName, bakedPart);
                 } else {
                     MainRegistry.LOGGER.warn("{}: Part '{}' baked to NULL!", loader.getClass().getSimpleName(), partName);
                 }
-            }
+            });
 
-            return bakedParts;
+            return new HashMap<>(bakedParts);
         }
 
         private void ensureBasePart(ObjModel model, HashMap<String, BakedModel> bakedParts,
@@ -142,9 +149,8 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
             if (!bakedParts.containsKey("Base")) {
                 MainRegistry.LOGGER.info("{}: Creating fallback 'Base' part", loader.getClass().getSimpleName());
                 BakedModel baseModel = LoaderHooks.bakeObjModel(model, new SinglePartBakingContext(context, "Base", loader), baker, spriteGetter, createIdentityState(), overrides, modelName);
-                bakedParts.put("Base", baseModel);
-                
                 if (baseModel != null) {
+                    bakedParts.put("Base", baseModel);
                     MainRegistry.LOGGER.info("{}: Fallback 'Base' part baked successfully", loader.getClass().getSimpleName());
                 } else {
                     MainRegistry.LOGGER.warn("{}: Fallback 'Base' part is NULL!", loader.getClass().getSimpleName());

@@ -49,16 +49,18 @@ public class GUIMachineCoreReceiver extends GuiInfoScreen<MachineCoreReceiverMen
         // Original: receiver.tank.renderTank(guiLeft + 8, guiTop + 69, ..., 16, 52) - kein UV-Bereich
         // fuer die gefuellte Tankgrafik in der Original-Textur vorhanden, daher als Fuellstands-
         // Rechteck (Cryogel = hellblau) nachgebildet, bottom-up wie im Original.
-        int capacity = receiver.getCoolantTank().getMaxFill();
-        int fill = receiver.getCoolantTank().getFill();
-        if (capacity > 0 && fill > 0) {
-            int tankHeight = 52;
-            int filled = Math.min(tankHeight, fill * tankHeight / capacity);
-            if (filled > 0) {
-                int x0 = this.leftPos + 8;
-                int y1 = this.topPos + 69 + tankHeight;
-                int y0 = y1 - filled;
-                guiGraphics.fill(x0, y0, x0 + 16, y1, 0xFF7FE0FF);
+        if (receiver != null) { // тайл может отсутствовать в реплее Flashback
+            int capacity = receiver.getCoolantTank().getMaxFill();
+            int fill = receiver.getCoolantTank().getFill();
+            if (capacity > 0 && fill > 0) {
+                int tankHeight = 52;
+                int filled = Math.min(tankHeight, fill * tankHeight / capacity);
+                if (filled > 0) {
+                    int x0 = this.leftPos + 8;
+                    int y1 = this.topPos + 69 + tankHeight;
+                    int y0 = y1 - filled;
+                    guiGraphics.fill(x0, y0, x0 + 16, y1, 0xFF7FE0FF);
+                }
             }
         }
     }
@@ -69,14 +71,16 @@ public class GUIMachineCoreReceiver extends GuiInfoScreen<MachineCoreReceiverMen
         guiGraphics.drawString(this.font, name, this.imageWidth / 2 - this.font.width(name) / 2, 6, 4210752, false);
 
         guiGraphics.drawString(this.font, "Energy:", 40, 25, 0xFF7F7F, false);
-        guiGraphics.drawString(this.font,
-                EnergyFormatter.format(receiver.getEnergyStored()) + " / " + EnergyFormatter.format(receiver.getMaxEnergyStored()),
-                40, 35, 0xFF7F7F, false);
+        if (receiver != null) {
+            guiGraphics.drawString(this.font,
+                    EnergyFormatter.format(receiver.getEnergyStored()) + " / " + EnergyFormatter.format(receiver.getMaxEnergyStored()),
+                    40, 35, 0xFF7F7F, false);
 
-        guiGraphics.drawString(this.font, "Coolant:", 40, 47, 0xFF7F7F, false);
-        guiGraphics.drawString(this.font,
-                receiver.getCoolantTank().getFill() + " / " + receiver.getCoolantTank().getMaxFill() + "mB",
-                40, 57, 0xFF7F7F, false);
+            guiGraphics.drawString(this.font, "Coolant:", 40, 47, 0xFF7F7F, false);
+            guiGraphics.drawString(this.font,
+                    receiver.getCoolantTank().getFill() + " / " + receiver.getCoolantTank().getMaxFill() + "mB",
+                    40, 57, 0xFF7F7F, false);
+        }
 
         guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.inventoryLabelY, 4210752, false);
     }
@@ -86,9 +90,11 @@ public class GUIMachineCoreReceiver extends GuiInfoScreen<MachineCoreReceiverMen
         com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        drawElectricityInfo(guiGraphics, mouseX, mouseY,
-                40, 25, 100, 20,
-                receiver.getEnergyStored(), receiver.getMaxEnergyStored());
+        if (receiver != null) { // тайл может отсутствовать в реплее Flashback
+            drawElectricityInfo(guiGraphics, mouseX, mouseY,
+                    40, 25, 100, 20,
+                    receiver.getEnergyStored(), receiver.getMaxEnergyStored());
+        }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

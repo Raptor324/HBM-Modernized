@@ -80,12 +80,8 @@ public class DetMinerBlock extends Block implements IDetonatable {
         triggerNearbyDetonations(serverLevel, pos, player);
 
         // 3. Звук взрыва
-        //? if < 1.21.1 {
-        serverLevel.playSound(null, pos, SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 1.0F, 1.0F);
-        //?} else {
-        /*// 1.21.1: SoundEvents.GENERIC_EXPLODE — Holder<SoundEvent>, нужен .value() для playSound(BlockPos, SoundEvent, ...).
-        serverLevel.playSound(null, pos, SoundEvents.GENERIC_EXPLODE.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
-        *///?}
+        com.hbm_m.platform.PlatformHooks.playSound(serverLevel, pos, SoundEvents.GENERIC_EXPLODE,
+                SoundSource.BLOCKS, 1.0F, 1.0F);
 
         // 4. Удаляем этот блок
         serverLevel.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());

@@ -282,6 +282,36 @@ public class ModLanguageProviderEn extends LanguageProvider {
         // Item tooltip for the lenses (mirrors early_explosive_lenses.desc, 1.7.10)
         add("tooltip.hbm_m.fat_man_explosive.desc1", "Assembly of 8 high-explosive lenses with an aluminium");
         add("tooltip.hbm_m.fat_man_explosive.desc2", "pusher, duraluminium shell, and bridgewire detonators.");
+        // Large nukes
+        add(ModBlocks.NUKE_GADGET.get(), "The Gadget");
+        add(ModBlocks.NUKE_BOY.get(), "Little Boy");
+        add(ModBlocks.NUKE_MIKE.get(), "Ivy Mike");
+        add(ModBlocks.NUKE_TSAR.get(), "Tsar Bomba");
+        add("container.hbm_m.nuke_gadget", "The Gadget");
+        add("container.hbm_m.nuke_boy", "Little Boy");
+        add("container.hbm_m.nuke_mike", "Ivy Mike");
+        add("container.hbm_m.nuke_tsar", "Tsar Bomba");
+        add(ModItems.EARLY_EXPLOSIVE_LENSES.get(), "Early Explosive Lenses");
+        add(ModItems.EXPLOSIVE_LENSES.get(), "Explosive Lenses");
+        add(ModBlocks.NUKE_FLEIJA.get(), "F.L.E.I.J.A.");
+        add("container.hbm_m.nuke_fleija", "F.L.E.I.J.A.");
+        add("container.hbm_m.nuke_n2", "N2 Mine");
+        add("container.hbm_m.nuke_solinium", "The Blue Rinse");
+        add("container.hbm_m.nuke_fstbmb", "Balefire Bomb");
+        add(ModBlocks.NUKE_CUSTOM.get(), "Custom Nuke");
+        add("container.hbm_m.nuke_custom", "Custom Nuke");
+        add(ModBlocks.BOMB_MULTI.get(), "Multi Purpose Bomb");
+        add("container.hbm_m.bomb_multi", "Multi Purpose Bomb");
+        add("gui.hbm_m.bomb_multi.ready", "READY — keep away from redstone");
+        add("gui.hbm_m.nuke_fstbmb.start", "Arm");
+        add("gui.hbm_m.nuke_fstbmb.timer", "Detonation in %s");
+        add("gui.hbm_m.nuke_custom.euph", "Charge: EUPHEMIUM — total erasure");
+        add("gui.hbm_m.nuke_custom.schrab", "Charge: SCHRABIDIUM, radius %s");
+        add("gui.hbm_m.nuke_custom.hydro", "Charge: HYDROGEN, radius %s");
+        add("gui.hbm_m.nuke_custom.nuke", "Charge: NUCLEAR, radius %s");
+        add("gui.hbm_m.nuke_custom.tnt_big", "Charge: CONVENTIONAL, radius %s");
+        add("gui.hbm_m.nuke_custom.tnt_small", "Charge: weak conventional explosive");
+        add("gui.hbm_m.nuke_custom.empty", "Charge: empty");
         // EQUIPMENT
         add("item.hbm_m.alloy_sword", "Alloy Sword");
         add("item.hbm_m.alloy_pickaxe", "Alloy Pickaxe");
@@ -1165,6 +1195,8 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("fluid.hbm_m.plasma_xm", "Xenon-Mercury Plasma");
         add("fluid.hbm_m.plasma_bf", "Balefire Plasma");
         add("fluid.hbm_m.steam", "Steam");
+        add("fluid.hbm_m.airblast", "Air blast");
+        add("fluid.hbm_m.flue", "Flue gas");
         add("fluid.hbm_m.hotsteam", "Hot Steam");
         add("fluid.hbm_m.superhotsteam", "Super Hot Steam");
         add("fluid.hbm_m.ultrahotsteam", "Ultra Hot Steam");
@@ -1550,6 +1582,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("tooltip.hbm_m.mod.battery_mk3.effect", "+100% Battery Capacity");
 
         add("gui.hbm_m.blast_furnace.accepts", "Accepts items from: %s");
+        add("gui.hbm_m.blast_furnace.speed", "Speed: %s%%");
         add("direction.hbm_m.down", "Down");
         add("direction.hbm_m.up", "Up");
         add("direction.hbm_m.north", "North");
@@ -4282,3 +4315,4 @@ public class ModLanguageProviderEn extends LanguageProvider {
     }
 }
 //?}
+

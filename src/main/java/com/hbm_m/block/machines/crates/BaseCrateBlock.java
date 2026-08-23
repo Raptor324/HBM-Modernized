@@ -62,6 +62,7 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state,
                             @Nullable LivingEntity placer, ItemStack stack) {
+        //? if < 1.21.1 {
         if (PlatformHooks.hasItemTag(stack)) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof BaseCrateBlockEntity crateEntity) {
@@ -71,6 +72,21 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
                 }
             }
         }
+        //?} else {
+        /*// 1.21.1: {@link #saveToItem} кладёт содержимое в DataComponents.BLOCK_ENTITY_DATA
+        // (без обёртки BlockEntityTag), поэтому читаем компонент напрямую.
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (blockEntity instanceof BaseCrateBlockEntity crateEntity) {
+            net.minecraft.world.item.component.CustomData data =
+                    stack.get(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA);
+            if (data != null) {
+                CompoundTag tag = data.copyTag();
+                if (!tag.isEmpty()) {
+                    crateEntity.loadWithComponents(tag, level.registryAccess());
+                }
+            }
+        }
+        *///?}
     }
 
     @Override

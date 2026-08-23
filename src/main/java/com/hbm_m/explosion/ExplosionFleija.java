@@ -89,7 +89,7 @@ public class ExplosionFleija {
         return this.n > this.nlimit;
     }
 
-    private void breakColumn(int x, int z) {
+    protected void breakColumn(int x, int z) {
         int dist = this.radius2 - (x * x + z * z);
         if (dist > 0) {
             dist = (int) Math.sqrt(dist);

@@ -33,6 +33,8 @@ public class GUIMachineRadiolysis extends AbstractContainerScreen<MachineRadioly
         int x = leftPos;
         int y = topPos;
         guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (blockEntity == null) return;
 
         var tanks = blockEntity.getTanks();
         int inW = tanks[0].getMaxFill() > 0 ? tanks[0].getFill() * 16 / tanks[0].getMaxFill() : 0;

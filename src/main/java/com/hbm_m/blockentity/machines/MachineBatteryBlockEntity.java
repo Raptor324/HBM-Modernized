@@ -1,6 +1,5 @@
 package com.hbm_m.blockentity.machines;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.machines.MachineBatteryBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -26,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
  * Режимы: 0 = BOTH, 1 = INPUT, 2 = OUTPUT, 3 = DISABLED
  */
 @SuppressWarnings("UnstableApiUsage")
-public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder {
+public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder, com.hbm_m.api.energy.PowerBuffer {
 
     private static final int SLOT_CHARGE = 0;
     private static final int SLOT_DISCHARGE = 1;
@@ -124,6 +123,20 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         return level.hasNeighborSignal(this.worldPosition) ? modeOnSignal : modeOnNoSignal;
     }
 
+    // Паритет с оригиналом (TileEntityMachineBattery.getProviderSpeed/getReceiverSpeed):
+    // скорость обмена с сетью зависит от режима — INPUT не отдает, OUTPUT не принимает.
+    @Override
+    public long getProvideSpeed() {
+        int mode = getCurrentMode();
+        return (mode == 0 || mode == 2) ? super.getProvideSpeed() : 0;
+    }
+
+    @Override
+    public long getReceiveSpeed() {
+        int mode = getCurrentMode();
+        return (mode == 0 || mode == 1) ? super.getReceiveSpeed() : 0;
+    }
+
     public long getEnergyDeltaAveraged() {
         return this.averagedEnergyDelta;
     }
@@ -164,9 +177,10 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
             case 0 -> this.data.set(0, (this.modeOnNoSignal + 1) % 4);
             case 1 -> this.data.set(1, (this.modeOnSignal + 1) % 4);
             case 2 -> {
+                // Паритет с оригиналом: батареи ограничены приоритетами LOW..HIGH (без LOWEST/HIGHEST)
                 Priority[] priorities = Priority.values();
-                int currentIndex = this.priority.ordinal();
-                int nextIndex = (currentIndex + 1) % priorities.length;
+                int currentIndex = Math.max(1, Math.min(this.priority.ordinal(), priorities.length - 2));
+                int nextIndex = (currentIndex >= priorities.length - 2) ? 1 : currentIndex + 1;
                 this.data.set(2, nextIndex);
             }
         }
@@ -187,7 +201,7 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         super.writeNbtData(tag, registries);
         tag.putInt("modeOnNoSignal", this.modeOnNoSignal);
         tag.putInt("modeOnSignal", this.modeOnSignal);
-        tag.putInt("priority", this.priority.ordinal());
+        tag.putInt("priorityV2", this.priority.ordinal());
         tag.putLong("lastEnergySample", this.lastEnergySample);
         tag.putLong("averagedEnergyDelta", this.averagedEnergyDelta);
     }
@@ -197,8 +211,14 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         super.readNbtData(tag, registries);
         this.modeOnNoSignal = tag.getInt("modeOnNoSignal");
         this.modeOnSignal = tag.getInt("modeOnSignal");
-        if (tag.contains("priority")) {
-            int priorityIndex = tag.getInt("priority");
+        // priorityV2 — ординал нового 5-уровневого enum'а (LOWEST..HIGHEST).
+        // Старый ключ "priority" писался для 3-уровневого enum'а (LOW,NORMAL,HIGH = 0,1,2),
+        // поэтому сдвигаем на +1 (в новом enum'е они имеют ординалы 1,2,3).
+        if (tag.contains("priorityV2")) {
+            int priorityIndex = tag.getInt("priorityV2");
+            this.priority = Priority.values()[Math.max(0, Math.min(priorityIndex, Priority.values().length - 1))];
+        } else if (tag.contains("priority")) {
+            int priorityIndex = tag.getInt("priority") + 1;
             this.priority = Priority.values()[Math.max(0, Math.min(priorityIndex, Priority.values().length - 1))];
         }
         this.lastEnergySample = tag.getLong("lastEnergySample");

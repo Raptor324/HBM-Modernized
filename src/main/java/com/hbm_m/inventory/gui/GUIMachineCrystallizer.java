@@ -76,7 +76,9 @@ public class GUIMachineCrystallizer extends GuiInfoScreen<MachineCrystallizerMen
         // Шкала жидкости. Окошко бака на текстуре GUI занимает y=18..70 (top+18 — верх,
         // top+70 — низ). renderFluidTank рисует жидкость снизу вверх: уровень растёт от
         // нижнего края окна. Поэтому передаём ВЕРХ окна — top+18.
-        renderFluidTank(guiGraphics, menu.getBlockEntity().getTank(), this.leftPos + 35, this.topPos + 18);
+        if (menu.getBlockEntity() != null) { // тайл может отсутствовать в реплее Flashback
+            renderFluidTank(guiGraphics, menu.getBlockEntity().getTank(), this.leftPos + 35, this.topPos + 18);
+        }
     }
 
     private void renderFluidTank(GuiGraphics guiGraphics, FluidTank tank, int x, int y) {
@@ -108,6 +110,9 @@ public class GUIMachineCrystallizer extends GuiInfoScreen<MachineCrystallizerMen
 
 
     private Component getExpectedFluidLabel() {
+        if (menu.getBlockEntity() == null) {
+            return Component.literal("Вставьте идентификатор"); // тайл может отсутствовать в реплее Flashback
+        }
         Fluid expected = menu.getBlockEntity().getTank().getTankType();
 
         if (expected == null
@@ -161,7 +166,7 @@ public class GUIMachineCrystallizer extends GuiInfoScreen<MachineCrystallizerMen
                 152, 18, 16, 52,
                 menu.getEnergyStored(), menu.getMaxEnergyStored());
 
-        if (isPointInRect(35, 18, 16, 52, mouseX, mouseY)) {
+        if (isPointInRect(35, 18, 16, 52, mouseX, mouseY) && menu.getBlockEntity() != null) {
             renderTankTooltip(guiGraphics, menu.getBlockEntity().getTank(), mouseX, mouseY);
         }
 

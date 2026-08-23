@@ -41,8 +41,10 @@ public class GUIMachineDifurnaceRtg extends AbstractContainerScreen<MachineDifur
         com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        String progress = "Progress: " + difurnace.getProgress() + " / " + difurnace.getMaxProgress();
-        guiGraphics.drawString(this.font, progress, this.leftPos + 8, this.topPos + 90, 0x404040, false);
+        if (difurnace != null) { // тайл может отсутствовать в реплее Flashback
+            String progress = "Progress: " + difurnace.getProgress() + " / " + difurnace.getMaxProgress();
+            guiGraphics.drawString(this.font, progress, this.leftPos + 8, this.topPos + 90, 0x404040, false);
+        }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

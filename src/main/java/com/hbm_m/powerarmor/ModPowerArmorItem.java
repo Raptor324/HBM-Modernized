@@ -172,7 +172,50 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
     }
     //?}
 
-    private void copyRotations(HumanoidModel<?> source, HumanoidModel<?> target) {
+    /**
+     * NeoForge 1.21.1: клиентские расширения — подменяем ванильную модель брони
+     * на "пустую" (PowerArmorEmptyModel), чтобы HumanoidArmorLayer не рисовал
+     * ванильную текстуру поверх OBJ-слоёв.
+     */
+    //? if neoforge {
+    /*public static net.neoforged.neoforge.client.extensions.common.IClientItemExtensions createNeoForgeClientExtensions() {
+        return new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+            private PowerArmorEmptyModel model;
+
+            @Override
+            public HumanoidModel<?> getHumanoidArmorModel(LivingEntity livingEntity, ItemStack itemStack,
+                    EquipmentSlot equipmentSlot, HumanoidModel<?> original) {
+                if (this.model == null) {
+                    ModelPart layer = Minecraft.getInstance().getEntityModels().bakeLayer(ModModelLayers.POWER_ARMOR);
+                    this.model = new PowerArmorEmptyModel(layer);
+                }
+
+                this.model.setAllVisible(false);
+                switch (equipmentSlot) {
+                    case HEAD -> this.model.head.visible = true;
+                    case CHEST -> {
+                        this.model.body.visible = true;
+                        this.model.rightArm.visible = true;
+                        this.model.leftArm.visible = true;
+                    }
+                    case LEGS, FEET -> {
+                        this.model.rightLeg.visible = true;
+                        this.model.leftLeg.visible = true;
+                    }
+                    default -> {}
+                }
+
+                this.model.crouching = original.crouching;
+                this.model.riding = original.riding;
+                this.model.young = original.young;
+                copyRotations(original, this.model);
+                return this.model;
+            }
+        };
+    }
+    *///?}
+
+    private static void copyRotations(HumanoidModel<?> source, HumanoidModel<?> target) {
         target.head.copyFrom(source.head);
         target.body.copyFrom(source.body);
         target.rightArm.copyFrom(source.rightArm);

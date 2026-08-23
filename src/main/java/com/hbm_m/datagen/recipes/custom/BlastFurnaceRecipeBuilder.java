@@ -13,6 +13,8 @@ public class BlastFurnaceRecipeBuilder extends BaseRecipeBuilder<BlastFurnaceRec
     private final Ingredient inputA;
     private final Ingredient inputB;
     private final ItemStack output;
+    private ItemStack secondaryOutput = ItemStack.EMPTY;
+    private int duration = 800;
 
     private BlastFurnaceRecipeBuilder(ItemStack output, Ingredient inputA, Ingredient inputB) {
         this.inputA = inputA;
@@ -26,6 +28,18 @@ public class BlastFurnaceRecipeBuilder extends BaseRecipeBuilder<BlastFurnaceRec
 
     public static BlastFurnaceRecipeBuilder blastFurnaceRecipe(ItemStack output, ItemLike inputA, ItemLike inputB) {
         return blastFurnaceRecipe(output, Ingredient.of(inputA), Ingredient.of(inputB));
+    }
+
+    /** Длительность плавки в тиках (при скорости 1.0). */
+    public BlastFurnaceRecipeBuilder duration(int ticks) {
+        this.duration = ticks;
+        return this;
+    }
+
+    /** Второй выход (шлак). */
+    public BlastFurnaceRecipeBuilder secondaryOutput(ItemStack stack) {
+        this.secondaryOutput = stack;
+        return this;
     }
 
     @Override
@@ -42,6 +56,10 @@ public class BlastFurnaceRecipeBuilder extends BaseRecipeBuilder<BlastFurnaceRec
 
         // Унифицированная сериализация ItemStack (через BaseRecipeBuilder.stackToJson).
         json.add("output", stackToJson(this.output));
+        if (!this.secondaryOutput.isEmpty()) {
+            json.add("secondary_output", stackToJson(this.secondaryOutput));
+        }
+        json.addProperty("duration", this.duration);
     }
 
     @Override

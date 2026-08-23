@@ -3124,6 +3124,8 @@ public class ModItems {
     public static final RegistrySupplier<Item> DWARVEN_PICKAXE = ITEMS.register("dwarven_pickaxe", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> DYSFUNCTIONAL_REACTOR = ITEMS.register("dysfunctional_reactor", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> EGG_BALEFIRE = ITEMS.register("egg_balefire", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> EARLY_EXPLOSIVE_LENSES = ITEMS.register("early_explosive_lenses", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> EXPLOSIVE_LENSES = ITEMS.register("explosive_lenses", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> EGG_BALEFIRE_SHARD = ITEMS.register("egg_balefire_shard", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> EGG_GLYPHID = ITEMS.register("egg_glyphid", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> ELEC_SHOVEL = ITEMS.register("elec_shovel", () -> new Item(new Item.Properties()));

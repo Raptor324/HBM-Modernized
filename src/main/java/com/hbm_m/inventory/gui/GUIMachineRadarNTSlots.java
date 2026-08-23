@@ -47,6 +47,8 @@ public class GUIMachineRadarNTSlots extends GuiInfoScreen<MachineRadarSlotsMenu>
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
         // Бар энергии: i = power*160/maxPower, source (0,185).
+        // тайл может отсутствовать в реплее Flashback
+        if (radar == null) return;
         int filled = (int) radar.getPowerScaled(160);
         if (filled > 0) {
             guiGraphics.blit(TEXTURE, this.leftPos + 8, this.topPos + 64, 0, 185, filled, 16);
@@ -77,7 +79,8 @@ public class GUIMachineRadarNTSlots extends GuiInfoScreen<MachineRadarSlotsMenu>
 
         drawElectricityInfo(guiGraphics, mouseX, mouseY,
                 8, 64, 160, 16,
-                radar.getEnergyStored(), radar.getMaxEnergyStored());
+                radar != null ? radar.getEnergyStored() : 0,
+                radar != null ? radar.getMaxEnergyStored() : 0);
     }
 
     @Override

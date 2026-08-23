@@ -32,21 +32,23 @@ public class GUIMachineFlareStack extends GuiInfoScreen<MachineFlareStackMenu> {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
-        int power = (int) (flareStack.getEnergyStored() * 52L / Math.max(flareStack.getMaxEnergyStored(), 1L));
-        if (power > 52) {
-            power = 52;
-        }
-        if (power > 0) {
-            guiGraphics.blit(TEXTURE, this.leftPos + 152, this.topPos + 70 - power, 176, 52 - power, 16, power);
-        }
+        if (flareStack != null) { // тайл может отсутствовать в реплее Flashback
+            int power = (int) (flareStack.getEnergyStored() * 52L / Math.max(flareStack.getMaxEnergyStored(), 1L));
+            if (power > 52) {
+                power = 52;
+            }
+            if (power > 0) {
+                guiGraphics.blit(TEXTURE, this.leftPos + 152, this.topPos + 70 - power, 176, 52 - power, 16, power);
+            }
 
-        int progress = flareStack.getProgressScaled(33);
-        if (progress > 0) {
-            guiGraphics.blit(TEXTURE, this.leftPos + 72, this.topPos + 37, 192, 0, progress, 14);
-        }
+            int progress = flareStack.getProgressScaled(33);
+            if (progress > 0) {
+                guiGraphics.blit(TEXTURE, this.leftPos + 72, this.topPos + 37, 192, 0, progress, 14);
+            }
 
-        if (flareStack.getEnergyStored() > 0) {
-            guiGraphics.blit(TEXTURE, this.leftPos + 156, this.topPos + 4, 176, 52, 9, 12);
+            if (flareStack.getEnergyStored() > 0) {
+                guiGraphics.blit(TEXTURE, this.leftPos + 156, this.topPos + 4, 176, 52, 9, 12);
+            }
         }
 
         drawInfoPanel(guiGraphics, 78, 67, PanelType.SMALL_BLUE_INFO);
@@ -64,15 +66,17 @@ public class GUIMachineFlareStack extends GuiInfoScreen<MachineFlareStackMenu> {
         GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        drawElectricityInfo(guiGraphics, mouseX, mouseY,
-                152, 18, 16, 52,
-                flareStack.getEnergyStored(), flareStack.getMaxEnergyStored());
+        if (flareStack != null) {
+            drawElectricityInfo(guiGraphics, mouseX, mouseY,
+                    152, 18, 16, 52,
+                    flareStack.getEnergyStored(), flareStack.getMaxEnergyStored());
 
-        drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                this.leftPos + 78, this.topPos + 67, 8, 8,
-                this.leftPos + 78, this.topPos + 67,
-                Component.literal("Progress:"),
-                Component.literal("   " + flareStack.getProgress() + " / " + flareStack.getMaxProgress()));
+            drawCustomInfoStat(guiGraphics, mouseX, mouseY,
+                    this.leftPos + 78, this.topPos + 67, 8, 8,
+                    this.leftPos + 78, this.topPos + 67,
+                    Component.literal("Progress:"),
+                    Component.literal("   " + flareStack.getProgress() + " / " + flareStack.getMaxProgress()));
+        }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

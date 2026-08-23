@@ -36,6 +36,8 @@ public class GUIMachineSolderingStation extends GuiInfoScreen<MachineSolderingSt
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1, 1, 1, 1);
         g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (solderer == null) return;
 
         // Collision Prevention indicator (texture at 192, 14 in GUI sheet)
         if (solderer.collisionPrevention)
@@ -76,6 +78,8 @@ public class GUIMachineSolderingStation extends GuiInfoScreen<MachineSolderingSt
         GuiCompat.renderBackground(this, g, mouseX, mouseY, partialTick);
         super.render(g, mouseX, mouseY, partialTick);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (solderer != null) {
         drawElectricityInfo(g, mouseX, mouseY, 152, 18, 16, 52,
                 solderer.getEnergyStored(), solderer.getMaxEnergyStored());
 
@@ -93,6 +97,7 @@ public class GUIMachineSolderingStation extends GuiInfoScreen<MachineSolderingSt
                                 : ChatFormatting.RED   + "OFF")),
                 Component.literal("Prevents no-fluid recipes from being processed"),
                 Component.literal("when fluid is present."));
+        }
 
         this.renderTooltip(g, mouseX, mouseY);
     }
@@ -101,6 +106,8 @@ public class GUIMachineSolderingStation extends GuiInfoScreen<MachineSolderingSt
 
     @Override
     public boolean mouseClicked(double mx, double my, int btn) {
+        // тайл может отсутствовать в реплее Flashback
+        if (solderer == null) return super.mouseClicked(mx, my, btn);
         int bx = leftPos + 5, by = topPos + 66;
         if (mx >= bx && mx < bx + 10 && my > by && my <= by + 10) {
             minecraft.getSoundManager().play(

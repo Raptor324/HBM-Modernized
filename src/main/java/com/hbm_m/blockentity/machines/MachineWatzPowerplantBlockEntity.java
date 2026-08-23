@@ -356,7 +356,7 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
 
     @Override
     public void setAllowedFluidSidesFromMultiblockStructure(Set<Direction> sides) {
-        this.allowedFluidSides = EnumSet.copyOf(sides);
+        this.allowedFluidSides = safeCopyDirectionSet(sides);
         this.fluidSidesFromMultiblockStructure = true;
         setChanged();
         sendUpdateToClient();
@@ -364,10 +364,23 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
 
     @Override
     public void setAllowedFluidSides(Set<Direction> sides) {
-        this.allowedFluidSides = EnumSet.copyOf(sides);
+        this.allowedFluidSides = safeCopyDirectionSet(sides);
         this.fluidSidesFromMultiblockStructure = false;
         setChanged();
         sendUpdateToClient();
+    }
+
+    /**
+     * Безопасная defensive-копия Set<Direction> в EnumSet. EnumSet.copyOf(Collection)
+     * бросает IllegalArgumentException на пустой коллекции; здесь всегда возвращаем
+     * валидный EnumSet (пустой ли, нет) и принимаем null как пустое множество.
+     */
+    private static EnumSet<Direction> safeCopyDirectionSet(Set<Direction> sides) {
+        EnumSet<Direction> out = EnumSet.noneOf(Direction.class);
+        if (sides != null && !sides.isEmpty()) {
+            out.addAll(sides);
+        }
+        return out;
     }
 
     @Override

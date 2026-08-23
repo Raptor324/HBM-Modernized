@@ -65,35 +65,37 @@ public class GUIMachineMixer extends GuiInfoScreen<MachineMixerMenu> {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
-        // Fluid tank levels
-        mixer.getTank(MachineMixerBlockEntity.TANK_INPUT_A)
-                .renderTank(guiGraphics, this.leftPos + TANK_A_X, this.topPos + TANK_Y, TANK_W, TANK_H);
-        mixer.getTank(MachineMixerBlockEntity.TANK_INPUT_B)
-                .renderTank(guiGraphics, this.leftPos + TANK_B_X, this.topPos + TANK_Y, TANK_W, TANK_H);
-        mixer.getTank(MachineMixerBlockEntity.TANK_OUTPUT)
-                .renderTank(guiGraphics, this.leftPos + OUTPUT_X, this.topPos + TANK_Y, TANK_W, TANK_H);
+        if (mixer != null) { // тайл может отсутствовать в реплее Flashback
+            // Fluid tank levels
+            mixer.getTank(MachineMixerBlockEntity.TANK_INPUT_A)
+                    .renderTank(guiGraphics, this.leftPos + TANK_A_X, this.topPos + TANK_Y, TANK_W, TANK_H);
+            mixer.getTank(MachineMixerBlockEntity.TANK_INPUT_B)
+                    .renderTank(guiGraphics, this.leftPos + TANK_B_X, this.topPos + TANK_Y, TANK_W, TANK_H);
+            mixer.getTank(MachineMixerBlockEntity.TANK_OUTPUT)
+                    .renderTank(guiGraphics, this.leftPos + OUTPUT_X, this.topPos + TANK_Y, TANK_W, TANK_H);
 
-        // Re-draw the panel overlay so the tank fill doesn't cover the gauge frame graphics
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+            // Re-draw the panel overlay so the tank fill doesn't cover the gauge frame graphics
+            RenderSystem.setShader(GameRenderer::getPositionTexShader);
+            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
 
-        // Energy bar (no dedicated texture region, drawn as a solid overlay)
-        long power = mixer.getEnergyStored();
-        long maxPower = Math.max(mixer.getMaxEnergyStored(), 1L);
-        int filled = (int) (power * ENERGY_BAR_H / maxPower);
-        if (filled > 0) {
-            if (filled > ENERGY_BAR_H) {
-                filled = ENERGY_BAR_H;
+            // Energy bar (no dedicated texture region, drawn as a solid overlay)
+            long power = mixer.getEnergyStored();
+            long maxPower = Math.max(mixer.getMaxEnergyStored(), 1L);
+            int filled = (int) (power * ENERGY_BAR_H / maxPower);
+            if (filled > 0) {
+                if (filled > ENERGY_BAR_H) {
+                    filled = ENERGY_BAR_H;
+                }
+                int x0 = this.leftPos + ENERGY_BAR_X;
+                int y0 = this.topPos + ENERGY_BAR_Y + (ENERGY_BAR_H - filled);
+                guiGraphics.fill(x0, y0, x0 + ENERGY_BAR_W, y0 + filled, 0xFF3FCFE0);
             }
-            int x0 = this.leftPos + ENERGY_BAR_X;
-            int y0 = this.topPos + ENERGY_BAR_Y + (ENERGY_BAR_H - filled);
-            guiGraphics.fill(x0, y0, x0 + ENERGY_BAR_W, y0 + filled, 0xFF3FCFE0);
-        }
 
-        // Progress arrow / mixing animation
-        int progress = mixer.getProgressScaled(PROGRESS_W);
-        if (progress > 0) {
-            guiGraphics.blit(TEXTURE, this.leftPos + PROGRESS_X, this.topPos + PROGRESS_Y, 192, 0, progress, PROGRESS_H);
+            // Progress arrow / mixing animation
+            int progress = mixer.getProgressScaled(PROGRESS_W);
+            if (progress > 0) {
+                guiGraphics.blit(TEXTURE, this.leftPos + PROGRESS_X, this.topPos + PROGRESS_Y, 192, 0, progress, PROGRESS_H);
+            }
         }
 
         drawInfoPanel(guiGraphics, 78, 67, PanelType.SMALL_BLUE_INFO);
@@ -109,6 +111,7 @@ public class GUIMachineMixer extends GuiInfoScreen<MachineMixerMenu> {
     @Override
     protected void renderTooltip(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
         super.renderTooltip(guiGraphics, mouseX, mouseY);
+        if (mixer == null) return; // тайл может отсутствовать в реплее Flashback
 
         FluidTank tankA = mixer.getTank(MachineMixerBlockEntity.TANK_INPUT_A);
         FluidTank tankB = mixer.getTank(MachineMixerBlockEntity.TANK_INPUT_B);

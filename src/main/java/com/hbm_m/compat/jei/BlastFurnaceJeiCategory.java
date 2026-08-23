@@ -43,7 +43,7 @@ public class BlastFurnaceJeiCategory extends JeiGenericRecipeCategory<BlastFurna
 
     @Override
     protected int getOutputCount(BlastFurnaceRecipe recipe) {
-        return 1;
+        return recipe.hasSecondaryOutput() ? 2 : 1;
     }
 
     @Override
@@ -65,9 +65,14 @@ public class BlastFurnaceJeiCategory extends JeiGenericRecipeCategory<BlastFurna
 
     @Override
     protected void addOutputSlots(IRecipeLayoutBuilder builder, BlastFurnaceRecipe recipe, int outputXOffset) {
-        int[][] positions = JeiNeiLayout.getGenericOutputSlotPositions(1);
+        int count = recipe.hasSecondaryOutput() ? 2 : 1;
+        int[][] positions = JeiNeiLayout.getGenericOutputSlotPositions(count);
         addItemSlot(builder, RecipeIngredientRole.OUTPUT, positions[0][0] + outputXOffset, positions[0][1])
                 .addItemStack(recipe.getResultItemSafe());
+        if (recipe.hasSecondaryOutput()) {
+            addItemSlot(builder, RecipeIngredientRole.OUTPUT, positions[1][0] + outputXOffset, positions[1][1])
+                    .addItemStack(recipe.getSecondaryOutputSafe());
+        }
     }
 
     @Override

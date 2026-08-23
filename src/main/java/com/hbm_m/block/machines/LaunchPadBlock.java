@@ -6,7 +6,6 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.bomb.IBomb;
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity;
@@ -74,18 +73,7 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
     public void onPlace(BlockState pState, Level pLevel, BlockPos pPos, BlockState pOldState, boolean pIsMoving) {
         super.onPlace(pState, pLevel, pPos, pOldState, pIsMoving);
         if (!pLevel.isClientSide() && !pState.is(pOldState.getBlock())) {
-            MultiblockStructureHelper helper = getStructureHelper();
-            BlockPos core = placeMultiblockStructure(pLevel, pPos, pState);
-            if (core == null) {
-                return;
-            }
-            Direction facing = pState.getValue(FACING);
-            for (BlockPos localPos : helper.getStructureMap().keySet()) {
-                if (getPartRole(localPos) == PartRole.UNIVERSAL_CONNECTOR) {
-                    BlockPos worldPos = helper.getRotatedPos(core, localPos, facing);
-                    EnergyNetworkManager.get((ServerLevel) pLevel).addNode(worldPos);
-                }
-            }
+            placeMultiblockStructure(pLevel, pPos, pState);
         }
     }
 
@@ -102,12 +90,6 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
             if (!level.isClientSide()) {
                 MultiblockStructureHelper helper = getStructureHelper();
                 Direction facing = state.getValue(FACING);
-                for (BlockPos localPos : helper.getStructureMap().keySet()) {
-                    if (getPartRole(localPos) == PartRole.UNIVERSAL_CONNECTOR) {
-                        BlockPos worldPos = helper.getRotatedPos(pos, localPos, facing);
-                        EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
-                    }
-                }
 
                 BlockEntity blockEntity = level.getBlockEntity(pos);
                 if (blockEntity instanceof LaunchPadBaseBlockEntity launchPadBe) {

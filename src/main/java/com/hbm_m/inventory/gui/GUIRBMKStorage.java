@@ -42,7 +42,10 @@ public class GUIRBMKStorage extends GuiInfoScreen<RBMKStorageMenu> {
         com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        guiGraphics.drawString(this.font, String.format("Heat: %.1f°C", be.heat), leftPos + 8, topPos + 6, 0x990000, false);
+        // тайл может отсутствовать в реплее Flashback
+        if (be != null) {
+            guiGraphics.drawString(this.font, String.format("Heat: %.1f°C", be.heat), leftPos + 8, topPos + 6, 0x990000, false);
+        }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

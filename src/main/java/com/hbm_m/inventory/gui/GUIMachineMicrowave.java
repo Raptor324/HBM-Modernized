@@ -44,6 +44,7 @@ public class GUIMachineMicrowave extends AbstractContainerScreen<MachineMicrowav
     }
 
     private void sendSpeed(int delta) {
+        if (blockEntity == null) return; // тайл может отсутствовать в реплее Flashback
         MicrowaveSpeedC2SPacket.sendToServer(blockEntity.getBlockPos(), delta);
     }
 
@@ -53,19 +54,21 @@ public class GUIMachineMicrowave extends AbstractContainerScreen<MachineMicrowav
         int y = topPos;
         guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
 
-        int cookProgress = blockEntity.getProgressScaled(24);
-        if (cookProgress > 0) {
-            guiGraphics.fill(x + 90, y + 39, x + 90 + cookProgress, y + 47, 0xFFC0C0C0);
-        }
+        if (blockEntity != null) {
+            int cookProgress = blockEntity.getProgressScaled(24);
+            if (cookProgress > 0) {
+                guiGraphics.fill(x + 90, y + 39, x + 90 + cookProgress, y + 47, 0xFFC0C0C0);
+            }
 
-        if (blockEntity.getPowerScaled(1) > 0) {
-            guiGraphics.fill(x + 154, y + 20, x + 166, y + 52, 0xFF3080FF);
-        }
+            if (blockEntity.getPowerScaled(1) > 0) {
+                guiGraphics.fill(x + 154, y + 20, x + 166, y + 52, 0xFF3080FF);
+            }
 
-        int speedHeight = blockEntity.getSpeedScaled(24);
-        int warnColor = blockEntity.speed >= MachineMicrowaveBlockEntity.MAX_SPEED ? 0xFFFF3030 : 0xFF30FF60;
-        if (speedHeight > 0) {
-            guiGraphics.fill(x + 122, y + 44 - speedHeight, x + 132, y + 44, warnColor);
+            int speedHeight = blockEntity.getSpeedScaled(24);
+            int warnColor = blockEntity.speed >= MachineMicrowaveBlockEntity.MAX_SPEED ? 0xFFFF3030 : 0xFF30FF60;
+            if (speedHeight > 0) {
+                guiGraphics.fill(x + 122, y + 44 - speedHeight, x + 132, y + 44, warnColor);
+            }
         }
     }
 
@@ -73,7 +76,9 @@ public class GUIMachineMicrowave extends AbstractContainerScreen<MachineMicrowav
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         guiGraphics.drawString(font, title, imageWidth / 2 - font.width(title) / 2, 6, 0x404040, false);
         guiGraphics.drawString(font, playerInventoryTitle, 8, inventoryLabelY, 4210752, false);
-        guiGraphics.drawString(font, String.valueOf(blockEntity.speed), 103, 34, 0x404040, false);
+        if (blockEntity != null) {
+            guiGraphics.drawString(font, String.valueOf(blockEntity.speed), 103, 34, 0x404040, false);
+        }
     }
 
     @Override

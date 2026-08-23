@@ -19,7 +19,7 @@ import net.minecraft.world.entity.player.Inventory;
 public class GUIMachineDieselGenerator extends AbstractContainerScreen<MachineDieselGeneratorMenu> {
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/GUIDiesel.png");
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_diesel.png");
 
     private final MachineDieselGeneratorBlockEntity blockEntity;
 
@@ -37,17 +37,19 @@ public class GUIMachineDieselGenerator extends AbstractContainerScreen<MachineDi
         int y = topPos;
         guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
 
-        var tank = blockEntity.getTank();
-        int fuelH = tank.getMaxFill() > 0 ? tank.getFill() * 52 / tank.getMaxFill() : 0;
-        if (fuelH > 0) guiGraphics.fill(x + 35, y + 69 + (52 - fuelH), x + 51, y + 121, 0xFF804000);
+        if (blockEntity != null) { // тайл может отсутствовать в реплее Flashback
+            var tank = blockEntity.getTank();
+            int fuelH = tank.getMaxFill() > 0 ? tank.getFill() * 52 / tank.getMaxFill() : 0;
+            if (fuelH > 0) guiGraphics.fill(x + 35, y + 69 + (52 - fuelH), x + 51, y + 121, 0xFF804000);
 
-        long max = blockEntity.getMaxEnergyStored();
-        long energy = blockEntity.getEnergyStored();
-        int energyH = max > 0 ? (int) (energy * 52L / max) : 0;
-        if (energyH > 0) guiGraphics.fill(x + 141, y + 69 + (52 - energyH), x + 157, y + 121, 0xFFFF3020);
+            long max = blockEntity.getMaxEnergyStored();
+            long energy = blockEntity.getEnergyStored();
+            int energyH = max > 0 ? (int) (energy * 52L / max) : 0;
+            if (energyH > 0) guiGraphics.fill(x + 141, y + 69 + (52 - energyH), x + 157, y + 121, 0xFFFF3020);
 
-        if (blockEntity.isActive()) {
-            guiGraphics.fill(x + 89, y + 42, x + 97, y + 50, 0xFF30FF30);
+            if (blockEntity.isActive()) {
+                guiGraphics.fill(x + 89, y + 42, x + 97, y + 50, 0xFF30FF30);
+            }
         }
     }
 

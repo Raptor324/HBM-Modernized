@@ -5,7 +5,6 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.api.energy.ItemEnergyAccess;
 
 import com.hbm_m.interfaces.IEnergyConnector;
@@ -119,6 +118,14 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
      */
     public void dropInventoryContents() {
         if (level == null) return;
+        // Во время переноса блоков движком сборки (Create/Sable) содержимое уезжает
+        // в NBT-снимок контрапшена; высыпание на пол здесь = дюп предметов.
+        if (com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
+            com.hbm_m.main.MainRegistry.LOGGER.info(
+                "[HBM] высыпание инвентаря подавлено (окно сборки контрапшена), BE {}",
+                getClass().getSimpleName());
+            return;
+        }
         net.minecraft.world.SimpleContainer c = new net.minecraft.world.SimpleContainer(inventory.getSlots());
         for (int i = 0; i < inventory.getSlots(); i++) {
             c.setItem(i, inventory.getStackInSlot(i));
@@ -539,19 +546,33 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
 
     // ═══════════════════════════ Network initialization ════════════════════════════════
 
-    protected void ensureNetworkInitialized() {
-        if (!networkInitialized && level != null && !level.isClientSide) {
-            EnergyNetworkManager.get((ServerLevel) level).addNode(this.getBlockPos());
-            networkInitialized = true;
+    /**
+     * Поддержка подписки на энергосеть (energymk2). Вызывается каждый серверный тик:
+     * либо из тика самой машины, либо из централизованного драйвера
+     * {@link com.hbm_m.api.energy.EnergySubscriptions#tickAll}.
+     * Машина периодически подписывается как receiver/provider к сетям соседних проводников.
+     */
+    public void ensureNetworkInitialized() {
+        if (level != null && !level.isClientSide) {
+            com.hbm_m.api.energy.EnergySubscriptions.update(this, getExtraEnergyPorts());
         }
+    }
+
+    /**
+     * Дополнительные позиции портов подписки для мультиблоков.
+     * У каждой такой позиции проверяются все 6 граней на предмет проводов.
+     */
+    protected net.minecraft.core.BlockPos[] getExtraEnergyPorts() {
+        return new net.minecraft.core.BlockPos[0];
     }
 
     @Override
     public void setRemoved() {
         super.setRemoved();
-        // [ВАЖНО!] Сообщаем сети, что мы удалены
+        // Снимаем подписки при удалении, включая порты частей мультиблока
+        // (сети сами пересоберутся через recentlyChanged)
         if (this.level != null && !this.level.isClientSide) {
-            EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
+            com.hbm_m.api.energy.EnergySubscriptions.unsubscribeAll(this, getExtraEnergyPorts());
         }
     }
 
@@ -561,6 +582,11 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
     @Override
     public void setLevel(Level pLevel) {
         super.setLevel(pLevel);
+        // Регистрируемся в централизованном драйвере подписок энергосети
+        // (setLevel вызывается vanilla и при загрузке чанка, и при установке блока)
+        if (pLevel != null && !pLevel.isClientSide) {
+            com.hbm_m.api.energy.EnergySubscriptions.register(this);
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════════════════

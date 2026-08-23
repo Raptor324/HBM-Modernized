@@ -200,19 +200,11 @@ public class WireBlock extends BaseEntityBlock {
 
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-        if (!level.isClientSide && !oldState.is(this)) {
-            LOGGER.info("[WIRE] Block placed at {}, adding to network immediately", pos);
-            EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
-        }
         super.onPlace(state, level, pos, oldState, isMoving);
     }
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!level.isClientSide && !state.is(newState.getBlock())) {
-            LOGGER.info("[WIRE] Block removed at {}, removing from network", pos);
-            EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
-        }
         super.onRemove(state, level, pos, newState, isMoving);
     }
 

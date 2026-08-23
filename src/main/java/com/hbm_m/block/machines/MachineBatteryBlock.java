@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineBatteryBlockEntity;
 import com.hbm_m.util.EnergyFormatter;
@@ -97,18 +96,11 @@ public class MachineBatteryBlock extends BaseEntityBlock {
         return createTickerHelper(type, ModBlockEntities.MACHINE_BATTERY_BE.get(), MachineBatteryBlockEntity::tick);
     }
 
-    //  Регистрация в энергосети
+    //  Регистрация в энергосети больше не нужна: узлами управляет Nodespace (BaseMachineBlockEntity)
 
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock()) && !level.isClientSide()) {
-            // Оставляем *только* логику удаления из сети
-            EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
-
-            // ... (и другое, если оно не связано с дропом) ...
-        }
-
         // Вызываем super.onRemove, который сам вызовет loot table
         super.onRemove(state, level, pos, newState, isMoving);
     }

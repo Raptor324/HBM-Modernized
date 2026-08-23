@@ -38,6 +38,8 @@ public class GUIRBMKOutgasser extends GuiInfoScreen<RBMKOutgasserMenu> {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         g.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (be == null) return;
 
         // Progress bar (original: rod.progress/rod.duration). The modernized outgasser has no
         // gradual processing timer -- it consumes the rod's Xenon poison instantly whenever flux
@@ -69,6 +71,8 @@ public class GUIRBMKOutgasser extends GuiInfoScreen<RBMKOutgasserMenu> {
         com.hbm_m.client.GuiCompat.renderBackground(this, g, mouseX, mouseY, partialTick);
         super.render(g, mouseX, mouseY, partialTick);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (be != null) {
         ItemStack rod = be.rodSlot;
         double poisonPct = (!rod.isEmpty() && rod.getItem() instanceof RBMKRodItem) ? RBMKRodItem.getPoison(rod) : 0;
 
@@ -86,6 +90,7 @@ public class GUIRBMKOutgasser extends GuiInfoScreen<RBMKOutgasserMenu> {
                 48, 45, 16, 16,
                 mouseX, mouseY,
                 Component.literal(String.format("Flux buffer: %.2f", be.fluxBuffer)));
+        }
 
         this.renderTooltip(g, mouseX, mouseY);
     }

@@ -106,8 +106,8 @@ public class MachineCoolingTowerRenderer extends AbstractPartBasedRenderer<Machi
 
         BlockPos blockPos = be.getBlockPos();
 
-        AABB renderBounds = be.getRenderBoundingBox();
-        if (!OcclusionCullingHelper.shouldRender(blockPos, Minecraft.getInstance().level, renderBounds)) {
+        // Куллинг: в контрапшене Create shouldRender() пропускает frustum/ray-march кулинг.
+        if (!passesOcclusionCulling(be)) {
             return;
         }
 
@@ -138,11 +138,6 @@ public class MachineCoolingTowerRenderer extends AbstractPartBasedRenderer<Machi
         }
 
         poseStack.popPose();
-    }
-
-    @Override
-    public boolean shouldRenderOffScreen(MachineCoolingTowerBlockEntity be) {
-        return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
     }
 
     @Override public int getViewDistance() { return 128; }

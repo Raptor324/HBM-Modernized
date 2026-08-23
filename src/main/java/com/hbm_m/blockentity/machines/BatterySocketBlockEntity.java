@@ -4,7 +4,6 @@ import java.util.Optional;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.block.machines.MachineBatterySocketBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
@@ -42,7 +41,7 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
  * Battery socket: one portable battery slot, modes like machine battery, energy from item capabilities.
  */
 @SuppressWarnings("UnstableApiUsage")
-public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder {
+public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder, com.hbm_m.api.energy.PowerBuffer {
 
     //? if forge {
     public static final ModelProperty<Boolean> HAS_INSERT = new ModelProperty<>();
@@ -96,21 +95,29 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
     @Override
     protected Component getDefaultName() { return Component.translatable("container.hbm_m.battery_socket"); }
 
+    // Энергопорты мультиблока: сама батарея (ядро, подписывается базовым классом)
+    // плюс все ENERGY_CONNECTOR-фантомы структуры.
+    @Override
+    protected net.minecraft.core.BlockPos[] getExtraEnergyPorts() {
+        if (level == null || level.isClientSide) return new BlockPos[0];
+        if (!(getBlockState().getBlock() instanceof MachineBatterySocketBlock controller)) {
+            return new BlockPos[0];
+        }
+        Direction facing = getBlockState().getValue(MachineBatterySocketBlock.FACING);
+        var helper = controller.getStructureHelper();
+        java.util.List<BlockPos> ports = new java.util.ArrayList<>();
+        for (BlockPos local : helper.getStructureMap().keySet()) {
+            if (helper.resolvePartRole(local, controller) == PartRole.ENERGY_CONNECTOR) {
+                ports.add(helper.getRotatedPos(worldPosition, local, facing));
+            }
+        }
+        return ports.toArray(new BlockPos[0]);
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, BatterySocketBlockEntity be) {
         if (level.isClientSide) return;
 
-        EnergyNetworkManager manager = EnergyNetworkManager.get((ServerLevel) level);
-        manager.addNode(pos);
-        Direction facing = state.getValue(MachineBatterySocketBlock.FACING);
-        if (!(state.getBlock() instanceof MachineBatterySocketBlock controller)) {
-            return;
-        }
-        var helper = controller.getStructureHelper();
-        for (BlockPos local : helper.getStructureMap().keySet()) {
-            if (helper.resolvePartRole(local, controller) == PartRole.ENERGY_CONNECTOR) {
-                manager.addNode(helper.getRotatedPos(pos, local, facing));
-            }
-        }
+        be.ensureNetworkInitialized();
 
         long gameTime = level.getGameTime();
         if (gameTime % 10 == 0) {
@@ -231,7 +238,6 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
     public long getEnergyStored() {
         return getEnergyStoredFromStack();
     }
-
     @Override
     public long getMaxEnergyStored() {
         return getMaxEnergyStoredFromStack();
@@ -364,8 +370,10 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
             case 0 -> this.data.set(0, (this.modeOnNoSignal + 1) % 4);
             case 1 -> this.data.set(1, (this.modeOnSignal + 1) % 4);
             case 2 -> {
+                // Паритет с оригиналом: батареи ограничены приоритетами LOW..HIGH (без LOWEST/HIGHEST)
                 IEnergyReceiver.Priority[] priorities = IEnergyReceiver.Priority.values();
-                int next = (this.priority.ordinal() + 1) % priorities.length;
+                int current = Math.max(1, Math.min(this.priority.ordinal(), priorities.length - 2));
+                int next = (current >= priorities.length - 2) ? 1 : current + 1;
                 this.data.set(2, next);
             }
         }
@@ -389,7 +397,7 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
         super.writeNbtData(tag, registries);
         tag.putInt("modeOnNoSignal", modeOnNoSignal);
         tag.putInt("modeOnSignal", modeOnSignal);
-        tag.putInt("priority", priority.ordinal());
+        tag.putInt("priorityV2", priority.ordinal());
         tag.putLong("energyDelta", energyDelta);
         tag.putLong("lastEnergySample", lastEnergySample);
     }
@@ -399,8 +407,13 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
         super.readNbtData(tag, registries);
         modeOnNoSignal = tag.getInt("modeOnNoSignal");
         modeOnSignal = tag.getInt("modeOnSignal");
-        if (tag.contains("priority")) {
-            int p = tag.getInt("priority");
+        // priorityV2 — ординал нового 5-уровневого enum'а; старый "priority" (3 уровня) сдвигаем на +1
+        if (tag.contains("priorityV2")) {
+            int p = tag.getInt("priorityV2");
+            IEnergyReceiver.Priority[] vals = IEnergyReceiver.Priority.values();
+            priority = vals[Math.max(0, Math.min(p, vals.length - 1))];
+        } else if (tag.contains("priority")) {
+            int p = tag.getInt("priority") + 1;
             IEnergyReceiver.Priority[] vals = IEnergyReceiver.Priority.values();
             priority = vals[Math.max(0, Math.min(p, vals.length - 1))];
         }

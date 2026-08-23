@@ -11,7 +11,6 @@ import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.machines.MachineAssemblerBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -820,17 +819,38 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
     }
 
+    /**
+     * Энергопорты мультиблока: ENERGY_CONNECTOR части структуры.
+     * Раньше эти позиции регистрировались в энергосети блоком при установке,
+     * теперь ядро подписывается через них как receiver/provider.
+     */
+    @Override
+    public BlockPos[] getExtraEnergyPorts() {
+        if (level == null || level.isClientSide) return new BlockPos[0];
+        if (!(getBlockState().getBlock() instanceof MachineAssemblerBlock block)) return new BlockPos[0];
+
+        var helper = block.getStructureHelper();
+        Direction facing = getBlockState().getValue(MachineAssemblerBlock.FACING);
+
+        java.util.List<BlockPos> ports = new java.util.ArrayList<>();
+        for (BlockPos localPos : helper.getStructureMap().keySet()) {
+            // Любая роль с энергетическим коннектором (ENERGY_CONNECTOR / UNIVERSAL_CONNECTOR)
+            com.hbm_m.multiblock.PartRole role = block.getPartRole(localPos);
+            if (role.canReceiveEnergy() || role.canSendEnergy()) {
+                ports.add(helper.getRotatedPos(worldPosition, localPos, facing));
+            }
+        }
+        return ports.toArray(new BlockPos[0]);
+    }
+
     @Override
     public void setRemoved() {
         super.setRemoved();
+        // Подписки энергосети снимаются в BaseMachineBlockEntity.setRemoved
         //? if forge {
         if (this.level != null && this.level.isClientSide) {
             ClientSoundBootstrap.updateSound(this, false, null);
         }
         //?}
-
-        if (this.level != null && !this.level.isClientSide) {
-            EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
-        }
     }
 }

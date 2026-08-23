@@ -75,20 +75,13 @@ public class MachineFluidTankRenderer extends AbstractPartBasedRenderer<MachineF
                               LegacyAnimator animator, float partialTick,
                               int packedLight, int packedOverlay, PoseStack poseStack,
                               MultiBufferSource bufferSource) {
-        var state = be.getBlockState();
-        Direction facing = getFacing(be);
         BlockPos blockPos = be.getBlockPos();
 
-        // Occlusion cull: AABB бака inflate(3) как в BE.getRenderBoundingBox().
-        AABB renderBounds = be.getRenderBoundingBox();
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null || !OcclusionCullingHelper.shouldRender(blockPos, mc.level, renderBounds)) {
+        // Куллинг + fade: AABB бака inflate(3) как в BE.getRenderBoundingBox();
+        // в контрапшене Create shouldRender() пропускает frustum/ray-march кулинг.
+        if (applyCullingAndStaticFade(be) < 0) {
             return;
         }
-
-        float staticFade = RenderDistanceHelper.computeStaticFade(be);
-        if (staticFade < 0) return;
-        SingleMeshVboRenderer.setFadeAlpha(staticFade);
 
         int blockLight = LightTexture.block(packedLight);
         int skyLight = LightTexture.sky(packedLight);
@@ -182,15 +175,5 @@ public class MachineFluidTankRenderer extends AbstractPartBasedRenderer<MachineF
 
     public static void clearCaches() {
         MachineFluidTankVboRenderer.clearTankTextureCache();
-    }
-
-    @Override
-    public boolean shouldRenderOffScreen(MachineFluidTankBlockEntity be) {
-        return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
-    }
-
-    @Override
-    public int getViewDistance() {
-        return RenderDistanceHelper.getStaticViewDistanceBlocks();
     }
 }

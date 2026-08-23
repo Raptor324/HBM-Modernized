@@ -9,7 +9,15 @@
     "PlayerStepSoundMixin",
     "CreeperMixin",
     "CreeperAccessor",
-    "LivingEntityRadiationMixin"
+    "LivingEntityRadiationMixin",
+    "SuperGlueSelectionHelperMixin",
+    "ContraptionMixin",
+    "LevelChunkSilentRemovalMixin",
+    "ContraptionWindowMixin",
+    "SubLevelMoveWindowMixin",
+    "SubLevelRelinkMixin",
+    "SubLevelAssembleExpansionMixin",
+    "HoneyGlueSelectionExpansionMixin"
   ],
   "server": [
   ],

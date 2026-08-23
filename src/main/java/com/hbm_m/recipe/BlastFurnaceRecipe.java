@@ -1,6 +1,7 @@
 package com.hbm_m.recipe;
 
 // Рецепт для Плавильной печи - машины, которая сплавляет два предмета в один.
+// Обновлённая версия: длительность на рецепт (duration) и второй выход (шлак).
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -24,11 +25,17 @@ import org.jetbrains.annotations.NotNull;
 public class BlastFurnaceRecipe extends PlatformRecipe {
     private final NonNullList<Ingredient> inputItems;
     private final ItemStack output;
+    /** Второй выход (шлак); может быть пустым. */
+    private final ItemStack secondaryOutput;
+    /** Длительность плавки в тиках при скорости 1.0. */
+    private final int duration;
 
-    public BlastFurnaceRecipe(NonNullList<Ingredient> inputItems, ItemStack output, ResourceLocation id) {
+    public BlastFurnaceRecipe(NonNullList<Ingredient> inputItems, ItemStack output, ItemStack secondaryOutput, int duration, ResourceLocation id) {
         super(id);
         this.inputItems = inputItems;
         this.output = output;
+        this.secondaryOutput = secondaryOutput;
+        this.duration = Math.max(1, duration);
     }
 
     @Override
@@ -60,6 +67,18 @@ public class BlastFurnaceRecipe extends PlatformRecipe {
         return output.copy();
     }
 
+    public ItemStack getSecondaryOutputSafe() {
+        return secondaryOutput.copy();
+    }
+
+    public boolean hasSecondaryOutput() {
+        return !secondaryOutput.isEmpty();
+    }
+
+    public int getDuration() {
+        return duration;
+    }
+
     @Override
     public RecipeSerializer<?> getSerializer() {
         return Serializer.INSTANCE;
@@ -83,6 +102,13 @@ public class BlastFurnaceRecipe extends PlatformRecipe {
         public BlastFurnaceRecipe readJson(ResourceLocation recipeId, JsonObject serializedRecipe) {
             ItemStack output = RecipeHooks.itemStackFromJson(GsonHelper.getAsJsonObject(serializedRecipe, "output"));
 
+            ItemStack secondaryOutput = ItemStack.EMPTY;
+            if (serializedRecipe.has("secondary_output") && serializedRecipe.get("secondary_output").isJsonObject()) {
+                secondaryOutput = RecipeHooks.itemStackFromJson(serializedRecipe.getAsJsonObject("secondary_output"));
+            }
+
+            int duration = GsonHelper.getAsInt(serializedRecipe, "duration", 800);
+
             JsonArray ingredients = GsonHelper.getAsJsonArray(serializedRecipe, "ingredients");
             NonNullList<Ingredient> inputs = NonNullList.withSize(2, Ingredient.EMPTY);
 
@@ -90,7 +116,7 @@ public class BlastFurnaceRecipe extends PlatformRecipe {
                 inputs.set(i, RecipeHooks.ingredientFromJson(ingredients.get(i)));
             }
 
-            return new BlastFurnaceRecipe(inputs, output, recipeId);
+            return new BlastFurnaceRecipe(inputs, output, secondaryOutput, duration, recipeId);
         }
 
         @Override
@@ -102,7 +128,9 @@ public class BlastFurnaceRecipe extends PlatformRecipe {
             }
 
             ItemStack output = RecipeHooks.readItem(buffer);
-            return new BlastFurnaceRecipe(inputs, output, recipeId);
+            ItemStack secondaryOutput = RecipeHooks.readItem(buffer);
+            int duration = buffer.readVarInt();
+            return new BlastFurnaceRecipe(inputs, output, secondaryOutput, duration, recipeId);
         }
 
         @Override
@@ -114,6 +142,8 @@ public class BlastFurnaceRecipe extends PlatformRecipe {
             }
 
             RecipeHooks.writeItem(buffer, recipe.getResultItemSafe());
+            RecipeHooks.writeItem(buffer, recipe.getSecondaryOutputSafe());
+            buffer.writeVarInt(recipe.getDuration());
         }
     }
 }

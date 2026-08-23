@@ -10,8 +10,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 
 /**
  * Frequency -> orbited {@link Satellite} registry. Port of legacy
- * {@code com.hbm.saveddata.SatelliteSavedData}, modeled on this codebase's
- * {@link com.hbm_m.api.energy.EnergyNetworkManager} SavedData pattern.
+ * {@code com.hbm.saveddata.SatelliteSavedData}, using the vanilla SavedData pattern.
  */
 public class SatelliteManager extends SavedData {
 

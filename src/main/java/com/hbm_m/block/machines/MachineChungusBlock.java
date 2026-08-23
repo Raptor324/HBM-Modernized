@@ -5,7 +5,6 @@ import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineChungusBlockEntity;
@@ -147,18 +146,6 @@ public class MachineChungusBlock extends BaseEntityBlock implements IMultiblockC
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
             Direction facing = state.getValue(FACING);
             structureHelper.placeStructure(level, pos, facing, this);
-
-            EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
-
-            // Alle Strukturblöcke registrieren (nicht nur Connector-Rollen), damit die Maschine eine
-            // durchgehende physische Kette im EnergyNetworkManager bildet (der Netzwerke rein über
-            // direkte Block-Nachbarschaft bildet). Bei Chungus liegt der Energie-Connector bis zu
-            // 10 Blöcke vom Controller entfernt - ohne die dazwischenliegenden Knoten würden
-            // Controller und Connector in zwei isolierten Netzwerken landen.
-            for (BlockPos gridPos : structureHelper.getStructureMap().keySet()) {
-                BlockPos worldPos = structureHelper.getRotatedPos(pos, gridPos, facing);
-                EnergyNetworkManager.get((ServerLevel) level).addNode(worldPos);
-            }
         }
     }
 
@@ -166,13 +153,6 @@ public class MachineChungusBlock extends BaseEntityBlock implements IMultiblockC
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (state.getBlock() != newState.getBlock() && !level.isClientSide()) {
             Direction facing = state.getValue(FACING);
-
-            EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
-
-            for (BlockPos gridPos : structureHelper.getStructureMap().keySet()) {
-                BlockPos worldPos = structureHelper.getRotatedPos(pos, gridPos, facing);
-                EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
-            }
 
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof MachineChungusBlockEntity chungus) {

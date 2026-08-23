@@ -27,6 +27,8 @@ public class GUIMachineStorageDrum extends AbstractContainerScreen<MachineStorag
     @Override
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         guiGraphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, 0xF0303030);
+        // тайл может отсутствовать в реплее Flashback
+        if (drum == null) return;
 
         int liquidPct = drum.getLiquidTank().getMaxFill() > 0
                 ? drum.getLiquidTank().getFill() * 40 / drum.getLiquidTank().getMaxFill() : 0;

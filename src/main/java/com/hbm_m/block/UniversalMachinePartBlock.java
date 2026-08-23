@@ -404,6 +404,16 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
     @Override
     public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pIsMoving) {
         if (!pState.is(pNewState.getBlock())) {
+            // Перенос блока движком сборки (Create/Sable): это НЕ разрушение.
+            // Каскад destroyStructure + destroyBlock(controllerPos) здесь = дюп станка:
+            // движок уже сохранил state+NBT и вернёт структуру на месте разборки.
+            if (!pLevel.isClientSide() && com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
+                com.hbm_m.main.MainRegistry.LOGGER.info(
+                    "[HBM] каскад разрушения части подавлен (окно сборки контрапшена), часть {}",
+                    pPos.toShortString());
+                super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);
+                return;
+            }
             if (pLevel.getBlockEntity(pPos) instanceof IMultiblockPart partBe) {
                 BlockPos controllerPos = partBe.getControllerPos();
                 if (controllerPos != null && !pLevel.isClientSide()) {

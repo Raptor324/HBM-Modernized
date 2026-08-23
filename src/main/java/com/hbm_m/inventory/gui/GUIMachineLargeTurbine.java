@@ -35,28 +35,30 @@ public class GUIMachineLargeTurbine extends GuiInfoScreen<MachineLargeTurbineMen
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
-        Fluid inputFluid = turbine.getTanks()[0].getTankType();
-        if (isSameFluid(inputFluid, ModFluids.STEAM.getSource())) {
-            guiGraphics.blit(TEXTURE, this.leftPos + 99, this.topPos + 18, 183, 0, 14, 14);
-        } else if (isSameFluid(inputFluid, ModFluids.HOTSTEAM.getSource())) {
-            guiGraphics.blit(TEXTURE, this.leftPos + 99, this.topPos + 18, 183, 14, 14, 14);
-        } else if (isSameFluid(inputFluid, ModFluids.SUPERHOTSTEAM.getSource())) {
-            guiGraphics.blit(TEXTURE, this.leftPos + 99, this.topPos + 18, 183, 28, 14, 14);
-        } else if (isSameFluid(inputFluid, ModFluids.ULTRAHOTSTEAM.getSource())) {
-            guiGraphics.blit(TEXTURE, this.leftPos + 99, this.topPos + 18, 183, 42, 14, 14);
-        }
+        if (turbine != null) { // тайл может отсутствовать в реплее Flashback
+            Fluid inputFluid = turbine.getTanks()[0].getTankType();
+            if (isSameFluid(inputFluid, ModFluids.STEAM.getSource())) {
+                guiGraphics.blit(TEXTURE, this.leftPos + 99, this.topPos + 18, 183, 0, 14, 14);
+            } else if (isSameFluid(inputFluid, ModFluids.HOTSTEAM.getSource())) {
+                guiGraphics.blit(TEXTURE, this.leftPos + 99, this.topPos + 18, 183, 14, 14, 14);
+            } else if (isSameFluid(inputFluid, ModFluids.SUPERHOTSTEAM.getSource())) {
+                guiGraphics.blit(TEXTURE, this.leftPos + 99, this.topPos + 18, 183, 28, 14, 14);
+            } else if (isSameFluid(inputFluid, ModFluids.ULTRAHOTSTEAM.getSource())) {
+                guiGraphics.blit(TEXTURE, this.leftPos + 99, this.topPos + 18, 183, 42, 14, 14);
+            }
 
-        int power = turbine.getPowerScaled(34);
-        if (power > 0) {
-            guiGraphics.blit(TEXTURE, this.leftPos + 123, this.topPos + 69 - power, 176, 34 - power, 7, power);
-        }
+            int power = turbine.getPowerScaled(34);
+            if (power > 0) {
+                guiGraphics.blit(TEXTURE, this.leftPos + 123, this.topPos + 69 - power, 176, 34 - power, 7, power);
+            }
 
-        if (isSameFluid(turbine.getTanks()[1].getTankType(), ModFluids.NONE.getSource())) {
-            drawInfoPanel(guiGraphics, -16, 68, PanelType.LARGE_RED_EXCLAMATION);
-        }
+            if (isSameFluid(turbine.getTanks()[1].getTankType(), ModFluids.NONE.getSource())) {
+                drawInfoPanel(guiGraphics, -16, 68, PanelType.LARGE_RED_EXCLAMATION);
+            }
 
-        turbine.getTanks()[0].renderTank(guiGraphics, this.leftPos + 62, this.topPos + 69, 16, 52);
-        turbine.getTanks()[1].renderTank(guiGraphics, this.leftPos + 134, this.topPos + 69, 16, 52);
+            turbine.getTanks()[0].renderTank(guiGraphics, this.leftPos + 62, this.topPos + 69, 16, 52);
+            turbine.getTanks()[1].renderTank(guiGraphics, this.leftPos + 134, this.topPos + 69, 16, 52);
+        }
     }
 
     @Override
@@ -71,19 +73,21 @@ public class GUIMachineLargeTurbine extends GuiInfoScreen<MachineLargeTurbineMen
         com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        FluidTank[] tanks = turbine.getTanks();
-        tanks[0].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 62, this.topPos + 17, 16, 52);
-        tanks[1].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 134, this.topPos + 17, 16, 52);
+        if (turbine != null) {
+            FluidTank[] tanks = turbine.getTanks();
+            tanks[0].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 62, this.topPos + 17, 16, 52);
+            tanks[1].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 134, this.topPos + 17, 16, 52);
 
-        drawElectricityInfo(guiGraphics, mouseX, mouseY,
-                123, 35, 7, 34,
-                turbine.getEnergyStored(), turbine.getMaxEnergyStored());
+            drawElectricityInfo(guiGraphics, mouseX, mouseY,
+                    123, 35, 7, 34,
+                    turbine.getEnergyStored(), turbine.getMaxEnergyStored());
 
-        if (isSameFluid(turbine.getTanks()[1].getTankType(), ModFluids.NONE.getSource())) {
-            drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                    -16, 68, 16, 16,
-                    mouseX, mouseY,
-                    Component.literal("Error: Invalid fluid!"));
+            if (isSameFluid(turbine.getTanks()[1].getTankType(), ModFluids.NONE.getSource())) {
+                drawCustomInfoStat(guiGraphics, mouseX, mouseY,
+                        -16, 68, 16, 16,
+                        mouseX, mouseY,
+                        Component.literal("Error: Invalid fluid!"));
+            }
         }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);

@@ -253,6 +253,26 @@ public final class OcclusionCullingHelper {
         return occlusionCacheKey(pos);
     }
 
+    /**
+     * Определяет, что в данный момент идёт рендер через фейковый мир контрапшена Create.
+     * Делегирует {@link com.hbm_m.compat.ContraptionRenderCompat}, чтобы вся кодовая база
+     * использовала одну и ту же проверку.
+     */
+    private static boolean isContraptionRenderLevel(@Nullable Level level) {
+        return level != null && com.hbm_m.compat.ContraptionRenderCompat.isContraptionRenderLevel(level);
+    }
+
+    /**
+     * Overload для BER-пути: проверяет контрапшен-рендер по {@code be.getLevel()}
+     * (который в контрапшене равен VirtualRenderWorld, а в обычном мире — ClientLevel).
+     * Большинство машин-рендереров передают {@code minecraft.level}, который всегда
+     * ClientLevel, и не различают эти случаи; эта перегрузка даёт корректный путь.
+     */
+    public static boolean shouldRender(@Nullable net.minecraft.world.level.block.entity.BlockEntity be, AABB renderBounds) {
+        if (be == null) return true;
+        return shouldRender(be.getBlockPos(), be.getLevel(), renderBounds);
+    }
+
     public static boolean shouldRender(BlockPos pos, Level level, AABB renderBounds) {
         if (!ModClothConfig.get().enableOcclusionCulling) return true;
 
@@ -260,6 +280,22 @@ public final class OcclusionCullingHelper {
         // captured in blockEntityPassFrustum. Culling here would drop off-screen casters
         // whose shadows are still visible on screen.
         if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
+            return true;
+        }
+
+        // Контрапшен Create (см. ContraptionRenderCompat): если BE висит на фейковом
+        // VirtualRenderWorld/ContraptionWorld, его реальная BlockPos далеко от камеры,
+        // AABB в world-space фрустуме её отбраковывает, ray-march идёт по реальному
+        // уровню (где в позиции BE ничего нет). Пропускаем кулинг — контрапшен сам
+        // решает, что рисовать, через BitSet shouldRenderBlockEntities.
+        if (isContraptionRenderLevel(level)) {
+            return true;
+        }
+
+        // Sable/Aeronautics sublevel: уровень — обычный ClientLevel, но блоки лежат
+        // в plot-grid (~160k+ блоков). Фрустум-тест по сохранённой позиции отбросит
+        // машину, хотя на корабле она видима. Аномальная дальность = спец-рендер.
+        if (com.hbm_m.compat.ContraptionRenderCompat.isFarFromCamera(pos)) {
             return true;
         }
 

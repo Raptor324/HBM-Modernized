@@ -73,16 +73,10 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
                                LegacyAnimator animator, float partialTick, int packedLight,
                                int packedOverlay, PoseStack poseStack, MultiBufferSource bufferSource) {
         BlockPos blockPos = blockEntity.getBlockPos();
-        AABB bounds = blockEntity.getRenderBoundingBox();
 
-        var minecraft = Minecraft.getInstance();
-        if (minecraft.level == null || !OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, bounds)) {
-            return;
-        }
-
-        float staticFade = RenderDistanceHelper.computeStaticFade(blockEntity);
-        if (staticFade < 0) return;
-        SingleMeshVboRenderer.setFadeAlpha(staticFade);
+        // Куллинг + fade: в контрапшене Create BE.getLevel() — VirtualRenderWorld,
+        // shouldRender() его распознаёт и пропускает frustum/ray-march кулинг.
+        if (applyCullingAndStaticFade(blockEntity) < 0) return;
 
         int blockLight = LightTexture.block(packedLight);
         int skyLight = LightTexture.sky(packedLight);
@@ -108,7 +102,9 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
 
         // Base рендерится через BlockState/BakedModel (запечён в чанк Embeddium/Sodium)
 
-        float animFade = RenderDistanceHelper.computeAnimatedFade(blockPos);
+        // BE-оверлоад: bypass fade/cull для контрапшенов и Sable sublevel
+        // (raw BlockPos в sublevel ~40M от origin → distanceSqToCamera гигантский → fade=-1).
+        float animFade = RenderDistanceHelper.computeAnimatedFade(blockEntity);
         if (animFade < 0) return null;
         float savedFade = SingleMeshVboRenderer.getFadeAlpha();
         SingleMeshVboRenderer.setFadeAlpha(Math.min(savedFade, animFade));

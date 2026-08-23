@@ -3,19 +3,19 @@ package com.hbm_m.test;
 import com.hbm_m.lib.RefStrings;
 
 /**
- * Регистрация GameTest-классов на мод-шине.
+ * Registers GameTest classes on the mod bus.
  *
- * <p>Кросс-лоадерная (Forge 1.20.1 / NeoForge 1.21.1) регистрация через
- * {@code RegisterGameTestsEvent}. Оба тестовых класса регистрируются явно
- * через событие — это надёжнее авто-дискавери и работает идентично на обеих
- * версиях.
+ * <p>Cross-loader (Forge 1.20.1 / NeoForge 1.21.1) registration via
+ * {@code RegisterGameTestsEvent}. Both test classes are registered explicitly
+ * through the event — more reliable than auto-discovery and works identically
+ * on both versions.
  *
- * <p>На Forge 1.20.1 событие — {@code net.minecraftforge.event.RegisterGameTestsEvent};
- * на NeoForge 1.21.1 — {@code net.neoforged.neoforge.event.RegisterGameTestsEvent}.
- * Оба имеют {@code event.register(Class)}, но это РАЗНЫЕ классы, поэтому gating
- * по лоадеру через stonecutter ({@code //? if forge} / {@code //? if neoforge}).
+ * <p>On Forge 1.20.1 the event is {@code net.minecraftforge.event.RegisterGameTestsEvent};
+ * on NeoForge 1.21.1 it is {@code net.neoforged.neoforge.event.RegisterGameTestsEvent}.
+ * Both have {@code event.register(Class)}, but they are DIFFERENT classes, hence the
+ * loader gating via stonecutter ({@code //? if forge} / {@code //? if neoforge}).
  *
- * <p>Шаблон {@code @EventBusSubscriber} повторяет эталон из
+ * <p>The {@code @EventBusSubscriber} pattern mirrors the reference in
  * {@link com.hbm_m.radiation.ChunkRadiationManager} / {@link com.hbm_m.client.ClientSetup}:
  * Forge — {@code @Mod.EventBusSubscriber}; NeoForge — {@code @EventBusSubscriber}.
  */
@@ -44,6 +44,13 @@ public final class GameTestRegistration {
         event.register(CrossLoaderParityGameTest.class);
         event.register(RadiationGameTest.class);
         event.register(MachineCraftingGameTest.class);
+        event.register(RadiationObservabilityGameTest.class);
+        event.register(SteelCrateGameTest.class);
+        event.register(StorageCrateVariantGameTest.class);
+        event.register(SandbagGameTest.class);
+        event.register(LegacyWoodBarrierGameTest.class);
+        event.register(SteelTrapdoorGameTest.class);
+        event.register(EnergyNetworkGameTest.class);
     }
     //?} elif neoforge {
     /*@SubscribeEvent
@@ -52,6 +59,16 @@ public final class GameTestRegistration {
         event.register(CrossLoaderParityGameTest.class);
         event.register(RadiationGameTest.class);
         event.register(MachineCraftingGameTest.class);
+        event.register(RadiationObservabilityGameTest.class);
+        event.register(SteelCrateGameTest.class);
+        event.register(StorageCrateVariantGameTest.class);
+        event.register(SandbagGameTest.class);
+        event.register(LegacyWoodBarrierGameTest.class);
+        event.register(SteelTrapdoorGameTest.class);
+        event.register(EnergyNetworkGameTest.class);
     }
     *///?}
 }
+
+
+

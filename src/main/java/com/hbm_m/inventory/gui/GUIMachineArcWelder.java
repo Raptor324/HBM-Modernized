@@ -32,26 +32,30 @@ public class GUIMachineArcWelder extends GuiInfoScreen<MachineArcWelderMenu> {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
-        int power = (int) (arcWelder.getEnergyStored() * 52L / Math.max(arcWelder.getMaxEnergyStored(), 1L));
-        if (power > 52) {
-            power = 52;
-        }
-        if (power > 0) {
-            guiGraphics.blit(TEXTURE, this.leftPos + 152, this.topPos + 70 - power, 176, 52 - power, 16, power);
-        }
+        if (arcWelder != null) { // тайл может отсутствовать в реплее Flashback
+            int power = (int) (arcWelder.getEnergyStored() * 52L / Math.max(arcWelder.getMaxEnergyStored(), 1L));
+            if (power > 52) {
+                power = 52;
+            }
+            if (power > 0) {
+                guiGraphics.blit(TEXTURE, this.leftPos + 152, this.topPos + 70 - power, 176, 52 - power, 16, power);
+            }
 
-        int progress = arcWelder.getProgressScaled(33);
-        if (progress > 0) {
-            guiGraphics.blit(TEXTURE, this.leftPos + 72, this.topPos + 37, 192, 0, progress, 14);
-        }
+            int progress = arcWelder.getProgressScaled(33);
+            if (progress > 0) {
+                guiGraphics.blit(TEXTURE, this.leftPos + 72, this.topPos + 37, 192, 0, progress, 14);
+            }
 
-        if (arcWelder.getEnergyStored() > 0) {
-            guiGraphics.blit(TEXTURE, this.leftPos + 156, this.topPos + 4, 176, 52, 9, 12);
+            if (arcWelder.getEnergyStored() > 0) {
+                guiGraphics.blit(TEXTURE, this.leftPos + 156, this.topPos + 4, 176, 52, 9, 12);
+            }
         }
 
         drawInfoPanel(guiGraphics, 78, 67, PanelType.SMALL_BLUE_INFO);
 
-        arcWelder.tank.renderTank(guiGraphics, this.leftPos + 35, this.topPos + 79, 34, 16);
+        if (arcWelder != null) {
+            arcWelder.tank.renderTank(guiGraphics, this.leftPos + 35, this.topPos + 79, 34, 16);
+        }
     }
 
     @Override
@@ -66,19 +70,21 @@ public class GUIMachineArcWelder extends GuiInfoScreen<MachineArcWelderMenu> {
         GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        drawElectricityInfo(guiGraphics, mouseX, mouseY,
-            152, 18, 16, 52,
-            arcWelder.getEnergyStored(), arcWelder.getMaxEnergyStored());
+        if (arcWelder != null) {
+            drawElectricityInfo(guiGraphics, mouseX, mouseY,
+                152, 18, 16, 52,
+                arcWelder.getEnergyStored(), arcWelder.getMaxEnergyStored());
 
-        drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-            this.leftPos + 78, this.topPos + 67, 8, 8,
-            this.leftPos + 78, this.topPos + 67,
-                Component.literal("Progress:"),
-                Component.literal("   " + arcWelder.getProgress() + " / " + arcWelder.getMaxProgress()));
+            drawCustomInfoStat(guiGraphics, mouseX, mouseY,
+                this.leftPos + 78, this.topPos + 67, 8, 8,
+                this.leftPos + 78, this.topPos + 67,
+                    Component.literal("Progress:"),
+                    Component.literal("   " + arcWelder.getProgress() + " / " + arcWelder.getMaxProgress()));
 
-        if (isPointInRect(35, 63, 34, 16, mouseX, mouseY)) {
-            arcWelder.tank.renderTankInfo(guiGraphics, this.font, mouseX, mouseY,
-                this.leftPos + 35, this.topPos + 63, 34, 16);
+            if (isPointInRect(35, 63, 34, 16, mouseX, mouseY)) {
+                arcWelder.tank.renderTankInfo(guiGraphics, this.font, mouseX, mouseY,
+                    this.leftPos + 35, this.topPos + 63, 34, 16);
+            }
         }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);

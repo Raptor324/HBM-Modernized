@@ -736,6 +736,39 @@ public class ModLanguageProviderRu extends LanguageProvider {
         // Тултип предмета «линзы» (как early_explosive_lenses.desc, 1.7.10)
         add("tooltip.hbm_m.fat_man_explosive.desc1", "Сборка из 8 осколочно-фугасных линз с алюминиевым");
         add("tooltip.hbm_m.fat_man_explosive.desc2", "толкателем, дюралюминиевой оболочкой и проволочными детонаторами.");
+        // Большие ядерные бомбы
+        add(ModBlocks.NUKE_GADGET.get(), "«Устройство»");
+        add(ModBlocks.NUKE_BOY.get(), "Малыш");
+        add(ModBlocks.NUKE_MIKE.get(), "Айви Майк");
+        add(ModBlocks.NUKE_TSAR.get(), "Царь-бомба");
+        add("container.hbm_m.nuke_gadget", "«Устройство»");
+        add("container.hbm_m.nuke_boy", "Ядерная бомба 'Малыш'");
+        add("container.hbm_m.nuke_mike", "Ядерная бомба 'Айви Майк'");
+        add("container.hbm_m.nuke_tsar", "Царь-бомба");
+        add(ModItems.EARLY_EXPLOSIVE_LENSES.get(), "Взрывные линзы первого поколения");
+        add(ModItems.EXPLOSIVE_LENSES.get(), "Взрывные линзы");
+        add(ModBlocks.NUKE_FLEIJA.get(), "Ф.Л.Е.Й.Д.Ж.А.");
+        add("container.hbm_m.nuke_fleija", "Ф.Л.Е.Й.Д.Ж.А.");
+        add(ModBlocks.NUKE_N2.get(), "Мина N²");
+        add("container.hbm_m.nuke_n2", "Мина N²");
+        add(ModBlocks.NUKE_SOLINIUM.get(), "«Синяя стирка»");
+        add("container.hbm_m.nuke_solinium", "«Синяя стирка»");
+        add(ModBlocks.NUKE_FSTBMB.get(), "Бомба бейлфайра");
+        add("container.hbm_m.nuke_fstbmb", "Бомба бейлфайра");
+        add(ModBlocks.NUKE_CUSTOM.get(), "Кастомная бомба");
+        add("container.hbm_m.nuke_custom", "Кастомная бомба");
+        add(ModBlocks.BOMB_MULTI.get(), "Многоцелевая бомба");
+        add("container.hbm_m.bomb_multi", "Многоцелевая бомба");
+        add("gui.hbm_m.bomb_multi.ready", "ГОТОВА — не подносить к редстоуну");
+        add("gui.hbm_m.nuke_fstbmb.start", "Взвести");
+        add("gui.hbm_m.nuke_fstbmb.timer", "Подрыв через %s");
+        add("gui.hbm_m.nuke_custom.euph", "Заряд: ЭЙФЕМИУМ — полное стирание");
+        add("gui.hbm_m.nuke_custom.schrab", "Заряд: ШРАБИДИУМ, радиус %s");
+        add("gui.hbm_m.nuke_custom.hydro", "Заряд: ВОДОРОД, радиус %s");
+        add("gui.hbm_m.nuke_custom.nuke", "Заряд: ЯДЕРНЫЙ, радиус %s");
+        add("gui.hbm_m.nuke_custom.tnt_big", "Заряд: КОНВЕНЦИОНАЛЬНЫЙ, радиус %s");
+        add("gui.hbm_m.nuke_custom.tnt_small", "Заряд: слабое конвенциональное ВВ");
+        add("gui.hbm_m.nuke_custom.empty", "Заряд: пусто");
         add(ModBlocks.MINE_AP.get(), "Противопехотная мина");
         add(ModItems.GRENADE_NUC.get(), "Ядерная граната");
         add(ModItems.GRENADE_IF_HE.get(), "IF-Граната: фугасная");
@@ -1266,6 +1299,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("armorMod.type.battery", "Аккумулятор");
 
         add("gui.hbm_m.blast_furnace.accepts", "Принимает предметы со стороны: %s");
+        add("gui.hbm_m.blast_furnace.speed", "Скорость: %s%%");
         add("direction.hbm_m.down", "Вниз");
         add("direction.hbm_m.up", "Вверх");
         add("direction.hbm_m.north", "Север");
@@ -1696,6 +1730,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("fluid.hbm_m.plasma_xm", "Xenon-Mercury Plasma");
         add("fluid.hbm_m.plasma_bf", "Balefire Plasma");
         add("fluid.hbm_m.steam", "Steam");
+        add("fluid.hbm_m.airblast", "Воздушное дутьё");
+        add("fluid.hbm_m.flue", "Дымовые газы");
         add("fluid.hbm_m.hotsteam", "Hot Steam");
         add("fluid.hbm_m.superhotsteam", "Super Hot Steam");
         add("fluid.hbm_m.ultrahotsteam", "Ultra Hot Steam");
@@ -2541,3 +2577,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
     }
 }
 //?}
+
+
+

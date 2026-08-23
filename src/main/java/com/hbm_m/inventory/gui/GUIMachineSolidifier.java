@@ -31,6 +31,8 @@ public class GUIMachineSolidifier extends GuiInfoScreen<MachineSolidifierMenu> {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (solidifier == null) return;
 
         int power = (int) (solidifier.getEnergyStored() * 52L / Math.max(1L, solidifier.getMaxEnergyStored()));
         guiGraphics.blit(TEXTURE, this.leftPos + 134, this.topPos + 70 - power, 176, 52 - power, 16, power);
@@ -58,11 +60,14 @@ public class GUIMachineSolidifier extends GuiInfoScreen<MachineSolidifierMenu> {
         com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (solidifier != null) {
         solidifier.getTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 35, this.topPos + 36, 16, 52);
 
         drawElectricityInfo(guiGraphics, mouseX, mouseY,
                 134, 18, 16, 52,
                 solidifier.getEnergyStored(), solidifier.getMaxEnergyStored());
+        }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

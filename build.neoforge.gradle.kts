@@ -96,11 +96,26 @@ dependencies {
 	"compileOnly"("com.simibubi.create:create-$mcVer:${prop("deps.create")}:slim") {
 		isTransitive = false
 	}
+	// Sable (экосистема Create Aeronautics): compileOnly только для валидации
+	// строковых таргетов миксинов (@Mixin(targets = "...")) на этапе компиляции.
+	// В рантайм не пакуется; в отсутствие Sable миксины просто не применяются.
+	"compileOnly"("maven.modrinth:sable:2.0.5+mc1.21.1")
+
+	// Рантайм-зависимости для ручного тестирования интеграции с Create
+	// Aeronautics / Sable в runClient (только 1.21.1 - на других версиях
+	// этих модов нет). Create 6.x тащит Flywheel/Ponder внутри себя (jarJar).
+	if (stonecutter.current.version == "1.21.1") {
+		"runtimeOnly"("maven.modrinth:create:6.0.10+mc1.21.1")
+		"runtimeOnly"("maven.modrinth:sable:2.0.5+mc1.21.1")
+		"runtimeOnly"("maven.modrinth:create-aeronautics:1.3.1+mc1.21.1") // bundled: simulated + offroad внутри
+	}
 	// В NeoForge артефакт называется flywheel-neoforge-api
 	"compileOnly"("dev.engine-room.flywheel:flywheel-neoforge-api-$mcVer:${prop("deps.flywheel")}")
-	"compileOnly"("curse.maven:jei-238222:${prop("deps.jei")}")
-	"runtimeOnly"("curse.maven:jei-238222:${prop("deps.jei")}")
+	"compileOnly"("maven.modrinth:u6dRKJwZ:${prop("deps.jei")}")
+	"runtimeOnly"("maven.modrinth:u6dRKJwZ:${prop("deps.jei")}")
 	"runtimeOnly"("maven.modrinth:l6YH9Als:v5qtqRQi") // spark
+	"runtimeOnly"("maven.modrinth:1bokaNcj:JXvcT1hp") // xaeros minimap
+	"runtimeOnly"("maven.modrinth:NcUtCpym:fOv9QzLO") // xaeros world map
 	
 }
 
@@ -211,23 +226,6 @@ tasks.withType<JavaCompile>().configureEach {
 }
 
 stonecutter {
-	val isModern = current.parsed >= "1.21.11"
-
-	replacements.regex(isModern) {
-		replace("\\bResourceLocation\\b", "Identifier")
-		reversePattern.set("\\bIdentifier\\b")
-		reverseValue.set("ResourceLocation")
-	}
-
-	replacements.regex(isModern) {
-		replace("\\blocation\\(\\)", "identifier()")
-		reversePattern.set("\\bidentifier\\(\\)")
-		reverseValue.set("location()")
-	}
-
-	replacements.regex(isModern) {
-		replace("net\\.minecraft\\.resources\\.ResourceLocation", "net.minecraft.util.Identifier")
-		reversePattern.set("net\\.minecraft\\.util\\.Identifier")
-		reverseValue.set("net.minecraft.resources.ResourceLocation")
-	}
 }
+
+

@@ -29,6 +29,7 @@ import com.hbm_m.client.loader.MissileModelLoader;
 import com.hbm_m.client.render.missile.MissileRenderHelper;
 import com.hbm_m.client.loader.PressModelLoader;
 import com.hbm_m.client.loader.TemplateModelLoader;
+// import com.hbm_m.client.loader.TestModelLoader;
 import com.hbm_m.client.model.ConnectedDecoBlockBakedModel;
 import com.hbm_m.client.overlay.OverlayGeiger;
 import com.hbm_m.client.overlay.OverlayInfoToast;
@@ -71,6 +72,7 @@ import com.hbm_m.client.render.implementations.RBMKColumnRenderer;
 import com.hbm_m.client.render.implementations.MissileEntityRenderer;
 import com.hbm_m.client.render.entity.mob.RenderCreeperUniversal;
 import com.hbm_m.client.render.implementations.NoloEntityRenderer;
+// import com.hbm_m.client.render.implementations.TestBlockRenderer;
 import com.hbm_m.client.render.shader.ShaderReloadListener;
 import com.hbm_m.client.tooltip.CrateContentsTooltipComponent;
 import com.hbm_m.client.tooltip.CrateContentsTooltipComponentRenderer;
@@ -314,6 +316,17 @@ public class ClientSetup {
         MainRegistry.LOGGER.info("RegisterMenuScreensEvent fired. Registering HBM screens.");
         registerScreens();
     }
+
+    @SubscribeEvent
+    public static void onRegisterClientExtensions(net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent event) {
+        var ext = com.hbm_m.powerarmor.ModPowerArmorItem.createNeoForgeClientExtensions();
+        event.registerItem(ext,
+                ModItems.T51_HELMET.get(), ModItems.T51_CHESTPLATE.get(), ModItems.T51_LEGGINGS.get(), ModItems.T51_BOOTS.get(),
+                ModItems.AJR_HELMET.get(), ModItems.AJR_CHESTPLATE.get(), ModItems.AJR_LEGGINGS.get(), ModItems.AJR_BOOTS.get(),
+                ModItems.AJRO_HELMET.get(), ModItems.AJRO_CHESTPLATE.get(), ModItems.AJRO_LEGGINGS.get(), ModItems.AJRO_BOOTS.get(),
+                ModItems.DNT_HELMET.get(), ModItems.DNT_CHESTPLATE.get(), ModItems.DNT_LEGGINGS.get(), ModItems.DNT_BOOTS.get(),
+                ModItems.BISMUTH_HELMET.get(), ModItems.BISMUTH_CHESTPLATE.get(), ModItems.BISMUTH_LEGGINGS.get(), ModItems.BISMUTH_BOOTS.get());
+    }
     *///?}
 
     private static void registerDebugClientCommands(RegisterClientCommandsEvent event) {
@@ -464,6 +477,13 @@ public class ClientSetup {
         MenuRegistry.registerScreenFactory(ModMenuTypes.LAUNCH_PAD_RUSTED_MENU.get(), GUILaunchPadRusted::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.NUKE_FAT_MAN_MENU.get(), com.hbm_m.inventory.gui.GUINukeFatMan::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.NUKE_PROTOTYPE_MENU.get(), com.hbm_m.inventory.gui.GUINukePrototype::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.LARGE_NUKE_MENU.get(), com.hbm_m.inventory.gui.GUINukeLarge::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.NUKE_FLEIJA_MENU.get(), com.hbm_m.inventory.gui.GUINukeFleija::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.NUKE_SOLINIUM_MENU.get(), com.hbm_m.inventory.gui.GUINukeSolinium::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.NUKE_N2_MENU.get(), com.hbm_m.inventory.gui.GUINukeN2::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.NUKE_FSTBMB_MENU.get(), com.hbm_m.inventory.gui.GUINukeFstbmb::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.NUKE_CUSTOM_MENU.get(), com.hbm_m.inventory.gui.GUINukeCustom::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.BOMB_MULTI_MENU.get(), com.hbm_m.inventory.gui.GUIBombMulti::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.VACUUM_DISTILL_MENU.get(), com.hbm_m.inventory.gui.GUIMachineVacuumDistill::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.HYDROTREATER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineHydrotreater::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.CORE_INJECTOR_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCoreInjector::new);
@@ -549,6 +569,7 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.SOYUZ_LAUNCHER_BE.get(), SoyuzLauncherRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.DECO_SOYUZ_ROCKET_BE.get(), com.hbm_m.client.render.implementations.SoyuzRocketRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.HEATING_OVEN_BE.get(), HeatingOvenRenderer::new);
+        // BlockEntityRenderers.register(ModBlockEntities.TEST_BE.get(), TestBlockRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.CRYSTALLIZER.get(), MachineCrystallizerRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), IndustrialTurbineRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.BATTERY_SOCKET_BE.get(), BatterySocketCreativeRenderer::new);
@@ -778,6 +799,13 @@ public class ClientSetup {
 
     @SubscribeEvent
     public static void onModelRegisterAdditional(ModelEvent.RegisterAdditional event) {
+        // Power armor: общие multipart-модели сетов (рендер на entity через OBJ-слои)
+        PlatformHooks.registerAdditionalModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.T51_MODEL_ID);
+        PlatformHooks.registerAdditionalModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.AJR_MODEL_ID);
+        PlatformHooks.registerAdditionalModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.AJRO_MODEL_ID);
+        PlatformHooks.registerAdditionalModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.BISMUTH_MODEL_ID);
+        PlatformHooks.registerAdditionalModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.DNT_MODEL_ID);
+
         PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_legacy"));
         PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/crystallizer_fluid"));
         PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/crystallizer_spinner"));
@@ -879,6 +907,7 @@ public class ClientSetup {
         PlatformHooks.registerGeometryLoader(event, "press_loader", new PressModelLoader());
         PlatformHooks.registerGeometryLoader(event, "missile_loader", new MissileModelLoader());
         PlatformHooks.registerGeometryLoader(event, "heating_oven_loader", new HeatingOvenModelLoader());
+        // PlatformHooks.registerGeometryLoader(event, "test", new TestModelLoader());
 
         //? if neoforge {
         /*event.register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("forge", "composite"), net.neoforged.neoforge.client.model.CompositeModel.Loader.INSTANCE);
@@ -889,6 +918,12 @@ public class ClientSetup {
         PlatformHooks.registerGeometryLoader(event, "radar_loader", new MachineRadarModelLoader());
         PlatformHooks.registerGeometryLoader(event, "soyuz_launcher_loader", new com.hbm_m.client.loader.SoyuzLauncherModelLoader());
         PlatformHooks.registerGeometryLoader(event, "soyuz_rocket_loader", new com.hbm_m.client.loader.SoyuzRocketModelLoader());
+
+        // Power armor OBJ loaders
+        PlatformHooks.registerGeometryLoader(event, "t51_armor_parts", new com.hbm_m.powerarmor.render.T51ArmorModelLoader());
+        PlatformHooks.registerGeometryLoader(event, "ajr_armor_parts", new com.hbm_m.powerarmor.render.AJRArmorModelLoader());
+        PlatformHooks.registerGeometryLoader(event, "bismuth_armor_parts", new com.hbm_m.powerarmor.render.BismuthArmorModelLoader());
+        PlatformHooks.registerGeometryLoader(event, "dnt_armor_parts", new com.hbm_m.powerarmor.render.DNTArmorModelLoader());
 
         MainRegistry.LOGGER.info("Registered geometry loaders successfully");
     }
@@ -966,6 +1001,8 @@ public class ClientSetup {
         event.registerEntityRenderer(ModEntities.AIRSTRIKE_AGENT_ENTITY.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.NUKE_FALLOUT_RAIN.get(), RenderFallout::new);
         event.registerEntityRenderer(ModEntities.NUKE_MK3.get(), ctx -> new EmptyEntityRenderer<>(ctx));
+        event.registerEntityRenderer(ModEntities.SOLINIUM_EXPLOSION.get(), ctx -> new EmptyEntityRenderer<>(ctx));
+        event.registerEntityRenderer(ModEntities.BALEFIRE_EXPLOSION.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.TOM_METEOR.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.TOM_BLAST.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.CLOUD_FLEIJA.get(), RenderCloudFleija::new);

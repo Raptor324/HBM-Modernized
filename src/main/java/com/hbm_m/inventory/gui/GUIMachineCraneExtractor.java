@@ -34,13 +34,15 @@ public class GUIMachineCraneExtractor extends GuiInfoScreen<MachineCraneExtracto
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
-        if (extractor.isMaxEject()) {
-            guiGraphics.blit(TEXTURE, this.leftPos + 187, this.topPos + 34, 212, 0, 18, 18);
-        }
-        if (extractor.isWhitelist()) {
-            guiGraphics.blit(TEXTURE, this.leftPos + 139, this.topPos + 33, 212, 18, 3, 6);
-        } else {
-            guiGraphics.blit(TEXTURE, this.leftPos + 139, this.topPos + 47, 212, 18, 3, 6);
+        if (extractor.isMaxEject() || extractor.isWhitelist()) { // тайл может отсутствовать в реплее Flashback
+            if (extractor.isMaxEject()) {
+                guiGraphics.blit(TEXTURE, this.leftPos + 187, this.topPos + 34, 212, 0, 18, 18);
+            }
+            if (extractor.isWhitelist()) {
+                guiGraphics.blit(TEXTURE, this.leftPos + 139, this.topPos + 33, 212, 18, 3, 6);
+            } else {
+                guiGraphics.blit(TEXTURE, this.leftPos + 139, this.topPos + 47, 212, 18, 3, 6);
+            }
         }
     }
 
@@ -56,7 +58,7 @@ public class GUIMachineCraneExtractor extends GuiInfoScreen<MachineCraneExtracto
         com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < 9 && extractor != null; i++) {
             Slot slot = this.menu.slots.get(i);
             String mode = extractor.getMatcher().getMode(i);
             if (mode != null && isHoveringSlot(slot, mouseX, mouseY)) {
@@ -67,7 +69,7 @@ public class GUIMachineCraneExtractor extends GuiInfoScreen<MachineCraneExtracto
             }
         }
 
-        if (isHovering(187, 34, 18, 18, mouseX, mouseY)) {
+        if (extractor != null && isHovering(187, 34, 18, 18, mouseX, mouseY)) {
             drawCustomInfoStat(guiGraphics, mouseX, mouseY, 187, 34, 18, 18, mouseX, mouseY,
                     Component.literal("Only take maximum possible: " + (extractor.isMaxEject() ? "ON" : "OFF")));
         }
@@ -77,6 +79,7 @@ public class GUIMachineCraneExtractor extends GuiInfoScreen<MachineCraneExtracto
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (extractor == null) return super.mouseClicked(mouseX, mouseY, button); // тайл может отсутствовать в реплее Flashback
         for (int i = 0; i < 9; i++) {
             Slot slot = this.menu.slots.get(i);
             if (isHoveringSlot(slot, (int) mouseX, (int) mouseY) && button == 1 && slot.hasItem()) {

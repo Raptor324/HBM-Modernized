@@ -32,6 +32,8 @@ public class GUIMachinePyroOven extends GuiInfoScreen<MachinePyroOvenMenu> {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (pyro == null) return;
         int power = (int) (pyro.getEnergyStored() * 52L / Math.max(1L, pyro.getMaxEnergyStored()));
         guiGraphics.blit(TEXTURE, this.leftPos + 152, this.topPos + 70 - power, 176, 64 - power, 16, power);
 
@@ -54,12 +56,15 @@ public class GUIMachinePyroOven extends GuiInfoScreen<MachinePyroOvenMenu> {
         com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (pyro != null) {
         pyro.getTank0().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 8, this.topPos + 18, 16, 52);
         pyro.getTank1().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 116, this.topPos + 18, 16, 52);
 
         drawElectricityInfo(guiGraphics, mouseX, mouseY,
                 152, 18, 16, 52,
                 pyro.getEnergyStored(), pyro.getMaxEnergyStored());
+        }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

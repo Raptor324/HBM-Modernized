@@ -31,7 +31,9 @@ public class GUIMachineCraneBoxer extends GuiInfoScreen<MachineCraneBoxerMenu> {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
-        guiGraphics.blit(TEXTURE, this.leftPos + 151, this.topPos + 34, 176, boxer.getMode() * 18, 18, 18);
+        if (boxer != null) { // тайл может отсутствовать в реплее Flashback
+            guiGraphics.blit(TEXTURE, this.leftPos + 151, this.topPos + 34, 176, boxer.getMode() * 18, 18, 18);
+        }
     }
 
     @Override
@@ -46,7 +48,7 @@ public class GUIMachineCraneBoxer extends GuiInfoScreen<MachineCraneBoxerMenu> {
         com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        if (isHovering(151, 34, 18, 18, mouseX, mouseY)) {
+        if (boxer != null && isHovering(151, 34, 18, 18, mouseX, mouseY)) {
             drawCustomInfoStat(guiGraphics, mouseX, mouseY, 151, 34, 18, 18, mouseX, mouseY,
                     Component.literal(modeLabel(boxer.getMode())));
         }
@@ -65,7 +67,7 @@ public class GUIMachineCraneBoxer extends GuiInfoScreen<MachineCraneBoxerMenu> {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (isHovering(151, 34, 18, 18, (int) mouseX, (int) mouseY)) {
+        if (boxer != null && isHovering(151, 34, 18, 18, (int) mouseX, (int) mouseY)) {
             boxer.nextMode();
             return true;
         }

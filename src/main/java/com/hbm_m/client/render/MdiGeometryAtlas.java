@@ -86,17 +86,16 @@ public final class MdiGeometryAtlas {
         }
     }
 
-    /** Cached per-renderer geometry record (so re-uploads can replay all parts). */
+    /** Cached per-renderer geometry record (shares native buffer views with InstancedStaticPartRenderer). */
     private static final class GeoRecord {
-        final ByteBuffer vertexBytesCopy;
-        final IntBuffer indicesCopy;
-        /** Снимок размеров на момент регистрации — смена без смены ключа рендерера → перерегистрация. */
+        final ByteBuffer vertexBytesView;
+        final IntBuffer indicesView;
         final int registeredVertexBytesLen;
         final int registeredIndexCount;
         Slot slot;
         GeoRecord(ByteBuffer vb, IntBuffer ib, int registeredVertexBytesLen, int registeredIndexCount) {
-            this.vertexBytesCopy = vb;
-            this.indicesCopy = ib;
+            this.vertexBytesView = vb;
+            this.indicesView = ib;
             this.registeredVertexBytesLen = registeredVertexBytesLen;
             this.registeredIndexCount = registeredIndexCount;
         }
@@ -173,18 +172,8 @@ public final class MdiGeometryAtlas {
     }
 
     private void destroyInternal() {
-        for (GeoRecord rec : geometryByRenderer.values()) {
-            try {
-                if (rec.vertexBytesCopy != null) {
-                    MemoryUtil.memFree(rec.vertexBytesCopy);
-                }
-                if (rec.indicesCopy != null) {
-                    MemoryUtil.memFree(rec.indicesCopy);
-                }
-            } catch (Throwable t) {
-                MainRegistry.LOGGER.warn("[HBM-M MDI] GeoRecord native free: {}", t.toString());
-            }
-        }
+        // Native-память принадлежит InstancedStaticPartRenderer и освобождается в его cleanup().
+        // Здесь повторный memFree не нужен, так как GeoRecord хранит срез без отдельного memAlloc.
         geometryByRenderer.clear();
         vertexUsedBytes = 0L;
         indexUsedBytes = 0L;
@@ -194,21 +183,11 @@ public final class MdiGeometryAtlas {
         }
         GLCapabilitiesGuard guard = GLCapabilitiesGuard.snapshot();
         try {
-            if (vaoId != 0) {
-                GL30.glDeleteVertexArrays(vaoId);
-            }
-            if (vertexVboId != 0) {
-                GL15.glDeleteBuffers(vertexVboId);
-            }
-            if (indexEboId != 0) {
-                GL15.glDeleteBuffers(indexEboId);
-            }
-            if (instanceVboId != 0) {
-                GL15.glDeleteBuffers(instanceVboId);
-            }
-            if (indirectBufId != 0) {
-                GL15.glDeleteBuffers(indirectBufId);
-            }
+            if (vaoId != 0) GL30.glDeleteVertexArrays(vaoId);
+            if (vertexVboId != 0) GL15.glDeleteBuffers(vertexVboId);
+            if (indexEboId != 0) GL15.glDeleteBuffers(indexEboId);
+            if (instanceVboId != 0) GL15.glDeleteBuffers(instanceVboId);
+            if (indirectBufId != 0) GL15.glDeleteBuffers(indirectBufId);
         } finally {
             guard.restore();
         }
@@ -401,16 +380,6 @@ public final class MdiGeometryAtlas {
     private void evictRendererLocked(InstancedStaticPartRenderer renderer) {
         GeoRecord rec = geometryByRenderer.remove(renderer);
         if (rec == null) return;
-        try {
-            if (rec.vertexBytesCopy != null) {
-                MemoryUtil.memFree(rec.vertexBytesCopy);
-            }
-            if (rec.indicesCopy != null) {
-                MemoryUtil.memFree(rec.indicesCopy);
-            }
-        } catch (Throwable t) {
-            MainRegistry.LOGGER.warn("[HBM-M MDI] evict GeoRecord native free: {}", t.toString());
-        }
         if (geometryByRenderer.isEmpty()) {
             vertexUsedBytes = 0L;
             indexUsedBytes = 0L;
@@ -441,8 +410,6 @@ public final class MdiGeometryAtlas {
                     return existing.slot;
                 }
             }
-            // «Битая» запись (slot null после частичного сбоя) или смена размеров — выкинуть,
-            // иначе put() перезапишет ключ без memFree старых native-копий.
             evictRendererLocked(renderer);
         }
 
@@ -453,37 +420,21 @@ public final class MdiGeometryAtlas {
         long indexBytesLen = (long) indexCount * 4L;
         long vertexCount = vertexBytesLen / VERTEX_STRIDE_BYTES;
 
-        // Take a copy so we can replay on growth. We dup() to capture the
-        // current position/limit without disturbing the caller's view.
-        ByteBuffer vbCopy = MemoryUtil.memAlloc((int) vertexBytesLen);
-        vbCopy.put(vertexBytesView);
-        vbCopy.flip();
-
-        IntBuffer ibCopy = MemoryUtil.memAllocInt(indexCount);
-        ibCopy.put(indicesView);
-        ibCopy.flip();
-
-        GeoRecord rec = new GeoRecord(vbCopy, ibCopy, (int) vertexBytesLen, indexCount);
+        // ПЕРЕИСПОЛЬЗУЕМ view-буферы напрямую без повторного memAlloc!
+        GeoRecord rec = new GeoRecord(vertexBytesView, indicesView, (int) vertexBytesLen, indexCount);
         try {
-            // Grow if needed (rare).
             ensureVertexCapacity(vertexUsedBytes + vertexBytesLen);
             ensureIndexCapacity(indexUsedBytes + indexBytesLen);
 
             int baseVertex = (int) (vertexUsedBytes / VERTEX_STRIDE_BYTES);
-            // Смещение начала куска индексов в EBO (байты). Indirect: firstIndex = firstIndexBytes / 4 (UNSIGNED_INT).
             int firstIndexBytes = (int) indexUsedBytes;
 
-            // Upload at current high-water marks.
             GLCapabilitiesGuard guard = GLCapabilitiesGuard.snapshot();
             try {
                 GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vertexVboId);
-                // LWJGL nio overloads of glBufferSubData consume the buffer
-                // (position advances to limit). Upload via a duplicate so the
-                // cached copy stays fully readable for any later repack
-                // triggered by ensureVertexCapacity / ensureIndexCapacity.
-                GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, vertexUsedBytes, vbCopy.duplicate());
+                GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, vertexUsedBytes, vertexBytesView.duplicate());
                 GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, indexEboId);
-                GL15.glBufferSubData(GL15.GL_ELEMENT_ARRAY_BUFFER, indexUsedBytes, ibCopy.duplicate());
+                GL15.glBufferSubData(GL15.GL_ELEMENT_ARRAY_BUFFER, indexUsedBytes, indicesView.duplicate());
             } finally {
                 guard.restore();
             }
@@ -498,11 +449,10 @@ public final class MdiGeometryAtlas {
             return rec.slot;
         } catch (Throwable t) {
             MainRegistry.LOGGER.error("[HBM-M MDI] Geometry registration failed", t);
-            MemoryUtil.memFree(vbCopy);
-            MemoryUtil.memFree(ibCopy);
             return null;
         }
     }
+
 
     private void ensureVertexCapacity(long requiredBytes) {
         if (requiredBytes <= vertexCapBytes) return;
@@ -552,36 +502,24 @@ public final class MdiGeometryAtlas {
             for (Map.Entry<InstancedStaticPartRenderer, GeoRecord> e : geometryByRenderer.entrySet()) {
                 GeoRecord rec = e.getValue();
                 String rid = Integer.toHexString(System.identityHashCode(e.getKey()));
-                if (rec.vertexBytesCopy == null || rec.indicesCopy == null) {
+                if (rec.vertexBytesView == null || rec.indicesView == null) {
                     rec.slot = null;
-                    MainRegistry.LOGGER.warn(
-                            "[HBM-M MDI] repack skip: null native copy rid=0x{} — slot invalidated (stale offsets after buffer resize)",
-                            rid);
                     continue;
                 }
-                // Явные границы по полям регистрации: duplicate().rewind() недостаточен,
-                // если limit/position на кэше когда-либо сдвинулись — получаем пропуски
-                // записей и слоты на неинициализированный VBO.
                 if (rec.registeredVertexBytesLen <= 0 || rec.registeredIndexCount <= 0) {
                     rec.slot = null;
-                    MainRegistry.LOGGER.warn(
-                            "[HBM-M MDI] repack skip: non-positive registered sizes rid=0x{} — slot invalidated",
-                            rid);
                     continue;
                 }
-                ByteBuffer vbView = rec.vertexBytesCopy.duplicate();
+                ByteBuffer vbView = rec.vertexBytesView.duplicate();
                 vbView.clear();
                 vbView.limit(rec.registeredVertexBytesLen);
-                IntBuffer ibView = rec.indicesCopy.duplicate();
+                IntBuffer ibView = rec.indicesView.duplicate();
                 ibView.clear();
                 ibView.limit(rec.registeredIndexCount);
                 int vLen = vbView.remaining();
                 int idxCount = ibView.remaining();
                 if (vLen != rec.registeredVertexBytesLen || idxCount != rec.registeredIndexCount) {
                     rec.slot = null;
-                    MainRegistry.LOGGER.warn(
-                            "[HBM-M MDI] repack skip: buffer view len mismatch rid=0x{} vLen={} expV={} idxCount={} expI={} — slot invalidated",
-                            rid, vLen, rec.registeredVertexBytesLen, idxCount, rec.registeredIndexCount);
                     continue;
                 }
                 long idxBytes = (long) idxCount * 4L;

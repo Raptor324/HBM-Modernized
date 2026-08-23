@@ -30,35 +30,35 @@ public final class BlastFurnaceRecipeGenerator {
                 new ItemStack(ModItems.getIngot(ModIngots.STEEL).get()),
                 Ingredient.of(Items.IRON_INGOT),
                 Ingredient.of(ItemTags.COALS)
-        ).save(writer, "blast_furnace/steel_from_ingot");
+        ).duration(800).save(writer, "blast_furnace/steel_from_ingot");
 
         // IRON.ore() + COAL -> steel x2
         BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
                 new ItemStack(ModItems.getIngot(ModIngots.STEEL).get(), 2),
                 Ingredient.of(Tags.Items.ORES_IRON),
                 Ingredient.of(ItemTags.COALS)
-        ).save(writer, "blast_furnace/steel_from_ore");
+        ).duration(800).save(writer, "blast_furnace/steel_from_ore");
 
         // IRON.ore() + COAL_BLOCK -> steel x3 (coal block burns hotter, like coke)
         BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
                 new ItemStack(ModItems.getIngot(ModIngots.STEEL).get(), 3),
                 Ingredient.of(Tags.Items.ORES_IRON),
                 Ingredient.of(Items.COAL_BLOCK)
-        ).save(writer, "blast_furnace/steel_from_ore_coal_block");
+        ).duration(1200).save(writer, "blast_furnace/steel_from_ore_coal_block");
 
         // IRON.ore() + coal powder -> steel x3 (flux-like)
         BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
                 new ItemStack(ModItems.getIngot(ModIngots.STEEL).get(), 3),
                 Ingredient.of(Tags.Items.ORES_IRON),
                 Ingredient.of(ModItems.getPowders(ModPowders.COAL).get())
-        ).save(writer, "blast_furnace/steel_from_ore_powder");
+        ).duration(1200).save(writer, "blast_furnace/steel_from_ore_powder");
 
         // CU + REDSTONE -> red_copper x2
         BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
                 new ItemStack(ModItems.getIngot(ModIngots.RED_COPPER).get(), 2),
                 Ingredient.of(Items.COPPER_INGOT),
                 Ingredient.of(Items.REDSTONE)
-        ).save(writer, "blast_furnace/red_copper");
+        ).duration(400).save(writer, "blast_furnace/red_copper");
 
         // STEEL + RED_COPPER (MINGRADE analogue) -> advanced_alloy x2
         BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
@@ -78,7 +78,7 @@ public final class BlastFurnaceRecipeGenerator {
                 new ItemStack(ModItems.getIngot(ModIngots.RED_COPPER).get(), 2),
                 Ingredient.of(ModItems.COPPER_POWDER.get()),
                 Ingredient.of(Items.REDSTONE)
-                ).save(writer, "blast_furnace/red_copper_dust");
+                ).duration(400).save(writer, "blast_furnace/red_copper_dust");
 
 
         // GOLD + plate_mixed -> plate_paa (blast.paa)
@@ -136,3 +136,4 @@ public final class BlastFurnaceRecipeGenerator {
     }
 }
 //?}
+

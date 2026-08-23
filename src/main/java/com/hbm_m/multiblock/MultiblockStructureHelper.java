@@ -46,6 +46,15 @@ public class MultiblockStructureHelper {
 
     private static final ThreadLocal<Boolean> IS_REPAIRING = ThreadLocal.withInitial(() -> false);
 
+    /**
+     * Радиус fallback-поиска контроллера для осиротевшей части (только когда у части
+     * НЕТ {@code localOffsetFromController} — legacy NBT). Должен покрывать большие
+     * структуры (двери 20x20): половина диагонали такой двери ~14 блоков, берём с запасом.
+     * Основной путь — детерминированный, без всякого поиска
+     * ({@link #relinkOrphanedPartDeterministic}).
+     */
+    private static final int RELINK_SEARCH_RADIUS = 24;
+
     public static boolean isDestroying() {
         return IS_DESTROYING.get();
     }
@@ -366,6 +375,12 @@ public class MultiblockStructureHelper {
     public boolean attemptAutoRepair(Level level, BlockPos currentCtrlPos, BlockState state, IMultiblockController controller) {
         if (level.isClientSide) return false;
 
+        // Идёт перенос блоков движком сборки (Create/Sable): структура сейчас
+        // "в пути", починка/перепривязка по промежуточным состояниям даст ложные
+        // срабатывания (фантомы-дубликаты). Откладываем до закрытия окна -
+        // части сами перепривяжутся через retry-механизм relink.
+        if (ContraptionAssemblyGuard.isMoving()) return false;
+
         // 1. ОТКЛАДЫВАЕМ ПОЧИНКУ, если поблизости нет игроков.
         // Это разгружает сервер во время старта/загрузки мира и гарантирует, что чанки вокруг будут активны.
         if (level.getNearestPlayer(currentCtrlPos.getX() + 0.5, currentCtrlPos.getY() + 0.5, currentCtrlPos.getZ() + 0.5, 64.0D, false) == null) {
@@ -471,6 +486,46 @@ public class MultiblockStructureHelper {
             }
         }
 
+        // 5а. КОНФЛИКТ С ЧУЖИМ ЖИВЫМ МУЛЬТИБЛОКОМ: в ожидаемом футпринте лежат части,
+        // принадлежащие ДРУГОМУ ЖИВОМУ контроллеру (дубликат после сбоя сборки/разборки).
+        // Раньше два таких контроллера бесконечно восстанавливали блоки друг друга
+        // («зомби-станок», который невозможно сломать). Теперь проигравший уходит сам:
+        // ломаем себя с дропом и отпускаем свои фантомы (onRemove-каскад подчистит их).
+        java.util.Set<BlockPos> foreignOwned = new java.util.HashSet<>();
+        for (BlockPos pos : expectedCurrentPositions) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (!(be instanceof IMultiblockPart other) || pos.equals(currentCtrlPos)) continue;
+            BlockPos otherCtrl = other.getControllerPos();
+            if (otherCtrl == null || otherCtrl.equals(currentCtrlPos)) continue;
+            // Чужая часть считается «живой» только если её контроллер реально существует:
+            // осиротевшие части с битой ссылкой обрабатывает reclaimOrphanedParts ниже.
+            if (level.getBlockState(otherCtrl).getBlock() instanceof IMultiblockController) {
+                foreignOwned.add(pos);
+            }
+        }
+        if (!foreignOwned.isEmpty()) {
+            MainRegistry.LOGGER.error(
+                "[HBM] attemptAutoRepair: контроллер {} конфликтует с другим живым мультиблоком ({} его частей в нашем футпринте, напр. {}). Самоуничтожение вместо войны починки.",
+                currentCtrlPos.toShortString(), foreignOwned.size(),
+                foreignOwned.iterator().next().toShortString());
+            IS_REPAIRING.set(true);
+            try {
+                net.minecraft.world.level.block.Block.dropResources(level.getBlockState(currentCtrlPos), level, currentCtrlPos, level.getBlockEntity(currentCtrlPos));
+                level.removeBlock(currentCtrlPos, false);
+            } finally {
+                IS_REPAIRING.set(false);
+            }
+            return false;
+        }
+
+        // 5б. ПЕРЕПРИВЯЗКА ОСИРОТЕВШИХ ЧАСТЕЙ (восстановление после Create/Sable disassembly):
+        // Create при disassembly восстанавливает BlockEntity из сохранённого NBT, переписывая
+        // только собственные x/y/z, но НЕ трогая "ControllerPos" части. Поэтому часть может
+        // указывать на старую (теперь пустую) позицию контроллера. Здесь мы перепривязываем
+        // такие части к текущему контроллеру, чтобы штатная починка ниже прошла без физической
+        // перестройки блоков и без потери NBT части.
+        reclaimOrphanedParts(level, currentCtrlPos, facing, controller, expectedPosToGrid, existingPhantoms);
+
         // 6. БЫСТРАЯ ПРОВЕРКА: ИДЕАЛЬНА ЛИ СТРУКТУРА?
         boolean isPerfect = existingPhantoms.size() == expectedCurrentPositions.size() && existingPhantoms.containsAll(expectedCurrentPositions);
         
@@ -498,8 +553,6 @@ public class MultiblockStructureHelper {
         if (noNewPartsNeeded) {
             IS_REPAIRING.set(true);
             try {
-                var energyManager = com.hbm_m.api.energy.EnergyNetworkManager.get((net.minecraft.server.level.ServerLevel) level);
-
                 // а) Удаляем лишние старые фантомы, если структура стала меньше в размерах
                 for (BlockPos oldPos : existingPhantoms) {
                     if (!expectedCurrentPositions.contains(oldPos) && !oldPos.equals(currentCtrlPos)) {
@@ -507,7 +560,7 @@ public class MultiblockStructureHelper {
                         if (be instanceof IMultiblockPart part) {
                             PartRole role = part.getPartRole();
                             if (role.canReceiveEnergy() || role.canSendEnergy()) {
-                                energyManager.removeNode(oldPos);
+                                com.hbm_m.api.energy.EnergySubscriptions.unsubscribeAll(be);
                             }
                         }
                         // Используем флаг 3, так как мы гарантировали загруженность соседей
@@ -553,10 +606,8 @@ public class MultiblockStructureHelper {
                                     Collections.addAll(worldEnergy, Direction.values());
                                 }
                                 part.setAllowedEnergySides(worldEnergy);
-                                energyManager.addNode(pos);
                             } else {
                                 part.setAllowedEnergySides(Collections.emptySet());
-                                energyManager.removeNode(pos);
                             }
 
                             if (expectedRole == PartRole.FLUID_CONNECTOR || expectedRole == PartRole.UNIVERSAL_CONNECTOR) {
@@ -626,15 +677,13 @@ public class MultiblockStructureHelper {
         // 9. ВЫПОЛНЯЕМ ПОЛНУЮ ПОЧИНКУ (ФИЗИЧЕСКАЯ ПЕРЕСТРОЙКА БЛОКОВ)
         IS_REPAIRING.set(true);
         try {
-            var energyManager = com.hbm_m.api.energy.EnergyNetworkManager.get((net.minecraft.server.level.ServerLevel) level);
-
             for (BlockPos oldPos : existingPhantoms) {
                 if (!oldPos.equals(currentCtrlPos) && !oldPos.equals(newCtrlPos)) {
                     BlockEntity be = level.getBlockEntity(oldPos);
                     if (be instanceof IMultiblockPart part) {
                         PartRole role = part.getPartRole();
                         if (role.canReceiveEnergy() || role.canSendEnergy()) {
-                            energyManager.removeNode(oldPos);
+                            com.hbm_m.api.energy.EnergySubscriptions.unsubscribeAll(be);
                         }
                     }
                     level.removeBlock(oldPos, false);
@@ -679,6 +728,325 @@ public class MultiblockStructureHelper {
             }
             
             return true;
+        } finally {
+            IS_REPAIRING.set(false);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    //  Восстановление после Create / Sable disassembly (перепривязка осиротевших частей)
+    // ═══════════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Самолечение осиротевшей части: если сохранённый {@code ControllerPos} не указывает на
+     * живой контроллер (Create/Sable disassembly восстановил BE из старого NBT, не переписав
+     * {@code ControllerPos}), часть сама ищет ближайший подходящий контроллер и перепривязывается.
+     *
+     * <p>Безопасна для вызова из server-tick части: сканирование ограничено
+     * {@link #RELINK_SEARCH_RADIUS}, выполняется один раз (gating через {@code pendingRelinkCheck}
+     * в {@code UniversalMachinePartBlockEntity}) и только когда ссылка невалидна. Не импортирует
+     * loader-API — только vanilla {@link Level}/{@link BlockPos}/{@link BlockEntity}/{@link BlockState}
+     * и собственные интерфейсы HBM.
+     *
+     * @param level   уровень (на клиенте — no-op)
+     * @param partPos позиция осиротевшей части
+     */
+    public static void relinkOrphanedPart(Level level, BlockPos partPos) {
+        if (level.isClientSide) return;
+        BlockEntity be = level.getBlockEntity(partPos);
+        if (!(be instanceof IMultiblockPart part)) return;
+
+        // 1. Если текущая ссылка валидна — ничего не делаем (часть не осиротевшая).
+        BlockPos stored = part.getControllerPos();
+        if (stored != null) {
+            BlockState storedState = level.getBlockState(stored);
+            if (storedState.getBlock() instanceof IMultiblockController) {
+                return;
+            }
+        }
+
+        // 2. Ищем ВСЕ контроллеры, в чью схему попадает partPos.
+        //    Раньше брали первого попавшегося — при двух одинаковых станках рядом
+        //    часть могла привязаться к ЧУЖОМУ контроллеру просто потому, что он
+        //    ближе в порядке обхода. Теперь собираем всех кандидатов и решаем.
+        BlockPos partPosImmutable = partPos.immutable();
+        BlockPos min = partPosImmutable.offset(-RELINK_SEARCH_RADIUS, -RELINK_SEARCH_RADIUS, -RELINK_SEARCH_RADIUS);
+        BlockPos max = partPosImmutable.offset(RELINK_SEARCH_RADIUS, RELINK_SEARCH_RADIUS, RELINK_SEARCH_RADIUS);
+
+        BlockPos bestCandidate = null;
+        Direction bestFacing = null;
+        IMultiblockController bestController = null;
+        MultiblockStructureHelper bestHelper = null;
+        BlockPos bestGridPos = null;
+        int candidateCount = 0;
+
+        for (BlockPos candidate : BlockPos.betweenClosed(min, max)) {
+            BlockState candState = level.getBlockState(candidate);
+            if (!(candState.getBlock() instanceof IMultiblockController controller)) continue;
+            if (!candState.hasProperty(HorizontalDirectionalBlock.FACING)) continue;
+            Direction facing = candState.getValue(HorizontalDirectionalBlock.FACING);
+            MultiblockStructureHelper helper = controller.getStructureHelper();
+            if (helper == null) continue;
+
+            // 3. Принадлежит ли partPos схеме этого контроллера?
+            //    Обратное вращение: gridPos = rotateBack(partPos - candidate, facing) + controllerOffset
+            BlockPos worldOffset = partPosImmutable.subtract(candidate);
+            BlockPos localOffset = rotateBack(worldOffset, facing);
+            BlockPos gridPos = localOffset.offset(helper.getControllerOffset());
+            if (!helper.getPartOffsets().contains(gridPos)) continue;
+
+            candidateCount++;
+            if (candidateCount == 1 || bestCandidate == null) {
+                bestCandidate = candidate.immutable();
+                bestFacing = facing;
+                bestController = controller;
+                bestHelper = helper;
+                bestGridPos = gridPos;
+            }
+        }
+
+        // 4. Решение:
+        //    - ровно один кандидат → однозначная перепривязка;
+        //    - несколько кандидатов → структура-схемы перекрываются, привязаться
+        //      «просто к ближайшему» опасно: часть может уйти к чужому станку.
+        //      Отказываемся от перепривязки (часть останется осиротевшей и будет
+        //      ломаться в один клик — getDestroyProgress), чтобы не портить чужую машину.
+        if (candidateCount == 1 && bestHelper != null) {
+            bestHelper.doRelinkOrphanedPart(level, partPosImmutable, bestCandidate, bestFacing, bestController, bestGridPos);
+        } else if (candidateCount > 1 && !level.isClientSide) {
+            MainRegistry.LOGGER.warn(
+                "[HBM] relinkOrphanedPart: {} кандидатов-контроллеров для части {} — привязка отклонена (неоднозначно)",
+                candidateCount, partPosImmutable.toShortString());
+        }
+    }
+
+    /**
+     * Детерминированное самолечение осиротевшей части: если у части сохранён
+     * {@link IMultiblockPart#getLocalOffsetFromController() localOffsetFromController},
+     * вычисляем позицию контроллера по формуле
+     * {@code controllerPos = partPos - rotate(localOffset, facing)}
+     * без радиус-поиска. Это работает для любого размера мультиблока и не путается
+     * между двумя соседними одинаковыми машинами.
+     *
+     * <p>Если вычисленная позиция не содержит валидный контроллер (контрапшен с
+     * наклоном/креном, или структура повёрнута нестандартно), откатываемся на
+     * {@link #relinkOrphanedPart} (радиус-поиск).
+     *
+     * <p>Безопасна для вызова из server-tick части: выполняется один раз (gating
+     * через {@code pendingRelinkCheck} в {@code UniversalMachinePartBlockEntity}).
+     *
+     * @param level уровень (на клиенте — no-op)
+     * @param partPos позиция осиротевшей части
+     * @param part сама часть (для чтения localOffsetFromController)
+     */
+    public static void relinkOrphanedPartDeterministic(Level level, BlockPos partPos, IMultiblockPart part) {
+        if (level.isClientSide) return;
+        if (!(part instanceof BlockEntity be)) {
+            // На всякий случай: если кто-то передал не-BE, fallback к радиус-поиску.
+            relinkOrphanedPart(level, partPos);
+            return;
+        }
+        BlockPos localOffset = part.getLocalOffsetFromController();
+        if (localOffset == null) {
+            // Старый NBT (без localOffset) — fallback к радиус-поиску.
+            relinkOrphanedPart(level, partPos);
+            return;
+        }
+
+        // partPosImmutable уже подразумевается — мы работаем с BlockPos из BE.
+        BlockPos partPosImmutable = partPos.immutable();
+
+        // 1) Берём facing из blockstate части (FACING = FACING структуры, обновляется
+        //    при relink, но для только-что-загруженной части из contraption — это
+        //    текущий FACING фантомного блока, который Create тоже поворачивал
+        //    тем же Y-поворотом, что и позицию).
+        BlockState partState = level.getBlockState(partPosImmutable);
+        Direction facing = Direction.NORTH;
+        if (partState.hasProperty(HorizontalDirectionalBlock.FACING)) {
+            facing = partState.getValue(HorizontalDirectionalBlock.FACING);
+        }
+
+        // 2) Вычисляем предполагаемую позицию контроллера: worldPos - rotate(localOffset, facing).
+        BlockPos rotatedOffset = rotate(localOffset, facing);
+        BlockPos expectedController = partPosImmutable.subtract(rotatedOffset);
+
+        // 3) Проверяем, что там действительно живой контроллер с подходящим helper'ом.
+        BlockState ctrlState = level.getBlockState(expectedController);
+        if (!(ctrlState.getBlock() instanceof IMultiblockController controller)) {
+            // Контрапшен с pitch/roll (Aeronautics) — fallback к радиус-поиску.
+            relinkOrphanedPart(level, partPos);
+            return;
+        }
+        MultiblockStructureHelper helper = controller.getStructureHelper();
+        if (helper == null) {
+            relinkOrphanedPart(level, partPos);
+            return;
+        }
+
+        // 4) Проверяем, что partPos действительно принадлежит схеме этого контроллера.
+        //    Это страховка от ложного срабатывания (например, если два разных мультиблока
+        //    используют один и тот же localOffset случайно).
+        BlockPos worldOffset = partPosImmutable.subtract(expectedController);
+        BlockPos backLocal = rotateBack(worldOffset, facing);
+        BlockPos gridPos = backLocal.offset(helper.getControllerOffset());
+        if (!helper.getPartOffsets().contains(gridPos)) {
+            relinkOrphanedPart(level, partPos);
+            return;
+        }
+
+        // 5) Всё ОК — перепривязываем.
+        helper.doRelinkOrphanedPart(level, partPosImmutable, expectedController, facing, controller, gridPos);
+    }
+
+    /**
+     * Сканирует футпринт структуры контроллера и перепривязывает части, у которых
+     * {@code ControllerPos} стал невалидным (осиротели после Create/Sable disassembly).
+     * Части, чья ссылка указывает на другой ЖИВОЙ контроллер, не трогаются (не крадём чужие).
+     *
+     * <p>Вызывается из {@link #attemptAutoRepair} перед «быстрой проверкой», чтобы осиротевшие
+     * части попали в {@code existingPhantoms} и штатная починка прошла без физической перестройки.
+     *
+     * @return количество перепривязанных частей
+     */
+    private int reclaimOrphanedParts(Level level, BlockPos currentCtrlPos, Direction facing,
+                                     IMultiblockController controller,
+                                     Map<BlockPos, BlockPos> expectedPosToGrid,
+                                     Set<BlockPos> existingPhantoms) {
+        if (level.isClientSide) return 0;
+        if (!(level instanceof net.minecraft.server.level.ServerLevel)) return 0;
+
+        int reclaimed = 0;
+        for (Map.Entry<BlockPos, BlockPos> e : expectedPosToGrid.entrySet()) {
+            BlockPos expectedPos = e.getKey();
+            if (existingPhantoms.contains(expectedPos)) continue; // уже привязана к нам
+
+            BlockState partState = level.getBlockState(expectedPos);
+            if (!(partState.getBlock() instanceof UniversalMachinePartBlock)) continue;
+
+            BlockEntity be = level.getBlockEntity(expectedPos);
+            if (!(be instanceof IMultiblockPart part)) continue;
+
+            // Часть осиротела, если ControllerPos null ИЛИ указывает на позицию, где больше нет контроллера.
+            BlockPos stored = part.getControllerPos();
+            boolean stale = (stored == null);
+            if (!stale) {
+                BlockState storedState = level.getBlockState(stored);
+                stale = !(storedState.getBlock() instanceof IMultiblockController);
+            }
+            if (!stale) continue; // принадлежит другому живому контроллеру — не крадём
+
+            BlockPos gridPos = e.getValue();
+            doRelinkOrphanedPart(level, expectedPos, currentCtrlPos, facing, controller, gridPos);
+            existingPhantoms.add(expectedPos);
+            reclaimed++;
+        }
+        return reclaimed;
+    }
+
+    /**
+     * Перепривязка одной осиротевшей части мультиблока к (новому) контроллеру.
+     * Логика роли/сторон — копия per-part блока из {@link #placeStructure}, применяемая
+     * к уже существующему BE на месте (без {@code setBlock}), чтобы сохранить NBT части.
+     *
+     * <p>Мутации обёрнуты в ThreadLocal {@link #IS_REPAIRING}, чтобы
+     * {@code UniversalMachinePartBlock#onRemove} (если сработает от neighbor-update при
+     * смене роли) не запустил каскадное {@code destroyStructure} — как в {@link #attemptAutoRepair}.
+     *
+     * @param level         уровень (на клиенте / не ServerLevel — no-op)
+     * @param partPos       позиция части (immutable)
+     * @param controllerPos позиция нового контроллера (immutable)
+     * @param facing        направление структуры
+     * @param controller    сам контроллер
+     * @param gridPos       позиция части в сетке хелпера (из {@link #getPartOffsets()})
+     */
+    private void doRelinkOrphanedPart(Level level, BlockPos partPos, BlockPos controllerPos,
+                                      Direction facing, IMultiblockController controller, BlockPos gridPos) {
+        if (level.isClientSide) return;
+        if (!(level instanceof net.minecraft.server.level.ServerLevel serverLevel)) return;
+        BlockEntity be = level.getBlockEntity(partPos);
+        if (!(be instanceof IMultiblockPart part)) return;
+
+        IS_REPAIRING.set(true);
+        try {
+            // 1. Привязываем часть к текущему контроллеру (setControllerPos сам сделает setChanged + sendBlockUpdated).
+            part.setControllerPos(controllerPos);
+
+            // 1b. Сохраняем локальный оффсет от контроллера (вращение-инвариантный).
+            //     gridPos — позиция в сетке хелпера; controllerOffset — позиция контроллера в сетке.
+            //     Relative offset = gridPos - controllerOffset (в локальных коорд., до поворота facing).
+            //     Этот оффсет переживает contraption disassembly: Create вращает и worldPos,
+            //     и FACING одним и тем же Y-поворотом, поэтому формула
+            //     controllerPos = partWorldPos - rotate(localOffset, facing) остаётся верной.
+            part.setLocalOffsetFromController(gridPos.subtract(this.controllerOffset));
+
+            // 2. Пересчитываем роль — копия placeStructure (включая переопределение ролей дверей из DoorDecl).
+            PartRole role = resolvePartRole(gridPos, controller);
+            if (controller instanceof com.hbm_m.block.decorations.DoorBlock doorBlock) {
+                String declId = doorBlock.getDoorDeclId();
+                com.hbm_m.block.entity.doors.DoorDecl decl =
+                        com.hbm_m.block.entity.doors.DoorDeclRegistry.getById(declId);
+                if (decl != null && decl.getStructureDefinition() != null) {
+                    PartRole definedRole = decl.getStructureDefinition().getRoles().get(gridPos);
+                    if (definedRole != null) {
+                        role = definedRole;
+                    }
+                }
+            }
+            part.setPartRole(role);
+
+            // 3. Стороны лестницы (LADDER) — из ladderLocalDirections или все горизонтальные.
+            if (role == PartRole.LADDER) {
+                Set<Direction> localSides = ladderLocalDirections.get(gridPos);
+                EnumSet<Direction> worldSides = EnumSet.noneOf(Direction.class);
+                if (localSides != null && !localSides.isEmpty()) {
+                    for (Direction localDir : localSides) {
+                        worldSides.add(rotateLocalDirectionToWorld(localDir, facing));
+                    }
+                } else {
+                    worldSides.add(Direction.NORTH);
+                    worldSides.add(Direction.SOUTH);
+                    worldSides.add(Direction.EAST);
+                    worldSides.add(Direction.WEST);
+                }
+                part.setAllowedClimbSides(worldSides);
+            } else {
+                part.setAllowedClimbSides(Collections.emptySet());
+            }
+
+            // 4. Стороны энергии (регистрация узлов теперь через EnergySubscriptions на тике части).
+            if (role == PartRole.ENERGY_CONNECTOR || role == PartRole.UNIVERSAL_CONNECTOR) {
+                Set<Direction> localEnergy = energyLocalDirections.get(gridPos);
+                EnumSet<Direction> worldEnergy = EnumSet.noneOf(Direction.class);
+                if (localEnergy != null && !localEnergy.isEmpty()) {
+                    for (Direction localDir : localEnergy) {
+                        worldEnergy.add(rotateLocalDirectionToWorld(localDir, facing));
+                    }
+                } else {
+                    Collections.addAll(worldEnergy, Direction.values());
+                }
+                part.setAllowedEnergySides(worldEnergy);
+            } else {
+                part.setAllowedEnergySides(Collections.emptySet());
+            }
+
+            // 5. Стороны жидкостей (FLUID_CONNECTOR / UNIVERSAL_CONNECTOR).
+            if (role == PartRole.FLUID_CONNECTOR || role == PartRole.UNIVERSAL_CONNECTOR) {
+                Set<Direction> localFluid = fluidLocalDirections.get(gridPos);
+                EnumSet<Direction> worldFluid = EnumSet.noneOf(Direction.class);
+                if (localFluid != null && !localFluid.isEmpty()) {
+                    for (Direction localDir : localFluid) {
+                        worldFluid.add(rotateLocalDirectionToWorld(localDir, facing));
+                    }
+                } else {
+                    Collections.addAll(worldFluid, Direction.values());
+                }
+                part.setAllowedFluidSides(worldFluid);
+            } else {
+                part.setAllowedFluidSides(Collections.emptySet());
+            }
+
+            be.setChanged();
+            level.sendBlockUpdated(partPos, level.getBlockState(partPos), level.getBlockState(partPos), Block.UPDATE_CLIENTS);
         } finally {
             IS_REPAIRING.set(false);
         }
@@ -952,10 +1320,21 @@ public class MultiblockStructureHelper {
     public synchronized void placeStructure(Level level, BlockPos controllerPos, Direction facing, IMultiblockController controller) {
         if (level.isClientSide) return;
 
+        // Идёт перенос блоков движком сборки (Create/Sable): контроллер сейчас ставится
+        // самим движком (setBlock -> onPlace), а части приходят из NBT контрапшена.
+        // Перестройка фантомов в этот момент кладёт их поверх ещё не расставленных
+        // клеток, сдвигает структуру и плодит контроллеры-дубликаты («зомби-станки»).
+        // После закрытия окна осиротевшие части перепривяжутся через relink.
+        if (ContraptionAssemblyGuard.isMoving()) {
+            MainRegistry.LOGGER.info(
+                "[HBM] placeStructure подавлен (окно сборки контрапшена), контроллер {}",
+                controllerPos.toShortString());
+            return;
+        }
+
         List<BlockPos> energyConnectorPositions = new ArrayList<>();
         List<BlockPos> allPlacedPositions = new ArrayList<>();
-        var energyManager = com.hbm_m.api.energy.EnergyNetworkManager.get((net.minecraft.server.level.ServerLevel) level);
-        
+
         for (Map.Entry<BlockPos, Supplier<BlockState>> entry : structureMap.entrySet()) {
             BlockPos gridPos = entry.getKey();
             BlockPos worldPos = getRotatedPos(controllerPos, gridPos, facing);
@@ -971,6 +1350,9 @@ public class MultiblockStructureHelper {
             BlockEntity be = level.getBlockEntity(worldPos);
             if (be instanceof IMultiblockPart partBe) {
                 partBe.setControllerPos(controllerPos);
+                // Локальный оффсет от контроллера в сетке структуры (вращение-инвариантный).
+                // См. javadoc у IMultiblockPart.getLocalOffsetFromController().
+                partBe.setLocalOffsetFromController(gridPos.subtract(this.controllerOffset));
                 PartRole role = resolvePartRole(gridPos, controller);
                 if (controller instanceof com.hbm_m.block.decorations.DoorBlock doorBlock) {
                     // Получаем ID декларации
@@ -1020,7 +1402,6 @@ public class MultiblockStructureHelper {
                     }
                     partBe.setAllowedEnergySides(worldEnergy);
                     energyConnectorPositions.add(worldPos);
-                    energyManager.addNode(worldPos);
                 }
 
                 // FLUID_CONNECTOR и UNIVERSAL_CONNECTOR - стороны из fluidSideMap или все шесть
@@ -1051,9 +1432,16 @@ public class MultiblockStructureHelper {
             }
         }
         
-        // ОДНО сообщение со всеми координатами
-        MainRegistry.LOGGER.info("Player {} placed multiblock at {} with {} parts: {}", 
-            controller, controllerPos, allPlacedPositions.size(), formatPositions(allPlacedPositions));
+        // ОДНО сообщение со всеми координатами (ник ближайшего игрока, если удалось определить)
+        String placerName = "unknown";
+        Player placer = level.getNearestPlayer(
+            controllerPos.getX() + 0.5, controllerPos.getY() + 0.5, controllerPos.getZ() + 0.5,
+            8.0, false);
+        if (placer != null) {
+            placerName = placer.getGameProfile().getName();
+        }
+        MainRegistry.LOGGER.info("Player {} placed multiblock {} at {} with {} parts: {}", 
+            placerName, controller, controllerPos, allPlacedPositions.size(), formatPositions(allPlacedPositions));
 
         // Настраиваем стороны подключения на самом контроллере, если он поддерживает sided IO.
         applyControllerSideConfig(level, controllerPos, facing);
@@ -1114,9 +1502,16 @@ public class MultiblockStructureHelper {
     
     public void destroyStructure(Level level, BlockPos controllerPos, Direction facing) {
         if (level.isClientSide || IS_DESTROYING.get()) return;
+        // Перенос блоков движком сборки (Create/Sable): разрушать структуру нельзя -
+        // движок уже сохранил state+NBT и вернёт её на месте. Разрушение здесь = дюп.
+        if (ContraptionAssemblyGuard.isMoving()) {
+            MainRegistry.LOGGER.info(
+                "[HBM] destroyStructure подавлен (окно сборки контрапшена), контроллер {}",
+                controllerPos.toShortString());
+            return;
+        }
         IS_DESTROYING.set(true);
         try {
-            var energyManager = com.hbm_m.api.energy.EnergyNetworkManager.get((net.minecraft.server.level.ServerLevel) level);
             for (BlockPos gridPos : structureMap.keySet()) {
                 BlockPos worldPos = getRotatedPos(controllerPos, gridPos, facing);
                 if (level.getBlockState(worldPos).getBlock() instanceof UniversalMachinePartBlock) {
@@ -1124,7 +1519,7 @@ public class MultiblockStructureHelper {
                     if (be instanceof IMultiblockPart part) {
                         PartRole role = part.getPartRole();
                         if (role.canReceiveEnergy() || role.canSendEnergy()) {
-                            energyManager.removeNode(worldPos);
+                            com.hbm_m.api.energy.EnergySubscriptions.unsubscribeAll(be);
                         }
                     }
                     level.setBlock(worldPos, Blocks.AIR.defaultBlockState(), 3);

@@ -264,10 +264,7 @@ public final class FalloutConfigJSON {
                 if (pos.getY() == level.getMinBuildHeight() && conversion.getBlock() != ModBlocks.SELLAFIELD_BEDROCK.get()) return false;
                 if (conversion == state) return false;
 
-                // [FIX] flag 18 = UPDATE_CLIENTS(2) | UPDATE_IMMEDIATE(16).
-                // UPDATE_IMMEDIATE пропускает updateNeighbourShapes в Level.markAndNotifyBlock,
-                // иначе соседняя вода получает уведомление и растекается в кратер.
-                level.setBlock(pos, conversion, 18);
+                level.setBlock(pos, conversion, 50);
                 return true;
             }
 

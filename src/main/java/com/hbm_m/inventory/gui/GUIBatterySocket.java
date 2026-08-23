@@ -157,7 +157,7 @@ public class GUIBatterySocket extends AbstractContainerScreen<BatterySocketMenu>
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0) {
+        if (button == 0 && menu.blockEntity != null) { // тайл может отсутствовать в реплее Flashback
             if (isMouseOver(mouseX, mouseY, 106, 16, 18, 18)) {
                 playClick();
                 ModPacketHandler.sendToServer(ModPacketHandler.UPDATE_BATTERY,

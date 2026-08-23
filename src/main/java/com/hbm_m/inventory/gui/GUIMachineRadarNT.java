@@ -86,6 +86,9 @@ public class GUIMachineRadarNT extends GuiInfoScreen<MachineRadarMenu> {
         renderPowerBar(guiGraphics);
         renderModeButtons(guiGraphics);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (radar == null) return;
+
         // Экран (развёртка/карта/метки) рисуется только при достаточной энергии
         // (порт if(radar.power < radar.consumption) return).
         if (radar.getEnergyStored() < MachineRadarBlockEntity.ENERGY_CONSUMPTION) {
@@ -111,6 +114,8 @@ public class GUIMachineRadarNT extends GuiInfoScreen<MachineRadarMenu> {
 
     /** Бар энергии: i = power*200/maxPower, source (0,234). */
     private void renderPowerBar(GuiGraphics guiGraphics) {
+        // тайл может отсутствовать в реплее Flashback
+        if (radar == null) return;
         int bar = (int) radar.getPowerScaled(200);
         if (bar > 0) {
             guiGraphics.blit(TEXTURE, leftPos + 8, topPos + 221, 0, 234, bar, 16);
@@ -122,6 +127,8 @@ public class GUIMachineRadarNT extends GuiInfoScreen<MachineRadarMenu> {
      * UV каждого индикатора: 238, 4 + index*10.
      */
     private void renderModeButtons(GuiGraphics guiGraphics) {
+        // тайл может отсутствовать в реплее Flashback
+        if (radar == null) return;
         if (radar.scanMissiles != (radar.jammed && noiseRandom.nextBoolean())) {
             guiGraphics.blit(TEXTURE, leftPos + TOGGLE_X, topPos + BTN_MISSILES, 238, 4, 8, 8);
         }
@@ -313,6 +320,8 @@ public class GUIMachineRadarNT extends GuiInfoScreen<MachineRadarMenu> {
         GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
+        // тайл может отсутствовать в реплее Flashback
+        if (radar == null) return;
 
         drawElectricityInfo(guiGraphics, mouseX, mouseY,
                 8, 221, 200, 7,
@@ -386,6 +395,8 @@ public class GUIMachineRadarNT extends GuiInfoScreen<MachineRadarMenu> {
         if (findContactAt(mouseX, mouseY) != null) {
             return;
         }
+        // тайл может отсутствовать в реплее Flashback
+        if (radar == null) return;
         int radarWidth = radar.getRange() * 2 + 1;
         int tX = (int) ((mouseX - leftPos - MAP_CENTER_X) * 1.0D / MAP_SIZE * radarWidth
                 + radar.getBlockPos().getX());
@@ -396,6 +407,8 @@ public class GUIMachineRadarNT extends GuiInfoScreen<MachineRadarMenu> {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // тайл может отсутствовать в реплее Flashback
+        if (radar == null) return super.mouseClicked(mouseX, mouseY, button);
         if (button == 0) {
             int mx = (int) mouseX;
             int my = (int) mouseY;
@@ -442,6 +455,8 @@ public class GUIMachineRadarNT extends GuiInfoScreen<MachineRadarMenu> {
             return true;
         }
         if (keyCode >= org.lwjgl.glfw.GLFW.GLFW_KEY_1 && keyCode <= org.lwjgl.glfw.GLFW.GLFW_KEY_8) {
+            // тайл может отсутствовать в реплее Flashback
+            if (radar == null) return false;
             int linkSlot = keyCode - org.lwjgl.glfw.GLFW.GLFW_KEY_1; // 0..7
             if (isPointInRect(8, 17, 200, 200, lastMouseX, lastMouseY)) {
                 int[] target = findContactAt(lastMouseX, lastMouseY);
@@ -466,6 +481,8 @@ public class GUIMachineRadarNT extends GuiInfoScreen<MachineRadarMenu> {
 
     @org.jetbrains.annotations.Nullable
     private int[] findContactAt(int mx, int my) {
+        // тайл может отсутствовать в реплее Flashback
+        if (radar == null) return null;
         int radarWidth = radar.getRange() * 2 + 1;
         int radarX = radar.getBlockPos().getX();
         int radarZ = radar.getBlockPos().getZ();

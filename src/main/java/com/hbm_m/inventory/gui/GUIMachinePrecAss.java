@@ -81,7 +81,8 @@ public class GUIMachinePrecAss extends AbstractContainerScreen<MachinePrecAssMen
         }
 
         // Текущий рецепт
-        ResourceLocation selectedRecipeId = this.menu.getBlockEntity().getSelectedRecipeId();
+        var precBe = this.menu.getBlockEntity(); // тайл может отсутствовать в реплее Flashback
+        ResourceLocation selectedRecipeId = precBe != null ? precBe.getSelectedRecipeId() : null;
         AssemblerRecipe recipe = null;
         if (selectedRecipeId != null && this.minecraft != null && this.minecraft.level != null) {
             recipe = com.hbm_m.platform.recipe.RecipeHooks.getRecipeByKey(this.minecraft.level.getRecipeManager(), selectedRecipeId)
@@ -113,7 +114,9 @@ public class GUIMachinePrecAss extends AbstractContainerScreen<MachinePrecAssMen
      * Группирует одинаковые ингредиенты и показывает суммарное количество.
      */
     private void renderGhostItems(GuiGraphics guiGraphics) {
-        NonNullList<ItemStack> ghostItems = this.menu.getBlockEntity().getGhostItems();
+        var be = this.menu.getBlockEntity();
+        // тайл может отсутствовать в реплее Flashback
+        NonNullList<ItemStack> ghostItems = be != null ? be.getGhostItems() : NonNullList.create();
 
         if (ghostItems.isEmpty()) {
             return;
@@ -215,8 +218,13 @@ public class GUIMachinePrecAss extends AbstractContainerScreen<MachinePrecAssMen
 
         // Подсказка для кнопки выбора рецепта
         if (isMouseOver(pMouseX, pMouseY, 7, 125, 18, 18)) {
-            ResourceLocation selectedRecipeId = this.menu.getBlockEntity().getSelectedRecipeId();
-            if (selectedRecipeId != null && this.minecraft != null && this.minecraft.level != null) {
+            var be = this.menu.getBlockEntity(); // тайл может отсутствовать в реплее Flashback
+            ResourceLocation selectedRecipeId = be != null ? be.getSelectedRecipeId() : null;
+            if (selectedRecipeId == null) {
+                guiGraphics.renderTooltip(this.font,
+                    Component.translatable("gui.recipe.setRecipe").withStyle(ChatFormatting.YELLOW),
+                    pMouseX, pMouseY);
+            } else if (this.minecraft != null && this.minecraft.level != null) {
                 com.hbm_m.platform.recipe.RecipeHooks.getRecipeByKey(this.minecraft.level.getRecipeManager(), selectedRecipeId).ifPresent(recipe -> {
                     if (recipe instanceof AssemblerRecipe assemblerRecipe) {
                         List<Component> tooltip = new ArrayList<>();
@@ -251,10 +259,13 @@ public class GUIMachinePrecAss extends AbstractContainerScreen<MachinePrecAssMen
     private void openRecipeSelector() {
         if (this.minecraft == null || this.minecraft.level == null) return;
 
-        ResourceLocation currentRecipe = this.menu.getBlockEntity().getSelectedRecipeId();
+        var be = this.menu.getBlockEntity();
+        // тайл может отсутствовать в реплее Flashback
+        if (be == null) return;
+        ResourceLocation currentRecipe = be.getSelectedRecipeId();
 
         this.minecraft.setScreen(new GUIScreenRecipeSelector(
-            this.menu.getBlockEntity().getBlockPos(),
+            be.getBlockPos(),
             currentRecipe,
             this
         ));
@@ -270,7 +281,8 @@ public class GUIMachinePrecAss extends AbstractContainerScreen<MachinePrecAssMen
                             8, this.imageHeight - 96 + 2, 0x404040, false);
 
         if (this.minecraft != null && this.minecraft.screen == this) {
-            ResourceLocation selectedRecipeId = this.menu.getBlockEntity().getSelectedRecipeId();
+            var labelBe = this.menu.getBlockEntity(); // тайл может отсутствовать в реплее Flashback
+            ResourceLocation selectedRecipeId = labelBe != null ? labelBe.getSelectedRecipeId() : null;
             if (selectedRecipeId != null && this.minecraft.level != null) {
                 com.hbm_m.platform.recipe.RecipeHooks.getRecipeByKey(this.minecraft.level.getRecipeManager(), selectedRecipeId).ifPresent(recipe -> {
                     if (recipe instanceof AssemblerRecipe assemblerRecipe) {

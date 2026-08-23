@@ -4,7 +4,6 @@ import java.util.Map;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineAdvancedAssemblerBlockEntity;
@@ -69,15 +68,6 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
             if (core == null) {
                 return;
             }
-            Direction facing = pState.getValue(FACING);
-            MultiblockStructureHelper helper = getStructureHelper();
-
-            for (BlockPos localPos : helper.getStructureMap().keySet()) {
-                if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
-                    BlockPos worldPos = helper.getRotatedPos(core, localPos, facing);
-                    EnergyNetworkManager.get((ServerLevel) pLevel).addNode(worldPos);
-                }
-            }
 
             if (pLevel.getBlockEntity(core) instanceof IFrameSupportable be) {
                 be.checkForFrame();
@@ -92,14 +82,6 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
             if (!level.isClientSide()) {
                 MultiblockStructureHelper helper = getStructureHelper();
                 Direction facing = state.getValue(FACING);
-
-                // Удаляем из энергосети (этот код у нас уже правильный)
-                for (BlockPos localPos : helper.getStructureMap().keySet()) {
-                    if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
-                        BlockPos worldPos = helper.getRotatedPos(pos, localPos, facing);
-                        EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
-                    }
-                }
 
                 BlockEntity blockEntity = level.getBlockEntity(pos);
                 if (blockEntity instanceof com.hbm_m.blockentity.BaseMachineBlockEntity be) {

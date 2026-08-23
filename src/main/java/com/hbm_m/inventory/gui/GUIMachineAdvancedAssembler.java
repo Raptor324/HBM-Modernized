@@ -82,7 +82,7 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
         }
 
         // РџРѕР»СѓС‡Р°РµРј С‚РµРєСѓС‰РёР№ СЂРµС†РµРїС‚
-        ResourceLocation selectedRecipeId = this.menu.getBlockEntity().getSelectedRecipeId();
+        ResourceLocation selectedRecipeId = this.menu.getBlockEntity() != null ? this.menu.getBlockEntity().getSelectedRecipeId() : null;
         AssemblerRecipe recipe = null;
         if (selectedRecipeId != null && this.minecraft != null && this.minecraft.level != null) {
             recipe = RecipeHooks.getRecipeByKey(this.minecraft.level.getRecipeManager(), selectedRecipeId)
@@ -134,6 +134,7 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
 
     private void renderGhostItems(GuiGraphics guiGraphics) {
         // РРЎРџРћР›Р¬Р—РЈР•Рњ РјРµС‚РѕРґ РёР· BlockEntity, РєРѕС‚РѕСЂС‹Р№ РїРѕР»СѓС‡Р°РµС‚ РґР°РЅРЅС‹Рµ РёР· РјРѕРґСѓР»СЏ
+        if (this.menu.getBlockEntity() == null) return; // тайл может отсутствовать в реплее Flashback
         NonNullList<ItemStack> ghostItems = this.menu.getBlockEntity().getGhostItems();
 
         if (ghostItems.isEmpty()) {
@@ -242,7 +243,8 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
         
         // РџР РћР”Р’РРќРЈРўРђРЇ РџРћР”РЎРљРђР—РљРђ Р”Р›РЇ РљРќРћРџРљР Р’Р«Р‘РћР Рђ Р Р•Р¦Р•РџРўРђ
         if (isMouseOver(pMouseX, pMouseY, 7, 125, 18, 18)) {
-            ResourceLocation selectedRecipeId = this.menu.getBlockEntity().getSelectedRecipeId();
+            ResourceLocation selectedRecipeId = this.menu.getBlockEntity() != null
+                    ? this.menu.getBlockEntity().getSelectedRecipeId() : null;
             if (selectedRecipeId != null && this.minecraft != null && this.minecraft.level != null) {
                 RecipeHooks.getRecipeByKey(this.minecraft.level.getRecipeManager(), selectedRecipeId).ifPresent(recipe -> {
                     if (recipe instanceof AssemblerRecipe assemblerRecipe) {
@@ -297,8 +299,8 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
     }
 
     private void openRecipeSelector() {
-        if (this.minecraft == null || this.minecraft.level == null) return;
-        
+        if (this.minecraft == null || this.minecraft.level == null || this.menu.getBlockEntity() == null) return;
+
         ResourceLocation currentRecipe = this.menu.getBlockEntity().getSelectedRecipeId();
         
         // РЈР±РёСЂР°РµРј РїРµСЂРµРґР°С‡Сѓ СЃРїРёСЃРєР° СЂРµС†РµРїС‚РѕРІ
@@ -323,7 +325,7 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
         
         // РћРўР РРЎРћР’РљРђ РРљРћРќРљР Р Р•Р¦Р•РџРўРђ - РўРћР›Р¬РљРћ Р•РЎР›Р Р­РўРћ РћРЎРќРћР’РќРћР™ Р­РљР РђРќ
         // РџСЂРѕРІРµСЂСЏРµРј, С‡С‚Рѕ С‚РµРєСѓС‰РёР№ Р°РєС‚РёРІРЅС‹Р№ СЌРєСЂР°РЅ - СЌС‚Рѕ РёРјРµРЅРЅРѕ СЌС‚РѕС‚ СЌРєСЂР°РЅ
-        if (this.minecraft != null && this.minecraft.screen == this) {
+        if (this.minecraft != null && this.minecraft.screen == this && this.menu.getBlockEntity() != null) {
             ResourceLocation selectedRecipeId = this.menu.getBlockEntity().getSelectedRecipeId();
             if (selectedRecipeId != null && this.minecraft.level != null) {
                 RecipeHooks.getRecipeByKey(this.minecraft.level.getRecipeManager(), selectedRecipeId).ifPresent(recipe -> {

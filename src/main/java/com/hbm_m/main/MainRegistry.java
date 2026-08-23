@@ -2,7 +2,6 @@ package com.hbm_m.main;
 
 import org.slf4j.Logger;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.api.fluids.bootstrap.ModFluidTraitsBootstrap;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
@@ -58,6 +57,17 @@ public final class MainRegistry {
     public static void init() {
         LOGGER.info("Initializing {}", RefStrings.NAME);
 
+        //? if neoforge {
+        /*// NeoForge 1.21+: регистрация сетевых пейлоадов обязана произойти ДО фазы
+        // NetworkRegistry.setup() → RegisterPayloadHandlersEvent, которая выполняется
+        // ПОСЛЕ конструкторов модов, но ДО FMLCommonSetupEvent/FMLClientSetupEvent.
+        // Architectury добавляет слушатель RegisterPayloadHandlersEvent в момент вызова
+        // registerReceiver, поэтому поздняя регистрация из common/client setup молча
+        // не срабатывает → S2C-пакеты (радиация, гейгер, дебаг-рендер) не доходят до клиента.
+        ModPacketHandler.register();
+        ModPacketHandler.registerClientReceivers();
+        *///?}
+
         // Registries (common)
         DoorDeclRegistry.init();
         ModBiomes.init();
@@ -103,7 +113,9 @@ public final class MainRegistry {
             if (level == null) {
                 return;
             }
-            EnergyNetworkManager.get(server.overworld()).tick();
+            // Энергосеть: сначала обновляем подписки машин, затем узлы и распределение —
+            // единая точка тика для PowerNet и жидкостей
+            com.hbm_m.api.energy.EnergySubscriptions.tickAll(server);
             com.hbm_m.api.network.UniNodespace.updateNodespace(server);
             // Process RBMK neutron streams for every loaded server level
             for (ServerLevel lvl : server.getAllLevels()) {
@@ -111,10 +123,6 @@ public final class MainRegistry {
                     NeutronNodeWorld.tick(lvl);
                 }
             }
-        });
-
-        LifecycleEvent.SERVER_LEVEL_LOAD.register((ServerLevel level) -> {
-            EnergyNetworkManager.get(level).rebuildAllNetworks();
         });
 
         LifecycleEvent.SERVER_LEVEL_UNLOAD.register((ServerLevel level) -> {

@@ -71,7 +71,7 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
 
         ChemicalPlantRecipe recipe = getSelectedRecipe();
         boolean hasRecipe = recipe != null;
-        boolean didProcess = menu.getBlockEntity().getDidProcess();
+        boolean didProcess = menu.getBlockEntity() != null && menu.getBlockEntity().getDidProcess();
         boolean canProcess = hasRecipe && energyStored >= (long) recipe.getPowerConsumption();
 
         // ЛЕД-Индикаторы (1.7.10: правый LED только при достаточной энергии для рецепта — см. recipe.power)
@@ -103,11 +103,13 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
         renderGhostInputs(guiGraphics);
 
         // Рендер танков
-        for (int i = 0; i < 3; i++) {
-            menu.getBlockEntity().getInputTanks()[i].renderTank(guiGraphics,
-                    this.leftPos + 8 + i * 18, this.topPos + 18, 16, 34);
-            menu.getBlockEntity().getOutputTanks()[i].renderTank(guiGraphics,
-                    this.leftPos + 80 + i * 18, this.topPos + 18, 16, 34);
+        if (menu.getBlockEntity() != null) {
+            for (int i = 0; i < 3; i++) {
+                menu.getBlockEntity().getInputTanks()[i].renderTank(guiGraphics,
+                        this.leftPos + 8 + i * 18, this.topPos + 18, 16, 34);
+                menu.getBlockEntity().getOutputTanks()[i].renderTank(guiGraphics,
+                        this.leftPos + 80 + i * 18, this.topPos + 18, 16, 34);
+            }
         }
         com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, TEXTURE);
     }
@@ -139,9 +141,11 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
                     mouseX, mouseY);
         }
 
-        for (int i = 0; i < 3; i++) {
-            menu.getBlockEntity().getInputTanks()[i].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 8 + i * 18, this.topPos + 18, 16, 34);
-            menu.getBlockEntity().getOutputTanks()[i].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 80 + i * 18, this.topPos + 18, 16, 34);
+        if (menu.getBlockEntity() != null) {
+            for (int i = 0; i < 3; i++) {
+                menu.getBlockEntity().getInputTanks()[i].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 8 + i * 18, this.topPos + 18, 16, 34);
+                menu.getBlockEntity().getOutputTanks()[i].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 80 + i * 18, this.topPos + 18, 16, 34);
+            }
         }
 
         // Тултип кнопки рецепта
@@ -167,7 +171,7 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
     }
 
     private void openRecipeSelector() {
-        if (this.minecraft == null) return;
+        if (this.minecraft == null || menu.getBlockEntity() == null) return; // тайл может отсутствовать в реплее Flashback
         ResourceLocation currentRecipe = menu.getBlockEntity().getSelectedRecipeId();
         this.minecraft.setScreen(new GUIScreenRecipeSelector(
                 menu.getBlockEntity().getBlockPos(),
@@ -176,7 +180,7 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
     }
 
     private @Nullable ChemicalPlantRecipe getSelectedRecipe() {
-        if (this.minecraft == null || this.minecraft.level == null) return null;
+        if (this.minecraft == null || this.minecraft.level == null || menu.getBlockEntity() == null) return null; // тайл может отсутствовать в реплее Flashback
         ResourceLocation id = menu.getBlockEntity().getSelectedRecipeId();
         if (id == null) return null;
         return RecipeHooks.getRecipeByKey(this.minecraft.level.getRecipeManager(), id)

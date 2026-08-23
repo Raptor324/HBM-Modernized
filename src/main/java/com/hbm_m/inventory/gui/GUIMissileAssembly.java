@@ -61,6 +61,8 @@ public class GUIMissileAssembly extends AbstractContainerScreen<MissileAssemblyM
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (menu.canBuild() && isMouseOver(mouseX, mouseY, 115, 35, 18, 18)) {
+            // тайл может отсутствовать в реплее Flashback
+            if (menu.blockEntity == null) return super.mouseClicked(mouseX, mouseY, button);
             ModPacketHandler.sendToServer(ModPacketHandler.BUILD_MISSILE,
                     new BuildMissilePacket(menu.blockEntity.getBlockPos()));
             return true;

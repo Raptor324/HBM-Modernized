@@ -38,11 +38,13 @@ public class GUIMachineAutocrafter extends AbstractContainerScreen<MachineAutocr
         int y = topPos;
         guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
 
-        long energy = blockEntity.getEnergyStored();
-        long maxEnergy = blockEntity.getMaxEnergyStored();
-        if (energy > 0 && maxEnergy > 0) {
-            int h = (int) (energy * 34L / maxEnergy);
-            guiGraphics.fill(x + 17, y + 71 - h, x + 29, y + 71, 0xFF3080FF);
+        if (blockEntity != null) { // тайл может отсутствовать в реплее Flashback
+            long energy = blockEntity.getEnergyStored();
+            long maxEnergy = blockEntity.getMaxEnergyStored();
+            if (energy > 0 && maxEnergy > 0) {
+                int h = (int) (energy * 34L / maxEnergy);
+                guiGraphics.fill(x + 17, y + 71 - h, x + 29, y + 71, 0xFF3080FF);
+            }
         }
     }
 

@@ -804,6 +804,16 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.LAUNCH_PAD);
         blockItemFromBlockModelMachine(ModBlocks.LAUNCH_PAD_RUSTED);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_FAT_MAN);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_GADGET);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_BOY);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_MIKE);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_TSAR);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_FLEIJA);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_N2);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_SOLINIUM);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_FSTBMB);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_CUSTOM);
+        blockItemFromBlockModelBomb(ModBlocks.BOMB_MULTI);
         blockItemFromBlockModelMachine(ModBlocks.MACHINE_BATTERY_SOCKET);
         blockItemFromBlockModelMachine(ModBlocks.INDUSTRIAL_BOILER);
         blockItemFromBlockModelMachine(ModBlocks.HEATING_OVEN);
@@ -1282,6 +1292,8 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.BOY_SHIELDING,
                 ModItems.BOY_TARGET,
                 ModItems.BROKEN_ITEM,
+                ModItems.EARLY_EXPLOSIVE_LENSES,
+                ModItems.EXPLOSIVE_LENSES,
                 ModItems.BUCKET_ACID,
                 ModItems.BUCKET_MUD,
                 ModItems.BUCKET_SCHRABIDIC_ACID,

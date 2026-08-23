@@ -187,13 +187,11 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
             renderBounds = be.getRenderBoundingBox();
         }
 
-        if (minecraft.level == null || !OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, renderBounds)) {
+        // Куллинг + fade: в контрапшене Create shouldRender() пропускает
+        // frustum/ray-march кулинг.
+        if (applyCullingAndStaticFade(be, renderBounds) < 0) {
             return;
         }
-
-        float staticFade = RenderDistanceHelper.computeStaticFade(be);
-        if (staticFade < 0) return;
-        SingleMeshVboRenderer.setFadeAlpha(staticFade);
 
         MachineChemicalPlantVboRenderer.FluidVisual visual = MachineChemicalPlantVboRenderer.getRecipeVisual(be);
 
@@ -267,7 +265,9 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         var blockState = be.getBlockState();
 
         float staticFade = SingleMeshVboRenderer.getFadeAlpha();
-        float animFade = RenderDistanceHelper.computeAnimatedFade(blockPos);
+        // BE-оверлоад: bypass fade/cull для контрапшенов и Sable sublevel
+        // (raw BlockPos в sublevel ~40M от origin → distanceSqToCamera гигантский → fade=-1).
+        float animFade = RenderDistanceHelper.computeAnimatedFade(be);
         boolean anyFading = staticFade < 0.99f || (animFade >= 0 && animFade < 0.99f);
         boolean effectiveBatching = useBatching && !anyFading;
 
@@ -429,6 +429,5 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
                                        InstancedStaticPartRenderer r) {
         if (r != null) r.flush(projectionMatrix);
     }
-    @Override public int getViewDistance() { return RenderDistanceHelper.getStaticViewDistanceBlocks(); }
 }
 

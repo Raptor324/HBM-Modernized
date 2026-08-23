@@ -32,6 +32,8 @@ public class GUIMachineZirnox extends GuiInfoScreen<MachineZirnoxMenu> {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (zirnox == null) return;
 
         int s = zirnox.getGaugeScaled(6, 0);
         guiGraphics.blit(TEXTURE, this.leftPos + 160, this.topPos + 108, 238, 0 + 12 * s, 18, 12);
@@ -86,6 +88,8 @@ public class GUIMachineZirnox extends GuiInfoScreen<MachineZirnoxMenu> {
         GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (zirnox != null) {
         drawCustomInfoStat(guiGraphics, mouseX, mouseY,
                 160, 33, 18, 17,
                 this.leftPos + 180, this.topPos + 33,
@@ -144,12 +148,15 @@ public class GUIMachineZirnox extends GuiInfoScreen<MachineZirnoxMenu> {
                     Component.literal("   CO2 buffer critically low."),
                     Component.literal("   Refill before continuing operation."));
         }
+        }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
 
     @Override
     public boolean mouseClicked(double x, double y, int button) {
+        // тайл может отсутствовать в реплее Flashback
+        if (zirnox == null) return super.mouseClicked(x, y, button);
         if (this.leftPos + 144 <= x && this.leftPos + 158 > x && this.topPos + 35 < y && this.topPos + 49 >= y) {
             ZirnoxControlPacket.sendToServer(zirnox.getBlockPos(), ZirnoxControlPacket.ACTION_CONTROL);
             playClickSound();

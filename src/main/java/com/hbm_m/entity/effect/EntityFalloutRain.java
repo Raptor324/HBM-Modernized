@@ -5,6 +5,7 @@ import com.hbm_m.block.generic.BlockFallout;
 import com.hbm_m.config.FalloutConfigJSON;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.entity.logic.EntityExplosionChunkloading;
+import com.hbm_m.explosion.NukeMk5ChunkEater;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.util.WorldUtil;
 import com.hbm_m.world.biome.ModBiomes;
@@ -27,28 +28,20 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-/**
- * Радиоактивный fallout после ядерного взрыва MK5.
- * Chunk-by-chunk stomp: sellafite, подмена руд, fallout-слой, биомы (порт 1.7.10 FalloutRain).
- */
 public class EntityFalloutRain extends EntityExplosionChunkloading {
 
     private static final EntityDataAccessor<Integer> SCALE = SynchedEntityData.defineId(EntityFalloutRain.class, EntityDataSerializers.INT);
 
-    /** Точечный тикет прогрузки чанка под обработку fallout; снимается сразу после stomp. */
     private static final TicketType<ChunkPos> FALLOUT_LOAD =
             TicketType.create("hbm_m_fallout_load", Comparator.comparingLong(p -> (long) p.x << 32 ^ p.z));
 
@@ -132,14 +125,12 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
                         discard();
                         break;
                     }
-                    int chunkPosX = (int) (chunkPos & 4294967295L);
-                    int chunkPosZ = (int) (chunkPos >> 32 & 4294967295L);
+                    int chunkPosX = ChunkPos.getX(chunkPos);
+                    int chunkPosZ = ChunkPos.getZ(chunkPos);
 
                     if (processChunkColumns(chunkPosX, chunkPosZ, outer)) {
                         deferred = 0;
                     } else {
-                        // чанк не загружен: вернуть в очередь и повторить в следующих тиках.
-                        // если ВСЕ оставшиеся чанки не загружены — выходим из тика, чтобы не крутиться впустую
                         if (outer) {
                             outerChunksToProcess.add(0, chunkPos);
                         } else {
@@ -158,22 +149,11 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         }
     }
 
-    /**
-     * @return true — чанк обработан; false — чанк не готов (обработка отложена,
-     *         тикет прогрузки запрошен).
-     * Готовность проверяется через getChunkNow(): он возвращает чанк только если тот
-     * уже сгенерирован до FULL, иначе null — без шедулинга генерации и без блокировки.
-     * hasChunk() для этого НЕ годится: он смотрит только ticket level холдера и возвращает
-     * true сразу после применения тикета, ещё ДО завершения генерации — а последующий
-     * getChunk(x, z) с requireChunk=true тогда паркует серверный поток в managedBlock
-     * на всю генерацию чанка (в профиле — до 40% времени тика сервера).
-     */
     private boolean processChunkColumns(int chunkPosX, int chunkPosZ, boolean outerRing) {
         if (!(level() instanceof ServerLevel serverLevel)) return true;
 
         LevelChunk chunk = serverLevel.getChunkSource().getChunkNow(chunkPosX, chunkPosZ);
         if (chunk == null) {
-            // запросим асинхронную прогрузку точечным тикетом; снимем после обработки
             ChunkPos cp = new ChunkPos(chunkPosX, chunkPosZ);
             if (issuedTickets.putIfAbsent(cp, cp) == null) {
                 serverLevel.getChunkSource().addRegionTicket(FALLOUT_LOAD, cp, 2, cp);
@@ -183,33 +163,50 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         releaseTicket(new ChunkPos(chunkPosX, chunkPosZ));
 
         boolean biomeModified = false;
+        int minX = chunkPosX << 4;
+        int minZ = chunkPosZ << 4;
 
-        for (int x = chunkPosX << 4; x < (chunkPosX << 4) + 16; x++) {
-            for (int z = chunkPosZ << 4; z < (chunkPosZ << 4) + 16; z++) {
-                double distance = Math.hypot(x - getX(), z - getZ());
-                if (outerRing && distance > getScale()) continue;
+        // 1. Быстрая замена биомов по сетке 4x4 (кварты ваниллы 1.21)
+        if (ModClothConfig.get().enableCraterBiomes) {
+            for (int bx = 0; bx < 16; bx += 4) {
+                for (int bz = 0; bz < 16; bz += 4) {
+                    int worldX = minX + bx + 2;
+                    int worldZ = minZ + bz + 2;
+                    double distance = Math.hypot(worldX - getX(), worldZ - getZ());
+                    if (outerRing && distance > getScale()) continue;
 
-                double percent = distance * 100 / getScale();
-                stomp(x, z, percent);
+                    double percent = distance * 100.0 / getScale();
+                    ResourceKey<Biome> biomeKey = getBiomeChange(percent, getScale(),
+                            serverLevel.getBiome(new BlockPos(worldX, (int) getY(), worldZ)).unwrapKey().orElse(null));
 
-                ResourceKey<Biome> biomeKey = getBiomeChange(percent, getScale(),
-                        serverLevel.getBiome(new BlockPos(x, (int) getY(), z)).unwrapKey().orElse(null));
-                if (biomeKey != null) {
-                    Holder<Biome> biomeHolder = biomeCache.get(biomeKey);
-                    if (biomeHolder != null) {
-                        WorldUtil.setBiomeColumn(serverLevel, x, z, biomeHolder);
-                        biomeModified = true;
+                    if (biomeKey != null) {
+                        Holder<Biome> biomeHolder = biomeCache.get(biomeKey);
+                        if (biomeHolder != null) {
+                            // Задаем биом сразу для всей кварты 4x4
+                            for (int qx = 0; qx < 4; qx++) {
+                                for (int qz = 0; qz < 4; qz++) {
+                                    WorldUtil.setBiomeColumn(serverLevel, minX + bx + qx, minZ + bz + qz, biomeHolder);
+                                }
+                            }
+                            biomeModified = true;
+                        }
                     }
                 }
             }
         }
 
-        // [FIX] stomp расставляет sellafite/waste с setBlock(flag=3, UPDATE_NEIGHBORS).
-        // Соседний океан получает neighbor-update → вода затекает обратно в кратер
-        // → уродливые сетки и полосы на границах чанков.
-        // Вычищаем всю жидкость в чанке в пределах радиуса кратера (не fallout-радиуса!),
-        // с флагом UPDATE_CLIENTS (2) — без neighbor-update, чтобы не запустить новый поток.
-        clearChunkFluidsPostStomp(serverLevel, chunkPosX, chunkPosZ);
+        // 2. Радиационная трансформация поверхности
+        for (int x = minX; x < minX + 16; x++) {
+            for (int z = minZ; z < minZ + 16; z++) {
+                double distance = Math.hypot(x - getX(), z - getZ());
+                if (outerRing && distance > getScale()) continue;
+
+                double percent = distance * 100.0 / getScale();
+                stomp(x, z, percent);
+            }
+        }
+
+        clearChunkFluidsPostStomp(serverLevel, chunk);
 
         if (biomeModified) {
             WorldUtil.flushChunk(serverLevel, chunk);
@@ -225,44 +222,39 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         }
     }
 
-    /**
-     * Пост-обработка: удаляет жидкость, затёкшую в кратер после расстановки sellafite.
-     * Радиус = ~40% от fallout scale (соответствует crater radius = length ≈ scale / 2.5).
-     * Флаг 2 = UPDATE_CLIENTS, без neighbor-update.
-     */
-    private void clearChunkFluidsPostStomp(ServerLevel level, int chunkPosX, int chunkPosZ) {
+    private void clearChunkFluidsPostStomp(ServerLevel level, LevelChunk chunk) {
         int craterRadius = (int) (getScale() * 0.4D);
         int craterRadiusSq = craterRadius * craterRadius;
-        int minY = level.getMinBuildHeight();
-        int maxY = level.getMaxBuildHeight();
         BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
 
-        for (int x = chunkPosX << 4; x < (chunkPosX << 4) + 16; x++) {
-            for (int z = chunkPosZ << 4; z < (chunkPosZ << 4) + 16; z++) {
-                double dx = x + 0.5D - getX();
-                double dz = z + 0.5D - getZ();
-                if (dx * dx + dz * dz > craterRadiusSq) continue;
+        int chunkPosX = chunk.getPos().x;
+        int chunkPosZ = chunk.getPos().z;
 
-                for (int y = minY; y < maxY; y++) {
-                    mutable.set(x, y, z);
-                    if (!level.getBlockState(mutable).getFluidState().isEmpty()) {
-                        // flag 18 = UPDATE_CLIENTS | UPDATE_IMMEDIATE — без updateNeighbourShapes
-                        level.setBlock(mutable, Blocks.AIR.defaultBlockState(), 18);
+        LevelChunkSection[] sections = chunk.getSections();
+        for (int s = 0; s < sections.length; s++) {
+            LevelChunkSection section = sections[s];
+            if (section == null || section.hasOnlyAir()) continue;
+
+            int sectionMinY = level.getSectionYFromSectionIndex(s) << 4;
+            int sectionMaxY = sectionMinY + 15;
+
+            for (int x = chunkPosX << 4; x < (chunkPosX << 4) + 16; x++) {
+                for (int z = chunkPosZ << 4; z < (chunkPosZ << 4) + 16; z++) {
+                    double dx = x + 0.5D - getX();
+                    double dz = z + 0.5D - getZ();
+                    if (dx * dx + dz * dz > craterRadiusSq) continue;
+
+                    for (int y = sectionMinY; y <= sectionMaxY; y++) {
+                        mutable.set(x, y, z);
+                        if (!section.getBlockState(x & 15, y & 15, z & 15).getFluidState().isEmpty()) {
+                            level.setBlock(mutable, Blocks.AIR.defaultBlockState(), NukeMk5ChunkEater.FAST_BLOCK_FLAGS);
+                        }
                     }
                 }
             }
         }
     }
 
-    /**
-     * 1:1 порт {@code EntityFalloutRain.getBiomeChange} (1.7.10):
-     * <ul>
-     *   <li>{@code scale >= 150 && dist < 15} → INNER (эпицентр крупных взрывов)</li>
-     *   <li>{@code scale >= 100 && dist < 55} → CRATER (средняя зона, если не INNER)</li>
-     *   <li>{@code scale >= 25} → OUTER (внешняя зона, если не INNER/CRATER)</li>
-     * </ul>
-     * {@code dist} — процент радиуса fallout от эпицентра (0..100).
-     */
     public static ResourceKey<Biome> getBiomeChange(double dist, int scale, ResourceKey<Biome> original) {
         if (!ModClothConfig.get().enableCraterBiomes || original == null) return null;
 
@@ -280,33 +272,56 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         return null;
     }
 
+    /**
+     * Сверхточный декартов сбор чанков без слепых зон и пропусков.
+     */
     private void gatherChunks() {
-        Set<Long> chunks = new LinkedHashSet<>();
-        Set<Long> outerChunks = new LinkedHashSet<>();
-        int outerRange = getScale();
-        int adjustedMaxAngle = Math.max(18, 20 * outerRange / 32);
+        chunksToProcess.clear();
+        outerChunksToProcess.clear();
 
-        for (int angle = 0; angle <= adjustedMaxAngle; angle++) {
-            Vec3 vector = new Vec3(outerRange, 0, 0)
-                    .yRot((float) (angle * Math.PI / 180.0 / (adjustedMaxAngle / 360.0)));
-            outerChunks.add(ChunkPos.asLong((int) (getX() + vector.x) >> 4, (int) (getZ() + vector.z) >> 4));
-        }
+        int centerChunkX = (int) getX() >> 4;
+        int centerChunkZ = (int) getZ() >> 4;
+        int chunkRadius = (getScale() + 15) >> 4;
+        double scaleSq = (double) getScale() * getScale();
+        double innerCutoffSq = Math.pow(getScale() * 0.85D, 2);
 
-        for (int distance = 0; distance <= outerRange; distance += 8) {
-            for (int angle = 0; angle <= adjustedMaxAngle; angle++) {
-                Vec3 vector = new Vec3(distance, 0, 0)
-                        .yRot((float) (angle * Math.PI / 180.0 / (adjustedMaxAngle / 360.0)));
-                long chunkCoord = ChunkPos.asLong((int) (getX() + vector.x) >> 4, (int) (getZ() + vector.z) >> 4);
-                if (!outerChunks.contains(chunkCoord)) {
-                    chunks.add(chunkCoord);
+        for (int cx = -chunkRadius; cx <= chunkRadius; cx++) {
+            for (int cz = -chunkRadius; cz <= chunkRadius; cz++) {
+                int chunkX = centerChunkX + cx;
+                int chunkZ = centerChunkZ + cz;
+
+                // Ближайшая точка границы чанка к эпицентру взрыва
+                int nearestX = Math.max(chunkX << 4, Math.min((int) getX(), (chunkX << 4) + 15));
+                int nearestZ = Math.max(chunkZ << 4, Math.min((int) getZ(), (chunkZ << 4) + 15));
+
+                double dx = nearestX - getX();
+                double dz = nearestZ - getZ();
+                double distSq = dx * dx + dz * dz;
+
+                if (distSq <= scaleSq) {
+                    long packed = ChunkPos.asLong(chunkX, chunkZ);
+                    if (distSq >= innerCutoffSq) {
+                        outerChunksToProcess.add(packed);
+                    } else {
+                        chunksToProcess.add(packed);
+                    }
                 }
             }
         }
 
-        chunksToProcess.addAll(chunks);
-        outerChunksToProcess.addAll(outerChunks);
-        Collections.reverse(chunksToProcess);
-        Collections.reverse(outerChunksToProcess);
+        // Обработка идет от центра к краям
+        Comparator<Long> distComp = (a, b) -> {
+            int ax = ChunkPos.getX(a);
+            int az = ChunkPos.getZ(a);
+            int bx = ChunkPos.getX(b);
+            int bz = ChunkPos.getZ(b);
+            int d1 = (ax - centerChunkX) * (ax - centerChunkX) + (az - centerChunkZ) * (az - centerChunkZ);
+            int d2 = (bx - centerChunkX) * (bx - centerChunkX) + (bz - centerChunkZ) * (bz - centerChunkZ);
+            return Integer.compare(d2, d1); // Реверс для быстрого pop с конца List
+        };
+
+        chunksToProcess.sort(distComp);
+        outerChunksToProcess.sort(distComp);
     }
 
     private void stomp(int x, int z, double dist) {
@@ -314,32 +329,31 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         int depth = 0;
         int minY = level.getMinBuildHeight();
         int maxY = level.getMaxBuildHeight();
-        // Сканируем от поверхности вниз, а не весь столб мира (1.7.10: y=255..0, но в кратере это ~400 блоков/колонну).
         int surfaceY = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
         int topY = Math.min(maxY - 1, surfaceY + 8);
+
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        BlockPos.MutableBlockPos above = new BlockPos.MutableBlockPos();
 
         for (int y = topY; y >= minY; y--) {
             if (depth >= 3) return;
 
-            BlockPos pos = new BlockPos(x, y, z);
+            pos.set(x, y, z);
             BlockState state = level.getBlockState(pos);
 
             if (state.isAir() || state.is(ModBlocks.NUCLEAR_FALLOUT.get())) continue;
 
-            // [FIX] Вычищаем жидкость/waterlogged блоки (вода, ламинарии, морская трава)
-            // с флагом 18 (UPDATE_CLIENTS | UPDATE_IMMEDIATE) — без updateNeighbourShapes,
-            // чтобы соседняя вода не получила уведомление и не растеклась.
             if (!state.getFluidState().isEmpty()) {
-                level.setBlock(pos, Blocks.AIR.defaultBlockState(), 18);
+                level.setBlock(pos, Blocks.AIR.defaultBlockState(), NukeMk5ChunkEater.FAST_BLOCK_FLAGS);
                 continue;
             }
 
-            BlockPos above = pos.above();
+            above.set(x, y + 1, z);
             BlockState aboveState = level.getBlockState(above);
 
             if (dist < 65 && state.isFlammable(level, pos, Direction.UP)) {
-                if (random.nextInt(5) == 0 && level.getBlockState(above).isAir()) {
-                    level.setBlock(above, Blocks.FIRE.defaultBlockState(), 18);
+                if (random.nextInt(5) == 0 && aboveState.isAir()) {
+                    level.setBlock(above, Blocks.FIRE.defaultBlockState(), NukeMk5ChunkEater.FAST_BLOCK_FLAGS);
                 }
             }
 
@@ -352,7 +366,6 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
                 }
             }
 
-
             if (!eval && state.isSolidRender(level, pos)) {
                 depth++;
             }
@@ -361,19 +374,19 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         tryPlaceFalloutLayer(level, x, z, dist);
     }
 
-    /** Слой осадков — после подмены блоков в колонке, чтобы опора не ломалась mid-stomp. */
     private void tryPlaceFalloutLayer(Level level, int x, int z, double dist) {
-        int minY = level.getMinBuildHeight();
         int topY = Math.min(level.getMaxBuildHeight() - 1, level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) + 8);
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        BlockPos.MutableBlockPos above = new BlockPos.MutableBlockPos();
 
-        for (int y = topY; y >= minY; y--) {
-            BlockPos pos = new BlockPos(x, y, z);
+        for (int y = topY; y >= level.getMinBuildHeight(); y--) {
+            pos.set(x, y, z);
             BlockState state = level.getBlockState(pos);
             if (state.isAir() || state.is(ModBlocks.NUCLEAR_FALLOUT.get())) {
                 continue;
             }
 
-            BlockPos above = pos.above();
+            above.set(x, y + 1, z);
             BlockState aboveState = level.getBlockState(above);
             if (!aboveState.isAir() && !(aboveState.canBeReplaced() && aboveState.getFluidState().isEmpty())) {
                 return;
@@ -383,10 +396,10 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
                 return;
             }
 
-            double d = dist / 100;
+            double d = dist / 100.0;
             double chance = 0.1 - Math.pow(d - 0.7, 2);
             if (chance >= random.nextDouble()) {
-                level.setBlock(above, ModBlocks.NUCLEAR_FALLOUT.get().defaultBlockState(), 18);
+                level.setBlock(above, ModBlocks.NUCLEAR_FALLOUT.get().defaultBlockState(), NukeMk5ChunkEater.FAST_BLOCK_FLAGS);
             }
             return;
         }
@@ -395,7 +408,6 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
     @Override
     public void remove(RemovalReason reason) {
         clearChunkTicket();
-        // снять незакрытые точечные тикеты, иначе чанки зависнут загруженными
         if (!issuedTickets.isEmpty() && level() instanceof ServerLevel serverLevel) {
             for (ChunkPos cp : issuedTickets.keySet()) {
                 serverLevel.getChunkSource().removeRegionTicket(FALLOUT_LOAD, cp, 2, cp);

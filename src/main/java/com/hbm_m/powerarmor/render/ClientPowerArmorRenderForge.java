@@ -17,29 +17,11 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
-import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class ClientPowerArmorRenderForge {
-
-    @SubscribeEvent
-    public static void onRegisterGeometryLoaders(ModelEvent.RegisterGeometryLoaders event) {
-        event.register("t51_armor_parts", new T51ArmorModelLoader());
-        event.register("ajr_armor_parts", new AJRArmorModelLoader());
-        event.register("bismuth_armor_parts", new BismuthArmorModelLoader());
-        event.register("dnt_armor_parts", new DNTArmorModelLoader());
-    }
-
-    @SubscribeEvent
-    public static void onRegisterAdditionalModels(ModelEvent.RegisterAdditional event) {
-        event.register(ClientPowerArmorRender.T51_MODEL_BAKED);
-        event.register(ClientPowerArmorRender.AJR_MODEL_BAKED);
-        event.register(ClientPowerArmorRender.AJRO_MODEL_BAKED);
-        event.register(ClientPowerArmorRender.BISMUTH_MODEL_BAKED);
-        event.register(ClientPowerArmorRender.DNT_MODEL_BAKED);
-    }
 
     @SubscribeEvent
     public static void onAddLayers(EntityRenderersEvent.AddLayers event) {

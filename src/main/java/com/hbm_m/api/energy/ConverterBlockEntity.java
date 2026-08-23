@@ -101,6 +101,9 @@ public class ConverterBlockEntity extends BaseHbmBlockEntity implements IEnergyR
     public long getCurrentLimit() { return currentLimit; }
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, ConverterBlockEntity be) {
+        if (!level.isClientSide) {
+            com.hbm_m.api.energy.EnergySubscriptions.update(be);
+        }
         if (be.energy <= 0) return;
         if (be.ioMode == 2) return;
 

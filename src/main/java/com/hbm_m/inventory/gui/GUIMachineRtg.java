@@ -41,8 +41,11 @@ public class GUIMachineRtg extends AbstractContainerScreen<MachineRtgMenu> {
         com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        String heat = "Heat: " + rtg.getHeat() + " / " + rtg.getHeatMax();
-        guiGraphics.drawString(this.font, heat, this.leftPos + 8, this.topPos + 74, 0x404040, false);
+        // тайл может отсутствовать в реплее Flashback
+        if (rtg != null) {
+            String heat = "Heat: " + rtg.getHeat() + " / " + rtg.getHeatMax();
+            guiGraphics.drawString(this.font, heat, this.leftPos + 8, this.topPos + 74, 0x404040, false);
+        }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

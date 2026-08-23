@@ -56,8 +56,10 @@ public class GUIMachineIndustrialBoiler extends GuiInfoScreen<MachineIndustrialB
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
         var be = menu.getBlockEntity();
-        renderTank(guiGraphics, WATER_TANK_X, be.getTankFluid(true), menu.getWaterAmount(), menu.getWaterCapacity());
-        renderTank(guiGraphics, STEAM_TANK_X, be.getTankFluid(false), menu.getSteamAmount(), menu.getSteamCapacity());
+        if (be != null) { // тайл может отсутствовать в реплее Flashback
+            renderTank(guiGraphics, WATER_TANK_X, be.getTankFluid(true), menu.getWaterAmount(), menu.getWaterCapacity());
+            renderTank(guiGraphics, STEAM_TANK_X, be.getTankFluid(false), menu.getSteamAmount(), menu.getSteamCapacity());
+        }
     }
 
     private void renderTank(GuiGraphics guiGraphics, int relX, Fluid fluid, int fill, int capacity) {

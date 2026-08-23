@@ -22,7 +22,7 @@ void main() {
     // night vision, darkness, and dimension tint — same as block models.
     vec3 lm = texture(Sampler2, lightmapUV).rgb;
     vec3 lit = baseColor.rgb * lm;
-    lit *= 0.8;
+    // lit *= 0;
 
     // Направленное затенение в стиле vanilla: верх 1.0, бока 0.8, низ 0.6.
     // Верхние грани сохраняют прежнюю яркость (0.8), остальные темнее — модель

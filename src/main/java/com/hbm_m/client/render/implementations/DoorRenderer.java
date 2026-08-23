@@ -184,13 +184,10 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
         if (doorDecl == null) return;
 
         BlockPos blockPos = be.getBlockPos();
-        var minecraft = Minecraft.getInstance();
-        if (!com.hbm_m.compat.ContraptionRenderCompat.isContraptionRender(be)) {
-            AABB renderBounds = be.getRenderBoundingBox();
-            if (!OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, renderBounds)) {
-                return;
-            }
-        }
+        // Куллинг + fade: в контрапшене Create shouldRender() пропускает
+        // frustum/ray-march кулинг.
+        float doorFade = applyCullingAndStaticFade(be);
+        if (doorFade < 0) return;
 
         boolean onContraption = com.hbm_m.compat.ContraptionRenderCompat.isContraptionRender(be);
         float openTicks;
@@ -204,10 +201,6 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
             isOpen = be.isOpen();
         }
         
-        float doorFade = RenderDistanceHelper.computeStaticFade(be);
-        if (doorFade < 0) return;
-        SingleMeshVboRenderer.setFadeAlpha(doorFade);
-
         doorDecl.doOffsetTransform(animator);
 
         if (model instanceof DoorBakedModel doorModel) {
@@ -585,11 +578,6 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
         }
     }
 
-    @Override
-    public int getViewDistance() {
-        return RenderDistanceHelper.getStaticViewDistanceBlocks();
-    }
-
     public void onResourceManagerReload() {
         clearAllCaches();
     }
@@ -609,6 +597,10 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
 
         com.hbm_m.client.render.implementations.DoorVboRenderer.clearCache();
 
+        // Очищаем рендереры из общего кэша MeshRenderCache перед удалением
+        for (String key : DAE_RENDERER_CACHE.keySet()) {
+            MeshRenderCache.removeRenderer(key);
+        }
         DAE_RENDERER_CACHE.values().forEach(SingleMeshVboRenderer::cleanup);
         DAE_RENDERER_CACHE.clear();
         DAE_MODELS_CACHE.clear();

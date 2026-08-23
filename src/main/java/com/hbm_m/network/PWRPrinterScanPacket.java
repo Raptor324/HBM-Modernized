@@ -1,9 +1,6 @@
 package com.hbm_m.network;
 
-import com.hbm_m.inventory.gui.GUIPWRPrinter;
-
 import dev.architectury.networking.NetworkManager.PacketContext;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 
 /**
@@ -11,6 +8,11 @@ import net.minecraft.network.FriendlyByteBuf;
  * the client to display. 1:1 in purpose to the original's piggybacked {@code TileEntityPWRController}
  * sync packet ({@code ItemPWRPrinter.serialize}/{@code deserialize}), implemented as its own
  * dedicated packet instead of overloading the reactor's block-entity sync packet.
+ *
+ * <p>ВАЖНО: обработчик НЕ ссылается напрямую на клиентские классы (GUI/Minecraft) —
+ * открытие экрана делегировано в {@code PwrPrinterClientHooks}. Прямая ссылка линковала
+ * иерархию GUIPWRPrinter → Screen уже при регистрации пакета и роняла загрузку мода
+ * на выделенном сервере.
  */
 public class PWRPrinterScanPacket implements S2CPacket {
 
@@ -42,7 +44,10 @@ public class PWRPrinterScanPacket implements S2CPacket {
     }
 
     public static void handle(PWRPrinterScanPacket packet, PacketContext context) {
-        context.queue(() -> Minecraft.getInstance().setScreen(
-                new GUIPWRPrinter(packet.sizeX, packet.sizeY, packet.sizeZ, packet.grid)));
+        // Делегирование в клиентский хук через FQN: ссылка резолвится лениво,
+        // только при исполнении лямбды на клиенте (см. javadoc класса).
+        context.queue(() ->
+                com.hbm_m.client.PwrPrinterClientHooks.openScanScreen(
+                        packet.sizeX, packet.sizeY, packet.sizeZ, packet.grid));
     }
 }

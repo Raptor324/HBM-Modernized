@@ -83,22 +83,14 @@ public class SwitchBlock extends BaseEntityBlock {
             be.setBlockState(newState);
         }
 
-        // 4. Handle Network Logic
-        EnergyNetworkManager manager = EnergyNetworkManager.get((ServerLevel) level);
-
-        // [ИСПРАВЛЕНО] Всегда сначала удаляем узел.
-        // Это предотвращает ситуацию "зомби-узла", когда addNode думает, что узел уже есть,
-        // но он в некорректном состоянии.
-        manager.removeNode(pos);
-
+        // 4. Звук включения/выключения
         if (isPowered) {
             level.playSound(null, pos, ModSounds.SWITCH_ON.get(), SoundSource.BLOCKS, 1.0f, 1.0f);
-            manager.addNode(pos);
         } else {
             level.playSound(null, pos, ModSounds.SWITCH_ON.get(), SoundSource.BLOCKS, 1.0f, 0.7f);
         }
 
-        // 5. Notify neighbors (теперь это делает и setBlock с флагом 3, но оставим для надежности)
+        // 5. Notify neighbors
         level.updateNeighborsAt(pos, this);
 
         return InteractionResult.SUCCESS;
@@ -106,19 +98,11 @@ public class SwitchBlock extends BaseEntityBlock {
 
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-        if (!level.isClientSide && !oldState.is(state.getBlock())) {
-            if (state.getValue(POWERED)) {
-                EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
-            }
-        }
         super.onPlace(state, level, pos, oldState, isMoving);
     }
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!level.isClientSide && !state.is(newState.getBlock())) {
-            EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
-        }
         super.onRemove(state, level, pos, newState, isMoving);
     }
 

@@ -353,6 +353,27 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<NukePrototypeMenu>> NUKE_PROTOTYPE_MENU =
             MENUS.register("nuke_prototype_menu", () -> MenuRegistry.ofExtended(NukePrototypeMenu::new));
 
+    public static final RegistrySupplier<MenuType<LargeNukeMenu>> LARGE_NUKE_MENU =
+            MENUS.register("large_nuke_menu", () -> MenuRegistry.ofExtended(LargeNukeMenu::new));
+
+    public static final RegistrySupplier<MenuType<NukeFleijaMenu>> NUKE_FLEIJA_MENU =
+            MENUS.register("nuke_fleija_menu", () -> MenuRegistry.ofExtended(NukeFleijaMenu::new));
+
+    public static final RegistrySupplier<MenuType<NukeSoliniumMenu>> NUKE_SOLINIUM_MENU =
+            MENUS.register("nuke_solinium_menu", () -> MenuRegistry.ofExtended(NukeSoliniumMenu::new));
+
+    public static final RegistrySupplier<MenuType<NukeN2Menu>> NUKE_N2_MENU =
+            MENUS.register("nuke_n2_menu", () -> MenuRegistry.ofExtended(NukeN2Menu::new));
+
+    public static final RegistrySupplier<MenuType<NukeFstbmbMenu>> NUKE_FSTBMB_MENU =
+            MENUS.register("nuke_fstbmb_menu", () -> MenuRegistry.ofExtended(NukeFstbmbMenu::new));
+
+    public static final RegistrySupplier<MenuType<NukeCustomMenu>> NUKE_CUSTOM_MENU =
+            MENUS.register("nuke_custom_menu", () -> MenuRegistry.ofExtended(NukeCustomMenu::new));
+
+    public static final RegistrySupplier<MenuType<BombMultiMenu>> BOMB_MULTI_MENU =
+            MENUS.register("bomb_multi_menu", () -> MenuRegistry.ofExtended(BombMultiMenu::new));
+
     public static final RegistrySupplier<MenuType<HeatingOvenMenu>> HEATING_OVEN_MENU =
             MENUS.register("heating_oven_menu", () -> MenuRegistry.ofExtended(HeatingOvenMenu::new));
 

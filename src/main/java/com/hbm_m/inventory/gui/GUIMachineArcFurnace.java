@@ -73,6 +73,7 @@ public class GUIMachineArcFurnace extends GuiInfoScreen<MachineArcFurnaceMenu> {
 
     private void renderTanks(GuiGraphics guiGraphics, int x, int y) {
         MachineArcFurnaceBlockEntity be = menu.getBlockEntity();
+        if (be == null) return; // тайл может отсутствовать в реплее Flashback
         be.getTank1().renderTank(guiGraphics, x + TANK1_X, y + TANK1_Y, TANK_WIDTH, TANK_HEIGHT);
         be.getTank2().renderTank(guiGraphics, x + TANK2_X, y + TANK2_Y, TANK_WIDTH, TANK_HEIGHT);
     }
@@ -104,6 +105,7 @@ public class GUIMachineArcFurnace extends GuiInfoScreen<MachineArcFurnaceMenu> {
 
     private void renderCustomTooltips(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         MachineArcFurnaceBlockEntity be = menu.getBlockEntity();
+        if (be == null) return; // тайл может отсутствовать в реплее Flashback
         int x = (width - imageWidth) / 2;
         int y = (height - imageHeight) / 2;
 

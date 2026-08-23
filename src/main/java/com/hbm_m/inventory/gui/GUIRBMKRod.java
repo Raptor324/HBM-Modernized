@@ -39,6 +39,8 @@ public class GUIRBMKRod extends GuiInfoScreen<RBMKRodMenu> {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (be == null) return;
 
         ItemStack rod = be.fuelSlot;
         if (!rod.isEmpty() && rod.getItem() instanceof RBMKRodItem) {
@@ -63,6 +65,7 @@ public class GUIRBMKRod extends GuiInfoScreen<RBMKRodMenu> {
         com.hbm_m.client.GuiCompat.renderBackground(this, g, mouseX, mouseY, partial);
         super.render(g, mouseX, mouseY, partial);
 
+        if (be != null) {
         if (!be.coldEnoughForAutoloader())
             drawCustomInfoStat(g, mouseX, mouseY, -16, 20, 16, 16, leftPos - 8, topPos + 36,
                     Component.literal("Fuel skin temperature has exceeded 1,000°C,"),
@@ -71,6 +74,7 @@ public class GUIRBMKRod extends GuiInfoScreen<RBMKRodMenu> {
             drawCustomInfoStat(g, mouseX, mouseY, -16, 36, 16, 16, leftPos - 8, topPos + 52,
                     Component.literal("Fuel skin temperature has exceeded 200°C,"),
                     Component.literal("fuel can no longer be removed by hand!"));
+        }
 
         this.renderTooltip(g, mouseX, mouseY);
     }

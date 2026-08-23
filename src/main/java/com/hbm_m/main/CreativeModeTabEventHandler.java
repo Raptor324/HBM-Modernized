@@ -214,6 +214,16 @@ public final class CreativeModeTabEventHandler {
 
         add.accept(new ItemStack(ModBlocks.NUKE_FAT_MAN.get()));
         // add.accept(new ItemStack(ModBlocks.NUKE_PROTOTYPE.get()));
+        add.accept(new ItemStack(ModBlocks.NUKE_GADGET.get()));
+        add.accept(new ItemStack(ModBlocks.NUKE_BOY.get()));
+        add.accept(new ItemStack(ModBlocks.NUKE_MIKE.get()));
+        add.accept(new ItemStack(ModBlocks.NUKE_TSAR.get()));
+        add.accept(new ItemStack(ModBlocks.NUKE_FLEIJA.get()));
+        add.accept(new ItemStack(ModBlocks.NUKE_N2.get()));
+        add.accept(new ItemStack(ModBlocks.NUKE_SOLINIUM.get()));
+        add.accept(new ItemStack(ModBlocks.NUKE_FSTBMB.get()));
+        add.accept(new ItemStack(ModBlocks.NUKE_CUSTOM.get()));
+        add.accept(new ItemStack(ModBlocks.BOMB_MULTI.get()));
         add.accept(new ItemStack(ModBlocks.DUD_CONVENTIONAL.get()));
         add.accept(new ItemStack(ModBlocks.DUD_NUKE.get()));
         add.accept(new ItemStack(ModBlocks.DUD_SALTED.get()));
@@ -271,6 +281,20 @@ public final class CreativeModeTabEventHandler {
 
         add.accept(new ItemStack(ModItems.FAT_MAN_IGNITER.get()));
         add.accept(new ItemStack(ModItems.FAT_MAN_CORE.get()));
+        add.accept(new ItemStack(ModItems.GADGET_WIREING.get()));
+        add.accept(new ItemStack(ModItems.EARLY_EXPLOSIVE_LENSES.get()));
+        add.accept(new ItemStack(ModItems.GADGET_CORE.get()));
+        add.accept(new ItemStack(ModItems.BOY_SHIELDING.get()));
+        add.accept(new ItemStack(ModItems.BOY_TARGET.get()));
+        add.accept(new ItemStack(ModItems.BOY_BULLET.get()));
+        add.accept(new ItemStack(ModItems.BOY_PROPELLANT.get()));
+        add.accept(new ItemStack(ModItems.BOY_IGNITER.get()));
+        add.accept(new ItemStack(ModItems.EXPLOSIVE_LENSES.get()));
+        add.accept(new ItemStack(ModItems.MAN_CORE.get()));
+        add.accept(new ItemStack(ModItems.MIKE_CORE.get()));
+        add.accept(new ItemStack(ModItems.MIKE_DEUT.get()));
+        add.accept(new ItemStack(ModItems.MIKE_COOLING_UNIT.get()));
+        add.accept(new ItemStack(ModItems.TSAR_CORE.get()));
         
         // add.accept(new ItemStack(ModItems.IGNITER.get()));
         add.accept(new ItemStack(ModItems.DETONATOR.get()));
@@ -1425,6 +1449,7 @@ public final class CreativeModeTabEventHandler {
         for (BlockAbsorber.EnumAbsorberTier tier : BlockAbsorber.EnumAbsorberTier.values()) {
             add.accept(BlockAbsorberItem.forTier(ModBlocks.RAD_ABSORBER.get(), tier));
         }
+        add.accept(new ItemStack(ModBlocks.WIRE_COATED.get()));
         add.accept(new ItemStack(ModItems.CASSETTE_AMS_SIREN.get()));
         add.accept(new ItemStack(ModItems.CASSETTE_BEEP_SIREN.get()));
         add.accept(new ItemStack(ModItems.CASSETTE_CLASSIC_SIREN.get()));

@@ -7,7 +7,6 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.api.fluids.IFluidConnectorMK2;
 import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
 import com.hbm_m.api.item.IDesignatorItem;
@@ -738,6 +737,25 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         return side != Direction.UP && side != Direction.DOWN;
     }
 
+    // Энергопорты мультиблока: все UNIVERSAL_CONNECTOR-фантомы структуры
+    // (ядро подписывается базовым классом автоматически).
+    @Override
+    protected BlockPos[] getExtraEnergyPorts() {
+        if (level == null || level.isClientSide) return new BlockPos[0];
+        if (!(getBlockState().getBlock() instanceof com.hbm_m.interfaces.IMultiblockController controller)) {
+            return new BlockPos[0];
+        }
+        var helper = controller.getStructureHelper();
+        Direction facing = getBlockState().getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
+        java.util.List<BlockPos> ports = new java.util.ArrayList<>();
+        for (BlockPos localPos : helper.getStructureMap().keySet()) {
+            if (controller.getPartRole(localPos) == com.hbm_m.multiblock.PartRole.UNIVERSAL_CONNECTOR) {
+                ports.add(helper.getRotatedPos(worldPosition, localPos, facing));
+            }
+        }
+        return ports.toArray(new BlockPos[0]);
+    }
+
     public FluidTank[] getTanks() {
         return tanks;
     }
@@ -746,7 +764,6 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         if (!(level instanceof ServerLevel serverLevel)) {
             return;
         }
-        EnergyNetworkManager energyMgr = EnergyNetworkManager.get(serverLevel);
 
         for (NodeDirPos con : getConPos()) {
             BlockPos pipePos = con.getPos();
@@ -758,10 +775,6 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
             BlockEntity pipeBe = level.getBlockEntity(pipePos);
             if (pipeBe == null) {
                 continue;
-            }
-
-            if (isEnergyBlock(pipeBe) && !energyMgr.hasNode(pipePos)) {
-                energyMgr.addNode(pipePos);
             }
 
             if (pipeBe instanceof IFluidConnectorMK2) {

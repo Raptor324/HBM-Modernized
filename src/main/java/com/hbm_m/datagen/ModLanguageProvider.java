@@ -1375,6 +1375,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("armorMod.type.battery", "Аккумулятор");
 
                 add("gui.hbm_m.blast_furnace.accepts", "Принимает предметы со стороны: %s");
+                add("gui.hbm_m.blast_furnace.speed", "Скорость: %s%%");
                 add("direction.hbm_m.down", "Вниз");
                 add("direction.hbm_m.up", "Вверх");
                 add("direction.hbm_m.north", "Север");
@@ -1808,6 +1809,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("fluid.hbm_m.plasma_xm", "Xenon-Mercury Plasma");
                 add("fluid.hbm_m.plasma_bf", "Balefire Plasma");
                 add("fluid.hbm_m.steam", "Steam");
+        add("fluid.hbm_m.airblast", "Air blast");
+        add("fluid.hbm_m.flue", "Flue gas");
                 add("fluid.hbm_m.hotsteam", "Hot Steam");
                 add("fluid.hbm_m.superhotsteam", "Super Hot Steam");
                 add("fluid.hbm_m.ultrahotsteam", "Ultra Hot Steam");
@@ -3624,6 +3627,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("fluid.hbm_m.plasma_xm", "Xenon-Mercury Plasma");
                 add("fluid.hbm_m.plasma_bf", "Balefire Plasma");
                 add("fluid.hbm_m.steam", "Steam");
+        add("fluid.hbm_m.airblast", "Air blast");
+        add("fluid.hbm_m.flue", "Flue gas");
                 add("fluid.hbm_m.hotsteam", "Hot Steam");
                 add("fluid.hbm_m.superhotsteam", "Super Hot Steam");
                 add("fluid.hbm_m.ultrahotsteam", "Ultra Hot Steam");
@@ -4009,6 +4014,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.mod.battery_mk3.effect", "+100% Battery Capacity");
 
                 add("gui.hbm_m.blast_furnace.accepts", "Accepts items from: %s");
+                add("gui.hbm_m.blast_furnace.speed", "Speed: %s%%");
                 add("direction.hbm_m.down", "Down");
                 add("direction.hbm_m.up", "Up");
                 add("direction.hbm_m.north", "North");
@@ -6754,3 +6760,4 @@ public class ModLanguageProvider extends LanguageProvider {
     }
 }
 //?}
+

@@ -52,6 +52,9 @@ public class GUIMachineWatzPowerplant extends GuiInfoScreen<MachineWatzPowerplan
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
+        // Тайл может отсутствовать в реплее Flashback
+        if (watz == null) return;
+
         watz.coolantTank.renderTank(guiGraphics, this.leftPos + TANK_COOLANT_X, this.topPos + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
         watz.coolantHotTank.renderTank(guiGraphics, this.leftPos + TANK_HOT_X, this.topPos + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
         watz.wasteTank.renderTank(guiGraphics, this.leftPos + TANK_WASTE_X, this.topPos + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
@@ -72,6 +75,12 @@ public class GUIMachineWatzPowerplant extends GuiInfoScreen<MachineWatzPowerplan
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+
+        // Тайл может отсутствовать в реплее Flashback
+        if (watz == null) {
+            this.renderTooltip(guiGraphics, mouseX, mouseY);
+            return;
+        }
 
         if (isPointInRect(TANK_COOLANT_X, TANK_Y, TANK_WIDTH, TANK_HEIGHT, mouseX, mouseY)) {
             watz.coolantTank.renderTankInfo(guiGraphics, this.font, mouseX, mouseY,
@@ -103,6 +112,8 @@ public class GUIMachineWatzPowerplant extends GuiInfoScreen<MachineWatzPowerplan
 
     @Override
     public boolean mouseClicked(double x, double y, int button) {
+        // тайл может отсутствовать в реплее Flashback
+        if (watz == null) return super.mouseClicked(x, y, button);
         if (this.leftPos + BUTTON_X <= x && this.leftPos + BUTTON_X + BUTTON_SIZE > x
                 && this.topPos + BUTTON_Y <= y && this.topPos + BUTTON_Y + BUTTON_SIZE > y) {
             WatzControlPacket.sendToServer(watz.getBlockPos(), 0);

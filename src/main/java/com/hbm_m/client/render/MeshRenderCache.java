@@ -330,6 +330,17 @@ public class MeshRenderCache {
         clear();
     }
 
+    /**
+     * Удаляет конкретный рендерер из кэша и выполняет его GL-очистку.
+     */
+    public static void removeRenderer(String partKey) {
+        SingleMeshVboRenderer renderer = PART_RENDERERS.remove(partKey);
+        if (renderer != null) {
+            renderer.cleanup();
+        }
+        FAILED_RENDERER_KEYS.remove(partKey);
+    }
+
     public static int getCachedQuadsCount() {
         return COMPILED_GEOMETRY.size();
     }

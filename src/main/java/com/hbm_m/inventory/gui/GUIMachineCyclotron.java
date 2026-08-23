@@ -32,23 +32,27 @@ public class GUIMachineCyclotron extends GuiInfoScreen<MachineCyclotronMenu> {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
-        int powerBarHeight = getPowerScaled(63);
-        if (powerBarHeight > 0) {
-            guiGraphics.blit(TEXTURE, this.leftPos + 168, this.topPos + 80 - powerBarHeight, 190, 62 - powerBarHeight, 16, powerBarHeight);
-        }
+        if (cyclotron != null) { // тайл может отсутствовать в реплее Flashback
+            int powerBarHeight = getPowerScaled(63);
+            if (powerBarHeight > 0) {
+                guiGraphics.blit(TEXTURE, this.leftPos + 168, this.topPos + 80 - powerBarHeight, 190, 62 - powerBarHeight, 16, powerBarHeight);
+            }
 
-        int progressWidth = cyclotron.getProgressScaled(34);
-        if (progressWidth > 0) {
-            guiGraphics.blit(TEXTURE, this.leftPos + 48, this.topPos + 27, 206, 0, progressWidth, 34);
-            guiGraphics.blit(TEXTURE, this.leftPos + 172, this.topPos + 4, 190, 63, 9, 12);
+            int progressWidth = cyclotron.getProgressScaled(34);
+            if (progressWidth > 0) {
+                guiGraphics.blit(TEXTURE, this.leftPos + 48, this.topPos + 27, 206, 0, progressWidth, 34);
+                guiGraphics.blit(TEXTURE, this.leftPos + 172, this.topPos + 4, 190, 63, 9, 12);
+            }
         }
 
         drawInfoPanel(guiGraphics, 49, 85, PanelType.SMALL_BLUE_INFO);
 
-        var tanks = cyclotron.getAllTanks();
-        tanks[0].renderTank(guiGraphics, this.leftPos + 11, this.topPos + 88, 34, 7, 1);
-        tanks[1].renderTank(guiGraphics, this.leftPos + 11, this.topPos + 97, 34, 7, 1);
-        tanks[2].renderTank(guiGraphics, this.leftPos + 107, this.topPos + 97, 34, 16, 1);
+        if (cyclotron != null) {
+            var tanks = cyclotron.getAllTanks();
+            tanks[0].renderTank(guiGraphics, this.leftPos + 11, this.topPos + 88, 34, 7, 1);
+            tanks[1].renderTank(guiGraphics, this.leftPos + 11, this.topPos + 97, 34, 7, 1);
+            tanks[2].renderTank(guiGraphics, this.leftPos + 107, this.topPos + 97, 34, 16, 1);
+        }
     }
 
     @Override
@@ -63,9 +67,16 @@ public class GUIMachineCyclotron extends GuiInfoScreen<MachineCyclotronMenu> {
         GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        drawElectricityInfo(guiGraphics, mouseX, mouseY,
-                168, 18, 16, 63,
-                cyclotron.getEnergyStored(), cyclotron.getMaxEnergyStored());
+        if (cyclotron != null) {
+            drawElectricityInfo(guiGraphics, mouseX, mouseY,
+                    168, 18, 16, 63,
+                    cyclotron.getEnergyStored(), cyclotron.getMaxEnergyStored());
+
+            var tanks = cyclotron.getAllTanks();
+            tanks[0].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 11, this.topPos + 81, 34, 7);
+            tanks[1].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 11, this.topPos + 90, 34, 7);
+            tanks[2].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 107, this.topPos + 81, 34, 16);
+        }
 
         drawCustomInfoStat(guiGraphics, mouseX, mouseY,
                 this.leftPos + 49, this.topPos + 85, 8, 8,
@@ -74,11 +85,6 @@ public class GUIMachineCyclotron extends GuiInfoScreen<MachineCyclotronMenu> {
                 Component.translatable("desc.gui.upgrade.speed"),
                 Component.translatable("desc.gui.upgrade.effectiveness"),
                 Component.translatable("desc.gui.upgrade.power"));
-
-        var tanks = cyclotron.getAllTanks();
-        tanks[0].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 11, this.topPos + 81, 34, 7);
-        tanks[1].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 11, this.topPos + 90, 34, 7);
-        tanks[2].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 107, this.topPos + 81, 34, 16);
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

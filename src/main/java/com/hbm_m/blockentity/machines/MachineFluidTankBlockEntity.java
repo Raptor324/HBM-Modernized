@@ -673,7 +673,7 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
 
     @Override
     public void setAllowedFluidSidesFromMultiblockStructure(java.util.Set<Direction> sides) {
-        this.allowedFluidSides = java.util.EnumSet.copyOf(sides);
+        this.allowedFluidSides = safeCopyDirectionSet(sides);
         this.fluidSidesFromMultiblockStructure = true;
         setChanged();
         if (level != null && !level.isClientSide) {
@@ -683,12 +683,25 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
 
     @Override
     public void setAllowedFluidSides(java.util.Set<Direction> sides) {
-        this.allowedFluidSides = java.util.EnumSet.copyOf(sides);
+        this.allowedFluidSides = safeCopyDirectionSet(sides);
         this.fluidSidesFromMultiblockStructure = false;
         setChanged();
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
+    }
+
+    /**
+     * Безопасная defensive-копия Set<Direction> в EnumSet. EnumSet.copyOf(Collection)
+     * бросает IllegalArgumentException на пустой коллекции; здесь всегда возвращаем
+     * валидный EnumSet (пустой ли, нет) и принимаем null как пустое множество.
+     */
+    private static java.util.EnumSet<Direction> safeCopyDirectionSet(java.util.Set<Direction> sides) {
+        java.util.EnumSet<Direction> out = java.util.EnumSet.noneOf(Direction.class);
+        if (sides != null && !sides.isEmpty()) {
+            out.addAll(sides);
+        }
+        return out;
     }
 
     @Override

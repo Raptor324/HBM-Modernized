@@ -4,7 +4,6 @@ import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.machines.TurretBaseBlockEntity;
 
@@ -60,15 +59,11 @@ public class TurretBlock extends BaseEntityBlock {
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
-        if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
-        }
     }
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide()) {
-            EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
             if (level.getBlockEntity(pos) instanceof BaseMachineBlockEntity be) {
                 be.dropInventoryContents();
             }

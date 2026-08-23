@@ -55,7 +55,7 @@ import net.minecraftforge.client.model.data.ModelData;
 *///?} elif neoforge {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
-public class MachineRadarRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineRadarBlockEntity> {
+public class MachineRadarRenderer extends com.hbm_m.client.render.AbstractPartBasedRenderer<MachineRadarBlockEntity, BakedModel> {
 
     private static final RandomSource RANDOM = RandomSource.create(42L);
     private static final float DEG_TO_RAD = (float) (Math.PI / 180.0);
@@ -75,6 +75,28 @@ public class MachineRadarRenderer implements com.hbm_m.client.render.HbmBerBound
     public MachineRadarRenderer(BlockEntityRendererProvider.Context context) {}
 
     @Override
+    protected BakedModel getModelType(BakedModel rawModel) {
+        return rawModel;
+    }
+
+    @Override
+    protected Direction getFacing(MachineRadarBlockEntity blockEntity) {
+        BlockState state = blockEntity.getBlockState();
+        return state.hasProperty(HorizontalDirectionalBlock.FACING)
+                ? state.getValue(HorizontalDirectionalBlock.FACING)
+                : Direction.NORTH;
+    }
+
+    @Override
+    protected void renderParts(MachineRadarBlockEntity blockEntity, BakedModel model,
+                               com.hbm_m.client.render.LegacyAnimator animator, float partialTick,
+                               int packedLight, int packedOverlay, PoseStack poseStack,
+                               MultiBufferSource bufferSource) {
+        // Не используется: render() переопределён целиком.
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void render(MachineRadarBlockEntity blockEntity, float partialTick, PoseStack poseStack,
                        MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
 
@@ -83,8 +105,10 @@ public class MachineRadarRenderer implements com.hbm_m.client.render.HbmBerBound
         try {
             var minecraft = Minecraft.getInstance();
             BlockPos blockPos = blockEntity.getBlockPos();
-            if (minecraft.level == null
-                    || !OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, blockEntity.getRenderBoundingBox())) {
+            // Куллинг + fade: в контрапшене Create shouldRender() пропускает
+            // frustum/ray-march кулинг.
+            float staticFade = applyCullingAndStaticFade(blockEntity);
+            if (staticFade < 0) {
                 return;
             }
 
@@ -96,11 +120,6 @@ public class MachineRadarRenderer implements com.hbm_m.client.render.HbmBerBound
                             "MachineRadarRenderer: block model is not MachineRadarBakedModel ({}), radar invisible under VBO",
                             minecraft.getBlockRenderer().getBlockModel(blockEntity.getBlockState()).getClass().getName());
                 }
-                return;
-            }
-
-            float staticFade = RenderDistanceHelper.computeStaticFade(blockEntity);
-            if (staticFade < 0) {
                 return;
             }
 
@@ -160,7 +179,9 @@ public class MachineRadarRenderer implements com.hbm_m.client.render.HbmBerBound
         InstancedStaticPartRenderer dishInstancer = large ? instancedLargeDish : instancedSmallDish;
 
         boolean useBatching = ModClothConfig.useInstancedBatching();
-        float animFade = RenderDistanceHelper.computeAnimatedFade(blockPos);
+        // BE-оверлоад: bypass fade/cull для контрапшенов и Sable sublevel
+        // (raw BlockPos в sublevel ~40M от origin → distanceSqToCamera гигантский → fade=-1).
+        float animFade = RenderDistanceHelper.computeAnimatedFade(be);
         boolean anyFading = staticFade < 0.99f || (animFade >= 0 && animFade < 0.99f);
         boolean effectiveBatching = useBatching && !anyFading;
 
@@ -377,15 +398,5 @@ public class MachineRadarRenderer implements com.hbm_m.client.render.HbmBerBound
         for (BakedQuad quad : quads) {
             RenderHooks.putBulkData(buffer, pose, quad, 1.0F, 1.0F, 1.0F, 1.0F, packedLight, packedOverlay, true);
         }
-    }
-
-    @Override
-    public boolean shouldRenderOffScreen(MachineRadarBlockEntity blockEntity) {
-        return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
-    }
-
-    @Override
-    public int getViewDistance() {
-        return RenderDistanceHelper.getStaticViewDistanceBlocks();
     }
 }

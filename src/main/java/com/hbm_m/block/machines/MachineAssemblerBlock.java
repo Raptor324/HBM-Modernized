@@ -11,7 +11,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.ImmutableMap;
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineAssemblerBlockEntity;
@@ -185,32 +184,14 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
         return builder.build();
     }
 
-    //  ДОБАВЛЕНО: Регистрация в энергосети
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
 
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            BlockPos core = placeMultiblockStructure(level, pos, state);
-            if (core == null) {
-                return;
-            }
-            Direction facing = state.getValue(FACING);
-            //  Регистрируем контроллер (IEnergyReceiver)
-            EnergyNetworkManager.get((ServerLevel) level).addNode(core);
-
-            //  Регистрируем энергетические коннекторы
-            for (BlockPos localPos : getStructureHelper().getStructureMap().keySet()) {
-                if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
-                    BlockPos worldPos = getStructureHelper().getRotatedPos(core, localPos, facing);
-                    EnergyNetworkManager.get((ServerLevel) level).addNode(worldPos);
-                }
-            }
+            placeMultiblockStructure(level, pos, state);
         }
     }
-
-    //  ДОБАВЛЕНО: Удаление из энергосети
-
     @Override
     public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
         return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
@@ -223,14 +204,6 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
                 MultiblockStructureHelper helper = getStructureHelper();
                 Direction facing = state.getValue(FACING);
 
-                // Удаляем из энергосети
-                for (BlockPos localPos : helper.getStructureMap().keySet()) {
-                    if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
-                        BlockPos worldPos = helper.getRotatedPos(pos, localPos, facing);
-                        EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
-                    }
-                }
-                
                 BlockEntity blockEntity = level.getBlockEntity(pos);
                 if (blockEntity instanceof com.hbm_m.blockentity.BaseMachineBlockEntity be) {
                     be.dropInventoryContents();

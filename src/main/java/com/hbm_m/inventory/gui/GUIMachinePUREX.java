@@ -37,6 +37,8 @@ public class GUIMachinePUREX extends AbstractContainerScreen<MachinePUREXMenu> {
         int x = leftPos;
         int y = topPos;
         guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (blockEntity == null) return;
 
         if (blockEntity.isActive()) {
             int w = blockEntity.getProgressScaled(24);

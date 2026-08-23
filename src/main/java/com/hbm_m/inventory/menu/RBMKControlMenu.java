@@ -34,6 +34,9 @@ public class RBMKControlMenu extends AbstractContainerMenu {
         BlockPos pos = buf.readBlockPos();
         BlockEntity be = inv.player.level().getBlockEntity(pos);
         if (be instanceof RBMKControlBlockEntity c) return c;
+        // На клиенте тайл может отсутствовать (реплей Flashback) — возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inv.player.level().isClientSide) return null;
         throw new IllegalStateException("No RBMKControlBlockEntity at " + pos);
     }
 
@@ -41,6 +44,10 @@ public class RBMKControlMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
+        // тайл может отсутствовать на клиенте (реплей Flashback)
+        if (blockEntity == null) {
+            return false;
+        }
         return blockEntity.getLevel() == player.level()
             && player.distanceToSqr(blockEntity.getBlockPos().getCenter()) <= 64;
     }

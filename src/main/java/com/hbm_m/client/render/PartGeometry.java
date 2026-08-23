@@ -90,9 +90,6 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
             //? if forge || neoforge {
             quads.addAll(modelPart.getQuads(null, direction, random, ModelData.EMPTY, RenderType.solid()));
             //?}
-            //? if fabric {
-            /*quads.addAll(modelPart.getQuads(null, direction, random));
-            *///?}
         }
 
         return quads.isEmpty() ? List.of() : Collections.unmodifiableList(quads);
@@ -166,16 +163,13 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
                     float ny = ((byte) ((normalPacked >> 8) & 0xFF)) / 127.0f;
                     float nz = ((byte) ((normalPacked >> 16) & 0xFF)) / 127.0f;
 
-                    float len = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
-                    if (len > 0.001f) {
-                        nx /= len;
-                        ny /= len;
-                        nz /= len;
-                    }
-
-                    if (indexOffset == 0 && i == 0) {
-                        MainRegistry.LOGGER.debug("PartGeometry VBO: pos({},{},{}), norm({},{},{}), uv({},{})",
-                                x, y, z, nx, ny, nz, u, v);
+                    // ОПТИМИЗАЦИЯ: Math.sqrt вызывается только если вектор нормали денормализован
+                    float lenSq = nx * nx + ny * ny + nz * nz;
+                    if (lenSq > 1e-6f && Math.abs(lenSq - 1.0f) > 1e-3f) {
+                        float invLen = (float) (1.0 / Math.sqrt(lenSq));
+                        nx *= invLen;
+                        ny *= invLen;
+                        nz *= invLen;
                     }
 
                     vb.putFloat(x).putFloat(y).putFloat(z);
@@ -197,8 +191,6 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
                 MainRegistry.LOGGER.debug("PartGeometry: Part '{}' produced no valid quads for VBO", partName);
                 MemoryUtil.memFree(vb);
                 MemoryUtil.memFree(ib);
-                vb = null;
-                ib = null;
                 return null;
             }
 
@@ -214,22 +206,9 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
                     indexOffset, ib.remaining(), minX, minY, minZ, maxX, maxY, maxZ);
             return new SingleMeshVboRenderer.VboData(vb, ib, minX, minY, minZ, maxX, maxY, maxZ, vertexStrideBytes);
 
-        } catch (Exception e) {
-            if (vb != null) {
-                MemoryUtil.memFree(vb);
-            }
-            if (ib != null) {
-                MemoryUtil.memFree(ib);
-            }
-            throw e;
-        } catch (OutOfMemoryError e) {
-            MainRegistry.LOGGER.error("PartGeometry: OOM building VBO, vertices ~ {}", vertexCount, e);
-            if (vb != null) {
-                MemoryUtil.memFree(vb);
-            }
-            if (ib != null) {
-                MemoryUtil.memFree(ib);
-            }
+        } catch (Exception | OutOfMemoryError e) {
+            if (vb != null) MemoryUtil.memFree(vb);
+            if (ib != null) MemoryUtil.memFree(ib);
             throw e;
         }
     }

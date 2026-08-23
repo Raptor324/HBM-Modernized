@@ -125,13 +125,12 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
             renderBounds = be.getRenderBoundingBox();
         }
 
-        if (minecraft.level == null || !OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, renderBounds)) {
+        // Куллинг + fade: в контрапшене Create shouldRender() пропускает
+        // frustum/ray-march кулинг.
+        float staticFade = applyCullingAndStaticFade(be, renderBounds);
+        if (staticFade < 0) {
             return;
         }
-
-        float staticFade = RenderDistanceHelper.computeStaticFade(be);
-        if (staticFade < 0) return;
-        SingleMeshVboRenderer.setFadeAlpha(staticFade);
 
         boolean useVboPath = ShaderCompatibilityDetector.useVboGeometry();
         if (useVboPath) {
@@ -182,11 +181,4 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
             gpu.render(poseStack, packedLight, blockPos, be, bufferSource);
         }
     }
-
-    @Override
-    public boolean shouldRenderOffScreen(MachineFrackingTowerBlockEntity be) {
-        return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
-    }
-
-    @Override public int getViewDistance() { return RenderDistanceHelper.getStaticViewDistanceBlocks(); }
 }

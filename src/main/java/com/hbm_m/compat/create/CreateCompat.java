@@ -35,7 +35,12 @@ public final class CreateCompat {
     /** Слушатель FMLCommonSetupEvent. Безопасен без Create. */
     public static void commonSetup(FMLCommonSetupEvent event) {
         if (!isLoaded()) return;
-        event.enqueueWork(CreateDoorRegistrar::register);
+        event.enqueueWork(() -> {
+            CreateDoorRegistrar.register();
+            // Взаимная "приклеенность" блоков мультиблоков: BFS сборки Create/Aeronautics
+            // захватывает весь станок, задев хотя бы один его блок (как факелы к опоре).
+            HbmMultiblockMovementChecks.register();
+        });
     }
 }
 //?}

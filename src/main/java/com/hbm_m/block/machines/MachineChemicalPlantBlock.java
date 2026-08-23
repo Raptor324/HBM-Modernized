@@ -5,7 +5,6 @@ import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineChemicalPlantBlockEntity;
@@ -124,16 +123,6 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
             if (core == null) {
                 return;
             }
-            Direction facing = state.getValue(FACING);
-
-            EnergyNetworkManager.get((ServerLevel) level).addNode(core);
-
-            for (BlockPos localPos : structureHelper.getStructureMap().keySet()) {
-                if (getPartRole(localPos).canReceiveEnergy()) {
-                    BlockPos worldPos = structureHelper.getRotatedPos(core, localPos, facing);
-                    EnergyNetworkManager.get((ServerLevel) level).addNode(worldPos);
-                }
-            }
 
             if (level.getBlockEntity(core) instanceof IFrameSupportable frameSupportable) {
                 frameSupportable.checkForFrame();
@@ -146,17 +135,6 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
         if (!state.is(newState.getBlock())) {
             if (!level.isClientSide()) {
                 Direction facing = state.getValue(FACING);
-                
-                // Remove controller from energy network
-                EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
-                
-                // Remove energy connector parts from energy network
-                for (BlockPos localPos : structureHelper.getStructureMap().keySet()) {
-                    if (getPartRole(localPos).canReceiveEnergy()) {
-                        BlockPos worldPos = structureHelper.getRotatedPos(pos, localPos, facing);
-                        EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
-                    }
-                }
 
                 BlockEntity be = level.getBlockEntity(pos);
                 if (be instanceof MachineChemicalPlantBlockEntity plant) {

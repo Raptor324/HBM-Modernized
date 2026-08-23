@@ -17,6 +17,7 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
+import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 
 //? if forge {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
@@ -67,6 +68,11 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
     }
 
     @Override
+    public int getViewDistance() {
+        return RenderDistanceHelper.getStaticViewDistanceBlocks();
+    }
+
+    @Override
     public void render(T blockEntity, float partialTick, PoseStack poseStack,
                        MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
         // Frustum cull FIRST for the main pass. Shadow pass uses light-space
@@ -114,6 +120,42 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
 
     protected final Minecraft getMinecraft() {
         return Minecraft.getInstance();
+    }
+
+    // -----------------------------------------------------------------------
+    // Общий куллинг и fade для реализаций
+    // -----------------------------------------------------------------------
+
+    /** Occlusion/frustum-куллинг по AABB из {@link #frustumCullBounds}. */
+    protected final boolean passesOcclusionCulling(T blockEntity) {
+        return passesOcclusionCulling(blockEntity, frustumCullBounds(blockEntity));
+    }
+
+    /**
+     * Проверка видимости через BE-уровень: в контрапшене Create BE.getLevel() —
+     * VirtualRenderWorld, shouldRender() его распознаёт и пропускает frustum/ray-march
+     * кулинг.
+     */
+    protected final boolean passesOcclusionCulling(T blockEntity, AABB bounds) {
+        return OcclusionCullingHelper.shouldRender(blockEntity, bounds);
+    }
+
+    /**
+     * Общая логика куллинга + статического fade: пропускает рендер за пределами
+     * дистанции и выставляет {@link SingleMeshVboRenderer#setFadeAlpha}.
+     *
+     * @return fade в [0,1], или -1 если рендер следует пропустить.
+     */
+    protected final float applyCullingAndStaticFade(T blockEntity) {
+        return applyCullingAndStaticFade(blockEntity, frustumCullBounds(blockEntity));
+    }
+
+    protected final float applyCullingAndStaticFade(T blockEntity, AABB bounds) {
+        if (!passesOcclusionCulling(blockEntity, bounds)) return -1f;
+        float staticFade = RenderDistanceHelper.computeStaticFade(blockEntity);
+        if (staticFade < 0) return -1f;
+        SingleMeshVboRenderer.setFadeAlpha(staticFade);
+        return staticFade;
     }
 
     /** Диагностика shadow pass: вызовы BER с прошлого сброса. См. render(). */

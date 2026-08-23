@@ -85,6 +85,7 @@ public class GUIMachineAssembler extends GuiInfoScreen<MachineAssemblerMenu> {
     }
 
     private void renderGhostItems(GuiGraphics guiGraphics) {
+        if (this.menu.getBlockEntity() == null) return; // тайл может отсутствовать в реплее Flashback
         NonNullList<ItemStack> ghostItems = this.menu.getBlockEntity().getGhostItems();
         
         if (ghostItems.isEmpty()) {

@@ -39,7 +39,7 @@ public class GUIMachineAmmoPress extends AbstractContainerScreen<MachineAmmoPres
         int y = topPos;
         guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
 
-        if (blockEntity.isPressing()) {
+        if (blockEntity != null && blockEntity.isPressing()) { // тайл может отсутствовать в реплее Flashback
             guiGraphics.fill(x + 96, y + 20, x + 116, y + 52, 0xA0FF3020);
         }
     }

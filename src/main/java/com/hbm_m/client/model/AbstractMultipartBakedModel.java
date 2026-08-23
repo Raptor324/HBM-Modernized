@@ -139,14 +139,12 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
         ModelData modelData,
         @Nullable RenderType renderType
     ) {
-        // Дефолтная реализация: просто собираем квады из всех частей без ModelData-логики.
-        // Подклассы (например MachineFluidTankBakedModel) переопределяют для динамических текстур.
-        //
-        // renderType==null → item/BER hot path. Квады здесь определяются только
-        // side (modelData эта дефолтная реализация игнорирует), поэтому кэшируем
-        // по side, чтобы не плодить new ArrayList + addAll каждый кадр инвентаря.
-        // renderType!=null → chunk-bake layer query; собираем заново, чтобы
-        // корректно учитывать слой (solid/translucent).
+        // ОПТИМИЗАЦИЯ: Если блок в мире рисуется через BER/VBO, немедленно возвращаем пустой список,
+        // предотвращая аллокации ArrayList во время запекания чанков.
+        if (state != null && shouldSkipWorldRendering(state)) {
+            return Collections.emptyList();
+        }
+
         if (renderType == null) {
             int idx = side == null ? 0 : side.ordinal() + 1;
             List<BakedQuad>[] cache = sideQuadsCache;
@@ -218,6 +216,10 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
         ModelData modelData,
         @Nullable RenderType renderType
     ) {
+        if (state != null && shouldSkipWorldRendering(state)) {
+            return Collections.emptyList();
+        }
+
         if (renderType == null) {
             int idx = side == null ? 0 : side.ordinal() + 1;
             List<BakedQuad>[] cache = sideQuadsCache;

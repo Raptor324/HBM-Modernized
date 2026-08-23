@@ -4,6 +4,7 @@ import com.hbm_m.blockentity.machines.PWRControllerBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.item.nuclear.PWRFuelItem;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -34,7 +35,10 @@ public class PWRControllerMenu extends AbstractContainerMenu {
     public PWRControllerMenu(int id, Inventory inventory, PWRControllerBlockEntity blockEntity) {
         super(ModMenuTypes.PWR_CONTROLLER_MENU.get(), id);
         this.blockEntity = blockEntity;
-        this.machineContainer = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
+        // тайл может отсутствовать на клиенте (реплей Flashback) — подставляем пустую заглушку
+        this.machineContainer = new ModItemStackHandlerContainer(
+                blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOT_COUNT),
+                blockEntity != null ? blockEntity::setChanged : () -> {});
 
         this.addSlot(new Slot(machineContainer, PWRControllerBlockEntity.SLOT_FUEL_IN, 44, 62));
         this.addSlot(new Slot(machineContainer, PWRControllerBlockEntity.SLOT_FUEL_OUT, 116, 62) {
@@ -63,6 +67,11 @@ public class PWRControllerMenu extends AbstractContainerMenu {
         BlockEntity blockEntity = inventory.player.level().getBlockEntity(pos);
         if (blockEntity instanceof PWRControllerBlockEntity pwr) {
             return pwr;
+        }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inventory.player.level().isClientSide) {
+            return null;
         }
         throw new IllegalStateException("No PWRControllerBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":pwr_controller_menu");
     }

@@ -1028,12 +1028,25 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         public final IntBuffer indices;
         /** Object-space AABB of the mesh, computed once while packing vertices. */
         public final float minX, minY, minZ, maxX, maxY, maxZ;
-        /**
-         * Stride одной вершины в {@link #byteBuffer}: pos(12) + normal(12) + uv(8) + boneId(int32) = 36.
-         * Старые 32-байтные буферы не поддерживаются для instanced-пути.
-         */
+        /** Stride одной вершины в byteBuffer: pos(12) + normal(12) + uv(8) + boneId(int32) = 36. */
         public final int bytesPerVertex;
-        private boolean consumed = false;
+        
+        private final java.util.concurrent.atomic.AtomicBoolean consumed = new java.util.concurrent.atomic.AtomicBoolean(false);
+        private final java.lang.ref.Cleaner.Cleanable cleanable;
+
+        private static final java.lang.ref.Cleaner CLEANER = java.lang.ref.Cleaner.create();
+
+        private static record NativeResourceReleaser(long bbAddress, long ibAddress) implements Runnable {
+            @Override
+            public void run() {
+                if (bbAddress != 0L) {
+                    MemoryUtil.nmemFree(bbAddress);
+                }
+                if (ibAddress != 0L) {
+                    MemoryUtil.nmemFree(ibAddress);
+                }
+            }
+        }
 
         public VboData(ByteBuffer byteBuffer, IntBuffer indices) {
             this(byteBuffer, indices, 0f, 0f, 0f, 0f, 0f, 0f, MACHINE_PART_VERTEX_STRIDE_BYTES);
@@ -1054,27 +1067,24 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             this.minX = minX; this.minY = minY; this.minZ = minZ;
             this.maxX = maxX; this.maxY = maxY; this.maxZ = maxZ;
             this.bytesPerVertex = bytesPerVertex;
+
+            long bbAddr = byteBuffer != null ? MemoryUtil.memAddress(byteBuffer) : 0L;
+            long ibAddr = indices != null ? MemoryUtil.memAddress(indices) : 0L;
+            this.cleanable = (bbAddr != 0L || ibAddr != 0L) 
+                    ? CLEANER.register(this, new NativeResourceReleaser(bbAddr, ibAddr)) 
+                    : null;
         }
 
         public boolean isConsumed() {
-            return consumed;
+            return consumed.get();
         }
 
         @Override
         public void close() {
-            if (consumed) {
-                // Double-free attempt: native memory was already freed by a previous
-                // close(). Silently no-op in production to avoid crashes, but the
-                // assert will trip in development to surface the bug.
-                assert false : "VboData.close() called twice (already consumed)";
-                return;
-            }
-            consumed = true;
-            if (byteBuffer != null) {
-                MemoryUtil.memFree(byteBuffer);
-            }
-            if (indices != null) {
-                MemoryUtil.memFree(indices);
+            if (consumed.compareAndSet(false, true)) {
+                if (cleanable != null) {
+                    cleanable.clean();
+                }
             }
         }
     }

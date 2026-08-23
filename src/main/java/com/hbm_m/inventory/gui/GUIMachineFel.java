@@ -32,21 +32,23 @@ public class GUIMachineFel extends GuiInfoScreen<MachineFelMenu> {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
-        int power = (int) (fel.getEnergyStored() * 52L / Math.max(fel.getMaxEnergyStored(), 1L));
-        if (power > 52) {
-            power = 52;
-        }
-        if (power > 0) {
-            guiGraphics.blit(TEXTURE, this.leftPos + 152, this.topPos + 70 - power, 176, 52 - power, 16, power);
-        }
+        if (fel != null) { // тайл может отсутствовать в реплее Flashback
+            int power = (int) (fel.getEnergyStored() * 52L / Math.max(fel.getMaxEnergyStored(), 1L));
+            if (power > 52) {
+                power = 52;
+            }
+            if (power > 0) {
+                guiGraphics.blit(TEXTURE, this.leftPos + 152, this.topPos + 70 - power, 176, 52 - power, 16, power);
+            }
 
-        int progress = fel.getProgressScaled(33);
-        if (progress > 0) {
-            guiGraphics.blit(TEXTURE, this.leftPos + 72, this.topPos + 37, 192, 0, progress, 14);
-        }
+            int progress = fel.getProgressScaled(33);
+            if (progress > 0) {
+                guiGraphics.blit(TEXTURE, this.leftPos + 72, this.topPos + 37, 192, 0, progress, 14);
+            }
 
-        if (fel.getEnergyStored() > 0) {
-            guiGraphics.blit(TEXTURE, this.leftPos + 156, this.topPos + 4, 176, 52, 9, 12);
+            if (fel.getEnergyStored() > 0) {
+                guiGraphics.blit(TEXTURE, this.leftPos + 156, this.topPos + 4, 176, 52, 9, 12);
+            }
         }
 
         drawInfoPanel(guiGraphics, 78, 67, PanelType.SMALL_BLUE_INFO);
@@ -64,15 +66,17 @@ public class GUIMachineFel extends GuiInfoScreen<MachineFelMenu> {
         GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        drawElectricityInfo(guiGraphics, mouseX, mouseY,
-            152, 18, 16, 52,
-            fel.getEnergyStored(), fel.getMaxEnergyStored());
+        if (fel != null) {
+            drawElectricityInfo(guiGraphics, mouseX, mouseY,
+                152, 18, 16, 52,
+                fel.getEnergyStored(), fel.getMaxEnergyStored());
 
-        drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-            this.leftPos + 78, this.topPos + 67, 8, 8,
-            this.leftPos + 78, this.topPos + 67,
-                Component.literal("Progress:"),
-                Component.literal("   " + fel.getProgress() + " / " + fel.getMaxProgress()));
+            drawCustomInfoStat(guiGraphics, mouseX, mouseY,
+                this.leftPos + 78, this.topPos + 67, 8, 8,
+                this.leftPos + 78, this.topPos + 67,
+                    Component.literal("Progress:"),
+                    Component.literal("   " + fel.getProgress() + " / " + fel.getMaxProgress()));
+        }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

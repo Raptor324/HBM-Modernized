@@ -44,6 +44,7 @@ public class GUIMachineFunnel extends AbstractContainerScreen<MachineFunnelMenu>
         super.init();
         int x = (width - imageWidth) / 2;
         int y = (height - imageHeight) / 2;
+        if (blockEntity == null) return; // тайл может отсутствовать в реплее Flashback
         modeButton = Button.builder(Component.literal(MODE_LABELS.get(blockEntity.getMode())), b -> {
             FunnelModeC2SPacket.sendToServer(blockEntity.getBlockPos());
             b.setMessage(Component.literal(MODE_LABELS.get((blockEntity.getMode() + 1) % 3)));
@@ -57,7 +58,7 @@ public class GUIMachineFunnel extends AbstractContainerScreen<MachineFunnelMenu>
         int y = topPos;
         guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
 
-        if (modeButton != null) {
+        if (modeButton != null && blockEntity != null) { // тайл может отсутствовать в реплее Flashback
             modeButton.setMessage(Component.literal(MODE_LABELS.get(blockEntity.getMode())));
         }
     }

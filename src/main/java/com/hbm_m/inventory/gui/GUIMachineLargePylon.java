@@ -34,7 +34,7 @@ public class GUIMachineLargePylon extends GuiInfoScreen<MachineLargePylonMenu> {
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
         long maxEnergy = menu.getMaxEnergyLong();
-        if (maxEnergy > 0) {
+        if (maxEnergy > 0 && menu.getBlockEntity() != null) { // тайл может отсутствовать в реплее Flashback
             int i = (int) menu.getBlockEntity().getPowerScaled(52);
             guiGraphics.blit(TEXTURE, this.leftPos + 152, this.topPos + 70 - i, 176, 64 - i, 16, i);
         }

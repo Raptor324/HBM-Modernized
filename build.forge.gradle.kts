@@ -117,6 +117,11 @@ dependencies {
 	"modCompileOnly"("com.simibubi.create:create-1.20.1:${prop("deps.create")}:slim") {
 		isTransitive = false
 	}
+	// Sable (экосистема Create Aeronautics, существует только на 1.21.1+):
+	// compileOnly только для валидации строковых таргетов миксинов на этапе
+	// компиляции. На 1.20.1 классы Sable в рантайме отсутствуют -> миксины
+	// не применяются (no-op, мод не падает).
+	compileOnly("maven.modrinth:sable:2.0.5+mc1.21.1")
 	"modCompileOnly"("dev.engine-room.flywheel:flywheel-forge-api-1.20.1:${prop("deps.flywheel")}")
 	"modRuntimeOnly"("curse.maven:embeddium-908741:5681725")
 	"modRuntimeOnly"("curse.maven:oculus-581495:6020952")
@@ -152,3 +157,6 @@ tasks.withType<JavaCompile>().configureEach { options.encoding = "UTF-8" }
 
 stonecutter {
 }
+
+
+

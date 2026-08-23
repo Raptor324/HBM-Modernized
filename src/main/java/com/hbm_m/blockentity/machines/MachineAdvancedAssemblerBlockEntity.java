@@ -5,7 +5,6 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -745,7 +744,8 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     @Override
     public void setAllowedEnergySides(java.util.Set<Direction> sides) {
-        this.allowedEnergySides = java.util.EnumSet.copyOf(sides);
+        // Безопасная defensive-копия: EnumSet.copyOf бросает IAE на пустой коллекции.
+        this.allowedEnergySides = safeCopyDirectionSet(sides);
         setChanged();
         sendUpdateToClient();
     }
@@ -757,7 +757,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     @Override
     public void setAllowedFluidSidesFromMultiblockStructure(java.util.Set<Direction> sides) {
-        this.allowedFluidSides = java.util.EnumSet.copyOf(sides);
+        this.allowedFluidSides = safeCopyDirectionSet(sides);
         this.fluidSidesFromMultiblockStructure = true;
         setChanged();
         sendUpdateToClient();
@@ -765,10 +765,23 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     @Override
     public void setAllowedFluidSides(java.util.Set<Direction> sides) {
-        this.allowedFluidSides = java.util.EnumSet.copyOf(sides);
+        this.allowedFluidSides = safeCopyDirectionSet(sides);
         this.fluidSidesFromMultiblockStructure = false;
         setChanged();
         sendUpdateToClient();
+    }
+
+    /**
+     * Безопасная defensive-копия Set<Direction> в EnumSet. EnumSet.copyOf(Collection)
+     * бросает IllegalArgumentException на пустой коллекции; здесь всегда возвращаем
+     * валидный EnumSet (пустой ли, нет) и принимаем null как пустое множество.
+     */
+    private static java.util.EnumSet<Direction> safeCopyDirectionSet(java.util.Set<Direction> sides) {
+        java.util.EnumSet<Direction> out = java.util.EnumSet.noneOf(Direction.class);
+        if (sides != null && !sides.isEmpty()) {
+            out.addAll(sides);
+        }
+        return out;
     }
 
     @Override
@@ -926,34 +939,24 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     //?}
 
     @Override
-    protected void ensureNetworkInitialized() {
-        // Если уже инициализировано - выходим
-        if (this.networkInitialized) return;
+    protected BlockPos[] getExtraEnergyPorts() {
+        if (level == null || level.isClientSide) return new BlockPos[0];
+        if (!(getBlockState().getBlock() instanceof MachineAdvancedAssemblerBlock block)) return new BlockPos[0];
 
-        // 1. Вызываем родительский метод (он зарегистрирует сам контроллер и поставит flag = true)
-        super.ensureNetworkInitialized();
+        MultiblockStructureHelper helper = block.getStructureHelper();
+        Direction facing = getBlockState().getValue(MachineAdvancedAssemblerBlock.FACING);
 
-        if (level != null && !level.isClientSide) {
-            // 2. Регистрируем все части мультиблока, которые являются коннекторами
-            if (getBlockState().getBlock() instanceof MachineAdvancedAssemblerBlock block) {
-                MultiblockStructureHelper helper = block.getStructureHelper();
-                Direction facing = getBlockState().getValue(MachineAdvancedAssemblerBlock.FACING);
-
-                // Получаем менеджер сети
-                EnergyNetworkManager manager = EnergyNetworkManager.get((ServerLevel) level);
-
-                // Проходим по всем частям структуры
-                for (BlockPos localPos : helper.getStructureMap().keySet()) {
-                    // Если часть является энергетическим коннектором
-                    if (block.getPartRole(localPos) == com.hbm_m.multiblock.PartRole.ENERGY_CONNECTOR) {
-                        // Вычисляем её реальную позицию в мире
-                        BlockPos partWorldPos = helper.getRotatedPos(worldPosition, localPos, facing);
-
-                        // Принудительно добавляем узел части в сеть
-                        manager.addNode(partWorldPos);
-                    }
-                }
+        java.util.List<BlockPos> ports = new java.util.ArrayList<>();
+        for (BlockPos localPos : helper.getStructureMap().keySet()) {
+            // Порты подписки — коннекторы мультиблока. Структура этого сборщика использует
+            // роль UNIVERSAL_CONNECTOR ('B'), а не ENERGY_CONNECTOR: фильтр строго по
+            // ENERGY_CONNECTOR давал пустой список портов, и машина не могла
+            // подписаться на сеть через свои коннекторы (энергия не передавалась).
+            com.hbm_m.multiblock.PartRole role = block.getPartRole(localPos);
+            if (role.canReceiveEnergy() || role.canSendEnergy()) {
+                ports.add(helper.getRotatedPos(worldPosition, localPos, facing));
             }
         }
+        return ports.toArray(new BlockPos[0]);
     }
 }

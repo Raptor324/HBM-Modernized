@@ -203,6 +203,8 @@ public class GUIMachineShredder extends GuiInfoScreen<MachineShredderMenu> {
 
     private boolean shouldShowBladeWarning() {
         MachineShredderBlockEntity blockEntity = menu.getBlockEntity();
+        // тайл может отсутствовать в реплее Flashback
+        if (blockEntity == null) return false;
         int gearLeft = blockEntity.getGearLeft();
         int gearRight = blockEntity.getGearRight();
         return (gearLeft == 0 || gearLeft == 3) || (gearRight == 0 || gearRight == 3);

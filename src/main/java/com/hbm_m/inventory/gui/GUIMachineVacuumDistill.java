@@ -64,6 +64,8 @@ public class GUIMachineVacuumDistill extends GuiInfoScreen<MachineVacuumDistillM
         com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (be != null) {
         drawElectricityInfo(guiGraphics, mouseX, mouseY, ENERGY_X, TANK_Y, TANK_W, TANK_H, be.getEnergyStored(), be.getMaxEnergyStored());
 
         var tanks = be.getTanks();
@@ -71,6 +73,7 @@ public class GUIMachineVacuumDistill extends GuiInfoScreen<MachineVacuumDistillM
             if (isPointInRect(TANK_X[i], TANK_Y, TANK_W, TANK_H, mouseX, mouseY)) {
                 tanks[i].renderTankInfo(guiGraphics, font, mouseX, mouseY, leftPos + TANK_X[i], topPos + TANK_Y, TANK_W, TANK_H);
             }
+        }
         }
 
         renderTooltip(guiGraphics, mouseX, mouseY);

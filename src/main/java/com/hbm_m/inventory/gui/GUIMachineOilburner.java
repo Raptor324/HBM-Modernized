@@ -40,7 +40,8 @@ public class GUIMachineOilburner extends GuiInfoScreen<MachineOilburnerMenu> {
     public GUIMachineOilburner(MachineOilburnerMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.oilburner = menu.getBlockEntity();
-        this.texture = this.oilburner.getBlockState().is(com.hbm_m.block.ModBlocks.OILBURNER_HP.get()) ? TEXTURE_HP : TEXTURE;
+        // тайл может отсутствовать в реплее Flashback
+        this.texture = this.oilburner != null && this.oilburner.getBlockState().is(com.hbm_m.block.ModBlocks.OILBURNER_HP.get()) ? TEXTURE_HP : TEXTURE;
         this.imageWidth = 176;
         this.imageHeight = 203;
     }
@@ -84,6 +85,7 @@ public class GUIMachineOilburner extends GuiInfoScreen<MachineOilburnerMenu> {
         com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
+        if (oilburner != null) {
         int heat = oilburner.getHeatStored();
         int maxHeat = oilburner.getMaxHeatStored();
         List<Component> heatTooltip = new ArrayList<>();
@@ -107,6 +109,7 @@ public class GUIMachineOilburner extends GuiInfoScreen<MachineOilburnerMenu> {
 
         oilburner.getOilTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY,
                 this.leftPos + 44, this.topPos + 17, 16, 52);
+        }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

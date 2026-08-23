@@ -318,13 +318,29 @@ public class ModPacketHandler {
             ResourceLocation id,
             Function<FriendlyByteBuf, T> decoder,
             java.util.function.BiConsumer<T, PacketContext> handler) {
+        //? if >= 1.21.1 {
+        /*// NeoForge 1.21+: пейлоад участвует в negotiation, поэтому должен быть
+        // зарегистрирован на ОБОИХ сторонах. На клиенте — с приёмником, на выделенном
+        // сервере — только объявление типа (иначе checkPacket уронит отправку S2C).
         if (dev.architectury.platform.Platform.getEnvironment() == Env.CLIENT) {
             NetworkManager.registerReceiver(
                     NetworkManager.Side.S2C,
                     id,
                     (buf, context) -> handler.accept(decoder.apply(buf), context)
-            ); 
+            );
+        } else {
+            NetworkManager.registerS2CPayloadType(id);
         }
+        *///?}
+        //? if < 1.21.1 {
+        if (dev.architectury.platform.Platform.getEnvironment() == Env.CLIENT) {
+            NetworkManager.registerReceiver(
+                    NetworkManager.Side.S2C,
+                    id,
+                    (buf, context) -> handler.accept(decoder.apply(buf), context)
+            );
+        }
+        //?}
 
     }
 

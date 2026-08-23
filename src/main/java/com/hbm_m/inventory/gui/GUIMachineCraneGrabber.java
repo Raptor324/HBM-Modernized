@@ -34,10 +34,12 @@ public class GUIMachineCraneGrabber extends GuiInfoScreen<MachineCraneGrabberMen
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
-        if (grabber.isWhitelist()) {
-            guiGraphics.blit(TEXTURE, this.leftPos + 108, this.topPos + 33, 176, 0, 3, 6);
-        } else {
-            guiGraphics.blit(TEXTURE, this.leftPos + 108, this.topPos + 47, 176, 0, 3, 6);
+        if (grabber != null) { // тайл может отсутствовать в реплее Flashback
+            if (grabber.isWhitelist()) {
+                guiGraphics.blit(TEXTURE, this.leftPos + 108, this.topPos + 33, 176, 0, 3, 6);
+            } else {
+                guiGraphics.blit(TEXTURE, this.leftPos + 108, this.topPos + 47, 176, 0, 3, 6);
+            }
         }
     }
 
@@ -53,7 +55,7 @@ public class GUIMachineCraneGrabber extends GuiInfoScreen<MachineCraneGrabberMen
         com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < 9 && grabber != null; i++) {
             Slot slot = this.menu.slots.get(i);
             String mode = grabber.getMatcher().getMode(i);
             if (mode != null && isHoveringSlot(slot, mouseX, mouseY)) {
@@ -69,6 +71,7 @@ public class GUIMachineCraneGrabber extends GuiInfoScreen<MachineCraneGrabberMen
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (grabber == null) return super.mouseClicked(mouseX, mouseY, button); // тайл может отсутствовать в реплее Flashback
         for (int i = 0; i < 9; i++) {
             Slot slot = this.menu.slots.get(i);
             if (isHoveringSlot(slot, (int) mouseX, (int) mouseY) && button == 1 && slot.hasItem()) {

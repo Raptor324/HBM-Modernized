@@ -912,7 +912,12 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
 
     @Override
     public void setAllowedClimbSides(java.util.Set<Direction> sides) {
-        this.allowedClimbSides = java.util.EnumSet.copyOf(sides);
+        // Безопасная defensive-копия: EnumSet.copyOf бросает IAE на пустой коллекции.
+        java.util.EnumSet<Direction> out = java.util.EnumSet.noneOf(Direction.class);
+        if (sides != null && !sides.isEmpty()) {
+            out.addAll(sides);
+        }
+        this.allowedClimbSides = out;
         this.setChanged();
     }
 

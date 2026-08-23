@@ -31,6 +31,8 @@ public class GUIMachineRadGen extends GuiInfoScreen<MachineRadGenMenu> {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (radgen == null) return;
 
         for (int i = 0; i < MachineRadGenBlockEntity.QUEUE_COUNT; i++) {
             int max = radgen.getMaxProgress(i);
@@ -55,9 +57,12 @@ public class GUIMachineRadGen extends GuiInfoScreen<MachineRadGenMenu> {
         com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (radgen != null) {
         drawElectricityInfo(guiGraphics, mouseX, mouseY,
                 64, 83, 48, 4,
                 radgen.getEnergyStored(), radgen.getMaxEnergyStored());
+        }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

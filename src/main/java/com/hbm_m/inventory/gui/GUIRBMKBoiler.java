@@ -55,6 +55,8 @@ public class GUIRBMKBoiler extends GuiInfoScreen<RBMKBoilerMenu> {
 
         int x = leftPos, y = topPos;
         g.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (be == null) return;
 
         // Wasser- (feed) Fuellstand: waechst von unten (guiLeft+126, guiTop+82-i, 176, 58-i, 14, i)
         int maxW = be.waterTank.getMaxFill();
@@ -82,6 +84,8 @@ public class GUIRBMKBoiler extends GuiInfoScreen<RBMKBoilerMenu> {
         GuiCompat.renderBackground(this, g, mx, my, partial);
         super.render(g, mx, my, partial);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (be != null) {
         if (isPointInRect(WATER_X, WATER_Y, WATER_W, WATER_H, mx, my)) {
             g.renderTooltip(font, Component.literal(
                     be.waterTank.getFill() + " / " + be.waterTank.getMaxFill() + " mB Water"), mx, my);
@@ -95,6 +99,7 @@ public class GUIRBMKBoiler extends GuiInfoScreen<RBMKBoilerMenu> {
                     Component.literal("Click to cycle steam grade")
             ), java.util.Optional.empty(), mx, my);
         }
+        }
 
         renderTooltip(g, mx, my);
     }
@@ -107,6 +112,8 @@ public class GUIRBMKBoiler extends GuiInfoScreen<RBMKBoilerMenu> {
 
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
+        // тайл может отсутствовать в реплее Flashback
+        if (be == null) return super.mouseClicked(mx, my, button);
         if (isPointInRect(TYPE_X, TYPE_Y, TYPE_W, TYPE_H, (int) mx, (int) my)) {
             be.cycleCompressor();
             playClickSound();

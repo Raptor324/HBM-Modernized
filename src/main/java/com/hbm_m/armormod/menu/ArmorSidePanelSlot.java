@@ -29,11 +29,7 @@ public class ArmorSidePanelSlot extends Slot {
     @Override
     public void onTake(Player pPlayer, ItemStack pStack) {
         if (pStack.getItem() instanceof ArmorItem armorItem) {
-            //? if < 1.21.1 {
-            playSound(armorItem.getEquipSound());
-            //?} else {
-            /*playSound(armorItem.getEquipSound().value());
-            *///?}
+            playEquipSound(armorItem);
         }
         super.onTake(pPlayer, pStack);
     }
@@ -45,17 +41,14 @@ public class ArmorSidePanelSlot extends Slot {
     @Override
     public void set(ItemStack pStack) {
         if (!ItemStack.isSameItem(this.getItem(), pStack) && pStack.getItem() instanceof ArmorItem armorItem) {
-            //? if < 1.21.1 {
-            playSound(armorItem.getEquipSound());
-            //?} else {
-            /*playSound(armorItem.getEquipSound().value());
-            *///?}
+            playEquipSound(armorItem);
         }
         super.set(pStack);
     }
 
-    private void playSound(SoundEvent sound) {
-        player.level().playSound(null, player.getX(), player.getY(), player.getZ(), sound, SoundSource.PLAYERS, 1.0F, 1.0F);
+    private void playEquipSound(ArmorItem armorItem) {
+        com.hbm_m.platform.PlatformHooks.playSound(player.level(), player.getX(), player.getY(), player.getZ(),
+                armorItem.getEquipSound(), SoundSource.PLAYERS, 1.0F, 1.0F);
     }
 
     @Override
