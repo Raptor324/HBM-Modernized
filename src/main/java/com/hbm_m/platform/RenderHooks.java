@@ -202,4 +202,52 @@ public final class RenderHooks {
         /*consumer.addVertex(x, y, z).setUv(u, v).setColor(r, g, b, a).setLight(packedLight);
         *///?}
     }
+
+    // =====================================================================================
+    //  RenderSystem ModelView (AFTER_WEATHER-проход дальнего контента)
+    // =====================================================================================
+
+    /**
+     * Гарантированно выставляет RenderSystem ModelViewMat в матрицу поворота
+     * камеры уровня (frustumMatrix) на время кастомного прохода рендера.
+     *
+     * ЗАЧЕМ: ваниль пушит frustumMatrix в modelViewStack на время renderLevel,
+     * но к моменту наших проходов (AFTER_WEATHER + флаш батчей) состояние
+     * может быть загрязнено чужими хуками (DH/Iris и т.п.). Если там окажется
+     * identity, camera-relative вершины рисуются «зеркально» движению камеры
+     * («гриб улетает при движении игрока»). Метод ЗАМЕНЯЕТ вершину стека
+     * переданной матрицей (не умножает!) — поведение детерминировано на обеих
+     * версиях; если ваниль уже пушила ту же матрицу, это no-op.
+     *
+     * 1.20.1: стек — PoseStack (pushPose/setIdentity/mulPoseMatrix);
+     * 1.21.1: стек — org.joml.Matrix4fStack (pushMatrix/identity/mul).
+     */
+    public static void pushLevelModelView(Matrix4f levelRotation) {
+        //? if < 1.21.1 {
+        PoseStack stack = com.mojang.blaze3d.systems.RenderSystem.getModelViewStack();
+        stack.pushPose();
+        stack.setIdentity();
+        stack.mulPoseMatrix(levelRotation);
+        com.mojang.blaze3d.systems.RenderSystem.applyModelViewMatrix();
+        //?} else {
+        /*org.joml.Matrix4fStack stack = com.mojang.blaze3d.systems.RenderSystem.getModelViewStack();
+        stack.pushMatrix();
+        stack.identity();
+        stack.mul(levelRotation);
+        com.mojang.blaze3d.systems.RenderSystem.applyModelViewMatrix();
+        *///?}
+    }
+
+    /** Восстанавливает ModelViewMat после pushLevelModelView. */
+    public static void popLevelModelView() {
+        //? if < 1.21.1 {
+        PoseStack stack = com.mojang.blaze3d.systems.RenderSystem.getModelViewStack();
+        stack.popPose();
+        com.mojang.blaze3d.systems.RenderSystem.applyModelViewMatrix();
+        //?} else {
+        /*org.joml.Matrix4fStack stack = com.mojang.blaze3d.systems.RenderSystem.getModelViewStack();
+        stack.popMatrix();
+        com.mojang.blaze3d.systems.RenderSystem.applyModelViewMatrix();
+        *///?}
+    }
 }

@@ -1,6 +1,6 @@
 # Blender 4.0.2
 # www.blender.org
-mtllib Prototype.mtl
+mtllib prototype.mtl
 o Cylinder.001
 v 0.000001 1.000000 2.500000
 v -0.000001 1.000000 -2.500000

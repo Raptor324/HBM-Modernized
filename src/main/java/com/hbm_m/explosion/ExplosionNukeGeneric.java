@@ -159,15 +159,16 @@ public class ExplosionNukeGeneric {
             return true;
         }
 
-        // 3. Вызываем быстрый clip (передаем null вместо CollisionContext)
-        // 1.21.1+: конструктор ClipContext неоднозначен (Entity vs CollisionContext для null) — типизируем null.
+        // 3. Вызываем быстрый clip. ВНИМАНИЕ: на 1.21.1+ в ClipContext передаётся
+        // CollisionContext и null там НЕДОПУСТИМ (CollisionContext.of -> NPE в
+        // EntityCollisionContext). На 1.20.1 параметр - Entity, null допустим.
         //? if < 1.21.1 {
         HitResult hit = level.clip(new ClipContext(
                 new Vec3(x, y, z),
                 new Vec3(a, b, c),
                 ClipContext.Block.COLLIDER,
                 ClipContext.Fluid.NONE,
-                null
+                (net.minecraft.world.entity.Entity) null
         ));
         //?} else {
         /*HitResult hit = level.clip(new ClipContext(
@@ -175,7 +176,7 @@ public class ExplosionNukeGeneric {
                 new Vec3(a, b, c),
                 ClipContext.Block.COLLIDER,
                 ClipContext.Fluid.NONE,
-                (net.minecraft.world.entity.Entity) null
+                net.minecraft.world.phys.shapes.CollisionContext.empty()
         ));
         *///?}
         return hit.getType() != HitResult.Type.MISS;

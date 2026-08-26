@@ -1,0 +1,17 @@
+{
+    "vertex": "hbm_m:dh_depth_blit",
+    "fragment": "hbm_m:dh_depth_blit",
+    "samplers": [
+        { "name": "Sampler0" }
+    ],
+    "attributes": [ "Position" ],
+    "uniforms": [
+        { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "DhNear", "type": "float", "count": 1, "values": [ 112.0 ] },
+        { "name": "DhFar", "type": "float", "count": 1, "values": [ 4096.0 ] },
+        { "name": "OutNear", "type": "float", "count": 1, "values": [ 0.05 ] },
+        { "name": "OutFar", "type": "float", "count": 1, "values": [ 8000000.0 ] },
+        { "name": "DhFadeMaskDist", "type": "float", "count": 1, "values": [ 0.0 ] }
+    ]
+}

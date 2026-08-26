@@ -1,13 +1,14 @@
 package com.hbm_m.client.missile.track;
 
-import com.hbm_m.particle.ModParticleTypes;
-import com.hbm_m.particle.custom.MissileNozzleFlareParticle;
+import com.hbm_m.particle.nt.MissileNozzleFlareNT;
+import com.hbm_m.particle.nt.ParticleEngineNT;
 
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.world.phys.Vec3;
 
 /**
  * Nozzle engine glare (flash + flare) — locked to the exhaust, not the contrail trail.
+ * Слои спавнятся в NT-движок (ParticleEngineNT) — рендер не клипается far plane'ом.
  */
 public final class MissileNozzleFlare {
 
@@ -21,6 +22,9 @@ public final class MissileNozzleFlare {
                              double anchorX, double anchorY, double anchorZ,
                              float pitch, float yaw,
                              Vec3 flightStep, float scale) {
+        if (MissileNozzleFlareNT.sprites == null) {
+            return; // Провайдеры ещё не зарегистрированы (ранний кадр)
+        }
         Vec3 nozzle;
         Vec3 carryVel;
         if (flightStep.lengthSqr() > 1.0E-8D) {
@@ -40,17 +44,10 @@ public final class MissileNozzleFlare {
     }
 
     private static void spawnLayer(ClientLevel level, Vec3 pos, Vec3 carryVel, float scale, int layer) {
-        MissileNozzleFlareParticle.currentSpawnScale = scale * FLARE_SIZE_MUL;
-        MissileNozzleFlareParticle.currentTextureLayer = layer;
-        try {
-            level.addParticle(
-                    ModParticleTypes.MISSILE_NOZZLE_FLARE.get(),
-                    true,
-                    pos.x, pos.y, pos.z,
-                    carryVel.x, carryVel.y, carryVel.z);
-        } finally {
-            MissileNozzleFlareParticle.currentSpawnScale = 1.0F;
-        }
+        ParticleEngineNT.INSTANCE.add(new MissileNozzleFlareNT(
+                level, pos.x, pos.y, pos.z,
+                carryVel.x, carryVel.y, carryVel.z,
+                scale * FLARE_SIZE_MUL, layer));
     }
 
     private static Vec3 thrustFromRotation(float pitch, float yaw) {

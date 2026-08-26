@@ -45,6 +45,7 @@ public class ClientRenderHandler {
 
     /** Shared with NukeTorex; must extend RenderType to access protected RenderStateShard members. */
     public static final class CustomRenderTypes extends RenderType {
+        private static long blendDiagCounter = 0;
         private static final RenderStateShard.TransparencyStateShard SEVEN_SEVEN10 = new RenderStateShard.TransparencyStateShard(
                 "7710",
                 () -> {
@@ -55,6 +56,31 @@ public class ClientRenderHandler {
                     RenderSystem.defaultBlendFunc();
                     RenderSystem.disableBlend();
                 });
+        /** Диагностика «чёрного фона»: лог GL-состояния в момент ДРО (после
+         *  включения блендинга; шейдер к этому моменту уже забинден шардом
+         *  ShaderState). Ожидания: blend=true, prog!=0, Color@2, UV0@1,
+         *  tex0=идентификатор текстуры облака. */
+        private static final RenderStateShard.TransparencyStateShard SEVEN_SEVEN10_DIAG = new RenderStateShard.TransparencyStateShard(
+                "7710diag",
+                () -> {
+                    SEVEN_SEVEN10.setupRenderState();
+                    if (++blendDiagCounter % 120 == 1) {
+                        try {
+                            int prog = org.lwjgl.opengl.GL11.glGetInteger(org.lwjgl.opengl.GL20.GL_CURRENT_PROGRAM);
+                            boolean blend = org.lwjgl.opengl.GL11.glIsEnabled(org.lwjgl.opengl.GL11.GL_BLEND);
+                            int locColor = prog != 0 ? org.lwjgl.opengl.GL20.glGetAttribLocation(prog, "Color") : -99;
+                            int locUv = prog != 0 ? org.lwjgl.opengl.GL20.glGetAttribLocation(prog, "UV0") : -99;
+                            org.lwjgl.opengl.GL13.glActiveTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
+                            int tex = org.lwjgl.opengl.GL11.glGetInteger(org.lwjgl.opengl.GL11.GL_TEXTURE_BINDING_2D);
+                            com.hbm_m.main.MainRegistry.LOGGER.info(
+                                    "HBM NUKE_CLOUDS draw: prog={} blend={} Color@{} UV0@{} tex0={}",
+                                    prog, blend, locColor, locUv, tex);
+                        } catch (Throwable t) {
+                            com.hbm_m.main.MainRegistry.LOGGER.info("HBM NUKE_CLOUDS diag failed: {}", t.toString());
+                        }
+                    }
+                },
+                () -> SEVEN_SEVEN10.clearRenderState());
         private static final RenderStateShard.TransparencyStateShard ADDITIVE_BLEND = new RenderStateShard.TransparencyStateShard(
                 "additive",
                 () -> {
@@ -67,8 +93,36 @@ public class ClientRenderHandler {
                 });
         private static final RenderStateShard.ShaderStateShard BHOLE_TEX_COLOR_SHADER =
                 new RenderStateShard.ShaderStateShard(GameRenderer::getPositionTexColorShader);
-        /** Самосветящиеся облака/вспышки взрыва — без lightmap (как RenderTorex 1.7.10). */
-        private static final RenderStateShard.ShaderStateShard NUKE_TEX_COLOR_SHADER = BHOLE_TEX_COLOR_SHADER;
+        /** Самосветящиеся облака/вспышки взрыва — без lightmap (как RenderTorex 1.7.10).
+         *  Без Iris — кастомный шейдер nuke_cloud (попиксельная окклюзия против LOD).
+         *  Под активным паком Iris — ExtendedShader ключа TEXTURED_COLOR: неизвестные
+         *  Iris'у модовые ShaderInstance маскируются disableDepthColor и рисуются
+         *  «в никуда» (см. FarContentShaders). */
+        private static final RenderStateShard.ShaderStateShard NUKE_TEX_COLOR_SHADER =
+                new RenderStateShard.ShaderStateShard(
+                        com.hbm_m.client.render.shader.FarContentShaders::resolveTexColor);
+
+        /** Флаг «идёт отрисовка дальнего контента в DH FBO» (мост).
+         *  Раньше переключал nukeClouds() на DH-вариант рендертайпа; теперь
+         *  используется только диагностикой (NukeTorex.render). */
+        private static volatile boolean FAR_PASS_ACTIVE = false;
+
+        public static void setFarPassActive(boolean active) {
+            FAR_PASS_ACTIVE = active;
+        }
+
+        public static boolean isFarPassActive() {
+            return FAR_PASS_ACTIVE;
+        }
+
+        /** Селектор рендертайпа для NT-частиц.
+         *  Исторически выбирал между NUKE_CLOUDS и удалённым DH-вариантом
+         *  NUKE_CLOUDS_DH по флагу FAR_PASS_ACTIVE; с перехода на «ПЛАН Б»
+         *  частицы в DH FBO не рисуются, поэтому флаг остаётся только для
+         *  диагностики и селектор всегда возвращает базовый тип. */
+        public static RenderType nukeClouds(ResourceLocation texture) {
+            return NUKE_CLOUDS.apply(texture);
+        }
 
         private CustomRenderTypes(String s, VertexFormat v, VertexFormat.Mode m, int i, boolean b, boolean b2, Runnable r, Runnable r2) { super(s, v, m, i, b, b2, r, r2); }
 
@@ -103,7 +157,7 @@ public class ClientRenderHandler {
                         RenderType.CompositeState.builder()
                                 .setShaderState(NUKE_TEX_COLOR_SHADER)
                                 .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
-                                .setTransparencyState(SEVEN_SEVEN10)
+                                .setTransparencyState(SEVEN_SEVEN10_DIAG)
                                 .setCullState(NO_CULL)
                                 .setLightmapState(NO_LIGHTMAP)
                                 .setWriteMaskState(COLOR_WRITE)
@@ -115,7 +169,7 @@ public class ClientRenderHandler {
                 texture -> create("nuke_flash", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 545234, true, true,
                         RenderType.CompositeState.builder()
                                 .setShaderState(NUKE_TEX_COLOR_SHADER)
-                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, true))
                                 .setTransparencyState(ADDITIVE_BLEND)
                                 .setDepthTestState(NO_DEPTH_TEST)
                                 .setCullState(NO_CULL)
@@ -123,6 +177,29 @@ public class ClientRenderHandler {
                                 .setWriteMaskState(COLOR_WRITE)
                                 .setOutputState(TRANSLUCENT_TARGET)
                                 .createCompositeState(false)));
+
+        /**
+         * Аддитивный блик (сопло ракеты и т.п.) с нативным depth-тестом:
+         * в отличие от NUKE_FLASH не рисуется сквозь геометрию.
+         * Текстура — атлас частиц (спрайты flash/flare).
+         * ОДИН экземпляр: ParticleEngineNT батчит по идентичности RenderType.
+         */
+        private static final RenderType NUKE_GLOW_ADD = create("hbm_m_nuke_glow_add", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 545234, true, true,
+                RenderType.CompositeState.builder()
+                        .setShaderState(NUKE_TEX_COLOR_SHADER)
+                        .setTextureState(new RenderStateShard.TextureStateShard(
+                                net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_PARTICLES, false, false))
+                        .setTransparencyState(ADDITIVE_BLEND)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST)
+                        .setCullState(NO_CULL)
+                        .setLightmapState(NO_LIGHTMAP)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .setOutputState(TRANSLUCENT_TARGET)
+                        .createCompositeState(false));
+
+        public static RenderType nukeGlowAdd() {
+            return NUKE_GLOW_ADD;
+        }
 
         /**
          * локаои 1.7.10-рендера костей/пепла (ParticleSkeleton/ParticleAshes).

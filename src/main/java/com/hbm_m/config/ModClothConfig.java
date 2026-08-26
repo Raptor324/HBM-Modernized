@@ -115,6 +115,13 @@ public class ModClothConfig {
     public int missileTrackMaxRangeBlocks = 0;
     public int missileTrackInterval = 1;
 
+    /**
+     * DH-мост: рендер дальних ракет/гриба внутри DH FBO через DhApiBeforeApplyShaderRenderEvent.
+     * Выключите для A/B-теста артефактов (просвечивание пещер, порядок листвы и т.п.):
+     * если артефакты остаются без моста — их источник сам DH, а не HBM.
+     */
+    public boolean enableDhRenderBridge = true;
+
     /** CPU voxel ray-march окклюзии в OcclusionCullingHelper (frustum vanilla + raycast по блокам). Выключите, если модели рендерятся некорректно. */
     public boolean enableOcclusionCulling = false;
 

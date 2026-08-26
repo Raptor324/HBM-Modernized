@@ -2808,6 +2808,10 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> TEST_BLOCK = registerBlock("test_block",
             () -> new TestBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
+    /** ДИАГНОСТИКА: столб частиц вверх (ваниль + NT) — тест рендер-пайплайнов. */
+    public static final RegistrySupplier<Block> PARTICLE_TEST_BLOCK = registerBlock("particle_test_block",
+            () -> new ParticleTestBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL)));
+
     private static <T extends Block> RegistrySupplier<T> registerBlock(String name, Supplier<T> block) {
         RegistrySupplier<T> toReturn = BLOCKS.register(name, block);
         registerBlockItem(name, toReturn);

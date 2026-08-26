@@ -105,6 +105,23 @@ public class MachineBatteryBlock extends BaseEntityBlock {
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
+    //? if >= 1.21.1 {
+    /*// На 1.21.1 лут-таблица батареи пустая (copy_nbt удалён из игры), состояние
+    // переносится в дропнутый предмет кодом — по паттерну ящиков (BaseCrateBlock).
+    @Override
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        if (!level.isClientSide && !player.getAbilities().instabuild) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof MachineBatteryBlockEntity battery) {
+                ItemStack stack = new ItemStack(this);
+                battery.saveToItemStack(stack);
+                popResource(level, pos, stack);
+            }
+        }
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+    *///?}
+
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,

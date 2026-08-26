@@ -569,6 +569,12 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("tooltip.hbm_m.mine.line1", "Может быть обезврежена");
         add("tooltip.hbm_m.naval_mine.line1", "Взрывается при контакте с игроком");
 
+        // Сигарета (порт ItemCigarette, 1.7.10)
+        add("tooltip.hbm_m.cigarette.line1", "✓ Асбестовый фильтр");
+        add("tooltip.hbm_m.cigarette.line2", "✓ Высокое содержание смол");
+        add("tooltip.hbm_m.cigarette.line3", "✓ Табак содержит 100% полония-210");
+        add("tooltip.hbm_m.cigarette.line4", "✓ Вкусно");
+
 // ДЕТОНАТОР
         add("tooltip.hbm_m.detonator.target", "Цель: ");
         add("tooltip.hbm_m.detonator.no_target", "Нет цели");

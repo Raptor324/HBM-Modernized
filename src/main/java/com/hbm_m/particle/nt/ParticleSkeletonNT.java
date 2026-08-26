@@ -162,10 +162,22 @@ public class ParticleSkeletonNT extends ParticleNT {
 
         // Камера-относительная позиция: вершины уже в пространстве камеры, PoseStack не нужен.
         // Паттернкак у MukeWaveParticle / MukeCloudParticle — матрицы не трогаем.
-        Vec3 camPos = camera.getPosition();
-        float pX = (float) (Mth.lerp(partialTicks, this.xo, this.x) - camPos.x);
-        float pY = (float) (Mth.lerp(partialTicks, this.yo, this.y) - camPos.y);
-        float pZ = (float) (Mth.lerp(partialTicks, this.zo, this.z) - camPos.z);
+        Vec3 off = virtualizedOffset(
+                Mth.lerp(partialTicks, this.xo, this.x),
+                Mth.lerp(partialTicks, this.yo, this.y),
+                Mth.lerp(partialTicks, this.zo, this.z),
+                camera);
+        float pX = (float) off.x;
+        float pY = (float) off.y;
+        float pZ = (float) off.z;
+
+        // Fallback-виртуализация: сжатие размера вместе со смещением (см. ParticleNT.virtualScale).
+        float vScale = virtualScale(
+                Mth.lerp(partialTicks, this.xo, this.x),
+                Mth.lerp(partialTicks, this.yo, this.y),
+                Mth.lerp(partialTicks, this.zo, this.z),
+                camera);
+        float vScaleModel = this.scale * vScale;
 
         float timeLeft = this.lifetime - (this.age + partialTicks);
         float alpha = timeLeft < FADE_TICKS ? Mth.clamp(timeLeft / FADE_TICKS, 0F, 1F) : 1F;
@@ -190,9 +202,9 @@ public class ParticleSkeletonNT extends ParticleNT {
             // Нормаль грани — в том же преобразовании (RotY/Pitch) что и вершины.
             // Для NEW_ENTITY-шейдера (освещение по нормалям) + back-face culling её нужно задавать.
             float[] nrm = rotatedFaceNormal(tri, cy, sy, cp, sp);
-            emitVertexCameraSpace(consumer, tri.a(), tri.ua(), pX, pY, pZ, cy, sy, cp, sp, scale, packedLight, cr, cg, cb, ca, nrm);
-            emitVertexCameraSpace(consumer, tri.b(), tri.ub(), pX, pY, pZ, cy, sy, cp, sp, scale, packedLight, cr, cg, cb, ca, nrm);
-            emitVertexCameraSpace(consumer, tri.c(), tri.uc(), pX, pY, pZ, cy, sy, cp, sp, scale, packedLight, cr, cg, cb, ca, nrm);
+            emitVertexCameraSpace(consumer, tri.a(), tri.ua(), pX, pY, pZ, cy, sy, cp, sp, vScaleModel, packedLight, cr, cg, cb, ca, nrm);
+            emitVertexCameraSpace(consumer, tri.b(), tri.ub(), pX, pY, pZ, cy, sy, cp, sp, vScaleModel, packedLight, cr, cg, cb, ca, nrm);
+            emitVertexCameraSpace(consumer, tri.c(), tri.uc(), pX, pY, pZ, cy, sy, cp, sp, vScaleModel, packedLight, cr, cg, cb, ca, nrm);
         }
     }
 

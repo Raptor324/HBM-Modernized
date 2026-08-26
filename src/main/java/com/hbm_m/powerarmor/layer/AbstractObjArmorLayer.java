@@ -87,7 +87,7 @@ public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends Hu
 
         ModelResourceLocation modelLocation = config.getBakedModelLocation();
         BakedModel baked = MODEL_CACHE.computeIfAbsent(modelLocation,
-            loc -> PlatformHooks.getModel(Minecraft.getInstance().getModelManager(), PlatformHooks.getModelId(loc)));
+            loc -> PlatformHooks.getItemModel(Minecraft.getInstance().getModelManager(), PlatformHooks.getModelId(loc)));
 
         if (baked == Minecraft.getInstance().getModelManager().getMissingModel()) return;
         if (!(baked instanceof AbstractMultipartBakedModel multipart)) return;

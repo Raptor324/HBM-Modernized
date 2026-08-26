@@ -82,13 +82,23 @@ public class MukeFlashParticle extends ParticleNT {
         FogRenderer.setupNoFog();
 
         RandomSource rand = RandomSource.create();
-        Vec3 camPos = camera.getPosition();
-        float dX = (float) (Mth.lerp(partialTicks, this.xo, this.x) - camPos.x);
-        float dY = (float) (Mth.lerp(partialTicks, this.yo, this.y) - camPos.y);
-        float dZ = (float) (Mth.lerp(partialTicks, this.zo, this.z) - camPos.z);
+        Vec3 off = virtualizedOffset(
+                Mth.lerp(partialTicks, this.xo, this.x),
+                Mth.lerp(partialTicks, this.yo, this.y),
+                Mth.lerp(partialTicks, this.zo, this.z),
+                camera);
+        float dX = (float) off.x;
+        float dY = (float) off.y;
+        float dZ = (float) off.z;
 
         this.alpha = Mth.clamp(1F - ((this.age + partialTicks) / (float) this.lifetime), 0F, 1F);
-        float scale = (this.age + partialTicks) * 3F + 1F;
+        // Fallback-виртуализация: сжатие размера вместе со смещением (см. ParticleNT.virtualScale).
+        float vScale = virtualScale(
+                Mth.lerp(partialTicks, this.xo, this.x),
+                Mth.lerp(partialTicks, this.yo, this.y),
+                Mth.lerp(partialTicks, this.zo, this.z),
+                camera);
+        float scale = ((this.age + partialTicks) * 3F + 1F) * vScale;
 
         Vector3f left = new Vector3f(camera.getLeftVector()).mul(scale);
         Vector3f up = new Vector3f(camera.getUpVector()).mul(scale);
@@ -100,9 +110,9 @@ public class MukeFlashParticle extends ParticleNT {
         for (int i = 0; i < 24; i++) {
             rand.setSeed(i * 31L + 1L);
 
-            float pX = (float) (dX + rand.nextDouble() * 15 - 7.5);
-            float pY = (float) (dY + rand.nextDouble() * 7.5 - 3.75);
-            float pZ = (float) (dZ + rand.nextDouble() * 15 - 7.5);
+            float pX = (float) (dX + (rand.nextDouble() * 15 - 7.5) * vScale);
+            float pY = (float) (dY + (rand.nextDouble() * 7.5 - 3.75) * vScale);
+            float pZ = (float) (dZ + (rand.nextDouble() * 15 - 7.5) * vScale);
 
             ImmediateVertexWriter.billboardQuad(consumer, null, pX, pY, pZ, left, up,
                     1.0F, 0.9F, 0.75F, alpha * 0.5F, 1F, 1F, 0F, 0F);

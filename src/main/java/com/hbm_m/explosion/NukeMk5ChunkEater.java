@@ -8,6 +8,7 @@ import java.util.Map;
 
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.util.WorldUtil;
 
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
@@ -52,6 +53,10 @@ public class NukeMk5ChunkEater implements IExplosionRay {
     private double gspX;
     private double gspY;
     private final BlockPos.MutableBlockPos scratchPos = new BlockPos.MutableBlockPos();
+    private final BlockPos.MutableBlockPos writePos = new BlockPos.MutableBlockPos();
+
+    /** Чанки, изменённые напрямую (мимо Level.setBlock) и ожидающие отправки клиенту. */
+    private final LongSet dirtyChunks = new LongOpenHashSet();
 
     public boolean isAusf3Complete = false;
 
@@ -63,6 +68,14 @@ public class NukeMk5ChunkEater implements IExplosionRay {
     private int cachedSectionIdx = Integer.MIN_VALUE;
 
     private final Map<ChunkPos, ChunkPos> eaterTickets = new HashMap<>();
+
+    /**
+     * Лимит одновременно выданных точечных тикетов догрузки. Без него при большом length
+     * requestMissingChunks запрашивал загрузку десятков тысяч чанков одним вызовом —
+     * чанк-лоадер грузил их параллельно и сервер захлёбывался GC / умирал по RAM.
+     */
+    private static final int MAX_PENDING_LOAD_TICKETS = 128;
+
     private long lastWaitLog = 0L;
     private boolean destructionLogged = false;
     private boolean completeLogged = false;
@@ -304,7 +317,7 @@ public class NukeMk5ChunkEater implements IExplosionRay {
             if (toRemTips.contains(packed)) {
                 handleTip(mutPos.getX(), mutPos.getY(), mutPos.getZ());
             } else {
-                clearBlock(mutPos);
+                clearBlock(mutPos.getX(), mutPos.getY(), mutPos.getZ());
             }
         }
 
@@ -316,6 +329,9 @@ public class NukeMk5ChunkEater implements IExplosionRay {
 
         perChunk.remove(coord);
         orderedChunks.remove(0);
+
+        // Отправляем клиенту один полный пакет чанка вместо тысяч block-update пакетов
+        flushDirtyChunks();
     }
 
     /**
@@ -369,10 +385,8 @@ public class NukeMk5ChunkEater implements IExplosionRay {
             }
         }
 
-        BlockPos.MutableBlockPos cur = new BlockPos.MutableBlockPos();
         for (long packed : toPurge) {
-            cur.set(BlockPos.getX(packed), BlockPos.getY(packed), BlockPos.getZ(packed));
-            clearBlock(cur);
+            clearBlock(BlockPos.getX(packed), BlockPos.getY(packed), BlockPos.getZ(packed));
         }
     }
 
@@ -398,12 +412,9 @@ public class NukeMk5ChunkEater implements IExplosionRay {
         LevelChunk chunk = level.getChunkSource().getChunkNow(chunkX, chunkZ);
         if (chunk == null) return;
 
-        int minX = chunkX << 4;
-        int maxX = minX + 15;
-        int minZ = chunkZ << 4;
-        int maxZ = minZ + 15;
-        int maxRSq = this.length * this.length;
-        BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
+        int baseX = chunkX << 4;
+        int baseZ = chunkZ << 4;
+        double maxRSq = (double) this.length * this.length;
 
         LevelChunkSection[] sections = chunk.getSections();
         for (int s = 0; s < sections.length; s++) {
@@ -411,19 +422,17 @@ public class NukeMk5ChunkEater implements IExplosionRay {
             if (section == null || section.hasOnlyAir()) continue;
 
             int sectionMinY = level.getSectionYFromSectionIndex(s) << 4;
-            int sectionMaxY = sectionMinY + 15;
 
-            for (int x = minX; x <= maxX; x++) {
-                for (int z = minZ; z <= maxZ; z++) {
-                    double dx = x + 0.5D - posX;
-                    double dz = z + 0.5D - posZ;
-                    if (dx * dx + dz * dz > (double) maxRSq) continue;
+            for (int lx = 0; lx < 16; lx++) {
+                int wx = baseX + lx;
+                for (int lz = 0; lz < 16; lz++) {
+                    double dx = wx + 0.5D - posX;
+                    double dz = baseZ + lz + 0.5D - posZ;
+                    if (dx * dx + dz * dz > maxRSq) continue;
 
-                    for (int y = sectionMinY; y <= sectionMaxY; y++) {
-                        mutablePos.set(x, y, z);
-                        BlockState state = chunk.getBlockState(mutablePos);
-                        if (!state.getFluidState().isEmpty()) {
-                            clearBlock(mutablePos);
+                    for (int ly = 0; ly < 16; ly++) {
+                        if (!section.getBlockState(lx, ly, lz).getFluidState().isEmpty()) {
+                            clearBlock(wx, sectionMinY + ly, baseZ + lz);
                         }
                     }
                 }
@@ -445,7 +454,6 @@ public class NukeMk5ChunkEater implements IExplosionRay {
         }
 
         long deadline = System.currentTimeMillis() + budgetMs;
-        BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
         int minY = level.getMinBuildHeight();
         int maxY = level.getMaxBuildHeight();
 
@@ -463,14 +471,15 @@ public class NukeMk5ChunkEater implements IExplosionRay {
                 }
 
                 for (int y = minY; y < maxY; y++) {
-                    mutablePos.set(fluidClearCursorX, y, z);
                     BlockState state = blockAt(fluidClearCursorX, y, z);
                     if (state != null && !state.getFluidState().isEmpty()) {
-                        clearBlock(mutablePos);
+                        clearBlock(fluidClearCursorX, y, z);
                     }
                 }
             }
         }
+
+        flushDirtyChunks();
 
         if (fluidClearCursorX > posX + maxR) {
             fluidsCleared = true;
@@ -478,13 +487,42 @@ public class NukeMk5ChunkEater implements IExplosionRay {
     }
 
     protected void handleTip(int x, int y, int z) {
-        clearBlock(new BlockPos(x, y, z));
+        clearBlock(x, y, z);
     }
 
-    private void clearBlock(BlockPos pos) {
-        BlockState state = level.getBlockState(pos);
-        if (state.isAir() && state.getFluidState().isEmpty()) return;
-        level.setBlock(pos, Blocks.AIR.defaultBlockState(), FAST_BLOCK_FLAGS);
+    /**
+     * Быстрое удаление блока: чтение через кэш секций ({@link #blockAt}), запись напрямую
+     * в чанк в обход Level.setBlock (markAndNotifyBlock → lithium hopper check → блокирующая
+     * догрузка соседних чанков). Изменённые чанки уходят клиенту одним полным пакетом
+     * через {@link #flushDirtyChunks()}.
+     */
+    private void clearBlock(int x, int y, int z) {
+        BlockState state = blockAt(x, y, z);
+        if (state == null || (state.isAir() && state.getFluidState().isEmpty())) return;
+
+        LevelChunk chunk = cachedChunk;
+        if (chunk == null) return;
+
+        if (WorldUtil.setBlockFast(chunk, writePos.set(x, y, z), Blocks.AIR.defaultBlockState())) {
+            cachedSectionIdx = Integer.MIN_VALUE; // секция могла пересоздаться
+            dirtyChunks.add(ChunkPos.asLong(x >> 4, z >> 4));
+        }
+    }
+
+    /** Отправляет клиентам полные пакеты чанков, изменённых напрямую с прошлой отправки. */
+    public void flushDirtyChunks() {
+        if (dirtyChunks.isEmpty()) return;
+        if (!(level instanceof ServerLevel server)) {
+            dirtyChunks.clear();
+            return;
+        }
+        for (long packed : dirtyChunks) {
+            LevelChunk chunk = server.getChunkSource().getChunkNow(ChunkPos.getX(packed), ChunkPos.getZ(packed));
+            if (chunk != null) {
+                WorldUtil.flushChunk(server, chunk);
+            }
+        }
+        dirtyChunks.clear();
     }
 
     private static boolean shouldClearBlock(BlockState state) {
@@ -544,8 +582,10 @@ public class NukeMk5ChunkEater implements IExplosionRay {
     }
 
     /**
-     * Точечные тикеты (радиус 2 = FULL) для всех ещё не загруженных чанков области —
+     * Точечные тикеты (радиус 2 = FULL) для ещё не загруженных чанков области —
      * тикет сущности не дотягивается до внешнего кольца при больших радиусах.
+     * Выдача идёт кольцами от эпицентра наружу и ограничена {@link #MAX_PENDING_LOAD_TICKETS}
+     * одновременно — иначе при большом length запрашивалась загрузка всего кратера разом.
      * Тикеты снимаются по мере обработки чанков в destructionTick (releaseEaterTicket).
      */
     private void requestMissingChunks() {
@@ -555,16 +595,28 @@ public class NukeMk5ChunkEater implements IExplosionRay {
         int cz0 = posZ >> 4;
         int margin = length + 14;
         long marginSq = (long) margin * margin;
-        for (int cx = cx0 - cr; cx <= cx0 + cr; cx++) {
-            for (int cz = cz0 - cr; cz <= cz0 + cr; cz++) {
-                if (!level.hasChunk(cx, cz)) {
-                    double dx = (cx << 4) + 8 - posX;
-                    double dz = (cz << 4) + 8 - posZ;
-                    if (dx * dx + dz * dz <= (double) marginSq) {
-                        ChunkPos cp = new ChunkPos(cx, cz);
-                        if (eaterTickets.putIfAbsent(cp, cp) == null) {
-                            server.getChunkSource().addRegionTicket(EATER_LOAD, cp, 2, cp);
+
+        outer:
+        for (int r = 0; r <= cr; r++) {
+            for (int dx = -r; dx <= r; dx++) {
+                for (int dz = -r; dz <= r; dz++) {
+                    if (Math.max(Math.abs(dx), Math.abs(dz)) != r) continue; // только периметр кольца
+
+                    int cx = cx0 + dx;
+                    int cz = cz0 + dz;
+                    if (level.hasChunk(cx, cz)) continue;
+
+                    double ddx = (cx << 4) + 8 - posX;
+                    double ddz = (cz << 4) + 8 - posZ;
+                    if (ddx * ddx + ddz * ddz > marginSq) continue;
+
+                    ChunkPos cp = new ChunkPos(cx, cz);
+                    if (!eaterTickets.containsKey(cp)) {
+                        if (eaterTickets.size() >= MAX_PENDING_LOAD_TICKETS) {
+                            break outer;
                         }
+                        eaterTickets.put(cp, cp);
+                        server.getChunkSource().addRegionTicket(EATER_LOAD, cp, 2, cp);
                     }
                 }
             }
@@ -583,10 +635,10 @@ public class NukeMk5ChunkEater implements IExplosionRay {
         while (!perChunk.isEmpty() && System.currentTimeMillis() < start + processTimeMs) {
             ChunkPos coord = orderedChunks.get(0);
             if (!level.hasChunk(coord.x, coord.z)) {
-                if (level instanceof ServerLevel server) {
-                    if (eaterTickets.putIfAbsent(coord, coord) == null) {
-                        server.getChunkSource().addRegionTicket(EATER_LOAD, coord, 2, coord);
-                    }
+                if (level instanceof ServerLevel server
+                        && eaterTickets.size() < MAX_PENDING_LOAD_TICKETS
+                        && eaterTickets.putIfAbsent(coord, coord) == null) {
+                    server.getChunkSource().addRegionTicket(EATER_LOAD, coord, 2, coord);
                 }
                 orderedChunks.remove(0);
                 orderedChunks.add(coord);
@@ -623,6 +675,7 @@ public class NukeMk5ChunkEater implements IExplosionRay {
         isAusf3Complete = true;
         if (perChunk != null) perChunk.clear();
         if (orderedChunks != null) orderedChunks.clear();
+        flushDirtyChunks();
         if (!eaterTickets.isEmpty() && level instanceof ServerLevel server) {
             for (ChunkPos cp : eaterTickets.keySet()) {
                 server.getChunkSource().removeRegionTicket(EATER_LOAD, cp, 2, cp);

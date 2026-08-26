@@ -57,46 +57,67 @@ public final class MissileTrackWorldRender {
     }
 
     public static void render(float partialTick, PoseStack poseStack) {
+        renderFiltered(partialTick, null);
+    }
+
+    /**
+     * Рендер треков ракет с опциональным фильтром по дистанции² до камеры.
+     *
+     * @param distFilterSq null = все треки; иначе предикат по дистанции²
+     *                     (far: d > splitDist², near: d <= splitDist² — та же
+     *                     граница, что у NT-частиц в EngineHandler).
+     *                     Виртуализация внутри renderOne работает как раньше:
+     *                     при DH — истинные координаты (дальний проход без
+     *                     клипа), без DH — приближение к границе прорисовки.
+     * @return true, если была отрисована хотя бы одна ракета.
+     */
+    public static boolean renderFiltered(float partialTick, java.util.function.DoublePredicate distFilterSq) {
         if (!MissileTrackClient.isEnabled()) {
-            return;
+            return false;
         }
         Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
         if (level == null) {
-            return;
+            return false;
         }
 
         Vec3 camera = mc.gameRenderer.getMainCamera().getPosition();
         // Private source — never the shared global one (see missileBufferSource()).
         MultiBufferSource.BufferSource buffers = missileBufferSource();
 
-        poseStack.pushPose();
+        // Своя камера-relative стопка: шейдеры берут поворот камеры из
+        // RenderSystem ModelViewMat, поэтому event-овый PoseStack не нужен.
+        PoseStack poseStack = new PoseStack();
         poseStack.translate(-camera.x, -camera.y, -camera.z);
         boolean drewAny = false;
-        try {
-            for (MissileTrackClient.TrackEntry entry : MissileTrackClient.entries()) {
-                if (!MissileTrackClient.shouldUseTrackWorldRender(entry.entityId)) {
+        for (MissileTrackClient.TrackEntry entry : MissileTrackClient.entries()) {
+            if (!MissileTrackClient.shouldUseTrackWorldRender(entry.entityId)) {
+                continue;
+            }
+            MissileTrackClient.InterpolatedPose pose = entry.interpolate(partialTick);
+            if (pose == null) {
+                continue;
+            }
+            if (distFilterSq != null) {
+                double dx = pose.x() - camera.x;
+                double dy = pose.y() - camera.y;
+                double dz = pose.z() - camera.z;
+                if (!distFilterSq.test(dx * dx + dy * dy + dz * dz)) {
                     continue;
-                }
-                MissileTrackClient.InterpolatedPose pose = entry.interpolate(partialTick);
-                if (pose == null) {
-                    continue;
-                }
-                if (renderOne(level, pose, poseStack, buffers, camera)) {
-                    drewAny = true;
                 }
             }
-        } finally {
-            poseStack.popPose();
+            if (renderOne(level, pose, poseStack, buffers, camera)) {
+                drewAny = true;
+            }
         }
         // Flush the private missile source so buffered missile aux-geometry draws
         // this frame. Safe because this source is isolated from the shared global
         // bufferSource — flush-all here cannot disturb other mods' pending
         // shared-builder quads (Copycats' translucentMovingBlock door etc.).
-        // drewAny just skips the call when nothing was buffered.
         if (drewAny) {
             buffers.endBatch();
         }
+        return drewAny;
     }
 
     private static boolean renderOne(ClientLevel level, MissileTrackClient.InterpolatedPose pose,
@@ -169,6 +190,14 @@ public final class MissileTrackWorldRender {
         double relY = worldY - camera.y;
         double relZ = worldZ - camera.z;
         double dist = Math.sqrt(relX * relX + relY * relY + relZ * relZ);
+        // DH РЕАЛЬНО рендерит этот кадр → не виртуализируем: дальний контент
+        // идёт через проход EngineHandler с удлинённой проекцией (нет клипа).
+        // DH не рендерит (не установлен / выключен / завис — isActive с
+        // 500мс-грейсом стабилен между кадрами, «двойных колец» нет) →
+        // старый виртуальный рендер: приближаем объект к границе прорисовки.
+        if (com.hbm_m.client.compat.dh.DhClientState.isActive()) {
+            return new CameraRelativePose(relX, relY, relZ, 1.0F, worldX, worldY, worldZ);
+        }
         double max = maxSafeRenderDistanceBlocks();
         float scale = 1.0F;
         if (dist > max && dist >= 1.0E-4D) {

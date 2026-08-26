@@ -111,6 +111,11 @@ dependencies {
 	}
 	// В NeoForge артефакт называется flywheel-neoforge-api
 	"compileOnly"("dev.engine-room.flywheel:flywheel-neoforge-api-$mcVer:${prop("deps.flywheel")}")
+	// Distant Horizons: compileOnly для официального API (см. DhRenderBridge).
+	// Класс моста грузится только при установленном DH.
+	"compileOnly"("maven.modrinth:distanthorizons:3.2.0-b-1.21.1") // 3.2.0-b-1.21.1
+	// "runtimeOnly"("maven.modrinth:distanthorizons:3.2.0-b-1.21.1")
+
 	"compileOnly"("maven.modrinth:u6dRKJwZ:${prop("deps.jei")}")
 	"runtimeOnly"("maven.modrinth:u6dRKJwZ:${prop("deps.jei")}")
 	"runtimeOnly"("maven.modrinth:l6YH9Als:v5qtqRQi") // spark
@@ -209,6 +214,25 @@ tasks.named<ProcessResources>("processResources") {
 					file.writeText(text.replace(Regex("\"(tag)\"\\s*:\\s*\"forge:"), "\"$1\": \"c:"))
 				}
 			}
+
+		// Лут-таблицы батарей используют minecraft:copy_nbt, удалённый в 1.20.5+.
+		// На 1.21.1 состояние батареи переносится кодом
+		// (MachineBatteryBlock#playerWillDestroy → MachineBatteryBlockEntity#saveToItemStack),
+		// поэтому таблицы просто исключаем из сборки.
+		listOf("loot_table", "loot_tables").forEach { dirName ->
+			File(File(dataDir, "hbm_m"), dirName).walkTopDown()
+				.filter { it.isFile && it.name.startsWith("machine_battery") }
+				.forEach { it.delete() }
+		}
+
+		// minecraft:grass переименован в short_grass в 1.20.3+ (датаген 1.20.1 пишет старое имя).
+		dataDir.walkTopDown()
+			.filter { it.isFile && it.extension == "json" }.forEach { file ->
+				val text = file.readText()
+				if (text.contains("\"minecraft:grass\"")) {
+					file.writeText(text.replace("\"minecraft:grass\"", "\"minecraft:short_grass\""))
+				}
+			}
 	}
 }
 
@@ -227,5 +251,3 @@ tasks.withType<JavaCompile>().configureEach {
 
 stonecutter {
 }
-
-

@@ -21,6 +21,7 @@ import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.*
 import org.gradle.language.jvm.tasks.ProcessResources
 import org.gradle.plugins.ide.idea.model.IdeaModel
+import java.io.File
 import java.util.*
 import javax.inject.Inject
 
@@ -197,6 +198,38 @@ abstract class ModPlatformPlugin @Inject constructor() : Plugin<Project> {
 					filesMatching("META-INF/mods.toml") { expand(props) }
 					exclude("META-INF/neoforge.mods.toml", "fabric.mod.json", "aw/*.accesswidener", ".cache")
 				}
+			}
+
+			// Crowdin присылает все таргет-переводы, включая полностью непереведённые
+			// и дубликаты — файлы, содержимое которых идентично en_us.json или друг другу.
+			// Такие файлы бесполезны и раздувают JAR — вырезаем их из готовых ресурсов
+			// processResources (датаген и исходники не трогаем).
+			doLast {
+				val langDir = File(destinationDir, "assets/$modId/lang")
+				if (!langDir.isDirectory) return@doLast
+
+				fun parseJson(file: File): Any? = groovy.json.JsonSlurper().parse(file)
+
+				// en_us сортируется первым: всё, что ему структурно идентично,
+				// гарантированно попадёт в дубликаты и будет удалено.
+				val candidates = (langDir.listFiles { f: File -> f.isFile && f.extension == "json" } ?: emptyArray())
+					.sortedBy { if (it.name == "en_us.json") "" else it.name }
+
+				val uniqueContents = mutableListOf<Any?>()
+				var removed = 0
+				for (candidate in candidates) {
+					try {
+						val content = parseJson(candidate)
+						if (uniqueContents.any { it == content }) {
+							if (candidate.delete()) removed++
+						} else {
+							uniqueContents.add(content)
+						}
+					} catch (e: Exception) {
+						logger.warn("Skipping ${candidate.name}: failed to parse JSON (${e.message})")
+					}
+				}
+				if (removed > 0) logger.lifecycle("processResources: removed $removed duplicate lang files (identical to en_us or to each other)")
 			}
 		}
 	}

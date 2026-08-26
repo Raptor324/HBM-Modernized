@@ -456,6 +456,38 @@ public final class PlatformHooks {
     }
 
     /**
+     * Регистрация "инвентарной" модели сета по её базовому id (например hbm_m:t51_armor).
+     * Файл модели при этом ищется в {@code models/item/<path>.json} на обеих версиях:
+     * на 1.20.1 через вариант "inventory", на 1.21.1 через standalone-ключ с путём item/<path>.
+     */
+    public static void registerItemModel(Object event, ResourceLocation id) {
+        //? if < 1.21.1 {
+        ((net.minecraftforge.client.event.ModelEvent.RegisterAdditional) event).register(
+                new net.minecraft.client.resources.model.ModelResourceLocation(id, "inventory"));
+        //?} else {
+        /*((net.neoforged.neoforge.client.event.ModelEvent.RegisterAdditional) event).register(
+                new net.minecraft.client.resources.model.ModelResourceLocation(
+                        ResourceLocation.fromNamespaceAndPath(id.getNamespace(), "item/" + id.getPath()),
+                        "standalone"));
+        *///?}
+    }
+
+    /**
+     * Получение запечённой "инвентарной" модели сета, зарегистрированной через
+     * {@link #registerItemModel}. Ключ должен совпадать с регистрацией.
+     */
+    public static net.minecraft.client.resources.model.BakedModel getItemModel(
+            net.minecraft.client.resources.model.ModelManager manager, ResourceLocation id) {
+        //? if < 1.21.1 {
+        return manager.getModel(new net.minecraft.client.resources.model.ModelResourceLocation(id, "inventory"));
+        //?} else {
+        /*return manager.getModel(new net.minecraft.client.resources.model.ModelResourceLocation(
+                ResourceLocation.fromNamespaceAndPath(id.getNamespace(), "item/" + id.getPath()),
+                "standalone"));
+        *///?}
+    }
+
+    /**
      * Регистрация Geometry Loader.
      */
     public static void registerGeometryLoader(Object event, String name, Object loader) {

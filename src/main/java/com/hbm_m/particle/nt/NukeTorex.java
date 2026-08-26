@@ -32,7 +32,7 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Toroidal convection mushroom cloud effect
  */
-public class NukeTorex extends ParticleNT {
+public class NukeTorex extends ParticleNT implements FarCapableParticle {
 
     protected int type = 0;
     protected float scale = 1;
@@ -448,18 +448,38 @@ public class NukeTorex extends ParticleNT {
         }
     }
 
+    @Override
+    public net.minecraft.resources.ResourceLocation hbm$getFarTexture() { return CLOUDLET; }
+
+    private int renderDiagCount = 0;
+    private long drawProbeCounter = 0;
+
     public enum TorexType { STANDARD, SHOCK, RING, CONDENSATION }
 
     @Override
     public void render(VertexConsumer ignored, Camera camera, float partialTicks, PoseStack levelPoseStack) {
+        if (renderDiagCount++ < 2 || renderDiagCount % 600 == 0) {
+            com.hbm_m.main.MainRegistry.LOGGER.info(
+                    "HBM Torex.render #{}: farPass={}, pos=({}, {}, {}), cloudlets={}",
+                    renderDiagCount,
+                    com.hbm_m.client.ClientRenderHandler.CustomRenderTypes.isFarPassActive(),
+                    (int) this.x, (int) this.y, (int) this.z, this.cloudlets.size());
+        }
         Vec3 camPos = camera.getPosition();
+        // Fallback-виртуализация ТОЛЬКО когда DH не рендерит (см. ParticleNT):
+        // центр гриба приближается к границе прорисовки, чтобы шляпка не
+        // клипалась ванильным far plane. Размер квайдов сжимается тем же
+        // коэффициентом — иначе угловой размер перестаёт уменьшаться и
+        // «эффект далёкого взрыва» теряется.
+        float vScale = virtualScale(this.x, this.y, this.z, camera);
+        Vec3 centerOffset = virtualizedOffset(this.x, this.y, this.z, camera);
 
         //  Свой PoseStack с ТОЛЬКО трансляцией. Поворот камеры уже в ModelViewMat (шейдер).
         PoseStack localPose = new PoseStack();
-        localPose.translate(this.x - camPos.x, this.y - camPos.y, this.z - camPos.z);
+        localPose.translate(centerOffset.x, centerOffset.y, centerOffset.z);
 
         FogRenderer.setupNoFog();
-        cloudletWrapper(partialTicks, localPose, ignored);
+        cloudletWrapper(partialTicks, localPose, ignored, vScale);
 
         long now = System.currentTimeMillis();
         //  Ядерная вспышка и тряска HUD живут в ModEventHandlerClient (Forge-only оверлей).
@@ -490,17 +510,19 @@ public class NukeTorex extends ParticleNT {
     @Override
     public void renderFlashOnly(MultiBufferSource buffer, Camera camera, float partialTicks, PoseStack levelPoseStack) {
         if (this.age >= 101) return;
-        Vec3 camPos = camera.getPosition();
+        // Вспышка — с той же fallback-виртуализацией (со сжатием размера).
+        Vec3 centerOffset = virtualizedOffset(this.x, this.y, this.z, camera);
+        float vScale = virtualScale(this.x, this.y, this.z, camera);
 
         //  Тоже свой PoseStack - только трансляция
         PoseStack localPose = new PoseStack();
-        localPose.translate(this.x - camPos.x, this.y - camPos.y, this.z - camPos.z);
+        localPose.translate(centerOffset.x, centerOffset.y, centerOffset.z);
 
         FogRenderer.setupNoFog();
-        flashWrapper(partialTicks, localPose, buffer);
+        flashWrapper(partialTicks, localPose, buffer, vScale);
     }
 
-    private void flashWrapper(float partialTicks, PoseStack poseStack, MultiBufferSource buffer) {
+    private void flashWrapper(float partialTicks, PoseStack poseStack, MultiBufferSource buffer, float vScale) {
         double age = Math.min(this.age + partialTicks, 100);
         float alpha = (float) ((100 - age) / 100F);
         Random rand = new Random(this.hashCode());
@@ -508,27 +530,28 @@ public class NukeTorex extends ParticleNT {
 
         VertexConsumer consumer = buffer.getBuffer(ClientRenderHandler.CustomRenderTypes.NUKE_FLASH.apply(FLASH));
         for (int i = 0; i < 3; i++) {
-            float lx = (float) (rand.nextGaussian() * 0.5 * this.rollerSize);
-            float ly = (float) (rand.nextGaussian() * 0.5 * this.rollerSize);
-            float lz = (float) (rand.nextGaussian() * 0.5 * this.rollerSize);
-            renderFlash(matrix, consumer, lx, (float) (ly + this.coreHeight), lz, (float) (25 * this.rollerSize), alpha);
+            float lx = (float) (rand.nextGaussian() * 0.5 * this.rollerSize * vScale);
+            float ly = (float) (rand.nextGaussian() * 0.5 * this.rollerSize * vScale);
+            float lz = (float) (rand.nextGaussian() * 0.5 * this.rollerSize * vScale);
+            renderFlash(matrix, consumer, lx, (float) (ly + this.coreHeight * vScale), lz, (float) (25 * this.rollerSize * vScale), alpha);
         }
     }
 
-    private void cloudletWrapper(float partialTicks, PoseStack poseStack, VertexConsumer consumer) {
+    private void cloudletWrapper(float partialTicks, PoseStack poseStack, VertexConsumer consumer, float vScale) {
         Matrix4f matrix = poseStack.last().pose();
         for (Cloudlet cloudlet : cloudlets) {
             Vec3 vec = cloudlet.getInterpPos(partialTicks);
-            float lx = (float) (vec.x - this.x);
-            float ly = (float) (vec.y - this.y);
-            float lz = (float) (vec.z - this.z);
-            renderCloudlet(matrix, consumer, lx, ly, lz, cloudlet, partialTicks);
+            float lx = (float) ((vec.x - this.x) * vScale);
+            float ly = (float) ((vec.y - this.y) * vScale);
+            float lz = (float) ((vec.z - this.z) * vScale);
+            renderCloudlet(matrix, consumer, lx, ly, lz, cloudlet, partialTicks, vScale);
         }
     }
 
-    private void renderCloudlet(Matrix4f matrix, VertexConsumer consumer, float posX, float posY, float posZ, Cloudlet cloud, float partialTicks) {
+    private void renderCloudlet(Matrix4f matrix, VertexConsumer consumer, float posX, float posY, float posZ, Cloudlet cloud, float partialTicks, float vScale) {
+        // Окклюзия — попиксельно в шейдере nuke_cloud (DhOcclusionGpu).
         float alpha = cloud.getAlpha();
-        float scale = cloud.getScale();
+        float scale = cloud.getScale() * vScale;
         Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
         Vector3f l = new Vector3f(camera.getLeftVector()).mul(scale);
         Vector3f u = new Vector3f(camera.getUpVector()).mul(scale);
@@ -537,6 +560,24 @@ public class NukeTorex extends ParticleNT {
         float r = (float) interpColor.x * brightness;
         float g = (float) interpColor.y * brightness;
         float b = (float) interpColor.z * brightness;
+        // ДИАГНОСТИКА «чёрного фона»: реальное GL-состояние в момент записи
+        // вершин (первый клаудлет за ~120 кадров). Ожидания: program != 0,
+        // blend=true, Color@2, UV0@1, на TU0 — текстура облака.
+        if (++drawProbeCounter % 120 == 1) {
+            try {
+                int prog = org.lwjgl.opengl.GL11.glGetInteger(org.lwjgl.opengl.GL20.GL_CURRENT_PROGRAM);
+                boolean blend = org.lwjgl.opengl.GL11.glIsEnabled(org.lwjgl.opengl.GL11.GL_BLEND);
+                int locColor = prog != 0 ? org.lwjgl.opengl.GL20.glGetAttribLocation(prog, "Color") : -99;
+                int locUv = prog != 0 ? org.lwjgl.opengl.GL20.glGetAttribLocation(prog, "UV0") : -99;
+                org.lwjgl.opengl.GL13.glActiveTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
+                int tex = org.lwjgl.opengl.GL11.glGetInteger(org.lwjgl.opengl.GL11.GL_TEXTURE_BINDING_2D);
+                com.hbm_m.main.MainRegistry.LOGGER.info(
+                        "HBM Torex in-draw: consumer={} prog={} blend={} Color@{} UV0@{} tex0={}",
+                        consumer.getClass().getSimpleName(), prog, blend, locColor, locUv, tex);
+            } catch (Throwable t) {
+                com.hbm_m.main.MainRegistry.LOGGER.info("HBM Torex in-draw probe failed: {}", t.toString());
+            }
+        }
         ImmediateVertexWriter.billboardQuad(consumer, matrix, posX, posY, posZ, l, u, r, g, b, alpha, 0, 0, 1, 1);
     }
 
@@ -553,6 +594,9 @@ public class NukeTorex extends ParticleNT {
     @Override
     public RenderType getRenderType() {
         // Основной рендер идёт через NUKE_CLOUDS, но возвращаем тип для совместимости.
-        return ClientRenderHandler.CustomRenderTypes.NUKE_CLOUDS.apply(CLOUDLET);
+        return ClientRenderHandler.CustomRenderTypes.nukeClouds(CLOUDLET);
     }
 }
+
+
+

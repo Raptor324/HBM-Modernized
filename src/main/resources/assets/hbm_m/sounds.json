@@ -305,6 +305,15 @@
       "hbm_m:player/vomit"
     ]
   },
+  "player.cough": {
+    "category": "player",
+    "sounds": [
+      "hbm_m:player/cough1",
+      "hbm_m:player/cough2",
+      "hbm_m:player/cough3",
+      "hbm_m:player/cough4"
+    ]
+  },
   "tool.repair1": {
     "subtitle": "sounds.hbm_m.subtitle.repair",
     "sounds": [

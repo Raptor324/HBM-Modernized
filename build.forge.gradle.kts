@@ -135,8 +135,11 @@ dependencies {
 	"modRuntimeOnly"("maven.modrinth:VYRu7qmG:QtSVNyjm") // Observable -  profiles (tile) entities and shows you what's taking up tick time and where.
 	"modRuntimeOnly"("maven.modrinth:ordsPcFz:Zsh14XeQ") // Kotlin For Forge
 	// "modRuntimeOnly"("curse.maven:konkrete-410295:5028413")
-	// "modCompileOnly"("maven.modrinth:distanthorizons:lcyL2Fq3")
-	// "modRuntimeOnly"("maven.modrinth:distanthorizons:lcyL2Fq3")
+	// Distant Horizons: compileOnly для официального API (DhApiBeforeApplyShaderRenderEvent
+	// и пр.) в com.hbm_m.client.compat.dh.DhRenderBridge. Класс моста грузится только при
+	// установленном DH, поэтому отсутствие зависимости в рантайме безопасно.
+	"modCompileOnly"("maven.modrinth:distanthorizons:3.2.0-b-1.20.1") // 3.2.0-b-1.20.1
+	// "modRuntimeOnly"("maven.modrinth:distanthorizons:3.2.0-b-1.20.1")
 
 	// "modRuntimeOnly"("curse.maven:xaeros-world-map-317780:7598469")
     // "modRuntimeOnly"("curse.maven:xaeros-minimap-263420:7598586")

@@ -10,6 +10,11 @@ import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.util.WorldUtil;
 import com.hbm_m.world.biome.ModBiomes;
 
+import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.longs.LongList;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
@@ -32,6 +37,7 @@ import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -45,12 +51,27 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
     private static final TicketType<ChunkPos> FALLOUT_LOAD =
             TicketType.create("hbm_m_fallout_load", Comparator.comparingLong(p -> (long) p.x << 32 ^ p.z));
 
-    private final Map<ChunkPos, ChunkPos> issuedTickets = new HashMap<>();
+    /**
+     * Лимит одновременно выданных точечных тикетов догрузки. Без него fallout на больших
+     * scale (тысячи/сотни тысяч чанков в очереди) выдавал тикеты на ВСЁ кольцо сразу —
+     * чанк-лоадер грузил гигабайты чанков параллельно и сервер захлёбывался GC.
+     * 64 в полёте ≈ до ~1500 живых чанков (тикет радиуса 2 подтягивает соседей).
+     */
+    private static final int MAX_PENDING_LOAD_TICKETS = 64;
+
+    private final LongSet issuedTickets = new LongOpenHashSet();
     private boolean firstTick = true;
     private int tickDelay;
     private final Map<ResourceKey<Biome>, Holder<Biome>> biomeCache = new HashMap<>();
-    private final List<Long> chunksToProcess = new ArrayList<>();
-    private final List<Long> outerChunksToProcess = new ArrayList<>();
+    private final LongList chunksToProcess = new LongArrayList();
+    private final LongList outerChunksToProcess = new LongArrayList();
+
+    /** Переиспользуемый буфер кварт 4x4 для смены биомов ([bx * 4 + bz]). */
+    @SuppressWarnings("unchecked")
+    private final Holder<Biome>[] quartTargets = new Holder[16];
+
+    /** Общая мутируемая позиция для vanilla-API вызовов (getBiome, isFlammable и т.п.). */
+    private final BlockPos.MutableBlockPos apiPos = new BlockPos.MutableBlockPos();
 
     public EntityFalloutRain(EntityType<?> type, Level level) {
         super(type, level);
@@ -115,20 +136,18 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
                     boolean outer;
                     long chunkPos;
                     if (!chunksToProcess.isEmpty()) {
-                        chunkPos = chunksToProcess.remove(chunksToProcess.size() - 1);
+                        chunkPos = chunksToProcess.removeLong(chunksToProcess.size() - 1);
                         outer = false;
                     } else if (!outerChunksToProcess.isEmpty()) {
-                        chunkPos = outerChunksToProcess.remove(outerChunksToProcess.size() - 1);
+                        chunkPos = outerChunksToProcess.removeLong(outerChunksToProcess.size() - 1);
                         outer = true;
                     } else {
                         clearChunkTicket();
                         discard();
                         break;
                     }
-                    int chunkPosX = ChunkPos.getX(chunkPos);
-                    int chunkPosZ = ChunkPos.getZ(chunkPos);
 
-                    if (processChunkColumns(chunkPosX, chunkPosZ, outer)) {
+                    if (processChunkColumns(ChunkPos.getX(chunkPos), ChunkPos.getZ(chunkPos), outer)) {
                         deferred = 0;
                     } else {
                         if (outer) {
@@ -154,61 +173,84 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
         LevelChunk chunk = serverLevel.getChunkSource().getChunkNow(chunkPosX, chunkPosZ);
         if (chunk == null) {
-            ChunkPos cp = new ChunkPos(chunkPosX, chunkPosZ);
-            if (issuedTickets.putIfAbsent(cp, cp) == null) {
+            long packed = ChunkPos.asLong(chunkPosX, chunkPosZ);
+            if (!issuedTickets.contains(packed)) {
+                // Лимит одновременных догрузок: чанк останется в очереди и будет
+                // обработан, когда освободится слот — иначе грузим весь кратер разом
+                if (issuedTickets.size() >= MAX_PENDING_LOAD_TICKETS) {
+                    return false;
+                }
+                issuedTickets.add(packed);
+                ChunkPos cp = new ChunkPos(chunkPosX, chunkPosZ);
                 serverLevel.getChunkSource().addRegionTicket(FALLOUT_LOAD, cp, 2, cp);
             }
             return false;
         }
-        releaseTicket(new ChunkPos(chunkPosX, chunkPosZ));
 
-        boolean biomeModified = false;
+        ChunkEditor ed = new ChunkEditor(serverLevel, chunk);
+
+        boolean modified = false;
         int minX = chunkPosX << 4;
         int minZ = chunkPosZ << 4;
+        double ex = getX();
+        double ez = getZ();
+        double scaleSq = (double) getScale() * getScale();
+        double percentPerBlock = 100.0 / getScale();
+        boolean biomesEnabled = ModClothConfig.get().enableCraterBiomes;
 
-        // 1. Быстрая замена биомов по сетке 4x4 (кварты ваниллы 1.21)
-        if (ModClothConfig.get().enableCraterBiomes) {
-            for (int bx = 0; bx < 16; bx += 4) {
-                for (int bz = 0; bz < 16; bz += 4) {
-                    int worldX = minX + bx + 2;
-                    int worldZ = minZ + bz + 2;
-                    double distance = Math.hypot(worldX - getX(), worldZ - getZ());
-                    if (outerRing && distance > getScale()) continue;
+        // 1. Быстрая замена биомов по сетке 4x4 (кварты ваниллы), один проход по секциям чанка
+        if (biomesEnabled) {
+            Arrays.fill(quartTargets, null);
+            int changed = 0;
+            for (int bx = 0; bx < 4; bx++) {
+                for (int bz = 0; bz < 4; bz++) {
+                    double dx = (minX + bx * 4 + 2) - ex;
+                    double dz = (minZ + bz * 4 + 2) - ez;
+                    double distSq = dx * dx + dz * dz;
+                    if (outerRing && distSq > scaleSq) continue;
 
-                    double percent = distance * 100.0 / getScale();
-                    ResourceKey<Biome> biomeKey = getBiomeChange(percent, getScale(),
-                            serverLevel.getBiome(new BlockPos(worldX, (int) getY(), worldZ)).unwrapKey().orElse(null));
+                    ResourceKey<Biome> biomeKey = getBiomeChange(Math.sqrt(distSq) * percentPerBlock, getScale(),
+                            biomeAt(serverLevel, minX + bx * 4 + 2, minZ + bz * 4 + 2));
 
                     if (biomeKey != null) {
                         Holder<Biome> biomeHolder = biomeCache.get(biomeKey);
                         if (biomeHolder != null) {
-                            // Задаем биом сразу для всей кварты 4x4
-                            for (int qx = 0; qx < 4; qx++) {
-                                for (int qz = 0; qz < 4; qz++) {
-                                    WorldUtil.setBiomeColumn(serverLevel, minX + bx + qx, minZ + bz + qz, biomeHolder);
-                                }
-                            }
-                            biomeModified = true;
+                            quartTargets[bx * 4 + bz] = biomeHolder;
+                            changed++;
                         }
                     }
                 }
             }
-        }
-
-        // 2. Радиационная трансформация поверхности
-        for (int x = minX; x < minX + 16; x++) {
-            for (int z = minZ; z < minZ + 16; z++) {
-                double distance = Math.hypot(x - getX(), z - getZ());
-                if (outerRing && distance > getScale()) continue;
-
-                double percent = distance * 100.0 / getScale();
-                stomp(x, z, percent);
+            if (changed > 0) {
+                WorldUtil.setBiomeQuarts(chunk, quartTargets);
+                modified = true;
             }
         }
 
-        clearChunkFluidsPostStomp(serverLevel, chunk);
+        // 2. Радиационная трансформация поверхности
+        FalloutConfigJSON.FalloutEntry.BlockWriter writer =
+                (lvl, pos, state) -> ed.set(pos.getX(), pos.getY(), pos.getZ(), state);
 
-        if (biomeModified) {
+        for (int x = minX; x < minX + 16; x++) {
+            for (int z = minZ; z < minZ + 16; z++) {
+                double dx = x - ex;
+                double dz = z - ez;
+                double distSq = dx * dx + dz * dz;
+                if (outerRing && distSq > scaleSq) continue;
+
+                stomp(serverLevel, ed, writer, x, z, Math.sqrt(distSq) * percentPerBlock);
+            }
+        }
+
+        clearChunkFluidsPostStomp(ed);
+
+        modified |= ed.modified;
+
+        // Тикет снимаем только после полной обработки чанка — иначе чанк успевает
+        // выгрузиться до повторной попытки и внешнее кольцо «пропадает»
+        releaseTicket(ChunkPos.asLong(chunkPosX, chunkPosZ));
+
+        if (modified) {
             WorldUtil.flushChunk(serverLevel, chunk);
         }
 
@@ -216,38 +258,88 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         return true;
     }
 
-    private void releaseTicket(ChunkPos cp) {
-        if (issuedTickets.remove(cp) != null && level() instanceof ServerLevel serverLevel) {
+    private ResourceKey<Biome> biomeAt(ServerLevel level, int x, int z) {
+        return level.getBiome(apiPos.set(x, (int) getY(), z)).unwrapKey().orElse(null);
+    }
+
+    private void releaseTicket(long packed) {
+        if (issuedTickets.remove(packed) && level() instanceof ServerLevel serverLevel) {
+            ChunkPos cp = new ChunkPos(packed);
             serverLevel.getChunkSource().removeRegionTicket(FALLOUT_LOAD, cp, 2, cp);
         }
     }
 
-    private void clearChunkFluidsPostStomp(ServerLevel level, LevelChunk chunk) {
-        int craterRadius = (int) (getScale() * 0.4D);
-        int craterRadiusSq = craterRadius * craterRadius;
-        BlockPos.MutableBlockPos mutable = new BlockPos.MutableBlockPos();
+    /**
+     * Прямой редактор чанка: чтение/запись через секции с кэшем активной секции.
+     * Полностью обходит Level.setBlock (markAndNotifyBlock → lithium hopper check →
+     * блокирующая догрузка соседних чанков была главным пожирателем TPS).
+     */
+    private final class ChunkEditor {
+        final ServerLevel level;
+        final LevelChunk chunk;
+        boolean modified;
 
-        int chunkPosX = chunk.getPos().x;
-        int chunkPosZ = chunk.getPos().z;
+        private final BlockPos.MutableBlockPos writePos = new BlockPos.MutableBlockPos();
+        private LevelChunkSection section;
+        private int sectionIdx = Integer.MIN_VALUE;
 
+        ChunkEditor(ServerLevel level, LevelChunk chunk) {
+            this.level = level;
+            this.chunk = chunk;
+        }
+
+        private LevelChunkSection sectionFor(int y) {
+            int idx = level.getSectionIndex(y);
+            if (idx != sectionIdx) {
+                sectionIdx = idx;
+                LevelChunkSection[] arr = chunk.getSections();
+                section = (idx >= 0 && idx < arr.length) ? arr[idx] : null;
+            }
+            return section;
+        }
+
+        BlockState getState(int x, int y, int z) {
+            LevelChunkSection s = sectionFor(y);
+            if (s == null || s.hasOnlyAir()) return Blocks.AIR.defaultBlockState();
+            return s.getBlockState(x & 15, y & 15, z & 15);
+        }
+
+        void set(int x, int y, int z, BlockState state) {
+            if (WorldUtil.setBlockFast(chunk, writePos.set(x, y, z), state)) {
+                modified = true;
+                sectionIdx = Integer.MIN_VALUE; // секции могли пересоздаться
+            }
+        }
+    }
+
+    private void clearChunkFluidsPostStomp(ChunkEditor ed) {
+        double craterRadius = getScale() * 0.4D;
+        double craterRadiusSq = craterRadius * craterRadius;
+        double ex = getX();
+        double ez = getZ();
+
+        LevelChunk chunk = ed.chunk;
+        int baseX = chunk.getPos().x << 4;
+        int baseZ = chunk.getPos().z << 4;
+
+        BlockState air = Blocks.AIR.defaultBlockState();
         LevelChunkSection[] sections = chunk.getSections();
         for (int s = 0; s < sections.length; s++) {
             LevelChunkSection section = sections[s];
             if (section == null || section.hasOnlyAir()) continue;
 
-            int sectionMinY = level.getSectionYFromSectionIndex(s) << 4;
-            int sectionMaxY = sectionMinY + 15;
+            int sectionMinY = ed.level.getSectionYFromSectionIndex(s) << 4;
 
-            for (int x = chunkPosX << 4; x < (chunkPosX << 4) + 16; x++) {
-                for (int z = chunkPosZ << 4; z < (chunkPosZ << 4) + 16; z++) {
-                    double dx = x + 0.5D - getX();
-                    double dz = z + 0.5D - getZ();
+            for (int lx = 0; lx < 16; lx++) {
+                int wx = baseX + lx;
+                for (int lz = 0; lz < 16; lz++) {
+                    double dx = wx + 0.5D - ex;
+                    double dz = baseZ + lz + 0.5D - ez;
                     if (dx * dx + dz * dz > craterRadiusSq) continue;
 
-                    for (int y = sectionMinY; y <= sectionMaxY; y++) {
-                        mutable.set(x, y, z);
-                        if (!section.getBlockState(x & 15, y & 15, z & 15).getFluidState().isEmpty()) {
-                            level.setBlock(mutable, Blocks.AIR.defaultBlockState(), NukeMk5ChunkEater.FAST_BLOCK_FLAGS);
+                    for (int ly = 0; ly < 16; ly++) {
+                        if (!section.getBlockState(lx, ly, lz).getFluidState().isEmpty()) {
+                            ed.set(wx, sectionMinY + ly, baseZ + lz, air);
                         }
                     }
                 }
@@ -285,6 +377,9 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         double scaleSq = (double) getScale() * getScale();
         double innerCutoffSq = Math.pow(getScale() * 0.85D, 2);
 
+        List<Long> innerTmp = new ArrayList<>();
+        List<Long> outerTmp = new ArrayList<>();
+
         for (int cx = -chunkRadius; cx <= chunkRadius; cx++) {
             for (int cz = -chunkRadius; cz <= chunkRadius; cz++) {
                 int chunkX = centerChunkX + cx;
@@ -301,15 +396,15 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
                 if (distSq <= scaleSq) {
                     long packed = ChunkPos.asLong(chunkX, chunkZ);
                     if (distSq >= innerCutoffSq) {
-                        outerChunksToProcess.add(packed);
+                        outerTmp.add(packed);
                     } else {
-                        chunksToProcess.add(packed);
+                        innerTmp.add(packed);
                     }
                 }
             }
         }
 
-        // Обработка идет от центра к краям
+        // Обработка идет от центра к краям (реверс для быстрого pop с конца списка)
         Comparator<Long> distComp = (a, b) -> {
             int ax = ChunkPos.getX(a);
             int az = ChunkPos.getZ(a);
@@ -317,89 +412,89 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
             int bz = ChunkPos.getZ(b);
             int d1 = (ax - centerChunkX) * (ax - centerChunkX) + (az - centerChunkZ) * (az - centerChunkZ);
             int d2 = (bx - centerChunkX) * (bx - centerChunkX) + (bz - centerChunkZ) * (bz - centerChunkZ);
-            return Integer.compare(d2, d1); // Реверс для быстрого pop с конца List
+            return Integer.compare(d2, d1);
         };
 
-        chunksToProcess.sort(distComp);
-        outerChunksToProcess.sort(distComp);
+        innerTmp.sort(distComp);
+        outerTmp.sort(distComp);
+
+        chunksToProcess.addAll(innerTmp);
+        outerChunksToProcess.addAll(outerTmp);
     }
 
-    private void stomp(int x, int z, double dist) {
-        Level level = level();
+    private void stomp(ServerLevel level, ChunkEditor ed, FalloutConfigJSON.FalloutEntry.BlockWriter writer,
+                       int x, int z, double distPercent) {
         int depth = 0;
         int minY = level.getMinBuildHeight();
         int maxY = level.getMaxBuildHeight();
         int surfaceY = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
         int topY = Math.min(maxY - 1, surfaceY + 8);
 
-        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
-        BlockPos.MutableBlockPos above = new BlockPos.MutableBlockPos();
+        BlockState air = Blocks.AIR.defaultBlockState();
+        BlockState fire = Blocks.FIRE.defaultBlockState();
 
         for (int y = topY; y >= minY; y--) {
             if (depth >= 3) return;
 
-            pos.set(x, y, z);
-            BlockState state = level.getBlockState(pos);
+            BlockState state = ed.getState(x, y, z);
 
             if (state.isAir() || state.is(ModBlocks.NUCLEAR_FALLOUT.get())) continue;
 
             if (!state.getFluidState().isEmpty()) {
-                level.setBlock(pos, Blocks.AIR.defaultBlockState(), NukeMk5ChunkEater.FAST_BLOCK_FLAGS);
+                ed.set(x, y, z, air);
                 continue;
             }
 
-            above.set(x, y + 1, z);
-            BlockState aboveState = level.getBlockState(above);
+            BlockState aboveState = ed.getState(x, y + 1, z);
+            apiPos.set(x, y, z);
 
-            if (dist < 65 && state.isFlammable(level, pos, Direction.UP)) {
+            if (distPercent < 65 && state.isFlammable(level, apiPos, Direction.UP)) {
                 if (random.nextInt(5) == 0 && aboveState.isAir()) {
-                    level.setBlock(above, Blocks.FIRE.defaultBlockState(), NukeMk5ChunkEater.FAST_BLOCK_FLAGS);
+                    ed.set(x, y + 1, z, fire);
                 }
             }
 
             boolean eval = false;
             for (FalloutConfigJSON.FalloutEntry entry : FalloutConfigJSON.entries) {
-                if (entry.eval(level, pos, state, dist)) {
+                if (entry.eval(level, apiPos, state, distPercent, writer)) {
                     if (entry.isSolid()) depth++;
                     eval = true;
                     break;
                 }
             }
 
-            if (!eval && state.isSolidRender(level, pos)) {
+            if (!eval && state.isSolidRender(level, apiPos)) {
                 depth++;
             }
         }
 
-        tryPlaceFalloutLayer(level, x, z, dist);
+        tryPlaceFalloutLayer(ed, x, z, distPercent);
     }
 
-    private void tryPlaceFalloutLayer(Level level, int x, int z, double dist) {
+    private void tryPlaceFalloutLayer(ChunkEditor ed, int x, int z, double distPercent) {
+        Level level = level();
         int topY = Math.min(level.getMaxBuildHeight() - 1, level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) + 8);
-        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
-        BlockPos.MutableBlockPos above = new BlockPos.MutableBlockPos();
+
+        BlockState falloutState = ModBlocks.NUCLEAR_FALLOUT.get().defaultBlockState();
 
         for (int y = topY; y >= level.getMinBuildHeight(); y--) {
-            pos.set(x, y, z);
-            BlockState state = level.getBlockState(pos);
+            BlockState state = ed.getState(x, y, z);
             if (state.isAir() || state.is(ModBlocks.NUCLEAR_FALLOUT.get())) {
                 continue;
             }
 
-            above.set(x, y + 1, z);
-            BlockState aboveState = level.getBlockState(above);
+            BlockState aboveState = ed.getState(x, y + 1, z);
             if (!aboveState.isAir() && !(aboveState.canBeReplaced() && aboveState.getFluidState().isEmpty())) {
                 return;
             }
 
-            if (!BlockFallout.canSurviveOn(level, pos)) {
+            if (!BlockFallout.canSurviveOn(level, apiPos.set(x, y, z))) {
                 return;
             }
 
-            double d = dist / 100.0;
-            double chance = 0.1 - Math.pow(d - 0.7, 2);
+            double chance = 0.1 - Math.pow(distPercent / 100.0 - 0.7, 2);
             if (chance >= random.nextDouble()) {
-                level.setBlock(above, ModBlocks.NUCLEAR_FALLOUT.get().defaultBlockState(), NukeMk5ChunkEater.FAST_BLOCK_FLAGS);
+                ed.set(x, y + 1, z, falloutState);
             }
             return;
         }
@@ -409,7 +504,8 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
     public void remove(RemovalReason reason) {
         clearChunkTicket();
         if (!issuedTickets.isEmpty() && level() instanceof ServerLevel serverLevel) {
-            for (ChunkPos cp : issuedTickets.keySet()) {
+            for (long packed : issuedTickets) {
+                ChunkPos cp = new ChunkPos(packed);
                 serverLevel.getChunkSource().removeRegionTicket(FALLOUT_LOAD, cp, 2, cp);
             }
             issuedTickets.clear();
@@ -435,16 +531,14 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
         setScale(tag.getInt("Scale"));
-        chunksToProcess.addAll(readChunksFromIntArray(tag.getIntArray("Chunks")));
-        outerChunksToProcess.addAll(readChunksFromIntArray(tag.getIntArray("OuterChunks")));
+        readChunksFromIntArray(chunksToProcess, tag.getIntArray("Chunks"));
+        readChunksFromIntArray(outerChunksToProcess, tag.getIntArray("OuterChunks"));
     }
 
-    private Collection<Long> readChunksFromIntArray(int[] data) {
-        List<Long> coords = new ArrayList<>();
+    private static void readChunksFromIntArray(LongList list, int[] data) {
         for (int i = 0; i + 1 < data.length; i += 2) {
-            coords.add(ChunkPos.asLong(data[i], data[i + 1]));
+            list.add(ChunkPos.asLong(data[i], data[i + 1]));
         }
-        return coords;
     }
 
     @Override
@@ -454,10 +548,11 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         tag.putIntArray("OuterChunks", writeChunksToIntArray(outerChunksToProcess));
     }
 
-    private int[] writeChunksToIntArray(Collection<Long> coords) {
+    private static int[] writeChunksToIntArray(LongList coords) {
         int[] data = new int[coords.size() * 2];
         int i = 0;
-        for (long packed : coords) {
+        for (int j = 0; j < coords.size(); j++) {
+            long packed = coords.getLong(j);
             data[i++] = ChunkPos.getX(packed);
             data[i++] = ChunkPos.getZ(packed);
         }

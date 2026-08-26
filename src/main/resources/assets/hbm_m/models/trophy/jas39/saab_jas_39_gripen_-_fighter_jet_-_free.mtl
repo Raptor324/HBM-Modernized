@@ -11,10 +11,10 @@ Pl 1
 Ka 1 1 1
 Kd 1 1 1
 Ke 0 0 0
-map_Kd Gripen-airframe.png
-map_Pm metalnessMap1.png
-map_Pr metalnessMap1.png
-norm normalMap1.png
+map_Kd gripen_airframe.png
+map_Pm metalness_map1.png
+map_Pr metalness_map1.png
+norm normal_map1.png
 
 newmtl Gripen-canopy
 Tr 0.878843474561728
@@ -37,7 +37,7 @@ Pl 1
 Ka 1 1 1
 Kd 1 1 1
 Ke 0 0 0
-map_Kd Gripen-airframe.png
+map_Kd gripen_airframe.png
 
 newmtl Gripen-hud
 Tr 0.0000

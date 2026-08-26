@@ -694,7 +694,13 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("tooltip.hbm_m.mine.line1", "Can be defused");
         add("tooltip.hbm_m.naval_mine.line1", "Explodes on contact with a player");
         add("tooltip.hbm_m.gigadet.line1", "Was made for fun");
-        
+
+        // Сигарета (порт ItemCigarette, 1.7.10)
+        add("tooltip.hbm_m.cigarette.line1", "✓ Asbestos filter");
+        add("tooltip.hbm_m.cigarette.line2", "✓ High in tar");
+        add("tooltip.hbm_m.cigarette.line3", "✓ Tobacco contains 100% Polonium-210");
+        add("tooltip.hbm_m.cigarette.line4", "✓ Yum");
+
 
         add("tooltip.hbm_m.nuclear_charge.line1", "High-yield nuclear weapon!");
         add("tooltip.hbm_m.nuclear_charge.line2", "At the moment, this is the");

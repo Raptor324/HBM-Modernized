@@ -165,6 +165,16 @@ public class ClientModEvents {
         }
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SKY) {
+            com.hbm_m.client.compat.dh.DhClientState.onAfterSky();
+            // Захват чистой ванильной проекции кадра (FOV/zoom/bob) — из неё
+            // строится проекция дальнего И ближнего NT-проходов.
+            Minecraft mcCapture = Minecraft.getInstance();
+            //? if < 1.21.1 {
+            com.hbm_m.client.compat.dh.DhClientCompat.captureVanillaProjection(mcCapture.getFrameTime());
+            //?} else {
+            /*com.hbm_m.client.compat.dh.DhClientCompat.captureVanillaProjection(
+                    mcCapture.getTimer().getGameTimeDeltaPartialTick(true));
+            *///?}
             MissileTrackClient.beginRenderFrame();
             logShadowBerDiagnostics();
         }
@@ -178,12 +188,17 @@ public class ClientModEvents {
             InstancedRenderFrame.onBeforeBlockEntities(
                     event.getProjectionMatrix(), cameraPos, frustum);
 
-            //? if < 1.21.1 {
-            MissileTrackWorldRender.render(mc.getFrameTime(), event.getPoseStack());
-            //?} else {
-            /*// 1.21.1: getPartialTick() удалён — частичное время тика через DeltaTracker.Timer.
-            MissileTrackWorldRender.render(mc.getTimer().getGameTimeDeltaPartialTick(true), event.getPoseStack());
-            *///?}
+            // При активном DH ракеты (обе дистанции) рисует EngineHandler на
+            // AFTER_WEATHER — единый painter-порядок far->near с NT-частицами.
+            // Здесь остаётся только путь без DH (виртуализация дальних треков).
+            if (!com.hbm_m.client.compat.dh.DhClientState.isActive()) {
+                //? if < 1.21.1 {
+                MissileTrackWorldRender.render(mc.getFrameTime(), event.getPoseStack());
+                //?} else {
+                /*// 1.21.1: getPartialTick() удалён — частичное время тика через DeltaTracker.Timer.
+                MissileTrackWorldRender.render(mc.getTimer().getGameTimeDeltaPartialTick(true), event.getPoseStack());
+                *///?}
+            }
         }
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
@@ -199,6 +214,7 @@ public class ClientModEvents {
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
             InstancedRenderFrame.onRenderSliceEnd();
+            com.hbm_m.client.compat.dh.DhClientState.onAfterLevel();
         }
     }
 

@@ -224,4 +224,24 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         this.lastEnergySample = tag.getLong("lastEnergySample");
         this.averagedEnergyDelta = tag.getLong("averagedEnergyDelta");
     }
+
+    /**
+     * 1.21.1: copy_nbt в лут-таблицах удалён (1.20.5+), поэтому перенос состояния
+     * батареи в дропнутый предмет делается кодом — как у ящиков
+     * ({@link com.hbm_m.blockentity.crates.BaseCrateBlockEntity#saveToItem}).
+     * Формат совпадает с чтением в {@code MachineBatteryBlock#setPlacedBy}:
+     * CUSTOM_DATA → {"BlockEntityTag": {...}}.
+     */
+    //? if >= 1.21.1 {
+    /*public void saveToItemStack(net.minecraft.world.item.ItemStack stack) {
+        net.minecraft.core.HolderLookup.Provider registries = this.level.registryAccess();
+        CompoundTag beTag = this.saveWithoutMetadata(registries);
+        if (!beTag.isEmpty()) {
+            CompoundTag root = new CompoundTag();
+            root.put("BlockEntityTag", beTag);
+            stack.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA,
+                    net.minecraft.world.item.component.CustomData.of(root));
+        }
+    }
+    *///?}
 }

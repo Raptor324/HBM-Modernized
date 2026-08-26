@@ -340,6 +340,76 @@ public final class IrisExtendedShaderAccess {
         return reflectionAvailable;
     }
 
+    // ── POSITION_TEX_COLOR контент (частицы NT, вспышки) ────────────────────
+    // Под паком кастомные модовые ShaderInstance маскируются
+    // (MixinShaderInstance -> DepthColorStorage.disableDepthColor), поэтому
+    // такой контент нужно рисовать через ИЗВЕСТНЫЙ Iris ключ: TEXTURED_COLOR
+    // (ProgramId.Textured, формат DefaultVertexFormat.POSITION_TEX_COLOR).
+    // В shadow-проходе — SHADOW_TEX_COLOR.
+
+    private static volatile Object[] texColorMainKeysResolved;
+    private static volatile Object[] texColorShadowKeysResolved;
+    private static volatile boolean texColorKeysBuilt = false;
+    private static volatile ShaderInstance cachedTexColorMain;
+    private static volatile ShaderInstance cachedTexColorShadow;
+    private static long cachedTexColorMainPassId = -1L;
+    private static long cachedTexColorShadowPassId = -1L;
+
+    private static void ensureTexColorKeysBuilt() {
+        if (texColorKeysBuilt) return;
+        synchronized (shaderKeyCache) {
+            if (!texColorKeysBuilt) {
+                texColorMainKeysResolved = resolveShaderKeyCandidatesArray(new String[]{"TEXTURED_COLOR"});
+                texColorShadowKeysResolved = resolveShaderKeyCandidatesArray(new String[]{"SHADOW_TEX_COLOR", "TEXTURED_COLOR"});
+                texColorKeysBuilt = true;
+            }
+        }
+    }
+
+    /**
+     * ExtendedShader для формата POSITION_TEX_COLOR под активным паком.
+     * Fallback — ванильный position_tex_color (без пака он и так корректен).
+     */
+    public static ShaderInstance getTexColorShader(boolean shadowPass) {
+        if (!reflectionInitialized) {
+            initReflection();
+        }
+        long pass = currentPassId.get();
+        if (shadowPass) {
+            ShaderInstance cached = cachedTexColorShadow;
+            if (cached != null && cachedTexColorShadowPassId == pass) return cached;
+        } else {
+            ShaderInstance cached = cachedTexColorMain;
+            if (cached != null && cachedTexColorMainPassId == pass) return cached;
+        }
+
+        if (!reflectionAvailable) {
+            return net.minecraft.client.renderer.GameRenderer.getPositionTexColorShader();
+        }
+        try {
+            Object pipelineManager = getPipelineManager.invoke(null);
+            Object pipeline = pipelineManager != null ? getPipelineNullable.invoke(pipelineManager) : null;
+            if (pipeline == null || !shaderRenderingPipelineClass.isInstance(pipeline)) {
+                return net.minecraft.client.renderer.GameRenderer.getPositionTexColorShader();
+            }
+            Object shaderMap = getShaderMap.invoke(pipeline);
+            if (shaderMap == null) {
+                return net.minecraft.client.renderer.GameRenderer.getPositionTexColorShader();
+            }
+            ensureTexColorKeysBuilt();
+            Object[] candidates = shadowPass ? texColorShadowKeysResolved : texColorMainKeysResolved;
+            for (Object key : candidates) {
+                Object instance = shaderMapGetShader.invoke(shaderMap, key);
+                if (instance instanceof ShaderInstance casted) {
+                    if (shadowPass) { cachedTexColorShadow = casted; cachedTexColorShadowPassId = pass; }
+                    else { cachedTexColorMain = casted; cachedTexColorMainPassId = pass; }
+                    return casted;
+                }
+            }
+        } catch (Throwable ignored) {}
+        return net.minecraft.client.renderer.GameRenderer.getPositionTexColorShader();
+    }
+
     private static Object lookupExtendedShader(boolean shadowPass) {
         if (!reflectionInitialized) {
             initReflection();

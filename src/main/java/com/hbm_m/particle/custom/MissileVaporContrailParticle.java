@@ -215,6 +215,8 @@ public class MissileVaporContrailParticle extends TextureSheetParticle {
 
         public Provider(SpriteSet sprites) {
             this.sprites = sprites;
+            // Прокидываем спрайты в NT-порт (частицы спавнятся через ParticleEngineNT).
+            com.hbm_m.particle.nt.MissileVaporContrailNT.setSprites(sprites);
         }
 
         @Override

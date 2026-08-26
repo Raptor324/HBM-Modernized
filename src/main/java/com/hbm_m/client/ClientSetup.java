@@ -238,6 +238,13 @@ public class ClientSetup {
 
         // Key mappings регистрируются в ModConfigKeybindHandler.init() через Architectury/обвязку.
         ModConfigKeybindHandler.init();
+        // DH: официальный API-мост (рендер дальних ракет/гриба внутри DH FBO).
+        // ВАЖНО: сам класс DhRenderBridge наследует DH-класс — его НЕЛЬЗЯ грузить
+        // без DH (упадёт ClassNotFound ещё до проверки внутри tryRegister),
+        // поэтому guard строго ДО первого упоминания класса.
+        if (com.hbm_m.compat.dh.DhCompat.isModPresent()) {
+            com.hbm_m.client.compat.dh.DhRenderBridge.tryRegister();
+        }
         ClientModEvents.init();
         com.hbm_m.client.missile.track.MissileTrackClientEvents.register();
         CameraShakeHandler.initClient();
@@ -800,11 +807,11 @@ public class ClientSetup {
     @SubscribeEvent
     public static void onModelRegisterAdditional(ModelEvent.RegisterAdditional event) {
         // Power armor: общие multipart-модели сетов (рендер на entity через OBJ-слои)
-        PlatformHooks.registerAdditionalModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.T51_MODEL_ID);
-        PlatformHooks.registerAdditionalModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.AJR_MODEL_ID);
-        PlatformHooks.registerAdditionalModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.AJRO_MODEL_ID);
-        PlatformHooks.registerAdditionalModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.BISMUTH_MODEL_ID);
-        PlatformHooks.registerAdditionalModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.DNT_MODEL_ID);
+        PlatformHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.T51_MODEL_ID);
+        PlatformHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.AJR_MODEL_ID);
+        PlatformHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.AJRO_MODEL_ID);
+        PlatformHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.BISMUTH_MODEL_ID);
+        PlatformHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.DNT_MODEL_ID);
 
         PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_legacy"));
         PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/crystallizer_fluid"));
@@ -1327,6 +1334,43 @@ public class ClientSetup {
             ModShaders::setBlockLitInstancedSlicedShader
         );
         MainRegistry.LOGGER.info("Successfully registered block_lit_instanced_sliced shader");
+
+        //? if < 1.21.1 {
+        VertexFormat nukeCloudFormat = new VertexFormat(
+            ImmutableMap.<String, VertexFormatElement>builder()
+                .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
+                .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
+                .put("Color",    DefaultVertexFormat.ELEMENT_COLOR)
+                .build()
+        );
+        //?} else {
+        /*VertexFormat nukeCloudFormat = VertexFormat.builder()
+                .add("Position", com.mojang.blaze3d.vertex.VertexFormatElement.POSITION)
+                .add("UV0",      com.mojang.blaze3d.vertex.VertexFormatElement.UV0)
+                .add("Color",    com.mojang.blaze3d.vertex.VertexFormatElement.COLOR)
+                .build();
+        *///?}
+
+        event.registerShader(
+            new ShaderInstance(
+                event.getResourceProvider(),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "nuke_cloud"),
+                nukeCloudFormat
+            ),
+            ModShaders::setNukeCloudShader
+        );
+        MainRegistry.LOGGER.info("Successfully registered nuke_cloud shader");
+
+        // Копия DH-глубины в главный z-buffer (окклюзия дальних мешей против LOD).
+        event.registerShader(
+            new ShaderInstance(
+                event.getResourceProvider(),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "dh_depth_blit"),
+                DefaultVertexFormat.POSITION
+            ),
+            ModShaders::setDhDepthBlitShader
+        );
+        MainRegistry.LOGGER.info("Successfully registered dh_depth_blit shader");
 
         // Register thermal vision shader for post-processing
         // VertexFormat thermalVisionFormat = new VertexFormat(

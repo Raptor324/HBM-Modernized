@@ -38,6 +38,7 @@ import com.hbm_m.item.nuclear.WatzPelletType;
 import com.hbm_m.item.food.ItemConserve;
 import com.hbm_m.item.food.ItemEnergyDrink;
 import com.hbm_m.item.food.ModFoods;
+import com.hbm_m.item.special.ItemCigarette;
 import com.hbm_m.item.grenades_and_activators.AirBombItem;
 import com.hbm_m.item.grenades_and_activators.AirNukeBombItem;
 import com.hbm_m.item.grenades_and_activators.AirstrikeItem;
@@ -3008,7 +3009,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> CHOPPER_TAIL = ITEMS.register("chopper_tail", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> CHOPPER_TORSO = ITEMS.register("chopper_torso", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> CHOPPER_WING = ITEMS.register("chopper_wing", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> CIGARETTE = ITEMS.register("cigarette", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> CIGARETTE = ITEMS.register("cigarette", () -> new ItemCigarette(new Item.Properties().stacksTo(16)));
     public static final RegistrySupplier<Item> CINNEBAR = ITEMS.register("cinnebar", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> CIRCUIT_STAR = ITEMS.register("circuit_star", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> CLAY_TABLET = ITEMS.register("clay_tablet", () -> new Item(new Item.Properties()));

@@ -16,6 +16,24 @@ public class ModShaders {
     private static ShaderInstance blockLitSimpleSlicedShader;
     private static ShaderInstance blockLitInstancedSlicedShader;
     private static ShaderInstance thermalVisionShader;
+    private static ShaderInstance nukeCloudShader;
+    private static ShaderInstance dhDepthBlitShader;
+
+    public static ShaderInstance getNukeCloudShader() {
+        return nukeCloudShader;
+    }
+
+    public static void setNukeCloudShader(ShaderInstance shader) {
+        nukeCloudShader = shader;
+    }
+
+    public static ShaderInstance getDhDepthBlitShader() {
+        return dhDepthBlitShader;
+    }
+
+    public static void setDhDepthBlitShader(ShaderInstance shader) {
+        dhDepthBlitShader = shader;
+    }
 
     public static ShaderInstance getDynamicCutoutShader() {
         return dynamicCutoutShader;
