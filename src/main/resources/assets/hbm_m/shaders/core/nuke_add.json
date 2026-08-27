@@ -1,5 +1,5 @@
 {
-    "blend": { "func": "add", "srcrgb": "srcAlpha", "dstrgb": "1-srcAlpha" },
+    "blend": { "func": "add", "srcrgb": "srcAlpha", "dstrgb": "one" },
     "vertex": "hbm_m:nuke_cloud",
     "fragment": "hbm_m:nuke_cloud",
     "samplers": [

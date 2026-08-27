@@ -21,6 +21,7 @@ import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.platform.RenderHooks;
+import com.mojang.blaze3d.platform.GlStateManager;
 
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -79,9 +80,42 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
     private static final ThreadLocal<Boolean> worldMissileOverlayDraw = ThreadLocal.withInitial(() -> false);
     /** Entity-pass missile mesh: bias depth vs terrain written in the solid pass (horizon z-fighting). */
     private static final ThreadLocal<Boolean> entityMissileDepthBias = ThreadLocal.withInitial(() -> false);
+    /**
+     * Какой веткой последний раз рисовался track-меш (только под флагом
+     * entityMissileDepthBias): "vbo", "quads" (фолбэк putBulkData) или null
+     * (ничего не рисовалось). Читается EngineHandler'ом для диагностики
+     * «чёрного экрана»: расхождение между ожидаемым VBO-путём и фактическим
+     * фолбэком сразу объясняет пропажу блит-биндов из кадра.
+     */
+    public static final ThreadLocal<String> lastTrackMeshBranch = new ThreadLocal<>();
     private static final float ENTITY_MISSILE_DEPTH_FACTOR = -4.0F;
     private static final float ENTITY_MISSILE_DEPTH_UNITS = -4.0F;
 
+
+    /**
+     * Диагностика «меш прилипает к экрану»: раз в секунду логируем итоговую
+     * ModelView и её компоненты. Ожидание: RenderSystem MV = поворот камеры
+     * (верхний левый 3x3 ортонормирован, столбец трансляции ≈ 0), полная
+     * матрица несёт смещение меша относительно камеры.
+     */
+    private static long lastMvmLogMs = 0;
+    private static void logMissileMatrices(Matrix4f fullModelView, String mvSource) {
+        long now = System.currentTimeMillis();
+        if (now - lastMvmLogMs < 1000) return;
+        lastMvmLogMs = now;
+        try {
+            org.joml.Matrix4f rsMv = new org.joml.Matrix4f(com.mojang.blaze3d.systems.RenderSystem.getModelViewMatrix());
+            MainRegistry.LOGGER.info(
+                    "HBM vbo.mvm [iris={} src={}]: rsMV[col0=({},{},{}) col3=({},{},{})] full[m30={} m31={} m32={}]",
+                    com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive(),
+                    mvSource,
+                    String.format("%.4f", rsMv.m00()), String.format("%.4f", rsMv.m10()), String.format("%.4f", rsMv.m20()),
+                    String.format("%.4f", rsMv.m03()), String.format("%.4f", rsMv.m13()), String.format("%.4f", rsMv.m23()),
+                    String.format("%.2f", fullModelView.m30()), String.format("%.2f", fullModelView.m31()),
+                    String.format("%.2f", fullModelView.m32()));
+        } catch (Throwable ignored) {
+        }
+    }
 
     public static void setFadeAlpha(float alpha) {
         currentFadeAlpha.set(alpha);
@@ -223,9 +257,10 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             var minecraft = Minecraft.getInstance();
             var textureManager = minecraft.getTextureManager();
 
-            RenderSystem.activeTexture(GL13.GL_TEXTURE0);
+            // Сырые бинды намеренно — см. комментарий в bindBlockLitSamplerTextures.
+            GL13.glActiveTexture(GL13.GL_TEXTURE0);
             var blockAtlas = textureManager.getTexture(TextureAtlas.LOCATION_BLOCKS);
-            RenderSystem.bindTexture(blockAtlas.getId());
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, blockAtlas.getId());
         }
     }
 
@@ -354,33 +389,33 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
      * Пропуск = белые модели (см. блок «РЕГРЕССИЯ-СТОП» над {@link #prepareBlockLitSamplers}).
      */
     public static void bindBlockLitSamplerTextures(ShaderInstance shader) {
-        if (shader == null) {
-            return;
-        }
+        if (shader == null) return;
         RenderSystem.assertOnRenderThread();
         Minecraft mc = Minecraft.getInstance();
 
         int atlasGlId = resolveBlockAtlasGlId(mc);
         int lightmapGlId = resolveLightmapGlId(mc);
-        if (atlasGlId <= 0 || lightmapGlId <= 0) {
-            return;
-        }
+        if (atlasGlId <= 0 || lightmapGlId <= 0) return;
 
-        // Unit 0: Атлас блоков
-        GL13.glActiveTexture(GL13.GL_TEXTURE0);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlasGlId);
-        RenderSystem.setShaderTexture(0, atlasGlId);
+        // TU0: Атлас
+        // Говорим кешу, что мы на TU0
+        com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
+        // Пробиваем сырой физический бинд (игнорируя любые десинки)
+        org.lwjgl.opengl.GL11.glBindTexture(org.lwjgl.opengl.GL11.GL_TEXTURE_2D, atlasGlId);
+        // Приводим кеш ванили в чувство
+        com.mojang.blaze3d.platform.GlStateManager._bindTexture(atlasGlId);
 
-        // Unit 1: Ванильный оверлей (чтобы не затирался свет)
-        GL13.glActiveTexture(GL13.GL_TEXTURE1);
-        mc.gameRenderer.overlayTexture().setupOverlayColor();
+        // TU1: Оверлей
+        com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE1);
+        mc.gameRenderer.overlayTexture().setupOverlayColor(); // Внутри уже использует GlStateManager
 
-        // Unit 2: Карта света
-        GL13.glActiveTexture(GL13.GL_TEXTURE2);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, lightmapGlId);
-        RenderSystem.setShaderTexture(2, lightmapGlId);
+        // TU2: Лайтмап
+        com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE2);
+        org.lwjgl.opengl.GL11.glBindTexture(org.lwjgl.opengl.GL11.GL_TEXTURE_2D, lightmapGlId);
+        com.mojang.blaze3d.platform.GlStateManager._bindTexture(lightmapGlId);
 
-        GL13.glActiveTexture(GL13.GL_TEXTURE0);
+        // ОБЯЗАТЕЛЬНО возвращаем кеш и физику на TU0 для всего остального рендера игры!
+        com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
 
         shader.setSampler("Sampler0", atlasGlId);
         shader.setSampler("Sampler2", lightmapGlId);
@@ -564,6 +599,9 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 return;
             }
         }
+        if (entityMissileDepthBias.get()) {
+            lastTrackMeshBranch.set("none");
+        }
         if (initFailed) return;
         if (!initialized || vaoId <= 0 || vboId <= 0) {
             return;
@@ -577,12 +615,14 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                                                : ModShaders.getBlockLitSimpleShader();
         if (shader == null) {
             // Shader not loaded yet (resource reload race) - fall back to putBulkData.
+            if (entityMissileDepthBias.get()) lastTrackMeshBranch.set("quads:shader-null");
             List<BakedQuad> fallbackQuads = getQuadsForIrisPath();
             if (fallbackQuads != null && bufferSource != null) {
                 renderToBufferSource(poseStack, packedLight, fallbackQuads, bufferSource);
             }
             return;
         }
+        if (entityMissileDepthBias.get()) lastTrackMeshBranch.set("vbo");
 
         int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
@@ -595,9 +635,41 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         boolean previousDepthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
         boolean previousDepthTestEnabled = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
 
+        ShaderInstance previousShader = RenderSystem.getShader();
+        int previousTexture0 = RenderSystem.getShaderTexture(0);
+
         try {
             RenderSystem.setShader(() -> shader);
-            Matrix4f fullModelView = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(poseStack.last().pose());
+            // Источник поворота камеры для меша ракет: ambient RenderSystem
+            // ModelViewMat под Oculus даже с выключенным паком бывает перезаписан
+            // в identity ЧУЖИМ bookkeeping'ом уже ВНУТРИ нашего окна пуша
+            // (диагностика «vbo.mvm»: rsMV=identity в кадрах трека). Поэтому в
+            // контексте трека берём захваченную копию из RenderHooks; там, где
+            // ambient корректен, результат идентичен (пуш кладёт ту же матрицу).
+            // Станки/двери (флаг false) продолжают читать ambient = R_cam фазы BE.
+            org.joml.Matrix4f fullModelView;
+            String mvSource;
+            if (entityMissileDepthBias.get()) {
+                org.joml.Matrix4f levelRot =
+                        com.hbm_m.platform.RenderHooks.currentLevelRotation();
+                if (levelRot != null) {
+                    // Track-путь: поворот камеры УЖЕ запечён в poseStack
+                    // (MissileTrackWorldRender домножает R_cam при построении
+                    // стопки — в чистой ваниле ambient MV на AFTER_WEATHER
+                    // identity, умножение дало бы двойной поворот/мусор).
+                    fullModelView = new Matrix4f(poseStack.last().pose());
+                    mvSource = "baked";
+                } else {
+                    fullModelView = new org.joml.Matrix4f(RenderSystem.getModelViewMatrix())
+                            .mul(poseStack.last().pose());
+                    mvSource = "ambient";
+                }
+            } else {
+                fullModelView = new org.joml.Matrix4f(RenderSystem.getModelViewMatrix())
+                        .mul(poseStack.last().pose());
+                mvSource = "ambient";
+            }
+            logMissileMatrices(fullModelView, mvSource);
             if (shader.MODEL_VIEW_MATRIX != null)
                 shader.MODEL_VIEW_MATRIX.set(fullModelView);
             if (shader.PROJECTION_MATRIX != null)
@@ -701,14 +773,33 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             // Must come BEFORE apply() - apply() reads samplerMap populated here and
             // does glUseProgram + glUniform1i + glBindTexture in one shot.
             prepareBlockLitSamplers(shader);
+            if (entityMissileDepthBias.get()) {
+                com.hbm_m.client.render.FrameStateProbe.snap("s1.prep");
+            }
+            // ЗАЩИТА ОТ DESYNC КЕША ПРОГРАММЫ (Oculus без шейдерпака):
+            // VanillaRenderingPipeline.beginLevelRendering() один раз за кадр
+            // делает сырой GlStateManager._glUseProgram(0), не сбрасывая статический
+            // ShaderInstance.lastProgramId. Если прошлый кадр закончил our block_lit,
+            // следующий shader.apply() ПРОПУСТИТ реальный glUseProgram (кеш совпадает),
+            // и все glUniform/glDrawElements уйдут в программу 0 — «No active program»,
+            // чёрный меш с мусорной матрицей. Явная проверка GL_CURRENT_PROGRAM:
+            // при расхождении clear() обнуляет lastProgramId (-1) и форсирует честный
+            // бинд в apply(). В норме — один glGetInteger, дешевле apply().
+            com.hbm_m.client.render.shader.ShaderBindResync.ensureFreshBind(shader);
             shader.apply();
+            if (entityMissileDepthBias.get()) {
+                com.hbm_m.client.render.FrameStateProbe.snap("s1.apply");
+            }
             bindBlockLitSamplerTextures(shader);
 
             float fade = currentFadeAlpha.get();
             boolean overlay = worldMissileOverlayDraw.get();
             if (overlay) {
                 RenderSystem.disableDepthTest();
-                GL11.glDepthMask(false);
+                // Управляемый вызов: сырой GL11.glDepthMask обходил кеш
+                // GlStateManager и рассинхронизировал depthMask для всех
+                // последующих прозрачных дро (частицы писали глубину).
+                RenderSystem.depthMask(false);
             } else {
                 RenderSystem.enableDepthTest();
                 RenderSystem.depthFunc(GL11.GL_LEQUAL);
@@ -720,10 +811,18 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 RenderSystem.defaultBlendFunc();
             }
 
-            GL30.glBindVertexArray(vaoId);
+            GlVaoSafety.bindVertexArray(vaoId);
             beginEntityMissileDepthBias();
             GL11.glDrawElements(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0);
             endEntityMissileDepthBias();
+            if (entityMissileDepthBias.get()) {
+                com.hbm_m.client.render.FrameStateProbe.snap("s1.drawn");
+                int glErr = GL11.glGetError();
+                while (glErr != GL11.GL_NO_ERROR) {
+                    MainRegistry.LOGGER.error("HBM VBO draw GL error after track mesh: {}", glErr);
+                    glErr = GL11.glGetError();
+                }
+            }
 
             if (fade < 0.99f) {
                 RenderSystem.disableBlend();
@@ -732,9 +831,24 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during VBO render", e);
         } finally {
-            GL30.glBindVertexArray(0);
-            RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
-            RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
+            GlVaoSafety.bindVertexArray(0);
+            if (previousShader != null) {
+                RenderSystem.setShader(() -> previousShader);
+            }
+            RenderSystem.setShaderTexture(0, previousTexture0);
+
+            // ========= ФИКС ЧЕРНОГО ЭКРАНА =========
+            // Убираем за собой физические текстуры, чтобы они не протекли 
+            // в следующий кадр (на Солнце и Виньетку) и не отравили им сэмплеры.
+            org.lwjgl.opengl.GL13.glActiveTexture(org.lwjgl.opengl.GL13.GL_TEXTURE2);
+            org.lwjgl.opengl.GL11.glBindTexture(org.lwjgl.opengl.GL11.GL_TEXTURE_2D, 0);
+            
+            org.lwjgl.opengl.GL13.glActiveTexture(org.lwjgl.opengl.GL13.GL_TEXTURE1);
+            org.lwjgl.opengl.GL11.glBindTexture(org.lwjgl.opengl.GL11.GL_TEXTURE_2D, 0);
+            
+            org.lwjgl.opengl.GL13.glActiveTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
+            // =======================================
+
             GlVaoSafety.bindVertexArray(previousVao);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
 
@@ -744,7 +858,8 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 RenderSystem.disableCull();
             }
             RenderSystem.depthFunc(previousDepthFunc);
-            GL11.glDepthMask(previousDepthMask);
+            // Восстановление через управляемый API — симметрично установке выше.
+            RenderSystem.depthMask(previousDepthMask);
             if (previousDepthTestEnabled) {
                 RenderSystem.enableDepthTest();
             } else {
@@ -915,7 +1030,8 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             boolean overlay = worldMissileOverlayDraw.get();
             if (overlay) {
                 RenderSystem.disableDepthTest();
-                GL11.glDepthMask(false);
+                // Управляемый вызов вместо сырого GL11.glDepthMask (см. vanilla-путь).
+                RenderSystem.depthMask(false);
             } else {
                 RenderSystem.enableDepthTest();
                 RenderSystem.depthFunc(GL11.GL_LEQUAL);
@@ -977,12 +1093,13 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             if (companion != null) {
                 companion.restoreConstantLightmap();
             }
-            GL30.glBindVertexArray(0);
+            GlVaoSafety.bindVertexArray(0);
             RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
             GlVaoSafety.bindVertexArray(previousVao);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
             RenderSystem.depthFunc(previousDepthFunc);
-            GL11.glDepthMask(previousDepthMask);
+            // Управляемое восстановление — симметрично установке выше.
+            RenderSystem.depthMask(previousDepthMask);
             if (previousDepthTestEnabled) {
                 RenderSystem.enableDepthTest();
             } else {

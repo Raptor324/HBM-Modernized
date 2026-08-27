@@ -1361,6 +1361,16 @@ public class ClientSetup {
         );
         MainRegistry.LOGGER.info("Successfully registered nuke_cloud shader");
 
+        event.registerShader(
+            new ShaderInstance(
+                event.getResourceProvider(),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "nuke_add"),
+                nukeCloudFormat
+            ),
+            ModShaders::setNukeAddShader
+        );
+        MainRegistry.LOGGER.info("Successfully registered nuke_add shader");
+
         // Копия DH-глубины в главный z-buffer (окклюзия дальних мешей против LOD).
         event.registerShader(
             new ShaderInstance(

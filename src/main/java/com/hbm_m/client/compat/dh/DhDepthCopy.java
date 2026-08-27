@@ -62,6 +62,10 @@ public final class DhDepthCopy {
         // Маска dither-fade зоны DH («Fade Nearby DH LODs») — там глубина-шум
         shader.safeGetUniform("DhFadeMaskDist").set(DhOcclusionGpu.ditherFadeMaskDistance());
 
+        // Oculus без пака оставляет GL-программу 0 при «свежем» с точки зрения
+        // ванильного кеша шейдере — без этого blit уйдёт в программу 0.
+        com.hbm_m.client.render.shader.ShaderBindResync.ensureFreshBind(shader);
+
         try {
             //? if < 1.21.1 {
             BufferBuilder bb = Tesselator.getInstance().getBuilder();

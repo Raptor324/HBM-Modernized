@@ -85,9 +85,21 @@ public final class MissileTrackWorldRender {
         // Private source — never the shared global one (see missileBufferSource()).
         MultiBufferSource.BufferSource buffers = missileBufferSource();
 
-        // Своя камера-relative стопка: шейдеры берут поворот камеры из
-        // RenderSystem ModelViewMat, поэтому event-овый PoseStack не нужен.
+        // Своя камера-relative стопка С ЗАПЕЧЁННЫМ ПОВОРОТОМ камеры: в чистой
+        // ваниле ambient RenderSystem ModelViewMat на AFTER_WEATHER = identity
+        //(поворот живёт в event-PoseStack, который мы не используем), поэтому
+        // полагаться на ambient нельзя в принципе. Домножаем захваченную
+        // R_cam (TLS-копия пуша EngineHandler'а) прямо в стопку — как ваниль
+        // делает для энтити (Camera#render возвращает PoseStack с поворотом).
+        // SingleMeshVboRenderer в track-контексте знает об этом и НЕ умножает
+        // ambient повторно.
         PoseStack poseStack = new PoseStack();
+        var levelRot = com.hbm_m.platform.RenderHooks.currentLevelRotation();
+        if (levelRot != null) {
+            // Прямое домножение в JOML-матрицу текущего pose — без
+            // версионных PoseStack-API (mulPoseMatrix/mulMatrix разошлись).
+            poseStack.last().pose().mul(levelRot);
+        }
         poseStack.translate(-camera.x, -camera.y, -camera.z);
         boolean drewAny = false;
         for (MissileTrackClient.TrackEntry entry : MissileTrackClient.entries()) {
@@ -117,7 +129,77 @@ public final class MissileTrackWorldRender {
         if (drewAny) {
             buffers.endBatch();
         }
+        com.hbm_m.client.render.FrameStateProbe.snap(drewAny ? "twr.drew" : "twr.idle");
+        logTrackDrawOncePerSecond(partialTick, camera);
         return drewAny;
+    }
+
+    /** Мировая позиция последнего отрисованного трек-меша — для fspWorld-пробников. */
+    private static final double[] LAST_MISSILE_POS = new double[3];
+    private static boolean lastMissilePosValid;
+
+    /** Позиция для FrameStateProbe.snapWorld (null, если ещё ничего не рисовалось). */
+    public static double[] lastDrawnMissilePos() {
+        return lastMissilePosValid ? LAST_MISSILE_POS : null;
+    }
+
+    private static long lastTrackDrawLogMs;
+
+    /**
+     * Диагностика «чёрного прямоугольника с параллаксом»: раз в секунду печатает
+     * для каждого трека истинную позицию, дистанцию до камеры и позицию/масштаб
+     * ОТРИСОВКИ (после виртуализации). Если drawDist окажется единицы блоков —
+     * меш висит у лица игрока и ночью выглядит чёрной стеной во весь экран
+     * (шаг вперёд/назад меняет перекрытие = параллакс). Заодно — живые NT-частицы
+     * по классам (флары/контрейл), чтобы видеть, спавнятся ли они вообще.
+     */
+    private static void logTrackDrawOncePerSecond(float partialTick, Vec3 camera) {
+        long now = System.currentTimeMillis();
+        if (now - lastTrackDrawLogMs < 1000) {
+            return;
+        }
+        lastTrackDrawLogMs = now;
+        try {
+            StringBuilder sb = new StringBuilder("HBM track-draw: cam=(")
+                    .append((int) camera.x).append(',').append((int) camera.y).append(',').append((int) camera.z).append(')');
+            int n = 0;
+            for (MissileTrackClient.TrackEntry entry : MissileTrackClient.entries()) {
+                MissileTrackClient.InterpolatedPose pose = entry.interpolate(partialTick);
+                if (pose == null) {
+                    continue;
+                }
+                CameraRelativePose virt = virtualizeWorld(pose.x(), pose.y(), pose.z(), camera);
+                double trueDist = Math.sqrt(sqr(pose.x() - camera.x) + sqr(pose.y() - camera.y) + sqr(pose.z() - camera.z));
+                double drawDist = Math.sqrt(sqr(virt.relX()) + sqr(virt.relY()) + sqr(virt.relZ()));
+                sb.append(" | id=").append(entry.entityId)
+                        .append(" true=(").append((int) pose.x()).append(',').append((int) pose.y()).append(',').append((int) pose.z()).append(')')
+                        .append(" trueDist=").append((int) trueDist)
+                        .append(" drawDist=").append((int) drawDist)
+                        .append(" scale=").append(String.format("%.2f", virt.screenScale()));
+                if (++n >= 4) {
+                    break;
+                }
+            }
+            if (n == 0) {
+                sb.append(" entries=0");
+            }
+            var batches = com.hbm_m.particle.nt.ParticleEngineNT.INSTANCE.debugBatches();
+            java.util.Map<String, Integer> byClass = new java.util.LinkedHashMap<>();
+            int total = 0;
+            for (java.util.List<com.hbm_m.particle.nt.ParticleNT> list : batches.values()) {
+                for (com.hbm_m.particle.nt.ParticleNT p : list) {
+                    byClass.merge(p.getClass().getSimpleName(), 1, Integer::sum);
+                    total++;
+                }
+            }
+            sb.append(" | ntTotal=").append(total).append(byClass);
+            com.hbm_m.main.MainRegistry.LOGGER.info(sb.toString());
+        } catch (Throwable ignored) {
+        }
+    }
+
+    private static double sqr(double v) {
+        return v * v;
     }
 
     private static boolean renderOne(ClientLevel level, MissileTrackClient.InterpolatedPose pose,
@@ -126,6 +208,10 @@ public final class MissileTrackWorldRender {
         if (data == null) {
             return false;
         }
+        LAST_MISSILE_POS[0] = pose.x();
+        LAST_MISSILE_POS[1] = pose.y();
+        LAST_MISSILE_POS[2] = pose.z();
+        lastMissilePosValid = true;
 
         CameraRelativePose virtual = virtualizeWorld(pose.x(), pose.y(), pose.z(), camera);
         double drawX = camera.x + virtual.relX();
@@ -133,9 +219,15 @@ public final class MissileTrackWorldRender {
         double drawZ = camera.z + virtual.relZ();
 
         BlockPos lightPos = BlockPos.containing(virtual.trueX(), virtual.trueY(), virtual.trueZ());
-        int packedLight = LightTexture.pack(
-                level.getBrightness(LightLayer.BLOCK, lightPos),
-                level.getBrightness(LightLayer.SKY, lightPos));
+        // Свет — только по КЛИЕНТСКОЙ карте чанков (серверные тикеты траектории
+        // чанки клиенту не шлют). Нет чанка → FULL_BRIGHT, как у ванильных
+        // энтити за границей синхронизации; иначе блок_lit сэмплит чёрный
+        // угол лайтмапы и дальний меш рисуется чёрным силуэтом.
+        int packedLight = level.hasChunkAt(lightPos)
+                ? LightTexture.pack(
+                        level.getBrightness(LightLayer.BLOCK, lightPos),
+                        level.getBrightness(LightLayer.SKY, lightPos))
+                : LightTexture.FULL_BRIGHT;
 
         Direction launchFacing = pose.current().launchFacing();
         float yaw = pose.yaw();
@@ -156,20 +248,19 @@ public final class MissileTrackWorldRender {
         LightSampleCache.BASE_POSE.set(poseStack.last().pose());
         LightSampleCache.BASE_POSE_SET.set(true);
 
-        float prevFogStart = RenderSystem.getShaderFogStart();
-        float prevFogEnd = RenderSystem.getShaderFogEnd();
-        double dist = camera.distanceTo(lightPos.getCenter());
-        float fogEnd = Math.max(prevFogEnd > 0.0F ? prevFogEnd : 64.0F, (float) dist + 512.0F);
-        RenderSystem.setShaderFogEnd(fogEnd);
-        RenderSystem.setShaderFogStart(Math.min(prevFogStart, fogEnd * 0.85F));
+        // ВНИМАНИЕ: НЕ трогаем RenderSystem.setShaderFog*! Раньше здесь глобально
+        // раздвигали туман кадра (fogEnd = max(prev, dist+512)) ради дальнего
+        // меша — это ОКАЗЫВАЛОСЬ ЧЁРНЫМ ЭКРАНОМ: значение утекало в следующие
+        // кадры, и мир дальше ~460 блоков заливался туманом fogColor (в мире на
+        // y<0 он почти чёрный). Дальний меш в тумане не нуждается: блок_lit
+        // глушит туман собственными юниформами (cachedFogStartU=1.0E8 при
+        // entityMissileDepthBias), а NT-частицы не фоггатся вовсе.
         SingleMeshVboRenderer.setEntityMissileDepthBias(true);
         try {
             data.render(poseStack, packedLight, lightPos, buffers);
             return true;
         } finally {
             SingleMeshVboRenderer.setEntityMissileDepthBias(false);
-            RenderSystem.setShaderFogStart(prevFogStart);
-            RenderSystem.setShaderFogEnd(prevFogEnd);
             LightSampleCache.BASE_POSE_SET.set(false);
             poseStack.popPose();
         }

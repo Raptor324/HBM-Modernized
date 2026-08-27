@@ -123,9 +123,9 @@ dependencies {
 	// не применяются (no-op, мод не падает).
 	compileOnly("maven.modrinth:sable:2.0.5+mc1.21.1")
 	"modCompileOnly"("dev.engine-room.flywheel:flywheel-forge-api-1.20.1:${prop("deps.flywheel")}")
-	"modRuntimeOnly"("curse.maven:embeddium-908741:5681725")
-	"modRuntimeOnly"("curse.maven:oculus-581495:6020952")
-	"modRuntimeOnly"("curse.maven:modernfix-790626:7515215")
+	// "modRuntimeOnly"("curse.maven:embeddium-908741:5681725")
+	// "modRuntimeOnly"("curse.maven:oculus-581495:6020952")
+	// "modRuntimeOnly"("curse.maven:modernfix-790626:7515215")
 	"modRuntimeOnly"("curse.maven:smooth-boot-reloaded-633412:5016280")
 	
 	"modRuntimeOnly"("curse.maven:screenshot-to-clipboard-326950:3643026")

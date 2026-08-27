@@ -16,7 +16,6 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
@@ -295,7 +294,10 @@ final class VanillaInstancedBatchRenderer {
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
             RenderSystem.depthMask(true);
-            GL11.glDisable(GL11.GL_CULL_FACE);
+            // Управляемый вызов: сырой GL11.glDisable(GL_CULL_FACE) не обновлял
+            // кеш GlStateManager, и RenderStateGuard.close() восстанавливал
+            // cull но-опом (кеш считал его всё ещё включённым).
+            RenderSystem.disableCull();
             if (fade < 0.99f) {
                 RenderSystem.enableBlend();
                 RenderSystem.defaultBlendFunc();
@@ -353,19 +355,10 @@ final class VanillaInstancedBatchRenderer {
             parent.instanceBuffer.flip();
         }
 
-        int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
-        int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
-        boolean cullWasEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
-        boolean depthTestWasEnabled = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
-        boolean depthMaskWasEnabled = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
-        int previousDepthFunc = GL11.glGetInteger(GL11.GL_DEPTH_FUNC);
-        boolean blendWasEnabled = GL11.glIsEnabled(GL11.GL_BLEND);
-        int prevBlendSrcRgb = GL11.glGetInteger(GL14.GL_BLEND_SRC_RGB);
-        int prevBlendDstRgb = GL11.glGetInteger(GL14.GL_BLEND_DST_RGB);
-        int prevBlendSrcAlpha = GL11.glGetInteger(GL14.GL_BLEND_SRC_ALPHA);
-        int prevBlendDstAlpha = GL11.glGetInteger(GL14.GL_BLEND_DST_ALPHA);
-
-        try {
+        // RenderStateGuard снимает и симметрично восстанавливает VAO,
+        // ARRAY_BUFFER, cull, depth test/mask/func и blend+blendFunc —
+        // ровно тот набор, который раньше снапшотился вручную ниже.
+        try (RenderStateGuard ignored = RenderStateGuard.snapshot()) {
             float minFade = 1f;
             for (int i = 0; i < parent.instanceCount; i++) {
                 float fa = parent.instanceBuffer.get(i * parent.instanceDataSize + parent.instanceFadeFloatOffset);
@@ -403,17 +396,6 @@ final class VanillaInstancedBatchRenderer {
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during instanced flush (vanilla)", e);
         } finally {
-            GL30.glBindVertexArray(previousVao);
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
-            RenderSystem.depthMask(depthMaskWasEnabled);
-            RenderSystem.depthFunc(previousDepthFunc);
-            if (depthTestWasEnabled) RenderSystem.enableDepthTest();
-            else RenderSystem.disableDepthTest();
-            if (cullWasEnabled) RenderSystem.enableCull();
-            else RenderSystem.disableCull();
-            RenderSystem.blendFuncSeparate(prevBlendSrcRgb, prevBlendDstRgb, prevBlendSrcAlpha, prevBlendDstAlpha);
-            if (blendWasEnabled) RenderSystem.enableBlend();
-            else RenderSystem.disableBlend();
             RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
             RenderSystem.setShaderTexture(0, net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS);
         }

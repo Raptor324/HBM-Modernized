@@ -99,9 +99,14 @@ public class MissileNozzleFlareNT extends MissileTrailNT {
         double wz = Mth.lerp(partialTicks, this.zo, this.z);
         Vec3 rel = virtualize(wx, wy, wz, camera);
 
+        // Размер обязан умножаться на коэффициент виртуализации (см.
+        // ParticleNT.virtualScale): позиция подтянута к границе прорисовки,
+        // но без уменьшения квада дальний флар рисуется в десятки раз крупнее
+        // углового размера и заливает экран.
+        float size = this.quadSize * virtualScale(wx, wy, wz, camera);
         emitBillboard(consumer, camera,
                 (float) rel.x, (float) rel.y, (float) rel.z,
-                this.quadSize,
+                size,
                 this.rCol, this.gCol, this.bCol, this.alpha);
     }
 }

@@ -153,6 +153,10 @@ public class ClientModEvents {
     //? if forge || neoforge {
     @SubscribeEvent
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
+        // KHR_debug-колбэк (первый кадр, render thread): ловит сообщения драйвера
+        // о битом GL-состоянии в момент проблемного вызова. Диагностика
+        // «чёрного экрана» трек-рендера — см. GlDebugProbe.
+        com.hbm_m.client.render.GlDebugProbe.enableOnce();
         // РЕГРЕССИЯ СТОП: ПРЕДОТВРАЩЕНИЕ УТЕЧКИ SHADOW PASS:
         // Если в системе остался активен батч теней, но сам проход теней уже завершен (мы в основном кадре),
         // немедленно закрываем его. Это восстановит оригинальный VAO, фазу Iris и очистит шейдер до того,
@@ -164,7 +168,22 @@ public class ClientModEvents {
             }
         }
 
+        // ВАТЧДОГ program-desync (Oculus без пака): если RS-шейдер числится, а
+        // фактическая GL-программа = 0 (сырой сброс), сбросить кеш — иначе ваниль
+        // пропустит честный бинд и кадр перестанет перерисовываться до появления
+        // любого другого честного apply (симптом «чёрный экран после смерти ракеты,
+        // лечится только появлением машин»). Вызывается на КАЖДОЙ стадии кадра.
+        com.hbm_m.client.render.shader.ShaderBindResync.enforceGlProgramConsistency();
+        // ВОССТАНОВЛЕНИЕ ТЕКСТУРНЫХ ЮНИТОВ: px.pad.* показала, что к фазе BER
+        // физические units=[0/0/0] при «живом» кеше — ванильные дро но-опятся и
+        // рисуют чёрное до первого block_lit (пусковая лечит кадр). Первое наше
+        // событие в кадре — AFTER_SKY: восстанавливаем троицу до энтити/BER.
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SKY) {
+            com.hbm_m.client.render.shader.ShaderBindResync.restoreVanillaTextureBindings();
+        }
+
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SKY) {
+            com.hbm_m.client.render.FrameStateProbe.snap("px.sky");
             com.hbm_m.client.compat.dh.DhClientState.onAfterSky();
             // Захват чистой ванильной проекции кадра (FOV/zoom/bob) — из неё
             // строится проекция дальнего И ближнего NT-проходов.
@@ -180,6 +199,7 @@ public class ClientModEvents {
         }
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
+            com.hbm_m.client.render.FrameStateProbe.snap("px.entities");
 
             ModClothConfig cfg = ModClothConfig.get();
             Minecraft mc = Minecraft.getInstance();
@@ -188,17 +208,11 @@ public class ClientModEvents {
             InstancedRenderFrame.onBeforeBlockEntities(
                     event.getProjectionMatrix(), cameraPos, frustum);
 
-            // При активном DH ракеты (обе дистанции) рисует EngineHandler на
-            // AFTER_WEATHER — единый painter-порядок far->near с NT-частицами.
-            // Здесь остаётся только путь без DH (виртуализация дальних треков).
-            if (!com.hbm_m.client.compat.dh.DhClientState.isActive()) {
-                //? if < 1.21.1 {
-                MissileTrackWorldRender.render(mc.getFrameTime(), event.getPoseStack());
-                //?} else {
-                /*// 1.21.1: getPartialTick() удалён — частичное время тика через DeltaTracker.Timer.
-                MissileTrackWorldRender.render(mc.getTimer().getGameTimeDeltaPartialTick(true), event.getPoseStack());
-                *///?}
-            }
+            // РЕГРЕССИЯ-СТОП (двойная отрисовка): меши ракет рисуются ТОЛЬКО
+            // в EngineHandler на AFTER_WEATHER (renderFiltered) — единый
+            // painter-порядок far->near с NT-частицами для обоих случаев
+            // (DH активен / нет). Второй проход здесь давал фантомную копию
+            // под другой проекцией и удвоенные draw/GL-ошибки.
         }
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
@@ -208,15 +222,64 @@ public class ClientModEvents {
                     mc.renderBuffers().bufferSource(),
                     event.getPoseStack(),
                     cameraPos);
+            com.hbm_m.client.render.FrameStateProbe.snap("px.be");
             InstancedRenderFrame.presentAfterBlockEntities(event.getProjectionMatrix(), cameraPos);
+            com.hbm_m.client.render.FrameStateProbe.snap("px.be2");
             return;
         }
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+            com.hbm_m.client.render.FrameStateProbe.snap("px.afterlevel");
+            com.hbm_m.client.render.shader.ShaderBindResync.forceIrisDepthColorEnabled();
             InstancedRenderFrame.onRenderSliceEnd();
             com.hbm_m.client.compat.dh.DhClientState.onAfterLevel();
         }
     }
+
+    // ── Слепая зона FrameStateProbe: рука и GUI ─────────────────────────────
+    // px.*-зонды останавливаются на AFTER_LEVEL, а «полностью чёрный экран»
+    // (GUI жив, рука пропала) может рисоваться именно после него. Эти снапы
+    // замеряют пиксели на входе в проход руки и в GUI-фазу.
+    //? if forge {
+    @SubscribeEvent
+    public static void onRenderHand(net.minecraftforge.client.event.RenderHandEvent event) {
+        com.hbm_m.client.render.FrameStateProbe.snap("px.hand");
+    }
+
+    @SubscribeEvent
+    public static void onRenderGuiPre(net.minecraftforge.client.event.RenderGuiEvent.Pre event) {
+        com.hbm_m.client.render.FrameStateProbe.snap("px.gui.pre");
+        com.hbm_m.client.render.FrameStateProbe.snapGuiEffects();
+    }
+
+    // Бисекция GUI-оверлеев: на Pre каждого оверлея читаем центральный пиксель;
+    // при провале яркости логируем id оверлея, зачернившего кадр (см. GuiOverlayBisectProbe).
+    @SubscribeEvent
+    public static void onGuiOverlayPre(net.minecraftforge.client.event.RenderGuiOverlayEvent.Pre event) {
+        com.hbm_m.client.render.GuiOverlayBisectProbe.onOverlayPre(event.getOverlay().id());
+    }
+
+    @SubscribeEvent
+    public static void onRenderGuiPost(net.minecraftforge.client.event.RenderGuiEvent.Post event) {
+        com.hbm_m.client.render.FrameStateProbe.snap("px.gui.post");
+        com.hbm_m.client.render.GuiOverlayBisectProbe.resetFrame();
+    }
+    //?} elif neoforge {
+    /*@SubscribeEvent
+    public static void onRenderHand(net.neoforged.neoforge.client.event.RenderHandEvent event) {
+        com.hbm_m.client.render.FrameStateProbe.snap("px.hand");
+    }
+
+    @SubscribeEvent
+    public static void onRenderGuiPre(net.neoforged.neoforge.client.event.RenderGuiEvent.Pre event) {
+        com.hbm_m.client.render.FrameStateProbe.snap("px.gui.pre");
+    }
+
+    @SubscribeEvent
+    public static void onRenderGuiPost(net.neoforged.neoforge.client.event.RenderGuiEvent.Post event) {
+        com.hbm_m.client.render.FrameStateProbe.snap("px.gui.post");
+    }
+    *///?}
 
     /**
      * Instanced flush — только {@link com.hbm_m.client.render.culling.InstancedRenderFrame#presentAfterBlockEntities}

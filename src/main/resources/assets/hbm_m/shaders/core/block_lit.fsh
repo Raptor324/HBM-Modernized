@@ -36,8 +36,9 @@ void main() {
         discard;
     }
 
-    float fogFactor = clamp((FogEnd - vertexDistance) / (FogEnd - FogStart), 0.0, 1.0);
-    vec3 colorWithFog = mix(FogColor.rgb, lit, fogFactor);
+    float fogDiff = max(FogEnd - FogStart, 1e-4);
+    float fogFactor = clamp((vertexDistance - FogStart) / fogDiff, 0.0, 1.0);
+    vec3 colorWithFog = mix(lit, FogColor.rgb, fogFactor);
 
     fragColor = vec4(colorWithFog, alpha);
 }

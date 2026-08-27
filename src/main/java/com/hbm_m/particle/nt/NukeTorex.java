@@ -452,7 +452,6 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle {
     public net.minecraft.resources.ResourceLocation hbm$getFarTexture() { return CLOUDLET; }
 
     private int renderDiagCount = 0;
-    private long drawProbeCounter = 0;
 
     public enum TorexType { STANDARD, SHOCK, RING, CONDENSATION }
 
@@ -560,24 +559,6 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle {
         float r = (float) interpColor.x * brightness;
         float g = (float) interpColor.y * brightness;
         float b = (float) interpColor.z * brightness;
-        // ДИАГНОСТИКА «чёрного фона»: реальное GL-состояние в момент записи
-        // вершин (первый клаудлет за ~120 кадров). Ожидания: program != 0,
-        // blend=true, Color@2, UV0@1, на TU0 — текстура облака.
-        if (++drawProbeCounter % 120 == 1) {
-            try {
-                int prog = org.lwjgl.opengl.GL11.glGetInteger(org.lwjgl.opengl.GL20.GL_CURRENT_PROGRAM);
-                boolean blend = org.lwjgl.opengl.GL11.glIsEnabled(org.lwjgl.opengl.GL11.GL_BLEND);
-                int locColor = prog != 0 ? org.lwjgl.opengl.GL20.glGetAttribLocation(prog, "Color") : -99;
-                int locUv = prog != 0 ? org.lwjgl.opengl.GL20.glGetAttribLocation(prog, "UV0") : -99;
-                org.lwjgl.opengl.GL13.glActiveTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
-                int tex = org.lwjgl.opengl.GL11.glGetInteger(org.lwjgl.opengl.GL11.GL_TEXTURE_BINDING_2D);
-                com.hbm_m.main.MainRegistry.LOGGER.info(
-                        "HBM Torex in-draw: consumer={} prog={} blend={} Color@{} UV0@{} tex0={}",
-                        consumer.getClass().getSimpleName(), prog, blend, locColor, locUv, tex);
-            } catch (Throwable t) {
-                com.hbm_m.main.MainRegistry.LOGGER.info("HBM Torex in-draw probe failed: {}", t.toString());
-            }
-        }
         ImmediateVertexWriter.billboardQuad(consumer, matrix, posX, posY, posZ, l, u, r, g, b, alpha, 0, 0, 1, 1);
     }
 
