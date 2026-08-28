@@ -88,8 +88,13 @@ public class PlainBufferSource extends MultiBufferSource.BufferSource {
     /*// 1.21.1: ванильный BufferSource уже хранит отдельный BufferBuilder на
     // тип (startedBuilders) и сортирует MeshData.sortQuads — уязвимой
     // разделяемой машины 1.20.1 там нет; достаточно честного наследника.
+    // ВАЖНО: fixedBuffers НЕ может быть Collections.emptySortedMap() — под
+    // капотом это TreeMap, чей get() кастует ключ к Comparable, а кастомные
+    // RenderType не Comparable (краш «CompositeRenderType cannot be cast to
+    // Comparable» при первом getBuffer). Ванильная фабрика immediate()
+    // использует пустую fastutil-мапу — делаем так же.
     public PlainBufferSource(com.mojang.blaze3d.vertex.ByteBufferBuilder sharedBuffer) {
-        super(sharedBuffer, java.util.Collections.emptySortedMap());
+        super(sharedBuffer, it.unimi.dsi.fastutil.objects.Object2ObjectSortedMaps.emptyMap());
     }
     *///?}
 }
