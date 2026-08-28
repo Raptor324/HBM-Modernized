@@ -174,14 +174,6 @@ public abstract class ParticleNT {
             double max = com.hbm_m.client.missile.track.MissileTrackWorldRender.maxSafeRenderDistanceBlocks();
             double dSq = rx * rx + ry * ry + rz * rz;
             if (dSq > max * max && dSq > 1.0E-8D) {
-                // Диагностика: если виртуализация стреляет при активном DH,
-                // это видно здесь (dhActive должен быть false в этом логе).
-                if (++virtualizeDiagCounter % 300 == 1) {
-                    com.hbm_m.main.MainRegistry.LOGGER.info(
-                            "HBM NT virtualize: {} dist={} max={} dhActive={}",
-                            this.getClass().getSimpleName(),
-                            (long) Math.sqrt(dSq), (long) max, dhActive);
-                }
                 double s = max / Math.sqrt(dSq);
                 return new Vec3(rx * s, ry * s, rz * s);
             }
@@ -210,5 +202,4 @@ public abstract class ParticleNT {
         return 1.0F;
     }
 
-    private static int virtualizeDiagCounter = 0;
 }

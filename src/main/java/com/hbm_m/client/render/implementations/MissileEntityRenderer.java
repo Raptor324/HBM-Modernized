@@ -89,29 +89,30 @@ public class MissileEntityRenderer<T extends MissileBaseEntity> extends EntityRe
         MissileRenderHelper.applyLaunchFacingRotation(poseStack, launchFacing);
 
         MissileRenderData data = MissileRenderHelper.resolveFlightData(entity);
+        com.hbm_m.client.render.FrameStateProbe.snap("px.mer.pre");
 
         LightSampleCache.BASE_POSE.set(poseStack.last().pose());
         LightSampleCache.BASE_POSE_SET.set(true);
-        float prevFogStart = RenderSystem.getShaderFogStart();
-        float prevFogEnd = RenderSystem.getShaderFogEnd();
-        double dist = camera.distanceTo(lightPos.getCenter());
-        float fogEnd = Math.max(prevFogEnd > 0.0F ? prevFogEnd : 64.0F, (float) dist + 512.0F);
-        RenderSystem.setShaderFogEnd(fogEnd);
-        RenderSystem.setShaderFogStart(Math.min(prevFogStart, fogEnd * 0.85F));
+        // ВНИМАНИЕ: НЕ трогаем RenderSystem.setShaderFog*! Глобальная раздвижка
+        // тумана кадра (fogEnd = max(prev, dist+512)) утекала между кадрами и
+        // заливала мир чёрным туманом fogColor дальше ~460 блоков (мир y<0 —
+        // fogColor почти чёрный) — «чёрный экран во время полёта ракеты»,
+        // с мерцанием при переключении энтити/track-путей. Дальнему мешу туман
+        // глушится собственными юниформами block_lit (entityMissileDepthBias).
         SingleMeshVboRenderer.setEntityMissileDepthBias(true);
         try {
             if (data != null) {
                 data.render(poseStack, meshLight, lightPos, buffer);
             }
+            com.hbm_m.client.render.FrameStateProbe.snap("px.mer.mesh");
         } finally {
             SingleMeshVboRenderer.setEntityMissileDepthBias(false);
-            RenderSystem.setShaderFogStart(prevFogStart);
-            RenderSystem.setShaderFogEnd(prevFogEnd);
             LightSampleCache.BASE_POSE_SET.set(false);
         }
 
         poseStack.popPose();
         super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
+        com.hbm_m.client.render.FrameStateProbe.snap("px.mer.post");
 
     }
 

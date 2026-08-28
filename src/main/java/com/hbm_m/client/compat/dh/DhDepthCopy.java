@@ -42,6 +42,12 @@ public final class DhDepthCopy {
         if (shader == null) {
             return;
         }
+        // Fabulous: AFTER_WEATHER выполняется внутри WEATHER_TARGET — переход
+        // на main разорвал бы transparencyChain-композит. Копию глубины там
+        // не делаем (полупрозрачный DH-проход и так поверх композита).
+        if (Minecraft.useShaderTransparency()) {
+            return;
+        }
 
         Minecraft mc = Minecraft.getInstance();
         mc.getMainRenderTarget().bindWrite(false);
@@ -61,6 +67,10 @@ public final class DhDepthCopy {
         shader.safeGetUniform("OutFar").set(com.hbm_m.client.compat.dh.DhClientCompat.extendedFar());
         // Маска dither-fade зоны DH («Fade Nearby DH LODs») — там глубина-шум
         shader.safeGetUniform("DhFadeMaskDist").set(DhOcclusionGpu.ditherFadeMaskDistance());
+
+        // Oculus без пака оставляет GL-программу 0 при «свежем» с точки зрения
+        // ванильного кеша шейдере — без этого blit уйдёт в программу 0.
+        com.hbm_m.client.render.shader.ShaderBindResync.ensureFreshBind(shader);
 
         try {
             //? if < 1.21.1 {

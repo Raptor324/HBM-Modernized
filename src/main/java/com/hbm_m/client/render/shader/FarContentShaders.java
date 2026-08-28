@@ -50,4 +50,23 @@ public final class FarContentShaders {
         }
         return GameRenderer.getPositionTexColorShader();
     }
+
+    /**
+     * Аддитивный шейдер для POSITION_TEX_COLOR (вспышки, glare).
+     * Под Iris — тот же ExtendedShader пака; без Iris — nuke_add.
+     */
+    public static ShaderInstance resolveAddTexColor() {
+        if (useIrisRouting()) {
+            ShaderInstance iris = IrisExtendedShaderAccess.getTexColorShader(
+                    ShaderCompatibilityDetector.isRenderingShadowPass());
+            if (iris != null) {
+                return iris;
+            }
+        }
+        ShaderInstance custom = ModShaders.getNukeAddShader();
+        if (custom != null) {
+            return custom;
+        }
+        return GameRenderer.getPositionTexColorShader();
+    }
 }

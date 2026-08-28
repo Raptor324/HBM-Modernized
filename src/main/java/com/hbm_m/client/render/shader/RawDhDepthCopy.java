@@ -86,6 +86,12 @@ public final class RawDhDepthCopy {
         int prevVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         int prevActiveTex = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
         boolean cullWasEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
+        // Предыдущая текстура юнита 0: восстанавливаем ЕЁ, а не сырой ноль.
+        // Раньше после прохода на TU0 оставалась пустая текстура при живом
+        // кеше GlStateManager → следующие ванильные _bindTexture но-опились,
+        // и последующие дро (частицы) сэмплировали «ничто» (чёрные квадраты).
+        GlStateManager._activeTexture(GL13.GL_TEXTURE0);
+        int prevUnit0Tex = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
 
         GlStateManager._colorMask(false, false, false, false);
         RenderSystem.depthMask(true);
@@ -93,7 +99,7 @@ public final class RawDhDepthCopy {
         // Пишем только более близкую глубину: ванильная геометрия в пикселе
         // сохраняется, небо (1.0) заменяется на LOD.
         RenderSystem.depthFunc(GL11.GL_LESS);
-        GL11.glDisable(GL11.GL_CULL_FACE);
+        RenderSystem.disableCull();
 
         GL20.glUseProgram(program);
         GL20.glUniform1f(uDhNear, dhNear);
@@ -101,23 +107,25 @@ public final class RawDhDepthCopy {
         GL20.glUniform1f(uOutNear, com.hbm_m.client.compat.dh.DhClientCompat.extendedNear());
         GL20.glUniform1f(uOutFar, com.hbm_m.client.compat.dh.DhClientCompat.extendedFar());
         GL20.glUniform1f(uFadeMaskDist, com.hbm_m.client.compat.dh.DhOcclusionGpu.ditherFadeMaskDistance());
-        GL13.glActiveTexture(GL13.GL_TEXTURE0);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, depthTextureId);
+        GlStateManager._activeTexture(GL13.GL_TEXTURE0);
+        GlStateManager._bindTexture(depthTextureId);
         GL20.glUniform1i(uSampler, 0);
 
         GlStateManager._glBindVertexArray(vao);
         GL11.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, 4);
 
-        // Восстановление: отвязываем DH-текстуру от юнита 0 (feedback), затем стейт.
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
+        // Восстановление: возвращаем ПРЕДЫДУЩУЮ текстуру юнита 0 (feedback),
+        // затем стейт — всё через управляемый API, чтобы кеш остался честным.
+        GlStateManager._activeTexture(GL13.GL_TEXTURE0);
+        GlStateManager._bindTexture(prevUnit0Tex);
         GlStateManager._colorMask(true, true, true, true);
         RenderSystem.depthFunc(GL43.GL_LEQUAL);
         if (cullWasEnabled) {
-            GL11.glEnable(GL11.GL_CULL_FACE);
+            RenderSystem.enableCull();
         }
         GlStateManager._glBindVertexArray(prevVao);
         GL20.glUseProgram(prevProgram);
-        GL13.glActiveTexture(prevActiveTex);
+        GlStateManager._activeTexture(prevActiveTex);
     }
 
     private static boolean ensureProgram() {

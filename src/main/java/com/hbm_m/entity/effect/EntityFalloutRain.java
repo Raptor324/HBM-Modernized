@@ -66,6 +66,16 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
     private final LongList chunksToProcess = new LongArrayList();
     private final LongList outerChunksToProcess = new LongArrayList();
 
+    /**
+     * Переиспользуемые буферы отложенных чанков. Раньше дефер делал add(0, ...) прямо
+     * в основную очередь — O(n) сдвиг массива на КАЖДЫЙ отложенный чанк давал O(n^2)
+     * на один проход бюджета (на очередях в десятки тысяч чанков это были сотни мс,
+     * видимые профилем как self-time tick()). Теперь отложенные копятся в буфер и
+     * добавляются в дальний конец очереди одним батчем после выхода из цикла.
+     */
+    private final LongList deferredInner = new LongArrayList();
+    private final LongList deferredOuter = new LongArrayList();
+
     /** Переиспользуемый буфер кварт 4x4 для смены биомов ([bx * 4 + bz]). */
     @SuppressWarnings("unchecked")
     private final Holder<Biome>[] quartTargets = new Holder[16];
@@ -132,6 +142,9 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
                 int budget = getMk5BudgetMs();
                 int deferred = 0;
 
+                deferredInner.clear();
+                deferredOuter.clear();
+
                 while (System.currentTimeMillis() < start + budget) {
                     boolean outer;
                     long chunkPos;
@@ -150,17 +163,23 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
                     if (processChunkColumns(ChunkPos.getX(chunkPos), ChunkPos.getZ(chunkPos), outer)) {
                         deferred = 0;
                     } else {
-                        if (outer) {
-                            outerChunksToProcess.add(0, chunkPos);
-                        } else {
-                            chunksToProcess.add(0, chunkPos);
-                        }
+                        (outer ? deferredOuter : deferredInner).add(chunkPos);
                         deferred++;
                         int remaining = chunksToProcess.size() + outerChunksToProcess.size();
                         if (deferred >= remaining) {
                             break;
                         }
                     }
+                }
+
+                // Отложенные чанки возвращаем в дальний (головной) конец очередей одним
+                // батчем — сохраняется исходная семантика "deferred обрабатываются
+                // последними", но без квадратичного сдвига массива
+                if (!deferredInner.isEmpty()) {
+                    chunksToProcess.addAll(0, deferredInner);
+                }
+                if (!deferredOuter.isEmpty()) {
+                    outerChunksToProcess.addAll(0, deferredOuter);
                 }
             }
 
@@ -307,7 +326,15 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         void set(int x, int y, int z, BlockState state) {
             if (WorldUtil.setBlockFast(chunk, writePos.set(x, y, z), state)) {
                 modified = true;
-                sectionIdx = Integer.MIN_VALUE; // секции могли пересоздаться
+                // Секции могли пересоздаться, но индекс не меняется — просто перечитываем
+                // текущую секцию, чтобы не терять кэш на следующем же чтении
+                LevelChunkSection[] arr = chunk.getSections();
+                if (sectionIdx >= 0 && sectionIdx < arr.length) {
+                    section = arr[sectionIdx];
+                } else {
+                    section = null;
+                    sectionIdx = Integer.MIN_VALUE;
+                }
             }
         }
     }

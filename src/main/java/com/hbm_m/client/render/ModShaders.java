@@ -17,6 +17,7 @@ public class ModShaders {
     private static ShaderInstance blockLitInstancedSlicedShader;
     private static ShaderInstance thermalVisionShader;
     private static ShaderInstance nukeCloudShader;
+    private static ShaderInstance nukeAddShader;
     private static ShaderInstance dhDepthBlitShader;
 
     public static ShaderInstance getNukeCloudShader() {
@@ -25,6 +26,14 @@ public class ModShaders {
 
     public static void setNukeCloudShader(ShaderInstance shader) {
         nukeCloudShader = shader;
+    }
+
+    public static ShaderInstance getNukeAddShader() {
+        return nukeAddShader;
+    }
+
+    public static void setNukeAddShader(ShaderInstance shader) {
+        nukeAddShader = shader;
     }
 
     public static ShaderInstance getDhDepthBlitShader() {

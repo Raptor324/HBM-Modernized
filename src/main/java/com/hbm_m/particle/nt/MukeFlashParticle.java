@@ -8,6 +8,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.FogRenderer;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.resources.ResourceLocation;
@@ -77,8 +78,18 @@ public class MukeFlashParticle extends ParticleNT {
         return new MukeCloudParticle(level, x, y, z, mx, my, mz);
     }
 
+    /**
+     * В обычном проходе частиц вспышка НЕ рисуется: она обязана быть
+     * поверх всех остальных частиц, а те идут в том же батче раньше.
+     * Вся отрисовка — в {@link #renderFlashOnly}, который EngineHandler
+     * вызывает отдельным проходом ПОСЛЕ частиц и мешей.
+     */
     @Override
     public void render(VertexConsumer ignored, Camera camera, float partialTicks, PoseStack levelPoseStack) {
+    }
+
+    @Override
+    public void renderFlashOnly(MultiBufferSource buffer, Camera camera, float partialTicks, PoseStack levelPoseStack) {
         FogRenderer.setupNoFog();
 
         RandomSource rand = RandomSource.create();
@@ -103,10 +114,14 @@ public class MukeFlashParticle extends ParticleNT {
         Vector3f left = new Vector3f(camera.getLeftVector()).mul(scale);
         Vector3f up = new Vector3f(camera.getUpVector()).mul(scale);
 
-        VertexConsumer consumer = net.minecraft.client.Minecraft.getInstance()
-                .renderBuffers().bufferSource()
+        // ИЗОЛИРОВАННЫЙ буфер движка (правило CustomRenderTypes): sortOnUpload-типы
+        // не должны регистрироваться в общем bufferSource под ImmediatelyFast.
+        VertexConsumer consumer = ParticleEngineNT.buffer()
                 .getBuffer(getRenderType());
 
+        // Внешнее свечение: 24 лепестка, тёплый белый. Блендинг NUKE_FLASH
+        // аддитивный (LIGHTNING), поэтому «ослепительность» = альфа: 0.85
+        // вместо прежних 0.5.
         for (int i = 0; i < 24; i++) {
             rand.setSeed(i * 31L + 1L);
 
@@ -115,8 +130,15 @@ public class MukeFlashParticle extends ParticleNT {
             float pZ = (float) (dZ + (rand.nextDouble() * 15 - 7.5) * vScale);
 
             ImmediateVertexWriter.billboardQuad(consumer, null, pX, pY, pZ, left, up,
-                    1.0F, 0.9F, 0.75F, alpha * 0.5F, 1F, 1F, 0F, 0F);
+                    1.0F, 0.9F, 0.75F, alpha * 0.85F, 1F, 1F, 0F, 0F);
         }
+
+        // Раскалённое ядро: чистый белый, насыщает аддитивный блендинг
+        // до сплошного белого в центре вспышки.
+        Vector3f coreLeft = new Vector3f(camera.getLeftVector()).mul(scale * 0.45F);
+        Vector3f coreUp = new Vector3f(camera.getUpVector()).mul(scale * 0.45F);
+        ImmediateVertexWriter.billboardQuad(consumer, null, dX, dY, dZ, coreLeft, coreUp,
+                1.0F, 1.0F, 1.0F, alpha, 1F, 1F, 0F, 0F);
     }
 
     @Override

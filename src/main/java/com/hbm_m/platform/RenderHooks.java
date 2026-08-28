@@ -224,6 +224,7 @@ public final class RenderHooks {
      */
     public static void pushLevelModelView(Matrix4f levelRotation) {
         //? if < 1.21.1 {
+        CURRENT_LEVEL_ROTATION.set(new Matrix4f(levelRotation));
         PoseStack stack = com.mojang.blaze3d.systems.RenderSystem.getModelViewStack();
         stack.pushPose();
         stack.setIdentity();
@@ -231,6 +232,7 @@ public final class RenderHooks {
         com.mojang.blaze3d.systems.RenderSystem.applyModelViewMatrix();
         //?} else {
         /*org.joml.Matrix4fStack stack = com.mojang.blaze3d.systems.RenderSystem.getModelViewStack();
+        CURRENT_LEVEL_ROTATION.set(new org.joml.Matrix4f(levelRotation));
         stack.pushMatrix();
         stack.identity();
         stack.mul(levelRotation);
@@ -238,8 +240,27 @@ public final class RenderHooks {
         *///?}
     }
 
+    /**
+     * Копия матрицы поворота камеры уровня, переданная в последний
+     * {@link #pushLevelModelView} на этом потоке ({@code null} вне окна пуша).
+     *
+     * ЗАЧЕМ НУЖНА ОТДЕЛЬНО: под Oculus (даже с выключенным шейдерпаком) ambient
+     * {@code RenderSystem.ModelViewMat} внутри нашего окна AFTER_WEATHER бывает
+     * перезаписан в identity чужим bookkeeping'ом (диагностика «vbo.mvm»:
+     * rsMV=identity в кадрах с мешем). Рендеры, которым критичен поворот
+     * камеры (меш ракет), должны брать его отсюда — детерминированно.
+     */
+    private static final ThreadLocal<Matrix4f> CURRENT_LEVEL_ROTATION = new ThreadLocal<>();
+
+    /** Повтор последнего {@link #pushLevelModelView}; null вне окна. */
+    @org.jetbrains.annotations.Nullable
+    public static Matrix4f currentLevelRotation() {
+        return CURRENT_LEVEL_ROTATION.get();
+    }
+
     /** Восстанавливает ModelViewMat после pushLevelModelView. */
     public static void popLevelModelView() {
+        CURRENT_LEVEL_ROTATION.remove();
         //? if < 1.21.1 {
         PoseStack stack = com.mojang.blaze3d.systems.RenderSystem.getModelViewStack();
         stack.popPose();
