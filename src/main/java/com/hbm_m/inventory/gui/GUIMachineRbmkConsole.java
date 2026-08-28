@@ -61,19 +61,16 @@ public class GUIMachineRbmkConsole extends AbstractContainerScreen<MachineRbmkCo
         };
     }
 
-    // The original texture only has 6 mini-screen mode icons at y=238
-    // (NONE/COL_TEMP/ROD_EXTRACTION/FUEL_DEPLETION/FUEL_POISON/FUEL_TEMP —
-    // see original ScreenType enum), because the original console's 6 mini
-    // screens cycled through *display modes*, not column types. The
-    // modernized BlockEntity has no ScreenType/RBMKScreen equivalent and
-    // instead cycles `screenTypes[]` through ColumnType (11 values) — a
-    // deliberate, out-of-scope data-model difference noted by the prior
-    // audit. We can't restore the original 6 display-mode icons since that
-    // data doesn't exist here, so we wrap ColumnType's ordinal into the 6
-    // available icon slots to stay within the texture's actual bounds
-    // instead of sampling garbage pixels past x=108.
-    private static int typeOffset18(ColumnType t) {
-        return (t.ordinal() % 6) * 18;
+    /**
+     * The texture holds exactly six 18px mini-screen mode icons at y=238, in CE's
+     * {@code ScreenType} order - NONE / COL_TEMP / ROD_EXTRACTION / FUEL_DEPLETION / FUEL_POISON /
+     * FUEL_TEMP. The console block entity now stores that same enum, so the icon is a straight
+     * lookup again; it used to store a {@code ColumnType} (eleven values) and the offset had to be
+     * wrapped modulo six to stay inside the texture, which meant the icon shown had nothing to do
+     * with what the screen was measuring.
+     */
+    private static int typeOffset18(MachineRbmkConsoleBlockEntity.ScreenType t) {
+        return t.ordinal() * 18;
     }
 
     // ─── State ───────────────────────────────────────────────────────────────
@@ -135,7 +132,7 @@ public class GUIMachineRbmkConsole extends AbstractContainerScreen<MachineRbmkCo
             for (int col = 0; col < 2; col++) {
                 int id = row * 2 + col;
                 if (id < MachineRbmkConsoleBlockEntity.SCREENS) {
-                    ColumnType st = console.screenTypes[id];
+                    MachineRbmkConsoleBlockEntity.ScreenType st = console.screenTypes[id];
                     g.blit(TEXTURE, leftPos + 6 + 40 * col, topPos + 8 + 21 * row,
                             typeOffset18(st), 238, 18, 18);
                 }
@@ -391,9 +388,11 @@ public class GUIMachineRbmkConsole extends AbstractContainerScreen<MachineRbmkCo
             return true;
         }
 
-        // Cycle boiler steam grade (for selected boiler columns)
+        // Cycle boiler steam grade on every selected boiler channel (CE: the "compressor" key).
+        // This used to fire sendAssignColor(-1) as a stand-in, which did nothing to the boilers and
+        // instead cleared the colour group of any control rod that happened to be selected.
         if (inBtn(imx, imy, 70, 82, 12, 12)) {
-            RBMKConsoleControlPacket.sendAssignColor(console.getBlockPos(), -1, selectedIndices()); // placeholder
+            RBMKConsoleControlPacket.sendCompressor(console.getBlockPos(), selectedIndices());
             playClick(1f); return true;
         }
 

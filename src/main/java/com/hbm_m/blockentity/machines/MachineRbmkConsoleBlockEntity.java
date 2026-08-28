@@ -54,23 +54,34 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
 
     public static final int GRID  = 15;
     public static final int AREA  = GRID * GRID;
-    public static final int FLUX_BUF = 20;
+    /** CE keeps 60 samples ({@code fluxDisplayBuffer}); the port only kept 20, so the console's
+     *  flux graph covered a third of the history it is drawn to show. */
+    public static final int FLUX_BUF = 60;
     public static final int SCREENS  = 6;
 
     // ─── State (server + client synced) ──────────────────────────────────────
 
     public RBMKColumnData[] columns    = new RBMKColumnData[AREA];
     public int[]            fluxBuffer = new int[FLUX_BUF];
-    /** Console display screen cycle types. */
-    public ColumnType[]     screenTypes;
     /**
-     * Per-screen aggregate readout text, recomputed in {@link #scanReactor} - 1:1 in spirit with
-     * the original's 5 {@code ScreenType} averages (column temp / rod extraction / fuel
-     * depletion / fuel poison / fuel temp), adapted to this port's screen model where each of the
-     * 6 screens already picks a {@link ColumnType} to filter on (via control action 3) rather than
-     * an explicit column selection: the screen shows the average of whichever stats are relevant
-     * to that column type across every column of it currently on the grid.
+     * What each of the six screens measures, 1:1 with CE's {@code ScreenType}. The port used to
+     * store a {@link ColumnType} here instead and average "every column of that type on the grid",
+     * which is not what the console does: in CE a screen picks a <em>statistic</em> and the
+     * operator separately picks <em>which columns</em> feed it, so one screen can watch the core
+     * temperature of one bank of channels while another watches the extraction of a second bank.
      */
+    public enum ScreenType {
+        NONE, COL_TEMP, ROD_EXTRACTION, FUEL_DEPLETION, FUEL_POISON, FUEL_TEMP;
+
+        public static final ScreenType[] VALUES = values();
+    }
+
+    public ScreenType[] screenTypes;
+
+    /** The column indices each screen averages over - CE's {@code RBMKScreen.columns}. */
+    public int[][] screenColumns;
+
+    /** Per-screen readout text, recomputed in {@link #scanReactor}. */
     public String[] screenText;
     /** Bottom-left corner of the reactor grid (same Y as console). Null = not configured. */
     public BlockPos reactorOrigin = null;
@@ -81,8 +92,9 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
 
     public MachineRbmkConsoleBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.RBMK_CONSOLE_BE.get(), pos, state);
-        screenTypes = new ColumnType[SCREENS];
-        Arrays.fill(screenTypes, ColumnType.FUEL);
+        screenTypes = new ScreenType[SCREENS];
+        Arrays.fill(screenTypes, ScreenType.NONE);
+        screenColumns = new int[SCREENS][0];
         screenText = new String[SCREENS];
         Arrays.fill(screenText, "");
     }
@@ -184,38 +196,73 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
         setChanged();
     }
 
-    /** Recomputes {@link #screenText}: averages of every stat relevant to each screen's {@link ColumnType} filter. */
+    /**
+     * 1:1 with CE's {@code prepareScreenInfo}: each screen averages one statistic over the columns
+     * the operator assigned to it. Columns that cannot supply that statistic (a moderator has no
+     * enrichment, a fuel channel has no extraction level) are skipped rather than counted as zero.
+     */
     private void computeScreenText() {
         for (int s = 0; s < SCREENS; s++) {
-            ColumnType filter = screenTypes[s];
-            int count = 0;
-            double heatSum = 0, enrichSum = 0, xenonSum = 0, coreHeatSum = 0, levelSum = 0;
+            ScreenType type = screenTypes[s];
+            if (type == ScreenType.NONE) {
+                screenText[s] = "";
+                continue;
+            }
 
-            for (RBMKColumnData col : columns) {
-                if (col == null || col.type != filter) continue;
-                count++;
-                heatSum += col.data.getDouble("heat");
-                if (filter == ColumnType.FUEL) {
-                    enrichSum   += col.data.getDouble("enrichment") * 100.0;
-                    xenonSum    += col.data.getDouble("xenon");
-                    coreHeatSum += col.data.getDouble("c_coreHeat");
-                } else if (filter == ColumnType.CONTROL) {
-                    levelSum += col.data.getDouble("level") * 100.0;
+            double value = 0;
+            int count = 0;
+
+            for (int idx : screenColumns[s]) {
+                if (idx < 0 || idx >= AREA) continue;
+                RBMKColumnData col = columns[idx];
+                if (col == null) continue;
+
+                boolean hasFuel = col.type == ColumnType.FUEL;
+
+                switch (type) {
+                    case COL_TEMP -> {
+                        count++;
+                        value += col.data.getDouble("heat");
+                    }
+                    case FUEL_DEPLETION -> {
+                        if (hasFuel && col.data.getDouble("c_maxHeat") > 0) {
+                            count++;
+                            value += 100.0 - col.data.getDouble("enrichment") * 100.0;
+                        }
+                    }
+                    case FUEL_POISON -> {
+                        if (hasFuel && col.data.getDouble("c_maxHeat") > 0) {
+                            count++;
+                            value += col.data.getDouble("xenon");
+                        }
+                    }
+                    case FUEL_TEMP -> {
+                        if (hasFuel && col.data.getDouble("c_maxHeat") > 0) {
+                            count++;
+                            value += col.data.getDouble("c_heat");
+                        }
+                    }
+                    case ROD_EXTRACTION -> {
+                        if (col.type == ColumnType.CONTROL) {
+                            count++;
+                            value += col.data.getDouble("level") * 100.0;
+                        }
+                    }
+                    default -> { }
                 }
             }
 
             if (count == 0) {
-                screenText[s] = filter.name() + ": --";
+                screenText[s] = "";
                 continue;
             }
 
-            String text = switch (filter) {
-                case FUEL -> String.format("FUEL  T:%.0f  E:%.0f%%  Xe:%.0f%%  Core:%.0f",
-                        heatSum / count, enrichSum / count, xenonSum / count, coreHeatSum / count);
-                case CONTROL -> String.format("CTRL  T:%.0f  Lvl:%.0f%%", heatSum / count, levelSum / count);
-                default -> String.format("%s  T:%.0f  n=%d", filter.name(), heatSum / count, count);
+            String text = ((int) (value / count * 10)) / 10D + "";
+            screenText[s] = switch (type) {
+                case COL_TEMP, FUEL_TEMP -> text + "\u00B0C";
+                case FUEL_DEPLETION, FUEL_POISON, ROD_EXTRACTION -> text + "%";
+                default -> text;
             };
-            screenText[s] = text;
         }
     }
 
@@ -248,11 +295,10 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
                     }
                 }
             }
-            case 3 -> { // cycle screen type
+            case 3 -> { // cycle screen type (CE: the "toggle" key)
                 if (iVal >= 0 && iVal < SCREENS) {
-                    ColumnType[] types = ColumnType.values();
-                    int cur = screenTypes[iVal].ordinal();
-                    screenTypes[iVal] = types[(cur + 1) % types.length];
+                    int next = screenTypes[iVal].ordinal() + 1;
+                    screenTypes[iVal] = ScreenType.VALUES[next % ScreenType.VALUES.length];
                     setChanged();
                 }
             }
@@ -261,13 +307,20 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
                     reactorOrigin = new BlockPos(selected[0], selected[1], selected[2]);
                 setChanged();
             }
-            case 5 -> {
-                // No-op: this port's screens already aggregate "every column of the selected
-                // ColumnType" (see computeScreenText/action 3) rather than an explicit
-                // player-picked column subset like the original's ScreenType selection, so
-                // there's nothing to assign here. Kept as a reserved action id for compatibility
-                // with existing client packet senders.
-                setChanged();
+            case 5 -> { // assign the current grid selection to screen `iVal` (CE: the "id" key)
+                if (iVal >= 0 && iVal < SCREENS) {
+                    screenColumns[iVal] = selected == null ? new int[0] : selected.clone();
+                    setChanged();
+                }
+            }
+            case 6 -> { // cycle the steam compressor on every selected boiler channel
+                for (int idx : selected) {
+                    BlockPos cPos = idxToPos(idx);
+                    if (cPos != null && level.getBlockEntity(cPos)
+                            instanceof com.hbm_m.blockentity.machines.rbmk.RBMKBoilerBlockEntity boiler) {
+                        boiler.cycleCompressor();
+                    }
+                }
             }
         }
     }
@@ -295,9 +348,11 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
             tag.putInt("oz", reactorOrigin.getZ());
         }
         ListTag screens = new ListTag();
-        for (ColumnType st : screenTypes) {
+        for (int i = 0; i < SCREENS; i++) {
             CompoundTag ct = new CompoundTag();
-            ct.putString("t", st.name());
+            ct.putString("t", screenTypes[i].name());
+            // CE persists each screen's column selection alongside its type (nbt "s<i>").
+            ct.putIntArray("s", screenColumns[i]);
             screens.add(ct);
         }
         tag.put("screens", screens);
@@ -318,8 +373,11 @@ public class MachineRbmkConsoleBlockEntity extends BlockEntity implements MenuPr
             reactorOrigin = new BlockPos(tag.getInt("ox"), tag.getInt("oy"), tag.getInt("oz"));
         ListTag screens = tag.getList("screens", 10);
         for (int i = 0; i < Math.min(screens.size(), SCREENS); i++) {
-            try { screenTypes[i] = ColumnType.valueOf(screens.getCompound(i).getString("t")); }
-            catch (Exception ignored) {}
+            CompoundTag ct = screens.getCompound(i);
+            // Older saves stored a ColumnType name here; anything unrecognised falls back to NONE.
+            try { screenTypes[i] = ScreenType.valueOf(ct.getString("t")); }
+            catch (Exception ignored) { screenTypes[i] = ScreenType.NONE; }
+            screenColumns[i] = ct.contains("s") ? ct.getIntArray("s") : new int[0];
         }
         fluxBuffer = tag.getIntArray("flux");
         if (fluxBuffer.length != FLUX_BUF) fluxBuffer = new int[FLUX_BUF];

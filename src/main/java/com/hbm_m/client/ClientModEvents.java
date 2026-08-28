@@ -56,6 +56,10 @@ public class ClientModEvents {
 
         initialized = true;
 
+        // Induced radioactivity from a neutron flux gets its own tooltip line; kept as its own
+        // handler because - unlike the block below - it must also apply to armour.
+        NeutronActivationTooltip.init();
+
 
 
         ClientTooltipEvent.ITEM.register((stack, lines, flag) -> {

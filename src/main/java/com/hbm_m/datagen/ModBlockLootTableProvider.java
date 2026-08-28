@@ -70,6 +70,10 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         dropMachineBatteryWithNbt(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM.get());
         dropMachineBatteryWithNbt(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM.get());
 
+        // 1.2) Breaking a stacked RBMK panel slab returns both singles it was made of.
+        dropDoubleSlab(ModBlocks.DECO_RBMK_PANEL_SLAB4.get(), ModBlocks.DECO_RBMK_PANEL_SLAB2.get());
+        dropDoubleSlab(ModBlocks.DECO_RBMK_SMOOTH_PANEL_SLAB4.get(), ModBlocks.DECO_RBMK_SMOOTH_PANEL_SLAB2.get());
+
         // 2)  ПЕРЕОПРЕДЕЛЯЕМ для ящиков - ПУСТЫЕ таблицы!
         dropEmptyTable(ModBlocks.CRATE_IRON.get());
         dropEmptyTable(ModBlocks.CRATE_STEEL.get());
@@ -441,5 +445,17 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         }
         return list;
     }
+
+    /** CE's {@code quantityDropped}: a double slab yields two of its single form. */
+    private void dropDoubleSlab(Block doubleSlab, Block singleSlab) {
+        this.add(doubleSlab, LootTable.lootTable()
+                .withPool(this.applyExplosionDecay(doubleSlab,
+                        net.minecraft.world.level.storage.loot.LootPool.lootPool()
+                                .setRolls(net.minecraft.world.level.storage.loot.providers.number.ConstantValue.exactly(1.0F))
+                                .add(net.minecraft.world.level.storage.loot.entries.LootItem.lootTableItem(singleSlab)
+                                        .apply(net.minecraft.world.level.storage.loot.functions.SetItemCountFunction
+                                                .setCount(net.minecraft.world.level.storage.loot.providers.number.ConstantValue.exactly(2.0F)))))));
+    }
+
 }
 //?}

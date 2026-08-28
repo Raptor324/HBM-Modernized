@@ -92,9 +92,12 @@ public final class MainRegistry {
         TickEvent.SERVER_POST.register(server -> {
             EnergyNetworkManager.get(server.overworld()).tick();
             com.hbm_m.api.network.UniNodespace.updateNodespace(server);
-            // Process RBMK neutron streams for every loaded server level
+            // Process RBMK neutron streams for every loaded server level. The tick counter that
+            // paces the node-cache sweep is advanced once per server tick, not once per level.
+            NeutronNodeWorld.removeEmptyWorlds();
+            boolean rbmkCacheClear = NeutronNodeWorld.advanceTick();
             for (ServerLevel level : server.getAllLevels()) {
-                NeutronNodeWorld.tick(level);
+                NeutronNodeWorld.tick(level, rbmkCacheClear);
             }
         });
 
@@ -113,6 +116,8 @@ public final class MainRegistry {
     }
 
     private static void commonSetup() {
+        // Panel slabs reference each other, so the pairing runs once after registration.
+        com.hbm_m.block.ModBlocks.linkSlabPairs();
         com.hbm_m.handler.HTTPHandler.loadStats();
         ModPacketHandler.register();
         com.hbm_m.handler.HazmatRegistry.registerHazmats();

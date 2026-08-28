@@ -27,8 +27,12 @@ public class RBMKLidItem extends Item {
         if (level.isClientSide) return InteractionResult.SUCCESS;
 
         BlockPos pos = ctx.getClickedPos();
-        BlockEntity be = level.getBlockEntity(pos);
-        if (be instanceof RBMKColumnBlockEntity col && col.isLidRemovable() && !col.hasLid()) {
+        // CE resolves the clicked block through RBMKBase.findCore, so clicking anywhere on the
+        // column - including its dummy segments, which is where the lid visually goes - works. The
+        // port only accepted a click on the base block, which is normally buried in the floor.
+        com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity col =
+                com.hbm_m.blockentity.machines.rbmk.RBMKSteamInletBlockEntity.findColumnCore(level, pos);
+        if (col != null && col.isLidRemovable() && !col.hasLid()) {
             col.setLidState(lidType);
             if (!ctx.getPlayer().isCreative())
                 ctx.getItemInHand().shrink(1);
@@ -36,7 +40,7 @@ public class RBMKLidItem extends Item {
             if (lidType == 2)
                 level.playSound(null, pos, SoundEvents.GLASS_PLACE, SoundSource.BLOCKS, 1.0f, 0.8f);
             else
-                level.playSound(null, pos, SoundEvents.STONE_PLACE, SoundSource.BLOCKS, 1.0f, 1.0f);
+                level.playSound(null, pos, SoundEvents.STONE_PLACE, SoundSource.BLOCKS, 1.0f, 0.8f);
             return InteractionResult.SUCCESS;
         }
         return InteractionResult.PASS;

@@ -301,6 +301,8 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .texture("layer0", mcLoc("item/music_disc_13"));
         withExistingParent(ModItems.MUSIC_DISC_GLASS.getId().getPath(), "item/generated")
                 .texture("layer0", modLoc("item/record_glass"));
+        withExistingParent(ModItems.MUSIC_DISC_CH.getId().getPath(), "item/generated")
+                .texture("layer0", modLoc("item/record_ch"));
 
         simpleItem(ModItems.HEART_PIECE);
         simpleItem(ModItems.HEART_CONTAINER);
@@ -1023,6 +1025,12 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.ASH_MISC);
         simpleItem(ModItems.ASH_FLY);
         simpleItem(ModItems.ASH_SOOT);
+        simpleItem(ModItems.OIL_TAR_CRUDE);
+        simpleItem(ModItems.OIL_TAR_CRACK);
+        simpleItem(ModItems.OIL_TAR_COAL);
+        simpleItem(ModItems.OIL_TAR_WOOD);
+        simpleItem(ModItems.OIL_TAR_WAX);
+        simpleItem(ModItems.OIL_TAR_PARAFFIN);
         simpleItem(ModItems.FLUORITE);
         simpleItem(ModItems.LIGNITE);
         simpleItem(ModItems.CINNABAR);

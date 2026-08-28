@@ -784,16 +784,6 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineFoundryChannelBlockEntity::new,
                             ModBlocks.FOUNDRY_CHANNEL.get()).build(null));
 
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.SU47TrophyBlockEntity>> SU47_TROPHY_BE =
-            BLOCK_ENTITIES.register("su47_trophy_be", () ->
-                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.SU47TrophyBlockEntity::new,
-                            ModBlocks.SU47_TROPHY.get()).build(null));
-
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.JAS39TrophyBlockEntity>> JAS39_TROPHY_BE =
-            BLOCK_ENTITIES.register("jas39_trophy_be", () ->
-                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.JAS39TrophyBlockEntity::new,
-                            ModBlocks.JAS39_TROPHY.get()).build(null));
-
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineFoundryMoldBlockEntity>> FOUNDRY_MOLD_BE =
             BLOCK_ENTITIES.register("foundry_mold_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineFoundryMoldBlockEntity::new, ModBlocks.FOUNDRY_MOLD.get()).build(null));

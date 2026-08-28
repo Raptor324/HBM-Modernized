@@ -783,6 +783,16 @@
       }
     ]
   },
+  "music_disc.ch": {
+    "category": "record",
+    "subtitle": "item.hbm_m.music_disc_ch.desc",
+    "sounds": [
+      {
+        "name": "hbm_m:music/record_ch",
+        "stream": true
+      }
+    ]
+  },
   "block.rbmk_explosion": {
     "category": "block",
     "subtitle": "sounds.hbm_m.subtitle.rbmk_explosion",

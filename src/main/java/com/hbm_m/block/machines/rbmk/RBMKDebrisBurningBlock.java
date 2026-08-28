@@ -28,10 +28,18 @@ public class RBMKDebrisBurningBlock extends Block {
         super(props);
     }
 
-    /** Original: {@code tickRate} of 20-40 ticks. */
+    /**
+     * CE's {@code RBMKDebrisBurning.tickRate} is 100-120 ticks, not 20-40. The port ticked five
+     * times as fast, so with the same 1-in-100 burn-out roll the fire went out roughly five times
+     * sooner than intended.
+     */
     private static int nextDelay(RandomSource random) {
-        return 20 + random.nextInt(20);
+        return 100 + random.nextInt(20);
     }
+
+    /** Range and strength of the heat field around burning rubble (CE: {@code radiate(.., 32, 0, 0, 50)}). */
+    private static final double FIRE_RANGE = 32D;
+    private static final float FIRE_STRENGTH = 50F;
 
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
@@ -41,6 +49,10 @@ public class RBMKDebrisBurningBlock extends Block {
 
     @Override
     public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+        // Burning rubble is genuinely hot: CE bathes a 32-block radius in a fire field. The port
+        // only drew flame particles, so you could stand in the middle of a burning crater unharmed.
+        scorch(level, pos, FIRE_RANGE, FIRE_STRENGTH);
+
         if (random.nextInt(5) == 0) {
             spawnFlame(level, pos, random);
             level.playSound(null, pos, SoundEvents.FIRE_AMBIENT, SoundSource.BLOCKS,
@@ -67,11 +79,36 @@ public class RBMKDebrisBurningBlock extends Block {
         }
     }
 
-    /** The original checks foam_layer / block_foam / sand_boron_layer / boron sand mix. */
+    /** CE checks for boron sand and nothing else. */
     static boolean isSuppressant(BlockState state) {
-        return state.is(ModBlocks.SAND_BORON.get())
-                || state.is(Blocks.WATER)
-                || state.getBlock().getDescriptionId().contains("foam");
+        return state.is(ModBlocks.SAND_BORON.get());
+    }
+
+    /**
+     * CE's {@code ContaminationUtil.radiate} fire term: damage falls off with the square of the
+     * distance and the entity is set alight for five seconds once it is above the noise floor.
+     */
+    static void scorch(ServerLevel level, BlockPos pos, double range, float strength) {
+        double cx = pos.getX() + 0.5, cy = pos.getY() + 0.5, cz = pos.getZ() + 0.5;
+        net.minecraft.world.phys.AABB area = new net.minecraft.world.phys.AABB(pos).inflate(range);
+
+        for (net.minecraft.world.entity.LivingEntity e :
+                level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, area)) {
+            if (e.fireImmune()) continue;
+
+            double dx = e.getX() - cx;
+            double dy = (e.getY() + e.getEyeHeight()) - cy;
+            double dz = e.getZ() - cz;
+            double len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            if (len > range) continue;
+
+            double dmgLen = Math.max(len, range * 0.05D);
+            float damage = (float) (strength / (dmgLen * dmgLen));
+            if (damage <= 0.025F) continue;
+
+            e.hurt(level.damageSources().inFire(), damage);
+            e.setSecondsOnFire(5);
+        }
     }
 
     /**

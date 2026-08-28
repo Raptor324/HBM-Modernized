@@ -716,10 +716,6 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.CARGO_ELEVATOR_BE.get(),
                 com.hbm_m.client.render.implementations.CargoElevatorRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_ROD_BE.get(),          RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.SU47_TROPHY_BE.get(),
-                com.hbm_m.client.render.implementations.SU47TrophyRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.JAS39_TROPHY_BE.get(),
-                com.hbm_m.client.render.implementations.JAS39TrophyRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_BLANK_BE.get(),        RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_ABSORBER_BE.get(),     RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_REFLECTOR_BE.get(),    RBMKColumnRenderer::new);
@@ -732,7 +728,7 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.RBMK_CONTROL_BE.get(),      RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_CONTROL_AUTO_BE.get(), RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_LOADER_BE.get(),        RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_AUTOLOADER_BE.get(),    RBMKColumnRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.RBMK_AUTOLOADER_BE.get(),    com.hbm_m.client.render.rbmk.RBMKAutoloaderRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_CRANE_CONSOLE_BE.get(), com.hbm_m.client.render.rbmk.RBMKCraneConsoleRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_PANEL_BE.get(),         RBMKColumnRenderer::new);
         // The 7 RTTY panel devices each get their own renderer, ported 1:1 from the original's

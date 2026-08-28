@@ -54,6 +54,7 @@ public class RBMKControlAutoBlockEntity extends RBMKControlBlockEntity {
     public static void tick(Level level, BlockPos pos, BlockState state, RBMKControlAutoBlockEntity be) {
         baseTick(level, pos, state, be);
         if (!level.isClientSide) {
+            be.updatePower(level);
             be.lastLevel = be.level;
             be.computeTarget();
             be.moveLevelToTarget(level);

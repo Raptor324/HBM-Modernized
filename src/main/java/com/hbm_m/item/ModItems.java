@@ -658,6 +658,19 @@ public class ModItems {
                     20 * 62
             ));
 
+    /**
+     * Schweizerpsalm - the Swiss national anthem. Length is the source file's 1:24 rounded up; the
+     * comparator value continues the mod's own sequence (bunker 1, glass 2).
+     */
+    public static final RegistrySupplier<Item> MUSIC_DISC_CH = ITEMS.register("music_disc_ch",
+            () -> new FlavouredRecordItem(
+                    3,
+                    ModSounds.MUSIC_DISC_CH.get(),
+                    new Item.Properties().stacksTo(1).rarity(Rarity.RARE),
+                    20 * 85,
+                    "item.hbm_m.music_disc_ch.flavour"
+            ));
+
 
 
 
@@ -1302,7 +1315,7 @@ public class ModItems {
     // actually be loaded as reactor fuel (RBMKRodBlock#use gates on `instanceof RBMKRodItem`).
     public static final RegistrySupplier<Item> RBMK_FUEL_DRX = ITEMS.register("rbmk_fuel_drx",
             () -> new RbmkFuelDrxItem(new Item.Properties())
-                    .setYield(10_000_000).setStats(1000, 10).setFunction(RBMKRodItem.EnumBurnFunc.QUADRATIC)
+                    .setYield(100_000_000).setStats(1000, 10).setFunction(RBMKRodItem.EnumBurnFunc.QUADRATIC)
                     .setHeat(0.1).setMeltingPoint(100_000).setTint(0xD77276).setPellet(() -> ModItems.RBMK_PELLET_DRX.get()));
 
     public static final RegistrySupplier<Item> ROD_ZIRNOX_EMPTY = ITEMS.register("rod_zirnox_empty",
@@ -1436,6 +1449,18 @@ public class ModItems {
     public static final RegistrySupplier<Item> ASH_MISC = ITEMS.register("ash_misc", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> ASH_FLY  = ITEMS.register("ash_fly",  () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> ASH_SOOT = ITEMS.register("ash_soot", () -> new Item(new Item.Properties()));
+
+    // Teer - im Original ein ItemEnumMulti(EnumTarType) mit sechs Metadata-Subtypen
+    // (CRUDE/CRACK/COAL/WOOD/WAX/PARAFFIN); hier als sechs eigenstaendige Items, analog zur
+    // Asche oben. Der RBMK-Outgasser erzeugt COAL-Teer aus Kohle und verarbeitet COAL/WAX weiter;
+    // die uebrigen Sorten gehoeren zu Raffinerie/Kristallisator und sind hier nur registriert,
+    // damit die Familie vollstaendig ist und jene Rezepte spaeter darauf zeigen koennen.
+    public static final RegistrySupplier<Item> OIL_TAR_CRUDE = ITEMS.register("oil_tar_crude", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> OIL_TAR_CRACK = ITEMS.register("oil_tar_crack", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> OIL_TAR_COAL = ITEMS.register("oil_tar_coal", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> OIL_TAR_WOOD = ITEMS.register("oil_tar_wood", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> OIL_TAR_WAX = ITEMS.register("oil_tar_wax", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> OIL_TAR_PARAFFIN = ITEMS.register("oil_tar_paraffin", () -> new Item(new Item.Properties()));
 
     public static final RegistrySupplier<Item> SEQUESTRUM = ITEMS.register("sequestrum",
             () -> new Item(new Item.Properties()));
@@ -3623,11 +3648,11 @@ public class ModItems {
     public static final RegistrySupplier<Item> RBMK_FUEL_HEA242 = ITEMS.register("rbmk_fuel_hea242",
             () -> new RBMKRodItem("Highly Enriched Americium-242 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(45).setFunction(RBMKRodItem.EnumBurnFunc.LINEAR)
-                    .setHeat(2.0).setMeltingPoint(2386).setTint(0xA88A8F).setPellet(() -> ModItems.RBMK_PELLET_HEA242.get()));
+                    .setHeat(2.0).setMeltingPoint(3386).setTint(0xA88A8F).setPellet(() -> ModItems.RBMK_PELLET_HEA242.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_HEAUS = ITEMS.register("rbmk_fuel_heaus",
             () -> new RBMKRodItem("Highly Enriched Australium (Ayerite) Rod", new Item.Properties())
-                    .setYield(100_000_000).setStats(35).setFunction(RBMKRodItem.EnumBurnFunc.LINEAR)
-                    .setXenon(0.05, 50).setHeat(1.5).setMeltingPoint(5211).setTint(0xFFEE00).setPellet(() -> ModItems.RBMK_PELLET_HEAUS.get()));
+                    .setYield(100_000_000).setStats(35).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)
+                    .setXenon(0.05, 50).setHeat(2.0).setMeltingPoint(5211).setTint(0xFFEE00).setPellet(() -> ModItems.RBMK_PELLET_HEAUS.get()));
     public static final RegistrySupplier<Item> RBMK_FUEL_HEN = ITEMS.register("rbmk_fuel_hen",
             () -> new RBMKRodItem("Highly Enriched Neptunium-237 Rod", new Item.Properties())
                     .setYield(100_000_000).setStats(40).setFunction(RBMKRodItem.EnumBurnFunc.SQUARE_ROOT)

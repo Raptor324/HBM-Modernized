@@ -396,10 +396,14 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 ModItems.COBALT_BOOTS.get(),
                 ModItems.ALLOY_BOOTS.get());
 
-        // Vanilla jukebox accepts only items in this tag (1.20.1)
+        // Vanilla jukebox accepts only items in this tag (1.20.1). JukeboxBlockEntity.setItem
+        // skips storing, setting HAS_RECORD and startPlaying() entirely when the stack is not
+        // tagged - while RecordItem.useOn shrinks the held stack regardless. An untagged disc is
+        // therefore silently destroyed on insertion, so every disc MUST be listed here.
         this.tag(ItemTags.MUSIC_DISCS)
                 .add(ModItems.MUSIC_DISC_BUNKER.get())
-                .add(ModItems.MUSIC_DISC_GLASS.get());
+                .add(ModItems.MUSIC_DISC_GLASS.get())
+                .add(ModItems.MUSIC_DISC_CH.get());
 
         // Forge dye tags used by assembler recipes (JEI + crafting)
         this.tag(Tags.Items.DYES_GREEN).add(Items.GREEN_DYE);

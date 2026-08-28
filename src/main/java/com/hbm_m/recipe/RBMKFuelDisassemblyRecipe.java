@@ -65,10 +65,22 @@ public class RBMKFuelDisassemblyRecipe extends CustomRecipe {
         return width * height >= 1;
     }
 
+    /**
+     * CE's {@code ItemRBMKRod} constructor calls {@code setContainerItem(ModItems.rbmk_fuel_empty)},
+     * so taking a rod apart hands the empty casing back rather than destroying it - a rod is worth
+     * eight pellets <b>and</b> the casing they go back into. The port returned nothing at all, which
+     * quietly deleted one casing per disassembly and made the fuel loop lossy.
+     */
     @Override
     public NonNullList<ItemStack> getRemainingItems(CraftingContainer container) {
-        // The rod itself is consumed; the original leaves nothing behind here either.
-        return NonNullList.withSize(container.getContainerSize(), ItemStack.EMPTY);
+        NonNullList<ItemStack> remaining = NonNullList.withSize(container.getContainerSize(), ItemStack.EMPTY);
+        for (int i = 0; i < container.getContainerSize(); i++) {
+            if (container.getItem(i).getItem() instanceof RBMKRodItem) {
+                remaining.set(i, new ItemStack(com.hbm_m.item.ModItems.RBMK_FUEL_EMPTY.get()));
+                break;
+            }
+        }
+        return remaining;
     }
 
     @Override

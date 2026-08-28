@@ -75,6 +75,8 @@ public final class CreativeModeTabEventHandler {
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
             event.accept(new ItemStack(ModItems.MUSIC_DISC_BUNKER.get()),
                     CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            event.accept(new ItemStack(ModItems.MUSIC_DISC_CH.get()),
+                    CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
 
         if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS || event.getTabKey() == CreativeModeTabs.SEARCH) {
@@ -124,9 +126,12 @@ public final class CreativeModeTabEventHandler {
         ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.COMBAT).register(entries ->
                 populateCombatTab((stack, vis) -> entries.accept(stack, vis)));
 
-        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(entries ->
-                entries.accept(new ItemStack(ModItems.MUSIC_DISC_BUNKER.get()),
-                        CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS));
+        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(entries -> {
+            entries.accept(new ItemStack(ModItems.MUSIC_DISC_BUNKER.get()),
+                    CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            entries.accept(new ItemStack(ModItems.MUSIC_DISC_CH.get()),
+                    CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        });
 
         ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.SPAWN_EGGS).register(entries ->
                 populateSpawnEggs((stack, vis) -> entries.accept(stack, vis)));
@@ -139,6 +144,8 @@ public final class CreativeModeTabEventHandler {
             populateCombatTab((stack, vis) -> entries.accept(stack, vis));
 
             entries.accept(new ItemStack(ModItems.MUSIC_DISC_BUNKER.get()),
+                    CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            entries.accept(new ItemStack(ModItems.MUSIC_DISC_CH.get()),
                     CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
 
             populateSpawnEggs((stack, vis) -> entries.accept(stack, vis));
@@ -580,6 +587,12 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.ASH_MISC.get()));
         add.accept(new ItemStack(ModItems.ASH_FLY.get()));
         add.accept(new ItemStack(ModItems.ASH_SOOT.get()));
+        add.accept(new ItemStack(ModItems.OIL_TAR_CRUDE.get()));
+        add.accept(new ItemStack(ModItems.OIL_TAR_CRACK.get()));
+        add.accept(new ItemStack(ModItems.OIL_TAR_COAL.get()));
+        add.accept(new ItemStack(ModItems.OIL_TAR_WOOD.get()));
+        add.accept(new ItemStack(ModItems.OIL_TAR_WAX.get()));
+        add.accept(new ItemStack(ModItems.OIL_TAR_PARAFFIN.get()));
         add.accept(new ItemStack(ModItems.SEQUESTRUM.get()));
         add.accept(new ItemStack(ModItems.LIGNITE.get()));
         add.accept(new ItemStack(ModItems.FLUORITE.get()));
@@ -1477,7 +1490,6 @@ public final class CreativeModeTabEventHandler {
 
 
         // ─── AUTO-PORT: fehlende Original-Bloecke (nur DEV-Tab, ungeprueft) ───
-        add.accept(new ItemStack(ModBlocks.BALEFIRE.get()));
         add.accept(new ItemStack(ModBlocks.BLOCK_ASBESTOS.get()));
         add.accept(new ItemStack(ModBlocks.BLOCK_BAKELITE.get()));
         add.accept(new ItemStack(ModBlocks.BLOCK_C4.get()));
@@ -1503,7 +1515,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.BLOCK_METEOR_MOLTEN.get()));
         add.accept(new ItemStack(ModBlocks.BLOCK_METEOR_TREASURE.get()));
         add.accept(new ItemStack(ModBlocks.BLOCK_NITER.get()));
-        add.accept(new ItemStack(ModBlocks.BLOCK_POLONIUM.get()));
         add.accept(new ItemStack(ModBlocks.BLOCK_POLYMER.get()));
         add.accept(new ItemStack(ModBlocks.BLOCK_PU_MIX.get()));
         add.accept(new ItemStack(ModBlocks.BLOCK_RED_PHOSPHORUS.get()));
@@ -1560,7 +1571,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.ORE_NETHER_TUNGSTEN.get()));
         add.accept(new ItemStack(ModBlocks.ORE_NETHER_URANIUM.get()));
         add.accept(new ItemStack(ModBlocks.ORE_NETHER_URANIUM_SCORCHED.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_NITER.get()));
         add.accept(new ItemStack(ModBlocks.ORE_OIL_SAND.get()));
         add.accept(new ItemStack(ModBlocks.ORE_RARE.get()));
         add.accept(new ItemStack(ModBlocks.ORE_TEKTITE_OSMIRIDIUM.get()));
@@ -3203,6 +3213,10 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.RBMK_BLANK.get()));
         add.accept(new ItemStack(ModBlocks.DECO_RBMK.get()));
         add.accept(new ItemStack(ModBlocks.DECO_RBMK_SMOOTH.get()));
+        add.accept(new ItemStack(ModBlocks.DECO_RBMK_PANEL.get()));
+        add.accept(new ItemStack(ModBlocks.DECO_RBMK_SMOOTH_PANEL.get()));
+        add.accept(new ItemStack(ModBlocks.DECO_RBMK_PANEL_SLAB2.get()));
+        add.accept(new ItemStack(ModBlocks.DECO_RBMK_SMOOTH_PANEL_SLAB2.get()));
         add.accept(new ItemStack(ModBlocks.BLOCK_GRAPHITE.get()));
         add.accept(new ItemStack(ModBlocks.STEEL_GRATE.get()));
         add.accept(new ItemStack(ModBlocks.RBMK_STEAM_INLET.get()));

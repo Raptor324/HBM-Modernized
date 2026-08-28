@@ -459,7 +459,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.dosimeter", "Дозиметр");
                 add(ModItems.DIGAMMA_DIAGNOSTIC.get(), "Диагностика Диггама");
                 add(ModItems.MUSIC_DISC_GLASS.get(), "Стеклянная пластинка");
+                add(ModItems.MUSIC_DISC_CH.get(), "Пластинка: Швейцария");
                 add("item.hbm_m.music_disc_glass.desc", "Увертюра 1812 года");
+                add("item.hbm_m.music_disc_ch.desc", "Швейцарский псалом");
+                add("item.hbm_m.music_disc_ch.flavour", "Great since 1291 , Motherland of the Dev FuchsDev");
                 add("item.hbm_m.battery_creative", "Бесконечная батарейка");
                 add("tooltip.hbm_m.creative_battery_desc","Предоставляет бесконечное количество энергии");
                 add("tooltip.hbm_m.creative_battery_flavor","Бесконечность - не предел!!");
@@ -1467,6 +1470,12 @@ public class ModLanguageProvider extends LanguageProvider {
                     add(ModItems.ASH_MISC.get(), "Пепел");
                     add(ModItems.ASH_FLY.get(), "Летучая зола");
                     add(ModItems.ASH_SOOT.get(), "Мелкая сажа");
+                    add(ModItems.OIL_TAR_CRUDE.get(), "Сырая нефтяная смола");
+                    add(ModItems.OIL_TAR_CRACK.get(), "Крекинговая смола");
+                    add(ModItems.OIL_TAR_COAL.get(), "Каменноугольная смола");
+                    add(ModItems.OIL_TAR_WOOD.get(), "Древесная смола");
+                    add(ModItems.OIL_TAR_WAX.get(), "Хлорированный смоляной воск");
+                    add(ModItems.OIL_TAR_PARAFFIN.get(), "Парафин");
                     add(ModItems.WASTE_PLATE_U233.get(), "Обеднённая топливная пластина (Высокообогащённый уран-233)");
                     add(ModItems.WASTE_PLATE_U235.get(), "Обеднённая топливная пластина (Высокообогащённый уран-235)");
                     add(ModItems.WASTE_PLATE_PU239.get(), "Обеднённая топливная пластина (Высокообогащённый плутоний-239)");
@@ -1978,6 +1987,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.rbmk_keypad", "РБМК Клавиатура");
                 add("gui.hbm_m.jei.rbmk_disassembly", "Разборка ТВЭЛ РБМК");
                 add("gui.hbm_m.jei.rbmk_waste_decay", "Распад ядерных отходов");
+                add("gui.hbm_m.jei.rbmk_outgasser", "Нейтронная активация РБМК");
                 add("gui.hbm_m.rbmk_terminal", "РБМК Терминал");
                 add("sounds.hbm_m.subtitle.upgrade_plug", "Вставка топливного стержня");
                 add("msg.hbm_m.rbmk_console.no_console_found", "Поблизости нет пульта РБМК");
@@ -2021,6 +2031,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.ZIRNOX_DEB_SHRAPNEL.get(), "Шрапнель ZIRNOX");
                 add(ModBlocks.DECO_RBMK.get(), "Декоративный блок РБМК");
                 add(ModBlocks.DECO_RBMK_SMOOTH.get(), "Гладкий декоративный блок РБМК");
+                add(ModBlocks.DECO_RBMK_PANEL.get(), "Декоративная панель РБМК");
+                add(ModBlocks.DECO_RBMK_SMOOTH_PANEL.get(), "Гладкая декоративная панель РБМК");
+                add(ModBlocks.DECO_RBMK_PANEL_SLAB2.get(), "Панельная плита РБМК");
+                add(ModBlocks.DECO_RBMK_SMOOTH_PANEL_SLAB2.get(), "Гладкая панельная плита РБМК");
                 add(ModBlocks.BLOCK_GRAPHITE.get(), "Графитовый блок");
                 add(ModBlocks.STEEL_GRATE.get(), "Стальная решётка");
                 add(ModBlocks.RBMK_CONTROL_MOD.get(),         "РБМК Стержень управления с замедлителем");
@@ -2873,7 +2887,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.dosimeter", "Dosimeter");
                 add(ModItems.DIGAMMA_DIAGNOSTIC.get(), "Digamma Diagnostic");
                 add(ModItems.MUSIC_DISC_GLASS.get(), "Glass Disc");
+                add(ModItems.MUSIC_DISC_CH.get(), "Music Disc");
                 add("item.hbm_m.music_disc_glass.desc", "1812 Overture");
+                add("item.hbm_m.music_disc_ch.desc", "Schweizerpsalm");
+                add("item.hbm_m.music_disc_ch.flavour", "Great since 1291 , Motherland of the Dev FuchsDev");
                 add("item.hbm_m.battery_creative", "Creative Battery");
                 add("tooltip.hbm_m.creative_battery_desc","Provides an infinite amount of power");
                 add("tooltip.hbm_m.creative_battery_flavor","To infinity... and beyond!!");
@@ -3962,6 +3979,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.rbmk_keypad", "RBMK Keypad");
                 add("gui.hbm_m.jei.rbmk_disassembly", "RBMK Rod Disassembly");
                 add("gui.hbm_m.jei.rbmk_waste_decay", "Nuclear Waste Decay");
+                add("gui.hbm_m.jei.rbmk_outgasser", "RBMK Neutron Activation");
                 add("gui.hbm_m.rbmk_terminal", "RBMK Terminal");
                 add("sounds.hbm_m.subtitle.upgrade_plug", "Fuel rod inserted");
                 add("msg.hbm_m.rbmk_console.no_console_found", "No RBMK console found nearby");
@@ -4007,6 +4025,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.ZIRNOX_DEB_SHRAPNEL.get(), "ZIRNOX Shrapnel");
                 add(ModBlocks.DECO_RBMK.get(), "RBMK Decoration Block");
                 add(ModBlocks.DECO_RBMK_SMOOTH.get(), "Smooth RBMK Decoration Block");
+                add(ModBlocks.DECO_RBMK_PANEL.get(), "RBMK Decoration Panel");
+                add(ModBlocks.DECO_RBMK_SMOOTH_PANEL.get(), "Smooth RBMK Decoration Panel");
+                add(ModBlocks.DECO_RBMK_PANEL_SLAB2.get(), "RBMK Panel Slab");
+                add(ModBlocks.DECO_RBMK_SMOOTH_PANEL_SLAB2.get(), "Smooth RBMK Panel Slab");
                 add(ModBlocks.BLOCK_GRAPHITE.get(), "Block of Graphite");
                 add(ModBlocks.STEEL_GRATE.get(), "Steel Grate");
                 add(ModBlocks.RBMK_CONTROL_MOD.get(),         "RBMK Control Rod (Moderated)");
@@ -4126,6 +4148,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.ASH_MISC.get(), "Ash");
                 add(ModItems.ASH_FLY.get(), "Fly Ash");
                 add(ModItems.ASH_SOOT.get(), "Fine Soot");
+                add(ModItems.OIL_TAR_CRUDE.get(), "Crude Oil Tar");
+                add(ModItems.OIL_TAR_CRACK.get(), "Cracking Tar");
+                add(ModItems.OIL_TAR_COAL.get(), "Coal Tar");
+                add(ModItems.OIL_TAR_WOOD.get(), "Wood Tar");
+                add(ModItems.OIL_TAR_WAX.get(), "Chlorinated Tar Wax");
+                add(ModItems.OIL_TAR_PARAFFIN.get(), "Paraffin Wax");
                 add(ModItems.WASTE_PLATE_U233.get(), "Depleted HEU-233 Plate Fuel");
                 add(ModItems.WASTE_PLATE_U235.get(), "Depleted HEU-235 Plate Fuel");
                 add(ModItems.WASTE_PLATE_PU239.get(), "Depleted HEP-239 Plate Fuel");
@@ -4469,8 +4497,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.advanced_assembly_machine", "Assembly Machine");
                 add(ModBlocks.CRUCIBLE.get(), "Crucible (WIP)");
                 add(ModBlocks.FOUNDRY_BASIN.get(), "Foundry Basin");
-                add(ModBlocks.SU47_TROPHY.get(), "Su-47 Trophy");
-                add(ModBlocks.JAS39_TROPHY.get(), "Saab Jas39 Gripen E");
                 add(ModBlocks.FOUNDRY_OUTLET.get(), "Foundry Outlet");
                 add(ModBlocks.FOUNDRY_CHANNEL.get(), "Foundry Channel");
                 add("container.hbm_m.crucible", "Crucible");
@@ -6548,6 +6574,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("advancements.hbm_m.rbmk.title", "Реактор Большой Мощности Канальный");
                 add("advancements.hbm_m.rbmk.description", "Скрафти пустой ТВЭЛ РБМК");
                 add("advancements.hbm_m.rbmk_boom.title", "3,6 рентгена");
+                add("advancements.hbm_m.fox_breeding.title", "Славная с 1291 года");
+                add("advancements.hbm_m.fox_breeding.description", "Разведи двух лисиц");
                 add("advancements.hbm_m.rbmk_boom.description", "Устрой аварию на РБМК");
                 add("advancements.hbm_m.bismuth.title", "Пепто-Бисмут");
                 add("advancements.hbm_m.bismuth.description", "Получи висмут");
@@ -6681,6 +6709,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("advancements.hbm_m.rbmk.title", "Reaktor Bolshoy Moshchnosti Kanalnyy");
                 add("advancements.hbm_m.rbmk.description", "Craft an empty RBMK fuel rod");
                 add("advancements.hbm_m.rbmk_boom.title", "3.6 Roentgen");
+                add("advancements.hbm_m.fox_breeding.title", "Great since 1291");
+                add("advancements.hbm_m.fox_breeding.description", "Breed two foxes");
                 add("advancements.hbm_m.rbmk_boom.description", "Cause an RBMK meltdown");
                 add("advancements.hbm_m.bismuth.title", "Pepto Bismuth");
                 add("advancements.hbm_m.bismuth.description", "Produce bismuth");
@@ -6770,7 +6800,6 @@ public class ModLanguageProvider extends LanguageProvider {
      */
     private void addPortedBlockNames() {
                 // ─── AUTO-PORT Block-Namen ───
-                add(ModBlocks.BALEFIRE.get(), "Balefire");
                 add(ModBlocks.BLOCK_ASBESTOS.get(), "Block Asbestos");
                 add(ModBlocks.BLOCK_BAKELITE.get(), "Block Bakelite");
                 add(ModBlocks.BLOCK_C4.get(), "Block C4");
@@ -6796,7 +6825,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.BLOCK_METEOR_MOLTEN.get(), "Block Meteor Molten");
                 add(ModBlocks.BLOCK_METEOR_TREASURE.get(), "Block Meteor Treasure");
                 add(ModBlocks.BLOCK_NITER.get(), "Block Niter");
-                add(ModBlocks.BLOCK_POLONIUM.get(), "Block Polonium");
                 add(ModBlocks.BLOCK_POLYMER.get(), "Block Polymer");
                 add(ModBlocks.BLOCK_PU_MIX.get(), "Block Pu Mix");
                 add(ModBlocks.BLOCK_RED_PHOSPHORUS.get(), "Block Red Phosphorus");
@@ -6853,7 +6881,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.ORE_NETHER_TUNGSTEN.get(), "Ore Nether Tungsten");
                 add(ModBlocks.ORE_NETHER_URANIUM.get(), "Ore Nether Uranium");
                 add(ModBlocks.ORE_NETHER_URANIUM_SCORCHED.get(), "Ore Nether Uranium Scorched");
-                add(ModBlocks.ORE_NITER.get(), "Ore Niter");
                 add(ModBlocks.ORE_OIL_SAND.get(), "Ore Oil Sand");
                 add(ModBlocks.ORE_RARE.get(), "Ore Rare");
                 add(ModBlocks.ORE_TEKTITE_OSMIRIDIUM.get(), "Ore Tektite Osmiridium");

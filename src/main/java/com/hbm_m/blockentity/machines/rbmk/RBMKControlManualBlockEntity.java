@@ -15,7 +15,7 @@ public class RBMKControlManualBlockEntity extends RBMKControlBlockEntity {
     public String texturePrefix = null;
 
     /** Snapshot of {@link #level} taken when a withdrawal ({@code setTarget}) begins - drives the surge in {@link #getMult}. */
-    private double startingLevel = 1.0;
+    private double startingLevel = 0.0;
 
     public RBMKControlManualBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.RBMK_CONTROL_BE.get(), pos, state);
@@ -80,9 +80,24 @@ public class RBMKControlManualBlockEntity extends RBMKControlBlockEntity {
         };
     }
 
+    // CE persists startingLevel (TileEntityRBMKControlManual.writeToNBT). Without it a reload
+    // mid-withdrawal resets the surge reference point and the tip effect silently vanishes.
+    @Override
+    protected void saveAdditional(net.minecraft.nbt.CompoundTag tag) {
+        super.saveAdditional(tag);
+        tag.putDouble("startingLevel", startingLevel);
+    }
+
+    @Override
+    public void load(net.minecraft.nbt.CompoundTag tag) {
+        super.load(tag);
+        if (tag.contains("startingLevel")) startingLevel = tag.getDouble("startingLevel");
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, RBMKControlManualBlockEntity be) {
         baseTick(level, pos, state, be);
         if (!level.isClientSide) {
+            be.updatePower(level);
             be.lastLevel = be.level;
             be.moveLevelToTarget(level);
         }

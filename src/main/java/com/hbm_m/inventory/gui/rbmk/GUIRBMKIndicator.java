@@ -23,6 +23,8 @@ public class GUIRBMKIndicator extends Screen {
     private final EditBox[] colorBoxes    = new EditBox[RBMKIndicatorBlockEntity.UNITS];
     private final Button[]  activeButtons = new Button[RBMKIndicatorBlockEntity.UNITS];
     private final boolean[] unitActive    = new boolean[RBMKIndicatorBlockEntity.UNITS];
+    /** CE's per-unit {@code polling} flag - re-read the channel every tick and zero on silence. */
+    private final net.minecraft.client.gui.components.Checkbox[] pollingBoxes = new net.minecraft.client.gui.components.Checkbox[RBMKIndicatorBlockEntity.UNITS];
     private final EditBox[] channelBoxes = new EditBox[RBMKIndicatorBlockEntity.UNITS];
     private final EditBox[] minBoxes     = new EditBox[RBMKIndicatorBlockEntity.UNITS];
     private final EditBox[] maxBoxes     = new EditBox[RBMKIndicatorBlockEntity.UNITS];
@@ -82,6 +84,8 @@ public class GUIRBMKIndicator extends Screen {
                 activeButtons[idx].setMessage(GUIRBMKGauge.activeLabel(unitActive[idx]));
             }).bounds(cx + 78, y, 22, 16).build();
             addRenderableWidget(activeButtons[i]);
+            pollingBoxes[i] = new net.minecraft.client.gui.components.Checkbox(cx - 100, y, 90, 16, Component.literal("poll"), be.polling[i]);
+            addRenderableWidget(pollingBoxes[i]);
             y += 24;
         }
 
@@ -99,6 +103,7 @@ public class GUIRBMKIndicator extends Screen {
             data.putDouble("min" + i, parse(minBoxes[i].getValue()));
             data.putDouble("max" + i, parse(maxBoxes[i].getValue()));
             data.putBoolean("invert" + i, invertBoxes[i].selected());
+            data.putBoolean("polling" + i, pollingBoxes[i].selected());
         }
         RadioTorchControlPacket.sendToServer(pos, data);
         onClose();

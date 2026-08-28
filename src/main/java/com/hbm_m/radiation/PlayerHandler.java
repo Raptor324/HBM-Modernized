@@ -249,7 +249,11 @@ public class PlayerHandler {
     private static float getRadiationFromItemStack(ItemStack stack) {
         if (stack.isEmpty()) return 0.0F;
         float perItemRadiation = HazardSystem.getHazardLevelFromStack(stack, HazardRegistry.RADIATION);
-        return perItemRadiation * stack.getCount();
+        // Induced activation from sitting in a neutron flux counts on top of the item's own
+        // radioactivity (CE: HazardSystem.getRadsFromStack). getNeutronRads already accounts for
+        // the stack size, so it is added outside the multiply.
+        return perItemRadiation * stack.getCount()
+                + com.hbm_m.util.ContaminationUtil.getNeutronRads(stack);
     }
     
     /**

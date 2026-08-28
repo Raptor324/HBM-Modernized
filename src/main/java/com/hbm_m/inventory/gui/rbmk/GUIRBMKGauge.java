@@ -31,6 +31,8 @@ public class GUIRBMKGauge extends Screen {
     private final EditBox[] maxBoxes      = new EditBox[UNITS];
     private final Button[]  activeButtons = new Button[UNITS];
     private final boolean[] unitActive    = new boolean[UNITS];
+    /** CE's per-unit {@code polling} flag - re-read the channel every tick and zero on silence. */
+    private final net.minecraft.client.gui.components.Checkbox[] pollingBoxes = new net.minecraft.client.gui.components.Checkbox[UNITS];
 
     public GUIRBMKGauge(BlockPos pos, RBMKGaugeBlockEntity be) {
         super(Component.translatable("gui.hbm_m.rbmk_gauge"));
@@ -82,6 +84,10 @@ public class GUIRBMKGauge extends Screen {
             }).bounds(cx + 78, y, 22, 16).build();
             addRenderableWidget(activeButtons[i]);
 
+            pollingBoxes[i] = new net.minecraft.client.gui.components.Checkbox(cx - 100, y, 90, 16, Component.literal("poll"), be.polling[i]);
+            addRenderableWidget(pollingBoxes[i]);
+            y += 18;
+
             y += 22;
         }
 
@@ -102,6 +108,7 @@ public class GUIRBMKGauge extends Screen {
             data.putBoolean("active" + i, unitActive[i]);
             data.putDouble("min" + i, parse(minBoxes[i].getValue()));
             data.putDouble("max" + i, parse(maxBoxes[i].getValue()));
+            data.putBoolean("polling" + i, pollingBoxes[i].selected());
         }
         RadioTorchControlPacket.sendToServer(pos, data);
         onClose();

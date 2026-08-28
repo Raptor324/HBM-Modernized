@@ -1,0 +1,39 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:music_disc_ch"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.fox_breeding.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.fox_breeding.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "bred_foxes": {
+      "trigger": "minecraft:bred_animals",
+      "conditions": {
+        "child": [
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "type": "minecraft:fox"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "rewards": {
+    "loot": [
+      "hbm_m:advancement_reward/music_disc_ch"
+    ]
+  },
+  "parent": "hbm_m:root"
+}

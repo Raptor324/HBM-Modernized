@@ -520,12 +520,6 @@ public class ModBlocks {
             () -> new com.hbm_m.block.machines.MachineFoundryOutletBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(3.0f, 3.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     // ─── Trophies ─────────────────────────────────────────────────────────────
-    public static final RegistrySupplier<Block> SU47_TROPHY = registerBlock("su47_trophy",
-            () -> new com.hbm_m.block.machines.SU47TrophyBlock(BlockBehaviour.Properties.of().strength(2f).noOcclusion().isSuffocating((state, world, pos) -> false)));
-
-    public static final RegistrySupplier<Block> JAS39_TROPHY = registerBlock("jas39_trophy",
-            () -> new com.hbm_m.block.machines.JAS39TrophyBlock(BlockBehaviour.Properties.of().strength(2f).noOcclusion().isSuffocating((state, world, pos) -> false)));
-
     public static final RegistrySupplier<Block> GAS_CENTRIFUGE = registerBlockWithoutItem("gas_centrifuge",
             () -> new MachineGasCentrifugeBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
@@ -1974,6 +1968,33 @@ public class ModBlocks {
     // com.hbm.blocks.ModBlocks:1436-1437 - plain deco blocks reusing the rbmk column textures.
     public static final RegistrySupplier<Block> DECO_RBMK        = registerBlock("deco_rbmk",        () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 100.0f)));
     public static final RegistrySupplier<Block> DECO_RBMK_SMOOTH = registerBlock("deco_rbmk_smooth", () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 100.0f)));
+    /**
+     * CE ships four RBMK decoration blocks, not two: the plain and smooth casings plus a panelled
+     * version of each ({@code deco_rbmk_panel} / {@code deco_rbmk_smooth_panel}). The panelled pair
+     * was missing entirely.
+     */
+    public static final RegistrySupplier<Block> DECO_RBMK_PANEL        = registerBlock("deco_rbmk_panel",        () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 100.0f)));
+    public static final RegistrySupplier<Block> DECO_RBMK_SMOOTH_PANEL = registerBlock("deco_rbmk_smooth_panel", () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 100.0f)));
+
+    /**
+     * CE's thin RBMK panel slabs. Each pair is a 2px single you craft and carry plus a 4px double
+     * that only ever appears by stacking two singles - see {@link com.hbm_m.block.generic.RBMKSlabBlock}.
+     * The doubles are deliberately kept out of the creative menu, exactly as CE does
+     * ({@code setCreativeTab(null)}), and drop two singles when broken.
+     */
+    private static BlockBehaviour.Properties rbmkSlabProps() {
+        return BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).noOcclusion();
+    }
+
+    public static final RegistrySupplier<Block> DECO_RBMK_PANEL_SLAB4 = registerBlockWithoutItem("deco_rbmk_panel_slab4",
+            () -> new com.hbm_m.block.generic.RBMKSlabBlock(true, rbmkSlabProps()));
+    public static final RegistrySupplier<Block> DECO_RBMK_PANEL_SLAB2 = registerBlock("deco_rbmk_panel_slab2",
+            () -> new com.hbm_m.block.generic.RBMKSlabBlock(false, rbmkSlabProps()));
+
+    public static final RegistrySupplier<Block> DECO_RBMK_SMOOTH_PANEL_SLAB4 = registerBlockWithoutItem("deco_rbmk_smooth_panel_slab4",
+            () -> new com.hbm_m.block.generic.RBMKSlabBlock(true, rbmkSlabProps()));
+    public static final RegistrySupplier<Block> DECO_RBMK_SMOOTH_PANEL_SLAB2 = registerBlock("deco_rbmk_smooth_panel_slab2",
+            () -> new com.hbm_m.block.generic.RBMKSlabBlock(false, rbmkSlabProps()));
     // com.hbm.blocks.ModBlocks:1571 - graphite storage block, used by the moderator/control recipes.
     public static final RegistrySupplier<Block> BLOCK_GRAPHITE   = registerBlock("block_graphite",   () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f)));
     // com.hbm.blocks.ModBlocks:1598 - steel grate, used by the cooler/outgasser recipes.
@@ -1982,7 +2003,7 @@ public class ModBlocks {
     // ── Debris ──────────────────────────────────────────────────────────────
     public static final RegistrySupplier<Block> RBMK_DEBRIS            = registerBlock("rbmk_debris",            () -> new Block(BlockBehaviour.Properties.copy(Blocks.GRAVEL).strength(0.5f)));
     public static final RegistrySupplier<Block> RBMK_DEBRIS_BURNING    = registerBlock("rbmk_debris_burning",    () -> new com.hbm_m.block.machines.rbmk.RBMKDebrisBurningBlock(BlockBehaviour.Properties.copy(Blocks.GRAVEL).strength(0.5f).lightLevel(s -> 10).randomTicks()));
-    public static final RegistrySupplier<Block> RBMK_DEBRIS_DIGAMMA    = registerBlock("rbmk_debris_digamma",    () -> new Block(BlockBehaviour.Properties.copy(Blocks.GRAVEL).strength(0.5f).lightLevel(s -> 8)));
+    public static final RegistrySupplier<Block> RBMK_DEBRIS_DIGAMMA    = registerBlock("rbmk_debris_digamma",    () -> new com.hbm_m.block.machines.rbmk.RBMKDebrisDigammaBlock(BlockBehaviour.Properties.copy(Blocks.GRAVEL).strength(0.5f).lightLevel(s -> 8).randomTicks()));
     public static final RegistrySupplier<Block> RBMK_DEBRIS_RADIATING  = registerBlock("rbmk_debris_radiating",  () -> new com.hbm_m.block.machines.rbmk.RBMKDebrisRadiatingBlock(BlockBehaviour.Properties.copy(Blocks.GRAVEL).strength(0.5f).lightLevel(s -> 4).randomTicks()));
 
     // ── Corium (molten reactor core, 1:1 with the original's ModBlocks.corium_block) ──────────
@@ -2782,8 +2803,6 @@ public class ModBlocks {
     // Platzhalter mit Stein-Eigenschaften - Varianten-, Deko- und OBJ-Modell-Bloecke
     // sind bewusst ausgelassen. Sichtbar NUR im Dev-Tab.
 
-    public static final RegistrySupplier<Block> BALEFIRE = registerBlock("balefire",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_ASBESTOS = registerBlock("block_asbestos",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_BAKELITE = registerBlock("block_bakelite",
@@ -2833,8 +2852,6 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BLOCK_METEOR_TREASURE = registerBlock("block_meteor_treasure",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_NITER = registerBlock("block_niter",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> BLOCK_POLONIUM = registerBlock("block_polonium",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BLOCK_POLYMER = registerBlock("block_polymer",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
@@ -2948,8 +2965,6 @@ public class ModBlocks {
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_NETHER_URANIUM_SCORCHED = registerBlock("ore_nether_uranium_scorched",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> ORE_NITER = registerBlock("ore_niter",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_OIL_SAND = registerBlock("ore_oil_sand",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_RARE = registerBlock("ore_rare",
@@ -3005,11 +3020,29 @@ public class ModBlocks {
                     || b instanceof com.hbm_m.block.machines.MachineRbmkConsoleBlock) {
                 return new com.hbm_m.item.rbmk.RBMKColumnBlockItem(b, new Item.Properties());
             }
+            // A panel slab's item has to be able to merge two singles into the double block.
+            if (b instanceof com.hbm_m.block.generic.RBMKSlabBlock slab && !slab.isDouble) {
+                return new com.hbm_m.block.generic.RBMKSlabItem(slab, new Item.Properties());
+            }
             return new BlockItem(b, new Item.Properties());
         });
     }
 
     public static void init() {
         BLOCKS.register();
+    }
+
+    /**
+     * Links each panel slab to its counterpart. Cannot be done in the field initialisers because
+     * the two halves of a pair reference each other, so it runs once after registration.
+     */
+    public static void linkSlabPairs() {
+        pairSlabs(DECO_RBMK_PANEL_SLAB2, DECO_RBMK_PANEL_SLAB4);
+        pairSlabs(DECO_RBMK_SMOOTH_PANEL_SLAB2, DECO_RBMK_SMOOTH_PANEL_SLAB4);
+    }
+
+    private static void pairSlabs(RegistrySupplier<Block> single, RegistrySupplier<Block> dbl) {
+        if (single.get() instanceof com.hbm_m.block.generic.RBMKSlabBlock s) s.setCounterpart(dbl::get);
+        if (dbl.get() instanceof com.hbm_m.block.generic.RBMKSlabBlock d) d.setCounterpart(single::get);
     }
 }

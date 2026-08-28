@@ -364,7 +364,14 @@ public class RBMKRodItem extends Item {
     // ─── Durability bar (depletion) ───────────────────────────────────────────
 
     @Override public boolean isBarVisible(ItemStack stack)  { return getEnrichment(stack) < 1.0; }
-    @Override public int    getBarWidth(ItemStack stack)    { return Math.round((float)(1.0 - getEnrichment(stack)) * 13); }
+    /**
+     * The bar shows what is <b>left</b>, not what is gone. CE returns the damage fraction
+     * ({@code 1 - enrichment}) from {@code getDurabilityForDisplay} and 1.12 subtracts it from the
+     * full width; modern {@code getBarWidth} wants the filled width directly, so the port's
+     * straight copy of the 1.12 expression drew the bar inverted - a fresh rod showed as empty and
+     * a spent one as full.
+     */
+    @Override public int    getBarWidth(ItemStack stack)    { return Math.round((float) getEnrichment(stack) * 13); }
 
     // ─── Enums ───────────────────────────────────────────────────────────────
 

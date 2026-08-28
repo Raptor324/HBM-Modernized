@@ -34,6 +34,8 @@ public class RBMKControlManualBlock extends RBMKColumnBlock {
         RBMKControlManualBlockEntity be = new RBMKControlManualBlockEntity(pos, state);
         be.moderated = moderated;
         be.texturePrefix = texturePrefix;
+        // Only the two ReaSim variants need electricity to move; see RBMKControlBlockEntity.powered.
+        be.powered = texturePrefix != null && texturePrefix.startsWith("rbmk_control_reasim");
         return be;
     }
 

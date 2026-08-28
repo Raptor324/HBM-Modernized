@@ -33,6 +33,8 @@ public class RBMKControlAutoBlock extends RBMKColumnBlock {
         RBMKControlAutoBlockEntity be = new RBMKControlAutoBlockEntity(pos, state);
         be.moderated = moderated;
         be.texturePrefix = texturePrefix;
+        // Only the two ReaSim variants need electricity to move; see RBMKControlBlockEntity.powered.
+        be.powered = texturePrefix != null && texturePrefix.startsWith("rbmk_control_reasim");
         return be;
     }
 

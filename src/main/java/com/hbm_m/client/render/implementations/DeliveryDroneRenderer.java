@@ -24,7 +24,7 @@ import java.util.*;
  * Multi-Part-Modell (Gruppen "Drone"/"Crate"/"Barrel", per {@code o}-Statement getrennt - im
  * Original per einfachem Ein-/Ausblenden der 3 Teile je nach {@code getAppearance()}), mit der
  * Textur abhaengig vom Drohnentyp (normal/express/request). Laed-/Parse-Logik uebernommen vom
- * bereits etablierten {@link SU47TrophyRenderer}-Muster, hier nach Objektname statt Materialname
+ * bereits etablierten Trophaeen-Renderer-Muster, hier nach Objektname statt Materialname
  * gruppiert, da alle drei Teile im Original dasselbe Material nutzen.
  */
 public class DeliveryDroneRenderer extends EntityRenderer<EntityDroneBase> {

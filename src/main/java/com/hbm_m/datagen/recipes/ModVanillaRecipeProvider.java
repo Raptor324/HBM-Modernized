@@ -350,6 +350,24 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .requires(ModBlocks.DECO_RBMK.get())
                 .unlockedBy(getHasName(ModBlocks.DECO_RBMK.get()), has(ModBlocks.DECO_RBMK.get()))
                 .save(writer, recipeId("crafting/deco_rbmk_smooth"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.BUILDING_BLOCKS, ModBlocks.DECO_RBMK_PANEL.get())
+                .requires(ModBlocks.DECO_RBMK.get())
+                .unlockedBy(getHasName(ModBlocks.DECO_RBMK.get()), has(ModBlocks.DECO_RBMK.get()))
+                .save(writer, recipeId("crafting/deco_rbmk_panel"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.BUILDING_BLOCKS, ModBlocks.DECO_RBMK_SMOOTH_PANEL.get())
+                .requires(ModBlocks.DECO_RBMK_SMOOTH.get())
+                .unlockedBy(getHasName(ModBlocks.DECO_RBMK_SMOOTH.get()), has(ModBlocks.DECO_RBMK_SMOOTH.get()))
+                .save(writer, recipeId("crafting/deco_rbmk_smooth_panel"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.DECO_RBMK_PANEL_SLAB2.get(), 6)
+                .pattern("PPP")
+                .define('P', ModBlocks.DECO_RBMK_PANEL.get())
+                .unlockedBy(getHasName(ModBlocks.DECO_RBMK_PANEL.get()), has(ModBlocks.DECO_RBMK_PANEL.get()))
+                .save(writer, recipeId("crafting/deco_rbmk_panel_slab2"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.DECO_RBMK_SMOOTH_PANEL_SLAB2.get(), 6)
+                .pattern("PPP")
+                .define('P', ModBlocks.DECO_RBMK_SMOOTH_PANEL.get())
+                .unlockedBy(getHasName(ModBlocks.DECO_RBMK_SMOOTH_PANEL.get()), has(ModBlocks.DECO_RBMK_SMOOTH_PANEL.get()))
+                .save(writer, recipeId("crafting/deco_rbmk_smooth_panel_slab2"));
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RBMK_BLANK.get())
                 .pattern("RRR").pattern("R R").pattern("RRR")
                 .define('R', ModBlocks.DECO_RBMK.get())

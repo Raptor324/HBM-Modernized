@@ -31,9 +31,15 @@ public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity {
     /** TileEntityRBMKTerminal.doesRepeat - drives the terminal text amber instead of green. */
     public boolean doesRepeat = false;
 
-    /** Original: shift everything down one slot and put the new message at the top. */
+    /**
+     * Shift everything down one slot and put the new message at the top.
+     *
+     * <p>The loop started at {@code length - 2}, so the last slot was never written and the oldest
+     * line fell off the list a row early - the bottom line of the terminal stayed permanently
+     * blank. CE starts at {@code length - 1}.</p>
+     */
     public void pushHistory(String msg) {
-        for (int i = history.length - 2; i > 0; i--) history[i] = history[i - 1];
+        for (int i = history.length - 1; i > 0; i--) history[i] = history[i - 1];
         history[0] = msg == null ? "" : msg;
     }
 
@@ -60,9 +66,10 @@ public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity {
 
         String result = switch (cmd) {
             case "chan" -> {
-                if (arg.isEmpty()) yield "chan: " + channel;
+                // CE's bare "chan" clears the channel rather than reporting it - that is the only
+                // way to detach a terminal again.
                 channel = arg;
-                yield "channel set to " + channel;
+                yield "Set channel to " + (channel.isEmpty() ? "<none>" : channel);
             }
             case "send" -> {
                 if (channel.isEmpty()) yield "no channel set";
@@ -77,15 +84,29 @@ public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity {
             }
             case "stop" -> {
                 running = false;
-                yield "stopped";
+                yield "Stopping repeat signal";
             }
-            default -> "unknown command: " + cmd;
+            // CE's three remaining commands, none of which the port had.
+            case "clear" -> {
+                java.util.Arrays.fill(history, "");
+                yield "";
+            }
+            case "horse" -> "Horse.";
+            case "selfdestruct" -> {
+                level.destroyBlock(getBlockPos(), false);
+                level.explode(null, getBlockPos().getX() + 0.5, getBlockPos().getY() + 0.5,
+                        getBlockPos().getZ() + 0.5, 5.0F, Level.ExplosionInteraction.BLOCK);
+                yield "";
+            }
+            default -> "Unrecognized command!";
         };
 
         // The original echoes both the command and its response into the panel's scrollback
         // (TileEntityRBMKTerminal:126-129); history[0] is the newest line.
-        pushHistory(line.trim());
-        if (result != null && !result.isEmpty()) pushHistory(result);
+        if (!"clear".equals(cmd)) {
+            pushHistory(line.trim());
+            if (result != null && !result.isEmpty()) pushHistory(result);
+        }
         doesRepeat = running;
 
         setChanged();

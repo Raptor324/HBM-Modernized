@@ -36,8 +36,20 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
     public static final int MAX_WATER = 16_000;
     public static final int MAX_STEAM = 16_000;
     public int craneIndicator = 0;
-    /** 0 = no lid, 1 = concrete lid, 2 = glass lid */
-    protected int lidState = 1;
+    /**
+     * 0 = no lid, 1 = concrete lid, 2 = glass lid.
+     *
+     * <p>A freshly placed column has <b>no</b> lid: CE's {@code RBMKBase.getDirModified} forces
+     * every column's placement metadata to {@code DIR_NO_LID}, and lids are a separate item you put
+     * on top afterwards. The port defaulted this to 1, so every column arrived pre-lidded and the
+     * two lid items had nothing to do - and now that the neutron handler irradiates through open
+     * columns again, that default also silently suppressed the radiation leak an uncapped channel
+     * is supposed to produce.
+     *
+     * <p>The NBT fallback below stays at 1 so columns saved by older versions of this port keep the
+     * lid they were built with.
+     */
+    protected int lidState = 0;
 
     private static final Direction[] NEIGHBOR_DIRS = {
         Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST
@@ -88,35 +100,79 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
 
     // â"€â"€â"€ Heat â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
+    /**
+     * 1:1 with the CE {@code TileEntityRBMKBase.moveHeat}. Two things the earlier port got wrong:
+     *
+     * <ul>
+     *   <li>the four cardinal neighbours are <b>cached</b> in {@link #neighbourCache} and only
+     *       re-resolved when a slot is empty or its block entity went invalid, instead of doing
+     *       four {@code getBlockEntity} lookups on every column on every tick;</li>
+     *   <li>the ReaSim water/steam <b>remainder</b> is handed out one unit at a time to the
+     *       neighbours first and only what is left over goes to this column. The port gave the
+     *       whole remainder to itself on top of its already-assigned share, which quietly
+     *       duplicated up to {@code members-1} mB of water and steam per column per tick.</li>
+     * </ul>
+     */
+    protected final RBMKColumnBlockEntity[] neighbourCache = new RBMKColumnBlockEntity[4];
+
     private void moveHeat(Level level) {
         boolean reasim = RBMKDials.getReasimBoilers(level);
-        List<RBMKColumnBlockEntity> rec = new ArrayList<>();
-        rec.add(this);
+
         double heatTot = heat;
         int waterTot = reasimWater, steamTot = reasimSteam;
+        int members = 1; // includes self
 
+        int index = 0;
         for (Direction dir : NEIGHBOR_DIRS) {
-            BlockPos np = getBlockPos().offset(dir.getStepX(), 0, dir.getStepZ());
-            if (level.getBlockEntity(np) instanceof RBMKColumnBlockEntity n && n.participatesInHeatNetwork()) {
-                rec.add(n);
-                heatTot += n.heat;
-                if (reasim) { waterTot += n.reasimWater; steamTot += n.reasimSteam; }
+            if (neighbourCache[index] != null && neighbourCache[index].isRemoved())
+                neighbourCache[index] = null;
+
+            if (neighbourCache[index] == null) {
+                BlockPos np = getBlockPos().offset(dir.getStepX(), 0, dir.getStepZ());
+                if (level.getBlockEntity(np) instanceof RBMKColumnBlockEntity n && n.participatesInHeatNetwork())
+                    neighbourCache[index] = n;
             }
+
+            RBMKColumnBlockEntity neighbor = neighbourCache[index];
+            if (neighbor != null) {
+                members++;
+                heatTot += neighbor.heat;
+                if (reasim) { waterTot += neighbor.reasimWater; steamTot += neighbor.reasimSteam; }
+            }
+            index++;
         }
 
-        int members = rec.size();
+        double stepSize = RBMKDials.getColumnHeatFlow(level);
+
         if (members > 1) {
-            double targetHeat = heatTot / members;
-            double step = RBMKDials.getColumnHeatFlow(level);
-            int tWater = waterTot / members, rWater = waterTot % members;
-            int tSteam  = steamTot  / members, rSteam  = steamTot  % members;
-            for (RBMKColumnBlockEntity c : rec) {
-                c.heat += (targetHeat - c.heat) * step;
-                if (reasim) { c.reasimWater = tWater; c.reasimSteam = tSteam; }
+            double targetHeat = heatTot / (double) members;
+
+            int tWater = 0, rWater = 0, tSteam = 0, rSteam = 0;
+            if (reasim) {
+                tWater = waterTot / members; rWater = waterTot % members;
+                tSteam = steamTot / members; rSteam = steamTot % members;
             }
-            if (reasim) { reasimWater += rWater; reasimSteam += rSteam; }
+
+            for (RBMKColumnBlockEntity neighbor : neighbourCache) {
+                if (neighbor == null) continue;
+                neighbor.heat += (targetHeat - neighbor.heat) * stepSize;
+                if (reasim) {
+                    neighbor.reasimWater = tWater;
+                    neighbor.reasimSteam = tSteam;
+                    if (rWater > 0) { neighbor.reasimWater++; rWater--; }
+                    if (rSteam > 0) { neighbor.reasimSteam++; rSteam--; }
+                }
+                neighbor.setChanged();
+            }
+
+            heat += (targetHeat - heat) * stepSize;
+            if (reasim) {
+                reasimWater = tWater + Math.max(rWater, 0);
+                reasimSteam = tSteam + Math.max(rSteam, 0);
+            }
             setChanged();
         }
+
         coolPassively(level, members - 1);
     }
 
@@ -186,7 +242,12 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
         int minX = originPos.getX(), maxX = originPos.getX();
         int minZ = originPos.getZ(), maxZ = originPos.getZ();
 
-        while (!queue.isEmpty()) {
+        // CE's getFF caps the flood fill at 50000 columns and refuses to touch unloaded chunks, so a
+        // world-edited mega-structure cannot freeze the server or force-load half the world mid-melt.
+        int safetyLimit = 50_000;
+
+        while (!queue.isEmpty() && safetyLimit > 0) {
+            safetyLimit--;
             RBMKColumnBlockEntity col = queue.poll();
             columns.add(col);
             BlockPos p = col.getBlockPos();
@@ -196,8 +257,9 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
             for (Direction dir : NEIGHBOR_DIRS) {
                 BlockPos np = p.relative(dir);
                 if (visited.contains(np)) continue;
+                visited.add(np);
+                if (!level.isLoaded(np)) continue;
                 if (level.getBlockEntity(np) instanceof RBMKColumnBlockEntity n) {
-                    visited.add(np);
                     queue.add(n);
                 }
             }
@@ -215,6 +277,7 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
         // 3x3x3 neighborhood with a 1-in-3 chance of turning ordinary/burning debris into the
         // more severe digamma or radiating variant, matching the original's post-meltdown sweep.
         for (RBMKColumnBlockEntity col : columns) {
+            if (!(col instanceof RBMKRodBlockEntity)) continue;
             BlockPos p = col.getBlockPos();
             if (!level.getBlockState(p).is(com.hbm_m.block.ModBlocks.RBMK_CORIUM.get())) continue;
 
@@ -241,7 +304,7 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
         // centred on the group rather than on whichever column happened to trigger it, plus the
         // explosion report. Both were missing - the RBMK_MUSH particle was registered but never
         // spawned by anything, so a meltdown was silent and left no cloud at all.
-        int smallDim = Math.min(maxX - minX, maxZ - minZ);
+        int smallDim = Math.max(maxX - minX, maxZ - minZ) * 2;
         double avgX = minX + (maxX - minX) / 2 + 0.5;
         double avgZ = minZ + (maxZ - minZ) / 2 + 0.5;
         double cloudY = originPos.getY() + 1;
@@ -352,9 +415,10 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
                 level.setBlock(base.above(i), Blocks.AIR.defaultBlockState(), 3);
             }
         }
-        // Cosmetic-only blast (matches the original's newExplosion(...,5F,false,false)): sound and
-        // particles to sell the meltdown without double-damaging terrain we already rewrote above.
-        level.explode(null, base.getX() + 0.5, base.getY() + 0.5, base.getZ() + 0.5, 5F, Level.ExplosionInteraction.NONE);
+        // No per-column explosion. CE's standardMelt only rewrites the column's blocks; the single
+        // reactor-wide blast (sound + mushroom particle) is fired once by meltdownReactor. The port
+        // used to detonate a 5-power explosion for *every* melting column, so a 30-column reactor
+        // spawned 30 overlapping explosions in one tick.
     }
 
     /**
@@ -380,7 +444,7 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
 
         double vx = level.random.nextGaussian() * 0.25;
         double vz = level.random.nextGaussian() * 0.25;
-        double vy = 0.25 + level.random.nextDouble() * 1.25;
+        double vy = 0.5 + level.random.nextDouble() * 1.5;
         if (debrisType == com.hbm_m.entity.rbmk.RBMKDebrisEntity.DebrisType.LID) {
             vx *= 0.5;
             vz *= 0.5;

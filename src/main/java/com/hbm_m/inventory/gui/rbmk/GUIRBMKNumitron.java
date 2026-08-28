@@ -33,6 +33,8 @@ public class GUIRBMKNumitron extends Screen {
     private final Button[][] digitButtons = new Button[UNITS][DIGITS];
 
     private final boolean[] unitActive    = new boolean[UNITS];
+    /** CE's per-unit {@code polling} flag - re-read the channel every tick and zero on silence. */
+    private final net.minecraft.client.gui.components.Checkbox[] pollingBoxes = new net.minecraft.client.gui.components.Checkbox[UNITS];
     private final boolean[] leadingZeroes = new boolean[UNITS];
     private final boolean[] shortenNumber = new boolean[UNITS];
     private final long[]    activeDigits  = new long[UNITS];
@@ -97,6 +99,8 @@ public class GUIRBMKNumitron extends Screen {
                 }).bounds(cx - 100 + d * 20, y, 18, 16).build();
                 addRenderableWidget(digitButtons[i][d]);
             }
+            pollingBoxes[i] = new net.minecraft.client.gui.components.Checkbox(cx - 100, y, 90, 16, Component.literal("poll"), be.polling[i]);
+            addRenderableWidget(pollingBoxes[i]);
             y += 26;
         }
 
@@ -121,6 +125,7 @@ public class GUIRBMKNumitron extends Screen {
             data.putBoolean("zeroes" + i, leadingZeroes[i]);
             data.putBoolean("short" + i, shortenNumber[i]);
             data.putLong("digits" + i, activeDigits[i]);
+            data.putBoolean("polling" + i, pollingBoxes[i].selected());
         }
         RadioTorchControlPacket.sendToServer(pos, data);
         onClose();

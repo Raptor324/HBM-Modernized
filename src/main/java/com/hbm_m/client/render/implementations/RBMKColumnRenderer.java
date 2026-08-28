@@ -164,15 +164,22 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements Bloc
                 packedLight, packedOverlay);
 
         // ── Pipe-corner stub decoration ───────────────────────────────────────
-        // 1:1 port of RenderRBMKControl (original): CONTROL/BOILER/HEATER all share this
-        // renderer and, when they don't currently have a lid rendered on top, show 4 small
-        // pipe-corner stubs instead. Control rods never have a lid at all (see
-        // RBMKControlBlockEntity#hasLid), so they always get the stubs; boiler/heater only get
-        // them when unlidded - matches the original's mutually-exclusive lid-vs-pipe-stub check
-        // (only boiler/heater in the original special-case the lid swap at all).
+        // CE draws four small pipe stubs on top of a CONTROL/BOILER/HEATER column whenever that
+        // column has no lid (RBMKControlBakedModel.buildWorldQuads: lid box, or else addPipes).
+        //
+        // DELIBERATE DEVIATION FROM CE, on request: the stubs are suppressed for the steam boiler
+        // and for control rods, which are the two the player actually sees a lot of - a control rod
+        // never has a lid, so it wore them permanently, and since columns are now placed lidless
+        // the boiler grew them too. The heat exchanger keeps CE's behaviour. Flip the two flags
+        // below to restore full CE parity.
+        final boolean CE_STUBS_ON_CONTROL = false;
+        final boolean CE_STUBS_ON_BOILER  = false;
+
         ColumnType consoleType = be.getConsoleType();
-        boolean showsPipeStub = consoleType == ColumnType.CONTROL
-                || ((consoleType == ColumnType.BOILER || consoleType == ColumnType.HEATER) && !be.hasLid());
+        boolean showsPipeStub =
+                   (CE_STUBS_ON_CONTROL && consoleType == ColumnType.CONTROL)
+                || (CE_STUBS_ON_BOILER  && consoleType == ColumnType.BOILER && !be.hasLid())
+                || (consoleType == ColumnType.HEATER && !be.hasLid());
         if (showsPipeStub) {
             TextureAtlasSprite pipeTop  = sprite(RefStrings.MODID, "block/rbmk/" + prefix + "_pipe_top");
             TextureAtlasSprite pipeSide = sprite(RefStrings.MODID, "block/rbmk/" + prefix + "_pipe_side");

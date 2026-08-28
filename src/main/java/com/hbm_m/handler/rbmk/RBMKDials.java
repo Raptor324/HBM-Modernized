@@ -55,33 +55,48 @@ public class RBMKDials {
 
     // --- Static accessors (world-independent, matching original API) ---
 
-    public static double getPassiveCooling(Level world)          { return dial(d -> d.passiveCooling, PASSIVE_COOLING); }
-    public static double getPassiveCoolingInner(Level world)     { return dial(d -> d.passiveCoolingInner, PASSIVE_COOLING_INNER); }
-    public static double getColumnHeatFlow(Level world)          { return dial(d -> d.columnHeatFlow, COLUMN_HEAT_FLOW); }
-    public static double getFuelDiffusionMod(Level world)        { return dial(d -> d.fuelDiffusionMod, FUEL_DIFFUSION_MOD); }
-    public static double getFuelHeatProvision(Level world)       { return dial(d -> d.heatProvision, HEAT_PROVISION); }
+    public static double getPassiveCooling(Level world)          { return Math.max(dial(d -> d.passiveCooling, PASSIVE_COOLING), 0.0); }
+    public static double getPassiveCoolingInner(Level world)     { return clamp(dial(d -> d.passiveCoolingInner, PASSIVE_COOLING_INNER), 0.0, 1.0); }
+    public static double getColumnHeatFlow(Level world)          { return clamp(dial(d -> d.columnHeatFlow, COLUMN_HEAT_FLOW), 0.0, 1.0); }
+    public static double getFuelDiffusionMod(Level world)        { return Math.max(dial(d -> d.fuelDiffusionMod, FUEL_DIFFUSION_MOD), 0.0); }
+    public static double getFuelHeatProvision(Level world)       { return clamp(dial(d -> d.heatProvision, HEAT_PROVISION), 0.0, 1.0); }
     /** Original counts the full column and subtracts one (RBMKDials:96). */
     public static int    getColumnHeight(Level world)            {
-        return rule(world, RBMKGameRules.COLUMN_HEIGHT, COLUMN_HEIGHT + 1) - 1;
+        return Math.min(Math.max(rule(world, RBMKGameRules.COLUMN_HEIGHT, COLUMN_HEIGHT + 1), 2), 16) - 1;
     }
     public static boolean getPermaScrap(Level world)             { return rule(world, RBMKGameRules.PERMANENT_SCRAP, PERMANENT_SCRAP); }
-    public static double getBoilerHeatConsumption(Level world)   { return dial(d -> d.boilerHeatConsumption, BOILER_HEAT_CONSUMPTION); }
-    public static double getControlSpeed(Level world)            { return dial(d -> d.controlSpeedMod, CONTROL_SPEED_MOD); }
-    public static double getReactivityMod(Level world)           { return dial(d -> d.reactivityMod, REACTIVITY_MOD); }
-    public static double getOutgasserMod(Level world)            { return dial(d -> d.outgasserMod, OUTGASSER_MOD); }
-    public static double getSurgeMod(Level world)                { return dial(d -> d.surgeMod, SURGE_MOD); }
-    public static int    getFluxRange(Level world)               { return rule(world, RBMKGameRules.FLUX_RANGE, FLUX_RANGE); }
-    public static int    getReaSimRange(Level world)             { return rule(world, RBMKGameRules.REASIM_RANGE, REASIM_RANGE); }
+    public static double getBoilerHeatConsumption(Level world)   { return Math.max(dial(d -> d.boilerHeatConsumption, BOILER_HEAT_CONSUMPTION), 0.0); }
+    public static double getControlSpeed(Level world)            { return Math.max(dial(d -> d.controlSpeedMod, CONTROL_SPEED_MOD), 0.0); }
+    public static double getReactivityMod(Level world)           { return Math.max(dial(d -> d.reactivityMod, REACTIVITY_MOD), 0.0); }
+    public static double getOutgasserMod(Level world)            { return Math.max(dial(d -> d.outgasserMod, OUTGASSER_MOD), 0.0); }
+    public static double getSurgeMod(Level world)                { return Math.max(dial(d -> d.surgeMod, SURGE_MOD), 0.0); }
+    public static int    getFluxRange(Level world)               { return clampInt(rule(world, RBMKGameRules.FLUX_RANGE, FLUX_RANGE), 1, 100); }
+    public static int    getReaSimRange(Level world)             { return clampInt(rule(world, RBMKGameRules.REASIM_RANGE, REASIM_RANGE), 1, 100); }
     public static boolean getReasimBoilers(Level world)          { return rule(world, RBMKGameRules.REASIM_BOILERS, REASIM_BOILERS); }
-    public static double getReaSimBoilerSpeed(Level world)       { return dial(d -> d.reasimBoilerSpeed, REASIM_BOILER_SPEED); }
+    public static double getReaSimBoilerSpeed(Level world)       { return clamp(dial(d -> d.reasimBoilerSpeed, REASIM_BOILER_SPEED), 0.0, 1.0); }
     public static boolean getMeltdownsDisabled(Level world)      { return rule(world, RBMKGameRules.DISABLE_MELTDOWNS, DISABLE_MELTDOWNS); }
     public static boolean getOverpressure(Level world)           { return rule(world, RBMKGameRules.MELTDOWN_OVERPRESSURE, ENABLE_OVERPRESSURE); }
-    public static double getModeratorEfficiency(Level world)     { return dial(d -> d.moderatorEfficiency, MODERATOR_EFFICIENCY); }
-    public static double getAbsorberEfficiency(Level world)      { return dial(d -> d.absorberEfficiency, ABSORBER_EFFICIENCY); }
-    public static double getAbsorberHeatConversion(Level world)  { return dial(d -> d.absorberHeatConversion, ABSORBER_HEAT_CONV); }
-    public static double getReflectorEfficiency(Level world)     { return dial(d -> d.reflectorEfficiency, REFLECTOR_EFFICIENCY); }
+    public static double getModeratorEfficiency(Level world)     { return clamp(dial(d -> d.moderatorEfficiency, MODERATOR_EFFICIENCY), 0.0, 1.0); }
+    public static double getAbsorberEfficiency(Level world)      { return clamp(dial(d -> d.absorberEfficiency, ABSORBER_EFFICIENCY), 0.0, 1.0); }
+    public static double getAbsorberHeatConversion(Level world)  { return clamp(dial(d -> d.absorberHeatConversion, ABSORBER_HEAT_CONV), 0.0, 1.0); }
+    public static double getReflectorEfficiency(Level world)     { return clamp(dial(d -> d.reflectorEfficiency, REFLECTOR_EFFICIENCY), 0.0, 1.0); }
     public static boolean getDepletion(Level world)              { return !rule(world, RBMKGameRules.DISABLE_DEPLETION, DISABLE_DEPLETION); }
     public static boolean getXenon(Level world)                  { return !rule(world, RBMKGameRules.DISABLE_XENON, DISABLE_XENON); }
+
+    /**
+     * CE clamps every dial at the point of use ({@code MathHelper.clamp} / {@code Math.max} in
+     * {@code RBMKDials}), so a hand-edited config or gamerule cannot push the simulation into
+     * nonsense - a negative passive cooling would heat every column forever, a moderator
+     * efficiency above 1 would invert the fast/slow ratio, a flux range of 0 would divide by zero.
+     * The port read the raw values, so those bounds are restored here.
+     */
+    private static double clamp(double v, double min, double max) {
+        return v < min ? min : Math.min(v, max);
+    }
+
+    private static int clampInt(int v, int min, int max) {
+        return v < min ? min : Math.min(v, max);
+    }
 
     // ─── Game rule lookup ─────────────────────────────────────────────────────
 

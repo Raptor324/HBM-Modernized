@@ -209,7 +209,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         // ─── AUTO-PORT: fehlende Original-Bloecke (nur DEV-Tab, ungeprueft) ───
         // Texturen liegen unter block/ported/, getrennt vom handgepflegten Bestand.
-        simpleBlockWithItem(ModBlocks.BALEFIRE.get(), models().cubeAll("balefire", modLoc("block/ported/balefire")));
         simpleBlockWithItem(ModBlocks.BLOCK_ASBESTOS.get(), models().cubeAll("block_asbestos", modLoc("block/ported/block_asbestos")));
         simpleBlockWithItem(ModBlocks.BLOCK_BAKELITE.get(), models().cubeAll("block_bakelite", modLoc("block/ported/block_bakelite")));
         simpleBlockWithItem(ModBlocks.BLOCK_C4.get(), models().cubeAll("block_c4", modLoc("block/ported/block_c4")));
@@ -238,7 +237,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(ModBlocks.BLOCK_METEOR_MOLTEN.get(), models().cubeAll("block_meteor_molten", modLoc("block/ported/block_meteor_molten")));
         simpleBlockWithItem(ModBlocks.BLOCK_METEOR_TREASURE.get(), models().cubeAll("block_meteor_treasure", modLoc("block/ported/block_meteor_treasure")));
         simpleBlockWithItem(ModBlocks.BLOCK_NITER.get(), models().cubeAll("block_niter", modLoc("block/ported/block_niter")));
-        simpleBlockWithItem(ModBlocks.BLOCK_POLONIUM.get(), models().cubeAll("block_polonium", modLoc("block/ported/block_polonium")));
         simpleBlockWithItem(ModBlocks.BLOCK_POLYMER.get(), models().cubeAll("block_polymer", modLoc("block/ported/block_polymer")));
         simpleBlockWithItem(ModBlocks.BLOCK_PU_MIX.get(), models().cubeAll("block_pu_mix", modLoc("block/ported/block_pu_mix")));
         simpleBlockWithItem(ModBlocks.BLOCK_RED_PHOSPHORUS.get(), models().cubeAll("block_red_phosphorus", modLoc("block/ported/block_red_phosphorus")));
@@ -297,7 +295,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(ModBlocks.ORE_NETHER_TUNGSTEN.get(), models().cubeAll("ore_nether_tungsten", modLoc("block/ported/ore_nether_tungsten")));
         simpleBlockWithItem(ModBlocks.ORE_NETHER_URANIUM.get(), models().cubeAll("ore_nether_uranium", modLoc("block/ported/ore_nether_uranium")));
         simpleBlockWithItem(ModBlocks.ORE_NETHER_URANIUM_SCORCHED.get(), models().cubeAll("ore_nether_uranium_scorched", modLoc("block/ported/ore_nether_uranium_scorched")));
-        simpleBlockWithItem(ModBlocks.ORE_NITER.get(), models().cubeAll("ore_niter", modLoc("block/ported/ore_niter")));
         simpleBlockWithItem(ModBlocks.ORE_OIL_SAND.get(), models().cubeAll("ore_oil_sand", modLoc("block/ported/ore_oil_sand")));
         simpleBlockWithItem(ModBlocks.ORE_RARE.get(), models().cubeAll("ore_rare", modLoc("block/ported/ore_rare")));
         simpleBlockWithItem(ModBlocks.ORE_TEKTITE_OSMIRIDIUM.get(), models().cubeAll("ore_tektite_osmiridium", modLoc("block/ported/ore_tektite_osmiridium")));
@@ -3465,10 +3462,28 @@ public class ModBlockStateProvider extends BlockStateProvider {
         );
         // RBMK support/deco blocks (1:1 with com.hbm.blocks.ModBlocks - deco_rbmk reuses
         // rbmk/rbmk_top, deco_rbmk_smooth reuses rbmk/rbmk_blank_top).
+        // These four have textures of their own in CE; the first two were borrowing the RBMK
+        // column's top faces as stand-ins and the panelled pair did not exist at all.
         simpleBlockWithItem(ModBlocks.DECO_RBMK.get(),
-                models().cubeAll(ModBlocks.DECO_RBMK.getId().getPath(), modLoc("block/rbmk/rbmk_top")));
+                models().cubeAll(ModBlocks.DECO_RBMK.getId().getPath(), modLoc("block/deco_rbmk")));
         simpleBlockWithItem(ModBlocks.DECO_RBMK_SMOOTH.get(),
-                models().cubeAll(ModBlocks.DECO_RBMK_SMOOTH.getId().getPath(), modLoc("block/rbmk/rbmk_blank_top")));
+                models().cubeAll(ModBlocks.DECO_RBMK_SMOOTH.getId().getPath(), modLoc("block/deco_rbmk_smooth")));
+        simpleBlockWithItem(ModBlocks.DECO_RBMK_PANEL.get(),
+                models().cubeAll(ModBlocks.DECO_RBMK_PANEL.getId().getPath(), modLoc("block/deco_rbmk_panel")));
+        simpleBlockWithItem(ModBlocks.DECO_RBMK_SMOOTH_PANEL.get(),
+                models().cubeAll(ModBlocks.DECO_RBMK_SMOOTH_PANEL.getId().getPath(), modLoc("block/deco_rbmk_panel_smooth")));
+
+        // CE's thin panel slabs: a 2px single and the 4px double it stacks into. The side faces use
+        // a dedicated narrow strip texture, sampled from the bottom of the sheet so the panel's
+        // edge lines up whichever height it is.
+        rbmkPanelSlab(ModBlocks.DECO_RBMK_PANEL_SLAB2.get(), "deco_rbmk_panel_slab2",
+                "deco_rbmk_panel", "deco_rbmk_panel_side", 2);
+        rbmkPanelSlab(ModBlocks.DECO_RBMK_PANEL_SLAB4.get(), "deco_rbmk_panel_slab4",
+                "deco_rbmk_panel", "deco_rbmk_panel_side", 4);
+        rbmkPanelSlab(ModBlocks.DECO_RBMK_SMOOTH_PANEL_SLAB2.get(), "deco_rbmk_smooth_panel_slab2",
+                "deco_rbmk_panel_smooth", "deco_rbmk_panel_smooth_side", 2);
+        rbmkPanelSlab(ModBlocks.DECO_RBMK_SMOOTH_PANEL_SLAB4.get(), "deco_rbmk_smooth_panel_slab4",
+                "deco_rbmk_panel_smooth", "deco_rbmk_panel_smooth_side", 4);
         simpleBlockWithItem(ModBlocks.BLOCK_GRAPHITE.get(),
                 models().cubeAll(ModBlocks.BLOCK_GRAPHITE.getId().getPath(), modLoc("block/block_graphite")));
         simpleBlockWithItem(ModBlocks.STEEL_GRATE.get(),
@@ -4299,5 +4314,36 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         simpleBlockItem(block, models().cubeAll(blockObject.getId().getPath(), modLoc(overlayTexture)));
     }
+
+    /**
+     * One RBMK panel slab: a flat plate {@code height} pixels tall, textured with the panel sheet on
+     * the flat faces and the narrow edge strip on the sides. 1:1 with CE's hand-written
+     * {@code deco_rbmk_*_slab2/4} models.
+     */
+    private void rbmkPanelSlab(net.minecraft.world.level.block.Block block, String name,
+                                String topTex, String sideTex, int height) {
+        var model = models().getBuilder(name)
+                .texture("particle", modLoc("block/" + topTex))
+                .texture("texture", modLoc("block/" + topTex))
+                .texture("side", modLoc("block/" + sideTex));
+
+        model.element()
+                .from(0, 0, 0).to(16, height, 16)
+                .face(Direction.DOWN).uvs(0, 0, 16, 16).texture("#texture").cullface(Direction.DOWN).end()
+                .face(Direction.UP).uvs(0, 0, 16, 16).texture("#texture").end()
+                .face(Direction.NORTH).uvs(0, 16 - height, 16, 16).texture("#side").cullface(Direction.NORTH).end()
+                .face(Direction.SOUTH).uvs(0, 16 - height, 16, 16).texture("#side").cullface(Direction.SOUTH).end()
+                .face(Direction.WEST).uvs(0, 16 - height, 16, 16).texture("#side").cullface(Direction.WEST).end()
+                .face(Direction.EAST).uvs(0, 16 - height, 16, 16).texture("#side").cullface(Direction.EAST).end()
+                .end();
+
+        simpleBlock(block, model);
+
+        // Only the single slab has an item; the double is never carried.
+        if (block.asItem() != net.minecraft.world.item.Items.AIR) {
+            simpleBlockItem(block, model);
+        }
+    }
+
 }
 //?}

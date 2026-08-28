@@ -33,6 +33,8 @@ public class GUIRBMKGraph extends Screen {
     private final Button[]  maxButtons    = new Button[UNITS];
 
     private final boolean[] unitActive = new boolean[UNITS];
+    /** CE's per-unit {@code polling} flag - re-read the channel every tick and zero on silence. */
+    private final net.minecraft.client.gui.components.Checkbox[] pollingBoxes = new net.minecraft.client.gui.components.Checkbox[UNITS];
     private final boolean[] minBound   = new boolean[UNITS];
     private final boolean[] maxBound   = new boolean[UNITS];
 
@@ -94,6 +96,8 @@ public class GUIRBMKGraph extends Screen {
                 maxButtons[u].setMessage(boundLabel(maxBound[u]));
             }).bounds(cx + 60, y, 40, 16).build();
             addRenderableWidget(maxButtons[i]);
+            pollingBoxes[i] = new net.minecraft.client.gui.components.Checkbox(cx - 100, y, 90, 16, Component.literal("poll"), be.polling[i]);
+            addRenderableWidget(pollingBoxes[i]);
             y += 26;
         }
 
@@ -118,6 +122,7 @@ public class GUIRBMKGraph extends Screen {
             else             data.putBoolean("gminOff" + i, true);
             if (maxBound[i]) data.putLong("gmax" + i, parse(maxBoxes[i].getValue()));
             else             data.putBoolean("gmaxOff" + i, true);
+            data.putBoolean("polling" + i, pollingBoxes[i].selected());
         }
         RadioTorchControlPacket.sendToServer(pos, data);
         onClose();
