@@ -180,10 +180,71 @@ public final class ShaderBindResync {
                     .bind(); // управляемо: TU0 + кеш
             mc.gameRenderer.overlayTexture().setupOverlayColor(); // TU1 управляемо
             mc.gameRenderer.lightTexture().turnOnLightLayer();    // TU2 управляемо
-            GL13.glActiveTexture(GL13.GL_TEXTURE0);
+            // Управляемо: сырой glActiveTexture рассинхронизировал бы кеш юнита
+            com.mojang.blaze3d.platform.GlStateManager._activeTexture(GL13.GL_TEXTURE0);
         } catch (Throwable ignored) {
         }
     }
+
+    /**
+     * Принудительный честный ресинк факторов блендинга.
+     *
+     * GlStateManager._blendFuncSeparate НО-ОПИТСЯ при совпадении факторов с кешем.
+     * Если кеш разошёлся с физикой (кто угодно в кадре — наши RenderType'ы, чужие
+     * моды, состояние прошлого кадра), ванильные отрисовки с НЕСТАНДАРТНЫМ
+     * блендингом ломаются молча:
+     *  - виньетка (multiply ZERO/ONE_MINUS_SRC_COLOR) рисуется обычным блендом —
+     *    её квад кладётся на экран как непрозрачный тёмный слой («чёрный экран»);
+     *  - солнце/луна (аддитивный SRC_ALPHA/ONE) — «чёрный квадрат» вокруг.
+     * Sentinel (0,0,0,0) гарантирует реальный GL-вызов, затем восстанавливаем
+     * ванильное значение по умолчанию. Дро между вызовами нет — безопасно.
+     */
+    public static void forceHonestBlendState() {
+        try {
+            com.mojang.blaze3d.platform.GlStateManager._blendFuncSeparate(0, 0, 0, 0);
+            com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();
+        } catch (Throwable ignored) {
+        }
+    }
+
+    /**
+     * Сброс статического кеша {@code com.mojang.blaze3d.shaders.BlendMode.lastApplied}.
+     *
+     * КАК ЛОМАЕТ: {@code ShaderInstance.apply()} (1.20.1, строка ~337) применяет
+     * blend из JSON шейдера. Наши кастомные шейдеры (nuke_cloud/nuke_add)
+     * несут НЕ-opaque режимы (альфа/аддитив) — после их apply() кеш остаётся
+     * non-opaque. Следующий ВАНИЛЬНЫЙ шейдер без blend в json (position_tex и
+     * т.п., opaque) видит смену opacity и делает RenderSystem.disableBlend() —
+     * молча убивая блендинг для ванильных отрисовок, которые включили его
+     * вручную: виньетка (multiply) рисуется непрозрачной тёмной текстурой во
+     * весь экран («чёрный экран» на Fancy), солнце/луна (аддитив) — чёрными
+     * квадратами, полупрозрачные слои GUI — чёрными плашками.
+     * После сброса в null следующий apply() выполняет ПОЛНУЮ честную
+     * установку (enable/disable + факторы). Поле ищется по ТИПУ (единственный
+     * static BlendMode в классе) — работает и под SRG-именами в проде.
+     */
+    public static void invalidateBlendModeCache() {
+        try {
+            if (blendLastAppliedField == null) {
+                for (java.lang.reflect.Field f : com.mojang.blaze3d.shaders.BlendMode.class
+                        .getDeclaredFields()) {
+                    if (java.lang.reflect.Modifier.isStatic(f.getModifiers())
+                            && !f.isSynthetic()
+                            && f.getType() == com.mojang.blaze3d.shaders.BlendMode.class) {
+                        f.setAccessible(true);
+                        blendLastAppliedField = f;
+                        break;
+                    }
+                }
+            }
+            if (blendLastAppliedField != null) {
+                blendLastAppliedField.set(null, null);
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+
+    private static java.lang.reflect.Field blendLastAppliedField;
 
     private static final org.slf4j.Logger MainRegistry_LOGGER =
             com.hbm_m.main.MainRegistry.LOGGER;

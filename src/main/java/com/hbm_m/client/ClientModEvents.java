@@ -248,6 +248,11 @@ public class ClientModEvents {
 
     @SubscribeEvent
     public static void onRenderGuiPre(net.minecraftforge.client.event.RenderGuiEvent.Pre event) {
+        // Виньетка использует multiply-блендинг (ZERO/ONE_MINUS_SRC_COLOR) и
+        // молча ломается при расхождении кеша факторов блендинга с физикой
+        // (GlStateManager._blendFuncSeparate но-опится при «совпадении»).
+        // Форсируем честный блендинг ДО Gui.render.
+        com.hbm_m.client.render.shader.ShaderBindResync.forceHonestBlendState();
         com.hbm_m.client.render.FrameStateProbe.snap("px.gui.pre");
         com.hbm_m.client.render.FrameStateProbe.snapGuiEffects();
     }

@@ -257,10 +257,12 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             var minecraft = Minecraft.getInstance();
             var textureManager = minecraft.getTextureManager();
 
-            // Сырые бинды намеренно — см. комментарий в bindBlockLitSamplerTextures.
-            GL13.glActiveTexture(GL13.GL_TEXTURE0);
+            // Только управляемые бинды: сырые glActiveTexture/glBindTexture
+            // рассинхронизируют кеш GlStateManager — последующие управляемые
+            // бинды ванили но-опятся (чёрные квадраты солнца/луны, битая рука).
+            GlStateManager._activeTexture(GL13.GL_TEXTURE0);
             var blockAtlas = textureManager.getTexture(TextureAtlas.LOCATION_BLOCKS);
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, blockAtlas.getId());
+            GlStateManager._bindTexture(blockAtlas.getId());
         }
     }
 
@@ -397,25 +399,20 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         int lightmapGlId = resolveLightmapGlId(mc);
         if (atlasGlId <= 0 || lightmapGlId <= 0) return;
 
-        // TU0: Атлас
-        // Говорим кешу, что мы на TU0
-        com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
-        // Пробиваем сырой физический бинд (игнорируя любые десинки)
-        org.lwjgl.opengl.GL11.glBindTexture(org.lwjgl.opengl.GL11.GL_TEXTURE_2D, atlasGlId);
-        // Приводим кеш ванили в чувство
-        com.mojang.blaze3d.platform.GlStateManager._bindTexture(atlasGlId);
+        // TU0: Атлас (управляемо: кеш GlStateManager остаётся честным)
+        GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
+        GlStateManager._bindTexture(atlasGlId);
 
         // TU1: Оверлей
-        com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE1);
+        GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE1);
         mc.gameRenderer.overlayTexture().setupOverlayColor(); // Внутри уже использует GlStateManager
 
         // TU2: Лайтмап
-        com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE2);
-        org.lwjgl.opengl.GL11.glBindTexture(org.lwjgl.opengl.GL11.GL_TEXTURE_2D, lightmapGlId);
-        com.mojang.blaze3d.platform.GlStateManager._bindTexture(lightmapGlId);
+        GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE2);
+        GlStateManager._bindTexture(lightmapGlId);
 
         // ОБЯЗАТЕЛЬНО возвращаем кеш и физику на TU0 для всего остального рендера игры!
-        com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
+        GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
 
         shader.setSampler("Sampler0", atlasGlId);
         shader.setSampler("Sampler2", lightmapGlId);
@@ -837,17 +834,12 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             }
             RenderSystem.setShaderTexture(0, previousTexture0);
 
-            // ========= ФИКС ЧЕРНОГО ЭКРАНА =========
-            // Убираем за собой физические текстуры, чтобы они не протекли 
-            // в следующий кадр (на Солнце и Виньетку) и не отравили им сэмплеры.
-            org.lwjgl.opengl.GL13.glActiveTexture(org.lwjgl.opengl.GL13.GL_TEXTURE2);
-            org.lwjgl.opengl.GL11.glBindTexture(org.lwjgl.opengl.GL11.GL_TEXTURE_2D, 0);
-            
-            org.lwjgl.opengl.GL13.glActiveTexture(org.lwjgl.opengl.GL13.GL_TEXTURE1);
-            org.lwjgl.opengl.GL11.glBindTexture(org.lwjgl.opengl.GL11.GL_TEXTURE_2D, 0);
-            
-            org.lwjgl.opengl.GL13.glActiveTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
-            // =======================================
+            // ВАЖНО: НЕ анбиндим TU1/TU2. Сырой glBindTexture(0) оставлял кеш
+            // GlStateManager с «живыми» оверлеем/лайтмапой — все последующие
+            // управляемые бинды но-опились, и рендер после нашего меша (рука,
+            // GUI на Fast, небо следующего кадра) сэмплировал пустоту.
+            // Байнды bindBlockLitSamplerTextures управляемые и указывают на те
+            // же текстуры, что ваниль держит в этих юнитах — «утечка» не вредит.
 
             GlVaoSafety.bindVertexArray(previousVao);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
@@ -990,9 +982,20 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             RenderSystem.setShader(() -> shader);
 
             if (shader.MODEL_VIEW_MATRIX != null) {
-                // Композит с RenderSystem.getModelViewMatrix() (= R_cam в фазе BE) нужен на ОБЕИХ
-                // версиях: LevelRenderer пушит frustumMatrix в modelViewStack и на 1.20.1, и на 1.21.1.
-                shader.MODEL_VIEW_MATRIX.set(new Matrix4f(RenderSystem.getModelViewMatrix()).mul(poseStack.last().pose()));
+                // Track-путь (AFTER_WEATHER, под Iris/Oculus): R_cam уже запечён
+                // в poseStack (MissileTrackWorldRender), а амбиентная
+                // RenderSystem.getModelViewMatrix() здесь НЕ равна R_cam — чужой
+                // bookkeeping сбрасывает её в identity/мусор → двойной поворот
+                // или «улетающий» меш. Берём pose целиком — как в ванильном
+                // VBO-пути выше (ветка "baked"). Для BER/станков (вне track-
+                // контекста) композит ambient × pose остаётся корректным: там
+                // ambient = R_cam фазы BE.
+                if (entityMissileDepthBias.get()
+                        && com.hbm_m.platform.RenderHooks.currentLevelRotation() != null) {
+                    shader.MODEL_VIEW_MATRIX.set(new Matrix4f(poseStack.last().pose()));
+                } else {
+                    shader.MODEL_VIEW_MATRIX.set(new Matrix4f(RenderSystem.getModelViewMatrix()).mul(poseStack.last().pose()));
+                }
             }
             if (shader.PROJECTION_MATRIX != null) shader.PROJECTION_MATRIX.set(RenderSystem.getProjectionMatrix());
 

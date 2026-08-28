@@ -96,8 +96,25 @@ public final class DhClientCompat {
         }
     }
 
-    /** Ожидаемый вертикальный FOV кадра (градусы): getFov включает zoom и speed-эффекты. */
+    /**
+     * Ожидаемый вертикальный FOV кадра (градусы).
+     *
+     * ПРИОРИТЕТ — фактическая матрица кадра (event.getProjectionMatrix,
+     * см. offerFrameProjection): fovY = 2*atan(1/m11). Раньше здесь была
+     * рефлексия GameRenderer.getFov — в production-именовании SRG она НЕ
+     * находится ("getFov" vs "m_109090_"), фолбэки возвращали «сырой» FOV
+     * настроек, и вся FOV-валидация + реконструкция теряли spyglass-зум и
+     * speed-FOV: частицы/меш не приближались в spyglass и не следовали за
+     * изменением FOV. Матрица кадра — истина по определению.
+     */
     private static double expectedFovDeg(float partialTick) {
+        Matrix4f frame = eventFrameProjection;
+        if (frame != null && Math.abs(frame.m11()) > 1.0E-6F) {
+            double fovY = Math.toDegrees(2.0 * Math.atan(1.0 / frame.m11()));
+            if (fovY > 1.0 && fovY < 175.0) {
+                return fovY;
+            }
+        }
         Minecraft mc = Minecraft.getInstance();
         return getFovCompat(mc.gameRenderer, mc.gameRenderer.getMainCamera(), partialTick);
     }
@@ -270,7 +287,19 @@ public final class DhClientCompat {
         // FOV-валидация ПРИ ИСПОЛЬЗОВАНИИ: захваченная матрица могла быть
         // отравлена утечкой чужой перспективы (fovY≈10°) — рисовать с ней
         // нельзя, падаем на чистую реконструкцию из FOV камеры.
-        Matrix4f captured = (!irisActive && capturedUsable(partialTick)) ? capturedVanillaProjection : null;
+
+        // ИСТОЧНИК 0 (приоритетный, в т.ч. ПОД IRIS): матрица кадра из
+        // RenderLevelStageEvent.getProjectionMatrix() — это ТО ЖЕ, что
+        // gbufferProjection, которой пак рисовал террейн: актуальный speed-
+        // FOV (ускорение/спринт), zoom, без боба (боб — на стороне
+        // modelview, пак компенсирует сам). Без неё под Iris строилась
+        // ЧИСТАЯ перспектива из FOV — при изменении FOV она расходилась с
+        // реальной проекцией кадра, и частицы «отлетали» от своих мест.
+        Matrix4f captured = frameProjectionUsable(partialTick) ? eventFrameProjection : null;
+
+        if (captured == null && !irisActive && capturedUsable(partialTick)) {
+            captured = capturedVanillaProjection;
+        }
         if (captured == null && !irisActive && capturedVanillaProjection != null) {
             logCaptureRejectedAtUse();
         }
@@ -289,6 +318,43 @@ public final class DhClientCompat {
         return cleanVanillaPerspective(partialTick);
     }
 
+    /**
+     * Матрица кадра, переданная в RenderLevelStageEvent текущего кадра
+     * ({@link #offerFrameProjection}). null — кадр без захвата.
+     */
+    private static volatile Matrix4f eventFrameProjection;
+
+    /**
+     * Захват точной проекции уровня (вызывается из RenderLevelStageEvent
+     * каждый кадр ДО наших проходов). Матрица проходит санити + FOV-
+     * валидацию при offer, чтобы отравленная/чужая матрица не дожила до
+     * отрисовки.
+     */
+    public static void offerFrameProjection(Matrix4f projection) {
+        if (projection == null) {
+            eventFrameProjection = null;
+            return;
+        }
+        // ВАЖНО: БЕЗ fovMatches против ожидаемого FOV — сама эта матрица и
+        // есть эталон FOV кадра (см. expectedFovDeg). Сравнение с рефлексией
+        // getFov в production (SRG-имена, рефлексия недоступна → «сырой» FOV
+        // настроек) отбраковывало зумленную матрицу spyglass/speed-FOV, и
+        // частицы+меш переставали приближаться. Остаётся санити перспективы.
+        if (isSanePerspective(projection)) {
+            eventFrameProjection = new Matrix4f(projection);
+        }
+    }
+
+    /** Захват свежий (этот же кадр) и годится по санити/FOV. */
+    private static boolean frameProjectionUsable(float partialTick) {
+        Matrix4f m = eventFrameProjection;
+        if (m == null) {
+            return false;
+        }
+        double expectedFov = expectedFovDeg(partialTick);
+        return isSanePerspective(m) && fovMatches(m, expectedFov);
+    }
+
     /** Чистая перспектива из FOV камеры с расширенным far plane, без боба. */
     private static Matrix4f cleanVanillaPerspective(float partialTick) {
         Minecraft mc = Minecraft.getInstance();
@@ -300,7 +366,9 @@ public final class DhClientCompat {
                 EXTENDED_NEAR, EXTENDED_FAR);
     }
 
-    /** GameRenderer.getFov(Camera,float,boolean) приватен — рефлексия, затем фолбэки. */
+    /** GameRenderer.getFov(Camera,float,boolean) приватен — рефлексия, затем фолбэки.
+     *  ВАЖНО: в production-рантайме имена SRG — "getFov" не находится, поэтому
+     *  первым фолбэком идёт m_109090_ (без него терялись spyglass/speed-FOV). */
     private static double getFovCompat(net.minecraft.client.renderer.GameRenderer gr, net.minecraft.client.Camera cam, float partialTick) {
         try {
             var m = net.minecraft.client.renderer.GameRenderer.class.getDeclaredMethod("getFov", cam.getClass(), float.class, boolean.class);
@@ -308,14 +376,11 @@ public final class DhClientCompat {
             Object r = m.invoke(gr, cam, partialTick, true);
             if (r instanceof Number n) return n.doubleValue();
         } catch (Throwable ignored) {}
-        // Фолбэк: базовый FOV опций × эффект скорости (поля fov/oldFov маппятся по имени).
         try {
-            var cl = net.minecraft.client.renderer.GameRenderer.class;
-            var fFov = cl.getDeclaredField("fov"); fFov.setAccessible(true);
-            var fOld = cl.getDeclaredField("oldFov"); fOld.setAccessible(true);
-            float fov = fFov.getFloat(gr), old = fOld.getFloat(gr);
-            double base = Minecraft.getInstance().options.fov().get();
-            return base * net.minecraft.util.Mth.lerp(partialTick, old, fov);
+            var m = net.minecraft.client.renderer.GameRenderer.class.getDeclaredMethod("m_109090_", cam.getClass(), float.class, boolean.class);
+            m.setAccessible(true);
+            Object r = m.invoke(gr, cam, partialTick, true);
+            if (r instanceof Number n) return n.doubleValue();
         } catch (Throwable ignored) {}
         return Minecraft.getInstance().options.fov().get();
     }

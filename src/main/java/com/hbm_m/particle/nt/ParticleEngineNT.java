@@ -39,12 +39,17 @@ public class ParticleEngineNT {
 
     public static synchronized MultiBufferSource.BufferSource buffer() {
         if (ownBuffer == null) {
+            // ВАЖНО: НЕ MultiBufferSource.immediate()! Под ImmediatelyFast фабрика
+            // редиректится и подменяет источник на BatchableBufferSource, который
+            // крашится «Sorting state uninitialized» на пустых sortOnUpload-батчах
+            // (наши nuke_clouds/nuke_flash при пустом фильтре). PlainBufferSource —
+            // честный ванильный BufferSource, созданный мимо фабрики.
             //? if < 1.21.1 {
-            ownBuffer = MultiBufferSource.immediate(new com.mojang.blaze3d.vertex.BufferBuilder(256));
-                        //?} else {
-            /*// 1.21.1: immediate() принимает ByteBufferBuilder и сама создаёт
-            // билдеры под формат каждого RenderType.
-            ownBuffer = MultiBufferSource.immediate(new com.mojang.blaze3d.vertex.ByteBufferBuilder(256));
+            ownBuffer = new com.hbm_m.client.render.PlainBufferSource(
+                    new com.mojang.blaze3d.vertex.BufferBuilder(256));
+            //?} else {
+            /*ownBuffer = new com.hbm_m.client.render.PlainBufferSource(
+                    new com.mojang.blaze3d.vertex.ByteBufferBuilder(256));
             *///?}
         }
         return ownBuffer;
@@ -81,19 +86,11 @@ public class ParticleEngineNT {
                 if (drewAny) farLists++;
             }
         }
-        if (farParticles != lastLoggedFarParticles || ++farDiagCount % 1200 == 1) {
-            lastLoggedFarParticles = farParticles;
-            com.hbm_m.main.MainRegistry.LOGGER.info(
-                    "HBM renderFarContent: farLists={}, farParticles={}, totalTypes={}, cutoff={}b",
-                    farLists, farParticles, this.particlesByType.size(), (long) Math.sqrt(maxSq));
-        }
         this.lastFarParticles = farParticles;
         if (farParticles == 0) this.lastFarParticlePos = null;
     }
 
-    private int farDiagCount = 0;
     private int lastFarParticles = 0;
-    private int lastLoggedFarParticles = -1;
     /** Мировая позиция первого дальнего партикла текущего кадра (для readback-диагностики). */
     public net.minecraft.world.phys.Vec3 lastFarParticlePos;
 
@@ -119,12 +116,23 @@ public class ParticleEngineNT {
     }
 
     private void renderBatches(List<net.minecraft.client.renderer.RenderType> order, MultiBufferSource.BufferSource buffer, Camera camera, float partialTick, PoseStack levelPoseStack) {
-        for (int i = 0, size = order.size(); i < size; i++) {
-            net.minecraft.client.renderer.RenderType type = order.get(i);
+        // Межбатчевый порядок тоже динамический: батчи (типы = разные
+        // текстуры/частицы гриба — кольца, ножка, шляпка) рисуются от дальних
+        // к ближним относительно камеры, а не в порядке регистрации.
+        List<net.minecraft.client.renderer.RenderType> ordered = orderDistanceSorted(order, camera);
+        for (int i = 0, size = ordered.size(); i < size; i++) {
+            net.minecraft.client.renderer.RenderType type = ordered.get(i);
             List<ParticleNT> list = this.particlesByType.get(type);
             if (list == null || list.isEmpty()) continue;
 
-            VertexConsumer consumer = buffer.getBuffer(type);
+            // Порядок отрисовки ВНУТРИ батча: от дальних к ближним (painter).
+            // sortOnUpload у наших RenderType выключен (нестабилен в модпаке —
+            // «Sorting state uninitialized»), поэтому порядок квайдов задаём
+            // сами — сортировкой частиц. Данные почти отсортированы между
+            // кадрами (частицы движутся медленно), TimSort почти O(n).
+            sortFarToNear(list, camera);
+
+            VertexConsumer consumer = buffer().getBuffer(type);
             for (int j = 0, lSize = list.size(); j < lSize; j++) {
                 list.get(j).render(consumer, camera, partialTick, levelPoseStack);
             }
@@ -132,19 +140,71 @@ public class ParticleEngineNT {
     }
 
     private void renderBatchesFiltered(List<net.minecraft.client.renderer.RenderType> order, MultiBufferSource.BufferSource buffer, Camera camera, float partialTick, PoseStack levelPoseStack, java.util.function.Predicate<ParticleNT> filter) {
-        for (int i = 0, size = order.size(); i < size; i++) {
-            net.minecraft.client.renderer.RenderType type = order.get(i);
+        List<net.minecraft.client.renderer.RenderType> ordered = orderDistanceSorted(order, camera);
+        for (int i = 0, size = ordered.size(); i < size; i++) {
+            net.minecraft.client.renderer.RenderType type = ordered.get(i);
             List<ParticleNT> list = this.particlesByType.get(type);
             if (list == null || list.isEmpty()) continue;
+
+            sortFarToNear(list, camera);
 
             VertexConsumer consumer = null;
             for (int j = 0, lSize = list.size(); j < lSize; j++) {
                 ParticleNT p = list.get(j);
                 if (!filter.test(p)) continue;
-                if (consumer == null) consumer = buffer.getBuffer(type);
+                if (consumer == null) consumer = buffer().getBuffer(type);
                 p.render(consumer, camera, partialTick, levelPoseStack);
             }
         }
+    }
+
+    /**
+     * Копия списка типов, отсортированная по дистанции центроида частиц
+     * батча от камеры (дальние раньше). Типы без живых частиц — в конец.
+     */
+    private List<net.minecraft.client.renderer.RenderType> orderDistanceSorted(List<net.minecraft.client.renderer.RenderType> order, Camera camera) {
+        double cx = camera.getPosition().x;
+        double cy = camera.getPosition().y;
+        double cz = camera.getPosition().z;
+        List<net.minecraft.client.renderer.RenderType> sorted = new ArrayList<>(order);
+        sorted.sort((ta, tb) -> {
+            double da = batchDistance(ta, cx, cy, cz);
+            double db = batchDistance(tb, cx, cy, cz);
+            return Double.compare(db, da);
+        });
+        return sorted;
+    }
+
+    /** Дистанция центроида частиц батча от камеры; MAX для пустых батчей. */
+    private double batchDistance(net.minecraft.client.renderer.RenderType type, double cx, double cy, double cz) {
+        List<ParticleNT> list = this.particlesByType.get(type);
+        if (list == null || list.isEmpty()) {
+            return Double.MAX_VALUE;
+        }
+        double sx = 0, sy = 0, sz = 0;
+        for (int i = 0, size = list.size(); i < size; i++) {
+            ParticleNT p = list.get(i);
+            sx += p.x;
+            sy += p.y;
+            sz += p.z;
+        }
+        double n = list.size();
+        double dx = sx / n - cx;
+        double dy = sy / n - cy;
+        double dz = sz / n - cz;
+        return dx * dx + dy * dy + dz * dz;
+    }
+
+    /** Сортировка частиц батча от дальних к ближним относительно камеры. */
+    private static void sortFarToNear(List<ParticleNT> list, Camera camera) {
+        double cx = camera.getPosition().x;
+        double cy = camera.getPosition().y;
+        double cz = camera.getPosition().z;
+        list.sort((a, b) -> {
+            double da = (a.x - cx) * (a.x - cx) + (a.y - cy) * (a.y - cy) + (a.z - cz) * (a.z - cz);
+            double db = (b.x - cx) * (b.x - cx) + (b.y - cy) * (b.y - cy) + (b.z - cz) * (b.z - cz);
+            return Double.compare(db, da);
+        });
     }
 
     public void renderFlashOnly(MultiBufferSource.BufferSource buffer, Camera camera, float partialTick, PoseStack levelPoseStack) {

@@ -49,8 +49,10 @@ public class MukeWaveParticle extends ParticleNT {
                 camera);
         float scale = (1F - (float) Math.pow(Math.E, (this.age + partialTicks) * -0.125D)) * waveScale * vScale;
 
-        VertexConsumer consumer = net.minecraft.client.Minecraft.getInstance()
-                .renderBuffers().bufferSource()
+        // Изолированный буфер движка (правило PlainBufferSource): NUKE_FLASH
+        // несёт sortOnUpload=true и не должен регистрироваться в общем
+        // bufferSource под ImmediatelyFast.
+        VertexConsumer consumer = ParticleEngineNT.buffer()
                 .getBuffer(getRenderType());
 
         ImmediateVertexWriter.worldQuad(consumer,

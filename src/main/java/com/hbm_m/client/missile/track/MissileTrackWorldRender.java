@@ -46,10 +46,13 @@ public final class MissileTrackWorldRender {
     private static MultiBufferSource.BufferSource missileBufferSource() {
         MultiBufferSource.BufferSource bs = missileBufferSource;
         if (bs == null) {
+            // PlainBufferSource, а НЕ MultiBufferSource.immediate(): под
+            // ImmediatelyFast фабрика подменяет источник на BatchableBufferSource,
+            // падающий на пустых sortOnUpload-батчах (см. PlainBufferSource).
             //? if < 1.21.1 {
-            bs = MultiBufferSource.immediate(new com.mojang.blaze3d.vertex.BufferBuilder(256));
+            bs = new com.hbm_m.client.render.PlainBufferSource(new com.mojang.blaze3d.vertex.BufferBuilder(256));
             //?} else {
-            /*bs = MultiBufferSource.immediate(new com.mojang.blaze3d.vertex.ByteBufferBuilder(256));
+            /*bs = new com.hbm_m.client.render.PlainBufferSource(new com.mojang.blaze3d.vertex.ByteBufferBuilder(256));
             *///?}
             missileBufferSource = bs;
         }
@@ -130,7 +133,6 @@ public final class MissileTrackWorldRender {
             buffers.endBatch();
         }
         com.hbm_m.client.render.FrameStateProbe.snap(drewAny ? "twr.drew" : "twr.idle");
-        logTrackDrawOncePerSecond(partialTick, camera);
         return drewAny;
     }
 
@@ -141,61 +143,6 @@ public final class MissileTrackWorldRender {
     /** Позиция для FrameStateProbe.snapWorld (null, если ещё ничего не рисовалось). */
     public static double[] lastDrawnMissilePos() {
         return lastMissilePosValid ? LAST_MISSILE_POS : null;
-    }
-
-    private static long lastTrackDrawLogMs;
-
-    /**
-     * Диагностика «чёрного прямоугольника с параллаксом»: раз в секунду печатает
-     * для каждого трека истинную позицию, дистанцию до камеры и позицию/масштаб
-     * ОТРИСОВКИ (после виртуализации). Если drawDist окажется единицы блоков —
-     * меш висит у лица игрока и ночью выглядит чёрной стеной во весь экран
-     * (шаг вперёд/назад меняет перекрытие = параллакс). Заодно — живые NT-частицы
-     * по классам (флары/контрейл), чтобы видеть, спавнятся ли они вообще.
-     */
-    private static void logTrackDrawOncePerSecond(float partialTick, Vec3 camera) {
-        long now = System.currentTimeMillis();
-        if (now - lastTrackDrawLogMs < 1000) {
-            return;
-        }
-        lastTrackDrawLogMs = now;
-        try {
-            StringBuilder sb = new StringBuilder("HBM track-draw: cam=(")
-                    .append((int) camera.x).append(',').append((int) camera.y).append(',').append((int) camera.z).append(')');
-            int n = 0;
-            for (MissileTrackClient.TrackEntry entry : MissileTrackClient.entries()) {
-                MissileTrackClient.InterpolatedPose pose = entry.interpolate(partialTick);
-                if (pose == null) {
-                    continue;
-                }
-                CameraRelativePose virt = virtualizeWorld(pose.x(), pose.y(), pose.z(), camera);
-                double trueDist = Math.sqrt(sqr(pose.x() - camera.x) + sqr(pose.y() - camera.y) + sqr(pose.z() - camera.z));
-                double drawDist = Math.sqrt(sqr(virt.relX()) + sqr(virt.relY()) + sqr(virt.relZ()));
-                sb.append(" | id=").append(entry.entityId)
-                        .append(" true=(").append((int) pose.x()).append(',').append((int) pose.y()).append(',').append((int) pose.z()).append(')')
-                        .append(" trueDist=").append((int) trueDist)
-                        .append(" drawDist=").append((int) drawDist)
-                        .append(" scale=").append(String.format("%.2f", virt.screenScale()));
-                if (++n >= 4) {
-                    break;
-                }
-            }
-            if (n == 0) {
-                sb.append(" entries=0");
-            }
-            var batches = com.hbm_m.particle.nt.ParticleEngineNT.INSTANCE.debugBatches();
-            java.util.Map<String, Integer> byClass = new java.util.LinkedHashMap<>();
-            int total = 0;
-            for (java.util.List<com.hbm_m.particle.nt.ParticleNT> list : batches.values()) {
-                for (com.hbm_m.particle.nt.ParticleNT p : list) {
-                    byClass.merge(p.getClass().getSimpleName(), 1, Integer::sum);
-                    total++;
-                }
-            }
-            sb.append(" | ntTotal=").append(total).append(byClass);
-            com.hbm_m.main.MainRegistry.LOGGER.info(sb.toString());
-        } catch (Throwable ignored) {
-        }
     }
 
     private static double sqr(double v) {
@@ -219,15 +166,17 @@ public final class MissileTrackWorldRender {
         double drawZ = camera.z + virtual.relZ();
 
         BlockPos lightPos = BlockPos.containing(virtual.trueX(), virtual.trueY(), virtual.trueZ());
-        // Свет — только по КЛИЕНТСКОЙ карте чанков (серверные тикеты траектории
-        // чанки клиенту не шлют). Нет чанка → FULL_BRIGHT, как у ванильных
-        // энтити за границей синхронизации; иначе блок_lit сэмплит чёрный
-        // угол лайтмапы и дальний меш рисуется чёрным силуэтом.
-        int packedLight = level.hasChunkAt(lightPos)
-                ? LightTexture.pack(
-                        level.getBrightness(LightLayer.BLOCK, lightPos),
-                        level.getBrightness(LightLayer.SKY, lightPos))
-                : LightTexture.FULL_BRIGHT;
+        // Свет по ПОЗИЦИИ ракеты: меш в небе/далеко от игрока освещается
+        // своим окружением, а не чанком камеры. Если чанк ракеты не загружен
+        // (дальние ступени трека, DH) — fallback на свет камеры: он стабилен
+        // на границе прогрузки и не даёт скачков яркости.
+        BlockPos samplePos = lightPos;
+        if (!level.hasChunkAt(lightPos)) {
+            samplePos = BlockPos.containing(camera.x, camera.y, camera.z);
+        }
+        int packedLight = LightTexture.pack(
+                level.getBrightness(LightLayer.BLOCK, samplePos),
+                level.getBrightness(LightLayer.SKY, samplePos));
 
         Direction launchFacing = pose.current().launchFacing();
         float yaw = pose.yaw();

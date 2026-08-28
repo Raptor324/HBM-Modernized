@@ -42,6 +42,12 @@ public final class DhDepthCopy {
         if (shader == null) {
             return;
         }
+        // Fabulous: AFTER_WEATHER выполняется внутри WEATHER_TARGET — переход
+        // на main разорвал бы transparencyChain-композит. Копию глубины там
+        // не делаем (полупрозрачный DH-проход и так поверх композита).
+        if (Minecraft.useShaderTransparency()) {
+            return;
+        }
 
         Minecraft mc = Minecraft.getInstance();
         mc.getMainRenderTarget().bindWrite(false);

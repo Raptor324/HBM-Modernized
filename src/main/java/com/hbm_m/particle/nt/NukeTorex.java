@@ -451,19 +451,10 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle {
     @Override
     public net.minecraft.resources.ResourceLocation hbm$getFarTexture() { return CLOUDLET; }
 
-    private int renderDiagCount = 0;
-
     public enum TorexType { STANDARD, SHOCK, RING, CONDENSATION }
 
     @Override
     public void render(VertexConsumer ignored, Camera camera, float partialTicks, PoseStack levelPoseStack) {
-        if (renderDiagCount++ < 2 || renderDiagCount % 600 == 0) {
-            com.hbm_m.main.MainRegistry.LOGGER.info(
-                    "HBM Torex.render #{}: farPass={}, pos=({}, {}, {}), cloudlets={}",
-                    renderDiagCount,
-                    com.hbm_m.client.ClientRenderHandler.CustomRenderTypes.isFarPassActive(),
-                    (int) this.x, (int) this.y, (int) this.z, this.cloudlets.size());
-        }
         Vec3 camPos = camera.getPosition();
         // Fallback-виртуализация ТОЛЬКО когда DH не рендерит (см. ParticleNT):
         // центр гриба приближается к границе прорисовки, чтобы шляпка не
@@ -538,6 +529,22 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle {
 
     private void cloudletWrapper(float partialTicks, PoseStack poseStack, VertexConsumer consumer, float vScale) {
         Matrix4f matrix = poseStack.last().pose();
+        // Порядок отрисовки cloudlets: от дальних к ближним относительно
+        // камеры (painter's algorithm). sortOnUpload у рендертайпа выключен
+        // (нестабилен в модпаке — «Sorting state uninitialized»), порядок
+        // квайдов задаём сами — иначе ножка/шляпка/роллеры блендятся в
+        // порядке спавна, а не по глубине.
+        Camera cam = Minecraft.getInstance().gameRenderer.getMainCamera();
+        double cx = cam.getPosition().x;
+        double cy = cam.getPosition().y;
+        double cz = cam.getPosition().z;
+        this.cloudlets.sort((a, b) -> {
+            Vec3 va = a.getInterpPos(partialTicks);
+            Vec3 vb = b.getInterpPos(partialTicks);
+            double da = (va.x - cx) * (va.x - cx) + (va.y - cy) * (va.y - cy) + (va.z - cz) * (va.z - cz);
+            double db = (vb.x - cx) * (vb.x - cx) + (vb.y - cy) * (vb.y - cy) + (vb.z - cz) * (vb.z - cz);
+            return Double.compare(db, da);
+        });
         for (Cloudlet cloudlet : cloudlets) {
             Vec3 vec = cloudlet.getInterpPos(partialTicks);
             float lx = (float) ((vec.x - this.x) * vScale);

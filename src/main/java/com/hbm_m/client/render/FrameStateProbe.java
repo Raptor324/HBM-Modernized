@@ -20,13 +20,18 @@ import com.mojang.blaze3d.systems.RenderSystem;
  */
 public final class FrameStateProbe {
 
+    /** По умолчанию ВЫКЛЮЧЕН: чтение GL-состояния + glReadPixels каждый кадр —
+     *  это только для отладки. Включать -Dhbm.fsp=1 (или env HBM_FSP). */
+    private static final boolean ENABLED =
+            Boolean.getBoolean("hbm.fsp") || System.getenv("HBM_FSP") != null;
+
     private static final long INTERVAL_MS = 400;
     private static final ConcurrentHashMap<String, Long> lastPerTag = new ConcurrentHashMap<>();
 
     private FrameStateProbe() {}
 
     public static void snap(String tag) {
-        if (!RenderSystem.isOnRenderThread()) return;
+        if (!ENABLED || !RenderSystem.isOnRenderThread()) return;
         long now = System.currentTimeMillis();
         Long prev = lastPerTag.get(tag);
         if (prev != null && now - prev < INTERVAL_MS) return;
@@ -79,6 +84,10 @@ public final class FrameStateProbe {
                     GL11.glGetIntegerv(GL11.GL_TEXTURE_BINDING_2D, b1);
                     unitBindings[u] = b1.get(0);
                 }
+                // ВАЖНО: именно СЫРОЙ вызов. Кеш GlStateManager считает активным
+                // TU0 (все управляемые пути завершаются _activeTexture(TU0));
+                // управляемый вызов здесь но-опился бы, оставив физику на TU2,
+                // и все последующие бинды ушли бы не в тот юнит (мерцание кадра).
                 GL13.glActiveTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
             }
             // ЧТЕНИЕ ПИКСЕЛЕЙ (только для px_тегов): центр и углы текущего
@@ -109,13 +118,15 @@ public final class FrameStateProbe {
                     pix = sb.append("]").toString();
                 }
             }
+            String cache = cacheVsPhys(unitBindings, bfSrc, bfDst);
             MainRegistry.LOGGER.info(String.format(
-                "HBM fsp[%s]: prog=%d fb=%d mainFb=%d rfb=%d glErr=%d cmMask=%d dMask=%d dFunc=%d blend=%d(%d/%d) cull=%d scissor=%d vp=%dx%d+%d+%d tex0=%s tex1=%s units=[%d/%d/%d] rsShader=%s fog=%.0f/%.0f mv=%.3f/%.3f/%.3f%s%s",
+                "HBM fsp[%s]: prog=%d fb=%d mainFb=%d rfb=%d glErr=%d cmMask=%d dMask=%d dFunc=%d blend=%d(%d/%d) cull=%d scissor=%d vp=%dx%d+%d+%d tex0=%s tex1=%s units=[%d/%d/%d]%s rsShader=%s fog=%.0f/%.0f mv=%.3f/%.3f/%.3f%s%s",
                 tag, prog, fb, mainFb, rfbo, glErr, cmMask, depthMask ? 1 : 0, dFunc,
                 blendOn ? 1 : 0, bfSrc, bfDst, cull ? 1 : 0, scissorTest ? 1 : 0,
                 viewport[2], viewport[3], viewport[0], viewport[1],
                 texSlot(0), texSlot(1),
                 unitBindings[0], unitBindings[1], unitBindings[2],
+                cache,
                 rsShader,
                 fogStart, fogEnd,
                 mv.m00(), mv.m10(), mv.m22(),
@@ -133,6 +144,49 @@ public final class FrameStateProbe {
             return String.valueOf(RenderSystem.getShaderTexture(index));
         } catch (Throwable t) {
             return "?";
+        }
+    }
+
+    // ── Кеш GlStateManager vs физика: прямое сравнение ──────────────────────
+    // Расхождение cached-биндов/активного юнита/факторов блендинга с GL = но-оп
+    // следующих управляемых вызовов = «протухшее» состояние. Резолвим поля
+    // рефлексией один раз; в проде имена могут не найтись — просто пусто.
+    private static volatile boolean cacheResolved;
+    private static java.lang.reflect.Field fActiveTexture, fTextures, fBlend,
+            fTexBinding, fBlendSrcRgb, fBlendDstRgb;
+
+    private static String cacheVsPhys(int[] physUnits, int physBlendSrc, int physBlendDst) {
+        try {
+            if (!cacheResolved) {
+                cacheResolved = true;
+                Class<?> g = com.mojang.blaze3d.platform.GlStateManager.class;
+                fActiveTexture = g.getDeclaredField("activeTexture");
+                fTextures = g.getDeclaredField("TEXTURES");
+                fBlend = g.getDeclaredField("BLEND");
+                fActiveTexture.setAccessible(true);
+                fTextures.setAccessible(true);
+                fBlend.setAccessible(true);
+                Class<?> texState = Class.forName("com.mojang.blaze3d.platform.GlStateManager$TextureState");
+                fTexBinding = texState.getDeclaredField("binding");
+                fTexBinding.setAccessible(true);
+                Class<?> blendState = Class.forName("com.mojang.blaze3d.platform.GlStateManager$BlendState");
+                fBlendSrcRgb = blendState.getDeclaredField("srcRgb");
+                fBlendDstRgb = blendState.getDeclaredField("dstRgb");
+                fBlendSrcRgb.setAccessible(true);
+                fBlendDstRgb.setAccessible(true);
+            }
+            if (fActiveTexture == null || fTextures == null || fBlend == null) return "";
+            int cachedActive = fActiveTexture.getInt(null) - GL13.GL_TEXTURE0;
+            Object textures = fTextures.get(null);
+            Object b0 = java.lang.reflect.Array.get(textures, 0);
+            Object b2 = java.lang.reflect.Array.get(textures, 2);
+            int c0 = fTexBinding.getInt(b0), c2 = fTexBinding.getInt(b2);
+            Object blend = fBlend.get(null);
+            int cbs = fBlendSrcRgb.getInt(blend), cbd = fBlendDstRgb.getInt(blend);
+            return String.format(" cacheAct=%d t0=%d t2=%d bf=%d/%d",
+                    cachedActive, c0, c2, cbs, cbd);
+        } catch (Throwable t) {
+            return " cache=?";
         }
     }
 
@@ -165,7 +219,7 @@ public final class FrameStateProbe {
      * внутри нашего пуша (levelRot из TLS) и при валидной проекции.
      */
     public static void snapWorld(String tag, double wx, double wy, double wz) {
-        if (!RenderSystem.isOnRenderThread()) return;
+        if (!ENABLED || !RenderSystem.isOnRenderThread()) return;
         long now = System.currentTimeMillis();
         Long prev = lastPerTag.get(tag);
         if (prev != null && now - prev < INTERVAL_MS) return;
@@ -217,7 +271,7 @@ public final class FrameStateProbe {
      * Диагностика «чёрного прямоугольника, едущего при тряске GUI».
      */
     public static void snapGuiEffects() {
-        if (!RenderSystem.isOnRenderThread()) return;
+        if (!ENABLED || !RenderSystem.isOnRenderThread()) return;
         long now = System.currentTimeMillis();
         if (now - lastGuiFxLogMs < 2000) return;
         lastGuiFxLogMs = now;

@@ -3,7 +3,6 @@ package com.hbm_m.client.particle;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.client.missile.track.MissileTrackWorldRender;
 import com.hbm_m.particle.nt.ParticleEngineNT;
-import org.joml.Matrix4f;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -45,6 +44,10 @@ public class EngineHandler {
         // от клоббера Oculus _glUseProgram(0) в beginLevelRendering.
         if (event.phase == net.minecraftforge.event.TickEvent.Phase.END) {
             com.hbm_m.client.render.shader.ShaderBindResync.invalidateStaticProgramCache();
+            // NOTE: invalidateBlendModeCache здесь НЕ вызываем — сброс на
+            // границе кадров заставлял первые ванильные apply() кадра делать
+            // полную установку с disableBlend, ломая небо/spyglass. Достаточно
+            // прицельного сброса в конце AFTER_WEATHER-прохода.
         }
     }
     //?} elif neoforge {
@@ -68,6 +71,11 @@ public class EngineHandler {
         /*org.joml.Matrix4f levelRotation = new org.joml.Matrix4f(event.getModelViewMatrix());
         *///?}
         com.hbm_m.platform.RenderHooks.pushLevelModelView(levelRotation);
+        // Точная проекция кадра (та же, которой пак/ваниль рисовали террейн):
+        // база для cleanExtendedProjection — иначе под Iris частицы строили
+        // приближённую перспективу и «отлетали» при изменении FOV (ускорение).
+        com.hbm_m.client.compat.dh.DhClientCompat.offerFrameProjection(
+                new org.joml.Matrix4f(event.getProjectionMatrix()));
         try {
             renderAfterWeather(event);
         } finally {
@@ -76,9 +84,20 @@ public class EngineHandler {
     }
 
     private static void renderAfterWeather(RenderLevelStageEvent event) {
-        long now = System.currentTimeMillis();
-        diagThisFrame = (now - lastDiagLogMs >= DIAG_INTERVAL_MS);
-        if (diagThisFrame) lastDiagLogMs = now;
+        // РАДИКАЛЬНАЯ СТРАХОВКА: если рисовать нечего (DH не рендерит, NT-частиц
+        // нет, треков ракет нет) — НЕ ТРОГАЕМ НИЧЕГО в кадре вообще. Любая наша
+        // манипуляция состоянием/FBO в этом окне — чистый риск для ванильного
+        // рендера; на пустом проходе она и была источником артефактов.
+        boolean hasParticles = !com.hbm_m.particle.nt.ParticleEngineNT.INSTANCE.debugBatches().isEmpty();
+        boolean hasTracks = com.hbm_m.client.missile.track.MissileTrackClient.isEnabled()
+                && com.hbm_m.client.missile.track.MissileTrackClient.entries().iterator().hasNext();
+        if (!com.hbm_m.client.compat.dh.DhClientState.isActive() && !hasParticles && !hasTracks) {
+            return;
+        }
+
+        // Честный блендинг перед нашими кастомными отрисовками: страхуемся от
+        // залипших факторов кеша (см. ShaderBindResync.forceHonestBlendState).
+        com.hbm_m.client.render.shader.ShaderBindResync.forceHonestBlendState();
 
         // Ресинк кеша программ кастомных шейдеров против сырого _glUseProgram(0)
         // от Oculus-VanillaRenderingPipeline (см. ShaderBindResync).
@@ -91,16 +110,28 @@ public class EngineHandler {
         com.hbm_m.client.render.FrameStateProbe.snap("eh.in");
         com.hbm_m.client.render.FrameStateProbe.snap("px.eh_in");
 
+        // ЦЕЛЕВОЙ FBO: всегда главный. На Fabulous рендертайпы NT-частиц несут
+        // шардинг TRANSLUCENT_TARGET: каждый батч прыгает в translucentTarget и
+        // teardown'ом возвращается в MAIN — если мы остались в weatherTarget,
+        // контент расщепляется между путями композита (мерцание/призраки).
+        // Единый main даёт согласованный кадр; transparencyChain в конце кадра
+        // поверх него кладёт только полупрозрачные слои.
         com.mojang.blaze3d.pipeline.RenderTarget mainTarget = Minecraft.getInstance().getMainRenderTarget();
         mainTarget.bindWrite(false);
+        // Честное восстановление: на Fast/Fancy ваниль ставит depthMask(false)
+        // ПЕРЕД погодой, на Fabulous шард WEATHER_TARGET оставляет true.
+        // Чтение сырое — glGet не рассинхронизирует кеш GlStateManager.
+        boolean prevDepthMask = org.lwjgl.opengl.GL11.glGetBoolean(org.lwjgl.opengl.GL11.GL_DEPTH_WRITEMASK);
         com.mojang.blaze3d.systems.RenderSystem.depthMask(true);
         com.mojang.blaze3d.systems.RenderSystem.enableDepthTest();
 
         MultiBufferSource.BufferSource buffer = Minecraft.getInstance().renderBuffers().bufferSource();
 
-        RenderSystem.setShaderFogStart(100000.0F);
-        RenderSystem.setShaderFogEnd(100001.0F);
-        RenderSystem.setShaderFogColor(0.0F, 0.0F, 0.0F, 0.0F);
+        // ТУМАН НЕ ТРОГАЕМ. Раньше здесь глушали туман (start=100000): наш
+        // контент рисовался ярко и без тумана, пока мир вокруг (например,
+        // кратерный туман CraterFogHandler 0.5/180) был в плотном тумане —
+        // отсюда «затемнение меша при переходе entity<->track» и мигание.
+        // Единый туман сцены = бесшовный переход между путями рендера.
 
         //? if < 1.21.1 {
         float partialTick = event.getPartialTick();
@@ -116,34 +147,14 @@ public class EngineHandler {
         double splitSq = (double) splitDist * (double) splitDist;
         net.minecraft.world.phys.Vec3 camPos = event.getCamera().getPosition();
 
-        // ДИАГНОСТИКА: печать ambient-проекции ДО наших подмен. ВНИМАНИЕ на
-        // индексы JOML (mXY = колонка X, строка Y): у нормальной перспективы
-        // m23 == -1 (w-строка), m32 ≈ -2fn/(f-n) ≈ -0.1, m33 == 0.
-        Matrix4f ambient = com.mojang.blaze3d.systems.RenderSystem.getProjectionMatrix();
-        if (ambient != null && diagThisFrame) {
-            com.hbm_m.main.MainRegistry.LOGGER.info(
-                    "HBM ambient proj @AFTER_WEATHER: m00={} m11={} m22={} m23={} m32={} m33={} m03={} m13={}",
-                    String.format("%.5f", ambient.m00()), String.format("%.5f", ambient.m11()),
-                    String.format("%.5f", ambient.m22()), String.format("%.5f", ambient.m23()),
-                    String.format("%.5f", ambient.m32()), String.format("%.5f", ambient.m33()),
-                    String.format("%.5f", ambient.m03()), String.format("%.5f", ambient.m13()));
-        }
+        // ДИАГНОСТИКА УДАЛЕНА (ambient proj / particlesAlive): спамили каждый
+        // кадр; при необходимости вернуть — git-история 2026-08-28.
+
         java.util.function.Predicate<com.hbm_m.particle.nt.ParticleNT> near = p -> {
             double dx = p.x - camPos.x, dy = p.y - camPos.y, dz = p.z - camPos.z;
             return dx * dx + dy * dy + dz * dz <= splitSq;
         };
         java.util.function.Predicate<com.hbm_m.particle.nt.ParticleNT> far = near.negate();
-
-            if (diagThisFrame) {
-            int alive = 0;
-            for (java.util.List<com.hbm_m.particle.nt.ParticleNT> l : java.util.List.copyOf(
-                    com.hbm_m.particle.nt.ParticleEngineNT.INSTANCE.debugBatches().values())) {
-                alive += l.size();
-            }
-            com.hbm_m.main.MainRegistry.LOGGER.info(
-                    "HBM AFTER_WEATHER diag: dhActive={}, particlesAlive={}, splitDist={}",
-                    dhRenderedThisFrame, alive, (int) splitDist);
-        }
 
         if (dhRenderedThisFrame) {
             // ПОРЯДОК: far -> near -> flash (painter's algorithm).
@@ -203,7 +214,7 @@ public class EngineHandler {
 
                 setDhShaderFarMode(1.0F,
                         com.hbm_m.client.compat.dh.DhClientState.dhProjection());
-                if (!SKIP_PARTICLES) ParticleEngineNT.INSTANCE.renderFiltered(buffer, event.getCamera(), partialTick, event.getPoseStack(), far);
+                if (!SKIP_PARTICLES) ParticleEngineNT.INSTANCE.renderFiltered(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack(), far);
                 buffer.endBatch();
                 ParticleEngineNT.buffer().endBatch();
             } finally {
@@ -223,14 +234,15 @@ public class EngineHandler {
             com.hbm_m.client.compat.dh.DhClientCompat.beginCapturedVanillaPass(partialTick);
             setDhShaderFarMode(0.0F, null);
             if (!SKIP_MESH) MissileTrackWorldRender.renderFiltered(partialTick, d -> d <= splitSq);
-            if (!SKIP_PARTICLES) ParticleEngineNT.INSTANCE.renderFiltered(buffer, event.getCamera(), partialTick, event.getPoseStack(), near);
+            if (!SKIP_PARTICLES) ParticleEngineNT.INSTANCE.renderFiltered(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack(), near);
             buffer.endBatch();
             ParticleEngineNT.buffer().endBatch();
             com.hbm_m.client.compat.dh.DhClientCompat.endVanillaExtendedPass();
 
             // 3. Вспышка — оверлей поверх всего.
-            if (!SKIP_FLASH) ParticleEngineNT.INSTANCE.renderFlashOnly(buffer, event.getCamera(), partialTick, event.getPoseStack());
+            if (!SKIP_FLASH) ParticleEngineNT.INSTANCE.renderFlashOnly(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
             buffer.endBatch();
+            ParticleEngineNT.buffer().endBatch();
         } else {
             // DH не рендерит: полный проход, тоже на захваченной матрице.
             // ЕДИНСТВЕННЫЙ источник отрисовки мешей ракет (дубль в
@@ -244,7 +256,7 @@ public class EngineHandler {
             }
             if (!SKIP_MESH) {
                 MissileTrackWorldRender.renderFiltered(partialTick, null);
-                // String br = com.hbm_m.client.render.SingleMeshVboRenderer.lastTrackMeshBranch.get();
+                String br = com.hbm_m.client.render.SingleMeshVboRenderer.lastTrackMeshBranch.get();
                 // Суффикс ветки в теге даёт независимые рейтлимиты и мгновенную
                 // читаемость: s1.mesh.vbo / s1.mesh.quads:shader-null / s1.mesh.
                 com.hbm_m.client.render.FrameStateProbe.snap("s1.mesh." + (br == null ? "-" : br));
@@ -253,7 +265,7 @@ public class EngineHandler {
                     com.hbm_m.client.render.FrameStateProbe.snapWorld("mx.mesh", mx[0], mx[1], mx[2]);
                 }
             }
-            if (!SKIP_PARTICLES) ParticleEngineNT.INSTANCE.render(buffer, event.getCamera(), partialTick, event.getPoseStack());
+            if (!SKIP_PARTICLES) ParticleEngineNT.INSTANCE.render(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
             buffer.endBatch();
             ParticleEngineNT.buffer().endBatch();
             // ФИКС «чёрного экрана» при совместном рендере меш+частицы:
@@ -270,21 +282,26 @@ public class EngineHandler {
             if (mx != null) {
                 com.hbm_m.client.render.FrameStateProbe.snapWorld("mx.part", mx[0], mx[1], mx[2]);
             }
-            if (!SKIP_FLASH) ParticleEngineNT.INSTANCE.renderFlashOnly(buffer, event.getCamera(), partialTick, event.getPoseStack());
+            if (!SKIP_FLASH) ParticleEngineNT.INSTANCE.renderFlashOnly(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
             buffer.endBatch();
+            ParticleEngineNT.buffer().endBatch();
             if (mx != null) {
                 com.hbm_m.client.render.FrameStateProbe.snapWorld("mx.flash", mx[0], mx[1], mx[2]);
             }
             com.hbm_m.client.compat.dh.DhClientCompat.endVanillaExtendedPass();
         }
 
-        // Восстанавливаем GL state как было до нас (weather/worldborder рассчитывают на false).
-        com.mojang.blaze3d.systems.RenderSystem.depthMask(false);
-        // Страховка и для DH-ветки: лайтмап/оверлей обязаны остаться физически
-        // забинденными после нашего прохода (см. фикс в nodh-ветке выше).
+        // Восстанавливаем GL state как было до нас: depthMask — значение,
+        // с которым кадр вошёл в проход (Fast/Fancy: false; Fabulous: true).
+        // Туман не трогали — восстанавливать нечего.
+        com.mojang.blaze3d.systems.RenderSystem.depthMask(prevDepthMask);
+        // Наш nuke_cloud/nuke_add оставили BlendMode.lastApplied = non-opaque
+        // (аддитив/альфа из JSON) — следующий ванильный opaque-шейдер молча
+        // выключит блендинг (чёрная виньетка/солнце/GUI). Сбрасываем кеш.
+        com.hbm_m.client.render.shader.ShaderBindResync.invalidateBlendModeCache();
         Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();
         Minecraft.getInstance().gameRenderer.overlayTexture().setupOverlayColor();
-        com.mojang.blaze3d.systems.RenderSystem.activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
+        com.mojang.blaze3d.platform.GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
         // ГЛАВНЫЙ фикс-кандидат «чёрного экрана»: если Oculus-миксин пометил
         // кадр маскировкой depth/color на apply() наших кастомных шейдеров,
         // презент кадра уйдёт через пустой композит Iris при полностью
@@ -293,10 +310,6 @@ public class EngineHandler {
         com.hbm_m.client.render.FrameStateProbe.snap("eh.out");
         com.hbm_m.client.render.FrameStateProbe.snap("px.ehout");
     }
-
-    private static long lastDiagLogMs = 0;
-    private static final long DIAG_INTERVAL_MS = 2000;
-    private static boolean diagThisFrame;
 
     // ── ВРЕМЕННЫЕ бисекторы «чёрного экрана» (2026-08) ──────────────────────
     // Выключают отдельные составляющие AFTER_WEATHER-прохода, чтобы одним
@@ -357,12 +370,6 @@ public class EngineHandler {
                 // убивал ВЕСЬ гриб в дальнем проходе (исчезал при отгрузке ванильных чанков).
                 // До apply() доживает только канал RenderSystem shaderTextures.
                 com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(1, texId);
-            }
-        if (diagThisFrame) {
-                com.hbm_m.main.MainRegistry.LOGGER.info(
-                        "HBM far shader mode: mode={}, dhProj={}, depthTex={}, viewport={}x{}",
-                        mode, dhProj != null ? "ok" : "NULL", texId,
-                        win.getWidth(), win.getHeight());
             }
         } catch (Throwable t) {
             com.hbm_m.main.MainRegistry.LOGGER.info("HBM DH shader far mode setup failed: {}", t.toString());
