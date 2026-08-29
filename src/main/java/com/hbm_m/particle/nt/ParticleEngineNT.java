@@ -110,9 +110,21 @@ public class ParticleEngineNT {
         renderBatches(this.renderOrderAshes, buffer, camera, partialTick, levelPoseStack);
     }
 
-    public void renderFiltered(MultiBufferSource.BufferSource buffer, Camera camera, float partialTick, PoseStack levelPoseStack, java.util.function.Predicate<ParticleNT> filter) {
-        renderBatchesFiltered(this.renderOrderNormal, buffer, camera, partialTick, levelPoseStack, filter);
-        renderBatchesFiltered(this.renderOrderAshes, buffer, camera, partialTick, levelPoseStack, filter);
+    /**
+     * Фильтр near/far по квадрату дистанции до камеры (без лямбд: горячий
+     * путь кадра, аллокация Predicate с захватом camPos на каждый вызов
+     * давала постоянный GC churn).
+     *
+     * @param splitSq  граница в квадрате блоков
+     * @param renderFar true = рисовать частицы ДАЛЬЕ границы (d² > splitSq),
+     *                  false = БЛИЖЕ (d² <= splitSq)
+     */
+    public void renderFiltered(MultiBufferSource.BufferSource buffer, Camera camera, float partialTick, PoseStack levelPoseStack, double splitSq, boolean renderFar) {
+        double cx = camera.getPosition().x;
+        double cy = camera.getPosition().y;
+        double cz = camera.getPosition().z;
+        renderBatchesFiltered(this.renderOrderNormal, buffer, camera, partialTick, levelPoseStack, cx, cy, cz, splitSq, renderFar);
+        renderBatchesFiltered(this.renderOrderAshes, buffer, camera, partialTick, levelPoseStack, cx, cy, cz, splitSq, renderFar);
     }
 
     private void renderBatches(List<net.minecraft.client.renderer.RenderType> order, MultiBufferSource.BufferSource buffer, Camera camera, float partialTick, PoseStack levelPoseStack) {
@@ -139,7 +151,8 @@ public class ParticleEngineNT {
         }
     }
 
-    private void renderBatchesFiltered(List<net.minecraft.client.renderer.RenderType> order, MultiBufferSource.BufferSource buffer, Camera camera, float partialTick, PoseStack levelPoseStack, java.util.function.Predicate<ParticleNT> filter) {
+    private void renderBatchesFiltered(List<net.minecraft.client.renderer.RenderType> order, MultiBufferSource.BufferSource buffer, Camera camera, float partialTick, PoseStack levelPoseStack,
+                                       double camX, double camY, double camZ, double splitSq, boolean renderFar) {
         List<net.minecraft.client.renderer.RenderType> ordered = orderDistanceSorted(order, camera);
         for (int i = 0, size = ordered.size(); i < size; i++) {
             net.minecraft.client.renderer.RenderType type = ordered.get(i);
@@ -151,7 +164,9 @@ public class ParticleEngineNT {
             VertexConsumer consumer = null;
             for (int j = 0, lSize = list.size(); j < lSize; j++) {
                 ParticleNT p = list.get(j);
-                if (!filter.test(p)) continue;
+                double dx = p.x - camX, dy = p.y - camY, dz = p.z - camZ;
+                boolean near = dx * dx + dy * dy + dz * dz <= splitSq;
+                if (near == renderFar) continue;
                 if (consumer == null) consumer = buffer().getBuffer(type);
                 p.render(consumer, camera, partialTick, levelPoseStack);
             }

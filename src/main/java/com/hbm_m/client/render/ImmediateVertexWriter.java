@@ -8,7 +8,12 @@ import org.joml.Vector4f;
 
 /**
  * Безопасная запись {@code POSITION_TEX_COLOR} для Embeddium {@code SodiumBufferBuilder}:
- * int-цвет, {@code uv} перед {@code color}, либо полный {@code vertex(...)} через reflection.
+ * int-цвет, {@code uv} перед {@code color}, либо полный {@code vertex(...)} через MethodHandle.
+ *
+ * Горячий путь (билборды ядерного гриба): определение Sodium-буфера выносится наружу
+ * один раз на батч ({@link #isSodiumBuffer} + перегрузки с boolean), чтобы не гонять
+ * getClass().getName() на каждый угол квада; трансформация матрицы идёт через
+ * переиспользуемый scratch-вектор — ноль аллокаций на вершину.
  */
 
 //? if forge {
@@ -23,13 +28,54 @@ public final class ImmediateVertexWriter {
     private static final String SODIUM_BUILDER =
             "me.jellysquid.mods.sodium.client.render.vertex.buffer.SodiumBufferBuilder";
 
-    private static java.lang.reflect.Method sodiumFullVertex;
+    private static volatile boolean sodiumResolved = false;
+    private static java.lang.invoke.MethodHandle sodiumFullVertex;
+
+    /** Scratch для трансформации матрицы — рендер однопоточный, переиспользуем. */
+    private static final Vector4f SCRATCH_POS = new Vector4f();
 
     private ImmediateVertexWriter() {}
+
+    /** Быстрая проверка буфера Embeddium для выноса из горячего цикла. */
+    public static boolean isSodiumBuffer(VertexConsumer consumer) {
+        return SODIUM_BUILDER.equals(consumer.getClass().getName());
+    }
+
+    private static void resolveSodium() {
+        if (sodiumResolved) return;
+        synchronized (ImmediateVertexWriter.class) {
+            if (sodiumResolved) return;
+            try {
+                Class<?> cls = Class.forName(SODIUM_BUILDER);
+                sodiumFullVertex = java.lang.invoke.MethodHandles.lookup().findVirtual(cls, "vertex",
+                        java.lang.invoke.MethodType.methodType(void.class,
+                                float.class, float.class, float.class,
+                                float.class, float.class, float.class, float.class,
+                                float.class, float.class,
+                                int.class, int.class,
+                                float.class, float.class, float.class));
+            } catch (ReflectiveOperationException | LinkageError ignored) {
+                sodiumFullVertex = null;
+            }
+            sodiumResolved = true;
+        }
+    }
 
     /** Camera-facing quad (billboard) в локальных координатах эффекта. */
     public static void billboardQuad(
             VertexConsumer consumer,
+            Matrix4f matrix,
+            float cx, float cy, float cz,
+            Vector3f left, Vector3f up,
+            float r, float g, float b, float a,
+            float u0, float v0, float u1, float v1) {
+        billboardQuad(consumer, isSodiumBuffer(consumer), matrix, cx, cy, cz, left, up, r, g, b, a, u0, v0, u1, v1);
+    }
+
+    /** Горячий вариант: sodium-флаг разрешён вызывающим один раз на батч. */
+    public static void billboardQuad(
+            VertexConsumer consumer,
+            boolean sodium,
             Matrix4f matrix,
             float cx, float cy, float cz,
             Vector3f left, Vector3f up,
@@ -40,10 +86,10 @@ public final class ImmediateVertexWriter {
         int bi = toColorByte(b);
         int ai = toColorByte(a);
 
-        putCorner(consumer, matrix, cx - left.x - up.x, cy - left.y - up.y, cz - left.z - up.z, ri, gi, bi, ai, u1, v1);
-        putCorner(consumer, matrix, cx - left.x + up.x, cy - left.y + up.y, cz - left.z + up.z, ri, gi, bi, ai, u1, v0);
-        putCorner(consumer, matrix, cx + left.x + up.x, cy + left.y + up.y, cz + left.z + up.z, ri, gi, bi, ai, u0, v0);
-        putCorner(consumer, matrix, cx + left.x - up.x, cy + left.y - up.y, cz + left.z - up.z, ri, gi, bi, ai, u0, v1);
+        putCorner(consumer, sodium, matrix, cx - left.x - up.x, cy - left.y - up.y, cz - left.z - up.z, ri, gi, bi, ai, u1, v1);
+        putCorner(consumer, sodium, matrix, cx - left.x + up.x, cy - left.y + up.y, cz - left.z + up.z, ri, gi, bi, ai, u1, v0);
+        putCorner(consumer, sodium, matrix, cx + left.x + up.x, cy + left.y + up.y, cz + left.z + up.z, ri, gi, bi, ai, u0, v0);
+        putCorner(consumer, sodium, matrix, cx + left.x - up.x, cy + left.y - up.y, cz + left.z - up.z, ri, gi, bi, ai, u0, v1);
     }
 
     public static void texColor(
@@ -52,16 +98,17 @@ public final class ImmediateVertexWriter {
             float x, float y, float z,
             float r, float g, float b, float a,
             float u, float v) {
-        putCorner(consumer, matrix, x, y, z, toColorByte(r), toColorByte(g), toColorByte(b), toColorByte(a), u, v);
+        putCorner(consumer, isSodiumBuffer(consumer), matrix, x, y, z, toColorByte(r), toColorByte(g), toColorByte(b), toColorByte(a), u, v);
     }
 
     private static void putCorner(
             VertexConsumer consumer,
+            boolean sodium,
             Matrix4f matrix,
             float x, float y, float z,
             int r, int g, int b, int a,
             float u, float v) {
-        if (trySodiumFullVertex(consumer, matrix, x, y, z, r, g, b, a, u, v)) {
+        if (sodium && trySodiumFullVertex(consumer, matrix, x, y, z, r, g, b, a, u, v)) {
             return;
         }
         if (matrix != null) {
@@ -92,10 +139,11 @@ public final class ImmediateVertexWriter {
         int gi = toColorByte(g);
         int bi = toColorByte(b);
         int ai = toColorByte(a);
-        putCorner(consumer, null, x0, y0, z0, ri, gi, bi, ai, u1, v1);
-        putCorner(consumer, null, x1, y1, z1, ri, gi, bi, ai, u1, v0);
-        putCorner(consumer, null, x2, y2, z2, ri, gi, bi, ai, u0, v0);
-        putCorner(consumer, null, x3, y3, z3, ri, gi, bi, ai, u0, v1);
+        boolean sodium = isSodiumBuffer(consumer);
+        putCorner(consumer, sodium, null, x0, y0, z0, ri, gi, bi, ai, u1, v1);
+        putCorner(consumer, sodium, null, x1, y1, z1, ri, gi, bi, ai, u1, v0);
+        putCorner(consumer, sodium, null, x2, y2, z2, ri, gi, bi, ai, u0, v0);
+        putCorner(consumer, sodium, null, x3, y3, z3, ri, gi, bi, ai, u0, v1);
     }
 
     private static boolean trySodiumFullVertex(
@@ -104,31 +152,26 @@ public final class ImmediateVertexWriter {
             float x, float y, float z,
             int r, int g, int b, int a,
             float u, float v) {
-        if (!SODIUM_BUILDER.equals(consumer.getClass().getName())) {
+        resolveSodium();
+        java.lang.invoke.MethodHandle mh = sodiumFullVertex;
+        if (mh == null) {
             return false;
         }
         try {
-            if (sodiumFullVertex == null) {
-                sodiumFullVertex = consumer.getClass().getMethod(
-                        "vertex",
-                        float.class, float.class, float.class,
-                        float.class, float.class, float.class, float.class,
-                        float.class, float.class,
-                        int.class, int.class,
-                        float.class, float.class, float.class);
+            SCRATCH_POS.set(x, y, z, 1.0F);
+            if (matrix != null) {
+                matrix.transform(SCRATCH_POS);
             }
-            Vector4f pos = matrix != null
-                    ? matrix.transform(new Vector4f(x, y, z, 1.0F))
-                    : new Vector4f(x, y, z, 1.0F);
-            sodiumFullVertex.invoke(
-                    consumer,
-                    pos.x(), pos.y(), pos.z(),
+            mh.invoke(consumer,
+                    SCRATCH_POS.x(), SCRATCH_POS.y(), SCRATCH_POS.z(),
                     r / 255.0F, g / 255.0F, b / 255.0F, a / 255.0F,
                     u, v,
                     0, 0,
                     0.0F, 0.0F, 1.0F);
             return true;
-        } catch (ReflectiveOperationException ignored) {
+        } catch (Throwable ignored) {
+            // Сбой sodium-пути — падаем обратно на ванильную запись
+            sodiumFullVertex = null;
             return false;
         }
     }

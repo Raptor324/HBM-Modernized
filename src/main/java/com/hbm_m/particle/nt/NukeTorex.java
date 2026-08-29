@@ -2,6 +2,7 @@ package com.hbm_m.particle.nt;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
@@ -51,6 +52,16 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle {
     /** Жёсткий лимит на общее число cloudlets (зависит от качества). */
     private static final int MAX_CLOUDLETS_FANCY = 12_000;
     private static final int MAX_CLOUDLETS_FAST = 6_000;
+
+    /**
+     * Порядок дальние→ближние по кэшированной дистанции (заполняется в cloudletWrapper
+     * одним проходом O(N)). Компаратор static final — раньше лямбда пересчитывала
+     * интерполяцию и аллоцировала Vec3 на каждое из N log N сравнений.
+     */
+    private static final Comparator<Cloudlet> CLOUDLET_DIST = (a, b) -> Double.compare(b.cachedDistSq, a.cachedDistSq);
+    /** Период полной сортировки в кадрах: дым движется медленно, для глаз разницы нет. */
+    private static final int SORT_INTERVAL = 3;
+    private int sortCounter = 0;
 
     //? if fabric && < 1.21.1 {
     /*private static final ResourceLocation CLOUDLET = new ResourceLocation(RefStrings.MODID, "textures/particle/particle_base.png");
@@ -274,6 +285,12 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle {
         public Vec3 color;
         public Vec3 prevColor;
         public TorexType type;
+
+        // Кэш кадра рендера: интерполированная позиция и квадрат дистанции до камеры.
+        // Заполняются одним проходом O(N) в cloudletWrapper — сортировка и запись
+        // квайдов читают готовые примитивы без вызовов getInterpPos/аллокаций.
+        double cachedDistSq;
+        double interpX, interpY, interpZ;
 
         public Cloudlet(double posX, double posY, double posZ, float angle, int age, int maxAge) {
             this(posX, posY, posZ, angle, age, maxAge, TorexType.STANDARD);
@@ -538,36 +555,63 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle {
         double cx = cam.getPosition().x;
         double cy = cam.getPosition().y;
         double cz = cam.getPosition().z;
-        this.cloudlets.sort((a, b) -> {
-            Vec3 va = a.getInterpPos(partialTicks);
-            Vec3 vb = b.getInterpPos(partialTicks);
-            double da = (va.x - cx) * (va.x - cx) + (va.y - cy) * (va.y - cy) + (va.z - cz) * (va.z - cz);
-            double db = (vb.x - cx) * (vb.x - cx) + (vb.y - cy) * (vb.y - cy) + (vb.z - cz) * (vb.z - cz);
-            return Double.compare(db, da);
-        });
-        for (Cloudlet cloudlet : cloudlets) {
-            Vec3 vec = cloudlet.getInterpPos(partialTicks);
-            float lx = (float) ((vec.x - this.x) * vScale);
-            float ly = (float) ((vec.y - this.y) * vScale);
-            float lz = (float) ((vec.z - this.z) * vScale);
-            renderCloudlet(matrix, consumer, lx, ly, lz, cloudlet, partialTicks, vScale);
+        float sc = (float) getScale();
+
+        // Проход O(N): интерполяция + дистанция один раз на cloudlet, без аллокаций
+        for (int i = 0; i < cloudlets.size(); i++) {
+            Cloudlet c = cloudlets.get(i);
+            double ix = c.prevPosX + (c.posX - c.prevPosX) * partialTicks;
+            double iy = c.prevPosY + (c.posY - c.prevPosY) * partialTicks;
+            double iz = c.prevPosZ + (c.posZ - c.prevPosZ) * partialTicks;
+            if (c.type != TorexType.SHOCK) {
+                ix = (ix - x) * sc + x;
+                iy = (iy - y) * sc + y;
+                iz = (iz - z) * sc + z;
+            }
+            double dx = ix - cx;
+            double dy = iy - cy;
+            double dz = iz - cz;
+            c.interpX = ix;
+            c.interpY = iy;
+            c.interpZ = iz;
+            c.cachedDistSq = dx * dx + dy * dy + dz * dz;
+        }
+        // Полная сортировка раз в SORT_INTERVAL кадров: TimSort на почти
+        // отсортированном списке почти линеен, порядок трёхкадровой давности
+        // для дыма визуально не отличим.
+        if (sortCounter++ % SORT_INTERVAL == 0) {
+            this.cloudlets.sort(CLOUDLET_DIST);
+        }
+
+        // Базис камеры и sodium-флаг — один раз на батч, а не на каждый cloudlet
+        Vector3f camLeft = new Vector3f(cam.getLeftVector());
+        Vector3f camUp = new Vector3f(cam.getUpVector());
+        boolean sodium = ImmediateVertexWriter.isSodiumBuffer(consumer);
+        for (int i = 0; i < cloudlets.size(); i++) {
+            Cloudlet cloudlet = cloudlets.get(i);
+            float lx = (float) ((cloudlet.interpX - this.x) * vScale);
+            float ly = (float) ((cloudlet.interpY - this.y) * vScale);
+            float lz = (float) ((cloudlet.interpZ - this.z) * vScale);
+            renderCloudlet(matrix, consumer, sodium, lx, ly, lz, cloudlet, partialTicks, camLeft, camUp, vScale);
         }
     }
 
-    private void renderCloudlet(Matrix4f matrix, VertexConsumer consumer, float posX, float posY, float posZ, Cloudlet cloud, float partialTicks, float vScale) {
+    private void renderCloudlet(Matrix4f matrix, VertexConsumer consumer, boolean sodium, float posX, float posY, float posZ, Cloudlet cloud, float partialTicks, Vector3f camLeft, Vector3f camUp, float vScale) {
         // Окклюзия — попиксельно в шейдере nuke_cloud (DhOcclusionGpu).
         float alpha = cloud.getAlpha();
         float scale = cloud.getScale() * vScale;
-        Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
-        Vector3f l = new Vector3f(camera.getLeftVector()).mul(scale);
-        Vector3f u = new Vector3f(camera.getUpVector()).mul(scale);
+        SCRATCH_LEFT.set(camLeft).mul(scale);
+        SCRATCH_UP.set(camUp).mul(scale);
         float brightness = cloud.type == TorexType.CONDENSATION ? 0.9F : 0.75F * cloud.colorMod;
         Vec3 interpColor = cloud.getInterpColor(partialTicks);
         float r = (float) interpColor.x * brightness;
         float g = (float) interpColor.y * brightness;
         float b = (float) interpColor.z * brightness;
-        ImmediateVertexWriter.billboardQuad(consumer, matrix, posX, posY, posZ, l, u, r, g, b, alpha, 0, 0, 1, 1);
+        ImmediateVertexWriter.billboardQuad(consumer, sodium, matrix, posX, posY, posZ, SCRATCH_LEFT, SCRATCH_UP, r, g, b, alpha, 0, 0, 1, 1);
     }
+
+    private final Vector3f SCRATCH_LEFT = new Vector3f();
+    private final Vector3f SCRATCH_UP = new Vector3f();
 
     private void renderFlash(Matrix4f matrix, VertexConsumer consumer,
             float posX, float posY, float posZ,

@@ -122,6 +122,7 @@ public final class ConfigSchema {
         reg(ConfigField.bool("enableChunkLoading", ConfigSide.SERVER, ApplyMode.LIVE, "explosions"));
         reg(ConfigField.integer("explosionAlgorithm", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", 0, 2));
         reg(ConfigField.integer("limitExplosionLifespan", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", 0, 3600));
+        reg(ConfigField.bool("enableNukeNBTSaving", ConfigSide.SERVER, ApplyMode.LIVE, "explosions"));
 
         // ── SERVER: сетевая трассировка ракет ───────────────────────
         reg(ConfigField.bool("enableMissileNetworkTrack", ConfigSide.SERVER, ApplyMode.LIVE, "missile_track"));

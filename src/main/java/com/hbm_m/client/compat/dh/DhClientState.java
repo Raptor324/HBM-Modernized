@@ -27,6 +27,7 @@ public final class DhClientState {
     /** Время последнего реального DH-кадра: защита от «залипшего» флага,
      *  если DH перестал рендерить (настройка/выгрузка), пока мод установлен. */
     private static volatile long lastBridgeMs = 0;
+    private static long nearClampMismatchCounter = 0;
 
     private DhClientState() {}
 
@@ -53,6 +54,27 @@ public final class DhClientState {
             if (ext != null) {
                 n = ext[0];
                 f = ext[1];
+                // DEFENSE-IN-DEPTH (near-clamp mismatch): нативный DH клампит
+                // near матрицы до min(near, 7.5), а Iris рендерит глубину LOD
+                // БЕЗ клампа (setPerspective с сырыми rp-значениями). Если пак
+                // активен, а rp.near СИЛЬНО больше матричного — глубину писал
+                // Iris, и декодировать надо rp-значениями: иначе вся дальняя
+                // глубина декодируется как (7.5/n_real)·true «ближе», и
+                // LOD-гора позади гриба перетирает его, ошибка ∝ дистанции
+                // (при rd≤4 под паком near=7.34<7.5 кламп не срабатывал, чем
+                // баг маскировался). Кейс «пак без dhTerrain-программ +
+                // нативный рендер» деградирует мягко: такой пак Iris всё
+                // равно лишает композита DH, честной DH-глубины не существует.
+                if (com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()
+                        && near > ext[0] * 1.001F) {
+                    if (nearClampMismatchCounter++ % 600 == 0) {
+                        com.hbm_m.main.MainRegistry.LOGGER.info(
+                                "HBM DH near-clamp mismatch (native matrix near={} vs rp near={}): decoding with rp values",
+                                String.format("%.2f", ext[0]), String.format("%.2f", near));
+                    }
+                    n = near;
+                    f = far;
+                }
             }
         }
         if (n > 0.0F && f > n) {

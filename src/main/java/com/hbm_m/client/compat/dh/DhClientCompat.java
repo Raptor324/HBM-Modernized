@@ -241,10 +241,20 @@ public final class DhClientCompat {
         }
     }
 
-    /** Рефлексия к приватным GameRenderer.bobHurt/bobView(PoseStack,float). */
+    /** Рефлексия к приватным GameRenderer.bobHurt/bobView(PoseStack,float).
+     *  Method-объекты кешируются: вызывается каждый кадр (reconstructVanillaProjection),
+     *  getDeclaredMethod по строкам в горячем цикле — микроаллокации. */
+    private static java.lang.reflect.Method bobHurtMethod;
+    private static java.lang.reflect.Method bobViewMethod;
+
     private static void invokeBob(net.minecraft.client.renderer.GameRenderer gr, String name, PoseStack poseStack, float partialTick) throws Exception {
-        var m = net.minecraft.client.renderer.GameRenderer.class.getDeclaredMethod(name, PoseStack.class, float.class);
-        m.setAccessible(true);
+        boolean hurt = "bobHurt".equals(name);
+        java.lang.reflect.Method m = hurt ? bobHurtMethod : bobViewMethod;
+        if (m == null) {
+            m = net.minecraft.client.renderer.GameRenderer.class.getDeclaredMethod(name, PoseStack.class, float.class);
+            m.setAccessible(true);
+            if (hurt) bobHurtMethod = m; else bobViewMethod = m;
+        }
         m.invoke(gr, poseStack, partialTick);
     }
 
@@ -368,17 +378,29 @@ public final class DhClientCompat {
 
     /** GameRenderer.getFov(Camera,float,boolean) приватен — рефлексия, затем фолбэки.
      *  ВАЖНО: в production-рантайме имена SRG — "getFov" не находится, поэтому
-     *  первым фолбэком идёт m_109090_ (без него терялись spyglass/speed-FOV). */
+     *  первым фолбэком идёт m_109090_ (без него терялись spyglass/speed-FOV).
+     *  Method-объекты кешируются: getFov вызывается несколько раз за кадр. */
+    private static java.lang.reflect.Method getFovMethod;
+    private static java.lang.reflect.Method getFovSrgMethod;
+
     private static double getFovCompat(net.minecraft.client.renderer.GameRenderer gr, net.minecraft.client.Camera cam, float partialTick) {
         try {
-            var m = net.minecraft.client.renderer.GameRenderer.class.getDeclaredMethod("getFov", cam.getClass(), float.class, boolean.class);
-            m.setAccessible(true);
+            java.lang.reflect.Method m = getFovMethod;
+            if (m == null) {
+                m = net.minecraft.client.renderer.GameRenderer.class.getDeclaredMethod("getFov", net.minecraft.client.Camera.class, float.class, boolean.class);
+                m.setAccessible(true);
+                getFovMethod = m;
+            }
             Object r = m.invoke(gr, cam, partialTick, true);
             if (r instanceof Number n) return n.doubleValue();
         } catch (Throwable ignored) {}
         try {
-            var m = net.minecraft.client.renderer.GameRenderer.class.getDeclaredMethod("m_109090_", cam.getClass(), float.class, boolean.class);
-            m.setAccessible(true);
+            java.lang.reflect.Method m = getFovSrgMethod;
+            if (m == null) {
+                m = net.minecraft.client.renderer.GameRenderer.class.getDeclaredMethod("m_109090_", net.minecraft.client.Camera.class, float.class, boolean.class);
+                m.setAccessible(true);
+                getFovSrgMethod = m;
+            }
             Object r = m.invoke(gr, cam, partialTick, true);
             if (r instanceof Number n) return n.doubleValue();
         } catch (Throwable ignored) {}
@@ -452,45 +474,70 @@ public final class DhClientCompat {
 
     private static final Object VERTEX_SORTING_SAFE = vertexSortingSafe();
 
+    private static java.lang.reflect.Field vertexSortingField;
+
     /**
      * Если текущий vertexSorting == null (его обнулил одиночный setProjectionMatrix),
      * выставляем VertexSorting.UNSORTED напрямую в приватное поле.
      * На 1.20.1-forge поле в SRG-именах и там это не нужно (2-арг метод
      * принимает сортировку явно) — молча игнорируем неудачу.
+     * Field кешируется: вызывается на границе каждого нашего прохода.
      */
     private static void forceVertexSortingNonNull() {
         if (VERTEX_SORTING_SAFE == null) return;
         try {
-            var f = RenderSystem.class.getDeclaredField("vertexSorting");
-            f.setAccessible(true);
+            java.lang.reflect.Field f = vertexSortingField;
+            if (f == null) {
+                f = RenderSystem.class.getDeclaredField("vertexSorting");
+                f.setAccessible(true);
+                vertexSortingField = f;
+            }
             if (f.get(null) == null) {
                 f.set(null, VERTEX_SORTING_SAFE);
             }
         } catch (Throwable ignored) {}
     }
 
+    /** Кеш методов RenderSystem.setProjectionMatrix (вызывается 3-5 раз за кадр
+     *  при входе/выходе из расширенных проходов — поиск по getMethods() в
+     *  горячем цикле убран). */
+    private static java.lang.reflect.Method setProjMethod1Arg;
+    private static java.lang.reflect.Method setProjMethod2Arg;
+    private static boolean setProjMethodsResolved;
+
     private static void setProjectionMatrix(Matrix4f mat) {
         // Handle both 1.20.1 (2-arg) and 1.21.1+ (1-arg) signatures via reflection,
         // avoiding compile-time dependency on VertexSorting location which moved.
+        if (!setProjMethodsResolved) {
+            setProjMethodsResolved = true;
+            try {
+                var m1 = RenderSystem.class.getMethod("setProjectionMatrix", Matrix4f.class);
+                if (m1.getParameterCount() == 1) {
+                    setProjMethod1Arg = m1;
+                }
+            } catch (Throwable ignored) {}
+            if (setProjMethod1Arg == null) {
+                // 2-arg variant: second param may be VertexSorting in different packages
+                for (var m : RenderSystem.class.getMethods()) {
+                    if (!m.getName().equals("setProjectionMatrix")) continue;
+                    if (m.getParameterCount() != 2) continue;
+                    if (m.getParameterTypes()[0] != Matrix4f.class) continue;
+                    setProjMethod2Arg = m;
+                    break;
+                }
+            }
+        }
         try {
-            // Try 1.21.1+ single-arg first
-            var m1 = RenderSystem.class.getMethod("setProjectionMatrix", Matrix4f.class);
-            if (m1.getParameterCount() == 1) {
-                m1.invoke(null, mat);
+            if (setProjMethod1Arg != null) {
+                setProjMethod1Arg.invoke(null, mat);
+                return;
+            }
+            if (setProjMethod2Arg != null) {
+                // VertexSorting (интерфейс на всех версиях): UNSORTED безопасен.
+                setProjMethod2Arg.invoke(null, mat, vertexSortingSafe());
                 return;
             }
         } catch (Throwable ignored) {}
-        // Try 2-arg variants: second param may be VertexSorting in different packages
-        for (var m : RenderSystem.class.getMethods()) {
-            if (!m.getName().equals("setProjectionMatrix")) continue;
-            if (m.getParameterCount() != 2) continue;
-            if (m.getParameterTypes()[0] != Matrix4f.class) continue;
-            try {
-                // VertexSorting (интерфейс на всех версиях): UNSORTED безопасен.
-                m.invoke(null, mat, vertexSortingSafe());
-                return;
-            } catch (Throwable ignored) {}
-        }
         // Fallback: try calling 1-arg via accessible method even if public lookup failed
         try {
             var m = RenderSystem.class.getDeclaredMethod("setProjectionMatrix", Matrix4f.class);

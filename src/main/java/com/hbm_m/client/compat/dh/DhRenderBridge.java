@@ -132,18 +132,33 @@ public final class DhRenderBridge extends DhApiBeforeApplyShaderRenderEvent {
     // ── Определение Iris DH-compat override ─────────────────────────────────
 
     private static volatile boolean dhCompatQueryInitialized = false;
+    // Кешируются ТОЛЬКО синглтоны и рефлексивная механика. Инстансы pipeline/
+    // DHCompat/DHCompatInternal Iris пересоздаёт при каждом reload пака —
+    // их кеширование давало протухший shouldOverride=false навсегда.
+    private static Object dhPipelineManager;
+    private static java.lang.reflect.Method dhGetPipelineNullable;
+    private static java.lang.reflect.Method dhGetDHCompat;
+    private static java.lang.reflect.Method dhGetInstance;
     private static java.lang.reflect.Field dhCompatShouldOverrideField;
-    private static Object dhCompatInternalHolder;
 
     /**
      * true, если LOD'ы под паком рисует Iris (DH-compat программы), а не
      * нативный DH-шейдер. В этом режиме проекция LOD строится из СЫРЫХ
-     * rp.nearClipPlane/farClipPlane (LodRendererEvents → setPerspective),
-     * и декод DEPTH32F должен идти по ним, а не по клампнутой матрице.
+     * rp.nearClipPlane/farClipPlane (LodRendererEvents → setPerspective,
+     * БЕЗ клампа near до 7.5), и декод DEPTH32F должен идти по ним, а не по
+     * клампнутой матрице нативного DH.
      *
      * Путь: Iris.getPipelineManager().getPipelineNullable() → pipeline
-     * .getDHCompat() → (getInstance()) → поле shouldOverride класса
+     * .getDHCompat() → getInstance() → поле shouldOverride класса
      * net.irisshaders.iris.compat.dh.DHCompatInternal.
+     *
+     * ВАЖНО: инстансы переразрешаются при КАЖДОМ вызове (раз в DH-кадр —
+     * дёшево). Раньше кешировался сам DHCompatInternal: Iris пересоздаёт его
+     * при каждом reload пайплайна, у старого инстанса shouldOverride
+     * навсегда false (см. DHCompatInternal.clear()), детекция врала, декод
+     * шёл по клампнутой near=7.5 матрице → LOD-глубина декодировалась
+     * (7.5/n_real)·true «ближе» и гора позади перетирала гриб (при rd≤4
+     * баг маскировался: под паком near=7.34 < 7.5, кламп не срабатывал).
      *
      * Фолбэк: если рефлексия не удалась — считаем override активным при
      * любом активном паке (isExternalShaderActive): у большинства паков
@@ -154,36 +169,39 @@ public final class DhRenderBridge extends DhApiBeforeApplyShaderRenderEvent {
             if (!dhCompatQueryInitialized) {
                 dhCompatQueryInitialized = true;
                 Class<?> irisC = Class.forName("net.irisshaders.iris.Iris");
-                Object pm = irisC.getMethod("getPipelineManager").invoke(null);
-                Object pipeline = pm.getClass().getMethod("getPipelineNullable").invoke(pm);
-                if (pipeline != null) {
-                    Object dhCompat = null;
-                    try {
-                        dhCompat = pipeline.getClass().getMethod("getDHCompat").invoke(pipeline);
-                    } catch (Throwable ignored) {}
-                    if (dhCompat != null) {
-                        Object internal = dhCompat;
-                        try {
-                            internal = dhCompat.getClass().getMethod("getInstance").invoke(dhCompat);
-                        } catch (Throwable ignored) {}
-                        Class<?> c = internal.getClass();
-                        while (c != null && dhCompatShouldOverrideField == null) {
-                            for (java.lang.reflect.Field f : c.getDeclaredFields()) {
-                                if (f.getName().equals("shouldOverride")) {
-                                    f.setAccessible(true);
-                                    dhCompatShouldOverrideField = f;
-                                    dhCompatInternalHolder = internal;
-                                    break;
-                                }
-                            }
-                            c = c.getSuperclass();
-                        }
-                    }
-                }
+                // PipelineManager — синглтон на время жизни игры, кешируем.
+                dhPipelineManager = irisC.getMethod("getPipelineManager").invoke(null);
             }
-            if (dhCompatShouldOverrideField != null) {
-                return dhCompatShouldOverrideField.getBoolean(dhCompatInternalHolder);
+            if (dhPipelineManager == null) {
+                // Iris ещё не инициализирован — LOD'ы рисует нативный DH.
+                return false;
             }
+            if (dhGetPipelineNullable == null) {
+                dhGetPipelineNullable = dhPipelineManager.getClass().getMethod("getPipelineNullable");
+            }
+            Object pipeline = dhGetPipelineNullable.invoke(dhPipelineManager);
+            if (pipeline == null) {
+                // Пак неактивен — LOD'ы рисует нативный DH.
+                return false;
+            }
+            if (dhGetDHCompat == null) {
+                dhGetDHCompat = pipeline.getClass().getMethod("getDHCompat");
+            }
+            Object dhCompat = dhGetDHCompat.invoke(pipeline);
+            if (dhCompat == null) {
+                return false;
+            }
+            if (dhGetInstance == null) {
+                dhGetInstance = dhCompat.getClass().getMethod("getInstance");
+            }
+            Object internal = dhGetInstance.invoke(dhCompat);
+            if (internal == null) {
+                return false;
+            }
+            if (dhCompatShouldOverrideField == null) {
+                dhCompatShouldOverrideField = internal.getClass().getField("shouldOverride");
+            }
+            return dhCompatShouldOverrideField.getBoolean(internal);
         } catch (Throwable ignored) {}
         // Фолбэк: активный пак → предполагаем override
         return com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive();

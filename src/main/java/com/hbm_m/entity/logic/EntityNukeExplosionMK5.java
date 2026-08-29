@@ -42,6 +42,11 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 
     private IExplosionRay explosion;
 
+    /** Снапшот {@link NukeMk5ChunkEater} из NBT, ожидает восстановления в первом тике. */
+    private CompoundTag pendingExplosionState;
+    /** Какой движок был сохранён в NBT: 0 = ChunkEater, 1 = Parallelized. */
+    private int resumedEngine = -1;
+
     /** Разрушение блоков лучами MK5 (кратер). */
     public boolean destroyTerrain = true;
     /** Урон сущностям через {@link ExplosionNukeGeneric}. */
@@ -119,34 +124,29 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
         // лениво инициализируем лучевой движок
         if (explosion == null) {
             explosionStart = System.currentTimeMillis();
-            MainRegistry.LOGGER.info("[NUKE MK5] Explosion entity started: algorithm={}, strength={}, speed={}, length={} at ({},{},{})",
-                    ModClothConfig.get().explosionAlgorithm, strength, speed, length,
-                    (int) getX(), (int) getY(), (int) getZ());
-            if (destroyTerrain) {
-                // 6.06_explosionAlgorithm: 0 = Legacy (Batched, однопоточный),
-                // 1 = Threaded DDA, 2 = Threaded DDA с накоплением урона.
-                // В оригинале 1.7.10 ветка 1/2 (ExplosionNukeRayParallelized) была закомментирована
-                // и конфиг фактически не работал — здесь подключён по назначению.
-                int algorithm = ModClothConfig.get().explosionAlgorithm;
-                if ((algorithm == 1 || algorithm == 2) && level() instanceof ServerLevel server) {
-                    explosion = new com.hbm_m.explosion.ExplosionNukeRayParallelized(
-                            server,
-                            getX(), getY(), getZ(),
-                            strength, speed, length
-                    );
+            if (pendingExplosionState != null) {
+                // NBT-resume: продолжаем сохранённое состояние ChunkEater с места остановки
+                MainRegistry.LOGGER.info("[NUKE MK5] Explosion entity resumed from NBT: strength={}, length={} at ({},{},{})",
+                        strength, length, (int) getX(), (int) getY(), (int) getZ());
+                if (destroyTerrain && resumedEngine == 0) {
+                    NukeMk5ChunkEater eater = new NukeMk5ChunkEater(
+                            level(), (int) getX(), (int) getY(), (int) getZ(), strength, speed, length);
+                    eater.loadState(pendingExplosionState);
+                    explosion = eater;
                 } else {
-                    explosion = new NukeMk5ChunkEater(
-                            level(),
-                            (int) getX(),
-                            (int) getY(),
-                            (int) getZ(),
-                            strength,
-                            speed,
-                            length
-                    );
+                    // несохраняемый движок (1/2) — пересоздаём и пересчитываем лучи
+                    createExplosionEngine();
                 }
+                pendingExplosionState = null;
             } else {
-                explosion = NoOpExplosionRay.INSTANCE;
+                MainRegistry.LOGGER.info("[NUKE MK5] Explosion entity started: algorithm={}, strength={}, speed={}, length={} at ({},{},{})",
+                        ModClothConfig.get().explosionAlgorithm, strength, speed, length,
+                        (int) getX(), (int) getY(), (int) getZ());
+                if (destroyTerrain) {
+                    createExplosionEngine();
+                } else {
+                    explosion = NoOpExplosionRay.INSTANCE;
+                }
             }
         }
 
@@ -179,6 +179,33 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
             }
 
             this.discard();
+        }
+    }
+
+    /**
+     * 6.06_explosionAlgorithm: 0 = Legacy (Batched, однопоточный),
+     * 1 = Threaded DDA, 2 = Threaded DDA с накоплением урона.
+     * В оригинале 1.7.10 ветка 1/2 (ExplosionNukeRayParallelized) была закомментирована
+     * и конфиг фактически не работал — здесь подключён по назначению.
+     */
+    private void createExplosionEngine() {
+        int algorithm = ModClothConfig.get().explosionAlgorithm;
+        if ((algorithm == 1 || algorithm == 2) && level() instanceof ServerLevel server) {
+            explosion = new com.hbm_m.explosion.ExplosionNukeRayParallelized(
+                    server,
+                    getX(), getY(), getZ(),
+                    strength, speed, length
+            );
+        } else {
+            explosion = new NukeMk5ChunkEater(
+                    level(),
+                    (int) getX(),
+                    (int) getY(),
+                    (int) getZ(),
+                    strength,
+                    speed,
+                    length
+            );
         }
     }
 
@@ -243,11 +270,42 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
         this.tickCount = tag.getInt("age");
+        this.strength = tag.getInt("strength");
+        this.speed = tag.getInt("speed");
+        this.length = tag.getInt("length");
+        this.destroyTerrain = tag.getBoolean("destroyTerrain");
+        this.applyEntityDamage = tag.getBoolean("applyEntityDamage");
+        this.applyInstantPlayerRads = tag.getBoolean("applyInstantPlayerRads");
+        this.applyCraterBiomes = tag.getBoolean("applyCraterBiomes");
+        this.fallout = tag.getBoolean("fallout");
+        this.falloutAdd = tag.getInt("falloutAdd");
+        // Снапшот состояния ChunkEater (алгоритм 0) — взрыв продолжится с места остановки.
+        // Для алгоритмов 1/2 снапшот не сохраняется: движок пересоздаётся и пересчитывает
+        // лучи заново (уже разрушенные блоки — воздух, пересчёт быстрый).
+        this.pendingExplosionState = tag.contains("explosionState") ? tag.getCompound("explosionState") : null;
+        this.resumedEngine = tag.getInt("explosionEngine");
     }
 
     @Override
     protected void addAdditionalSaveData(CompoundTag tag) {
         tag.putInt("age", this.tickCount);
+        tag.putInt("strength", this.strength);
+        tag.putInt("speed", this.speed);
+        tag.putInt("length", this.length);
+        tag.putBoolean("destroyTerrain", this.destroyTerrain);
+        tag.putBoolean("applyEntityDamage", this.applyEntityDamage);
+        tag.putBoolean("applyInstantPlayerRads", this.applyInstantPlayerRads);
+        tag.putBoolean("applyCraterBiomes", this.applyCraterBiomes);
+        tag.putBoolean("fallout", this.fallout);
+        tag.putInt("falloutAdd", this.falloutAdd);
+        if (explosion != null) {
+            // 0 = ChunkEater, 1/2 = Parallelized
+            int engine = explosion instanceof NukeMk5ChunkEater ? 0 : 1;
+            tag.putInt("explosionEngine", engine);
+            if (ModClothConfig.get().enableNukeNBTSaving && explosion instanceof NukeMk5ChunkEater eater) {
+                tag.put("explosionState", eater.saveState());
+            }
+        }
     }
 
     /**

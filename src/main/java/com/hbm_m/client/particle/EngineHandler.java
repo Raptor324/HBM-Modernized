@@ -145,16 +145,13 @@ public class EngineHandler {
         boolean dhRenderedThisFrame = com.hbm_m.client.compat.dh.DhClientState.isActive();
         float splitDist = com.hbm_m.client.compat.dh.DhOcclusionGpu.vanillaFarPlane();
         double splitSq = (double) splitDist * (double) splitDist;
-        net.minecraft.world.phys.Vec3 camPos = event.getCamera().getPosition();
 
         // ДИАГНОСТИКА УДАЛЕНА (ambient proj / particlesAlive): спамили каждый
         // кадр; при необходимости вернуть — git-история 2026-08-28.
 
-        java.util.function.Predicate<com.hbm_m.particle.nt.ParticleNT> near = p -> {
-            double dx = p.x - camPos.x, dy = p.y - camPos.y, dz = p.z - camPos.z;
-            return dx * dx + dy * dy + dz * dz <= splitSq;
-        };
-        java.util.function.Predicate<com.hbm_m.particle.nt.ParticleNT> far = near.negate();
+        // Фильтры near/far — примитивными параметрами в renderFiltered:
+        // лямбды-предикаты с захватом camPos/splitSq аллоцировали 4 объекта
+        // на кадр — чистый GC churn в горячем пути.
 
         if (dhRenderedThisFrame) {
             // ПОРЯДОК: far -> near -> flash (painter's algorithm).
@@ -210,11 +207,11 @@ public class EngineHandler {
                 // ВАЖНО: рисуем ДО биндинга DH depth в Sampler1 — стандартные
                 // entity-шейдеры используют слот 1 как overlay-маску, и получили
                 // бы глубину вместо неё (тинт на корпусе ракеты).
-                if (!SKIP_MESH) MissileTrackWorldRender.renderFiltered(partialTick, d -> d > splitSq);
+                if (!SKIP_MESH) MissileTrackWorldRender.renderFiltered(partialTick, splitSq, true);
 
                 setDhShaderFarMode(1.0F,
                         com.hbm_m.client.compat.dh.DhClientState.dhProjection());
-                if (!SKIP_PARTICLES) ParticleEngineNT.INSTANCE.renderFiltered(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack(), far);
+                if (!SKIP_PARTICLES) ParticleEngineNT.INSTANCE.renderFiltered(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack(), splitSq, true);
                 buffer.endBatch();
                 ParticleEngineNT.buffer().endBatch();
             } finally {
@@ -233,8 +230,8 @@ public class EngineHandler {
             // та, которой террейн писал свой z-buffer (глубина корректна).
             com.hbm_m.client.compat.dh.DhClientCompat.beginCapturedVanillaPass(partialTick);
             setDhShaderFarMode(0.0F, null);
-            if (!SKIP_MESH) MissileTrackWorldRender.renderFiltered(partialTick, d -> d <= splitSq);
-            if (!SKIP_PARTICLES) ParticleEngineNT.INSTANCE.renderFiltered(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack(), near);
+            if (!SKIP_MESH) MissileTrackWorldRender.renderFiltered(partialTick, splitSq, false);
+            if (!SKIP_PARTICLES) ParticleEngineNT.INSTANCE.renderFiltered(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack(), splitSq, false);
             buffer.endBatch();
             ParticleEngineNT.buffer().endBatch();
             com.hbm_m.client.compat.dh.DhClientCompat.endVanillaExtendedPass();
@@ -255,7 +252,7 @@ public class EngineHandler {
                 com.hbm_m.client.render.FrameStateProbe.snapWorld("mx.pre", mx[0], mx[1], mx[2]);
             }
             if (!SKIP_MESH) {
-                MissileTrackWorldRender.renderFiltered(partialTick, null);
+                MissileTrackWorldRender.renderFiltered(partialTick, Double.NaN, false);
                 String br = com.hbm_m.client.render.SingleMeshVboRenderer.lastTrackMeshBranch.get();
                 // Суффикс ветки в теге даёт независимые рейтлимиты и мгновенную
                 // читаемость: s1.mesh.vbo / s1.mesh.quads:shader-null / s1.mesh.

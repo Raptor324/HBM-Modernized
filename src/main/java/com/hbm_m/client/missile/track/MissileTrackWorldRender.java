@@ -60,21 +60,25 @@ public final class MissileTrackWorldRender {
     }
 
     public static void render(float partialTick, PoseStack poseStack) {
-        renderFiltered(partialTick, null);
+        renderFiltered(partialTick, Double.NaN, false);
     }
 
     /**
      * Рендер треков ракет с опциональным фильтром по дистанции² до камеры.
      *
-     * @param distFilterSq null = все треки; иначе предикат по дистанции²
-     *                     (far: d > splitDist², near: d <= splitDist² — та же
-     *                     граница, что у NT-частиц в EngineHandler).
-     *                     Виртуализация внутри renderOne работает как раньше:
-     *                     при DH — истинные координаты (дальний проход без
-     *                     клипа), без DH — приближение к границе прорисовки.
+     * @param distFilterSq Double.NaN = все треки; иначе граница по дистанции²
+     *                     (far: d² > distFilterSq, near: d² <= distFilterSq —
+     *                     та же граница, что у NT-частиц в EngineHandler).
+     *                     Примитивный параметр вместо DoublePredicate: горячий
+     *                     путь кадра, лямбда с захватом splitSq аллоцировалась
+     *                     на каждый вызов.
+     * @param far       true = рисовать дальние (d² > границы).
+     *                  Виртуализация внутри renderOne работает как раньше:
+     *                  при DH — истинные координаты (дальний проход без
+     *                  клипа), без DH — приближение к границе прорисовки.
      * @return true, если была отрисована хотя бы одна ракета.
      */
-    public static boolean renderFiltered(float partialTick, java.util.function.DoublePredicate distFilterSq) {
+    public static boolean renderFiltered(float partialTick, double distFilterSq, boolean far) {
         if (!MissileTrackClient.isEnabled()) {
             return false;
         }
@@ -113,11 +117,12 @@ public final class MissileTrackWorldRender {
             if (pose == null) {
                 continue;
             }
-            if (distFilterSq != null) {
+            if (!Double.isNaN(distFilterSq)) {
                 double dx = pose.x() - camera.x;
                 double dy = pose.y() - camera.y;
                 double dz = pose.z() - camera.z;
-                if (!distFilterSq.test(dx * dx + dy * dy + dz * dz)) {
+                boolean near = dx * dx + dy * dy + dz * dz <= distFilterSq;
+                if (near == far) {
                     continue;
                 }
             }

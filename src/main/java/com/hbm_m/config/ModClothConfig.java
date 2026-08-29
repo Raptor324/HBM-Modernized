@@ -227,6 +227,8 @@ public class ModClothConfig {
     public int explosionAlgorithm = 0;
     /** Лимит жизни невыгруженного взрыва в секундах; 0 = без лимита (ориг. BombConfig.limitExplosionLifespan, ключ 6.00). */
     public int limitExplosionLifespan = 0;
+    /** Сохранять состояние взрыва MK5 в NBT — после перезахода взрыв продолжается с места остановки (ориг. BombConfig.enableNukeNBTSaving). */
+    public boolean enableNukeNBTSaving = true;
 
     // ════════════════════════════════════════════════════════════════
     // Тепловизор

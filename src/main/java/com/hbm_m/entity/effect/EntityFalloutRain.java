@@ -323,6 +323,12 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
             return s.getBlockState(x & 15, y & 15, z & 15);
         }
 
+        /** null-секция или hasOnlyAir — колонку на этом 16-блочном отрезке можно пропустить. */
+        boolean isSectionEmpty(int y) {
+            LevelChunkSection s = sectionFor(y);
+            return s == null || s.hasOnlyAir();
+        }
+
         void set(int x, int y, int z, BlockState state) {
             if (WorldUtil.setBlockFast(chunk, writePos.set(x, y, z), state)) {
                 modified = true;
@@ -463,6 +469,13 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         for (int y = topY; y >= minY; y--) {
             if (depth >= 3) return;
 
+            // Скип целиком воздушных секций: после кратера под поверхностью десятки
+            // секций воздуха, поблочный провал до minY был заметной частью тика.
+            if (ed.isSectionEmpty(y)) {
+                y &= ~15; // прыжок к нижней границе секции (декремент уводит в следующую)
+                continue;
+            }
+
             BlockState state = ed.getState(x, y, z);
 
             if (state.isAir() || state.is(ModBlocks.NUCLEAR_FALLOUT.get())) continue;
@@ -505,6 +518,10 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         BlockState falloutState = ModBlocks.NUCLEAR_FALLOUT.get().defaultBlockState();
 
         for (int y = topY; y >= level.getMinBuildHeight(); y--) {
+            if (ed.isSectionEmpty(y)) {
+                y &= ~15;
+                continue;
+            }
             BlockState state = ed.getState(x, y, z);
             if (state.isAir() || state.is(ModBlocks.NUCLEAR_FALLOUT.get())) {
                 continue;

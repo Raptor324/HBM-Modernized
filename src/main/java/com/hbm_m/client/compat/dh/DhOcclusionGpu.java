@@ -37,12 +37,26 @@ public final class DhOcclusionGpu {
         return 1280.0F;
     }
 
-    /** Активная DEPTH32F текстура DH (для Sampler1 шейдера nuke_cloud). */
+    /** Активная DEPTH32F текстура DH (для Sampler1 шейдера nuke_cloud).
+     *  Field кешируется: дергается несколько раз за кадр, а поиск по строкам
+     *  (Class.forName/getField) — микроаллокации и строковые сравнения
+     *  в горячем цикле рендера. */
+    private static java.lang.reflect.Field dhActiveDepthField;
+    private static boolean dhDepthFieldInitialized;
+
     public static int getDhActiveDepthTextureId() {
-        try {
-            Class<?> c = Class.forName("com.seibel.distanthorizons.core.render.DhApiRenderProxy");
-            return c.getField("activeOpenGlDhDepthTextureId").getInt(null);
-        } catch (Throwable ignored) {}
+        if (!dhDepthFieldInitialized) {
+            dhDepthFieldInitialized = true;
+            try {
+                Class<?> c = Class.forName("com.seibel.distanthorizons.core.render.DhApiRenderProxy");
+                dhActiveDepthField = c.getField("activeOpenGlDhDepthTextureId");
+            } catch (Throwable ignored) {}
+        }
+        if (dhActiveDepthField != null) {
+            try {
+                return dhActiveDepthField.getInt(null);
+            } catch (Throwable ignored) {}
+        }
         return -1;
     }
 
@@ -106,24 +120,49 @@ public final class DhOcclusionGpu {
         return 0.0F;
     }
 
-    /** Конфиг «Overdraw Prevention» (<0 = авто); рефлексия — класс грузится и без DH. */
+    /**
+     * Конфиг «Overdraw Prevention» (<0 = авто).
+     *
+     * Рефлексия закеширована, а САМО ЗНАЧЕНИЕ обновляется не чаще раза в
+     * секунду: метод дергается каждый кадр (через ditherFadeMaskDistance →
+     * DhDepthCopy), а конфиг DH игрок меняет крайне редко — обход
+     * graphics.getClass().getMethods() на каждый кадр был чистым оверхедом.
+     */
+    private static java.lang.reflect.Method overdrawMethod;
+    private static java.lang.reflect.Method overdrawGetValueMethod;
+    private static Object overdrawConfigProperty;
+    private static boolean overdrawResolved;
+    private static float cachedOverdrawValue = -1.0F;
+    private static long overdrawNextRefreshMs;
+
     private static float getOverdrawPreventionConfigValue() {
+        long now = System.currentTimeMillis();
+        if (overdrawResolved && now < overdrawNextRefreshMs) {
+            return cachedOverdrawValue;
+        }
+        overdrawNextRefreshMs = now + 1000L;
         try {
-            Class<?> cfg = Class.forName("com.seibel.distanthorizons.core.api.external.methods.config.DhApiConfig");
-            Object inst = cfg.getField("INSTANCE").get(null);
-            Object graphics = cfg.getMethod("graphics").invoke(inst);
-            java.lang.reflect.Method m = null;
-            for (java.lang.reflect.Method mm : graphics.getClass().getMethods()) {
-                if (mm.getName().equals("overdrawPreventionRadius")) {
-                    m = mm;
-                    break;
+            if (!overdrawResolved) {
+                Class<?> cfg = Class.forName("com.seibel.distanthorizons.core.api.external.methods.config.DhApiConfig");
+                Object inst = cfg.getField("INSTANCE").get(null);
+                Object graphics = cfg.getMethod("graphics").invoke(inst);
+                for (java.lang.reflect.Method mm : graphics.getClass().getMethods()) {
+                    if (mm.getName().equals("overdrawPreventionRadius")) {
+                        overdrawMethod = mm;
+                        break;
+                    }
                 }
+                if (overdrawMethod == null) {
+                    overdrawResolved = true;
+                    return cachedOverdrawValue = -1.0F;
+                }
+                overdrawConfigProperty = overdrawMethod.invoke(graphics);
+                overdrawGetValueMethod = overdrawConfigProperty.getClass().getMethod("getValue");
+                overdrawResolved = true;
             }
-            if (m == null) return -1.0F;
-            Object value = m.invoke(graphics);
-            Object v = value.getClass().getMethod("getValue").invoke(value);
-            return v instanceof Number n ? n.floatValue() : -1.0F;
+            Object value = overdrawGetValueMethod.invoke(overdrawConfigProperty);
+            return cachedOverdrawValue = value instanceof Number n ? n.floatValue() : -1.0F;
         } catch (Throwable ignored) {}
-        return -1.0F;
+        return cachedOverdrawValue = -1.0F;
     }
 }
