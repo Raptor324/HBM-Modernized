@@ -41,6 +41,7 @@ public class AdditiveParticleRenderType implements ParticleRenderType {
         return "additive_particle";
     }
 
+    //? if < 1.21.1 {
     @Override
     public void begin(BufferBuilder buffer, TextureManager textureManager) {
         savedFogStart = RenderSystem.getShaderFogStart();
@@ -60,6 +61,29 @@ public class AdditiveParticleRenderType implements ParticleRenderType {
 
         IrisBufferHelper.beginWithoutExtending(buffer, VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
     }
+    //?} else {
+    /*/**
+     * 1.21 gab {@code ParticleRenderType} eine neue Form: {@code begin} bekommt den Tesselator und
+     * liefert den BufferBuilder zurueck, und ein {@code end}-Hook existiert nicht mehr. Der
+     * Zustand wird daher nicht mehr selbst zurueckgesetzt - das uebernimmt der Partikel-Pass.
+     *\/
+    @Override
+    public BufferBuilder begin(com.mojang.blaze3d.vertex.Tesselator tesselator, TextureManager textureManager) {
+        RenderSystem.enableBlend();
+        RenderSystem.blendFuncSeparate(
+                GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE,
+                GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+        RenderSystem.depthMask(false);
+        RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
+        RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_PARTICLES);
+        disableParticleFog();
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthFunc(515);
+        RenderSystem.disableCull();
+
+        return tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+    }
+    *///?}
 
     private static void disableParticleFog() {
         RenderSystem.setShaderFogStart(NO_FOG_START);
@@ -79,6 +103,7 @@ public class AdditiveParticleRenderType implements ParticleRenderType {
         }
     }
 
+    //? if < 1.21.1 {
     @Override
     public void end(Tesselator tesselator) {
         tesselator.end();
@@ -90,4 +115,5 @@ public class AdditiveParticleRenderType implements ParticleRenderType {
         RenderSystem.setShaderFogStart(savedFogStart);
         RenderSystem.setShaderFogEnd(savedFogEnd);
     }
+    //?}
 }

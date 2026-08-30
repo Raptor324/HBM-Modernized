@@ -2,10 +2,7 @@ package com.hbm_m.advancement;
 
 import com.hbm_m.lib.RefStrings;
 
-import net.minecraft.advancements.Advancement;
-import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.ServerAdvancementManager;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
@@ -101,20 +98,9 @@ public final class ModAdvancements {
     public static void grant(Player player, String id) {
         if (!(player instanceof ServerPlayer serverPlayer)) return;
 
-        var server = serverPlayer.getServer();
-        if (server == null) return;
-
-        ServerAdvancementManager manager = server.getAdvancements();
-        Advancement advancement = manager.getAdvancement(
-                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, id));
-        if (advancement == null) return;
-
-        AdvancementProgress progress = serverPlayer.getAdvancements().getOrStartProgress(advancement);
-        if (progress.isDone()) return;
-
-        for (String criterion : progress.getRemainingCriteria()) {
-            serverPlayer.getAdvancements().award(advancement, criterion);
-        }
+        // Advancement wurde in 1.21 durch AdvancementHolder ersetzt; PlatformHooks kapselt beide.
+        com.hbm_m.platform.PlatformHooks.awardAdvancementIfEligible(
+                serverPlayer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, id), true);
     }
 
     /**

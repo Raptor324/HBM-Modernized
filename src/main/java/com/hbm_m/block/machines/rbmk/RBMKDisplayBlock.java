@@ -57,4 +57,13 @@ public class RBMKDisplayBlock extends RBMKMiniPanelBlock {
         }
         return InteractionResult.PASS;
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<RBMKDisplayBlock> CODEC = simpleCodec(RBMKDisplayBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }
