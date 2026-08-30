@@ -81,7 +81,7 @@ public abstract class BlockGasBase extends Block {
 
     /** Общий износ фильтра при контакте с газом (1 ед./тик, как в оригинале). */
     protected static void damageWornFilter(LivingEntity living) {
-        ItemStack mask = GasMaskUtil.resolveMask(living.getItemBySlot(EquipmentSlot.HEAD));
+        ItemStack mask = GasMaskUtil.resolveWornMask(living);
         if (!mask.isEmpty() && mask.getItem() instanceof IGasMask) {
             IGasMask.damageFilter(mask, 1);
         }

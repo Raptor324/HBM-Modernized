@@ -7,7 +7,7 @@
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
         "location": "hbm_m:radio_house",
-        "processors": "minecraft:empty"
+        "processors": "hbm_m:connection_fix"
       }
     }
   ]

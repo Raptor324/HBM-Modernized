@@ -47,8 +47,8 @@ public class ItemModGasmask extends ItemArmorMod implements IGasMask {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        ItemStack helmet = player.getItemBySlot(EquipmentSlot.HEAD);
-        ItemStack mask = GasMaskUtil.resolveMask(helmet);
+        // Маска на голове, прицепленная к шлему или в слоте лица Curios.
+        ItemStack mask = GasMaskUtil.resolveWornMask(player);
 
         if (mask.getItem() instanceof IGasMask) {
             // Маска уже прицеплена к шлему — обрабатываем как обычную маску.

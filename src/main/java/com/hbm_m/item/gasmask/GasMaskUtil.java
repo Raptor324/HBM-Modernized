@@ -3,10 +3,13 @@ package com.hbm_m.item.gasmask;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.armormod.util.ArmorModificationHelper;
+import com.hbm_m.compat.curios.CuriosCompat;
 import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
@@ -36,6 +39,30 @@ public final class GasMaskUtil {
             }
         }
         return ItemStack.EMPTY;
+    }
+
+    /**
+     * Находит надетую маску на сущности: шлем-маска ИЛИ маска-модификация
+     * в шлеме, ИЛИ маска в слоте лица Curios (опциональная интеграция).
+     */
+    @Nullable
+    public static ItemStack resolveWornMask(LivingEntity entity) {
+        if (entity == null) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack mask = resolveMask(entity.getItemBySlot(EquipmentSlot.HEAD));
+        if (!mask.isEmpty()) {
+            return mask;
+        }
+        return CuriosCompat.getFaceMask(entity);
+    }
+
+    /**
+     * Есть ли на голове (шлем-маска или маска-модификация) —
+     * для взаимной блокировки со слотом лица Curios.
+     */
+    public static boolean isMaskOnHead(@Nullable LivingEntity entity) {
+        return entity != null && !resolveMask(entity.getItemBySlot(EquipmentSlot.HEAD)).isEmpty();
     }
 
     /** Вынуть фильтр из маски, вернув его предметом с остатком ресурса. */

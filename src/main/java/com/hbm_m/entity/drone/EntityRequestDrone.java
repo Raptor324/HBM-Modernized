@@ -164,7 +164,7 @@ public class EntityRequestDrone extends EntityDroneBase {
         super.readAdditionalSaveData(tag);
         
         //? if < 1.21.1 {
-        heldItem = tag.contains("held") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("held"), null) : ItemStack.EMPTY;
+        heldItem = tag.contains("held") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("held"), com.hbm_m.platform.PlatformHooks.bestEffortProvider()) : ItemStack.EMPTY;
         //?} else {
         /*heldItem = tag.contains("held") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("held"), this.registryAccess()) : ItemStack.EMPTY;
         *///?}
@@ -183,7 +183,7 @@ public class EntityRequestDrone extends EntityDroneBase {
                 case "unload" -> program.add(ProgramStep.UNLOAD);
                 case "dock" -> program.add(ProgramStep.DOCK);
                 //? if < 1.21.1 {
-                case "pattern" -> program.add(com.hbm_m.platform.PlatformHooks.itemStackOf(entry.getCompound("stack"), null));
+                case "pattern" -> program.add(com.hbm_m.platform.PlatformHooks.itemStackOf(entry.getCompound("stack"), com.hbm_m.platform.PlatformHooks.bestEffortProvider()));
                 //?} else {
                 /*case "pattern" -> program.add(com.hbm_m.platform.PlatformHooks.itemStackOf(entry.getCompound("stack"), this.registryAccess()));
                 *///?}
@@ -197,7 +197,7 @@ public class EntityRequestDrone extends EntityDroneBase {
         super.addAdditionalSaveData(tag);
         
         //? if < 1.21.1 {
-        if (!heldItem.isEmpty()) tag.put("held", com.hbm_m.platform.PlatformHooks.safeItemSave(heldItem, null));
+        if (!heldItem.isEmpty()) tag.put("held", com.hbm_m.platform.PlatformHooks.safeItemSave(heldItem, com.hbm_m.platform.PlatformHooks.bestEffortProvider()));
         //?} else {
         /*if (!heldItem.isEmpty()) tag.put("held", com.hbm_m.platform.PlatformHooks.safeItemSave(heldItem, this.registryAccess()));
         *///?}
@@ -215,7 +215,7 @@ public class EntityRequestDrone extends EntityDroneBase {
             } else if (step instanceof ItemStack pattern) {
                 entry.putString("type", "pattern");
                 //? if < 1.21.1 {
-                entry.put("stack", com.hbm_m.platform.PlatformHooks.safeItemSave(pattern, null));
+                entry.put("stack", com.hbm_m.platform.PlatformHooks.safeItemSave(pattern, com.hbm_m.platform.PlatformHooks.bestEffortProvider()));
                 //?} else {
                 /*entry.put("stack", com.hbm_m.platform.PlatformHooks.safeItemSave(pattern, this.registryAccess()));
                 *///?}

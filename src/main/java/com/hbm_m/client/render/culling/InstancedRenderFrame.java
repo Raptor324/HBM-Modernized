@@ -93,24 +93,18 @@ public final class InstancedRenderFrame {
         IrisRenderBatch.closePersistentIfActive();
 
         try {
-            if (ClientRenderFlags.useInstancedBatching()) {
-                ModClothConfig cfg = ModClothConfig.get();
-                boolean useMdi = cfg.useMultiDrawIndirect && MdiBatchCoordinator.isMdiAvailable();
+            // Инстансинг включён всегда; forceVanillaImmediatePath проверяется внутри
+            // ClientRenderFlags.useInstancedBatching() самими BER. MDI включается
+            // автоматически (caps + отсутствие shader pack) — см. MdiBatchCoordinator.beginFrame.
+            RenderFrameLight.ensureLightTextureUpdated();
 
-                RenderFrameLight.ensureLightTextureUpdated();
-
-                if (useMdi) {
-                    MdiBatchCoordinator coord = MdiBatchCoordinator.beginFrame(projection);
-                    flushAllInstanced(projection);
-                    if (coord != null) {
-                        coord.endFrame(false);
-                    }
-                } else {
-                    flushAllInstanced(projection);
-                }
-
-                MdiRenderFrameGate.advanceAfterPresent();
+            MdiBatchCoordinator coord = MdiBatchCoordinator.beginFrame(projection);
+            flushAllInstanced(projection);
+            if (coord != null) {
+                coord.endFrame(false);
             }
+
+            MdiRenderFrameGate.advanceAfterPresent();
 
             // БЕЗ guard'а useInstancedBatching: при выключенном инстансинге
             // не-instanced путь (SingleMeshVboRenderer.render / renderSingle)
@@ -170,14 +164,11 @@ public final class InstancedRenderFrame {
     }
 
     private static void flushAllInstanced(Matrix4f projection) {
-        MachineAdvancedAssemblerRenderer.flushInstancedBatches(projection);
-        MachineHydraulicFrackiningTowerRenderer.flushInstancedBatches(projection);
-        MachineAssemblerRenderer.flushInstancedBatches(projection);
+        // Фабричные станки (machine/) — единый реестр вместо N хардкодов flushInstancedBatches.
+        com.hbm_m.client.render.machine.MachineRenderRegistry.flushAll(projection);
+
+        // Легаси-рендереры, ещё не мигрированные на фабрику.
         DoorRenderer.flushInstancedBatches(projection);
-        MachinePressRenderer.flushInstancedBatches(projection);
-        MachineChemicalPlantRenderer.flushInstancedBatches(projection);
-        MachineCrystallizerRenderer.flushInstancedBatches(projection);
-        MachineRadarRenderer.flushInstancedBatches(projection);
     }
 
     public static void clear() {

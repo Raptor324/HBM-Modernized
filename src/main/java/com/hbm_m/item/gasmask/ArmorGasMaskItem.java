@@ -3,6 +3,7 @@ package com.hbm_m.item.gasmask;
 import java.util.EnumSet;
 import java.util.List;
 
+import com.hbm_m.compat.curios.CuriosCompat;
 import com.hbm_m.handler.HazardClass;
 import com.hbm_m.item.ITooltipProvider;
 import com.hbm_m.item.tools_and_armor.ModArmorMaterials;
@@ -15,6 +16,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
@@ -57,6 +59,21 @@ public class ArmorGasMaskItem extends ArmorItem implements IGasMask, ITooltipPro
     public EquipmentSlot getEquipmentSlot() {
         return EquipmentSlot.HEAD;
     }
+
+    // Взаимная блокировка: нельзя надеть противогаз на голову,
+    // пока маска уже стоит в слоте лица Curios (и наоборот — см. GasMaskCurio).
+    //? if < 1.21.1 {
+    @Override
+    public boolean canEquip(ItemStack stack, EquipmentSlot slot, net.minecraft.world.entity.Entity entity) {
+        return super.canEquip(stack, slot, entity)
+                && (slot != EquipmentSlot.HEAD || !(entity instanceof LivingEntity living) || CuriosCompat.getFaceMask(living).isEmpty());
+    }
+    //?} else {
+    /*@Override
+    public boolean canEquip(ItemStack stack, EquipmentSlot slot, LivingEntity entity) {
+        return super.canEquip(stack, slot, entity) && (slot != EquipmentSlot.HEAD || CuriosCompat.getFaceMask(entity).isEmpty());
+    }
+     *///?}
 
     @Override
     public EnumSet<HazardClass> getBlacklist() {

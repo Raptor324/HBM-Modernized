@@ -58,11 +58,7 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
  * <b>Eligibility constraints for an individual flush:</b>
  * <ul>
  *   <li>Iris/Oculus NOT active (we only optimise the vanilla shader path).</li>
- *   <li>Unsliced light layout ({@code useSlicedLight == false}). Sliced parts
- *       use a different attribute layout (loc 7..14 + 15) and a different
- *       shader, so they fall through to the legacy path.</li>
  *   <li>Renderer initialised, instanceCount &gt; 0.</li>
- *   <li>{@link ModClothConfig#useMultiDrawIndirect} enabled.</li>
  * </ul>
  * <p>
  * <b>Iris path:</b> untouched. {@link InstancedStaticPartRenderer#flush(Matrix4f)}
@@ -226,10 +222,6 @@ public final class MdiBatchCoordinator {
         if (ShaderCompatibilityDetector.isExternalShaderActive()) {
             return null;
         }
-        ModClothConfig cfg;
-        try { cfg = ModClothConfig.get(); }
-        catch (Throwable t) { return null; }
-        if (cfg == null || !cfg.useMultiDrawIndirect) return null;
         if (!isMdiAvailable()) return null;
 
         MdiBatchCoordinator session = new MdiBatchCoordinator(projectionMatrix);

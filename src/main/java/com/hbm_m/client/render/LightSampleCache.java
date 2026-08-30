@@ -68,7 +68,6 @@ import net.minecraft.world.phys.AABB;
 public final class LightSampleCache {
 
     private static final Long2ObjectOpenHashMap<Entry> CACHE = new Long2ObjectOpenHashMap<>();
-    private static final Long2ObjectOpenHashMap<Entry16> CACHE16 = new Long2ObjectOpenHashMap<>();
     private static long currentFrame = 0L;
 
     public static final ThreadLocal<Matrix4f> BASE_POSE = ThreadLocal.withInitial(Matrix4f::new);
@@ -116,11 +115,6 @@ public final class LightSampleCache {
         long lastFrame;
     }
 
-    private static final class Entry16 {
-        final float[] probeUV = new float[32];
-        long lastFrame;
-    }
-
     /**
      * Preserves the old fast path of skipping expensive spatial sampling when the
      * BlockEntity's own packed light reports no block light, but makes it adaptive:
@@ -150,12 +144,10 @@ public final class LightSampleCache {
         if ((currentFrame % PRUNE_EVERY) == 0) {
             CACHE.long2ObjectEntrySet().removeIf(e ->
                 e.getValue().lastFrame < currentFrame - STALE_AFTER_FRAMES);
-            // CACHE8/CACHE16 раньше не чистились вообще: ключи включают identityHashCode
+            // CACHE8 раньше не чистился вообще: ключи включают identityHashCode
             // рендерера, который меняется на каждом reload/disconnect, — старые записи
             // становились навсегда недостижимым мусором в map (неограниченный рост).
             CACHE8.long2ObjectEntrySet().removeIf(e ->
-                e.getValue().lastFrame < currentFrame - STALE_AFTER_FRAMES);
-            CACHE16.long2ObjectEntrySet().removeIf(e ->
                 e.getValue().lastFrame < currentFrame - STALE_AFTER_FRAMES);
         }
     }
@@ -332,7 +324,6 @@ public final class LightSampleCache {
     public static void invalidateAll() {
         CACHE.clear();
         CACHE8.clear();
-        CACHE16.clear();
         lastQueriedBE = null;
         lastFastFrame = -1L;
     }
@@ -485,119 +476,6 @@ public final class LightSampleCache {
             return;
         }
         getOrSample8(be, partIdentityHash, objBbox, blockPos, localPose, packedLightFallback, out16);
-    }
-
-    /**
-     * Samples lightmap UV pairs for a 2x4x2 lattice (X/Z corners across 4 Y slices).
-     * Output layout: 16 probes * 2 floats = 32 floats:
-     *   slice0: (x0z0, x1z0, x0z1, x1z1), then slice1, slice2, slice3;
-     * each probe contributes (blockU, skyV).
-     *
-     * <p>Intended for very tall machines where a single 2x2x2 corner set fails to
-     * capture mid-height localized block light (e.g. a torch attached halfway up
-     * the side of a tower).</p>
-     */
-    public static void getOrSample16(@Nullable BlockEntity be, long partIdentityHash,
-                                     float[] objBbox, BlockPos blockPos, Matrix4f localPose,
-                                     int packedLightFallback, float[] out32) {
-        if (com.hbm_m.client.render.SingleMeshVboRenderer.isWorldMissileOverlayDraw()) {
-            fillFallback16(packedLightFallback, out32);
-            return;
-        }
-        if (shouldSkipSpatialSampling(be, packedLightFallback)) {
-            fillFallback16(packedLightFallback, out32);
-            return;
-        }
-
-        Level level = (be != null) ? be.getLevel() : null;
-        if (level == null || blockPos == null || localPose == null || objBbox == null) {
-            fillFallback16(packedLightFallback, out32);
-            return;
-        }
-
-        long key = be.getBlockPos().asLong() ^ partIdentityHash ^ 0x16_16_16_16L;
-        Entry16 cached = CACHE16.get(key);
-        if (cached != null && cached.lastFrame == currentFrame) {
-            System.arraycopy(cached.probeUV, 0, out32, 0, 32);
-            return;
-        }
-
-        sample16(level, objBbox, blockPos, localPose, packedLightFallback, out32);
-
-        if (cached == null) {
-            cached = new Entry16();
-            CACHE16.put(key, cached);
-        }
-        System.arraycopy(out32, 0, cached.probeUV, 0, 32);
-        cached.lastFrame = currentFrame;
-    }
-
-    private static final BlockPos.MutableBlockPos SAMPLE_POS_16 = new BlockPos.MutableBlockPos();
-    private static final Vector4f PROBE_TMP = new Vector4f();
-
-    private static void sample16(Level level, float[] objBbox, BlockPos blockPos,
-                                 Matrix4f localPose, int packedLightFallback, float[] out32) {
-        final float minX = objBbox[0], minY = objBbox[1], minZ = objBbox[2];
-        final float maxX = objBbox[3], maxY = objBbox[4], maxZ = objBbox[5];
-        final int bpx = blockPos.getX();
-        final int bpy = blockPos.getY();
-        final int bpz = blockPos.getZ();
-
-        float insetX = Math.min(SAMPLE_INSET, (maxX - minX) * 0.5f);
-        float insetY = Math.min(SAMPLE_INSET, (maxY - minY) * 0.5f);
-        float insetZ = Math.min(SAMPLE_INSET, (maxZ - minZ) * 0.5f);
-        final float minXs = minX + insetX, maxXs = maxX - insetX;
-        final float minYs = minY + insetY, maxYs = maxY - insetY;
-        final float minZs = minZ + insetZ, maxZs = maxZ - insetZ;
-
-        // Sample slightly OUTSIDE the model volume so we don't land inside solid blocks
-        // that the model visually occupies (which would return 0 or be forced to fallback).
-        final float shell = 0.55f;
-
-        int outBase = 0;
-        for (int slice = 0; slice < 4; slice++) {
-            float t = slice / 3.0f;
-            float oy = Mth.lerp(t, minYs, maxYs);
-            for (int corner = 0; corner < 4; corner++) {
-                boolean maxSideX = (corner & 1) != 0;
-                boolean maxSideZ = (corner & 2) != 0;
-                float ox = maxSideX ? maxXs : minXs;
-                float oz = maxSideZ ? maxZs : minZs;
-                ox += maxSideX ? shell : -shell;
-                oz += maxSideZ ? shell : -shell;
-
-                PROBE_TMP.set(ox, oy, oz, 1f);
-                localPose.transform(PROBE_TMP);
-                int wx = bpx + Mth.floor(PROBE_TMP.x);
-                int wy = bpy + Mth.floor(PROBE_TMP.y);
-                int wz = bpz + Mth.floor(PROBE_TMP.z);
-                SAMPLE_POS_16.set(wx, wy, wz);
-
-                int packed;
-                try {
-                    BlockState state = level.getBlockState(SAMPLE_POS_16);
-                    if (state.isSolidRender(level, SAMPLE_POS_16)) {
-                        packed = packedLightFallback;
-                    } else {
-                        packed = LevelRenderer.getLightColor(level, SAMPLE_POS_16);
-                    }
-                } catch (Throwable t0) {
-                    packed = packedLightFallback;
-                }
-
-                out32[outBase++] = (float) (packed & 0xFFFF);
-                out32[outBase++] = (float) ((packed >>> 16) & 0xFFFF);
-            }
-        }
-    }
-
-    private static void fillFallback16(int packedLightFallback, float[] out32) {
-        float bu = (float) (packedLightFallback & 0xFFFF);
-        float sv = (float) ((packedLightFallback >>> 16) & 0xFFFF);
-        for (int i = 0; i < 16; i++) {
-            out32[i * 2]     = bu;
-            out32[i * 2 + 1] = sv;
-        }
     }
 
     private static void sample8(Level level, float[] objBbox, BlockPos blockPos,

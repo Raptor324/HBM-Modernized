@@ -132,17 +132,12 @@ public class ModClothConfig {
     /** Перед заливкой instance VBO вызывать glBufferData(..., NULL) того же размера — orphaning буфера. */
     public boolean instanceVboOrphanBeforeUpload = true;
 
-    /** Instanced batch для OBJ-частей. Flush только в AFTER_BLOCK_ENTITIES. Нарушение контракта → белые модели при true. */
-    public boolean useInstancedStaticRendering = true;
-
-    /** Advanced assembler: при vanilla instanced использовать addInstanceGpuBones (матрица base×part на CPU). */
-    public boolean gpuBoneSkinning = false;
-
-    /** 2×4×2 sliced light probes (16 UV). Несовместимо с useMultiDrawIndirect. */
-    public boolean useSlicedLight = false;
-
-    /** Аггрегация instanced draw в один батч по общему атласу: один glMultiDrawElementsIndirect на flush. */
-    public boolean useMultiDrawIndirect = true;
+    /**
+     * Инстансинг, MDI и GPU-bone skinning включаются автоматически (переключателей больше нет).
+     * Резервный тумблер: принудительно рисовать все OBJ-станки ванильным immediate-путём
+     * (putBulkData) — если наш VBO-рендер сломался (белые/невидимые модели, артефакты).
+     */
+    public boolean forceVanillaImmediatePath = false;
 
     /** После каждого MDI-dispatch: одна строка INFO (число sub-draw, инстансов, атлас). */
     public boolean mdiDebugLogDispatch = false;
@@ -304,6 +299,6 @@ public class ModClothConfig {
 
     /** Использовать батчинг для статических частей (frame, Base). При проблемах отключите. */
     public static boolean useInstancedBatching() {
-        return INSTANCE.useInstancedStaticRendering;
+        return !INSTANCE.forceVanillaImmediatePath;
     }
 }

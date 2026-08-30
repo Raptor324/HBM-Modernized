@@ -249,6 +249,23 @@ public final class PlatformHooks {
     }
     *///?}
 
+    /**
+     * Провайдер реестров «из любой доступной стороны»: клиентский Level на клиенте,
+     * текущий сервер на dedicated server. null на 1.20.1 (не нужен) или если сторона
+     * ещё не поднята — вызыватели обязаны деградировать (EMPTY stack), не падать.
+     */
+    public static net.minecraft.core.HolderLookup.Provider bestEffortProvider() {
+        //? if < 1.21.1 {
+        return null;
+        //?} else {
+        /*if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
+            return clientProvider();
+        }
+        var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
+        return server != null ? server.registryAccess() : null;
+        *///?}
+    }
+
     // =====================================================================================
     //  Типизированные хелперы (COMMON — делегируют в getItemTag/editItemTag, без gating).
     //  Цель: сохранить линейный стиль вызова, близкий к stack.getOrCreateTag().putX(...),

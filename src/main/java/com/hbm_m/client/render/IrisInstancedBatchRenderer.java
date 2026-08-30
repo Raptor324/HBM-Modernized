@@ -150,13 +150,8 @@ final class IrisInstancedBatchRenderer {
             parent.tmpLocalPose.m32(parent.tmpLocalPose.m32() - (float) (anchor.getZ() - cam.z));
         }
         long partHash = System.identityHashCode(parent);
-        if (parent.useSlicedLight) {
-            LightSampleCache.getOrSample16(blockEntity, partHash, parent.objBbox, anchor,
-                                           parent.tmpLocalPose, packedLight, parent.tmpCornerUV);
-        } else {
-            LightSampleCache.getOrSample8(blockEntity, partHash, parent.objBbox, anchor,
-                                          parent.tmpLocalPose, packedLight, parent.tmpCornerUV);
-        }
+        LightSampleCache.getOrSample8(blockEntity, partHash, parent.objBbox, anchor,
+                                      parent.tmpLocalPose, packedLight, parent.tmpCornerUV);
     }
 
     // ── Single draw with Iris ExtendedShader ───────────────────────────
@@ -194,10 +189,7 @@ final class IrisInstancedBatchRenderer {
             int blockUInt = Math.max(0, Math.min(240, Math.round(irisSingleUV[0])));
             int skyVInt   = Math.max(0, Math.min(240, Math.round(irisSingleUV[1])));
             int packedSmoothLight = (skyVInt << 16) | blockUInt;
-            if (haveCorners && parent.useSlicedLight && companion.supportsSlicedPerVertexLightmap()) {
-                batch.drawCompanionWithSlicedPerVertexLight(companion, fullModelView,
-                        parent.tmpCornerUV, packedSmoothLight);
-            } else if (haveCorners) {
+            if (haveCorners) {
                 batch.drawCompanionWithPerVertexLight(companion, fullModelView,
                         parent.tmpCornerUV, packedSmoothLight);
             } else {
@@ -344,9 +336,7 @@ final class IrisInstancedBatchRenderer {
 
             final int uv2Loc = (companion != null) ? companion.getUv2Location() : -1;
             final boolean perVertexLight = companion != null
-                    && (parent.useSlicedLight
-                            ? companion.supportsSlicedPerVertexLightmap()
-                            : companion.supportsPerVertexLightmap());
+                    && companion.supportsPerVertexLightmap();
 
             if (perVertexLight) {
                 companion.ensureLightmapCapacity(Math.max(8, parent.instanceCount));

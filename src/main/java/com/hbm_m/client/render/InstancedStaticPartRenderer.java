@@ -75,13 +75,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     //   InstLightC23  vec4 (loc 9) @ 18   -- c2.uv, c3.uv
     //   InstLightC45  vec4 (loc 10) @ 22   -- c4.uv, c5.uv
     //   InstLightC67  vec4 (loc 11) @ 26  -- c6.uv, c7.uv
-    // Sliced: lights @14..45 (8 vec4), fade in InstBboxSize.w @ 13
     static final int INSTANCE_ATTRIB_FIRST = 4;
     static final int LIGHT_FLOAT_OFFSET = 14;
-    private static final int BASE_INSTANCE_DATA_SIZE = 30;
-    private static final int SLICED_INSTANCE_DATA_SIZE = 46;
+    private static final int INSTANCE_DATA_SIZE = 30;
 
-    final boolean useSlicedLight;
     final boolean storesPerInstancePartBone;
     final int instanceDataSize;
     final int instanceAttribLast;
@@ -129,26 +126,22 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     // ── Constructors ───────────────────────────────────────────────────
 
     public InstancedStaticPartRenderer(SingleMeshVboRenderer.VboData data) {
-        this(data, null, false, false);
+        this(data, null, false);
     }
     public InstancedStaticPartRenderer(SingleMeshVboRenderer.VboData data, List<BakedQuad> quadsForIris) {
-        this(data, quadsForIris, false, false);
-    }
-    public InstancedStaticPartRenderer(SingleMeshVboRenderer.VboData data, List<BakedQuad> quadsForIris, boolean useSlicedLight) {
-        this(data, quadsForIris, useSlicedLight, false);
+        this(data, quadsForIris, false);
     }
 
     /**
      * @param storesPerInstancePartBone assembler arms: {@link #addInstanceGpuBones} (no MDI atlas).
      */
-    public InstancedStaticPartRenderer(SingleMeshVboRenderer.VboData data, List<BakedQuad> quadsForIris, boolean useSlicedLight, boolean storesPerInstancePartBone) {
+    public InstancedStaticPartRenderer(SingleMeshVboRenderer.VboData data, List<BakedQuad> quadsForIris, boolean storesPerInstancePartBone) {
         this.quadsForIris = quadsForIris;
-        this.useSlicedLight = useSlicedLight;
         this.storesPerInstancePartBone = storesPerInstancePartBone;
-        this.instanceDataSize = useSlicedLight ? SLICED_INSTANCE_DATA_SIZE : BASE_INSTANCE_DATA_SIZE;
-        this.instanceAttribLast = useSlicedLight ? 15 : 11;
+        this.instanceDataSize = INSTANCE_DATA_SIZE;
+        this.instanceAttribLast = 11;
         this.instanceFadeFloatOffset = 13; // InstBboxSize.w
-        this.lightFloatCount = useSlicedLight ? 32 : 16;
+        this.lightFloatCount = 16;
         this.tmpCornerUV = new float[lightFloatCount];
 
         this.vanillaHelper = new VanillaInstancedBatchRenderer(this);
@@ -246,27 +239,18 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             GL20.glVertexAttribPointer(7, 4, GL11.GL_FLOAT, false, stride, 10 * 4);
             InstancedGlCompat.glVertexAttribDivisorCompat(7, 1);
 
-            if (!useSlicedLight) {
-                GL20.glEnableVertexAttribArray(8);
-                GL20.glVertexAttribPointer(8, 4, GL11.GL_FLOAT, false, stride, LIGHT_FLOAT_OFFSET * 4L);
-                InstancedGlCompat.glVertexAttribDivisorCompat(8, 1);
-                GL20.glEnableVertexAttribArray(9);
-                GL20.glVertexAttribPointer(9, 4, GL11.GL_FLOAT, false, stride, (LIGHT_FLOAT_OFFSET + 4) * 4L);
-                InstancedGlCompat.glVertexAttribDivisorCompat(9, 1);
-                GL20.glEnableVertexAttribArray(10);
-                GL20.glVertexAttribPointer(10, 4, GL11.GL_FLOAT, false, stride, (LIGHT_FLOAT_OFFSET + 8) * 4L);
-                InstancedGlCompat.glVertexAttribDivisorCompat(10, 1);
-                GL20.glEnableVertexAttribArray(11);
-                GL20.glVertexAttribPointer(11, 4, GL11.GL_FLOAT, false, stride, (LIGHT_FLOAT_OFFSET + 12) * 4L);
-                InstancedGlCompat.glVertexAttribDivisorCompat(11, 1);
-            } else {
-                for (int a = 0; a < 8; a++) {
-                    int loc = 8 + a;
-                    GL20.glEnableVertexAttribArray(loc);
-                    GL20.glVertexAttribPointer(loc, 4, GL11.GL_FLOAT, false, stride, (LIGHT_FLOAT_OFFSET + a * 4) * 4L);
-                    InstancedGlCompat.glVertexAttribDivisorCompat(loc, 1);
-                }
-            }
+            GL20.glEnableVertexAttribArray(8);
+            GL20.glVertexAttribPointer(8, 4, GL11.GL_FLOAT, false, stride, LIGHT_FLOAT_OFFSET * 4L);
+            InstancedGlCompat.glVertexAttribDivisorCompat(8, 1);
+            GL20.glEnableVertexAttribArray(9);
+            GL20.glVertexAttribPointer(9, 4, GL11.GL_FLOAT, false, stride, (LIGHT_FLOAT_OFFSET + 4) * 4L);
+            InstancedGlCompat.glVertexAttribDivisorCompat(9, 1);
+            GL20.glEnableVertexAttribArray(10);
+            GL20.glVertexAttribPointer(10, 4, GL11.GL_FLOAT, false, stride, (LIGHT_FLOAT_OFFSET + 8) * 4L);
+            InstancedGlCompat.glVertexAttribDivisorCompat(10, 1);
+            GL20.glEnableVertexAttribArray(11);
+            GL20.glVertexAttribPointer(11, 4, GL11.GL_FLOAT, false, stride, (LIGHT_FLOAT_OFFSET + 12) * 4L);
+            InstancedGlCompat.glVertexAttribDivisorCompat(11, 1);
 
             GL30.glBindVertexArray(0);
 
@@ -283,7 +267,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
                 }
             });
 
-            if (!storesPerInstancePartBone && !useSlicedLight && data.byteBuffer != null && data.indices != null
+            if (!storesPerInstancePartBone && data.byteBuffer != null && data.indices != null
                     && data.indices.remaining() > 0) {
                 try {
                     java.nio.ByteBuffer srcVb = data.byteBuffer.duplicate();
@@ -607,13 +591,8 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         }
 
         long partHash = System.identityHashCode(this);
-        if (useSlicedLight) {
-            LightSampleCache.getOrSample16(blockEntity, partHash, objBbox, blockPos, tmpLocalPose,
-                    packedLight, tmpCornerUV);
-        } else {
-            LightSampleCache.getOrSample8(blockEntity, partHash, objBbox, blockPos, tmpLocalPose,
-                    packedLight, tmpCornerUV);
-        }
+        LightSampleCache.getOrSample8(blockEntity, partHash, objBbox, blockPos, tmpLocalPose,
+                packedLight, tmpCornerUV);
     }
 
     // ── Flush ──────────────────────────────────────────────────────────

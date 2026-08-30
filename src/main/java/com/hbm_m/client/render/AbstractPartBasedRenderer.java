@@ -102,8 +102,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
         
         if (model == null) return;
 
-        LegacyAnimator animator = LegacyAnimator.create(poseStack, bufferSource,
-                packedLight, packedOverlay);
+        LegacyAnimator animator = LegacyAnimator.create(poseStack);
 
         com.hbm_m.client.render.LightSampleCache.BASE_POSE.get().set(poseStack.last().pose());
         com.hbm_m.client.render.LightSampleCache.BASE_POSE_SET.set(true);
@@ -129,6 +128,11 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
     /** Occlusion/frustum-куллинг по AABB из {@link #frustumCullBounds}. */
     protected final boolean passesOcclusionCulling(T blockEntity) {
         return passesOcclusionCulling(blockEntity, frustumCullBounds(blockEntity));
+    }
+
+    /** Публичный доступ к AABB этого BE для движковых расчётов (shared light и т.п.). */
+    protected final AABB renderBounds(T blockEntity) {
+        return frustumCullBounds(blockEntity);
     }
 
     /**

@@ -80,6 +80,8 @@ repositories {
 	maven("https://maven.parchmentmc.org") { name = "ParchmentMC" }
 	maven("https://maven.createmod.net") { name = "CreateMod" }
 	strictMaven("https://cursemaven.com", "curse.maven") { name = "CurseForge" }
+	// Curios API (опционально): слот лица для противогазов. См. com.hbm_m.compat.curios.
+	maven("https://maven.theillusivec4.top/") { name = "Illusive Soul Works" }
 	maven("https://maven.caffeinemc.net/releases") { name = "CaffeineMC" }
 
 }
@@ -105,9 +107,9 @@ dependencies {
 	// Aeronautics / Sable в runClient (только 1.21.1 - на других версиях
 	// этих модов нет). Create 6.x тащит Flywheel/Ponder внутри себя (jarJar).
 	if (stonecutter.current.version == "1.21.1") {
-		"runtimeOnly"("maven.modrinth:create:6.0.10+mc1.21.1")
-		"runtimeOnly"("maven.modrinth:sable:2.0.5+mc1.21.1")
-		"runtimeOnly"("maven.modrinth:create-aeronautics:1.3.1+mc1.21.1") // bundled: simulated + offroad внутри
+		// "runtimeOnly"("maven.modrinth:create:6.0.10+mc1.21.1")
+		// "runtimeOnly"("maven.modrinth:sable:2.0.5+mc1.21.1")
+		// "runtimeOnly"("maven.modrinth:create-aeronautics:1.3.1+mc1.21.1") // bundled: simulated + offroad внутри
 	}
 	// В NeoForge артефакт называется flywheel-neoforge-api
 	"compileOnly"("dev.engine-room.flywheel:flywheel-neoforge-api-$mcVer:${prop("deps.flywheel")}")
@@ -118,6 +120,10 @@ dependencies {
 
 	"compileOnly"("maven.modrinth:u6dRKJwZ:${prop("deps.jei")}")
 	"runtimeOnly"("maven.modrinth:u6dRKJwZ:${prop("deps.jei")}")
+
+	// Curios (опционально): API для компиляции, сам мод — в рантайм для тестов.
+	"compileOnly"("top.theillusivec4.curios:curios-neoforge:9.5.1+1.21.1:api")
+	"runtimeOnly"("top.theillusivec4.curios:curios-neoforge:9.5.1+1.21.1")
 	"runtimeOnly"("maven.modrinth:l6YH9Als:v5qtqRQi") // spark
 	"runtimeOnly"("maven.modrinth:1bokaNcj:JXvcT1hp") // xaeros minimap
 	"runtimeOnly"("maven.modrinth:NcUtCpym:fOv9QzLO") // xaeros world map
@@ -200,6 +206,47 @@ tasks.named<ProcessResources>("processResources") {
 					val plural = File(tags, old)
 					if (plural.isDirectory) moveInto(plural, File(tags, new))
 				}
+			}
+		}
+
+		// Remap silk-touch условия в loot-таблицах: датаген (1.20.1) пишет
+		// match_tool-предикат с полем "enchantments" внутри ItemPredicate,
+		// а на 1.21.1 это поле удалено — проверки зачарований переехали в
+		// ItemSubPredicates ("predicates"."minecraft:enchantments", а внутри
+		// каждой записи зачарование теперь "enchantments", не "enchantment").
+		// Без ремапа silk-ветка рудных таблиц никогда не срабатывает.
+		val lootRoots = dataDir.listFiles()!!.mapNotNull { File(it, "loot_table").takeIf(File::isDirectory) }
+		lootRoots.forEach { root ->
+			root.walkTopDown().filter { it.isFile && it.extension == "json" }.forEach { file ->
+				val text = file.readText()
+				if (!text.contains("minecraft:match_tool")) return@forEach
+				val tree = groovy.json.JsonSlurper().parseText(text)
+				@Suppress("UNCHECKED_CAST")
+				fun fixPredicate(predicate: MutableMap<String, Any>) {
+					val ench = predicate.remove("enchantments") as? List<Any> ?: return
+					val converted = ench.map { e ->
+						val m = e as MutableMap<String, Any>
+						val out = linkedMapOf<String, Any>()
+						m["enchantment"]?.let { out["enchantments"] = it }
+						m["levels"]?.let { out["levels"] = it }
+						out
+					}
+					predicate["predicates"] = linkedMapOf("minecraft:enchantments" to converted)
+				}
+				@Suppress("UNCHECKED_CAST")
+				fun walk(node: Any?) {
+					when (node) {
+						is MutableMap<*, *> -> {
+							if (node["condition"] == "minecraft:match_tool") {
+								(node["predicate"] as? MutableMap<String, Any>)?.let { fixPredicate(it) }
+							}
+							node.values.forEach { walk(it) }
+						}
+						is MutableList<*> -> node.forEach { walk(it) }
+					}
+				}
+				walk(tree)
+				file.writeText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(tree)))
 			}
 		}
 

@@ -179,7 +179,7 @@ public class SoyuzEntity extends Entity {
             CompoundTag itemTag = list.getCompound(i);
             int slot = itemTag.getInt("Slot");
             if (slot >= 0 && slot < payload.size()) {
-                payload.set(slot, PlatformHooks.itemStackOf(itemTag, null));
+                payload.set(slot, PlatformHooks.itemStackOf(itemTag, PlatformHooks.bestEffortProvider()));
             }
         }
     }
@@ -197,7 +197,7 @@ public class SoyuzEntity extends Entity {
             if (!stack.isEmpty()) {
                 CompoundTag itemTag = new CompoundTag();
                 itemTag.putInt("Slot", i);
-                PlatformHooks.saveItemStack(stack, itemTag, null);
+                PlatformHooks.saveItemStack(stack, itemTag, PlatformHooks.bestEffortProvider());
                 list.add(itemTag);
             }
         }

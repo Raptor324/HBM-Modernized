@@ -3,6 +3,7 @@ package com.hbm_m.client.render;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.armormod.item.ItemModGasmask;
 import com.hbm_m.armormod.util.ArmorModificationHelper;
+import com.hbm_m.client.compat.curios.CuriosClientCompat;
 import com.hbm_m.client.model.GasMaskModels;
 import com.hbm_m.item.gasmask.ArmorGasMaskItem;
 import com.hbm_m.item.gasmask.IGasMask;
@@ -54,9 +55,6 @@ public class GasMaskLayer<T extends LivingEntity, M extends HumanoidModel<T>> ex
             float ageInTicks, float netHeadYaw, float headPitch) {
         ensureBaked();
         ItemStack head = entity.getItemBySlot(EquipmentSlot.HEAD);
-        if (head.isEmpty()) {
-            return;
-        }
 
         // 1. Надетая маска-шлем.
         if (head.getItem() instanceof ArmorGasMaskItem mask) {
@@ -69,6 +67,15 @@ public class GasMaskLayer<T extends LivingEntity, M extends HumanoidModel<T>> ex
                 renderM65(entity, gasmask.getModelTexture(), IGasMask.hasFilter(mod),
                         poseStack, buffer, packedLight);
             }
+        }
+
+        // 3. Маска в слоте лица Curios (опционально) — поверх шлема.
+        ItemStack faceMask = CuriosClientCompat.getFaceMask(entity);
+        if (faceMask.getItem() instanceof ArmorGasMaskItem mask) {
+            renderVariant(entity, mask.variant, IGasMask.hasFilter(faceMask), poseStack, buffer, packedLight);
+        } else if (faceMask.getItem() instanceof ItemModGasmask gasmask) {
+            renderM65(entity, gasmask.getModelTexture(), IGasMask.hasFilter(faceMask),
+                    poseStack, buffer, packedLight);
         }
     }
 

@@ -139,10 +139,9 @@ public final class ConfigSchema {
         reg(ConfigField.integer("modelStaticRenderDistance", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", 1, 20));
         reg(ConfigField.bool("enableOcclusionCulling", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("instanceVboOrphanBeforeUpload", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
-        reg(ConfigField.bool("useInstancedStaticRendering", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
-        reg(ConfigField.bool("gpuBoneSkinning", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
-        reg(ConfigField.bool("useSlicedLight", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
-        reg(ConfigField.bool("useMultiDrawIndirect", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        // Инстансинг/MDI/GPU-bone skinning всегда включены; forceVanillaImmediatePath — резервный
+        // ручной перевод всех OBJ-станков на ванильный immediate-путь (putBulkData).
+        reg(ConfigField.bool("forceVanillaImmediatePath", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("mdiDebugLogDispatch", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("mdiVerboseSubdraws", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         // Размер буферов инстансинга фиксируется при создании рендерера → reload ресурсов

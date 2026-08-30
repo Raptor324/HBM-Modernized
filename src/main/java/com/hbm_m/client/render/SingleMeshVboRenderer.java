@@ -160,8 +160,6 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
     private final Matrix4f tmpLocalPose = new Matrix4f();
     private final Matrix4f tmpInvViewRot = new Matrix4f();
     private final float[] tmpCornerUV = new float[16];
-    private final float[] tmpProbeUV = new float[32];
-    protected boolean useSlicedLight = false;
 
     // Cached block_lit uniform handles (per renderer instance, invalidated on shader relink).
     private ShaderInstance cachedBlockLitShader;
@@ -173,22 +171,10 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
     private Uniform cachedLightC23;
     private Uniform cachedLightC45;
     private Uniform cachedLightC67;
-    private Uniform cachedLightS0C01;
-    private Uniform cachedLightS0C23;
-    private Uniform cachedLightS1C01;
-    private Uniform cachedLightS1C23;
-    private Uniform cachedLightS2C01;
-    private Uniform cachedLightS2C23;
-    private Uniform cachedLightS3C01;
-    private Uniform cachedLightS3C23;
     private Uniform cachedFogStartU;
     private Uniform cachedFogEndU;
     private Uniform cachedFogColorU;
     private Uniform cachedFadeAlphaU;
-
-    public void setUseSlicedLight(boolean useSlicedLight) {
-        this.useSlicedLight = useSlicedLight;
-    }
 
     private void updateBlockLitUniformCache(ShaderInstance shader) {
         int programId = (shader != null) ? shader.getId() : -1;
@@ -209,14 +195,6 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             cachedLightC23 = null;
             cachedLightC45 = null;
             cachedLightC67 = null;
-            cachedLightS0C01 = null;
-            cachedLightS0C23 = null;
-            cachedLightS1C01 = null;
-            cachedLightS1C23 = null;
-            cachedLightS2C01 = null;
-            cachedLightS2C23 = null;
-            cachedLightS3C01 = null;
-            cachedLightS3C23 = null;
             cachedFogStartU = null;
             cachedFogEndU = null;
             cachedFogColorU = null;
@@ -229,14 +207,6 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         cachedLightC23 = shader.getUniform("LightC23");
         cachedLightC45 = shader.getUniform("LightC45");
         cachedLightC67 = shader.getUniform("LightC67");
-        cachedLightS0C01 = shader.getUniform("LightS0C01");
-        cachedLightS0C23 = shader.getUniform("LightS0C23");
-        cachedLightS1C01 = shader.getUniform("LightS1C01");
-        cachedLightS1C23 = shader.getUniform("LightS1C23");
-        cachedLightS2C01 = shader.getUniform("LightS2C01");
-        cachedLightS2C23 = shader.getUniform("LightS2C23");
-        cachedLightS3C01 = shader.getUniform("LightS3C01");
-        cachedLightS3C23 = shader.getUniform("LightS3C23");
         cachedFogStartU = shader.getUniform("FogStart");
         cachedFogEndU = shader.getUniform("FogEnd");
         cachedFogColorU = shader.getUniform("FogColor");
@@ -270,7 +240,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
     // ═══════════════════════════════════════════════════════════════════════════
     // РЕГРЕССИЯ-СТОП: instanced block_lit — белые модели без текстур атласа
     // ═══════════════════════════════════════════════════════════════════════════
-    // Симптом: useInstancedStaticRendering=true → все OBJ белые; false → нормально.
+    // Симптом: инстансинг включён → все OBJ белые; выключен → нормально.
     // Причина A: Sampler2 uniform=0 → FS читает atlas вместо lightmap (угол ~белый).
     // Причина B: turnOnLightLayer() при active TEXTURE0 → atlas на unit 0 затирается.
     // Причина C: flush в AFTER_LEVEL, а не в AFTER_BLOCK_ENTITIES → слоты GL грязные.
@@ -609,8 +579,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             return;
         }
 
-        ShaderInstance shader = useSlicedLight ? ModShaders.getBlockLitSimpleSlicedShader()
-                                               : ModShaders.getBlockLitSimpleShader();
+        ShaderInstance shader = ModShaders.getBlockLitSimpleShader();
         if (shader == null) {
             // Shader not loaded yet (resource reload race) - fall back to putBulkData.
             if (entityMissileDepthBias.get()) lastTrackMeshBranch.set("quads:shader-null");
@@ -721,13 +690,8 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 tmpLocalPose.m31(tmpLocalPose.m31() - (float) (blockPos.getY() - cam.y));
                 tmpLocalPose.m32(tmpLocalPose.m32() - (float) (blockPos.getZ() - cam.z));
             }
-            if (useSlicedLight) {
-                LightSampleCache.getOrSample16(blockEntity, partHash, objBbox, blockPos,
-                                               tmpLocalPose, packedLight, tmpProbeUV);
-            } else {
-                LightSampleCache.getOrSample8(blockEntity, partHash, objBbox, blockPos,
-                                              tmpLocalPose, packedLight, tmpCornerUV);
-            }
+            LightSampleCache.getOrSample8(blockEntity, partHash, objBbox, blockPos,
+                                          tmpLocalPose, packedLight, tmpCornerUV);
 
             updateBlockLitUniformCache(shader);
             if (cachedBboxMinU != null) cachedBboxMinU.set(objBbox[0], objBbox[1], objBbox[2]);
@@ -738,21 +702,10 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                     Math.max(1e-4f, objBbox[5] - objBbox[2])
                 );
             }
-            if (useSlicedLight) {
-                if (cachedLightS0C01 != null) cachedLightS0C01.set(tmpProbeUV[0], tmpProbeUV[1], tmpProbeUV[2], tmpProbeUV[3]);
-                if (cachedLightS0C23 != null) cachedLightS0C23.set(tmpProbeUV[4], tmpProbeUV[5], tmpProbeUV[6], tmpProbeUV[7]);
-                if (cachedLightS1C01 != null) cachedLightS1C01.set(tmpProbeUV[8], tmpProbeUV[9], tmpProbeUV[10], tmpProbeUV[11]);
-                if (cachedLightS1C23 != null) cachedLightS1C23.set(tmpProbeUV[12], tmpProbeUV[13], tmpProbeUV[14], tmpProbeUV[15]);
-                if (cachedLightS2C01 != null) cachedLightS2C01.set(tmpProbeUV[16], tmpProbeUV[17], tmpProbeUV[18], tmpProbeUV[19]);
-                if (cachedLightS2C23 != null) cachedLightS2C23.set(tmpProbeUV[20], tmpProbeUV[21], tmpProbeUV[22], tmpProbeUV[23]);
-                if (cachedLightS3C01 != null) cachedLightS3C01.set(tmpProbeUV[24], tmpProbeUV[25], tmpProbeUV[26], tmpProbeUV[27]);
-                if (cachedLightS3C23 != null) cachedLightS3C23.set(tmpProbeUV[28], tmpProbeUV[29], tmpProbeUV[30], tmpProbeUV[31]);
-            } else {
-                if (cachedLightC01 != null) cachedLightC01.set(tmpCornerUV[0], tmpCornerUV[1], tmpCornerUV[2], tmpCornerUV[3]);
-                if (cachedLightC23 != null) cachedLightC23.set(tmpCornerUV[4], tmpCornerUV[5], tmpCornerUV[6], tmpCornerUV[7]);
-                if (cachedLightC45 != null) cachedLightC45.set(tmpCornerUV[8], tmpCornerUV[9], tmpCornerUV[10], tmpCornerUV[11]);
-                if (cachedLightC67 != null) cachedLightC67.set(tmpCornerUV[12], tmpCornerUV[13], tmpCornerUV[14], tmpCornerUV[15]);
-            }
+            if (cachedLightC01 != null) cachedLightC01.set(tmpCornerUV[0], tmpCornerUV[1], tmpCornerUV[2], tmpCornerUV[3]);
+            if (cachedLightC23 != null) cachedLightC23.set(tmpCornerUV[4], tmpCornerUV[5], tmpCornerUV[6], tmpCornerUV[7]);
+            if (cachedLightC45 != null) cachedLightC45.set(tmpCornerUV[8], tmpCornerUV[9], tmpCornerUV[10], tmpCornerUV[11]);
+            if (cachedLightC67 != null) cachedLightC67.set(tmpCornerUV[12], tmpCornerUV[13], tmpCornerUV[14], tmpCornerUV[15]);
 
             if (worldMissileOverlayDraw.get() || entityMissileDepthBias.get()) {
                 if (cachedFogStartU != null) cachedFogStartU.set(1.0E8F);
@@ -903,13 +856,10 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         IrisRenderBatch batchEarly = IrisRenderBatch.active();
         if (batchEarly != null) shadowPassEarly = batchEarly.isShadowPass();
 
-        // Sample world-space light probes for this draw: either 2×2×2 corners
-        // (16 floats) or 2×4×2 sliced (32 floats) when the caller enabled
-        // {@link #useSlicedLight} and the companion mesh has sliced weights
-        // (tall VBOs — e.g. fracking tower). See {@link #render} for the same
-        // localPose reconstruction as the vanilla / instanced path.
+        // Sample world-space light probes for this draw: 2×2×2 corners (16 floats).
+        // See {@link #render} for the same localPose reconstruction as the
+        // vanilla / instanced path.
         boolean haveCorners = false;
-        boolean haveSlicedProbes = false;
         if (!shadowPassEarly && companion.supportsPerVertexLightmap()) {
             BlockPos anchor = (blockEntity != null) ? blockEntity.getBlockPos() : blockPos;
             if (anchor == null) anchor = BlockPos.ZERO;
@@ -927,16 +877,10 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 tmpLocalPose.m31(tmpLocalPose.m31() - (float) (anchor.getY() - cam.y));
                 tmpLocalPose.m32(tmpLocalPose.m32() - (float) (anchor.getZ() - cam.z));
             }
-            
+
             long partHash = System.identityHashCode(this);
-            if (useSlicedLight && companion.supportsSlicedPerVertexLightmap()) {
-                LightSampleCache.getOrSample16(blockEntity, partHash, objBbox, anchor,
-                                               tmpLocalPose, packedLight, tmpProbeUV);
-                haveSlicedProbes = true;
-            } else {
-                LightSampleCache.getOrSample8(blockEntity, partHash, objBbox, anchor,
-                                              tmpLocalPose, packedLight, tmpCornerUV);
-            }
+            LightSampleCache.getOrSample8(blockEntity, partHash, objBbox, anchor,
+                                          tmpLocalPose, packedLight, tmpCornerUV);
             haveCorners = true;
         }
 
@@ -948,10 +892,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         // legacy constant-UV2 path.
         IrisRenderBatch batch = IrisRenderBatch.active();
         if (batch != null) {
-            if (haveCorners && haveSlicedProbes) {
-                batch.drawCompanionWithSlicedPerVertexLight(companion, poseStack.last().pose(),
-                                                            tmpProbeUV, packedLight);
-            } else if (haveCorners) {
+            if (haveCorners) {
                 batch.drawCompanionWithPerVertexLight(companion, poseStack.last().pose(),
                                                       tmpCornerUV, packedLight);
             } else {
@@ -1068,11 +1009,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             int uv2Loc = companion.getUv2Location();
             if (haveCorners && companion.supportsPerVertexLightmap()) {
                 companion.ensureLightmapCapacity(1);
-                if (haveSlicedProbes) {
-                    companion.writeInstanceLightmap(0, tmpProbeUV);
-                } else {
-                    companion.writeInstanceLightmap(0, tmpCornerUV);
-                }
+                companion.writeInstanceLightmap(0, tmpCornerUV);
                 companion.finishLightmapWrites();
                 companion.activatePerVertexLightmap();
                 companion.bindLightmapForInstance(0);

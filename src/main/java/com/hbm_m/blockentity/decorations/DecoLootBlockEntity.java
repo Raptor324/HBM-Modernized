@@ -61,6 +61,20 @@ public class DecoLootBlockEntity extends BaseHbmBlockEntity {
         return items;
     }
 
+    /**
+     * Добавляет стопку в «кучу» с ручным смещением (порт
+     * {@code TileEntityLoot.addItem}). Используется генератором красной
+     * комнаты; пока список непуст, автогенерация хлама в {@link #onLoad}
+     * не запускается.
+     */
+    public void addItem(ItemStack stack, double dx, double dy, double dz) {
+        items.add(new LootEntry(stack, dx, dy, dz));
+        setChanged();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
+        }
+    }
+
     @Override
     public void onLoad() {
         super.onLoad();

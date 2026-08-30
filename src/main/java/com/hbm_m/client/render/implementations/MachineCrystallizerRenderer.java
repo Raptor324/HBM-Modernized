@@ -6,70 +6,142 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
+import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineCrystallizerBlockEntity;
-import com.hbm_m.client.render.InstancedStaticPartRenderer;
-import com.hbm_m.client.render.MeshRenderCache;
-import com.hbm_m.client.render.PartGeometry;
-import com.hbm_m.client.render.RenderDistanceHelper;
-import com.hbm_m.client.render.SingleMeshVboRenderer;
-import com.hbm_m.client.render.culling.OcclusionCullingHelper;
-import com.hbm_m.client.render.shader.IrisRenderBatch;
+import com.hbm_m.client.render.LegacyAnimator;
+import com.hbm_m.client.render.cache.RenderCacheManager;
+import com.hbm_m.client.render.machine.MachineRenderApi;
+import com.hbm_m.client.render.machine.MachineRenderers;
+import com.hbm_m.client.render.shader.IrisPhaseGuard;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
-import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.main.MainRegistry;
+import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.RenderHooks;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
-import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.block.HorizontalDirectionalBlock;
-import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.material.Fluid;
-import com.hbm_m.client.render.shader.IrisPhaseGuard;
-import com.hbm_m.platform.RenderHooks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+
 //? if forge {
+import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.client.model.data.ModelData;
-//?}
+import net.minecraftforge.fluids.FluidStack;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.fluids.FluidStack;
+*///?}
 
 /**
- * BER Crystallizer: вращающийся спиннер (VBO + instancing) и жидкость в баке
- * (отдельная модель {@code crystallizer_fluid}, спрайт текущей жидкости).
- *
- * <p>Статическое тело — {@code crystallizer.json} в chunk mesh (Spinner/Fluid скрыты).
- * Под Iris/VBO путь совпадает с {@link MachineChemicalPlantRenderer} / {@link MachineAdvancedAssemblerRenderer}.</p>
+ * Кристаллизатор на фабрике {@link MachineRenderers}: корпус живёт в чанк-меше,
+ * спиннер — динамическая часть из injected-модели crystallizer_spinner, жидкость —
+ * immediate-хук с отложенной отрисовкой (draw в AFTER_BLOCK_ENTITIES после
+ * instanced-flush, см. {@link #presentDeferredFluids()}).
  */
+public final class MachineCrystallizerRenderer {
 
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
-public class MachineCrystallizerRenderer extends com.hbm_m.client.render.AbstractPartBasedRenderer<MachineCrystallizerBlockEntity, BakedModel> {
-
-    private static final RandomSource RANDOM = RandomSource.create(42L);
     private static final float DEG_TO_RAD = (float) (Math.PI / 180.0);
+    private static final RandomSource RANDOM = RandomSource.create(42L);
 
-    private final MachineCrystallizerVboRenderer gpu = new MachineCrystallizerVboRenderer();
+    public static void register() {
+        MachineRenderers.machine("crystallizer", ModBlockEntities.CRYSTALLIZER.get(),
+                MachineCrystallizerBlockEntity.class)
+            .dynamicPart("Spinner", be -> spinnerQuads(), be -> "spinner")
+            .blockTransform(MachineCrystallizerRenderer::applyBlockTransform)
+            .hook(MachineCrystallizerRenderer::scheduleFluid)
+            .register();
 
-    private static volatile InstancedStaticPartRenderer instancedSpinner;
-    private static volatile boolean instancersInitialized = false;
+        // Кеш квадов спиннера инвалидируется централизованно
+        RenderCacheManager.register(reason -> cachedSpinnerQuads = null);
+    }
 
-    private final Matrix4f matSpinner = new Matrix4f();
+    private MachineCrystallizerRenderer() {}
+
+    // ── Трансформы (вербатим из легаси applyFacingRotation + matSpinner) ──
+
+    private static void applyBlockTransform(MachineCrystallizerBlockEntity be, LegacyAnimator animator) {
+        BlockState state = be.getBlockState();
+        if (!state.hasProperty(HorizontalDirectionalBlock.FACING)) return;
+        Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
+        float rot = switch (facing) {
+            case SOUTH -> 180F;
+            case EAST  -> 270F;
+            case WEST  -> 90F;
+            default -> 0F;
+        };
+        if (rot != 0F) {
+            animator.translate(0.5, 0, 0.5);
+            animator.rotate(rot, 0, 1, 0);
+            animator.translate(-0.5, 0, -0.5);
+        }
+    }
+
+    private static boolean animateSpinner(MachineCrystallizerBlockEntity be, float partialTick,
+                                          long gameTime, PoseStack pose) {
+        float angle = Mth.lerp(partialTick, be.prevAngle, be.angle);
+        pose.last().pose().mul(new Matrix4f()
+                .translate(0.5f, 0f, 0.5f)
+                .rotateY(angle * DEG_TO_RAD)
+                .translate(-0.5f, 0f, -0.5f));
+        return true;
+    }
+
+    // ── Спиннер: injected-модель, квад-кеш ─────────────────────────────
+
+    private static final ResourceLocation SPINNER_MODEL_ID =
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/crystallizer_spinner");
+
+    private static volatile List<BakedQuad> cachedSpinnerQuads;
+
+    private static List<BakedQuad> spinnerQuads() {
+        List<BakedQuad> q = cachedSpinnerQuads;
+        if (q == null) {
+            var modelManager = Minecraft.getInstance().getModelManager();
+            BakedModel model = PlatformHooks.getModel(modelManager, SPINNER_MODEL_ID);
+            if (model == null || model == modelManager.getMissingModel()) return List.of();
+            q = collectModelQuads(model, RenderType.cutout());
+            if (q.isEmpty()) q = collectModelQuads(model, RenderType.solid());
+            cachedSpinnerQuads = q;
+        }
+        return q;
+    }
+
+    private static List<BakedQuad> collectModelQuads(BakedModel model, @Nullable RenderType renderType) {
+        List<BakedQuad> quads = new ArrayList<>();
+        //? if forge {
+        quads.addAll(model.getQuads(null, null, RANDOM, ModelData.EMPTY, renderType));
+        for (Direction dir : Direction.values()) {
+            quads.addAll(model.getQuads(null, dir, RANDOM, ModelData.EMPTY, renderType));
+        }
+        //?}
+        //? if fabric {
+        /*quads.addAll(model.getQuads(null, null, RANDOM));
+        for (Direction dir : Direction.values()) {
+            quads.addAll(model.getQuads(null, dir, RANDOM));
+        }
+        *///?}
+        return quads;
+    }
+
+    // ==================== DEFERRED FLUID ====================
 
     private record DeferredCrystallizerFluid(
         BlockPos pos,
@@ -82,82 +154,30 @@ public class MachineCrystallizerRenderer extends com.hbm_m.client.render.Abstrac
 
     private static final List<DeferredCrystallizerFluid> DEFERRED_FLUIDS = new ArrayList<>();
 
-    public MachineCrystallizerRenderer(BlockEntityRendererProvider.Context context) {}
-
-    @Override
-    protected BakedModel getModelType(BakedModel rawModel) {
-        // Модель blockstate не используется напрямую (спиннер/жидкость берутся из VBO-рендерера).
-        return rawModel;
-    }
-
-    @Override
-    protected Direction getFacing(MachineCrystallizerBlockEntity blockEntity) {
-        BlockState state = blockEntity.getBlockState();
-        return state.hasProperty(HorizontalDirectionalBlock.FACING)
-                ? state.getValue(HorizontalDirectionalBlock.FACING)
-                : Direction.NORTH;
-    }
-
-    @Override
-    protected void renderParts(MachineCrystallizerBlockEntity blockEntity, BakedModel model,
-                               com.hbm_m.client.render.LegacyAnimator animator, float partialTick,
-                               int packedLight, int packedOverlay, PoseStack poseStack,
-                               MultiBufferSource bufferSource) {
-        // Не используется: render() переопределён целиком (собственная работа с BASE_POSE
-        // и отложенной жидкостью).
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void render(MachineCrystallizerBlockEntity blockEntity, float partialTick, PoseStack poseStack,
-                       MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
-
-        com.hbm_m.client.render.LightSampleCache.BASE_POSE.get().set(poseStack.last().pose());
-        com.hbm_m.client.render.LightSampleCache.BASE_POSE_SET.set(true);
-        try {
-            var minecraft = Minecraft.getInstance();
-            BlockPos blockPos = blockEntity.getBlockPos();
-            // Куллинг + fade: в контрапшене Create shouldRender() пропускает
-            // frustum/ray-march кулинг.
-            float staticFade = applyCullingAndStaticFade(blockEntity);
-            if (staticFade < 0) return;
-
-            poseStack.pushPose();
-            applyFacingRotation(blockEntity, poseStack);
-
-            boolean useVboPath = ShaderCompatibilityDetector.useVboGeometry();
-            if (!useVboPath) {
-                renderLegacySpinnerAndFluid(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
-                poseStack.popPose();
-                return;
-            }
-
-            SingleMeshVboRenderer.setFadeAlpha(staticFade);
-            int blockLight = LightTexture.block(packedLight);
-            int skyLight = LightTexture.sky(packedLight);
-            int dynamicLight = LightTexture.pack(blockLight, skyLight);
-
-            renderSpinnerVbo(blockEntity, partialTick, poseStack, dynamicLight, blockPos, bufferSource, staticFade);
-            scheduleFluidIfPresent(blockEntity, poseStack, packedLight, packedOverlay);
-
-            poseStack.popPose();
-        } finally {
-            com.hbm_m.client.render.LightSampleCache.BASE_POSE_SET.set(false);
-        }
-    }
-
     /** Сброс очереди жидкости в начале кадра (до BER). */
     public static void clearDeferredFluids() {
         DEFERRED_FLUIDS.clear();
     }
 
-    static void scheduleDeferredFluid(BlockPos pos, Matrix4f poseInLocalSpace, int packedLight, int packedOverlay,
-                                      TextureAtlasSprite sprite, float r, float g, float b) {
-        if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
-            return;
-        }
+    /** Хук: фиксируем pose/цвет, draw — позже. */
+    private static void scheduleFluid(MachineCrystallizerBlockEntity be, float partialTick,
+                                      PoseStack poseStack, MultiBufferSource bufferSource,
+                                      int packedLight, int packedOverlay, MachineRenderApi api) {
+        if (ShaderCompatibilityDetector.isRenderingShadowPass()) return;
+        if (be.getTank().isEmpty()) return;
+        Fluid fluid = be.getTank().getStoredFluid();
+        if (fluid == null) return;
+
+        TextureAtlasSprite sprite = getFluidSprite(be, fluid);
+        if (sprite == null) return;
+
+        int color = getFluidTint(be, fluid);
+        float r = ((color >> 16) & 0xFF) / 255.0F;
+        float g = ((color >> 8) & 0xFF) / 255.0F;
+        float b = (color & 0xFF) / 255.0F;
+
         DEFERRED_FLUIDS.add(new DeferredCrystallizerFluid(
-            pos, new Matrix4f(poseInLocalSpace), packedLight, packedOverlay, sprite, r, g, b));
+            be.getBlockPos(), new Matrix4f(poseStack.last().pose()), packedLight, packedOverlay, sprite, r, g, b));
     }
 
     /**
@@ -181,246 +201,92 @@ public class MachineCrystallizerRenderer extends com.hbm_m.client.render.Abstrac
             for (DeferredCrystallizerFluid entry : DEFERRED_FLUIDS) {
                 poseStack.pushPose();
                 poseStack.last().pose().set(entry.pose);
-                MachineCrystallizerVboRenderer.drawCrystallizerFluidBaked(
+                drawCrystallizerFluidBaked(
                     poseStack, buffers, entry.packedLight, entry.packedOverlay,
                     entry.sprite, entry.r, entry.g, entry.b);
                 poseStack.popPose();
             }
             buffers.endBatch();
         }
-        //?} else {
-        /*DEFERRED_FLUIDS.clear();*///?}
+        //?}
         DEFERRED_FLUIDS.clear();
     }
 
-    private void renderSpinnerVbo(MachineCrystallizerBlockEntity be, float partialTick, PoseStack poseStack,
-                                  int dynamicLight, BlockPos blockPos, MultiBufferSource bufferSource,
-                                  float staticFade) {
-        BakedModel spinnerModel = MachineCrystallizerVboRenderer.getSpinnerModel();
-        if (spinnerModel == null) return;
+    private static void drawCrystallizerFluidBaked(PoseStack poseStack, MultiBufferSource bufferSource,
+                                                   int packedLight, int packedOverlay,
+                                                   TextureAtlasSprite sprite, float r, float g, float b) {
+        RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
+        List<BakedQuad> quads = collectFluidQuads();
+        if (quads.isEmpty() || sprite == null) return;
 
-        if (!instancersInitialized) {
-            initializeInstancedRenderersSync();
+        quads = remapQuadsSprite(quads, sprite);
+        VertexConsumer vc = bufferSource.getBuffer(RenderType.translucent());
+        PoseStack.Pose pose = poseStack.last();
+        float a = 1.0f;
+        for (BakedQuad quad : quads) {
+            RenderHooks.putBulkData(vc, pose, quad, r, g, b, a, packedLight, packedOverlay, true);
         }
+    }
 
-        float angle = Mth.lerp(partialTick, be.prevAngle, be.angle);
-        matSpinner.identity()
-            .translate(0.5f, 0f, 0.5f)
-            .rotateY(angle * DEG_TO_RAD)
-            .translate(-0.5f, 0f, -0.5f);
+    private static List<BakedQuad> collectFluidQuads() {
+        ResourceLocation fluidModelId =
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/crystallizer_fluid");
+        var modelManager = Minecraft.getInstance().getModelManager();
+        BakedModel model = PlatformHooks.getModel(modelManager, fluidModelId);
+        if (model == null || model == modelManager.getMissingModel()) return List.of();
+        List<BakedQuad> quads = collectModelQuads(model, RenderType.translucent());
+        if (!quads.isEmpty()) return quads;
+        return collectModelQuads(model, RenderType.cutout());
+    }
 
-        boolean useBatching = ModClothConfig.useInstancedBatching();
-        // BE-оверлоад: bypass fade/cull для контрапшенов и Sable sublevel
-        // (raw BlockPos в sublevel ~40M от origin → distanceSqToCamera гигантский → fade=-1).
-        float animFade = RenderDistanceHelper.computeAnimatedFade(be);
-        boolean anyFading = staticFade < 0.99f || (animFade >= 0 && animFade < 0.99f);
-        boolean effectiveBatching = useBatching && !anyFading;
-
-        boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
-        boolean useIrisBatch = ShaderCompatibilityDetector.isExternalShaderActive();
-
-        Runnable drawSpinner = () -> drawSpinnerInternal(poseStack, dynamicLight, blockPos, be, bufferSource,
-                effectiveBatching, animFade, staticFade);
-
-        if (useIrisBatch) {
-            try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
-                drawSpinner.run();
+    @Nullable
+    private static TextureAtlasSprite getFluidSprite(MachineCrystallizerBlockEntity be, Fluid fluid) {
+        ResourceLocation fluidId = BuiltInRegistries.FLUID.getKey(fluid);
+        if (fluidId != null && RefStrings.MODID.equals(fluidId.getNamespace())) {
+            String path = fluidId.getPath();
+            if (path.endsWith("_flowing")) {
+                path = path.substring(0, path.length() - "_flowing".length());
             }
-        } else {
-            drawSpinner.run();
+            ResourceLocation blockFluidTexture = ResourceLocation.fromNamespaceAndPath(
+                    RefStrings.MODID, "block/fluids/" + path);
+            return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(blockFluidTexture);
         }
-    }
-
-    private void drawSpinnerInternal(PoseStack poseStack, int dynamicLight, BlockPos blockPos,
-                                     MachineCrystallizerBlockEntity be, MultiBufferSource bufferSource,
-                                     boolean effectiveBatching, float animFade, float staticFade) {
-        if (animFade < 0) return;
-
-        float fade = Math.min(staticFade, animFade >= 0 ? animFade : staticFade);
-        SingleMeshVboRenderer.setFadeAlpha(fade);
-
-        if (effectiveBatching && instancedSpinner != null && instancedSpinner.isInitialized()) {
-            poseStack.pushPose();
-            poseStack.last().pose().mul(matSpinner);
-            instancedSpinner.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
-            poseStack.popPose();
-        } else {
-            poseStack.pushPose();
-            poseStack.last().pose().mul(matSpinner);
-            gpu.renderSpinner(poseStack, dynamicLight, blockPos, be, bufferSource);
-            poseStack.popPose();
-        }
-
-        SingleMeshVboRenderer.setFadeAlpha(staticFade);
-    }
-
-    private void scheduleFluidIfPresent(MachineCrystallizerBlockEntity be, PoseStack poseStack,
-                                        int packedLight, int packedOverlay) {
-        if (be.getTank().isEmpty()) return;
-        Fluid fluid = be.getTank().getStoredFluid();
-        if (fluid == null) return;
-
-        TextureAtlasSprite sprite = MachineCrystallizerVboRenderer.getFluidSprite(be, fluid);
-        if (sprite == null) return;
-
-        int color = MachineCrystallizerVboRenderer.getFluidTint(be, fluid);
-        float r = ((color >> 16) & 0xFF) / 255.0F;
-        float g = ((color >> 8) & 0xFF) / 255.0F;
-        float b = (color & 0xFF) / 255.0F;
 
         //? if forge {
-        try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
-            MachineCrystallizerVboRenderer.scheduleDeferredFluid(be, poseStack, packedLight, packedOverlay, sprite, r, g, b);
-        }
-        //?} else {
-        /*MachineCrystallizerVboRenderer.scheduleDeferredFluid(be, poseStack, packedLight, packedOverlay, sprite, r, g, b);
-        *///?}
-    }
-
-    private static synchronized void initializeInstancedRenderersSync() {
-        if (instancersInitialized) return;
-        try {
-            MainRegistry.LOGGER.info("MachineCrystallizerRenderer: initializing instanced renderers...");
-            List<BakedQuad> spinnerQuads = MachineCrystallizerVboRenderer.collectSpinnerQuads();
-            if (spinnerQuads.isEmpty()) {
-                MainRegistry.LOGGER.error("MachineCrystallizerRenderer: spinner geometry empty");
-                clearCaches();
-                return;
-            }
-            var data = PartGeometry.buildVboDataFromQuads(spinnerQuads, "crystallizer_spinner");
-            if (data == null) {
-                clearCaches();
-                return;
-            }
-            instancedSpinner = new InstancedStaticPartRenderer(data, spinnerQuads);
-            instancedSpinner.setMdiTraceTag("Crystallizer/Spinner");
-            instancersInitialized = true;
-        } catch (Exception e) {
-            MainRegistry.LOGGER.error("MachineCrystallizerRenderer: failed to init instanced renderers", e);
-            clearCaches();
-        }
-    }
-
-    public static void flushInstancedBatches(org.joml.Matrix4f projectionMatrix) {
-        if (instancedSpinner != null) {
-            instancedSpinner.flush(projectionMatrix);
-        }
-    }
-
-    public static void clearCaches() {
-        if (instancedSpinner != null) {
-            instancedSpinner.cleanup();
-            instancedSpinner = null;
-        }
-        instancersInitialized = false;
-    }
-
-    // --- Legacy baked path (no VBO geometry / vanilla chunk) ---
-
-    private static void renderLegacySpinnerAndFluid(MachineCrystallizerBlockEntity blockEntity, float partialTick,
-                                                    PoseStack poseStack, MultiBufferSource bufferSource,
-                                                    int packedLight, int packedOverlay) {
-        renderLegacySpinner(blockEntity, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
-        renderLegacyFluid(blockEntity, poseStack, bufferSource, packedLight, packedOverlay);
-    }
-
-    private static void renderLegacySpinner(MachineCrystallizerBlockEntity blockEntity, float partialTick,
-                                            PoseStack poseStack, MultiBufferSource bufferSource,
-                                            int packedLight, int packedOverlay) {
-        BakedModel spinnerModel = MachineCrystallizerVboRenderer.getSpinnerModel();
-        if (spinnerModel == null) return;
-
-        float angle = Mth.lerp(partialTick, blockEntity.prevAngle, blockEntity.angle);
-
-        poseStack.pushPose();
-        poseStack.translate(0.5, 0.0, 0.5);
-        poseStack.mulPose(Axis.YP.rotationDegrees(angle));
-        poseStack.translate(-0.5, 0.0, -0.5);
-
-        VertexConsumer buffer = bufferSource.getBuffer(RenderType.cutout());
-        List<BakedQuad> quads = collectQuads(spinnerModel, RenderType.cutout());
-        if (!quads.isEmpty()) {
-            renderQuads(poseStack, buffer, quads, 1.0F, 1.0F, 1.0F, 1.0F, packedLight, packedOverlay);
-        }
-        poseStack.popPose();
-    }
-
-    private static void renderLegacyFluid(MachineCrystallizerBlockEntity blockEntity, PoseStack poseStack,
-                                          MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
-        if (blockEntity.getTank().isEmpty()) return;
-        Fluid fluid = blockEntity.getTank().getStoredFluid();
-        if (fluid == null) return;
-
-        TextureAtlasSprite sprite = MachineCrystallizerVboRenderer.getFluidSprite(blockEntity, fluid);
-        if (sprite == null) return;
-
-        int color = MachineCrystallizerVboRenderer.getFluidTint(blockEntity, fluid);
-        float r = ((color >> 16) & 0xFF) / 255.0F;
-        float g = ((color >> 8) & 0xFF) / 255.0F;
-        float b = (color & 0xFF) / 255.0F;
-
-        BakedModel fluidModel = MachineCrystallizerVboRenderer.getFluidModel();
-        if (fluidModel == null) return;
-
-        VertexConsumer buffer = bufferSource.getBuffer(RenderType.translucent());
-        List<BakedQuad> quads = collectQuads(fluidModel, RenderType.translucent());
-        if (!quads.isEmpty()) {
-            renderQuadsWithSprite(poseStack, buffer, quads, sprite, r, g, b, 1.0F, packedLight, packedOverlay);
-        }
-    }
-
-    private static void applyFacingRotation(MachineCrystallizerBlockEntity blockEntity, PoseStack poseStack) {
-        BlockState state = blockEntity.getBlockState();
-        if (!state.hasProperty(HorizontalDirectionalBlock.FACING)) return;
-
-        Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
-        float rot = switch (facing) {
-            case SOUTH -> 180F;
-            case EAST  -> 270F;
-            case WEST  -> 90F;
-            default -> 0F;
-        };
-
-        if (rot != 0F) {
-            poseStack.translate(0.5, 0, 0.5);
-            poseStack.mulPose(Axis.YP.rotationDegrees(rot));
-            poseStack.translate(-0.5, 0, -0.5);
-        }
-    }
-
-    private static List<BakedQuad> collectQuads(BakedModel model, RenderType renderType) {
-        List<BakedQuad> quads = new ArrayList<>();
-        //? if forge {
-        quads.addAll(model.getQuads(null, null, RANDOM, ModelData.EMPTY, renderType));
-        for (Direction dir : Direction.values()) {
-            quads.addAll(model.getQuads(null, dir, RANDOM, ModelData.EMPTY, renderType));
-        }
+        IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid);
+        FluidStack stack = new FluidStack(fluid, be.getTank().getFluidAmountMb());
+        ResourceLocation stillTexture = ext.getStillTexture(stack);
+        if (stillTexture == null) return null;
+        return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(stillTexture);
         //?}
-        //? if fabric {
-        /*quads.addAll(model.getQuads(null, null, RANDOM));
-        for (Direction dir : Direction.values()) {
-            quads.addAll(model.getQuads(null, dir, RANDOM));
-        }
+        //? if neoforge {
+        /*IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid);
+        FluidStack stack = new FluidStack(fluid, be.getTank().getFluidAmountMb());
+        ResourceLocation stillTexture = ext.getStillTexture(stack);
+        if (stillTexture == null) return null;
+        return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(stillTexture);
         *///?}
-        return quads;
     }
 
-    private static void renderQuads(PoseStack poseStack, VertexConsumer buffer, List<BakedQuad> quads,
-                                    float r, float g, float b, float a, int packedLight, int packedOverlay) {
-        var pose = poseStack.last();
-        for (BakedQuad quad : quads) {
-            RenderHooks.putBulkData(buffer, pose, quad, r, g, b, a, packedLight, packedOverlay, true);
-        }
+    private static int getFluidTint(MachineCrystallizerBlockEntity be, Fluid fluid) {
+        //? if forge {
+        IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid);
+        FluidStack stack = new FluidStack(fluid, be.getTank().getFluidAmountMb());
+        return ext.getTintColor(stack);
+        //?}
+        //? if neoforge {
+        /*IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid);
+        FluidStack stack = new FluidStack(fluid, be.getTank().getFluidAmountMb());
+        return ext.getTintColor(stack);
+        *///?}
     }
 
-    private static void renderQuadsWithSprite(PoseStack poseStack, VertexConsumer buffer, List<BakedQuad> quads,
-                                              TextureAtlasSprite sprite, float r, float g, float b, float a,
-                                              int packedLight, int packedOverlay) {
-        var pose = poseStack.last();
-        for (BakedQuad quad : quads) {
-            BakedQuad reskinned = remapQuadSprite(quad, sprite);
-            RenderHooks.putBulkData(buffer, pose, reskinned, r, g, b, a, packedLight, packedOverlay, true);
+    private static List<BakedQuad> remapQuadsSprite(List<BakedQuad> source, TextureAtlasSprite newSprite) {
+        List<BakedQuad> out = new ArrayList<>(source.size());
+        for (BakedQuad quad : source) {
+            out.add(remapQuadSprite(quad, newSprite));
         }
+        return out;
     }
 
     private static BakedQuad remapQuadSprite(BakedQuad source, TextureAtlasSprite newSprite) {

@@ -63,6 +63,10 @@ import com.hbm_m.client.render.implementations.MachineChemicalPlantRenderer;
 import com.hbm_m.client.loader.MachineCoolingTowerModelLoader;
 import com.hbm_m.client.render.implementations.CrucibleRenderer;
 import com.hbm_m.client.render.implementations.MachineCoolingTowerRenderer;
+import com.hbm_m.client.render.implementations.MachineMiningDrillRenderer;
+import com.hbm_m.client.render.implementations.MachineOreSlopperRenderer;
+import com.hbm_m.client.render.implementations.MachineArcFurnaceRenderer;
+import com.hbm_m.client.render.implementations.SoyuzRocketRenderer;
 import com.hbm_m.client.render.implementations.MachineCrystallizerRenderer;
 import com.hbm_m.client.render.implementations.MachineHydraulicFrackiningTowerRenderer;
 import com.hbm_m.client.render.implementations.SoyuzLauncherRenderer;
@@ -581,32 +585,31 @@ public class ClientSetup {
             BlockEntityRenderers.register(ModBlockEntities.RED_CABLE_PAINTABLE_BE.get(), com.hbm_m.client.render.implementations.RedCablePaintableRenderer::new);
         }
 
-        BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
+        MachineAdvancedAssemblerRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.CARGO_ELEVATOR_BE.get(), com.hbm_m.client.render.implementations.CargoElevatorRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.MACHINE_ASSEMBLER_BE.get(), MachineAssemblerRenderer::new);
+        MachineAssemblerRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.TRANSITION_SEAL_BE.get(), TransitionSealRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.PEDESTAL_BE.get(), com.hbm_m.client.render.implementations.PedestalRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.DECO_LOOT_BE.get(), com.hbm_m.client.render.implementations.DecoLootRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.PRESS_BE.get(), MachinePressRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.CHEMICAL_PLANT_BE.get(), MachineChemicalPlantRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.HYDRAULIC_FRACKINING_TOWER_BE.get(), MachineHydraulicFrackiningTowerRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.SOYUZ_LAUNCHER_BE.get(), SoyuzLauncherRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.DECO_SOYUZ_ROCKET_BE.get(), com.hbm_m.client.render.implementations.SoyuzRocketRenderer::new);
+        MachinePressRenderer.register();
+        MachineChemicalPlantRenderer.register();
+        MachineHydraulicFrackiningTowerRenderer.register();
+        SoyuzLauncherRenderer.register();
+        SoyuzRocketRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.HEATING_OVEN_BE.get(), HeatingOvenRenderer::new);
         // BlockEntityRenderers.register(ModBlockEntities.TEST_BE.get(), TestBlockRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.CRYSTALLIZER.get(), MachineCrystallizerRenderer::new);
+        MachineCrystallizerRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), IndustrialTurbineRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.BATTERY_SOCKET_BE.get(), BatterySocketCreativeRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.FLUID_TANK_BE.get(), MachineFluidTankRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.BAT9000_BE.get(), MachineFluidTankRenderer::new);
+        MachineFluidTankRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.LAUNCH_PAD_BE.get(), LaunchPadMissileRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.LAUNCH_PAD_RUSTED_BE.get(), LaunchPadMissileRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.COOLING_TOWER_BE.get(), MachineCoolingTowerRenderer::new);
+        MachineCoolingTowerRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.GAS_CENTRIFUGE_BE.get(), GasCentrifugeRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.MINING_DRILL_BE.get(), com.hbm_m.client.render.implementations.MachineMiningDrillRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.ORE_SLOPPER_BE.get(), com.hbm_m.client.render.implementations.MachineOreSlopperRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.ARC_FURNACE_BE.get(), com.hbm_m.client.render.implementations.MachineArcFurnaceRenderer::new);
+        MachineMiningDrillRenderer.register();
+        MachineOreSlopperRenderer.register();
+        MachineArcFurnaceRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.TURRET_SENTRY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.TURRET_CHEKHOV_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.TURRET_FRIENDLY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
@@ -618,7 +621,7 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.TURRET_FRITZ_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.TURRET_ARTY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.TURRET_HIMARS_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RADAR_BE.get(), MachineRadarRenderer::new);
+        MachineRadarRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.RADAR_SCREEN_BE.get(), com.hbm_m.client.render.implementations.MachineRadarScreenRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.CRUCIBLE_BE.get(), CrucibleRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.FOUNDRY_BASIN_BE.get(), com.hbm_m.client.render.implementations.FoundryBasinRenderer::new);
@@ -665,23 +668,9 @@ public class ClientSetup {
     }
 
     private static void clearClientCachesDeferred() {
-        com.mojang.blaze3d.systems.RenderSystem.recordRenderCall(() -> {
-            com.hbm_m.client.render.culling.InstancedRenderFrame.clear();
-            com.hbm_m.client.render.LightSampleCache.invalidateAll();
-            com.hbm_m.client.render.culling.OcclusionCullingHelper.clearCache();
-            MachineAdvancedAssemblerRenderer.clearCaches();
-            MachineAssemblerRenderer.clearCaches();
-            MachineHydraulicFrackiningTowerRenderer.clearCaches();
-            DoorRenderer.clearAllCaches();
-            MachinePressRenderer.clearCaches();
-            MachineChemicalPlantRenderer.clearCaches();
-            MachineCrystallizerRenderer.clearCaches();
-            MachineRadarRenderer.clearCaches();
-            MachineFluidTankRenderer.clearCaches();
-            MeshRenderCache.clearAll();
-            com.hbm_m.client.render.MdiGeometryAtlas.resetForResourceLifecycle();
-            AbstractObjArmorLayer.clearAllCaches();
-        });
+        // Единая точка инвалидации: см. RenderCacheManager
+        com.hbm_m.client.render.cache.RenderCacheManager.invalidateAll(
+                com.hbm_m.client.render.cache.RenderCacheManager.Reason.SESSION_END);
     }
 
     public static void addTemplatesClient(java.util.function.Consumer<ItemStack> acceptor) {
@@ -1089,26 +1078,9 @@ public class ClientSetup {
             return preparationBarrier.wait(null).thenRunAsync(() -> {
                 FleijaSphereMesh.reload(resourceManager);
                 com.hbm_m.client.render.projectile.ClusterSubmunitionMesh.reload(resourceManager);
-                com.mojang.blaze3d.systems.RenderSystem.recordRenderCall(() -> {
-                    try {
-                        com.hbm_m.client.render.MdiBatchCoordinator.discardActiveSessionNoDispatch();
-                        MachineAdvancedAssemblerRenderer.clearCaches();
-                        MachineAssemblerRenderer.clearCaches();
-                        MachineHydraulicFrackiningTowerRenderer.clearCaches();
-                        DoorRenderer.clearAllCaches();
-                        MachinePressRenderer.clearCaches();
-                        MachineChemicalPlantRenderer.clearCaches();
-                        MachineCrystallizerRenderer.clearCaches();
-                        MachineRadarRenderer.clearCaches();
-                        MeshRenderCache.clearAll();
-                        com.hbm_m.client.render.LightSampleCache.invalidateAll();
-                        com.hbm_m.client.render.MdiGeometryAtlas.resetForResourceLifecycle();
-                        AbstractObjArmorLayer.clearAllCaches();
-                        MainRegistry.LOGGER.info("VBO cache cleanup completed (deferred to render thread)");
-                    } catch (Exception e) {
-                        MainRegistry.LOGGER.error("Error during deferred VBO cache cleanup", e);
-                    }
-                });
+                // Единая точка инвалидации: см. RenderCacheManager
+                com.hbm_m.client.render.cache.RenderCacheManager.invalidateAll(
+                        com.hbm_m.client.render.cache.RenderCacheManager.Reason.RESOURCE_RELOAD);
             }, gameExecutor);
         });
     }
@@ -1247,79 +1219,17 @@ public class ClientSetup {
                 .build();
         *///?}
 
-        //? if < 1.21.1 {
-        VertexFormat blockLitInstancedSlicedFormat = new VertexFormat(
-            ImmutableMap.<String, VertexFormatElement>builder()
-                .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
-                .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
-                .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
-                .put("BoneId", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.GENERIC, 1))
-                .put("InstPos", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
-                .put("InstRot", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstBboxMin", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
-                .put("InstBboxSize", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS0C01", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS0C23", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS1C01", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS1C23", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS2C01", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS2C23", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS3C01", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstLightS3C23", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .build()
-        );
-        //?} else {
-        /*VertexFormat blockLitInstancedSlicedFormat = VertexFormat.builder()
-                .add("Position", com.mojang.blaze3d.vertex.VertexFormatElement.POSITION)
-                .add("Normal",   com.mojang.blaze3d.vertex.VertexFormatElement.NORMAL)
-                .add("UV0",      com.mojang.blaze3d.vertex.VertexFormatElement.UV0)
-                .add("BoneId", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.INT, VertexFormatElement.Usage.GENERIC, 1))
-                .add("InstPos", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
-                .add("InstRot", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .add("InstBboxMin", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
-                .add("InstBboxSize", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .add("InstLightS0C01", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .add("InstLightS0C23", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .add("InstLightS1C01", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .add("InstLightS1C23", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .add("InstLightS2C01", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .add("InstLightS2C23", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .add("InstLightS3C01", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .add("InstLightS3C23", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .build();
-        *///?}
-
         ResourceLocation realVsh = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shaders/core/block_lit.vsh");
         ResourceLocation virtualInstancedVsh = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shaders/core/block_lit_instanced.vsh");
-        ResourceLocation virtualSlicedVsh = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shaders/core/block_lit_sliced.vsh");
-        ResourceLocation virtualInstancedSlicedVsh = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shaders/core/block_lit_instanced_sliced.vsh");
 
         com.hbm_m.client.render.shader.modification.ShaderModification instancingDefine =
             com.hbm_m.client.render.shader.modification.ShaderModification.builder()
                 .define("USE_INSTANCING")
                 .define("USE_VERTEX_BONE_ID");
 
-        com.hbm_m.client.render.shader.modification.ShaderModification slicedDefine =
-            com.hbm_m.client.render.shader.modification.ShaderModification.builder()
-                .define("USE_SLICED_LIGHT");
-
-        com.hbm_m.client.render.shader.modification.ShaderModification instancedSlicedDefine =
-            com.hbm_m.client.render.shader.modification.ShaderModification.builder()
-                .define("USE_INSTANCING")
-                .define("USE_SLICED_LIGHT")
-                .define("USE_VERTEX_BONE_ID");
-
         net.minecraft.server.packs.resources.ResourceProvider instancedProvider =
             com.hbm_m.client.render.shader.modification.ShaderPreDefinitions.wrapRedirect(
                 event.getResourceProvider(), virtualInstancedVsh, realVsh, instancingDefine);
-
-        net.minecraft.server.packs.resources.ResourceProvider slicedProvider =
-            com.hbm_m.client.render.shader.modification.ShaderPreDefinitions.wrapRedirect(
-                event.getResourceProvider(), virtualSlicedVsh, realVsh, slicedDefine);
-
-        net.minecraft.server.packs.resources.ResourceProvider instancedSlicedProvider =
-            com.hbm_m.client.render.shader.modification.ShaderPreDefinitions.wrapRedirect(
-                event.getResourceProvider(), virtualInstancedSlicedVsh, realVsh, instancedSlicedDefine);
 
         event.registerShader(
             new ShaderInstance(
@@ -1340,26 +1250,6 @@ public class ClientSetup {
             ModShaders::setBlockLitInstancedShader
         );
         MainRegistry.LOGGER.info("Successfully registered block_lit_instanced shader");
-
-        event.registerShader(
-            new ShaderInstance(
-                slicedProvider,
-                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block_lit_simple_sliced"),
-                blockLitSimpleFormat
-            ),
-            ModShaders::setBlockLitSimpleSlicedShader
-        );
-        MainRegistry.LOGGER.info("Successfully registered block_lit_simple_sliced shader");
-
-        event.registerShader(
-            new ShaderInstance(
-                instancedSlicedProvider,
-                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block_lit_instanced_sliced"),
-                blockLitInstancedSlicedFormat
-            ),
-            ModShaders::setBlockLitInstancedSlicedShader
-        );
-        MainRegistry.LOGGER.info("Successfully registered block_lit_instanced_sliced shader");
 
         //? if < 1.21.1 {
         VertexFormat nukeCloudFormat = new VertexFormat(

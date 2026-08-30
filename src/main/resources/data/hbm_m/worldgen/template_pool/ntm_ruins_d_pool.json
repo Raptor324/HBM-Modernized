@@ -6,7 +6,7 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
-        "location": "hbm_m:ntmruinsD",
+        "location": "hbm_m:ntm_ruins_d",
         "processors": "hbm_m:foundation_processor"
       }
     }

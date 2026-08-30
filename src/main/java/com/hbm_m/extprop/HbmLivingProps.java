@@ -153,8 +153,7 @@ public final class HbmLivingProps {
         int value = Math.min(getBlackLung(entity) + amount, maxBlackLung);
         livingTag(entity).putInt(NBT_BLACK_LUNG, value);
 
-        Level level = entity.level();
-        if (value >= maxBlackLung) {
+        Level level = entity.level();        if (value >= maxBlackLung) {
             // Смерть от угольной болезни: 1000 урона в обход брони, счётчик сбрасывается.
             livingTag(entity).putInt(NBT_BLACK_LUNG, 0);
             entity.hurt(ModDamageSources.blacklung(level), 1000F);

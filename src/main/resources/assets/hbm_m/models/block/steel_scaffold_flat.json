@@ -1,7 +1,7 @@
 {
   "loader": "forge:composite",
   "textures": {
-    "particle": "hbm_m:block/steel_scaffold"
+    "particle": "hbm_m:block/struct_scaffold"
   },
   "children": {
     "steel_scaffold_model": {
@@ -9,7 +9,7 @@
       "model": "hbm_m:models/block/steel_scaffold.obj",
       "flip_v": true,
       "textures": {
-        "default": "hbm_m:block/steel_scaffold"
+        "default": "hbm_m:block/struct_scaffold"
       }
     }
   },

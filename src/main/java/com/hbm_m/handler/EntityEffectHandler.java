@@ -92,9 +92,12 @@ public final class EntityEffectHandler {
         float blackLungMax = HbmLivingProps.maxBlackLung;
         float asbestosMax = HbmLivingProps.maxAsbestos;
 
-        float bDelta = 1F - Math.min(blackLung / blackLungMax, 1F);
-        float aDelta = 1F - Math.min(asbestos / asbestosMax, 1F);
-        float total = 1F - bDelta * aDelta;
+        // ВАЖНО: деление с плавающей точкой (в 1.7.10 — double blacklung/maxBlacklung).
+        // Целочисленное деление зануляет тяжесть до самой смерти: кашель раз в 50 с,
+        // слабость/тошнота не наступают никогда.
+        float blFrac = Math.min(blackLung / (float) blackLungMax, 1F);
+        float asbFrac = Math.min(asbestos / (float) asbestosMax, 1F);
+        float total = 1F - (1F - blFrac) * (1F - asbFrac);
 
         // Симптомы: слабость и тошнота на поздних стадиях.
         if (total > 0.75F) {
@@ -105,12 +108,10 @@ public final class EntityEffectHandler {
         }
 
         // Кашель: от раза в 50 секунд до каждой секунды по мере тяжести; начинается на 25% накопления.
-        boolean coughs = blackLung > blackLungMax * 0.25F || asbestos > asbestosMax * 0.25F;
-        float severity = 1F - bDelta * aDelta;
-        int freq = Math.max((int) (1000F - 950F * severity), 20);
-        if (coughs && level.getGameTime() % freq == entity.getId() % freq) {
-            boolean coughsCoal = blackLung > blackLungMax * 0.5F;
-            boolean coughsBlood = asbestos > asbestosMax * 0.75F || blackLung > blackLungMax * 0.75F;
+        boolean coughs = blFrac > 0.25F || asbFrac > 0.25F;
+        int freq = Math.max((int) (1000F - 950F * total), 20);
+        if (coughs && level.getGameTime() % freq == entity.getId() % freq) {            boolean coughsCoal = blFrac > 0.5F;
+            boolean coughsBlood = asbFrac > 0.75F || blFrac > 0.75F;
 
             level.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
                     ModSounds.PLAYER_COUGH.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
@@ -120,9 +121,8 @@ public final class EntityEffectHandler {
                     sendVomitPacket(serverLevel, entity, "blood", 5);
                 }
                 if (coughsCoal) {
-                    // Сильно задымлённые лёгкие — большой облако (50 против 10 частиц).
-                    sendVomitPacket(serverLevel, entity, "smoke",
-                            blackLung > blackLungMax * 0.8F ? 50 : 10);
+                    // Сильно задымлённые лёгкие — большое облако (50 против 10 частиц).
+                    sendVomitPacket(serverLevel, entity, "smoke", blFrac > 0.8F ? 50 : 10);
                 }
             }
         }

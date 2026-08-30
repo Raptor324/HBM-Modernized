@@ -59,16 +59,16 @@
 * `meteor/room10/room-split.nbt`
 * `meteor/room10/room-stairs.nbt`
 * `meteor/room10/room-triple.nbt`
-* `ntmruinsA.nbt`
-* `ntmruinsB.nbt`
-* `ntmruinsC.nbt`
-* `ntmruinsD.nbt`
-* `ntmruinsE.nbt`
-* `ntmruinsF.nbt`
-* `ntmruinsG.nbt`
-* `ntmruinsH.nbt`
-* `ntmruinsI.nbt`
-* `ntmruinsJ.nbt`
+* `ntm_ruins_a.nbt`
+* `ntm_ruins_b.nbt`
+* `ntm_ruins_c.nbt`
+* `ntm_ruins_d.nbt`
+* `ntm_ruins_e.nbt`
+* `ntm_ruins_f.nbt`
+* `ntm_ruins_g.nbt`
+* `ntm_ruins_h.nbt`
+* `ntm_ruins_i.nbt`
+* `ntm_ruins_j.nbt`
 * `oil_rig.nbt`
 * `radio_house.nbt`
 * `repeater_radio.nbt`
@@ -83,6 +83,7 @@
 * TE tileentity_geiger отброшен (блок сохранён)
 * TE tileentity_radio_receiver отброшен (блок сохранён)
 * ore_oil_sand: ore_oil_sand -> ore_oil
+* deco_computer: deco_computer дублирует puter (тот же OBJ); rot хранится в meta>>2
 * filing_cabinet: filing_cabinet -> crate_metal
 * bobblehead: bobblehead -> flower_pot (порт голов-фигурок отложен)
 * TE tileentity_ntm_bobblehead отброшен (блок сохранён)

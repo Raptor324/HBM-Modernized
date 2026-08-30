@@ -47,11 +47,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
  * stream. When the existing vertex/index buffers don't have room, we
  * reallocate at double capacity and re-upload all known parts. This is rare
  * (happens only on first-frame growth) and amortised across the session.
- * <p>
- * Sliced renderers ({@code useSlicedLight=true}) are NOT supported here today —
- * they use a different attribute layout and a different shader. Adding a
- * second atlas + a second MDI dispatch later is mechanical, but out of scope
- * for the initial integration.
  */
 
 //? if forge {

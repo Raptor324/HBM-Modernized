@@ -7,7 +7,7 @@
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
         "location": "hbm_m:meteor/room-basic",
-        "processors": "minecraft:empty"
+        "processors": "hbm_m:connection_fix"
       }
     },
     {
@@ -16,7 +16,7 @@
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
         "location": "hbm_m:meteor/room-balcony",
-        "processors": "minecraft:empty"
+        "processors": "hbm_m:connection_fix"
       }
     },
     {
@@ -25,7 +25,7 @@
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
         "location": "hbm_m:meteor/room-dragon",
-        "processors": "minecraft:empty"
+        "processors": "hbm_m:connection_fix"
       }
     },
     {
@@ -34,7 +34,7 @@
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
         "location": "hbm_m:meteor/room-ladder",
-        "processors": "minecraft:empty"
+        "processors": "hbm_m:connection_fix"
       }
     },
     {
@@ -43,7 +43,7 @@
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
         "location": "hbm_m:meteor/room-ooze",
-        "processors": "minecraft:empty"
+        "processors": "hbm_m:connection_fix"
       }
     },
     {
@@ -52,7 +52,7 @@
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
         "location": "hbm_m:meteor/room-split",
-        "processors": "minecraft:empty"
+        "processors": "hbm_m:connection_fix"
       }
     },
     {
@@ -61,7 +61,7 @@
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
         "location": "hbm_m:meteor/room-stairs",
-        "processors": "minecraft:empty"
+        "processors": "hbm_m:connection_fix"
       }
     },
     {
@@ -70,7 +70,7 @@
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
         "location": "hbm_m:meteor/room-triple",
-        "processors": "minecraft:empty"
+        "processors": "hbm_m:connection_fix"
       }
     }
   ]

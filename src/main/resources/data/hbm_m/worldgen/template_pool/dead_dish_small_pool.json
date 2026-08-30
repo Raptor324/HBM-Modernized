@@ -7,7 +7,7 @@
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
         "location": "hbm_m:dead_dish_small",
-        "processors": "minecraft:empty"
+        "processors": "hbm_m:connection_fix"
       }
     }
   ]

@@ -7,7 +7,7 @@
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
         "location": "hbm_m:tower_base",
-        "processors": "minecraft:empty"
+        "processors": "hbm_m:connection_fix"
       }
     }
   ]

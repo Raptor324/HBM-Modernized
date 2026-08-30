@@ -7,7 +7,7 @@
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
         "location": "hbm_m:meteor/room10/headloot/loot-chest",
-        "processors": "minecraft:empty"
+        "processors": "hbm_m:connection_fix"
       }
     },
     {
@@ -16,7 +16,7 @@
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
         "location": "hbm_m:meteor/room10/headloot/loot-tesla",
-        "processors": "minecraft:empty"
+        "processors": "hbm_m:connection_fix"
       }
     },
     {
@@ -25,7 +25,7 @@
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
         "location": "hbm_m:meteor/room10/headloot/loot-trap",
-        "processors": "minecraft:empty"
+        "processors": "hbm_m:connection_fix"
       }
     },
     {
@@ -34,7 +34,7 @@
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
         "location": "hbm_m:meteor/room10/headloot/loot-crate-crab",
-        "processors": "minecraft:empty"
+        "processors": "hbm_m:connection_fix"
       }
     }
   ]

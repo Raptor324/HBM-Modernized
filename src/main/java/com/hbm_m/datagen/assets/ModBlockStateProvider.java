@@ -1,4 +1,6 @@
 package com.hbm_m.datagen.assets;
+
+import java.util.Map;
 //? if forge {
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.decorations.DoorBlock;
@@ -15,6 +17,8 @@ import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.multiblock.PartRole;
+
+import java.util.Map;
 
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.Direction;
@@ -689,8 +693,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 modLoc("block/decon_side")
         );
         registerRadAbsorber();
-        customObjBlock(ModBlocks.TAPE_RECORDER);
-        customObjBlock(ModBlocks.TOASTER);
+        customObjBlockRotated(ModBlocks.TAPE_RECORDER, Map.of(
+                Direction.NORTH, 90, Direction.SOUTH, 270, Direction.WEST, 180, Direction.EAST, 0));
+        customObjBlockRotated(ModBlocks.TOASTER, Map.of(
+                Direction.NORTH, 270, Direction.SOUTH, 90, Direction.WEST, 0, Direction.EAST, 180));
         customObjBlock(ModBlocks.DECO_STEEL_SCAFFOLD);
         customObjBlock(ModBlocks.STEEL_WALL);
 
@@ -1009,11 +1015,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // BLOCK_RED_COPPER / BLOCK_STARMETAL — алиасы слитковых блоков (auto-loop ниже), тут не конфигурируем.
         blockWithItem(ModBlocks.BLOCK_SCRAP);
         blockWithItem(ModBlocks.BLOCK_ELECTRICAL_SCRAP);
-        blockWithItem(ModBlocks.DECO_COMPUTER);
         blockWithItem(ModBlocks.DECO_TITANIUM);
         blockWithItem(ModBlocks.WOOD_STRUCTURE);
         blockWithItem(ModBlocks.POLE_TOP);
-        blockWithItem(ModBlocks.POLE_SATELLITE_RECEIVER);
+        customObjBlockNoFacing(ModBlocks.POLE_SATELLITE_RECEIVER);
         blockWithItem(ModBlocks.TOXIC_BLOCK);
         grateBlockWithItem(ModBlocks.STEEL_GRATE, "block/steel_grate", "block/steel_grate_end");
         grateBlockWithItem(ModBlocks.STEEL_GRATE_WIDE, "block/steel_grate_wide", "block/steel_grate_wide_end");
@@ -2129,18 +2134,16 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/factory_titanium_hull")
                 )
         );
-        simpleBlockWithItem(ModBlocks.FENCE_METAL.get(),
-                models().cubeAll(
-                        ModBlocks.FENCE_METAL.getId().getPath(),
-                        modLoc("block/fence_metal")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.FENCE_METAL_POST.get(),
-                models().cubeAll(
-                        ModBlocks.FENCE_METAL_POST.getId().getPath(),
-                        modLoc("block/fence_metal_post")
-                )
-        );
+        fenceBlockWithItem(ModBlocks.FENCE_METAL, "block/fence_metal");
+        // одиночный столб chainlink-забора
+        ModelFile postModel = models().withExistingParent(ModBlocks.FENCE_METAL_POST.getId().getPath(), mcLoc("block/fence_post"))
+                .texture("texture", modLoc("block/fence_metal_post"));
+        VariantBlockStateBuilder postBuilder = getVariantBuilder(ModBlocks.FENCE_METAL_POST.get());
+        for (Direction facing : Direction.Plane.HORIZONTAL) {
+            postBuilder.partialState().with(com.hbm_m.block.decorations.DecorShapeBlock.FACING, facing)
+                    .modelForState().modelFile(postModel).addModel();
+        }
+        simpleBlockItem(ModBlocks.FENCE_METAL_POST.get(), postModel);
         simpleBlockWithItem(ModBlocks.FIELD_DISTURBER.get(),
                 models().cubeAll(
                         ModBlocks.FIELD_DISTURBER.getId().getPath(),
@@ -3045,12 +3048,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/radiobox")
                 )
         );
-        simpleBlockWithItem(ModBlocks.RADIOREC.get(),
-                models().cubeAll(
-                        ModBlocks.RADIOREC.getId().getPath(),
-                        modLoc("block/radiorec")
-                )
-        );
+        customObjBlockRotated(ModBlocks.RADIOREC, Map.of(
+                Direction.NORTH, 180, Direction.SOUTH, 0, Direction.WEST, 90, Direction.EAST, 270));
         simpleBlockWithItem(ModBlocks.RADIO_AUTOCAL.get(),
                 models().cubeAll(
                         ModBlocks.RADIO_AUTOCAL.getId().getPath(),
@@ -3298,12 +3297,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/stalagmite_sulfur")
                 )
         );
-        simpleBlockWithItem(ModBlocks.STEEL_ROOF.get(),
-                models().cubeAll(
-                        ModBlocks.STEEL_ROOF.getId().getPath(),
-                        modLoc("block/steel_roof")
-                )
-        );
+        customObjBlockSimple(ModBlocks.STEEL_ROOF);
         // Порт BlockScaffold: OBJ-панель 2/16..14/16, AXIS-ориентация (модель-обёртка в resources)
         objAxisBlockWithItem(ModBlocks.STEEL_SCAFFOLD, "block/steel_scaffold", false);
         simpleBlockWithItem(ModBlocks.STONE_CRACKED.get(),
@@ -3330,16 +3324,21 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/stone_gneiss")
                 )
         );
-        // Ручные blockstates: у keyhole-блоков есть FACING — модель одна, повороты через варианты
-        horizontalBlock(ModBlocks.STONE_KEYHOLE.get(),
-                models().cubeAll(ModBlocks.STONE_KEYHOLE.getId().getPath(), mcLoc("block/stone")));
-        simpleBlockItem(ModBlocks.STONE_KEYHOLE.get(), models().getExistingFile(modLoc("block/stone_keyhole")));
-        horizontalBlock(ModBlocks.STONE_KEYHOLE_META.get(),
-                models().withExistingParent(ModBlocks.STONE_KEYHOLE_META.getId().getPath(), mcLoc("block/orientable"))
-                        .texture("front", modLoc("block/stone_keyhole_meta"))
-                        .texture("side", modLoc("block/brick_base"))
-                        .texture("top", modLoc("block/brick_red_top")));
-        simpleBlockItem(ModBlocks.STONE_KEYHOLE_META.get(), models().getExistingFile(modLoc("block/stone_keyhole_meta")));
+        // Ручные blockstates: у keyhole-блоков есть FACING — модель одна, повороты через варианты.
+        // В 1.7.10 stone_keyhole: боковые стороны — текстура скважины, верх/низ — ванильный камень.
+        ModelFile stoneKeyholeModel = models().cubeBottomTop(
+                ModBlocks.STONE_KEYHOLE.getId().getPath(),
+                modLoc("block/stone_keyhole"),
+                mcLoc("block/stone"),
+                mcLoc("block/stone"));
+        horizontalBlock(ModBlocks.STONE_KEYHOLE.get(), stoneKeyholeModel);
+        simpleBlockItem(ModBlocks.STONE_KEYHOLE.get(), stoneKeyholeModel);
+        ModelFile stoneKeyholeMetaModel = models().withExistingParent(ModBlocks.STONE_KEYHOLE_META.getId().getPath(), mcLoc("block/orientable"))
+                .texture("front", modLoc("block/stone_keyhole_meta"))
+                .texture("side", modLoc("block/brick_base"))
+                .texture("top", modLoc("block/brick_red_top"));
+        horizontalBlock(ModBlocks.STONE_KEYHOLE_META.get(), stoneKeyholeMetaModel);
+        simpleBlockItem(ModBlocks.STONE_KEYHOLE_META.get(), stoneKeyholeMetaModel);
         simpleBlockWithItem(ModBlocks.STONE_POROUS.get(),
                 models().cubeAll(
                         ModBlocks.STONE_POROUS.getId().getPath(),
@@ -4674,6 +4673,57 @@ public class ModBlockStateProvider extends BlockStateProvider {
         }
         // плоский предмет (как у снежного слоя)
         itemModels().withExistingParent(name, mcLoc("item/generated")).texture("layer0", modLoc(texture));
+    }
+
+    /** OBJ-блок без ориентации (модель-обёртка в resources, identity transform). */
+    private void customObjBlockSimple(RegistrySupplier<Block> blockObject) {
+        ModelFile model = models().getExistingFile(modLoc("block/" + blockObject.getId().getPath()));
+        VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
+        for (Direction facing : Direction.Plane.HORIZONTAL) {
+            builder.partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, facing)
+                    .modelForState().modelFile(model).addModel();
+        }
+        simpleBlockItem(blockObject.get(), model);
+    }
+
+    /** OBJ-блок без свойства facing (обычный Block): один вариант, без поворотов. */
+    private void customObjBlockNoFacing(RegistrySupplier<Block> blockObject) {
+        ModelFile model = models().getExistingFile(modLoc("block/" + blockObject.getId().getPath()));
+        getVariantBuilder(blockObject.get()).partialState().modelForState().modelFile(model).addModel();
+        simpleBlockItem(blockObject.get(), model);
+    }
+
+    /** OBJ-блок с нестандартной картой поворотов facing→y (из рендера оригинала). */
+    private void customObjBlockRotated(RegistrySupplier<Block> blockObject, Map<Direction, Integer> rotY) {
+        ModelFile model = models().getExistingFile(modLoc("block/" + blockObject.getId().getPath()));
+        VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
+        for (Direction facing : Direction.Plane.HORIZONTAL) {
+            builder.partialState().with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, facing)
+                    .modelForState().modelFile(model).rotationY(rotY.getOrDefault(facing, 0)).addModel();
+        }
+        simpleBlockItem(blockObject.get(), model);
+    }
+
+    /** Ванильный забор (порт BlockMetalFence): post/side шаблоны с текстурой. */
+    private void fenceBlockWithItem(RegistrySupplier<Block> blockObject, String texture) {
+        ModelFile post = models().withExistingParent(blockObject.getId().getPath() + "_post", mcLoc("block/fence_post"))
+                .texture("texture", modLoc(texture));
+        ModelFile side = models().withExistingParent(blockObject.getId().getPath() + "_side", mcLoc("block/fence_side"))
+                .texture("texture", modLoc(texture));
+        net.minecraft.world.level.block.FenceBlock fence = (net.minecraft.world.level.block.FenceBlock) blockObject.get();
+        var n = net.minecraft.world.level.block.state.properties.BlockStateProperties.NORTH;
+        var s2 = net.minecraft.world.level.block.state.properties.BlockStateProperties.SOUTH;
+        var w = net.minecraft.world.level.block.state.properties.BlockStateProperties.WEST;
+        var e = net.minecraft.world.level.block.state.properties.BlockStateProperties.EAST;
+        getMultipartBuilder(fence)
+                // столб виден, если хотя бы с одной стороны нет соединения (OR)
+                .part().modelFile(post).addModel().useOr()
+                .condition(n, false).condition(s2, false).condition(w, false).condition(e, false).end()
+                .part().modelFile(side).addModel().condition(n, true).end()
+                .part().modelFile(side).addModel().condition(s2, true).end()
+                .part().modelFile(side).addModel().condition(w, true).end()
+                .part().modelFile(side).addModel().condition(e, true).end();
+        simpleBlockItem(fence, post);
     }
 
     private void axisBlockWithItem(Block block, String side, String end) {

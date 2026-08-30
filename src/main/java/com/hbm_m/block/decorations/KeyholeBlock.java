@@ -24,16 +24,27 @@ import net.minecraft.world.phys.BlockHitResult;
 /**
  * Порт {@code BlockKeyhole} / {@code BlockRedBrickKeyhole} (1.7.10) — потайная скважина.
  *
- * <p>Маскируется под обычную породу (в 1.7.10 спавнится в камне на глубине).
- * При активации ключом ({@code key_red}, остаётся; или {@code key_red_cracked},
- * расходуется) генерирует скрытую красную комнату и заменяет себя дверью.</p>
+ * <p>{@code blackRoom=false} — каменная скважина ({@code stone_keyhole}),
+ * маскируется под обычную породу и ведёт в красную комнату;
+ * {@code blackRoom=true} — кирпичная скважина ({@code stone_keyhole_meta}),
+ * встраивается в стену красной комнаты и ведёт в чёрную комнату.</p>
+ *
+ * <p>Как и в 1.7.10, комната строится ЗА той гранью, по которой кликнул
+ * игрок (сторона клика задаёт ориентацию, собственная ориентация блока из
+ * worldgen не используется). При активации ключом ({@code key_red}, остаётся;
+ * или {@code key_red_cracked}, расходуется) генерируется комната, а скважина
+ * заменяется дверью.</p>
  */
 public class KeyholeBlock extends Block {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
-    public KeyholeBlock(Properties properties) {
+    /** true — порт BlockRedBrickKeyhole (чёрная комната), false — BlockKeyhole (красная). */
+    private final boolean blackRoom;
+
+    public KeyholeBlock(Properties properties, boolean blackRoom) {
         super(properties);
+        this.blackRoom = blackRoom;
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
 
@@ -51,19 +62,24 @@ public class KeyholeBlock extends Block {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
             net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
-        return activate(state, level, pos, player);
+        return activate(state, level, pos, player, hit);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
             BlockHitResult hit) {
-        return activate(state, level, pos, player);
+        return activate(state, level, pos, player, hit);
     }
     *///?}
 
-    private static InteractionResult activate(BlockState state, Level level, BlockPos pos, Player player) {
+    private InteractionResult activate(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         ItemStack held = player.getMainHandItem();
         if (!level.isClientSide) {
+            Direction face = hit.getDirection();
+            // В оригинале верх/низ не открывают комнату
+            if (face == Direction.UP || face == Direction.DOWN) {
+                return InteractionResult.PASS;
+            }
             boolean cracked;
             if (held.is(ModItems.KEY_RED.get())) {
                 cracked = false;
@@ -75,7 +91,13 @@ public class KeyholeBlock extends Block {
             if (cracked) {
                 held.shrink(1);
             }
-            RedRoomGenerator.generate((ServerLevel) level, pos, state.getValue(FACING));
+            if (level instanceof ServerLevel serverLevel) {
+                if (blackRoom) {
+                    RedRoomGenerator.generateBlackRoom(serverLevel, pos, face);
+                } else {
+                    RedRoomGenerator.generateRedRoom(serverLevel, pos, face);
+                }
+            }
             // Порт достижения redRoom ("The Other Side") из 1.7.10
             if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
                 net.minecraft.resources.ResourceLocation advId =

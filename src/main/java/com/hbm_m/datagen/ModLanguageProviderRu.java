@@ -1004,7 +1004,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.BLOCK_METEOR_COBBLE.get(), "Метеоритный булыжник");
         add(ModBlocks.BLOCK_SCRAP.get(), "Блок металлолома");
         add(ModBlocks.BLOCK_ELECTRICAL_SCRAP.get(), "Электрический лом");
-        add(ModBlocks.DECO_COMPUTER.get(), "Компьютер");
         add(ModBlocks.DECO_TITANIUM.get(), "Титановая отделка");
         add(ModBlocks.WOOD_STRUCTURE.get(), "Строительное дерево");
         add(ModBlocks.STEEL_BEAM.get(), "Стальная балка");
@@ -2331,6 +2330,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("hazard.prot", "Защищает от:");
         add("hazard.neverProtects", "Не защищает от:");
         add("tooltip.hbm_m.mask.noFilter", "Фильтр не установлен!");
+        add("curios.identifier.mask", "Маска");
         add("tooltip.hbm_m.mask.filter", "Установленный фильтр:");
         add("tooltip.hbm_m.attachment.gasProtection", "Газовая защита");
         add("tooltip.hbm_m.attachment.slotHelmet", "Крепится к шлемам на столе модификаций брони");
@@ -2528,9 +2528,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.modelUpdateDistance", "Дистанция для рендеринга динамических частей .obj моделей");
         add("text.autoconfig.hbm_m.option.modelStaticRenderDistance", "Дистанция для рендеринга статических частей .obj моделей");
         add("text.autoconfig.hbm_m.option.enableOcclusionCulling", "Включить куллинг моделей");
-        add("text.autoconfig.hbm_m.option.useInstancedStaticRendering", "Батчинг частей obj моделей");
-        add("text.autoconfig.hbm_m.option.useSlicedLight", "Sliced light (2×4×2 зонды)");
-        add("text.autoconfig.hbm_m.option.useMultiDrawIndirect", "Multi-draw indirect (MDI)");
+        add("text.autoconfig.hbm_m.option.forceVanillaImmediatePath", "Ванильный immediate-путь (резерв)");
 
         add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks", "Дальность прорисовки VATS");
 
@@ -2582,9 +2580,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.modelStaticRenderDistance.@Tooltip", "Дистанция для рендеринга статических частей .obj моделей (в чанках)");
         add("text.autoconfig.hbm_m.option.enableMissileNetworkTrack.@Tooltip", "Включите это, если хотите чтобы сервер отсылал всем клиентам пакеты с местоположением баллистических ракет, чтобы их было видно ЗА ванильной дальностью прорисовки.");
         add("text.autoconfig.hbm_m.option.enableOcclusionCulling.@Tooltip", "Включить куллинг моделей (выключите, если ваши модели рендерятся некорректно)");
-        add("text.autoconfig.hbm_m.option.useInstancedStaticRendering.@Tooltip", "Использовать батчинговый рендер для частей obj. Сильно повышает производительность рендеринга в бесшейдерном режиме, при проблемах отключите.");
-        add("text.autoconfig.hbm_m.option.useSlicedLight.@Tooltip", "16 зондов освещения вместо 8 углов — лучше на высоких башнях. Несовместимо с MDI: при включении части снова рисуются отдельными instanced draw. После смены — F3+T.");
-        add("text.autoconfig.hbm_m.option.useMultiDrawIndirect.@Tooltip", "Один glMultiDrawElementsIndirect на кадр вместо многих instanced draw (без shader pack). Выигрыш заметен при большом числе одинаковых машин. Не работает с sliced light и GPU bone skinning.");
+        add("text.autoconfig.hbm_m.option.forceVanillaImmediatePath.@Tooltip", "Рисовать все OBJ-станки ванильным immediate-путём (putBulkData) вместо автоматического VBO/инстансинг-пайплайна. Аварийный резерв, если станки рендерятся белыми/невидимыми или сломанными.");
 
         add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks.@Tooltip", "Дальность отрисовки полосок здоровья мобов (чанки). Больше значение - дальше видно, но выше нагрузка.");
 
@@ -2696,8 +2692,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.missileTrackInterval.@Tooltip", "Как часто (в тиках) позиции ракет отправляются клиентам.");
         add("text.autoconfig.hbm_m.option.instanceVboOrphanBeforeUpload", "Orphaning instance VBO");
         add("text.autoconfig.hbm_m.option.instanceVboOrphanBeforeUpload.@Tooltip", "Перед заливкой instance VBO вызывать glBufferData(NULL) того же размера, чтобы драйвер не синхронизировался с предыдущим кадром. Отключайте только при проблемах.");
-        add("text.autoconfig.hbm_m.option.gpuBoneSkinning", "GPU bone skinning");
-        add("text.autoconfig.hbm_m.option.gpuBoneSkinning.@Tooltip", "Считать матрицы base×part на GPU для продвинутого сборщика (только vanilla; под Iris/Oculus — отдельный путь).");
         add("text.autoconfig.hbm_m.option.mdiDebugLogDispatch", "Лог MDI-диспетча");
         add("text.autoconfig.hbm_m.option.mdiDebugLogDispatch.@Tooltip", "Писать одну строку INFO на каждый MDI-dispatch (число sub-draw, инстансов, атлас).");
         add("text.autoconfig.hbm_m.option.mdiVerboseSubdraws", "Подробный лог MDI");

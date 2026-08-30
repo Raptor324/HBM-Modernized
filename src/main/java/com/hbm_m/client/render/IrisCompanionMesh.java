@@ -126,13 +126,6 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
      */
     private float[] perVertexCornerWeights;
     /**
-     * Optional per-vertex weights for a 2x4x2 light-probe lattice (16 probes).
-     * Laid out as {@code [vertexCount * 16]} and used when the caller provides
-     * a 32-float probe array (see {@link #writeInstanceLightmap(int, float[])}).
-     */
-    private float[] perVertexSlicedWeights;
-
-    /**
      * GL buffer holding per-instance per-vertex UV2 values. Laid out as
      * {@code instanceSlots[maxInstanceSlots] × vertexCount × 2 × sizeof(USHORT)}
      * = {@code 4 bytes} per vertex per instance.
@@ -589,7 +582,6 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             objBbox[0] = objBbox[1] = objBbox[2] = 0f;
             objBbox[3] = objBbox[4] = objBbox[5] = 1f;
             perVertexCornerWeights = null;
-            perVertexSlicedWeights = null;
             return;
         }
 
@@ -605,9 +597,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         float invSx = 1f / sx, invSy = 1f / sy, invSz = 1f / sz;
 
         perVertexCornerWeights = new float[provisionalVertexCount * 8];
-        perVertexSlicedWeights = new float[provisionalVertexCount * 16];
         int wBase = 0;
-        int wsBase = 0;
         for (BakedQuad quad : quads) {
             int[] raw = quad.getVertices();
             if (raw == null || raw.length < 32) continue;
@@ -636,39 +626,6 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                 perVertexCornerWeights[wBase + 6] = axy2 * wz;
                 perVertexCornerWeights[wBase + 7] = axy3 * wz;
                 wBase += 8;
-
-                // 2x4x2 sliced weights: 4 Y slices => interpolate between adjacent slices.
-                // Each slice has 4 XZ corners laid out as:
-                //   0: x0z0, 1: x1z0, 2: x0z1, 3: x1z1
-                float ty = wy * 3.0f;
-                int s0 = (int) Math.floor(ty);
-                if (s0 < 0) s0 = 0;
-                if (s0 > 3) s0 = 3;
-                int s1 = Math.min(s0 + 1, 3);
-                float fy = ty - (float) s0;
-                if (fy < 0f) fy = 0f;
-                if (fy > 1f) fy = 1f;
-                float w0 = 1f - fy;
-                float w1 = fy;
-
-                float b00 = oneMinusWx * oneMinusWz;
-                float b10 = wx * oneMinusWz;
-                float b01 = oneMinusWx * wz;
-                float b11 = wx * wz;
-
-                // Zero 16 weights (array is fresh but we write sequentially; keep explicit for clarity).
-                for (int p = 0; p < 16; p++) perVertexSlicedWeights[wsBase + p] = 0f;
-                int o0 = wsBase + s0 * 4;
-                int o1 = wsBase + s1 * 4;
-                perVertexSlicedWeights[o0 + 0] = b00 * w0;
-                perVertexSlicedWeights[o0 + 1] = b10 * w0;
-                perVertexSlicedWeights[o0 + 2] = b01 * w0;
-                perVertexSlicedWeights[o0 + 3] = b11 * w0;
-                perVertexSlicedWeights[o1 + 0] += b00 * w1;
-                perVertexSlicedWeights[o1 + 1] += b10 * w1;
-                perVertexSlicedWeights[o1 + 2] += b01 * w1;
-                perVertexSlicedWeights[o1 + 3] += b11 * w1;
-                wsBase += 16;
             }
         }
     }
@@ -679,16 +636,6 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
      */
     public boolean supportsPerVertexLightmap() {
         return built && uv2Location != -1 && perVertexCornerWeights != null && vertexCount > 0;
-    }
-
-    /**
-     * @return {@code true} if {@link #writeInstanceLightmap} can combine a
-     *         {@code float[32]} 2×4×2 light probe set with {@link #perVertexSlicedWeights}
-     *         (Iris / extended path matches tall VBOs that use
-     *         {@code LightSampleCache#getOrSample16}).
-     */
-    public boolean supportsSlicedPerVertexLightmap() {
-        return built && uv2Location != -1 && perVertexSlicedWeights != null && vertexCount > 0;
     }
 
     /**
@@ -1033,70 +980,51 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         if (slotIndex < 0 || slotIndex >= lightmapInstanceCapacity) return;
         if (corner16 == null || corner16.length < 16) return;
         if (lightmapShortView == null) return;
-    
-        final boolean sliced = corner16.length >= 32 && perVertexSlicedWeights != null;
-        final float[] w = sliced ? perVertexSlicedWeights : perVertexCornerWeights;
+
+        final float[] w = perVertexCornerWeights;
         final ShortBuffer dst = lightmapShortView;
-    
+
         int requiredLength = vertexCount * 2;
         if (lightmapTempArray.length < requiredLength) {
             lightmapTempArray = new short[requiredLength];
         }
-    
+
         int shortOffset = slotIndex * vertexCount * 2;
         if (shortOffset < 0 || shortOffset + requiredLength > dst.capacity()) return;
-    
-        if (!sliced) {
-            for (int v = 0; v < vertexCount; v++) {
-                int wBase = v * 8;
-                // Unroll цикла (процессор скажет вам спасибо)
-                float blockU = w[wBase] * corner16[0] +
-                               w[wBase + 1] * corner16[2] +
-                               w[wBase + 2] * corner16[4] +
-                               w[wBase + 3] * corner16[6] +
-                               w[wBase + 4] * corner16[8] +
-                               w[wBase + 5] * corner16[10] +
-                               w[wBase + 6] * corner16[12] +
-                               w[wBase + 7] * corner16[14];
-    
-                float skyV =   w[wBase] * corner16[1] +
-                               w[wBase + 1] * corner16[3] +
-                               w[wBase + 2] * corner16[5] +
-                               w[wBase + 3] * corner16[7] +
-                               w[wBase + 4] * corner16[9] +
-                               w[wBase + 5] * corner16[11] +
-                               w[wBase + 6] * corner16[13] +
-                               w[wBase + 7] * corner16[15];
-    
-                // Быстрое округление вместо Math.round()
-                int bu = (int) (blockU + 0.5f);
-                int sv = (int) (skyV + 0.5f);
-    
-                // Быстрый clamp
-                bu = bu < 0 ? 0 : (bu > 240 ? 240 : bu);
-                sv = sv < 0 ? 0 : (sv > 240 ? 240 : sv);
-    
-                lightmapTempArray[v * 2] = (short) bu;
-                lightmapTempArray[v * 2 + 1] = (short) sv;
-            }
-        } else {
-            // Сделайте то же самое (unroll на 16) для sliced ветки
-            for (int v = 0; v < vertexCount; v++) {
-                float blockU = 0f;
-                float skyV = 0f;
-                int wBase = v * 16;
-                for (int p = 0; p < 16; p++) { // Можно оставить цикл, если unroll на 16 выглядит громоздко, но unroll быстрее
-                    float wp = w[wBase + p];
-                    blockU += wp * corner16[p * 2];
-                    skyV   += wp * corner16[p * 2 + 1];
-                }
-                int bu = (int) (blockU + 0.5f);
-                int sv = (int) (skyV + 0.5f);
-                lightmapTempArray[v * 2] = (short) (bu < 0 ? 0 : (bu > 240 ? 240 : bu));
-                lightmapTempArray[v * 2 + 1] = (short) (sv < 0 ? 0 : (sv > 240 ? 240 : sv));
-            }
+
+        for (int v = 0; v < vertexCount; v++) {
+            int wBase = v * 8;
+            // Unroll цикла (процессор скажет вам спасибо)
+            float blockU = w[wBase] * corner16[0] +
+                           w[wBase + 1] * corner16[2] +
+                           w[wBase + 2] * corner16[4] +
+                           w[wBase + 3] * corner16[6] +
+                           w[wBase + 4] * corner16[8] +
+                           w[wBase + 5] * corner16[10] +
+                           w[wBase + 6] * corner16[12] +
+                           w[wBase + 7] * corner16[14];
+
+            float skyV =   w[wBase] * corner16[1] +
+                           w[wBase + 1] * corner16[3] +
+                           w[wBase + 2] * corner16[5] +
+                           w[wBase + 3] * corner16[7] +
+                           w[wBase + 4] * corner16[9] +
+                           w[wBase + 5] * corner16[11] +
+                           w[wBase + 6] * corner16[13] +
+                           w[wBase + 7] * corner16[15];
+
+            // Быстрое округление вместо Math.round()
+            int bu = (int) (blockU + 0.5f);
+            int sv = (int) (skyV + 0.5f);
+
+            // Быстрый clamp
+            bu = bu < 0 ? 0 : (bu > 240 ? 240 : bu);
+            sv = sv < 0 ? 0 : (sv > 240 ? 240 : sv);
+
+            lightmapTempArray[v * 2] = (short) bu;
+            lightmapTempArray[v * 2 + 1] = (short) sv;
         }
-    
+
         // Массовая запись в DirectBuffer — это ОГРОМНЫЙ буст производительности
         int prevPos = dst.position();
         dst.position(shortOffset);
@@ -1511,7 +1439,6 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         this.perVertexLightmapActive = false;
         this.lightmapCurrentSlot = -1;
         this.perVertexCornerWeights = null;
-        this.perVertexSlicedWeights = null;
         this.lightmapStagingMapped = null;
         this.lightmapStagingShortView = null;
         this.lightmapStagingAvailable = false;

@@ -131,7 +131,7 @@ public class ArmorModificationHelper {
 
         // Сохраняем ItemStack модификации в NBT
         CompoundTag modTag = new CompoundTag();
-        PlatformHooks.saveItemStack(mod, modTag, null);
+        PlatformHooks.saveItemStack(mod, modTag, PlatformHooks.bestEffortProvider());
 
         int slot = modItem.type;
         modsTag.put(MOD_SLOT_KEY_PREFIX + slot, modTag);
@@ -239,7 +239,7 @@ public class ArmorModificationHelper {
         for (int i = 0; i < MOD_SLOTS; i++) {
             String key = MOD_SLOT_KEY_PREFIX + i;
             if (modsTag.contains(key)) {
-                ItemStack parsed = PlatformHooks.itemStackOf(modsTag.getCompound(key), null);
+                ItemStack parsed = PlatformHooks.itemStackOf(modsTag.getCompound(key), PlatformHooks.bestEffortProvider());
                 slots[i] = parsed == null ? ItemStack.EMPTY : parsed;
             } else {
                 // Пустые слоты — EMPTY, а не null: вызыватели (GasMaskLayer и др.) не обязаны проверять на null.
@@ -270,7 +270,7 @@ public class ArmorModificationHelper {
         String key = MOD_SLOT_KEY_PREFIX + slot;
 
         if (modsTag.contains(key)) {
-            return PlatformHooks.itemStackOf(modsTag.getCompound(key), null);
+            return PlatformHooks.itemStackOf(modsTag.getCompound(key), PlatformHooks.bestEffortProvider());
         }
 
         return ItemStack.EMPTY;
@@ -291,7 +291,7 @@ public class ArmorModificationHelper {
         for (int i = 0; i < 9; i++) { // 9 слотов модов
             String key = MOD_SLOT_KEY_PREFIX + i;
             if (mods.contains(key)) {
-                ItemStack modStack = PlatformHooks.itemStackOf(mods.getCompound(key), null);
+                ItemStack modStack = PlatformHooks.itemStackOf(mods.getCompound(key), PlatformHooks.bestEffortProvider());
                 tableInventory.setItem(i, modStack);
             }
         }
@@ -316,7 +316,7 @@ public class ArmorModificationHelper {
                     modStack = pryMod(armorStack, i);
                 }
                 if (!modStack.isEmpty()) {
-                    modsCompound.put(MOD_SLOT_KEY_PREFIX + i, PlatformHooks.saveItemStack(modStack, new CompoundTag(), player != null ? player.level().registryAccess() : null));
+                    modsCompound.put(MOD_SLOT_KEY_PREFIX + i, PlatformHooks.saveItemStack(modStack, new CompoundTag(), player != null ? player.level().registryAccess() : PlatformHooks.bestEffortProvider()));
                 }
             }
             if (modsCompound.isEmpty()) {
@@ -454,7 +454,7 @@ public class ArmorModificationHelper {
         for (int i = 0; i < 9; i++) { // Проверяем все 9 слотов
             String key = MOD_SLOT_KEY_PREFIX + i;
             if (modsCompound.contains(key)) {
-                ItemStack modStack = PlatformHooks.itemStackOf(modsCompound.getCompound(key), null);
+                ItemStack modStack = PlatformHooks.itemStackOf(modsCompound.getCompound(key), PlatformHooks.bestEffortProvider());
                 if (!modStack.isEmpty()) {
                     modsList.add(modStack);
                 }

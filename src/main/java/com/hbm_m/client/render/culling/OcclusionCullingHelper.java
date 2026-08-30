@@ -7,6 +7,7 @@ import org.joml.Matrix4f;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 
+import com.hbm_m.client.render.ClientRenderFlags;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 
@@ -328,7 +329,7 @@ public final class OcclusionCullingHelper {
 
     private static boolean canReuseCrossFrame(CachedResult c, Level level, Vec3 cameraPos) {
         if (!c.visible) return false;
-        if (ModClothConfig.useInstancedBatching()) return false;
+        if (ClientRenderFlags.useInstancedBatching()) return false;
         if (level == null) return false;
         if (c.geometryStampAtCheck != clientGeometryStamp) return false;
         long nowTick = level.getGameTime();

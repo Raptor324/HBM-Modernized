@@ -356,7 +356,7 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
      * Делегирует в {@link PlatformHooks#safeItemSave} (наследники RBMK используют в своём NBT).
      */
     protected static CompoundTag safeItemSave(ItemStack stack) {
-        return PlatformHooks.safeItemSave(stack, null);
+        return PlatformHooks.safeItemSave(stack, PlatformHooks.bestEffortProvider());
     }
 
     @Override

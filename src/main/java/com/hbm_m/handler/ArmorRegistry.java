@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.armormod.util.ArmorModificationHelper;
+import com.hbm_m.compat.curios.CuriosCompat;
 import com.hbm_m.item.gasmask.IGasMask;
 
 import net.minecraft.world.entity.EquipmentSlot;
@@ -91,6 +92,13 @@ public final class ArmorRegistry {
         if (eq == null) {
             return false;
         }
-        return getProtectionFromItem(entity.getItemBySlot(eq), clazz);
+        if (getProtectionFromItem(entity.getItemBySlot(eq), clazz)) {
+            return true;
+        }
+        // Слот лица Curios (опционально): маска там защищает как надетая на шлем.
+        if (slot == 3) {
+            return getProtectionFromItem(CuriosCompat.getFaceMask(entity), clazz);
+        }
+        return false;
     }
 }

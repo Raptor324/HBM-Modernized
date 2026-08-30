@@ -1,6 +1,7 @@
 # Blender 5.2.0 LTS
 # www.blender.org
 o Pylon
+mtllib hbm_base.mtl
 v -0.187500 0.500000 0.500000
 v -0.187500 0.500000 0.187500
 v -0.187500 0.000000 0.500000

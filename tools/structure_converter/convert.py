@@ -307,7 +307,8 @@ HBM_MAP = {
     "deco_tungsten":          M("deco_tungsten", hbm_facing),
     "deco_red_copper":        M("deco_red_copper", hbm_facing),
     "deco_beryllium":         M("deco_beryllium", hbm_facing),
-    "deco_computer":          M("deco_computer", deco_rot),
+    "deco_computer":          M("puter", lambda m: {"facing": {0:"north",1:"south",2:"west",3:"east"}.get((m >> 2) & 3, "north")},
+                                "deco_computer дублирует puter (тот же OBJ); rot хранится в meta>>2"),
     "deco_titanium":          M("deco_titanium", hbm_facing),
     "deco_crt":               None,  # вариантный
     "deco_pipe":              None,  # вариантные, см. HBM_PIPES
@@ -759,7 +760,7 @@ SINGLES = [
 ]
 RUINS_WEIGHTS = {"A":10,"B":12,"C":12,"D":12,"E":12,"F":12,"G":12,"H":12,"I":12,"J":12}
 for letter, w in RUINS_WEIGHTS.items():
-    SINGLES.append(("ntm_ruins_" + letter.lower(), "ntmruins" + letter, "rainy", -1, "surface", w, True))
+    SINGLES.append(("ntm_ruins_" + letter.lower(), "ntm_ruins_" + letter.lower(), "rainy", -1, "surface", w, True))
 
 BIOME_TAGS = {
     "land": ["badlands","bamboo_jungle","beach","birch_forest","cherry_grove","dark_forest","desert",
@@ -870,7 +871,7 @@ SINGLES = [
 ]
 RUINS_WEIGHTS = {"A":10,"B":12,"C":12,"D":12,"E":12,"F":12,"G":12,"H":12,"I":12,"J":12}
 for letter, w in RUINS_WEIGHTS.items():
-    SINGLES.append(("ntm_ruins_" + letter.lower(), "ntmruins" + letter, "rainy", -1, "surface", w, True))
+    SINGLES.append(("ntm_ruins_" + letter.lower(), "ntm_ruins_" + letter.lower(), "rainy", -1, "surface", w, True))
 
 BIOME_TAGS = {
     "land": ["badlands","bamboo_jungle","beach","birch_forest","cherry_grove","dark_forest","desert",
@@ -1061,13 +1062,42 @@ def convert_structure(path, meteor_piece=None):
             **({"nbt": new_nbt} if new_nbt else {})
         })
 
-    return {
+    obj = {
         "DataVersion": DATA_VERSION,
         "size": size,
         "entities": [],
         "palette": new_palette,
         "blocks": new_blocks,
     }
+    fix_door_open_states(obj)
+    return obj
+
+# Двери: в 1.7.10 бит open хранится только в нижней половине; обе половины
+# должны иметь одинаковое open, иначе дверь спавнится "раскрытой наполовину".
+def fix_door_open_states(obj):
+    doors = {NS + ":metal_door", NS + ":door_bunker", NS + ":door_office"}
+    palette = obj["palette"]
+    by_pos = {tuple(b["pos"]): b for b in obj["blocks"]}
+    for b in obj["blocks"]:
+        entry = palette[b["state"]]
+        if entry["Name"] not in doors:
+            continue
+        props = entry.get("Properties", {})
+        if props.get("half") != "lower" or props.get("open") != "true":
+            continue
+        upper = by_pos.get((b["pos"][0], b["pos"][1] + 1, b["pos"][2]))
+        if upper is None or palette[upper["state"]]["Name"] != entry["Name"]:
+            continue
+        upper_entry = palette[upper["state"]]
+        upper_props = upper_entry.get("Properties", {})
+        if upper_props.get("open") == "true":
+            continue
+        new_entry = dict(upper_entry)
+        new_props = dict(upper_props)
+        new_props["open"] = "true"
+        new_entry["Properties"] = new_props
+        palette.append(new_entry)
+        upper["state"] = len(palette) - 1
 
 def write_json(path, obj):
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -1159,7 +1189,7 @@ def main():
                     "element_type": "minecraft:single_pool_element",
                     "projection": "rigid",
                     "location": NS + ":" + file,
-                    "processors": "hbm_m:foundation_processor" if conform else "minecraft:empty",
+                    "processors": "hbm_m:foundation_processor" if conform else "hbm_m:connection_fix",
                 },
             }],
         }
@@ -1193,7 +1223,7 @@ def main():
                       "element_type": "minecraft:single_pool_element",
                       "projection": "rigid",
                       "location": NS + ":" + loc,
-                      "processors": "minecraft:empty"}} for loc, w in elements]}
+                      "processors": "hbm_m:connection_fix"}} for loc, w in elements]}
             write_json(wg / "template_pool" / ("meteor_" + pool + ".json"), pj)
 
     # --- теги биомов ---

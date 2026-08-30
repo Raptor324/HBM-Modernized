@@ -1,51 +1,36 @@
 package com.hbm_m.client.render.implementations;
 
+import java.util.List;
+
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.decorations.SoyuzLauncherBlock;
+import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.SoyuzLauncherBlockEntity;
 import com.hbm_m.client.model.SoyuzLauncherBakedModel;
 import com.hbm_m.client.model.SoyuzRocketBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.MeshRenderCache;
-import com.hbm_m.client.render.SingleMeshVboRenderer;
+import com.hbm_m.client.render.machine.MachineRenderApi;
+import com.hbm_m.client.render.machine.MachineRenderers;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.platform.PlatformHooks;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * BER for the Soyuz launch tower: renders the 6 static OBJ parts (Table,
- * TowerBase, Tower, SupportBase, Support, Legs) via the VBO path (see
- * {@link SoyuzLauncherBakedModel} for why baked-quad world rendering is
- * skipped), plus:
- * <ul>
- *   <li>the mounted rocket ({@link SoyuzRocketBakedModel}'s "Rocket" part)
- *       while {@code hasRocket()} is true</li>
- *   <li>the Tower/Support "arm" pivot animation, matching legacy
- *       {@code SoyuzLauncherPronter.prontLauncher(rot)}'s
- *       {@code glTranslate -> glRotate -> glTranslate} dance</li>
- * </ul>
+ * Пусковая установка Союза на фабрике {@link MachineRenderers}: Table/TowerBase/
+ * SupportBase/Legs — статика; Tower/Support — анимированные створы arms (поворот
+ * на 45° при старте); ракета-превью — динамическая часть из injected-модели
+ * (видима только при hasRocket).
  */
+public final class SoyuzLauncherRenderer {
 
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
-public class SoyuzLauncherRenderer extends AbstractPartBasedRenderer<SoyuzLauncherBlockEntity, SoyuzLauncherBakedModel> {
-
-    private static final String CACHE_PREFIX = "soyuz_launcher";
     private static final ResourceLocation ROCKET_MODEL_ID =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_soyuz_rocket");
 
@@ -53,60 +38,25 @@ public class SoyuzLauncherRenderer extends AbstractPartBasedRenderer<SoyuzLaunch
     private static final int ARM_ANIM_TICKS = 20;
     private static final double ARM_OPEN_DEGREES = 45.0D;
 
-    public SoyuzLauncherRenderer(BlockEntityRendererProvider.Context ctx) {
+    public static void register() {
+        MachineRenderers.machine("soyuzlauncher", ModBlockEntities.SOYUZ_LAUNCHER_BE.get(),
+                SoyuzLauncherBlockEntity.class)
+            .part(SoyuzLauncherBakedModel.TABLE)
+            .part(SoyuzLauncherBakedModel.TOWER_BASE)
+            .part(SoyuzLauncherBakedModel.SUPPORT_BASE)
+            .part(SoyuzLauncherBakedModel.LEGS)
+            .part(SoyuzLauncherBakedModel.TOWER, SoyuzLauncherRenderer::animateTower)
+            .part(SoyuzLauncherBakedModel.SUPPORT, SoyuzLauncherRenderer::animateSupport)
+            .dynamicPart("Rocket", SoyuzLauncherRenderer::animateRocket,
+                    SoyuzLauncherRenderer::rocketQuads, be -> "rocket")
+            .facing(be -> be.getBlockState().getValue(SoyuzLauncherBlock.FACING))
+            .register();
     }
 
-    @Override
-    protected SoyuzLauncherBakedModel getModelType(BakedModel rawModel) {
-        return rawModel instanceof SoyuzLauncherBakedModel m ? m : null;
-    }
+    private SoyuzLauncherRenderer() {}
 
-    @Override
-    protected Direction getFacing(SoyuzLauncherBlockEntity be) {
-        return be.getBlockState().getValue(SoyuzLauncherBlock.FACING);
-    }
-
-    @Override
-    protected void renderParts(SoyuzLauncherBlockEntity be, SoyuzLauncherBakedModel model, LegacyAnimator animator,
-                                float partialTick, int packedLight, int packedOverlay,
-                                PoseStack poseStack, MultiBufferSource bufferSource) {
-        double rot = computeArmAngle(be, partialTick);
-
-        for (String partName : SoyuzLauncherBakedModel.ALL_PARTS) {
-            BakedModel part = model.getPart(partName);
-            if (part == null) continue;
-
-            SingleMeshVboRenderer renderer = MeshRenderCache.getOrCreateRenderer(CACHE_PREFIX, partName, part);
-            if (renderer == null) continue;
-
-            if (partName.equals(SoyuzLauncherBakedModel.TOWER) && rot != 0.0D) {
-                renderPivoted(renderer, poseStack, packedLight, be, bufferSource, 0, 5.5, 5.5, rot, true);
-            } else if (partName.equals(SoyuzLauncherBakedModel.SUPPORT) && rot != 0.0D) {
-                renderPivoted(renderer, poseStack, packedLight, be, bufferSource, 0, 5.5, -6.5, rot, false);
-            } else {
-                renderer.render(poseStack, packedLight, be.getBlockPos(), be, bufferSource);
-            }
-        }
-
-        if (be.hasRocket()) {
-            renderRocket(be, poseStack, packedLight, bufferSource);
-        }
-    }
-
-    /** Reproduces legacy {@code glTranslate(px,py,pz) -> glRotate(rot,axisX,0,0) -> glTranslate(-px,-py,-pz)}. */
-    private void renderPivoted(SingleMeshVboRenderer renderer, PoseStack poseStack, int packedLight,
-                                SoyuzLauncherBlockEntity be, MultiBufferSource bufferSource,
-                                double px, double py, double pz, double rot, boolean positiveX) {
-        poseStack.pushPose();
-        poseStack.translate(px, py, pz);
-        poseStack.mulPose((positiveX ? Axis.XP : Axis.XN).rotationDegrees((float) rot));
-        poseStack.translate(-px, -py, -pz);
-        renderer.render(poseStack, packedLight, be.getBlockPos(), be, bufferSource);
-        poseStack.popPose();
-    }
-
-    /** 0 = closed/gripping rocket, 45 = fully open. Mirrors legacy {@code RenderSoyuzLauncher}'s {@code rot} calc. */
-    private double computeArmAngle(SoyuzLauncherBlockEntity be, float partialTick) {
+    /** 0 = сомкнуты на ракете, 45 = полностью раскрыты. Вердикт легаси RenderSoyuzLauncher. */
+    private static double armAngle(SoyuzLauncherBlockEntity be, float partialTick) {
         double rot = be.hasRocket() ? 0.0D : ARM_OPEN_DEGREES;
         if (be.isStarting() && be.getCountdown() < ARM_ANIM_TICKS) {
             rot = (ARM_ANIM_TICKS - be.getCountdown() + partialTick) * ARM_OPEN_DEGREES / ARM_ANIM_TICKS;
@@ -114,20 +64,43 @@ public class SoyuzLauncherRenderer extends AbstractPartBasedRenderer<SoyuzLaunch
         return rot;
     }
 
-    private void renderRocket(SoyuzLauncherBlockEntity be, PoseStack poseStack, int packedLight, MultiBufferSource bufferSource) {
+    private static boolean animateTower(SoyuzLauncherBlockEntity be, float partialTick,
+                                        long gameTime, PoseStack pose) {
+        double rot = armAngle(be, partialTick);
+        if (rot == 0.0D) return true;
+        applyPivot(pose, 0, 5.5, 5.5, rot, true);
+        return true;
+    }
+
+    private static boolean animateSupport(SoyuzLauncherBlockEntity be, float partialTick,
+                                          long gameTime, PoseStack pose) {
+        double rot = armAngle(be, partialTick);
+        if (rot == 0.0D) return true;
+        applyPivot(pose, 0, 5.5, -6.5, rot, false);
+        return true;
+    }
+
+    /** Legacy: glTranslate(px,py,pz) → glRotate(rot,axisX,0,0) → glTranslate(-px,-py,-pz). */
+    private static void applyPivot(PoseStack pose, double px, double py, double pz, double rot, boolean positiveX) {
+        pose.translate(px, py, pz);
+        pose.mulPose((positiveX ? com.mojang.math.Axis.XP : com.mojang.math.Axis.XN).rotationDegrees((float) rot));
+        pose.translate(-px, -py, -pz);
+    }
+
+    private static boolean animateRocket(SoyuzLauncherBlockEntity be, float partialTick,
+                                         long gameTime, PoseStack pose) {
+        if (!be.hasRocket()) return false;
+        pose.translate(0.0, 5.0, 0.0);
+        return true;
+    }
+
+    private static List<net.minecraft.client.renderer.block.model.BakedQuad> rocketQuads(
+            SoyuzLauncherBlockEntity be) {
         BakedModel rocketModel = getRocketModel();
-        if (!(rocketModel instanceof SoyuzRocketBakedModel model)) return;
-
+        if (!(rocketModel instanceof SoyuzRocketBakedModel model)) return List.of();
         BakedModel part = model.getPart(SoyuzRocketBakedModel.ROCKET);
-        if (part == null) return;
-
-        SingleMeshVboRenderer renderer = MeshRenderCache.getOrCreateRenderer("soyuz_launcher_rocket", "Rocket", part);
-        if (renderer == null) return;
-
-        poseStack.pushPose();
-        poseStack.translate(0.0, 5.0, 0.0);
-        renderer.render(poseStack, packedLight, be.getBlockPos(), be, bufferSource);
-        poseStack.popPose();
+        if (part == null) return List.of();
+        return MeshRenderCache.getOrCompilePartGeometry("soyuzlauncher/rocket", part).solidQuads();
     }
 
     @Nullable

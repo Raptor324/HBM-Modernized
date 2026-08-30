@@ -1020,7 +1020,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.BLOCK_METEOR_COBBLE.get(), "Meteor Cobblestone");
         add(ModBlocks.BLOCK_SCRAP.get(), "Scrap Block");
         add(ModBlocks.BLOCK_ELECTRICAL_SCRAP.get(), "Electrical Scrap");
-        add(ModBlocks.DECO_COMPUTER.get(), "Computer");
         add(ModBlocks.DECO_TITANIUM.get(), "Titanium Decoration");
         add(ModBlocks.WOOD_STRUCTURE.get(), "Structural Wood");
         add(ModBlocks.STEEL_BEAM.get(), "Steel Beam");
@@ -2383,6 +2382,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("hazard.prot", "Provides protection against:");
         add("hazard.neverProtects", "Will never protect against:");
         add("tooltip.hbm_m.mask.noFilter", "No filter installed!");
+        add("curios.identifier.mask", "Mask");
         add("tooltip.hbm_m.mask.filter", "Installed filter:");
         add("tooltip.hbm_m.attachment.gasProtection", "Gas protection");
         add("tooltip.hbm_m.attachment.slotHelmet", "Attachable to helmets at the Armor Modification Table");
@@ -2592,9 +2592,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.modelUpdateDistance", "Distance for .obj model animated parts rendering");
         add("text.autoconfig.hbm_m.option.modelStaticRenderDistance", "Distance for .obj model static parts rendering");
         add("text.autoconfig.hbm_m.option.enableOcclusionCulling", "Enable model occlusion culling");
-        add("text.autoconfig.hbm_m.option.useInstancedStaticRendering", "Instanced batching for obj model parts");
-        add("text.autoconfig.hbm_m.option.useSlicedLight", "Sliced light (2×4×2 probes)");
-        add("text.autoconfig.hbm_m.option.useMultiDrawIndirect", "Multi-draw indirect (MDI)");
+        add("text.autoconfig.hbm_m.option.forceVanillaImmediatePath", "Force vanilla immediate path (fallback)");
 
         add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks", "VATS render distance (chunks)");
 
@@ -2644,9 +2642,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.modelUpdateDistance.@Tooltip", "Distance for .obj model animated parts rendering (in chunks)");
         add("text.autoconfig.hbm_m.option.modelStaticRenderDistance.@Tooltip", "Distance for .obj model static parts rendering (in chunks)");
         add("text.autoconfig.hbm_m.option.enableOcclusionCulling.@Tooltip", "Enable model occlusion culling (disable if your models are not rendering correctly)");
-        add("text.autoconfig.hbm_m.option.useInstancedStaticRendering.@Tooltip", "Use batch rendering for obj parts. This greatly improves rendering performance in shaderless mode. If you experience issues, disable it");
-        add("text.autoconfig.hbm_m.option.useSlicedLight.@Tooltip", "16 light probes instead of 8 corners — better on tall towers. Incompatible with MDI: parts fall back to separate instanced draws. Reload resources (F3+T) after changing.");
-        add("text.autoconfig.hbm_m.option.useMultiDrawIndirect.@Tooltip", "One glMultiDrawElementsIndirect per frame instead of many instanced draws (no shader pack). Helps with large fields of identical machines. Does not apply with sliced light or GPU bone skinning.");
+        add("text.autoconfig.hbm_m.option.forceVanillaImmediatePath.@Tooltip", "Render all OBJ machines through the vanilla immediate path (putBulkData) instead of the automatic VBO/instancing pipeline. Emergency fallback if machines render white/invisible or broken.");
 
         add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks.@Tooltip","Max distance for mob health highlighting. Higher values increase range but reduce performance.");
 
@@ -2758,8 +2754,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.missileTrackInterval.@Tooltip", "How often (in ticks) missile positions are synced to clients.");
         add("text.autoconfig.hbm_m.option.instanceVboOrphanBeforeUpload", "Instance VBO orphaning");
         add("text.autoconfig.hbm_m.option.instanceVboOrphanBeforeUpload.@Tooltip", "Orphan the instance VBO (glBufferData NULL) before upload to avoid driver sync stalls. Disable only if it causes issues.");
-        add("text.autoconfig.hbm_m.option.gpuBoneSkinning", "GPU bone skinning");
-        add("text.autoconfig.hbm_m.option.gpuBoneSkinning.@Tooltip", "Compute base×part matrices on the GPU for the advanced assembler instanced path (vanilla only; Iris/Oculus use a separate path).");
         add("text.autoconfig.hbm_m.option.mdiDebugLogDispatch", "MDI debug log dispatch");
         add("text.autoconfig.hbm_m.option.mdiDebugLogDispatch.@Tooltip", "Log one INFO line per MDI dispatch (sub-draw count, instances, atlas).");
         add("text.autoconfig.hbm_m.option.mdiVerboseSubdraws", "MDI verbose subdraws");

@@ -44,7 +44,11 @@ public class OverlayGasMask {
         }
 
         ItemStack head = player.getItemBySlot(EquipmentSlot.HEAD);
-        if (!(head.getItem() instanceof ArmorGasMaskItem mask)) {
+        // Маска-шлем на голове или маска в слоте лица Curios (опционально).
+        ItemStack maskStack = head.getItem() instanceof ArmorGasMaskItem
+                ? head
+                : com.hbm_m.client.compat.curios.CuriosClientCompat.getFaceMask(player);
+        if (!(maskStack.getItem() instanceof ArmorGasMaskItem mask)) {
             return;
         }
 
@@ -52,11 +56,11 @@ public class OverlayGasMask {
 
         // Без фильтра — базовая (наиболее плотная) текстура; с фильтром — стадия по износу.
         String path;
-        if (!IGasMask.hasFilter(head)) {
+        if (!IGasMask.hasFilter(maskStack)) {
             path = gasmaskBase ? BASE_GASMASK : BASE_GOGGLES;
         } else {
-            int max = head.getItem() instanceof ItemGasMaskFilter f ? f.maxFilterDamage : ItemGasMaskFilter.DEFAULT_MAX_DAMAGE;
-            int dmg = IGasMask.getFilterDamage(head);
+            int max = maskStack.getItem() instanceof ItemGasMaskFilter f ? f.maxFilterDamage : ItemGasMaskFilter.DEFAULT_MAX_DAMAGE;
+            int dmg = IGasMask.getFilterDamage(maskStack);
             int stage = Math.min((int) (dmg / (float) max * 6F), 5);
             path = String.format(mask.variant.overlayPattern, stage);
         }

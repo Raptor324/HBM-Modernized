@@ -243,13 +243,8 @@ final class VanillaInstancedBatchRenderer {
         }
         long partHash = System.identityHashCode(parent);
 
-        if (parent.useSlicedLight) {
-            LightSampleCache.getOrSample16(blockEntity, partHash, parent.objBbox, blockPosForSample,
-                    parent.tmpLocalPose, packedLight, parent.tmpCornerUV);
-        } else {
-            LightSampleCache.getOrSample8(blockEntity, partHash, parent.objBbox, blockPosForSample,
-                    parent.tmpLocalPose, packedLight, parent.tmpCornerUV);
-        }
+        LightSampleCache.getOrSample8(blockEntity, partHash, parent.objBbox, blockPosForSample,
+                parent.tmpLocalPose, packedLight, parent.tmpCornerUV);
 
         parent.memPutInstanceRecordAtBaseFloat(0);
         ((Buffer) parent.instanceBuffer).position(parent.instanceDataSize);
@@ -260,8 +255,7 @@ final class VanillaInstancedBatchRenderer {
 
     void renderSingleVanilla(PoseStack poseStack, int packedLight, BlockPos blockPos,
                              @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
-        ShaderInstance shader = parent.useSlicedLight ? ModShaders.getBlockLitInstancedSlicedShader()
-                                                     : ModShaders.getBlockLitInstancedShader();
+        ShaderInstance shader = ModShaders.getBlockLitInstancedShader();
         if (shader == null) {
             if (parent.quadsForIris != null && !parent.quadsForIris.isEmpty() && bufferSource != null) {
                 float fade = SingleMeshVboRenderer.getFadeAlpha();
@@ -325,7 +319,6 @@ final class VanillaInstancedBatchRenderer {
         MdiBatchCoordinator coord = MdiBatchCoordinator.active();
         if (coord != null
                 && !parent.storesPerInstancePartBone
-                && !parent.useSlicedLight
                 && parent.atlasVertexBytesRetained != null
                 && parent.atlasIndicesRetained != null
                 && parent.atlasIndexCountRetained > 0
@@ -340,8 +333,7 @@ final class VanillaInstancedBatchRenderer {
             }
         }
 
-        ShaderInstance shader = parent.useSlicedLight ? ModShaders.getBlockLitInstancedSlicedShader()
-                                                     : ModShaders.getBlockLitInstancedShader();
+        ShaderInstance shader = ModShaders.getBlockLitInstancedShader();
         if (shader == null) {
             if (!InstancedStaticPartRenderer.warnedInstancedShaderNullFlush) {
                 InstancedStaticPartRenderer.warnedInstancedShaderNullFlush = true;

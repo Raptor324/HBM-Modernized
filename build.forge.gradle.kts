@@ -99,6 +99,8 @@ repositories {
 	// Create compat (опционально): Create, Flywheel. См. com.hbm_m.compat.create.
 	maven("https://maven.createmod.net") { name = "Create" }
 	maven("https://maven.ithundxr.dev/mirror") { name = "Ithundxr Mirror" }
+	// Curios API (опционально): слот лица для противогазов. См. com.hbm_m.compat.curios.
+	maven("https://maven.theillusivec4.top/") { name = "Illusive Soul Works" }
 	flatDir { dirs(rootProject.file("libs")) }
 }
 
@@ -113,6 +115,10 @@ dependencies {
 
 	"modCompileOnly"("curse.maven:jei-238222:${prop("deps.jei")}")
 	"modRuntimeOnly"("curse.maven:jei-238222:${prop("deps.jei")}")
+
+	// Curios (опционально): API для компиляции, сам мод — в рантайм для тестов.
+	"modCompileOnly"("top.theillusivec4.curios:curios-forge:5.14.1+1.20.1:api")
+	"modRuntimeOnly"("top.theillusivec4.curios:curios-forge:5.14.1+1.20.1")
 
 	"modCompileOnly"("com.simibubi.create:create-1.20.1:${prop("deps.create")}:slim") {
 		isTransitive = false

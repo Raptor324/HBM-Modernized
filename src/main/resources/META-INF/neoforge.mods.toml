@@ -16,9 +16,13 @@ displayName="${mod_name}"
 displayURL="${homepage_url}"
 logoFile="icon.png"
 authors="${mod_authors}"
-# Mixin config registration (имя из gradle: mod.mixin_config)
-mixins=["${mixin_config}"]
 # MATCH_VERSION — красный крест на screen-подключении, если версии на client/server различаются.
 displayTest="MATCH_VERSION"
 description='''${mod_description}'''
 ${dependencies}
+
+# Mixin-конфиги: в NeoForge 1.21+ объявляются таблицей [[mixins]] (вне [[mods]]).
+# Старый синтаксис mixins=["..."] внутри [[mods]] молча игнорируется — миксины не грузятся.
+[[mixins]]
+config = "${mixin_config}"
+

@@ -221,4 +221,23 @@ public class ModArmorFSBPowered extends ModArmorFSB implements ITooltipProvider 
         return new EnergyCapabilityProvider(stack, modifiedCapacity, chargeRate, modifiedCapacity);
     }
     //?}
+
+    // Взаимная блокировка с маской в слоте лица Curios: шлем силовой брони нельзя
+    // надеть, пока там стоит противогаз (и наоборот — см. GasMaskCurio/ArmorGasMaskItem).
+    //? if < 1.21.1 {
+    @Override
+    public boolean canEquip(ItemStack stack, EquipmentSlot slot, Entity entity) {
+        return super.canEquip(stack, slot, entity)
+                && (slot != EquipmentSlot.HEAD
+                    || !(entity instanceof LivingEntity living)
+                    || com.hbm_m.compat.curios.CuriosCompat.getFaceMask(living).isEmpty());
+    }
+    //?} else {
+    /*@Override
+    public boolean canEquip(ItemStack stack, EquipmentSlot slot, LivingEntity entity) {
+        return super.canEquip(stack, slot, entity)
+                && (slot != EquipmentSlot.HEAD
+                    || com.hbm_m.compat.curios.CuriosCompat.getFaceMask(entity).isEmpty());
+    }
+     *///?}
 }

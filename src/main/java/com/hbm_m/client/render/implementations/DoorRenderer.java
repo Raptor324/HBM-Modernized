@@ -25,10 +25,10 @@ import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.ObjModelVboBuilder;
 import com.hbm_m.client.render.RenderDistanceHelper;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
+import com.hbm_m.client.render.ClientRenderFlags;
 import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
-import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.platform.PlatformHooks;
@@ -390,7 +390,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
             String[] partNames = model.getPartNames();
             String staticFramePart = detectFramePart(partNames);
             
-            boolean useBatchingNow = ModClothConfig.useInstancedBatching();
+            boolean useBatchingNow = ClientRenderFlags.useInstancedBatching();
             boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
             boolean useIrisBatch = ShaderCompatibilityDetector.isExternalShaderActive() && (!useBatchingNow || shadowPass);
 
@@ -423,7 +423,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
 
             if (useInstancedFrame) {
                 poseStack.pushPose();
-                boolean useBatching = ModClothConfig.useInstancedBatching();
+                boolean useBatching = ClientRenderFlags.useInstancedBatching();
                 boolean inShadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
                 if (useBatching && !inShadowPass) {
                     frameRenderer.addInstance(poseStack, packedLight, blockPos, be, bufferSource);
@@ -476,7 +476,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
             if (partModel != null && partHasGeometry(partModel, partName, geomCacheKey)) {
                 String partCacheKey = getPartCacheKey(doorType, partName, selection);
 
-                boolean useBatching = ModClothConfig.useInstancedBatching();
+                boolean useBatching = ClientRenderFlags.useInstancedBatching();
                 boolean inShadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
                 if (useBatching && !inShadowPass) {
                     if (!partInitializationFlags.getOrDefault(partCacheKey, false)) {

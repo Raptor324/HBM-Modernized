@@ -64,14 +64,14 @@ public final class ArmorUtil {
         if (damage <= 0) {
             return;
         }
-        ItemStack mask = GasMaskUtil.resolveMask(entity.getItemBySlot(EquipmentSlot.HEAD));
+        ItemStack mask = GasMaskUtil.resolveWornMask(entity);
         if (!mask.isEmpty() && mask.getItem() instanceof IGasMask) {
             IGasMask.damageFilter(mask, damage);
         }
     }
 
-    /** Есть ли на сущности маска (надетая или прицепленная к шлему). */
+    /** Есть ли на сущности маска (надетая, прицепленная к шлему или в слоте лица Curios). */
     public static boolean isWearingMask(LivingEntity entity) {
-        return !GasMaskUtil.resolveMask(entity.getItemBySlot(EquipmentSlot.HEAD)).isEmpty();
+        return !GasMaskUtil.resolveWornMask(entity).isEmpty();
     }
 }

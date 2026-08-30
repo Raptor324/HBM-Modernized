@@ -22,6 +22,7 @@ import com.hbm_m.block.bomb.NukeFatManBlock;
 import com.hbm_m.block.decorations.CageLampBlock;
 import com.hbm_m.block.decorations.CrateCanBlock;
 import com.hbm_m.block.decorations.CrtBlock;
+import com.hbm_m.block.decorations.DecorShapeBlock;
 import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.block.decorations.GrateBlock;
 import com.hbm_m.block.decorations.KeyholeBlock;
@@ -174,6 +175,7 @@ import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.material.MapColor;
+import net.minecraft.world.phys.shapes.Shapes;
 import dev.architectury.registry.registries.DeferredRegister;
 import net.minecraft.core.registries.Registries;
 import dev.architectury.registry.registries.RegistrySupplier;
@@ -1076,8 +1078,6 @@ public class ModBlocks {
             () -> new Block(STRUCTURE_DECOR_METAL));
     public static final RegistrySupplier<Block> BLOCK_STARMETAL = getIngotBlock(ModIngots.STARMETAL);
 
-    public static final RegistrySupplier<Block> DECO_COMPUTER = registerBlock("deco_computer",
-            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(2.0F, 6.0F)));
     public static final RegistrySupplier<Block> DECO_TITANIUM = registerBlock("deco_titanium",
             () -> new Block(STRUCTURE_DECOR_METAL));
     public static final RegistrySupplier<Block> WOOD_STRUCTURE = registerBlock("wood_structure",
@@ -1108,12 +1108,12 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> POLE_TOP = registerBlock("pole_top",
             () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(3.0F, 8.0F)));
     public static final RegistrySupplier<Block> POLE_SATELLITE_RECEIVER = registerBlock("pole_satellite_receiver",
-            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(3.0F, 8.0F)));
+            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(3.0F, 8.0F).noOcclusion()));
 
     /** Порт {@code deco_loot} (BlockLoot из 1.7.10) — невидимая груда лута: хитбокс-«коврик»,
      *  предметы лежат внутри (BER), при ломании/ПКМ выпадают. */
     public static final RegistrySupplier<Block> DECO_LOOT = registerBlock("deco_loot",
-            () -> new com.hbm_m.block.decorations.DecoLootBlock(BlockProps.copy(Blocks.GRAVEL).strength(0.0F, 0.6F)));
+            () -> new com.hbm_m.block.decorations.DecoLootBlock(BlockProps.copy(Blocks.GRAVEL).strength(0.0F, 0.6F).noOcclusion()));
 
     private static RegistrySupplier<Block> pipePillar(String name) {
         return registerBlock(name, () -> new RotatedPillarBlock(STRUCTURE_DECOR_METAL));
@@ -1167,11 +1167,13 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> REBAR = registerBlock("rebar",
             () -> new CrtBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(3F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> STEEL_POLE = registerBlock("steel_pole",
-            () -> new CrtBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(2.5F, 6.0F).noOcclusion()));
+            () -> new DecorShapeBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(2.5F, 6.0F).noOcclusion(),
+                    Shapes.box(0.125, 0, 0.125, 0.875, 1.0, 0.875), false, true));
     public static final RegistrySupplier<Block> ANTENNA_TOP = registerBlock("antenna_top",
             () -> new CrtBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(2.5F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> PUTER = registerBlock("puter",
-            () -> new CrtBlock(BlockProps.copy(Blocks.STONE).strength(1F, 6.0F).noOcclusion()));
+            () -> new DecorShapeBlock(BlockProps.copy(Blocks.STONE).strength(1F, 6.0F).noOcclusion(),
+                    Shapes.box(0.125, 0, 0.0, 0.875, 0.875, 1.0), true, true));
     public static final RegistrySupplier<Block> DECO_STEEL_SCAFFOLD = registerBlock("deco_steel_scaffold",
             () -> new CrtBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(2.5F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> STEEL_WALL = registerBlock("steel_wall",
@@ -1217,7 +1219,8 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> CRATE_CONSERVE = registerBlock("crate_conserve",
             () -> new CrtBlock(BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> TAPE_RECORDER = registerBlock("tape_recorder",
-            () -> new CrtBlock(BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+            () -> new DecorShapeBlock(BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion(),
+                    Shapes.box(0.0, 0, 0.0, 1.0, 1.0, 0.875), true, true));
 
     public static final RegistrySupplier<Block> BARREL_LOX = registerBlock("barrel_lox",
             () -> new CrtBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
@@ -1291,7 +1294,8 @@ public class ModBlocks {
             () -> new BarbedWireRadBlock(BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
 
     public static final RegistrySupplier<Block> TOASTER = registerBlock("toaster",
-            () -> new CrtBlock(BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+            () -> new DecorShapeBlock(BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion(),
+                    Shapes.box(0.25, 0, 0.375, 0.75, 0.325, 0.625), true, true));
     public static final RegistrySupplier<Block> CRT_BSOD = registerBlock("crt_bsod",
             () -> new CrtBlock(BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> CRT_CLEAN = registerBlock("crt_clean",
@@ -2454,8 +2458,9 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> DYNAMITE = registerBlock("dynamite", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FACTORY_ADVANCED_HULL = registerBlock("factory_advanced_hull", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FACTORY_TITANIUM_HULL = registerBlock("factory_titanium_hull", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> FENCE_METAL = registerBlock("fence_metal", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> FENCE_METAL_POST = registerBlock("fence_metal_post", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> FENCE_METAL = registerBlock("fence_metal", () -> new net.minecraft.world.level.block.FenceBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F)));
+    public static final RegistrySupplier<Block> FENCE_METAL_POST = registerBlock("fence_metal_post", () -> new DecorShapeBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F),
+            Shapes.box(0.375, 0, 0.375, 0.625, 1.0, 0.625), false, false));
     public static final RegistrySupplier<Block> FIELD_DISTURBER = registerBlock("field_disturber", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FIRE_DIGAMMA = registerBlock("fire_digamma", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FIREWORKS = registerBlock("fireworks", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -2773,18 +2778,19 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> STALACTITE_SULFUR = registerBlock("stalactite_sulfur", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> STALAGMITE_ASBESTOS = registerBlock("stalagmite_asbestos", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> STALAGMITE_SULFUR = registerBlock("stalagmite_sulfur", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> STEEL_ROOF = registerBlock("steel_roof", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> STEEL_ROOF = registerBlock("steel_roof", () -> new DecorShapeBlock(BlockProps.copy(Blocks.STONE).noOcclusion(),
+            Shapes.box(0, 0, 0, 1, 0.0625, 1), false, false));
     public static final RegistrySupplier<Block> STEEL_SCAFFOLD = registerBlock("steel_scaffold", () -> new SteelScaffoldBlock(BlockProps.copy(Blocks.STONE).strength(3.0F, 8.0F).noOcclusion()));
     public static final RegistrySupplier<Block> STONE_CRACKED = registerBlock("stone_cracked", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> STONE_DEPTH = registerBlock("stone_depth", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> STONE_DEPTH_NETHER = registerBlock("stone_depth_nether", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> STONE_GNEISS = registerBlock("stone_gneiss", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    /** Порт {@code BlockKeyhole} (1.7.10) — скважина-ключ, маскируется под камень. */
+    /** Порт {@code BlockKeyhole} (1.7.10) — скважина-ключ, маскируется под камень, ведёт в красную комнату. */
     public static final RegistrySupplier<Block> STONE_KEYHOLE = registerBlock("stone_keyhole",
-            () -> new KeyholeBlock(BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F)));
-    /** Порт {@code BlockRedBrickKeyhole} (1.7.10) — скважина-ключ в красном кирпиче. */
+            () -> new KeyholeBlock(BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F), false));
+    /** Порт {@code BlockRedBrickKeyhole} (1.7.10) — скважина-ключ в красном кирпиче, ведёт в чёрную комнату. */
     public static final RegistrySupplier<Block> STONE_KEYHOLE_META = registerBlock("stone_keyhole_meta",
-            () -> new KeyholeBlock(BlockProps.copy(Blocks.STONE).strength(3.0F, 9.0F)));
+            () -> new KeyholeBlock(BlockProps.copy(Blocks.STONE).strength(3.0F, 10_000.0F), true));
     public static final RegistrySupplier<Block> STONE_POROUS = registerBlock("stone_porous", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> STONE_RESOURCE_ASBESTOS = registerBlock("stone_resource_asbestos", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> STONE_RESOURCE_BAUXITE = registerBlock("stone_resource_bauxite", () -> new Block(BlockProps.copy(Blocks.STONE)));

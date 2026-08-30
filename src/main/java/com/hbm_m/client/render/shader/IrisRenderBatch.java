@@ -107,8 +107,6 @@ public final class IrisRenderBatch implements AutoCloseable {
     private final short[] cornerShort16 = new short[16];
     /** Scratch float view of the quantized corner UV2 (0..240). */
     private final float[] cornerFloat16 = new float[16];
-    /** Quantized 16-probe (32 floats) samples for 2×4×2 sliced + Iris per-vertex path. */
-    private final float[] quantProbe32 = new float[32];
 
     /**
      * Per-instance state caches - let us elide redundant GL calls when consecutive
@@ -675,95 +673,10 @@ public final class IrisRenderBatch implements AutoCloseable {
     }
 
     /**
-     * Per-vertex path for tall meshes that use a 2×4×2 world probe lattice
-     * ({@link com.hbm_m.client.render.LightSampleCache#getOrSample16} → {@code float[32]}),
-     * matching the vanilla VBO / instanced-sliced path under {@code USE_SLICED_LIGHT}.
-     * <p>
-     * When the mesh has no {@link IrisCompanionMesh#supportsSlicedPerVertexLightmap() sliced
-     * weights}, fall back to {@link #drawCompanionWithPerVertexLight} (8 corners) or
-     * {@link #drawCompanion}.
+     * Per-vertex path for tall meshes that use a 2×4×2 world probe lattice.
+     * REMOVED together with the sliced-light system: the mesh per-vertex lightmap
+     * is now 8-corner trilinear only (see {@link #drawCompanionWithPerVertexLight}).
      */
-    public void drawCompanionWithSlicedPerVertexLight(IrisCompanionMesh companion,
-                                                      Matrix4f modelView,
-                                                      float[] probeUV32,
-                                                      int packedLightFallback) {
-        if (!isOuter || shader == null) return;
-        if (companion == null || !companion.isBuilt()) return;
-        int targetVao = companion.getVaoId();
-        int targetIndexCount = companion.getIndexCount();
-        if (targetVao <= 0 || targetIndexCount <= 0) return;
-
-        if (!companion.supportsSlicedPerVertexLightmap() || probeUV32 == null || probeUV32.length < 32) {
-            // Do not map the first 16 floats of a 2×4×2 lattice onto 8-corner weights — layouts differ.
-            drawCompanion(companion, modelView, packedLightFallback);
-            return;
-        }
-
-        if (isShadowPass) {
-            drawCompanion(companion, modelView, packedLightFallback);
-            return;
-        }
-
-        if (isPersistent) {
-            IrisExtendedShaderAccess.setCurrentRenderedBlockEntity(0);
-        }
-
-        modelView.get(mvFloats);
-
-        bindCompanionVao(companion, targetVao);
-
-        float[] mvSrc = mvFloats;
-
-        if (matrixLocs.modelView() >= 0) {
-            GL20.glUniformMatrix4fv(matrixLocs.modelView(), false, mvSrc);
-        }
-
-        boolean haveInverse = false;
-        if (matrixLocs.modelViewInverse() >= 0) {
-            mvInverseTmp.set(mvSrc).invert();
-            mvInverseTmp.get(mvInverseFloats);
-            GL20.glUniformMatrix4fv(matrixLocs.modelViewInverse(), false, mvInverseFloats);
-            haveInverse = true;
-        }
-        if (matrixLocs.normalMat() >= 0) {
-            if (haveInverse) {
-                normalTmp.set(mvInverseTmp).transpose();
-            } else {
-                normalTmp.set(mvSrc[0], mvSrc[1], mvSrc[2],
-                              mvSrc[4], mvSrc[5], mvSrc[6],
-                              mvSrc[8], mvSrc[9], mvSrc[10])
-                         .invert().transpose();
-            }
-            normalTmp.get(normalMatFloats);
-            GL20.glUniformMatrix3fv(matrixLocs.normalMat(), false, normalMatFloats);
-        }
-
-        long key = 1469598103934665603L;
-        for (int k = 0; k < 32; k++) {
-            int q = Math.round(probeUV32[k]);
-            if (q < 0) q = 0;
-            else if (q > 240) q = 240;
-            quantProbe32[k] = (float) q;
-            key ^= (q & 0xFFFF);
-            key *= 1099511628211L;
-        }
-
-        companion.ensureLightmapCapacity(32);
-        long alloc = companion.allocLightmapSlot(key);
-        int cachedSlot = (int) (alloc & 0xFFFF_FFFFL);
-        boolean reused = (alloc >>> 32) != 0L;
-        if (!reused) {
-            companion.writeInstanceLightmap(cachedSlot, quantProbe32);
-        }
-        companion.finishLightmapWrites();
-        companion.activatePerVertexLightmap();
-        companion.bindLightmapForInstance(cachedSlot);
-        lastBlockU = Integer.MIN_VALUE;
-        lastSkyV = Integer.MIN_VALUE;
-
-        GL11.glDrawElements(GL11.GL_TRIANGLES, targetIndexCount, GL11.GL_UNSIGNED_INT, 0);
-        releaseCompanionVaoAfterDraw(companion);
-    }
 
     @Override
     public void close() {
