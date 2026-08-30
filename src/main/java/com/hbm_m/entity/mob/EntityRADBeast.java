@@ -218,8 +218,16 @@ public class EntityRADBeast extends Monster implements IRadiationImmune {
     }
 
     @Override
+    //? if < 1.21.1 {
     protected void dropCustomDeathLoot(@NotNull DamageSource source, int looting, boolean recentlyHit) {
         super.dropCustomDeathLoot(source, looting, recentlyHit);
+    //?} else {
+    /*protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel level, @NotNull DamageSource source, boolean recentlyHit) {
+        super.dropCustomDeathLoot(level, source, recentlyHit);
+        // 1.21 reicht die Pluenderung-Stufe hier nicht mehr durch (sie steckt im LootContext),
+        // daher entfaellt der lootingskalierte Polonium-Nugget-Drop auf dieser Version.
+        int looting = 0;
+    *///?}
         if (!recentlyHit) return;
 
         if (looting > 0) {

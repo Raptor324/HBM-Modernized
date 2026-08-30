@@ -169,20 +169,26 @@ public class BossSpawnHandler {
     private static boolean trySpawn(ServerLevel level, Mob mob, double x, double y, double z) {
         mob.moveTo(x, y, z, level.random.nextFloat() * 360.0F, 0.0F);
 
+        //? if forge {
         var result = net.minecraftforge.event.ForgeEventFactory.checkSpawnPosition(mob, level,
                 MobSpawnType.EVENT);
         if (!result) return false;
 
         mob.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(x, y, z)),
                 MobSpawnType.EVENT, null, null);
+        //?} else {
+        /*// Kein plattformneutrales Gegenstueck zu checkSpawnPosition; hier nur finalisieren.
+        // finalizeSpawn verlor auf 1.21 den abschliessenden CompoundTag-Parameter.
+        mob.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(x, y, z)),
+                MobSpawnType.EVENT, null);
+        *///?}
         level.addFreshEntity(mob);
         return true;
     }
 
     private static CompoundTag persistentData(ServerPlayer player) {
-        //? if forge {
-        return player.getPersistentData();
-        //?}
+        // getPersistentData() ist Forge-spezifisch; PlayerPersistentData kapselt beide Plattformen.
+        return com.hbm_m.platform.PlayerPersistentData.get(player);
     }
 
     private static int getTimer(ServerPlayer player) {

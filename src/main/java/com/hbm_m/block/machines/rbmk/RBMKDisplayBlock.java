@@ -38,24 +38,43 @@ public class RBMKDisplayBlock extends RBMKMiniPanelBlock {
                 (lvl, pos, st, be) -> { if (be instanceof RBMKDisplayBlockEntity d) d.tickPanel(lvl, pos); });
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                   Player player, InteractionHand hand, BlockHitResult hit) {
+        return handleUse(level, pos, player, hand)
+                ? InteractionResult.sidedSuccess(level.isClientSide)
+                : InteractionResult.PASS;
+    }
+    //?} else {
+    /*// 1.21 hat use() durch useItemOn() mit eigenem Ergebnistyp ersetzt.
+    @Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level,
+                                                                 BlockPos pos, Player player, InteractionHand hand,
+                                                                 BlockHitResult hit) {
+        return handleUse(level, pos, player, hand)
+                ? net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide)
+                : net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+    }
+    *///?}
+
+    /** Gemeinsame Interaktionslogik beider Versionen; true = behandelt. */
+    private boolean handleUse(Level level, BlockPos pos, Player player, InteractionHand hand) {
         ItemStack held = player.getItemInHand(hand);
 
         // RBMKDisplay.onScrew - same quarter-turn as the console.
         if (held.getItem() instanceof com.hbm_m.item.tools_and_armor.ScrewdriverItem
                 && level.getBlockEntity(pos) instanceof RBMKDisplayBlockEntity rotatable) {
             if (!level.isClientSide) rotatable.rotate();
-            return InteractionResult.sidedSuccess(level.isClientSide);
+            return true;
         }
 
         if (held.getItem() instanceof RBMKToolItem
                 && level.getBlockEntity(pos) instanceof RBMKDisplayBlockEntity display) {
             RBMKToolItem.linkDisplay(held, level, display, player);
-            return InteractionResult.sidedSuccess(level.isClientSide);
+            return true;
         }
-        return InteractionResult.PASS;
+        return false;
     }
 
     //? if >1.20.1 {
