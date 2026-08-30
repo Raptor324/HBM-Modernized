@@ -125,9 +125,9 @@ public class RBMKDisplayRenderer extends RBMKPanelRenderer<RBMKDisplayBlockEntit
         TextureAtlasSprite s = white();
         float u = (s.getU0() + s.getU1()) / 2f;
         float v = (s.getV0() + s.getV1()) / 2f;
-        vc.vertex(m, x0, y0, z0).color(r, g, b, 1f).uv(u, v).overlayCoords(overlay).uv2(FULLBRIGHT).normal(1, 0, 0).endVertex();
-        vc.vertex(m, x1, y1, z1).color(r, g, b, 1f).uv(u, v).overlayCoords(overlay).uv2(FULLBRIGHT).normal(1, 0, 0).endVertex();
-        vc.vertex(m, x2, y2, z2).color(r, g, b, 1f).uv(u, v).overlayCoords(overlay).uv2(FULLBRIGHT).normal(1, 0, 0).endVertex();
-        vc.vertex(m, x3, y3, z3).color(r, g, b, 1f).uv(u, v).overlayCoords(overlay).uv2(FULLBRIGHT).normal(1, 0, 0).endVertex();
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x0, y0, z0, (int)(r * 255f), (int)(g * 255f), (int)(b * 255f), (int)(1f * 255f), u, v, overlay, FULLBRIGHT, 1, 0, 0);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x1, y1, z1, (int)(r * 255f), (int)(g * 255f), (int)(b * 255f), (int)(1f * 255f), u, v, overlay, FULLBRIGHT, 1, 0, 0);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x2, y2, z2, (int)(r * 255f), (int)(g * 255f), (int)(b * 255f), (int)(1f * 255f), u, v, overlay, FULLBRIGHT, 1, 0, 0);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x3, y3, z3, (int)(r * 255f), (int)(g * 255f), (int)(b * 255f), (int)(1f * 255f), u, v, overlay, FULLBRIGHT, 1, 0, 0);
     }
 }

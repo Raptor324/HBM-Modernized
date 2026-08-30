@@ -90,12 +90,21 @@ public class EntityUFO extends Mob implements Enemy, IRadiationImmune {
                 .add(Attributes.MOVEMENT_SPEED, 1.0D);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(BEAM, false);
         this.entityData.define(WAYPOINT, BlockPos.ZERO);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(BEAM, false);
+        builder.define(WAYPOINT, BlockPos.ZERO);
+    }
+    *///?}
 
     public boolean getBeam()             { return this.entityData.get(BEAM); }
     public void setBeam(boolean beam)    { this.entityData.set(BEAM, beam); }

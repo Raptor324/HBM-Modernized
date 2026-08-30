@@ -104,10 +104,10 @@ public abstract class RBMKPanelRenderer<T extends RBMKPanelDeviceBlockEntity>
         float au1 = sprite.getU0() + u1 * (sprite.getU1() - sprite.getU0());
         float av0 = sprite.getV0() + v0 * (sprite.getV1() - sprite.getV0());
         float av1 = sprite.getV0() + v1 * (sprite.getV1() - sprite.getV0());
-        vc.vertex(m, x, y0, z0).color(r, g, b, 1f).uv(au0, av1).overlayCoords(overlay).uv2(light).normal(1, 0, 0).endVertex();
-        vc.vertex(m, x, y1, z0).color(r, g, b, 1f).uv(au0, av0).overlayCoords(overlay).uv2(light).normal(1, 0, 0).endVertex();
-        vc.vertex(m, x, y1, z1).color(r, g, b, 1f).uv(au1, av0).overlayCoords(overlay).uv2(light).normal(1, 0, 0).endVertex();
-        vc.vertex(m, x, y0, z1).color(r, g, b, 1f).uv(au1, av1).overlayCoords(overlay).uv2(light).normal(1, 0, 0).endVertex();
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x, y0, z0, (int)(r * 255f), (int)(g * 255f), (int)(b * 255f), (int)(1f * 255f), au0, av1, overlay, light, 1, 0, 0);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x, y1, z0, (int)(r * 255f), (int)(g * 255f), (int)(b * 255f), (int)(1f * 255f), au0, av0, overlay, light, 1, 0, 0);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x, y1, z1, (int)(r * 255f), (int)(g * 255f), (int)(b * 255f), (int)(1f * 255f), au1, av0, overlay, light, 1, 0, 0);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x, y0, z1, (int)(r * 255f), (int)(g * 255f), (int)(b * 255f), (int)(1f * 255f), au1, av1, overlay, light, 1, 0, 0);
     }
 
     /** One line segment, replacing the original's {@code GL_LINES} tessellator batch. */
@@ -116,8 +116,8 @@ public abstract class RBMKPanelRenderer<T extends RBMKPanelDeviceBlockEntity>
                                 float r, float g, float b) {
         VertexConsumer vc = buf.getBuffer(RenderType.lines());
         var pose = ps.last();
-        vc.vertex(pose.pose(), x0, y0, z0).color(r, g, b, 1f).normal(pose.normal(), 1, 0, 0).endVertex();
-        vc.vertex(pose.pose(), x1, y1, z1).color(r, g, b, 1f).normal(pose.normal(), 1, 0, 0).endVertex();
+        com.hbm_m.platform.RenderHooks.vertexLine(vc, pose, x0, y0, z0, (int)(r * 255f), (int)(g * 255f), (int)(b * 255f), (int)(1f * 255f), 1, 0, 0);
+        com.hbm_m.platform.RenderHooks.vertexLine(vc, pose, x1, y1, z1, (int)(r * 255f), (int)(g * 255f), (int)(b * 255f), (int)(1f * 255f), 1, 0, 0);
     }
 
     /**

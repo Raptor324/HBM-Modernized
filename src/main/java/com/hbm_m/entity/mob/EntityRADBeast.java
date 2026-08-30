@@ -79,11 +79,19 @@ public class EntityRADBeast extends Monster implements IRadiationImmune {
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(VICTIM_ID, 0);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(VICTIM_ID, 0);
+    }
+    *///?}
 
     /** {@code makeLeader}: triple health and a radiation coin that always drops. */
     public EntityRADBeast makeLeader() {
