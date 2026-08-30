@@ -210,17 +210,17 @@ public class ModCreativeTabs {
     /**
      * Временная вкладка для новых, ещё не отсортированных по основным вкладкам предметов/блоков.
      */
-//     public static final RegistrySupplier<CreativeModeTab> NTM_DEV_TAB = CREATIVE_MODE_TABS.register("ntm_dev_tab",
+     public static final RegistrySupplier<CreativeModeTab> NTM_DEV_TAB = CREATIVE_MODE_TABS.register("ntm_dev_tab",
 
-//             () -> tabBuilderAfter("ntm_consumables_tab", 11)
+             () -> tabBuilderAfter("ntm_consumables_tab", 11)
 
-//                     .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_dev_tab"))
+                     .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_dev_tab"))
 
-//                     .icon(() -> new ItemStack(ModBlocks.BROADCASTER.get()))
+                     .icon(() -> new ItemStack(ModBlocks.BROADCASTER.get()))
 
-//                     .displayItems((params, output) -> CreativeModeTabEventHandler.populateDevItemsTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
+                     .displayItems((params, output) -> CreativeModeTabEventHandler.populateDevItemsTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
 
-//                     .build());
+                     .build());
 
 
 

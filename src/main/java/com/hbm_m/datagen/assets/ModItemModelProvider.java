@@ -918,8 +918,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.COMBINATION_OVEN);
         blockItemFromBlockModelMachine(ModBlocks.COMBUSTION_ENGINE);
         blockItemFromBlockModelMachine(ModBlocks.COMPRESSOR);
-        withExistingParent(ModBlocks.MACHINE_COMPRESSOR_COMPACT.getId().getPath(),
-                modLoc("block/" + ModBlocks.MACHINE_COMPRESSOR_COMPACT.getId().getPath()));
         blockItemFromBlockModelMachine(ModBlocks.CONDENSER_POWERED);
         blockItemFromBlockModelMachine(ModBlocks.CONVEYOR_PRESS);
         blockItemFromBlockModelMachine(ModBlocks.COUPLER);

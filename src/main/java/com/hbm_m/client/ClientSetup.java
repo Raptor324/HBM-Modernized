@@ -457,7 +457,6 @@ public class ClientSetup {
         MenuRegistry.registerScreenFactory(ModMenuTypes.ARMOR_TABLE_MENU.get(), GUIArmorTable::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_ASSEMBLER_MENU.get(), GUIMachineAssembler::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), GUIMachineAdvancedAssembler::new);
-        MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_PRECASS_MENU.get(), com.hbm_m.inventory.gui.GUIMachinePrecAss::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_DIFURNACE_RTG_MENU.get(), com.hbm_m.inventory.gui.GUIMachineDifurnaceRtg::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_BATTERY_MENU.get(), GUIMachineBattery::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.BATTERY_SOCKET_MENU.get(), GUIBatterySocket::new);
@@ -493,7 +492,6 @@ public class ClientSetup {
         MenuRegistry.registerScreenFactory(ModMenuTypes.BAT9000_MENU.get(), com.hbm_m.inventory.gui.GUIBat9000::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.BOOK_MENU.get(), com.hbm_m.inventory.gui.GUIBook::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.ORBUS_MENU.get(), com.hbm_m.inventory.gui.GUIFluidTank::new);
-        MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_RTG_MENU.get(), com.hbm_m.inventory.gui.GUIMachineRtg::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_WASTE_DRUM_MENU.get(), com.hbm_m.inventory.gui.GUIMachineWasteDrum::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.BARREL_IRON_MENU.get(), com.hbm_m.inventory.gui.GUIBarrelIron::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.BARREL_STEEL_MENU.get(), com.hbm_m.inventory.gui.GUIBarrelSteel::new);

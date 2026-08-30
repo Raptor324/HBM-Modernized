@@ -2610,9 +2610,6 @@ public class ModBlocks {
     /** Rein dekorativ im Original (leerer TE-Stub, keine Fluid-Logik) - siehe {@link #MACHINE_UF6_TANK}. */
     public static final RegistrySupplier<Block> MACHINE_PUF6_TANK = registerBlock("machine_puf6_tank",
             () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).noOcclusion()));
-    /** Genuinely missing from the port until now - no RTG (radioisotope thermoelectric generator) existed anywhere. */
-    public static final RegistrySupplier<Block> MACHINE_RTG = registerBlock("machine_rtg_grey",
-            () -> new com.hbm_m.block.machines.MachineRtgBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL).noOcclusion()));
     /** Genuinely missing from the port until now - machine_difurnace_off/_extension already exist under
      * blast_furnace/blast_furnace_extension (renamed IDs); only the RTG-heated variant was a real gap. */
     public static final RegistrySupplier<Block> MACHINE_DIFURNACE_RTG = registerBlock("machine_difurnace_rtg_off",
@@ -2623,18 +2620,12 @@ public class ModBlocks {
     /** Genuinely missing from the port until now - purely decorative marker, no TileEntity (matches original). */
     public static final RegistrySupplier<Block> TELEANCHOR = registerBlock("teleanchor",
             () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL)));
-    /** Genuinely missing from the port until now - reuses MachineAdvancedAssemblerBlockEntity wholesale (see class javadoc). */
-    public static final RegistrySupplier<Block> MACHINE_PRECASS = registerBlock("machine_precass",
-            () -> new com.hbm_m.block.machines.MachinePrecAssBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 30.0f).sound(SoundType.METAL).noOcclusion()));
     /** Genuinely missing from the port until now. */
     public static final RegistrySupplier<Block> MACHINE_DRAIN = registerBlock("machine_drain",
             () -> new com.hbm_m.block.machines.MachineDrainBlock(BlockProps.copy(Blocks.STONE).strength(5.0f, 10.0f).noOcclusion()));
     /** Genuinely missing from the port until now - purely decorative in the original, no TileEntity (see class javadoc). */
     public static final RegistrySupplier<Block> MACHINE_TRANSFORMER = registerBlock("machine_transformer",
             () -> new com.hbm_m.block.generic.MachineTransformerBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f)));
-    /** Genuinely missing from the port until now. */
-    public static final RegistrySupplier<Block> MACHINE_FAN = registerBlock("fan",
-            () -> new com.hbm_m.block.machines.MachineFanBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL).noOcclusion()));
     /** Genuinely missing from the port until now. */
     public static final RegistrySupplier<Block> MACHINE_WASTE_DRUM = registerBlock("machine_waste_drum",
             () -> new com.hbm_m.block.machines.MachineWasteDrumBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).sound(SoundType.METAL).noOcclusion()));
@@ -2911,10 +2902,6 @@ public class ModBlocks {
             () -> new com.hbm_m.block.machines.MachineCombustionEngineBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
     public static final RegistrySupplier<Block> COMPRESSOR = registerBlock("compressor",
-            () -> new com.hbm_m.block.machines.MachineCompressorBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
-    /** Genuinely missing from the port until now - identical logic to {@link #COMPRESSOR}, the original's
-     * "compact" variant only differed in multiblock footprint/visuals, which this single-block port already lacks. */
-    public static final RegistrySupplier<Block> MACHINE_COMPRESSOR_COMPACT = registerBlock("machine_compressor_compact",
             () -> new com.hbm_m.block.machines.MachineCompressorBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
     public static final RegistrySupplier<Block> PUREX = registerBlock("purex",

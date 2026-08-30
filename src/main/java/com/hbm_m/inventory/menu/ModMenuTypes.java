@@ -43,8 +43,6 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<MachineDifurnaceRtgMenu>> MACHINE_DIFURNACE_RTG_MENU =
             MENUS.register("machine_difurnace_rtg_menu", () -> MenuRegistry.ofExtended(MachineDifurnaceRtgMenu::new));
 
-    public static final RegistrySupplier<MenuType<MachinePrecAssMenu>> MACHINE_PRECASS_MENU =
-            MENUS.register("machine_precass_menu", () -> MenuRegistry.ofExtended(MachinePrecAssMenu::new));
 
     public static final RegistrySupplier<MenuType<MachineBatteryMenu>> MACHINE_BATTERY_MENU =
             MENUS.register("machine_battery_menu", () -> MenuRegistry.ofExtended(MachineBatteryMenu::new));
@@ -275,8 +273,6 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<FluidTankMenu>> ORBUS_MENU =
             registerFluidTankMenu("orbus_menu", ModBlocks.ORBUS);
 
-    public static final RegistrySupplier<MenuType<MachineRtgMenu>> MACHINE_RTG_MENU =
-            MENUS.register("machine_rtg_menu", () -> MenuRegistry.ofExtended(MachineRtgMenu::new));
 
     public static final RegistrySupplier<MenuType<MachineWasteDrumMenu>> MACHINE_WASTE_DRUM_MENU =
             MENUS.register("machine_waste_drum_menu", () -> MenuRegistry.ofExtended(MachineWasteDrumMenu::new));
