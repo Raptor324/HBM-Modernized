@@ -102,8 +102,8 @@ public class EngineHandler {
         // Ресинк кеша программ кастомных шейдеров против сырого _glUseProgram(0)
         // от Oculus-VanillaRenderingPipeline (см. ShaderBindResync).
         // clear() безопасен: каждый дро перенастроит сэмплеры и юниформы заново.
-        forceResyncProgram(com.hbm_m.client.render.ModShaders.getNukeCloudShader());
-        forceResyncProgram(com.hbm_m.client.render.ModShaders.getNukeAddShader());
+        forceResyncProgram(com.hbm_m.client.render.shader.ModShaders.getNukeCloudShader());
+        forceResyncProgram(com.hbm_m.client.render.shader.ModShaders.getNukeAddShader());
         com.hbm_m.client.render.shader.ShaderBindResync.invalidateStaticProgramCache();
         com.hbm_m.client.render.shader.ShaderBindResync.enforceGlProgramConsistency();
 
@@ -345,7 +345,7 @@ public class EngineHandler {
         if (com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()) {
             return;
         }
-        net.minecraft.client.renderer.ShaderInstance sh = com.hbm_m.client.render.ModShaders.getNukeCloudShader();
+        net.minecraft.client.renderer.ShaderInstance sh = com.hbm_m.client.render.shader.ModShaders.getNukeCloudShader();
         if (sh == null) return;
         boolean farMode = mode > 0.5F;
         try {

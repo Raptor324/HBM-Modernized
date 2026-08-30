@@ -305,6 +305,10 @@
       "hbm_m:player/vomit"
     ]
   },
+  "tool.gasmaskscrew": {
+    "category": "player",
+    "sounds": ["hbm_m:tool/gasmaskscrew"]
+  },
   "player.cough": {
     "category": "player",
     "sounds": [

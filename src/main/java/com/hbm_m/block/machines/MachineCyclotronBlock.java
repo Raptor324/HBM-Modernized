@@ -12,15 +12,20 @@ import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockSideTuples;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.sound.ModSounds;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -170,6 +175,25 @@ public class MachineCyclotronBlock extends BaseEntityBlock implements IMultibloc
     private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
+
+            // Шутливые заглушки (plugs) из оригинала: ПКМ шуточным предметом устанавливает
+            // флаг в BE (порт MachineCyclotron#onBlockActivated), иначе открывается GUI
+            if (hand == InteractionHand.MAIN_HAND && entity instanceof MachineCyclotronBlockEntity cyc) {
+                ItemStack held = player.getItemInHand(hand);
+                if (!held.isEmpty()) {
+                    for (int i = 0; i < 4; i++) {
+                        Item plugItem = MachineCyclotronBlockEntity.getItemForPlug(i);
+                        if (plugItem != null && held.getItem() == plugItem && !cyc.getPlug(i)) {
+                            held.shrink(1);
+                            cyc.setPlug(i);
+                            PlatformHooks.playSound(level, pos, ModSounds.UPGRADE_PLUG.get(),
+                                    SoundSource.BLOCKS, 1.5F, 1.0F);
+                            return InteractionResult.sidedSuccess(false);
+                        }
+                    }
+                }
+            }
+
             if (entity instanceof MenuProvider menuProvider) {
                 MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));
             }

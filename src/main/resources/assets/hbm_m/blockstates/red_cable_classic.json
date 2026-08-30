@@ -1,0 +1,90 @@
+{
+  "multipart": [
+    {
+      "when": {
+        "center": "junction"
+      },
+      "apply": {
+        "model": "hbm_m:block/cable_classic_core"
+      }
+    },
+    {
+      "when": {
+        "center": "straight_x"
+      },
+      "apply": {
+        "model": "hbm_m:block/cable_classic_straight_x"
+      }
+    },
+    {
+      "when": {
+        "center": "straight_y"
+      },
+      "apply": {
+        "model": "hbm_m:block/cable_classic_straight_y"
+      }
+    },
+    {
+      "when": {
+        "center": "straight_z"
+      },
+      "apply": {
+        "model": "hbm_m:block/cable_classic_straight_z"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "center": "junction"
+      },
+      "apply": {
+        "model": "hbm_m:block/cable_classic_arm_north"
+      }
+    },
+    {
+      "when": {
+        "east": "true",
+        "center": "junction"
+      },
+      "apply": {
+        "model": "hbm_m:block/cable_classic_arm_east"
+      }
+    },
+    {
+      "when": {
+        "south": "true",
+        "center": "junction"
+      },
+      "apply": {
+        "model": "hbm_m:block/cable_classic_arm_south"
+      }
+    },
+    {
+      "when": {
+        "west": "true",
+        "center": "junction"
+      },
+      "apply": {
+        "model": "hbm_m:block/cable_classic_arm_west"
+      }
+    },
+    {
+      "when": {
+        "up": "true",
+        "center": "junction"
+      },
+      "apply": {
+        "model": "hbm_m:block/cable_classic_arm_up"
+      }
+    },
+    {
+      "when": {
+        "down": "true",
+        "center": "junction"
+      },
+      "apply": {
+        "model": "hbm_m:block/cable_classic_arm_down"
+      }
+    }
+  ]
+}

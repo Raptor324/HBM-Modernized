@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.hbm_m.client.render.ModShaders;
+import com.hbm_m.client.render.shader.ModShaders;
 import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.client.renderer.ShaderInstance;

@@ -333,6 +333,10 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("gui.hbm_m.energy", "Energy: %s/%s HE");
         add("gui.hbm_m.burn_time", "Burn time: %s%%");
         add("container.hbm_m.gas_centrifuge", "Gas Centrifuge");
+        add("container.hbm_m.book", "The Book of Boxcars");
+        add("container.hbm_m.book.extended_crafting", "Extended 4-Slot Crafting");
+        add("container.hbm_m.book.standard_inventory", "Standard Inventory");
+        add("item.hbm_m.book_of_.desc", "Edition 4, gold lined pages");
         add("desc.gui.gasCent.enrichment", "Enrichment");
         add("desc.gui.gasCent.output", "Output");
         add("pseudofluid.hbm_m.none", "None");
@@ -1010,6 +1014,44 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.GNEISS_BRICK_STAIRS.get(), "Gneiss Brick Stairs");
         add(ModBlocks.BRICK_BASE_STAIRS.get(), "Polished Bricks Stairs");
         add(ModBlocks.BRICK_LIGHT_STAIRS.get(), "Light Bricks Stairs");
+
+        // Декор структур (порт 1.7.10)
+        add(ModBlocks.BLOCK_METEOR.get(), "Meteor Block");
+        add(ModBlocks.BLOCK_METEOR_COBBLE.get(), "Meteor Cobblestone");
+        add(ModBlocks.BLOCK_SCRAP.get(), "Scrap Block");
+        add(ModBlocks.BLOCK_ELECTRICAL_SCRAP.get(), "Electrical Scrap");
+        add(ModBlocks.DECO_COMPUTER.get(), "Computer");
+        add(ModBlocks.DECO_TITANIUM.get(), "Titanium Decoration");
+        add(ModBlocks.WOOD_STRUCTURE.get(), "Structural Wood");
+        add(ModBlocks.STEEL_BEAM.get(), "Steel Beam");
+        add(ModBlocks.STEEL_GRATE.get(), "Steel Grate");
+        add(ModBlocks.STEEL_GRATE_WIDE.get(), "Wide Steel Grate");
+        add(ModBlocks.TOXIC_BLOCK.get(), "Toxic Waste");
+        add(ModBlocks.BALEFIRE.get(), "Balefire");
+        add(ModBlocks.PLANT_DEAD.get(), "Dead Plant");
+        add(ModBlocks.POLE_TOP.get(), "Antenna Tip");
+        add(ModBlocks.POLE_SATELLITE_RECEIVER.get(), "Satellite Receiver");
+        add(ModBlocks.DECO_LOOT.get(), "Loot Pile");
+        add(ModBlocks.DECO_PIPE.get(), "Steel Pipe");
+        add(ModBlocks.DECO_PIPE_RUSTED.get(), "Rusty Steel Pipe");
+        add(ModBlocks.DECO_PIPE_RED.get(), "Red Steel Pipe");
+        add(ModBlocks.DECO_PIPE_MARKED.get(), "Marked Steel Pipe");
+        add(ModBlocks.DECO_PIPE_QUAD.get(), "Quad Steel Pipes");
+        add(ModBlocks.DECO_PIPE_QUAD_RUSTED.get(), "Rusty Quad Steel Pipes");
+        add(ModBlocks.DECO_PIPE_QUAD_RED.get(), "Red Quad Steel Pipes");
+        add(ModBlocks.DECO_PIPE_QUAD_MARKED.get(), "Marked Quad Steel Pipes");
+        add(ModBlocks.DECO_PIPE_FRAMED.get(), "Framed Steel Pipe");
+        add(ModBlocks.DECO_PIPE_FRAMED_RUSTED.get(), "Rusty Framed Steel Pipe");
+        add(ModBlocks.DECO_PIPE_FRAMED_RED.get(), "Red Framed Steel Pipe");
+        add(ModBlocks.DECO_PIPE_FRAMED_GREEN_RUSTED.get(), "Rusty Green Framed Steel Pipe");
+        add(ModBlocks.DECO_PIPE_RIM.get(), "Steel Pipe Rim");
+        add(ModBlocks.DECO_PIPE_RIM_RUSTED.get(), "Rusty Steel Pipe Rim");
+        add(ModBlocks.DECO_PIPE_RIM_MARKED.get(), "Marked Steel Pipe Rim");
+        add(ModBlocks.BRICK_COMPOUND_STAIRS.get(), "Compound Bricks Stairs");
+        add(ModBlocks.REINFORCED_BRICK_STAIRS.get(), "Reinforced Bricks Stairs");
+        add(ModBlocks.LIGHTSTONE_BRICKS_STAIRS.get(), "Lightstone Bricks Stairs");
+        add(ModBlocks.REINFORCED_BRICK_SLAB.get(), "Reinforced Bricks Slab");
+        add(ModBlocks.BRICK_COMPOUND_SLAB.get(), "Compound Bricks Slab");
         add(ModBlocks.BRICK_FIRE_STAIRS.get(), "Fire Bricks Stairs");
         add(ModBlocks.BRICK_OBSIDIAN_STAIRS.get(), "Obsidian Bricks Stairs");
         add(ModBlocks.VINYL_TILE_STAIRS.get(), "Vinyl Tiles Stairs");
@@ -2041,7 +2083,21 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("block.hbm_m.rad_absorber.pink", "Elite Radiation Absorber");
         add("item.hbm_m.powder_desh_mix", "Desh Blend");
         add("item.hbm_m.powder_nitan_mix", "Nitanium Blend");
-        add("block.hbm_m.wire_coated", "Red Copper Wire");
+        // ══════════ Сеть длинной ЛЭП (порт 1.7.10) ══════════
+        add("tooltip.hbm_m.paintable", "Right-click with a block to disguise. Shift-click with empty hand to reset.");
+        add("tooltip.hbm_m.connection_type", "Connection Type: ");
+        add("tooltip.hbm_m.connection_single", "Single");
+        add("tooltip.hbm_m.connection_triple", "Triple");
+        add("tooltip.hbm_m.connection_quad", "Quadruple");
+        add("tooltip.hbm_m.connection_range", "Connection Range: ");
+        add("tooltip.hbm_m.wiring", "Right-click poles to connect");
+        add("chat.hbm_m.wire_start", "Wire start");
+        add("chat.hbm_m.wire_end", "Wire end");
+        add("chat.hbm_m.wire_error", "Wire error");
+        add("chat.hbm_m.wire_error_type", "Wire error - Pylons are not the same type");
+        add("chat.hbm_m.wire_error_same", "Wire error - Cannot connect to the same pylon");
+        add("chat.hbm_m.wire_error_far", "Wire error - Pylon is too far away");
+
 
         // ORES
         add(ModBlocks.SEQUESTRUM_ORE.get(), "Niter Ore");
@@ -2079,6 +2135,39 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("block.hbm_m.lead_ore", "Lead Ore");
         add("block.hbm_m.lead_ore_deepslate", "Deepslate Lead Ore");
         add("block.hbm_m.cinnabar_ore", "Cinnabar Ore");
+        // Ore generation parity with 1.7.10
+        add("block.hbm_m.niter_ore", "Niter Ore");
+        add("block.hbm_m.niter_ore_deepslate", "Deepslate Niter Ore");
+        add("block.hbm_m.lithium_ore", "Lithium Ore");
+        add("block.hbm_m.lithium_ore_deepslate", "Deepslate Lithium Ore");
+        add("block.hbm_m.alexandrite_ore", "Alexandrite Ore");
+        add("block.hbm_m.coltan_ore", "Coltan Ore");
+        add("block.hbm_m.coltan_ore_deepslate", "Deepslate Coltan Ore");
+        add("block.hbm_m.sulfur_ore_deepslate", "Deepslate Sulfur Ore");
+        add("block.hbm_m.tungsten_ore_deepslate", "Deepslate Tungsten Ore");
+        add("block.hbm_m.asbestos_ore_deepslate", "Deepslate Asbestos Ore");
+        add("block.hbm_m.fluorite_ore_deepslate", "Deepslate Fluorite Ore");
+        add("block.hbm_m.lignite_ore_deepslate", "Deepslate Lignite Ore");
+        add("block.hbm_m.nether_uranium_ore", "Nether Uranium Ore");
+        add("block.hbm_m.nether_tungsten_ore", "Nether Tungsten Ore");
+        add("block.hbm_m.nether_sulfur_ore", "Nether Sulfur Ore");
+        add("block.hbm_m.nether_fire_ore", "Nether Fire Ore");
+        add("block.hbm_m.nether_coal_ore", "Nether Coal Ore");
+        add("block.hbm_m.nether_cobalt_ore", "Nether Cobalt Ore");
+        add("block.hbm_m.nether_plutonium_ore", "Nether Plutonium Ore");
+        add("block.hbm_m.nether_smoldering_ore", "Smoldering Nether Ore");
+        add("block.hbm_m.depth_nether_neodymium", "Nether Depth Neodymium Ore");
+        add("block.hbm_m.tikite_ore", "Tikite Ore");
+        add("block.hbm_m.ore_oil_sand", "Oil Sand");
+        add("block.hbm_m.australium_ore", "Australium Ore");
+        add("block.hbm_m.gneiss_iron_ore", "Gneiss Iron Ore");
+        add("block.hbm_m.gneiss_gold_ore", "Gneiss Gold Ore");
+        add("block.hbm_m.gneiss_uranium_ore", "Gneiss Uranium Ore");
+        add("block.hbm_m.gneiss_copper_ore", "Gneiss Copper Ore");
+        add("block.hbm_m.gneiss_asbestos_ore", "Gneiss Asbestos Ore");
+        add("block.hbm_m.gneiss_lithium_ore", "Gneiss Lithium Ore");
+        add("block.hbm_m.gneiss_rare_ore", "Gneiss Rare Earth Ore");
+        add("block.hbm_m.gneiss_gas_ore", "Gneiss Gas Ore");
         add("block.hbm_m.waste_grass", "Dead Grass");
         add("block.hbm_m.waste_leaves", "Dead Leaves");
         add("block.hbm_m.freaky_alien_block", "Freaky Allien Block");
@@ -2280,6 +2369,25 @@ public class ModLanguageProviderEn extends LanguageProvider {
 
         add("trait.radioactive", "Radioactive");
         add("trait.asbestos", "Asbestos");
+        // ── Lung disease / gas masks (1.7.10 port) ──
+        add("info.asbestos", "My lungs are burning.");
+        add("info.coaldust", "It's hard to breathe here.");
+        add("hazard.particleCoarse", "Airborne Particles");
+        add("hazard.particleFine", "Particulates");
+        add("hazard.gasMonoxide", "Carbon Monoxide");
+        add("hazard.gasLung", "Lung-damaging Gases");
+        add("hazard.gasBlistering", "Blistering Agents");
+        add("hazard.bacteria", "Bacteria");
+        add("hazard.sand", "Sand");
+        add("hazard.light", "Flash");
+        add("hazard.prot", "Provides protection against:");
+        add("hazard.neverProtects", "Will never protect against:");
+        add("tooltip.hbm_m.mask.noFilter", "No filter installed!");
+        add("tooltip.hbm_m.mask.filter", "Installed filter:");
+        add("tooltip.hbm_m.attachment.gasProtection", "Gas protection");
+        add("tooltip.hbm_m.attachment.slotHelmet", "Attachable to helmets at the Armor Modification Table");
+        add("item.hbm_m.siox.desc", "Reverses mesothelioma with the power of Asbestos!");
+        add("item.hbm_m.pill_herbal.desc", "Effective treatment against lung disease and mild radiation poisoning. Comes with side effects.");
         add("trait.blinding", "Blinding");
         add("trait.coal", "Coal Dust");
         add("trait.digamma", "Digamma Radiation");
@@ -2388,6 +2496,9 @@ public class ModLanguageProviderEn extends LanguageProvider {
         
         // DEATH ATTACK MESSAGES
         add("death.attack.radiation", "%s died from radiation poisoning");
+        // 1.7.10 en_US.lang: death.attack.asbestos / death.attack.blacklung
+        add("death.attack.asbestos", "%1$s is now entitled to financial compensation.");
+        add("death.attack.blacklung", "%1$s died from black lung disease.");
         add("death.attack.hardlanding_smash", "%1$s was flattened by %2$s");
 
         add("advancements.hbm_m.radiation_200.title", "Hooray, Radiation!");
@@ -3020,6 +3131,11 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.RED_CABLE.get(), "Red Copper Cable");
         add(ModBlocks.RED_CABLE_BOX.get(), "Red Cable Junction Box");
         add(ModBlocks.RED_CABLE_CLASSIC.get(), "Red Copper Cable (Classic)");
+        add(ModBlocks.RED_CABLE_PAINTABLE.get(), "Paintable Cable");
+        add(ModBlocks.RED_CABLE_GAUGE.get(), "Power Gauge");
+        add(ModBlocks.RED_PYLON_STEEL.get(), "Electricity Pylon (Steel)");
+        add(ModBlocks.RED_PYLON_MEDIUM_WOOD_TRANSFORMER.get(), "Medium Electricity Pylon (Wood) w/ Transformer");
+        add(ModBlocks.RED_PYLON_MEDIUM_STEEL_TRANSFORMER.get(), "Medium Electricity Pylon (Steel) w/ Transformer");
         add(ModBlocks.RED_CONNECTOR.get(), "Electricity Connector");
         add(ModBlocks.RED_CONNECTOR_SUPER.get(), "Super Electricity Connector");
         add(ModBlocks.RED_PYLON.get(), "Electricity Pylon");
@@ -3648,6 +3764,16 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.DNT_SWORD.get(), "dinuatureum sword");
         add(ModItems.DOOR_METAL.get(), "Metal Door");
         add(ModItems.DOOR_RED.get(), "Red Door");
+        // Перенос ключей из удалённого ручного en_us.json
+        add(ModBlocks.BLOCK_COPPER.get(), "Copper Block");
+        add(ModItems.ITEM_SECRET_CANISTER.get(), "Secret: Canister");
+        add(ModItems.ITEM_SECRET_CONTROLLER.get(), "Secret: Controller");
+        add(ModItems.ITEM_SECRET_SELENIUM_STEEL.get(), "Secret: Selenium Steel");
+        add(ModItems.ITEM_SECRET_ABERRATOR.get(), "Secret: Aberrator");
+        add(ModItems.ITEM_SECRET_FOLLY.get(), "Secret: Folly");
+        add("advancements.hbm_m.red_room.title", "The Other Side");
+        add("advancements.hbm_m.red_room.description", "No key, no entry. Unless it's cracked.");
+
         add(ModItems.DRAX.get(), "Terra Drill (LEGACY)");
         add(ModItems.DRAX_MK2.get(), "Hardened Terra Drill (LEGACY)");
         add(ModItems.DRAX_MK3.get(), "Schrabidic Terra Drill (LEGACY)");

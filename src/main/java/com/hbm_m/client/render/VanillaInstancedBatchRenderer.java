@@ -2,6 +2,7 @@ package com.hbm_m.client.render;
 
 import java.nio.Buffer;
 
+import com.hbm_m.client.render.shader.ModShaders;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;

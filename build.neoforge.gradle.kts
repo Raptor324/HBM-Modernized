@@ -162,10 +162,33 @@ tasks.named<ProcessResources>("processResources") {
 			"fluids" to "fluid", "game_events" to "game_event",
 		)
 
+		// Biome-модификаторы на NeoForge 1.21+ читаются из neoforge/biome_modifier
+		// с типом neoforge:add_features; датаген (1.20.1) пишет
+		// forge/biome_modifier + forge:add_features — без ремапа руды не спавнятся.
+		dataDir.listFiles()!!.filter { it.isDirectory }.forEach { nsDir ->
+			val bm = File(nsDir, "forge/biome_modifier")
+			if (bm.isDirectory) {
+				val target = File(nsDir, "neoforge/biome_modifier")
+				moveInto(bm, target)
+				target.walkTopDown().filter { it.isFile && it.extension == "json" }.forEach { f ->
+					f.writeText(f.readText().replace("\"forge:add_features\"", "\"neoforge:add_features\""))
+				}
+			}
+		}
+
 		dataDir.listFiles()!!.filter { it.isDirectory }.forEach { nsDir ->
 			// Теги forge: → c: (конвенциональные теги на NeoForge 1.21+ живут в c:).
 			if (nsDir.name == "forge") {
 				moveInto(nsDir, File(dataDir, "c"))
+				// После переезда в c: теги тоже надо привести к единственному числу
+				// (1.21 переименовала tags/items → tags/item и т.д.).
+				val cTags = File(File(dataDir, "c"), "tags")
+				if (cTags.isDirectory) {
+					for ((old, new) in tagRenames) {
+						val plural = File(cTags, old)
+						if (plural.isDirectory) moveInto(plural, File(cTags, new))
+					}
+				}
 			}
 			for ((old, new) in dirRenames) {
 				val plural = File(nsDir, old)
@@ -242,6 +265,12 @@ sourceSets {
 			exclude("com/hbm_m/datagen/**")
 		}
 	}
+}
+
+// GameTest'ы нужны только в dev-ранах (gameTestServer работает из classes-директории,
+// не из jar) — в продакшен-jar они не попадают.
+tasks.named<Jar>("jar") {
+	exclude("com/hbm_m/test/**")
 }
 
 tasks.withType<JavaCompile>().configureEach {

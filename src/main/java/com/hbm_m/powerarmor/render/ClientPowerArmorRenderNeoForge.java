@@ -6,6 +6,7 @@ import com.hbm_m.powerarmor.layer.AJROPowerArmorLayer;
 import com.hbm_m.powerarmor.layer.AJRPowerArmorLayer;
 import com.hbm_m.powerarmor.layer.BismuthPowerArmorLayer;
 import com.hbm_m.powerarmor.layer.DNTPowerArmorLayer;
+import com.hbm_m.client.render.GasMaskLayer;
 import com.hbm_m.powerarmor.layer.T51PowerArmorLayer;
 
 import net.minecraft.client.renderer.entity.ArmorStandRenderer;
@@ -82,6 +83,7 @@ public final class ClientPowerArmorRenderNeoForge {
         raw.addLayer(new AJROPowerArmorLayer(raw));
         raw.addLayer(new BismuthPowerArmorLayer(raw));
         raw.addLayer(new DNTPowerArmorLayer(raw));
+        raw.addLayer(new GasMaskLayer(raw));
     }
 
     private ClientPowerArmorRenderNeoForge() {}

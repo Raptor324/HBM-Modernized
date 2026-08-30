@@ -401,6 +401,14 @@ public class ModBlockEntities {
 			BlockEntityType.Builder.<GeigerCounterBlockEntity>of(GeigerCounterBlockEntity::new, ModBlocks.GEIGER_COUNTER_BLOCK.get())
 				.build(null));
 
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.decorations.PedestalBlockEntity>> PEDESTAL_BE =
+            BLOCK_ENTITIES.register("pedestal_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.decorations.PedestalBlockEntity::new, com.hbm_m.block.ModBlocks.PEDESTAL.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.decorations.DecoLootBlockEntity>> DECO_LOOT_BE =
+            BLOCK_ENTITIES.register("deco_loot_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.decorations.DecoLootBlockEntity::new, com.hbm_m.block.ModBlocks.DECO_LOOT.get()).build(null));
+
     public static final RegistrySupplier<BlockEntityType<DeconBlockEntity>> DECON_BE =
             BLOCK_ENTITIES.register("decon_be", () ->
                     BlockEntityType.Builder.of(DeconBlockEntity::new, ModBlocks.DECON.get()).build(null));
@@ -704,7 +712,51 @@ public class ModBlockEntities {
 
 	public static final RegistrySupplier<BlockEntityType<WireBlockEntity>> WIRE_BE =
 		BLOCK_ENTITIES.register("wire_be", () ->
-			BlockEntityType.Builder.<WireBlockEntity>of(WireBlockEntity::new, ModBlocks.WIRE_COATED.get())
+			BlockEntityType.Builder.<WireBlockEntity>of(WireBlockEntity::new, ModBlocks.WIRE_COATED.get(), ModBlocks.RED_WIRE_COATED.get(), ModBlocks.RED_CABLE.get(), ModBlocks.RED_CABLE_CLASSIC.get())
+				.build(null));
+
+	// ══════════ Сеть длинной ЛЭП (порт TileEntityPylonBase-иерархии 1.7.10) ══════════
+
+	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.network.RedConnectorBlockEntity>> RED_CONNECTOR_BE =
+		BLOCK_ENTITIES.register("red_connector_be", () ->
+			BlockEntityType.Builder.<com.hbm_m.blockentity.network.RedConnectorBlockEntity>of(com.hbm_m.blockentity.network.RedConnectorBlockEntity::new, ModBlocks.RED_CONNECTOR.get())
+				.build(null));
+
+	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.network.RedConnectorSuperBlockEntity>> RED_CONNECTOR_SUPER_BE =
+		BLOCK_ENTITIES.register("red_connector_super_be", () ->
+			BlockEntityType.Builder.<com.hbm_m.blockentity.network.RedConnectorSuperBlockEntity>of(com.hbm_m.blockentity.network.RedConnectorSuperBlockEntity::new, ModBlocks.RED_CONNECTOR_SUPER.get())
+				.build(null));
+
+	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.network.RedPylonBlockEntity>> RED_PYLON_BE =
+		BLOCK_ENTITIES.register("red_pylon_be", () ->
+			BlockEntityType.Builder.<com.hbm_m.blockentity.network.RedPylonBlockEntity>of(com.hbm_m.blockentity.network.RedPylonBlockEntity::new, ModBlocks.RED_PYLON.get(), ModBlocks.RED_PYLON_STEEL.get())
+				.build(null));
+
+	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.network.RedPylonMediumBlockEntity>> RED_PYLON_MEDIUM_BE =
+		BLOCK_ENTITIES.register("red_pylon_medium_be", () ->
+			BlockEntityType.Builder.<com.hbm_m.blockentity.network.RedPylonMediumBlockEntity>of(com.hbm_m.blockentity.network.RedPylonMediumBlockEntity::new,
+					ModBlocks.RED_PYLON_MEDIUM_WOOD.get(), ModBlocks.RED_PYLON_MEDIUM_WOOD_TRANSFORMER.get(),
+					ModBlocks.RED_PYLON_MEDIUM_STEEL.get(), ModBlocks.RED_PYLON_MEDIUM_STEEL_TRANSFORMER.get())
+				.build(null));
+
+	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.network.RedPylonLargeBlockEntity>> RED_PYLON_LARGE_BE =
+		BLOCK_ENTITIES.register("red_pylon_large_be", () ->
+			BlockEntityType.Builder.<com.hbm_m.blockentity.network.RedPylonLargeBlockEntity>of(com.hbm_m.blockentity.network.RedPylonLargeBlockEntity::new, ModBlocks.RED_PYLON_LARGE.get())
+				.build(null));
+
+	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.network.RedCableGaugeBlockEntity>> RED_CABLE_GAUGE_BE =
+		BLOCK_ENTITIES.register("red_cable_gauge_be", () ->
+			BlockEntityType.Builder.<com.hbm_m.blockentity.network.RedCableGaugeBlockEntity>of(com.hbm_m.blockentity.network.RedCableGaugeBlockEntity::new, ModBlocks.RED_CABLE_GAUGE.get())
+				.build(null));
+
+	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.network.RedCablePaintableBlockEntity>> RED_CABLE_PAINTABLE_BE =
+		BLOCK_ENTITIES.register("red_cable_paintable_be", () ->
+			BlockEntityType.Builder.<com.hbm_m.blockentity.network.RedCablePaintableBlockEntity>of(com.hbm_m.blockentity.network.RedCablePaintableBlockEntity::new, ModBlocks.RED_CABLE_PAINTABLE.get())
+				.build(null));
+
+	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.network.PylonDummyBlockEntity>> PYLON_DUMMY_BE =
+		BLOCK_ENTITIES.register("pylon_dummy_be", () ->
+			BlockEntityType.Builder.<com.hbm_m.blockentity.network.PylonDummyBlockEntity>of(com.hbm_m.blockentity.network.PylonDummyBlockEntity::new, ModBlocks.PYLON_DUMMY.get())
 				.build(null));
 
 	public static final RegistrySupplier<BlockEntityType<LaunchPadBlockEntity>> LAUNCH_PAD_BE =

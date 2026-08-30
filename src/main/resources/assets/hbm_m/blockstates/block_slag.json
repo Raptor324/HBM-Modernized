@@ -1,6 +1,0 @@
-{
-  "variants": {
-    "broken=false": { "model": "hbm_m:block/block_slag" },
-    "broken=true": { "model": "hbm_m:block/block_slag_broken" }
-  }
-}

@@ -11,6 +11,7 @@ import com.hbm_m.inventory.UpgradeManager;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineCyclotronMenu;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
 import com.hbm_m.platform.recipe.RecipeHooks;
@@ -20,6 +21,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.Level;
@@ -299,10 +301,38 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
         return fromDir != null;
     }
 
+    // ═══ Шутливые «заглушки» (plugs) из оригинала: битовый флаг + шуточные предметы ═══
+
+    /** Битовый флаг установленных заглушек (порт {@code plugs} из TileEntityMachineCyclotron). */    private byte plugs;
+
+    public void setPlug(int index) {
+        this.plugs |= (byte) (1 << index);
+        this.setChanged();
+    }
+
+    public boolean getPlug(int index) {
+        return (this.plugs & (1 << index)) > 0;
+    }
+
+    /**
+     * Предмет-заглушка по индексу (1:1 с оригиналом): порошок белфайра, книга Вагонов,
+     * алмазная кувалда, монета Маскомэна. Устанавливаются ПКМ по блоку циклотрона.
+     */
+    public static Item getItemForPlug(int i) {
+        switch(i) {
+        case 0: return ModItems.POWDER_BALEFIRE.get();
+        case 1: return ModItems.BOOK_OF_.get();
+        case 2: return ModItems.DIAMOND_GAVEL.get();
+        case 3: return ModItems.COIN_MASKMAN.get();
+        }
+        return null;
+    }
+
     @Override
     protected void writeNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
         tag.putInt("progress", this.progress);
+        tag.putByte("plugs", this.plugs);
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].writeToNBT(tag, "t" + i);
         }
@@ -312,6 +342,7 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
     protected void readNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
         this.progress = tag.getInt("progress");
+        this.plugs = tag.getByte("plugs");
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].readFromNBT(tag, "t" + i);
         }

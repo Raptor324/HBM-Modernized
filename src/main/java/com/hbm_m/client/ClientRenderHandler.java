@@ -215,9 +215,65 @@ public class ClientRenderHandler {
                                 .setWriteMaskState(COLOR_DEPTH_WRITE)
                                 .createCompositeState(false)));
 
+        /** Вуаль камуфляжа (RedCablePaintableRenderer): спрайт из блочного атласа, прозрачный. */
+        public static final RenderType PYLON_OVERLAY = makePylonOverlay();
+
+        private static RenderType makePylonOverlay() {
+            //? if < 1.21.1 {
+            return create("hbm_m_pylon_overlay", DefaultVertexFormat.POSITION_COLOR_TEX, VertexFormat.Mode.QUADS, 4096, false, false,
+                    RenderType.CompositeState.builder()
+                            .setShaderState(POSITION_COLOR_TEX_SHADER)
+                            .setTextureState(new RenderStateShard.TextureStateShard(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS, false, false))
+                            .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                            .setCullState(NO_CULL)
+                            .setLightmapState(NO_LIGHTMAP)
+                            .setDepthTestState(LEQUAL_DEPTH_TEST)
+                            .setWriteMaskState(COLOR_WRITE)
+                            .createCompositeState(false));
+            //?} else {
+            /*return create("hbm_m_pylon_overlay", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 4096, false, false,
+                    RenderType.CompositeState.builder()
+                            .setShaderState(RENDERTYPE_TEXT_BACKGROUND_SHADER)
+                            .setTextureState(new RenderStateShard.TextureStateShard(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS, false, false))
+                            .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                            .setCullState(NO_CULL)
+                            .setLightmapState(NO_LIGHTMAP)
+                            .setDepthTestState(LEQUAL_DEPTH_TEST)
+                            .setWriteMaskState(COLOR_WRITE)
+                            .createCompositeState(false));
+            *///?}
+        }
+
+        /** Кабели ЛЭП (RedPylonWireRenderer): текстурированные квады wire.png, UV-тайлинг 1/8 блока. */
+        public static final Function<ResourceLocation, RenderType> PYLON_WIRE = Util.memoize(
+                texture -> {
+                    //? if < 1.21.1 {
+                    return create("hbm_m_pylon_wire", DefaultVertexFormat.POSITION_COLOR_TEX, VertexFormat.Mode.QUADS, 262144, false, false,
+                            RenderType.CompositeState.builder()
+                                    .setShaderState(POSITION_COLOR_TEX_SHADER)
+                                    .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                                    .setTransparencyState(NO_TRANSPARENCY)
+                                    .setCullState(NO_CULL)
+                                    .setLightmapState(NO_LIGHTMAP)
+                                    .setDepthTestState(LEQUAL_DEPTH_TEST)
+                                    .setWriteMaskState(COLOR_DEPTH_WRITE)
+                                    .createCompositeState(false));
+                    //?} else {
+                    /*return create("hbm_m_pylon_wire", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 262144, false, false,
+                            RenderType.CompositeState.builder()
+                                    .setShaderState(RENDERTYPE_TEXT_BACKGROUND_SHADER)
+                                    .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                                    .setTransparencyState(NO_TRANSPARENCY)
+                                    .setCullState(NO_CULL)
+                                    .setLightmapState(NO_LIGHTMAP)
+                                    .setDepthTestState(LEQUAL_DEPTH_TEST)
+                                    .setWriteMaskState(COLOR_DEPTH_WRITE)
+                                    .createCompositeState(false));
+                    *///?}
+                });
+
         /** Fleija cloud — untextured sphere, full-bright color (порт RenderCloudFleija). */
-        public static final RenderType FLEIJA_SPHERE = create("fleija_sphere",
-                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 262144, false, false,
+        public static final RenderType FLEIJA_SPHERE = create("fleija_sphere",                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 262144, false, false,
                 RenderType.CompositeState.builder()
                         .setShaderState(POSITION_COLOR_SHADER)
                         .setTransparencyState(LIGHTNING_TRANSPARENCY)

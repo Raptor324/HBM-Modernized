@@ -1931,12 +1931,17 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.RAIL_WOOD.get()));
         add.accept(new ItemStack(ModBlocks.RED_CABLE.get()));
         add.accept(new ItemStack(ModBlocks.RED_CABLE_CLASSIC.get()));
+        add.accept(new ItemStack(ModBlocks.RED_CABLE_PAINTABLE.get()));
+        add.accept(new ItemStack(ModBlocks.RED_CABLE_GAUGE.get()));
         add.accept(new ItemStack(ModBlocks.RED_CABLE_BOX.get()));
         add.accept(new ItemStack(ModBlocks.RED_CONNECTOR.get()));
         add.accept(new ItemStack(ModBlocks.RED_CONNECTOR_SUPER.get()));
         add.accept(new ItemStack(ModBlocks.RED_PYLON.get()));
+        add.accept(new ItemStack(ModBlocks.RED_PYLON_STEEL.get()));
         add.accept(new ItemStack(ModBlocks.RED_PYLON_MEDIUM_WOOD.get()));
+        add.accept(new ItemStack(ModBlocks.RED_PYLON_MEDIUM_WOOD_TRANSFORMER.get()));
         add.accept(new ItemStack(ModBlocks.RED_PYLON_MEDIUM_STEEL.get()));
+        add.accept(new ItemStack(ModBlocks.RED_PYLON_MEDIUM_STEEL_TRANSFORMER.get()));
         add.accept(new ItemStack(ModBlocks.RED_PYLON_LARGE.get()));
         add.accept(new ItemStack(ModBlocks.RED_WIRE_COATED.get()));
         add.accept(new ItemStack(ModBlocks.REINFORCED_BRICK.get()));

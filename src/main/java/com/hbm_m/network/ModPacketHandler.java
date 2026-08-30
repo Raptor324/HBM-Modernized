@@ -40,6 +40,7 @@ public class ModPacketHandler {
     // S2C
     public static final ResourceLocation GEIGER_SOUND          = id("geiger_sound");
     public static final ResourceLocation RADIATION_DATA        = id("radiation_data");
+    public static final ResourceLocation INFO_TOAST           = id("info_toast");
     public static final ResourceLocation CHUNK_RAD_DEBUG_BATCH = id("chunk_rad_debug_batch");
     public static final ResourceLocation HIGHLIGHT_BLOCKS      = id("highlight_blocks");
     public static final ResourceLocation SYNC_ENERGY           = id("sync_energy");
@@ -103,6 +104,10 @@ public class ModPacketHandler {
         registerS2C(GEIGER_SOUND,
                 GeigerSoundPacket::decode,
                 GeigerSoundPacket::handle);
+
+        registerS2C(INFO_TOAST,
+                InfoToastPacket::decode,
+                InfoToastPacket::handle);
 
         registerS2C(RADIATION_DATA,
                 RadiationDataPacket::decode,

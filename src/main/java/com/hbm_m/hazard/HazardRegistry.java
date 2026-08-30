@@ -275,6 +275,22 @@ public class HazardRegistry {
                 new HazardEntry(RADIATION, 0.35f)));
         HazardSystem.register(ALKALI_METALS, new HazardData(
                 new HazardEntry(HYDROACTIVE, 2.0f)));
+
+        // ── Угольная пыль (GIT: dust → COAL at powder=3.0F, tiny=0.3F) ──────────
+        HazardSystem.register(ModItems.getPowders(com.hbm_m.item.tags_and_tiers.ModPowders.COAL).get(), new HazardData(
+                new HazardEntry(COAL, 3.0f)));
+        HazardSystem.register(ModItems.COAL_POWDER_TINY.get(), new HazardData(
+                new HazardEntry(COAL, 0.3f)));
+        HazardSystem.register(ModItems.LIGNITE_POWDER.get(), new HazardData(
+                new HazardEntry(COAL, 3.0f)));
+
+        // ── Асбест (GIT: brick_asbestos 1F, tile_lab_broken 1F, powder_coltan_ore 3F) ──
+        HazardSystem.register(ModBlocks.BRICK_ASBESTOS.get(), new HazardData(
+                new HazardEntry(ASBESTOS, 1.0f)));
+        HazardSystem.register(ModBlocks.TILE_LAB_BROKEN.get(), new HazardData(
+                new HazardEntry(ASBESTOS, 1.0f)));
+        HazardSystem.register(ModItems.POWDER_COLTAN.get(), new HazardData(
+                new HazardEntry(ASBESTOS, 3.0f)));
     }
 
     /** GIT {@link com.hbm.hazard.HazardRegistry#block} (=10) × базовая rad слитка ({@link com.hbm.inventory.OreDictManager} DictFrame). */

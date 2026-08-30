@@ -19,6 +19,7 @@ import com.hbm_m.client.render.shader.IrisExtendedShaderAccess;
 import com.hbm_m.client.render.shader.IrisPhaseGuard;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
+import com.hbm_m.client.render.shader.ModShaders;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.platform.RenderHooks;
 import com.mojang.blaze3d.platform.GlStateManager;

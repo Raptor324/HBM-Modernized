@@ -45,6 +45,14 @@ public class ModWorldGen {
             LOOT_PROCESSOR = PROCESSORS.register("loot_processor",
             () -> () -> StructureLootProcessor.CODEC);
 
+    /**
+     * Процессор, фиксирующий соединения решёток/паней после спавна структур
+     * (см. {@link StructureConnectionFixProcessor}).
+     */
+    public static final RegistrySupplier<StructureProcessorType<StructureConnectionFixProcessor>>
+            CONNECTION_FIX_PROCESSOR = PROCESSORS.register("connection_fix_processor",
+            () -> () -> StructureConnectionFixProcessor.CODEC);
+
     public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> OILCLASTER_SURROUNDED =
             FEATURES.register("oilclaster_surrounded", () -> new OilClasterSurroundedFeature(NoneFeatureConfiguration.CODEC));
 
@@ -53,6 +61,18 @@ public class ModWorldGen {
 
     public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> BEDROCK_ORE =
             FEATURES.register("ore_bedrock_mineral", () -> new BedrockOreFeature(NoneFeatureConfiguration.CODEC));
+
+    /** Порт незерской бедрок-руды (BedrockOre.weightedOresNether). */
+    public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> NETHER_BEDROCK_ORE =
+            FEATURES.register("nether_bedrock_ore", () -> new NetherBedrockOreFeature(NoneFeatureConfiguration.CODEC));
+
+    /** Порт MapGenBubble (каменные нефтяные месторождения). */
+    public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> OIL_DEPOSIT =
+            FEATURES.register("oil_deposit", () -> OilDepositFeature.stone(NoneFeatureConfiguration.CODEC));
+
+    /** Порт песчаных нефтяных месторождения (sandOilBubble). */
+    public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> SAND_OIL_DEPOSIT =
+            FEATURES.register("sand_oil_deposit", () -> OilDepositFeature.sand(NoneFeatureConfiguration.CODEC));
 
     public static final ResourceKey<ConfiguredFeature<?, ?>> BEDROCK_ORE_CONFIGURED_KEY =
             ResourceKey.create(Registries.CONFIGURED_FEATURE, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "ore_bedrock_mineral"));

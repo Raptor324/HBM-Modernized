@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 
+import com.hbm_m.client.render.shader.ModShaders;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.ARBDrawIndirect;
 import org.lwjgl.opengl.ARBMultiDrawIndirect;

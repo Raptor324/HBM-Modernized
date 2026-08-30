@@ -1,6 +1,6 @@
 package com.hbm_m.client.compat.dh;
 
-import com.hbm_m.client.render.ModShaders;
+import com.hbm_m.client.render.shader.ModShaders;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;

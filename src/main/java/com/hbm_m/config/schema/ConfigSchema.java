@@ -46,7 +46,7 @@ public final class ConfigSchema {
         // ── SERVER: общие ───────────────────────────────────────────
         reg(ConfigField.bool("enableRadiation", ConfigSide.SERVER, ApplyMode.LIVE, "general").withComment("Enables / disables global radiation system"));
         reg(ConfigField.bool("enableChunkRads", ConfigSide.SERVER, ApplyMode.LIVE, "general"));
-        reg(ConfigField.bool("enableMOTD", ConfigSide.SERVER, ApplyMode.LIVE, "general"));
+        reg(ConfigField.bool("enableMOTD", ConfigSide.CLIENT, ApplyMode.LIVE, "general"));
 
         // ── SERVER: эффекты мира ────────────────────────────────────
         reg(ConfigField.bool("enableRadFogEffect", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects"));

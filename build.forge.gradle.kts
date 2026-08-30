@@ -123,8 +123,12 @@ dependencies {
 	// не применяются (no-op, мод не падает).
 	compileOnly("maven.modrinth:sable:2.0.5+mc1.21.1")
 	"modCompileOnly"("dev.engine-room.flywheel:flywheel-forge-api-1.20.1:${prop("deps.flywheel")}")
-	"modRuntimeOnly"("curse.maven:embeddium-908741:5681725")
-	"modRuntimeOnly"("curse.maven:oculus-581495:6020952")
+	// Embeddium падает в data-режиме (Minecraft.getInstance()==null при конструировании),
+	// поэтому для runData запускаемся с -PnoClientMods, отключающим клиентские моды.
+	if (!project.hasProperty("noClientMods")) {
+		"modRuntimeOnly"("curse.maven:embeddium-908741:5681725")
+		"modRuntimeOnly"("curse.maven:oculus-581495:6020952")
+	}
 	"modRuntimeOnly"("curse.maven:modernfix-790626:7515215")
 	"modRuntimeOnly"("curse.maven:smooth-boot-reloaded-633412:5016280")
 	
@@ -154,6 +158,13 @@ sourceSets {
 
 tasks.named("createMinecraftArtifacts") {
 	dependsOn(tasks.named("stonecutterGenerate"))
+}
+
+// Датаген и GameTest'ы нужны только в dev-ранах (runData / gameTestServer работают
+// из classes-директории, не из jar) — в продакшен-jar они не попадают.
+// reobfJar (публикуемый артефакт) строится поверх этого jar и наследует исключения.
+tasks.named<Jar>("jar") {
+	exclude("com/hbm_m/datagen/**", "com/hbm_m/test/**")
 }
 
 tasks.withType<JavaCompile>().configureEach { options.encoding = "UTF-8" }

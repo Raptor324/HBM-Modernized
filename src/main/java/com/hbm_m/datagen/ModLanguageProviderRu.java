@@ -298,6 +298,11 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("gui.hbm_m.energy", "Энергия: %s/%s HE");
         add("gui.hbm_m.burn_time", "Время горения: %s%%");
         add("container.hbm_m.gas_centrifuge", "Газовая центрифуга");
+        add("container.hbm_m.book", "Книга Вагонов");
+        add("container.hbm_m.book.extended_crafting", "Расширенный крафт на 4 слота");
+        add("container.hbm_m.book.standard_inventory", "Обычный инвентарь");
+        add(ModItems.BOOK_OF_.get(), "Книга Вагонов");
+        add("item.hbm_m.book_of_.desc", "Издание 4, страницы с золотым обрезом");
         add("desc.gui.gasCent.enrichment", "Обогащение");
         add("desc.gui.gasCent.output", "Выход");
         add("pseudofluid.hbm_m.none", "Нет");
@@ -993,6 +998,44 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.GNEISS_BRICK_STAIRS.get(), "Ступени из кирпичей графитового сланца");
         add(ModBlocks.BRICK_BASE_STAIRS.get(), "Ступени из отполированных кирпичей");
         add(ModBlocks.BRICK_LIGHT_STAIRS.get(), "Ступени из легких кирпичей");
+
+        // Декор структур (порт 1.7.10)
+        add(ModBlocks.BLOCK_METEOR.get(), "Метеоритный блок");
+        add(ModBlocks.BLOCK_METEOR_COBBLE.get(), "Метеоритный булыжник");
+        add(ModBlocks.BLOCK_SCRAP.get(), "Блок металлолома");
+        add(ModBlocks.BLOCK_ELECTRICAL_SCRAP.get(), "Электрический лом");
+        add(ModBlocks.DECO_COMPUTER.get(), "Компьютер");
+        add(ModBlocks.DECO_TITANIUM.get(), "Титановая отделка");
+        add(ModBlocks.WOOD_STRUCTURE.get(), "Строительное дерево");
+        add(ModBlocks.STEEL_BEAM.get(), "Стальная балка");
+        add(ModBlocks.STEEL_GRATE.get(), "Стальная решётка");
+        add(ModBlocks.STEEL_GRATE_WIDE.get(), "Широкая стальная решётка");
+        add(ModBlocks.TOXIC_BLOCK.get(), "Токсичные отходы");
+        add(ModBlocks.BALEFIRE.get(), "Адское пламя");
+        add(ModBlocks.PLANT_DEAD.get(), "Мёртвое растение");
+        add(ModBlocks.POLE_TOP.get(), "Верхушка антенны");
+        add(ModBlocks.POLE_SATELLITE_RECEIVER.get(), "Спутниковая антенна");
+        add(ModBlocks.DECO_LOOT.get(), "Груда хлама");
+        add(ModBlocks.DECO_PIPE.get(), "Стальная труба");
+        add(ModBlocks.DECO_PIPE_RUSTED.get(), "Ржавая стальная труба");
+        add(ModBlocks.DECO_PIPE_RED.get(), "Красная стальная труба");
+        add(ModBlocks.DECO_PIPE_MARKED.get(), "Маркированная стальная труба");
+        add(ModBlocks.DECO_PIPE_QUAD.get(), "Квадро-труба");
+        add(ModBlocks.DECO_PIPE_QUAD_RUSTED.get(), "Ржавая квадро-труба");
+        add(ModBlocks.DECO_PIPE_QUAD_RED.get(), "Красная квадро-труба");
+        add(ModBlocks.DECO_PIPE_QUAD_MARKED.get(), "Маркированная квадро-труба");
+        add(ModBlocks.DECO_PIPE_FRAMED.get(), "Труба в обвязке");
+        add(ModBlocks.DECO_PIPE_FRAMED_RUSTED.get(), "Ржавая труба в обвязке");
+        add(ModBlocks.DECO_PIPE_FRAMED_RED.get(), "Красная труба в обвязке");
+        add(ModBlocks.DECO_PIPE_FRAMED_GREEN_RUSTED.get(), "Зелёная ржавая труба в обвязке");
+        add(ModBlocks.DECO_PIPE_RIM.get(), "Труба с ободом");
+        add(ModBlocks.DECO_PIPE_RIM_RUSTED.get(), "Ржавая труба с ободом");
+        add(ModBlocks.DECO_PIPE_RIM_MARKED.get(), "Маркированная труба с ободом");
+        add(ModBlocks.BRICK_COMPOUND_STAIRS.get(), "Ступени из сложного кирпича");
+        add(ModBlocks.REINFORCED_BRICK_STAIRS.get(), "Ступени из укреплённого кирпича");
+        add(ModBlocks.LIGHTSTONE_BRICKS_STAIRS.get(), "Ступени из кирпичей светокамня");
+        add(ModBlocks.REINFORCED_BRICK_SLAB.get(), "Плита из укреплённого кирпича");
+        add(ModBlocks.BRICK_COMPOUND_SLAB.get(), "Плита из сложного кирпича");
         add(ModBlocks.BRICK_FIRE_STAIRS.get(), "Ступени из огнеупорных кирпичей");
         add(ModBlocks.BRICK_OBSIDIAN_STAIRS.get(), "Ступени из обсидиановых кирпичей");
         add(ModBlocks.VINYL_TILE_STAIRS.get(), "Ступени из виниловой плитки");
@@ -1608,6 +1651,35 @@ public class ModLanguageProviderRu extends LanguageProvider {
 
 
         add("block.hbm_m.wire_coated", "Провод из красной меди");
+        // ══════════ Сеть длинной ЛЭП (порт 1.7.10) ══════════
+        add("block.hbm_m.red_wire_coated", "Изолированный красный кабель");
+        add("block.hbm_m.red_connector", "Красный разъём");
+        add("block.hbm_m.red_connector_super", "Дальний красный разъём");
+        add("block.hbm_m.red_pylon", "Пилон");
+        add("block.hbm_m.red_pylon_steel", "Стальной пилон");
+        add("block.hbm_m.red_pylon_medium_wood", "Средний деревянный пилон");
+        add("block.hbm_m.red_pylon_medium_wood_transformer", "Средний деревянный пилон с трансформатором");
+        add("block.hbm_m.red_pylon_medium_steel", "Средний стальной пилон");
+        add("block.hbm_m.red_pylon_medium_steel_transformer", "Средний стальной пилон с трансформатором");
+        add("block.hbm_m.red_pylon_large", "Большой пилон");
+        add("block.hbm_m.red_cable", "Кабель");
+        add("block.hbm_m.red_cable_classic", "Классический кабель");
+        add("block.hbm_m.red_cable_paintable", "Красящийся кабель");
+        add("block.hbm_m.red_cable_gauge", "Датчик энергии");
+        add("tooltip.hbm_m.paintable", "ПКМ блоком — замаскировать. Shift+ПКМ пустой рукой — сбросить.");
+        add("tooltip.hbm_m.connection_type", "Тип подключения: ");
+        add("tooltip.hbm_m.connection_single", "Одинарное");
+        add("tooltip.hbm_m.connection_triple", "Тройное");
+        add("tooltip.hbm_m.connection_quad", "Четверное");
+        add("tooltip.hbm_m.connection_range", "Дальность подключения: ");
+        add("tooltip.hbm_m.wiring", "ПКМ по пилонам, чтобы соединить их");
+        add("chat.hbm_m.wire_start", "Начало провода");
+        add("chat.hbm_m.wire_end", "Провод подключён");
+        add("chat.hbm_m.wire_error", "Ошибка провода");
+        add("chat.hbm_m.wire_error_type", "Ошибка провода — пилоны разных типов");
+        add("chat.hbm_m.wire_error_same", "Ошибка провода — нельзя соединить пилон с самим собой");
+        add("chat.hbm_m.wire_error_far", "Ошибка провода — пион слишком далеко");
+
         add("block.hbm_m.wood_burner", "Дровяной генератор");
         add("block.hbm_m.shredder", "Измельчитель");
         add("block.hbm_m.blast_furnace", "Доменная печь");
@@ -1839,6 +1911,39 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.lead_ore", "Свинцовая руда");
         add("block.hbm_m.lead_ore_deepslate", "Глубинная свинцовая руда");
         add("block.hbm_m.cinnabar_ore", "Киноварная руда");
+        // Руды паритета генерации с 1.7.10
+        add("block.hbm_m.niter_ore", "Селитровая руда");
+        add("block.hbm_m.niter_ore_deepslate", "Глубинная селитровая руда");
+        add("block.hbm_m.lithium_ore", "Литиевая руда");
+        add("block.hbm_m.lithium_ore_deepslate", "Глубинная литиевая руда");
+        add("block.hbm_m.alexandrite_ore", "Александритовая руда");
+        add("block.hbm_m.coltan_ore", "Колтановая руда");
+        add("block.hbm_m.coltan_ore_deepslate", "Глубинная колтановая руда");
+        add("block.hbm_m.sulfur_ore_deepslate", "Глубинная серная руда");
+        add("block.hbm_m.tungsten_ore_deepslate", "Глубинная вольфрамовая руда");
+        add("block.hbm_m.asbestos_ore_deepslate", "Глубинная асбестовая руда");
+        add("block.hbm_m.fluorite_ore_deepslate", "Глубинная флюоритовая руда");
+        add("block.hbm_m.lignite_ore_deepslate", "Глубинная руда бурого угля");
+        add("block.hbm_m.nether_uranium_ore", "Адская урановая руда");
+        add("block.hbm_m.nether_tungsten_ore", "Адская вольфрамовая руда");
+        add("block.hbm_m.nether_sulfur_ore", "Адская серная руда");
+        add("block.hbm_m.nether_fire_ore", "Адская фосфоритовая руда");
+        add("block.hbm_m.nether_coal_ore", "Адская угольная руда");
+        add("block.hbm_m.nether_cobalt_ore", "Адская кобальтовая руда");
+        add("block.hbm_m.nether_plutonium_ore", "Адская плутониевая руда");
+        add("block.hbm_m.nether_smoldering_ore", "Дымящаяся адская руда");
+        add("block.hbm_m.depth_nether_neodymium", "Адская глубинная неодимовая руда");
+        add("block.hbm_m.tikite_ore", "Тикитовая руда");
+        add("block.hbm_m.ore_oil_sand", "Нефтеносный песок");
+        add("block.hbm_m.australium_ore", "Аустралиумовая руда");
+        add("block.hbm_m.gneiss_iron_ore", "Гнейсовая железная руда");
+        add("block.hbm_m.gneiss_gold_ore", "Гнейсовая золотая руда");
+        add("block.hbm_m.gneiss_uranium_ore", "Гнейсовая урановая руда");
+        add("block.hbm_m.gneiss_copper_ore", "Гнейсовая медная руда");
+        add("block.hbm_m.gneiss_asbestos_ore", "Гнейсовая асбестовая руда");
+        add("block.hbm_m.gneiss_lithium_ore", "Гнейсовая литиевая руда");
+        add("block.hbm_m.gneiss_rare_ore", "Гнейсовая руда редкоземельных металлов");
+        add("block.hbm_m.gneiss_gas_ore", "Гнейсовая газовая руда");
         add("block.hbm_m.crate_iron", "Железный ящик");
         add("block.hbm_m.crate_steel", "Стальной ящик");
         add("block.hbm_m.crate_desh", "Деш ящик");
@@ -2046,6 +2151,20 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("gui.hbm_m.industrial_boiler.water", "Вода");
         add("gui.hbm_m.industrial_boiler.steam", "Пар");
         add("gui.hbm_m.industrial_boiler.heat", "Тепло");
+
+        // Перенос ключей из удалённого ручного ru_ru.json
+        add(ModBlocks.BLOCK_COPPER.get(), "Медный блок");
+        add(ModBlocks.STONE_KEYHOLE.get(), "Каменная скважина");
+        add(ModBlocks.STONE_KEYHOLE_META.get(), "Скважина в красном кирпиче");
+        add(ModBlocks.PEDESTAL.get(), "Постамент");
+        add(ModBlocks.DOOR_RED_BLOCK.get(), "Красная дверь");
+        add(ModItems.ITEM_SECRET_CANISTER.get(), "Секрет: Канистра");
+        add(ModItems.ITEM_SECRET_CONTROLLER.get(), "Секрет: Контроллер");
+        add(ModItems.ITEM_SECRET_SELENIUM_STEEL.get(), "Секрет: Селеновая сталь");
+        add(ModItems.ITEM_SECRET_ABERRATOR.get(), "Секрет: Аберратор");
+        add(ModItems.ITEM_SECRET_FOLLY.get(), "Секрет: Глупость");
+        add("advancements.hbm_m.red_room.title", "Другая сторона");
+        add("advancements.hbm_m.red_room.description", "Без ключа не войдёшь. Хотя бы треснутого.");
         add("gui.hbm_m.solar_boiler.sunlight", "Солнечный свет");
         add("gui.hbm_m.solar_boiler.mirrors", "Активные зеркала: %s");
         add("container.hbm_m.solar_boiler", "Солнечный котел");
@@ -2198,6 +2317,25 @@ public class ModLanguageProviderRu extends LanguageProvider {
 
         add("trait.radioactive", "Радиоактивный");
         add("trait.asbestos", "Содержит асбест");
+        // ── Болезнь лёгких / противогазы (порт 1.7.10) ──
+        add("info.asbestos", "Мои лёгкие горят!");
+        add("info.coaldust", "Здесь трудно дышать...");
+        add("hazard.particleCoarse", "Взвесь в воздухе");
+        add("hazard.particleFine", "Мелкодисперсные частицы");
+        add("hazard.gasMonoxide", "Угарный газ");
+        add("hazard.gasLung", "Удушающие газы");
+        add("hazard.gasBlistering", "Кожно-нарывные вещества");
+        add("hazard.bacteria", "Бактерии");
+        add("hazard.sand", "Песок");
+        add("hazard.light", "Вспышка");
+        add("hazard.prot", "Защищает от:");
+        add("hazard.neverProtects", "Не защищает от:");
+        add("tooltip.hbm_m.mask.noFilter", "Фильтр не установлен!");
+        add("tooltip.hbm_m.mask.filter", "Установленный фильтр:");
+        add("tooltip.hbm_m.attachment.gasProtection", "Газовая защита");
+        add("tooltip.hbm_m.attachment.slotHelmet", "Крепится к шлемам на столе модификаций брони");
+        add("item.hbm_m.siox.desc", "Обращает мезотелиому вспять силой асбеста!");
+        add("item.hbm_m.pill_herbal.desc", "Эффективное средство от болезней лёгких и лёгкого лучевого отравления. Имеет побочные эффекты.");
         add("trait.blinding", "Ослепление");
         add("trait.coal", "Угольная пыль");
         add("trait.digamma", "Дигамма-радиация");
@@ -2301,6 +2439,9 @@ public class ModLanguageProviderRu extends LanguageProvider {
 
         // СООБЩЕНИЯ О СМЕРТИ
         add("death.attack.radiation", "Игрок %s умер от лучевой болезни");
+        // 1.7.10 death.attack.asbestos / death.attack.blacklung
+        add("death.attack.asbestos", "%1$s теперь имеет право на финансовую компенсацию.");
+        add("death.attack.blacklung", "%1$s умер от болезни чёрных лёгких.");
         add("death.attack.hardlanding_smash", "%1$s был раздавлен в лепешку %2$s");
 
         add("advancements.hbm_m.radiation_200.title", "Ура, Радиация!");

@@ -145,6 +145,9 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<Bat9000Menu>> BAT9000_MENU =
             MENUS.register("bat9000_menu", () -> MenuRegistry.ofExtended(Bat9000Menu::new));
 
+    public static final RegistrySupplier<MenuType<com.hbm_m.inventory.menu.BookMenu>> BOOK_MENU =
+            MENUS.register("book_menu", () -> MenuRegistry.ofExtended(com.hbm_m.inventory.menu.BookMenu::new));
+
     public static final RegistrySupplier<MenuType<BarrelIronMenu>> BARREL_IRON_MENU =
             MENUS.register("barrel_iron_menu", () -> MenuRegistry.ofExtended(BarrelIronMenu::new));
 

@@ -36,7 +36,7 @@ import com.hbm_m.client.overlay.OverlayInfoToast;
 import com.hbm_m.client.overlay.OverlayRadiationVisuals;
 import com.hbm_m.client.render.EmptyEntityRenderer;
 import com.hbm_m.client.render.MeshRenderCache;
-import com.hbm_m.client.render.ModShaders;
+import com.hbm_m.client.render.shader.ModShaders;
 import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 import com.hbm_m.client.render.effect.FleijaSphereMesh;
 import com.hbm_m.client.render.effect.RenderBlackHole;
@@ -252,6 +252,9 @@ public class ClientSetup {
         PowerArmorSounds.register();
         PowerArmorStepSoundHandler.initClient();
 
+        // MOTD при входе в мир — решение принимает клиент (client.json -> enableMOTD).
+        com.hbm_m.client.ClientMotdHandler.register();
+
         dev.architectury.event.events.client.ClientPlayerEvent.CLIENT_PLAYER_QUIT.register(player -> {
             com.hbm_m.config.ModClothConfig.reloadServer();
             ClientRadiationData.clearAll();
@@ -465,6 +468,7 @@ public class ClientSetup {
         MenuRegistry.registerScreenFactory(ModMenuTypes.TEMPLATE_CRATE_MENU.get(), GUITemplateCrate::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.FLUID_TANK_MENU.get(), GUIMachineFluidTank::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.BAT9000_MENU.get(), com.hbm_m.inventory.gui.GUIBat9000::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.BOOK_MENU.get(), com.hbm_m.inventory.gui.GUIBook::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.ORBUS_MENU.get(), com.hbm_m.inventory.gui.GUIFluidTank::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_RTG_MENU.get(), com.hbm_m.inventory.gui.GUIMachineRtg::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_WASTE_DRUM_MENU.get(), com.hbm_m.inventory.gui.GUIMachineWasteDrum::new);
@@ -565,11 +569,25 @@ public class ClientSetup {
         ModEntities.DIGAMMA_QUASAR.ifPresent(entityType -> EntityRenderers.register(entityType, RenderQuasar::new));
         ModEntities.RUBBLE.ifPresent(entityType -> EntityRenderers.register(entityType, RubbleEntityRenderer::new));
 
+        // Сеть длинной ЛЭП: один рендерер кабелей для всех пилонов/коннекторов.
+        {
+            net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider<com.hbm_m.blockentity.network.PylonBaseBlockEntity> wireRenderer =
+                    com.hbm_m.client.render.implementations.RedPylonWireRenderer::new;
+            BlockEntityRenderers.register(ModBlockEntities.RED_CONNECTOR_BE.get(), wireRenderer);
+            BlockEntityRenderers.register(ModBlockEntities.RED_CONNECTOR_SUPER_BE.get(), wireRenderer);
+            BlockEntityRenderers.register(ModBlockEntities.RED_PYLON_BE.get(), wireRenderer);
+            BlockEntityRenderers.register(ModBlockEntities.RED_PYLON_MEDIUM_BE.get(), wireRenderer);
+            BlockEntityRenderers.register(ModBlockEntities.RED_PYLON_LARGE_BE.get(), wireRenderer);
+            BlockEntityRenderers.register(ModBlockEntities.RED_CABLE_PAINTABLE_BE.get(), com.hbm_m.client.render.implementations.RedCablePaintableRenderer::new);
+        }
+
         BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.CARGO_ELEVATOR_BE.get(), com.hbm_m.client.render.implementations.CargoElevatorRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.MACHINE_ASSEMBLER_BE.get(), MachineAssemblerRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.TRANSITION_SEAL_BE.get(), TransitionSealRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.PEDESTAL_BE.get(), com.hbm_m.client.render.implementations.PedestalRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.DECO_LOOT_BE.get(), com.hbm_m.client.render.implementations.DecoLootRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.PRESS_BE.get(), MachinePressRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.CHEMICAL_PLANT_BE.get(), MachineChemicalPlantRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.HYDRAULIC_FRACKINING_TOWER_BE.get(), MachineHydraulicFrackiningTowerRenderer::new);
@@ -1113,6 +1131,7 @@ public class ClientSetup {
         event.registerAbove(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.ARMOR_LEVEL.id(), "power_armor_hud", OverlayPowerArmor.POWER_ARMOR_OVERLAY);
         event.registerAbove(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.PORTAL.id(), "radiation_pixels", OverlayRadiationVisuals.RADIATION_PIXELS_OVERLAY);
         event.registerAboveAll("info_toast", OverlayInfoToast.OVERLAY);
+        event.registerAboveAll("gas_mask_overlay", com.hbm_m.client.overlay.OverlayGasMask.OVERLAY);
         MainRegistry.LOGGER.info("GUI overlays registered.");
     }
     //?} elif neoforge {
@@ -1149,6 +1168,13 @@ public class ClientSetup {
             if (mc != null && mc.getWindow() != null) {
                 float tickDelta = deltaTracker.getGameTimeDeltaPartialTick(true);
                 OverlayInfoToast.render(guiGraphics, tickDelta, mc.getWindow().getGuiScaledWidth(), mc.getWindow().getGuiScaledHeight());
+            }
+        });
+        
+        event.registerAboveAll(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "gas_mask_overlay"), (guiGraphics, deltaTracker) -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc != null && mc.getWindow() != null) {
+                com.hbm_m.client.overlay.OverlayGasMask.render(guiGraphics);
             }
         });
         
@@ -1436,5 +1462,7 @@ public class ClientSetup {
     @SubscribeEvent
     public static void registerLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(ModModelLayers.POWER_ARMOR, PowerArmorEmptyModel::createBodyLayer);
+        event.registerLayerDefinition(ModModelLayers.GAS_MASK, com.hbm_m.client.model.GasMaskModels::createGasMask);
+        event.registerLayerDefinition(ModModelLayers.M65, com.hbm_m.client.model.GasMaskModels::createM65);
     }
 }

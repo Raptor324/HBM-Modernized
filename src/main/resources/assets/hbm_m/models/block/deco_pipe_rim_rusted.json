@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "side": "hbm_m:block/deco_pipe_rim_rusted",
+    "end": "hbm_m:block/deco_pipe_rim_rusted"
+  }
+}

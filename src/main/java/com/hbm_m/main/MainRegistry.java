@@ -123,6 +123,8 @@ public final class MainRegistry {
                     NeutronNodeWorld.tick(lvl);
                 }
             }
+            // Отложенный фикс соединений решёток/паней после спавна структур
+            com.hbm_m.worldgen.StructureConnectionFixProcessor.tickIfReady(server);
         });
 
         LifecycleEvent.SERVER_LEVEL_UNLOAD.register((ServerLevel level) -> {
@@ -139,7 +141,9 @@ public final class MainRegistry {
         com.hbm_m.handler.HTTPHandler.loadStats();
         ModPacketHandler.register();
         com.hbm_m.handler.HazmatRegistry.registerHazmats();
+        com.hbm_m.handler.ArmorRegistryInit.init();
         HazardRegistry.registerItems();
+        com.hbm_m.event.LungGasHandler.init();
         com.hbm_m.config.FalloutConfigJSON.initialize();
         DamageResistanceHandler.initArmorStats();
         com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity.registerLaunchables();

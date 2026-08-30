@@ -1,6 +1,6 @@
 package com.hbm_m.client.render.shader;
 
-import com.hbm_m.client.render.ModShaders;
+import com.hbm_m.client.render.shader.ModShaders;
 
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderInstance;

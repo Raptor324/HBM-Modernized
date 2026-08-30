@@ -7,6 +7,7 @@ import com.hbm_m.powerarmor.layer.AJROPowerArmorLayer;
 import com.hbm_m.powerarmor.layer.AJRPowerArmorLayer;
 import com.hbm_m.powerarmor.layer.BismuthPowerArmorLayer;
 import com.hbm_m.powerarmor.layer.DNTPowerArmorLayer;
+import com.hbm_m.client.render.GasMaskLayer;
 import com.hbm_m.powerarmor.layer.T51PowerArmorLayer;
 
 import net.minecraft.client.renderer.entity.ArmorStandRenderer;
@@ -75,6 +76,7 @@ public final class ClientPowerArmorRenderForge {
         accessor.hbm_m$getLayers().add(new AJROPowerArmorLayer((LivingEntityRenderer) renderer));
         accessor.hbm_m$getLayers().add(new BismuthPowerArmorLayer((LivingEntityRenderer) renderer));
         accessor.hbm_m$getLayers().add(new DNTPowerArmorLayer((LivingEntityRenderer) renderer));
+        accessor.hbm_m$getLayers().add(new GasMaskLayer((LivingEntityRenderer) renderer));
     }
 
     private ClientPowerArmorRenderForge() {}

@@ -762,7 +762,7 @@ Sliced-варианты используют тот же `blockLitInstancedForma
 
 ### 9.5 ModShaders
 
-Файл: `com.hbm_m.client.render.ModShaders`
+Файл: `com.hbm_m.client.render.shader.ModShaders`
 
 Хранилище ссылок на все четыре шейдера:
 
@@ -1813,7 +1813,7 @@ return distanceSquared > thresholdBlocks * thresholdBlocks;
 
 #### Shader infrastructure
 
-- `com.hbm_m.client.render.ModShaders`
+- `com.hbm_m.client.render.shader.ModShaders`
 - `com.hbm_m.client.render.shader.ShaderCompatibilityDetector`
 - `com.hbm_m.client.render.shader.IrisExtendedShaderAccess`
 - `com.hbm_m.client.render.shader.IrisPhaseGuard`

@@ -81,6 +81,11 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
 
         // 2) ОСОБЫЕ СЛУЧАИ: руды переопределяют свою таблицу
 
+        // deco_loot (груда лута из структур 1.7.10): сам блок ничего не дропает —
+        // предметы хранятся в DecoLootBlockEntity и выпадают при ломании/ПКМ
+        // (пул хлама перенесён в DecoLootBlockEntity.POOL)
+        dropEmptyTable(ModBlocks.DECO_LOOT.get());
+
         // Тип 1: silk touch -> блок, иначе сырьё с Fortune + explosion decay
         dropOreType1(
                 ModBlocks.ALUMINUM_ORE.get(),

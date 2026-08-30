@@ -45,6 +45,10 @@ public class ModClothConfig {
     public float craterBiomeOuterRad = 0.5F;
     /** Множитель RAD/s в crater биомах в воде/под дождём (1.7.10 WorldConfig.craterBiomeWaterMult). */
     public float craterBiomeWaterMult = 5F;
+    /** Фоновая радиация в Незере, RAD/s (1.7.10 RadiationConfig.hellRad, floor поверх чанковой). 0 = выключено. */
+    public float netherAmbientRad = 0.1F;
+    /** Множитель адского фона в Базальтовых дельтах (0.1 × 10 = 1.0 RAD/s по умолчанию). */
+    public float basaltDeltasRadMult = 10F;
 
     // ════════════════════════════════════════════════════════════════
     // Оружие / падение предметов

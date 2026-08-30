@@ -89,7 +89,12 @@ public class DataGenerators {
                             }
                         }
                     }
-                });
+                })
+                // Worldgen: configured/placed features + biome-модификаторы всех руд
+                // (полная замена рукописным JSON в data/hbm_m/worldgen).
+                .add(Registries.CONFIGURED_FEATURE, ModWorldGenProvider::bootstrapConfigured)
+                .add(Registries.PLACED_FEATURE, ModWorldGenProvider::bootstrapPlaced)
+                .add(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, ModWorldGenProvider::bootstrapBiomeModifiers);
                 // .add(Registries.CONFIGURED_FEATURE, context -> {
                 //     RuleTest stoneReplaceables = new TagMatchTest(BlockTags.STONE_ORE_REPLACEABLES);
                 //     List<OreConfiguration.TargetBlockState> targets = List.of(OreConfiguration.target(stoneReplaceables, ModBlocks.URANIUM_ORE.get().defaultBlockState()));

@@ -38,7 +38,13 @@ import com.hbm_m.item.nuclear.WatzPelletType;
 import com.hbm_m.item.food.ItemConserve;
 import com.hbm_m.item.food.ItemEnergyDrink;
 import com.hbm_m.item.food.ModFoods;
+import com.hbm_m.item.gasmask.ArmorGasMaskItem;
+import com.hbm_m.item.gasmask.ArmorGasMaskItem.Variant;
+import com.hbm_m.item.gasmask.ItemGasMaskFilter;
+import com.hbm_m.item.tools_and_armor.RagMaskItem;
+import com.hbm_m.armormod.item.ItemModGasmask;
 import com.hbm_m.item.special.ItemCigarette;
+import com.hbm_m.item.special.ModConsumables;
 import com.hbm_m.item.grenades_and_activators.AirBombItem;
 import com.hbm_m.item.grenades_and_activators.AirNukeBombItem;
 import com.hbm_m.item.grenades_and_activators.AirstrikeItem;
@@ -2629,8 +2635,8 @@ public class ModItems {
     public static final RegistrySupplier<Item> ASBESTOS_PLATE = ITEMS.register("asbestos_plate", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> ASHGLASSES = ITEMS.register("ashglasses", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> ASSEMBLY_NUKE = ITEMS.register("assembly_nuke", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> ATTACHMENT_MASK = ITEMS.register("attachment_mask", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> ATTACHMENT_MASK_MONO = ITEMS.register("attachment_mask_mono", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ATTACHMENT_MASK = ITEMS.register("attachment_mask", () -> new ItemModGasmask(new Item.Properties(), false));
+    public static final RegistrySupplier<Item> ATTACHMENT_MASK_MONO = ITEMS.register("attachment_mask_mono", () -> new ItemModGasmask(new Item.Properties(), true));
     public static final RegistrySupplier<Item> AUSTRALIUM_III = ITEMS.register("australium_iii", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> BACK_TESLA = ITEMS.register("back_tesla", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> BALEFIRE_AND_HAM = ITEMS.register("balefire_and_ham", () -> new Item(new Item.Properties()));
@@ -2934,7 +2940,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> BOMB_WAFFLE = ITEMS.register("bomb_waffle", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> BOOK_GUIDE = ITEMS.register("book_guide", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> BOOK_LEMEGETON = ITEMS.register("book_lemegeton", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> BOOK_OF_ = ITEMS.register("book_of_", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> BOOK_OF_ = ITEMS.register("book_of_", () -> new com.hbm_m.item.special.ItemBook(new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> BOOK_SECRET = ITEMS.register("book_secret", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> BOTTLE2_EMPTY = ITEMS.register("bottle2_empty", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> BOTTLE2_FRITZ = ITEMS.register("bottle2_fritz", () -> new Item(new Item.Properties()));
@@ -3096,7 +3102,16 @@ public class ModItems {
     public static final RegistrySupplier<Item> DNT_PLATE = ITEMS.register("dnt_plate", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> DNT_SWORD = ITEMS.register("dnt_sword", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> DOOR_METAL = ITEMS.register("door_metal", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> DOOR_RED = ITEMS.register("door_red", () -> new Item(new Item.Properties()));
+    /** Порт {@code door_red} (1.7.10) — BlockItem двери красной комнаты. */
+    public static final RegistrySupplier<Item> DOOR_RED = ITEMS.register("door_red",
+            () -> new BlockItem(ModBlocks.DOOR_RED_BLOCK.get(), new Item.Properties()));
+
+    // ================== Секреты красной комнаты (порт item_secret, 1.7.10) ==================
+    public static final RegistrySupplier<Item> ITEM_SECRET_CANISTER = ITEMS.register("item_secret_canister", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ITEM_SECRET_CONTROLLER = ITEMS.register("item_secret_controller", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ITEM_SECRET_SELENIUM_STEEL = ITEMS.register("item_secret_selenium_steel", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ITEM_SECRET_ABERRATOR = ITEMS.register("item_secret_aberrator", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ITEM_SECRET_FOLLY = ITEMS.register("item_secret_folly", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> DRAX = ITEMS.register("drax", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> DRAX_MK2 = ITEMS.register("drax_mk2", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> DRAX_MK3 = ITEMS.register("drax_mk3", () -> new Item(new Item.Properties()));
@@ -3180,15 +3195,15 @@ public class ModItems {
     public static final RegistrySupplier<Item> GADGET_EXPLOSIVE = ITEMS.register("gadget_explosive", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> GADGET_KIT = ITEMS.register("gadget_kit", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> GADGET_WIREING = ITEMS.register("gadget_wireing", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> GAS_MASK = ITEMS.register("gas_mask", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> GAS_MASK_FILTER = ITEMS.register("gas_mask_filter", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> GAS_MASK_FILTER_COMBO = ITEMS.register("gas_mask_filter_combo", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> GAS_MASK_FILTER_MONO = ITEMS.register("gas_mask_filter_mono", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> GAS_MASK_FILTER_PISS = ITEMS.register("gas_mask_filter_piss", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> GAS_MASK_FILTER_RAG = ITEMS.register("gas_mask_filter_rag", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> GAS_MASK_M65 = ITEMS.register("gas_mask_m65", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> GAS_MASK_MONO = ITEMS.register("gas_mask_mono", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> GAS_MASK_OLDE = ITEMS.register("gas_mask_olde", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> GAS_MASK = ITEMS.register("gas_mask", () -> new ArmorGasMaskItem(Variant.GAS_MASK, new Item.Properties()));
+    public static final RegistrySupplier<Item> GAS_MASK_FILTER = ITEMS.register("gas_mask_filter", () -> new ItemGasMaskFilter(new Item.Properties()));
+    public static final RegistrySupplier<Item> GAS_MASK_FILTER_COMBO = ITEMS.register("gas_mask_filter_combo", () -> new ItemGasMaskFilter(new Item.Properties()));
+    public static final RegistrySupplier<Item> GAS_MASK_FILTER_MONO = ITEMS.register("gas_mask_filter_mono", () -> new ItemGasMaskFilter(new Item.Properties()));
+    public static final RegistrySupplier<Item> GAS_MASK_FILTER_PISS = ITEMS.register("gas_mask_filter_piss", () -> new ItemGasMaskFilter(new Item.Properties()));
+    public static final RegistrySupplier<Item> GAS_MASK_FILTER_RAG = ITEMS.register("gas_mask_filter_rag", () -> new ItemGasMaskFilter(new Item.Properties()));
+    public static final RegistrySupplier<Item> GAS_MASK_M65 = ITEMS.register("gas_mask_m65", () -> new ArmorGasMaskItem(Variant.M65, new Item.Properties()));
+    public static final RegistrySupplier<Item> GAS_MASK_MONO = ITEMS.register("gas_mask_mono", () -> new ArmorGasMaskItem(Variant.MONO, new Item.Properties()));
+    public static final RegistrySupplier<Item> GAS_MASK_OLDE = ITEMS.register("gas_mask_olde", () -> new ArmorGasMaskItem(Variant.OLDE, new Item.Properties()));
     public static final RegistrySupplier<Item> GAS_TESTER = ITEMS.register("gas_tester", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> GEAR_LARGE = ITEMS.register("gear_large", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> GEM_ALEXANDRITE = ITEMS.register("gem_alexandrite", () -> new Item(new Item.Properties()));
@@ -3302,8 +3317,9 @@ public class ModItems {
     public static final RegistrySupplier<Item> MAN_KIT = ITEMS.register("man_kit", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> MARSHMALLOW = ITEMS.register("marshmallow", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> MASK_OF_INFAMY = ITEMS.register("mask_of_infamy", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> MASK_PISS = ITEMS.register("mask_piss", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> MASK_RAG = ITEMS.register("mask_rag", () -> new Item(new Item.Properties()));
+    // Тряпичные маски: обычная броня без фильтра (порт ModArmor/aMatRags), см. RagMaskItem.
+    public static final RegistrySupplier<Item> MASK_PISS = ITEMS.register("mask_piss", () -> new RagMaskItem(true, new Item.Properties()));
+    public static final RegistrySupplier<Item> MASK_RAG = ITEMS.register("mask_rag", () -> new RagMaskItem(false, new Item.Properties()));
     public static final RegistrySupplier<Item> MATCHSTICK = ITEMS.register("matchstick", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> MECH_KEY = ITEMS.register("mech_key", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> MED_BAG = ITEMS.register("med_bag", () -> new Item(new Item.Properties()));
@@ -3473,7 +3489,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> PILE_ROD_PU239 = ITEMS.register("pile_rod_pu239", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PILE_ROD_SOURCE = ITEMS.register("pile_rod_source", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PILE_ROD_URANIUM = ITEMS.register("pile_rod_uranium", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> PILL_HERBAL = ITEMS.register("pill_herbal", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PILL_HERBAL = ITEMS.register("pill_herbal", () -> new ItemSimpleConsumable(new Item.Properties(), ModConsumables::usePillHerbal));
     public static final RegistrySupplier<Item> PILL_IODINE = ITEMS.register("pill_iodine", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PILL_RED = ITEMS.register("pill_red", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PIN = ITEMS.register("pin", () -> new Item(new Item.Properties()));
@@ -3862,7 +3878,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> SHIMMER_HEAD = ITEMS.register("shimmer_head", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> SHIMMER_SLEDGE = ITEMS.register("shimmer_sledge", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> SINGULARITY = ITEMS.register("singularity", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> SIOX = ITEMS.register("siox", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> SIOX = ITEMS.register("siox", () -> new ItemSimpleConsumable(new Item.Properties(), ModConsumables::useSiox));
     public static final RegistrySupplier<Item> SIPHON = ITEMS.register("siphon", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> SMASHING_HAMMER = ITEMS.register("smashing_hammer", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> SOLID_FUEL = ITEMS.register("solid_fuel", () -> new Item(new Item.Properties()));
@@ -4007,7 +4023,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> WILD_P = ITEMS.register("wild_p", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> WINGS_LIMP = ITEMS.register("wings_limp", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> WINGS_MURK = ITEMS.register("wings_murk", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> WIRING_RED_COPPER = ITEMS.register("wiring_red_copper", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> WIRING_RED_COPPER = ITEMS.register("wiring_red_copper", () -> new com.hbm_m.item.tool.ItemWiring(new Item.Properties()));
     public static final RegistrySupplier<Item> WOOD_GAVEL = ITEMS.register("wood_gavel", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> WRENCH = ITEMS.register("wrench", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> WRENCH_ARCHINEER = ITEMS.register("wrench_archineer", () -> new Item(new Item.Properties()));

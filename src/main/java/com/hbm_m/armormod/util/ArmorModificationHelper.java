@@ -219,7 +219,11 @@ public class ArmorModificationHelper {
      * @return Массив ItemStack модификаций
      */
     public static ItemStack[] pryMods(ItemStack armor) {
+        // Пустые слоты всегда EMPTY, а не null: вызыватели не обязаны проверять на null.
         ItemStack[] slots = new ItemStack[MOD_SLOTS];
+        for (int i = 0; i < MOD_SLOTS; i++) {
+            slots[i] = ItemStack.EMPTY;
+        }
 
         if (!hasMods(armor)) {
             return slots;
@@ -235,7 +239,11 @@ public class ArmorModificationHelper {
         for (int i = 0; i < MOD_SLOTS; i++) {
             String key = MOD_SLOT_KEY_PREFIX + i;
             if (modsTag.contains(key)) {
-                slots[i] = PlatformHooks.itemStackOf(modsTag.getCompound(key), null);
+                ItemStack parsed = PlatformHooks.itemStackOf(modsTag.getCompound(key), null);
+                slots[i] = parsed == null ? ItemStack.EMPTY : parsed;
+            } else {
+                // Пустые слоты — EMPTY, а не null: вызыватели (GasMaskLayer и др.) не обязаны проверять на null.
+                slots[i] = ItemStack.EMPTY;
             }
         }
 

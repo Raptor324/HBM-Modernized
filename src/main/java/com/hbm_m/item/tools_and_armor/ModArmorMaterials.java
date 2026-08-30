@@ -67,7 +67,11 @@ public enum ModArmorMaterials implements ArmorMaterial {
             SoundEvents.ARMOR_EQUIP_IRON, 1f, 0.05f, () -> Ingredient.of(ModItems.PLATE_IRON.get())),
 
     BISMUTH("bismuth", 100, new int[]{ 3, 8, 6, 3 }, 100,
-            SoundEvents.ARMOR_EQUIP_IRON, 2f, 0.2f, () -> Ingredient.of(ModItems.PLATE_BISMUTH.get()));
+            SoundEvents.ARMOR_EQUIP_IRON, 2f, 0.2f, () -> Ingredient.of(ModItems.PLATE_BISMUTH.get())),
+
+    /** Противогазы: только шлем, символическая защита (лёгкие защищает фильтр). */
+    GAS_MASK("gas_mask", 5, new int[]{ 1, 0, 0, 0 }, 5,
+            SoundEvents.ARMOR_EQUIP_LEATHER, 0f, 0f, () -> Ingredient.of(ModItems.RAG_DAMP.get()));
 
     private final String name;
     private final int durabilityMultiplier;
