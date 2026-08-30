@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.MachineCombinationOvenBlockEntity;
 import com.hbm_m.inventory.menu.MachineCombinationOvenMenu;
@@ -66,11 +67,13 @@ public class GUIMachineCombinationOven extends GuiInfoScreen<MachineCombinationO
 
     private void renderTank(GuiGraphics guiGraphics, int x, int y) {
         MachineCombinationOvenBlockEntity be = menu.getBlockEntity();
+        if (be == null) return; // тайл может отсутствовать в реплее Flashback
         be.getTank().renderTank(guiGraphics, x + TANK_X, y + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
     }
 
     private void renderProgress(GuiGraphics guiGraphics, int x, int y) {
         MachineCombinationOvenBlockEntity be = menu.getBlockEntity();
+        if (be == null) return; // тайл может отсутствовать в реплее Flashback
         int maxProgress = be.getMaxProgress();
         if (maxProgress <= 0) return;
         int width = be.getProgressScaled(PROGRESS_MAX_WIDTH);
@@ -82,7 +85,7 @@ public class GUIMachineCombinationOven extends GuiInfoScreen<MachineCombinationO
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, delta);
         super.render(guiGraphics, mouseX, mouseY, delta);
         renderTooltip(guiGraphics, mouseX, mouseY);
         renderCustomTooltips(guiGraphics, mouseX, mouseY);
@@ -96,6 +99,7 @@ public class GUIMachineCombinationOven extends GuiInfoScreen<MachineCombinationO
 
     private void renderCustomTooltips(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         MachineCombinationOvenBlockEntity be = menu.getBlockEntity();
+        if (be == null) return; // тайл может отсутствовать в реплее Flashback
         int x = (width - imageWidth) / 2;
         int y = (height - imageHeight) / 2;
 

@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.MachineStorageDrumBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineStorageDrumMenu;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -26,6 +27,8 @@ public class GUIMachineStorageDrum extends AbstractContainerScreen<MachineStorag
     @Override
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         guiGraphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, 0xF0303030);
+        // тайл может отсутствовать в реплее Flashback
+        if (drum == null) return;
 
         int liquidPct = drum.getLiquidTank().getMaxFill() > 0
                 ? drum.getLiquidTank().getFill() * 40 / drum.getLiquidTank().getMaxFill() : 0;
@@ -46,7 +49,7 @@ public class GUIMachineStorageDrum extends AbstractContainerScreen<MachineStorag
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

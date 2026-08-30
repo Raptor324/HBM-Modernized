@@ -5,7 +5,6 @@ import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineRadarBlockEntity;
@@ -39,7 +38,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
+import dev.architectury.registry.menu.MenuRegistry;
 
 public class MachineRadarBlock extends BaseEntityBlock implements IMultiblockController {
 
@@ -95,11 +94,7 @@ public class MachineRadarBlock extends BaseEntityBlock implements IMultiblockCon
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            BlockPos core = placeMultiblockStructure(level, pos, state);
-            if (core == null) {
-                return;
-            }
-            EnergyNetworkManager.get((ServerLevel) level).addNode(core);
+            placeMultiblockStructure(level, pos, state);
         }
     }
 
@@ -124,14 +119,24 @@ public class MachineRadarBlock extends BaseEntityBlock implements IMultiblockCon
             }
             if (!level.isClientSide()) {
                 structureHelper.destroyStructure(level, pos, state.getValue(FACING));
-                EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
             }
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return handleUse(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return handleUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult handleUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (pos.getY() < MachineRadarBlockEntity.RADAR_ALTITUDE) {
             if (!level.isClientSide) {
                 player.sendSystemMessage(Component.translatable("chat.radar.tolow"));
@@ -146,7 +151,7 @@ public class MachineRadarBlock extends BaseEntityBlock implements IMultiblockCon
         if (!level.isClientSide) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider menuProvider && player instanceof ServerPlayer serverPlayer) {
-                NetworkHooks.openScreen(serverPlayer, menuProvider, pos);
+                MenuRegistry.openExtendedMenu(serverPlayer, menuProvider, buf -> buf.writeBlockPos(pos));
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
@@ -216,4 +221,13 @@ public class MachineRadarBlock extends BaseEntityBlock implements IMultiblockCon
     public int getLightBlock(BlockState state, BlockGetter level, BlockPos pos) {
         return 0;
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineRadarBlock> CODEC = simpleCodec(MachineRadarBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

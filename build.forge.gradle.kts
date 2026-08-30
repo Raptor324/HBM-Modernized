@@ -12,15 +12,12 @@ platform {
 			forgeVersionRange = "[${prop("deps.minecraft")}]"
 		}
 		required("forge") {
-			forgeVersionRange = "[1,)"
+			// Минимальная версия Forge: 47.3.31. Более старые версии Forge не смогут загрузить мод.
+			forgeVersionRange = "[47.3.31,)"
 		}
 		optional("architectury") {
 			slug("architectury-api")
 			forgeVersionRange = "[${prop("deps.architectury")},)"
-		}
-		required("cloth_config") {
-			slug(modrinthSlug = "cloth-config", curseforgeSlug = "cloth-config")
-			forgeVersionRange = "[${prop("deps.cloth-config")},)"
 		}
 	}
 }
@@ -51,6 +48,16 @@ legacyForge {
 			programArgument("--nogui")
 			jvmArguments.addAll("-Xmx4G", "-Xms2G")
 		}
+		// GameTest-сервер: headless-прогон всех @GameTest без GUI.
+		register("gameTestServer") {
+			server()
+			gameDirectory = file("run/")
+			ideName = "Forge GameTest (${stonecutter.active?.version})"
+			systemProperty("forge.gameTestServer", "true")
+			systemProperty("forge.enableGameTest", "true")
+			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8")
+		}
+
 		register("data") {
 			data()
 			gameDirectory = file("run/")
@@ -92,6 +99,8 @@ repositories {
 	// Create compat (опционально): Create, Flywheel. См. com.hbm_m.compat.create.
 	maven("https://maven.createmod.net") { name = "Create" }
 	maven("https://maven.ithundxr.dev/mirror") { name = "Ithundxr Mirror" }
+	// Curios API (опционально): слот лица для противогазов. См. com.hbm_m.compat.curios.
+	maven("https://maven.theillusivec4.top/") { name = "Illusive Soul Works" }
 	flatDir { dirs(rootProject.file("libs")) }
 }
 
@@ -103,27 +112,44 @@ dependencies {
 
 	"modImplementation"("dev.architectury:architectury-forge:${prop("deps.architectury")}")
 	jarJar("dev.architectury:architectury-forge:${prop("deps.architectury")}")
-	"modImplementation"("me.shedaniel.cloth:cloth-config-forge:${prop("deps.cloth-config")}")
 
 	"modCompileOnly"("curse.maven:jei-238222:${prop("deps.jei")}")
 	"modRuntimeOnly"("curse.maven:jei-238222:${prop("deps.jei")}")
-	// Create compat — compile-only (мод опциональный, работает и без Create).
-	// slim-артефакт без транзитивных зависимостей; flywheel-api нужен только для
-	// сигнатур Create MovementBehaviour (VisualizationContext и т.п.).
-	"modCompileOnly"("com.simibubi.create:create-1.20.1:${prop("deps.create")}:slim")
+
+	// Curios (опционально): API для компиляции, сам мод — в рантайм для тестов.
+	"modCompileOnly"("top.theillusivec4.curios:curios-forge:5.14.1+1.20.1:api")
+	"modRuntimeOnly"("top.theillusivec4.curios:curios-forge:5.14.1+1.20.1")
+
+	"modCompileOnly"("com.simibubi.create:create-1.20.1:${prop("deps.create")}:slim") {
+		isTransitive = false
+	}
+	// Sable (экосистема Create Aeronautics, существует только на 1.21.1+):
+	// compileOnly только для валидации строковых таргетов миксинов на этапе
+	// компиляции. На 1.20.1 классы Sable в рантайме отсутствуют -> миксины
+	// не применяются (no-op, мод не падает).
+	compileOnly("maven.modrinth:sable:2.0.5+mc1.21.1")
 	"modCompileOnly"("dev.engine-room.flywheel:flywheel-forge-api-1.20.1:${prop("deps.flywheel")}")
-	"modRuntimeOnly"("curse.maven:embeddium-908741:5681725")
-	"modRuntimeOnly"("curse.maven:oculus-581495:6020952")
+	// Embeddium падает в data-режиме (Minecraft.getInstance()==null при конструировании),
+	// поэтому для runData запускаемся с -PnoClientMods, отключающим клиентские моды.
+	if (!project.hasProperty("noClientMods")) {
+		"modRuntimeOnly"("curse.maven:embeddium-908741:5681725")
+		"modRuntimeOnly"("curse.maven:oculus-581495:6020952")
+	}
 	"modRuntimeOnly"("curse.maven:modernfix-790626:7515215")
 	"modRuntimeOnly"("curse.maven:smooth-boot-reloaded-633412:5016280")
-	"modRuntimeOnly"("maven.modrinth:spark:1.10.53-forge")
+	
 	"modRuntimeOnly"("curse.maven:screenshot-to-clipboard-326950:3643026")
 	// "modRuntimeOnly"("maven.modrinth:cwoL6CqY:3PEwIAxS") // Item Transforms Helper
 	// "modRuntimeOnly"("maven.modrinth:f3zK7pP5:8gUY8UiV") // Tick Freeze
-
+	"modRuntimeOnly"("maven.modrinth:spark:1.10.53-forge")
+	"modRuntimeOnly"("maven.modrinth:VYRu7qmG:QtSVNyjm") // Observable -  profiles (tile) entities and shows you what's taking up tick time and where.
+	"modRuntimeOnly"("maven.modrinth:ordsPcFz:Zsh14XeQ") // Kotlin For Forge
 	// "modRuntimeOnly"("curse.maven:konkrete-410295:5028413")
-	// "modCompileOnly"("maven.modrinth:distanthorizons:lcyL2Fq3")
-	// "modRuntimeOnly"("maven.modrinth:distanthorizons:lcyL2Fq3")
+	// Distant Horizons: compileOnly для официального API (DhApiBeforeApplyShaderRenderEvent
+	// и пр.) в com.hbm_m.client.compat.dh.DhRenderBridge. Класс моста грузится только при
+	// установленном DH, поэтому отсутствие зависимости в рантайме безопасно.
+	"modCompileOnly"("maven.modrinth:distanthorizons:3.2.0-b-1.20.1") // 3.2.0-b-1.20.1
+	// "modRuntimeOnly"("maven.modrinth:distanthorizons:3.2.0-b-1.20.1")
 
 	// "modRuntimeOnly"("curse.maven:xaeros-world-map-317780:7598469")
     // "modRuntimeOnly"("curse.maven:xaeros-minimap-263420:7598586")
@@ -140,7 +166,17 @@ tasks.named("createMinecraftArtifacts") {
 	dependsOn(tasks.named("stonecutterGenerate"))
 }
 
+// Датаген и GameTest'ы нужны только в dev-ранах (runData / gameTestServer работают
+// из classes-директории, не из jar) — в продакшен-jar они не попадают.
+// reobfJar (публикуемый артефакт) строится поверх этого jar и наследует исключения.
+tasks.named<Jar>("jar") {
+	exclude("com/hbm_m/datagen/**", "com/hbm_m/test/**")
+}
+
 tasks.withType<JavaCompile>().configureEach { options.encoding = "UTF-8" }
 
 stonecutter {
 }
+
+
+

@@ -78,7 +78,11 @@ public class MachineDifurnaceRtgBlockEntity extends BaseMachineBlockEntity {
         SimpleContainer container = new SimpleContainer(4);
         container.setItem(1, top);
         container.setItem(2, bottom);
-        return level.getRecipeManager().getRecipeFor(BlastFurnaceRecipe.Type.INSTANCE, container, level);
+        // 1.21.1: getRecipeFor требует RecipeInput — используем getAllRecipes + matchesRecipe.
+        return com.hbm_m.platform.recipe.RecipeHooks
+                .getAllRecipes(level, BlastFurnaceRecipe.Type.INSTANCE).stream()
+                .filter(r -> r.matchesRecipe(new com.hbm_m.platform.recipe.RecipeInputWrapper(container), level))
+                .findFirst();
     }
 
     private void craftItem(Level level) {
@@ -125,14 +129,14 @@ public class MachineDifurnaceRtgBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progress);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progress = tag.getInt("progress");
     }
 }

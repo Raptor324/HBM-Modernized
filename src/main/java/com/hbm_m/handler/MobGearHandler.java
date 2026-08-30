@@ -1,8 +1,12 @@
 package com.hbm_m.handler;
 
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.gasmask.IGasMask;
+
 import dev.architectury.event.EventResult;
 import dev.architectury.event.events.common.EntityEvent;
+
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.monster.Skeleton;
@@ -10,7 +14,101 @@ import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.List;
+
+/**
+ * Экипировка мобов при спавне. Порт {@code ModEventHandler.decorateMob} + {@code MobUtil}
+ * (1.7.10): пер-слотовые взвешенные пулы с большим весом «ничего» — поэтому мобы чаще
+ * всего спавнятся с одним предметом (например, только противогазом), а не фулл-сетом.
+ * Противогазам сразу вкручивается базовый фильтр (как в {@code MobUtil.assignItemsToEntity}).
+ *
+ * <p>Отличия от оригинала: пулы сокращены до предметов, которые в порту являются
+ * носимыми ArmorItem (robes/no9/mask_of_infamy/hat/goggles/jackt в порту — обычные
+ * предметы); pollution/soot не портирован, поэтому сажа-гейты опущены, а у скелета
+ * оставлено ванильное оружие (guns/EntityAIFireGun не перенесены).</p>
+ */
 public class MobGearHandler {
+
+    private record Entry(Item item, int weight) {
+    }
+
+    private record SlotPool(int nullWeight, List<Entry> entries) {
+    }
+
+    /**
+     * Лениво загружаемый контейнер пулов: статические поля здесь инициализируются при
+     * первом обращении из equipSlot (в рантайме, после регистрации предметов) —
+     * обращение к ModItems.get() на этапе регистрации падает ("Registry Object not present").
+     */
+    private static final class Pools {
+        private static final SlotPool ZOMBIE_HELMET = new SlotPool(8000, List.of(
+            new Entry(ModItems.GAS_MASK_M65.get(), 16),
+            new Entry(ModItems.GAS_MASK_OLDE.get(), 12),
+            new Entry(ModItems.GAS_MASK_MONO.get(), 8),
+            new Entry(ModItems.MASK_PISS.get(), 1),
+            new Entry(ModItems.COBALT_HELMET.get(), 2),
+            new Entry(ModItems.ALLOY_HELMET.get(), 2),
+            new Entry(ModItems.TITANIUM_HELMET.get(), 4),
+            new Entry(ModItems.STEEL_HELMET.get(), 8)));
+
+    private static final SlotPool SKELETON_HELMET = new SlotPool(8000, List.of(
+            new Entry(ModItems.GAS_MASK_M65.get(), 16),
+            new Entry(ModItems.GAS_MASK_OLDE.get(), 12),
+            new Entry(ModItems.GAS_MASK_MONO.get(), 8),
+            new Entry(ModItems.MASK_PISS.get(), 1),
+            new Entry(ModItems.COBALT_HELMET.get(), 2),
+            new Entry(ModItems.ALLOY_HELMET.get(), 2),
+            new Entry(ModItems.TITANIUM_HELMET.get(), 4),
+            new Entry(ModItems.STEEL_HELMET.get(), 8)));
+
+    private static final SlotPool ZOMBIE_CHEST = new SlotPool(7000, List.of(
+            new Entry(ModItems.STARMETAL_CHESTPLATE.get(), 1),
+            new Entry(ModItems.COBALT_CHESTPLATE.get(), 2),
+            new Entry(ModItems.ALLOY_CHESTPLATE.get(), 2),
+            new Entry(ModItems.STEEL_CHESTPLATE.get(), 2)));
+
+    private static final SlotPool SKELETON_CHEST = new SlotPool(7000, List.of(
+            new Entry(ModItems.STARMETAL_CHESTPLATE.get(), 1),
+            new Entry(ModItems.COBALT_CHESTPLATE.get(), 2),
+            new Entry(ModItems.ALLOY_CHESTPLATE.get(), 2),
+            new Entry(ModItems.STEEL_CHESTPLATE.get(), 8),
+            new Entry(ModItems.TITANIUM_CHESTPLATE.get(), 4)));
+
+    private static final SlotPool ZOMBIE_LEGS = new SlotPool(7000, List.of(
+            new Entry(ModItems.ZIRCONIUM_LEGS.get(), 1),
+            new Entry(ModItems.COBALT_LEGGINGS.get(), 2),
+            new Entry(ModItems.STEEL_LEGGINGS.get(), 16),
+            new Entry(ModItems.TITANIUM_LEGGINGS.get(), 8),
+            new Entry(ModItems.ALLOY_LEGGINGS.get(), 2)));
+
+    private static final SlotPool SKELETON_LEGS = ZOMBIE_LEGS;
+
+    private static final SlotPool ZOMBIE_BOOTS = new SlotPool(7000, List.of(
+            new Entry(ModItems.STEEL_BOOTS.get(), 16),
+            new Entry(ModItems.COBALT_BOOTS.get(), 2),
+            new Entry(ModItems.ALLOY_BOOTS.get(), 2)));
+
+    private static final SlotPool SKELETON_BOOTS = new SlotPool(10000, List.of(
+            new Entry(ModItems.STEEL_BOOTS.get(), 16),
+            new Entry(ModItems.COBALT_BOOTS.get(), 2),
+            new Entry(ModItems.ALLOY_BOOTS.get(), 2),
+            new Entry(ModItems.TITANIUM_BOOTS.get(), 6)));
+
+    /** Рукопашный пул зомби (MobUtil.slotPoolCommonS слот 0; reer_graar в порт не перенесён). */
+    private static final SlotPool ZOMBIE_HAND = new SlotPool(10000, List.of(
+            new Entry(ModItems.PIPE_LEAD.get(), 30),
+            new Entry(ModItems.CROWBAR.get(), 25),
+            new Entry(ModItems.GEIGER_COUNTER.get(), 20),
+            new Entry(ModItems.STEEL_PICKAXE.get(), 12),
+            new Entry(ModItems.STOPSIGN.get(), 10),
+            new Entry(ModItems.SOPSIGN.get(), 8),
+            new Entry(ModItems.CHERNOBYLSIGN.get(), 6),
+            new Entry(ModItems.STEEL_SWORD.get(), 15),
+            new Entry(ModItems.TITANIUM_SWORD.get(), 8),
+            new Entry(ModItems.LEAD_GAVEL.get(), 4),
+            new Entry(ModItems.WRENCH_FLIPPED.get(), 2),
+                    new Entry(ModItems.WRENCH.get(), 20)));
+    }
 
     public static void init() {
         EntityEvent.LIVING_CHECK_SPAWN.register((entity, level, x, y, z, type, spawner) -> {
@@ -27,127 +125,46 @@ public class MobGearHandler {
     }
 
     private static void equipZombie(Zombie zombie) {
-        if (zombie.getRandom().nextFloat() >= 0.07f) return; // 7% шанс экипировки
-
-        applyZombieArmor(zombie);
-
-        // Выбираем случайное оружие
-        ItemStack weapon = chooseZombieWeapon(zombie);
-        zombie.setItemSlot(EquipmentSlot.MAINHAND, weapon);
-
-        // Устанавливаем шанс дропа (как у ванильных)
-        setDropChances(zombie, 0.05f);
+        equipSlot(zombie, EquipmentSlot.HEAD, Pools.ZOMBIE_HELMET);
+        equipSlot(zombie, EquipmentSlot.CHEST, Pools.ZOMBIE_CHEST);
+        equipSlot(zombie, EquipmentSlot.LEGS, Pools.ZOMBIE_LEGS);
+        equipSlot(zombie, EquipmentSlot.FEET, Pools.ZOMBIE_BOOTS);
+        equipSlot(zombie, EquipmentSlot.MAINHAND, Pools.ZOMBIE_HAND);
     }
-
-    private static void applyZombieArmor(Zombie zombie) {
-        float roll = zombie.getRandom().nextFloat();
-
-        if (roll < 0.25f) {
-            applyArmorSet(zombie,
-                    ModItems.STEEL_HELMET.get(),
-                    ModItems.STEEL_CHESTPLATE.get(),
-                    ModItems.STEEL_LEGGINGS.get(),
-                    ModItems.STEEL_BOOTS.get());
-        } else if (roll < 0.45f) {
-            applyArmorSet(zombie,
-                    ModItems.ALLOY_HELMET.get(),
-                    ModItems.ALLOY_CHESTPLATE.get(),
-                    ModItems.ALLOY_LEGGINGS.get(),
-                    ModItems.ALLOY_BOOTS.get());
-        } else if (roll < 0.65f) {
-            applyArmorSet(zombie,
-                    ModItems.COBALT_HELMET.get(),
-                    ModItems.COBALT_CHESTPLATE.get(),
-                    ModItems.COBALT_LEGGINGS.get(),
-                    ModItems.COBALT_BOOTS.get());
-        } else if (roll < 0.85f) {
-            applyArmorSet(zombie,
-                    ModItems.TITANIUM_HELMET.get(),
-                    ModItems.TITANIUM_CHESTPLATE.get(),
-                    ModItems.TITANIUM_LEGGINGS.get(),
-                    ModItems.TITANIUM_BOOTS.get());
-        } else if (roll < 0.92f) {
-            applyArmorSet(zombie,
-                    ModItems.HAZMAT_HELMET.get(),
-                    ModItems.HAZMAT_CHESTPLATE.get(),
-                    ModItems.HAZMAT_LEGGINGS.get(),
-                    ModItems.HAZMAT_BOOTS.get());
-        } else {
-            applyArmorSet(zombie,
-                    ModItems.SECURITY_HELMET.get(),
-                    ModItems.SECURITY_CHESTPLATE.get(),
-                    ModItems.SECURITY_LEGGINGS.get(),
-                    ModItems.SECURITY_BOOTS.get());
-        }
-    }
-
-    private static ItemStack chooseZombieWeapon(Zombie zombie) {
-        float roll = zombie.getRandom().nextFloat();
-
-        if (roll < 0.15f) return new ItemStack(ModItems.ALLOY_SWORD.get());
-        if (roll < 0.30f) return new ItemStack(ModItems.ALLOY_PICKAXE.get());
-        if (roll < 0.45f) return new ItemStack(ModItems.ALLOY_SHOVEL.get());
-        if (roll < 0.60f) return new ItemStack(ModItems.TITANIUM_SWORD.get());
-        if (roll < 0.75f) return new ItemStack(ModItems.TITANIUM_PICKAXE.get());
-        if (roll < 0.85f) return new ItemStack(ModItems.TITANIUM_SHOVEL.get());
-        if (roll < 0.90f) return new ItemStack(ModItems.STEEL_SWORD.get());
-        if (roll < 0.95f) return new ItemStack(ModItems.STEEL_PICKAXE.get());
-        return new ItemStack(ModItems.STEEL_SHOVEL.get());
-    }
-
-    // ══════════════════════════ Экипировка скелета ════════════════════════════
 
     private static void equipSkeleton(Skeleton skeleton) {
-        if (skeleton.getRandom().nextFloat() >= 0.07f) return;
-
-        applySkeletonArmor(skeleton);
-
-        setDropChances(skeleton, 0.1f);
+        // Оружие — ванильный лук (guns не портированы), броня — ranged-пул оригинала.
+        equipSlot(skeleton, EquipmentSlot.HEAD, Pools.SKELETON_HELMET);
+        equipSlot(skeleton, EquipmentSlot.CHEST, Pools.SKELETON_CHEST);
+        equipSlot(skeleton, EquipmentSlot.LEGS, Pools.SKELETON_LEGS);
+        equipSlot(skeleton, EquipmentSlot.FEET, Pools.SKELETON_BOOTS);
     }
 
-    private static void applySkeletonArmor(Skeleton skeleton) {
-        float roll = skeleton.getRandom().nextFloat();
+    /** Разыгрывает слот: с весом nullWeight остаётся пустым (как WeightedRandom в оригинале). */
+    private static void equipSlot(Mob mob, EquipmentSlot slot, SlotPool pool) {
+        RandomSource random = mob.getRandom();
 
-        if (roll < 0.25f) {
-            applyArmorSet(skeleton,
-                    ModItems.STEEL_HELMET.get(),
-                    ModItems.STEEL_CHESTPLATE.get(),
-                    ModItems.STEEL_LEGGINGS.get(),
-                    ModItems.STEEL_BOOTS.get());
-        } else if (roll < 0.50f) {
-            applyArmorSet(skeleton,
-                    ModItems.TITANIUM_HELMET.get(),
-                    ModItems.TITANIUM_CHESTPLATE.get(),
-                    ModItems.TITANIUM_LEGGINGS.get(),
-                    ModItems.TITANIUM_BOOTS.get());
-        } else if (roll < 0.75f) {
-            applyArmorSet(skeleton,
-                    ModItems.COBALT_HELMET.get(),
-                    ModItems.COBALT_CHESTPLATE.get(),
-                    ModItems.COBALT_LEGGINGS.get(),
-                    ModItems.COBALT_BOOTS.get());
-        } else {
-            applyArmorSet(skeleton,
-                    ModItems.ALLOY_HELMET.get(),
-                    ModItems.ALLOY_CHESTPLATE.get(),
-                    ModItems.ALLOY_LEGGINGS.get(),
-                    ModItems.ALLOY_BOOTS.get());
+        int total = pool.nullWeight();
+        for (Entry e : pool.entries()) {
+            total += e.weight();
         }
-    }
 
-    // ══════════════════════════ Вспомогательные методы ════════════════════════
-
-    private static void setDropChances(Mob mob, float chance) {
-        mob.setDropChance(EquipmentSlot.HEAD,  chance);
-        mob.setDropChance(EquipmentSlot.CHEST, chance);
-        mob.setDropChance(EquipmentSlot.LEGS,  chance);
-        mob.setDropChance(EquipmentSlot.FEET,  chance);
-    }
-
-    private static void applyArmorSet(Mob mob, Item helmet, Item chestplate, Item leggings, Item boots) {
-        mob.setItemSlot(EquipmentSlot.HEAD, new ItemStack(helmet));
-        mob.setItemSlot(EquipmentSlot.CHEST, new ItemStack(chestplate));
-        mob.setItemSlot(EquipmentSlot.LEGS, new ItemStack(leggings));
-        mob.setItemSlot(EquipmentSlot.FEET, new ItemStack(boots));
+        if (random.nextInt(total) < pool.nullWeight()) {
+            return; // слот остаётся пустым
+        }
+        int roll = random.nextInt(total - pool.nullWeight());
+        for (Entry e : pool.entries()) {
+            roll -= e.weight();
+            if (roll < 0) {
+                ItemStack stack = new ItemStack(e.item());
+                // Противогазы спавнятся с уже вкрученным фильтром (MobUtil.assignItemsToEntity).
+                if (e.item() instanceof IGasMask && !IGasMask.hasFilter(stack)) {
+                    IGasMask.installFilter(stack, ModItems.GAS_MASK_FILTER.get());
+                }
+                mob.setItemSlot(slot, stack);
+                mob.setDropChance(slot, 0.085F); // ванильный шанс дропа экипировки
+                return;
+            }
+        }
     }
 }

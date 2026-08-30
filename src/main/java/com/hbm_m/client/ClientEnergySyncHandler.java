@@ -9,6 +9,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.fabricmc.api.Environment;*///?}
 
 import com.hbm_m.interfaces.ILongEnergyMenu;
+import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.powerarmor.ModArmorFSBPowered;
 
 import net.minecraft.client.Minecraft;
@@ -71,8 +72,7 @@ public class ClientEnergySyncHandler {
         if (armorStack.getItem() instanceof ModArmorFSBPowered) {
             // Обновляем отображаемый заряд на клиенте
             // (реальный заряд хранится на сервере, клиент только отображает)
-            CompoundTag tag = armorStack.getOrCreateTag();
-            tag.putLong("charge", energy);
+            PlatformHooks.putLong(armorStack, "charge", energy);
         }
     }
 }

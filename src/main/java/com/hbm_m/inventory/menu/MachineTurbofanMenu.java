@@ -98,11 +98,12 @@ public class MachineTurbofanMenu extends AbstractContainerMenu {
     private static boolean isEnergySource(ItemStack stack) {
         if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
         //? if forge {
-        return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+        if (stack.getCapability(ForgeCapabilities.ENERGY).isPresent()) return true;
         //?}
-        //? if fabric {
-        /*return false;
+        //? if neoforge {
+        /*if (stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null) return true;
         *///?}
+        return false;
     }
 
     @Override

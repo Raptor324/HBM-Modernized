@@ -54,7 +54,7 @@ public class MachineDeuteriumTowerBlockEntity extends BaseMachineBlockEntity {
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable net.minecraft.core.Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return tanks[TANK_WATER].getCapability().cast();
+            return tanks[TANK_WATER].getForgeFluidCapability().cast();
         }
         return super.getCapability(cap, side);
     }
@@ -93,15 +93,15 @@ public class MachineDeuteriumTowerBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tanks[TANK_WATER].writeToNBT(tag, "water");
         tanks[TANK_HEAVY_WATER].writeToNBT(tag, "heavyWater");
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         tanks[TANK_WATER].readFromNBT(tag, "water");
         tanks[TANK_HEAVY_WATER].readFromNBT(tag, "heavyWater");
     }

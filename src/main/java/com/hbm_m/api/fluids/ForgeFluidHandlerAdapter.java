@@ -2,6 +2,13 @@ package com.hbm_m.api.fluids;
 
 import java.util.Objects;
 
+//? if neoforge {
+/*import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.items.IItemHandler;
+*///?}
+
 import com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
@@ -137,6 +144,17 @@ public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
             // не коммитим — это симуляция
         }
         *///?}
+
+        //? if neoforge {
+        /*IFluidHandler handler = getNeoForgeHandler();
+        if (handler == null) return 0;
+        // Паритет с Forge: drain(int) не требует указания типа, фильтруем по substance.
+        FluidStack simulated = handler.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
+        if (simulated.isEmpty() || !VanillaFluidEquivalence.sameSubstance(simulated.getFluid(), fluid)) {
+            return 0;
+        }
+        return simulated.getAmount();
+        *///?}
     }
 
     @Override
@@ -193,6 +211,12 @@ public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
             // не коммитим — это симуляция
         }
         *///?}
+
+        //? if neoforge {
+        /*IFluidHandler handler = getNeoForgeHandler();
+        if (handler == null) return 0;
+        return handler.fill(new FluidStack(resolveNeoForgeFillFluid(handler, fluid), Integer.MAX_VALUE), IFluidHandler.FluidAction.SIMULATE);
+        *///?}
     }
 
     /**
@@ -228,6 +252,13 @@ public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
             if (filled > 0) tx.commit();
             return amount - filled;
         }
+        *///?}
+
+        //? if neoforge {
+        /*IFluidHandler handler = getNeoForgeHandler();
+        if (handler == null) return amount;
+        int filled = handler.fill(new FluidStack(resolveNeoForgeFillFluid(handler, fluid), clampInt(amount)), IFluidHandler.FluidAction.EXECUTE);
+        return amount - filled;
         *///?}
     }
 
@@ -312,6 +343,50 @@ public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
             }
         }
         return false;
+    }
+    *///?}
+
+    //? if neoforge {
+    /*/^* Паритет с Forge {@code hasInfiniteBarrel}: скан инвентаря контроллера на бочку {@link com.hbm_m.item.liquids.InfiniteFluidItem#isInstantNetwork()}. ^/
+    private boolean hasInfiniteBarrel(boolean wantSource) {
+        BlockEntity be = level.getBlockEntity(machinePos);
+        if (be == null || be.isRemoved()) return false;
+        BlockState st = level.getBlockState(machinePos);
+        IItemHandler items = level.getCapability(Capabilities.ItemHandler.BLOCK, machinePos, st, be, null);
+        if (items == null) return false;
+        for (int i = 0; i < items.getSlots(); i++) {
+            var stack = items.getStackInSlot(i);
+            if (stack.isEmpty()) continue;
+            if (stack.getItem() instanceof com.hbm_m.item.liquids.InfiniteFluidItem inf) {
+                if (!inf.isInstantNetwork()) continue;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /^* Паритет с Forge {@code getForgeHandler}: NeoForge FluidHandler.BLOCK через level.getCapability (1.21.1). ^/
+    @Nullable
+    private IFluidHandler getNeoForgeHandler() {
+        BlockEntity be = level.getBlockEntity(machinePos);
+        if (be == null || be.isRemoved()) return null;
+        BlockState st = level.getBlockState(machinePos);
+        return level.getCapability(Capabilities.FluidHandler.BLOCK, machinePos, st, be, sideOfMachineFacingDuct);
+    }
+
+    /^* Паритет с Forge {@code resolveForgeFillFluid}: тот же fluid instance, что уже в баке, иначе канонический представитель. ^/
+    private static Fluid resolveNeoForgeFillFluid(IFluidHandler handler, Fluid target) {
+        for (int i = 0; i < handler.getTanks(); i++) {
+            FluidStack inTank = handler.getFluidInTank(i);
+            if (!inTank.isEmpty()) {
+                return inTank.getFluid();
+            }
+        }
+        return VanillaFluidEquivalence.forVanillaContainerFill(target);
+    }
+
+    private static int clampInt(long v) {
+        return (int) Math.min(v, Integer.MAX_VALUE);
     }
     *///?}
 

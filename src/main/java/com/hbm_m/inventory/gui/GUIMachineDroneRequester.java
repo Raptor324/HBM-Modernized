@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.network.MachineDroneRequesterBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.filter.ModulePatternMatcher;
 import com.hbm_m.inventory.menu.MachineDroneRequesterMenu;
 import com.hbm_m.lib.RefStrings;
@@ -43,10 +44,10 @@ public class GUIMachineDroneRequester extends GuiInfoScreen<MachineDroneRequeste
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        for (int i = 0; i < 9; i++) {
+        for (int i = 0; i < 9 && requester != null; i++) {
             Slot slot = this.menu.slots.get(i);
             String mode = requester.getMatcher().getMode(i);
             if (mode != null && isHoveringSlot(slot, mouseX, mouseY)) {
@@ -62,6 +63,7 @@ public class GUIMachineDroneRequester extends GuiInfoScreen<MachineDroneRequeste
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (requester == null) return super.mouseClicked(mouseX, mouseY, button); // тайл может отсутствовать в реплее Flashback
         for (int i = 0; i < 9; i++) {
             Slot slot = this.menu.slots.get(i);
             if (isHoveringSlot(slot, (int) mouseX, (int) mouseY) && button == 1 && slot.hasItem()) {

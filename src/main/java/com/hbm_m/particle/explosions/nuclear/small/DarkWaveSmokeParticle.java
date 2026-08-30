@@ -24,9 +24,8 @@ public class DarkWaveSmokeParticle extends AbstractExplosionParticle {
     private static final double LIFT_FORCE = 0.3;
     private static final double MAX_LIFT_HEIGHT = 5.0;
 
-    // ┌─────────────────────────────────────────────────────────────┐
-    // │ НАСТРОЙКИ ЭФФЕКТА ТРЯСКИ                                    │
-    // └─────────────────────────────────────────────────────────────┘
+    
+    //НАСТРОЙКИ ЭФФЕКТА ТРЯСКИ
 
     // Радиус воздействия на игрока (в блоках)
     private static final double PLAYER_EFFECT_RADIUS = 2.0;
@@ -43,9 +42,9 @@ public class DarkWaveSmokeParticle extends AbstractExplosionParticle {
     // Кулдаун между применениями эффекта (в тиках)
     private int effectCooldown = 0;
 
-    // ┌─────────────────────────────────────────────────────────────┐
-    // │ СОХРАНЕНИЕ ЭПИЦЕНТРА ВЗРЫВА                                 │
-    // └─────────────────────────────────────────────────────────────┘
+    
+    // │ СОХРАНЕНИЕ ЭПИЦЕНТРА ВЗРЫВА
+    
 
     // Начальная позиция взрыва (эпицентр)
     private final double explosionCenterX;
@@ -104,9 +103,9 @@ public class DarkWaveSmokeParticle extends AbstractExplosionParticle {
             return;
         }
 
-        // ┌─────────────────────────────────────────────────────────────┐
-        // │ ПРОВЕРКА КАСАНИЯ ИГРОКА                                     │
-        // └─────────────────────────────────────────────────────────────┘
+        
+        // │ ПРОВЕРКА КАСАНИЯ ИГРОКА    
+        
 
         if (effectCooldown > 0) {
             effectCooldown--;
@@ -114,9 +113,9 @@ public class DarkWaveSmokeParticle extends AbstractExplosionParticle {
             checkPlayerCollision();
         }
 
-        // ┌─────────────────────────────────────────────────────────────┐
+        
         // │ ПРОВЕРКА СТОЛКНОВЕНИЙ С БЛОКАМИ                             │
-        // └─────────────────────────────────────────────────────────────┘
+        
 
         Vec3 nextPos = new Vec3(this.x + this.xd, this.y + this.yd, this.z + this.zd);
         BlockPos blockPos = new BlockPos((int) Math.floor(nextPos.x),
@@ -215,16 +214,16 @@ public class DarkWaveSmokeParticle extends AbstractExplosionParticle {
      * @param distanceSq Квадрат расстояния до игрока
      */
     private void applyShockwaveEffect(LocalPlayer player, double distanceSq) {
-        // ┌─────────────────────────────────────────────────────────────┐
+        
         // │ 1. КОЭФФИЦИЕНТ ОТ РАССТОЯНИЯ ДО ИГРОКА                     │
-        // └─────────────────────────────────────────────────────────────┘
+        
         // Чем ближе игрок к частице - тем сильнее эффект
         double distance = Math.sqrt(distanceSq);
         float playerProximity = (float) (1.0 - distance / PLAYER_EFFECT_RADIUS);
 
-        // ┌─────────────────────────────────────────────────────────────┐
+        
         // │ 2. КОЭФФИЦИЕНТ ОТ РАССТОЯНИЯ ОТ ЭПИЦЕНТРА                  │
-        // └─────────────────────────────────────────────────────────────┘
+        
         // Чем дальше частица от эпицентра - тем слабее её "сила"
         double distanceFromCenter = getDistanceFromExplosionCenter();
 
@@ -238,9 +237,9 @@ public class DarkWaveSmokeParticle extends AbstractExplosionParticle {
             distanceFalloff = 0.0F;
         }
 
-        // ┌─────────────────────────────────────────────────────────────┐
-        // │ 3. ИТОГОВАЯ ИНТЕНСИВНОСТЬ                                   │
-        // └─────────────────────────────────────────────────────────────┘
+        
+        // │ 3. ИТОГОВАЯ ИНТЕНСИВНОСТЬ  
+        
 
         // Базовая интенсивность = MAX_SHAKE_INTENSITY * близость игрока * удалённость от центра
         float baseIntensity = MAX_SHAKE_INTENSITY * playerProximity * distanceFalloff;

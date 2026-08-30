@@ -5,10 +5,8 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;
 
-import dev.architectury.utils.Env;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -24,18 +22,12 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 //? if forge {
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 //?}
 //? if forge {
 @OnlyIn(Dist.CLIENT)
 //?}
 //? if fabric {
 /*@Environment(EnvType.CLIENT)*///?}
-//? if forge {
-@Mod.EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
-//?}
 public class OverlayInfoToast {
 
     private static final List<Entry> ENTRIES = new ArrayList<>();
@@ -114,10 +106,8 @@ public class OverlayInfoToast {
         show(text, 60, ID_TOOL_MODE, rgbFromFormatting(formatting));
     }
 
-    //? if forge {
-    @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) return;
+    /** Кросс-лоадерное затухание записей; вызывается из ClientModEvents (Architectury ClientTickEvent.CLIENT_POST). */
+    public static void tick() {
         if (Minecraft.getInstance().isPaused()) return;
 
         Iterator<Entry> it = ENTRIES.iterator();
@@ -127,7 +117,6 @@ public class OverlayInfoToast {
             if (e.ticksLeft <= 0) it.remove();
         }
     }
-    //?}
 
     public static void render(GuiGraphics gfx, float partialTick, int screenWidth, int screenHeight) {
         if (ENTRIES.isEmpty()) return;

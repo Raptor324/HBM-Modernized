@@ -10,6 +10,7 @@ import java.util.Optional;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.Screen;
@@ -64,8 +65,8 @@ public class ArmorTooltipHandler {
         }
 
         boolean hasMods = false;
-        if (stack.hasTag() && stack.getTag().contains(ArmorModificationHelper.MOD_COMPOUND_KEY, 10)) {
-            CompoundTag modsCompound = stack.getTag().getCompound(ArmorModificationHelper.MOD_COMPOUND_KEY);
+        if (PlatformHooks.hasItemTag(stack) && PlatformHooks.contains(stack, ArmorModificationHelper.MOD_COMPOUND_KEY)) {
+            CompoundTag modsCompound = PlatformHooks.getCompound(stack, ArmorModificationHelper.MOD_COMPOUND_KEY);
             hasMods = !modsCompound.isEmpty();
         }
 
@@ -87,10 +88,10 @@ public class ArmorTooltipHandler {
             return Optional.empty();
         }
 
-        if (!stack.hasTag() || !stack.getTag().contains(ArmorModificationHelper.MOD_COMPOUND_KEY, 10)) {
+        if (!PlatformHooks.hasItemTag(stack) || !PlatformHooks.contains(stack, ArmorModificationHelper.MOD_COMPOUND_KEY)) {
             return Optional.empty();
         }
-        CompoundTag modsCompound = stack.getTag().getCompound(ArmorModificationHelper.MOD_COMPOUND_KEY);
+        CompoundTag modsCompound = PlatformHooks.getCompound(stack, ArmorModificationHelper.MOD_COMPOUND_KEY);
         if (modsCompound.isEmpty()) {
             return Optional.empty();
         }
@@ -99,7 +100,17 @@ public class ArmorTooltipHandler {
         for (int i = 0; i < 9; i++) {
             String key = ArmorModificationHelper.MOD_SLOT_KEY_PREFIX + i;
             if (modsCompound.contains(key)) {
+                
+                //? if < 1.21.1 {
                 ItemStack modStack = ItemStack.of(modsCompound.getCompound(key));
+                //?} else {
+                /*net.minecraft.core.HolderLookup.Provider provider = null;
+                if (dev.architectury.platform.Platform.getEnvironment() == dev.architectury.utils.Env.CLIENT) {
+                    provider = getClientProvider();
+                }
+                ItemStack modStack = provider != null ? ItemStack.parseOptional(provider, modsCompound.getCompound(key)) : ItemStack.EMPTY;
+                *///?}
+                
                 if (!modStack.isEmpty() && modStack.getItem() instanceof ItemArmorMod) {
                     ItemArmorMod mod = (ItemArmorMod) modStack.getItem();
                     
@@ -336,4 +347,20 @@ public class ArmorTooltipHandler {
             list.add(line.withStyle(ChatFormatting.GRAY));
         }
     }
+    
+    //? if >= 1.21.1 {
+    /*//? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif fabric {
+    /^@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+    ^///?} elif neoforge {
+    /^@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    ^///?}
+    private static net.minecraft.core.HolderLookup.Provider getClientProvider() {
+        var mc = net.minecraft.client.Minecraft.getInstance();
+        if (mc.level != null) return mc.level.registryAccess();
+        if (mc.getConnection() != null) return mc.getConnection().registryAccess();
+        return null;
+    }
+    *///?}
 }

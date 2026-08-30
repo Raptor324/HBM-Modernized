@@ -1,10 +1,10 @@
 package com.hbm_m.item.special;
 
+import com.hbm_m.item.ITooltipProvider;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.effect.BlackHoleEntity;
 import com.hbm_m.item.ModItems;
-import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -19,7 +19,7 @@ import java.util.List;
 /**
  * Опасные предметы при падении на землю (порт {@code com.hbm.item.special.ItemDrop}).
  */
-public class ItemDrop extends Item {
+public class ItemDrop extends Item implements ITooltipProvider {
 
     public ItemDrop(Properties properties) {
         super(properties);
@@ -36,7 +36,7 @@ public class ItemDrop extends Item {
             return false;
         }
 
-        ModClothConfig config = AutoConfig.getConfigHolder(ModClothConfig.class).getConfig();
+        ModClothConfig config = ModClothConfig.get();
 
         if (stack.is(ModItems.BLACK_HOLE.get()) && config.dropSingularity) {
             BlackHoleEntity hole = new BlackHoleEntity(ModEntities.BLACK_HOLE.get(), level);
@@ -58,8 +58,7 @@ public class ItemDrop extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
 
         if (stack.is(ModItems.PELLET_ANTIMATTER.get())) {
             tooltip.add(Component.literal("Very heavy antimatter cluster."));

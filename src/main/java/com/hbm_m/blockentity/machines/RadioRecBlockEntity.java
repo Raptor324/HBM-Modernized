@@ -3,6 +3,7 @@ package com.hbm_m.blockentity.machines;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.network.radio.IRadioTorchConfigurable;
 import com.hbm_m.blockentity.network.radio.RTTYNetwork;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -22,7 +23,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * vollstaendiger Notenfolge-Dekodierung - der Kernmechanismus (RTTY-Kanal &rarr; hoerbare Ausgabe)
  * bleibt erhalten.
  */
-public class RadioRecBlockEntity extends BlockEntity implements IRadioTorchConfigurable {
+public class RadioRecBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IRadioTorchConfigurable {
 
     public String channel = "";
     public boolean isOn = false;
@@ -43,7 +44,7 @@ public class RadioRecBlockEntity extends BlockEntity implements IRadioTorchConfi
         RTTYNetwork.RttyChannel sig = RTTYNetwork.listen(level, be.channel);
         if (sig != null && sig.timeStamp != be.lastPlayedTick && sig.signal != null) {
             be.lastPlayedTick = sig.timeStamp;
-            level.playSound(null, pos, SoundEvents.NOTE_BLOCK_HARP.value(), SoundSource.RECORDS, 3.0F, 1.0F);
+            PlatformHooks.playSound(level, pos, SoundEvents.NOTE_BLOCK_HARP, SoundSource.RECORDS, 3.0F, 1.0F);
         }
     }
 
@@ -58,15 +59,13 @@ public class RadioRecBlockEntity extends BlockEntity implements IRadioTorchConfi
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         tag.putString("channel", channel);
         tag.putBoolean("isOn", isOn);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         channel = tag.getString("channel");
         isOn = tag.getBoolean("isOn");
     }

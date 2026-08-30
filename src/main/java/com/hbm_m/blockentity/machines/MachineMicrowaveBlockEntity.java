@@ -116,17 +116,17 @@ public class MachineMicrowaveBlockEntity extends BaseMachineBlockEntity {
 
         ItemStack result = recipe.get().getResultItem(level.registryAccess());
         if (result.isEmpty()) return false;
-        if (!input.getItem().isEdible() && !result.getItem().isEdible()) return false;
+        if (!com.hbm_m.platform.PlatformHooks.isEdible(input) && !com.hbm_m.platform.PlatformHooks.isEdible(result)) return false;
 
         ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT);
         if (current.isEmpty()) return true;
-        if (!ItemStack.isSameItemSameTags(current, result)) return false;
+        if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, result)) return false;
         return current.getCount() + result.getCount() <= result.getMaxStackSize();
     }
 
     private java.util.Optional<SmeltingRecipe> getRecipe(Level level, ItemStack input) {
-        recipeInput.setItem(0, input);
-        return level.getRecipeManager().getRecipeFor(RecipeType.SMELTING, recipeInput, level);
+        // 1.21.1: getRecipeFor требует RecipeInput (SingleRecipeInput) и возвращает RecipeHolder.
+        return com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(level, RecipeType.SMELTING, input);
     }
 
     public long getPowerScaled(int scale) {
@@ -144,15 +144,15 @@ public class MachineMicrowaveBlockEntity extends BaseMachineBlockEntity {
     // ==================== NBT ====================
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("time", time);
         tag.putInt("speed", speed);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         time = tag.getInt("time");
         speed = tag.getInt("speed");
     }

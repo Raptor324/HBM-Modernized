@@ -1,6 +1,9 @@
 package com.hbm_m.util;
 
+import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.gasmask.GasMaskUtil;
+import com.hbm_m.item.gasmask.IGasMask;
 
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -51,5 +54,24 @@ public final class ArmorUtil {
     private static boolean checkArmorPiece(LivingEntity entity, Item armor, EquipmentSlot slot) {
         ItemStack stack = entity.getItemBySlot(slot);
         return !stack.isEmpty() && stack.is(armor);
+    }
+
+    /**
+     * Износ фильтра на надетой маске (или на маске, прицепленной к шлему).
+     * Порт {@link com.hbm.util.ArmorUtil#damageGasMaskFilter} (1.7.10).
+     */
+    public static void damageGasMaskFilter(LivingEntity entity, int damage) {
+        if (damage <= 0) {
+            return;
+        }
+        ItemStack mask = GasMaskUtil.resolveWornMask(entity);
+        if (!mask.isEmpty() && mask.getItem() instanceof IGasMask) {
+            IGasMask.damageFilter(mask, damage);
+        }
+    }
+
+    /** Есть ли на сущности маска (надетая, прицепленная к шлему или в слоте лица Curios). */
+    public static boolean isWearingMask(LivingEntity entity) {
+        return !GasMaskUtil.resolveWornMask(entity).isEmpty();
     }
 }

@@ -213,9 +213,10 @@ public class MachineEPressBlockEntity extends BaseMachineBlockEntity {
             container.setItem(i, inventory.getStackInSlot(i));
         }
 
-        RecipeType type = (RecipeType) PressRecipe.Type.INSTANCE;
-        for (Object holderObj : level.getRecipeManager().getAllRecipesFor(type)) {
-            if (holderObj instanceof PressRecipe recipe && recipe.matches(container, level)) {
+        // 1.21.1: Recipe.matches требует RecipeInput, а рецепты завёрнуты в RecipeHolder —
+        // используем RecipeHooks.getAllRecipes + matchesRecipe(RecipeInputWrapper).
+        for (PressRecipe recipe : com.hbm_m.platform.recipe.RecipeHooks.getAllRecipes(level, (RecipeType<PressRecipe>) (RecipeType<?>) PressRecipe.Type.INSTANCE)) {
+            if (recipe.matchesRecipe(new com.hbm_m.platform.recipe.RecipeInputWrapper(container), level)) {
                 return Optional.of(recipe);
             }
         }
@@ -252,8 +253,8 @@ public class MachineEPressBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("press", press);
         tag.putBoolean("isRetracting", isRetracting);
         tag.putInt("delay", delay);
@@ -261,8 +262,8 @@ public class MachineEPressBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         press = tag.getInt("press");
         isRetracting = tag.getBoolean("isRetracting");
         delay = tag.getInt("delay");

@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
+
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
@@ -18,15 +19,15 @@ import com.hbm_m.client.render.shader.IrisExtendedShaderAccess;
 import com.hbm_m.client.render.shader.IrisPhaseGuard;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
+import com.hbm_m.client.render.shader.ModShaders;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.platform.RenderHooks;
+import com.mojang.blaze3d.platform.GlStateManager;
+
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
@@ -40,15 +41,14 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
+
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
 
     /**
@@ -81,9 +81,42 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
     private static final ThreadLocal<Boolean> worldMissileOverlayDraw = ThreadLocal.withInitial(() -> false);
     /** Entity-pass missile mesh: bias depth vs terrain written in the solid pass (horizon z-fighting). */
     private static final ThreadLocal<Boolean> entityMissileDepthBias = ThreadLocal.withInitial(() -> false);
+    /**
+     * Какой веткой последний раз рисовался track-меш (только под флагом
+     * entityMissileDepthBias): "vbo", "quads" (фолбэк putBulkData) или null
+     * (ничего не рисовалось). Читается EngineHandler'ом для диагностики
+     * «чёрного экрана»: расхождение между ожидаемым VBO-путём и фактическим
+     * фолбэком сразу объясняет пропажу блит-биндов из кадра.
+     */
+    public static final ThreadLocal<String> lastTrackMeshBranch = new ThreadLocal<>();
     private static final float ENTITY_MISSILE_DEPTH_FACTOR = -4.0F;
     private static final float ENTITY_MISSILE_DEPTH_UNITS = -4.0F;
 
+
+    /**
+     * Диагностика «меш прилипает к экрану»: раз в секунду логируем итоговую
+     * ModelView и её компоненты. Ожидание: RenderSystem MV = поворот камеры
+     * (верхний левый 3x3 ортонормирован, столбец трансляции ≈ 0), полная
+     * матрица несёт смещение меша относительно камеры.
+     */
+    private static long lastMvmLogMs = 0;
+    private static void logMissileMatrices(Matrix4f fullModelView, String mvSource) {
+        long now = System.currentTimeMillis();
+        if (now - lastMvmLogMs < 1000) return;
+        lastMvmLogMs = now;
+        try {
+            org.joml.Matrix4f rsMv = new org.joml.Matrix4f(com.mojang.blaze3d.systems.RenderSystem.getModelViewMatrix());
+            MainRegistry.LOGGER.info(
+                    "HBM vbo.mvm [iris={} src={}]: rsMV[col0=({},{},{}) col3=({},{},{})] full[m30={} m31={} m32={}]",
+                    com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive(),
+                    mvSource,
+                    String.format("%.4f", rsMv.m00()), String.format("%.4f", rsMv.m10()), String.format("%.4f", rsMv.m20()),
+                    String.format("%.4f", rsMv.m03()), String.format("%.4f", rsMv.m13()), String.format("%.4f", rsMv.m23()),
+                    String.format("%.2f", fullModelView.m30()), String.format("%.2f", fullModelView.m31()),
+                    String.format("%.2f", fullModelView.m32()));
+        } catch (Throwable ignored) {
+        }
+    }
 
     public static void setFadeAlpha(float alpha) {
         currentFadeAlpha.set(alpha);
@@ -127,8 +160,6 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
     private final Matrix4f tmpLocalPose = new Matrix4f();
     private final Matrix4f tmpInvViewRot = new Matrix4f();
     private final float[] tmpCornerUV = new float[16];
-    private final float[] tmpProbeUV = new float[32];
-    protected boolean useSlicedLight = false;
 
     // Cached block_lit uniform handles (per renderer instance, invalidated on shader relink).
     private ShaderInstance cachedBlockLitShader;
@@ -140,22 +171,10 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
     private Uniform cachedLightC23;
     private Uniform cachedLightC45;
     private Uniform cachedLightC67;
-    private Uniform cachedLightS0C01;
-    private Uniform cachedLightS0C23;
-    private Uniform cachedLightS1C01;
-    private Uniform cachedLightS1C23;
-    private Uniform cachedLightS2C01;
-    private Uniform cachedLightS2C23;
-    private Uniform cachedLightS3C01;
-    private Uniform cachedLightS3C23;
     private Uniform cachedFogStartU;
     private Uniform cachedFogEndU;
     private Uniform cachedFogColorU;
     private Uniform cachedFadeAlphaU;
-
-    public void setUseSlicedLight(boolean useSlicedLight) {
-        this.useSlicedLight = useSlicedLight;
-    }
 
     private void updateBlockLitUniformCache(ShaderInstance shader) {
         int programId = (shader != null) ? shader.getId() : -1;
@@ -176,14 +195,6 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             cachedLightC23 = null;
             cachedLightC45 = null;
             cachedLightC67 = null;
-            cachedLightS0C01 = null;
-            cachedLightS0C23 = null;
-            cachedLightS1C01 = null;
-            cachedLightS1C23 = null;
-            cachedLightS2C01 = null;
-            cachedLightS2C23 = null;
-            cachedLightS3C01 = null;
-            cachedLightS3C23 = null;
             cachedFogStartU = null;
             cachedFogEndU = null;
             cachedFogColorU = null;
@@ -196,14 +207,6 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         cachedLightC23 = shader.getUniform("LightC23");
         cachedLightC45 = shader.getUniform("LightC45");
         cachedLightC67 = shader.getUniform("LightC67");
-        cachedLightS0C01 = shader.getUniform("LightS0C01");
-        cachedLightS0C23 = shader.getUniform("LightS0C23");
-        cachedLightS1C01 = shader.getUniform("LightS1C01");
-        cachedLightS1C23 = shader.getUniform("LightS1C23");
-        cachedLightS2C01 = shader.getUniform("LightS2C01");
-        cachedLightS2C23 = shader.getUniform("LightS2C23");
-        cachedLightS3C01 = shader.getUniform("LightS3C01");
-        cachedLightS3C23 = shader.getUniform("LightS3C23");
         cachedFogStartU = shader.getUniform("FogStart");
         cachedFogEndU = shader.getUniform("FogEnd");
         cachedFogColorU = shader.getUniform("FogColor");
@@ -225,16 +228,19 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             var minecraft = Minecraft.getInstance();
             var textureManager = minecraft.getTextureManager();
 
-            RenderSystem.activeTexture(GL13.GL_TEXTURE0);
+            // Только управляемые бинды: сырые glActiveTexture/glBindTexture
+            // рассинхронизируют кеш GlStateManager — последующие управляемые
+            // бинды ванили но-опятся (чёрные квадраты солнца/луны, битая рука).
+            GlStateManager._activeTexture(GL13.GL_TEXTURE0);
             var blockAtlas = textureManager.getTexture(TextureAtlas.LOCATION_BLOCKS);
-            RenderSystem.bindTexture(blockAtlas.getId());
+            GlStateManager._bindTexture(blockAtlas.getId());
         }
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
     // РЕГРЕССИЯ-СТОП: instanced block_lit — белые модели без текстур атласа
     // ═══════════════════════════════════════════════════════════════════════════
-    // Симптом: useInstancedStaticRendering=true → все OBJ белые; false → нормально.
+    // Симптом: инстансинг включён → все OBJ белые; выключен → нормально.
     // Причина A: Sampler2 uniform=0 → FS читает atlas вместо lightmap (угол ~белый).
     // Причина B: turnOnLightLayer() при active TEXTURE0 → atlas на unit 0 затирается.
     // Причина C: flush в AFTER_LEVEL, а не в AFTER_BLOCK_ENTITIES → слоты GL грязные.
@@ -356,52 +362,38 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
      * Пропуск = белые модели (см. блок «РЕГРЕССИЯ-СТОП» над {@link #prepareBlockLitSamplers}).
      */
     public static void bindBlockLitSamplerTextures(ShaderInstance shader) {
-        if (shader == null) {
-            return;
-        }
+        if (shader == null) return;
         RenderSystem.assertOnRenderThread();
         Minecraft mc = Minecraft.getInstance();
 
-        // Same unit order as prepareBlockLitSamplers(): turnOnLightLayer() binds to the
-        // *active* GL unit — never call it before TEXTURE1 is active or the atlas on unit 0
-        // gets replaced by the lightmap (Sampler0 then samples lightmap → solid white).
-        RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
-        RenderSystem.activeTexture(GL13.GL_TEXTURE0);
-        mc.getTextureManager().bindForSetup(TextureAtlas.LOCATION_BLOCKS);
-
-        RenderSystem.activeTexture(GL13.GL_TEXTURE1);
-        mc.gameRenderer.lightTexture().turnOnLightLayer();
-
-        RenderSystem.activeTexture(GL13.GL_TEXTURE0);
-        mc.getTextureManager().bindForSetup(TextureAtlas.LOCATION_BLOCKS);
-
         int atlasGlId = resolveBlockAtlasGlId(mc);
         int lightmapGlId = resolveLightmapGlId(mc);
-        if (atlasGlId <= 0 || lightmapGlId <= 0) {
-            MainRegistry.LOGGER.warn(
-                    "bindBlockLitSamplerTextures: invalid atlas/lightmap GL id (atlas={}, lightmap={})",
-                    atlasGlId, lightmapGlId);
-            return;
-        }
+        if (atlasGlId <= 0 || lightmapGlId <= 0) return;
 
-        GL13.glActiveTexture(GL13.GL_TEXTURE0);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, atlasGlId);
-        GL13.glActiveTexture(GL13.GL_TEXTURE1);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, lightmapGlId);
-        GL13.glActiveTexture(GL13.GL_TEXTURE0);
+        // TU0: Атлас (управляемо: кеш GlStateManager остаётся честным)
+        GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
+        GlStateManager._bindTexture(atlasGlId);
+
+        // TU1: Оверлей
+        GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE1);
+        mc.gameRenderer.overlayTexture().setupOverlayColor(); // Внутри уже использует GlStateManager
+
+        // TU2: Лайтмап
+        GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE2);
+        GlStateManager._bindTexture(lightmapGlId);
+
+        // ОБЯЗАТЕЛЬНО возвращаем кеш и физику на TU0 для всего остального рендера игры!
+        GlStateManager._activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
 
         shader.setSampler("Sampler0", atlasGlId);
         shader.setSampler("Sampler2", lightmapGlId);
 
-        // JSON lists Sampler0 then Sampler2 → apply() uses texture units 0 and 1, not 0 and 2.
         var uSampler0 = shader.getUniform("Sampler0");
-        if (uSampler0 != null) {
-            uSampler0.set(0);
-        }
+        if (uSampler0 != null) uSampler0.set(0);
+        var uSampler1 = shader.getUniform("Sampler1");
+        if (uSampler1 != null) uSampler1.set(1);
         var uSampler2 = shader.getUniform("Sampler2");
-        if (uSampler2 != null) {
-            uSampler2.set(1);
-        }
+        if (uSampler2 != null) uSampler2.set(2);
     }
 
     private boolean shouldRenderWithCulling(BlockPos blockPos, @Nullable BlockEntity blockEntity) {
@@ -524,11 +516,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         var consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.cutout());
         var pose = poseStack.last();
         for (BakedQuad quad : quads) {
-            //? if forge {
-            consumer.putBulkData(pose, quad, 1f, 1f, 1f, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
-            //?} else {
-            /*consumer.putBulkData(pose, quad, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY);
-            *///?}
+            RenderHooks.putBulkData(consumer, pose, quad, 1f, 1f, 1f, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
         }
     }
 
@@ -579,6 +567,9 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 return;
             }
         }
+        if (entityMissileDepthBias.get()) {
+            lastTrackMeshBranch.set("none");
+        }
         if (initFailed) return;
         if (!initialized || vaoId <= 0 || vboId <= 0) {
             return;
@@ -588,16 +579,17 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             return;
         }
 
-        ShaderInstance shader = useSlicedLight ? ModShaders.getBlockLitSimpleSlicedShader()
-                                               : ModShaders.getBlockLitSimpleShader();
+        ShaderInstance shader = ModShaders.getBlockLitSimpleShader();
         if (shader == null) {
             // Shader not loaded yet (resource reload race) - fall back to putBulkData.
+            if (entityMissileDepthBias.get()) lastTrackMeshBranch.set("quads:shader-null");
             List<BakedQuad> fallbackQuads = getQuadsForIrisPath();
             if (fallbackQuads != null && bufferSource != null) {
                 renderToBufferSource(poseStack, packedLight, fallbackQuads, bufferSource);
             }
             return;
         }
+        if (entityMissileDepthBias.get()) lastTrackMeshBranch.set("vbo");
 
         int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
@@ -610,10 +602,43 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         boolean previousDepthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
         boolean previousDepthTestEnabled = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
 
+        ShaderInstance previousShader = RenderSystem.getShader();
+        int previousTexture0 = RenderSystem.getShaderTexture(0);
+
         try {
             RenderSystem.setShader(() -> shader);
+            // Источник поворота камеры для меша ракет: ambient RenderSystem
+            // ModelViewMat под Oculus даже с выключенным паком бывает перезаписан
+            // в identity ЧУЖИМ bookkeeping'ом уже ВНУТРИ нашего окна пуша
+            // (диагностика «vbo.mvm»: rsMV=identity в кадрах трека). Поэтому в
+            // контексте трека берём захваченную копию из RenderHooks; там, где
+            // ambient корректен, результат идентичен (пуш кладёт ту же матрицу).
+            // Станки/двери (флаг false) продолжают читать ambient = R_cam фазы BE.
+            org.joml.Matrix4f fullModelView;
+            String mvSource;
+            if (entityMissileDepthBias.get()) {
+                org.joml.Matrix4f levelRot =
+                        com.hbm_m.platform.RenderHooks.currentLevelRotation();
+                if (levelRot != null) {
+                    // Track-путь: поворот камеры УЖЕ запечён в poseStack
+                    // (MissileTrackWorldRender домножает R_cam при построении
+                    // стопки — в чистой ваниле ambient MV на AFTER_WEATHER
+                    // identity, умножение дало бы двойной поворот/мусор).
+                    fullModelView = new Matrix4f(poseStack.last().pose());
+                    mvSource = "baked";
+                } else {
+                    fullModelView = new org.joml.Matrix4f(RenderSystem.getModelViewMatrix())
+                            .mul(poseStack.last().pose());
+                    mvSource = "ambient";
+                }
+            } else {
+                fullModelView = new org.joml.Matrix4f(RenderSystem.getModelViewMatrix())
+                        .mul(poseStack.last().pose());
+                mvSource = "ambient";
+            }
+            logMissileMatrices(fullModelView, mvSource);
             if (shader.MODEL_VIEW_MATRIX != null)
-                shader.MODEL_VIEW_MATRIX.set(poseStack.last().pose());
+                shader.MODEL_VIEW_MATRIX.set(fullModelView);
             if (shader.PROJECTION_MATRIX != null)
                 shader.PROJECTION_MATRIX.set(RenderSystem.getProjectionMatrix());
 
@@ -655,19 +680,18 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(poseStack.last().pose());
             } else {
                 var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+                //? if < 1.21.1 {
                 tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
+                //?} else {
+                /*tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
+                *///?}
                 tmpLocalPose.set(tmpInvViewRot).mul(poseStack.last().pose());
                 tmpLocalPose.m30(tmpLocalPose.m30() - (float) (blockPos.getX() - cam.x));
                 tmpLocalPose.m31(tmpLocalPose.m31() - (float) (blockPos.getY() - cam.y));
                 tmpLocalPose.m32(tmpLocalPose.m32() - (float) (blockPos.getZ() - cam.z));
             }
-            if (useSlicedLight) {
-                LightSampleCache.getOrSample16(blockEntity, partHash, objBbox, blockPos,
-                                               tmpLocalPose, packedLight, tmpProbeUV);
-            } else {
-                LightSampleCache.getOrSample8(blockEntity, partHash, objBbox, blockPos,
-                                              tmpLocalPose, packedLight, tmpCornerUV);
-            }
+            LightSampleCache.getOrSample8(blockEntity, partHash, objBbox, blockPos,
+                                          tmpLocalPose, packedLight, tmpCornerUV);
 
             updateBlockLitUniformCache(shader);
             if (cachedBboxMinU != null) cachedBboxMinU.set(objBbox[0], objBbox[1], objBbox[2]);
@@ -678,21 +702,10 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                     Math.max(1e-4f, objBbox[5] - objBbox[2])
                 );
             }
-            if (useSlicedLight) {
-                if (cachedLightS0C01 != null) cachedLightS0C01.set(tmpProbeUV[0], tmpProbeUV[1], tmpProbeUV[2], tmpProbeUV[3]);
-                if (cachedLightS0C23 != null) cachedLightS0C23.set(tmpProbeUV[4], tmpProbeUV[5], tmpProbeUV[6], tmpProbeUV[7]);
-                if (cachedLightS1C01 != null) cachedLightS1C01.set(tmpProbeUV[8], tmpProbeUV[9], tmpProbeUV[10], tmpProbeUV[11]);
-                if (cachedLightS1C23 != null) cachedLightS1C23.set(tmpProbeUV[12], tmpProbeUV[13], tmpProbeUV[14], tmpProbeUV[15]);
-                if (cachedLightS2C01 != null) cachedLightS2C01.set(tmpProbeUV[16], tmpProbeUV[17], tmpProbeUV[18], tmpProbeUV[19]);
-                if (cachedLightS2C23 != null) cachedLightS2C23.set(tmpProbeUV[20], tmpProbeUV[21], tmpProbeUV[22], tmpProbeUV[23]);
-                if (cachedLightS3C01 != null) cachedLightS3C01.set(tmpProbeUV[24], tmpProbeUV[25], tmpProbeUV[26], tmpProbeUV[27]);
-                if (cachedLightS3C23 != null) cachedLightS3C23.set(tmpProbeUV[28], tmpProbeUV[29], tmpProbeUV[30], tmpProbeUV[31]);
-            } else {
-                if (cachedLightC01 != null) cachedLightC01.set(tmpCornerUV[0], tmpCornerUV[1], tmpCornerUV[2], tmpCornerUV[3]);
-                if (cachedLightC23 != null) cachedLightC23.set(tmpCornerUV[4], tmpCornerUV[5], tmpCornerUV[6], tmpCornerUV[7]);
-                if (cachedLightC45 != null) cachedLightC45.set(tmpCornerUV[8], tmpCornerUV[9], tmpCornerUV[10], tmpCornerUV[11]);
-                if (cachedLightC67 != null) cachedLightC67.set(tmpCornerUV[12], tmpCornerUV[13], tmpCornerUV[14], tmpCornerUV[15]);
-            }
+            if (cachedLightC01 != null) cachedLightC01.set(tmpCornerUV[0], tmpCornerUV[1], tmpCornerUV[2], tmpCornerUV[3]);
+            if (cachedLightC23 != null) cachedLightC23.set(tmpCornerUV[4], tmpCornerUV[5], tmpCornerUV[6], tmpCornerUV[7]);
+            if (cachedLightC45 != null) cachedLightC45.set(tmpCornerUV[8], tmpCornerUV[9], tmpCornerUV[10], tmpCornerUV[11]);
+            if (cachedLightC67 != null) cachedLightC67.set(tmpCornerUV[12], tmpCornerUV[13], tmpCornerUV[14], tmpCornerUV[15]);
 
             if (worldMissileOverlayDraw.get() || entityMissileDepthBias.get()) {
                 if (cachedFogStartU != null) cachedFogStartU.set(1.0E8F);
@@ -711,14 +724,33 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             // Must come BEFORE apply() - apply() reads samplerMap populated here and
             // does glUseProgram + glUniform1i + glBindTexture in one shot.
             prepareBlockLitSamplers(shader);
+            if (entityMissileDepthBias.get()) {
+                com.hbm_m.client.render.FrameStateProbe.snap("s1.prep");
+            }
+            // ЗАЩИТА ОТ DESYNC КЕША ПРОГРАММЫ (Oculus без шейдерпака):
+            // VanillaRenderingPipeline.beginLevelRendering() один раз за кадр
+            // делает сырой GlStateManager._glUseProgram(0), не сбрасывая статический
+            // ShaderInstance.lastProgramId. Если прошлый кадр закончил our block_lit,
+            // следующий shader.apply() ПРОПУСТИТ реальный glUseProgram (кеш совпадает),
+            // и все glUniform/glDrawElements уйдут в программу 0 — «No active program»,
+            // чёрный меш с мусорной матрицей. Явная проверка GL_CURRENT_PROGRAM:
+            // при расхождении clear() обнуляет lastProgramId (-1) и форсирует честный
+            // бинд в apply(). В норме — один glGetInteger, дешевле apply().
+            com.hbm_m.client.render.shader.ShaderBindResync.ensureFreshBind(shader);
             shader.apply();
+            if (entityMissileDepthBias.get()) {
+                com.hbm_m.client.render.FrameStateProbe.snap("s1.apply");
+            }
             bindBlockLitSamplerTextures(shader);
 
             float fade = currentFadeAlpha.get();
             boolean overlay = worldMissileOverlayDraw.get();
             if (overlay) {
                 RenderSystem.disableDepthTest();
-                GL11.glDepthMask(false);
+                // Управляемый вызов: сырой GL11.glDepthMask обходил кеш
+                // GlStateManager и рассинхронизировал depthMask для всех
+                // последующих прозрачных дро (частицы писали глубину).
+                RenderSystem.depthMask(false);
             } else {
                 RenderSystem.enableDepthTest();
                 RenderSystem.depthFunc(GL11.GL_LEQUAL);
@@ -730,10 +762,18 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 RenderSystem.defaultBlendFunc();
             }
 
-            GL30.glBindVertexArray(vaoId);
+            GlVaoSafety.bindVertexArray(vaoId);
             beginEntityMissileDepthBias();
             GL11.glDrawElements(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0);
             endEntityMissileDepthBias();
+            if (entityMissileDepthBias.get()) {
+                com.hbm_m.client.render.FrameStateProbe.snap("s1.drawn");
+                int glErr = GL11.glGetError();
+                while (glErr != GL11.GL_NO_ERROR) {
+                    MainRegistry.LOGGER.error("HBM VBO draw GL error after track mesh: {}", glErr);
+                    glErr = GL11.glGetError();
+                }
+            }
 
             if (fade < 0.99f) {
                 RenderSystem.disableBlend();
@@ -742,9 +782,19 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during VBO render", e);
         } finally {
-            GL30.glBindVertexArray(0);
-            RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
-            RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
+            GlVaoSafety.bindVertexArray(0);
+            if (previousShader != null) {
+                RenderSystem.setShader(() -> previousShader);
+            }
+            RenderSystem.setShaderTexture(0, previousTexture0);
+
+            // ВАЖНО: НЕ анбиндим TU1/TU2. Сырой glBindTexture(0) оставлял кеш
+            // GlStateManager с «живыми» оверлеем/лайтмапой — все последующие
+            // управляемые бинды но-опились, и рендер после нашего меша (рука,
+            // GUI на Fast, небо следующего кадра) сэмплировал пустоту.
+            // Байнды bindBlockLitSamplerTextures управляемые и указывают на те
+            // же текстуры, что ваниль держит в этих юнитах — «утечка» не вредит.
+
             GlVaoSafety.bindVertexArray(previousVao);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
 
@@ -754,7 +804,8 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 RenderSystem.disableCull();
             }
             RenderSystem.depthFunc(previousDepthFunc);
-            GL11.glDepthMask(previousDepthMask);
+            // Восстановление через управляемый API — симметрично установке выше.
+            RenderSystem.depthMask(previousDepthMask);
             if (previousDepthTestEnabled) {
                 RenderSystem.enableDepthTest();
             } else {
@@ -777,6 +828,17 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
      */
     private boolean renderWithIrisExtended(PoseStack poseStack, int packedLight,
                                            BlockPos blockPos, @Nullable BlockEntity blockEntity) {
+        // Shadow pass: только через АКТИВНЫЙ per-BE батч (см. IrisRenderBatch
+        // .begin — неперсистентный, закрывается до возврата из BER). Standalone
+        // путь (apply на каждую часть) в shadow запрещён: teardown ExtendedShader
+        // .clear() ребиндит MAIN FBO, а его случайные срабатывания по ходу
+        // основного прохода задваивали растительность на 1.20.1. Без батча —
+        // возвращаем false, вызывающий {@link #render} уйдёт в putBulkData
+        // через bufferSource (Iris нарисует SHADOW_BLOCK-программой на endBatch).
+        if (ShaderCompatibilityDetector.isRenderingShadowPass() && IrisRenderBatch.active() == null) {
+            return false;
+        }
+
         IrisCompanionMesh companion = getOrBuildIrisCompanion();
         if (companion == null) {
             return false;
@@ -794,13 +856,10 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         IrisRenderBatch batchEarly = IrisRenderBatch.active();
         if (batchEarly != null) shadowPassEarly = batchEarly.isShadowPass();
 
-        // Sample world-space light probes for this draw: either 2×2×2 corners
-        // (16 floats) or 2×4×2 sliced (32 floats) when the caller enabled
-        // {@link #useSlicedLight} and the companion mesh has sliced weights
-        // (tall VBOs — e.g. fracking tower). See {@link #render} for the same
-        // localPose reconstruction as the vanilla / instanced path.
+        // Sample world-space light probes for this draw: 2×2×2 corners (16 floats).
+        // See {@link #render} for the same localPose reconstruction as the
+        // vanilla / instanced path.
         boolean haveCorners = false;
-        boolean haveSlicedProbes = false;
         if (!shadowPassEarly && companion.supportsPerVertexLightmap()) {
             BlockPos anchor = (blockEntity != null) ? blockEntity.getBlockPos() : blockPos;
             if (anchor == null) anchor = BlockPos.ZERO;
@@ -808,22 +867,20 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(poseStack.last().pose());
             } else {
                 var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+                //? if < 1.21.1 {
                 tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
+                //?} else {
+                /*tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
+                *///?}
                 tmpLocalPose.set(tmpInvViewRot).mul(poseStack.last().pose());
                 tmpLocalPose.m30(tmpLocalPose.m30() - (float) (anchor.getX() - cam.x));
                 tmpLocalPose.m31(tmpLocalPose.m31() - (float) (anchor.getY() - cam.y));
                 tmpLocalPose.m32(tmpLocalPose.m32() - (float) (anchor.getZ() - cam.z));
             }
-            
+
             long partHash = System.identityHashCode(this);
-            if (useSlicedLight && companion.supportsSlicedPerVertexLightmap()) {
-                LightSampleCache.getOrSample16(blockEntity, partHash, objBbox, anchor,
-                                               tmpLocalPose, packedLight, tmpProbeUV);
-                haveSlicedProbes = true;
-            } else {
-                LightSampleCache.getOrSample8(blockEntity, partHash, objBbox, anchor,
-                                              tmpLocalPose, packedLight, tmpCornerUV);
-            }
+            LightSampleCache.getOrSample8(blockEntity, partHash, objBbox, anchor,
+                                          tmpLocalPose, packedLight, tmpCornerUV);
             haveCorners = true;
         }
 
@@ -835,10 +892,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         // legacy constant-UV2 path.
         IrisRenderBatch batch = IrisRenderBatch.active();
         if (batch != null) {
-            if (haveCorners && haveSlicedProbes) {
-                batch.drawCompanionWithSlicedPerVertexLight(companion, poseStack.last().pose(),
-                                                            tmpProbeUV, packedLight);
-            } else if (haveCorners) {
+            if (haveCorners) {
                 batch.drawCompanionWithPerVertexLight(companion, poseStack.last().pose(),
                                                       tmpCornerUV, packedLight);
             } else {
@@ -856,6 +910,11 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
         boolean previousCullFaceEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
+        // Тело try ставит depthFunc/depthMask/depthTest для обеих веток (overlay и
+        // обычной); раньше finally восстанавливал их только для overlay-пути.
+        int previousDepthFunc = GL11.glGetInteger(GL11.GL_DEPTH_FUNC);
+        boolean previousDepthMask = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
+        boolean previousDepthTestEnabled = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
 
         // Neutral blockEntityId so BSL & co. don't take EMISSIVE_RECOLOR /
         // DrawEndPortal branches based on whatever BE Iris rendered last.
@@ -864,7 +923,22 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         try (IrisPhaseGuard ignored = IrisPhaseGuard.pushBlockEntities()) {
             RenderSystem.setShader(() -> shader);
 
-            if (shader.MODEL_VIEW_MATRIX != null) shader.MODEL_VIEW_MATRIX.set(poseStack.last().pose());
+            if (shader.MODEL_VIEW_MATRIX != null) {
+                // Track-путь (AFTER_WEATHER, под Iris/Oculus): R_cam уже запечён
+                // в poseStack (MissileTrackWorldRender), а амбиентная
+                // RenderSystem.getModelViewMatrix() здесь НЕ равна R_cam — чужой
+                // bookkeeping сбрасывает её в identity/мусор → двойной поворот
+                // или «улетающий» меш. Берём pose целиком — как в ванильном
+                // VBO-пути выше (ветка "baked"). Для BER/станков (вне track-
+                // контекста) композит ambient × pose остаётся корректным: там
+                // ambient = R_cam фазы BE.
+                if (entityMissileDepthBias.get()
+                        && com.hbm_m.platform.RenderHooks.currentLevelRotation() != null) {
+                    shader.MODEL_VIEW_MATRIX.set(new Matrix4f(poseStack.last().pose()));
+                } else {
+                    shader.MODEL_VIEW_MATRIX.set(new Matrix4f(RenderSystem.getModelViewMatrix()).mul(poseStack.last().pose()));
+                }
+            }
             if (shader.PROJECTION_MATRIX != null) shader.PROJECTION_MATRIX.set(RenderSystem.getProjectionMatrix());
 
             var brightnessUniform = shader.getUniform("Brightness");
@@ -901,7 +975,8 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             boolean overlay = worldMissileOverlayDraw.get();
             if (overlay) {
                 RenderSystem.disableDepthTest();
-                GL11.glDepthMask(false);
+                // Управляемый вызов вместо сырого GL11.glDepthMask (см. vanilla-путь).
+                RenderSystem.depthMask(false);
             } else {
                 RenderSystem.enableDepthTest();
                 RenderSystem.depthFunc(GL11.GL_LEQUAL);
@@ -934,11 +1009,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             int uv2Loc = companion.getUv2Location();
             if (haveCorners && companion.supportsPerVertexLightmap()) {
                 companion.ensureLightmapCapacity(1);
-                if (haveSlicedProbes) {
-                    companion.writeInstanceLightmap(0, tmpProbeUV);
-                } else {
-                    companion.writeInstanceLightmap(0, tmpCornerUV);
-                }
+                companion.writeInstanceLightmap(0, tmpCornerUV);
                 companion.finishLightmapWrites();
                 companion.activatePerVertexLightmap();
                 companion.bindLightmapForInstance(0);
@@ -963,13 +1034,17 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             if (companion != null) {
                 companion.restoreConstantLightmap();
             }
-            GL30.glBindVertexArray(0);
+            GlVaoSafety.bindVertexArray(0);
             RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
             GlVaoSafety.bindVertexArray(previousVao);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
-            if (worldMissileOverlayDraw.get()) {
+            RenderSystem.depthFunc(previousDepthFunc);
+            // Управляемое восстановление — симметрично установке выше.
+            RenderSystem.depthMask(previousDepthMask);
+            if (previousDepthTestEnabled) {
                 RenderSystem.enableDepthTest();
-                GL11.glDepthMask(true);
+            } else {
+                RenderSystem.disableDepthTest();
             }
             if (previousCullFaceEnabled) RenderSystem.enableCull();
             else RenderSystem.disableCull();
@@ -1011,12 +1086,25 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         public final IntBuffer indices;
         /** Object-space AABB of the mesh, computed once while packing vertices. */
         public final float minX, minY, minZ, maxX, maxY, maxZ;
-        /**
-         * Stride одной вершины в {@link #byteBuffer}: pos(12) + normal(12) + uv(8) + boneId(int32) = 36.
-         * Старые 32-байтные буферы не поддерживаются для instanced-пути.
-         */
+        /** Stride одной вершины в byteBuffer: pos(12) + normal(12) + uv(8) + boneId(int32) = 36. */
         public final int bytesPerVertex;
-        private boolean consumed = false;
+        
+        private final java.util.concurrent.atomic.AtomicBoolean consumed = new java.util.concurrent.atomic.AtomicBoolean(false);
+        private final java.lang.ref.Cleaner.Cleanable cleanable;
+
+        private static final java.lang.ref.Cleaner CLEANER = java.lang.ref.Cleaner.create();
+
+        private static record NativeResourceReleaser(long bbAddress, long ibAddress) implements Runnable {
+            @Override
+            public void run() {
+                if (bbAddress != 0L) {
+                    MemoryUtil.nmemFree(bbAddress);
+                }
+                if (ibAddress != 0L) {
+                    MemoryUtil.nmemFree(ibAddress);
+                }
+            }
+        }
 
         public VboData(ByteBuffer byteBuffer, IntBuffer indices) {
             this(byteBuffer, indices, 0f, 0f, 0f, 0f, 0f, 0f, MACHINE_PART_VERTEX_STRIDE_BYTES);
@@ -1037,27 +1125,24 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             this.minX = minX; this.minY = minY; this.minZ = minZ;
             this.maxX = maxX; this.maxY = maxY; this.maxZ = maxZ;
             this.bytesPerVertex = bytesPerVertex;
+
+            long bbAddr = byteBuffer != null ? MemoryUtil.memAddress(byteBuffer) : 0L;
+            long ibAddr = indices != null ? MemoryUtil.memAddress(indices) : 0L;
+            this.cleanable = (bbAddr != 0L || ibAddr != 0L) 
+                    ? CLEANER.register(this, new NativeResourceReleaser(bbAddr, ibAddr)) 
+                    : null;
         }
 
         public boolean isConsumed() {
-            return consumed;
+            return consumed.get();
         }
 
         @Override
         public void close() {
-            if (consumed) {
-                // Double-free attempt: native memory was already freed by a previous
-                // close(). Silently no-op in production to avoid crashes, but the
-                // assert will trip in development to surface the bug.
-                assert false : "VboData.close() called twice (already consumed)";
-                return;
-            }
-            consumed = true;
-            if (byteBuffer != null) {
-                MemoryUtil.memFree(byteBuffer);
-            }
-            if (indices != null) {
-                MemoryUtil.memFree(indices);
+            if (consumed.compareAndSet(false, true)) {
+                if (cleanable != null) {
+                    cleanable.clean();
+                }
             }
         }
     }

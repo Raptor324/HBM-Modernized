@@ -18,7 +18,7 @@ import net.minecraft.world.level.Level;
  * {@code PWRControllerBlockEntity} (typeLoaded/amountLoaded/progress), matching the original -
  * unlike Watz pellets, this item itself carries no per-stack yield NBT.
  */
-public class PWRFuelItem extends Item {
+public class PWRFuelItem extends Item implements com.hbm_m.item.ITooltipProvider {
 
     private final PWRFuelType type;
 
@@ -32,8 +32,7 @@ public class PWRFuelItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.literal("Heat per flux: " + type.heatEmission + " TU").withStyle(ChatFormatting.GOLD));
     }
 }

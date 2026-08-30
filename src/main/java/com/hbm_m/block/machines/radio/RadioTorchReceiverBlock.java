@@ -45,6 +45,7 @@ public class RadioTorchReceiverBlock extends RadioTorchBaseBlock {
                 (lvl, pos, st, be) -> RadioTorchReceiverBlockEntity.tick(lvl, pos, st, (RadioTorchReceiverBlockEntity) be));
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (level.isClientSide()) {
@@ -53,4 +54,23 @@ public class RadioTorchReceiverBlock extends RadioTorchBaseBlock {
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (level.isClientSide()) {
+            dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () ->
+                    com.hbm_m.client.gui.radio.RadioTorchScreenOpener.openSenderReceiver(pos));
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide());
+    }
+    *///?}
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<RadioTorchReceiverBlock> CODEC = simpleCodec(RadioTorchReceiverBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

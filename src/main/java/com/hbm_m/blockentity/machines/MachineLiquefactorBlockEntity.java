@@ -8,8 +8,8 @@ import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineLiquefactorMenu;
-import com.hbm_m.recipe.LiquefactorRecipes;
-import com.hbm_m.recipe.LiquefactorRecipes.Output;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.LiquefactorRecipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -25,8 +25,8 @@ import net.minecraft.world.level.material.Fluid;
 
 /**
  * Liquefactor: Portierung der Kernlogik aus {@code TileEntityMachineLiquefactor} (1.7.10
- * Original). Verfluessigt 1 Item pro Zyklus (Slot 0) zu einem Fluid (Tank), ueber die feste
- * Rezeptliste {@link LiquefactorRecipes} (Direktport von {@code LiquefactionRecipes}, siehe dort
+ * Original). Verfluessigt 1 Item pro Zyklus (Slot 0) zu einem Fluid (Tank), ueber die data-driven
+ * Rezeptliste {@link LiquefactorRecipe} (JSON; Port von {@code LiquefactionRecipes}, siehe Generator
  * fuer ausgelassene Rezepte). Upgrade-Slots (Speed/Power) aus dem Original wurden NICHT
  * uebernommen - Konsistenz mit dem "Funktion vor Politur"-Ansatz dieser Session; die Basiswerte
  * (250 HE/Tick, 100 Ticks/Zyklus) entsprechen dem Original ohne Upgrades.
@@ -73,10 +73,10 @@ public class MachineLiquefactorBlockEntity extends BaseMachineBlockEntity implem
         ItemStack input = inventory.getStackInSlot(SLOT_INPUT);
         if (input.isEmpty()) return false;
 
-        Output out = LiquefactorRecipes.getOutput(input);
-        if (out == null) return false;
-        if (!tank.isEmpty() && tank.getTankType() != out.fluid()) return false;
-        return tank.getFill() + out.amountMb() <= tank.getMaxFill();
+        LiquefactorRecipe recipe = findLiquefactorRecipe(input);
+        if (recipe == null) return false;
+        if (!tank.isEmpty() && tank.getTankType() != recipe.getOutput().getFluid()) return false;
+        return tank.getFill() + recipe.getOutputAmountMb() <= tank.getMaxFill();
     }
 
     private void process() {
@@ -84,14 +84,27 @@ public class MachineLiquefactorBlockEntity extends BaseMachineBlockEntity implem
         progress++;
 
         if (progress >= PROCESS_TIME) {
-            Output out = LiquefactorRecipes.getOutput(inventory.getStackInSlot(SLOT_INPUT));
-            if (out != null) {
-                tank.conform(out.fluid());
-                tank.fillMb(out.fluid(), out.amountMb());
+            LiquefactorRecipe recipe = findLiquefactorRecipe(inventory.getStackInSlot(SLOT_INPUT));
+            if (recipe != null) {
+                tank.conform(recipe.getOutput().getFluid());
+                tank.fillMb(recipe.getOutput().getFluid(), recipe.getOutputAmountMb());
                 inventory.getStackInSlot(SLOT_INPUT).shrink(1);
             }
             progress = 0;
         }
+    }
+
+    /**
+     * Data-driven поиск LiquefactorRecipe по входному предмету
+     * (заменяет статический LiquefactorRecipes.getOutput).
+     */
+    @Nullable
+    private LiquefactorRecipe findLiquefactorRecipe(ItemStack input) {
+        if (level == null) return null;
+        for (LiquefactorRecipe recipe : RecipeHooks.getAllRecipes(level, LiquefactorRecipe.Type.INSTANCE)) {
+            if (recipe.matchesInput(input)) return recipe;
+        }
+        return null;
     }
 
     // ==================== GUI ====================
@@ -137,15 +150,15 @@ public class MachineLiquefactorBlockEntity extends BaseMachineBlockEntity implem
     // ==================== NBT ====================
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tank.writeToNBT(tag, "tank");
         tag.putInt("progress", progress);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         tank.readFromNBT(tag, "tank");
         progress = tag.getInt("progress");
     }
@@ -162,7 +175,8 @@ public class MachineLiquefactorBlockEntity extends BaseMachineBlockEntity implem
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        if (slot == SLOT_INPUT) return LiquefactorRecipes.has(stack);
+        // level==null (нет доступа к RecipeManager) — разрешаем; серверная валидация идёт дальше в canProcess.
+        if (slot == SLOT_INPUT) return level == null || findLiquefactorRecipe(stack) != null;
         if (slot == SLOT_BATTERY) return isEnergyProviderItem(stack);
         return false;
     }

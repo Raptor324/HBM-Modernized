@@ -1,0 +1,22 @@
+{
+  "_comment": "POOL_NUKE_TRASH — продукты ядерных отходов из электростанций (порт ItemPoolsLegacy.POOL_NUKE_TRASH из 1.7.10)",
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": { "min": 3, "max": 6 },
+      "entries": [
+        { "type": "item", "name": "hbm_m:nugget_u238", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 3, "max": 12 } } ] },
+        { "type": "item", "name": "hbm_m:nugget_pu240", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 3, "max": 8 } } ] },
+        { "type": "item", "name": "hbm_m:nugget_neptunium", "weight": 3, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:rod_empty", "weight": 3 },
+        { "type": "item", "name": "hbm_m:rod_dual_empty", "weight": 3 },
+        { "type": "item", "name": "hbm_m:rod_quad_empty", "weight": 3 },
+        { "type": "item", "name": "hbm_m:bottle_quantum", "weight": 1 },
+        { "type": "item", "name": "hbm_m:gas_mask_m65", "weight": 5 },
+        { "type": "item", "name": "hbm_m:hazmat_kit", "weight": 1 },
+        { "type": "item", "name": "hbm_m:gas_mask_filter", "weight": 5 },
+        { "type": "item", "name": "hbm_m:barrel_yellow", "weight": 2 }
+      ]
+    }
+  ]
+}

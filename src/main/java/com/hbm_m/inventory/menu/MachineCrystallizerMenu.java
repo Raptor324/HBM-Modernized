@@ -5,6 +5,7 @@ import com.hbm_m.blockentity.machines.MachineCrystallizerBlockEntity;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;
+import com.hbm_m.platform.DummyItemStackHandler;
 import com.hbm_m.platform.ModItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
@@ -14,11 +15,14 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+//? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+//?}
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
@@ -49,7 +53,8 @@ public class MachineCrystallizerMenu extends AbstractContainerMenu implements IL
     }
 
     public MachineCrystallizerMenu(int id, Inventory inv, MachineCrystallizerBlockEntity blockEntity) {
-        this(id, inv, blockEntity, blockEntity.getContainerData());
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустые данные
+        this(id, inv, blockEntity, blockEntity != null ? blockEntity.getContainerData() : new SimpleContainerData(6));
     }
 
     public MachineCrystallizerMenu(int id, Inventory inv, BlockEntity entity, ContainerData data) {
@@ -62,7 +67,11 @@ public class MachineCrystallizerMenu extends AbstractContainerMenu implements IL
         checkContainerDataCount(data, 6);
         addDataSlots(data);
 
-        ModItemStackHandler handler = blockEntity.getInventory();
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
+        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
+        ModItemStackHandler handler = this.blockEntity != null
+                ? this.blockEntity.getInventory()
+                : new DummyItemStackHandler(MACHINE_SLOTS);
         this.machineInventory = new HandlerContainer(handler);
 
         // Original slot layout from ContainerCrystallizer
@@ -134,8 +143,8 @@ public class MachineCrystallizerMenu extends AbstractContainerMenu implements IL
     }
 
     private static boolean isBattery(ItemStack stack) {
-        return stack.getCapability(ForgeCapabilities.ENERGY).isPresent()
-            || stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()
+        return com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent()
+            || com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).isPresent()
             || stack.getItem() instanceof ItemCreativeBattery;
     }
 
@@ -143,6 +152,11 @@ public class MachineCrystallizerMenu extends AbstractContainerMenu implements IL
         BlockEntity be = inv.player.level().getBlockEntity(data.readBlockPos());
         if (be instanceof MachineCrystallizerBlockEntity crystallizer) {
             return crystallizer;
+        }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inv.player.level().isClientSide) {
+            return null;
         }
         throw new IllegalStateException("BlockEntity is not a Crystallizer");
     }
@@ -187,12 +201,13 @@ public class MachineCrystallizerMenu extends AbstractContainerMenu implements IL
 
     @Override
     public long getEnergyStatic() {
-        return blockEntity.getEnergyStored();
+        // тайл может отсутствовать на клиенте (реплей Flashback)
+        return blockEntity != null ? blockEntity.getEnergyStored() : 0L;
     }
 
     @Override
     public long getMaxEnergyStatic() {
-        return blockEntity.getMaxEnergyStored();
+        return blockEntity != null ? blockEntity.getMaxEnergyStored() : 0L;
     }
 
     @Override
@@ -291,6 +306,9 @@ public class MachineCrystallizerMenu extends AbstractContainerMenu implements IL
 
     @Override
     public boolean stillValid(Player player) {
+        if (blockEntity == null) {
+            return false; // тайл может отсутствовать на клиенте (реплей Flashback)
+        }
         return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.CRYSTALLIZER.get());
     }
 

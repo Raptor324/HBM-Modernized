@@ -1,8 +1,10 @@
 package com.hbm_m.item.designator;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import com.hbm_m.api.item.IDesignatorItem;
+import com.hbm_m.platform.PlatformHooks;
 
 import dev.architectury.utils.Env;
 import dev.architectury.utils.EnvExecutor;
@@ -21,7 +23,7 @@ import net.minecraft.world.phys.Vec3;
  * Manual designator: right-click opens GUI to set target X/Z with buttons.
  * Port from 1.7.10 ItemDesingatorManual. GUI is opened client-side only.
  */
-public class ItemDesignatorManual extends Item implements IDesignatorItem {
+public class ItemDesignatorManual extends Item implements IDesignatorItem, ITooltipProvider {
 
     public ItemDesignatorManual(Properties properties) {
         super(properties.stacksTo(1));
@@ -37,11 +39,11 @@ public class ItemDesignatorManual extends Item implements IDesignatorItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
-        if (stack.hasTag() && stack.getTag().contains("xCoord")) {
+    public void appendHbmTooltip(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
+        if (PlatformHooks.hasItemTag(stack) && PlatformHooks.getItemTag(stack).contains("xCoord")) {
             tooltip.add(Component.translatable("tooltip.hbm_m.designator.target"));
-            tooltip.add(Component.literal("X: " + stack.getTag().getInt("xCoord")).withStyle(ChatFormatting.GRAY));
-            tooltip.add(Component.literal("Z: " + stack.getTag().getInt("zCoord")).withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.literal("X: " + PlatformHooks.getItemTag(stack).getInt("xCoord")).withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.literal("Z: " + PlatformHooks.getItemTag(stack).getInt("zCoord")).withStyle(ChatFormatting.GRAY));
         } else {
             tooltip.add(Component.translatable("tooltip.hbm_m.designator.no_target"));
         }
@@ -49,13 +51,13 @@ public class ItemDesignatorManual extends Item implements IDesignatorItem {
 
     @Override
     public boolean isReady(Level level, ItemStack stack, int x, int y, int z) {
-        var tag = stack.getTag();
+        var tag = PlatformHooks.getItemTag(stack);
         return tag != null && tag.contains("xCoord") && tag.contains("zCoord");
     }
 
     @Override
     public Vec3 getCoords(Level level, ItemStack stack, int x, int y, int z) {
-        var tag = stack.getTag();
+        var tag = PlatformHooks.getItemTag(stack);
         if (tag == null || !tag.contains("xCoord")) return Vec3.ZERO;
         return new Vec3(tag.getInt("xCoord"), 0, tag.getInt("zCoord"));
     }

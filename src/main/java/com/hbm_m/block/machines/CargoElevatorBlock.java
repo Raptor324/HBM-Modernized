@@ -107,9 +107,11 @@ public class CargoElevatorBlock extends BaseEntityBlock {
         return shape;
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
                                   InteractionHand hand, BlockHitResult hit) {
+
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
         }
@@ -138,7 +140,42 @@ public class CargoElevatorBlock extends BaseEntityBlock {
 
         core.toggleElevator();
         return InteractionResult.SUCCESS;
-    }
+        }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
+        }
+        if (player.isShiftKeyDown()) {
+            return InteractionResult.PASS;
+        }
+        if (!(level.getBlockEntity(pos) instanceof CargoElevatorBlockEntity elevator)) {
+            return InteractionResult.PASS;
+        }
+        CargoElevatorBlockEntity core = elevator.resolveCore(CargoElevatorBlockEntity.class);
+        if (core == null) {
+            return InteractionResult.PASS;
+        }
+
+        ItemStack held = player.getItemInHand(InteractionHand.MAIN_HAND);
+        if (!held.isEmpty() && held.getItem() == this.asItem()) {
+            if (tryAddFloor(level, core)) {
+                if (!player.getAbilities().instabuild) {
+                    held.shrink(1);
+                }
+                level.playSound(null, core.getBlockPos(), SoundEvents.PISTON_EXTEND, SoundSource.BLOCKS, 1.0F, 0.8F);
+                return InteractionResult.CONSUME;
+            }
+            return InteractionResult.FAIL;
+        }
+
+        core.toggleElevator();
+        return InteractionResult.SUCCESS;
+        }
+    *///?}
+
 
     private boolean tryAddFloor(Level level, CargoElevatorBlockEntity core) {
         BlockPos corePos = core.getBlockPos();
@@ -166,4 +203,13 @@ public class CargoElevatorBlock extends BaseEntityBlock {
         core.addFloor();
         return true;
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<CargoElevatorBlock> CODEC = simpleCodec(CargoElevatorBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

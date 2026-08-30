@@ -1,10 +1,13 @@
 package com.hbm_m.armormod.item;
 
 // Это базовый класс для всех предметов-модификаций брони.
+import com.hbm_m.item.ITooltipProvider;
 import com.google.common.collect.Multimap;
 import com.hbm_m.armormod.util.ArmorModificationHelper;
 
 import net.minecraft.network.chat.Component;
+import com.hbm_m.platform.PlatformHooks;
+
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.ArmorItem;
@@ -19,7 +22,7 @@ import java.util.UUID;
 
 import org.jetbrains.annotations.Nullable;
 
-public abstract class ItemArmorMod extends Item {
+public abstract class ItemArmorMod extends Item implements ITooltipProvider {
 
     // Тип слота, к которому привязан мод (0-8)
     public final int type;
@@ -36,7 +39,11 @@ public abstract class ItemArmorMod extends Item {
      * @return Multimap с атрибутами.
      */
     @Nullable
-    public Multimap<Attribute, AttributeModifier> getModifiers(ItemStack armor) {
+    public Multimap<
+            //? if < 1.21.1 {
+            Attribute//?} else {
+            /*net.minecraft.core.Holder<Attribute>*///?}
+            , AttributeModifier> getModifiers(ItemStack armor) {
         return null;
     }
 
@@ -51,8 +58,7 @@ public abstract class ItemArmorMod extends Item {
     }
     
     @Override
-    public void appendHoverText(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltip, TooltipFlag pIsAdvanced) {
-        super.appendHoverText(pStack, pLevel, pTooltip, pIsAdvanced);
+    public void appendHbmTooltip(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltip, TooltipFlag pIsAdvanced) {
         // Добавляем строки с эффектами, которые определены в дочерних классах.
         pTooltip.addAll(this.getEffectTooltipLines());
     }
@@ -84,10 +90,10 @@ public abstract class ItemArmorMod extends Item {
             // Получаем UUID, соответствующий слоту брони (шлем, ботинки и т.д.)
             UUID modifierUUID = ArmorModificationHelper.MODIFIER_UUIDS.get(armorItem.getType().getSlot().getIndex());
             if (modifierUUID != null) {
-                return new AttributeModifier(modifierUUID, name, value, operation);
+                return PlatformHooks.attributeModifier(modifierUUID, name, value, operation);
             }
         }
         // Возвращаем временный модификатор, если что-то пошло не так
-        return new AttributeModifier(name, value, operation);
+        return PlatformHooks.attributeModifier(name, value, operation);
     }
 }

@@ -25,12 +25,13 @@ import com.hbm_m.item.tags_and_tiers.ModPowders;
 import dev.architectury.registry.registries.RegistrySupplier;
 import dev.architectury.utils.Env;
 import dev.architectury.utils.EnvExecutor;
-//? if fabric {
-/*import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
-*///?}
+import com.hbm_m.platform.PlatformHooks;
+import net.minecraft.nbt.CompoundTag;
 //? if forge {
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+*///?}
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
@@ -48,75 +49,86 @@ public final class CreativeModeTabEventHandler {
     private CreativeModeTabEventHandler() {
     }
 
-    //? if forge {
     public static void onBuildCreativeModeTabContents(BuildCreativeModeTabContentsEvent event) {
         MainRegistry.LOGGER.info("Building creative tab contents for: " + event.getTabKey());
-        
-        if (event.getTab() == ModCreativeTabs.NTM_RESOURCES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateResourceTab((stack, vis) -> event.accept(stack, vis));
-        }
 
-        if (event.getTab() == ModCreativeTabs.NTM_FUEL_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateFuelTab((stack, vis) -> event.accept(stack, vis));
-        }
-
-        if (event.getTab() == ModCreativeTabs.NTM_TEMPLATES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateTemplatesTab((stack, vis) -> event.accept(stack, vis));
-        }
-
-        if (event.getTab() == ModCreativeTabs.NTM_WEAPONS_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateWeaponsTab((stack, vis) -> event.accept(stack, vis));
-        }
+        // ВАЖНО: собственные вкладки мода (NTM_RESOURCES_TAB и т.д.) наполняются через
+        // .displayItems(...) в ModCreativeTabs — NeoForge вызывает этот event ПОВЕРХ уже
+        // добавленных там предметов, поэтому здесь их повторно добавлять нельзя (иначе
+        // IllegalArgumentException "already exists in the tab's list"). Поиск (SEARCH) в
+        // NeoForge тоже автоматически собирает содержимое всех вкладок — ветка для него
+        // не нужна. Здесь только ванильные вкладки, которые иначе расширить нельзя.
+        //
+        // На случай повторов внутри одного события всё равно проходит через дедупликатор.
+        Set<String> seen = new HashSet<>();
+        BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor = deduplicatingAcceptor(event, seen);
 
         if (event.getTabKey() == CreativeModeTabs.COMBAT) {
-            populateCombatTab((stack, vis) -> event.accept(stack, vis));
+            populateCombatTab(acceptor);
         }
 
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
-            event.accept(new ItemStack(ModItems.MUSIC_DISC_BUNKER.get()),
+            acceptor.accept(new ItemStack(ModItems.MUSIC_DISC_BUNKER.get()),
                     CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             event.accept(new ItemStack(ModItems.MUSIC_DISC_CH.get()),
                     CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         }
 
-        if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateSpawnEggs((stack, vis) -> event.accept(stack, vis));
-        }
-
-        if (event.getTab() == ModCreativeTabs.NTM_CONSUMABLES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateConsumablesTab((stack, vis) -> event.accept(stack, vis));
-        }
-
-        if (event.getTab() == ModCreativeTabs.NTM_SPAREPARTS_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateSparepartsTab((stack, vis) -> event.accept(stack, vis));
-        }
-
-        if (event.getTab() == ModCreativeTabs.NTM_ORES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateOresTab((stack, vis) -> event.accept(stack, vis));
-        }
-
-        if (event.getTab() == ModCreativeTabs.NTM_BUILDING_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateBuildingTab((stack, vis) -> event.accept(stack, vis));
-        }
-
-        if (event.getTab() == ModCreativeTabs.NTM_MACHINES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateMachinesTab((stack, vis) -> event.accept(stack, vis));
-        }
-
-        if (event.getTab() == ModCreativeTabs.NTM_BOMBS_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateNukeTab((stack, vis) -> event.accept(stack, vis));
-        }
-
-        if (event.getTab() == ModCreativeTabs.NTM_MISSILES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateMissilesTab((stack, vis) -> event.accept(stack, vis));
-        }
-
-        if (event.getTab() == ModCreativeTabs.NTM_DEV_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
-            populateDevItemsTab((stack, vis) -> event.accept(stack, vis));
+        if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
+            populateSpawnEggs(acceptor);
         }
 
     }
-    //?}
+
+    /**
+     * Обёртка над {@code event.accept}, пропускающая повторные добавления одного и того же
+     * предмета (item id + NBT) в рамках одного {@link BuildCreativeModeTabContentsEvent}.
+     * NeoForge 1.21.1 падает с IllegalArgumentException на дубликатах во вкладке.
+     */
+    private static BiConsumer<ItemStack, CreativeModeTab.TabVisibility> deduplicatingAcceptor(
+            BuildCreativeModeTabContentsEvent event, Set<String> seen) {
+        BiConsumer<ItemStack, CreativeModeTab.TabVisibility> raw = event::accept;
+        return (stack, vis) -> {
+            if (stack == null || stack.isEmpty()) {
+                return;
+            }
+            String itemId = String.valueOf(BuiltInRegistries.ITEM.getKey(stack.getItem()));
+            CompoundTag itemTag = PlatformHooks.getItemTag(stack);
+            String tag = itemTag == null ? "" : itemTag.toString();
+            if (!seen.add(itemId + "|" + tag)) {
+                if (ModClothConfig.get().enableDebugLogging) {
+                    MainRegistry.LOGGER.debug("Skipping duplicate creative tab entry {} for tab {}",
+                            itemId, event.getTabKey());
+                }
+                return;
+            }
+            raw.accept(stack, vis);
+        };
+    }
+
+    /**
+     * Публичная версия дедупликатора для {@code .displayItems(...)} в {@link ModCreativeTabs}:
+     * ванильный {@code output.accept} тоже кидает исключение на повторных ItemStack.
+     */
+    public static BiConsumer<ItemStack, CreativeModeTab.TabVisibility> deduplicated(
+            BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
+        Set<String> seen = new HashSet<>();
+        return (stack, vis) -> {
+            if (stack == null || stack.isEmpty()) {
+                return;
+            }
+            String itemId = String.valueOf(BuiltInRegistries.ITEM.getKey(stack.getItem()));
+            CompoundTag itemTag = PlatformHooks.getItemTag(stack);
+            String tag = itemTag == null ? "" : itemTag.toString();
+            if (!seen.add(itemId + "|" + tag)) {
+                if (ModClothConfig.get().enableDebugLogging) {
+                    MainRegistry.LOGGER.debug("Skipping duplicate creative tab entry {}", itemId);
+                }
+                return;
+            }
+            acceptor.accept(stack, vis);
+        };
+    }
 
     //? if fabric {
     /*public static void initFabric() {
@@ -167,7 +179,19 @@ public final class CreativeModeTabEventHandler {
 
     /** Яйца призыва и связанное (ванильная вкладка + поиск на Fabric). */
     public static void populateSpawnEggs(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
-        Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        Set<String> seen = new HashSet<>();
+        Consumer<ItemStack> add = stack -> {
+            if (stack == null || stack.isEmpty()) {
+                return;
+            }
+            String itemId = String.valueOf(BuiltInRegistries.ITEM.getKey(stack.getItem()));
+            CompoundTag itemTag = PlatformHooks.getItemTag(stack);
+            String tag = itemTag == null ? "" : itemTag.toString();
+            if (!seen.add(itemId + "|" + tag)) {
+                return;
+            }
+            acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        };
         add.accept(new ItemStack(ModItems.BOT_PRIME_SPAWN_EGG.get()));
         add.accept(new ItemStack(ModItems.UFO_SPAWN_EGG.get()));
         add.accept(new ItemStack(ModItems.RAD_BEAST_SPAWN_EGG.get()));
@@ -233,7 +257,8 @@ public final class CreativeModeTabEventHandler {
                 return;
             }
             String itemId = String.valueOf(BuiltInRegistries.ITEM.getKey(stack.getItem()));
-            String tag = stack.getTag() == null ? "" : stack.getTag().toString();
+            CompoundTag itemTag = PlatformHooks.getItemTag(stack);
+            String tag = itemTag == null ? "" : itemTag.toString();
             if (!seen.add(itemId + "|" + tag)) {
                 return;
             }
@@ -242,6 +267,16 @@ public final class CreativeModeTabEventHandler {
 
         add.accept(new ItemStack(ModBlocks.NUKE_FAT_MAN.get()));
         // add.accept(new ItemStack(ModBlocks.NUKE_PROTOTYPE.get()));
+        add.accept(new ItemStack(ModBlocks.NUKE_GADGET.get()));
+        add.accept(new ItemStack(ModBlocks.NUKE_BOY.get()));
+        add.accept(new ItemStack(ModBlocks.NUKE_MIKE.get()));
+        add.accept(new ItemStack(ModBlocks.NUKE_TSAR.get()));
+        add.accept(new ItemStack(ModBlocks.NUKE_FLEIJA.get()));
+        add.accept(new ItemStack(ModBlocks.NUKE_N2.get()));
+        add.accept(new ItemStack(ModBlocks.NUKE_SOLINIUM.get()));
+        add.accept(new ItemStack(ModBlocks.NUKE_FSTBMB.get()));
+        add.accept(new ItemStack(ModBlocks.NUKE_CUSTOM.get()));
+        add.accept(new ItemStack(ModBlocks.BOMB_MULTI.get()));
         add.accept(new ItemStack(ModBlocks.DUD_CONVENTIONAL.get()));
         add.accept(new ItemStack(ModBlocks.DUD_NUKE.get()));
         add.accept(new ItemStack(ModBlocks.DUD_SALTED.get()));
@@ -299,6 +334,20 @@ public final class CreativeModeTabEventHandler {
 
         add.accept(new ItemStack(ModItems.FAT_MAN_IGNITER.get()));
         add.accept(new ItemStack(ModItems.FAT_MAN_CORE.get()));
+        add.accept(new ItemStack(ModItems.GADGET_WIREING.get()));
+        add.accept(new ItemStack(ModItems.EARLY_EXPLOSIVE_LENSES.get()));
+        add.accept(new ItemStack(ModItems.GADGET_CORE.get()));
+        add.accept(new ItemStack(ModItems.BOY_SHIELDING.get()));
+        add.accept(new ItemStack(ModItems.BOY_TARGET.get()));
+        add.accept(new ItemStack(ModItems.BOY_BULLET.get()));
+        add.accept(new ItemStack(ModItems.BOY_PROPELLANT.get()));
+        add.accept(new ItemStack(ModItems.BOY_IGNITER.get()));
+        add.accept(new ItemStack(ModItems.EXPLOSIVE_LENSES.get()));
+        add.accept(new ItemStack(ModItems.MAN_CORE.get()));
+        add.accept(new ItemStack(ModItems.MIKE_CORE.get()));
+        add.accept(new ItemStack(ModItems.MIKE_DEUT.get()));
+        add.accept(new ItemStack(ModItems.MIKE_COOLING_UNIT.get()));
+        add.accept(new ItemStack(ModItems.TSAR_CORE.get()));
         
         // add.accept(new ItemStack(ModItems.IGNITER.get()));
         add.accept(new ItemStack(ModItems.DETONATOR.get()));
@@ -384,8 +433,16 @@ public final class CreativeModeTabEventHandler {
 
     // БРОНЯ И ИНСТРУМЕНТЫ
     public static void populateCombatTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
-        // Упрощенный Consumer, по умолчанию использующий PARENT_AND_SEARCH_TABS
-        Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        // ДОБАВЛЕНА ЗАЩИТА ОТ ВНУТРЕННИХ ДУБЛИКАТОВ (поскольку в коде ниже много повторяющихся шлемов и мечей)
+        Set<String> seen = new HashSet<>();
+        Consumer<ItemStack> add = stack -> {
+            if (stack == null || stack.isEmpty()) return;
+            String itemId = String.valueOf(BuiltInRegistries.ITEM.getKey(stack.getItem()));
+            CompoundTag itemTag = PlatformHooks.getItemTag(stack);
+            String tag = itemTag == null ? "" : itemTag.toString();
+            if (!seen.add(itemId + "|" + tag)) return; // Игнорируем дубликат, чтобы не крашнуть 1.21.1
+            acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        };
 
         add.accept(new ItemStack(ModItems.ALLOY_SWORD.get()));
         add.accept(new ItemStack(ModItems.ALLOY_AXE.get()));
@@ -1379,8 +1436,9 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.SILO_HATCH.get()));
         add.accept(new ItemStack(ModBlocks.SILO_HATCH_LARGE.get()));
         add.accept(new ItemStack(ModBlocks.VAULT_DOOR.get()));
-        // add.accept(new ItemStack(ModBlocks.TRANSITION_SEAL.get()));
-        // add.accept(new ItemStack(ModBlocks.SLIDE_DOOR.get()));
+        add.accept(new ItemStack(ModBlocks.TRANSITION_SEAL.get()));
+        add.accept(new ItemStack(ModBlocks.SLIDE_DOOR.get()));
+        add.accept(new ItemStack(ModBlocks.CARGO_DOOR.get()));
     }
 
     // СТАНКИ
@@ -1451,6 +1509,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.CENTRIFUGE.get()));
         add.accept(new ItemStack(ModBlocks.CRYSTALLIZER.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_ASSEMBLER.get()));
+        add.accept(new ItemStack(ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get()));
         add.accept(new ItemStack(ModBlocks.ARC_WELDER.get()));
         add.accept(new ItemStack(ModBlocks.SOLDERING_STATION.get()));
         add.accept(new ItemStack(ModBlocks.DERRICK.get()));
@@ -1471,6 +1530,7 @@ public final class CreativeModeTabEventHandler {
         for (BlockAbsorber.EnumAbsorberTier tier : BlockAbsorber.EnumAbsorberTier.values()) {
             add.accept(BlockAbsorberItem.forTier(ModBlocks.RAD_ABSORBER.get(), tier));
         }
+        add.accept(new ItemStack(ModBlocks.WIRE_COATED.get()));
         add.accept(new ItemStack(ModItems.CASSETTE_AMS_SIREN.get()));
         add.accept(new ItemStack(ModItems.CASSETTE_BEEP_SIREN.get()));
         add.accept(new ItemStack(ModItems.CASSETTE_CLASSIC_SIREN.get()));
@@ -2038,12 +2098,17 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.RAIL_WOOD.get()));
         add.accept(new ItemStack(ModBlocks.RED_CABLE.get()));
         add.accept(new ItemStack(ModBlocks.RED_CABLE_CLASSIC.get()));
+        add.accept(new ItemStack(ModBlocks.RED_CABLE_PAINTABLE.get()));
+        add.accept(new ItemStack(ModBlocks.RED_CABLE_GAUGE.get()));
         add.accept(new ItemStack(ModBlocks.RED_CABLE_BOX.get()));
         add.accept(new ItemStack(ModBlocks.RED_CONNECTOR.get()));
         add.accept(new ItemStack(ModBlocks.RED_CONNECTOR_SUPER.get()));
         add.accept(new ItemStack(ModBlocks.RED_PYLON.get()));
+        add.accept(new ItemStack(ModBlocks.RED_PYLON_STEEL.get()));
         add.accept(new ItemStack(ModBlocks.RED_PYLON_MEDIUM_WOOD.get()));
+        add.accept(new ItemStack(ModBlocks.RED_PYLON_MEDIUM_WOOD_TRANSFORMER.get()));
         add.accept(new ItemStack(ModBlocks.RED_PYLON_MEDIUM_STEEL.get()));
+        add.accept(new ItemStack(ModBlocks.RED_PYLON_MEDIUM_STEEL_TRANSFORMER.get()));
         add.accept(new ItemStack(ModBlocks.RED_PYLON_LARGE.get()));
         add.accept(new ItemStack(ModBlocks.RED_WIRE_COATED.get()));
         add.accept(new ItemStack(ModBlocks.REINFORCED_BRICK.get()));
@@ -3253,12 +3318,12 @@ public final class CreativeModeTabEventHandler {
 
     // ТОПЛИВО И ЭЛЕМЕНТЫ МЕХАНИЗМОВ
     public static void populateFuelTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
-        // ДОБАВЛЕНА ЗАЩИТА ОТ ДУБЛИКАТОВ, как в TemplatesTab и NukeTab:
         Set<String> seen = new HashSet<>();
         Consumer<ItemStack> add = stack -> {
             if (stack == null || stack.isEmpty()) return;
             String itemId = String.valueOf(BuiltInRegistries.ITEM.getKey(stack.getItem()));
-            String tag = stack.getTag() == null ? "" : stack.getTag().toString();
+            CompoundTag itemTag = PlatformHooks.getItemTag(stack);
+            String tag = itemTag == null ? "" : itemTag.toString();
             // Если такой предмет с таким же NBT уже добавлялся, пропускаем его, чтобы не сломать Поиск
             if (!seen.add(itemId + "|" + tag)) return;
             acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
@@ -3269,8 +3334,59 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.CREATIVE_BATTERY.get()));
 
         // RBMK blocks
+        // add.accept(new ItemStack(ModBlocks.RBMK_ROD.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_ROD_MOD.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_CONTROL.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_BLUE.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_GREEN.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_YELLOW.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_PURPLE.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_MOD.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_MOD_AUTO.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_AUTO.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_REASIM.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_CONTROL_REASIM_AUTO.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_MODERATOR.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_ABSORBER.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_REFLECTOR.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_COOLER.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_BOILER.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_HEATER.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_OUTGASSER.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_STORAGE.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_BLANK.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_STEAM_INLET.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_STEAM_OUTLET.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_LOADER.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_AUTOLOADER.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_CRANE_CONSOLE.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_DISPLAY.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_GAUGE.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_INDICATOR.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_LEVER.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_NUMITRON.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_GRAPH.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_TERMINAL.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_KEYPAD.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_DEBRIS.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_DEBRIS_BURNING.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_DEBRIS_DIGAMMA.get()));
+        // add.accept(new ItemStack(ModBlocks.RBMK_DEBRIS_RADIATING.get()));
 
-        // RBMK items
+        // // RBMK items
+        // add.accept(new ItemStack(ModItems.RBMK_LID.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_LID_GLASS.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_FUEL_EMPTY.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_FUEL_LEU235.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_FUEL_HEU235.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_FUEL_LEP.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_FUEL_HEP.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_FUEL_MOX.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_PELLET_LEU235.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_PELLET_HEU235.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_PELLET_LEP.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_PELLET_HEP.get()));
+        // add.accept(new ItemStack(ModItems.RBMK_PELLET_MOX.get()));
 
 
 
@@ -3394,13 +3510,12 @@ public final class CreativeModeTabEventHandler {
     }
 
     public static void populateTemplatesTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
-        // Упрощенный Consumer, по умолчанию использующий PARENT_AND_SEARCH_TABS.
-        // В 1.20.1 игра падает, если один и тот же ItemStack (item+tag) добавить в вкладку дважды.
         Set<String> seen = new HashSet<>();
         Consumer<ItemStack> add = stack -> {
             if (stack == null || stack.isEmpty()) return;
             String itemId = String.valueOf(BuiltInRegistries.ITEM.getKey(stack.getItem()));
-            String tag = stack.getTag() == null ? "" : stack.getTag().toString();
+            CompoundTag itemTag = PlatformHooks.getItemTag(stack);
+            String tag = itemTag == null ? "" : itemTag.toString();
             if (!seen.add(itemId + "|" + tag)) return;
             acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
         };
@@ -3443,8 +3558,8 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.STAMP_DESH_357.get()));
 
         add.accept(new ItemStack(ModItems.TEMPLATE_FOLDER.get()));
-        add.accept(new ItemStack(ModItems.ASSEMBLY_TEMPLATE.get()));
-        add.accept(new ItemStack(ModItems.BLUEPRINT_FOLDER.get()));
+        // add.accept(new ItemStack(ModItems.ASSEMBLY_TEMPLATE.get()));
+        // add.accept(new ItemStack(ModItems.BLUEPRINT_FOLDER.get()));
 
         // Machine Upgrades
         add.accept(new ItemStack(ModItems.UPGRADE_SPEED_1.get()));
@@ -3474,6 +3589,7 @@ public final class CreativeModeTabEventHandler {
 
         add.accept(new ItemStack(ModItems.SCREWDRIVER.get()));
         add.accept(new ItemStack(ModItems.SCREWDRIVER_DESH.get()));
+        add.accept(new ItemStack(ModItems.CONFETTI_TESTER.get()));
 
         EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
             ClientSetup.addTemplatesClient(add);
@@ -3496,7 +3612,7 @@ public final class CreativeModeTabEventHandler {
         if (item instanceof com.hbm_m.powerarmor.ModArmorFSBPowered powerArmor) {
             // Получаем максимальную емкость и устанавливаем полный заряд
             long maxCapacity = powerArmor.getMaxCharge(stack);
-            stack.getOrCreateTag().putLong("charge", maxCapacity);
+            PlatformHooks.putLong(stack, "charge", maxCapacity);
         }
 
         return stack;

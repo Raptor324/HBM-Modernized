@@ -109,15 +109,15 @@ public class MachineStorageDrumBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.put("liquidTank", liquidTank.writeNBT(new CompoundTag()));
         tag.put("gasTank", gasTank.writeNBT(new CompoundTag()));
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         if (tag.contains("liquidTank")) liquidTank.readNBT(tag.getCompound("liquidTank"));
         if (tag.contains("gasTank")) gasTank.readNBT(tag.getCompound("gasTank"));
     }

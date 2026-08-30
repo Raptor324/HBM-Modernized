@@ -58,7 +58,7 @@ public class PlayerHandler {
         PlayerEvent.PLAYER_QUIT.register(PlayerHandler::onPlayerQuit);
         PlayerEvent.PLAYER_RESPAWN.register(PlayerHandler::onPlayerRespawn);
         TickEvent.PLAYER_POST.register(PlayerHandler::onPlayerTick);
-        CommandRegistrationEvent.EVENT.register(PlayerHandler::onRegisterCommands);
+        CommandRegistrationEvent.EVENT.register((dispatcher, buildContext, selection) -> onRegisterCommands(dispatcher, buildContext, selection));
     }
 
     /**
@@ -164,7 +164,11 @@ public class PlayerHandler {
      * Игрок возродился — сбрасываем радиацию
      * (параметр keepInventory: если true — не сбрасываем, чтобы не злоупотребляли)
      */
+    //? if < 1.21.1 {
     private static void onPlayerRespawn(ServerPlayer serverPlayer, boolean conqueredEnd) {
+    //?} else {
+    /*private static void onPlayerRespawn(ServerPlayer serverPlayer, boolean conqueredEnd, net.minecraft.world.entity.Entity.RemovalReason reason) {
+    *///?}
         // Сброс при смерти, но не при телепортации через End
         if (!conqueredEnd) {
             setPlayerRads(serverPlayer, 0F);

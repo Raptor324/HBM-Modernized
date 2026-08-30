@@ -33,7 +33,15 @@ import java.util.*;
  * and renders its {@code Inner} + {@code Cap} groups per section, creating the
  * characteristic hollow octagonal channel appearance visible from the top.
  */
-public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements BlockEntityRenderer<T> {
+
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
+public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements com.hbm_m.client.render.HbmBerBounds<T> {
 
     // ─── Caches ──────────────────────────────────────────────────────────────
 
@@ -245,10 +253,10 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements Bloc
         ps.translate(0.5, 0.75, 0.5);
         Matrix4f m = ps.last().pose();
         for (float j = 0; j <= height; j += 0.25f) {
-            vc.vertex(m, -0.5f, j, -0.5f).color(0.4f, 0.9f, 1.0f, 0.1f).endVertex();
-            vc.vertex(m, -0.5f, j,  0.5f).color(0.4f, 0.9f, 1.0f, 0.1f).endVertex();
-            vc.vertex(m,  0.5f, j,  0.5f).color(0.4f, 0.9f, 1.0f, 0.1f).endVertex();
-            vc.vertex(m,  0.5f, j, -0.5f).color(0.4f, 0.9f, 1.0f, 0.1f).endVertex();
+            com.hbm_m.platform.RenderHooks.vertexColor(vc, m, -0.5f, j, -0.5f, 102, 230, 255, 25);
+            com.hbm_m.platform.RenderHooks.vertexColor(vc, m, -0.5f, j,  0.5f, 102, 230, 255, 25);
+            com.hbm_m.platform.RenderHooks.vertexColor(vc, m,  0.5f, j,  0.5f, 102, 230, 255, 25);
+            com.hbm_m.platform.RenderHooks.vertexColor(vc, m,  0.5f, j, -0.5f, 102, 230, 255, 25);
         }
         ps.popPose();
     }
@@ -318,10 +326,11 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements Bloc
                               TextureAtlasSprite s, int light, int overlay,
                               float r, float g, float b) {
         float u0 = s.getU0(), u1 = s.getU1(), v0 = s.getV0(), v1 = s.getV1();
-        vc.vertex(m, x0, y0, z0).color(r,g,b,1f).uv(u0,v1).overlayCoords(overlay).uv2(light).normal(nx,ny,nz).endVertex();
-        vc.vertex(m, x1, y1, z1).color(r,g,b,1f).uv(u1,v1).overlayCoords(overlay).uv2(light).normal(nx,ny,nz).endVertex();
-        vc.vertex(m, x2, y2, z2).color(r,g,b,1f).uv(u1,v0).overlayCoords(overlay).uv2(light).normal(nx,ny,nz).endVertex();
-        vc.vertex(m, x3, y3, z3).color(r,g,b,1f).uv(u0,v0).overlayCoords(overlay).uv2(light).normal(nx,ny,nz).endVertex();
+        int ir = (int) (r * 255), ig = (int) (g * 255), ib = (int) (b * 255);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x0, y0, z0, ir, ig, ib, 255, u0, v1, overlay, light, nx, ny, nz);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x1, y1, z1, ir, ig, ib, 255, u1, v1, overlay, light, nx, ny, nz);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x2, y2, z2, ir, ig, ib, 255, u1, v0, overlay, light, nx, ny, nz);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x3, y3, z3, ir, ig, ib, 255, u0, v0, overlay, light, nx, ny, nz);
     }
 
     // ─── OBJ geometry rendering ───────────────────────────────────────────────
@@ -339,6 +348,7 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements Bloc
         if (triangles == null || sprite == null) return;
         float u0 = sprite.getU0(), u1 = sprite.getU1();
         float v0 = sprite.getV0(), v1 = sprite.getV1();
+        int ir = (int) (r * 255), ig = (int) (g * 255), ib = (int) (b * 255);
         for (float[] tri : triangles) {
             for (int pass = 0; pass < 4; pass++) {  // 4th is duplicate of 3rd (degenerate quad)
                 int base = Math.min(pass, 2) * 8;

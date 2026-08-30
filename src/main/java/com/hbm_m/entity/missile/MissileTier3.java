@@ -2,7 +2,7 @@ package com.hbm_m.entity.missile;
 
 
 
-import api.hbm.entity.IRadarDetectable;
+import api.hbm_m.entity.IRadarDetectable;
 
 import com.hbm_m.explosion.ExplosionChaos;
 

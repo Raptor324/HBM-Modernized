@@ -35,7 +35,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  * with next/prev navigation instead - the only UX-only simplification in the PWR feature (the
  * reactor mechanics themselves are a 1:1 port).
  */
-public class PWRFuelPrinterItem extends Item {
+public class PWRFuelPrinterItem extends Item implements com.hbm_m.item.ITooltipProvider {
 
     private static final int MAX_SIZE = 4096;
 
@@ -105,8 +105,7 @@ public class PWRFuelPrinterItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.literal("Use on an assembled PWR controller to generate construction diagrams")
                 .withStyle(ChatFormatting.GRAY));
     }

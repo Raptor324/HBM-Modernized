@@ -166,8 +166,8 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity implem
     // ── NBT ─────────────────────────────────────────────────────────────────
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         for (int i = 0; i < SIDE_COUNT; i++) {
             CompoundTag patternTag = new CompoundTag();
             patterns[i].writeToNBT(patternTag);
@@ -177,8 +177,8 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity implem
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         for (int i = 0; i < SIDE_COUNT; i++) {
             patterns[i].readFromNBT(tag.getCompound("pattern" + i));
         }

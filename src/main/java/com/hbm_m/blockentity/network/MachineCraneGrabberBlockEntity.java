@@ -175,15 +175,15 @@ public class MachineCraneGrabberBlockEntity extends BaseMachineBlockEntity {
     // ── NBT ─────────────────────────────────────────────────────────────────
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putBoolean("isWhitelist", isWhitelist);
         matcher.writeToNBT(tag);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         isWhitelist = tag.getBoolean("isWhitelist");
         matcher.readFromNBT(tag);
     }

@@ -31,4 +31,13 @@ public class MachineTeleporterBlock extends BaseEntityBlock {
         return createTickerHelper(type, ModBlockEntities.MACHINE_TELEPORTER_BE.get(),
                 (lvl, pos, st, be) -> MachineTeleporterBlockEntity.tick(lvl, pos, st, (MachineTeleporterBlockEntity) be));
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineTeleporterBlock> CODEC = simpleCodec(MachineTeleporterBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

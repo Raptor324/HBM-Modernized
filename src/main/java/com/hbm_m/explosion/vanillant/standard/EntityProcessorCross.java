@@ -4,17 +4,19 @@ import com.hbm_m.explosion.vanillant.ExplosionVNT;
 import com.hbm_m.explosion.vanillant.interfaces.ICustomDamageHandler;
 import com.hbm_m.explosion.vanillant.interfaces.IEntityProcessor;
 import com.hbm_m.explosion.vanillant.interfaces.IEntityRangeMutator;
+import com.hbm_m.platform.PlatformHooks;
+
 import net.minecraft.core.Direction;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageSources;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.enchantment.ProtectionEnchantment;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+
 //? if forge {
 import net.minecraftforge.event.ForgeEventFactory;
 //?}
@@ -84,7 +86,12 @@ public class EntityProcessorCross implements IEntityProcessor {
         HashMap<Entity, Float> damageMap = new HashMap<>();
 
         for (Entity entity : list) {
-            if (!entity.ignoreExplosion()) {
+            //? if < 1.21.1 {
+            boolean ignore = entity.ignoreExplosion();
+            //?} else {
+            /*boolean ignore = entity.ignoreExplosion(explosion.compat);
+            *///?}
+            if (!ignore) {
 
                 AABB entityBoundingBox = entity.getBoundingBox();
                 double xDist = (entityBoundingBox.minX <= x && entityBoundingBox.maxX >= x) ? 0 : Math.min(Math.abs(entityBoundingBox.minX - x), Math.abs(entityBoundingBox.maxX - x));
@@ -121,7 +128,7 @@ public class EntityProcessorCross implements IEntityProcessor {
 
                         double enchKnockback;
                         if (entity instanceof LivingEntity livingEntity) {
-                            enchKnockback = ProtectionEnchantment.getExplosionKnockbackAfterDampener(livingEntity, knockback);
+                            enchKnockback = PlatformHooks.getExplosionKnockbackAfterDampener(livingEntity, knockback);
                         } else {
                             enchKnockback = knockback;
                         }

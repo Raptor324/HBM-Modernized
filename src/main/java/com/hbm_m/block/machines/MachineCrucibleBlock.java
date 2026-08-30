@@ -12,6 +12,7 @@ import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.inventory.menu.MachineCrucibleMenu;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+import dev.architectury.registry.menu.MenuRegistry;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -44,8 +45,11 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+//? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.network.NetworkHooks;
+//?} else if neoforge {
+/*import net.neoforged.neoforge.capabilities.Capabilities;
+*///?}
 
 /**
  * Crucible machine block — GIT MachineCrucible multiblock (3×3 ring) with bowl collision on controller.
@@ -181,9 +185,21 @@ public class MachineCrucibleBlock extends BaseEntityBlock implements IMultiblock
         builder.add(FACING);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                  Player player, InteractionHand hand, BlockHitResult hit) {
+        return hbmOnUse(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return hbmOnUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult hbmOnUse(BlockState state, Level level, BlockPos pos,
+                                       Player player, InteractionHand hand, BlockHitResult hit) {
 
         if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
@@ -193,21 +209,28 @@ public class MachineCrucibleBlock extends BaseEntityBlock implements IMultiblock
         if (!held.isEmpty() && held.getItem() instanceof net.minecraft.world.item.ShovelItem) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be != null) {
+                //? if forge {
                 be.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
                     for (int i = 0; i < handler.getSlots(); i++) {
                         ItemStack extracted = handler.extractItem(i, Integer.MAX_VALUE, false);
-                        if (extracted.isEmpty()) {
-                            continue;
-                        }
+                        if (extracted.isEmpty()) continue;
                         if (!player.getInventory().add(extracted.copy())) {
-                            Containers.dropItemStack(level,
-                                    hit.getLocation().x,
-                                    hit.getLocation().y,
-                                    hit.getLocation().z,
-                                    extracted);
+                            Containers.dropItemStack(level, hit.getLocation().x, hit.getLocation().y, hit.getLocation().z, extracted);
                         }
                     }
                 });
+                //?} else if neoforge {
+                /*var handler = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, state, be, null);
+                if (handler != null) {
+                    for (int i = 0; i < handler.getSlots(); i++) {
+                        ItemStack extracted = handler.extractItem(i, Integer.MAX_VALUE, false);
+                        if (extracted.isEmpty()) continue;
+                        if (!player.getInventory().add(extracted.copy())) {
+                            Containers.dropItemStack(level, hit.getLocation().x, hit.getLocation().y, hit.getLocation().z, extracted);
+                        }
+                    }
+                }
+                *///?}
                 player.inventoryMenu.broadcastChanges();
             }
             return InteractionResult.CONSUME;
@@ -218,7 +241,7 @@ public class MachineCrucibleBlock extends BaseEntityBlock implements IMultiblock
             ContainerData data = (be instanceof MachineCrucibleBlockEntity cbe)
                 ? cbe.getData()
                 : new SimpleContainerData(4);
-            NetworkHooks.openScreen(serverPlayer,
+            MenuRegistry.openExtendedMenu(serverPlayer,
                     new SimpleMenuProvider(
                             (containerId, playerInventory, p) -> new MachineCrucibleMenu(
                                     containerId,
@@ -228,7 +251,7 @@ public class MachineCrucibleBlock extends BaseEntityBlock implements IMultiblock
                             ),
                             Component.translatable("container.hbm_m.crucible")
                     ),
-                    pos);
+                    buf -> buf.writeBlockPos(pos));
         }
         return InteractionResult.CONSUME;
     }
@@ -247,6 +270,7 @@ public class MachineCrucibleBlock extends BaseEntityBlock implements IMultiblock
                 structureHelper.destroyStructure(level, pos, state.getValue(FACING));
                 BlockEntity be = level.getBlockEntity(pos);
                 if (be != null) {
+                    //? if forge {
                     be.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
                         for (int i = 0; i < handler.getSlots(); i++) {
                             ItemStack extracted = handler.extractItem(i, Integer.MAX_VALUE, false);
@@ -255,9 +279,29 @@ public class MachineCrucibleBlock extends BaseEntityBlock implements IMultiblock
                             }
                         }
                     });
+                    //?} else if neoforge {
+                    /*var handler = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, state, be, null);
+                    if (handler != null) {
+                        for (int i = 0; i < handler.getSlots(); i++) {
+                            ItemStack extracted = handler.extractItem(i, Integer.MAX_VALUE, false);
+                            if (!extracted.isEmpty()) {
+                                Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), extracted);
+                            }
+                        }
+                    }
+                    *///?}
                 }
             }
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineCrucibleBlock> CODEC = simpleCodec(MachineCrucibleBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

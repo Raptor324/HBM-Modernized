@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui.rbmk;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKIndicatorBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.network.RadioTorchControlPacket;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -58,7 +59,7 @@ public class GUIRBMKIndicator extends Screen {
             maxBoxes[i] = max;
             addRenderableWidget(max);
 
-            Checkbox invert = new Checkbox(cx + 92, y, 60, 16, Component.literal("inv"), be.invert[i]);
+            Checkbox invert = com.hbm_m.client.GuiCompat.checkbox(cx + 92, y, 60, 16, Component.literal("inv"), be.invert[i]);
             invertBoxes[i] = invert;
             addRenderableWidget(invert);
 
@@ -115,7 +116,7 @@ public class GUIRBMKIndicator extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(g);
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, mouseX, mouseY, partialTick);
         super.render(g, mouseX, mouseY, partialTick);
         g.drawCenteredString(this.font, this.title, this.width / 2, this.height / 2 - 115, 0xFFFFFF);
     }

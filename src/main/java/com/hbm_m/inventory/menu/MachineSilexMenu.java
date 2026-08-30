@@ -44,6 +44,11 @@ public class MachineSilexMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineSilexBlockEntity silexBlockEntity) {
             return silexBlockEntity;
         }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inventory.player.level().isClientSide) {
+            return null;
+        }
         throw new IllegalStateException("No MachineSilexBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":silex_menu");
     }
 

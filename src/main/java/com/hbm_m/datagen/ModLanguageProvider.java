@@ -1,8 +1,9 @@
 package com.hbm_m.datagen;
+//? if forge {
+
 import static com.hbm_m.block.ModBlocks.ENABLED_INGOT_BLOCKS;
 import static com.hbm_m.block.ModBlocks.getIngotBlock;
 
-//? if forge {
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -125,8 +126,49 @@ public class ModLanguageProvider extends LanguageProvider {
             return replaced.trim();
         }
     }
+
+    /** Тултипы меню конфигурации (ConfigScreen) — единый блок для обеих локалей.
+     *  Базовые config.hbm_m.* ключи (title/tab.client/.../restart.*) уже добавляются
+     *  ниже в switch по локали — здесь только недостающие .tooltip-строки. */
+    private void addConfigTranslations() {
+        if ("ru_ru".equals(this.locale)) {
+            add("config.hbm_m.tab.client.tooltip", "Клиентские настройки — хранятся локально в client.json");
+            add("config.hbm_m.tab.server.tooltip", "Серверные настройки. Доступны в одиночной игре или с правами оператора.");
+            add("config.hbm_m.category.general.tooltip", "Общие тумблеры мода (радиация, MOTD).");
+            add("config.hbm_m.category.world_effects.tooltip", "Эффекты мира (радиоактивный туман, следы порчи).");
+            add("config.hbm_m.category.weapons.tooltip", "Поведение оружия и падение предметов.");
+            add("config.hbm_m.category.player.tooltip", "Пороги радиации игрока.");
+            add("config.hbm_m.category.chunk.tooltip", "Движок радиации чанков.");
+            add("config.hbm_m.category.machines.tooltip", "Настройка механизмов и мультиблоков.");
+            add("config.hbm_m.category.nukes.tooltip", "Радиусы взрывов ядерных устройств.");
+            add("config.hbm_m.category.explosions.tooltip", "Движок взрывов и радиоактивные осадки.");
+            add("config.hbm_m.category.missile_track.tooltip", "Сетевое отслеживание ракет.");
+            add("config.hbm_m.category.debug.tooltip", "Отладочный рендер и логирование.");
+            add("config.hbm_m.category.rendering.tooltip", "Клиентские опции рендеринга.");
+            add("config.hbm_m.category.overlay.tooltip", "Экранные оверлеи (пиксельный эффект, подсветка).");
+        } else {
+            add("config.hbm_m.tab.client.tooltip", "Client-side settings, stored locally in client.json");
+            add("config.hbm_m.tab.server.tooltip", "Server-side settings. Editable in singleplayer or as operator.");
+            add("config.hbm_m.category.general.tooltip", "Common mod toggles (radiation, MOTD).");
+            add("config.hbm_m.category.world_effects.tooltip", "World-side effects (rad fog, taint trails).");
+            add("config.hbm_m.category.weapons.tooltip", "Weapon behaviour and item drops.");
+            add("config.hbm_m.category.player.tooltip", "Player radiation thresholds.");
+            add("config.hbm_m.category.chunk.tooltip", "Chunk radiation engine.");
+            add("config.hbm_m.category.machines.tooltip", "Machine and multiblock tuning.");
+            add("config.hbm_m.category.nukes.tooltip", "Explosive radii of nuclear devices.");
+            add("config.hbm_m.category.explosions.tooltip", "Explosion engine and fallout.");
+            add("config.hbm_m.category.missile_track.tooltip", "Network missile tracking.");
+            add("config.hbm_m.category.debug.tooltip", "Debug rendering and logging.");
+            add("config.hbm_m.category.rendering.tooltip", "Client rendering options.");
+            add("config.hbm_m.category.overlay.tooltip", "Screen overlays (pixel effect, highlight).");
+        }
+    }
+
     @Override
     protected void addTranslations() {
+        // Меню конфигурации (ConfigScreen) — общий блок для обеих локалей.
+        addConfigTranslations();
+
         // Neu portierte, freistehende Pulver ohne Ingot-Gegenstueck (DEV-Tab, zur Durchsicht)
         if ("ru_ru".equals(this.locale)) {
             add(ModItems.POWDER_SAWDUST.get(), "Опилки");
@@ -259,6 +301,24 @@ public class ModLanguageProvider extends LanguageProvider {
     // ЯВНАЯ ЛОКАЛИЗАЦИЯ ДЛЯ ОСТАЛЬНЫХ КЛЮЧЕЙ
         switch (this.locale) {
             case "ru_ru":
+                addTranslationsRuRuPart1();
+                addTranslationsRuRuPart2();
+                addTranslationsRuRuPart3();
+                addTranslationsRuRuPart4();
+                break;
+            case "en_us":
+                addTranslationsEnUsPart1();
+                addTranslationsEnUsPart2();
+                addTranslationsEnUsPart3();
+                addTranslationsEnUsPart4();
+                addTranslationsEnUsPart5();
+                addDevItemTranslationsEnUs();
+                add("damage.other", "Other");
+                break;
+        }
+    }
+
+    private void addTranslationsRuRuPart1() {
                 // КРЕАТИВНЫЕ ВКЛАДКИ
                 add("itemGroup.hbm_m.ntm_resources_tab", "Слитки и ресурсы NTM");
                 add("itemGroup.hbm_m.ntm_fuel_tab", "Топливо и элементы механизмов NTM");
@@ -356,6 +416,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.energy", "Энергия: %s/%s HE");
                 add("gui.hbm_m.burn_time", "Время горения: %s%%");
                 add("container.hbm_m.gas_centrifuge", "Газовая центрифуга");
+                add("container.hbm_m.book", "Книга Вагонов");
+                add("container.hbm_m.book.extended_crafting", "Расширенный крафт на 4 слота");
+                add("container.hbm_m.book.standard_inventory", "Обычный инвентарь");
+                add("item.hbm_m.book_of_.desc", "Издание 4, страницы с золотым обрезом");
                 add("desc.gui.gasCent.enrichment", "Обогащение");
                 add("desc.gui.gasCent.output", "Выход");
                 add("pseudofluid.hbm_m.none", "Нет");
@@ -770,8 +834,8 @@ public class ModLanguageProvider extends LanguageProvider {
 // MULTIBLOCK DOORS
                 add(ModBlocks.LARGE_VEHICLE_DOOR.get(), "Дверь для крупногабаритного транспорта");
                 add(ModBlocks.ROUND_AIRLOCK_DOOR.get(), "Круглая воздушная дверь");
-                add(ModBlocks.TRANSITION_SEAL.get(), "Транзитный люк (WIP)");
-                add(ModBlocks.SLIDE_DOOR.get(), "Скользящая взрывная дверь (WIP)");
+                add(ModBlocks.TRANSITION_SEAL.get(), "Транзитный люк");
+                add(ModBlocks.SLIDE_DOOR.get(), "Раздвижная дверь");
                 add(ModBlocks.FIRE_DOOR.get(), "Пожарная дверь");
                 add(ModBlocks.SLIDING_SEAL_DOOR.get(), "Скользящая герметичная дверь");
                 add(ModBlocks.SECURE_ACCESS_DOOR.get(), "Усиленная дверь");
@@ -781,6 +845,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.WATER_DOOR.get(), "Подводный люк");
                 add(ModBlocks.SILO_HATCH.get(), "Малый люк");
                 add(ModBlocks.SILO_HATCH_LARGE.get(), "Люк ракетной шахты");
+                add(ModBlocks.CARGO_DOOR.get(), "Грузовая дверь");
 
                 add(ModBlocks.DUD_SALTED.get(), "Неразорвавшаяся солёная бомба");
                 add(ModBlocks.DUD_NUKE.get(), "Неразорвавшаяся ядерная бомба");
@@ -794,11 +859,17 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.ROD_QUAD_LEAD.get(), "Четырёхкратный свинцовый стержень");
                 add(ModItems.ROD_QUAD_NP237.get(), "Четырёхкратный стержень Нп-237");
                 add(ModItems.ROD_QUAD_URANIUM.get(), "Четырёхкратный урановый стержень");
-                add(ModItems.FAT_MAN_EXPLOSIVE.get(), "Ранние взрывные линзы");
-                add(ModItems.FAT_MAN_IGNITER.get(), "Воспламенитель 'Толстяк'");
+                add(ModItems.FAT_MAN_EXPLOSIVE.get(), "Набор взрывных линз первого поколения");
+                add(ModItems.FAT_MAN_IGNITER.get(), "Зажигатель");
                 add(ModItems.FAT_MAN_CORE.get(), "Плутониевое ядро");
                 add("container.hbm_m.nuke_fat_man", "Ядерная бомба 'Толстяк'");
-                add("gui.hbm_m.nuke_fat_man.desc", "Установите 4 ранние взрывные линзы, воспламенитель и плутониевое ядро. Активируется редстоуном или детонатором.");
+                add("gui.hbm_m.nuke_fat_man.requires", "Требует:");
+                add("gui.hbm_m.nuke_fat_man.line_lenses", " * 4 набора взрывных линз первого поколения");
+                add("gui.hbm_m.nuke_fat_man.line_core", " * Плутониевое ядро");
+                add("gui.hbm_m.nuke_fat_man.line_igniter", " * Зажигатель");
+                // Тултип предмета «линзы» (как early_explosive_lenses.desc, 1.7.10)
+                add("tooltip.hbm_m.fat_man_explosive.desc1", "Сборка из 8 осколочно-фугасных линз с алюминиевым");
+                add("tooltip.hbm_m.fat_man_explosive.desc2", "толкателем, дюралюминиевой оболочкой и проволочными детонаторами.");
                 add(ModBlocks.MINE_AP.get(), "Противопехотная мина");
                 add(ModItems.GRENADE_NUC.get(), "Ядерная граната");
                 add(ModItems.GRENADE_IF_HE.get(), "IF-Граната: фугасная");
@@ -806,6 +877,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.GRENADE_IF_SLIME.get(), "IF-Граната: прыгучая");
                 add(ModItems.MULTI_DETONATOR.get(), "Мульти-детонатор");
                 add(ModItems.RANGEFINDER.get(), "Дальномер");
+                add(ModItems.CONFETTI_TESTER.get(), "Тестер *конфетти* эффектов");
                 add(ModItems.RANGE_DETONATOR.get(), "Детонатор дальнего действия");
                 add(ModItems.DETONATOR.get(), "Детонатор");
                 add(ModBlocks.BARBED_WIRE_POISON.get(), "Колючая проволока (яд)");
@@ -818,7 +890,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.NUCLEAR_CHARGE.get(), "Ядерный заряд");
                 add(ModBlocks.C4.get(), "Заряд C4");
                 add(ModItems.DEFUSER.get(), "Устройство для разминирования");
-                add(ModItems.CROWBAR.get(), "Лом");
+                add(ModItems.CROWBAR.get(), "Mk.V Устройство Для Вскрытия Ящиков ''Лом''");
                 add(ModItems.DEPTH_ORES_SCANNER.get(), "Сканер глубинных кластеров");
                 add(ModItems.OIL_DETECTOR.get(), "Детектор нефти");
 
@@ -963,6 +1035,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.BRICK_BASE_SLAB.get(), "Плита из отполированных кирпичей");
                 add(ModBlocks.BRICK_LIGHT_SLAB.get(), "Плита из легких кирпичей");
                 add(ModBlocks.BRICK_FIRE_SLAB.get(), "Плита из огнеупорных кирпичей");
+    }
+
+    private void addTranslationsRuRuPart2() {
                 add(ModBlocks.BRICK_OBSIDIAN_SLAB.get(), "Плита из обсидиановых кирпичей");
                 add(ModBlocks.VINYL_TILE_SLAB.get(), "Плита из виниловой плитки");
                 add(ModBlocks.VINYL_TILE_SMALL_SLAB.get(), "Плита из мелкой виниловой плитки");
@@ -1331,6 +1406,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("armorMod.type.battery", "Аккумулятор");
 
                 add("gui.hbm_m.blast_furnace.accepts", "Принимает предметы со стороны: %s");
+                add("gui.hbm_m.blast_furnace.speed", "Скорость: %s%%");
                 add("direction.hbm_m.down", "Вниз");
                 add("direction.hbm_m.up", "Вверх");
                 add("direction.hbm_m.north", "Север");
@@ -1401,7 +1477,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.advanced_assembly_machine", "Сборочная машина");
                 add("block.hbm_m.block_uranium", "Урановый блок");
                 add(ModBlocks.FLUID_TANK.get(), "Цистерна");
-                add(ModBlocks.BAT9000.get(), "БАТ9000");
+                add(ModBlocks.BAT9000.get(), "Цистернище");
                 add(ModBlocks.MACHINE_BATTERY_SOCKET.get(), "Аккумуляторный разъём");
                 add(ModBlocks.FLUID_DUCT.get(), "Жидкостная труба (NEO)");
                 add(ModBlocks.FLUID_DUCT_COLORED.get(), "Жидкостная труба (цветная)");
@@ -1672,6 +1748,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.brick_concrete", "Бетонные кирпичи");
                 add("block.hbm_m.brick_concrete_slab", "Плита из бетонных кирпичей");
                 add("block.hbm_m.brick_concrete_stairs", "Ступени из бетонных кирпичей");
+    }
+
+    private void addTranslationsRuRuPart3() {
                 add("block.hbm_m.brick_concrete_broken", "Сломанные бетонные кирпичи");
                 add("block.hbm_m.brick_concrete_broken_slab", "Плита из сломанных бетонных кирпичей");
                 add("block.hbm_m.brick_concrete_broken_stairs", "Ступени из сломанных бетонных кирпичей");
@@ -1767,6 +1846,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("fluid.hbm_m.plasma_xm", "Xenon-Mercury Plasma");
                 add("fluid.hbm_m.plasma_bf", "Balefire Plasma");
                 add("fluid.hbm_m.steam", "Steam");
+        add("fluid.hbm_m.airblast", "Air blast");
+        add("fluid.hbm_m.flue", "Flue gas");
                 add("fluid.hbm_m.hotsteam", "Hot Steam");
                 add("fluid.hbm_m.superhotsteam", "Super Hot Steam");
                 add("fluid.hbm_m.ultrahotsteam", "Ultra Hot Steam");
@@ -1868,6 +1949,28 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.lead_ore", "Свинцовая руда");
                 add("block.hbm_m.lead_ore_deepslate", "Глубинная свинцовая руда");
                 add("block.hbm_m.cinnabar_ore", "Киноварная руда");
+                // Руды паритета генерации с 1.7.10
+                add("block.hbm_m.niter_ore", "Селитровая руда");
+                add("block.hbm_m.niter_ore_deepslate", "Глубинная селитровая руда");
+                add("block.hbm_m.lithium_ore", "Литиевая руда");
+                add("block.hbm_m.lithium_ore_deepslate", "Глубинная литиевая руда");
+                add("block.hbm_m.alexandrite_ore", "Александритовая руда");
+                add("block.hbm_m.coltan_ore", "Колтановая руда");
+                add("block.hbm_m.coltan_ore_deepslate", "Глубинная колтановая руда");
+                add("block.hbm_m.sulfur_ore_deepslate", "Глубинная серная руда");
+                add("block.hbm_m.tungsten_ore_deepslate", "Глубинная вольфрамовая руда");
+                add("block.hbm_m.asbestos_ore_deepslate", "Глубинная асбестовая руда");
+                add("block.hbm_m.fluorite_ore_deepslate", "Глубинная флюоритовая руда");
+                add("block.hbm_m.lignite_ore_deepslate", "Глубинная руда бурого угля");
+                add("block.hbm_m.nether_uranium_ore", "Адская урановая руда");
+                add("block.hbm_m.nether_tungsten_ore", "Адская вольфрамовая руда");
+                add("block.hbm_m.nether_sulfur_ore", "Адская серная руда");
+                add("block.hbm_m.nether_fire_ore", "Адская фосфоритовая руда");
+                add("block.hbm_m.nether_coal_ore", "Адская угольная руда");
+                add("block.hbm_m.nether_cobalt_ore", "Адская кобальтовая руда");
+                add("block.hbm_m.nether_plutonium_ore", "Адская плутониевая руда");
+                add("block.hbm_m.nether_smoldering_ore", "Дымящаяся адская руда");
+                add("block.hbm_m.depth_nether_neodymium", "Адская глубинная неодимовая руда");
                 add("block.hbm_m.crate_iron", "Железный ящик");
                 add("block.hbm_m.crate_steel", "Стальной ящик");
                 add("block.hbm_m.crate_desh", "Деш ящик");
@@ -2200,12 +2303,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("door.skin.hbm_m.secure_access_door.gray", "Серая");
                 add("door.skin.hbm_m.secure_access_door.black", "Черная");
                 add("door.skin.hbm_m.secure_access_door.yellow", "Жёлтая");
-                add("door.skin.hbm_m.sliding_blast_door.default", "Новая");
+                add("door.skin.hbm_m.sliding_blast_door.default", "Стандартная");
                 add("door.skin.hbm_m.sliding_blast_door.variant1", "Вариант 1");
                 add("door.skin.hbm_m.sliding_blast_door.variant2", "Вариант 2");
                 add("door.skin.hbm_m.sliding_seal_door.default", "Новая");
-                add("door.skin.hbm_m.large_vehicle_door.default", "Новая");
+                add("door.skin.hbm_m.large_vehicle_door.default", "Чистая");
                 add("door.skin.hbm_m.large_vehicle_door.rad", "Радиация");
+                add("door.skin.hbm_m.large_vehicle_door.clear", "Стандартная");
                 add("door.skin.hbm_m.water_door.default", "Новая");
                 add("door.skin.hbm_m.water_door.clean", "Чистая");
                 add("door.skin.hbm_m.qe_sliding_door.default", "Новая");
@@ -2370,6 +2474,19 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("text.autoconfig.hbm_m.title", "Настройки радиации (HBM Modernized)");
 
+                // ── Config GUI (config.hbm_m.*) — собственное меню на vanilla-виджетах ──
+                add("config.hbm_m.title", "Настройки HBM Modernized");
+                add("config.hbm_m.tab.client", "Клиент");
+                add("config.hbm_m.tab.server", "Сервер");
+                add("config.hbm_m.save", "Сохранить");
+                add("config.hbm_m.apply", "Применить");
+                add("config.hbm_m.restart.title", "Требуется перезапуск");
+                add("config.hbm_m.restart.message", "Некоторые изменения вступят в силу только после перезапуска игры или перезагрузки ресурсов (F3+T). Применить?");
+                add("config.hbm_m.reset", "Сбросить");
+                add("config.hbm_m.reset.all", "Сбросить всё");
+                add("config.hbm_m.reset.title", "Сбросить настройки?");
+                add("config.hbm_m.reset.message", "Сбросить все значения текущей стороны к значениям по умолчанию? Изменения применятся после сохранения.");
+
                 add("text.autoconfig.hbm_m.category.general", "Общие настройки");
                 add("text.autoconfig.hbm_m.option.enableRadiation", "Включить радиацию");
                 add("text.autoconfig.hbm_m.option.enableChunkRads", "Включить радиацию в чанках");
@@ -2385,6 +2502,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.taintTrails.@Tooltip","При заражении игрок оставляет следы заражения под собой.");
 
                 add("text.autoconfig.hbm_m.category.player", "Игрок");
+    }
+
+    private void addTranslationsRuRuPart4() {
                 add("text.autoconfig.hbm_m.option.maxPlayerRad", "Максимальный уровень радиации у игрока");
                 add("text.autoconfig.hbm_m.option.radDecay", "Скорость распада радиации у игрока");
                 add("text.autoconfig.hbm_m.option.radDamage", "Урон от радиации");
@@ -2429,11 +2549,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.modelUpdateDistance", "Дистанция для рендеринга динамических частей .obj моделей");
                 add("text.autoconfig.hbm_m.option.modelStaticRenderDistance", "Дистанция для рендеринга статических частей .obj моделей");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling", "Включить куллинг моделей");
-                add("text.autoconfig.hbm_m.option.useInstancedStaticRendering", "Батчинг частей obj моделей");
-                add("text.autoconfig.hbm_m.option.useSlicedLight", "Sliced light (2×4×2 зонды)");
-                add("text.autoconfig.hbm_m.option.useMultiDrawIndirect", "Multi-draw indirect (MDI)");
-                add("text.autoconfig.hbm_m.option.useColladaDoorAnimations", "Анимации дверей из DAE (COLLADA)");
-                add("text.autoconfig.hbm_m.option.useColladaZUpConversion", "Конвертация Z-up→Y-up для DAE (Blender)");
+                add("text.autoconfig.hbm_m.option.forceVanillaImmediatePath", "Ванильный immediate-путь (резерв)");
 
                 add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks", "Дальность прорисовки VATS");
 
@@ -2485,11 +2601,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.modelStaticRenderDistance.@Tooltip", "Дистанция для рендеринга статических частей .obj моделей (в чанках)");
                 add("text.autoconfig.hbm_m.option.enableMissileNetworkTrack.@Tooltip", "Включите это, если хотите чтобы сервер отсылал всем клиентам пакеты с местоположением баллистических ракет, чтобы их было видно ЗА ванильной дальностью прорисовки.");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling.@Tooltip", "Включить куллинг моделей (выключите, если ваши модели рендерятся некорректно)");
-                add("text.autoconfig.hbm_m.option.useInstancedStaticRendering.@Tooltip", "Использовать батчинговый рендер для частей obj. Сильно повышает производительность рендеринга в бесшейдерном режиме, при проблемах отключите.");
-                add("text.autoconfig.hbm_m.option.useSlicedLight.@Tooltip", "16 зондов освещения вместо 8 углов — лучше на высоких башнях. Несовместимо с MDI: при включении части снова рисуются отдельными instanced draw. После смены — F3+T.");
-                add("text.autoconfig.hbm_m.option.useMultiDrawIndirect.@Tooltip", "Один glMultiDrawElementsIndirect на кадр вместо многих instanced draw (без shader pack). Выигрыш заметен при большом числе одинаковых машин. Не работает с sliced light и GPU bone skinning.");
-                add("text.autoconfig.hbm_m.option.useColladaDoorAnimations.@Tooltip", "Использовать анимации из DAE для transition_seal и sliding_blast_door. Отключите при проблемах - будет procedural fallback.");
-                add("text.autoconfig.hbm_m.option.useColladaZUpConversion.@Tooltip", "Конвертировать систему координат Blender (Z-up) в Minecraft (Y-up). Отключите для тестирования.");
+                add("text.autoconfig.hbm_m.option.forceVanillaImmediatePath.@Tooltip", "Рисовать все OBJ-станки ванильным immediate-путём (putBulkData) вместо автоматического VBO/инстансинг-пайплайна. Аварийный резерв, если станки рендерятся белыми/невидимыми или сломанными.");
 
                 add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks.@Tooltip", "Дальность отрисовки полосок здоровья мобов (чанки). Больше значение - дальше видно, но выше нагрузка.");
 
@@ -2498,6 +2610,115 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.debugRenderDistance.@Tooltip", "Дальность отладочного рендеринга (чанки)");
                 add("text.autoconfig.hbm_m.option.debugRenderInSurvival.@Tooltip", "Показывать отладочный рендер в режиме выживания");
                 add("text.autoconfig.hbm_m.option.enableDebugLogging.@Tooltip", "Если выключено, будет активно глубокое логгирование игровых событий. Не стоит включать, если не испытываете проблем");
+
+                // ── Недостающие категории и опции (weapons / machines / nukes / explosions / пробелы rendering) ──
+                add("text.autoconfig.hbm_m.category.weapons", "Оружие");
+                add("text.autoconfig.hbm_m.category.machines", "Станки и механизмы");
+                add("text.autoconfig.hbm_m.category.nukes", "Ядерка");
+                add("text.autoconfig.hbm_m.category.explosions", "Взрывчатка");
+
+                add("text.autoconfig.hbm_m.option.dropSingularity", "Сингулярность при падении предмета");
+                add("text.autoconfig.hbm_m.option.dropSingularity.@Tooltip", "Создаёт сингулярность/чёрную дыру при падении предмета-сингулярности (WeaponConfig.dropSing).");
+                add("text.autoconfig.hbm_m.option.dropCell", "Антиматерия при падении ячейки");
+                add("text.autoconfig.hbm_m.option.dropCell.@Tooltip", "Вызывает аннигиляционный взрыв при падении антиматериальной ячейки/пеллета (WeaponConfig.dropCell).");
+
+                add("text.autoconfig.hbm_m.option.machineRadar", "Радар");
+                add("text.autoconfig.hbm_m.option.machineRadar.generateChunks", "Генерировать чанки");
+                add("text.autoconfig.hbm_m.option.machineRadar.generateChunks.@Tooltip", "Если включено, радар принудительно прогружает/генерирует сканируемые чанки.");
+                add("text.autoconfig.hbm_m.option.frackingTower", "Фрекинговая вышка");
+                add("text.autoconfig.hbm_m.option.frackingTower.maxPower", "Макс. энергия");
+                add("text.autoconfig.hbm_m.option.frackingTower.maxPower.@Tooltip", "Максимальный запас энергии фрекинговой вышки.");
+                add("text.autoconfig.hbm_m.option.frackingTower.consumption", "Потребление энергии");
+                add("text.autoconfig.hbm_m.option.frackingTower.consumption.@Tooltip", "Энергия, потребляемая за одну операцию.");
+                add("text.autoconfig.hbm_m.option.frackingTower.solutionRequired", "Требуется раствора");
+                add("text.autoconfig.hbm_m.option.frackingTower.solutionRequired.@Tooltip", "Расход фрекингового раствора (мБ) за операцию.");
+                add("text.autoconfig.hbm_m.option.frackingTower.delay", "Задержка операции");
+                add("text.autoconfig.hbm_m.option.frackingTower.delay.@Tooltip", "Тиков между операциями фрекинга.");
+                add("text.autoconfig.hbm_m.option.frackingTower.oilPerDeposit", "Нефть на месторождение");
+                add("text.autoconfig.hbm_m.option.frackingTower.oilPerDeposit.@Tooltip", "Нефть (мБ) с обычного месторождения.");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerDepositMin", "Мин. газа на месторождение");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerDepositMin.@Tooltip", "Минимум газа (мБ) с обычного месторождения.");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerDepositMax", "Макс. газа на месторождение");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerDepositMax.@Tooltip", "Максимум газа (мБ) с обычного месторождения.");
+                add("text.autoconfig.hbm_m.option.frackingTower.drainChance", "Шанс истощения");
+                add("text.autoconfig.hbm_m.option.frackingTower.drainChance.@Tooltip", "Шанс (0–1), что операция истощает месторождение.");
+                add("text.autoconfig.hbm_m.option.frackingTower.oilPerBedrockDeposit", "Нефть на бедрок-месторождение");
+                add("text.autoconfig.hbm_m.option.frackingTower.oilPerBedrockDeposit.@Tooltip", "Нефть (мБ) с бедрок-месторождения.");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerBedrockDepositMin", "Мин. газа на бедрок-месторождение");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerBedrockDepositMin.@Tooltip", "Минимум газа (мБ) с бедрок-месторождения.");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerBedrockDepositMax", "Макс. газа на бедрок-месторождение");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerBedrockDepositMax.@Tooltip", "Максимум газа (мБ) с бедрок-месторождения.");
+                add("text.autoconfig.hbm_m.option.frackingTower.destructionRange", "Радиус разрушения");
+                add("text.autoconfig.hbm_m.option.frackingTower.destructionRange.@Tooltip", "Радиус взрыва при разрушении фрекинговой вышки.");
+
+                add("text.autoconfig.hbm_m.option.gadgetRadius", "Радиус «Gadget»");
+                add("text.autoconfig.hbm_m.option.gadgetRadius.@Tooltip", "Радиус взрыва «Gadget».");
+                add("text.autoconfig.hbm_m.option.boyRadius", "Радиус «Little Boy»");
+                add("text.autoconfig.hbm_m.option.boyRadius.@Tooltip", "Радиус взрыва «Little Boy».");
+                add("text.autoconfig.hbm_m.option.manRadius", "Радиус «Fat Man»");
+                add("text.autoconfig.hbm_m.option.manRadius.@Tooltip", "Радиус взрыва «Fat Man».");
+                add("text.autoconfig.hbm_m.option.mikeRadius", "Радиус «Ivy Mike»");
+                add("text.autoconfig.hbm_m.option.mikeRadius.@Tooltip", "Радиус взрыва «Ivy Mike».");
+                add("text.autoconfig.hbm_m.option.tsarRadius", "Радиус «Царь-бомбы»");
+                add("text.autoconfig.hbm_m.option.tsarRadius.@Tooltip", "Радиус взрыва «Царь-бомбы».");
+                add("text.autoconfig.hbm_m.option.prototypeRadius", "Радиус «Prototype»");
+                add("text.autoconfig.hbm_m.option.prototypeRadius.@Tooltip", "Радиус взрыва «Prototype».");
+                add("text.autoconfig.hbm_m.option.fleijaRadius", "Радиус «F.L.E.I.J.A.»");
+                add("text.autoconfig.hbm_m.option.fleijaRadius.@Tooltip", "Радиус взрыва «F.L.E.I.J.A.».");
+                add("text.autoconfig.hbm_m.option.soliniumRadius", "Радиус «Solinium»");
+                add("text.autoconfig.hbm_m.option.soliniumRadius.@Tooltip", "Радиус взрыва солиниевого заряда (blue rinse).");
+                add("text.autoconfig.hbm_m.option.n2Radius", "Радиус N2-мины");
+                add("text.autoconfig.hbm_m.option.n2Radius.@Tooltip", "Радиус взрыва N2-мины.");
+                add("text.autoconfig.hbm_m.option.missileRadius", "Радиус ядерной ракеты");
+                add("text.autoconfig.hbm_m.option.missileRadius.@Tooltip", "Радиус взрыва ядерной баллистической ракеты.");
+                add("text.autoconfig.hbm_m.option.mirvRadius", "Радиус РГЧ (MIRV)");
+                add("text.autoconfig.hbm_m.option.mirvRadius.@Tooltip", "Радиус взрыва боеголовки типа MIRV.");
+                add("text.autoconfig.hbm_m.option.fatmanRadius", "Радиус гранатомёта «Fatman»");
+                add("text.autoconfig.hbm_m.option.fatmanRadius.@Tooltip", "Радиус взрыва мини-ядерки гранатомёта «Fatman Launcher».");
+                add("text.autoconfig.hbm_m.option.nukaRadius", "Радиус «Nuka»-гранаты");
+                add("text.autoconfig.hbm_m.option.nukaRadius.@Tooltip", "Радиус взрыва «Nuka»-гранаты.");
+                add("text.autoconfig.hbm_m.option.aSchrabRadius", "Радиус антишрабидия");
+                add("text.autoconfig.hbm_m.option.aSchrabRadius.@Tooltip", "Радиус взрыва упавшего антишрабидия.");
+
+                add("text.autoconfig.hbm_m.option.mk5TickTimeMs", "Время тика MK5 (мс)");
+                add("text.autoconfig.hbm_m.option.mk5TickTimeMs.@Tooltip", "Минимум миллисекунд на тик для обработки чанков взрывом MK5.");
+                add("text.autoconfig.hbm_m.option.blastSpeed", "Скорость взрыва");
+                add("text.autoconfig.hbm_m.option.blastSpeed.@Tooltip", "Базовая скорость взрыва MK3/Tom (блоков/тик).");
+                add("text.autoconfig.hbm_m.option.falloutRangePercent", "Радиус осадков (%)");
+                add("text.autoconfig.hbm_m.option.falloutRangePercent.@Tooltip", "Радиус зоны радиоактивных осадков в % от базового радиуса взрыва.");
+                add("text.autoconfig.hbm_m.option.falloutDelay", "Задержка осадков");
+                add("text.autoconfig.hbm_m.option.falloutDelay.@Tooltip", "Сколько тиков ждать перед следующим расчётом чанка осадков.");
+                add("text.autoconfig.hbm_m.option.enableChunkLoading", "Прогрузка чанков");
+                add("text.autoconfig.hbm_m.option.enableChunkLoading.@Tooltip", "Разрешает процедурным взрывам удерживать центральный чанк загруженным и генерировать новые чанки.");
+                add("text.autoconfig.hbm_m.option.explosionAlgorithm", "Алгоритм взрыва");
+                add("text.autoconfig.hbm_m.option.explosionAlgorithm.@Tooltip", "0 = Legacy, 1 = Threaded DDA, 2 = Threaded DDA с накоплением урона.");
+                add("text.autoconfig.hbm_m.option.enableCraterBiomes", "Биомы кратеров");
+                add("text.autoconfig.hbm_m.option.enableCraterBiomes.@Tooltip", "Превращает кратер от ядерного взрыва в радиоактивные биомы кратеров.");
+                add("text.autoconfig.hbm_m.option.craterBiomeInnerRad", "RAD/s внутреннего биома кратера");
+                add("text.autoconfig.hbm_m.option.craterBiomeInnerRad.@Tooltip", "RAD/s для игрока внутри биома inner_crater.");
+                add("text.autoconfig.hbm_m.option.craterBiomeRad", "RAD/s биома кратера");
+                add("text.autoconfig.hbm_m.option.craterBiomeRad.@Tooltip", "RAD/s для игрока внутри биома crater.");
+                add("text.autoconfig.hbm_m.option.craterBiomeOuterRad", "RAD/s внешнего биома кратера");
+                add("text.autoconfig.hbm_m.option.craterBiomeOuterRad.@Tooltip", "RAD/s для игрока внутри биома outer_crater.");
+                add("text.autoconfig.hbm_m.option.craterBiomeWaterMult", "Множитель осадков в воде");
+                add("text.autoconfig.hbm_m.option.craterBiomeWaterMult.@Tooltip", "Множитель RAD/s в биомах кратера, когда игрок в воде или под дождём.");
+                add("text.autoconfig.hbm_m.option.limitExplosionLifespan", "Лимит жизни взрыва");
+                add("text.autoconfig.hbm_m.option.limitExplosionLifespan.@Tooltip", "Сколько секунд невыгруженный взрыв может просуществовать. 0 = без лимита.");
+
+                // Rendering — недостающие опции трекинга ракет и instanced-рендера
+                add("text.autoconfig.hbm_m.option.enableMissileNetworkTrack", "Отслеживать ракеты по сети");
+                add("text.autoconfig.hbm_m.option.missileTrackMaxRangeBlocks", "Макс. дальность трекинга ракет (блоки)");
+                add("text.autoconfig.hbm_m.option.missileTrackMaxRangeBlocks.@Tooltip", "Максимальное расстояние (в блоках), на котором ракеты синхронизируются по сети. 0 = без лимита.");
+                add("text.autoconfig.hbm_m.option.missileTrackInterval", "Интервал трекинга ракет");
+                add("text.autoconfig.hbm_m.option.missileTrackInterval.@Tooltip", "Как часто (в тиках) позиции ракет отправляются клиентам.");
+                add("text.autoconfig.hbm_m.option.instanceVboOrphanBeforeUpload", "Orphaning instance VBO");
+                add("text.autoconfig.hbm_m.option.instanceVboOrphanBeforeUpload.@Tooltip", "Перед заливкой instance VBO вызывать glBufferData(NULL) того же размера, чтобы драйвер не синхронизировался с предыдущим кадром. Отключайте только при проблемах.");
+                add("text.autoconfig.hbm_m.option.mdiDebugLogDispatch", "Лог MDI-диспетча");
+                add("text.autoconfig.hbm_m.option.mdiDebugLogDispatch.@Tooltip", "Писать одну строку INFO на каждый MDI-dispatch (число sub-draw, инстансов, атлас).");
+                add("text.autoconfig.hbm_m.option.mdiVerboseSubdraws", "Подробный лог MDI");
+                add("text.autoconfig.hbm_m.option.mdiVerboseSubdraws.@Tooltip", "Доп. строка INFO на каждую MDI-команду (тег части, baseInstance и т.д.).");
+                add("text.autoconfig.hbm_m.option.maxInstancedInstancesPerPart", "Макс. инстансов на часть");
+                add("text.autoconfig.hbm_m.option.maxInstancedInstancesPerPart.@Tooltip", "Максимум инстансов на одну OBJ-часть для instanced-рендера. Большие поля машин требуют 4096+.");
 
                 // FSB ARMOR TOOLTIPS
                 add("tooltip.hbm_m.fsb_bonus", "Бонусы полного набора брони:");
@@ -2515,9 +2736,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("armor.fsb.hardLanding", "Жёсткая посадка");
                 add("armor.fsb.stepSize", "Шаг: %d");
                 add("armor.fsb.dash", "Дополнительных рывков: %d");
-                break;
-            
-            case "en_us":
+    }
+
+    private void addTranslationsEnUsPart1() {
 
                 // Missile prototype + shared missile strings
                 add("item.hbm_m.missile_test", "Test Ballistic Missile");
@@ -2588,11 +2809,18 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.ROD_QUAD_LEAD.get(), "Quad Lead Rod");
                 add(ModItems.ROD_QUAD_NP237.get(), "Quad Np-237 Rod");
                 add(ModItems.ROD_QUAD_URANIUM.get(), "Quad Uranium Rod");
-                add(ModItems.FAT_MAN_EXPLOSIVE.get(), "Early Explosive Lenses");
-                add(ModItems.FAT_MAN_IGNITER.get(), "Fat Man Igniter");
+                add(ModItems.FAT_MAN_EXPLOSIVE.get(), "Array of First-Generation High-Explosive Lenses");
+                add(ModItems.FAT_MAN_IGNITER.get(), "Bomb Firing Unit");
                 add(ModItems.FAT_MAN_CORE.get(), "Plutonium Core");
                 add("container.hbm_m.nuke_fat_man", "Fat Man");
-                add("gui.hbm_m.nuke_fat_man.desc", "Place 4 Early Explosive Lenses, Fat Man Igniter and Fat Man Core. Activated by redstone or detonator.");
+                // GUI tooltip (mirrors desc.gui.nukeMan.desc, 1.7.10): header + per-line list
+                add("gui.hbm_m.nuke_fat_man.requires", "Requires:");
+                add("gui.hbm_m.nuke_fat_man.line_lenses", " * 4 Arrays of First-Generation High-Explosive Lenses");
+                add("gui.hbm_m.nuke_fat_man.line_core", " * Plutonium Core");
+                add("gui.hbm_m.nuke_fat_man.line_igniter", " * Bomb Firing Unit");
+                // Item tooltip for the lenses (mirrors early_explosive_lenses.desc, 1.7.10)
+                add("tooltip.hbm_m.fat_man_explosive.desc1", "Assembly of 8 high-explosive lenses with an aluminium");
+                add("tooltip.hbm_m.fat_man_explosive.desc2", "pusher, duraluminium shell, and bridgewire detonators.");
                 // EQUIPMENT
                 add("item.hbm_m.alloy_sword", "Alloy Sword");
                 add("item.hbm_m.alloy_pickaxe", "Alloy Pickaxe");
@@ -2614,6 +2842,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.energy", "Energy: %s/%s HE");
                 add("gui.hbm_m.burn_time", "Burn time: %s%%");
                 add("container.hbm_m.gas_centrifuge", "Gas Centrifuge");
+                add("container.hbm_m.book", "The Book of Boxcars");
+                add("container.hbm_m.book.extended_crafting", "Extended 4-Slot Crafting");
+                add("container.hbm_m.book.standard_inventory", "Standard Inventory");
+                add("item.hbm_m.book_of_.desc", "Edition 4, gold lined pages");
                 add("desc.gui.gasCent.enrichment", "Enrichment");
                 add("desc.gui.gasCent.output", "Output");
                 add("pseudofluid.hbm_m.none", "None");
@@ -3217,6 +3449,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.CONCRETE_PURPLE_SLAB.get(), "Purple Concrete Slab");
                 add(ModBlocks.CONCRETE_RED_SLAB.get(), "Red Concrete Slab");
                 add(ModBlocks.CONCRETE_SILVER_SLAB.get(), "Silver Concrete Slab");
+    }
+
+    private void addTranslationsEnUsPart2() {
                 add(ModBlocks.CONCRETE_WHITE_SLAB.get(), "White Concrete Slab");
                 add(ModBlocks.CONCRETE_YELLOW_SLAB.get(), "Yellow Concrete Slab");
                 add(ModBlocks.CONCRETE_SUPER_SLAB.get(), "Super Concrete Slab");
@@ -3481,6 +3716,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("fluid.hbm_m.plasma_xm", "Xenon-Mercury Plasma");
                 add("fluid.hbm_m.plasma_bf", "Balefire Plasma");
                 add("fluid.hbm_m.steam", "Steam");
+        add("fluid.hbm_m.airblast", "Air blast");
+        add("fluid.hbm_m.flue", "Flue gas");
                 add("fluid.hbm_m.hotsteam", "Hot Steam");
                 add("fluid.hbm_m.superhotsteam", "Super Hot Steam");
                 add("fluid.hbm_m.ultrahotsteam", "Ultra Hot Steam");
@@ -3641,8 +3878,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.WATER_DOOR.get(), "Waterproof Hatch");
                 add(ModBlocks.SILO_HATCH.get(), "Silo Hatch");
                 add(ModBlocks.SILO_HATCH_LARGE.get(), "Large Silo Hatch");
-                add(ModBlocks.TRANSITION_SEAL.get(), "Transition Seal (WIP)");
-                add(ModBlocks.SLIDE_DOOR.get(), "Sliding Blast Door (WIP)");
+                add(ModBlocks.TRANSITION_SEAL.get(), "Transition Seal");
+                add(ModBlocks.SLIDE_DOOR.get(), "Sliding Blast Door");
+                add(ModBlocks.CARGO_DOOR.get(), "Cargo Door");
 
 
                 add(ModBlocks.DUD_SALTED.get(), "Unexploded Salted Bomb");
@@ -3657,6 +3895,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.GRENADE_IF_SLIME.get(), "IF Grenade: Bouncy");
                 add(ModItems.MULTI_DETONATOR.get(), "Multi Detonator");
                 add(ModItems.RANGEFINDER.get(), "Rangefinder");
+                add(ModItems.CONFETTI_TESTER.get(), "Confetti Effect Tester");
                 add(ModItems.RANGE_DETONATOR.get(), "Range Detonator");
                 add(ModItems.DETONATOR.get(), "Detonator");
                 add(ModBlocks.BARBED_WIRE_POISON.get(), "Poison Barbed Wire");
@@ -3669,7 +3908,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.NUCLEAR_CHARGE.get(), "Nuclear Charge");
                 add(ModBlocks.C4.get(), "C4 Charge");
                 add(ModItems.DEFUSER.get(), "Defuser");
-                add(ModItems.CROWBAR.get(), "Crowbar");
+                add(ModItems.CROWBAR.get(), "Mk.V Crate Opening Device ''Crowbar''");
                 add(ModItems.DEPTH_ORES_SCANNER.get(), "Depth Ore Scanner");
                 add(ModItems.OIL_DETECTOR.get(), "Oil Detector");
 
@@ -3873,6 +4112,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.mod.battery_mk3.effect", "+100% Battery Capacity");
 
                 add("gui.hbm_m.blast_furnace.accepts", "Accepts items from: %s");
+                add("gui.hbm_m.blast_furnace.speed", "Speed: %s%%");
                 add("direction.hbm_m.down", "Down");
                 add("direction.hbm_m.up", "Up");
                 add("direction.hbm_m.north", "North");
@@ -3924,6 +4164,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.block_uranium", "Uranium Block");
                 add("block.hbm_m.plutonium_block", "Plutonium Block");
                 add("block.hbm_m.plutonium_fuel_block", "Plutonium Fuel Block");
+    }
+
+    private void addTranslationsEnUsPart3() {
                 add("block.hbm_m.polonium210_block", "Polonium-210 Block");
                 add("block.hbm_m.armor_table", "Armor Modification Table");
                 add("block.hbm_m.machine_assembler", "Assembly Machine (Legacy)");
@@ -3963,7 +4206,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.CHEMICAL_PLANT.get(), "Chemical Plant");
                 add(ModBlocks.CENTRIFUGE.get(), "Centrifuge");
                 add(ModBlocks.FLUID_TANK.get(), "Tank");
-                add(ModBlocks.BAT9000.get(), "BAT9000");
+                add(ModBlocks.BAT9000.get(), "Big-Ass Tank 9000");
                 add(ModBlocks.DERRICK.get(), "Derrick (WIP)");
                 add(ModBlocks.RBMK_CONSOLE.get(), "RBMK Console (WIP)");
                 add("msg.hbm_m.rbmk_console.linked", "Linked to RBMK console at %s, %s, %s");
@@ -4395,6 +4638,28 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.lead_ore", "Lead Ore");
                 add("block.hbm_m.lead_ore_deepslate", "Deepslate Lead Ore");
                 add("block.hbm_m.cinnabar_ore", "Cinnabar Ore");
+                // Ore generation parity with 1.7.10
+                add("block.hbm_m.niter_ore", "Niter Ore");
+                add("block.hbm_m.niter_ore_deepslate", "Deepslate Niter Ore");
+                add("block.hbm_m.lithium_ore", "Lithium Ore");
+                add("block.hbm_m.lithium_ore_deepslate", "Deepslate Lithium Ore");
+                add("block.hbm_m.alexandrite_ore", "Alexandrite Ore");
+                add("block.hbm_m.coltan_ore", "Coltan Ore");
+                add("block.hbm_m.coltan_ore_deepslate", "Deepslate Coltan Ore");
+                add("block.hbm_m.sulfur_ore_deepslate", "Deepslate Sulfur Ore");
+                add("block.hbm_m.tungsten_ore_deepslate", "Deepslate Tungsten Ore");
+                add("block.hbm_m.asbestos_ore_deepslate", "Deepslate Asbestos Ore");
+                add("block.hbm_m.fluorite_ore_deepslate", "Deepslate Fluorite Ore");
+                add("block.hbm_m.lignite_ore_deepslate", "Deepslate Lignite Ore");
+                add("block.hbm_m.nether_uranium_ore", "Nether Uranium Ore");
+                add("block.hbm_m.nether_tungsten_ore", "Nether Tungsten Ore");
+                add("block.hbm_m.nether_sulfur_ore", "Nether Sulfur Ore");
+                add("block.hbm_m.nether_fire_ore", "Nether Fire Ore");
+                add("block.hbm_m.nether_coal_ore", "Nether Coal Ore");
+                add("block.hbm_m.nether_cobalt_ore", "Nether Cobalt Ore");
+                add("block.hbm_m.nether_plutonium_ore", "Nether Plutonium Ore");
+                add("block.hbm_m.nether_smoldering_ore", "Smoldering Nether Ore");
+                add("block.hbm_m.depth_nether_neodymium", "Nether Depth Neodymium Ore");
                 add("block.hbm_m.waste_grass", "Dead Grass");
                 add("block.hbm_m.waste_leaves", "Dead Leaves");
                 add("block.hbm_m.freaky_alien_block", "Freaky Allien Block");
@@ -4545,8 +4810,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("door.skin.hbm_m.sliding_blast_door.variant1", "Variant 1");
                 add("door.skin.hbm_m.sliding_blast_door.variant2", "Variant 2");
                 add("door.skin.hbm_m.sliding_seal_door.default", "Standard");
-                add("door.skin.hbm_m.large_vehicle_door.default", "Standard");
+                add("door.skin.hbm_m.large_vehicle_door.default", "Clean");
                 add("door.skin.hbm_m.large_vehicle_door.rad", "Radiation");
+                add("door.skin.hbm_m.large_vehicle_door.clear", "Standard");
                 add("door.skin.hbm_m.water_door.default", "Standard");
                 add("door.skin.hbm_m.water_door.clean", "Clean");
                 add("door.skin.hbm_m.qe_sliding_door.default", "Standard");
@@ -4658,6 +4924,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("message.hbm_m.fortune.disabled", "Fortune %s disabled!");
                 add("message.hbm_m.disabled", "All abilities disabled!");
                 add("message.hbm_m.loaded", "Loaded world with %s %s for Minecraft %s!");
+    }
+
+    private void addTranslationsEnUsPart4() {
                 add("message.hbm_m.modernized", "Hbm's Nuclear Tech Mod: Modernized");
                 add("message.hbm_m.new_version", "New version %s is available!");
                 add("message.hbm_m.download_now", "Download now: ");
@@ -4703,7 +4972,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("commands.hbm_m.explosion.unsupported_key", "This explosion type does not support option: %s");
                 
                 // DEATH ATTACK MESSAGES
-                add("death.attack.radiation", "Player %s die from Digamma Poisoning");
+                add("death.attack.radiation", "%s died from radiation poisoning");
                 add("death.attack.hardlanding_smash", "%1$s was flattened by %2$s");
 
                 addAdvancementTranslationsEnUs();
@@ -4715,6 +4984,19 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.title", "Radiation Settings (HBM Modernized)");
 
                 // CONFIG
+
+                // ── Config GUI (config.hbm_m.*) — custom vanilla-widget menu ──
+                add("config.hbm_m.title", "HBM Modernized Settings");
+                add("config.hbm_m.tab.client", "Client");
+                add("config.hbm_m.tab.server", "Server");
+                add("config.hbm_m.save", "Save");
+                add("config.hbm_m.apply", "Apply");
+                add("config.hbm_m.restart.title", "Restart Required");
+                add("config.hbm_m.restart.message", "Some changes require a game restart or resource reload (F3+T) to take effect. Apply anyway?");
+                add("config.hbm_m.reset", "Reset");
+                add("config.hbm_m.reset.all", "Reset All");
+                add("config.hbm_m.reset.title", "Reset settings?");
+                add("config.hbm_m.reset.message", "Reset all values of the current side to their defaults? Changes apply after saving.");
 
                 add("text.autoconfig.hbm_m.category.general", "General Settings");
                 add("text.autoconfig.hbm_m.option.enableRadiation", "Enable radiation");
@@ -4781,11 +5063,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.modelUpdateDistance", "Distance for .obj model animated parts rendering");
                 add("text.autoconfig.hbm_m.option.modelStaticRenderDistance", "Distance for .obj model static parts rendering");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling", "Enable model occlusion culling");
-                add("text.autoconfig.hbm_m.option.useInstancedStaticRendering", "Instanced batching for obj model parts");
-                add("text.autoconfig.hbm_m.option.useSlicedLight", "Sliced light (2×4×2 probes)");
-                add("text.autoconfig.hbm_m.option.useMultiDrawIndirect", "Multi-draw indirect (MDI)");
-                add("text.autoconfig.hbm_m.option.useColladaDoorAnimations", "Door animations from DAE (COLLADA)");
-                add("text.autoconfig.hbm_m.option.useColladaZUpConversion", "Z-up to Y-up conversion for DAE (Blender)");
+                add("text.autoconfig.hbm_m.option.forceVanillaImmediatePath", "Force vanilla immediate path (fallback)");
 
                 add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks", "VATS render distance (chunks)");
 
@@ -4835,11 +5113,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.modelUpdateDistance.@Tooltip", "Distance for .obj model animated parts rendering (in chunks)");
                 add("text.autoconfig.hbm_m.option.modelStaticRenderDistance.@Tooltip", "Distance for .obj model static parts rendering (in chunks)");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling.@Tooltip", "Enable model occlusion culling (disable if your models are not rendering correctly)");
-                add("text.autoconfig.hbm_m.option.useInstancedStaticRendering.@Tooltip", "Use batch rendering for obj parts. This greatly improves rendering performance in shaderless mode. If you experience issues, disable it");
-                add("text.autoconfig.hbm_m.option.useSlicedLight.@Tooltip", "16 light probes instead of 8 corners — better on tall towers. Incompatible with MDI: parts fall back to separate instanced draws. Reload resources (F3+T) after changing.");
-                add("text.autoconfig.hbm_m.option.useMultiDrawIndirect.@Tooltip", "One glMultiDrawElementsIndirect per frame instead of many instanced draws (no shader pack). Helps with large fields of identical machines. Does not apply with sliced light or GPU bone skinning.");
-                add("text.autoconfig.hbm_m.option.useColladaDoorAnimations.@Tooltip", "Use DAE animations for transition_seal and sliding_blast_door. Disable if broken - falls back to procedural.");
-                add("text.autoconfig.hbm_m.option.useColladaZUpConversion.@Tooltip", "Convert Blender (Z-up) to Minecraft (Y-up) coordinate system. Disable for testing.");
+                add("text.autoconfig.hbm_m.option.forceVanillaImmediatePath.@Tooltip", "Render all OBJ machines through the vanilla immediate path (putBulkData) instead of the automatic VBO/instancing pipeline. Emergency fallback if machines render white/invisible or broken.");
 
                 add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks.@Tooltip","Max distance for mob health highlighting. Higher values increase range but reduce performance.");
 
@@ -4848,6 +5122,115 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.debugRenderDistance.@Tooltip", "Debug render distance (in chunks)");
                 add("text.autoconfig.hbm_m.option.debugRenderInSurvival.@Tooltip", "Show debug renderer in survival mode");
                 add("text.autoconfig.hbm_m.option.enableDebugLogging.@Tooltip", "If disabled, deep logging of game events will be active. Do not enable unless you experience problems");
+
+                // ── Missing categories & options (weapons / machines / nukes / explosions / rendering gaps) ──
+                add("text.autoconfig.hbm_m.category.weapons", "Weapons");
+                add("text.autoconfig.hbm_m.category.machines", "Machines");
+                add("text.autoconfig.hbm_m.category.nukes", "Nukes");
+                add("text.autoconfig.hbm_m.category.explosions", "Explosions");
+
+                add("text.autoconfig.hbm_m.option.dropSingularity", "Drop singularity on item despawn");
+                add("text.autoconfig.hbm_m.option.dropSingularity.@Tooltip", "Spawns a singularity/black hole when a singularity item is dropped (WeaponConfig.dropSing).");
+                add("text.autoconfig.hbm_m.option.dropCell", "Antimatter explosion on cell drop");
+                add("text.autoconfig.hbm_m.option.dropCell.@Tooltip", "Triggers an antimatter explosion when an antimatter cell/pellet is dropped (WeaponConfig.dropCell).");
+
+                add("text.autoconfig.hbm_m.option.machineRadar", "Radar");
+                add("text.autoconfig.hbm_m.option.machineRadar.generateChunks", "Generate chunks");
+                add("text.autoconfig.hbm_m.option.machineRadar.generateChunks.@Tooltip", "When enabled, the radar forces loading/generation of the chunks it scans.");
+                add("text.autoconfig.hbm_m.option.frackingTower", "Fracking Tower");
+                add("text.autoconfig.hbm_m.option.frackingTower.maxPower", "Max power");
+                add("text.autoconfig.hbm_m.option.frackingTower.maxPower.@Tooltip", "Maximum energy the fracking tower can store.");
+                add("text.autoconfig.hbm_m.option.frackingTower.consumption", "Power consumption");
+                add("text.autoconfig.hbm_m.option.frackingTower.consumption.@Tooltip", "Energy consumed per operation.");
+                add("text.autoconfig.hbm_m.option.frackingTower.solutionRequired", "Solution required");
+                add("text.autoconfig.hbm_m.option.frackingTower.solutionRequired.@Tooltip", "Fracking solution (mB) consumed per operation.");
+                add("text.autoconfig.hbm_m.option.frackingTower.delay", "Operation delay");
+                add("text.autoconfig.hbm_m.option.frackingTower.delay.@Tooltip", "Ticks between each fracking operation.");
+                add("text.autoconfig.hbm_m.option.frackingTower.oilPerDeposit", "Oil per deposit");
+                add("text.autoconfig.hbm_m.option.frackingTower.oilPerDeposit.@Tooltip", "Oil (mB) yielded per normal deposit.");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerDepositMin", "Min gas per deposit");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerDepositMin.@Tooltip", "Minimum gas (mB) yielded per normal deposit.");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerDepositMax", "Max gas per deposit");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerDepositMax.@Tooltip", "Maximum gas (mB) yielded per normal deposit.");
+                add("text.autoconfig.hbm_m.option.frackingTower.drainChance", "Deposit drain chance");
+                add("text.autoconfig.hbm_m.option.frackingTower.drainChance.@Tooltip", "Chance (0–1) that an operation drains the deposit.");
+                add("text.autoconfig.hbm_m.option.frackingTower.oilPerBedrockDeposit", "Oil per bedrock deposit");
+                add("text.autoconfig.hbm_m.option.frackingTower.oilPerBedrockDeposit.@Tooltip", "Oil (mB) yielded per bedrock deposit.");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerBedrockDepositMin", "Min gas per bedrock deposit");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerBedrockDepositMin.@Tooltip", "Minimum gas (mB) yielded per bedrock deposit.");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerBedrockDepositMax", "Max gas per bedrock deposit");
+                add("text.autoconfig.hbm_m.option.frackingTower.gasPerBedrockDepositMax.@Tooltip", "Maximum gas (mB) yielded per bedrock deposit.");
+                add("text.autoconfig.hbm_m.option.frackingTower.destructionRange", "Destruction range");
+                add("text.autoconfig.hbm_m.option.frackingTower.destructionRange.@Tooltip", "Explosion radius when a fracking tower is destroyed.");
+
+                add("text.autoconfig.hbm_m.option.gadgetRadius", "Gadget radius");
+                add("text.autoconfig.hbm_m.option.gadgetRadius.@Tooltip", "Radius of the Gadget.");
+                add("text.autoconfig.hbm_m.option.boyRadius", "Little Boy radius");
+                add("text.autoconfig.hbm_m.option.boyRadius.@Tooltip", "Radius of Little Boy.");
+                add("text.autoconfig.hbm_m.option.manRadius", "Fat Man radius");
+                add("text.autoconfig.hbm_m.option.manRadius.@Tooltip", "Radius of Fat Man.");
+                add("text.autoconfig.hbm_m.option.mikeRadius", "Ivy Mike radius");
+                add("text.autoconfig.hbm_m.option.mikeRadius.@Tooltip", "Radius of Ivy Mike.");
+                add("text.autoconfig.hbm_m.option.tsarRadius", "Tsar Bomba radius");
+                add("text.autoconfig.hbm_m.option.tsarRadius.@Tooltip", "Radius of the Tsar Bomba.");
+                add("text.autoconfig.hbm_m.option.prototypeRadius", "Prototype radius");
+                add("text.autoconfig.hbm_m.option.prototypeRadius.@Tooltip", "Radius of the Prototype.");
+                add("text.autoconfig.hbm_m.option.fleijaRadius", "F.L.E.I.J.A. radius");
+                add("text.autoconfig.hbm_m.option.fleijaRadius.@Tooltip", "Radius of F.L.E.I.J.A.");
+                add("text.autoconfig.hbm_m.option.soliniumRadius", "Solinium radius");
+                add("text.autoconfig.hbm_m.option.soliniumRadius.@Tooltip", "Radius of the blue rinse (Solinium).");
+                add("text.autoconfig.hbm_m.option.n2Radius", "N2 mine radius");
+                add("text.autoconfig.hbm_m.option.n2Radius.@Tooltip", "Radius of the N2 mine.");
+                add("text.autoconfig.hbm_m.option.missileRadius", "Nuclear missile radius");
+                add("text.autoconfig.hbm_m.option.missileRadius.@Tooltip", "Radius of the nuclear missile.");
+                add("text.autoconfig.hbm_m.option.mirvRadius", "MIRV radius");
+                add("text.autoconfig.hbm_m.option.mirvRadius.@Tooltip", "Radius of a MIRV.");
+                add("text.autoconfig.hbm_m.option.fatmanRadius", "Fatman launcher radius");
+                add("text.autoconfig.hbm_m.option.fatmanRadius.@Tooltip", "Radius of the Fatman Launcher.");
+                add("text.autoconfig.hbm_m.option.nukaRadius", "Nuka grenade radius");
+                add("text.autoconfig.hbm_m.option.nukaRadius.@Tooltip", "Radius of the nuka grenade.");
+                add("text.autoconfig.hbm_m.option.aSchrabRadius", "Anti-schrabidium radius");
+                add("text.autoconfig.hbm_m.option.aSchrabRadius.@Tooltip", "Radius of dropped anti-schrabidium.");
+
+                add("text.autoconfig.hbm_m.option.mk5TickTimeMs", "MK5 tick time (ms)");
+                add("text.autoconfig.hbm_m.option.mk5TickTimeMs.@Tooltip", "Minimum milliseconds per tick allocated for MK5 chunk processing.");
+                add("text.autoconfig.hbm_m.option.blastSpeed", "Blast speed");
+                add("text.autoconfig.hbm_m.option.blastSpeed.@Tooltip", "Base speed of MK3/Tom detonations (blocks/tick).");
+                add("text.autoconfig.hbm_m.option.falloutRangePercent", "Fallout range (%)");
+                add("text.autoconfig.hbm_m.option.falloutRangePercent.@Tooltip", "Radius of the fallout area as a percentage of the base blast radius.");
+                add("text.autoconfig.hbm_m.option.falloutDelay", "Fallout delay");
+                add("text.autoconfig.hbm_m.option.falloutDelay.@Tooltip", "Ticks to wait between each fallout chunk computation.");
+                add("text.autoconfig.hbm_m.option.enableChunkLoading", "Enable chunk loading");
+                add("text.autoconfig.hbm_m.option.enableChunkLoading.@Tooltip", "Allows procedural explosions to keep the central chunk loaded and generate new chunks.");
+                add("text.autoconfig.hbm_m.option.explosionAlgorithm", "Explosion algorithm");
+                add("text.autoconfig.hbm_m.option.explosionAlgorithm.@Tooltip", "0 = Legacy, 1 = Threaded DDA, 2 = Threaded DDA with damage accumulation.");
+                add("text.autoconfig.hbm_m.option.enableCraterBiomes", "Enable crater biomes");
+                add("text.autoconfig.hbm_m.option.enableCraterBiomes.@Tooltip", "Converts the crater left by nuclear explosions into radioactive crater biomes.");
+                add("text.autoconfig.hbm_m.option.craterBiomeInnerRad", "Inner crater biome RAD/s");
+                add("text.autoconfig.hbm_m.option.craterBiomeInnerRad.@Tooltip", "RAD/s applied to the player inside the inner_crater biome.");
+                add("text.autoconfig.hbm_m.option.craterBiomeRad", "Crater biome RAD/s");
+                add("text.autoconfig.hbm_m.option.craterBiomeRad.@Tooltip", "RAD/s applied to the player inside the crater biome.");
+                add("text.autoconfig.hbm_m.option.craterBiomeOuterRad", "Outer crater biome RAD/s");
+                add("text.autoconfig.hbm_m.option.craterBiomeOuterRad.@Tooltip", "RAD/s applied to the player inside the outer_crater biome.");
+                add("text.autoconfig.hbm_m.option.craterBiomeWaterMult", "Crater biome water multiplier");
+                add("text.autoconfig.hbm_m.option.craterBiomeWaterMult.@Tooltip", "Multiplier applied to crater biome RAD/s when the player is in water or rain.");
+                add("text.autoconfig.hbm_m.option.limitExplosionLifespan", "Explosion lifespan limit");
+                add("text.autoconfig.hbm_m.option.limitExplosionLifespan.@Tooltip", "How long an explosion can stay unloaded before it dies (seconds). 0 = unlimited.");
+
+                // Rendering — missing missile tracking and instanced render options
+                add("text.autoconfig.hbm_m.option.enableMissileNetworkTrack", "Track missiles over network");
+                add("text.autoconfig.hbm_m.option.missileTrackMaxRangeBlocks", "Missile track max range (blocks)");
+                add("text.autoconfig.hbm_m.option.missileTrackMaxRangeBlocks.@Tooltip", "Maximum distance (in blocks) at which missiles are network-tracked. 0 = unlimited.");
+                add("text.autoconfig.hbm_m.option.missileTrackInterval", "Missile track interval");
+                add("text.autoconfig.hbm_m.option.missileTrackInterval.@Tooltip", "How often (in ticks) missile positions are synced to clients.");
+                add("text.autoconfig.hbm_m.option.instanceVboOrphanBeforeUpload", "Instance VBO orphaning");
+                add("text.autoconfig.hbm_m.option.instanceVboOrphanBeforeUpload.@Tooltip", "Orphan the instance VBO (glBufferData NULL) before upload to avoid driver sync stalls. Disable only if it causes issues.");
+                add("text.autoconfig.hbm_m.option.mdiDebugLogDispatch", "MDI debug log dispatch");
+                add("text.autoconfig.hbm_m.option.mdiDebugLogDispatch.@Tooltip", "Log one INFO line per MDI dispatch (sub-draw count, instances, atlas).");
+                add("text.autoconfig.hbm_m.option.mdiVerboseSubdraws", "MDI verbose subdraws");
+                add("text.autoconfig.hbm_m.option.mdiVerboseSubdraws.@Tooltip", "Log one INFO line per MDI command (part tag, baseInstance, etc.).");
+                add("text.autoconfig.hbm_m.option.maxInstancedInstancesPerPart", "Max instances per part");
+                add("text.autoconfig.hbm_m.option.maxInstancedInstancesPerPart.@Tooltip", "Maximum instances per OBJ part for instanced static rendering. Large machine fields need 4096+.");
 
                 // DAMAGE TYPES FOR POWER ARMOR TOOLTIPS
                 add("damage.type.physical", "Physical");
@@ -5235,6 +5618,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.SAND_DIRTY_RED.get(), "Red Oily Sand");
                 add(ModBlocks.SAND_LEAD.get(), "Lead Sand");
                 add(ModBlocks.SAND_POLONIUM.get(), "Polonium Sand");
+    }
+
+    private void addTranslationsEnUsPart5() {
                 add(ModBlocks.SAND_QUARTZ.get(), "Quartz Sand");
                 add(ModBlocks.SAND_URANIUM.get(), "Uranium Sand");
                 add(ModBlocks.SANDBAGS.get(), "Sandbags");
@@ -5310,9 +5696,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 // DEV: Namen fuer importierte fehlende Items (siehe ModItems DEV-Sektion)
                 addDevItemTranslationsEnUs();
                 add("damage.other", "Other");
-                break;
-        }
     }
+
 
     private void addDevItemTranslationsEnUs() {
                 add(ModItems.ACETYLENE_TORCH.get(), "Acetylene Welding Torch");
@@ -5853,6 +6238,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.DNT_SWORD.get(), "dinuatureum sword");
                 add(ModItems.DOOR_METAL.get(), "Metal Door");
                 add(ModItems.DOOR_RED.get(), "Red Door");
+                add("advancements.hbm_m.red_room.title", "The Other Side");
+                add("advancements.hbm_m.red_room.description", "No key, no entry. Unless it's cracked.");
                 add(ModItems.DRAX.get(), "Terra Drill (LEGACY)");
                 add(ModItems.DRAX_MK2.get(), "Hardened Terra Drill (LEGACY)");
                 add(ModItems.DRAX_MK3.get(), "Schrabidic Terra Drill (LEGACY)");
@@ -6903,3 +7290,4 @@ public class ModLanguageProvider extends LanguageProvider {
 
 }
 //?}
+

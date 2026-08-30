@@ -11,6 +11,7 @@ import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineOreSlopperMenu;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.worldgen.BedrockOreDensity;
+import com.hbm_m.platform.PlatformHooks;
 
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.BlockPos;
@@ -68,12 +69,8 @@ public class MachineOreSlopperBlockEntity extends BaseMachineBlockEntity {
 
     //? if forge {
     @Override
-    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
-            net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable net.minecraft.core.Direction side) {
-        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return tank.getCapability().cast();
-        }
-        return super.getCapability(cap, side);
+    protected void setupFluidCapability() {
+        setFluidHandler(tank);
     }
     //?}
 
@@ -176,7 +173,7 @@ public class MachineOreSlopperBlockEntity extends BaseMachineBlockEntity {
         if (input.isEmpty()) return;
 
         // Dichten VOR dem Verbrauch des Items auslesen (auch wenn der Stack danach leer wird).
-        CompoundTag nbt = input.getTag();
+        CompoundTag nbt = PlatformHooks.getItemTag(input);
         double[] gained = new double[ores.length];
         if (nbt != null) {
             for (BedrockOreDensity.Type type : BedrockOreDensity.Type.values()) {
@@ -216,8 +213,8 @@ public class MachineOreSlopperBlockEntity extends BaseMachineBlockEntity {
     // ==================== NBT ====================
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progressTicks);
         tag.putBoolean("active", active);
         for (BedrockOreDensity.Type type : BedrockOreDensity.Type.values()) {
@@ -227,8 +224,8 @@ public class MachineOreSlopperBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progressTicks = tag.getInt("progress");
         active = tag.getBoolean("active");
         for (BedrockOreDensity.Type type : BedrockOreDensity.Type.values()) {

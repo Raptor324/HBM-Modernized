@@ -1,0 +1,50 @@
+{
+  "fallback": "hbm_m:meteor_fallback",
+  "elements": [
+    {
+      "weight": 2,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:meteor/meteor-corner",
+        "processors": "hbm_m:connection_fix"
+      }
+    },
+    {
+      "weight": 3,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:meteor/meteor-t",
+        "processors": "hbm_m:connection_fix"
+      }
+    },
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:meteor/meteor-stairs",
+        "processors": "hbm_m:connection_fix"
+      }
+    },
+    {
+      "weight": 3,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:meteor/room-base-thru",
+        "processors": "hbm_m:connection_fix"
+      }
+    },
+    {
+      "weight": 4,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:meteor/room-base-end",
+        "processors": "hbm_m:connection_fix"
+      }
+    }
+  ]
+}

@@ -216,7 +216,7 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
             net.minecraftforge.common.capabilities.Capability<T> cap,
             @org.jetbrains.annotations.Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return gasTank.getCapability().cast();
+            return gasTank.getForgeFluidCapability().cast();
         }
         return super.getCapability(cap, side);
     }
@@ -235,6 +235,7 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
     @Override public RBMKType getRBMKType()      { return RBMKType.OUTGASSER; }
     @Override public ColumnType getConsoleType() { return ColumnType.OUTGASSER; }
 
+    
     @Override
     public CompoundTag getNBTForConsole() {
         CompoundTag d = new CompoundTag();

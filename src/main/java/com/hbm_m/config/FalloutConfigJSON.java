@@ -202,6 +202,15 @@ public final class FalloutConfigJSON {
     }
 
     public static final class FalloutEntry {
+        /**
+         * Быстрый писатель блоков (прямая запись в секцию чанка в обход Level.setBlock).
+         * null = обычный level.setBlock с флагом 50.
+         */
+        @FunctionalInterface
+        public interface BlockWriter {
+            void write(Level level, BlockPos pos, BlockState state);
+        }
+
         private BlockState matchesBlockState = null;
         private net.minecraft.tags.TagKey<Block> matchesTag = null;
         private boolean matchesOpaque = false;
@@ -240,6 +249,10 @@ public final class FalloutConfigJSON {
         public FalloutEntry sol(boolean solid) { this.isSolid = solid; return this; }
 
         public boolean eval(Level level, BlockPos pos, BlockState state, double dist) {
+            return eval(level, pos, state, dist, null);
+        }
+
+        public boolean eval(Level level, BlockPos pos, BlockState state, double dist, BlockWriter writer) {
             if (dist > maxDist || dist < minDist) return false;
             if (matchesBlockState != null && state != matchesBlockState) return false;
             if (matchesTag != null && !state.is(matchesTag)) return false;
@@ -264,7 +277,11 @@ public final class FalloutConfigJSON {
                 if (pos.getY() == level.getMinBuildHeight() && conversion.getBlock() != ModBlocks.SELLAFIELD_BEDROCK.get()) return false;
                 if (conversion == state) return false;
 
-                level.setBlock(pos, conversion, 3);
+                if (writer != null) {
+                    writer.write(level, pos, conversion);
+                } else {
+                    level.setBlock(pos, conversion, 50);
+                }
                 return true;
             }
 

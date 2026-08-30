@@ -91,7 +91,6 @@ public abstract class DoorDecl {
         return switch (getBlockId().getPath()) {
             case "large_vehicle_door" -> new int[] { -3, 0, 0, 6, 5, 0 };
             case "round_airlock_door" -> new int[] { -1, 0, 0, 3, 3, 0 };
-            case "transition_seal" -> new int[] { -12, 0, 0, 25, 23, 0 };
             case "fire_door" -> new int[] { -1, 0, 0, 3, 2, 0 };
             case "sliding_blast_door" -> new int[] { -3, 0, 0, 6, 3, 0 };
             case "sliding_seal_door" -> new int[] { 0, 0, 0, 0, 1, 0 };
@@ -101,6 +100,7 @@ public abstract class DoorDecl {
             case "water_door" -> new int[] { -1, 0, 0, 2, 2, 0 };
             case "silo_hatch" -> new int[] { -2, 0, -2, 4, 0, 4 };
             case "silo_hatch_large" -> new int[] { -3, 0, -3, 6, 0, 6 };
+            case "cargo_door" -> new int[] { -1, -1, 0, 3, 3, 1 };
             default -> new int[] { 0, 0, 0, 0, 1, 0 };
         };
     }
@@ -130,14 +130,6 @@ public abstract class DoorDecl {
     @Nullable
     public ResourceLocation getColladaAnimationSource() {
         return null;
-    }
-
-    /**
-     * Маппинг имени части (OBJ/JSON) на имя объекта в DAE.
-     * По умолчанию возвращает partName. Для transition_seal: Cylinder.001 → Cylinder_001.
-     */
-    public String getDaeObjectName(String partName) {
-        return partName;
     }
 
     /**
@@ -672,80 +664,6 @@ public abstract class DoorDecl {
         @Override public float getSoundVolume() { return 2.0f; }
     };
     
-    public static final DoorDecl TRANSITION_SEAL = new DoorDecl() {
-        @Override
-        public ResourceLocation getBlockId() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "transition_seal");
-            *///?} else {
-                        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "transition_seal");
-            //?}
-
-        }
-    
-        @Override
-        public ResourceLocation getColladaAnimationSource() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "models/block/doors/transition_seal.dae");
-            *///?} else {
-                        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/doors/transition_seal.dae");
-            //?}
-
-        }
-    
-        @Override
-        public String getDaeObjectName(String partName) {
-            // DAE обычно заменяет точки на подчеркивания
-            return partName.replace('.', '_');
-        }
-    
-        @Override
-        public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
-            // В 1.7.10 логика была: "всё кроме базы едет вверх".
-            // Здесь мы повторяем это: Рама стоит, всё остальное (дверь, шестерни, замки) едет вверх.
-            if ("frame".equals(partName) || "base".equals(partName)) {
-                set(trans, 0, 0, 0);
-            } else {
-                // Процедурный подъем на 3.5 блока
-                set(trans, 0, 3.5F * getNormTime(openTicks), 0);
-            }
-        }
-    
-        @Override 
-        public int getOpenTime() { 
-            return 480; 
-        }
-    
-        @Override
-        public String[] getPartNames() {
-            return new String[] { 
-                "frame", "door", "Cylinder.001", "Cylinder.003", "Cylinder.005", "Cube.006", "Cylinder.007", "Cylinder.008", "Circle", "Cylinder.009", "Cylinder.010", "Cylinder.011", "door.005", "door.002", "door.008", "ring.001", "door.003", "door.004", "ring.002", "door.006"
-            };
-        }
-        
-        @Override
-        public void doOffsetTransform(IDoorAnimator animator) {
-            // Глобальное смещение всей модели (как в 1.7.10 GL11.glTranslated)
-            animator.translate(0.0f, 0.0f, 0.5f);
-        }
-        
-        @Override 
-        public int[][] getDoorOpenRanges() {
-            return new int[][] { { -9, 2, 0, 20, 20, 1 } };
-        }
-    
-        @Override 
-        public SoundEvent getOpenSoundStart() { 
-            return ModSounds.TRANSITION_SEAL_OPEN.get(); 
-        }
-        
-        @Override 
-        public float getSoundVolume() { 
-            return 6.0f; 
-        }
-    };
-    
-
     public static final DoorDecl FIRE_DOOR = new DoorDecl() {
         {
             DoorStructureDefinition.Builder builder = DoorStructureDefinition.create();
@@ -822,189 +740,144 @@ public abstract class DoorDecl {
         @Override public float getSoundVolume() { return 1.5f; }
     };
 
-    public static final DoorDecl SLIDE_DOOR = new DoorDecl() {
+    public static final DoorDecl SLIDING_BLAST_DOOR = new DoorDecl() {
+        {
+            DoorStructureDefinition.Builder builder = DoorStructureDefinition.create();
+            builder.addSymbol('#', Shapes.block(), PartRole.DEFAULT);
+            builder.addSymbol('C', Shapes.block(), PartRole.CONTROLLER);
+            builder.addSymbol('O', Shapes.empty(), PartRole.DEFAULT);
+
+            // 7x5 frame with 5x4 opening
+            String[] closed = {
+                "#######",
+                "#######",
+                "#######",
+                "###C###"
+            };
+            String[] open = {
+                "#######",
+                "#OOOOO#",
+                "#OOOOO#",
+                "#OOOOO#" 
+            };
+            defineStructure(builder.parseVertical(closed, open, 'C'));
+        }
+
+        @Override
+        public String[] getPartNames() {
+            return new String[] { "Frame", "LeftDoor", "RightDoor", "LeftLock", "RightLock" };
+        }
+
         @Override
         public ResourceLocation getBlockId() {
             //? if fabric && < 1.21.1 {
             /*return new ResourceLocation(RefStrings.MODID, "sliding_blast_door");
             *///?} else {
-                        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "sliding_blast_door");
+            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "sliding_blast_door");
             //?}
-
-        }
-
-        @Override
-        public DoorModelSelection getDefaultModelSelection() {
-            return DoorModelSelection.modern(DoorSkin.DEFAULT);
         }
 
         @Override
         public ResourceLocation getColladaAnimationSource() {
             //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "models/block/doors/sliding_blast_door.dae");
+            /*return new ResourceLocation(RefStrings.MODID, "models/block/doors/sliding_blast_door");
             *///?} else {
-                        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/doors/sliding_blast_door.dae");
+            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/doors/sliding_blast_door");
             //?}
-
-        }
-
-        /** Blender: frame 0 = open. Закрытое состояние = последний keyframe */
-        @Override
-        public boolean isColladaAnimationInverted() {
-            return false;
         }
 
         @Override
-        public String[] getChildren(String partName) {
-            return switch (partName) {
-                case "DoorLeft" -> new String[] { "DoorCircleLeft", "Window" };
-                case "DoorRight" -> new String[] { "DoorCircleRight" };
-                default -> super.getChildren(partName);
-            };
+        public DoorModelSelection getDefaultModelSelection() {
+            // По умолчанию — MODERN + default skin: OBJ-модель (sliding_blast_door_modern)
+            // рендерится через VBO-pipeline (DoorRenderer.renderWithVBO), который
+            // гарантированно работает для всех скинов и поддерживает анимацию
+            // (getTranslation для LeftDoor/RightDoor). DAE-pipeline
+            // (renderDaeModel) задействуется только при выборе скинов variant1/variant2
+            // (их modelPath указывает на _modern_variant1/2 с loader'ом hbm_m:dae) либо
+            // при ручном переключении в LEGACY-режим.
+            return DoorModelSelection.modern(DoorSkin.DEFAULT);
         }
 
-        @Override
-        public String[] getChildren(String partName, @Nullable DoorModelSelection selection) {
-            if (selection != null && selection.isModern()) {
-                // OBJ: LeftDoor->RightLock, RightDoor->LeftLock
-                return switch (partName) {
-                    case "LeftDoor" -> new String[] { "RightLock" };
-                    case "RightDoor" -> new String[] { "LeftLock" };
-                    default -> getChildren(partName);
-                };
-            }
-            return getChildren(partName);
+        @Override 
+        public int getOpenTime() { 
+            return 24; 
         }
 
-        @Override
-        public boolean doesRender(String partName, boolean child) {
-            if (!child && ("DoorCircleLeft".equals(partName) || "Window".equals(partName) || "DoorCircleRight".equals(partName)
-                    || "RightLock".equals(partName) || "LeftLock".equals(partName))) {
-                return false;
-            }
-            return true;
-        }
-
-        /** Fallback: DAE анимирует по X (влево-вправо). Если DAE недоступен - процедурно по X */
         @Override
         public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
-            float progress = getNormTime(openTicks);
-            switch (partName) {
-                case "DoorFrame" -> set(trans, 0, 0, 0);
-                case "DoorLeft" -> set(trans, 2.5F * progress, 0, 0);   // +X влево-вправо (как в DAE)
-                case "DoorRight" -> set(trans, -2.5F * progress, 0, 0);  // -X
-                default -> super.getTranslation(partName, openTicks, child, trans);
+            //LEGACY (DAE) путь: симметричный линейный slide ±3.0*progress, как было ранее.
+            float progress = getNormTime(openTicks, 0, 24);
+            if ("LeftDoor".equals(partName) || "LeftLock".equals(partName)) {
+                set(trans, 0, 0, 3.0F * progress);
+            } else if ("RightDoor".equals(partName) || "RightLock".equals(partName)) {
+                set(trans, 0, 0, -3.0F * progress);
+            } else {
+                super.getTranslation(partName, openTicks, child, trans);
             }
         }
 
         @Override
-        public void getTranslation(String partName, float openTicks, boolean child, float[] trans, @Nullable DoorModelSelection selection) {
-            if (selection != null && selection.isModern()) {
-                // RenderSlidingBlastDoor 1.7.10: maxOpen=2.125, LeftDoor +Z, RightDoor -Z (после -90°Y: +X/-X)
-                float progress = getNormTime(openTicks);
-                float open = Math.min(2.125f, 2.125f * progress);
-                switch (partName) {
-                    case "DoorFrame", "Frame" -> set(trans, 0, 0, 0);
-                    case "DoorLeft", "LeftDoor" -> set(trans, open, 0, 0);
-                    case "DoorRight", "RightDoor" -> set(trans, -open, 0, 0);
-                    default -> getTranslation(partName, openTicks, child, trans);
-                }
+        public void getTranslation(String partName, float openTicks, boolean child, float[] trans,
+                                   @Nullable DoorModelSelection selection) {
+            if (selection == null || selection.isLegacy()) {
+                getTranslation(partName, openTicks, child, trans);
                 return;
             }
-            getTranslation(partName, openTicks, child, trans);
+            // MODERN/OBJ-pipeline: dual-phase слайдинг.
+            float t = openTicks;
+            float doorProg = Math.max(0f, Math.min(1f, (t - 7f) / 17f)); // 7..24 → 0..1
+            float maxOpen = 2.125f;
+            if ("LeftDoor".equals(partName) || "LeftLock".equals(partName)) {
+                set(trans, 0, 0, maxOpen * doorProg);
+            } else if ("RightDoor".equals(partName) || "RightLock".equals(partName)) {
+                set(trans, 0, 0, -maxOpen * doorProg);
+            } else {
+                super.getTranslation(partName, openTicks, child, trans, selection);
+            }
         }
 
         @Override
         public void getOrigin(String partName, float[] orig, @Nullable DoorModelSelection selection) {
-            if (selection != null && selection.isModern()) {
-                // RenderSlidingBlastDoor 1.7.10: пивот замков (0, 1.8125, 0)
-                if ("DoorCircleLeft".equals(partName) || "DoorCircleRight".equals(partName)
-                        || "RightLock".equals(partName) || "LeftLock".equals(partName)) {
-                    set(orig, 0F, 1.8125F, 0F);
-                    return;
-                }
+            // Pivot для поворота замков вокруг X: (0, 1.8125, 0) — как в 1.7.10
+            // glTranslated(0, 1.8125, 0); glRotated(90+lock, 1,0,0); glTranslated(0, -1.8125, 0);
+            if (selection != null && !selection.isLegacy()
+                    && ("LeftLock".equals(partName) || "RightLock".equals(partName))) {
+                set(orig, 0f, 1.8125f, 0f);
+            } else {
+                super.getOrigin(partName, orig, selection);
             }
-            getOrigin(partName, orig);
         }
 
         @Override
-        public void getRotation(String partName, float openTicks, float[] rot, @Nullable DoorModelSelection selection) {
-            if (selection != null && selection.isModern()) {
-                // RenderSlidingBlastDoor 1.7.10: rotate 90+lock вокруг X, lock 0..90
-                if ("DoorCircleLeft".equals(partName) || "DoorCircleRight".equals(partName)
-                        || "RightLock".equals(partName) || "LeftLock".equals(partName)) {
-                    float lock = 90f * getNormTime(openTicks);
-                    set(rot, 90f + lock, 0f, 0f);
-                    return;
-                }
+        public void getRotation(String partName, float openTicks, float[] rot,
+                                @Nullable DoorModelSelection selection) {
+            if (selection == null || selection.isLegacy()
+                    || (!"LeftLock".equals(partName) && !"RightLock".equals(partName))) {
+                super.getRotation(partName, openTicks, rot, selection);
+                return;
             }
-            getRotation(partName, openTicks, rot);
+            // MODERN: lock поворот вокруг X = 90 + 90*lockProg (как в 1.7.10).
+            // lock=0 (закрыт) → 90°; lock=1 (открыт) → 180°.
+            float t = openTicks;
+            float lockProg = Math.max(0f, Math.min(1f, t / 4f)); // 0..4 → 0..1
+            set(rot, 90f + 90f * lockProg, 0f, 0f);
         }
 
-        @Override
-        public String[] getPartNames() {
-            return new String[] { "DoorFrame", "DoorLeft", "DoorRight", "Window", "DoorCircleLeft", "DoorCircleRight" };
-        }
-    
-        @Override
-        public int getOpenTime() {
-            return 24;
-        }
-    
-        @Override
-        public void doOffsetTransform(IDoorAnimator animator) {
-            animator.rotate(-90.0f, 0.0f, 1.0f, 0.0f);
-        }
-
-        @Override public int getBakedModelRotationOffsetY() { return -90; }
-    
         @Override
         public double[][] getClippingPlanes() {
-            return new double[][] { 
-                { -1, 0, 0, 3.50001 }, 
-                { 1, 0, 0, 3.50001 } 
-            };
-        }
-    
-        @Override
-        public int[][] getDoorOpenRanges() {
-            return new int[][] { { -2, 0, 0, 4, 5, 1 } };
-        }
-    
-        @Override
-        public boolean hasSkins() {
-            return true;
-        }
-    
-        @Override
-        public int getSkinCount() {
-            return 3;
-        }
-    
-        @Override
-        public SoundEvent getOpenSoundEnd() {
-            return ModSounds.SLIDING_DOOR_OPENED.get();
-        }
-    
-        @Override
-        public SoundEvent getCloseSoundEnd() {
-            return ModSounds.SLIDING_DOOR_SHUT.get();
-        }
-    
-        @Override
-        public SoundEvent getOpenSoundLoop() {
-            return ModSounds.SLIDING_DOOR_OPENING.get();
+            // (glClipPlane в современном MixedPipelineIndexVertex builder'е) — TODO.
+            return new double[][] { { 0, 0, 1, 2.5 }, { 0, 0, -1, 2.5 } };
         }
 
         @Override
-        public SoundEvent getSoundLoop2() {
-            return ModSounds.SLIDING_DOOR_OPENING.get();
+        public int getBakedModelRotationOffsetY() {
+            return -90; // Fixes the 90-degree Y rotation issue on the DAE model
         }
-    
-        @Override
-        public float getSoundVolume() {
-            return 2.0f;
-        }
+
+        @Override public SoundEvent getOpenSoundEnd() { return ModSounds.SLIDING_DOOR_OPENED.get(); }
+        @Override public SoundEvent getOpenSoundLoop() { return ModSounds.SLIDING_DOOR_OPENING.get(); }
+        @Override public SoundEvent getCloseSoundEnd() { return ModSounds.SLIDING_DOOR_SHUT.get(); }
+        @Override public float getSoundVolume() { return 2.0f; }
     };
     
     public static final DoorDecl SLIDING_SEAL_DOOR = new DoorDecl() {
@@ -1662,6 +1535,93 @@ public abstract class DoorDecl {
         @Override public SoundEvent getOpenSoundEnd() { return ModSounds.DOOR_WGH_BIG_STOP.get(); }
         @Override public SoundEvent getOpenSoundLoop() { return ModSounds.DOOR_WGH_BIG_START.get(); }
         @Override public SoundEvent getCloseSoundEnd() { return ModSounds.DOOR_WGH_BIG_STOP.get(); }
+        @Override public float getSoundVolume() { return 2.0f; }
+    };
+
+    public static final DoorDecl CARGO_DOOR = new DoorDecl() {
+        {
+            DoorStructureDefinition.Builder builder = DoorStructureDefinition.create();
+
+            // Повторяет оригинальный getBlockBound из 1.7.10:
+            // закрытая дверь — тонкая створка 0.375..0.625 по Z (т.е. 6/16..10/16)
+            VoxelShape thin = Block.box(0, 0, 6, 16, 16, 10);
+            builder.addSymbol('#', thin, PartRole.DEFAULT);
+            builder.addSymbol('C', thin, PartRole.CONTROLLER);
+
+            // Вид спереди (Y сверху вниз): 3 блока в ширину (X), 3 в высоту (Y).
+            // Контроллер — нижний-средний блок (как в оригинале getDimensions {-1,-1,0,3,3,1}).
+            String[] closed = {
+                "###",
+                "###",
+                "#C#"
+            };
+
+            // В открытом состоянии вся створка убирается, рамка остаётся коллизией
+            // ( BOT/TOP поднимаются, проход свободен ).
+            String[] open = {
+                "###",
+                "   ",
+                "   "
+            };
+
+            defineStructure(builder.parseVertical(closed, open, 'C'));
+        }
+
+        //? if fabric && < 1.21.1 {
+        /*@Override public ResourceLocation getBlockId() { return new ResourceLocation(RefStrings.MODID, "cargo_door");
+        *///?} else {
+                @Override public ResourceLocation getBlockId() { return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "cargo_door");
+        //?}
+ }
+
+        @Override public String[] getPartNames() { return new String[] { "Frame", "DoorTop", "DoorBot" }; }
+        @Override public int getOpenTime() { return 60; }
+
+        @Override
+        public DoorModelSelection getDefaultModelSelection() {
+            return DoorModelSelection.modern(DoorSkin.DEFAULT);
+        }
+
+        // Повторяет логику AxisAlignedBB из оригинального DoorDecl.CARGO_DOOR (1.7.10).
+        // open=false → створка 0..1 × 0..1 × 0.375..0.625.
+        // open=true: верхние блоки (y>1) ↑ 0.25..1; нижний (y==0) ↑ 0..(forCollision?0:0.125).
+        @Override
+        public AABB getBlockBound(int x, int y, int z, boolean open, boolean forCollision) {
+            if (!open) return new AABB(0, 0, 0.375, 1, 1, 0.625);
+            if (y > 1) return new AABB(0, 0.25, 0.375, 1, 1, 0.625);
+            else if (y == 0) return new AABB(0, 0, 0.375, 1, forCollision ? 0 : 0.125, 0.625);
+            return super.getBlockBound(x, y, z, open, forCollision);
+        }
+
+        // BusAnimation оригинала: BOT поднимается на 2 блока за timeToOpen*2 тиков
+        // (полный проезд한다 за открытие), TOP поднимается на 1 блок с задержкой.
+        // В Modernized трансляции задаётся через нормированный прогресс [0..1].
+        @Override
+        public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
+            float norm = getNormTime(openTicks, 0, getOpenTime());
+            if ("DoorBot".equals(partName)) {
+                // BOT: полное смещение 2 блока, плавное (ease-in/out через smoothstep)
+                float t = smoothstep(norm);
+                set(trans, 0, 2.0F * t, 0);
+            } else if ("DoorTop".equals(partName)) {
+                // TOP: половина длительности стоит, потом поднимается на 1 блок.
+                // Оригинал BusAnimation: addPos(0,0,0,half) + addPos(0,1,0,half).
+                float t = smoothstep(getNormTime(openTicks, getOpenTime() * 0.5F, getOpenTime()));
+                set(trans, 0, 1.0F * t, 0);
+            } else {
+                super.getTranslation(partName, openTicks, child, trans);
+            }
+        }
+
+        private float smoothstep(float t) { return t * t * (3.0f - 2.0f * t); }
+
+        @Override public int[][] getDoorOpenRanges() { return new int[][] { { -1, -1, 0, 3, 3, 1 } }; }
+
+        // Звуки: hbm:door.garage_move (loop) / hbm:door.garage_stop (end), громкость 2.0
+        @Override public SoundEvent getOpenSoundLoop() { return ModSounds.GARAGE_MOVE.get(); }
+        @Override public SoundEvent getOpenSoundEnd() { return ModSounds.GARAGE_STOP.get(); }
+        @Override public SoundEvent getCloseSoundLoop() { return ModSounds.GARAGE_MOVE.get(); }
+        @Override public SoundEvent getCloseSoundEnd() { return ModSounds.GARAGE_STOP.get(); }
         @Override public float getSoundVolume() { return 2.0f; }
     };
 

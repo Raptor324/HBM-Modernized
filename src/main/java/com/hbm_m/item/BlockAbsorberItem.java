@@ -2,6 +2,7 @@ package com.hbm_m.item;
 
 import com.hbm_m.block.generic.BlockAbsorber;
 import com.hbm_m.block.generic.BlockAbsorber.EnumAbsorberTier;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -24,12 +25,20 @@ public class BlockAbsorberItem extends BlockItem {
         ItemStack stack = new ItemStack(block);
         CompoundTag blockStateTag = new CompoundTag();
         blockStateTag.putString("tier", tier.getSerializedName());
-        stack.getOrCreateTag().put("BlockStateTag", blockStateTag);
+        PlatformHooks.put(stack, "BlockStateTag", blockStateTag);
         return stack;
     }
 
     public static EnumAbsorberTier readTier(ItemStack stack) {
+        // BlockStateTag на 1.20.1 — NBT-подтег (getTagElement); на 1.21.1 — тот же ключ
+        // "BlockStateTag" внутри CUSTOM_DATA, куда его кладёт PlatformHooks.put (forTier).
+        //? if < 1.21.1 {
         CompoundTag blockStateTag = stack.getTagElement("BlockStateTag");
+        //?} else {
+        /*CompoundTag custom = PlatformHooks.getItemTag(stack);
+        CompoundTag blockStateTag = custom != null && custom.contains("BlockStateTag")
+                ? custom.getCompound("BlockStateTag") : null;
+        *///?}
         if (blockStateTag != null && blockStateTag.contains("tier")) {
             String name = blockStateTag.getString("tier");
             for (EnumAbsorberTier tier : EnumAbsorberTier.values()) {

@@ -1,5 +1,6 @@
 package com.hbm_m.item.missile;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -17,7 +18,7 @@ import org.jetbrains.annotations.Nullable;
  * Логика максимально повторяет старый ItemMissile из 1.7.10,
  * но адаптирована под систему переводов 1.20.1.
  */
-public class MissileItem extends Item {
+public class MissileItem extends Item implements ITooltipProvider {
 
     public final MissileFormFactor formFactor;
     public final MissileTier tier;
@@ -48,7 +49,7 @@ public class MissileItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         // Tier localized: missile.tier.tier0, missile.tier.tier1, ...
         String tierKey = "item.hbm_m.missile.tier." + this.tier.name().toLowerCase();
         tooltip.add(Component.translatable(tierKey).withStyle(ChatFormatting.ITALIC));
@@ -82,7 +83,17 @@ public class MissileItem extends Item {
             }
         });
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public void initializeClient(Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.render.item.ItemRenderMissileGeneric.INSTANCE;
+            }
+        });
+    }
+    *///?}
 
     public enum MissileFormFactor {
         ABM(MissileFuel.SOLID),

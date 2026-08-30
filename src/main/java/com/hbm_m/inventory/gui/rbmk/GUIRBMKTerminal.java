@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui.rbmk;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKTerminalBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.network.RadioTorchControlPacket;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -93,7 +94,7 @@ public class GUIRBMKTerminal extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(g);
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, mouseX, mouseY, partialTick);
         super.render(g, mouseX, mouseY, partialTick);
 
         int cx = this.width / 2;

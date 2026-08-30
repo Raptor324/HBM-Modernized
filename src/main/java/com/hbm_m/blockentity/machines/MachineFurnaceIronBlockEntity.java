@@ -42,7 +42,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * 100% Vanilla-Schmelzrezepte (wie im Original), zwei parallele Brennstoff-Slots wie im Original
  * (slot 1 + slot 2), Brenndauer via {@link AbstractFurnaceBlockEntity#getFuel()}.
  */
-public class MachineFurnaceIronBlockEntity extends BlockEntity implements MenuProvider {
+public class MachineFurnaceIronBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements MenuProvider {
 
     public static final int SLOT_INPUT = 0;
     public static final int SLOT_FUEL_1 = 1;
@@ -203,7 +203,7 @@ public class MachineFurnaceIronBlockEntity extends BlockEntity implements MenuPr
     private boolean canAcceptResult(ItemStack result) {
         ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT);
         if (current.isEmpty()) return true;
-        if (!ItemStack.isSameItemSameTags(current, result)) return false;
+        if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, result)) return false;
         return current.getCount() + result.getCount() <= current.getMaxStackSize();
     }
 
@@ -226,8 +226,8 @@ public class MachineFurnaceIronBlockEntity extends BlockEntity implements MenuPr
     }
 
     private java.util.Optional<SmeltingRecipe> getRecipe(Level level, ItemStack input) {
-        recipeInput.setItem(0, input);
-        return level.getRecipeManager().getRecipeFor(RecipeType.SMELTING, recipeInput, level);
+        // 1.21.1: getRecipeFor требует RecipeInput (SingleRecipeInput) и возвращает RecipeHolder.
+        return com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(level, RecipeType.SMELTING, input);
     }
 
     public static boolean isFuel(ItemStack stack) {
@@ -246,32 +246,21 @@ public class MachineFurnaceIronBlockEntity extends BlockEntity implements MenuPr
     // ==================== NBT ====================
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.put("inventory", inventory.serializeNBT());
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(inventory, registries));
         tag.putInt("litTime", litTime);
         tag.putInt("litDuration", litDuration);
         tag.putInt("progress", progress);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        inventory.deserializeNBT(tag.getCompound("inventory"));
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
+        com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, tag.getCompound("inventory"), registries);
         litTime = tag.getInt("litTime");
         litDuration = tag.getInt("litDuration");
         progress = tag.getInt("progress");
-    }
-
-    @Nullable
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
-
-    @Override
-    public CompoundTag getUpdateTag() {
-        return saveWithoutMetadata();
     }
 
     // ==================== GUI ====================

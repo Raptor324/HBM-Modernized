@@ -10,16 +10,28 @@ import java.util.Optional;
 import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
+//? if neoforge {
+/*import com.hbm_m.capability.ModCapabilities;
+import net.neoforged.neoforge.capabilities.Capabilities;
+*///?}
 
-/**
- * Loader-safe доступ к энергетическим интерфейсам у ItemStack.
- *
- * На Forge/NeoForge используется capability-система.
- * На Fabric батарейки читаются напрямую из NBT через {@link EnergyCapabilityProvider.ItemEnergyStorage}.
- */
 public final class ItemEnergyAccess {
 
     private ItemEnergyAccess() {}
+
+    public static boolean isEnergySource(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        if (getHbmProvider(stack).isPresent()) return true;
+
+        //? if forge {
+        if (stack.getCapability(ForgeCapabilities.ENERGY).isPresent()) return true;
+        //?}
+        //? if neoforge {
+        /*if (stack.getCapability(Capabilities.EnergyStorage.ITEM) != null) return true;
+        *///?}
+
+        return false;
+    }
 
     public static Optional<IEnergyProvider> getHbmProvider(ItemStack stack) {
         if (stack.isEmpty()) {
@@ -28,17 +40,9 @@ public final class ItemEnergyAccess {
 
         //? if forge {
         return stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).resolve();
-        //?} else if fabric {
-        /*if (stack.getItem() instanceof com.hbm_m.item.fekal_electric.ModBatteryItem battery) {
-            var storage = new EnergyCapabilityProvider.ItemEnergyStorage(
-                    stack, battery.getCapacity(), battery.getMaxReceive(), battery.getMaxExtract()
-            );
-            return storage.canExtract() ? Optional.of(storage) : Optional.empty();
-        }
-
-        return Optional.empty();
-        *///?} else {
-        /*return Optional.empty();
+        //?} else {
+        /*IEnergyProvider p = stack.getCapability(ModCapabilities.HBM_ITEM_ENERGY_PROVIDER);
+        return Optional.ofNullable(p);
         *///?}
     }
 
@@ -49,17 +53,9 @@ public final class ItemEnergyAccess {
 
         //? if forge {
         return stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).resolve();
-        //?} else if fabric {
-        /*if (stack.getItem() instanceof com.hbm_m.item.fekal_electric.ModBatteryItem battery) {
-            var storage = new EnergyCapabilityProvider.ItemEnergyStorage(
-                    stack, battery.getCapacity(), battery.getMaxReceive(), battery.getMaxExtract()
-            );
-            return storage.canReceive() ? Optional.of(storage) : Optional.empty();
-        }
-
-        return Optional.empty();
-        *///?} else {
-        /*return Optional.empty();
+        //?} else {
+        /*IEnergyReceiver r = stack.getCapability(ModCapabilities.HBM_ITEM_ENERGY_RECEIVER);
+        return Optional.ofNullable(r);
         *///?}
     }
 
@@ -67,6 +63,21 @@ public final class ItemEnergyAccess {
     public static boolean canForgeExtract(ItemStack stack) {
         return stack.getCapability(ForgeCapabilities.ENERGY).map(net.minecraftforge.energy.IEnergyStorage::canExtract).orElse(false);
     }
-    //?}
-}
 
+    public static java.util.Optional<net.minecraftforge.energy.IEnergyStorage> getForgeEnergy(ItemStack stack) {
+        if (stack.isEmpty()) return java.util.Optional.empty();
+        return stack.getCapability(ForgeCapabilities.ENERGY).resolve();
+    }
+    //?}
+    //? if neoforge {
+    /*public static boolean canForgeExtract(ItemStack stack) {
+        net.neoforged.neoforge.energy.IEnergyStorage cap = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        return cap != null && cap.canExtract();
+    }
+
+    public static java.util.Optional<net.neoforged.neoforge.energy.IEnergyStorage> getForgeEnergy(ItemStack stack) {
+        if (stack.isEmpty()) return java.util.Optional.empty();
+        return java.util.Optional.ofNullable(stack.getCapability(Capabilities.EnergyStorage.ITEM));
+    }
+    *///?}
+}

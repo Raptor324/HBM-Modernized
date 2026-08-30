@@ -22,6 +22,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
+import com.hbm_m.platform.PlatformHooks;
+
 /**
  * Port of {@code com.hbm.entity.item.EntityMovingItem} (which extends the abstract
  * {@code EntityMovingConveyorObject}, 1.7.10 Original) - a lightweight entity that carries a single
@@ -53,10 +55,17 @@ public class MovingConveyorItemEntity extends Entity implements ItemSupplier {
         return entity;
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         this.entityData.define(ITEM, ItemStack.EMPTY);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        builder.define(ITEM, ItemStack.EMPTY);
+    }
+    *///?}
 
     @Override
     public ItemStack getItem() {
@@ -167,7 +176,7 @@ public class MovingConveyorItemEntity extends Entity implements ItemSupplier {
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
         if (tag.contains("Item")) {
-            ItemStack stack = ItemStack.of(tag.getCompound("Item"));
+            ItemStack stack = PlatformHooks.itemStackOf(tag.getCompound("Item"), this.level().registryAccess());
             if (stack.isEmpty()) {
                 this.discard();
             } else {
@@ -180,7 +189,7 @@ public class MovingConveyorItemEntity extends Entity implements ItemSupplier {
     protected void addAdditionalSaveData(CompoundTag tag) {
         ItemStack stack = getItem();
         if (!stack.isEmpty()) {
-            tag.put("Item", stack.save(new CompoundTag()));
+            tag.put("Item", PlatformHooks.safeItemSave(stack, this.level().registryAccess()));
         }
     }
 

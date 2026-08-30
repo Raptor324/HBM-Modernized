@@ -55,11 +55,7 @@ public class MachineIndustrialBoilerMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(machineInventory, MachineIndustrialBoilerBlockEntity.SLOT_WATER_IN, 44, 16) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                //? if forge {
-                return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-                //?} else {
-                /*return false;
-                *///?}
+                return com.hbm_m.platform.PlatformHooks.isFluidContainer(stack);
             }
         });
         this.addSlot(new Slot(machineInventory, MachineIndustrialBoilerBlockEntity.SLOT_WATER_OUT, 44, 52) {
@@ -73,11 +69,7 @@ public class MachineIndustrialBoilerMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(machineInventory, MachineIndustrialBoilerBlockEntity.SLOT_STEAM_IN, 151, 16) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                //? if forge {
-                return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-                //?} else {
-                /*return false;
-                *///?}
+                return com.hbm_m.platform.PlatformHooks.isFluidContainer(stack);
             }
         });
         this.addSlot(new Slot(machineInventory, MachineIndustrialBoilerBlockEntity.SLOT_STEAM_OUT, 151, 52) {
@@ -153,11 +145,7 @@ public class MachineIndustrialBoilerMenu extends AbstractContainerMenu {
                 return ItemStack.EMPTY;
             }
         } else {
-            //? if forge {
-            boolean isFluidContainer = slotStack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-            //?} else {
-            /*boolean isFluidContainer = false;
-            *///?}
+            boolean isFluidContainer = com.hbm_m.platform.PlatformHooks.isFluidContainer(slotStack);
             if (isFluidContainer) {
                 if (!this.moveItemStackTo(slotStack, MachineIndustrialBoilerBlockEntity.SLOT_WATER_IN,
                         MachineIndustrialBoilerBlockEntity.SLOT_WATER_IN + 1, false)

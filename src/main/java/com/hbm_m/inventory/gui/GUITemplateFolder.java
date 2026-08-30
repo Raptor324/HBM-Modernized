@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +12,7 @@ import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.GiveTemplateC2SPacket;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.recipe.AssemblerRecipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.util.TemplateCraftingCosts;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -94,10 +96,9 @@ public class GUITemplateFolder extends Screen {
                 allRecipes.add(new ItemStack(ModItems.STAMP_DESH_357.get()));
 
                 // Затем добавляем рецепты сборочной машины
-                List<AssemblerRecipe> recipes = this.minecraft.level.getRecipeManager()
-                        .getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
+                List<AssemblerRecipe> recipes = RecipeHooks.getAllRecipes(this.minecraft.level, AssemblerRecipe.Type.INSTANCE);
                 for (AssemblerRecipe recipe : recipes) {
-                    allRecipes.add(recipe.getResultItem(null));
+                    allRecipes.add(recipe.getResultItemSafe());
                 }
             }
             this.filteredRecipes.clear();
@@ -155,14 +156,14 @@ public class GUITemplateFolder extends Screen {
 
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
-        this.renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, pMouseX, pMouseY, pPartialTick);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
         if (this.searchBox.isFocused()) {
             guiGraphics.blit(TEXTURE, this.leftPos + 45, this.topPos + 211, 176, 54, 72, 12);
         }
 
-        super.render(guiGraphics, pMouseX, pMouseY, pPartialTick);
+        GuiCompat.renderWidgetsOnly(this, guiGraphics, pMouseX, pMouseY, pPartialTick);
 
         renderRecipes(guiGraphics, pMouseX, pMouseY);
 
@@ -250,6 +251,7 @@ public class GUITemplateFolder extends Screen {
         return super.mouseClicked(pMouseX, pMouseY, pButton);
     }
 
+    //? if < 1.21.1 {
     @Override
     public boolean mouseScrolled(double pMouseX, double pMouseY, double pDelta) {
         if (pDelta > 0 && currentPage > 0) {
@@ -259,6 +261,19 @@ public class GUITemplateFolder extends Screen {
         }
         return true;
     }
+    //?} else {
+    /*// 1.21.1: mouseScrolled получил 4-й параметр (horizontal scroll) — передаём 0.0.
+    @Override
+    public boolean mouseScrolled(double pMouseX, double pMouseY, double scrollX, double scrollY) {
+        double pDelta = scrollY;
+        if (pDelta > 0 && currentPage > 0) {
+            changePage(-1);
+        } else if (pDelta < 0 && currentPage < getPageCount() - 1) {
+            changePage(1);
+        }
+        return true;
+    }
+    *///?}
 
     private int getPageCount() {
         return Math.max(1, (int) Math.ceil(filteredRecipes.size() / 35.0));

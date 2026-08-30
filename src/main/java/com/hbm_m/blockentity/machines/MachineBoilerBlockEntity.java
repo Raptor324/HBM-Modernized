@@ -69,7 +69,7 @@ public class MachineBoilerBlockEntity extends BaseMachineBlockEntity implements 
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return waterTank.getCapability().cast();
+            return waterTank.getForgeFluidCapability().cast();
         }
         return super.getCapability(cap, side);
     }
@@ -140,7 +140,7 @@ public class MachineBoilerBlockEntity extends BaseMachineBlockEntity implements 
     private void explode(ServerLevel level, BlockPos pos) {
         level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
                 5.0F, Level.ExplosionInteraction.BLOCK);
-        level.playSound(null, pos, SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 2.0F, 1.0F);
+        com.hbm_m.platform.PlatformHooks.playSound(level, pos, SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 2.0F, 1.0F);
         hasExploded = true;
         heat = 0;
         syncExplodedState();
@@ -182,8 +182,8 @@ public class MachineBoilerBlockEntity extends BaseMachineBlockEntity implements 
     // ==================== NBT ====================
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("heat", heat);
         tag.putBoolean("has_exploded", hasExploded);
         waterTank.writeToNBT(tag, "tank_water");
@@ -191,8 +191,8 @@ public class MachineBoilerBlockEntity extends BaseMachineBlockEntity implements 
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         heat = tag.getInt("heat");
         hasExploded = tag.getBoolean("has_exploded");
         waterTank.readFromNBT(tag, "tank_water");

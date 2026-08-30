@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.MachineRtgBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineRtgMenu;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -37,11 +38,14 @@ public class GUIMachineRtg extends AbstractContainerScreen<MachineRtgMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        String heat = "Heat: " + rtg.getHeat() + " / " + rtg.getHeatMax();
-        guiGraphics.drawString(this.font, heat, this.leftPos + 8, this.topPos + 74, 0x404040, false);
+        // тайл может отсутствовать в реплее Flashback
+        if (rtg != null) {
+            String heat = "Heat: " + rtg.getHeat() + " / " + rtg.getHeatMax();
+            guiGraphics.drawString(this.font, heat, this.leftPos + 8, this.topPos + 74, 0x404040, false);
+        }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

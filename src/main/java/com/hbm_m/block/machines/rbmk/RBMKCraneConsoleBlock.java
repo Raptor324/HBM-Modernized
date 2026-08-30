@@ -24,9 +24,11 @@ public class RBMKCraneConsoleBlock extends RBMKColumnBlock {
     // Crane console has no GUI (it's flown by keybind, not menu) - only the RBMK linking tool
     // and a shift-click rotation cycle are handled here, bypassing RBMKColumnBlock's default
     // "open MenuProvider" behavior entirely.
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                   Player player, InteractionHand hand, BlockHitResult hit) {
+
         if (level.isClientSide) return InteractionResult.SUCCESS;
 
         BlockEntity be = level.getBlockEntity(pos);
@@ -44,7 +46,31 @@ public class RBMKCraneConsoleBlock extends RBMKColumnBlock {
         }
 
         return InteractionResult.PASS;
-    }
+        }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+
+        if (level.isClientSide) return InteractionResult.SUCCESS;
+
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof RBMKCraneConsoleBlockEntity crane)) return InteractionResult.PASS;
+
+        ItemStack held = player.getItemInHand(InteractionHand.MAIN_HAND);
+        if (held.getItem() instanceof RBMKToolItem) {
+            RBMKToolItem.linkCrane(held, level, crane, player);
+            return InteractionResult.SUCCESS;
+        }
+
+        if (player.isShiftKeyDown()) {
+            crane.cycleCraneRotation();
+            return InteractionResult.SUCCESS;
+        }
+
+        return InteractionResult.PASS;
+        }
+    *///?}
+
 
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
@@ -55,4 +81,13 @@ public class RBMKCraneConsoleBlock extends RBMKColumnBlock {
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.RBMK_CRANE_CONSOLE_BE.get(), RBMKCraneConsoleBlockEntity::tick);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<RBMKCraneConsoleBlock> CODEC = simpleCodec(RBMKCraneConsoleBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

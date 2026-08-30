@@ -1,5 +1,6 @@
 package com.hbm_m.item.fekal_electric;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import org.jetbrains.annotations.NotNull;
@@ -7,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyCapabilityProvider;
 import com.hbm_m.api.energy.ItemEnergyAccess;
+import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.util.EnergyFormatter;
 
 import net.minecraft.ChatFormatting;
@@ -22,7 +24,7 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 //?}
 
-public class ModBatteryItem extends Item {
+public class ModBatteryItem extends Item implements ITooltipProvider {
     protected final long capacity;
     protected final long maxReceive;
     protected final long maxExtract;
@@ -74,7 +76,7 @@ public class ModBatteryItem extends Item {
         }
 
         long clampedEnergy = Math.max(0, Math.min(energy, battery.getCapacity()));
-        stack.getOrCreateTag().putLong("energy", clampedEnergy);
+        PlatformHooks.editItemTag(stack, t -> t.putLong("energy", clampedEnergy));
     }
 
     /**
@@ -84,10 +86,10 @@ public class ModBatteryItem extends Item {
      * @return Количество энергии
      */
     public static long getEnergy(ItemStack stack) {
-        if (stack.isEmpty() || !stack.hasTag()) {
+        if (stack.isEmpty() || !PlatformHooks.hasItemTag(stack)) {
             return 0;
         }
-        return stack.getTag().getLong("energy");
+        return PlatformHooks.getItemTag(stack).getLong("energy");
     }
 
     @Override
@@ -130,7 +132,7 @@ public class ModBatteryItem extends Item {
     }
 
     @Override
-    public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
+    public void appendHbmTooltip(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
         ItemEnergyAccess.getHbmProvider(stack)
                 .ifPresent(energy -> addEnergyTooltip(tooltip, energy.getEnergyStored(), energy.getMaxEnergyStored(), ChatFormatting.AQUA));
 
@@ -149,7 +151,6 @@ public class ModBatteryItem extends Item {
             tooltip.add(Component.translatable("tooltip.hbm_m.battery.discharge_rate",
                     EnergyFormatter.format(maxExtract)).withStyle(ChatFormatting.GOLD));
         }
-        super.appendHoverText(stack, level, tooltip, flag);
     }
 
     private void addEnergyTooltip(List<Component> tooltip, long stored, long max, ChatFormatting color) {

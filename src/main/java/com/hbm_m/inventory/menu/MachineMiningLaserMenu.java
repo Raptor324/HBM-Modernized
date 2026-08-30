@@ -55,8 +55,9 @@ public class MachineMiningLaserMenu extends AbstractContainerMenu {
                 if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
                 //? if forge {
                 return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-                //?}
-                //? if fabric {
+                //?} elif neoforge {
+                /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
+                *///?} else {
                 /*return false;
                 *///?}
             }

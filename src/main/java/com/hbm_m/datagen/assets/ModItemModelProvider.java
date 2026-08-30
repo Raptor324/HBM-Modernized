@@ -29,11 +29,11 @@ import net.minecraftforge.client.model.generators.ItemModelBuilder;
 import net.minecraftforge.client.model.generators.ItemModelProvider;
 import net.minecraftforge.client.model.generators.ModelFile;
 import net.minecraftforge.common.data.ExistingFileHelper;
+import com.hbm_m.client.render.missile.MissileItemModelDefinitions;
 
 public class ModItemModelProvider extends ItemModelProvider {
 
-    private static LinkedHashMap<ResourceKey<TrimMaterial>, Float> trimMaterials = new LinkedHashMap<>();
-    static {
+    private static LinkedHashMap<ResourceKey<TrimMaterial>, Float> trimMaterials = new LinkedHashMap<>();    static {
         trimMaterials.put(TrimMaterials.QUARTZ, 0.1F);
         trimMaterials.put(TrimMaterials.IRON, 0.2F);
         trimMaterials.put(TrimMaterials.NETHERITE, 0.3F);
@@ -45,6 +45,35 @@ public class ModItemModelProvider extends ItemModelProvider {
         trimMaterials.put(TrimMaterials.LAPIS, 0.9F);
         trimMaterials.put(TrimMaterials.AMETHYST, 1.0F);
     }
+
+    // Плоские иконки RBMK-блоков (по ручным эталонам): имя блока -> текстура layer0
+    private static final java.util.Map<String, String> RBMK_FLAT_ITEM_TEXTURES = java.util.Map.ofEntries(
+            java.util.Map.entry("rbmk_control_blue", "block/rbmk/rbmk_control_blue"),
+            java.util.Map.entry("rbmk_control_green", "block/rbmk/rbmk_control_green"),
+            java.util.Map.entry("rbmk_control_yellow", "block/rbmk/rbmk_control_yellow"),
+            java.util.Map.entry("rbmk_control_purple", "block/rbmk/rbmk_control_purple"),
+            java.util.Map.entry("rbmk_control_mod", "block/rbmk/rbmk_control_mod_side"),
+            java.util.Map.entry("rbmk_control_mod_auto", "block/rbmk/rbmk_control_auto_side"),
+            java.util.Map.entry("rbmk_control_reasim", "block/rbmk/rbmk_control_side"),
+            java.util.Map.entry("rbmk_control_reasim_auto", "block/rbmk/rbmk_control_auto_side"),
+            java.util.Map.entry("rbmk_steam_inlet", "block/rbmk/rbmk_boiler_pipe_side"),
+            java.util.Map.entry("rbmk_steam_outlet", "block/rbmk/rbmk_boiler_pipe_side"),
+            java.util.Map.entry("rbmk_loader", "block/rbmk/rbmk_blank_side"),
+            java.util.Map.entry("rbmk_autoloader", "block/rbmk/rbmk_blank_side"),
+            java.util.Map.entry("rbmk_crane_console", "block/rbmk/rbmk_console"),
+            java.util.Map.entry("rbmk_display", "block/rbmk/rbmk_display"),
+            java.util.Map.entry("rbmk_gauge", "block/rbmk/rbmk_element_side"),
+            java.util.Map.entry("rbmk_indicator", "block/rbmk/rbmk_element_side"),
+            java.util.Map.entry("rbmk_lever", "block/rbmk/rbmk_control_side"),
+            java.util.Map.entry("rbmk_numitron", "block/rbmk/rbmk_element_side"),
+            java.util.Map.entry("rbmk_graph", "block/rbmk/rbmk_element_side"),
+            java.util.Map.entry("rbmk_terminal", "block/rbmk/rbmk_element_side"),
+            java.util.Map.entry("rbmk_keypad", "block/rbmk/rbmk_control_side"),
+            java.util.Map.entry("rbmk_debris", "block/rbmk/rbmk_debris"),
+            java.util.Map.entry("rbmk_debris_burning", "block/rbmk/rbmk_debris_burning"),
+            java.util.Map.entry("rbmk_debris_digamma", "block/rbmk/rbmk_debris_digamma"),
+            java.util.Map.entry("rbmk_debris_radiating", "block/rbmk/rbmk_debris_radiating")
+    );
 
     public ModItemModelProvider(PackOutput output, ExistingFileHelper existingFileHelper) {
         super(output, RefStrings.MODID, existingFileHelper);
@@ -250,8 +279,11 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent("qe_sliding_door", 
             modLoc("block/doors/qe_sliding_door_modern"));
 
-        withExistingParent("vault_door", 
+        withExistingParent("vault_door",
             modLoc("block/doors/vault_door_skin_101"));
+
+        withExistingParent("cargo_door",
+            modLoc("block/doors/cargo_door"));
 
         // Door items (flat icons like vanilla doors)
         withExistingParent(ModBlocks.METAL_DOOR.getId().getPath(), "item/generated")
@@ -615,7 +647,20 @@ public class ModItemModelProvider extends ItemModelProvider {
             ModBlocks.RBMK_DEBRIS_DIGAMMA, ModBlocks.RBMK_DEBRIS_RADIATING
         );
         for (var rb : rbmkBlocks) {
-            withExistingParent(rb.getId().getPath(), modLoc("block/rbmk/" + rb.getId().getPath()));
+            // Fidelity: у части блоков ручные item-модели были плоскими (item/generated + layer0),
+            // у остальных — ссылка на блочную модель block/rbmk/<name>
+            String flat = RBMK_FLAT_ITEM_TEXTURES.get(rb.getId().getPath());
+            if (flat != null) {
+                withExistingParent(rb.getId().getPath(), "item/generated").texture("layer0", modLoc(flat));
+            } else {
+                withGeneratedBlockParent(rb.getId().getPath(), "block/rbmk/" + rb.getId().getPath());
+            }
+        }
+
+        // Простые блоки, чьи blockstates/модели переведены на датаген: item-модель = ссылка на блочную
+        for (String n : java.util.List.of("block_slag", "emp", "ore_bedrock_mineral", "ore_bedrock_oil",
+                "particle_test_block", "taint", "rbmk_corium")) {
+            withGeneratedBlockParent(n, "block/" + n);
         }
 
         simpleItem(ModItems.STAMP_STONE_FLAT);
@@ -747,6 +792,10 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.FOUNDRY_CHANNEL, "foundry_channel_inventory");
         blockItemFromBlockModelMachine(ModBlocks.CENTRIFUGE);
         blockItemFromBlockModelMachine(ModBlocks.GAS_CENTRIFUGE);
+        // Газовые блоки: blockstate = invisible_gas, поэтому item-модель делаем прямо
+        // из block-текстуры (в 1.7.10 предмет был в machineTab и рендерился текстурой газа).
+        withExistingParent(ModBlocks.GAS_ASBESTOS.getId().getPath(), "item/generated").texture("layer0", modLoc("block/gas_asbestos"));
+        withExistingParent(ModBlocks.GAS_COAL.getId().getPath(), "item/generated").texture("layer0", modLoc("block/gas_coal"));
         blockItemFromBlockModelMachine(ModBlocks.CRYSTALLIZER, "crystallizer_item");
         blockItemFromBlockModelMachine(ModBlocks.BREEDER);
         blockItemFromBlockModelMachine(ModBlocks.LARGE_PYLON);
@@ -816,6 +865,16 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.LAUNCH_PAD);
         blockItemFromBlockModelMachine(ModBlocks.LAUNCH_PAD_RUSTED);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_FAT_MAN);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_GADGET);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_BOY);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_MIKE);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_TSAR);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_FLEIJA);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_N2);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_SOLINIUM);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_FSTBMB);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_CUSTOM);
+        blockItemFromBlockModelBomb(ModBlocks.BOMB_MULTI);
         blockItemFromBlockModelMachine(ModBlocks.MACHINE_BATTERY_SOCKET);
         blockItemFromBlockModelMachine(ModBlocks.INDUSTRIAL_BOILER);
         blockItemFromBlockModelMachine(ModBlocks.HEATING_OVEN);
@@ -826,7 +885,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.CATALYTIC_REFORMER);
         blockItemFromBlockModelMachine(ModBlocks.DEUTERIUM_TOWER);
         blockItemFromBlockModelMachine(ModBlocks.CHEMICAL_FACTORY);
-        blockItemFromBlockModelMachine(ModBlocks.STEAM_TURBINE);
+        withGeneratedBlockParent("steam_turbine", "block/machines/steam_turbine");
         blockItemFromBlockModelMachine(ModBlocks.LIQUEFACTOR);
         blockItemFromBlockModelMachine(ModBlocks.CORE_EMITTER);
         blockItemFromBlockModelMachine(ModBlocks.CORE_INJECTOR);
@@ -943,6 +1002,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModel(ModBlocks.B29);
         blockItemFromBlockModel(ModBlocks.SOYUZ_LAUNCHER);
         blockItemFromBlockModel(ModBlocks.DECO_SOYUZ_ROCKET);
+        // Колючая проволока: item-модели ссылаются на ручные составные OBJ-модели блоков
         blockItemFromBlockModel(ModBlocks.BARBED_WIRE);
         blockItemFromBlockModel(ModBlocks.BARBED_WIRE_FIRE);
         blockItemFromBlockModel(ModBlocks.BARBED_WIRE_POISON);
@@ -994,7 +1054,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModel(ModBlocks.SMOKE_BOMB);
         blockItemFromBlockModel(ModBlocks.STEEL_POLE);
         blockItemFromBlockModel(ModBlocks.SULFUR_ORE);
-        itemModelFromBlockResourcePath("switch", "block/switch_on");
+        withGeneratedBlockParent("switch", "block/switch_on");
         blockItemFromBlockModel(ModBlocks.TAPE_RECORDER);
         blockItemFromBlockModel(ModBlocks.THORIUM_ORE);
         blockItemFromBlockModel(ModBlocks.THORIUM_ORE_DEEPSLATE);
@@ -1304,6 +1364,8 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.BOY_SHIELDING,
                 ModItems.BOY_TARGET,
                 ModItems.BROKEN_ITEM,
+                ModItems.EARLY_EXPLOSIVE_LENSES,
+                ModItems.EXPLOSIVE_LENSES,
                 ModItems.BUCKET_ACID,
                 ModItems.BUCKET_MUD,
                 ModItems.BUCKET_SCHRABIDIC_ACID,
@@ -2093,6 +2155,13 @@ public class ModItemModelProvider extends ItemModelProvider {
     }
 
     /** Модель предмета с parent = hbm_m:&lt;путь&gt; (без отдельного ModBlocks, если id не совпадает с блоком). */
+
+    /** Item-модель с родителем, который генерируется ModBlockStateProvider в этом же прогоне
+     *  (EFH ещё не видит файл — используем UncheckedModelFile). */
+    private ItemModelBuilder withGeneratedBlockParent(String name, String blockModelPath) {
+        return getBuilder(name).parent(new ModelFile.UncheckedModelFile(modLoc(blockModelPath)));
+    }
+
     private void itemModelFromBlockResourcePath(String itemModelName, String pathUnderModWithoutNamespace) {
         withExistingParent(itemModelName, modLoc(pathUnderModWithoutNamespace));
     }

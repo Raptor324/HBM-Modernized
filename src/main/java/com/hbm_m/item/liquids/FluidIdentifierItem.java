@@ -1,5 +1,6 @@
 package com.hbm_m.item.liquids;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import dev.architectury.fluid.FluidStack;
@@ -14,6 +15,7 @@ import com.hbm_m.interfaces.IItemControlReceiver;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
 import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.inventory.fluid.ModFluids;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -39,7 +41,7 @@ import net.minecraft.world.level.material.Fluids;
  * RMB: swap primary and secondary. Shift+RMB in air: open GUI to select fluids.
  * Shift+RMB on a fluid duct: paint that fluid onto the entire connected duct network (same block type).
  */
-public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, IItemControlReceiver {
+public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, IItemControlReceiver, ITooltipProvider {
 
     private static final String NBT_FLUID1 = "fluid1";
     private static final String NBT_FLUID2 = "fluid2";
@@ -159,8 +161,7 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("item.hbm_m.fluid_identifier.info").withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal("   ").append(getFluidDisplayName(getType(stack, true)).copy().withStyle(ChatFormatting.AQUA)));
         
@@ -225,7 +226,7 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
     }
 
     public static String getTypeName(ItemStack stack, boolean primary) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = PlatformHooks.getItemTag(stack);
         if (tag == null) return "none";
         String key = primary ? NBT_FLUID1 : NBT_FLUID2;
         return tag.getString(key);
@@ -236,8 +237,7 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
     }
 
     public static void setType(ItemStack stack, String fluidName, boolean primary) {
-        stack.getOrCreateTag().putString(primary ? NBT_FLUID1 : NBT_FLUID2,
-            fluidName != null ? fluidName : "none");
+        PlatformHooks.putString(stack, primary ? NBT_FLUID1 : NBT_FLUID2, fluidName != null ? fluidName : "none");
     }
 
     /** Returns tint color for primary fluid (for ItemColor). */

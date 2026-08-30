@@ -49,7 +49,7 @@ public class BarbedWireFireBlock extends Block {
                     living.hurt(level.damageSources().cactus(), 2.0F);
 
                     // Поджигаем на 4 секунды (80 тиков)
-                    living.setSecondsOnFire(4);
+                    com.hbm_m.platform.PlatformHooks.setSecondsOnFire(living, 4);
                 }
             }
         }

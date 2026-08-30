@@ -99,7 +99,7 @@ public class RBMKSteamInletBlockEntity extends BlockEntity
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return waterTank.getCapability().cast();
+            return waterTank.getForgeFluidCapability().cast();
         }
         return super.getCapability(cap, side);
     }

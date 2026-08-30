@@ -231,8 +231,8 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
             net.minecraftforge.common.capabilities.Capability<T> cap,
             @org.jetbrains.annotations.Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            if (side == Direction.DOWN) return waterTank.getCapability().cast();
-            if (side != null)           return steamTank.getCapability().cast();
+            if (side == Direction.DOWN) return waterTank.getForgeFluidCapability().cast();
+            if (side != null)           return steamTank.getForgeFluidCapability().cast();
             return combinedHandler.cast();
         }
         return super.getCapability(cap, side);
@@ -245,11 +245,11 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
     private class FeedAndSteamHandler implements net.minecraftforge.fluids.capability.IFluidHandler {
 
         private net.minecraftforge.fluids.capability.IFluidHandler feed() {
-            return waterTank.getCapability().orElseThrow(IllegalStateException::new);
+            return waterTank.getForgeFluidCapability().orElseThrow(IllegalStateException::new);
         }
 
         private net.minecraftforge.fluids.capability.IFluidHandler steam() {
-            return steamTank.getCapability().orElseThrow(IllegalStateException::new);
+            return steamTank.getForgeFluidCapability().orElseThrow(IllegalStateException::new);
         }
 
         @Override public int getTanks() { return 2; }
@@ -349,6 +349,7 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
         return d;
     }
 
+    
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -358,8 +359,8 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         waterTank.readFromNBT(tag, "water");
         steamTank.readFromNBT(tag, "steam");
         ventDelay = tag.getInt("ventDelay");

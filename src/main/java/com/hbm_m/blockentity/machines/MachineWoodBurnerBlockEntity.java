@@ -7,6 +7,7 @@ import com.hbm_m.inventory.menu.MachineWoodBurnerMenu;
 import com.hbm_m.item.ModItems;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Containers;
@@ -158,16 +159,16 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity {
 
     // --- NBT ---
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag); // Сохраняет inventory и energy из базового класса
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries); // Сохраняет inventory и energy из базового класса
         tag.putInt("burnTime", burnTime);
         tag.putInt("maxBurnTime", maxBurnTime);
         tag.putBoolean("enabled", enabled);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag); // Загружает inventory и energy из базового класса
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries); // Загружает inventory и energy из базового класса
         burnTime = tag.getInt("burnTime");
         maxBurnTime = tag.getInt("maxBurnTime");
         enabled = tag.getBoolean("enabled");
@@ -234,4 +235,22 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity {
         }
         return false;
     }
-}
+
+    // Энергопорты мультиблока: позиции фантомов структуры, ранее регистрировавшиеся блоком.
+    // Ядро (worldPosition) подписывается в BaseMachineBlockEntity.ensureNetworkInitialized().
+    @Override
+    protected BlockPos[] getExtraEnergyPorts() {
+        if (level == null || level.isClientSide) return new BlockPos[0];
+        if (!(getBlockState().getBlock() instanceof com.hbm_m.block.machines.MachineWoodBurnerBlock block)) return new BlockPos[0];
+
+        var helper = block.getStructureHelper();
+        Direction facing = getBlockState().getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
+
+        java.util.List<BlockPos> ports = new java.util.ArrayList<>();
+        for (BlockPos localPos : helper.getStructureMap().keySet()) {
+            if (block.getPartRole(localPos) == com.hbm_m.multiblock.PartRole.ENERGY_CONNECTOR) {
+                ports.add(helper.getRotatedPos(worldPosition, localPos, facing));
+            }
+        }
+        return ports.toArray(new BlockPos[0]);
+    }}

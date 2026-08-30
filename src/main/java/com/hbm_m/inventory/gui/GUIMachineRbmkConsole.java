@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity;
 import com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity.RBMKColumnData;
@@ -108,7 +109,7 @@ public class GUIMachineRbmkConsole extends AbstractContainerScreen<MachineRbmkCo
 
     @Override
     public void render(GuiGraphics g, int mx, int my, float pt) {
-        this.renderBackground(g);
+        GuiCompat.renderBackground(this, g, mx, my, pt);
         super.render(g, mx, my, pt);
         renderColumnTooltip(g, mx, my);
         renderButtonTooltips(g, mx, my);
@@ -128,6 +129,8 @@ public class GUIMachineRbmkConsole extends AbstractContainerScreen<MachineRbmkCo
             g.blit(TEXTURE, leftPos + 30, topPos + 138, 228, 172, 28, 28);
 
         // Screen type icons (6 mini screens, 3 rows × 2 columns, 40 px apart, 18×18)
+        // тайл может отсутствовать в реплее Flashback
+        if (console != null) {
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 2; col++) {
                 int id = row * 2 + col;
@@ -144,6 +147,7 @@ public class GUIMachineRbmkConsole extends AbstractContainerScreen<MachineRbmkCo
 
         // Flux graph
         renderFluxGraph(g);
+        }
 
         // Level input field
         rodLevelField.render(g, 0, 0, pt);
@@ -291,6 +295,8 @@ public class GUIMachineRbmkConsole extends AbstractContainerScreen<MachineRbmkCo
 
         int idx = ((mx - GRID_X - leftPos) / CELL) + ((my - GRID_Y - topPos) / CELL) * GRID;
         if (idx < 0 || idx >= MachineRbmkConsoleBlockEntity.AREA) return;
+        // тайл может отсутствовать в реплее Flashback
+        if (console == null) return;
         RBMKColumnData col = console.columns[idx];
         if (col == null) return;
 
@@ -332,6 +338,8 @@ public class GUIMachineRbmkConsole extends AbstractContainerScreen<MachineRbmkCo
     public boolean mouseClicked(double mx, double my, int btn) {
         rodLevelField.mouseClicked(mx, my, btn);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (console == null) return super.mouseClicked(mx, my, btn);
         int imx = (int) mx, imy = (int) my;
 
         // Column grid — toggle selection

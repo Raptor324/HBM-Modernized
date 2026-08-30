@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import java.math.BigInteger;
+import com.hbm_m.client.GuiCompat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,6 +63,7 @@ public class GUIMachineAnnihilator extends GuiInfoScreen<MachineAnnihilatorMenu>
         this.titleLabelX = (this.imageWidth - this.font.width(this.title)) / 2;
 
         MachineAnnihilatorBlockEntity be = menu.getBlockEntity();
+        if (be == null) return; // тайл может отсутствовать в реплее Flashback
         poolField = new EditBox(font, leftPos + POOL_FIELD_X, topPos + POOL_FIELD_Y, POOL_FIELD_WIDTH, POOL_FIELD_HEIGHT, Component.empty());
         poolField.setMaxLength(64);
         poolField.setBordered(true);
@@ -96,7 +98,7 @@ public class GUIMachineAnnihilator extends GuiInfoScreen<MachineAnnihilatorMenu>
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, delta);
         super.render(guiGraphics, mouseX, mouseY, delta);
         renderTooltip(guiGraphics, mouseX, mouseY);
         renderCustomTooltips(guiGraphics, mouseX, mouseY);
@@ -110,6 +112,7 @@ public class GUIMachineAnnihilator extends GuiInfoScreen<MachineAnnihilatorMenu>
 
     private void renderCustomTooltips(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         MachineAnnihilatorBlockEntity be = menu.getBlockEntity();
+        if (be == null) return; // тайл может отсутствовать в реплее Flashback
         int x = (width - imageWidth) / 2;
         int y = (height - imageHeight) / 2;
 

@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui.rbmk;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKKeyPadBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.network.RadioTorchControlPacket;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -50,7 +51,7 @@ public class GUIRBMKKeyPad extends Screen {
             commandBoxes[i] = command;
             addRenderableWidget(command);
 
-            Checkbox polling = new Checkbox(cx + 60, y, 55, 16, Component.literal("hold"), be.polling[i]);
+            Checkbox polling = com.hbm_m.client.GuiCompat.checkbox(cx + 60, y, 55, 16, Component.literal("hold"), be.polling[i]);
             pollingBoxes[i] = polling;
             addRenderableWidget(polling);
 
@@ -99,7 +100,7 @@ public class GUIRBMKKeyPad extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(g);
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, mouseX, mouseY, partialTick);
         super.render(g, mouseX, mouseY, partialTick);
         g.drawCenteredString(this.font, this.title, this.width / 2, this.height / 2 - 95, 0xFFFFFF);
     }

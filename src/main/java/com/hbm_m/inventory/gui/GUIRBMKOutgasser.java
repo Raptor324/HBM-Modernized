@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKOutgasserBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.RBMKOutgasserMenu;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -39,6 +40,8 @@ public class GUIRBMKOutgasser extends GuiInfoScreen<RBMKOutgasserMenu> {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         g.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (be == null) return;
 
         int progress = be.duration > 0 ? (int) (be.progress * 45 / be.duration) : 0;
         progress = Math.max(0, Math.min(progress, 45));
@@ -77,7 +80,7 @@ public class GUIRBMKOutgasser extends GuiInfoScreen<RBMKOutgasserMenu> {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(g);
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, mouseX, mouseY, partialTick);
         super.render(g, mouseX, mouseY, partialTick);
 
         drawCustomInfoStat(g, mouseX, mouseY, 66, 58, 45, 6, mouseX, mouseY,

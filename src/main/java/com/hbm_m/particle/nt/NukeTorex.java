@@ -2,6 +2,7 @@ package com.hbm_m.particle.nt;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
@@ -32,7 +33,7 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Toroidal convection mushroom cloud effect
  */
-public class NukeTorex extends ParticleNT {
+public class NukeTorex extends ParticleNT implements FarCapableParticle {
 
     protected int type = 0;
     protected float scale = 1;
@@ -51,6 +52,16 @@ public class NukeTorex extends ParticleNT {
     /** Жёсткий лимит на общее число cloudlets (зависит от качества). */
     private static final int MAX_CLOUDLETS_FANCY = 12_000;
     private static final int MAX_CLOUDLETS_FAST = 6_000;
+
+    /**
+     * Порядок дальние→ближние по кэшированной дистанции (заполняется в cloudletWrapper
+     * одним проходом O(N)). Компаратор static final — раньше лямбда пересчитывала
+     * интерполяцию и аллоцировала Vec3 на каждое из N log N сравнений.
+     */
+    private static final Comparator<Cloudlet> CLOUDLET_DIST = (a, b) -> Double.compare(b.cachedDistSq, a.cachedDistSq);
+    /** Период полной сортировки в кадрах: дым движется медленно, для глаз разницы нет. */
+    private static final int SORT_INTERVAL = 3;
+    private int sortCounter = 0;
 
     //? if fabric && < 1.21.1 {
     /*private static final ResourceLocation CLOUDLET = new ResourceLocation(RefStrings.MODID, "textures/particle/particle_base.png");
@@ -275,6 +286,12 @@ public class NukeTorex extends ParticleNT {
         public Vec3 prevColor;
         public TorexType type;
 
+        // Кэш кадра рендера: интерполированная позиция и квадрат дистанции до камеры.
+        // Заполняются одним проходом O(N) в cloudletWrapper — сортировка и запись
+        // квайдов читают готовые примитивы без вызовов getInterpPos/аллокаций.
+        double cachedDistSq;
+        double interpX, interpY, interpZ;
+
         public Cloudlet(double posX, double posY, double posZ, float angle, int age, int maxAge) {
             this(posX, posY, posZ, angle, age, maxAge, TorexType.STANDARD);
         }
@@ -448,18 +465,28 @@ public class NukeTorex extends ParticleNT {
         }
     }
 
+    @Override
+    public net.minecraft.resources.ResourceLocation hbm$getFarTexture() { return CLOUDLET; }
+
     public enum TorexType { STANDARD, SHOCK, RING, CONDENSATION }
 
     @Override
     public void render(VertexConsumer ignored, Camera camera, float partialTicks, PoseStack levelPoseStack) {
         Vec3 camPos = camera.getPosition();
+        // Fallback-виртуализация ТОЛЬКО когда DH не рендерит (см. ParticleNT):
+        // центр гриба приближается к границе прорисовки, чтобы шляпка не
+        // клипалась ванильным far plane. Размер квайдов сжимается тем же
+        // коэффициентом — иначе угловой размер перестаёт уменьшаться и
+        // «эффект далёкого взрыва» теряется.
+        float vScale = virtualScale(this.x, this.y, this.z, camera);
+        Vec3 centerOffset = virtualizedOffset(this.x, this.y, this.z, camera);
 
         //  Свой PoseStack с ТОЛЬКО трансляцией. Поворот камеры уже в ModelViewMat (шейдер).
         PoseStack localPose = new PoseStack();
-        localPose.translate(this.x - camPos.x, this.y - camPos.y, this.z - camPos.z);
+        localPose.translate(centerOffset.x, centerOffset.y, centerOffset.z);
 
         FogRenderer.setupNoFog();
-        cloudletWrapper(partialTicks, localPose, ignored);
+        cloudletWrapper(partialTicks, localPose, ignored, vScale);
 
         long now = System.currentTimeMillis();
         //  Ядерная вспышка и тряска HUD живут в ModEventHandlerClient (Forge-only оверлей).
@@ -483,24 +510,26 @@ public class NukeTorex extends ParticleNT {
             this.didShake = true;
             CameraShakeHandler.addShake(1.0F, 30);
         }
-        */
-        //?}
+        
+        *///?}
     }
 
     @Override
     public void renderFlashOnly(MultiBufferSource buffer, Camera camera, float partialTicks, PoseStack levelPoseStack) {
         if (this.age >= 101) return;
-        Vec3 camPos = camera.getPosition();
+        // Вспышка — с той же fallback-виртуализацией (со сжатием размера).
+        Vec3 centerOffset = virtualizedOffset(this.x, this.y, this.z, camera);
+        float vScale = virtualScale(this.x, this.y, this.z, camera);
 
         //  Тоже свой PoseStack - только трансляция
         PoseStack localPose = new PoseStack();
-        localPose.translate(this.x - camPos.x, this.y - camPos.y, this.z - camPos.z);
+        localPose.translate(centerOffset.x, centerOffset.y, centerOffset.z);
 
         FogRenderer.setupNoFog();
-        flashWrapper(partialTicks, localPose, buffer);
+        flashWrapper(partialTicks, localPose, buffer, vScale);
     }
 
-    private void flashWrapper(float partialTicks, PoseStack poseStack, MultiBufferSource buffer) {
+    private void flashWrapper(float partialTicks, PoseStack poseStack, MultiBufferSource buffer, float vScale) {
         double age = Math.min(this.age + partialTicks, 100);
         float alpha = (float) ((100 - age) / 100F);
         Random rand = new Random(this.hashCode());
@@ -508,37 +537,81 @@ public class NukeTorex extends ParticleNT {
 
         VertexConsumer consumer = buffer.getBuffer(ClientRenderHandler.CustomRenderTypes.NUKE_FLASH.apply(FLASH));
         for (int i = 0; i < 3; i++) {
-            float lx = (float) (rand.nextGaussian() * 0.5 * this.rollerSize);
-            float ly = (float) (rand.nextGaussian() * 0.5 * this.rollerSize);
-            float lz = (float) (rand.nextGaussian() * 0.5 * this.rollerSize);
-            renderFlash(matrix, consumer, lx, (float) (ly + this.coreHeight), lz, (float) (25 * this.rollerSize), alpha);
+            float lx = (float) (rand.nextGaussian() * 0.5 * this.rollerSize * vScale);
+            float ly = (float) (rand.nextGaussian() * 0.5 * this.rollerSize * vScale);
+            float lz = (float) (rand.nextGaussian() * 0.5 * this.rollerSize * vScale);
+            renderFlash(matrix, consumer, lx, (float) (ly + this.coreHeight * vScale), lz, (float) (25 * this.rollerSize * vScale), alpha);
         }
     }
 
-    private void cloudletWrapper(float partialTicks, PoseStack poseStack, VertexConsumer consumer) {
+    private void cloudletWrapper(float partialTicks, PoseStack poseStack, VertexConsumer consumer, float vScale) {
         Matrix4f matrix = poseStack.last().pose();
-        for (Cloudlet cloudlet : cloudlets) {
-            Vec3 vec = cloudlet.getInterpPos(partialTicks);
-            float lx = (float) (vec.x - this.x);
-            float ly = (float) (vec.y - this.y);
-            float lz = (float) (vec.z - this.z);
-            renderCloudlet(matrix, consumer, lx, ly, lz, cloudlet, partialTicks);
+        // Порядок отрисовки cloudlets: от дальних к ближним относительно
+        // камеры (painter's algorithm). sortOnUpload у рендертайпа выключен
+        // (нестабилен в модпаке — «Sorting state uninitialized»), порядок
+        // квайдов задаём сами — иначе ножка/шляпка/роллеры блендятся в
+        // порядке спавна, а не по глубине.
+        Camera cam = Minecraft.getInstance().gameRenderer.getMainCamera();
+        double cx = cam.getPosition().x;
+        double cy = cam.getPosition().y;
+        double cz = cam.getPosition().z;
+        float sc = (float) getScale();
+
+        // Проход O(N): интерполяция + дистанция один раз на cloudlet, без аллокаций
+        for (int i = 0; i < cloudlets.size(); i++) {
+            Cloudlet c = cloudlets.get(i);
+            double ix = c.prevPosX + (c.posX - c.prevPosX) * partialTicks;
+            double iy = c.prevPosY + (c.posY - c.prevPosY) * partialTicks;
+            double iz = c.prevPosZ + (c.posZ - c.prevPosZ) * partialTicks;
+            if (c.type != TorexType.SHOCK) {
+                ix = (ix - x) * sc + x;
+                iy = (iy - y) * sc + y;
+                iz = (iz - z) * sc + z;
+            }
+            double dx = ix - cx;
+            double dy = iy - cy;
+            double dz = iz - cz;
+            c.interpX = ix;
+            c.interpY = iy;
+            c.interpZ = iz;
+            c.cachedDistSq = dx * dx + dy * dy + dz * dz;
+        }
+        // Полная сортировка раз в SORT_INTERVAL кадров: TimSort на почти
+        // отсортированном списке почти линеен, порядок трёхкадровой давности
+        // для дыма визуально не отличим.
+        if (sortCounter++ % SORT_INTERVAL == 0) {
+            this.cloudlets.sort(CLOUDLET_DIST);
+        }
+
+        // Базис камеры и sodium-флаг — один раз на батч, а не на каждый cloudlet
+        Vector3f camLeft = new Vector3f(cam.getLeftVector());
+        Vector3f camUp = new Vector3f(cam.getUpVector());
+        boolean sodium = ImmediateVertexWriter.isSodiumBuffer(consumer);
+        for (int i = 0; i < cloudlets.size(); i++) {
+            Cloudlet cloudlet = cloudlets.get(i);
+            float lx = (float) ((cloudlet.interpX - this.x) * vScale);
+            float ly = (float) ((cloudlet.interpY - this.y) * vScale);
+            float lz = (float) ((cloudlet.interpZ - this.z) * vScale);
+            renderCloudlet(matrix, consumer, sodium, lx, ly, lz, cloudlet, partialTicks, camLeft, camUp, vScale);
         }
     }
 
-    private void renderCloudlet(Matrix4f matrix, VertexConsumer consumer, float posX, float posY, float posZ, Cloudlet cloud, float partialTicks) {
+    private void renderCloudlet(Matrix4f matrix, VertexConsumer consumer, boolean sodium, float posX, float posY, float posZ, Cloudlet cloud, float partialTicks, Vector3f camLeft, Vector3f camUp, float vScale) {
+        // Окклюзия — попиксельно в шейдере nuke_cloud (DhOcclusionGpu).
         float alpha = cloud.getAlpha();
-        float scale = cloud.getScale();
-        Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
-        Vector3f l = new Vector3f(camera.getLeftVector()).mul(scale);
-        Vector3f u = new Vector3f(camera.getUpVector()).mul(scale);
+        float scale = cloud.getScale() * vScale;
+        SCRATCH_LEFT.set(camLeft).mul(scale);
+        SCRATCH_UP.set(camUp).mul(scale);
         float brightness = cloud.type == TorexType.CONDENSATION ? 0.9F : 0.75F * cloud.colorMod;
         Vec3 interpColor = cloud.getInterpColor(partialTicks);
         float r = (float) interpColor.x * brightness;
         float g = (float) interpColor.y * brightness;
         float b = (float) interpColor.z * brightness;
-        ImmediateVertexWriter.billboardQuad(consumer, matrix, posX, posY, posZ, l, u, r, g, b, alpha, 0, 0, 1, 1);
+        ImmediateVertexWriter.billboardQuad(consumer, sodium, matrix, posX, posY, posZ, SCRATCH_LEFT, SCRATCH_UP, r, g, b, alpha, 0, 0, 1, 1);
     }
+
+    private final Vector3f SCRATCH_LEFT = new Vector3f();
+    private final Vector3f SCRATCH_UP = new Vector3f();
 
     private void renderFlash(Matrix4f matrix, VertexConsumer consumer,
             float posX, float posY, float posZ,
@@ -553,6 +626,9 @@ public class NukeTorex extends ParticleNT {
     @Override
     public RenderType getRenderType() {
         // Основной рендер идёт через NUKE_CLOUDS, но возвращаем тип для совместимости.
-        return ClientRenderHandler.CustomRenderTypes.NUKE_CLOUDS.apply(CLOUDLET);
+        return ClientRenderHandler.CustomRenderTypes.nukeClouds(CLOUDLET);
     }
 }
+
+
+

@@ -24,7 +24,7 @@ import net.minecraft.world.phys.AABB;
  * {@code falloff}-Option entfaellt (immer an); {@code suck} laesst sich stattdessen per Schleich-
  * Rechtsklick umschalten.
  */
-public class MachineFanBlockEntity extends BlockEntity {
+public class MachineFanBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity {
 
     private static final int RANGE = 10;
     private static final double PUSH = 0.1D;
@@ -75,14 +75,12 @@ public class MachineFanBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         tag.putBoolean("suck", suck);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         suck = tag.getBoolean("suck");
     }
 }

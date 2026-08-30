@@ -30,11 +30,28 @@ public class ModWorldGen {
             DeferredRegister.create(RefStrings.MODID, Registries.STRUCTURE_PROCESSOR);
 
     public static final ResourceKey<ConfiguredFeature<?, ?>> URANIUM_ORE_CONFIGURED_KEY =
-            ResourceKey.create(Registries.CONFIGURED_FEATURE, RefStrings.resourceLocation("ore_uranium"));
+            ResourceKey.create(Registries.CONFIGURED_FEATURE, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "ore_uranium"));
 
     public static final RegistrySupplier<StructureProcessorType<StructureFoundationProcessor>>
             FOUNDATION_PROCESSOR = PROCESSORS.register("foundation_processor",
             () -> () -> StructureFoundationProcessor.CODEC);
+
+    /**
+     * Процессор, назначающий лут-таблицы сундукам и ящикам HBM при генерации
+     * структур. Подключён в {@code worldgen/processor_list/foundation_processor.json},
+     * на который ссылается подавляющее большинство структурных template_pool.
+     */
+    public static final RegistrySupplier<StructureProcessorType<StructureLootProcessor>>
+            LOOT_PROCESSOR = PROCESSORS.register("loot_processor",
+            () -> () -> StructureLootProcessor.CODEC);
+
+    /**
+     * Процессор, фиксирующий соединения решёток/паней после спавна структур
+     * (см. {@link StructureConnectionFixProcessor}).
+     */
+    public static final RegistrySupplier<StructureProcessorType<StructureConnectionFixProcessor>>
+            CONNECTION_FIX_PROCESSOR = PROCESSORS.register("connection_fix_processor",
+            () -> () -> StructureConnectionFixProcessor.CODEC);
 
     public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> OILCLASTER_SURROUNDED =
             FEATURES.register("oilclaster_surrounded", () -> new OilClasterSurroundedFeature(NoneFeatureConfiguration.CODEC));
@@ -45,20 +62,32 @@ public class ModWorldGen {
     public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> BEDROCK_ORE =
             FEATURES.register("ore_bedrock_mineral", () -> new BedrockOreFeature(NoneFeatureConfiguration.CODEC));
 
+    /** Порт незерской бедрок-руды (BedrockOre.weightedOresNether). */
+    public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> NETHER_BEDROCK_ORE =
+            FEATURES.register("nether_bedrock_ore", () -> new NetherBedrockOreFeature(NoneFeatureConfiguration.CODEC));
+
+    /** Порт MapGenBubble (каменные нефтяные месторождения). */
+    public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> OIL_DEPOSIT =
+            FEATURES.register("oil_deposit", () -> OilDepositFeature.stone(NoneFeatureConfiguration.CODEC));
+
+    /** Порт песчаных нефтяных месторождения (sandOilBubble). */
+    public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> SAND_OIL_DEPOSIT =
+            FEATURES.register("sand_oil_deposit", () -> OilDepositFeature.sand(NoneFeatureConfiguration.CODEC));
+
     public static final ResourceKey<ConfiguredFeature<?, ?>> BEDROCK_ORE_CONFIGURED_KEY =
-            ResourceKey.create(Registries.CONFIGURED_FEATURE, RefStrings.resourceLocation("ore_bedrock_mineral"));
+            ResourceKey.create(Registries.CONFIGURED_FEATURE, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "ore_bedrock_mineral"));
 
     public static final ResourceKey<PlacedFeature> BEDROCK_ORE_PLACED_KEY =
-            ResourceKey.create(Registries.PLACED_FEATURE, RefStrings.resourceLocation("ore_bedrock_mineral_placed"));
+            ResourceKey.create(Registries.PLACED_FEATURE, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "ore_bedrock_mineral_placed"));
 
     public static final ResourceKey<ConfiguredFeature<?, ?>> BEDROCK_OIL_ORE_CONFIGURED_KEY =
-            ResourceKey.create(Registries.CONFIGURED_FEATURE, RefStrings.resourceLocation("ore_bedrock_oil"));
+            ResourceKey.create(Registries.CONFIGURED_FEATURE, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "ore_bedrock_oil"));
 
     public static final ResourceKey<PlacedFeature> BEDROCK_OIL_ORE_PLACED_KEY =
-            ResourceKey.create(Registries.PLACED_FEATURE, RefStrings.resourceLocation("ore_bedrock_oil_placed"));
+            ResourceKey.create(Registries.PLACED_FEATURE, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "ore_bedrock_oil_placed"));
 
     public static final ResourceKey<PlacedFeature> URANIUM_ORE_PLACED_KEY =
-            ResourceKey.create(Registries.PLACED_FEATURE, RefStrings.resourceLocation("ore_uranium_placed"));
+            ResourceKey.create(Registries.PLACED_FEATURE, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "ore_uranium_placed"));
 
     public static final ResourceKey<PlacedFeature> STRAWBERRY_BUSH_PLACED =
             ResourceKey.create(Registries.PLACED_FEATURE,

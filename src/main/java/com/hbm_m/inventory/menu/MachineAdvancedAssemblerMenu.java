@@ -9,6 +9,7 @@ import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.util.LongDataPacker; // <-- Убедись, что этот импорт есть
+import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -51,18 +52,19 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
         this.data = pData;
         this.player = pPlayerInventory.player; // Сохраняем игрока
 
-        // Добавляем слоты машины (без Forge-only SlotItemHandler)
-        var handler = this.blockEntity.getInventory();
-        var container = new ModItemStackHandlerContainer(handler, this.blockEntity::setChanged);
+        // Добавляем слоты машины (без Forge-only SlotItemHandler).
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
+        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
+        var handler = this.blockEntity != null ? this.blockEntity.getInventory() : new DummyItemStackHandler(17);
+        var container = new ModItemStackHandlerContainer(handler, this.blockEntity != null ? this.blockEntity::setChanged : null);
 
         this.addSlot(new Slot(container, 0, 152, 81) { // Energy
             @Override public boolean mayPlace(ItemStack stack) {
                 if (ItemEnergyAccess.getHbmProvider(stack).isPresent() || ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
-                //? if fabric {
-                /*return EnergyStorage.ITEM.find(stack, null) != null;
-                *///?} else {
+                //? if neoforge {
+                /*if (stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null) return true;
+                *///?}
                 return false;
-                //?}
             }
         });
         this.addSlot(new Slot(container, 1, 35, 126)); // Blueprint
@@ -90,6 +92,11 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
         if (be instanceof MachineAdvancedAssemblerBlockEntity) {
             return (MachineAdvancedAssemblerBlockEntity) be;
         }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (playerInventory.player.level().isClientSide) {
+            return null;
+        }
         throw new IllegalStateException("BlockEntity не найден или имеет неверный тип!");
     }
 
@@ -101,12 +108,13 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
 
     @Override
     public long getEnergyStatic() {
-        return blockEntity.getEnergyStored();
+        // тайл может отсутствовать на клиенте (реплей Flashback)
+        return blockEntity != null ? blockEntity.getEnergyStored() : 0L;
     }
 
     @Override
     public long getMaxEnergyStatic() {
-        return blockEntity.getMaxEnergyStored();
+        return blockEntity != null ? blockEntity.getMaxEnergyStored() : 0L;
     }
 
     // --- Логика для GUI (с правильными индексами) ---
@@ -172,6 +180,9 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
 
     @Override
     public boolean stillValid(@NotNull Player pPlayer) {
+        if (blockEntity == null) {
+            return false; // тайл может отсутствовать на клиенте (реплей Flashback)
+        }
         return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()),
                 pPlayer, ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get());
     }

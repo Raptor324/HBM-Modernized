@@ -27,6 +27,7 @@ import java.util.function.Function;
  *   sendToServer(packet)               — клиент → сервер
  */
 
+@SuppressWarnings("removal")
 public class ModPacketHandler {
 
     private static boolean REGISTERED = false;
@@ -39,6 +40,7 @@ public class ModPacketHandler {
     // S2C
     public static final ResourceLocation GEIGER_SOUND          = id("geiger_sound");
     public static final ResourceLocation RADIATION_DATA        = id("radiation_data");
+    public static final ResourceLocation INFO_TOAST           = id("info_toast");
     public static final ResourceLocation CHUNK_RAD_DEBUG_BATCH = id("chunk_rad_debug_batch");
     public static final ResourceLocation HIGHLIGHT_BLOCKS      = id("highlight_blocks");
     public static final ResourceLocation SYNC_ENERGY           = id("sync_energy");
@@ -46,6 +48,7 @@ public class ModPacketHandler {
     public static final ResourceLocation PWR_PRINTER_SCAN      = id("pwr_printer_scan");
     public static final ResourceLocation VANILLA_EXPLOSION     = id("vanilla_explosion");
     public static final ResourceLocation DOOR_CONTRAPTION_STATE = id("door_contrap_state");
+    public static final ResourceLocation CONFIG_SYNC           = id("config_sync");
 
     // C2S
     public static final ResourceLocation GIVE_TEMPLATE         = id("give_template");
@@ -81,6 +84,7 @@ public class ModPacketHandler {
     public static final ResourceLocation MISSILE_TRACK_STOP   = id("missile_track_stop");
     public static final ResourceLocation TURRET_CONTROL        = id("turret_control");
     public static final ResourceLocation MINING_DRILL_TOGGLE   = id("mining_drill_toggle");
+    public static final ResourceLocation CONFIG_EDIT           = id("config_edit");
     public static final ResourceLocation MICROWAVE_SPEED       = id("microwave_speed");
     public static final ResourceLocation ANNIHILATOR_POOL      = id("annihilator_pool");
     public static final ResourceLocation FUNNEL_MODE            = id("funnel_mode");
@@ -101,6 +105,10 @@ public class ModPacketHandler {
         registerS2C(GEIGER_SOUND,
                 GeigerSoundPacket::decode,
                 GeigerSoundPacket::handle);
+
+        registerS2C(INFO_TOAST,
+                InfoToastPacket::decode,
+                InfoToastPacket::handle);
 
         registerS2C(RADIATION_DATA,
                 RadiationDataPacket::decode,
@@ -153,6 +161,10 @@ public class ModPacketHandler {
         registerS2C(MISSILE_TRACK_STOP,
                 com.hbm_m.network.missile.S2CMissileTrackStopPacket::decode,
                 com.hbm_m.network.missile.S2CMissileTrackStopPacket::handle);
+
+        registerS2C(CONFIG_SYNC,
+                ConfigSyncS2CPacket::decode,
+                ConfigSyncS2CPacket::handle);
 
     }
 
@@ -274,6 +286,10 @@ public class ModPacketHandler {
                 MiningDrillToggleC2SPacket::decode,
                 MiningDrillToggleC2SPacket::handle);
 
+        registerC2S(CONFIG_EDIT,
+                ConfigEditC2SPacket::decode,
+                ConfigEditC2SPacket::handle);
+
         registerC2S(MICROWAVE_SPEED,
                 MicrowaveSpeedC2SPacket::decode,
                 MicrowaveSpeedC2SPacket::handle);
@@ -312,13 +328,29 @@ public class ModPacketHandler {
             ResourceLocation id,
             Function<FriendlyByteBuf, T> decoder,
             java.util.function.BiConsumer<T, PacketContext> handler) {
+        //? if >= 1.21.1 {
+        /*// NeoForge 1.21+: пейлоад участвует в negotiation, поэтому должен быть
+        // зарегистрирован на ОБОИХ сторонах. На клиенте — с приёмником, на выделенном
+        // сервере — только объявление типа (иначе checkPacket уронит отправку S2C).
         if (dev.architectury.platform.Platform.getEnvironment() == Env.CLIENT) {
             NetworkManager.registerReceiver(
                     NetworkManager.Side.S2C,
                     id,
                     (buf, context) -> handler.accept(decoder.apply(buf), context)
-            ); 
+            );
+        } else {
+            NetworkManager.registerS2CPayloadType(id);
         }
+        *///?}
+        //? if < 1.21.1 {
+        if (dev.architectury.platform.Platform.getEnvironment() == Env.CLIENT) {
+            NetworkManager.registerReceiver(
+                    NetworkManager.Side.S2C,
+                    id,
+                    (buf, context) -> handler.accept(decoder.apply(buf), context)
+            );
+        }
+        //?}
 
     }
 
@@ -357,8 +389,14 @@ public class ModPacketHandler {
             }
             return;
         }
+        //? if < 1.21.1 {
         FriendlyByteBuf buf = new FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
         packet.write(buf);
+        //?} else {
+        /*net.minecraft.network.RegistryFriendlyByteBuf buf = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), player.server.registryAccess());
+        packet.write(buf);
+        *///?}
+        
         if (NET_DEBUG_PACKETS) {
             com.hbm_m.main.MainRegistry.LOGGER.info(
                     "[NET-DBG] S2C -> {} id={} bytes={}",
@@ -367,7 +405,23 @@ public class ModPacketHandler {
                     buf.readableBytes()
             );
         }
-        NetworkManager.sendToPlayer(player, id, buf);
+        // Защита S2C-отправки для «неполноценных» соединений (напр. Flashback ReplayServer):
+        // ReplayServer создаёт игрока через placeNewPlayer без полноценного config-handshake,
+        // поэтому NeoForge NetworkRegistry.checkPacket бросает UnsupportedOperationException
+        // для кастомных пэйлоадов, не прошедших negotiation (config_sync на join,
+        // chunk_rad_debug_batch на тике и т.д.). В обычной игре исключение никогда не срабатывает.
+        try {
+            NetworkManager.sendToPlayer(player, id, buf);
+        } catch (UnsupportedOperationException e) {
+            if (NET_DEBUG_PACKETS) {
+                com.hbm_m.main.MainRegistry.LOGGER.info(
+                        "[NET-DBG] S2C dropped for {} id={}: {}",
+                        player.getGameProfile().getName(),
+                        id,
+                        e.getMessage()
+                );
+            }
+        }
     }
 
     /**
@@ -401,13 +455,32 @@ public class ModPacketHandler {
         sendToPlayersNear(level, new Vec3(x, y, z), range, id, packet);
     }
 
+	//? if >= 1.21.1 {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    private static net.minecraft.core.RegistryAccess getClientRegistryAccess() {
+        if (net.minecraft.client.Minecraft.getInstance().level != null) {
+            return net.minecraft.client.Minecraft.getInstance().level.registryAccess();
+        }
+        if (net.minecraft.client.Minecraft.getInstance().getConnection() != null) {
+            return net.minecraft.client.Minecraft.getInstance().getConnection().registryAccess();
+        }
+        return net.minecraft.core.RegistryAccess.EMPTY;
+    }
+    *///?}
+
     /**
      * Отправить пакет на сервер (C2S).
      * Вызывается с клиентской стороны.
      */
     public static void sendToServer(ResourceLocation id, C2SPacket packet) {
+        //? if < 1.21.1 {
         FriendlyByteBuf buf = new FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
         packet.write(buf);
+        //?} else {
+        /*net.minecraft.network.RegistryFriendlyByteBuf buf = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), getClientRegistryAccess());
+        packet.write(buf);
+        *///?}
+        
         if (NET_DEBUG_PACKETS) {
             com.hbm_m.main.MainRegistry.LOGGER.info(
                     "[NET-DBG] C2S id={} bytes={}",

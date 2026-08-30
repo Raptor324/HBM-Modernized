@@ -34,8 +34,10 @@ public class HevBatteryBlock extends Block {
         return SHAPE;
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+
         if (level.isClientSide()) return InteractionResult.SUCCESS;
 
         boolean charged = false;
@@ -52,5 +54,28 @@ public class HevBatteryBlock extends Block {
         }
 
         return InteractionResult.CONSUME;
-    }
+        }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+
+        if (level.isClientSide()) return InteractionResult.SUCCESS;
+
+        boolean charged = false;
+        for (ItemStack armorStack : player.getInventory().armor) {
+            if (armorStack.getItem() instanceof ModArmorFSBPowered fsb) {
+                fsb.chargeBattery(armorStack, CHARGE_AMOUNT);
+                charged = true;
+            }
+        }
+
+        if (charged) {
+            level.playSound(null, pos, SoundEvents.PLAYER_LEVELUP, SoundSource.BLOCKS, 1.0F, 1.0F);
+            level.removeBlock(pos, false);
+        }
+
+        return InteractionResult.CONSUME;
+        }
+    *///?}
+
 }

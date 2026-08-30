@@ -1,0 +1,28 @@
+{
+  "_comment": "POOL_OFFICE_TRASH + POOL_FILING_CABINET — офисный хлам и картотеки (порт ItemPoolsComponent из 1.7.10)",
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": { "min": 4, "max": 7 },
+      "entries": [
+        { "type": "item", "name": "minecraft:paper", "weight": 12, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 12 } } ] },
+        { "type": "item", "name": "minecraft:book", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:twinkie", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:coffee", "weight": 4 },
+        { "type": "item", "name": "hbm_m:flame_politics", "weight": 2 },
+        { "type": "item", "name": "hbm_m:ring_pull", "weight": 4 },
+        { "type": "item", "name": "hbm_m:can_empty", "weight": 2 },
+        { "type": "item", "name": "hbm_m:can_creature", "weight": 2, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:can_smart", "weight": 2, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:can_mrsugar", "weight": 2, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:cap_nuka", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 16 } } ] },
+        { "type": "item", "name": "hbm_m:cigarette", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 16 } } ] },
+        { "type": "item", "name": "hbm_m:dust_tiny", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:tape_recorder", "weight": 2 },
+        { "type": "item", "name": "hbm_m:blueprint_folder", "weight": 2 },
+        { "type": "item", "name": "hbm_m:coin_token", "weight": 5 },
+        { "type": "item", "name": "hbm_m:screwdriver", "weight": 2 }
+      ]
+    }
+  ]
+}

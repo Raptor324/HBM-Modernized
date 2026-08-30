@@ -21,10 +21,12 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+//? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+//?}
 
 /**
  * BlockEntity for the (large) Cooling Tower multiblock.
@@ -57,10 +59,6 @@ public class MachineCoolingTowerBlockEntity extends BaseMachineBlockEntity imple
 
     private boolean isCooling = false;
     private int particleTimer = 0;
-
-    //? if forge {
-    private LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
-    //?}
 
     public MachineCoolingTowerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.COOLING_TOWER_BE.get(), pos, state, 0, 0L, 0L);
@@ -160,8 +158,8 @@ public class MachineCoolingTowerBlockEntity extends BaseMachineBlockEntity imple
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].writeToNBT(tag, "tank_" + i);
         }
@@ -169,8 +167,8 @@ public class MachineCoolingTowerBlockEntity extends BaseMachineBlockEntity imple
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].readFromNBT(tag, "tank_" + i);
         }
@@ -180,19 +178,7 @@ public class MachineCoolingTowerBlockEntity extends BaseMachineBlockEntity imple
     //? if forge {
     @Override
     protected void setupFluidCapability() {
-        fluidHandler = LazyOptional.of(() -> new CoolingTowerFluidHandler(this));
-    }
-
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) return fluidHandler.cast();
-        return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        fluidHandler.invalidate();
+        setFluidHandler(new CoolingTowerFluidHandler(this));
     }
     //?}
 

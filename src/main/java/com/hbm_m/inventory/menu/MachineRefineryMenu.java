@@ -3,6 +3,7 @@ package com.hbm_m.inventory.menu;
 import com.hbm_m.blockentity.machines.MachineRefineryBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -29,7 +30,11 @@ public class MachineRefineryMenu extends AbstractContainerMenu {
         super(ModMenuTypes.REFINERY_MENU.get(), id);
         this.blockEntity = blockEntity;
 
-        var machineContainer = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
+        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
+        var machineContainer = new ModItemStackHandlerContainer(
+                blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOT_COUNT),
+                blockEntity != null ? blockEntity::setChanged : null);
 
         // Battery
         this.addSlot(new Slot(machineContainer, 0, 186, 72));
@@ -73,6 +78,11 @@ public class MachineRefineryMenu extends AbstractContainerMenu {
         BlockEntity blockEntity = inventory.player.level().getBlockEntity(pos);
         if (blockEntity instanceof MachineRefineryBlockEntity refineryBlockEntity) {
             return refineryBlockEntity;
+        }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inventory.player.level().isClientSide) {
+            return null;
         }
         throw new IllegalStateException("No MachineRefineryBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":refinery_menu");
     }

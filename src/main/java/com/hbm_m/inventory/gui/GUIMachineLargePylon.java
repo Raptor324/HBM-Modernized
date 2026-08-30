@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.inventory.menu.MachineLargePylonMenu;
 import com.hbm_m.lib.RefStrings;
@@ -33,7 +34,7 @@ public class GUIMachineLargePylon extends GuiInfoScreen<MachineLargePylonMenu> {
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
         long maxEnergy = menu.getMaxEnergyLong();
-        if (maxEnergy > 0) {
+        if (maxEnergy > 0 && menu.getBlockEntity() != null) { // тайл может отсутствовать в реплее Flashback
             int i = (int) menu.getBlockEntity().getPowerScaled(52);
             guiGraphics.blit(TEXTURE, this.leftPos + 152, this.topPos + 70 - i, 176, 64 - i, 16, i);
         }
@@ -53,7 +54,7 @@ public class GUIMachineLargePylon extends GuiInfoScreen<MachineLargePylonMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

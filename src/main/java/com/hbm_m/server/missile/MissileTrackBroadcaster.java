@@ -43,8 +43,13 @@ public final class MissileTrackBroadcaster {
         }
         registered = true;
         TickEvent.SERVER_POST.register(server -> {
+            if (server == null) {
+                return;
+            }
             for (ServerLevel level : server.getAllLevels()) {
-                tick(level);
+                if (level != null) {
+                    tick(level);
+                }
             }
         });
         PlayerEvent.PLAYER_JOIN.register(MissileTrackBroadcaster::syncTracksToPlayer);
@@ -75,6 +80,9 @@ public final class MissileTrackBroadcaster {
 
     /** First pose packet the same tick as spawn — no gap before vanilla entity drops off at view distance. */
     private static void broadcastTrackNow(ServerLevel level, MissileBaseEntity missile) {
+        if (level.getServer() == null || level.getServer().getPlayerList() == null) {
+            return;
+        }
         S2CMissileTrackPacket packet = buildPacket(level, missile);
         for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
             if (player.level() == level) {
@@ -191,6 +199,10 @@ public final class MissileTrackBroadcaster {
 
     private static void broadcastPose(ServerLevel level, MissileBaseEntity missile,
                                     boolean limitByRange, double maxRangeSq) {
+        if (level.getServer() == null || level.getServer().getPlayerList() == null) {
+            return;
+        }
+        
         S2CMissileTrackPacket packet = buildPacket(level, missile);
         for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
             if (player.level() != level) {
@@ -263,6 +275,9 @@ public final class MissileTrackBroadcaster {
     }
 
     private static void broadcastStop(ServerLevel level, int entityId) {
+        if (level.getServer() == null || level.getServer().getPlayerList() == null) {
+            return;
+        }
         for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
             if (player.level() == level) {
                 S2CMissileTrackStopPacket.sendTo(player, entityId);

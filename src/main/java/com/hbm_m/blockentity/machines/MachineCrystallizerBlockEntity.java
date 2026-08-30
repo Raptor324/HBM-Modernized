@@ -1,5 +1,8 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.FluidHooks;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,8 +17,8 @@ import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineCrystallizerMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
+import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.CrystallizerRecipe;
-import com.hbm_m.recipe.CrystallizerRecipes;
 
 import dev.architectury.fluid.FluidStack;
 
@@ -50,30 +53,7 @@ import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 *///?}
 
-/**
- * Crystallizer BlockEntity — рудный окислитель, порт с 1.7.10.
- *
- * <p>Слоты:</p>
- * <ul>
- *   <li>0 — вход (руда / предмет)</li>
- *   <li>1 — батарея</li>
- *   <li>2 — выход (кристалл)</li>
- *   <li>3 — слот заливки жидкости (ведро/контейнер с кислотой)</li>
- *   <li>4 — слот выхода жидкости (опустевший контейнер)</li>
- *   <li>5, 6 — апгрейды (пока не реализовано)</li>
- *   <li>7 — слот идентификатора жидкости (пока не реализовано)</li>
- * </ul>
- *
- * <p>Логика обработки:</p>
- * <ol>
- *   <li>Зарядка от батареи в слоте 1.</li>
- *   <li>Перенос жидкости из контейнера в слоте 3 в внутренний бак.</li>
- *   <li>Поиск рецепта в {@link CrystallizerRecipes} по входу и текущей жидкости в баке.</li>
- *   <li>Если рецепт найден и есть энергия / кислота / место в выходе — крутим прогресс.</li>
- *   <li>По достижении {@code duration} — выдаём результат, тратим кислоту,
- *       с учётом productivity тратим (или не тратим) вход.</li>
- * </ol>
- */
+
 public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2 {
 
@@ -104,10 +84,6 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
             }
         }
     };
-    //? if forge {
-    // FluidTank itself is NOT an IFluidHandler; it exposes Forge handler via getCapability().
-    private final LazyOptional<IFluidHandler> tankHandler = tank.getCapability();
-    //?}
 
     private int progress = 0;
     private int duration = DEFAULT_DURATION;
@@ -155,16 +131,18 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         entity.applyFluidIdentifier();
         entity.transferFluidsFromItems();
 
-        // Поиск рецепта по входу + текущей жидкости в баке.
         ItemStack inputStack = entity.inventory.getStackInSlot(SLOT_INPUT);
         FluidStack tankFluid = entity.getTankFluidStack();
-        CrystallizerRecipe recipe = CrystallizerRecipes.findRecipe(inputStack, tankFluid);
+        // Рецепты теперь data-driven (JSON) — поиск через RecipeManager (кросс-версионный RecipeHooks).
+        CrystallizerRecipe recipe = RecipeHooks.getAllRecipes(level, CrystallizerRecipe.Type.INSTANCE).stream()
+                .filter(r -> r.matchesInput(inputStack) && r.matchesAcid(tankFluid))
+                .findFirst()
+                .orElse(null);
 
         boolean wasOn = entity.isOn;
         entity.isOn = false;
 
         if (recipe != null) {
-            // Длительность с учётом апгрейда скорости (пока заглушка — берём из рецепта).
             entity.duration = entity.calcDuration(recipe);
 
             if (entity.canProcess(recipe)) {
@@ -192,12 +170,10 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
             }
         }
 
-        // Обновим клиента, если поменялся статус "вкл/выкл" (для рендера и индикаторов).
         if (wasOn != entity.isOn) {
             entity.sendUpdateToClient();
         }
     }
-
 
     /**
      * Client-side visuals: rotate the center part while the machine works and spawn
@@ -242,37 +218,27 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         }
     }
 
-    /**
-     * Проверяет, можно ли запустить или продолжить крафт.
-     */
     private boolean canProcess(CrystallizerRecipe recipe) {
         ItemStack inputStack = inventory.getStackInSlot(SLOT_INPUT);
 
-        // Хватает ли количества входного предмета.
         if (inputStack.getCount() < recipe.getInputCount()) return false;
 
-        // Хватает ли энергии на тик.
         if (getEnergyStored() < getPowerRequired()) return false;
 
-        // Хватает ли кислоты в баке.
         if (recipe.getAcid() != null && tank.getFluidAmountMb() < recipe.getAcidAmount()) {
             return false;
         }
 
-        // Поместится ли результат в выходной слот.
         ItemStack outSlot = inventory.getStackInSlot(SLOT_OUTPUT);
         ItemStack out = recipe.getOutput();
         if (!outSlot.isEmpty()) {
-            if (!ItemStack.isSameItemSameTags(outSlot, out)) return false;
+            if (!PlatformHooks.isSameItemSameTags(outSlot, out)) return false;
             if (outSlot.getCount() + out.getCount() > outSlot.getMaxStackSize()) return false;
         }
 
         return true;
     }
 
-    /**
-     * Завершение крафта: выдать выход, слить кислоту, потратить вход (с учётом productivity).
-     */
     private void processItem(CrystallizerRecipe recipe) {
         ItemStack out = recipe.getOutput().copy();
         ItemStack outSlot = inventory.getStackInSlot(SLOT_OUTPUT);
@@ -282,13 +248,10 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
             outSlot.grow(out.getCount());
         }
 
-        // Слить кислоту, если рецепт её требует.
         if (recipe.getAcid() != null && recipe.getAcidAmount() > 0) {
             tank.drainMb(recipe.getAcidAmount());
         }
 
-        // Productivity: шанс не тратить вход. С апгрейдом EFFECT шанс растёт
-        // (пока без апгрейдов — берём базовое значение из рецепта).
         float freeChance = recipe.getProductivity();
         if (freeChance <= 0f || level.random.nextFloat() >= freeChance) {
             inventory.getStackInSlot(SLOT_INPUT).shrink(recipe.getInputCount());
@@ -297,17 +260,6 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         setChanged();
     }
 
-    /**
-     * Применяет жидкостный идентификатор из слота 7 к баку.
-     *
-     * <p>Если в слоте лежит {@link IItemFluidIdentifier} (или {@link FluidIdentifierItem}),
-     * берётся первичный тип жидкости и сравнивается с текущим типом бака. Если они различаются —
-     * бак переключается на новый тип, имеющаяся жидкость сливается.</p>
-     *
-     * <p>Вызывается каждый тик, поэтому достаточно положить идентификатор в слот один раз
-     * (даже на 1 тик): машина переключится мгновенно, после чего идентификатор можно забрать
-     * без последствий — бак сохраняет свой тип.</p>
-     */
     private void applyFluidIdentifier() {
         ItemStack idStack = inventory.getStackInSlot(SLOT_FLUID_ID);
         if (idStack.isEmpty()) return;
@@ -317,12 +269,10 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
 
         Fluid currentType = tank.getTankType();
 
-        // Если тип уже совпадает — ничего не делаем (не трогаем содержимое бака).
         if (VanillaFluidEquivalence.sameSubstance(resolved, currentType)) {
             return;
         }
 
-        // Переключаем тип бака. Если в нём есть «старая» жидкость — она сливается.
         tank.assignTypeAndZeroFluid(resolved);
         setChanged();
         if (level != null && !level.isClientSide) {
@@ -330,14 +280,9 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         }
     }
 
-    /**
-     * Извлекает первичный тип жидкости из идентификатора. Возвращает {@code null}, если стэк
-     * не идентификатор или его тип нельзя превратить в реальный {@link Fluid}.
-     */
     @Nullable
     private Fluid resolveIdentifierFluid(ItemStack stack) {
         if (stack.getItem() instanceof FluidIdentifierItem) {
-            // У FluidIdentifierItem уже есть удобный resolver: возвращает {@code ModFluids.NONE} вместо EMPTY.
             return FluidIdentifierItem.resolvePrimaryForTank(stack);
         }
         if (stack.getItem() instanceof IItemFluidIdentifier idItem) {
@@ -348,118 +293,54 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         return null;
     }
 
-    /**
-     * Постепенная перекачка жидкости из контейнера в слоте 3 в внутренний бак.
-     *
-     * <p>Логика: каждый тик пытаемся высосать максимум из контейнера в бак (но не более
-     * того, что влезает). Если бак не принимает (тип жидкости не совпадает или нет места) —
-     * ничего не делаем. Когда контейнер становится пуст — перемещаем его в слот 4 (выход).</p>
-     *
-     * <p>Это решает проблему с большими бочками (16 000 mB), которые не помещаются в бак
-     * за один присест: бочка остаётся в верхнем слоте и продолжает доливать по мере того,
-     * как машина расходует кислоту.</p>
-     */
     private void transferFluidsFromItems() {
         ItemStack fillStack = inventory.getStackInSlot(SLOT_FLUID_INPUT);
         if (fillStack.isEmpty()) return;
 
-        //? if forge {
-        IFluidHandler tankH = tankHandler.orElse(null);
-        if (tankH == null) return;
-
-        // Без жидкостного идентификатора бак не принимает ничего — как в оригинале 1.7.10.
-        // Если тип бака не задан (Fluids.EMPTY или ModFluids.NONE) — выходим, пусть игрок
-        // сначала поставит идентификатор в слот 7.
+        // Кросс-платформенная реализация через FluidHooks + tank.fillMb.
+        // Заменяет прежние раздельные ветки Forge/Fabric/NeoForge.
         Fluid currentType = tank.getTankType();
         if (currentType == Fluids.EMPTY || currentType == ModFluids.NONE.getSource()) {
             return;
         }
 
-        // Берём отдельный стак на 1 предмет — чтобы не модифицировать целый стак сразу.
-        // (Хотя в слот мы и так пускаем максимум 1, на всякий случай страхуемся.)
-        ItemStack singleItem = fillStack.copy();
-        singleItem.setCount(1);
+        // Сначала пробуем извлечь жидкость из контейнера (simulate), чтобы узнать тип/объём.
+        int tankSpace = tank.getSpaceMb();
+        if (tankSpace <= 0) return;
 
-        var itemCapOpt = singleItem.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM);
-        var itemHandler = itemCapOpt.orElse(null);
-        if (itemHandler == null) return;
-
-        // Сосём из контейнера столько, сколько влезает в бак.
-        net.minecraftforge.fluids.FluidStack drained = itemHandler.drain(
-                tankH.getTankCapacity(0), IFluidHandler.FluidAction.SIMULATE);
-        if (drained.isEmpty()) {
-            // Контейнер уже пуст — пробуем переместить его в выходной слот (со стэкованием).
-            tryMoveContainerToOutput(itemHandler.getContainer(), fillStack);
+        FluidHooks.FluidExtraction sim = FluidHooks.extractFluidFromItem(fillStack, tankSpace, true);
+        if (sim.amount() <= 0) {
+            // Контейнер пуст — отправляем его в выходной слот (воспроизводим forge-поведение).
+            FluidHooks.FluidExtraction probe = FluidHooks.extractFluidFromItem(fillStack, 1, true);
+            if (probe.amount() == 0) {
+                ItemStack singleEmpty = fillStack.copy();
+                singleEmpty.setCount(1);
+                tryMoveContainerToOutput(singleEmpty, fillStack);
+            }
             return;
         }
 
-        int filled = tankH.fill(drained, IFluidHandler.FluidAction.SIMULATE);
-        if (filled <= 0) return; // бак не принимает (другая жидкость / нет места).
+        // Согласовываем тип жидкости с баком — заливаем только совместимую.
+        int toFill = sim.amount();
+        int accepted = tank.fillMb(sim.fluid(), toFill, true);
+        if (accepted <= 0) return;
 
-        // Реально переливаем filled mB.
-        net.minecraftforge.fluids.FluidStack actuallyDrained = itemHandler.drain(filled, IFluidHandler.FluidAction.EXECUTE);
-        tankH.fill(actuallyDrained, IFluidHandler.FluidAction.EXECUTE);
+        // Реально извлекаем (execute) и заливаем в бак.
+        FluidHooks.FluidExtraction real = FluidHooks.extractFluidFromItem(fillStack, accepted, false);
+        if (real.amount() <= 0) return;
+        tank.fillMb(real.fluid(), real.amount(), false);
 
-        // Контейнер мог обновиться (новый NBT, например).
-        ItemStack updatedContainer = itemHandler.getContainer();
-
-        // Если после слива контейнер пуст — выгоняем его в выходной слот.
-        var afterCapOpt = updatedContainer.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM);
-        var afterHandler = afterCapOpt.orElse(null);
-        boolean nowEmpty = afterHandler == null
-                || afterHandler.drain(1, IFluidHandler.FluidAction.SIMULATE).isEmpty();
-
-        if (nowEmpty) {
+        ItemStack updatedContainer = real.remainder();
+        if (updatedContainer.isEmpty() || FluidHooks.extractFluidFromItem(updatedContainer, 1, true).amount() == 0) {
+            // Контейнер опустел после перелива — отправляем в выходной слот.
             tryMoveContainerToOutput(updatedContainer, fillStack);
         } else {
-            // Контейнер ещё не пустой — оставляем во входном слоте.
             inventory.setStackInSlot(SLOT_FLUID_INPUT, updatedContainer);
         }
         setChanged();
-        //?}
-
-        //? if fabric {
-        /*ItemStack one = fillStack.copy();
-        one.setCount(1);
-
-        Storage<FluidVariant> itemStorage = FluidStorage.ITEM.find(one, null);
-        if (itemStorage == null) return;
-
-        try (Transaction tx = Transaction.openOuter()) {
-            long moved = net.fabricmc.fabric.api.transfer.v1.storage.StorageUtil.move(
-                    itemStorage,
-                    tank.getStorage(),
-                    v -> true,
-                    Long.MAX_VALUE,
-                    tx
-            );
-            if (moved > 0) {
-                tx.commit();
-                inventory.setStackInSlot(SLOT_FLUID_INPUT, ItemStack.EMPTY);
-                inventory.setStackInSlot(SLOT_FLUID_OUTPUT, one);
-                setChanged();
-            }
-        }
-        *///?}
     }
 
-    //? if forge {
-    /**
-     * Пытается положить опустошённый контейнер в выходной слот.
-     *
-     * <p>Сценарии:</p>
-     * <ul>
-     *   <li>Контейнер исчез (например, ведро в Forge — drain уничтожает ведро) → просто
-     *       убираем 1 предмет из входного слота, в выход ничего не кладём.</li>
-     *   <li>Выходной слот пуст → кладём контейнер туда.</li>
-     *   <li>В выходе уже лежит идентичный пустой контейнер с местом до maxStackSize →
-     *       стэкуем (увеличиваем count).</li>
-     *   <li>В выходе лежит другой предмет или стэк уже полон → не делаем ничего,
-     *       контейнер остаётся во входном слоте до тех пор пока выход не освободится.</li>
-     * </ul>
-     */
     private void tryMoveContainerToOutput(ItemStack emptyContainer, ItemStack originalFillStack) {
-        // Случай 0 — контейнер исчез.
         if (emptyContainer.isEmpty()) {
             ItemStack remaining = originalFillStack.copy();
             remaining.shrink(1);
@@ -469,7 +350,6 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
 
         ItemStack outSlot = inventory.getStackInSlot(SLOT_FLUID_OUTPUT);
 
-        // Случай 1 — выход пустой.
         if (outSlot.isEmpty()) {
             ItemStack remaining = originalFillStack.copy();
             remaining.shrink(1);
@@ -478,8 +358,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
             return;
         }
 
-        // Случай 2 — выход содержит такой же предмет с местом → стэкуем.
-        if (ItemStack.isSameItemSameTags(outSlot, emptyContainer)) {
+        if (PlatformHooks.isSameItemSameTags(outSlot, emptyContainer)) {
             int max = outSlot.getMaxStackSize();
             int totalAfter = outSlot.getCount() + emptyContainer.getCount();
             if (totalAfter <= max) {
@@ -491,13 +370,9 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
                 remaining.shrink(1);
                 inventory.setStackInSlot(SLOT_FLUID_INPUT, remaining);
             }
-            // Если totalAfter > max — выход полон, ждём, контейнер остаётся во входе.
             return;
         }
-
-        // Случай 3 — выход занят другим предметом → ждём, контейнер остаётся во входе.
     }
-    //?}
 
     private void chargeFromBattery() {
         ItemStack stack = inventory.getStackInSlot(SLOT_BATTERY);
@@ -512,7 +387,6 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         return recipe.getDuration();
     }
 
-    /** Снимок бака для сопоставления с рецептами (Architectury {@link FluidStack}, миллибакеты). */
     private FluidStack getTankFluidStack() {
         var fluid = tank.getStoredFluid();
         int amount = tank.getFluidAmountMb();
@@ -520,17 +394,6 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
             return FluidStack.empty();
         }
         return FluidStack.create(fluid, amount);
-    }
-
-    private boolean canProcess() {
-        if (inventory.getStackInSlot(SLOT_INPUT).isEmpty()) return false;
-        if (getEnergyStored() < getPowerRequired()) return false;
-        // Заглушка: CrystallizerRecipes.getOutput - всегда null
-        return false;
-    }
-
-    private void processItem() {
-        // Заглушка: логика крафтов
     }
 
     public int getPowerRequired() {
@@ -563,14 +426,6 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         return data;
     }
 
-    // ───────────────────────────── IFluidStandardReceiverMK2 ─────────────────────────────
-    // Регистрирует окислитель как приёмник в жидкостной сети MK2 (используется
-    // UniversalMachinePartBlockEntity в углах нижнего слоя). Без этого интерфейса сеть не
-    // знает что наш бак готов принять жидкость, пока в баке пусто — collectControllerFluidTypes
-    // в part-BE возвращал бы пустое множество (он смотрит только на залитую жидкость через
-    // getFluidInTank). С интерфейсом same путь идёт через mk2.getAllTanks() → tank.getTankType(),
-    // которое корректно выдаёт настроенный тип даже при пустом баке.
-
     private final FluidTank[] receivingTanksArr = new FluidTank[] { tank };
 
     @Override
@@ -585,11 +440,9 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
 
     @Override
     public boolean isLoaded() {
-        // Точная проверка — позиция действительно в загруженном чанке.
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
-    // ─────────────────────────────────────────────────────────────────────────────────────
-
+   
     /**
      * The controller BlockEntity is only one block, but the animated spinner/fluid BER is
      * rendered across the whole 3x3x6 multiblock. Without the expanded render bounds,
@@ -625,8 +478,12 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_INPUT) {
-            // Принимаем только то, что подходит хотя бы под один рецепт с текущей жидкостью.
-            return CrystallizerRecipes.findRecipe(stack, getTankFluidStack()) != null;
+            for (CrystallizerRecipe r : RecipeHooks.getAllRecipes(level, CrystallizerRecipe.Type.INSTANCE)) {
+                if (r.matchesInput(stack) && r.matchesAcid(getTankFluidStack())) {
+                    return true;
+                }
+            }
+            return false;
         }
         if (slot == SLOT_BATTERY) {
             if (stack.getItem() instanceof ItemCreativeBattery) return true;
@@ -636,15 +493,9 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
             return false;
         }
         if (slot == SLOT_FLUID_INPUT) {
-            //? if forge {
-            return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-            //?}
-            //? if fabric {
-            /*return FluidStorage.ITEM.find(stack, null) != null;
-            *///?}
+            return PlatformHooks.isFluidContainer(stack);
         }
         if (slot == SLOT_FLUID_ID) {
-            // Принимаем только мульти-жидкостный идентификатор.
             return stack.getItem() instanceof IItemFluidIdentifier;
         }
         return true;
@@ -661,8 +512,8 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.put("tank", tank.writeNBT(new CompoundTag()));
         tag.putInt("progress", progress);
         tag.putInt("duration", duration);
@@ -670,8 +521,8 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         if (tag.contains("tank")) {
             tank.readNBT(tag.getCompound("tank"));
         }
@@ -690,17 +541,8 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
 
     //? if forge {
     @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            return tankHandler.cast();
-        }
-        return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        tankHandler.invalidate();
+    protected void setupFluidCapability() {
+        setFluidHandler(tank);
     }
     //?}
 }

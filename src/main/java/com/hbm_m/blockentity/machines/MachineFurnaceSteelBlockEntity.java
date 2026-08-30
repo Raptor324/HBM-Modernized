@@ -48,7 +48,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * ohne ein entsprechendes modernes Tag-Aequivalent nicht 1:1 uebertragbar ist. Kann spaeter ueber
  * Item-Tags nachgeruestet werden.
  */
-public class MachineFurnaceSteelBlockEntity extends BlockEntity implements MenuProvider {
+public class MachineFurnaceSteelBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements MenuProvider {
 
     public static final int SLOT_INPUT_0 = 0;
     public static final int SLOT_INPUT_1 = 1;
@@ -216,7 +216,7 @@ public class MachineFurnaceSteelBlockEntity extends BlockEntity implements MenuP
     private boolean canAcceptResult(int lane, ItemStack result) {
         ItemStack current = inventory.getStackInSlot(outputSlot(lane));
         if (current.isEmpty()) return true;
-        if (!ItemStack.isSameItemSameTags(current, result)) return false;
+        if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, result)) return false;
         return current.getCount() + result.getCount() <= current.getMaxStackSize();
     }
 
@@ -248,8 +248,8 @@ public class MachineFurnaceSteelBlockEntity extends BlockEntity implements MenuP
     }
 
     private java.util.Optional<SmeltingRecipe> getRecipe(Level level, ItemStack input) {
-        recipeInput.setItem(0, input);
-        return level.getRecipeManager().getRecipeFor(RecipeType.SMELTING, recipeInput, level);
+        // 1.21.1: getRecipeFor требует RecipeInput (SingleRecipeInput) и возвращает RecipeHolder.
+        return com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(level, RecipeType.SMELTING, input);
     }
 
     public static boolean isFuel(ItemStack stack) {
@@ -268,9 +268,9 @@ public class MachineFurnaceSteelBlockEntity extends BlockEntity implements MenuP
     // ==================== NBT ====================
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.put("inventory", inventory.serializeNBT());
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(inventory, registries));
         tag.putInt("litTime", litTime);
         tag.putInt("litDuration", litDuration);
         for (int lane = 0; lane < LANE_COUNT; lane++) {
@@ -279,25 +279,14 @@ public class MachineFurnaceSteelBlockEntity extends BlockEntity implements MenuP
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        inventory.deserializeNBT(tag.getCompound("inventory"));
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
+        com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, tag.getCompound("inventory"), registries);
         litTime = tag.getInt("litTime");
         litDuration = tag.getInt("litDuration");
         for (int lane = 0; lane < LANE_COUNT; lane++) {
             progress[lane] = tag.getInt("progress" + lane);
         }
-    }
-
-    @Nullable
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
-
-    @Override
-    public CompoundTag getUpdateTag() {
-        return saveWithoutMetadata();
     }
 
     // ==================== GUI ====================

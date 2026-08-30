@@ -393,6 +393,26 @@ public class ModEntities {
                             .updateInterval(1)
                             .build("nuke_mk3"));
 
+    // Длительный взрыв солиния («синяя стирка»)
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.logic.EntitySoliniumExplosion>> SOLINIUM_EXPLOSION =
+            ENTITY_TYPES.register("solinium_explosion",
+                    () -> EntityType.Builder.<com.hbm_m.entity.logic.EntitySoliniumExplosion>of(
+                                    com.hbm_m.entity.logic.EntitySoliniumExplosion::new, MobCategory.MISC)
+                            .sized(1.0F, 1.0F)
+                            .clientTrackingRange(256)
+                            .updateInterval(1)
+                            .build("solinium_explosion"));
+
+    // Длительный взрыв бейлфайра
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.logic.EntityBalefireExplosion>> BALEFIRE_EXPLOSION =
+            ENTITY_TYPES.register("balefire_explosion",
+                    () -> EntityType.Builder.<com.hbm_m.entity.logic.EntityBalefireExplosion>of(
+                                    com.hbm_m.entity.logic.EntityBalefireExplosion::new, MobCategory.MISC)
+                            .sized(1.0F, 1.0F)
+                            .clientTrackingRange(256)
+                            .updateInterval(1)
+                            .build("balefire_explosion"));
+
     // Gerald/Horizons orbital strike meteor (see com.hbm_m.satellite.SatelliteHorizons)
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.TomEntity>> TOM_METEOR =
             ENTITY_TYPES.register("tom_meteor",

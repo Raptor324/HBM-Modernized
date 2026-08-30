@@ -27,6 +27,15 @@ public final class FluidCapabilityAccess {
         }
         *///?}
 
+        //? if neoforge {
+        /*// NeoForge: BlockCapability запрашивается через Level (LevelAccessor его не предоставляет).
+        if (level instanceof net.minecraft.world.level.Level lvl) {
+            result = lvl.getCapability(
+                    net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK,
+                    pos, sideFromPos) != null;
+        }
+        *///?}
+
         return result;
     }
 }

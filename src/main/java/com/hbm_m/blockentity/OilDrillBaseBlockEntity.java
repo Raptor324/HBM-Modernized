@@ -54,20 +54,20 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity imp
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        this.energy = tag.getLong("power"); // для обратной совместимости логики
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        tag.putLong("power", this.energy);
         for (int i = 0; i < this.tanks.length; i++) {
-            this.tanks[i].readFromNBT(tag, "t" + i);
+            this.tanks[i].writeToNBT(tag, "t" + i);
         }
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.putLong("power", this.energy);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
+        this.energy = tag.getLong("power"); // для обратной совместимости логики
         for (int i = 0; i < this.tanks.length; i++) {
-            this.tanks[i].writeToNBT(tag, "t" + i);
+            this.tanks[i].readFromNBT(tag, "t" + i);
         }
     }
 

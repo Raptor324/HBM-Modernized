@@ -181,8 +181,8 @@ public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity
             net.minecraftforge.common.capabilities.Capability<T> cap,
             @org.jetbrains.annotations.Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            if (side == Direction.DOWN || side == null) return inputTank.getCapability().cast();
-            return outputTank.getCapability().cast();
+            if (side == Direction.DOWN || side == null) return inputTank.getForgeFluidCapability().cast();
+            return outputTank.getForgeFluidCapability().cast();
         }
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER) {
             return net.minecraftforge.common.util.LazyOptional.of(() -> inventory).cast();
@@ -207,17 +207,18 @@ public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity
     @Override public Component getDisplayName() { return Component.translatable("block.hbm_m.rbmk_heater"); }
     @Override public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) { return new RBMKHeaterMenu(id, inv, this); }
 
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         inputTank.writeToNBT(tag, "input");
         outputTank.writeToNBT(tag, "output");
         tag.put("inventory", inventory.serializeNBT());
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         inputTank.readFromNBT(tag, "input");
         outputTank.readFromNBT(tag, "output");
         if (tag.contains("inventory")) inventory.deserializeNBT(tag.getCompound("inventory"));

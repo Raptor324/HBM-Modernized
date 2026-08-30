@@ -7,6 +7,7 @@ import com.hbm_m.entity.ModEntities;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.particle.ModParticleTypes;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
@@ -79,7 +80,7 @@ public class SoyuzEntity extends Entity {
             AABB exhaustZone = new AABB(getX() - 5, getY() - 15, getZ() - 5, getX() + 5, getY(), getZ() + 5);
             List<Entity> caught = level().getEntities(this, exhaustZone);
             for (Entity e : caught) {
-                e.setSecondsOnFire(15);
+                PlatformHooks.setSecondsOnFire(e, 15);
                 DamageSource exhaust = ModDamageSources.exhaust(level());
                 e.hurt(exhaust, 100.0F);
                 firedOnce = true;
@@ -167,10 +168,20 @@ public class SoyuzEntity extends Entity {
         this.discard();
     }
 
+    //? if < 1.21.1 {
+
     @Override
     protected void defineSynchedData() {
         // No synced fields needed - mode/skin only matter server-side and for our own render pose.
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+
+        // No synced fields needed - mode/skin only matter server-side and for our own render pose.
+    
+    }
+    *///?}
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
@@ -184,7 +195,7 @@ public class SoyuzEntity extends Entity {
             CompoundTag itemTag = list.getCompound(i);
             int slot = itemTag.getInt("Slot");
             if (slot >= 0 && slot < payload.size()) {
-                payload.set(slot, ItemStack.of(itemTag));
+                payload.set(slot, PlatformHooks.itemStackOf(itemTag, PlatformHooks.bestEffortProvider()));
             }
         }
     }
@@ -202,7 +213,7 @@ public class SoyuzEntity extends Entity {
             if (!stack.isEmpty()) {
                 CompoundTag itemTag = new CompoundTag();
                 itemTag.putInt("Slot", i);
-                stack.save(itemTag);
+                PlatformHooks.saveItemStack(stack, itemTag, PlatformHooks.bestEffortProvider());
                 list.add(itemTag);
             }
         }

@@ -24,6 +24,9 @@ public final class MissileTrackWorldRender {
     private static final double FRUSTUM_SAFETY = 0.72D;
     private static final double MIN_VIRTUAL_DISTANCE_BLOCKS = 96.0D;
 
+    private static int cachedRenderDistance = -1;
+    private static double cachedMaxSafeDistance = MIN_VIRTUAL_DISTANCE_BLOCKS;
+
     private MissileTrackWorldRender() {}
 
     /**
@@ -43,53 +46,112 @@ public final class MissileTrackWorldRender {
     private static MultiBufferSource.BufferSource missileBufferSource() {
         MultiBufferSource.BufferSource bs = missileBufferSource;
         if (bs == null) {
-            bs = MultiBufferSource.immediate(new com.mojang.blaze3d.vertex.BufferBuilder(256));
+            // PlainBufferSource, а НЕ MultiBufferSource.immediate(): под
+            // ImmediatelyFast фабрика подменяет источник на BatchableBufferSource,
+            // падающий на пустых sortOnUpload-батчах (см. PlainBufferSource).
+            //? if < 1.21.1 {
+            bs = new com.hbm_m.client.render.PlainBufferSource(new com.mojang.blaze3d.vertex.BufferBuilder(256));
+            //?} else {
+            /*bs = new com.hbm_m.client.render.PlainBufferSource(new com.mojang.blaze3d.vertex.ByteBufferBuilder(256));
+            *///?}
             missileBufferSource = bs;
         }
         return bs;
     }
 
     public static void render(float partialTick, PoseStack poseStack) {
+        renderFiltered(partialTick, Double.NaN, false);
+    }
+
+    /**
+     * Рендер треков ракет с опциональным фильтром по дистанции² до камеры.
+     *
+     * @param distFilterSq Double.NaN = все треки; иначе граница по дистанции²
+     *                     (far: d² > distFilterSq, near: d² <= distFilterSq —
+     *                     та же граница, что у NT-частиц в EngineHandler).
+     *                     Примитивный параметр вместо DoublePredicate: горячий
+     *                     путь кадра, лямбда с захватом splitSq аллоцировалась
+     *                     на каждый вызов.
+     * @param far       true = рисовать дальние (d² > границы).
+     *                  Виртуализация внутри renderOne работает как раньше:
+     *                  при DH — истинные координаты (дальний проход без
+     *                  клипа), без DH — приближение к границе прорисовки.
+     * @return true, если была отрисована хотя бы одна ракета.
+     */
+    public static boolean renderFiltered(float partialTick, double distFilterSq, boolean far) {
         if (!MissileTrackClient.isEnabled()) {
-            return;
+            return false;
         }
         Minecraft mc = Minecraft.getInstance();
         ClientLevel level = mc.level;
         if (level == null) {
-            return;
+            return false;
         }
 
         Vec3 camera = mc.gameRenderer.getMainCamera().getPosition();
         // Private source — never the shared global one (see missileBufferSource()).
         MultiBufferSource.BufferSource buffers = missileBufferSource();
 
-        poseStack.pushPose();
+        // Своя камера-relative стопка С ЗАПЕЧЁННЫМ ПОВОРОТОМ камеры: в чистой
+        // ваниле ambient RenderSystem ModelViewMat на AFTER_WEATHER = identity
+        //(поворот живёт в event-PoseStack, который мы не используем), поэтому
+        // полагаться на ambient нельзя в принципе. Домножаем захваченную
+        // R_cam (TLS-копия пуша EngineHandler'а) прямо в стопку — как ваниль
+        // делает для энтити (Camera#render возвращает PoseStack с поворотом).
+        // SingleMeshVboRenderer в track-контексте знает об этом и НЕ умножает
+        // ambient повторно.
+        PoseStack poseStack = new PoseStack();
+        var levelRot = com.hbm_m.platform.RenderHooks.currentLevelRotation();
+        if (levelRot != null) {
+            // Прямое домножение в JOML-матрицу текущего pose — без
+            // версионных PoseStack-API (mulPoseMatrix/mulMatrix разошлись).
+            poseStack.last().pose().mul(levelRot);
+        }
         poseStack.translate(-camera.x, -camera.y, -camera.z);
         boolean drewAny = false;
-        try {
-            for (MissileTrackClient.TrackEntry entry : MissileTrackClient.entries()) {
-                if (!MissileTrackClient.shouldUseTrackWorldRender(entry.entityId)) {
+        for (MissileTrackClient.TrackEntry entry : MissileTrackClient.entries()) {
+            if (!MissileTrackClient.shouldUseTrackWorldRender(entry.entityId)) {
+                continue;
+            }
+            MissileTrackClient.InterpolatedPose pose = entry.interpolate(partialTick);
+            if (pose == null) {
+                continue;
+            }
+            if (!Double.isNaN(distFilterSq)) {
+                double dx = pose.x() - camera.x;
+                double dy = pose.y() - camera.y;
+                double dz = pose.z() - camera.z;
+                boolean near = dx * dx + dy * dy + dz * dz <= distFilterSq;
+                if (near == far) {
                     continue;
-                }
-                MissileTrackClient.InterpolatedPose pose = entry.interpolate(partialTick);
-                if (pose == null) {
-                    continue;
-                }
-                if (renderOne(level, pose, poseStack, buffers, camera)) {
-                    drewAny = true;
                 }
             }
-        } finally {
-            poseStack.popPose();
+            if (renderOne(level, pose, poseStack, buffers, camera)) {
+                drewAny = true;
+            }
         }
         // Flush the private missile source so buffered missile aux-geometry draws
         // this frame. Safe because this source is isolated from the shared global
         // bufferSource — flush-all here cannot disturb other mods' pending
         // shared-builder quads (Copycats' translucentMovingBlock door etc.).
-        // drewAny just skips the call when nothing was buffered.
         if (drewAny) {
             buffers.endBatch();
         }
+        com.hbm_m.client.render.FrameStateProbe.snap(drewAny ? "twr.drew" : "twr.idle");
+        return drewAny;
+    }
+
+    /** Мировая позиция последнего отрисованного трек-меша — для fspWorld-пробников. */
+    private static final double[] LAST_MISSILE_POS = new double[3];
+    private static boolean lastMissilePosValid;
+
+    /** Позиция для FrameStateProbe.snapWorld (null, если ещё ничего не рисовалось). */
+    public static double[] lastDrawnMissilePos() {
+        return lastMissilePosValid ? LAST_MISSILE_POS : null;
+    }
+
+    private static double sqr(double v) {
+        return v * v;
     }
 
     private static boolean renderOne(ClientLevel level, MissileTrackClient.InterpolatedPose pose,
@@ -98,6 +160,10 @@ public final class MissileTrackWorldRender {
         if (data == null) {
             return false;
         }
+        LAST_MISSILE_POS[0] = pose.x();
+        LAST_MISSILE_POS[1] = pose.y();
+        LAST_MISSILE_POS[2] = pose.z();
+        lastMissilePosValid = true;
 
         CameraRelativePose virtual = virtualizeWorld(pose.x(), pose.y(), pose.z(), camera);
         double drawX = camera.x + virtual.relX();
@@ -105,9 +171,17 @@ public final class MissileTrackWorldRender {
         double drawZ = camera.z + virtual.relZ();
 
         BlockPos lightPos = BlockPos.containing(virtual.trueX(), virtual.trueY(), virtual.trueZ());
+        // Свет по ПОЗИЦИИ ракеты: меш в небе/далеко от игрока освещается
+        // своим окружением, а не чанком камеры. Если чанк ракеты не загружен
+        // (дальние ступени трека, DH) — fallback на свет камеры: он стабилен
+        // на границе прогрузки и не даёт скачков яркости.
+        BlockPos samplePos = lightPos;
+        if (!level.hasChunkAt(lightPos)) {
+            samplePos = BlockPos.containing(camera.x, camera.y, camera.z);
+        }
         int packedLight = LightTexture.pack(
-                level.getBrightness(LightLayer.BLOCK, lightPos),
-                level.getBrightness(LightLayer.SKY, lightPos));
+                level.getBrightness(LightLayer.BLOCK, samplePos),
+                level.getBrightness(LightLayer.SKY, samplePos));
 
         Direction launchFacing = pose.current().launchFacing();
         float yaw = pose.yaw();
@@ -128,20 +202,19 @@ public final class MissileTrackWorldRender {
         LightSampleCache.BASE_POSE.set(poseStack.last().pose());
         LightSampleCache.BASE_POSE_SET.set(true);
 
-        float prevFogStart = RenderSystem.getShaderFogStart();
-        float prevFogEnd = RenderSystem.getShaderFogEnd();
-        double dist = camera.distanceTo(lightPos.getCenter());
-        float fogEnd = Math.max(prevFogEnd > 0.0F ? prevFogEnd : 64.0F, (float) dist + 512.0F);
-        RenderSystem.setShaderFogEnd(fogEnd);
-        RenderSystem.setShaderFogStart(Math.min(prevFogStart, fogEnd * 0.85F));
+        // ВНИМАНИЕ: НЕ трогаем RenderSystem.setShaderFog*! Раньше здесь глобально
+        // раздвигали туман кадра (fogEnd = max(prev, dist+512)) ради дальнего
+        // меша — это ОКАЗЫВАЛОСЬ ЧЁРНЫМ ЭКРАНОМ: значение утекало в следующие
+        // кадры, и мир дальше ~460 блоков заливался туманом fogColor (в мире на
+        // y<0 он почти чёрный). Дальний меш в тумане не нуждается: блок_lit
+        // глушит туман собственными юниформами (cachedFogStartU=1.0E8 при
+        // entityMissileDepthBias), а NT-частицы не фоггатся вовсе.
         SingleMeshVboRenderer.setEntityMissileDepthBias(true);
         try {
             data.render(poseStack, packedLight, lightPos, buffers);
             return true;
         } finally {
             SingleMeshVboRenderer.setEntityMissileDepthBias(false);
-            RenderSystem.setShaderFogStart(prevFogStart);
-            RenderSystem.setShaderFogEnd(prevFogEnd);
             LightSampleCache.BASE_POSE_SET.set(false);
             poseStack.popPose();
         }
@@ -150,7 +223,11 @@ public final class MissileTrackWorldRender {
     public static double maxSafeRenderDistanceBlocks() {
         Minecraft mc = Minecraft.getInstance();
         int chunks = mc.options.getEffectiveRenderDistance();
-        return Math.max(MIN_VIRTUAL_DISTANCE_BLOCKS, chunks * 16.0D * FRUSTUM_SAFETY);
+        if (chunks != cachedRenderDistance) {
+            cachedRenderDistance = chunks;
+            cachedMaxSafeDistance = Math.max(MIN_VIRTUAL_DISTANCE_BLOCKS, chunks * 16.0D * FRUSTUM_SAFETY);
+        }
+        return cachedMaxSafeDistance;
     }
 
     public static CameraRelativePose virtualizeWorld(double worldX, double worldY, double worldZ, Vec3 camera) {
@@ -158,6 +235,14 @@ public final class MissileTrackWorldRender {
         double relY = worldY - camera.y;
         double relZ = worldZ - camera.z;
         double dist = Math.sqrt(relX * relX + relY * relY + relZ * relZ);
+        // DH РЕАЛЬНО рендерит этот кадр → не виртуализируем: дальний контент
+        // идёт через проход EngineHandler с удлинённой проекцией (нет клипа).
+        // DH не рендерит (не установлен / выключен / завис — isActive с
+        // 500мс-грейсом стабилен между кадрами, «двойных колец» нет) →
+        // старый виртуальный рендер: приближаем объект к границе прорисовки.
+        if (com.hbm_m.client.compat.dh.DhClientState.isActive()) {
+            return new CameraRelativePose(relX, relY, relZ, 1.0F, worldX, worldY, worldZ);
+        }
         double max = maxSafeRenderDistanceBlocks();
         float scale = 1.0F;
         if (dist > max && dist >= 1.0E-4D) {

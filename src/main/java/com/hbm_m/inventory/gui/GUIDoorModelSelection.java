@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 
 import java.util.ArrayList;
@@ -169,7 +170,7 @@ public class GUIDoorModelSelection extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         int localMouseX = toLocalX(mouseX);
         int localMouseY = toLocalY(mouseY);
         guiGraphics.pose().pushPose();
@@ -179,7 +180,7 @@ public class GUIDoorModelSelection extends Screen {
         renderSkinButtons(guiGraphics, localMouseX, localMouseY);
         renderPageButtons(guiGraphics, localMouseX, localMouseY);
         guiGraphics.pose().popPose();
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        GuiCompat.renderWidgetsOnly(this, guiGraphics, mouseX, mouseY, partialTick);
     }
 
     private void renderMenuPanel(GuiGraphics guiGraphics) {
@@ -248,7 +249,6 @@ public class GUIDoorModelSelection extends Screen {
         return switch (doorId) {
             case "large_vehicle_door" -> ModItems.LARGE_VEHICLE_DOOR.get();
             case "round_airlock_door" -> ModItems.ROUND_AIRLOCK_DOOR.get();
-            case "transition_seal" -> ModItems.TRANSITION_SEAL.get();
             case "fire_door" -> ModItems.FIRE_DOOR.get();
             case "sliding_blast_door" -> ModItems.SLIDE_DOOR.get();
             case "sliding_seal_door" -> ModItems.SLIDING_SEAL_DOOR.get();
@@ -259,6 +259,7 @@ public class GUIDoorModelSelection extends Screen {
             case "silo_hatch" -> ModItems.SILO_HATCH.get();
             case "silo_hatch_large" -> ModItems.SILO_HATCH_LARGE.get();
             case "vault_door" -> ModItems.VAULT_DOOR.get();
+            case "cargo_door" -> ModItems.CARGO_DOOR.get();
             default -> ModItems.LARGE_VEHICLE_DOOR.get();
         };
     }

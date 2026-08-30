@@ -59,7 +59,12 @@ public class GenNode<N extends NodeNet<?, ?, ?>> {
     }
 
     public void setNet(N net) {
+        // ВАЖНО (паритет с оригиналом com.hbm.uninos.GenNode.setNet):
+        // каждый переход между сетями помечает узел для повторной проверки соединений.
+        // Без этого воспроизводится баг "произвольного отказа join" после слияний/разрывов,
+        // который hbm чинил этим флагом (см. комментарий в Nodespace.PowerNode оригинала).
         this.net = net;
+        this.recentlyChanged = true;
     }
 
     public boolean isExpired() {

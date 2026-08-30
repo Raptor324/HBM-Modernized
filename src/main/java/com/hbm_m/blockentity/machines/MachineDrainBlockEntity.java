@@ -49,7 +49,7 @@ public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements I
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return tank.getCapability().cast();
+            return tank.getForgeFluidCapability().cast();
         }
         return super.getCapability(cap, side);
     }
@@ -122,14 +122,14 @@ public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements I
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.put("tank", tank.writeNBT(new CompoundTag()));
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         if (tag.contains("tank")) tank.readNBT(tag.getCompound("tank"));
     }
 }

@@ -5,7 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.FluidType;
-import com.hbm_m.inventory.menu.BarrelPlasticMenu;
+import com.hbm_m.inventory.menu.FluidTankMenu;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -57,6 +57,6 @@ public class BarrelPlasticBlockEntity extends MachineFluidTankBlockEntity {
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
-        return new BarrelPlasticMenu(id, inventory, this, this.data);
+        return new FluidTankMenu(id, inventory, this, this.data);
     }
 }

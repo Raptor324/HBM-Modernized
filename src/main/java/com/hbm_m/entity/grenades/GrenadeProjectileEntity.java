@@ -44,11 +44,22 @@ public class GrenadeProjectileEntity extends ThrowableItemProjectile {
         this.entityData.set(GRENADE_TYPE_ID, type.name());
     }
 
+    //? if < 1.21.1 {
+
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(GRENADE_TYPE_ID, GrenadeType.STANDARD.name());
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+
+        super.defineSynchedData(builder);
+        builder.define(GRENADE_TYPE_ID, GrenadeType.STANDARD.name());
+    
+    }
+    *///?}
 
     @Override
     protected Item getDefaultItem() {

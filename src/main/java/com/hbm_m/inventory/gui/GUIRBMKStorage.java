@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKStorageBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.RBMKStorageMenu;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -38,10 +39,13 @@ public class GUIRBMKStorage extends GuiInfoScreen<RBMKStorageMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        guiGraphics.drawString(this.font, String.format("Heat: %.1f°C", be.heat), leftPos + 8, topPos + 6, 0x990000, false);
+        // тайл может отсутствовать в реплее Flashback
+        if (be != null) {
+            guiGraphics.drawString(this.font, String.format("Heat: %.1f°C", be.heat), leftPos + 8, topPos + 6, 0x990000, false);
+        }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

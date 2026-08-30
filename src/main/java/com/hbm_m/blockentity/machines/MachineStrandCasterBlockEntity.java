@@ -13,7 +13,8 @@ import com.hbm_m.inventory.material.MaterialType;
 import com.hbm_m.inventory.menu.MachineStrandCasterMenu;
 import com.hbm_m.item.material.ItemCastMold;
 import com.hbm_m.platform.ModItemStackHandler;
-import com.hbm_m.recipe.MoldCastingRecipes;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.MoldCastingRecipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -45,7 +46,7 @@ import net.minecraft.world.level.material.Fluid;
  * andere Maschinen diese Session), Wasser-Tank per MK2-Netz statt eigenem Anschluss-Positions-System,
  * Ueberlauf-Schrott-Auswurf (EntityItem bei amount &gt; capacity) entfaellt.
  */
-public class MachineStrandCasterBlockEntity extends BlockEntity implements MenuProvider, ICrucibleAcceptor, IFluidStandardReceiverMK2 {
+public class MachineStrandCasterBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements MenuProvider, ICrucibleAcceptor, IFluidStandardReceiverMK2 {
 
     public static final int SLOT_MOLD = 0;
     public static final int SLOT_OUTPUT = 1;
@@ -100,11 +101,23 @@ public class MachineStrandCasterBlockEntity extends BlockEntity implements MenuP
 
     public int getCapacity() {
         ItemCastMold mold = getInstalledMold();
-        return mold == null ? 0 : MoldCastingRecipes.getCost(mold.getMoldType()) * 10;
+        return mold == null ? 0 : mold.getMoldType().getCostMb() * 10;
     }
 
     private int getWaterRequired(ItemCastMold mold) {
-        return 5 * MoldCastingRecipes.getCost(mold.getMoldType());
+        return 5 * mold.getMoldType().getCostMb();
+    }
+
+    /** Data-driven поиск MoldCastingRecipe по паре (mold, material) — как в MachineFoundryBasinBlockEntity. */
+    private @Nullable ItemStack getResultFor(MaterialType type, ItemCastMold.MoldType mold) {
+        if (level == null) return null;
+        for (MoldCastingRecipe r : RecipeHooks.getAllRecipes(level, MoldCastingRecipe.Type.INSTANCE)) {
+            if (r.matches(mold, type)) {
+                ItemStack out = r.getOutput();
+                return out.isEmpty() ? null : out;
+            }
+        }
+        return null;
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineStrandCasterBlockEntity be) {
@@ -125,9 +138,9 @@ public class MachineStrandCasterBlockEntity extends BlockEntity implements MenuP
 
         if (moldsToCast > 0 && (moldsToCast >= 9 || be.ticksSinceProgress >= 200)) {
             ItemCastMold mold = be.getInstalledMold();
-            ItemStack out = MoldCastingRecipes.getOutput(mold.getMoldType(), be.type);
-            if (!out.isEmpty()) {
-                be.amount -= moldsToCast * MoldCastingRecipes.getCost(mold.getMoldType());
+            ItemStack out = be.getResultFor(be.type, mold.getMoldType());
+            if (out != null && !out.isEmpty()) {
+                be.amount -= moldsToCast * mold.getMoldType().getCostMb();
                 if (be.amount < 0) be.amount = 0;
 
                 ItemStack existing = be.inventory.getStackInSlot(SLOT_OUTPUT);
@@ -135,7 +148,7 @@ public class MachineStrandCasterBlockEntity extends BlockEntity implements MenuP
                 produced.setCount(out.getCount() * moldsToCast);
                 if (existing.isEmpty()) {
                     be.inventory.setStackInSlot(SLOT_OUTPUT, produced);
-                } else if (ItemStack.isSameItemSameTags(existing, produced)) {
+                } else if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(existing, produced)) {
                     existing.grow(Math.min(produced.getCount(), existing.getMaxStackSize() - existing.getCount()));
                 }
 
@@ -151,17 +164,17 @@ public class MachineStrandCasterBlockEntity extends BlockEntity implements MenuP
     private int maxProcessable() {
         ItemCastMold mold = getInstalledMold();
         if (type == null || mold == null) return 0;
-        ItemStack out = MoldCastingRecipes.getOutput(mold.getMoldType(), type);
-        if (out.isEmpty()) return 0;
+        ItemStack out = getResultFor(type, mold.getMoldType());
+        if (out == null || out.isEmpty()) return 0;
 
-        int cost = MoldCastingRecipes.getCost(mold.getMoldType());
+        int cost = mold.getMoldType().getCostMb();
         if (cost <= 0) return 0;
 
         ItemStack existing = inventory.getStackInSlot(SLOT_OUTPUT);
         int freeSpace;
         if (existing.isEmpty()) {
             freeSpace = out.getMaxStackSize();
-        } else if (ItemStack.isSameItemSameTags(existing, out)) {
+        } else if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(existing, out)) {
             freeSpace = existing.getMaxStackSize() - existing.getCount();
         } else {
             freeSpace = 0;
@@ -182,7 +195,7 @@ public class MachineStrandCasterBlockEntity extends BlockEntity implements MenuP
         if (this.type != null && this.type != stack.type && this.amount > 0) return false;
         ItemCastMold mold = getInstalledMold();
         if (mold == null) return false;
-        int limit = MoldCastingRecipes.getCost(mold.getMoldType()) * 9;
+        int limit = mold.getMoldType().getCostMb() * 9;
         return this.amount < limit;
     }
 
@@ -196,7 +209,7 @@ public class MachineStrandCasterBlockEntity extends BlockEntity implements MenuP
     public @Nullable MaterialStack pour(Level level, BlockPos pos, Direction side, MaterialStack stack) {
         this.type = stack.type;
         ItemCastMold mold = getInstalledMold();
-        int limit = mold != null ? MoldCastingRecipes.getCost(mold.getMoldType()) * 9 : 0;
+        int limit = mold != null ? mold.getMoldType().getCostMb() * 9 : 0;
 
         if (stack.amount + this.amount <= limit) {
             this.amount += stack.amount;
@@ -235,9 +248,8 @@ public class MachineStrandCasterBlockEntity extends BlockEntity implements MenuP
     // ==================== NBT ====================
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.put("inventory", inventory.serializeNBT());
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(inventory, registries));
         if (type != null) tag.putString("mat_type", type.name);
         tag.putInt("mat_amount", amount);
         tag.putInt("ticksSinceProgress", ticksSinceProgress);
@@ -245,24 +257,12 @@ public class MachineStrandCasterBlockEntity extends BlockEntity implements MenuP
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        inventory.deserializeNBT(tag.getCompound("inventory"));
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, tag.getCompound("inventory"), registries);
         type = tag.contains("mat_type") ? MaterialType.byName(tag.getString("mat_type")) : null;
         amount = tag.getInt("mat_amount");
         ticksSinceProgress = tag.getInt("ticksSinceProgress");
         water.readFromNBT(tag, "water");
-    }
-
-    @Nullable
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
-
-    @Override
-    public CompoundTag getUpdateTag() {
-        return saveWithoutMetadata();
     }
 
     // ==================== GUI ====================

@@ -52,15 +52,13 @@ public class MachinePumpSteamBlockEntity extends PumpBlockEntity {
     @Override public FluidTank[] getReceivingTanks() { return new FluidTank[]{ steam }; }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         steam.writeToNBT(tag, "tank_steam");
         lps.writeToNBT(tag, "tank_lps");
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         steam.readFromNBT(tag, "tank_steam");
         lps.readFromNBT(tag, "tank_lps");
     }

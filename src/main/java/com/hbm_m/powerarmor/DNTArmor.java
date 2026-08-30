@@ -2,7 +2,7 @@ package com.hbm_m.powerarmor;
 
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.item.ArmorMaterial;
+import com.hbm_m.item.tools_and_armor.ModArmorMaterials;
 
 /**
  * Dineutronium (DNT) Power Armor.
@@ -60,7 +60,7 @@ public class DNTArmor extends ModPowerArmorItem {
             .setJumpSound("hbm_m:step.iron_jump")
             .setFallSound("hbm_m:step.iron_land");
 
-    public DNTArmor(ArmorMaterial material, Type type, Properties properties) {
+    public DNTArmor(ModArmorMaterials material, Type type, Properties properties) {
         super(material, type, properties, DNT_SPECS);
     }
 }

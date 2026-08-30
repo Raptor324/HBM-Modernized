@@ -1,14 +1,15 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.interfaces.IEnergyProvider;
 import com.hbm_m.inventory.material.MaterialStack;
 import com.hbm_m.inventory.material.MaterialType;
 import com.hbm_m.platform.ModItemStackHandler;
-import com.hbm_m.recipe.CrucibleSmeltingRecipes;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.CrucibleSmeltingRecipe;
 import com.hbm_m.recipe.MoltenAlloyRecipe;
-import com.hbm_m.recipe.MoltenAlloyRecipes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -18,17 +19,20 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+//? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
+//?}
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class MachineCrucibleBlockEntity extends BlockEntity {
+public class MachineCrucibleBlockEntity extends BaseHbmBlockEntity {
 
     public static final int INPUT_SLOTS    = 9;
     public static final int LIQUID_CAPACITY = 18_000;
@@ -39,7 +43,9 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
     private final ModItemStackHandler itemHandler = new ModItemStackHandler(INPUT_SLOTS) {
         @Override protected void onContentsChanged(int slot) { setChanged(); }
     };
+    //? if forge {
     private final LazyOptional<IItemHandler> itemHandlerOpt = LazyOptional.of(() -> itemHandler);
+    //?}
 
     public  int   heat        = 0;
     private int   maxHeat     = MAX_HEAT;
@@ -74,7 +80,9 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
         super(ModBlockEntities.CRUCIBLE_BE.get(), pos, state);
     }
 
+    //? if forge {
     public IItemHandler          getItemHandler()        { return itemHandler; }
+    //?}
     public ModItemStackHandler   getModItemStackHandler() { return itemHandler; }
     public ContainerData         getData()               { return data; }
     public float                 getFillLevel()          { return fillLevel; }
@@ -113,8 +121,9 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
         boolean canSmelt = slot >= 0 && be.heat > 0;
         if (canSmelt) {
             ItemStack in = be.itemHandler.getStackInSlot(slot);
-            // smelt() scales with stack size, but only ONE item is consumed per cycle
-            MaterialStack ms = CrucibleSmeltingRecipes.smelt(in.copyWithCount(1));
+            // smelt() scales with stack size, but only ONE item is consumed per cycle.
+            // Рецепты data-driven (JSON) — поиск через RecipeManager (RecipeHooks).
+            MaterialStack ms = smeltCrucible(level, in.copyWithCount(1));
             if (ms != null && be.canAccept(ms)) {
                 be.progress++;
                 be.heat = Math.max(0, be.heat - 1);
@@ -188,19 +197,24 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
      */
     private void tryAlloy(Level level) {
         long time = level.getGameTime();
-        for (MoltenAlloyRecipe recipe : MoltenAlloyRecipes.getRecipes()) {
-            if (recipe.frequency > 0 && time % recipe.frequency != 0) continue;
-            if (!poolHasAll(recipe.inputs)) continue;
+        // MoltenAlloy теперь data-driven (JSON) — итерируем MoltenAlloyRecipe из RecipeManager
+        // через RecipeHooks (кросс-версионный мост). Статический MoltenAlloyRecipes удалён.
+        for (MoltenAlloyRecipe recipe : RecipeHooks.getAllRecipes(level, MoltenAlloyRecipe.Type.INSTANCE)) {
+            MaterialStack[] inputs  = recipe.getInputs();
+            MaterialStack[] outputs = recipe.getOutputs();
+            int frequency = recipe.getFrequency();
+            if (frequency > 0 && time % frequency != 0) continue;
+            if (!poolHasAll(inputs)) continue;
 
             int outputTotal = 0;
-            for (MaterialStack out : recipe.outputs) outputTotal += out.amount;
+            for (MaterialStack out : outputs) outputTotal += out.amount;
             int inputTotal = 0;
-            for (MaterialStack in : recipe.inputs) inputTotal += in.amount;
+            for (MaterialStack in : inputs) inputTotal += in.amount;
             // don't let the reaction overflow the tank
             if (totalMoltenAmount() - inputTotal + outputTotal > LIQUID_CAPACITY) continue;
 
-            for (MaterialStack in : recipe.inputs) poolConsume(in);
-            for (MaterialStack out : recipe.outputs) addMaterial(out.copy());
+            for (MaterialStack in : inputs) poolConsume(in);
+            for (MaterialStack out : outputs) addMaterial(out.copy());
         }
     }
 
@@ -208,11 +222,27 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
         for (int i = 0; i < INPUT_SLOTS; i++) {
             ItemStack s = itemHandler.getStackInSlot(i);
             if (s.isEmpty()) continue;
-            // only one item is smelted per cycle, so check a single-item copy
-            MaterialStack ms = CrucibleSmeltingRecipes.smelt(s.copyWithCount(1));
+            // only one item is smelted per cycle, so check a single-item copy.
+            // Рецепты data-driven (JSON) — поиск через RecipeManager (RecipeHooks); level из BlockEntity.
+            MaterialStack ms = smeltCrucible(this.level, s.copyWithCount(1));
             if (ms != null && canAccept(ms)) return i;
         }
         return -1;
+    }
+
+    /**
+     * Замена удалённому {@code CrucibleSmeltingRecipes.smelt(stack)}: итерация
+     * data-driven {@link CrucibleSmeltingRecipe} из {@code RecipeManager} через {@link RecipeHooks};
+     * первый {@code matchesInput(stack)} → {@code toMaterialStack(stack.count)}.
+     */
+    private static MaterialStack smeltCrucible(Level level, ItemStack stack) {
+        if (level == null || stack == null || stack.isEmpty()) return null;
+        for (CrucibleSmeltingRecipe recipe : RecipeHooks.getAllRecipes(level, CrucibleSmeltingRecipe.Type.INSTANCE)) {
+            if (recipe.matchesInput(stack)) {
+                return recipe.toMaterialStack(stack.getCount());
+            }
+        }
+        return null;
     }
 
     /**
@@ -255,7 +285,9 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
     }
 
     /** The crucible model spans 3×3 blocks — keep the molten surface visible (Forge render culling). */
+    //? if forge {
     @Override
+    //?}
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         return new net.minecraft.world.phys.AABB(
                 worldPosition.getX() - 1, worldPosition.getY(),     worldPosition.getZ() - 1,
@@ -273,12 +305,18 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
     private static long tryPull(Level level, BlockPos src, MachineCrucibleBlockEntity be) {
         BlockEntity te = level.getBlockEntity(src);
         if (te == null) return 0L;
+        //? if forge {
         return te.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, Direction.UP)
                 .map(p -> pullEnergy(p, be))
-                .orElseGet(() -> te.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
-                        .map(p -> pullEnergy(p, be)).orElse(0L));
+                .orElse(0L);
+        //?} elif neoforge {
+        /*// NeoForge: BlockEntity.getCapability удалён — запрос через level.getCapability(cap, pos, state, be, side).
+        IEnergyProvider p = level.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, src, level.getBlockState(src), te, Direction.UP);
+        return p != null ? pullEnergy(p, be) : 0L;
+        *///?}
     }
 
+    //? if forge {
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.ITEM_HANDLER) return itemHandlerOpt.cast();
@@ -286,11 +324,13 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
     }
 
     @Override public void invalidateCaps() { super.invalidateCaps(); itemHandlerOpt.invalidate(); }
+    //?}
 
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.put("inventory", itemHandler.serializeNBT());
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(itemHandler, registries));
         tag.putInt("heat", heat); tag.putInt("progress", progress);
         tag.putFloat("fillLevel", fillLevel); tag.putInt("fillColor", fillColor);
 
@@ -304,9 +344,9 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        if (tag.contains("inventory")) itemHandler.deserializeNBT(tag.getCompound("inventory"));
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
+        if (tag.contains("inventory")) com.hbm_m.platform.ItemStackSerialization.deserialize(itemHandler, tag.getCompound("inventory"), registries);
         heat = tag.getInt("heat"); progress = tag.getInt("progress");
         fillLevel = tag.getFloat("fillLevel"); fillColor = tag.getInt("fillColor");
 
@@ -325,14 +365,7 @@ public class MachineCrucibleBlockEntity extends BlockEntity {
     }
 
     @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        saveAdditional(tag);
-        return tag;
-    }
-
-    @Override
-    public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> getUpdatePacket() {
-        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
+    public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
+        return this.itemHandler;
     }
 }

@@ -75,24 +75,37 @@ public class RBMKColumnFillerBlock extends Block {
         return SHAPE;
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                   Player player, InteractionHand hand, BlockHitResult hit) {
+
         BlockPos basePos = findBase(level, pos);
         if (basePos == null) return InteractionResult.PASS;
         BlockState baseState = level.getBlockState(basePos);
         return baseState.use(level, player, hand, new BlockHitResult(hit.getLocation(), hit.getDirection(), basePos, hit.isInside()));
-    }
+        }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
 
+        BlockPos basePos = findBase(level, pos);
+        if (basePos == null) return InteractionResult.PASS;
+        BlockState baseState = level.getBlockState(basePos);
+        return baseState.useWithoutItem(level, player, new BlockHitResult(hit.getLocation(), hit.getDirection(), basePos, hit.isInside()));
+        }
+    *///?}
+
+
+    //? if < 1.21.1 {
     @Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         super.playerWillDestroy(level, pos, state, player);
-        if (level.isClientSide) return;
-        BlockPos basePos = findBase(level, pos);
-        if (basePos != null && level.getBlockState(basePos).getBlock() instanceof RBMKColumnBlock) {
-            // Cascade: breaking any filler destroys the whole column (base + remaining fillers),
-            // matching vanilla multi-part blocks (doors, beds, tall flowers).
-            level.destroyBlock(basePos, !player.isCreative());
-        }
     }
+    //?} else {
+    /*@Override
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+    *///?}
 }

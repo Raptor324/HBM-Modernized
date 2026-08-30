@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,7 @@ import com.hbm_m.network.SetAssemblerRecipeC2SPacket;
 import com.hbm_m.network.SetChemPlantRecipeC2SPacket;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
 
 import dev.architectury.hooks.fluid.FluidStackHooks;
 import net.minecraft.ChatFormatting;
@@ -23,6 +25,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -125,9 +128,9 @@ public class GUIScreenRecipeSelector extends Screen {
     
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        GuiCompat.renderFlatBlurredBackground(this, guiGraphics, partialTick);
         drawGuiBackground(guiGraphics, mouseX, mouseY);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        GuiCompat.renderWidgetsOnly(this, guiGraphics, mouseX, mouseY, partialTick);
         renderRecipes(guiGraphics, mouseX, mouseY);
         renderTooltips(guiGraphics, mouseX, mouseY);
     }
@@ -291,6 +294,7 @@ public class GUIScreenRecipeSelector extends Screen {
         return super.mouseClicked(mouseX, mouseY, button);
     }
     
+    //? if < 1.21.1 {
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         if (delta > 0 && pageIndex > 0) {
@@ -300,6 +304,19 @@ public class GUIScreenRecipeSelector extends Screen {
         }
         return true;
     }
+    //?} else {
+    /*// 1.21.1: mouseScrolled получил 4-й параметр (horizontal scroll) — передаём 0.0.
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        double delta = scrollY;
+        if (delta > 0 && pageIndex > 0) {
+            pageIndex--;
+        } else if (delta < 0 && pageIndex < pageCount) {
+            pageIndex++;
+        }
+        return true;
+    }
+    *///?}
     
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
@@ -395,7 +412,7 @@ public class GUIScreenRecipeSelector extends Screen {
 
                 for (AssemblerRecipe recipe : available) {
                     ItemStack icon = recipe.getResultItem(this.minecraft.level.registryAccess());
-                    RecipeEntry entry = new RecipeEntry(recipe.getId(), icon, recipe);
+                    RecipeEntry entry = new RecipeEntry(RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), AssemblerRecipe.Type.INSTANCE, recipe), icon, recipe);
                     if (recipe.getBlueprintPool() != null && !recipe.getBlueprintPool().isEmpty()) {
                         poolRecipes.add(entry);
                     } else {
@@ -410,7 +427,7 @@ public class GUIScreenRecipeSelector extends Screen {
                 for (ChemicalPlantRecipe recipe : available) {
                     ItemStack icon = recipe.getResultItem(this.minecraft.level.registryAccess());
                     if (icon.isEmpty()) icon = new ItemStack(com.hbm_m.item.ModItems.TEMPLATE_FOLDER.get());
-                    allRecipes.add(new RecipeEntry(recipe.getId(), icon, recipe));
+                    allRecipes.add(new RecipeEntry(RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), ChemicalPlantRecipe.Type.INSTANCE, recipe), icon, recipe));
                 }
             }
 
@@ -483,8 +500,8 @@ public class GUIScreenRecipeSelector extends Screen {
                 tooltip.add(Component.literal("  " + in.count() + "x " + name).withStyle(ChatFormatting.GRAY));
             }
             for (var fin : chemicalRecipe.getFluidInputs()) {
-                tooltip.add(Component.literal("  " + fin.amount() + "mB ").withStyle(ChatFormatting.BLUE)
-                        .append(FluidLocalization.nameFromFluidId(fin.fluidId()).copy().withStyle(ChatFormatting.GRAY)));
+                tooltip.add(Component.literal("  " + fin.getAmount() + "mB ").withStyle(ChatFormatting.BLUE)
+                        .append(FluidLocalization.nameFromFluidId(BuiltInRegistries.FLUID.getKey(fin.getFluid())).copy().withStyle(ChatFormatting.GRAY)));
             }
 
             tooltip.add(Component.translatable("gui.recipe.output").withStyle(ChatFormatting.BOLD));

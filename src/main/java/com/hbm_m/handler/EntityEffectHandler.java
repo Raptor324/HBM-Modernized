@@ -60,6 +60,72 @@ public final class EntityEffectHandler {
         handleRadiationFromChunk(entity);
 
         handleRadiationFX(entity);
+
+        handleLungDisease(entity);
+    }
+
+    /**
+     * Болезнь лёгких (асбестоз + угольная болезнь). Порт {@code EntityEffectHandler.handleLungDisease}
+     * (1.7.10 строки 489-563), без pollution/soot — система загрязнения в порт не перенесена.
+     */
+    private static void handleLungDisease(LivingEntity entity) {
+        if (entity instanceof Player player && (player.isCreative() || player.isSpectator())) {
+            HbmLivingProps.setAsbestos(entity, 0);
+            HbmLivingProps.setBlackLung(entity, 0);
+            return;
+        }
+
+        Level level = entity.level();
+        int blackLung = HbmLivingProps.getBlackLung(entity);
+        int asbestos = HbmLivingProps.getAsbestos(entity);
+        if (blackLung <= 0 && asbestos <= 0) {
+            return;
+        }
+
+        // Естественное восстановление: угольная пыль выводится ниже половины максимума,
+        // асбест не выводится никогда.
+        if (blackLung > 0 && blackLung < HbmLivingProps.maxBlackLung / 2) {
+            blackLung--;
+            HbmLivingProps.setBlackLung(entity, blackLung);
+        }
+
+        float blackLungMax = HbmLivingProps.maxBlackLung;
+        float asbestosMax = HbmLivingProps.maxAsbestos;
+
+        // ВАЖНО: деление с плавающей точкой (в 1.7.10 — double blacklung/maxBlacklung).
+        // Целочисленное деление зануляет тяжесть до самой смерти: кашель раз в 50 с,
+        // слабость/тошнота не наступают никогда.
+        float blFrac = Math.min(blackLung / (float) blackLungMax, 1F);
+        float asbFrac = Math.min(asbestos / (float) asbestosMax, 1F);
+        float total = 1F - (1F - blFrac) * (1F - asbFrac);
+
+        // Симптомы: слабость и тошнота на поздних стадиях.
+        if (total > 0.75F) {
+            entity.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 100, 2));
+        }
+        if (total > 0.95F) {
+            entity.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 100, 0));
+        }
+
+        // Кашель: от раза в 50 секунд до каждой секунды по мере тяжести; начинается на 25% накопления.
+        boolean coughs = blFrac > 0.25F || asbFrac > 0.25F;
+        int freq = Math.max((int) (1000F - 950F * total), 20);
+        if (coughs && level.getGameTime() % freq == entity.getId() % freq) {            boolean coughsCoal = blFrac > 0.5F;
+            boolean coughsBlood = asbFrac > 0.75F || blFrac > 0.75F;
+
+            level.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+                    ModSounds.PLAYER_COUGH.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+
+            if (level instanceof ServerLevel serverLevel) {
+                if (coughsBlood) {
+                    sendVomitPacket(serverLevel, entity, "blood", 5);
+                }
+                if (coughsCoal) {
+                    // Сильно задымлённые лёгкие — большое облако (50 против 10 частиц).
+                    sendVomitPacket(serverLevel, entity, "smoke", blFrac > 0.8F ? 50 : 10);
+                }
+            }
+        }
     }
 
     /**
@@ -73,6 +139,9 @@ public final class EntityEffectHandler {
      */
     private static void handleCraterBiomeRadiation(LivingEntity entity) {
         if (!ModClothConfig.get().enableRadiation) {
+            return;
+        }
+        if (!ModClothConfig.get().enableCraterBiomes) {
             return;
         }
         if (ContaminationUtil.isRadImmune(entity)) {
@@ -218,21 +287,53 @@ public final class EntityEffectHandler {
         }
     }
 
-    /** Накопление радиации из фона чанка ({@link ChunkRadiationManager}). */
+    /**
+     * Накопление радиации из фона чанка ({@link ChunkRadiationManager}) + адский фон.
+     * Чанковая радиация гейтится enableChunkRads; адский фон (1.7.10 hellRad) работает
+     * независимо от неё — только от enableRadiation, как в оригинале.
+     */
     private static void handleRadiationFromChunk(LivingEntity entity) {
-        if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads) {
+        if (!ModClothConfig.get().enableRadiation) {
             return;
         }
         if (ContaminationUtil.isRadImmune(entity)) {
             return;
         }
 
-        float rad = ChunkRadiationManager.getRadiation(
-                entity.level(),
-                entity.getBlockX(),
-                entity.getBlockY(),
-                entity.getBlockZ()
-        );
+        Level level = entity.level();
+        float rad = 0F;
+
+        if (ModClothConfig.get().enableChunkRads) {
+            rad = ChunkRadiationManager.getRadiation(
+                    level,
+                    entity.getBlockX(),
+                    entity.getBlockY(),
+                    entity.getBlockZ()
+            );
+        }
+
+        // Адский фон (1.7.10 RadiationConfig.hellRad = 0.1 RAD/s): floor поверх чанковой радиации —
+        // "if(world.provider.isHellWorld && RadiationConfig.hellRad > 0 && rad < hellRad) rad = hellRad".
+        float hellRad = ModClothConfig.get().netherAmbientRad;
+        if (hellRad > 0F && level.dimension() == Level.NETHER && rad < hellRad) {
+            rad = hellRad;
+
+            // Дополнение Modernized: Базальтовые дельты — повышенный фон (база × множитель).
+            var biomeKey = level.getBiome(entity.blockPosition()).unwrapKey().orElse(null);
+            if (biomeKey == net.minecraft.world.level.biome.Biomes.BASALT_DELTAS) {
+                float basaltRad = hellRad * ModClothConfig.get().basaltDeltasRadMult;
+                if (rad < basaltRad) {
+                    rad = basaltRad;
+                }
+            }
+        }
+
+        // Диагностика цепочки чанк→сущность (гейтится enableDebugLogging, раз в 5 сек на сущность)
+        if (ModClothConfig.get().enableDebugLogging && rad > 0F && entity.tickCount % 100 == 0) {
+            com.hbm_m.main.MainRegistry.LOGGER.debug(
+                    "[RadChain] {} at [{}, {}, {}] chunkRad={} → radEnv accumulation active",
+                    entity.getName().getString(), entity.getBlockX(), entity.getBlockY(), entity.getBlockZ(), rad);
+        }
 
         if (rad > 0F) {
             ContaminationUtil.contaminate(entity, HazardType.RADIATION, ContaminationType.CREATIVE, rad / 20F);

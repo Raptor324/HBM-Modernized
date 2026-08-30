@@ -9,8 +9,7 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineHydrotreaterMenu;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.recipe.HydrotreaterRecipes;
-import com.hbm_m.recipe.HydrotreaterRecipes.Recipe;
+import com.hbm_m.recipe.HydrotreaterRecipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -28,7 +27,7 @@ import net.minecraft.world.level.material.Fluid;
  * Hydrotreater: Portierung der Kernlogik aus {@code TileEntityMachineHydrotreater} (1.7.10
  * Original). Entschwefelt alle 2 Ticks 100mB eines Oel-Fluids (Tank 0) unter Verbrauch von
  * Wasserstoff (Tank 1, druckbeaufschlagt) zu entschwefeltem Oel (Tank 2) + Sauergas (Tank 3),
- * ueber die feste Rezeptliste {@link HydrotreaterRecipes} (Direktport von
+ * ueber die data-driven Rezeptliste {@link HydrotreaterRecipe} (Port von
  * {@code HydrotreatingRecipes}). Erfordert wie im Original einen katalytischen Konverter
  * ({@link ModItems#CATALYTIC_CONVERTER}) im Katalysatorslot.
  */
@@ -53,7 +52,8 @@ public class MachineHydrotreaterBlockEntity extends BaseMachineBlockEntity imple
         tanks[0] = new FluidTank(OIL_CAPACITY_MB) {
             @Override
             public boolean isFluidValid(Fluid fluid) {
-                return HydrotreaterRecipes.has(fluid);
+                // Data-driven: рецепт ищется в RecipeManager (заменяет HydrotreaterRecipes.has).
+                return HydrotreaterRecipe.hasRecipe(level, fluid);
             }
         };
         tanks[1] = new FluidTank(HYDROGEN_CAPACITY_MB) {
@@ -90,27 +90,27 @@ public class MachineHydrotreaterBlockEntity extends BaseMachineBlockEntity imple
 
     /** Direktport von {@code reform()}. */
     private void reform() {
-        Recipe recipe = HydrotreaterRecipes.get(tanks[0].getTankType());
+        HydrotreaterRecipe recipe = HydrotreaterRecipe.getRecipe(level, tanks[0].getTankType());
         if (recipe == null) {
             tanks[2].conform(com.hbm_m.inventory.fluid.ModFluids.NONE.getSource());
             tanks[3].conform(com.hbm_m.inventory.fluid.ModFluids.NONE.getSource());
             return;
         }
-        if (tanks[2].isEmpty()) tanks[2].conform(recipe.output());
-        if (tanks[3].isEmpty()) tanks[3].conform(recipe.sourGas());
+        if (tanks[2].isEmpty()) tanks[2].conform(recipe.getOutput());
+        if (tanks[3].isEmpty()) tanks[3].conform(recipe.getSourGas());
 
         if (getEnergyStored() < POWER_PER_CYCLE) return;
         if (tanks[0].getFill() < OIL_PER_CYCLE_MB) return;
-        if (tanks[1].getFill() < recipe.hydrogenMb()) return;
+        if (tanks[1].getFill() < recipe.getHydrogenMb()) return;
         if (!hasCatalyst()) return;
-        if (tanks[2].getFill() + recipe.outputMb() > tanks[2].getMaxFill()) return;
-        if (tanks[3].getFill() + recipe.sourGasMb() > tanks[3].getMaxFill()) return;
+        if (tanks[2].getFill() + recipe.getOutputMb() > tanks[2].getMaxFill()) return;
+        if (tanks[3].getFill() + recipe.getSourGasMb() > tanks[3].getMaxFill()) return;
 
         setEnergyStored(getEnergyStored() - POWER_PER_CYCLE);
         tanks[0].drainMb(OIL_PER_CYCLE_MB);
-        tanks[1].drainMb(recipe.hydrogenMb());
-        tanks[2].fillMb(recipe.output(), recipe.outputMb());
-        tanks[3].fillMb(recipe.sourGas(), recipe.sourGasMb());
+        tanks[1].drainMb(recipe.getHydrogenMb());
+        tanks[2].fillMb(recipe.getOutput(), recipe.getOutputMb());
+        tanks[3].fillMb(recipe.getSourGas(), recipe.getSourGasMb());
     }
 
     private boolean hasCatalyst() {
@@ -148,7 +148,7 @@ public class MachineHydrotreaterBlockEntity extends BaseMachineBlockEntity imple
 
     @Override
     public boolean canConnect(Fluid fluid, Direction fromDir) {
-        return fromDir != null && (HydrotreaterRecipes.has(fluid)
+        return fromDir != null && (HydrotreaterRecipe.hasRecipe(level, fluid)
                 || fluid == com.hbm_m.inventory.fluid.ModFluids.HYDROGEN.getSource()
                 || tanks[2].getTankType() == fluid || tanks[3].getTankType() == fluid);
     }
@@ -156,16 +156,16 @@ public class MachineHydrotreaterBlockEntity extends BaseMachineBlockEntity imple
     // ==================== NBT ====================
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].writeToNBT(tag, "tank" + i);
         }
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].readFromNBT(tag, "tank" + i);
         }

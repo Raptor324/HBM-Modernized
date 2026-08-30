@@ -80,7 +80,7 @@ public abstract class RBMKControlBlockEntity extends RBMKColumnBlockEntity imple
         if (!isPowered()) return;
 
         if (!energyNodeRegistered && level instanceof net.minecraft.server.level.ServerLevel server) {
-            com.hbm_m.api.energy.EnergyNetworkManager.get(server).addNode(getBlockPos());
+            com.hbm_m.api.energy.EnergySubscriptions.register(this);
             energyNodeRegistered = true;
         }
         if (this.power < CONSUMPTION) this.hasPower = false;
@@ -144,7 +144,7 @@ public abstract class RBMKControlBlockEntity extends RBMKColumnBlockEntity imple
         // NB: `level` is shadowed in this class by the rod's extraction level, so the world has to
         // be fetched through getLevel().
         if (energyNodeRegistered && getLevel() instanceof net.minecraft.server.level.ServerLevel server) {
-            com.hbm_m.api.energy.EnergyNetworkManager.get(server).removeNode(getBlockPos());
+            com.hbm_m.api.energy.EnergySubscriptions.unsubscribeAll(this);
             energyNodeRegistered = false;
         }
         super.setRemoved();
@@ -177,9 +177,10 @@ public abstract class RBMKControlBlockEntity extends RBMKColumnBlockEntity imple
         return d;
     }
 
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putDouble("level", level);
         tag.putDouble("lastLevel", lastLevel);
         tag.putDouble("targetLevel", targetLevel);
@@ -189,10 +190,10 @@ public abstract class RBMKControlBlockEntity extends RBMKColumnBlockEntity imple
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         level       = tag.getDouble("level");
-        // lastLevel was never sent to the client before (this same saveAdditional/load pair
+        // lastLevel was never sent to the client before (this same save/load pair
         // backs both disk NBT and the per-tick network sync packet) - the renderer's
         // level/lastLevel partial-tick interpolation was lerping toward a client-side value
         // that never updated, then snapping back to it at every tick boundary. That snap-back,

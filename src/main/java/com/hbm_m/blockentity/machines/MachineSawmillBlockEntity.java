@@ -33,7 +33,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * Entitaeten-Schadens-AoE der rotierenden Klinge entfallen ersatzlos, da beide direkt von der
  * fehlenden Hitze-Eskalation abhaengen.
  */
-public class MachineSawmillBlockEntity extends BlockEntity {
+public class MachineSawmillBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity {
 
     public static final int SLOT_INPUT = 0;
     public static final int SLOT_OUTPUT = 1;
@@ -123,16 +123,16 @@ public class MachineSawmillBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.put("inventory", inventory.serializeNBT());
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(inventory, registries));
         tag.putInt("progress", progress);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        inventory.deserializeNBT(tag.getCompound("inventory"));
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
+        com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, tag.getCompound("inventory"), registries);
         progress = tag.getInt("progress");
     }
 }

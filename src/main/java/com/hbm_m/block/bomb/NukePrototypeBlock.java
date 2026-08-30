@@ -101,8 +101,19 @@ public class NukePrototypeBlock extends BaseEntityBlock implements IBomb, IDeton
         return null;
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return hbmOnUse(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return hbmOnUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult hbmOnUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (level.isClientSide) return InteractionResult.SUCCESS;
 
         BlockEntity be = level.getBlockEntity(pos);
@@ -152,4 +163,9 @@ public class NukePrototypeBlock extends BaseEntityBlock implements IBomb, IDeton
         }
         return BombReturnCode.UNDEFINED;
     }
+
+    //? if > 1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<NukePrototypeBlock> CODEC = simpleCodec(NukePrototypeBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

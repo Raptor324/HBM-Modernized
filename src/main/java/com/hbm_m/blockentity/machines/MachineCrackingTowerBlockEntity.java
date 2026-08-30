@@ -8,8 +8,7 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineCrackingTowerMenu;
-import com.hbm_m.recipe.CrackingTowerRecipes;
-import com.hbm_m.recipe.CrackingTowerRecipes.Crack;
+import com.hbm_m.recipe.CrackingTowerRecipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -28,7 +27,7 @@ import net.minecraft.world.level.material.Fluid;
  * "MachineCrackingTower" in diesem Port ist eine Umbenennung dieser Original-TE, NICHT von
  * {@code TileEntityMachineFractionTower}. Wandelt 100mB eines Oel-Fluids (Tank 0) + 200mB Dampf (Tank 1) alle
  * 5 Ticks (bis zu 2x pro Intervall, wie im Original) in zwei leichtere Fraktionen (Tank 2/3) + 2mB Restdampf
- * (Tank 4) um, ueber die feste Rezeptliste {@link CrackingTowerRecipes} (Direktport von {@code CrackingRecipes}).
+ * (Tank 4) um, ueber die data-driven Rezeptliste {@link CrackingTowerRecipe} (Port von {@code CrackingRecipes}).
  * <p>
  * Vereinfachung ggue. Original: Einzelblock statt mehrstoeckigem Multiblock, MK2-Rohrnetz an allen 6 Seiten statt
  * der festen Multiblock-Anschlusspunkte - analog zu {@link MachineFractionTowerBlockEntity}.
@@ -50,7 +49,8 @@ public class MachineCrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         tanks[0] = new FluidTank(ModFluids.BITUMEN.getSource(), OIL_CAPACITY_MB) {
             @Override
             public boolean isFluidValid(Fluid fluid) {
-                return CrackingTowerRecipes.has(fluid);
+                // Data-driven: рецепт ищется в RecipeManager (заменяет CrackingTowerRecipes.has).
+                return CrackingTowerRecipe.hasRecipe(level, fluid);
             }
         };
         tanks[1] = new FluidTank(ModFluids.STEAM.getSource(), STEAM_CAPACITY_MB) {
@@ -90,31 +90,31 @@ public class MachineCrackingTowerBlockEntity extends BaseMachineBlockEntity impl
 
     /** Direktport von {@code setupTanks()}. */
     private void setupTanks() {
-        Crack crack = CrackingTowerRecipes.get(tanks[0].getTankType());
-        if (crack == null) return;
-        if (tanks[2].isEmpty()) tanks[2].conform(crack.outA());
-        if (tanks[3].isEmpty() && crack.outB() != ModFluids.NONE.getSource()) tanks[3].conform(crack.outB());
+        CrackingTowerRecipe recipe = CrackingTowerRecipe.getRecipe(level, tanks[0].getTankType());
+        if (recipe == null) return;
+        if (tanks[2].isEmpty()) tanks[2].conform(recipe.getOutputA());
+        if (tanks[3].isEmpty() && recipe.hasOutputB()) tanks[3].conform(recipe.getOutputB());
     }
 
     /** Direktport von {@code crack()}: verbraucht Oel + Dampf, produziert zwei Fraktionen + Restdampf. */
     private boolean crack() {
-        Crack crack = CrackingTowerRecipes.get(tanks[0].getTankType());
-        if (crack == null) return false;
+        CrackingTowerRecipe recipe = CrackingTowerRecipe.getRecipe(level, tanks[0].getTankType());
+        if (recipe == null) return false;
 
-        int steamNeeded = CrackingTowerRecipes.STEAM_PER_100_INPUT;
-        int spentSteamProduced = CrackingTowerRecipes.SPENTSTEAM_PRODUCED;
+        int steamNeeded = CrackingTowerRecipe.STEAM_PER_100_INPUT;
+        int spentSteamProduced = CrackingTowerRecipe.SPENTSTEAM_PRODUCED;
 
         if (tanks[0].getFill() < OIL_PER_CRACK_MB) return false;
         if (tanks[1].getFill() < steamNeeded) return false;
-        if (tanks[2].getFill() + crack.amountA() > tanks[2].getMaxFill()) return false;
-        if (crack.outB() != ModFluids.NONE.getSource() && tanks[3].getFill() + crack.amountB() > tanks[3].getMaxFill()) return false;
+        if (tanks[2].getFill() + recipe.getOutputAMb() > tanks[2].getMaxFill()) return false;
+        if (recipe.hasOutputB() && tanks[3].getFill() + recipe.getOutputBMb() > tanks[3].getMaxFill()) return false;
         if (tanks[4].getFill() + spentSteamProduced > tanks[4].getMaxFill()) return false;
 
         tanks[0].drainMb(OIL_PER_CRACK_MB);
         tanks[1].drainMb(steamNeeded);
-        tanks[2].fillMb(crack.outA(), crack.amountA());
-        if (crack.outB() != ModFluids.NONE.getSource()) {
-            tanks[3].fillMb(crack.outB(), crack.amountB());
+        tanks[2].fillMb(recipe.getOutputA(), recipe.getOutputAMb());
+        if (recipe.hasOutputB()) {
+            tanks[3].fillMb(recipe.getOutputB(), recipe.getOutputBMb());
         }
         tanks[4].fillMb(ModFluids.SPENTSTEAM.getSource(), spentSteamProduced);
         return true;
@@ -163,7 +163,7 @@ public class MachineCrackingTowerBlockEntity extends BaseMachineBlockEntity impl
 
     @Override
     public boolean canConnect(Fluid fluid, Direction fromDir) {
-        return fromDir != null && (CrackingTowerRecipes.has(fluid)
+        return fromDir != null && (CrackingTowerRecipe.hasRecipe(level, fluid)
                 || fluid == ModFluids.STEAM.getSource()
                 || tanks[2].getTankType() == fluid || tanks[3].getTankType() == fluid || tanks[4].getTankType() == fluid);
     }
@@ -171,16 +171,16 @@ public class MachineCrackingTowerBlockEntity extends BaseMachineBlockEntity impl
     // ==================== NBT ====================
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].writeToNBT(tag, "tank" + i);
         }
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].readFromNBT(tag, "tank" + i);
         }

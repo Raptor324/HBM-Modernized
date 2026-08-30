@@ -1,0 +1,36 @@
+{
+  "_comment": "POOL_VAULT_LOCKERS — личные вещи и снаряжение из убежищ (порт ItemPoolsComponent.POOL_VAULT_LOCKERS из 1.7.10)",
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": { "min": 5, "max": 9 },
+      "entries": [
+        { "type": "item", "name": "hbm_m:robes_helmet", "weight": 1 },
+        { "type": "item", "name": "hbm_m:robes_plate", "weight": 1 },
+        { "type": "item", "name": "hbm_m:robes_legs", "weight": 1 },
+        { "type": "item", "name": "hbm_m:robes_boots", "weight": 1 },
+        { "type": "item", "name": "hbm_m:jackt", "weight": 1 },
+        { "type": "item", "name": "hbm_m:jackt2", "weight": 1 },
+        { "type": "item", "name": "hbm_m:gas_mask_m65", "weight": 2 },
+        { "type": "item", "name": "hbm_m:gas_mask_mono", "weight": 2 },
+        { "type": "item", "name": "hbm_m:goggles", "weight": 2 },
+        { "type": "item", "name": "hbm_m:gas_mask_filter", "weight": 4 },
+        { "type": "item", "name": "hbm_m:flame_opinion", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:flame_conspiracy", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:flame_politics", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:definitelyfood", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 2, "max": 7 } } ] },
+        { "type": "item", "name": "hbm_m:cigarette", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 8 } } ] },
+        { "type": "item", "name": "hbm_m:armor_polish", "weight": 3 },
+        { "type": "item", "name": "hbm_m:gun_kit_1", "weight": 3 },
+        { "type": "item", "name": "hbm_m:rag", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "minecraft:paper", "weight": 7, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 6 } } ] },
+        { "type": "item", "name": "minecraft:clock", "weight": 3 },
+        { "type": "item", "name": "minecraft:book", "weight": 10, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 5 } } ] },
+        { "type": "item", "name": "minecraft:experience_bottle", "weight": 1, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:blueprint_folder", "weight": 2 },
+        { "type": "item", "name": "hbm_m:ammo_container", "weight": 1 },
+        { "type": "item", "name": "hbm_m:coin_token", "weight": 5 }
+      ]
+    }
+  ]
+}

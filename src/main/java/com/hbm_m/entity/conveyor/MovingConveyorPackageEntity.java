@@ -26,6 +26,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.hbm_m.platform.PlatformHooks;
 
 /**
  * Port von {@code com.hbm.entity.item.EntityMovingPackage} (1.7.10 Original) - traegt mehrere
@@ -60,10 +61,17 @@ public class MovingConveyorPackageEntity extends Entity implements ItemSupplier 
         return entity;
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         this.entityData.define(DISPLAY_ITEM, ItemStack.EMPTY);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        builder.define(DISPLAY_ITEM, ItemStack.EMPTY);
+    }
+    *///?}
 
     public void setContents(ItemStack[] contents) {
         this.contents = contents;
@@ -175,7 +183,7 @@ public class MovingConveyorPackageEntity extends Entity implements ItemSupplier 
         ListTag list = tag.getList("contents", 10);
         List<ItemStack> loaded = new ArrayList<>();
         for (int i = 0; i < list.size(); i++) {
-            ItemStack stack = ItemStack.of(list.getCompound(i));
+            ItemStack stack = PlatformHooks.itemStackOf(list.getCompound(i), this.level().registryAccess());
             if (!stack.isEmpty()) loaded.add(stack);
         }
         if (loaded.isEmpty()) {
@@ -189,7 +197,7 @@ public class MovingConveyorPackageEntity extends Entity implements ItemSupplier 
     protected void addAdditionalSaveData(CompoundTag tag) {
         ListTag list = new ListTag();
         for (ItemStack stack : contents) {
-            if (!stack.isEmpty()) list.add(stack.save(new CompoundTag()));
+            if (!stack.isEmpty()) list.add(PlatformHooks.safeItemSave(stack, this.level().registryAccess()));
         }
         tag.put("contents", list);
     }

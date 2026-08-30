@@ -1,5 +1,1 @@
-{
-  "variants": {
-    "": { "model": "hbm_m:block/cargo_elevator" }
-  }
-}
+{"variants":{"":{"model":"hbm_m:block/cargo_elevator"}}}

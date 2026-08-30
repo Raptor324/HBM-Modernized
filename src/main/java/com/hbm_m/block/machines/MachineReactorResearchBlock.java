@@ -148,9 +148,11 @@ public class MachineReactorResearchBlock extends BaseEntityBlock implements IMul
         }
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                   Player player, InteractionHand hand, BlockHitResult hit) {
+
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MachineReactorResearchBlockEntity reactorEntity) {
@@ -160,7 +162,23 @@ public class MachineReactorResearchBlock extends BaseEntityBlock implements IMul
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
-    }
+        }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+
+        if (!level.isClientSide()) {
+            BlockEntity entity = level.getBlockEntity(pos);
+            if (entity instanceof MachineReactorResearchBlockEntity reactorEntity) {
+                MenuRegistry.openExtendedMenu((ServerPlayer) player, reactorEntity, buf -> buf.writeBlockPos(pos));
+            } else {
+                throw new IllegalStateException("Container provider is missing!");
+            }
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide());
+        }
+    *///?}
+
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos,
@@ -176,4 +194,13 @@ public class MachineReactorResearchBlock extends BaseEntityBlock implements IMul
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineReactorResearchBlock> CODEC = simpleCodec(MachineReactorResearchBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

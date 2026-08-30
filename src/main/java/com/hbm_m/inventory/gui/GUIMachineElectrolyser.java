@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.MachineElectrolyserBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineElectrolyserMenu;
 import com.hbm_m.lib.RefStrings;
 
@@ -33,18 +34,20 @@ public class GUIMachineElectrolyser extends AbstractContainerScreen<MachineElect
         int y = topPos;
         guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
 
-        int fluidProgress = blockEntity.getProgressFluidScaled(16);
-        if (fluidProgress > 0) {
-            guiGraphics.fill(x + 8, y + 34 - fluidProgress, x + 24, y + 34, 0xFF3080FF);
-        }
+        if (blockEntity != null) { // тайл может отсутствовать в реплее Flashback
+            int fluidProgress = blockEntity.getProgressFluidScaled(16);
+            if (fluidProgress > 0) {
+                guiGraphics.fill(x + 8, y + 34 - fluidProgress, x + 24, y + 34, 0xFF3080FF);
+            }
 
-        int metalProgress = blockEntity.getProgressMetalScaled(30);
-        if (metalProgress > 0) {
-            guiGraphics.fill(x + 116, y + 36, x + 116 + metalProgress, y + 44, 0xFFC0C0C0);
-        }
+            int metalProgress = blockEntity.getProgressMetalScaled(30);
+            if (metalProgress > 0) {
+                guiGraphics.fill(x + 116, y + 36, x + 116 + metalProgress, y + 44, 0xFFC0C0C0);
+            }
 
-        if (blockEntity.getEnergyStored() > 0) {
-            guiGraphics.fill(x + 8, y + 71, x + 20, y + 87, 0xFFFFD030);
+            if (blockEntity.getEnergyStored() > 0) {
+                guiGraphics.fill(x + 8, y + 71, x + 20, y + 87, 0xFFFFD030);
+            }
         }
     }
 
@@ -56,7 +59,7 @@ public class GUIMachineElectrolyser extends AbstractContainerScreen<MachineElect
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         renderTooltip(guiGraphics, mouseX, mouseY);
     }

@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.MachineCatalyticReformerBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineCatalyticReformerMenu;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
@@ -43,19 +44,21 @@ public class GUIMachineCatalyticReformer extends GuiInfoScreen<MachineCatalyticR
         RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
         guiGraphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
 
-        long power = be.getEnergyStored();
-        long maxPower = Math.max(1L, be.getMaxEnergyStored());
-        int j = (int) (power * 54 / maxPower);
-        if (j > 0) {
-            guiGraphics.blit(TEXTURE, leftPos + ENERGY_X, topPos + TANK_Y + TANK_H - j, 176, TANK_H - j, TANK_W, j);
-        }
+        if (be != null) {
+            long power = be.getEnergyStored();
+            long maxPower = Math.max(1L, be.getMaxEnergyStored());
+            int j = (int) (power * 54 / maxPower);
+            if (j > 0) {
+                guiGraphics.blit(TEXTURE, leftPos + ENERGY_X, topPos + TANK_Y + TANK_H - j, 176, TANK_H - j, TANK_W, j);
+            }
 
-        var tanks = be.getTanks();
-        // Tank0 (Eingang) wird analog zum Original nicht separat visualisiert (kein eigener
-        // Balken im Original-GUI - nur die drei Ausgangstanks werden gezeigt).
-        tanks[1].renderTank(guiGraphics, leftPos + TANK_X[0], topPos + TANK_Y, TANK_W, TANK_H);
-        tanks[2].renderTank(guiGraphics, leftPos + TANK_X[1], topPos + TANK_Y, TANK_W, TANK_H);
-        tanks[3].renderTank(guiGraphics, leftPos + TANK_X[2], topPos + TANK_Y, TANK_W, TANK_H);
+            var tanks = be.getTanks();
+            // Tank0 (Eingang) wird analog zum Original nicht separat visualisiert (kein eigener
+            // Balken im Original-GUI - nur die drei Ausgangstanks werden gezeigt).
+            tanks[1].renderTank(guiGraphics, leftPos + TANK_X[0], topPos + TANK_Y, TANK_W, TANK_H);
+            tanks[2].renderTank(guiGraphics, leftPos + TANK_X[1], topPos + TANK_Y, TANK_W, TANK_H);
+            tanks[3].renderTank(guiGraphics, leftPos + TANK_X[2], topPos + TANK_Y, TANK_W, TANK_H);
+        }
     }
 
     @Override
@@ -66,13 +69,15 @@ public class GUIMachineCatalyticReformer extends GuiInfoScreen<MachineCatalyticR
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        drawElectricityInfo(guiGraphics, mouseX, mouseY, ENERGY_X, TANK_Y, TANK_W, TANK_H, be.getEnergyStored(), be.getMaxEnergyStored());
+        if (be != null) {
+            drawElectricityInfo(guiGraphics, mouseX, mouseY, ENERGY_X, TANK_Y, TANK_W, TANK_H, be.getEnergyStored(), be.getMaxEnergyStored());
 
-        var tanks = be.getTanks();
-        FluidTankArr(tanks, guiGraphics, mouseX, mouseY);
+            var tanks = be.getTanks();
+            FluidTankArr(tanks, guiGraphics, mouseX, mouseY);
+        }
 
         if (isPointInRect(CATALYST_X, CATALYST_Y, 16, 16, mouseX, mouseY) && menu.getCarried().isEmpty()) {
             ItemStack converter = new ItemStack(ModItems.CATALYTIC_CONVERTER.get());

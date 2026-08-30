@@ -1535,6 +1535,27 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 4)
                 .addIngredient(Ingredient.of(Tags.Items.DYES_WHITE), 2)
                 .save(writer, "door_sliding_seal");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.TRANSITION_SEAL.get(), 1), 100, 300)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 30)
+                .addIngredient(ModItems.INSULATOR.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 8)
+                .addIngredient(Items.IRON_BLOCK, 10)
+                .addIngredient(Ingredient.of(Tags.Items.DYES_GRAY), 8)
+                .save(writer, "door_transition_seal");
+
+        // Cargo door: оригинал 1.7.10 — ass.cargodoor (200 тиков, 100 power):
+        // steel_beam×32, STEEL.plate()×4, DURA.bolt()×4, motor×2, KEY_GRAY×1.
+        // steel_beam отсутствует в Modernized → заменяем на стальной слиток (32).
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.CARGO_DOOR.get(), 1), 200, 100)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 32)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 4)
+                .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .addIngredient(Ingredient.of(Tags.Items.DYES_GRAY), 1)
+                .save(writer, "cargo_door");
     }
 
     private static void registerElectronics(Consumer<FinishedRecipe> writer) {
@@ -1604,13 +1625,13 @@ public final class AssemblerRecipeGenerator {
                         ModItems.getIngot(ModIngots.POLYMER).get(),
                         ModItems.getIngot(ModIngots.BAKELITE).get()), 4)
                 .addIngredient(ModItems.NEUTRON_REFLECTOR.get(), 2)
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "assembler/fat_man_explosive"));
+                .save(writer, "assembler/fat_man_explosive");
 
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.FAT_MAN_IGNITER.get(), 1), 200, 100)
                 .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 3)
                 .addIngredient(ModItems.WIRE_GOLD.get(), 24)
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "assembler/fat_man_igniter"));
+                .save(writer, "assembler/fat_man_igniter");
 
         AssemblerRecipeBuilder.assemblerRecipe(  //TODO: WIP RECIPES, NEEDS REWORK WHEN FULL PROCESSING IS PORTED
                         new ItemStack(ModItems.BALL_TNT.get(), 10), 80, 150)
@@ -1634,6 +1655,116 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.WIRE_COPPER.get(), 10)
                 .addIngredient(ModItems.getPowder(ModIngots.LEAD).get(), 4)
                 .save(writer, "nuke_prototype");
+
+        // ─── Компоненты больших бомб ───
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.EARLY_EXPLOSIVE_LENSES.get(), 1), 300, 100)
+                .addIngredient(ModItems.PLATE_ALUMINUM.get(), 6)
+                .addIngredient(ModItems.BALL_TNT.get(), 4)
+                .addIngredient(Ingredient.of(
+                        ModItems.getIngot(ModIngots.POLYMER).get(),
+                        ModItems.getIngot(ModIngots.BAKELITE).get()), 2)
+                .save(writer, "assembler/early_explosive_lenses");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.EXPLOSIVE_LENSES.get(), 1), 400, 100)
+                .addIngredient(ModItems.PLATE_ALUMINUM.get(), 8)
+                .addIngredient(ModItems.BALL_TNT.get(), 6)
+                .addIngredient(ModItems.PLATE_ADVANCED_ALLOY.get(), 2)
+                .save(writer, "assembler/explosive_lenses");
+
+        // ─── Большие ядерные бомбы ───
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.NUKE_GADGET.get(), 1), 120, 100)
+                .addIngredient(ModItems.PLATE_IRON.get(), 24)
+                .addIngredient(ModItems.PLATE_ALUMINUM.get(), 12)
+                .addIngredient(ModItems.WIRE_COPPER.get(), 16)
+                .addIngredient(ModItems.GADGET_WIREING.get(), 1)
+                .addIngredient(ModItems.GADGET_CORE.get(), 1)
+                .addIngredient(ModItems.EARLY_EXPLOSIVE_LENSES.get(), 1)
+                .save(writer, "nuke_gadget");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.NUKE_BOY.get(), 1), 120, 100)
+                .addIngredient(ModItems.PLATE_IRON.get(), 24)
+                .addIngredient(ModItems.WIRE_COPPER.get(), 12)
+                .addIngredient(ModItems.BOY_SHIELDING.get(), 1)
+                .addIngredient(ModItems.BOY_TARGET.get(), 1)
+                .addIngredient(ModItems.BOY_BULLET.get(), 1)
+                .addIngredient(ModItems.BOY_PROPELLANT.get(), 1)
+                .addIngredient(ModItems.BOY_IGNITER.get(), 1)
+                .save(writer, "nuke_boy");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.NUKE_MIKE.get(), 1), 200, 100)
+                .addIngredient(ModItems.PLATE_ADVANCED_ALLOY.get(), 16)
+                .addIngredient(ModItems.PLATE_IRON.get(), 48)
+                .addIngredient(ModItems.EXPLOSIVE_LENSES.get(), 1)
+                .addIngredient(ModItems.MAN_CORE.get(), 1)
+                .addIngredient(ModItems.MIKE_CORE.get(), 1)
+                .addIngredient(ModItems.MIKE_DEUT.get(), 1)
+                .addIngredient(ModItems.MIKE_COOLING_UNIT.get(), 1)
+                .save(writer, "nuke_mike");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.NUKE_TSAR.get(), 1), 400, 100)
+                .addIngredient(ModItems.PLATE_ADVANCED_ALLOY.get(), 32)
+                .addIngredient(ModItems.PLATE_IRON.get(), 64)
+                .addIngredient(ModItems.EXPLOSIVE_LENSES.get(), 1)
+                .addIngredient(ModItems.MAN_CORE.get(), 1)
+                .addIngredient(ModItems.TSAR_CORE.get(), 1)
+                .save(writer, "nuke_tsar");
+
+        // ─── Специальные заряды ───
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.NUKE_FLEIJA.get(), 1), 250, 100)
+                .addIngredient(ModItems.PLATE_ADVANCED_ALLOY.get(), 20)
+                .addIngredient(ModItems.FLEIJA_IGNITER.get(), 2)
+                .addIngredient(ModItems.FLEIJA_PROPELLANT.get(), 3)
+                .addIngredient(ModItems.FLEIJA_CORE.get(), 6)
+                .save(writer, "nuke_fleija");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.NUKE_SOLINIUM.get(), 1), 300, 100)
+                .addIngredient(ModItems.PLATE_ADVANCED_ALLOY.get(), 20)
+                .addIngredient(ModItems.SOLINIUM_IGNITER.get(), 4)
+                .addIngredient(ModItems.SOLINIUM_PROPELLANT.get(), 4)
+                .addIngredient(ModItems.SOLINIUM_CORE.get(), 1)
+                .save(writer, "nuke_solinium");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.NUKE_N2.get(), 1), 150, 100)
+                .addIngredient(ModItems.PLATE_IRON.get(), 32)
+                .addIngredient(ModItems.N2_CHARGE.get(), 12)
+                .save(writer, "nuke_n2");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.NUKE_FSTBMB.get(), 1), 350, 100)
+                .addIngredient(ModItems.PLATE_ADVANCED_ALLOY.get(), 16)
+                .addIngredient(ModItems.PLATE_IRON.get(), 32)
+                .addIngredient(ModItems.EGG_BALEFIRE.get(), 1)
+                .addIngredient(Ingredient.of(
+                        ModItems.BATTERY_SPARK.get(),
+                        ModItems.BATTERY_TRIXITE.get()), 1)
+                .save(writer, "nuke_fstbmb");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.NUKE_CUSTOM.get(), 1), 100, 100)
+                .addIngredient(ModItems.PLATE_IRON.get(), 24)
+                .addIngredient(ModItems.PLATE_ALUMINUM.get(), 12)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 4)
+                .addIngredient(ModItems.WIRE_COPPER.get(), 16)
+                .save(writer, "nuke_custom");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.BOMB_MULTI.get(), 1), 60, 100)
+                .addIngredient(net.minecraft.world.item.Items.TNT, 4)
+                .addIngredient(net.minecraft.world.item.Items.GUNPOWDER, 8)
+                .addIngredient(ModItems.PLATE_IRON.get(), 8)
+                .save(writer, "bomb_multi");
     }
 
     private static void registerCastPlateRecipes(Consumer<FinishedRecipe> writer) {
@@ -1809,14 +1940,14 @@ public final class AssemblerRecipeGenerator {
                         ModItems.PLATE_IRON.get()), 16)
                 .addIngredient(Ingredient.of(ModBlocks.DECO_STEEL_SCAFFOLD.get()), 24)
                 .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 2)
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "assembler/launch_pad"));
+                .save(writer, "assembler/launch_pad");
 
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.WARHEAD_GENERIC_MEDIUM.get(), 1), 200, 100)
                 .addIngredient(ModItems.PLATE_TITANIUM.get(), 8)
                 .addIngredient(ModItems.BALL_TNT.get(), 4)
                 .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 1)
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "assembler/warhead_generic_medium"));
+                .save(writer, "assembler/warhead_generic_medium");
 
         // Tier 0 — micro / ABM (cheap test crafts)
         AssemblerRecipeBuilder.assemblerRecipe(

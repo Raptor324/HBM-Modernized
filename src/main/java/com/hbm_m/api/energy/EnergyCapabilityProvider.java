@@ -4,6 +4,7 @@ import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.interfaces.IEnergyProvider;
 import com.hbm_m.interfaces.IEnergyReceiver;
 import com.hbm_m.powerarmor.ModArmorFSBPowered;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
@@ -15,14 +16,15 @@ import net.minecraftforge.common.util.LazyOptional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 //?}
+
 /**
  * Провайдер capability для ItemStack (батарейки).
  * Предоставляет IEnergyProvider и IEnergyReceiver для предметов.
  * Совместим с Forge Energy через LongEnergyWrapper.
  */
+
 //? if forge {
 public class EnergyCapabilityProvider implements ICapabilityProvider {
-
     private final LazyOptional<ItemEnergyStorage> storage;
 
     public EnergyCapabilityProvider(ItemStack stack, long capacity, long maxReceive, long maxExtract) {
@@ -32,33 +34,31 @@ public class EnergyCapabilityProvider implements ICapabilityProvider {
     @NotNull
     @Override
     public <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        // Предоставляем HBM capabilities
         if (cap == ModCapabilities.HBM_ENERGY_PROVIDER && storage.resolve().map(ItemEnergyStorage::canExtract).orElse(false)) {
             return storage.cast();
         }
         if (cap == ModCapabilities.HBM_ENERGY_RECEIVER && storage.resolve().map(ItemEnergyStorage::canReceive).orElse(false)) {
             return storage.cast();
         }
-
-        // Совместимость с Forge Energy (всегда LOW биты для простоты)
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY) {
             return storage.lazyMap(s -> new LongEnergyWrapper(s, LongEnergyWrapper.BitMode.LOW)).cast();
         }
 
         return LazyOptional.empty();
     }
+//?}
 
-    /**
-     * Внутреннее хранилище энергии для ItemStack.
-     * Обычные батареи — NBT {@code energy}; силовая броня — {@code charge} через {@link ModArmorFSBPowered}.
-     */
-    private static class ItemEnergyStorage implements IEnergyProvider, IEnergyReceiver {
+//? if !forge {
+/*public class EnergyCapabilityProvider {
+*///?}
+
+    public static class ItemEnergyStorage implements IEnergyProvider, IEnergyReceiver {
         private final ItemStack stack;
         private final long fallbackCapacity;
         private final long maxReceive;
         private final long maxExtract;
 
-        ItemEnergyStorage(ItemStack stack, long capacity, long maxReceive, long maxExtract) {
+        public ItemEnergyStorage(ItemStack stack, long capacity, long maxReceive, long maxExtract) {
             this.stack = stack;
             this.fallbackCapacity = capacity;
             this.maxReceive = maxReceive;
@@ -78,7 +78,7 @@ public class EnergyCapabilityProvider implements ICapabilityProvider {
             if (isPoweredArmor()) {
                 return poweredArmor().getCharge(stack);
             }
-            return stack.getOrCreateTag().getLong("energy");
+            return PlatformHooks.getLong(stack, "energy");
         }
 
         @Override
@@ -88,7 +88,7 @@ public class EnergyCapabilityProvider implements ICapabilityProvider {
             if (isPoweredArmor()) {
                 poweredArmor().setCharge(stack, clamped);
             } else {
-                stack.getOrCreateTag().putLong("energy", clamped);
+                PlatformHooks.putLong(stack, "energy", clamped);
             }
         }
 
@@ -100,7 +100,6 @@ public class EnergyCapabilityProvider implements ICapabilityProvider {
             return this.fallbackCapacity;
         }
 
-        // --- IEnergyReceiver ---
         @Override
         public long receiveEnergy(long maxReceive, boolean simulate) {
             if (!canReceive()) return 0;
@@ -130,7 +129,6 @@ public class EnergyCapabilityProvider implements ICapabilityProvider {
             return this.maxReceive > 0 && getEnergyStored() < getMaxEnergyStored();
         }
 
-        // --- IEnergyProvider ---
         @Override
         public long extractEnergy(long maxExtract, boolean simulate) {
             if (!canExtract()) return 0;
@@ -161,52 +159,3 @@ public class EnergyCapabilityProvider implements ICapabilityProvider {
         }
     }
 }
-//?}
-//? if fabric {
-/*public class EnergyCapabilityProvider {
-    public static class ItemEnergyStorage implements IEnergyProvider, IEnergyReceiver {
-        private final ItemStack stack;
-        private final long capacity;
-        private final long maxReceive;
-        private final long maxExtract;
-
-        public ItemEnergyStorage(ItemStack stack, long capacity, long maxReceive, long maxExtract) {
-            this.stack = stack;
-            this.capacity = capacity;
-            this.maxReceive = maxReceive;
-            this.maxExtract = maxExtract;
-        }
-
-        @Override public long getEnergyStored() { return stack.getOrCreateTag().getLong("energy"); }
-        @Override public void setEnergyStored(long energy) {
-            long clamped = Math.max(0, Math.min(energy, capacity));
-            stack.getOrCreateTag().putLong("energy", clamped);
-        }
-        @Override public long getMaxEnergyStored() { return this.capacity; }
-
-        @Override public long receiveEnergy(long maxReceive, boolean simulate) {
-            if (!canReceive()) return 0;
-            long energyStored = getEnergyStored();
-            long energyReceived = Math.min(getMaxEnergyStored() - energyStored, Math.min(this.maxReceive, maxReceive));
-            if (!simulate && energyReceived > 0) setEnergyStored(energyStored + energyReceived);
-            return energyReceived;
-        }
-
-        @Override public long getReceiveSpeed() { return this.maxReceive; }
-        @Override public Priority getPriority() { return Priority.NORMAL; }
-        @Override public boolean canReceive() { return this.maxReceive > 0 && getEnergyStored() < capacity; }
-
-        @Override public long extractEnergy(long maxExtract, boolean simulate) {
-            if (!canExtract()) return 0;
-            long energyStored = getEnergyStored();
-            long energyExtracted = Math.min(energyStored, Math.min(this.maxExtract, maxExtract));
-            if (!simulate && energyExtracted > 0) setEnergyStored(energyStored - energyExtracted);
-            return energyExtracted;
-        }
-
-        @Override public long getProvideSpeed() { return this.maxExtract; }
-        @Override public boolean canExtract() { return this.maxExtract > 0 && getEnergyStored() > 0; }
-        @Override public boolean canConnectEnergy(Direction side) { return true; }
-    }
-}
-*///?}

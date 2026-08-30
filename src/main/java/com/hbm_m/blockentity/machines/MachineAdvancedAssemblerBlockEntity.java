@@ -5,7 +5,6 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -21,6 +20,8 @@ import com.hbm_m.multiblock.MultiblockFrameHelper;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.sound.ModSounds;
+import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.recipe.RecipeHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -49,6 +50,10 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.DistExecutor;
 //?}
+//? if neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
@@ -58,6 +63,7 @@ import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import team.reborn.energy.api.EnergyStorage;
 import com.hbm_m.client.machine.AdvancedAssemblerClientTicker;
+import com.hbm_m.platform.PlatformHooks;
 *///?}
 /**
  * Advanced Assembler Block Entity:
@@ -92,11 +98,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         }
     };
 
-    //? if forge {
-    protected LazyOptional<IFluidHandler> fluidInputHandler = LazyOptional.empty();
-    protected LazyOptional<IFluidHandler> fluidOutputHandler = LazyOptional.empty();
-    //?}
-
     /** Разрешённые стороны прямого подключения к контроллеру (пусто = все). */
     private java.util.Set<Direction> allowedEnergySides = java.util.EnumSet.noneOf(Direction.class);
     /** Разрешённые стороны жидкости. Если {@link #fluidSidesFromMultiblockStructure} — пусто может означать «ни одной»; иначе пусто = все. */
@@ -118,8 +119,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     private boolean needsClientSync = false;
     private int ticksSinceLastSync = 0;
 
-    // Клиентский тикер (ленивая инициализация на клиенте) — тип Object, чтобы сервер не резолвил AdvancedAssemblerClientTicker
-    //? if forge {
     private static Object newAdvAssemblerClientTickerInstance() {
         try {
             return Class.forName("com.hbm_m.client.machine.AdvancedAssemblerClientTicker").getDeclaredConstructor().newInstance();
@@ -128,15 +127,8 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         }
     }
 
-    private final LazyOptional<Object> clientTicker = DistExecutor.unsafeRunForDist(
-            () -> () -> LazyOptional.of(MachineAdvancedAssemblerBlockEntity::newAdvAssemblerClientTickerInstance),
-            () -> () -> LazyOptional.empty()
-    );
-    //?}
-    //? if fabric {
-    /*@Nullable
-    private AdvancedAssemblerClientTicker clientTicker;
-    *///?}
+    @Nullable
+    private Object clientTicker = null;
 
     // ContainerData: упаковываем long как два int через LongDataPacker
     protected final ContainerData data = new ContainerData() {
@@ -204,8 +196,8 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     @Override
     protected void setupFluidCapability() {
         //? if forge {
-        fluidInputHandler = inputTank.getCapability();
-        fluidOutputHandler = outputTank.getCapability();
+        // Экспонируем входной бак (inputTank) через базовый fluidHandlerOpt.
+        setFluidHandler(inputTank);
         //?}
     }
 
@@ -239,7 +231,9 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     public AABB getRenderBoundingBox() {
         BlockState state = getBlockState();
         if (!(state.getBlock() instanceof MachineAdvancedAssemblerBlock block)) {
-            return new AABB(worldPosition.offset(-2, -1, -2), worldPosition.offset(3, 4, 3));
+            BlockPos min = worldPosition.offset(-2, -1, -2);
+            BlockPos max = worldPosition.offset(3, 4, 3);
+            return new AABB(min.getX(), min.getY(), min.getZ(), max.getX(), max.getY(), max.getZ());
         }
         Direction facing = state.getValue(MachineAdvancedAssemblerBlock.FACING);
         return block.getStructureHelper().getRenderBoundingBox(worldPosition, facing, 1.5);
@@ -277,13 +271,10 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     // Tick-хуки
     public static void tick(Level level, BlockPos pos, BlockState state, MachineAdvancedAssemblerBlockEntity entity) {
         if (level.isClientSide) {
-            //? if forge {
-            entity.clientTicker.ifPresent(ticker -> invokeAdvAssemblerClientTick(ticker, level, pos, state, entity));
-            //?}
-            //? if fabric {
-            /*if (entity.clientTicker == null) entity.clientTicker = new AdvancedAssemblerClientTicker();
-            entity.clientTicker.clientTick(level, pos, state, entity);
-            *///?}
+            if (entity.clientTicker == null) {
+                entity.clientTicker = newAdvAssemblerClientTickerInstance();
+            }
+            invokeAdvAssemblerClientTick(entity.clientTicker, level, pos, state, entity);
         } else {
             entity.serverTick();
         }
@@ -391,7 +382,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             boolean isCraftingNow = assemblerModule.isProcessing();
 
             if (isCraftingNow && assemblerModule.getPreferredRecipe() != null) {
-                ResourceLocation autoSelectedRecipeId = assemblerModule.getPreferredRecipe().getId();
+                ResourceLocation autoSelectedRecipeId = RecipeHooks.recipeId(level.getRecipeManager(), AssemblerRecipe.Type.INSTANCE, assemblerModule.getPreferredRecipe());
                 if (selectedRecipeId == null || !selectedRecipeId.equals(autoSelectedRecipeId)) {
                     selectedRecipeId = autoSelectedRecipeId;
                     cachedRecipe = assemblerModule.getPreferredRecipe();
@@ -401,7 +392,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             }
 
             if (assemblerModule.getCurrentRecipe() != null) {
-                ResourceLocation currentRecipeId = assemblerModule.getCurrentRecipe().getId();
+                ResourceLocation currentRecipeId = RecipeHooks.recipeId(level.getRecipeManager(), AssemblerRecipe.Type.INSTANCE, assemblerModule.getCurrentRecipe());
                 if (selectedRecipeId == null || !selectedRecipeId.equals(currentRecipeId)) {
                     selectedRecipeId = currentRecipeId;
                     cachedRecipe = assemblerModule.getCurrentRecipe();
@@ -476,6 +467,23 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             }
         }
         *///?}
+
+        //? if neoforge {
+        /*var itemEnergy = energySourceStack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
+        if (itemEnergy == null) return;
+
+        long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
+        if (energyNeeded <= 0) return;
+
+        int maxTransfer = (int) Math.min(Integer.MAX_VALUE, Math.min(energyNeeded, this.getReceiveSpeed()));
+        if (maxTransfer <= 0) return;
+
+        int extracted = itemEnergy.extractEnergy(maxTransfer, false);
+        if (extracted > 0) {
+            this.setEnergyStored(this.getEnergyStored() + extracted);
+            setChanged();
+        }
+        *///?}
     }
 
     // Рецепты и ghost-предметы
@@ -486,8 +494,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             return null;
         }
         if (cachedRecipe == null || recipeCacheDirty) {
-            cachedRecipe = level.getRecipeManager()
-                    .byKey(selectedRecipeId)
+            cachedRecipe = RecipeHooks.getRecipeByKey(level.getRecipeManager(), selectedRecipeId)
                     .filter(recipe -> recipe instanceof AssemblerRecipe)
                     .map(recipe -> (AssemblerRecipe) recipe)
                     .orElse(null);
@@ -585,10 +592,9 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         return slot >= INPUT_SLOT_START && slot <= INPUT_SLOT_END;
     }
 
-    // NBT
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.put("input_tank", inputTank.writeNBT(new CompoundTag()));
         tag.put("output_tank", outputTank.writeNBT(new CompoundTag()));
         tag.putLong("last_use_tick", lastUseTick);
@@ -624,8 +630,8 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
 
         inputTank.readNBT(tag.getCompound("input_tank"));
         outputTank.readNBT(tag.getCompound("output_tank"));
@@ -645,7 +651,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
         if (tag.contains("AssemblerModule") && level != null) {
             if (assemblerModule == null) {
-                // НОВЫЙ ПРАВИЛЬНЫЙ СПОСОБ
                 assemblerModule = new MachineModuleAdvancedAssembler(0, this, inventory, level);
             }
             assemblerModule.readFromNBT(tag.getCompound("AssemblerModule"));
@@ -675,21 +680,18 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     }
 
     // Пакеты синхронизации
+    // (кастомный onDataPacket сохранён: readNbtData с реальным Provider, если level доступен)
     public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
-        load(pkt.getTag());
+        CompoundTag tag = PlatformHooks.getItemTag(pkt);
+        if (tag != null) {
+            readNbtData(tag, level != null ? level.registryAccess() : null);
+        }
     }
 
     @Override
     public ClientboundBlockEntityDataPacket getUpdatePacket() {
         // Минимальная совместимость по сигнатуре
         return ClientboundBlockEntityDataPacket.create(this);
-    }
-
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = new CompoundTag();
-        saveAdditional(tag);
-        return tag;
     }
 
     // Capability: используем базовые item/energy/fluids, плюс локальные хэндлеры флюидов
@@ -721,9 +723,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             }
         }
 
-        if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            return fluidInputHandler.cast();
-        }
+        // FLUID_HANDLER для разрешённых сторон отдаёт базовый fluidHandlerOpt (см. setupFluidCapability).
         return super.getCapability(cap, side);
     }
     //?}
@@ -744,7 +744,8 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     @Override
     public void setAllowedEnergySides(java.util.Set<Direction> sides) {
-        this.allowedEnergySides = java.util.EnumSet.copyOf(sides);
+        // Безопасная defensive-копия: EnumSet.copyOf бросает IAE на пустой коллекции.
+        this.allowedEnergySides = safeCopyDirectionSet(sides);
         setChanged();
         sendUpdateToClient();
     }
@@ -756,7 +757,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     @Override
     public void setAllowedFluidSidesFromMultiblockStructure(java.util.Set<Direction> sides) {
-        this.allowedFluidSides = java.util.EnumSet.copyOf(sides);
+        this.allowedFluidSides = safeCopyDirectionSet(sides);
         this.fluidSidesFromMultiblockStructure = true;
         setChanged();
         sendUpdateToClient();
@@ -764,10 +765,23 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     @Override
     public void setAllowedFluidSides(java.util.Set<Direction> sides) {
-        this.allowedFluidSides = java.util.EnumSet.copyOf(sides);
+        this.allowedFluidSides = safeCopyDirectionSet(sides);
         this.fluidSidesFromMultiblockStructure = false;
         setChanged();
         sendUpdateToClient();
+    }
+
+    /**
+     * Безопасная defensive-копия Set<Direction> в EnumSet. EnumSet.copyOf(Collection)
+     * бросает IllegalArgumentException на пустой коллекции; здесь всегда возвращаем
+     * валидный EnumSet (пустой ли, нет) и принимаем null как пустое множество.
+     */
+    private static java.util.EnumSet<Direction> safeCopyDirectionSet(java.util.Set<Direction> sides) {
+        java.util.EnumSet<Direction> out = java.util.EnumSet.noneOf(Direction.class);
+        if (sides != null && !sides.isEmpty()) {
+            out.addAll(sides);
+        }
+        return out;
     }
 
     @Override
@@ -789,24 +803,14 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
-        fluidInputHandler.invalidate();
-        fluidOutputHandler.invalidate();
-        clientTicker.invalidate();
     }
     //?}
 
     @Override
     public void setRemoved() {
-        //? if forge {
-        if (level != null && level.isClientSide) {
-            clientTicker.ifPresent(MachineAdvancedAssemblerBlockEntity::invokeAdvAssemblerClientTickerOnRemoved);
+        if (level != null && level.isClientSide && clientTicker != null) {
+            invokeAdvAssemblerClientTickerOnRemoved(clientTicker);
         }
-        //?}
-        //? if fabric {
-        /*if (level != null && level.isClientSide && clientTicker != null) {
-            clientTicker.onRemoved();
-        }
-        *///?}
         super.setRemoved();
     }
 
@@ -850,16 +854,15 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             clientRecipeIconCache = ItemStack.EMPTY;
             return ItemStack.EMPTY;
         }
-        clientRecipeIconCache = level.getRecipeManager()
-                .byKey(id)
+        clientRecipeIconCache = RecipeHooks.getRecipeByKey(level.getRecipeManager(), id)
                 .filter(r -> r instanceof AssemblerRecipe)
-                .map(r -> ((AssemblerRecipe) r).getResultItem(null))
+                .map(r -> ((AssemblerRecipe) r).getResultItemSafe())
                 .orElse(ItemStack.EMPTY);
         return clientRecipeIconCache;
     }
     *///?}
 
-    //? if forge {
+    //? if forge || neoforge {
     @Nullable
     private ResourceLocation clientRecipeIconCacheId;
 
@@ -883,23 +886,21 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             clientRecipeIconCache = ItemStack.EMPTY;
             return ItemStack.EMPTY;
         }
-        clientRecipeIconCache = level.getRecipeManager()
-                .byKey(id)
+        clientRecipeIconCache = RecipeHooks.getRecipeByKey(level.getRecipeManager(), id)
                 .filter(r -> r instanceof AssemblerRecipe)
-                .map(r -> ((AssemblerRecipe) r).getResultItem(null))
+                .map(r -> ((AssemblerRecipe) r).getResultItemSafe())
                 .orElse(ItemStack.EMPTY);
         return clientRecipeIconCache;
     }
 
     @OnlyIn(Dist.CLIENT)
     public float getRingAngle() {
-        if (!clientTicker.isPresent()) {
+        if (clientTicker == null) {
             return 0f;
         }
         ensureAdvAssemblerReflectCache();
         try {
-            Object t = clientTicker.orElseThrow(IllegalStateException::new);
-            return (Float) cachedAdvAsmGetRingAngle.invoke(t);
+            return (Float) cachedAdvAsmGetRingAngle.invoke(clientTicker);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -907,13 +908,12 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     @OnlyIn(Dist.CLIENT)
     public float getPrevRingAngle() {
-        if (!clientTicker.isPresent()) {
+        if (clientTicker == null) {
             return 0f;
         }
         ensureAdvAssemblerReflectCache();
         try {
-            Object t = clientTicker.orElseThrow(IllegalStateException::new);
-            return (Float) cachedAdvAsmGetPrevRingAngle.invoke(t);
+            return (Float) cachedAdvAsmGetPrevRingAngle.invoke(clientTicker);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -921,13 +921,12 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     @OnlyIn(Dist.CLIENT)
     public Object getArms() {
-        if (!clientTicker.isPresent()) {
+        if (clientTicker == null) {
             return emptyAssemblerArmsArray();
         }
         ensureAdvAssemblerReflectCache();
         try {
-            Object t = clientTicker.orElseThrow(IllegalStateException::new);
-            return cachedAdvAsmGetArms.invoke(t);
+            return cachedAdvAsmGetArms.invoke(clientTicker);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -940,34 +939,24 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     //?}
 
     @Override
-    protected void ensureNetworkInitialized() {
-        // Если уже инициализировано - выходим
-        if (this.networkInitialized) return;
+    protected BlockPos[] getExtraEnergyPorts() {
+        if (level == null || level.isClientSide) return new BlockPos[0];
+        if (!(getBlockState().getBlock() instanceof MachineAdvancedAssemblerBlock block)) return new BlockPos[0];
 
-        // 1. Вызываем родительский метод (он зарегистрирует сам контроллер и поставит flag = true)
-        super.ensureNetworkInitialized();
+        MultiblockStructureHelper helper = block.getStructureHelper();
+        Direction facing = getBlockState().getValue(MachineAdvancedAssemblerBlock.FACING);
 
-        if (level != null && !level.isClientSide) {
-            // 2. Регистрируем все части мультиблока, которые являются коннекторами
-            if (getBlockState().getBlock() instanceof MachineAdvancedAssemblerBlock block) {
-                MultiblockStructureHelper helper = block.getStructureHelper();
-                Direction facing = getBlockState().getValue(MachineAdvancedAssemblerBlock.FACING);
-
-                // Получаем менеджер сети
-                EnergyNetworkManager manager = EnergyNetworkManager.get((ServerLevel) level);
-
-                // Проходим по всем частям структуры
-                for (BlockPos localPos : helper.getStructureMap().keySet()) {
-                    // Если часть является энергетическим коннектором
-                    if (block.getPartRole(localPos) == com.hbm_m.multiblock.PartRole.ENERGY_CONNECTOR) {
-                        // Вычисляем её реальную позицию в мире
-                        BlockPos partWorldPos = helper.getRotatedPos(worldPosition, localPos, facing);
-
-                        // Принудительно добавляем узел части в сеть
-                        manager.addNode(partWorldPos);
-                    }
-                }
+        java.util.List<BlockPos> ports = new java.util.ArrayList<>();
+        for (BlockPos localPos : helper.getStructureMap().keySet()) {
+            // Порты подписки — коннекторы мультиблока. Структура этого сборщика использует
+            // роль UNIVERSAL_CONNECTOR ('B'), а не ENERGY_CONNECTOR: фильтр строго по
+            // ENERGY_CONNECTOR давал пустой список портов, и машина не могла
+            // подписаться на сеть через свои коннекторы (энергия не передавалась).
+            com.hbm_m.multiblock.PartRole role = block.getPartRole(localPos);
+            if (role.canReceiveEnergy() || role.canSendEnergy()) {
+                ports.add(helper.getRotatedPos(worldPosition, localPos, facing));
             }
         }
+        return ports.toArray(new BlockPos[0]);
     }
 }

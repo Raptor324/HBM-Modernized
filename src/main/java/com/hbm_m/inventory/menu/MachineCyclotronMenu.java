@@ -4,6 +4,7 @@ import com.hbm_m.blockentity.machines.MachineCyclotronBlockEntity;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.DummyItemStackHandler;
 import com.hbm_m.platform.ModItemStackHandler;
 
 import net.minecraft.core.BlockPos;
@@ -40,8 +41,14 @@ public class MachineCyclotronMenu extends AbstractContainerMenu {
     public MachineCyclotronMenu(int id, Inventory inventory, MachineCyclotronBlockEntity blockEntity) {
         super(ModMenuTypes.CYCLOTRON_MENU.get(), id);
         this.blockEntity = blockEntity;
-        this.access = ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos());
-        this.machineInventory = new HandlerContainer(blockEntity.getInventory());
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустые заглушки,
+        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
+        this.access = blockEntity != null
+                ? ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos())
+                : ContainerLevelAccess.NULL;
+        this.machineInventory = new HandlerContainer(blockEntity != null
+                ? blockEntity.getInventory()
+                : new DummyItemStackHandler(SLOT_MACHINE_END_EXCLUSIVE));
 
         // Input (rendered on the left, as in the 1.7.10 original)
         this.addSlot(new Slot(machineInventory, 0, 11, 18));
@@ -86,6 +93,11 @@ public class MachineCyclotronMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineCyclotronBlockEntity cyclotronBlockEntity) {
             return cyclotronBlockEntity;
         }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inventory.player.level().isClientSide) {
+            return null;
+        }
         throw new IllegalStateException("No MachineCyclotronBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":cyclotron_menu");
     }
 
@@ -95,6 +107,9 @@ public class MachineCyclotronMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
+        if (blockEntity == null) {
+            return false; // тайл может отсутствовать на клиенте (реплей Flashback)
+        }
         return stillValid(this.access, player, this.blockEntity.getBlockState().getBlock());
     }
 

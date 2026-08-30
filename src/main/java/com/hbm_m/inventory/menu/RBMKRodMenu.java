@@ -25,15 +25,17 @@ public class RBMKRodMenu extends AbstractContainerMenu {
         super(ModMenuTypes.RBMK_ROD_MENU.get(), id);
         this.blockEntity = be;
 
+        // тайл может отсутствовать на клиенте (реплей Flashback) — заглушка без синхронизации с тайлом
         SimpleContainer container = new SimpleContainer(1) {
             @Override
             public void setChanged() {
                 super.setChanged();
+                if (be == null) return;
                 be.fuelSlot = getItem(0).copy();
                 be.setChanged();
             }
         };
-        container.setItem(0, be.fuelSlot.copy());
+        if (be != null) container.setItem(0, be.fuelSlot.copy());
 
         // Fuel rod slot — matches the real gui_rbmk_element.png layout (slot 0)
         addSlot(new Slot(container, 0, 80, 45) {
@@ -44,7 +46,8 @@ public class RBMKRodMenu extends AbstractContainerMenu {
 
             @Override
             public boolean mayPickup(Player player) {
-                return player.isCreative() || be.coldEnoughForManual();
+                // тайл может отсутствовать на клиенте (реплей Flashback)
+                return player.isCreative() || (be != null && be.coldEnoughForManual());
             }
         });
 
@@ -63,6 +66,9 @@ public class RBMKRodMenu extends AbstractContainerMenu {
         BlockPos pos = buf.readBlockPos();
         BlockEntity be = inv.player.level().getBlockEntity(pos);
         if (be instanceof RBMKRodBlockEntity rbmk) return rbmk;
+        // На клиенте тайл может отсутствовать (реплей Flashback) — возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inv.player.level().isClientSide) return null;
         throw new IllegalStateException("No RBMKRodBlockEntity at " + pos);
     }
 
@@ -78,15 +84,22 @@ public class RBMKRodMenu extends AbstractContainerMenu {
      */
     @Override
     public void broadcastChanges() {
-        Slot slot = this.slots.get(0);
-        if (!ItemStack.matches(slot.getItem(), blockEntity.fuelSlot)) {
-            slot.set(blockEntity.fuelSlot.copy());
+        // тайл может отсутствовать на клиенте (реплей Flashback)
+        if (blockEntity != null) {
+            Slot slot = this.slots.get(0);
+            if (!ItemStack.matches(slot.getItem(), blockEntity.fuelSlot)) {
+                slot.set(blockEntity.fuelSlot.copy());
+            }
         }
         super.broadcastChanges();
     }
 
     @Override
     public boolean stillValid(Player player) {
+        // тайл может отсутствовать на клиенте (реплей Flashback)
+        if (blockEntity == null) {
+            return false;
+        }
         return blockEntity.getLevel() == player.level()
             && player.distanceToSqr(blockEntity.getBlockPos().getCenter()) <= 64;
     }
@@ -94,7 +107,7 @@ public class RBMKRodMenu extends AbstractContainerMenu {
     // Prevent any manual interaction with the fuel slot when the rod is too hot to handle.
     @Override
     public void clicked(int slotId, int button, ClickType clickType, Player player) {
-        if (slotId == 0 && !player.isCreative() && !blockEntity.coldEnoughForManual()) return;
+        if (slotId == 0 && blockEntity != null && !player.isCreative() && !blockEntity.coldEnoughForManual()) return;
         super.clicked(slotId, button, clickType, player);
     }
 
@@ -109,7 +122,7 @@ public class RBMKRodMenu extends AbstractContainerMenu {
 
             if (index == 0) {
                 // Moving fuel rod out into the player inventory
-                if (!blockEntity.coldEnoughForManual() && !player.isCreative()) return ItemStack.EMPTY;
+                if (blockEntity != null && !blockEntity.coldEnoughForManual() && !player.isCreative()) return ItemStack.EMPTY;
                 if (!this.moveItemStackTo(stackInSlot, 1, this.slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }

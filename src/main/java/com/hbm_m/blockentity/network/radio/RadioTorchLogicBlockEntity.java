@@ -17,7 +17,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * none match). Operators 0-5 are numeric ({@code <, <=, >=, >, ==, !=}), 6-9 are string
  * ({@code equals, !equals, contains, !contains}).
  */
-public class RadioTorchLogicBlockEntity extends BlockEntity implements IRadioTorchConfigurable {
+public class RadioTorchLogicBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IRadioTorchConfigurable {
 
     public String channel = "";
     public int lastState = 0;
@@ -105,8 +105,7 @@ public class RadioTorchLogicBlockEntity extends BlockEntity implements IRadioTor
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         tag.putBoolean("polling", polling);
         tag.putBoolean("descending", descending);
         tag.putInt("lastState", lastState);
@@ -117,8 +116,7 @@ public class RadioTorchLogicBlockEntity extends BlockEntity implements IRadioTor
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         polling = tag.getBoolean("polling");
         descending = tag.getBoolean("descending");
         lastState = tag.getInt("lastState");
@@ -128,11 +126,4 @@ public class RadioTorchLogicBlockEntity extends BlockEntity implements IRadioTor
         for (int i = 0; i < 16; i++) conditions[i] = tag.getInt("cond" + i);
     }
 
-    @Override
-    public CompoundTag getUpdateTag() { CompoundTag t = super.getUpdateTag(); saveAdditional(t); return t; }
-
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
 }

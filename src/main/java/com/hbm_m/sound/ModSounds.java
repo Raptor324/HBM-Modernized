@@ -36,6 +36,9 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> CRATE_OPEN = registerSoundEvents("crateopen");
     public static final RegistrySupplier<SoundEvent> CRATE_CLOSE = registerSoundEvents("crateclose");
     public static final RegistrySupplier<SoundEvent> EXPLOSION_LARGE_NEAR = registerSoundEvents("explosionlargenear");
+    public static final RegistrySupplier<SoundEvent> EXPLOSION_LARGE_FAR = registerSoundEvents("explosionlargefar");
+    public static final RegistrySupplier<SoundEvent> EXPLOSION_TINY = registerSoundEvents("explosiontiny");
+    public static final RegistrySupplier<SoundEvent> OLD_EXPLOSION = registerSoundEvents("oldexplosion");
     public static final RegistrySupplier<SoundEvent> EXPLOSION_SMALL_NEAR1 = registerSoundEvents("explosionsmallnear1");
     public static final RegistrySupplier<SoundEvent> EXPLOSION_SMALL_NEAR2 = registerSoundEvents("explosionsmallnear2");
     public static final RegistrySupplier<SoundEvent> EXPLOSION_SMALL_NEAR3 = registerSoundEvents("explosionsmallnear3");
@@ -44,10 +47,15 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> MUKE_EXPLOSION = registerSoundEvents("mukeexplosion");
     public static final RegistrySupplier<SoundEvent> NUCLEAR_EXPLOSION = registerSoundEvents("nuclear_explosion");
     public static final RegistrySupplier<SoundEvent> MISSILE_TAKEOFF = registerSoundEvents("missile_takeoff");
+    // Звук пролета ракеты — управляется клиентским движком MissileSoundEngine
+    // (Допплер-питч, запаздывающая позиция, плавные fade) через MissileFlybySoundInstance.
+    public static final RegistrySupplier<SoundEvent> MISSILE_FLYBY = registerSoundEvents("missile.flyby");
     public static final RegistrySupplier<SoundEvent> GRENADE_TRIGGER = registerSoundEvents("grenadetrigger");
 
     public static final RegistrySupplier<SoundEvent> RADAWAY_USE = registerSoundEvents("radaway_use");
     public static final RegistrySupplier<SoundEvent> PLAYER_VOMIT = registerSoundEvents("player.vomit");
+    public static final RegistrySupplier<SoundEvent> PLAYER_COUGH = registerSoundEvents("player.cough");
+    public static final RegistrySupplier<SoundEvent> FILTER_SCREW = registerSoundEvents("tool.gasmaskscrew");
     public static final RegistrySupplier<SoundEvent> CRATEBREAK5 = registerSoundEvents("block.cratebreak5");
     public static final RegistrySupplier<SoundEvent> DEBRIS = registerSoundEvents("block.debris");
     public static final RegistrySupplier<SoundEvent> CRATEBREAK4 = registerSoundEvents("block.cratebreak4");
@@ -154,6 +162,9 @@ public class ModSounds {
 
     // Music discs
     public static final RegistrySupplier<SoundEvent> MUSIC_DISC_BUNKER = registerSoundEvents("music_disc.bunker");
+
+    // Эффект скелетонизации (порт из HBM 1.7.10 — weapon.fire.disintegration)
+    public static final RegistrySupplier<SoundEvent> DISINTEGRATION = registerSoundEvents("weapon.disintegration");
     public static final RegistrySupplier<SoundEvent> MUSIC_DISC_GLASS = registerSoundEvents("music_disc.glass");
     public static final RegistrySupplier<SoundEvent> MUSIC_DISC_CH = registerSoundEvents("music_disc.ch");
 

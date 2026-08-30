@@ -17,11 +17,13 @@ import com.hbm_m.api.fluids.IFluidStandardSenderMK2;
 import com.hbm_m.api.fluids.IFluidUserMK2;
 import com.hbm_m.api.network.NodeDirPos;
 import com.hbm_m.api.network.UniNodespace;
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
+import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.Connection;
@@ -35,12 +37,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.block.machines.FluidDuctBlock;
 //? if forge {
 import com.hbm_m.capability.ModCapabilities;
-import com.hbm_m.block.machines.FluidDuctBlock;
-import com.hbm_m.blockentity.ModBlockEntities;
-
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
@@ -48,15 +48,9 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 //?}
 
-//? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
-*///?}
 
 @SuppressWarnings("UnstableApiUsage")
-public class UniversalMachinePartBlockEntity extends BlockEntity implements IMultiblockPart, IEnergyConnector, IFluidConnectorMK2 {
+public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implements IMultiblockPart, IEnergyConnector, IFluidConnectorMK2 {
 
     // Виртуальные узлы жидкостной сети на позиции коннектора, по одному на тип жидкости контроллера.
     // Используется для "коннектор-к-коннектору" без труб: переносы делает FluidNet,
@@ -69,6 +63,57 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
 
     private BlockPos controllerPos;
     private PartRole role = PartRole.DEFAULT;
+
+    /**
+     * Локальный оффсет этой части относительно контроллера в сетке структуры
+     * (до поворота {@code facing}). Не зависит от того, как структура повёрнута в мире,
+     * поэтому сохраняется в NBT как вращение-инвариантный «адрес» части.
+     *
+     * <p>Когда contraption (Create / Aeronautics / Sable) разбирается и часть оказывается
+     * в мире на новых координатах, часть детерминированно вычисляет, где обязан стоять
+     * её контроллер:
+     * <pre>{@code
+     *   controllerPos = partWorldPos - rotate(localOffsetFromController, partFacing)
+     * }</pre>
+     * где {@code partFacing} — это FACING фантомного блока (он же FACING структуры).
+     *
+     * <p>Это работает потому, что Create's {@code StructureTransform} вращает и позиции,
+     * и blockstate (включая FACING) одним и тем же Y-осевым поворотом R, а Y-осевые
+     * повороты коммутативны: {@code R(rotate(v, F)) = rotate(v, R(F))}.
+     *
+     * <p>Для контрапшенов с наклоном/креном (Aeronautics pitch/roll) формула может
+     * дать неверный результат — тогда работает fallback: радиус-поиск в
+     * {@link com.hbm_m.multiblock.MultiblockStructureHelper#relinkOrphanedPart}.
+     *
+     * <p>{@code null} = не задано (старый NBT до этой правки, или часть не из структуры).
+     */
+    private BlockPos localOffsetFromController;
+
+    /**
+     * Одноразовый флаг самолечения для осиротевших частей (Create / Sable disassembly recovery).
+     * <p>Устанавливается в true после {@link #readNbtData}, чтобы на первом server-tick часть
+     * перепроверила свою ссылку на контроллер. Если {@code controllerPos} невалиден (Create
+     * восстановил BE из старого NBT, переписав только собственные x/y/z), часть сама ищет
+     * ближайший подходящий контроллер и перепривязывается (см.
+     * {@link com.hbm_m.multiblock.MultiblockStructureHelper#relinkOrphanedPart}).
+     * Потребляется за один тик; для здоровых частей — сбрасывается сразу, сканирование
+     * не повторяется каждый тик (нулевая стоимость в steady state).
+     */
+    private boolean pendingRelinkCheck = true;
+
+    /**
+     * Retry-механизм самолечения: одноразовой проверки недостаточно, потому что
+     * сразу после разборки контрапшена (Create/Sable) контроллер может быть ещё
+     * не установлен на своё место, когда часть тикает первый раз. Часть повторяет
+     * детерминированную проверку каждые {@link #RELINK_RETRY_INTERVAL_TICKS}
+     * тиков до {@link #RELINK_MAX_ATTEMPTS} попыток (~2 минуты), после чего
+     * сдаётся (контроллера действительно нет — часть осиротела навсегда).
+     * Оба поля транзиентные (не сохраняются в NBT).
+     */
+    private static final int RELINK_RETRY_INTERVAL_TICKS = 20;
+    private static final int RELINK_MAX_ATTEMPTS = 60;
+    private int relinkAttempts;
+    private int relinkCooldownTicks;
     private java.util.Set<Direction> allowedClimbSides = java.util.EnumSet.noneOf(Direction.class);
     /** Мировые стороны энергоподключения; пусто = не задано (для коннектора - все стороны). */
     private java.util.Set<Direction> allowedEnergySides = java.util.EnumSet.noneOf(Direction.class);
@@ -78,8 +123,8 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
     //? if forge {
     /**
      * Reiner Konnektivitäts-Marker für JEDEN Teil der Struktur (auch DEFAULT-Phantomblöcke), NICHT
-     * an die Connector-Rollen delegiert. EnergyNetworkManager#addNode lehnt Knoten ohne
-     * ModCapabilities.hasEnergyComponent() sofort ab (EnergyNode#isValid) - ohne diesen Marker
+     * an die Connector-Rollen delegiert. Nodespace#PowerNode lehnt Knoten ohne
+     * ModCapabilities.hasEnergyComponent() sofort ab (PowerNode#isValid) - ohne diesen Marker
      * würden DEFAULT-Blöcke nie als Knoten registriert, und der Controller könnte nie eine
      * physische Kette zu weit entfernten Connectoren (z.B. Chungus' Energie-Connector 10 Blöcke
      * entfernt) bilden. canConnectEnergy() bleibt unabhängig rollenbasiert - Kabel docken weiterhin
@@ -97,9 +142,9 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
     public void setRemoved() {
         if (level instanceof ServerLevel sl) {
             destroyAllFluidNodes(sl);
-            // Энергия: убираем узел части, чтобы пересобралась сеть.
-            EnergyNetworkManager.get(sl).removeNode(worldPosition);
         }
+        // Энергия: снимаем все подписки части, чтобы пересобралась сеть.
+        com.hbm_m.api.energy.EnergySubscriptions.unsubscribeAll(this);
         super.setRemoved();
     }
 
@@ -151,14 +196,52 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
             return;
         }
 
-        // Энергия: роль-коннектор должна быть узлом EnergyNetworkManager,
-        // чтобы коннектор-к-коннектору работал точно как через кабели.
-        if (level instanceof ServerLevel serverLevel
-                && (be.role.canReceiveEnergy() || be.role.canSendEnergy())) {
-            EnergyNetworkManager manager = EnergyNetworkManager.get(serverLevel);
-            if (!manager.hasNode(pos)) {
-                manager.addNode(pos);
+        // Самолечение осиротевших частей (Create/Sable disassembly): один раз после загрузки
+        // проверяем, валиден ли сохранённый ControllerPos. Если нет — перепривязываемся.
+        // Ограничено pendingRelinkCheck (not-per-tick) → нулевая стоимость в steady state.
+        //
+        // ПЕРВИЧНЫЙ путь (детерминированный): если у части сохранён localOffsetFromController,
+        // вычисляем контроллера по формуле controllerPos = partPos - rotate(offset, facing)
+        // без радиус-поиска. Это работает для любого размера мультиблока и не путается
+        // между двумя соседними одинаковыми машинами.
+        //
+        // FALLBACK: если localOffsetFromController == null (старый NBT) или вычисленная
+        // позиция не содержит контроллер (контрапшен с наклоном/креном, или структура
+        // повёрнута нестандартно) — откатываемся к радиус-поиску relinkOrphanedPart.
+        if (be.pendingRelinkCheck) {
+            // Retry: сразу после разборки контрапшена контроллер может быть ещё
+            // не на месте — повторяем детерминированную проверку, пока не найдём.
+            if (be.relinkCooldownTicks > 0) {
+                be.relinkCooldownTicks--;
+            } else {
+                boolean stale = (be.controllerPos == null);
+                if (!stale) {
+                    BlockState ctrlState = level.getBlockState(be.controllerPos);
+                    stale = !(ctrlState.getBlock() instanceof com.hbm_m.interfaces.IMultiblockController);
+                }
+                if (!stale) {
+                    // Здоровая часть — самолечение завершено.
+                    be.pendingRelinkCheck = false;
+                    be.relinkAttempts = 0;
+                } else if (be.relinkAttempts < RELINK_MAX_ATTEMPTS) {
+                    be.relinkAttempts++;
+                    be.relinkCooldownTicks = RELINK_RETRY_INTERVAL_TICKS;
+                    // 1) Детерминированный путь: пробуем вычислить контроллера из localOffset.
+                    com.hbm_m.multiblock.MultiblockStructureHelper
+                            .relinkOrphanedPartDeterministic(level, pos, be);
+                    // 2) relinkOrphanedPartDeterministic сам вызывает fallback relinkOrphanedPart
+                    //    при необходимости — отдельный вызов здесь НЕ нужен (двойной поиск).
+                } else {
+                    // Попытки исчерпаны: контроллера действительно нет рядом.
+                    be.pendingRelinkCheck = false;
+                }
             }
+        }
+
+        // Энергия: роль-коннектор должна быть узлом энергосети,
+        // чтобы коннектор-к-коннектору работал точно как через кабели.
+        if (be.role.canReceiveEnergy() || be.role.canSendEnergy()) {
+            com.hbm_m.api.energy.EnergySubscriptions.update(be);
         }
 
         if (!isFluidConnector(be.role) || be.controllerPos == null) {
@@ -369,13 +452,26 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
     }
 
     @Override
+    public BlockPos getLocalOffsetFromController() {
+        return this.localOffsetFromController;
+    }
+
+    @Override
+    public void setLocalOffsetFromController(BlockPos offset) {
+        this.localOffsetFromController = offset == null ? null : offset.immutable();
+        this.setChanged();
+    }
+
+    @Override
     public PartRole getPartRole() {
         return this.role;
     }
 
     @Override
     public void setAllowedClimbSides(java.util.Set<Direction> sides) {
-        this.allowedClimbSides = java.util.EnumSet.copyOf(sides);
+        // EnumSet.copyOf(Collection) бросает IllegalArgumentException на пустой коллекции
+        // (не может вывести enum-класс). Используем defensive-копию с явным EnumSet.noneOf.
+        this.allowedClimbSides = copyDirectionSet(sides);
         this.setChanged();
         if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
@@ -389,7 +485,7 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
 
     @Override
     public void setAllowedEnergySides(java.util.Set<Direction> sides) {
-        this.allowedEnergySides = java.util.EnumSet.copyOf(sides);
+        this.allowedEnergySides = copyDirectionSet(sides);
         this.setChanged();
         if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
@@ -404,12 +500,27 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
 
     @Override
     public void setAllowedFluidSides(java.util.Set<Direction> sides) {
-        this.allowedFluidSides = java.util.EnumSet.copyOf(sides);
+        this.allowedFluidSides = copyDirectionSet(sides);
         this.setChanged();
         if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
             level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
         }
+    }
+
+    /**
+     * Безопасная defensive-копия {@link java.util.Set<Direction>} в {@link EnumSet}.
+     * <p>{@code EnumSet.copyOf(Collection)} бросает {@link IllegalArgumentException} на пустой
+     * коллекции (не может вывести enum-класс). Этот helper всегда возвращает валидный
+     * {@code EnumSet} — пустой ли, нет — и принимает {@code null} как пустое множество.
+     * Используется всеми {@code setAllowed*Sides}-сеттерами в мультиблок-частях и контроллерах.
+     */
+    private static java.util.EnumSet<Direction> copyDirectionSet(java.util.Set<Direction> sides) {
+        java.util.EnumSet<Direction> out = java.util.EnumSet.noneOf(Direction.class);
+        if (sides != null && !sides.isEmpty()) {
+            out.addAll(sides);
+        }
+        return out;
     }
 
     @Override
@@ -435,52 +546,6 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         return allowedEnergySides.contains(side);
     }
 
-    /**
-     * Fabric Transfer API: делегирование энергии в контроллер (аналог Forge {@code getCapability(ENERGY, side)}).
-     * Зарегистрирован через {@code EnergyStorage.SIDED.registerForBlockEntity} в FabricEntrypoint.
-     */
-    //? if fabric {
-    /*@Nullable
-    public team.reborn.energy.api.EnergyStorage getEnergyStorageSided(@Nullable Direction side) {
-        if (this.controllerPos == null || this.level == null) return null;
-        if (!this.role.canReceiveEnergy() && !this.role.canSendEnergy()) return null;
-        boolean energySideOk = side == null
-                || allowedEnergySides.isEmpty()
-                || allowedEnergySides.contains(side);
-        if (!energySideOk) return null;
-        BlockEntity ctrl = this.level.getBlockEntity(this.controllerPos);
-        if (ctrl == null) return null;
-        return team.reborn.energy.api.EnergyStorage.SIDED.find(this.level, this.controllerPos, ctrl.getBlockState(), ctrl, null);
-    }
-    *///?}
-
-    /**
-     * Fabric Transfer API: делегирование жидкости в контроллер (аналог Forge {@code getCapability(FLUID_HANDLER, null)}).
-     */
-    //? if fabric {
-    /*@SuppressWarnings("UnstableApiUsage")
-    @Nullable
-    public Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
-        if (this.controllerPos == null || this.level == null) {
-            return null;
-        }
-        if (!isFluidConnector(this.role)) {
-            return null;
-        }
-        boolean fluidSideOk = side == null
-                || allowedFluidSides.isEmpty()
-                || allowedFluidSides.contains(side);
-        if (!fluidSideOk) {
-            return null;
-        }
-        BlockEntity ctrl = this.level.getBlockEntity(this.controllerPos);
-        if (ctrl == null) {
-            return null;
-        }
-        return FluidStorage.SIDED.find(this.level, this.controllerPos, ctrl.getBlockState(), ctrl, null);
-    }
-    *///?}
-
     //? if forge {
     @Override
     public void onLoad() {
@@ -503,8 +568,8 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         super.onChunkUnloaded();
         if (this.level instanceof ServerLevel sl) {
             destroyAllFluidNodes(sl);
-            EnergyNetworkManager.get(sl).removeNode(worldPosition);
         }
+        com.hbm_m.api.energy.EnergySubscriptions.unsubscribeAll(this);
     }
 
 
@@ -554,11 +619,14 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
 
         // === ДЕЛЕГИРОВАНИЕ ПРЕДМЕТОВ ===
         if (cap == ForgeCapabilities.ITEM_HANDLER &&
-                (this.role == PartRole.ITEM_INPUT || this.role == PartRole.ITEM_OUTPUT))
-        {
+                (this.role == PartRole.ITEM_INPUT || this.role == PartRole.ITEM_OUTPUT
+                        || this.role == PartRole.UNIVERSAL_CONNECTOR)) {
             // MachineAssemblerBlockEntity вернет специальный proxy-handler
-            if (controllerBE instanceof MachineAssemblerBlockEntity assembler) {
+            if (controllerBE instanceof MachineAssemblerBlockEntity assembler && this.role != PartRole.UNIVERSAL_CONNECTOR) {
                 return assembler.getItemHandlerForPart(this.role).cast();
+            }
+            if (controllerBE instanceof BlastFurnaceBlockEntity furnace) {
+                return controllerBE.getCapability(cap, side);
             }
 
             // Для других машин (если появятся) можно делегировать напрямую
@@ -589,12 +657,20 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
     //?}
 
     @Override
-    protected void saveAdditional(CompoundTag pTag) {
-        super.saveAdditional(pTag);
+    protected void writeNbtData(@NotNull CompoundTag pTag, @Nullable HolderLookup.Provider registries) {
+        super.writeNbtData(pTag, registries);
         if (this.controllerPos != null) {
-            pTag.put("ControllerPos", NbtUtils.writeBlockPos(this.controllerPos));
+            com.hbm_m.platform.PlatformHooks.writeBlockPos(pTag, "ControllerPos", this.controllerPos);
         }
         pTag.putString("PartRole", this.role.name());
+
+        // Локальный оффсет от контроллера — вращение-инвариантный «адрес» части.
+        // Сохраняем всегда (даже если controllerPos null), чтобы после contraption
+        // disassembly часть могла детерминированно вычислить новый controllerPos.
+        // См. javadoc у localOffsetFromController.
+        if (this.localOffsetFromController != null) {
+            pTag.putLong("LocalOffset", this.localOffsetFromController.asLong());
+        }
 
         if (!allowedClimbSides.isEmpty()) {
             int mask = 0;
@@ -614,11 +690,22 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
     }
 
     @Override
-    public void load(CompoundTag pTag) {
-        super.load(pTag);
+    protected void readNbtData(@NotNull CompoundTag pTag, @Nullable HolderLookup.Provider registries) {
+        super.readNbtData(pTag, registries);
         if (pTag.contains("ControllerPos")) {
-            this.controllerPos = NbtUtils.readBlockPos(pTag.getCompound("ControllerPos"));
+            this.controllerPos = com.hbm_m.platform.PlatformHooks.readBlockPos(pTag, "ControllerPos");
         }
+        // Восстанавливаем локальный оффсет от контроллера (вращение-инвариантный).
+        // Create/Sable disassembly сохраняет этот тег как есть (он не зависит от worldPos),
+        // поэтому после разборки часть «помнит», на каком месте сетки она стояла.
+        if (pTag.contains("LocalOffset")) {
+            this.localOffsetFromController = BlockPos.of(pTag.getLong("LocalOffset"));
+        } else {
+            this.localOffsetFromController = null;
+        }
+        // Create/Sable disassembly восстанавливает BE из старого NBT, переписывая только x/y/z,
+        // но НЕ ControllerPos. Активируем самолечение на следующем server-tick.
+        this.pendingRelinkCheck = true;
         if (pTag.contains("PartRole")) {
             try {
                 this.role = PartRole.valueOf(pTag.getString("PartRole"));
@@ -647,37 +734,65 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
                 if ((mask & (1 << dir.get3DDataValue())) != 0) allowedFluidSides.add(dir);
             }
         }
-        //? if fabric {
-        /*if (level != null && !level.isClientSide()
-                && (isFluidConnector(this.role) || this.role.canReceiveEnergy() || this.role.canSendEnergy())) {
-            level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
-        }
-        *///?}
-    }
-
-    @Nullable
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
     }
 
     @Override
-    public CompoundTag getUpdateTag() {
-        return this.saveWithoutMetadata();
-    }
-
-    //? if forge {
-    @Override
-    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
-        CompoundTag tag = pkt.getTag();
-        if (tag != null) {
-            handleUpdateTag(tag);
-            
-            // Принудительно обновляем состояние блока на клиенте, чтобы обновилась визуализация/логика
-            if (level != null && level.isClientSide) {
-                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
-            }
+    protected void applyClientUpdate(@NotNull CompoundTag tag) {
+        super.applyClientUpdate(tag);
+        
+        // Принудительно обновляем состояние блока на клиенте, чтобы обновилась визуализация/логика
+        if (level != null && level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
         }
     }
-    //?}
+
+    // ═════════════════════════════════════════════════════════════════════════════════════════════
+    //  Polymorphic Capability Delegation (для NeoForge автоматической регистрации)
+    // ═══════════════════════════════════════════════════════════════════════════════════════════════
+
+    @Override
+    public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
+        if (level == null || controllerPos == null) return null;
+        if (this.role != PartRole.ITEM_INPUT && this.role != PartRole.ITEM_OUTPUT
+                && this.role != PartRole.UNIVERSAL_CONNECTOR) return null;
+
+        BlockEntity ctrl = level.getBlockEntity(controllerPos);
+        if (ctrl instanceof MachineAssemblerBlockEntity) {
+            //? if forge {
+            return ((MachineAssemblerBlockEntity) ctrl).getItemHandlerForPart(this.role).resolve().orElse(null);
+            //?} elif neoforge {
+            /*return ((MachineAssemblerBlockEntity) ctrl).getItemHandler(side);
+             *///?}
+        }
+        if (ctrl instanceof BaseHbmBlockEntity hbm) {
+            return hbm.getItemHandler(side);
+        }
+        return null;
+    }
+
+    @Override
+    public @Nullable Object getFluidHandler(@Nullable net.minecraft.core.Direction side) {
+        if (level == null || controllerPos == null) return null;
+        if (this.role != PartRole.FLUID_CONNECTOR && this.role != PartRole.UNIVERSAL_CONNECTOR) return null;
+        if (allowedFluidSides != null && !allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) return null;
+
+        BlockEntity ctrl = level.getBlockEntity(controllerPos);
+        if (ctrl instanceof BaseHbmBlockEntity hbm) {
+            return hbm.getFluidHandler(null);
+        }
+        return null;
+    }
+
+    @Override
+    public @Nullable Object getEnergyStorage(@Nullable net.minecraft.core.Direction side) {
+        if (level == null || controllerPos == null) return null;
+        if (!this.role.canReceiveEnergy() && !this.role.canSendEnergy()) return null;
+        if (allowedEnergySides != null && !allowedEnergySides.isEmpty() && !allowedEnergySides.contains(side)) return null;
+
+        BlockEntity ctrl = level.getBlockEntity(controllerPos);
+        if (ctrl instanceof BaseHbmBlockEntity hbm) {
+            return hbm.getEnergyStorage(side);
+        }
+        return null;
+    }
 }

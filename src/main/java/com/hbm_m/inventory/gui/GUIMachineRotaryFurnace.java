@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.inventory.menu.MachineRotaryFurnaceMenu;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -39,11 +40,14 @@ public class GUIMachineRotaryFurnace extends AbstractContainerScreen<MachineRota
             guiGraphics.fill(x + 63, y + 30, x + 63 + progress, y + 40, 0xFFC0C0C0);
         }
 
+        // тайл может отсутствовать в реплее Flashback
+        if (menu.blockEntity != null) {
         int fill = menu.blockEntity.getTank().getFill();
         int max = menu.blockEntity.getTank().getMaxFill();
         if (max > 0 && fill > 0) {
             int w = fill * 52 / max;
             guiGraphics.fill(x + 8, y + 36, x + 8 + w, y + 52, 0x8000AAFF);
+        }
         }
     }
 
@@ -55,7 +59,7 @@ public class GUIMachineRotaryFurnace extends AbstractContainerScreen<MachineRota
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         renderTooltip(guiGraphics, mouseX, mouseY);
     }

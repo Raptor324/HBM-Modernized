@@ -16,7 +16,14 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
-public class LaunchPadMissileRenderer implements BlockEntityRenderer<LaunchPadBaseBlockEntity> {
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
+public class LaunchPadMissileRenderer implements com.hbm_m.client.render.HbmBerBounds<LaunchPadBaseBlockEntity> {
 
     public LaunchPadMissileRenderer(BlockEntityRendererProvider.Context context) {
     }
@@ -65,7 +72,11 @@ public class LaunchPadMissileRenderer implements BlockEntityRenderer<LaunchPadBa
 
         poseStack.translate(0.0F, 1.0F, 0.0F);
 
+        // ДИАГНОСТИКА тёмного квада на BE-стадии: подтверждить, что пад рисует
+        // меш в этом кадре, и снять пиксели ДО/ПОСЛЕ.
+        com.hbm_m.client.render.FrameStateProbe.snap("px.pad.pre");
         renderData.render(poseStack, packedLight, be.getBlockPos(), buffer, be);
+        com.hbm_m.client.render.FrameStateProbe.snap("px.pad.post");
         poseStack.popPose();
     }
 }

@@ -32,10 +32,9 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 
 /**
@@ -74,7 +73,6 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
     private final FluidTank spentSteamTank;
 
     //? if forge {
-    private LazyOptional<IFluidHandler> lazySteamHandler;
     private LazyOptional<IFluidHandler> lazySpentHandler;
     //?}
 
@@ -95,7 +93,6 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         this.spentSteamTank = new FluidTank(ModFluids.SPENTSTEAM.getSource(), SPENT_STEAM_CAPACITY);
 
         //? if forge {
-        this.lazySteamHandler = LazyOptional.empty();
         this.lazySpentHandler = LazyOptional.empty();
         //?}
     }
@@ -269,11 +266,9 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
 
     private static final String CHUNGUS_LOOP_SOUND_FACTORY = "com.hbm_m.client.sound.ChungusLoopSoundFactory";
 
-    //? if forge {
+    //? if forge || neoforge {
     @OnlyIn(Dist.CLIENT)
     //?}
-    //? if fabric {
-    /*@Environment(EnvType.CLIENT)*///?}
     private Object createLoopingSoundReflect(SoundEvent sound) {
         try {
             return Class.forName(CHUNGUS_LOOP_SOUND_FACTORY)
@@ -291,8 +286,8 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
     // --- NBT ---
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         steamTank.writeToNBT(tag, "steam");
         spentSteamTank.writeToNBT(tag, "spent");
         tag.putBoolean("active", isActive);
@@ -305,8 +300,8 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         steamTank.readFromNBT(tag, "steam");
         spentSteamTank.readFromNBT(tag, "spent");
         isActive = tag.getBoolean("active");
@@ -323,24 +318,23 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
     //? if forge {
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            // UP = spent output, остальное = steam input (gleiche Konvention wie Industrial Turbine)
-            if (side == Direction.UP) return lazySpentHandler.cast();
-            return lazySteamHandler.cast();
+        // UP = spent output; остальные стороны (steam input) отдаёт базовый fluidHandlerOpt.
+        if (cap == ForgeCapabilities.FLUID_HANDLER && side == Direction.UP) {
+            return lazySpentHandler.cast();
         }
         return super.getCapability(cap, side);
     }
 
     @Override
     protected void setupFluidCapability() {
-        lazySteamHandler = LazyOptional.of(() -> new SteamInputHandler(this));
+        // Steam input — обработчик по умолчанию — через базовый fluidHandlerOpt.
+        setFluidHandler(new SteamInputHandler(this));
         lazySpentHandler = LazyOptional.of(() -> new SpentSteamOutputHandler(this));
     }
 
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
-        lazySteamHandler.invalidate();
         lazySpentHandler.invalidate();
     }
 
@@ -455,4 +449,22 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         // und 5 nach oben - großzügig symmetrisch geschätzt, unabhängig von der Facing-Richtung.
         return new AABB(worldPosition).inflate(12.0, 0.0, 12.0).expandTowards(0.0, 5.0, 0.0);
     }
-}
+
+    // Энергопорты мультиблока: позиции фантомов структуры, ранее регистрировавшиеся блоком.
+    // Ядро (worldPosition) подписывается в BaseMachineBlockEntity.ensureNetworkInitialized().
+    @Override
+    protected BlockPos[] getExtraEnergyPorts() {
+        if (level == null || level.isClientSide) return new BlockPos[0];
+        if (!(getBlockState().getBlock() instanceof com.hbm_m.block.machines.MachineChungusBlock block)) return new BlockPos[0];
+
+        var helper = block.getStructureHelper();
+        Direction facing = getBlockState().getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
+
+        java.util.List<BlockPos> ports = new java.util.ArrayList<>();
+        for (BlockPos localPos : helper.getStructureMap().keySet()) {
+            if (true) {
+                ports.add(helper.getRotatedPos(worldPosition, localPos, facing));
+            }
+        }
+        return ports.toArray(new BlockPos[0]);
+    }}

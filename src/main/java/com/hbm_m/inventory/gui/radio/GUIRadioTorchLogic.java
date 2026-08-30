@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui.radio;
 
 import com.hbm_m.blockentity.network.radio.RadioTorchLogicBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.network.RadioTorchControlPacket;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -48,9 +49,9 @@ public class GUIRadioTorchLogic extends Screen {
         addRenderableWidget(channelBox);
         y += 22;
 
-        pollingBox = new Checkbox(cx - 100, y, 90, 18, Component.literal("Polling"), blockEntity.polling);
+        pollingBox = com.hbm_m.client.GuiCompat.checkbox(cx - 100, y, 90, 18, Component.literal("Polling"), blockEntity.polling);
         addRenderableWidget(pollingBox);
-        descendingBox = new Checkbox(cx + 10, y, 100, 18, Component.literal("Descending"), blockEntity.descending);
+        descendingBox = com.hbm_m.client.GuiCompat.checkbox(cx + 10, y, 100, 18, Component.literal("Descending"), blockEntity.descending);
         addRenderableWidget(descendingBox);
         y += 24;
 
@@ -98,7 +99,7 @@ public class GUIRadioTorchLogic extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, this.height / 2 - 128, 0xFFFFFF);
     }

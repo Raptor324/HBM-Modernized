@@ -24,11 +24,22 @@ public class AnnihilatorPoolManager extends SavedData {
     private final Map<String, Map<String, BigInteger>> pools = new HashMap<>();
 
     public static AnnihilatorPoolManager get(ServerLevel level) {
+        //? if < 1.21.1 {
         return level.getDataStorage().computeIfAbsent(
                 AnnihilatorPoolManager::load,
                 AnnihilatorPoolManager::new,
                 DATA_NAME
         );
+        //?} else {
+        /*return level.getDataStorage().computeIfAbsent(
+                new net.minecraft.world.level.saveddata.SavedData.Factory<>(
+                        AnnihilatorPoolManager::new,
+                        (nbt, provider) -> load(nbt),
+                        null
+                ),
+                DATA_NAME
+        );
+        *///?}
     }
 
     private static AnnihilatorPoolManager load(CompoundTag nbt) {
@@ -49,8 +60,13 @@ public class AnnihilatorPoolManager extends SavedData {
         return manager;
     }
 
+    //? if < 1.21.1 {
     @Override
     public CompoundTag save(CompoundTag nbt) {
+    //?} else {
+    /*@Override
+    public CompoundTag save(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider provider) {
+    *///?}
         CompoundTag poolsTag = new CompoundTag();
         for (Map.Entry<String, Map<String, BigInteger>> poolEntry : pools.entrySet()) {
             CompoundTag poolTag = new CompoundTag();

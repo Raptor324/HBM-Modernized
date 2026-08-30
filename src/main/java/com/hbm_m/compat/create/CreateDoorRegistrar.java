@@ -1,4 +1,4 @@
-//? if forge {
+//? if forge || neoforge {
 package com.hbm_m.compat.create;
 
 import com.hbm_m.block.ModBlocks;
@@ -9,8 +9,14 @@ import com.hbm_m.main.MainRegistry;
 import com.simibubi.create.api.behaviour.interaction.MovingInteractionBehaviour;
 import com.simibubi.create.api.behaviour.movement.MovementBehaviour;
 
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
+
+//? if forge {
 import net.minecraftforge.registries.ForgeRegistries;
+//?} elif neoforge {
+/*import net.minecraft.core.registries.BuiltInRegistries;
+*///?}
 
 /**
  * Регистрирует Create {@link MovementBehaviour} + {@link MovingInteractionBehaviour}
@@ -27,8 +33,13 @@ public final class CreateDoorRegistrar {
 
     public static void register() {
         int count = 0;
+        //? if forge {
         for (Block block : ForgeRegistries.BLOCKS.getValues()) {
-            var key = ForgeRegistries.BLOCKS.getKey(block);
+            ResourceLocation key = ForgeRegistries.BLOCKS.getKey(block);
+        //?} elif neoforge {
+        /*for (Block block : BuiltInRegistries.BLOCK) {
+            ResourceLocation key = BuiltInRegistries.BLOCK.getKey(block);
+        *///?}
             if (key == null || !RefStrings.MODID.equals(key.getNamespace())) continue;
             if (!(block instanceof DoorBlock door)) continue;
 

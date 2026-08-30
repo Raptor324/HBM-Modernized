@@ -1,6 +1,0 @@
-{
-  "type": "forge:add_features",
-  "biomes": "#minecraft:is_forest",
-  "features": "hbm_m:strawberry_bush_placed",
-  "step": "vegetal_decoration"
-}

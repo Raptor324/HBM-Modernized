@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.MachineVacuumDistillBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineVacuumDistillMenu;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -60,9 +61,11 @@ public class GUIMachineVacuumDistill extends GuiInfoScreen<MachineVacuumDistillM
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (be != null) {
         drawElectricityInfo(guiGraphics, mouseX, mouseY, ENERGY_X, TANK_Y, TANK_W, TANK_H, be.getEnergyStored(), be.getMaxEnergyStored());
 
         var tanks = be.getTanks();
@@ -70,6 +73,7 @@ public class GUIMachineVacuumDistill extends GuiInfoScreen<MachineVacuumDistillM
             if (isPointInRect(TANK_X[i], TANK_Y, TANK_W, TANK_H, mouseX, mouseY)) {
                 tanks[i].renderTankInfo(guiGraphics, font, mouseX, mouseY, leftPos + TANK_X[i], topPos + TANK_Y, TANK_W, TANK_H);
             }
+        }
         }
 
         renderTooltip(guiGraphics, mouseX, mouseY);

@@ -10,6 +10,7 @@ import com.hbm_m.blockentity.machines.TurretStats;
 import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.PlatformHooks;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
@@ -34,7 +35,15 @@ import net.minecraft.util.Mth;
  * liefert in diesem Mod IMMER {@code true}, der Legacy-Pfad ist toter Code und offenbar nicht
  * Embeddium-kompatibel. Barrel-Spin/Recoil ist bewusst NICHT animiert - siehe {@link TurretStats}.
  */
-public class MachineTurretRenderer implements BlockEntityRenderer<TurretBaseBlockEntity> {
+
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
+public class MachineTurretRenderer implements com.hbm_m.client.render.HbmBerBounds<TurretBaseBlockEntity> {
 
     private static final Map<String, ResourceLocation> MODEL_IDS = new HashMap<>();
 
@@ -134,7 +143,7 @@ public class MachineTurretRenderer implements BlockEntityRenderer<TurretBaseBloc
         ResourceLocation id = MODEL_IDS.computeIfAbsent(partKey,
                 key -> ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/turret_parts/" + key));
         var modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel model = modelManager.getModel(id);
+        BakedModel model = PlatformHooks.getModel(modelManager, id);
         return (model == null || model == modelManager.getMissingModel()) ? null : model;
     }
 }

@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import java.util.ArrayList;
+import com.hbm_m.client.GuiCompat;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,10 +44,12 @@ public class GUIMachineDroneCrate extends GuiInfoScreen<MachineDroneCrateMenu> {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
-        guiGraphics.blit(TEXTURE, this.leftPos + 151, this.topPos + 16, 194, crate.isItemType() ? 0 : 18, 18, 18);
-        guiGraphics.blit(TEXTURE, this.leftPos + 151, this.topPos + 52, 176, crate.isSendingMode() ? 18 : 0, 18, 18);
+        if (crate != null) { // тайл может отсутствовать в реплее Flashback
+            guiGraphics.blit(TEXTURE, this.leftPos + 151, this.topPos + 16, 194, crate.isItemType() ? 0 : 18, 18, 18);
+            guiGraphics.blit(TEXTURE, this.leftPos + 151, this.topPos + 52, 176, crate.isSendingMode() ? 18 : 0, 18, 18);
 
-        renderFluidTank(guiGraphics, crate.getFluidTank(), this.leftPos + 125, this.topPos + 17);
+            renderFluidTank(guiGraphics, crate.getFluidTank(), this.leftPos + 125, this.topPos + 17);
+        }
     }
 
     private void renderFluidTank(GuiGraphics guiGraphics, FluidTank tank, int x, int y) {
@@ -99,19 +102,21 @@ public class GUIMachineDroneCrate extends GuiInfoScreen<MachineDroneCrateMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        if (isHovering(151, 16, 18, 18, mouseX, mouseY)) {
-            drawCustomInfoStat(guiGraphics, mouseX, mouseY, 151, 16, 18, 18, mouseX, mouseY,
-                    Component.literal("Mode: " + (crate.isItemType() ? "Item" : "Fluid")));
-        }
-        if (isHovering(151, 52, 18, 18, mouseX, mouseY)) {
-            drawCustomInfoStat(guiGraphics, mouseX, mouseY, 151, 52, 18, 18, mouseX, mouseY,
-                    Component.literal(crate.isSendingMode() ? "Sending" : "Receiving"));
-        }
-        if (isHovering(125, 17, 16, 34, mouseX, mouseY)) {
-            renderTankTooltip(guiGraphics, crate.getFluidTank(), mouseX, mouseY);
+        if (crate != null) {
+            if (isHovering(151, 16, 18, 18, mouseX, mouseY)) {
+                drawCustomInfoStat(guiGraphics, mouseX, mouseY, 151, 16, 18, 18, mouseX, mouseY,
+                        Component.literal("Mode: " + (crate.isItemType() ? "Item" : "Fluid")));
+            }
+            if (isHovering(151, 52, 18, 18, mouseX, mouseY)) {
+                drawCustomInfoStat(guiGraphics, mouseX, mouseY, 151, 52, 18, 18, mouseX, mouseY,
+                        Component.literal(crate.isSendingMode() ? "Sending" : "Receiving"));
+            }
+            if (isHovering(125, 17, 16, 34, mouseX, mouseY)) {
+                renderTankTooltip(guiGraphics, crate.getFluidTank(), mouseX, mouseY);
+            }
         }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
@@ -119,6 +124,7 @@ public class GUIMachineDroneCrate extends GuiInfoScreen<MachineDroneCrateMenu> {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (crate == null) return super.mouseClicked(mouseX, mouseY, button); // тайл может отсутствовать в реплее Flashback
         if (isHovering(151, 16, 18, 18, (int) mouseX, (int) mouseY)) {
             crate.toggleItemType();
             return true;

@@ -34,6 +34,7 @@ public class TaintEffect extends MobEffect {
         super(MobEffectCategory.HARMFUL, 0x800080);
     }
 
+    //? if < 1.21.1 {
     @Override
     public void applyEffectTick(@NotNull LivingEntity entity, int amplifier) {
         Level level = entity.level();
@@ -59,11 +60,47 @@ public class TaintEffect extends MobEffect {
             }
         }
     }
+    //?} else {
+    /*@Override
+    public boolean applyEffectTick(@NotNull LivingEntity entity, int amplifier) {
+        Level level = entity.level();
+        if (level.isClientSide) {
+            return false;
+        }
 
+        if (entity instanceof EntityCreeperTainted) {
+            return false;
+        }
+
+        if (level.random.nextInt(40) == 0) {
+            entity.hurt(ModDamageSources.taint(level), amplifier + 1);
+        }
+
+        if (ModClothConfig.get().taintTrails) {
+            BlockPos below = BlockPos.containing(entity.getX(), entity.getY() - 1.0, entity.getZ());
+            if (below.getY() > level.getMinBuildHeight()) {
+                BlockState ground = level.getBlockState(below);
+                if (BlockTaint.canBeReplacedByTaint(level, below, ground)) {
+                    level.setBlock(below, BlockTaint.stateWithAge(14), 2);
+                }
+            }
+        }
+        return true;
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public boolean isDurationEffectTick(int duration, int amplifier) {
         return duration % 2 == 0;
     }
+    //?} else {
+    /*// 1.21.1: isDurationEffectTick переименован в shouldApplyEffectTickThisTick.
+    @Override
+    public boolean shouldApplyEffectTickThisTick(int duration, int amplifier) {
+        return duration % 2 == 0;
+    }
+    *///?}
 
     //? if forge {
     @Override

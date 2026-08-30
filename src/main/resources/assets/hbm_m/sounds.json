@@ -2,43 +2,43 @@
   "alarm.amssiren": {
     "category": "blocks",
     "sounds": [
-      "hbm_m:alarm/amsSiren"
+      "hbm_m:alarm/amssiren"
     ]
   },
   "alarm.beepsiren": {
     "category": "blocks",
     "sounds": [
-      "hbm_m:alarm/beepSiren"
+      "hbm_m:alarm/beepsiren"
     ]
   },
   "alarm.classicsiren": {
     "category": "blocks",
     "sounds": [
-      "hbm_m:alarm/classicSiren"
+      "hbm_m:alarm/classicsiren"
     ]
   },
   "alarm.nostromosiren": {
     "category": "blocks",
     "sounds": [
-      "hbm_m:alarm/nostromoSiren"
+      "hbm_m:alarm/nostromosiren"
     ]
   },
   "alarm.regularsiren": {
     "category": "blocks",
     "sounds": [
-      "hbm_m:alarm/regularSiren"
+      "hbm_m:alarm/regularsiren"
     ]
   },
   "alarm.stridersiren": {
     "category": "blocks",
     "sounds": [
-      "hbm_m:alarm/striderSiren"
+      "hbm_m:alarm/stridersiren"
     ]
   },
   "alarm.sweepsiren": {
     "category": "blocks",
     "sounds": [
-      "hbm_m:alarm/sweepSiren"
+      "hbm_m:alarm/sweepsiren"
     ]
   },
   "soyuz.alarm": {
@@ -209,6 +209,28 @@
       "hbm_m:explosionlargenear"
     ]
   },
+  "explosionlargefar": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.explosionlargefar",
+    "sounds": [
+      "hbm_m:explosionlargefar"
+    ]
+  },
+  "explosiontiny": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.explosiontiny",
+    "sounds": [
+      "hbm_m:explosiontiny1",
+      "hbm_m:explosiontiny2"
+    ]
+  },
+  "oldexplosion": {
+    "category": "ambient",
+    "subtitle": "sounds.hbm_m.oldexplosion",
+    "sounds": [
+      "hbm_m:oldexplosion"
+    ]
+  },
   "explosionsmallnear2": {
     "category": "player",
     "subtitle": "sounds.hbm_m.explosionsmallnear2",
@@ -241,7 +263,19 @@
     "category": "player",
     "subtitle": "sounds.hbm_m.missile_takeoff",
     "sounds": [
-      "hbm_m:missile_takeoff"
+      {
+        "name": "hbm_m:missile_takeoff",
+        "attenuation_distance": 60
+      }
+    ]
+  },
+  "missile.flyby": {
+    "category": "ambient",
+    "sounds": [
+      {
+        "name": "hbm_m:missile_flyby",
+        "attenuation_distance": 512
+      }
     ]
   },
   "nuclear_explosion": {
@@ -268,6 +302,19 @@
     "category": "player",
     "sounds": [
       "hbm_m:player/vomit"
+    ]
+  },
+  "tool.gasmaskscrew": {
+    "category": "player",
+    "sounds": ["hbm_m:tool/gasmaskscrew"]
+  },
+  "player.cough": {
+    "category": "player",
+    "sounds": [
+      "hbm_m:player/cough1",
+      "hbm_m:player/cough2",
+      "hbm_m:player/cough3",
+      "hbm_m:player/cough4"
     ]
   },
   "tool.repair1": {
@@ -460,13 +507,13 @@
   "block.large_turbine": {
     "subtitle": "sounds.hbm_m.subtitle.large_turbine",
     "sounds": [
-      "hbm_m:block/largeTurbine"
+      "hbm_m:block/large_turbine"
     ]
   },
   "block.chungus_turbine": {
     "subtitle": "sounds.hbm_m.subtitle.chungus_turbine",
     "sounds": [
-      "hbm_m:block/chungusTurbine"
+      "hbm_m:block/chungus_turbine"
     ]
   },
   "block.sonar_ping": {
@@ -771,6 +818,12 @@
     "subtitle": "item.hbm_m.music_disc_bunker.desc",
     "sounds": [
       "hbm_m:messages/bunker"
+    ]
+  },
+  "weapon.disintegration": {
+    "category": "player",
+    "sounds": [
+      "hbm_m:weapon/disintegration"
     ]
   },
   "music_disc.glass": {

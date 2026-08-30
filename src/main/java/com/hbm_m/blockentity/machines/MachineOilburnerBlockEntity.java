@@ -64,7 +64,7 @@ public class MachineOilburnerBlockEntity extends BaseMachineBlockEntity implemen
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return oilTank.getCapability().cast();
+            return oilTank.getForgeFluidCapability().cast();
         }
         return super.getCapability(cap, side);
     }
@@ -179,8 +179,8 @@ public class MachineOilburnerBlockEntity extends BaseMachineBlockEntity implemen
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("setting", setting);
         tag.putInt("heat", heat);
         tag.putBoolean("burning", burning);
@@ -188,8 +188,8 @@ public class MachineOilburnerBlockEntity extends BaseMachineBlockEntity implemen
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         setting = tag.contains("setting") ? tag.getInt("setting") : 1;
         heat = tag.getInt("heat");
         burning = tag.getBoolean("burning");

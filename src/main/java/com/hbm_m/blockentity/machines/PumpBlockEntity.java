@@ -22,7 +22,7 @@ import net.minecraft.world.level.material.Fluid;
  * Concrete subclasses ({@code MachinePumpSteamBlockEntity}/{@code MachinePumpElectricBlockEntity})
  * supply the actual power source and {@link #canOperate()}/{@link #operate()}.
  */
-public abstract class PumpBlockEntity extends BlockEntity implements IFluidStandardTransceiverMK2 {
+public abstract class PumpBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IFluidStandardTransceiverMK2 {
 
     public static final int GROUND_HEIGHT = PumpGroundCheck.GROUND_HEIGHT;
     public static final int STEAM_SPEED = 1_000;
@@ -107,16 +107,14 @@ public abstract class PumpBlockEntity extends BlockEntity implements IFluidStand
     // ── NBT ───────────────────────────────────────────────────────────────
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         water.writeToNBT(tag, "tank_water");
         tag.putBoolean("isOn", isOn);
         tag.putBoolean("onGround", onGround);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         water.readFromNBT(tag, "tank_water");
         isOn = tag.getBoolean("isOn");
         onGround = tag.getBoolean("onGround");

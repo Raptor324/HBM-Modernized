@@ -92,9 +92,10 @@ public class RBMKControlAutoBlockEntity extends RBMKControlBlockEntity {
 
     // ─── NBT ─────────────────────────────────────────────────────────────────
 
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("function",    function.ordinal());
         tag.putDouble("levelLower", levelLower);
         tag.putDouble("levelUpper", levelUpper);
@@ -103,8 +104,8 @@ public class RBMKControlAutoBlockEntity extends RBMKControlBlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         if (tag.contains("function"))
             function = RBMKFunction.values()[Mth.clamp(tag.getInt("function"), 0, RBMKFunction.values().length - 1)];
         levelLower = tag.getDouble("levelLower");

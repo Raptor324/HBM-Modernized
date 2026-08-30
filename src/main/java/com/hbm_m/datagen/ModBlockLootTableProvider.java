@@ -85,6 +85,11 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
 
         // 2) ОСОБЫЕ СЛУЧАИ: руды переопределяют свою таблицу
 
+        // deco_loot (груда лута из структур 1.7.10): сам блок ничего не дропает —
+        // предметы хранятся в DecoLootBlockEntity и выпадают при ломании/ПКМ
+        // (пул хлама перенесён в DecoLootBlockEntity.POOL)
+        dropEmptyTable(ModBlocks.DECO_LOOT.get());
+
         // Тип 1: silk touch -> блок, иначе сырьё с Fortune + explosion decay
         dropOreType1(
                 ModBlocks.ALUMINUM_ORE.get(),
@@ -311,6 +316,75 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModBlocks.SEQUESTRUM_ORE.get(),
                 ModItems.SEQUESTRUM.get(),
                 1.0f, 3.0f
+        );
+
+        // Пропущенные руды (сверялись с 1.7.10 BlockOre/BlockDepthOre/BlockDragonProof):
+        // гнейсовые железо/медь/золото/уран/литий/газ и незерские уголь/уран/плутоний/
+        // вольфрам/тлеющая руда, а также tikite и australium в оригинале дропают сами
+        // себя — оставляем dropSelf (базовый проход).
+
+        // ore_nether_sulfur → sulfur ×2-4
+        dropOreType2(
+                ModBlocks.NETHER_SULFUR_ORE.get(),
+                ModBlocks.NETHER_SULFUR_ORE.get(),
+                ModItems.SULFUR.get(),
+                2.0f, 4.0f
+        );
+        // ore_alexandrite → gem_alexandrite ×1
+        dropOreType1(
+                ModBlocks.ALEXANDRITE_ORE.get(),
+                ModBlocks.ALEXANDRITE_ORE.get(),
+                ModItems.GEM_ALEXANDRITE.get()
+        );
+        // ore_coltan → fragment_coltan ×1
+        dropOreType1(
+                ModBlocks.COLTAN_ORE.get(),
+                ModBlocks.COLTAN_ORE.get(),
+                ModItems.FRAGMENT_COLTAN.get()
+        );
+        dropOreType1(
+                ModBlocks.COLTAN_ORE_DEEPSLATE.get(),
+                ModBlocks.COLTAN_ORE_DEEPSLATE.get(),
+                ModItems.FRAGMENT_COLTAN.get()
+        );
+        // ore_nether_cobalt → fragment_cobalt ×5-12
+        dropOreType2(
+                ModBlocks.NETHER_COBALT_ORE.get(),
+                ModBlocks.NETHER_COBALT_ORE.get(),
+                ModItems.FRAGMENT_COBALT.get(),
+                5.0f, 12.0f
+        );
+        // ore_nether_fire → powder_fire (в оригинале ещё 10% ingot_phosphorus —
+        // предмета ingot_phosphorus в порту нет)
+        dropOreType1(
+                ModBlocks.NETHER_FIRE_ORE.get(),
+                ModBlocks.NETHER_FIRE_ORE.get(),
+                ModItems.FIRE_POWDER.get()
+        );
+        // ore_gneiss_rare → chunk_ore (порт: rareground_ore_chunk) ×1
+        dropOreType1(
+                ModBlocks.GNEISS_RARE_ORE.get(),
+                ModBlocks.GNEISS_RARE_ORE.get(),
+                ModItems.RAREGROUND_ORE_CHUNK.get()
+        );
+        // ore_gneiss_asbestos → ingot_asbestos ×1
+        dropOreType1(
+                ModBlocks.GNEISS_ASBESTOS_ORE.get(),
+                ModBlocks.GNEISS_ASBESTOS_ORE.get(),
+                ModItems.getIngot(ModIngots.ASBESTOS).get()
+        );
+        // ore_niter → niter ×2-4 (порт: crystal_niter)
+        dropOreType2(
+                ModBlocks.NITER_ORE.get(),
+                ModBlocks.NITER_ORE.get(),
+                ModItems.CRYSTAL_NITER.get(),
+                2.0f, 4.0f
+        );
+        dropOreType2(
+                ModBlocks.NITER_ORE_DEEPSLATE.get(),
+                ModBlocks.NITER_ORE_DEEPSLATE.get(),
+                ModItems.CRYSTAL_NITER.get(),
+                2.0f, 4.0f
         );
     }
 

@@ -147,8 +147,8 @@ public class RBMKCoolerBlockEntity extends RBMKColumnBlockEntity
             net.minecraftforge.common.capabilities.Capability<T> cap,
             @org.jetbrains.annotations.Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            if (side == Direction.DOWN || side == null) return coldTank.getCapability().cast();
-            return hotTank.getCapability().cast();
+            if (side == Direction.DOWN || side == null) return coldTank.getForgeFluidCapability().cast();
+            return hotTank.getForgeFluidCapability().cast();
         }
         return super.getCapability(cap, side);
     }
@@ -157,6 +157,7 @@ public class RBMKCoolerBlockEntity extends RBMKColumnBlockEntity
     @Override public RBMKType getRBMKType()      { return RBMKType.OTHER; }
     @Override public ColumnType getConsoleType() { return ColumnType.COOLER; }
 
+    
     @Override
     public CompoundTag getNBTForConsole() {
         CompoundTag d = new CompoundTag();
@@ -177,8 +178,8 @@ public class RBMKCoolerBlockEntity extends RBMKColumnBlockEntity
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         coldTank.readFromNBT(tag, "t0");
         hotTank.readFromNBT(tag, "t1");
         lastCooled = tag.getInt("lastCooled");

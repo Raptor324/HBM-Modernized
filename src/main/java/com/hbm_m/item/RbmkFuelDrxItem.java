@@ -25,8 +25,8 @@ public class RbmkFuelDrxItem extends RBMKRodItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+        super.appendHbmTooltip(stack, level, tooltip, flag);
         tooltip.add(Component.literal("§4Self-combusting").withStyle(ChatFormatting.DARK_RED));
         tooltip.add(Component.literal("§2Crustyness! 0.0%").withStyle(ChatFormatting.DARK_GREEN));
         tooltip.add(Component.literal("§5Lead poison! 0.0%").withStyle(ChatFormatting.DARK_PURPLE));

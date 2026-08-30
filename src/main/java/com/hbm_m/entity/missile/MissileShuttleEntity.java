@@ -2,11 +2,9 @@ package com.hbm_m.entity.missile;
 
 import com.hbm_m.explosion.MissileWarheadEffects;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.sound.ModSounds;
 
-import api.hbm.entity.IRadarDetectable;
+import api.hbm_m.entity.IRadarDetectable;
 import net.minecraft.core.BlockPos;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -46,11 +44,15 @@ public class MissileShuttleEntity extends MissileBaseEntity {
         if (level().isClientSide) {
             return;
         }
+        // 1.7.10 EntityMissileShuttle: ExplosionNT(NOSOUND+NOPARTICLE, 20F, res 64) + rbmkmush
+        // + уникальный звук robin_explosion (4.0F, pitch (1.0+(rand-rand)*0.2)*0.7). Звук здесь НЕ
+        // дублируется: warheadShuttle → composeEffectLarge → ExplosionCreator уже воспроизводит
+        // отложенный explosionLarge (near/far) с задержкой dist/8.575 (скорость звука) в пределах
+        // soundRange=350. Оригинальный robin_explosion недоступен (нет .ogg ассета в Modernized),
+        // поэтому используется общий explosionLarge. Прежний прямой EXPLOSION_LARGE_NEAR давал
+        // «двойной бум» (немедленный + отложенный).
         if (level() instanceof net.minecraft.server.level.ServerLevel server) {
             MissileWarheadEffects.warheadShuttle(this, server, pos);
         }
-        level().playSound(null, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D,
-                ModSounds.EXPLOSION_LARGE_NEAR.get(), SoundSource.PLAYERS, 4.0F,
-                0.7F + level().random.nextFloat() * 0.2F);
     }
 }

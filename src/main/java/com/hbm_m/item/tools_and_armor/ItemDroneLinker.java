@@ -36,7 +36,7 @@ public class ItemDroneLinker extends Item {
         super(properties.stacksTo(1));
     }
 
-    @Override
+   @Override
     public InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
         Player player = context.getPlayer();
@@ -47,9 +47,9 @@ public class ItemDroneLinker extends Item {
         if (!(be instanceof IDroneLinkable linkable)) return InteractionResult.PASS;
 
         ItemStack stack = context.getItemInHand();
-        CompoundTag tag = stack.getOrCreateTag();
+        CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
 
-        if (tag.getBoolean(TAG_HAS_POS)) {
+        if (tag != null && tag.getBoolean(TAG_HAS_POS)) {
             BlockPos prevPos = BlockPos.of(tag.getLong(TAG_POS));
             BlockEntity prevBe = level.getBlockEntity(prevPos);
             if (prevBe instanceof IDroneLinkable prevLinkable) {
@@ -60,8 +60,10 @@ public class ItemDroneLinker extends Item {
             player.displayClientMessage(Component.literal("Set initial position: " + pos.toShortString()), true);
         }
 
-        tag.putLong(TAG_POS, pos.asLong());
-        tag.putBoolean(TAG_HAS_POS, true);
+        com.hbm_m.platform.PlatformHooks.editItemTag(stack, t -> {
+            t.putLong(TAG_POS, pos.asLong());
+            t.putBoolean(TAG_HAS_POS, true);
+        });
 
         return InteractionResult.CONSUME;
     }
@@ -70,8 +72,7 @@ public class ItemDroneLinker extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (!level.isClientSide) {
-            CompoundTag tag = stack.getOrCreateTag();
-            tag.putBoolean(TAG_HAS_POS, false);
+            com.hbm_m.platform.PlatformHooks.editItemTag(stack, t -> t.putBoolean(TAG_HAS_POS, false));
             player.displayClientMessage(Component.literal("Cleared stored position"), true);
         }
         return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);

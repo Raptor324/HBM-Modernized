@@ -7,9 +7,17 @@ name: Crowdin Sync
 # Перед включением: отключить нативную интеграцию в Crowdin:
 # Project Settings → Integrations → GitHub → Remove.
 # Иначе она будет дублировать работу этого экшена.
+#
+# ВАЖНО по правам (иначе 403 "GitHub Actions is not permitted to create PR"
+# или "Permission denied .git/logs/..."):
+# Repository → Settings → Actions → General → Workflow permissions:
+#   * выбрать "Read and write permissions"
+#   * ВКЛЮЧИТЬ галку "Allow GitHub Actions to create and approve pull requests".
+# Без этой галки GITHUB_TOKEN не сможет открыть PR, даже если в yaml написано
+# permissions: pull-requests: write.
 
 on:
-  # Ручной запуск из вкладки Actions (аналог старого "Sync Now")
+  # Ручной запуск из вкладки Actions (аналог старого "Sync Now").
   workflow_dispatch:
   # Ночём в 03:00 UTC (06:00 МСК). GitHub не гарантирует точное время,
   # cron может задержаться на 10-30 минут в часы пик — это нормально.
@@ -27,30 +35,94 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 1) Crowdin: заливаем источник, скачиваем переводы в рабочую копию.
+      #    ВАЖНО: create_pull_request: false И push_translations: false.
+      #    При push_translations: false экшен НЕ создаёт ветку l10n_main и НЕ коммитит —
+      #    он только распаковывает переводы поверх рабочей копии (checkout на main).
+      #    Иначе экшен делает git checkout -B l10n_main, commit и force-push —
+      #    что ломает последующие git-шаги (reflog от root после docker action,
+      #    "Permission denied .git/logs/...") и дублирует коммиты переводов.
       - name: Crowdin Action
         uses: crowdin/github-action@v2
         with:
-          # Залить исходник (en_us.json) в Crowdin — синхронизация ключей.
           upload_sources: true
-          # Не заливать переводы из репо в Crowdin (Crowdin — источник правды для переводов).
           upload_translations: false
-          # Скачать переводы всех языков и положить их туда, куда указывает crowdin.yml
-          # (после фикса — в src/main/resources/assets/hbm_m/lang/).
           download_translations: true
-
-          # Создать/обновить один PR со всеми языками одним коммитом.
-          create_pull_request: true
-          localization_branch_name: 'l10n_main'
-          # База для PR. Если переводы нужны в FFA вместо main — поменяй здесь.
-          pull_request_base_branch_name: 'main'
-          pull_request_title: 'chore: sync translations from Crowdin'
-          pull_request_body: 'Автоматический PR: обновления переводов из Crowdin (все языки одним коммитом).'
-          # Один коммит за прогон вместо коммита на каждый файл.
-          commit_message: 'chore: update translations from Crowdin'
-
-          # Пути source/translation берутся из crowdin.yml в корне репо,
-          # поэтому здесь их не дублируем.
+          # НЕ создавать PR и НЕ пушить переводы — этим займутся шаги ниже.
+          create_pull_request: false
+          push_translations: false
+          push_sources: false
+          # Пути source/translation берутся из crowdin.yml в корне репо.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
           CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+
+      # 2) Фикс прав на .git.
+      #    КонтейнерCrowdin-action (docker, от root) мог оставить в .git/logs файлы,
+      #    owned by root — step-runner (user "runner") после этого не может
+      #    писать в reflog и падает на checkout: "Permission denied .git/logs/.../".
+      #    Чиним ownership и отключаем reflog для stability.
+      - name: Fix .git ownership after docker action
+        run: |
+          sudo chown -R "$(id -u):$(id -g)" .git
+          git config --global --add safe.directory "$PWD"
+          # Отключаем reflog — устраняет одну из причин конфликтов при работе
+          # с refs/heads/* сразу после docker-action.
+          git config --global core.logAllRefUpdates false
+
+      # 3) Нормализация имён файлов в нижний регистр.
+      #    Crowdin отдаёт %locale_with_underscore% в виде "tr_TR", "af_ZA", "zh_CN"
+      #    (страна в верхнем регистре), а Minecraft требует строго "tr_tr", "af_za",
+      #    "zh_cn". Без этого шага MC загрузит только fi_fi/zh_cn и проигнорирует
+      #    все новые переводы. Также удаляем дубликаты (fi_FI.json + fi_fi.json).
+      - name: Normalize lang filenames to lowercase
+        run: |
+          LANG_DIR="src/main/resources/assets/hbm_m/lang"
+          if [ ! -d "$LANG_DIR" ]; then
+            echo "lang dir missing, nothing to normalize"
+            exit 0
+          fi
+          shopt -s nullglob
+          for f in "$LANG_DIR"/*.json; do
+            base=$(basename "$f")
+            lower=$(echo "$base" | tr '[:upper:]' '[:lower:]')
+            if [ "$base" != "$lower" ]; then
+              # Удалить уже существующий lowercase-файл, чтобы не было коллизии
+              # (Crowdin пишет в верхнем регистре; у тебя уже были lowercase-файлы).
+              if [ -f "$LANG_DIR/$lower" ]; then
+                rm -f "$LANG_DIR/$lower"
+              fi
+              mv "$f" "$LANG_DIR/$lower"
+              echo "renamed: $base -> $lower"
+            fi
+          done
+          # Покажем итог структуры
+          echo "--- lang dir after normalize ---"
+          ls -1 "$LANG_DIR" | head -40
+        shell: bash
+
+      # 4) Создаём/обновляем PR через peter-evans.
+      #    peter-evans/create-pull-request делит новые коммиты в новую ветку
+      #    и открывает PR по GITHUB_TOKEN. Работает при включённой галке
+      #    "Allow GitHub Actions to create and approve pull requests" в настройках
+      #    репо (Settings → Actions → General → Workflow permissions).
+      - name: Create / update pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: l10n_main
+          base: main
+          # Коммит ведётся от github-actions[bot]; author — инициатор workflow.
+          title: 'chore: sync translations from Crowdin'
+          body: |
+            Automatic PR: Translation updates from Crowdin (all languages ​​in one commit).
+
+            * Source: `src/generated/resources/assets/hbm_m/lang/en_us.json` (datagen).
+            * Translations: `src/main/resources/assets/hbm_m/lang/*.json` (lowercase, Minecraft `language_country` format).
+            * `ru_ru.json` and `en_us.json` are intentionally included - it is controlled by the data generator.
+          commit-message: 'chore: update translations from Crowdin'
+          # Коммитить только изменения в папке переводов, чтобы шаг Normalise
+          # не зацепил ничего лишнего.
+          add-paths: |
+            src/main/resources/assets/hbm_m/lang/*.json

@@ -247,10 +247,10 @@ public class RBMKCraneConsoleBlockEntity extends RBMKColumnBlockEntity {
 
     // ─── NBT ─────────────────────────────────────────────────────────────────
 
-    //? if < 1.21.1 {
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putBoolean("setUpCrane", setUpCrane);
         tag.putString("facing", facing.getName());
         tag.putInt("craneRotationOffset", craneRotationOffset);
@@ -265,12 +265,12 @@ public class RBMKCraneConsoleBlockEntity extends RBMKColumnBlockEntity {
         tag.putDouble("posFront", posFront);
         tag.putDouble("posLeft", posLeft);
         tag.putDouble("progress", progress);
-        if (!loadedItem.isEmpty()) tag.put("loadedItem", safeItemSave(loadedItem));
+        if (!loadedItem.isEmpty()) tag.put("loadedItem", com.hbm_m.platform.PlatformHooks.safeItemSave(loadedItem, registries));
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         setUpCrane = tag.getBoolean("setUpCrane");
         facing = Direction.byName(tag.getString("facing"));
         if (facing == null) facing = Direction.NORTH;
@@ -284,47 +284,6 @@ public class RBMKCraneConsoleBlockEntity extends RBMKColumnBlockEntity {
         posFront = tag.getDouble("posFront");
         posLeft  = tag.getDouble("posLeft");
         progress = tag.contains("progress") ? tag.getDouble("progress") : 1D;
-        loadedItem = tag.contains("loadedItem") ? ItemStack.of(tag.getCompound("loadedItem")) : ItemStack.EMPTY;
+        loadedItem = tag.contains("loadedItem") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("loadedItem"), registries) : ItemStack.EMPTY;
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        tag.putBoolean("setUpCrane", setUpCrane);
-        tag.putString("facing", facing.getName());
-        tag.putInt("craneRotationOffset", craneRotationOffset);
-        tag.putInt("centerX", center.getX());
-        tag.putInt("centerY", center.getY());
-        tag.putInt("centerZ", center.getZ());
-        tag.putInt("spanF", spanF);
-        tag.putInt("spanB", spanB);
-        tag.putInt("spanL", spanL);
-        tag.putInt("spanR", spanR);
-        tag.putInt("height", height);
-        tag.putDouble("posFront", posFront);
-        tag.putDouble("posLeft", posLeft);
-        tag.putDouble("progress", progress);
-        if (!loadedItem.isEmpty()) tag.put("loadedItem", safeItemSave(loadedItem, registries));
-    }
-
-    @Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        setUpCrane = tag.getBoolean("setUpCrane");
-        facing = Direction.byName(tag.getString("facing"));
-        if (facing == null) facing = Direction.NORTH;
-        craneRotationOffset = tag.getInt("craneRotationOffset");
-        center = new BlockPos(tag.getInt("centerX"), tag.getInt("centerY"), tag.getInt("centerZ"));
-        spanF = tag.getInt("spanF");
-        spanB = tag.getInt("spanB");
-        spanL = tag.getInt("spanL");
-        spanR = tag.getInt("spanR");
-        height = tag.getInt("height");
-        posFront = tag.getDouble("posFront");
-        posLeft  = tag.getDouble("posLeft");
-        progress = tag.contains("progress") ? tag.getDouble("progress") : 1D;
-        loadedItem = tag.contains("loadedItem")
-                ? ItemStack.parseOptional(registries, tag.getCompound("loadedItem")) : ItemStack.EMPTY;
-    }
-    *///?}
 }

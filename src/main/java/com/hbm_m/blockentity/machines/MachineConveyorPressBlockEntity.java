@@ -103,9 +103,10 @@ public class MachineConveyorPressBlockEntity extends BaseMachineBlockEntity {
         container.setItem(1, stamp);
         container.setItem(2, material);
 
-        RecipeType type = (RecipeType) PressRecipe.Type.INSTANCE;
-        for (Object holderObj : level.getRecipeManager().getAllRecipesFor(type)) {
-            if (holderObj instanceof PressRecipe recipe && recipe.matches(container, level)) {
+        // 1.21.1: Recipe.matches требует RecipeInput, а рецепты завёрнуты в RecipeHolder —
+        // используем RecipeHooks.getAllRecipes + matchesRecipe(RecipeInputWrapper).
+        for (PressRecipe recipe : com.hbm_m.platform.recipe.RecipeHooks.getAllRecipes(level, (RecipeType<PressRecipe>) (RecipeType<?>) PressRecipe.Type.INSTANCE)) {
+            if (recipe.matchesRecipe(new com.hbm_m.platform.recipe.RecipeInputWrapper(container), level)) {
                 return Optional.of(recipe);
             }
         }

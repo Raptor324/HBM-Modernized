@@ -94,15 +94,16 @@ public class RBMKStorageBlockEntity extends RBMKColumnBlockEntity
 
     // ─── NBT ─────────────────────────────────────────────────────────────────
 
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         ListTag list = new ListTag();
         for (int i = 0; i < SLOTS; i++) {
             if (!slots_empty(slots[i])) {
                 CompoundTag s = new CompoundTag();
                 s.putByte("s", (byte) i);
-                s.put("item", safeItemSave(slots[i]));
+                s.put("item", com.hbm_m.platform.PlatformHooks.safeItemSave(slots[i], registries));
                 list.add(s);
             }
         }
@@ -110,15 +111,15 @@ public class RBMKStorageBlockEntity extends RBMKColumnBlockEntity
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         for (int i = 0; i < SLOTS; i++) slots[i] = ItemStack.EMPTY;
         ListTag list = tag.getList("slots", 10);
         for (int i = 0; i < list.size(); i++) {
             CompoundTag s = list.getCompound(i);
             int idx = s.getByte("s") & 0xFF;
             if (idx < SLOTS && s.contains("item"))
-                slots[idx] = ItemStack.of(s.getCompound("item"));
+                slots[idx] = com.hbm_m.platform.PlatformHooks.itemStackOf(s.getCompound("item"), registries);
         }
     }
 }

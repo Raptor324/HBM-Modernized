@@ -16,6 +16,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.platform.PlatformHooks;
 
 /**
  * Small single-block iron fluid barrel — same logic as {@link MachineFluidTankBlockEntity},
@@ -61,12 +62,12 @@ public class BarrelIronBlockEntity extends MachineFluidTankBlockEntity {
             newState = newState.setValue(BarrelTankBlock.FACING, oldState.getValue(BarrelTankBlock.FACING));
         }
 
-        CompoundTag savedTag = saveWithoutMetadata();
+        CompoundTag savedTag = PlatformHooks.saveBlockEntityWithoutMetadata(this, level.registryAccess());
         level.setBlock(worldPosition, newState, 3);
 
         BlockEntity newBe = level.getBlockEntity(worldPosition);
         if (newBe instanceof BarrelCorrodedBlockEntity corroded) {
-            corroded.load(savedTag);
+            PlatformHooks.loadBlockEntityTag(corroded, savedTag, level.registryAccess());
             corroded.hasExploded = true;
             corroded.setChanged();
         }

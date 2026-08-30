@@ -119,8 +119,8 @@ public class MachineTeleporterBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("targetX", targetX);
         tag.putInt("targetY", targetY);
         tag.putInt("targetZ", targetZ);
@@ -128,8 +128,8 @@ public class MachineTeleporterBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         targetX = tag.getInt("targetX");
         targetY = tag.contains("targetY") ? tag.getInt("targetY") : -1;
         targetZ = tag.getInt("targetZ");

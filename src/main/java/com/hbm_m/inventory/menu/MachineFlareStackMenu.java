@@ -44,6 +44,11 @@ public class MachineFlareStackMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineFlareStackBlockEntity flareStackBlockEntity) {
             return flareStackBlockEntity;
         }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inventory.player.level().isClientSide) {
+            return null;
+        }
         throw new IllegalStateException("No MachineFlareStackBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":flare_stack_menu");
     }
 

@@ -1,36 +1,46 @@
 {
-	"parent": "block/orientable",
-	"textures": {
-		"top": "hbm_m:block/difurnace_top_off_alt",
-		"front": "hbm_m:block/difurnace_front_off_alt",
-		"side": "hbm_m:block/difurnace_side_alt",
-		"bottom": "hbm_m:block/difurnace_top_off_alt"
-	},
-    "display": {
-        "gui": {
-            "rotation": [ 30, 225, 0 ],
-            "translation": [ 0, 0, 0 ],
-            "scale": [ 0.625, 0.625, 0.625 ]
-        },
-        "ground": {
-            "rotation": [ 0, 0, 0 ],
-            "translation": [ 0, 3, 0 ],
-            "scale": [ 0.25, 0.25, 0.25 ]
-        },
-        "fixed": {
-            "rotation": [ 0, 180, 0 ],
-            "translation": [ 0, 0, 0 ],
-            "scale": [ 0.5, 0.5, 0.5 ]
-        },
-        "thirdperson_righthand": {
-            "rotation": [ 75, 45, 0 ],
-            "translation": [ 0, 2.5, 0 ],
-            "scale": [ 0.375, 0.375, 0.375 ]
-        },
-        "firstperson_righthand": {
-            "rotation": [ 0, 45, 0 ],
-            "translation": [ 0, 0, 0 ],
-            "scale": [ 0.4, 0.4, 0.4 ]
-        }
+  "loader": "forge:composite",
+  "ao": false,
+  "textures": {
+    "particle": "hbm_m:block/blast_furnace"
+  },
+  "children": {
+    "blast_furnace_model": {
+      "loader": "forge:obj",
+      "model": "hbm_m:models/block/machines/blast_furnace.obj",
+      "flip_v": true,
+      "shade_quads": true,
+      "emissive_ambient": false,
+      "automatic_culling": false,
+      "ao": false,
+      "textures": {
+        "default": "hbm_m:block/blast_furnace"
+      }
     }
+  },
+  "transform": {
+    "translation": [0.5, 0.0, 0.5],
+    "rotation": [0, 0, 0],
+    "scale": 1.0
+  },
+  "display": {
+    "gui": {"rotation": [30, 225, 0], 
+    "translation": [-1.414214, -5.031089, -1.75], 
+    "scale": [0.125, 0.125, 0.125]},
+    "ground": {"rotation": [0, 90, 0], 
+    "translation": [0.75, 0.75, -0.75], 
+    "scale": [0.09375, 0.09375, 0.09375]},
+    "fixed": {"rotation": [0, 90, 0], 
+    "translation": [0, -2, 0], 
+    "scale": [0.12, 0.12, 0.12]},
+    "thirdperson_righthand": {
+      "rotation": [0, 0, 0], 
+      "translation": [9, 5, 1], 
+      "scale": [0.125, 0.125, 0.125]
+    },
+    "firstperson_righthand": {
+      "rotation": [0, 90, 0], 
+      "translation": [9, 5, -1], 
+      "scale": [0.125, 0.125, 0.125]}
+  }
 }

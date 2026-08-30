@@ -128,7 +128,7 @@ public final class MissileRenderHelper {
     public static MissileBakedModel resolveMissileModel(ResourceLocation itemId) {
         BakedModel model = resolveBakedModel(itemId);
         //? if forge {
-        MissileBakedModel missileModel = com.hbm_m.client.compat.ItemTransformHelperCompat.unwrapMissileDelegate(model);
+        MissileBakedModel missileModel = com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.unwrapMissileDelegate(model);
         if (missileModel != null) {
             return missileModel;
         }
@@ -167,7 +167,7 @@ public final class MissileRenderHelper {
         BakedModel itemModel = modelManager.getModel(new ModelResourceLocation(itemId, "inventory"));
         itemModel = AbstractPartBasedRenderer.unwrapFabricForwardingModels(itemModel);
         //? if forge {
-        if (com.hbm_m.client.compat.ItemTransformHelperCompat.unwrapMissileDelegate(itemModel) != null) {
+        if (com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.unwrapMissileDelegate(itemModel) != null) {
             return itemModel;
         }
         //?} else {
@@ -180,7 +180,7 @@ public final class MissileRenderHelper {
             BakedModel meshModel = modelManager.getModel(new ModelResourceLocation(meshId, "inventory"));
             meshModel = AbstractPartBasedRenderer.unwrapFabricForwardingModels(meshModel);
             //? if forge {
-            if (com.hbm_m.client.compat.ItemTransformHelperCompat.unwrapMissileDelegate(meshModel) != null) {
+            if (com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.unwrapMissileDelegate(meshModel) != null) {
                 return meshModel;
             }
             //?} else {
@@ -202,14 +202,8 @@ public final class MissileRenderHelper {
             return;
         }
         RandomSource random = RandomSource.create(42L);
-        List<BakedQuad> quads;
-        //? if forge {
-        quads = model.getQuads(null, null, random, net.minecraftforge.client.model.data.ModelData.EMPTY,
-                RenderType.solid());
-        //?}
-        //? if fabric {
-        /*quads = model.getQuads(null, null, random);
-        *///?}
+        // Кросс-лоадерно: forge/neoforge — ModelData+RenderType, fabric — 3-arg.
+        List<BakedQuad> quads = com.hbm_m.platform.RenderHooks.getPartQuads(model, null, null, random);
         if (quads.isEmpty()) {
             debugMissile("drawBakedQuads: no quads for {}", BuiltInRegistries.ITEM.getKey(stack.getItem()));
             return;
@@ -218,12 +212,8 @@ public final class MissileRenderHelper {
         PoseStack.Pose pose = poseStack.last();
         int overlay = overlay();
         for (BakedQuad quad : quads) {
-            //? if forge {
-            consumer.putBulkData(pose, quad, 1.0F, 1.0F, 1.0F, 1.0F, packedLight, overlay, false);
-            //?}
-            //? if fabric {
-            /*consumer.putBulkData(pose, quad, 1.0F, 1.0F, 1.0F, packedLight, overlay);
-            *///?}
+            com.hbm_m.platform.RenderHooks.putBulkData(consumer, pose, quad,
+                    1.0F, 1.0F, 1.0F, 1.0F, packedLight, overlay, false);
         }
     }
 

@@ -1,4 +1,4 @@
-//? if forge {
+//? if forge || neoforge {
 package com.hbm_m.compat.create;
 
 import com.hbm_m.compat.ContraptionDoorState;

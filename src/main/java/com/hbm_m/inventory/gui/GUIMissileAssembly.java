@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.inventory.menu.MissileAssemblyMenu;
 import com.hbm_m.main.MainRegistry;
@@ -52,7 +53,7 @@ public class GUIMissileAssembly extends AbstractContainerScreen<MissileAssemblyM
 
     @Override
     public void render(GuiGraphics gui, int mouseX, int mouseY, float delta) {
-        this.renderBackground(gui);
+        GuiCompat.renderBackground(this, gui, mouseX, mouseY, delta);
         super.render(gui, mouseX, mouseY, delta);
         this.renderTooltip(gui, mouseX, mouseY);
     }
@@ -60,6 +61,8 @@ public class GUIMissileAssembly extends AbstractContainerScreen<MissileAssemblyM
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (menu.canBuild() && isMouseOver(mouseX, mouseY, 115, 35, 18, 18)) {
+            // тайл может отсутствовать в реплее Flashback
+            if (menu.blockEntity == null) return super.mouseClicked(mouseX, mouseY, button);
             ModPacketHandler.sendToServer(ModPacketHandler.BUILD_MISSILE,
                     new BuildMissilePacket(menu.blockEntity.getBlockPos()));
             return true;

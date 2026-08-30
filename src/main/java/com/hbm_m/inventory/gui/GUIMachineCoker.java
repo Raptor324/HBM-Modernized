@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.MachineCokerBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineCokerMenu;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -31,14 +32,16 @@ public class GUIMachineCoker extends GuiInfoScreen<MachineCokerMenu> {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
-        int p = coker.getMaxProgress() > 0 ? coker.getProgress() * 53 / coker.getMaxProgress() : 0;
-        guiGraphics.blit(TEXTURE, this.leftPos + 61, this.topPos + 46, 176, 0, p, 5);
+        if (coker != null) { // тайл может отсутствовать в реплее Flashback
+            int p = coker.getMaxProgress() > 0 ? coker.getProgress() * 53 / coker.getMaxProgress() : 0;
+            guiGraphics.blit(TEXTURE, this.leftPos + 61, this.topPos + 46, 176, 0, p, 5);
 
-        int h = coker.getMaxHeat() > 0 ? coker.getHeat() * 52 / coker.getMaxHeat() : 0;
-        guiGraphics.blit(TEXTURE, this.leftPos + 61, this.topPos + 55, 176, 5, h, 5);
+            int h = coker.getMaxHeat() > 0 ? coker.getHeat() * 52 / coker.getMaxHeat() : 0;
+            guiGraphics.blit(TEXTURE, this.leftPos + 61, this.topPos + 55, 176, 5, h, 5);
 
-        coker.getTank0().renderTank(guiGraphics, this.leftPos + 35, this.topPos + 70, 16, 52);
-        coker.getTank1().renderTank(guiGraphics, this.leftPos + 125, this.topPos + 70, 16, 52);
+            coker.getTank0().renderTank(guiGraphics, this.leftPos + 35, this.topPos + 70, 16, 52);
+            coker.getTank1().renderTank(guiGraphics, this.leftPos + 125, this.topPos + 70, 16, 52);
+        }
     }
 
     @Override
@@ -50,18 +53,20 @@ public class GUIMachineCoker extends GuiInfoScreen<MachineCokerMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        coker.getTank0().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 35, this.topPos + 18, 16, 52);
-        coker.getTank1().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 125, this.topPos + 18, 16, 52);
+        if (coker != null) {
+            coker.getTank0().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 35, this.topPos + 18, 16, 52);
+            coker.getTank1().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 125, this.topPos + 18, 16, 52);
 
-        drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                60, 45, 54, 7, mouseX, mouseY,
-                Component.literal(coker.getProgress() + " / " + coker.getMaxProgress() + "TU"));
-        drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                60, 54, 54, 7, mouseX, mouseY,
-                Component.literal(coker.getHeat() + " / " + coker.getMaxHeat() + "TU"));
+            drawCustomInfoStat(guiGraphics, mouseX, mouseY,
+                    60, 45, 54, 7, mouseX, mouseY,
+                    Component.literal(coker.getProgress() + " / " + coker.getMaxProgress() + "TU"));
+            drawCustomInfoStat(guiGraphics, mouseX, mouseY,
+                    60, 54, 54, 7, mouseX, mouseY,
+                    Component.literal(coker.getHeat() + " / " + coker.getMaxHeat() + "TU"));
+        }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

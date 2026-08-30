@@ -4,6 +4,7 @@ import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.blockentity.machines.MachineMiningDrillBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -13,9 +14,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
 
 public class MachineMiningDrillMenu extends AbstractContainerMenu {
 
@@ -35,10 +33,12 @@ public class MachineMiningDrillMenu extends AbstractContainerMenu {
         super(ModMenuTypes.MINING_DRILL_MENU.get(), id);
         this.blockEntity = blockEntity;
 
-        var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
+        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
+        var container = new ModItemStackHandlerContainer(
+                blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOT_COUNT),
+                blockEntity != null ? blockEntity::setChanged : null);
 
-        // Layout deckungsgleich mit den Slot-Grafiken in gui_mining_drill.png (siehe
-        // GUIMachineMiningDrill fuer die per Pixel vermessenen Koordinaten dieses Atlas).
         this.addSlot(new Slot(container, MachineMiningDrillBlockEntity.SLOT_DRILLBIT, 172, 75));
 
         for (int row = 0; row < 3; row++) {
@@ -46,7 +46,7 @@ public class MachineMiningDrillMenu extends AbstractContainerMenu {
                 this.addSlot(new Slot(container, OUTPUT_START + row * 3 + col, 136 + col * 18, 5 + row * 18) {
                     @Override
                     public boolean mayPlace(ItemStack stack) {
-                        return false; // Nur Entnahme - wird von der Maschine befuellt.
+                        return false; 
                     }
                 });
             }
@@ -55,13 +55,7 @@ public class MachineMiningDrillMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(container, MachineMiningDrillBlockEntity.SLOT_BATTERY, 220, 72) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
-                //? if forge {
-                return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-                //?}
-                //? if fabric {
-                /*return false;
-                *///?}
+                return ItemEnergyAccess.isEnergySource(stack);
             }
         });
 
@@ -84,6 +78,11 @@ public class MachineMiningDrillMenu extends AbstractContainerMenu {
         BlockEntity blockEntity = inventory.player.level().getBlockEntity(pos);
         if (blockEntity instanceof MachineMiningDrillBlockEntity miningDrillBlockEntity) {
             return miningDrillBlockEntity;
+        }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inventory.player.level().isClientSide) {
+            return null;
         }
         throw new IllegalStateException("No MachineMiningDrillBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":mining_drill_menu");
     }
@@ -115,11 +114,7 @@ public class MachineMiningDrillMenu extends AbstractContainerMenu {
                     return ItemStack.EMPTY;
                 }
             } else {
-                boolean isEnergySource = ItemEnergyAccess.getHbmProvider(slotStack).isPresent()
-                        //? if forge {
-                        || slotStack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-                        //?}
-                if (isEnergySource) {
+                if (ItemEnergyAccess.isEnergySource(slotStack)) {
                     if (!this.moveItemStackTo(slotStack, MachineMiningDrillBlockEntity.SLOT_BATTERY, MachineMiningDrillBlockEntity.SLOT_BATTERY + 1, false)) {
                         return ItemStack.EMPTY;
                     }

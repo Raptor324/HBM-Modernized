@@ -2,11 +2,11 @@ package com.hbm_m.client.render.implementations;
 
 import com.hbm_m.blockentity.machines.MachineRadarBlockEntity;
 import com.hbm_m.blockentity.machines.MachineRadarScreenBlockEntity;
+import com.hbm_m.platform.RenderHooks;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
@@ -45,7 +45,15 @@ import java.util.List;
  * Блок имеет {@code RenderShape.INVISIBLE}, поэтому ваниль block-model не рисуется —
  * всё тело отдаёт BER.
  */
-public class MachineRadarScreenRenderer implements BlockEntityRenderer<MachineRadarScreenBlockEntity> {
+
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
+public class MachineRadarScreenRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineRadarScreenBlockEntity> {
 
     private static final ResourceLocation RADAR_TEX =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/machine/gui_radar_nt.png");
@@ -78,25 +86,14 @@ public class MachineRadarScreenRenderer implements BlockEntityRenderer<MachineRa
 
         long time = screen.getLevel() != null ? screen.getLevel().getGameTime() : 0L;
 
-
-        // Предыдущая ориентация была развернута на 90 градусов в сторону тыльной
-        // поверхности. Добавляем ещё 180 градусов по Y (итого -90) и выдвигаем
-        // плоскость на 0.02 блока вперед по её локальной нормали.
         pose.pushPose();
         pose.translate(0.5D, 1.0D, 0.5D);
-        // После поворота вокруг Y экранная плоскость становится Z-плоскостью,
-        // поэтому переворот изображения «вверх ногами» выполняется вокруг Z.
-        // Оба вращения находятся внутри одного pivot, чтобы не сместить BER.
         pose.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(180F));
         pose.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-90F));
         pose.translate(-0.5D, -1.0D, -0.5D);
         pose.translate(-0.8D, 0.0D, 0.0D);
 
         if (screen.linked || screen.showMap || !screen.entries.isEmpty()) {
-            // Overlay должен участвовать в обычном depth-тесте мира и записывать
-            // глубину. При depthMask(false) последующие сущности/BER могли пройти
-            // поверх карты и индикаторов, тогда как шум записывал depth и выглядел
-            // корректно.
             RenderSystem.enableDepthTest();
             RenderSystem.depthMask(true);
             if (screen.showMap) {
@@ -120,22 +117,16 @@ public class MachineRadarScreenRenderer implements BlockEntityRenderer<MachineRa
      */
     private void renderBody(PoseStack pose, MultiBufferSource bufferSource,
                             int packedLight, int packedOverlay, BlockState state) {
-        // Берём NORTH-вариант модели (без y-поворота из blockstate-варианта).
-        // Иначе был бы ДВОЙНОЙ поворот: blockstate уже испёк y-ротацию в quads,
-        // а applyFacingRotation крутит ещё раз → корпус смотрел криво/в одну сторону.
-        // BER применяет поворот сам (как MachineRadarRenderer для тарелки).
         BlockState northState = state.hasProperty(HorizontalDirectionalBlock.FACING)
                 ? state.getBlock().defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, Direction.NORTH)
                 : state;
         BakedModel model = Minecraft.getInstance().getBlockRenderer().getBlockModel(northState);
-        // Снимаем возможные обёртки (Continuity/FRAPI).
         model = com.hbm_m.client.render.AbstractPartBasedRenderer.unwrapFabricForwardingModels(model);
         if (model == null) {
             return;
         }
         VertexConsumer consumer = bufferSource.getBuffer(RenderType.cutout());
         PoseStack.Pose matrix = pose.last();
-        // quads по всем cull-граням + general (null).
         for (Direction dir : Direction.values()) {
             List<BakedQuad> quads = model.getQuads(null, dir, RAND);
             if (quads == null || quads.isEmpty()) {
@@ -153,18 +144,11 @@ public class MachineRadarScreenRenderer implements BlockEntityRenderer<MachineRa
         }
     }
 
-    /** putBulkData с учётом платформы: Forge 9-arg (alpha + hasNormal), Fabric 7-arg. */
     private static void putQuad(VertexConsumer consumer, PoseStack.Pose matrix, BakedQuad quad,
                                 int packedLight, int packedOverlay) {
-        //? if forge {
-        consumer.putBulkData(matrix, quad, 1F, 1F, 1F, 1F, packedLight, packedOverlay, false);
-        //?}
-        //? if fabric {
-        /*consumer.putBulkData(matrix, quad, 1F, 1F, 1F, packedLight, packedOverlay);
-        *///?}
+        RenderHooks.putBulkData(consumer, matrix, quad, 1F, 1F, 1F, 1F, packedLight, packedOverlay, false);
     }
 
-    /** Рисует карту HeightMap на лицевой плоскости экрана с прозрачными пустыми ячейками. */
     private void renderHeightMap(MachineRadarScreenBlockEntity screen, PoseStack pose) {
         if (screen.heightMap == null || screen.heightMap.length < MachineRadarBlockEntity.MAP_LENGTH) {
             return;
@@ -203,9 +187,6 @@ public class MachineRadarScreenRenderer implements BlockEntityRenderer<MachineRa
             heightMapInitialized = true;
         }
 
-        // Карта находится чуть перед внутренней поверхностью экрана (X=0.375),
-        // поэтому может использовать обычный depth-test и корректно скрываться
-        // сущностями или другими BER, расположенными перед экраном.
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
@@ -213,82 +194,59 @@ public class MachineRadarScreenRenderer implements BlockEntityRenderer<MachineRa
         RenderSystem.setShaderTexture(0, heightMapTextureLocation);
 
         org.joml.Matrix4f matrix = pose.last().pose();
-        BufferBuilder buffer = Tesselator.getInstance().getBuilder();
-        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+        BufferBuilder buffer = RenderHooks.beginTesselator(Tesselator.getInstance(), VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
         float x = 0.381F;
         float yTop = 1.875F;
         float yBottom = 0.125F;
         float zLeft = -0.375F;
         float zRight = 1.375F;
-        buffer.vertex(matrix, x, yTop, zRight).uv(0F, 1F).color(255, 255, 255, 255).endVertex();
-        buffer.vertex(matrix, x, yTop, zLeft).uv(1F, 1F).color(255, 255, 255, 255).endVertex();
-        buffer.vertex(matrix, x, yBottom, zLeft).uv(1F, 0F).color(255, 255, 255, 255).endVertex();
-        buffer.vertex(matrix, x, yBottom, zRight).uv(0F, 0F).color(255, 255, 255, 255).endVertex();
-        BufferUploader.drawWithShader(buffer.end());
+        
+        RenderHooks.vertexTexColor(buffer, matrix, x, yTop, zRight, 0F, 0F, 255, 255, 255, 255);
+        RenderHooks.vertexTexColor(buffer, matrix, x, yTop, zLeft, 1F, 0F, 255, 255, 255, 255);
+        RenderHooks.vertexTexColor(buffer, matrix, x, yBottom, zLeft, 1F, 1F, 255, 255, 255, 255);
+        RenderHooks.vertexTexColor(buffer, matrix, x, yBottom, zRight, 0F, 1F, 255, 255, 255, 255);
+        
+        RenderHooks.drawWithShader(buffer);
         RenderSystem.disableBlend();
     }
 
-    /** Бегущая зелёная полоса развёртки (порт GL_QUADS-полосы из RenderRadarScreen). */
     private void renderSweep(PoseStack pose, long time, float partialTick) {
         double offset = ((time % 56) + partialTick) / 30D;
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
         org.joml.Matrix4f matrix = pose.last().pose();
-        BufferBuilder buffer = Tesselator.getInstance().getBuilder();
-        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        
+        BufferBuilder buffer = RenderHooks.beginTesselator(Tesselator.getInstance(), VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
         float x = 0.38F;
         float yTop = (float) (2D - offset);
         float yBottom = (float) (2D - offset - 0.125D);
 
-        // Полоса полупрозрачная, но под ней всегда должна быть непрозрачная
-        // поверхность дисплея. Иначе alpha=50 смешивается уже с framebuffer мира
-        // и через полосу видны блоки позади корпуса. Цвет совпадает с базовым
-        // зелёным пикселем экрана radar_screen.png.
-        buffer.vertex(matrix, x, yTop, 1.375F)
-                .color(0, 31, 0, 255).endVertex();
-        buffer.vertex(matrix, x, yTop, -0.375F)
-                .color(0, 31, 0, 255).endVertex();
-        buffer.vertex(matrix, x, yBottom, -0.375F)
-                .color(0, 31, 0, 255).endVertex();
-        buffer.vertex(matrix, x, yBottom, 1.375F)
-                .color(0, 31, 0, 255).endVertex();
-        BufferUploader.drawWithShader(buffer.end());
+        RenderHooks.vertexColor(buffer, matrix, x, yTop, 1.375F, 0, 31, 0, 255);
+        RenderHooks.vertexColor(buffer, matrix, x, yTop, -0.375F, 0, 31, 0, 255);
+        RenderHooks.vertexColor(buffer, matrix, x, yBottom, -0.375F, 0, 31, 0, 255);
+        RenderHooks.vertexColor(buffer, matrix, x, yBottom, 1.375F, 0, 31, 0, 255);
+        RenderHooks.drawWithShader(buffer);
 
-        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-        // Точная форма оригинального BER: верхняя кромка полностью прозрачна,
-        // нижняя имеет alpha=50. Поэтому видна мягкая горизонтальная полоса,
-        // которая движется сверху вниз и затем зацикливается.
-        buffer.vertex(matrix, x, yTop, 1.375F)
-                .color(0, 255, 0, 0).endVertex();
-        buffer.vertex(matrix, x, yTop, -0.375F)
-                .color(0, 255, 0, 0).endVertex();
-        buffer.vertex(matrix, x, yBottom, -0.375F)
-                .color(0, 255, 0, 50).endVertex();
-        buffer.vertex(matrix, x, yBottom, 1.375F)
-                .color(0, 255, 0, 50).endVertex();
+        buffer = RenderHooks.beginTesselator(Tesselator.getInstance(), VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        RenderHooks.vertexColor(buffer, matrix, x, yTop, 1.375F, 0, 255, 0, 0);
+        RenderHooks.vertexColor(buffer, matrix, x, yTop, -0.375F, 0, 255, 0, 0);
+        RenderHooks.vertexColor(buffer, matrix, x, yBottom, -0.375F, 0, 255, 0, 50);
+        RenderHooks.vertexColor(buffer, matrix, x, yBottom, 1.375F, 0, 255, 0, 50);
 
-        BufferUploader.drawWithShader(buffer.end());
+        RenderHooks.drawWithShader(buffer);
         RenderSystem.disableBlend();
     }
 
-    /**
-     * Метки целей (порт addVertexWithUV-цикла). UV как в GUI: U=216..224/256,
-     * V=blipLevel*8..+8/256. Immediate-mode с bound текстурой gui_radar_nt.
-     */
     private void renderBlips(MachineRadarScreenBlockEntity screen, PoseStack pose, MultiBufferSource bufferSource) {
         if (screen.entries.isEmpty() || screen.range <= 0) {
             return;
         }
         bindRadarTexture();
         org.joml.Matrix4f matrix = pose.last().pose();
-        BufferBuilder buffer = Tesselator.getInstance().getBuilder();
-        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+        BufferBuilder buffer = RenderHooks.beginTesselator(Tesselator.getInstance(), VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
 
-        // x=0.38F — та же лицевая плоскость, что у sweep/noise (порт RenderRadarScreen:
-        // все оверлеи рисуются на x=0.38). При 0.379F метки оказались позади корпуса
-        // и depth-test их отсекал.
         float x = 0.38F;
         double denom = screen.range + 1;
         double size = 0.0625D;
@@ -305,15 +263,14 @@ public class MachineRadarScreenRenderer implements BlockEntityRenderer<MachineRa
 
             float cy = (float) (1D - sZ);
             float cz = (float) (0.5D - sX);
-            buffer.vertex(matrix, x, cy + (float) size, cz + (float) size).uv(u0, v1).color(255, 255, 255, 255).endVertex();
-            buffer.vertex(matrix, x, cy + (float) size, cz - (float) size).uv(u1, v1).color(255, 255, 255, 255).endVertex();
-            buffer.vertex(matrix, x, cy - (float) size, cz - (float) size).uv(u1, v0).color(255, 255, 255, 255).endVertex();
-            buffer.vertex(matrix, x, cy - (float) size, cz + (float) size).uv(u0, v0).color(255, 255, 255, 255).endVertex();
+            RenderHooks.vertexTexColor(buffer, matrix, x, cy + (float) size, cz + (float) size, u0, v1, 255, 255, 255, 255);
+            RenderHooks.vertexTexColor(buffer, matrix, x, cy + (float) size, cz - (float) size, u1, v1, 255, 255, 255, 255);
+            RenderHooks.vertexTexColor(buffer, matrix, x, cy - (float) size, cz - (float) size, u1, v0, 255, 255, 255, 255);
+            RenderHooks.vertexTexColor(buffer, matrix, x, cy - (float) size, cz + (float) size, u0, v0, 255, 255, 255, 255);
         }
-        BufferUploader.drawWithShader(buffer.end());
+        RenderHooks.drawWithShader(buffer);
     }
 
-    /** Статичный шум когда экран не слинкован (порт else-ветки RenderRadarScreen). */
     private void renderNoise(PoseStack pose, MultiBufferSource bufferSource, long time) {
         bindRadarTexture();
         org.joml.Matrix4f matrix = pose.last().pose();
@@ -323,13 +280,13 @@ public class MachineRadarScreenRenderer implements BlockEntityRenderer<MachineRa
         float v0 = offset / 256F;
         float v1 = (offset + 40F) / 256F;
         float x = 0.38F;
-        BufferBuilder buffer = Tesselator.getInstance().getBuilder();
-        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
-        buffer.vertex(matrix, x, 1.875F, 1.375F).uv(u0, v1).color(255, 255, 255, 255).endVertex();
-        buffer.vertex(matrix, x, 1.875F, -0.375F).uv(u1, v1).color(255, 255, 255, 255).endVertex();
-        buffer.vertex(matrix, x, 0.125F, -0.375F).uv(u1, v0).color(255, 255, 255, 255).endVertex();
-        buffer.vertex(matrix, x, 0.125F, 1.375F).uv(u0, v0).color(255, 255, 255, 255).endVertex();
-        BufferUploader.drawWithShader(buffer.end());
+        
+        BufferBuilder buffer = RenderHooks.beginTesselator(Tesselator.getInstance(), VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
+        RenderHooks.vertexTexColor(buffer, matrix, x, 1.875F, 1.375F, u0, v1, 255, 255, 255, 255);
+        RenderHooks.vertexTexColor(buffer, matrix, x, 1.875F, -0.375F, u1, v1, 255, 255, 255, 255);
+        RenderHooks.vertexTexColor(buffer, matrix, x, 0.125F, -0.375F, u1, v0, 255, 255, 255, 255);
+        RenderHooks.vertexTexColor(buffer, matrix, x, 0.125F, 1.375F, u0, v0, 255, 255, 255, 255);
+        RenderHooks.drawWithShader(buffer);
     }
 
     private static void bindRadarTexture() {
@@ -343,8 +300,6 @@ public class MachineRadarScreenRenderer implements BlockEntityRenderer<MachineRa
             return;
         }
         Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
-        // Таблица поворотов как у MachineRadarRenderer (радар-тарелка):
-        // NORTH→0, SOUTH→180, EAST→270, WEST→90.
         float rot = switch (facing) {
             case SOUTH -> 180F;
             case EAST -> 270F;

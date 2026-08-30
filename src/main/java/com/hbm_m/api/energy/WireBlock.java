@@ -34,15 +34,12 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-//? if forge {
 import com.hbm_m.capability.ModCapabilities;
+//? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 //?}
 
-//? if fabric {
-/*import com.hbm_m.capability.ModCapabilities;
-*///?}
 
 public class WireBlock extends BaseEntityBlock {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -156,7 +153,6 @@ public class WireBlock extends BaseEntityBlock {
     }
 
     private boolean canVisuallyConnectTo(LevelAccessor world, BlockPos neighborPos, Direction sideFromNeighbor, BlockState neighborState) {
-
         if (neighborState.is(this)) {
             return true;
         }
@@ -176,16 +172,18 @@ public class WireBlock extends BaseEntityBlock {
         }
 
         //? if forge {
-        // Forge: дополнительная проверка через Capability для совместимости со сторонними модами
         if (be.getCapability(ModCapabilities.HBM_ENERGY_CONNECTOR, sideFromNeighbor).isPresent()) return true;
         if (be.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, sideFromNeighbor).isPresent()) return true;
         if (be.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER, sideFromNeighbor).isPresent()) return true;
         return be.getCapability(ForgeCapabilities.ENERGY, sideFromNeighbor).isPresent();
-        //?}
-
-        //? if fabric {
-        /*// Fabric: проверяем через cardinal-components
-        return ModCapabilities.hasEnergyComponent(be);
+        //?} else {
+        /*if (world instanceof net.minecraft.world.level.Level level) {
+            if (level.getCapability(ModCapabilities.HBM_ENERGY_CONNECTOR, neighborPos, neighborState, be, sideFromNeighbor) != null) return true;
+            if (level.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, neighborPos, neighborState, be, sideFromNeighbor) != null) return true;
+            if (level.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER, neighborPos, neighborState, be, sideFromNeighbor) != null) return true;
+            return level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK, neighborPos, neighborState, be, sideFromNeighbor) != null;
+        }
+        return false;
         *///?}
     }
 
@@ -202,19 +200,11 @@ public class WireBlock extends BaseEntityBlock {
 
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-        if (!level.isClientSide && !oldState.is(this)) {
-            LOGGER.info("[WIRE] Block placed at {}, adding to network immediately", pos);
-            EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
-        }
         super.onPlace(state, level, pos, oldState, isMoving);
     }
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!level.isClientSide && !state.is(newState.getBlock())) {
-            LOGGER.info("[WIRE] Block removed at {}, removing from network", pos);
-            EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
-        }
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
@@ -240,4 +230,9 @@ public class WireBlock extends BaseEntityBlock {
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new WireBlockEntity(pos, state);
     }
+
+    //? if > 1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<WireBlock> CODEC = simpleCodec(WireBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

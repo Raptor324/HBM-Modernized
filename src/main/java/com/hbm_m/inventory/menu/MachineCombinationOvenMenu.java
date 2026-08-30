@@ -3,6 +3,7 @@ package com.hbm_m.inventory.menu;
 import com.hbm_m.blockentity.machines.MachineCombinationOvenBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -31,7 +32,11 @@ public class MachineCombinationOvenMenu extends AbstractContainerMenu {
         super(ModMenuTypes.COMBINATION_OVEN_MENU.get(), id);
         this.blockEntity = blockEntity;
 
-        var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
+        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
+        var container = new ModItemStackHandlerContainer(
+                blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOT_COUNT),
+                blockEntity != null ? blockEntity::setChanged : null);
 
         // Eingangsslot - Koordinaten aus dem 1.7.10-Original (ContainerFurnaceCombo, Slot 0).
         this.addSlot(new Slot(container, SLOT_INPUT, 26, 36));
@@ -62,6 +67,11 @@ public class MachineCombinationOvenMenu extends AbstractContainerMenu {
         BlockEntity blockEntity = inventory.player.level().getBlockEntity(pos);
         if (blockEntity instanceof MachineCombinationOvenBlockEntity combinationOven) {
             return combinationOven;
+        }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inventory.player.level().isClientSide) {
+            return null;
         }
         throw new IllegalStateException("No MachineCombinationOvenBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":combination_oven_menu");
     }

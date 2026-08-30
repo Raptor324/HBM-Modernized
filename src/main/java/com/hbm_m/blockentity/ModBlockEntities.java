@@ -15,6 +15,7 @@ import com.hbm_m.blockentity.machines.AnvilBlockEntity;
 import com.hbm_m.blockentity.machines.BatterySocketBlockEntity;
 import com.hbm_m.blockentity.machines.BlastFurnaceBlockEntity;
 import com.hbm_m.blockentity.machines.DeconBlockEntity;
+import com.hbm_m.blockentity.machines.TestBlockEntity;
 import com.hbm_m.blockentity.machines.FluidDuctBlockEntity;
 import com.hbm_m.blockentity.machines.FluidExhaustBlockEntity;
 import com.hbm_m.blockentity.machines.FluidPumpBlockEntity;
@@ -23,6 +24,7 @@ import com.hbm_m.blockentity.machines.GeigerCounterBlockEntity;
 import com.hbm_m.blockentity.machines.HeatingOvenBlockEntity;
 import com.hbm_m.blockentity.machines.LaunchPadBlockEntity;
 import com.hbm_m.blockentity.machines.LaunchPadRustedBlockEntity;
+import com.hbm_m.blockentity.machines.CargoElevatorBlockEntity;
 import com.hbm_m.blockentity.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.blockentity.machines.MachineArcWelderBlockEntity;
 import com.hbm_m.blockentity.machines.MachineAssemblerBlockEntity;
@@ -83,6 +85,7 @@ import com.hbm_m.blockentity.machines.MachineWatzPowerplantBlockEntity;
 import com.hbm_m.blockentity.machines.MachineWoodBurnerBlockEntity;
 import com.hbm_m.blockentity.machines.MachineZirnoxBlockEntity;
 import com.hbm_m.blockentity.machines.MachineZirnoxDestroyedBlockEntity;
+import com.hbm_m.blockentity.machines.TransitionSealBlockEntity;
 import com.hbm_m.blockentity.machines.UniversalMachinePartBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKAbsorberBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKAutoloaderBlockEntity;
@@ -399,6 +402,14 @@ public class ModBlockEntities {
 			BlockEntityType.Builder.<GeigerCounterBlockEntity>of(GeigerCounterBlockEntity::new, ModBlocks.GEIGER_COUNTER_BLOCK.get())
 				.build(null));
 
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.decorations.PedestalBlockEntity>> PEDESTAL_BE =
+            BLOCK_ENTITIES.register("pedestal_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.decorations.PedestalBlockEntity::new, com.hbm_m.block.ModBlocks.PEDESTAL.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.decorations.DecoLootBlockEntity>> DECO_LOOT_BE =
+            BLOCK_ENTITIES.register("deco_loot_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.decorations.DecoLootBlockEntity::new, com.hbm_m.block.ModBlocks.DECO_LOOT.get()).build(null));
+
     public static final RegistrySupplier<BlockEntityType<DeconBlockEntity>> DECON_BE =
             BLOCK_ENTITIES.register("decon_be", () ->
                     BlockEntityType.Builder.of(DeconBlockEntity::new, ModBlocks.DECON.get()).build(null));
@@ -473,6 +484,54 @@ public class ModBlockEntities {
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.bomb.NukePrototypeBlockEntity>> NUKE_PROTOTYPE_BE =
             BLOCK_ENTITIES.register("nuke_prototype_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.bomb.NukePrototypeBlockEntity::new, ModBlocks.NUKE_PROTOTYPE.get())
+                            .build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.bomb.LargeNukeBlockEntity>> LARGE_NUKE_BE =
+            BLOCK_ENTITIES.register("large_nuke_be", () ->
+                    BlockEntityType.Builder.of(
+                            (pos, state) -> new com.hbm_m.blockentity.bomb.LargeNukeBlockEntity(pos, state,
+                                    state.getBlock() instanceof com.hbm_m.block.bomb.LargeNukeBlock b
+                                            ? b.type : com.hbm_m.block.bomb.LargeNukeType.GADGET),
+                            ModBlocks.NUKE_GADGET.get(),
+                            ModBlocks.NUKE_BOY.get(),
+                            ModBlocks.NUKE_MIKE.get(),
+                            ModBlocks.NUKE_TSAR.get())
+                            .build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.bomb.NukeFleijaBlockEntity>> NUKE_FLEIJA_BE =
+            BLOCK_ENTITIES.register("nuke_fleija_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.bomb.NukeFleijaBlockEntity::new,
+                            ModBlocks.NUKE_FLEIJA.get())
+                            .build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.bomb.NukeSoliniumBlockEntity>> NUKE_SOLINIUM_BE =
+            BLOCK_ENTITIES.register("nuke_solinium_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.bomb.NukeSoliniumBlockEntity::new,
+                            ModBlocks.NUKE_SOLINIUM.get())
+                            .build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.bomb.NukeN2BlockEntity>> NUKE_N2_BE =
+            BLOCK_ENTITIES.register("nuke_n2_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.bomb.NukeN2BlockEntity::new,
+                            ModBlocks.NUKE_N2.get())
+                            .build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.bomb.NukeFstbmbBlockEntity>> NUKE_FSTBMB_BE =
+            BLOCK_ENTITIES.register("nuke_fstbmb_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.bomb.NukeFstbmbBlockEntity::new,
+                            ModBlocks.NUKE_FSTBMB.get())
+                            .build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.bomb.NukeCustomBlockEntity>> NUKE_CUSTOM_BE =
+            BLOCK_ENTITIES.register("nuke_custom_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.bomb.NukeCustomBlockEntity::new,
+                            ModBlocks.NUKE_CUSTOM.get())
+                            .build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.bomb.BombMultiBlockEntity>> BOMB_MULTI_BE =
+            BLOCK_ENTITIES.register("bomb_multi_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.bomb.BombMultiBlockEntity::new,
+                            ModBlocks.BOMB_MULTI.get())
                             .build(null));
 
     public static final RegistrySupplier<BlockEntityType<MachineShredderBlockEntity>> SHREDDER =
@@ -654,7 +713,51 @@ public class ModBlockEntities {
 
 	public static final RegistrySupplier<BlockEntityType<WireBlockEntity>> WIRE_BE =
 		BLOCK_ENTITIES.register("wire_be", () ->
-			BlockEntityType.Builder.<WireBlockEntity>of(WireBlockEntity::new, ModBlocks.WIRE_COATED.get())
+			BlockEntityType.Builder.<WireBlockEntity>of(WireBlockEntity::new, ModBlocks.WIRE_COATED.get(), ModBlocks.RED_WIRE_COATED.get(), ModBlocks.RED_CABLE.get(), ModBlocks.RED_CABLE_CLASSIC.get())
+				.build(null));
+
+	// ══════════ Сеть длинной ЛЭП (порт TileEntityPylonBase-иерархии 1.7.10) ══════════
+
+	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.network.RedConnectorBlockEntity>> RED_CONNECTOR_BE =
+		BLOCK_ENTITIES.register("red_connector_be", () ->
+			BlockEntityType.Builder.<com.hbm_m.blockentity.network.RedConnectorBlockEntity>of(com.hbm_m.blockentity.network.RedConnectorBlockEntity::new, ModBlocks.RED_CONNECTOR.get())
+				.build(null));
+
+	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.network.RedConnectorSuperBlockEntity>> RED_CONNECTOR_SUPER_BE =
+		BLOCK_ENTITIES.register("red_connector_super_be", () ->
+			BlockEntityType.Builder.<com.hbm_m.blockentity.network.RedConnectorSuperBlockEntity>of(com.hbm_m.blockentity.network.RedConnectorSuperBlockEntity::new, ModBlocks.RED_CONNECTOR_SUPER.get())
+				.build(null));
+
+	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.network.RedPylonBlockEntity>> RED_PYLON_BE =
+		BLOCK_ENTITIES.register("red_pylon_be", () ->
+			BlockEntityType.Builder.<com.hbm_m.blockentity.network.RedPylonBlockEntity>of(com.hbm_m.blockentity.network.RedPylonBlockEntity::new, ModBlocks.RED_PYLON.get(), ModBlocks.RED_PYLON_STEEL.get())
+				.build(null));
+
+	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.network.RedPylonMediumBlockEntity>> RED_PYLON_MEDIUM_BE =
+		BLOCK_ENTITIES.register("red_pylon_medium_be", () ->
+			BlockEntityType.Builder.<com.hbm_m.blockentity.network.RedPylonMediumBlockEntity>of(com.hbm_m.blockentity.network.RedPylonMediumBlockEntity::new,
+					ModBlocks.RED_PYLON_MEDIUM_WOOD.get(), ModBlocks.RED_PYLON_MEDIUM_WOOD_TRANSFORMER.get(),
+					ModBlocks.RED_PYLON_MEDIUM_STEEL.get(), ModBlocks.RED_PYLON_MEDIUM_STEEL_TRANSFORMER.get())
+				.build(null));
+
+	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.network.RedPylonLargeBlockEntity>> RED_PYLON_LARGE_BE =
+		BLOCK_ENTITIES.register("red_pylon_large_be", () ->
+			BlockEntityType.Builder.<com.hbm_m.blockentity.network.RedPylonLargeBlockEntity>of(com.hbm_m.blockentity.network.RedPylonLargeBlockEntity::new, ModBlocks.RED_PYLON_LARGE.get())
+				.build(null));
+
+	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.network.RedCableGaugeBlockEntity>> RED_CABLE_GAUGE_BE =
+		BLOCK_ENTITIES.register("red_cable_gauge_be", () ->
+			BlockEntityType.Builder.<com.hbm_m.blockentity.network.RedCableGaugeBlockEntity>of(com.hbm_m.blockentity.network.RedCableGaugeBlockEntity::new, ModBlocks.RED_CABLE_GAUGE.get())
+				.build(null));
+
+	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.network.RedCablePaintableBlockEntity>> RED_CABLE_PAINTABLE_BE =
+		BLOCK_ENTITIES.register("red_cable_paintable_be", () ->
+			BlockEntityType.Builder.<com.hbm_m.blockentity.network.RedCablePaintableBlockEntity>of(com.hbm_m.blockentity.network.RedCablePaintableBlockEntity::new, ModBlocks.RED_CABLE_PAINTABLE.get())
+				.build(null));
+
+	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.network.PylonDummyBlockEntity>> PYLON_DUMMY_BE =
+		BLOCK_ENTITIES.register("pylon_dummy_be", () ->
+			BlockEntityType.Builder.<com.hbm_m.blockentity.network.PylonDummyBlockEntity>of(com.hbm_m.blockentity.network.PylonDummyBlockEntity::new, ModBlocks.PYLON_DUMMY.get())
 				.build(null));
 
 	public static final RegistrySupplier<BlockEntityType<LaunchPadBlockEntity>> LAUNCH_PAD_BE =
@@ -1003,7 +1106,6 @@ public class ModBlockEntities {
                 // Все блоки дверей, которые используют этот BlockEntity
                         ModBlocks.LARGE_VEHICLE_DOOR.get(),
                         ModBlocks.ROUND_AIRLOCK_DOOR.get(),
-                        ModBlocks.TRANSITION_SEAL.get(),
                         ModBlocks.FIRE_DOOR.get(),
                         ModBlocks.SLIDE_DOOR.get(),
                         ModBlocks.SLIDING_SEAL_DOOR.get(),
@@ -1013,8 +1115,14 @@ public class ModBlockEntities {
                         ModBlocks.WATER_DOOR.get(),
                         ModBlocks.SILO_HATCH.get(),
                         ModBlocks.SILO_HATCH_LARGE.get(),
-                        ModBlocks.VAULT_DOOR.get())
+                        ModBlocks.VAULT_DOOR.get(),
+                        ModBlocks.CARGO_DOOR.get())
                     .build(null));
+
+    public static final RegistrySupplier<BlockEntityType<TransitionSealBlockEntity>> TRANSITION_SEAL_BE =
+            BLOCK_ENTITIES.register("transition_seal_be", () ->
+                    BlockEntityType.Builder.of(TransitionSealBlockEntity::new,
+                            ModBlocks.TRANSITION_SEAL.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<IronCrateBlockEntity>> IRON_CRATE_BE =
             BLOCK_ENTITIES.register("iron_crate_be", () ->
@@ -1066,6 +1174,11 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("heating_oven_be", () ->
                     BlockEntityType.Builder.of(HeatingOvenBlockEntity::new,
                             ModBlocks.HEATING_OVEN.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<TestBlockEntity>> TEST_BE =
+            BLOCK_ENTITIES.register("test_be", () ->
+                    BlockEntityType.Builder.of(TestBlockEntity::new,
+                            ModBlocks.TEST_BLOCK.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<FluidDuctBlockEntity>> FLUID_DUCT_BE =
             BLOCK_ENTITIES.register("fluid_duct_be", () ->

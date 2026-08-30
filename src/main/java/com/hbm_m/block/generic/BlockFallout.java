@@ -72,10 +72,17 @@ public class BlockFallout extends Block {
         return canSurviveOn(level, pos.below());
     }
 
+    //? if < 1.21.1 {
     @Override
     public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
         return new ItemStack(ModItems.FALLOUT.get());
     }
+    //?} else {
+    /*@Override
+    public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level, BlockPos pos, BlockState state) {
+        return new ItemStack(ModItems.FALLOUT.get());
+    }
+    *///?}
 
     @Override
     public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {

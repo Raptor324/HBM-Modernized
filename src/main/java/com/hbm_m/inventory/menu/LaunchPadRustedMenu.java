@@ -14,6 +14,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import com.hbm_m.platform.DummyItemStackHandler;
 import com.hbm_m.platform.ModItemStackHandler;
 
 /**
@@ -44,7 +45,11 @@ public class LaunchPadRustedMenu extends AbstractContainerMenu {
         super(getMenuType(), id);
         this.blockEntity = blockEntity;
 
-        Container machineContainer = new HandlerContainer(blockEntity.getInventory());
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
+        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
+        Container machineContainer = new HandlerContainer(blockEntity != null
+                ? blockEntity.getInventory()
+                : new DummyItemStackHandler(MACHINE_SLOTS));
 
         // Выходной слот (нельзя класть предметы)
         this.addSlot(new Slot(machineContainer, SLOT_OUTPUT, 26, 72) {
@@ -85,6 +90,11 @@ public class LaunchPadRustedMenu extends AbstractContainerMenu {
         BlockEntity be = inv.player.level().getBlockEntity(pos);
         if (be instanceof LaunchPadRustedBlockEntity rusted) {
             return rusted;
+        }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inv.player.level().isClientSide) {
+            return null;
         }
         throw new IllegalStateException("No LaunchPadRustedBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":launch_pad_rusted_menu");
     }

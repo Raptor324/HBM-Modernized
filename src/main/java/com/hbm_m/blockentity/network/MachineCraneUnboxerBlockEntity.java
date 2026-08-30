@@ -128,7 +128,7 @@ public class MachineCraneUnboxerBlockEntity extends BaseMachineBlockEntity imple
             if (current.isEmpty()) {
                 inventory.setStackInSlot(i, stack);
                 return ItemStack.EMPTY;
-            } else if (ItemStack.isSameItemSameTags(current, stack)) {
+            } else if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, stack)) {
                 int space = current.getMaxStackSize() - current.getCount();
                 if (space > 0) {
                     int toMove = Math.min(space, stack.getCount());

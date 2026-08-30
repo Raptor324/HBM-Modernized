@@ -5,17 +5,14 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.api.energy.ItemEnergyAccess;
-//? if forge {
-import com.hbm_m.api.energy.PackedEnergyCapabilityProvider;
-import com.hbm_m.capability.ModCapabilities;
-//?}
+
 import com.hbm_m.interfaces.IEnergyConnector;
 import com.hbm_m.interfaces.IEnergyProvider;
 import com.hbm_m.interfaces.IEnergyReceiver;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.platform.ModItemStackHandler;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -35,17 +32,18 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
 //? if forge {
+import com.hbm_m.api.energy.PackedEnergyCapabilityProvider;
+import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 //?}
 
-//? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import team.reborn.energy.api.EnergyStorage;
-import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
+//? if neoforge {
+/*import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.energy.IEnergyStorage;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 *///?}
 
 /**
@@ -53,7 +51,7 @@ import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
  * Реализует хранение энергии, инвентарь и синхронизацию.
  */
 @SuppressWarnings("UnstableApiUsage")
-public abstract class BaseMachineBlockEntity extends BlockEntity implements MenuProvider, IEnergyProvider, IEnergyReceiver {
+public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implements MenuProvider, IEnergyProvider, IEnergyReceiver {
 
     // Инвентарь
     protected final ModItemStackHandler inventory;
@@ -78,47 +76,16 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
     private final LazyOptional<IEnergyProvider> hbmProvider = LazyOptional.of(() -> this);
     private final LazyOptional<IEnergyReceiver> hbmReceiver = LazyOptional.of(() -> this);
     private final LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
-    private final PackedEnergyCapabilityProvider feCapabilityProvider;//?}
+    private final PackedEnergyCapabilityProvider feCapabilityProvider;
 
-    // Провайдер TeamReborn Energy (Fabric)
-    //? if fabric {
-    /*private final EnergyStorage energyStorage = new EnergyStorage() {
-        @Override
-        public long insert(long maxAmount, TransactionContext transaction) {
-            if (!canReceive()) return 0;
-            long amount = Math.min(capacity - energy, Math.min(maxReceive, maxAmount));
-            if (amount > 0) {
-                transaction.addCloseCallback((ctx, result) -> {
-                    if (result.wasCommitted()) setEnergyStored(energy + amount);
-                });
-            }
-            return amount;
-        }
-
-        @Override
-        public long extract(long maxAmount, TransactionContext transaction) {
-            if (!canExtract()) return 0;
-            long amount = Math.min(energy, Math.min(maxExtract, maxAmount));
-            if (amount > 0) {
-                transaction.addCloseCallback((ctx, result) -> {
-                    if (result.wasCommitted()) setEnergyStored(energy - amount);
-                });
-            }
-            return amount;
-        }
-
-        @Override public long getAmount()   { return energy; }
-        @Override public long getCapacity() { return capacity; }
-    };
-
-    public EnergyStorage getEnergyStorage() { return energyStorage; }
-
-    /^* Возвращает Transfer API Storage для предметов. Переопределяй в подклассах для sided-логики. ^/
-    @Nullable
-    public Storage<ItemVariant> getItemStorage(@Nullable Direction side) {
-        return inventory.getStorage();
-    }
+    // Fluid-капабилити (Forge). Подклассы регистрируют обработчик через setFluidHandler().
+    protected LazyOptional<net.minecraftforge.fluids.capability.IFluidHandler> fluidHandlerOpt = LazyOptional.empty();
+    //?}
+    //? if neoforge {
+    /*// Fluid-капабилити (NeoForge): без LazyOptional, храним сам объект-обработчик.
+    protected Object fluidHandlerNeo;
     *///?}
+
 
     /** Общий доступ к инвентарю машины (loader-agnostic). */
     public ModItemStackHandler getInventory() {
@@ -151,6 +118,14 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
      */
     public void dropInventoryContents() {
         if (level == null) return;
+        // Во время переноса блоков движком сборки (Create/Sable) содержимое уезжает
+        // в NBT-снимок контрапшена; высыпание на пол здесь = дюп предметов.
+        if (com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
+            com.hbm_m.main.MainRegistry.LOGGER.info(
+                "[HBM] высыпание инвентаря подавлено (окно сборки контрапшена), BE {}",
+                getClass().getSimpleName());
+            return;
+        }
         net.minecraft.world.SimpleContainer c = new net.minecraft.world.SimpleContainer(inventory.getSlots());
         for (int i = 0; i < inventory.getSlots(); i++) {
             c.setItem(i, inventory.getStackInSlot(i));
@@ -318,19 +293,45 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
     }
 
     // --- Настройка Fluid Capability (опционально) ---
+
+    /**
+     * Регистрирует обработчик жидкости, который BaseMachineBlockEntity будет отдавать через
+     * {@code ForgeCapabilities.FLUID_HANDLER}. Вызывать из {@link #setupFluidCapability()} подкласса.
+     * <p>Можно передать:
+     * <ul>
+     *   <li>HBM {@link com.hbm_m.inventory.fluid.tank.FluidTank} — тогда переиспользуется его
+     *       внутренний {@code LazyOptional<IFluidHandler>};</li>
+     *   <li>любой {@code net.minecraftforge.fluids.capability.IFluidHandler} — кастомный враппер,
+     *       Forge {@code FluidTank} и т.п.</li>
+     * </ul>
+     */
+    protected void setFluidHandler(Object handler) {
+        //? if forge {
+        if (handler instanceof com.hbm_m.inventory.fluid.tank.FluidTank tank) {
+            this.fluidHandlerOpt = (net.minecraftforge.common.util.LazyOptional<net.minecraftforge.fluids.capability.IFluidHandler>) tank.getCapability();
+        } else {
+            this.fluidHandlerOpt = LazyOptional.of(() -> (net.minecraftforge.fluids.capability.IFluidHandler) handler);
+        }
+        //?}
+        //? if neoforge {
+        /*// На NeoForge нет LazyOptional — капабилити это обычный объект.
+        // HBM FluidTank отдаёт свой backend напрямую, иначе храним переданный handler как есть.
+        if (handler instanceof com.hbm_m.inventory.fluid.tank.FluidTank tank) {
+            this.fluidHandlerNeo = tank.getCapability();
+        } else {
+            this.fluidHandlerNeo = handler;
+        }
+        *///?}
+    }
+
     protected void setupFluidCapability() {
         // Переопределяется в подклассах при необходимости
     }
 
     // --- NBT ---
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        // copy() обязателен: ItemStack.save() кладёт в NBT ССЫЛКУ на живой ItemStack.tag.
-        // Chunk NBT сериализуется в потоке IOWorker, а машины продолжают менять теги
-        // предметов (зарядка батарей, счётчики) → ConcurrentModificationException
-        // в CompoundTag.write и незавершаемое "Saving worlds" при выходе из мира.
-        tag.put("inventory", inventory.serializeNBT().copy());
+    protected void writeNbtData(@NotNull CompoundTag tag, @Nullable net.minecraft.core.HolderLookup.Provider registries) {
+        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(inventory, registries));
         tag.putLong("energy", energy);
         tag.putLong("capacity", capacity);
         tag.putLong("lastEnergy", lastEnergy);
@@ -338,13 +339,12 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(@NotNull CompoundTag tag, @Nullable net.minecraft.core.HolderLookup.Provider registries) {
         CompoundTag inventoryTag = tag.getCompound("inventory");
         if (inventoryTag.contains("Size")) {
             inventoryTag.putInt("Size", inventory.getSlots());
         }
-        inventory.deserializeNBT(inventoryTag);
+        com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, inventoryTag, registries);
         energy = tag.getLong("energy");
         if (tag.contains("capacity")) {
             capacity = Math.max(0L, tag.getLong("capacity"));
@@ -352,34 +352,6 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         lastEnergy = tag.getLong("lastEnergy");
         energyDelta = tag.getLong("energyDelta");
     }
-
-    // --- Синхронизация ---
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        saveAdditional(tag);
-        return tag;
-    }
-
-    //? if forge {
-    @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        load(tag);
-    }//?}
-
-    @Nullable
-    @Override
-    public ClientboundBlockEntityDataPacket getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
-
-    //? if forge {
-    @Override
-    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
-        if (pkt.getTag() != null) {
-            load(pkt.getTag());
-        }
-    }//?}
 
     protected void sendUpdateToClient() {
         if (level != null && !level.isClientSide && !isRemoved()) {
@@ -396,6 +368,7 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         if (cap == ModCapabilities.HBM_ENERGY_RECEIVER)  return hbmReceiver.cast();
         if (cap == ModCapabilities.HBM_ENERGY_CONNECTOR) return hbmConnector.cast();
         if (cap == ForgeCapabilities.ITEM_HANDLER)        return itemHandler.cast();
+        if (cap == ForgeCapabilities.FLUID_HANDLER && fluidHandlerOpt.isPresent()) return fluidHandlerOpt.cast();
 
         LazyOptional<T> feCap = feCapabilityProvider.getCapability(cap, side);
         if (feCap.isPresent()) return feCap;
@@ -418,6 +391,7 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         hbmReceiver.invalidate();
         hbmConnector.invalidate();
         feCapabilityProvider.invalidate();
+        fluidHandlerOpt.invalidate();
     }
     //?}
 
@@ -461,15 +435,14 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         });
         //?}
 
-        //? if fabric {
-        /*var fabricEnergy = EnergyStorage.ITEM.find(batteryStack, null);
-        if (fabricEnergy == null || !fabricEnergy.supportsExtraction()) return;
-        try (var tx = net.fabricmc.fabric.api.transfer.v1.transaction.Transaction.openOuter()) {
-            long extracted = fabricEnergy.extract(maxTransfer, tx);
-            if (extracted > 0) {
-                setEnergyStored(energy + extracted);
-                tx.commit();
-            }
+        //? if neoforge {
+        /*IEnergyStorage itemEnergy = batteryStack.getCapability(Capabilities.EnergyStorage.ITEM);
+        if (itemEnergy == null || !itemEnergy.canExtract()) return;
+        int intTransfer = (int) Math.min(Integer.MAX_VALUE, maxTransfer);
+        if (intTransfer <= 0) return;
+        int extracted = itemEnergy.extractEnergy(intTransfer, false);
+        if (extracted > 0) {
+            setEnergyStored(energy + extracted);
         }
         *///?}
     }
@@ -506,8 +479,9 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         });
         //?}
 
-        //? if fabric {
-        /*var hbm = ItemEnergyAccess.getHbmReceiver(itemToCharge);
+        //? if neoforge {
+        /*// Сначала HBM-приёмник (кастомная capability предмета), затем FE через NeoForge Capabilities.
+        var hbm = ItemEnergyAccess.getHbmReceiver(itemToCharge);
         if (hbm.isPresent()) {
             var target = hbm.get();
             if (!target.canReceive()) return;
@@ -515,15 +489,12 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
             if (accepted > 0) setEnergyStored(energy - accepted);
             return;
         }
-        var target = EnergyStorage.ITEM.find(itemToCharge, null);
-        if (target == null || !target.supportsInsertion()) return;
-        try (var tx = net.fabricmc.fabric.api.transfer.v1.transaction.Transaction.openOuter()) {
-            long accepted = target.insert(toTransfer, tx);
-            if (accepted > 0) {
-                setEnergyStored(energy - accepted);
-                tx.commit();
-            }
-        }
+        IEnergyStorage target = itemToCharge.getCapability(Capabilities.EnergyStorage.ITEM);
+        if (target == null || !target.canReceive()) return;
+        int maxTransfer = (int) Math.min(toTransfer, Integer.MAX_VALUE);
+        if (maxTransfer <= 0) return;
+        int accepted = target.receiveEnergy(maxTransfer, false);
+        if (accepted > 0) setEnergyStored(energy - accepted);
         *///?}
     }
 
@@ -538,9 +509,9 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         return stack.getCapability(ForgeCapabilities.ENERGY)
                 .map(net.minecraftforge.energy.IEnergyStorage::canExtract).orElse(false);
         //?}
-        //? if fabric {
-        /*var es = EnergyStorage.ITEM.find(stack, null);
-        return es != null && es.supportsExtraction();
+        //? if neoforge {
+        /*IEnergyStorage cap = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        return cap != null && cap.canExtract();
         *///?}
     }
 
@@ -555,9 +526,9 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         return stack.getCapability(ForgeCapabilities.ENERGY)
                 .map(net.minecraftforge.energy.IEnergyStorage::canReceive).orElse(false);
         //?}
-        //? if fabric {
-        /*var es = EnergyStorage.ITEM.find(stack, null);
-        return es != null && es.supportsInsertion();
+        //? if neoforge {
+        /*IEnergyStorage cap = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        return cap != null && cap.canReceive();
         *///?}
     }
 
@@ -575,19 +546,33 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
 
     // ═══════════════════════════ Network initialization ════════════════════════════════
 
-    protected void ensureNetworkInitialized() {
-        if (!networkInitialized && level != null && !level.isClientSide) {
-            EnergyNetworkManager.get((ServerLevel) level).addNode(this.getBlockPos());
-            networkInitialized = true;
+    /**
+     * Поддержка подписки на энергосеть (energymk2). Вызывается каждый серверный тик:
+     * либо из тика самой машины, либо из централизованного драйвера
+     * {@link com.hbm_m.api.energy.EnergySubscriptions#tickAll}.
+     * Машина периодически подписывается как receiver/provider к сетям соседних проводников.
+     */
+    public void ensureNetworkInitialized() {
+        if (level != null && !level.isClientSide) {
+            com.hbm_m.api.energy.EnergySubscriptions.update(this, getExtraEnergyPorts());
         }
+    }
+
+    /**
+     * Дополнительные позиции портов подписки для мультиблоков.
+     * У каждой такой позиции проверяются все 6 граней на предмет проводов.
+     */
+    protected net.minecraft.core.BlockPos[] getExtraEnergyPorts() {
+        return new net.minecraft.core.BlockPos[0];
     }
 
     @Override
     public void setRemoved() {
         super.setRemoved();
-        // [ВАЖНО!] Сообщаем сети, что мы удалены
+        // Снимаем подписки при удалении, включая порты частей мультиблока
+        // (сети сами пересоберутся через recentlyChanged)
         if (this.level != null && !this.level.isClientSide) {
-            EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
+            com.hbm_m.api.energy.EnergySubscriptions.unsubscribeAll(this, getExtraEnergyPorts());
         }
     }
 
@@ -597,8 +582,47 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
     @Override
     public void setLevel(Level pLevel) {
         super.setLevel(pLevel);
-        //? if fabric {
-        /*setupFluidCapability();
+        // Регистрируемся в централизованном драйвере подписок энергосети
+        // (setLevel вызывается vanilla и при загрузке чанка, и при установке блока)
+        if (pLevel != null && !pLevel.isClientSide) {
+            com.hbm_m.api.energy.EnergySubscriptions.register(this);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════════════════
+    //  Polymorphic Capability Providers (для NeoForge автоматической регистрации)
+    // ════════════════════════════════════════════════════════════════════════════════════════════
+
+    @Override
+    public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
+        return this.inventory;
+    }
+
+    @Override
+    public @Nullable Object getEnergyStorage(@Nullable net.minecraft.core.Direction side) {
+        if (!canConnectEnergy(side)) return null;
+        //? if neoforge {
+        /*return new com.hbm_m.api.energy.LongEnergyWrapper(this,
+                side == Direction.DOWN
+                        ? com.hbm_m.api.energy.LongEnergyWrapper.BitMode.HIGH
+                        : com.hbm_m.api.energy.LongEnergyWrapper.BitMode.LOW);
+        *///?} else {
+        return null;
+        //?}
+    }
+
+    @Override
+    public @Nullable Object getFluidHandler(@Nullable net.minecraft.core.Direction side) {
+        // Если машина реализует IFluidUserMK2 — super вернёт NeoForgeFluidHandlerMK2
+        Object superHandler = super.getFluidHandler(side);
+        if (superHandler != null) return superHandler;
+
+        // Если у машины есть локальный бак через setFluidHandler
+        //? if neoforge {
+        /*if (this.fluidHandlerNeo instanceof net.neoforged.neoforge.fluids.capability.IFluidHandler neoHandler) {
+            return neoHandler;
+        }
         *///?}
+        return null;
     }
 }

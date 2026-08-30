@@ -21,7 +21,7 @@ import java.util.Locale;
  * Port of {@code TileEntityRadioTorchReader} (1.7.10 Original) - reads up to 8 named stats off the
  * backing block (must implement {@link IRORValueProvider}) and broadcasts each on its own channel.
  */
-public class RadioTorchReaderBlockEntity extends BlockEntity implements IRadioTorchConfigurable {
+public class RadioTorchReaderBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IRadioTorchConfigurable {
 
     public final String[] channels = new String[8];
     public final String[] names = new String[8];
@@ -68,8 +68,7 @@ public class RadioTorchReaderBlockEntity extends BlockEntity implements IRadioTo
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         tag.putBoolean("polling", polling);
         for (int i = 0; i < 8; i++) tag.putString("channel" + i, channels[i]);
         for (int i = 0; i < 8; i++) tag.putString("name" + i, names[i]);
@@ -77,19 +76,11 @@ public class RadioTorchReaderBlockEntity extends BlockEntity implements IRadioTo
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         polling = tag.getBoolean("polling");
         for (int i = 0; i < 8; i++) channels[i] = tag.contains("channel" + i) ? tag.getString("channel" + i) : "";
         for (int i = 0; i < 8; i++) names[i] = tag.contains("name" + i) ? tag.getString("name" + i) : "";
         for (int i = 0; i < 8; i++) prev[i] = tag.contains("prev" + i) ? tag.getString("prev" + i) : "";
     }
 
-    @Override
-    public CompoundTag getUpdateTag() { CompoundTag t = super.getUpdateTag(); saveAdditional(t); return t; }
-
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
 }

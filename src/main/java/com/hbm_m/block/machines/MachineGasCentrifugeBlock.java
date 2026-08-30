@@ -5,7 +5,6 @@ import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineGasCentrifugeBlockEntity;
@@ -37,7 +36,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
+import dev.architectury.registry.menu.MenuRegistry;
 
 public class MachineGasCentrifugeBlock extends BaseEntityBlock implements IMultiblockController {
 
@@ -80,19 +79,7 @@ public class MachineGasCentrifugeBlock extends BaseEntityBlock implements IMulti
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!level.isClientSide() && !state.is(oldState.getBlock())) {
-            BlockPos core = placeMultiblockStructure(level, pos, state);
-            if (core == null) {
-                return;
-            }
-            Direction facing = state.getValue(FACING);
-            EnergyNetworkManager.get((ServerLevel) level).addNode(core);
-
-            for (BlockPos localPos : structureHelper.getStructureMap().keySet()) {
-                if (getPartRole(localPos).canReceiveEnergy()) {
-                    BlockPos worldPos = structureHelper.getRotatedPos(core, localPos, facing);
-                    EnergyNetworkManager.get((ServerLevel) level).addNode(worldPos);
-                }
-            }
+            placeMultiblockStructure(level, pos, state);
         }
     }
 
@@ -107,15 +94,6 @@ public class MachineGasCentrifugeBlock extends BaseEntityBlock implements IMulti
         if (!state.is(newState.getBlock())) {
             if (!level.isClientSide()) {
                 Direction facing = state.getValue(FACING);
-                
-                EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
-                
-                for (BlockPos localPos : structureHelper.getStructureMap().keySet()) {
-                    if (getPartRole(localPos).canReceiveEnergy()) {
-                        BlockPos worldPos = structureHelper.getRotatedPos(pos, localPos, facing);
-                        EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
-                    }
-                }
 
                 BlockEntity be = level.getBlockEntity(pos);
                 if (be instanceof MachineGasCentrifugeBlockEntity gasCentrifuge) {
@@ -128,12 +106,23 @@ public class MachineGasCentrifugeBlock extends BaseEntityBlock implements IMulti
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return openMenu(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider menuProvider) {
-                NetworkHooks.openScreen((ServerPlayer) player, menuProvider, pos);
+                MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
@@ -200,4 +189,13 @@ public class MachineGasCentrifugeBlock extends BaseEntityBlock implements IMulti
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.GAS_CENTRIFUGE_BE.get(), MachineGasCentrifugeBlockEntity::tick);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineGasCentrifugeBlock> CODEC = simpleCodec(MachineGasCentrifugeBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
  * accepts pours/flows from the slagtap and can be mined back (see {@code BlockSlag}), but doesn't
  * expand into a growing puddle on its own.
  */
-public class SlagBlockEntity extends BlockEntity implements ICrucibleAcceptor {
+public class SlagBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements ICrucibleAcceptor {
 
     @Nullable public MaterialType type = null;
     public int amount = 0;
@@ -77,24 +77,15 @@ public class SlagBlockEntity extends BlockEntity implements ICrucibleAcceptor {
     /* ── NBT / sync ─────────────────────────────────────────────────────── */
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         if (type != null) tag.putString("mat_type", type.name);
         tag.putInt("mat_amount", amount);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         type = tag.contains("mat_type") ? MaterialType.byName(tag.getString("mat_type")) : null;
         amount = tag.getInt("mat_amount");
     }
 
-    @Override
-    public CompoundTag getUpdateTag() { CompoundTag t = super.getUpdateTag(); saveAdditional(t); return t; }
-
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
 }

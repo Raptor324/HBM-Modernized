@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.MachineLiquefactorBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineLiquefactorMenu;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -45,6 +46,10 @@ public class GUIMachineLiquefactor extends GuiInfoScreen<MachineLiquefactorMenu>
         RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
         guiGraphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
 
+        if (be == null) {
+            return; // тайл может отсутствовать в реплее Flashback
+        }
+
         long power = be.getEnergyStored();
         long maxPower = Math.max(1L, be.getMaxEnergyStored());
         int i = (int) (power * TANK_H / maxPower);
@@ -68,13 +73,15 @@ public class GUIMachineLiquefactor extends GuiInfoScreen<MachineLiquefactorMenu>
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        drawElectricityInfo(guiGraphics, mouseX, mouseY, ENERGY_X, ENERGY_Y, TANK_W, TANK_H, be.getEnergyStored(), be.getMaxEnergyStored());
+        if (be != null) {
+            drawElectricityInfo(guiGraphics, mouseX, mouseY, ENERGY_X, ENERGY_Y, TANK_W, TANK_H, be.getEnergyStored(), be.getMaxEnergyStored());
 
-        if (isPointInRect(TANK_X, TANK_Y, TANK_W, TANK_H, mouseX, mouseY)) {
-            be.getTank().renderTankInfo(guiGraphics, font, mouseX, mouseY, leftPos + TANK_X, topPos + TANK_Y, TANK_W, TANK_H);
+            if (isPointInRect(TANK_X, TANK_Y, TANK_W, TANK_H, mouseX, mouseY)) {
+                be.getTank().renderTankInfo(guiGraphics, font, mouseX, mouseY, leftPos + TANK_X, topPos + TANK_Y, TANK_W, TANK_H);
+            }
         }
 
         renderTooltip(guiGraphics, mouseX, mouseY);

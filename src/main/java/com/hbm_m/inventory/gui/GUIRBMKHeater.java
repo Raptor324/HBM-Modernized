@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKHeaterBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.RBMKHeaterMenu;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -55,6 +56,8 @@ public class GUIRBMKHeater extends GuiInfoScreen<RBMKHeaterMenu> {
 
         int x = leftPos, y = topPos;
         g.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (be == null) return;
 
         // Original: rod.feed.renderTank(guiLeft+68, guiTop+82, zLevel, 14, 58);
         be.inputTank.renderTank(g, x + 68, y + 82, 14, 58);
@@ -69,11 +72,14 @@ public class GUIRBMKHeater extends GuiInfoScreen<RBMKHeaterMenu> {
 
     @Override
     public void render(GuiGraphics g, int mx, int my, float partial) {
-        renderBackground(g);
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, mx, my, partial);
         super.render(g, mx, my, partial);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (be != null) {
         be.inputTank.renderTankInfo(g, font, mx, my, leftPos + FEED_X, topPos + FEED_Y, FEED_W, FEED_H);
         be.outputTank.renderTankInfo(g, font, mx, my, leftPos + STEAM_X, topPos + STEAM_Y, STEAM_W, STEAM_H);
+        }
 
         renderTooltip(g, mx, my);
     }

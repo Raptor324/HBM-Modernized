@@ -1,10 +1,12 @@
 package com.hbm_m.item.grenades_and_activators;
 
+import com.hbm_m.item.ITooltipProvider;
 import net.minecraft.world.item.TooltipFlag;
 import java.util.List;
 
 import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.sound.ModSounds;
+import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -31,7 +33,7 @@ import org.jetbrains.annotations.Nullable;
  * При нажатии R открывается GUI для выбора активной точки
  * При ПКМ (без Shift) активирует текущую выбранную точку
  */
-public class MultiDetonatorItem extends Item {
+public class MultiDetonatorItem extends Item implements ITooltipProvider {
 
     // NBT константы для основных данных
     private static final String NBT_ACTIVE_POINT = "ActivePoint"; // 0-3
@@ -67,8 +69,7 @@ public class MultiDetonatorItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
 
         // Проходим по всем 4 точкам
         for (int i = 0; i < MAX_POINTS; i++) {
@@ -120,48 +121,51 @@ public class MultiDetonatorItem extends Item {
 
         // Только при приседании сохраняем позицию
         if (player.isCrouching()) {
-            if (!stack.hasTag()) {
-                stack.setTag(new CompoundTag());
-            }
+            // На 1.21.1 getItemTag() возвращает КОПИЮ (DataComponents.CUSTOM_DATA),
+            // а setItemTag с пустым тегом удаляет компонент — поэтому мутации NBT
+            // обязаны идти через editItemTag (read-modify-write), иначе NPE/потеря данных.
+            final String[] finalNameHolder = new String[1];
 
-            CompoundTag nbt = stack.getTag();
+            PlatformHooks.editItemTag(stack, nbt -> {
+                int activePoint = nbt.getInt(NBT_ACTIVE_POINT);
+                if (activePoint < 0 || activePoint >= MAX_POINTS) {
+                    activePoint = 0;
+                }
 
-            int activePoint = nbt.getInt(NBT_ACTIVE_POINT);
-            if (activePoint < 0 || activePoint >= MAX_POINTS) {
-                activePoint = 0;
-            }
+                if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) {
+                    nbt.put(NBT_POINTS_TAG, new ListTag());
+                }
 
-            if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) {
-                nbt.put(NBT_POINTS_TAG, new ListTag());
-            }
+                ListTag pointsList = nbt.getList(NBT_POINTS_TAG, Tag.TAG_COMPOUND);
 
-            ListTag pointsList = nbt.getList(NBT_POINTS_TAG, Tag.TAG_COMPOUND);
+                // Расширяем список, сохраняя существующие точки
+                while (pointsList.size() <= activePoint) {
+                    CompoundTag newPointTag = createEmptyPointTag();
+                    pointsList.add(newPointTag);
+                }
 
-            // Расширяем список, сохраняя существующие точки
-            while (pointsList.size() <= activePoint) {
-                CompoundTag newPointTag = createEmptyPointTag();
-                pointsList.add(newPointTag);
-            }
+                // Получаем существующую точку и сохраняем ЕЁ ИМЯ
+                CompoundTag pointTag = pointsList.getCompound(activePoint);
+                String savedName = pointTag.getString(NBT_POINT_NAME);
 
-            // Получаем существующую точку и сохраняем ЕЁ ИМЯ
-            CompoundTag pointTag = pointsList.getCompound(activePoint);
-            String savedName = pointTag.getString(NBT_POINT_NAME);
+                // Обновляем координаты
+                pointTag.putInt(NBT_POINT_X, pos.getX());
+                pointTag.putInt(NBT_POINT_Y, pos.getY());
+                pointTag.putInt(NBT_POINT_Z, pos.getZ());
+                pointTag.putBoolean(NBT_POINT_HAS_TARGET, true);
 
-            // Обновляем координаты
-            pointTag.putInt(NBT_POINT_X, pos.getX());
-            pointTag.putInt(NBT_POINT_Y, pos.getY());
-            pointTag.putInt(NBT_POINT_Z, pos.getZ());
-            pointTag.putBoolean(NBT_POINT_HAS_TARGET, true);
+                // Возвращаем сохранённое имя
+                String finalName = savedName.isEmpty() ?
+                        "Point " + (activePoint + 1) : savedName;
+                pointTag.putString(NBT_POINT_NAME, finalName);
+                finalNameHolder[0] = finalName;
 
-            // Возвращаем сохранённое имя
-            pointTag.putString(NBT_POINT_NAME, savedName.isEmpty() ?
-                    "Point " + (activePoint + 1) : savedName);
-
-            pointsList.set(activePoint, pointTag);
-            nbt.put(NBT_POINTS_TAG, pointsList);
+                pointsList.set(activePoint, pointTag);
+                nbt.put(NBT_POINTS_TAG, pointsList);
+            });
 
             if (!level.isClientSide) {
-                String finalName = pointTag.getString(NBT_POINT_NAME);
+                String finalName = finalNameHolder[0];
                 player.displayClientMessage(
                         Component.translatable("message.hbm_m.multi_detonator.position_saved", finalName, pos.getX(), pos.getY(), pos.getZ())
                                 .withStyle(ChatFormatting.GREEN),
@@ -196,7 +200,7 @@ public class MultiDetonatorItem extends Item {
 
         // На сервере: активируем текущую выбранную точку при ПКМ в воздухе
         if (!level.isClientSide) {
-            if (!stack.hasTag()) {
+            if (!PlatformHooks.hasItemTag(stack)) {
                 player.displayClientMessage(
                         Component.translatable("message.hbm_m.multi_detonator.no_coordinates")
                                 .withStyle(ChatFormatting.RED),
@@ -211,7 +215,7 @@ public class MultiDetonatorItem extends Item {
                 return InteractionResultHolder.fail(stack);
             }
 
-            CompoundTag nbt = stack.getTag();
+            CompoundTag nbt = PlatformHooks.getItemTag(stack);
             int activePoint = nbt.getInt(NBT_ACTIVE_POINT);
 
             if (activePoint >= MAX_POINTS) {
@@ -310,11 +314,11 @@ public class MultiDetonatorItem extends Item {
      * Получить данные точки по индексу
      */
     public PointData getPointData(ItemStack stack, int pointIndex) {
-        if (!stack.hasTag() || pointIndex < 0 || pointIndex >= MAX_POINTS) {
+        if (!PlatformHooks.hasItemTag(stack) || pointIndex < 0 || pointIndex >= MAX_POINTS) {
             return null;
         }
 
-        CompoundTag nbt = stack.getTag();
+        CompoundTag nbt = PlatformHooks.getItemTag(stack);
 
         if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) {
             return null;
@@ -351,26 +355,23 @@ public class MultiDetonatorItem extends Item {
      * Установить активную точку
      */
     public void setActivePoint(ItemStack stack, int pointIndex) {
-        if (!stack.hasTag()) {
-            stack.setTag(new CompoundTag());
+        if (pointIndex < 0 || pointIndex >= MAX_POINTS) {
+            return;
         }
-
-        CompoundTag nbt = stack.getTag();
-
-        if (pointIndex >= 0 && pointIndex < MAX_POINTS) {
-            nbt.putInt(NBT_ACTIVE_POINT, pointIndex);
-        }
+        // editItemTag сам создаёт NBT при необходимости — ручной setItemTag был
+        // анти-паттерном (на 1.21.1 пустой тег удаляет CUSTOM_DATA компонент).
+        PlatformHooks.editItemTag(stack, nbt -> nbt.putInt(NBT_ACTIVE_POINT, pointIndex));
     }
 
     /**
      * Получить активную точку
      */
     public int getActivePoint(ItemStack stack) {
-        if (!stack.hasTag()) {
+        if (!PlatformHooks.hasItemTag(stack)) {
             return 0;
         }
 
-        int activePoint = stack.getTag().getInt(NBT_ACTIVE_POINT);
+        int activePoint = PlatformHooks.getInt(stack, NBT_ACTIVE_POINT);
         return (activePoint >= 0 && activePoint < MAX_POINTS) ? activePoint : 0;
     }
 
@@ -378,73 +379,70 @@ public class MultiDetonatorItem extends Item {
      * Установить имя точки
      */
     public void setPointName(ItemStack stack, int pointIndex, String name) {
-        if (!stack.hasTag()) {
-            stack.setTag(new CompoundTag());
-        }
-
         if (pointIndex < 0 || pointIndex >= MAX_POINTS) {
             return;
         }
+        // editItemTag (read-modify-write) — единственный корректный способ мутации
+        // NBT предмета на 1.21.1, где getItemTag() возвращает копию.
+        PlatformHooks.editItemTag(stack, nbt -> {
+            // Инициализируем список точек
+            if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) {
+                nbt.put(NBT_POINTS_TAG, new ListTag());
+            }
 
-        CompoundTag nbt = stack.getTag();
+            ListTag pointsList = nbt.getList(NBT_POINTS_TAG, Tag.TAG_COMPOUND);
 
-        // Инициализируем список точек
-        if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) {
-            nbt.put(NBT_POINTS_TAG, new ListTag());
-        }
+            // При расширении списка - копируем имена существующих точек
+            while (pointsList.size() <= pointIndex) {
+                CompoundTag newPointTag = createEmptyPointTag();
+                pointsList.add(newPointTag);
+            }
 
-        ListTag pointsList = nbt.getList(NBT_POINTS_TAG, Tag.TAG_COMPOUND);
+            CompoundTag pointTag = pointsList.getCompound(pointIndex);
 
-        // При расширении списка - копируем имена существующих точек
-        while (pointsList.size() <= pointIndex) {
-            CompoundTag newPointTag = createEmptyPointTag();
-            pointsList.add(newPointTag);
-        }
+            // Ограничиваем длину имени
+            String limitedName = name.length() > MAX_NAME_LENGTH ?
+                    name.substring(0, MAX_NAME_LENGTH) : name;
 
-        CompoundTag pointTag = pointsList.getCompound(pointIndex);
-
-        // Ограничиваем длину имени
-        String limitedName = name.length() > MAX_NAME_LENGTH ?
-                name.substring(0, MAX_NAME_LENGTH) : name;
-
-        pointTag.putString(NBT_POINT_NAME, limitedName);
-        pointsList.set(pointIndex, pointTag);
-        nbt.put(NBT_POINTS_TAG, pointsList);
+            pointTag.putString(NBT_POINT_NAME, limitedName);
+            pointsList.set(pointIndex, pointTag);
+            nbt.put(NBT_POINTS_TAG, pointsList);
+        });
     }
 
     /**
      * Очистить точку (только координаты, имя сохраняется!)
      */
     public void clearPoint(ItemStack stack, int pointIndex) {
-        if (!stack.hasTag() || pointIndex < 0 || pointIndex >= MAX_POINTS) {
+        if (!PlatformHooks.hasItemTag(stack) || pointIndex < 0 || pointIndex >= MAX_POINTS) {
             return;
         }
+        // Мутация копииgetItemTag на 1.21.1 не сохранялась бы — обернули в editItemTag.
+        PlatformHooks.editItemTag(stack, nbt -> {
+            if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) {
+                return;
+            }
 
-        CompoundTag nbt = stack.getTag();
+            ListTag pointsList = nbt.getList(NBT_POINTS_TAG, Tag.TAG_COMPOUND);
 
-        if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) {
-            return;
-        }
+            if (pointIndex < pointsList.size()) {
+                CompoundTag pointTag = pointsList.getCompound(pointIndex);
 
-        ListTag pointsList = nbt.getList(NBT_POINTS_TAG, Tag.TAG_COMPOUND);
+                // Очищаем ТОЛЬКО координаты и флаг hasTarget, оставляем имя!
+                String savedName = pointTag.getString(NBT_POINT_NAME);
 
-        if (pointIndex < pointsList.size()) {
-            CompoundTag pointTag = pointsList.getCompound(pointIndex);
+                // Создаём очищенный тег с сохранённым именем
+                CompoundTag clearedTag = new CompoundTag();
+                clearedTag.putInt(NBT_POINT_X, 0);
+                clearedTag.putInt(NBT_POINT_Y, 0);
+                clearedTag.putInt(NBT_POINT_Z, 0);
+                clearedTag.putBoolean(NBT_POINT_HAS_TARGET, false);
+                clearedTag.putString(NBT_POINT_NAME, savedName); // Сохраняем имя!
 
-            // Очищаем ТОЛЬКО координаты и флаг hasTarget, оставляем имя!
-            String savedName = pointTag.getString(NBT_POINT_NAME);
-
-            // Создаём очищенный тег с сохранённым именем
-            CompoundTag clearedTag = new CompoundTag();
-            clearedTag.putInt(NBT_POINT_X, 0);
-            clearedTag.putInt(NBT_POINT_Y, 0);
-            clearedTag.putInt(NBT_POINT_Z, 0);
-            clearedTag.putBoolean(NBT_POINT_HAS_TARGET, false);
-            clearedTag.putString(NBT_POINT_NAME, savedName); // Сохраняем имя!
-
-            pointsList.set(pointIndex, clearedTag);
-            nbt.put(NBT_POINTS_TAG, pointsList);
-        }
+                pointsList.set(pointIndex, clearedTag);
+                nbt.put(NBT_POINTS_TAG, pointsList);
+            }
+        });
     }
 
     /**

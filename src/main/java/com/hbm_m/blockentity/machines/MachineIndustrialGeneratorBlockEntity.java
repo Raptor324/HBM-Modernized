@@ -65,7 +65,7 @@ public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntit
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return fuelTank.getCapability().cast();
+            return fuelTank.getForgeFluidCapability().cast();
         }
         return super.getCapability(cap, side);
     }
@@ -159,8 +159,7 @@ public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntit
     // ==================== NBT ====================
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         tag.putInt("burn_time", burnTime);
         tag.putInt("max_burn_time", maxBurnTime);
         waterTank.writeToNBT(tag, "tank_water");
@@ -169,8 +168,7 @@ public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntit
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         burnTime = tag.getInt("burn_time");
         maxBurnTime = tag.contains("max_burn_time") ? Math.max(1, tag.getInt("max_burn_time")) : 1;
         waterTank.readFromNBT(tag, "tank_water");

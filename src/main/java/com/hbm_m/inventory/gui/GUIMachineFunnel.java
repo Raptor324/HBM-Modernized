@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import java.util.List;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.MachineFunnelBlockEntity;
 import com.hbm_m.inventory.menu.MachineFunnelMenu;
@@ -43,6 +44,7 @@ public class GUIMachineFunnel extends AbstractContainerScreen<MachineFunnelMenu>
         super.init();
         int x = (width - imageWidth) / 2;
         int y = (height - imageHeight) / 2;
+        if (blockEntity == null) return; // тайл может отсутствовать в реплее Flashback
         modeButton = Button.builder(Component.literal(MODE_LABELS.get(blockEntity.getMode())), b -> {
             FunnelModeC2SPacket.sendToServer(blockEntity.getBlockPos());
             b.setMessage(Component.literal(MODE_LABELS.get((blockEntity.getMode() + 1) % 3)));
@@ -56,7 +58,7 @@ public class GUIMachineFunnel extends AbstractContainerScreen<MachineFunnelMenu>
         int y = topPos;
         guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
 
-        if (modeButton != null) {
+        if (modeButton != null && blockEntity != null) { // тайл может отсутствовать в реплее Flashback
             modeButton.setMessage(Component.literal(MODE_LABELS.get(blockEntity.getMode())));
         }
     }
@@ -69,7 +71,7 @@ public class GUIMachineFunnel extends AbstractContainerScreen<MachineFunnelMenu>
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         renderTooltip(guiGraphics, mouseX, mouseY);
     }

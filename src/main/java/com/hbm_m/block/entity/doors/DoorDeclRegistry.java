@@ -31,9 +31,8 @@ public class DoorDeclRegistry {
     public static void init() {
         register("large_vehicle_door", DoorDecl.LARGE_VEHICLE_DOOR);
         register("round_airlock_door", DoorDecl.ROUND_AIRLOCK_DOOR);
-        register("transition_seal", DoorDecl.TRANSITION_SEAL);
         register("fire_door", DoorDecl.FIRE_DOOR);
-        register("sliding_blast_door", DoorDecl.SLIDE_DOOR);
+        register("sliding_blast_door", DoorDecl.SLIDING_BLAST_DOOR);
         register("sliding_seal_door", DoorDecl.SLIDING_SEAL_DOOR);
         register("secure_access_door", DoorDecl.SECURE_ACCESS_DOOR);
         register("qe_sliding_door", DoorDecl.QE_SLIDING);
@@ -42,5 +41,6 @@ public class DoorDeclRegistry {
         register("silo_hatch", DoorDecl.SILO_HATCH);
         register("silo_hatch_large", DoorDecl.SILO_HATCH_LARGE);
         register("vault_door", DoorDecl.VAULT_DOOR);
+        register("cargo_door", DoorDecl.CARGO_DOOR);
     }
 }

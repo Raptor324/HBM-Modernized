@@ -9,8 +9,8 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineRotaryFurnaceMenu;
 import com.hbm_m.platform.ModItemStackHandler;
-import com.hbm_m.recipe.RotaryFurnaceRecipes;
-import com.hbm_m.recipe.RotaryFurnaceRecipes.RotaryFurnaceRecipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.RotaryFurnaceRecipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -46,7 +46,7 @@ import net.minecraft.world.level.material.Fluids;
  * Output stattdessen als echter Ingot-ItemStack in einen Output-Slot gelegt (gleiche Vereinfachung
  * wie bei anderen Maschinen diese Session).
  */
-public class MachineRotaryFurnaceBlockEntity extends BlockEntity implements MenuProvider, IFluidStandardReceiverMK2 {
+public class MachineRotaryFurnaceBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements MenuProvider, IFluidStandardReceiverMK2 {
 
     public static final int SLOT_IN1 = 0, SLOT_IN2 = 1, SLOT_IN3 = 2;
     public static final int SLOT_FUEL = 3;
@@ -125,21 +125,17 @@ public class MachineRotaryFurnaceBlockEntity extends BlockEntity implements Menu
 
         boolean wasLit = be.isLit();
 
-        RotaryFurnaceRecipe recipe = RotaryFurnaceRecipes.getRecipe(
-                be.inventory.getStackInSlot(SLOT_IN1),
-                be.inventory.getStackInSlot(SLOT_IN2),
-                be.inventory.getStackInSlot(SLOT_IN3),
-                be.tank.getTankType(), be.tank.getFill());
+        RotaryFurnaceRecipe recipe = findRotaryFurnaceRecipe(level, be);
 
-        if (be.litTime <= 0 && recipe != null && be.canAcceptResult(recipe.output())) {
+        if (be.litTime <= 0 && recipe != null && be.canAcceptResult(recipe.getOutput())) {
             be.tryConsumeFuel();
         }
 
         if (be.litTime > 0) {
             be.litTime--;
 
-            if (recipe != null && be.canAcceptResult(recipe.output())) {
-                be.progress += 1f / recipe.duration();
+            if (recipe != null && be.canAcceptResult(recipe.getOutput())) {
+                be.progress += 1f / recipe.getDuration();
                 if (be.progress >= 1f) {
                     be.progress -= 1f;
                     be.craftItem(recipe);
@@ -159,6 +155,24 @@ public class MachineRotaryFurnaceBlockEntity extends BlockEntity implements Menu
     }
 
     private boolean isLit() { return litTime > 0; }
+
+    /**
+     * Data-driven поиск RotaryFurnaceRecipe по 3 входным слотам + баку
+     * (заменяет статический RotaryFurnaceRecipes.getRecipe).
+     */
+    @Nullable
+    private static RotaryFurnaceRecipe findRotaryFurnaceRecipe(Level level, MachineRotaryFurnaceBlockEntity be) {
+        ItemStack s0 = be.inventory.getStackInSlot(SLOT_IN1);
+        ItemStack s1 = be.inventory.getStackInSlot(SLOT_IN2);
+        ItemStack s2 = be.inventory.getStackInSlot(SLOT_IN3);
+        for (RotaryFurnaceRecipe recipe : RecipeHooks.getAllRecipes(level, RotaryFurnaceRecipe.Type.INSTANCE)) {
+            if (recipe.matchesInputs(s0, s1, s2)
+                    && recipe.matchesFluid(be.tank.getTankType(), be.tank.getFill())) {
+                return recipe;
+            }
+        }
+        return null;
+    }
 
     private boolean tryConsumeFuel() {
         ItemStack fuelStack = inventory.getStackInSlot(SLOT_FUEL);
@@ -180,27 +194,28 @@ public class MachineRotaryFurnaceBlockEntity extends BlockEntity implements Menu
     private boolean canAcceptResult(ItemStack result) {
         ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT);
         if (current.isEmpty()) return true;
-        if (!ItemStack.isSameItemSameTags(current, result)) return false;
+        if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, result)) return false;
         return current.getCount() + result.getCount() <= current.getMaxStackSize();
     }
 
     private void craftItem(RotaryFurnaceRecipe recipe) {
         int[] inputSlots = { SLOT_IN1, SLOT_IN2, SLOT_IN3 };
-        for (var ing : recipe.ingredients()) {
+        // Поглощение зеркалит matchesInputs: каждый ингредиент снимается с первого подходящего слота.
+        for (int i = 0; i < recipe.getInputs().length; i++) {
             for (int slot : inputSlots) {
                 ItemStack stack = inventory.getStackInSlot(slot);
-                if (!stack.isEmpty() && stack.is(ing.item()) && stack.getCount() >= ing.count()) {
-                    inventory.extractItem(slot, ing.count(), false);
+                if (!stack.isEmpty() && recipe.getInputs()[i].test(stack) && stack.getCount() >= recipe.getInputCount(i)) {
+                    inventory.extractItem(slot, recipe.getInputCount(i), false);
                     break;
                 }
             }
         }
 
-        if (recipe.fluid() != null) {
-            tank.drainMb(recipe.fluid().amountMb());
+        if (recipe.getFluid() != null) {
+            tank.drainMb(recipe.getFluidAmountMb());
         }
 
-        ItemStack result = recipe.output().copy();
+        ItemStack result = recipe.getOutput();
         ItemStack output = inventory.getStackInSlot(SLOT_OUTPUT);
         if (output.isEmpty()) {
             inventory.setStackInSlot(SLOT_OUTPUT, result);
@@ -244,9 +259,9 @@ public class MachineRotaryFurnaceBlockEntity extends BlockEntity implements Menu
     // ==================== NBT ====================
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.put("inventory", inventory.serializeNBT());
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(inventory, registries));
         tag.putInt("litTime", litTime);
         tag.putInt("litDuration", litDuration);
         tag.putFloat("progress", progress);
@@ -254,24 +269,13 @@ public class MachineRotaryFurnaceBlockEntity extends BlockEntity implements Menu
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        inventory.deserializeNBT(tag.getCompound("inventory"));
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
+        com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, tag.getCompound("inventory"), registries);
         litTime = tag.getInt("litTime");
         litDuration = tag.getInt("litDuration");
         progress = tag.getFloat("progress");
         tank.readFromNBT(tag, "tank");
-    }
-
-    @Nullable
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
-
-    @Override
-    public CompoundTag getUpdateTag() {
-        return saveWithoutMetadata();
     }
 
     // ==================== GUI ====================

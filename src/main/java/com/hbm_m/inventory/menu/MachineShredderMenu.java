@@ -5,6 +5,7 @@ import com.hbm_m.blockentity.machines.MachineShredderBlockEntity;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.item.industrial.ItemBlades;
+import com.hbm_m.platform.DummyItemStackHandler;
 import com.hbm_m.platform.ModItemStackHandler;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -43,7 +44,8 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
     }
 
     public MachineShredderMenu(int containerId, Inventory playerInventory, MachineShredderBlockEntity blockEntity) {
-        this(containerId, playerInventory, blockEntity, blockEntity.getContainerData());
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустые данные
+        this(containerId, playerInventory, blockEntity, blockEntity != null ? blockEntity.getContainerData() : new SimpleContainerData(2));
     }
 
     public MachineShredderMenu(int containerId, Inventory playerInventory, MachineShredderBlockEntity blockEntity, ContainerData data) {
@@ -57,7 +59,11 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
         this.player = playerInventory.player;
         addDataSlots(data);
 
-        ModItemStackHandler itemHandler = this.blockEntity.getInventory();
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
+        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
+        ModItemStackHandler itemHandler = this.blockEntity != null
+                ? this.blockEntity.getInventory()
+                : new DummyItemStackHandler(BATTERY_SLOT + 1);
         this.machineInventory = new HandlerContainer(itemHandler);
 
         // Входные слоты (3x3 сетка) - верхняя левая часть GUI (0-8)
@@ -120,6 +126,11 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
         BlockEntity blockEntity = playerInventory.player.level().getBlockEntity(data.readBlockPos());
         if (blockEntity instanceof MachineShredderBlockEntity shredder) {
             return shredder;
+        }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (playerInventory.player.level().isClientSide) {
+            return null;
         }
         throw new IllegalStateException("BlockEntity is not a MachineShredder");
     }
@@ -188,6 +199,9 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
 
     @Override
     public boolean stillValid(Player player) {
+        if (blockEntity == null) {
+            return false; // тайл может отсутствовать на клиенте (реплей Flashback)
+        }
         return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()),
                 player, ModBlocks.SHREDDER.get());
     }
@@ -216,12 +230,13 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
 
     @Override
     public long getEnergyStatic() {
-        return blockEntity.getEnergyStored();
+        // тайл может отсутствовать на клиенте (реплей Flashback)
+        return blockEntity != null ? blockEntity.getEnergyStored() : 0L;
     }
 
     @Override
     public long getMaxEnergyStatic() {
-        return blockEntity.getMaxEnergyStored();
+        return blockEntity != null ? blockEntity.getMaxEnergyStored() : 0L;
     }
 
     public int getScaledProgress(int width) {

@@ -22,7 +22,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * modern equivalent purpose; the player-visible result - each block always looks like what it is
  * - is unaffected).
  */
-public class PWRPartBlockEntity extends BlockEntity implements IDummyCorePart {
+public class PWRPartBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IDummyCorePart {
 
     public enum Kind { FUEL, CONTROL, CHANNEL, HEATEX, HEATSINK, NEUTRON_SOURCE, CASING, REFLECTOR, PORT }
 
@@ -70,16 +70,14 @@ public class PWRPartBlockEntity extends BlockEntity implements IDummyCorePart {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         if (corePos != null) {
-            tag.put("CorePos", NbtUtils.writeBlockPos(corePos));
+            com.hbm_m.platform.PlatformHooks.writeBlockPos(tag, "CorePos", corePos);
         }
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        corePos = tag.contains("CorePos") ? NbtUtils.readBlockPos(tag.getCompound("CorePos")) : null;
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        corePos = tag.contains("CorePos") ? com.hbm_m.platform.PlatformHooks.readBlockPos(tag, "CorePos") : null;
     }
 }

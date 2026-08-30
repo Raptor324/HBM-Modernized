@@ -13,8 +13,8 @@ import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
-import com.hbm_m.recipe.PyroOvenRecipes;
-import com.hbm_m.recipe.PyroOvenRecipes.Recipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.PyroOvenRecipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -32,7 +32,8 @@ import net.minecraft.world.level.material.Fluids;
 
 /**
  * Pyro Oven - Port von {@code TileEntityMachinePyroOven} (1.7.10 Original). Rezepte kommen aus
- * {@link PyroOvenRecipes} (erstes passendes Rezept gewinnt, 1:1 wie im Original). Upgrade-Slots
+ * {@link PyroOvenRecipe} (data-driven via {@code RecipeManager}, erstes passendes Rezept gewinnt,
+ * 1:1 wie im Original). Upgrade-Slots
  * (Speed/Power/Overdrive) via {@link UpgradeManager}, analog zu {@code OilDrillBaseBlockEntity}.
  * <p>
  * SCOPE-Entscheidung: Pollution (SOOT beim Laufen, {@code TileEntityMachinePolluting}) entfaellt
@@ -105,10 +106,10 @@ public class MachinePyroOvenBlockEntity extends BaseMachineBlockEntity implement
 
         isProgressing = false;
 
-        Recipe recipe = canProcess();
+        PyroOvenRecipe recipe = canProcess();
         if (recipe != null) {
             int overdriveSpeed = speedLevel + overdriveLevel * 2;
-            progress += 1F / Math.max((recipe.duration() - speedLevel * (recipe.duration() / 4)) / (overdriveLevel * 2 + 1), 1);
+            progress += 1F / Math.max((recipe.getDuration() - speedLevel * (recipe.getDuration() / 4)) / (overdriveLevel * 2 + 1), 1);
             isProgressing = true;
             setEnergyStored(Math.max(0L, getEnergyStored() - getConsumption(overdriveSpeed, powerSavingLevel)));
 
@@ -129,12 +130,12 @@ public class MachinePyroOvenBlockEntity extends BaseMachineBlockEntity implement
         return (int) (BASE_CONSUMPTION * Math.pow(speed + 1, 2)) / (powerSaving + 1);
     }
 
-    private Recipe lastValidRecipe;
+    private PyroOvenRecipe lastValidRecipe;
 
-    private Recipe getMatchingRecipe() {
-        if (lastValidRecipe != null && doesRecipeMatch(lastValidRecipe)) return lastValidRecipe;
-        for (Recipe rec : PyroOvenRecipes.getAll()) {
-            if (doesRecipeMatch(rec)) {
+    private PyroOvenRecipe getMatchingRecipe() {
+        if (lastValidRecipe != null && lastValidRecipe.matchesInputs(tank0, inventory.getStackInSlot(SLOT_ITEM_IN))) return lastValidRecipe;
+        for (PyroOvenRecipe rec : RecipeHooks.getAllRecipes(getLevel(), PyroOvenRecipe.Type.INSTANCE)) {
+            if (rec.matchesInputs(tank0, inventory.getStackInSlot(SLOT_ITEM_IN))) {
                 lastValidRecipe = rec;
                 return rec;
             }
@@ -142,66 +143,53 @@ public class MachinePyroOvenBlockEntity extends BaseMachineBlockEntity implement
         return null;
     }
 
-    private boolean doesRecipeMatch(Recipe recipe) {
-        if (recipe.inputFluid() != null && !com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(tank0.getTankType(), recipe.inputFluid())) return false;
-
-        ItemStack itemIn = inventory.getStackInSlot(SLOT_ITEM_IN);
-        if (recipe.inputItem() != null) {
-            if (itemIn.isEmpty()) return false;
-            if (itemIn.getItem() != recipe.inputItem()) return false;
-        } else if (!itemIn.isEmpty()) {
-            return false;
-        }
-        return true;
-    }
-
-    private Recipe canProcess() {
+    private PyroOvenRecipe canProcess() {
         int consumption = getConsumption(speedLevel, powerSavingLevel);
         if (getEnergyStored() < consumption) return null;
 
-        Recipe recipe = getMatchingRecipe();
+        PyroOvenRecipe recipe = getMatchingRecipe();
         if (recipe == null) return null;
 
-        if (recipe.inputFluid() != null && tank0.getFluidAmountMb() < recipe.inputFluidMb()) return null;
+        if (recipe.getInputFluid() != null && tank0.getFluidAmountMb() < recipe.getInputFluidMb()) return null;
         ItemStack itemIn = inventory.getStackInSlot(SLOT_ITEM_IN);
-        if (recipe.inputItem() != null && itemIn.getCount() < recipe.inputItemCount()) return null;
+        if (recipe.getInputItem() != null && itemIn.getCount() < recipe.getInputItemCount()) return null;
 
-        if (recipe.outputFluid() != null) {
-            boolean sameType = com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(tank1.getTankType(), recipe.outputFluid())
+        if (recipe.getOutputFluid() != null) {
+            boolean sameType = com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(tank1.getTankType(), recipe.getOutputFluid())
                     || tank1.getFill() <= 0;
-            if (sameType && recipe.outputFluidMb() + tank1.getFluidAmountMb() > tank1.getCapacityMb()) return null;
+            if (sameType && recipe.getOutputFluidMb() + tank1.getFluidAmountMb() > tank1.getCapacityMb()) return null;
         }
 
-        if (recipe.outputItem() != null && !recipe.outputItem().isEmpty()) {
+        if (recipe.getOutputItem() != null && !recipe.getOutputItem().isEmpty()) {
             ItemStack current = inventory.getStackInSlot(SLOT_ITEM_OUT);
             if (!current.isEmpty()) {
-                if (!ItemStack.isSameItemSameTags(current, recipe.outputItem())) return null;
-                if (current.getCount() + recipe.outputItem().getCount() > recipe.outputItem().getMaxStackSize()) return null;
+                if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, recipe.getOutputItem())) return null;
+                if (current.getCount() + recipe.getOutputItem().getCount() > recipe.getOutputItem().getMaxStackSize()) return null;
             }
         }
 
         return recipe;
     }
 
-    private void finishRecipe(Recipe recipe) {
-        if (recipe.outputItem() != null && !recipe.outputItem().isEmpty()) {
+    private void finishRecipe(PyroOvenRecipe recipe) {
+        if (recipe.getOutputItem() != null && !recipe.getOutputItem().isEmpty()) {
             ItemStack current = inventory.getStackInSlot(SLOT_ITEM_OUT);
             if (current.isEmpty()) {
-                inventory.setStackInSlot(SLOT_ITEM_OUT, recipe.outputItem().copy());
+                inventory.setStackInSlot(SLOT_ITEM_OUT, recipe.getOutputItem().copy());
             } else {
-                current.grow(recipe.outputItem().getCount());
+                current.grow(recipe.getOutputItem().getCount());
             }
         }
-        if (recipe.outputFluid() != null) {
-            tank1.fillMb(recipe.outputFluid(), recipe.outputFluidMb());
+        if (recipe.getOutputFluid() != null) {
+            tank1.fillMb(recipe.getOutputFluid(), recipe.getOutputFluidMb());
         }
-        if (recipe.inputItem() != null) {
+        if (recipe.getInputItem() != null) {
             ItemStack itemIn = inventory.getStackInSlot(SLOT_ITEM_IN);
-            itemIn.shrink(recipe.inputItemCount());
+            itemIn.shrink(recipe.getInputItemCount());
             if (itemIn.isEmpty()) inventory.setStackInSlot(SLOT_ITEM_IN, ItemStack.EMPTY);
         }
-        if (recipe.inputFluid() != null) {
-            tank0.drainMb(recipe.inputFluidMb());
+        if (recipe.getInputFluid() != null) {
+            tank0.drainMb(recipe.getInputFluidMb());
         }
     }
 
@@ -252,16 +240,16 @@ public class MachinePyroOvenBlockEntity extends BaseMachineBlockEntity implement
     // ── NBT ─────────────────────────────────────────────────────────────────
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putFloat("progress", progress);
         tank0.writeToNBT(tag, "tank0");
         tank1.writeToNBT(tag, "tank1");
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progress = tag.getFloat("progress");
         tank0.readFromNBT(tag, "tank0");
         tank1.readFromNBT(tag, "tank1");

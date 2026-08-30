@@ -40,8 +40,10 @@ public class MachineCraneRouterBlock extends BaseEntityBlock implements com.hbm_
         return new MachineCraneRouterBlockEntity(pos, state);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider menuProvider) {
@@ -49,7 +51,21 @@ public class MachineCraneRouterBlock extends BaseEntityBlock implements com.hbm_
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
-    }
+        }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+
+        if (!level.isClientSide()) {
+            BlockEntity entity = level.getBlockEntity(pos);
+            if (entity instanceof MenuProvider menuProvider) {
+                MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));
+            }
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide());
+        }
+    *///?}
+
 
     @Override
     public void onItemEnter(Level level, BlockPos pos, com.hbm_m.entity.conveyor.MovingConveyorItemEntity item) {
@@ -58,4 +74,13 @@ public class MachineCraneRouterBlock extends BaseEntityBlock implements com.hbm_
             router.onItemEnter(level, pos, item);
         }
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineCraneRouterBlock> CODEC = simpleCodec(MachineCraneRouterBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

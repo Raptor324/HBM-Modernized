@@ -5,7 +5,8 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineBreederMenu;
-import com.hbm_m.recipe.BreederRecipes;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.BreederRecipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -23,7 +24,7 @@ import net.minecraft.world.phys.AABB;
 /**
  * Breeder - true multiblock port of the original 1.7.10 {@code MachineReactorBreeding}/
  * {@code TileEntityMachineReactorBreeding}: a simple two-slot (input/output) item transmutation
- * machine (see {@link BreederRecipes} for the exact material substitutions, since the original's
+ * machine (see {@link BreederRecipe} for the exact material substitutions, since the original's
  * {@code ItemBreedingRod} meta-item system does not exist in this port).
  * <p>
  * SCOPE-Vereinfachung: the original drew "neutron flux" from an adjacent
@@ -106,37 +107,50 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
         ItemStack input = inventory.getStackInSlot(SLOT_INPUT);
         if (input.isEmpty()) return false;
 
-        BreederRecipes.BreederRecipe recipe = BreederRecipes.getOutput(input);
+        BreederRecipe recipe = findRecipe(input);
         if (recipe == null) return false;
 
-        if (getEnergyStored() < recipe.energyPerTick) return false;
+        if (getEnergyStored() < recipe.getEnergyPerTick()) return false;
 
         ItemStack output = inventory.getStackInSlot(SLOT_OUTPUT);
         if (output.isEmpty()) return true;
 
-        if (!ItemStack.isSameItemSameTags(output, recipe.output)) return false;
+        ItemStack result = recipe.getOutput();
+        if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(output, result)) return false;
         return output.getCount() < output.getMaxStackSize();
     }
 
     private void processItem() {
         ItemStack input = inventory.getStackInSlot(SLOT_INPUT);
-        BreederRecipes.BreederRecipe recipe = BreederRecipes.getOutput(input);
+        BreederRecipe recipe = findRecipe(input);
         if (recipe == null) return;
 
+        ItemStack result = recipe.getOutput();
         ItemStack output = inventory.getStackInSlot(SLOT_OUTPUT);
         if (output.isEmpty()) {
-            inventory.setStackInSlot(SLOT_OUTPUT, recipe.output.copy());
-        } else if (ItemStack.isSameItemSameTags(output, recipe.output)) {
-            output.grow(recipe.output.getCount());
+            inventory.setStackInSlot(SLOT_OUTPUT, result);
+        } else if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(output, result)) {
+            output.grow(result.getCount());
         }
 
         input.shrink(1);
     }
 
+    /** Data-driven поиск BreederRecipe по входному слоту (заменяет статический BreederRecipes.getOutput). */
+    @Nullable
+    private BreederRecipe findRecipe(ItemStack input) {
+        Level level = getLevel();
+        if (level == null || input.isEmpty()) return null;
+        for (BreederRecipe recipe : RecipeHooks.getAllRecipes(level, BreederRecipe.Type.INSTANCE)) {
+            if (recipe.matches(input)) return recipe;
+        }
+        return null;
+    }
+
     /** Reuses the current recipe's "flux" balance number 1:1 as an FE-per-tick draw (see class javadoc). */
     public int getPowerRequired() {
-        BreederRecipes.BreederRecipe recipe = BreederRecipes.getOutput(inventory.getStackInSlot(SLOT_INPUT));
-        return recipe != null ? recipe.energyPerTick : 0;
+        BreederRecipe recipe = findRecipe(inventory.getStackInSlot(SLOT_INPUT));
+        return recipe != null ? recipe.getEnergyPerTick() : 0;
     }
 
     public int getDuration() {
@@ -177,7 +191,7 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
             return false;
         }
         if (slot == SLOT_INPUT) {
-            return BreederRecipes.getOutput(stack) != null;
+            return findRecipe(stack) != null;
         }
         return true;
     }
@@ -203,15 +217,15 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progress);
         tag.putBoolean("isOn", isOn);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progress = tag.getInt("progress");
         isOn = tag.getBoolean("isOn");
     }

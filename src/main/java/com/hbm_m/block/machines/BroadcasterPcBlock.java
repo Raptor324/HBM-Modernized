@@ -31,4 +31,13 @@ public class BroadcasterPcBlock extends BaseEntityBlock {
         return createTickerHelper(type, ModBlockEntities.BROADCASTER_PC_BE.get(),
                 (lvl, pos, st, be) -> BroadcasterPcBlockEntity.tick(lvl, pos, st, (BroadcasterPcBlockEntity) be));
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<BroadcasterPcBlock> CODEC = simpleCodec(BroadcasterPcBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

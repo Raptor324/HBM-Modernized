@@ -1,9 +1,5 @@
 package com.hbm_m.compat.jei;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.generic.BlockAbsorber;
 import com.hbm_m.inventory.gui.GUIAnvil;
@@ -19,38 +15,39 @@ import com.hbm_m.inventory.gui.GUIMachineCrystallizer;
 import com.hbm_m.inventory.gui.GUIMachinePress;
 import com.hbm_m.inventory.gui.GUIMachineShredder;
 import com.hbm_m.inventory.gui.GUIBlastFurnace;
-import com.hbm_m.inventory.recipes.ArcWelderRecipes;
-import com.hbm_m.inventory.recipes.SolderingRecipes;
 import com.hbm_m.item.BlockAbsorberItem;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.AnvilRecipe;
 import com.hbm_m.recipe.AnvilRecipeManager;
+import com.hbm_m.recipe.ArcWelderRecipe;
 import com.hbm_m.recipe.AssemblerRecipe;
+import com.hbm_m.recipe.BlastFurnaceRecipe;
+import com.hbm_m.recipe.CentrifugeRecipe;
+import com.hbm_m.recipe.ChemicalPlantRecipe;
+import com.hbm_m.recipe.CrucibleSmeltingRecipe;
+import com.hbm_m.recipe.CrystallizerRecipe;
+import com.hbm_m.recipe.CyclotronRecipe;
+import com.hbm_m.recipe.GasCentrifugeRecipe;
 import com.hbm_m.recipe.PressRecipe;
 import com.hbm_m.recipe.ShredderRecipe;
-import com.hbm_m.recipe.BlastFurnaceRecipe;
+import com.hbm_m.recipe.SolderingRecipe;
 import com.hbm_m.recipe.ArcFurnaceRecipe;
 import com.hbm_m.recipe.AmmoPressRecipe;
 import com.hbm_m.recipe.PurexRecipe;
-import com.hbm_m.recipe.ExposureChamberRecipes;
-import com.hbm_m.recipe.RotaryFurnaceRecipes;
-import com.hbm_m.recipe.CompressorRecipes;
-import com.hbm_m.recipe.ElectrolyserRecipes;
-import com.hbm_m.recipe.CrucibleAlloyingRecipe;
-import com.hbm_m.recipe.CrucibleAlloyingRecipes;
-import com.hbm_m.recipe.CrucibleMoldRecipes;
-import com.hbm_m.recipe.CrucibleRecipes;
-import com.hbm_m.recipe.CrucibleSmeltingRecipes;
+import com.hbm_m.recipe.ExposureChamberRecipe;
+import com.hbm_m.recipe.RotaryFurnaceRecipe;
+import com.hbm_m.recipe.CompressorRecipe;
+import com.hbm_m.recipe.CrackingTowerRecipe;
+import com.hbm_m.recipe.RadiolysisRecipe;
+import com.hbm_m.recipe.ElectrolyserFluidRecipe;
+import com.hbm_m.recipe.ElectrolyserMetalRecipe;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.item.liquids.FluidBarrelItem;
 import com.hbm_m.item.liquids.FluidDuctItem;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
-import com.hbm_m.lib.RefStrings;
-import com.hbm_m.recipe.CentrifugeRecipes;
-import com.hbm_m.recipe.CentrifugeRecipes.RecipeInput;
-import com.hbm_m.recipe.ChemicalPlantRecipe;
-import com.hbm_m.recipe.CyclotronRecipes;
-import com.hbm_m.recipe.PressRecipe;
 
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -58,7 +55,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 
 //? if forge {
 import mezz.jei.api.IModPlugin;
@@ -94,8 +91,9 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCategories(new CentrifugeJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new ChemicalPlantJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new CyclotronJeiCategory(registration.getJeiHelpers().getGuiHelper()));
-        registration.addRecipeCategories(new CrucibleCastingJeiCategory(registration.getJeiHelpers().getGuiHelper()));
-        registration.addRecipeCategories(new CrucibleAlloyingJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        // Crucible casting / alloying categories УДАЛЕНЫ — они были JEI-only зеркалами поверх
+        // удалённых статических CrucibleAlloyingRecipes / CrucibleMoldRecipes (MoltenAlloy/MoldCasting
+        // остаются in-memory, но их предметные JEI-зеркала не имеют data-driven источника правды).
         registration.addRecipeCategories(new CrucibleSmeltingJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new ArcWelderJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new SolderingStationJeiCategory(registration.getJeiHelpers().getGuiHelper()));
@@ -121,36 +119,47 @@ public class HbmJeiPlugin implements IModPlugin {
 
     @Override
     public void registerRecipes(@Nonnull IRecipeRegistration registration) {
-        CrucibleRecipes.INSTANCE.registerDefaults();
-        ensureCrucibleFallbackRecipes();
-        registration.addRecipes(AnvilJeiCategory.RECIPE_TYPE, getAnvilRecipes());
-        registration.addRecipes(AssemblerJeiCategory.RECIPE_TYPE, getAssemblerRecipes());
-        registration.addRecipes(CentrifugeJeiCategory.RECIPE_TYPE, getCentrifugeRecipes());
-        registration.addRecipes(ChemicalPlantJeiCategory.RECIPE_TYPE, getChemicalPlantRecipes());
-        registration.addRecipes(CyclotronJeiCategory.RECIPE_TYPE, getCyclotronRecipes());
-        registration.addRecipes(CrucibleCastingJeiCategory.RECIPE_TYPE, getCrucibleCastingRecipes());
-        registration.addRecipes(CrucibleAlloyingJeiCategory.RECIPE_TYPE, getCrucibleAlloyingRecipes());
-        registration.addRecipes(CrucibleSmeltingJeiCategory.RECIPE_TYPE, getCrucibleSmeltingRecipes());
-        registration.addRecipes(ArcWelderJeiCategory.RECIPE_TYPE, ArcWelderJeiRecipe.fromRecipes());
+        // JEI иногда грузит плагин до старта мира — единая защита level==null.
+        Level level = Minecraft.getInstance().level;
+        if (level == null) return;
+
+        // Anvil — особый случай: рецепты идут через AnvilRecipeManager.getClientRecipes() (внутренний реестр),
+        // а не через RecipeManager (AnvilRecipe — предметно-теговая система не через PlatformRecipe).
+        registration.addRecipes(AnvilJeiCategory.RECIPE_TYPE, AnvilRecipeManager.getClientRecipes());
+
+        // Все остальные машины — data-driven (JSON), читаем напрямую через кросс-версионный RecipeHooks.
+        registration.addRecipes(AssemblerJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, AssemblerRecipe.Type.INSTANCE));
+        registration.addRecipes(CentrifugeJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, CentrifugeRecipe.Type.INSTANCE));
+        registration.addRecipes(ChemicalPlantJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, ChemicalPlantRecipe.Type.INSTANCE));
+        registration.addRecipes(CyclotronJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, CyclotronRecipe.Type.INSTANCE));
+        registration.addRecipes(CrucibleSmeltingJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, CrucibleSmeltingRecipe.Type.INSTANCE));
+        registration.addRecipes(CrystallizerJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, CrystallizerRecipe.Type.INSTANCE));
+        registration.addRecipes(PressJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, PressRecipe.Type.INSTANCE));
+        registration.addRecipes(ShredderJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, ShredderRecipe.Type.INSTANCE));
+        registration.addRecipes(BlastFurnaceJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, BlastFurnaceRecipe.Type.INSTANCE));
+
+        // ArcWelder / SolderingStation / GasCentrifuge — теперь data-driven (JSON), раньше — статика.
+        registration.addRecipes(ArcWelderJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, ArcWelderRecipe.Type.INSTANCE));
+        registration.addRecipes(SolderingStationJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, SolderingRecipe.Type.INSTANCE));
+        registration.addRecipes(GasCentrifugeJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, GasCentrifugeRecipe.Type.INSTANCE));
+
+        // FFA: дополнительные категории (машины, добавленные в FFA-ветке)
+        registration.addRecipes(ArcFurnaceJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, ArcFurnaceRecipe.Type.INSTANCE));
+        registration.addRecipes(AmmoPressJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, AmmoPressRecipe.Type.INSTANCE));
+        registration.addRecipes(PurexJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, PurexRecipe.Type.INSTANCE));
+        registration.addRecipes(ExposureChamberJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, ExposureChamberRecipe.Type.INSTANCE));
+        registration.addRecipes(RotaryFurnaceJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, RotaryFurnaceRecipe.Type.INSTANCE));
+        // Compressor / CrackingTower / Radiolysis / Electrolyser — теперь data-driven (JSON), раньше — статика.
+        registration.addRecipes(CompressorJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, CompressorRecipe.Type.INSTANCE));
+        registration.addRecipes(CrackingTowerJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, CrackingTowerRecipe.Type.INSTANCE));
+        registration.addRecipes(RadiolysisJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, RadiolysisRecipe.Type.INSTANCE));
+        registration.addRecipes(ElectrolyserFluidJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, ElectrolyserFluidRecipe.Type.INSTANCE));
+        registration.addRecipes(ElectrolyserMetalJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, ElectrolyserMetalRecipe.Type.INSTANCE));
+
+        // FFA: Crucible- und RBMK-Kategorien (in funni-stuff nicht enthalten).
         registration.addRecipes(RBMKDisassemblyJeiCategory.RECIPE_TYPE, RBMKDisassemblyJeiRecipe.all());
         registration.addRecipes(RBMKWasteDecayJeiCategory.RECIPE_TYPE, RBMKWasteDecayJeiCategory.all());
         registration.addRecipes(RBMKOutgasserJeiCategory.RECIPE_TYPE, RBMKOutgasserJeiCategory.all());
-        registration.addRecipes(SolderingStationJeiCategory.RECIPE_TYPE, SolderingStationJeiRecipe.fromRecipes());
-        registration.addRecipes(CrystallizerJeiCategory.RECIPE_TYPE, CrystallizerJeiRecipe.fromAll());
-        registration.addRecipes(PressJeiCategory.RECIPE_TYPE, getPressRecipes());
-        registration.addRecipes(ShredderJeiCategory.RECIPE_TYPE, getShredderRecipes());
-        registration.addRecipes(BlastFurnaceJeiCategory.RECIPE_TYPE, getBlastFurnaceRecipes());
-        registration.addRecipes(GasCentrifugeJeiCategory.RECIPE_TYPE, GasCentrifugeJeiCategory.getDefaultRecipes());
-        registration.addRecipes(ArcFurnaceJeiCategory.RECIPE_TYPE, getArcFurnaceRecipes());
-        registration.addRecipes(AmmoPressJeiCategory.RECIPE_TYPE, getAmmoPressRecipes());
-        registration.addRecipes(PurexJeiCategory.RECIPE_TYPE, getPurexRecipes());
-        registration.addRecipes(ExposureChamberJeiCategory.RECIPE_TYPE, ExposureChamberRecipes.getAll());
-        registration.addRecipes(RotaryFurnaceJeiCategory.RECIPE_TYPE, RotaryFurnaceRecipes.getAll());
-        registration.addRecipes(CompressorJeiCategory.RECIPE_TYPE, CompressorJeiCategory.fromRecipes());
-        registration.addRecipes(CrackingTowerJeiCategory.RECIPE_TYPE, CrackingTowerJeiCategory.fromRecipes());
-        registration.addRecipes(RadiolysisJeiCategory.RECIPE_TYPE, RadiolysisJeiCategory.fromRecipes());
-        registration.addRecipes(ElectrolyserFluidJeiCategory.RECIPE_TYPE, ElectrolyserFluidJeiCategory.fromRecipes());
-        registration.addRecipes(ElectrolyserMetalJeiCategory.RECIPE_TYPE, ElectrolyserMetalJeiCategory.fromRecipes());
     }
 
     @Override
@@ -164,9 +173,7 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CHEMICAL_PLANT.get()), ChemicalPlantJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CHEMICAL_FACTORY.get()), ChemicalPlantJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CYCLOTRON.get()), CyclotronJeiCategory.RECIPE_TYPE);
-        // Foundry basin is the primary catalyst; mold and strand caster are registered once those blocks are ported
-        registration.addRecipeCatalyst(new ItemStack(ModBlocks.FOUNDRY_BASIN.get()), CrucibleCastingJeiCategory.RECIPE_TYPE);
-        registration.addRecipeCatalyst(new ItemStack(ModBlocks.CRUCIBLE.get()), CrucibleAlloyingJeiCategory.RECIPE_TYPE);
+        // Каталисты CrucibleCasting/CrucibleAlloying JEI удалены вместе с этими категориями.
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CRUCIBLE.get()), CrucibleSmeltingJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.ARC_WELDER.get()), ArcWelderJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.SOLDERING_STATION.get()), SolderingStationJeiCategory.RECIPE_TYPE);
@@ -190,8 +197,6 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.RADIOLYSIS.get()), RadiolysisJeiCategory.RECIPE_TYPE);
         // Microwave teilt sich Vanilla-Ofen-Rezepte mit dem eingebauten JEI-Ofen-Kategorie.
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.MACHINE_MICROWAVE.get()), mezz.jei.api.constants.RecipeTypes.SMELTING);
-        // Strand Caster teilt sich MoldCastingRecipes mit der Foundry Basin.
-        registration.addRecipeCatalyst(new ItemStack(ModBlocks.STRAND_CASTER.get()), CrucibleCastingJeiCategory.RECIPE_TYPE);
     }
 
     @Override
@@ -208,11 +213,8 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeClickArea(GUIMachineChemicalPlant.class, 62, 126, 70, 16, ChemicalPlantJeiCategory.RECIPE_TYPE);
         // Cyclotron click area around the main accelerator progress
         registration.addRecipeClickArea(GUIMachineCyclotron.class, 48, 27, 79, 34, CyclotronJeiCategory.RECIPE_TYPE);
-        // Crucible casting — matches the legacy NEI transfer rect: new Rectangle(65, 23, 36, 18)
-        registration.addRecipeClickArea(GUIMachineCrucible.class, 65, 23, 36, 18, CrucibleCastingJeiCategory.RECIPE_TYPE);
-        // Crucible alloying — same click zone on the crucible GUI
-        registration.addRecipeClickArea(GUIMachineCrucible.class, 65, 23, 36, 18, CrucibleAlloyingJeiCategory.RECIPE_TYPE);
         // Crucible smelting — same click zone on the crucible GUI
+        // (CrucibleCasting/CrucibleAlloying click areas удалены вместе с этими категориями.)
         registration.addRecipeClickArea(GUIMachineCrucible.class, 65, 23, 36, 18, CrucibleSmeltingJeiCategory.RECIPE_TYPE);
         registration.addRecipeClickArea(GUIMachineArcWelder.class, 72, 37, 33, 14, ArcWelderJeiCategory.RECIPE_TYPE);
         registration.addRecipeClickArea(GUIMachineSolderingStation.class, 72, 28, 33, 14, SolderingStationJeiCategory.RECIPE_TYPE);
@@ -256,7 +258,7 @@ public class HbmJeiPlugin implements IModPlugin {
                 if (output.isEmpty()) return "empty";
                 ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(output.getItem());
                 return (itemId != null ? itemId.toString() : "unknown") +
-                    (output.hasTag() ? output.getTag().toString() : "");
+                    (PlatformHooks.hasItemTag(output) ? PlatformHooks.getItemTag(output).toString() : "");
             }
         );
 
@@ -285,156 +287,6 @@ public class HbmJeiPlugin implements IModPlugin {
                 return fluidId != null ? fluidId.toString() : "unknown";
             }
         );
-    }
-
-    private static List<AnvilRecipe> getAnvilRecipes() {
-        return AnvilRecipeManager.getClientRecipes();
-    }
-
-    private static List<AssemblerRecipe> getAssemblerRecipes() {
-        if (net.minecraft.client.Minecraft.getInstance().level == null) {
-            return List.of();
-        }
-
-        return net.minecraft.client.Minecraft.getInstance().level.getRecipeManager()
-                .getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
-    }
-
-    private static List<PressRecipe> getPressRecipes() {
-        if (net.minecraft.client.Minecraft.getInstance().level == null) {
-            return List.of();
-        }
-
-        return net.minecraft.client.Minecraft.getInstance().level.getRecipeManager()
-                .getAllRecipesFor(PressRecipe.Type.INSTANCE);
-    }
-
-    private static List<CentrifugeJeiCategory.Recipe> getCentrifugeRecipes() {
-        List<CentrifugeJeiCategory.Recipe> recipes = new ArrayList<>();
-
-        Map<RecipeInput, ItemStack[]> allRecipes = CentrifugeRecipes.getAllRecipes();
-
-        for (Map.Entry<RecipeInput, ItemStack[]> entry : allRecipes.entrySet()) {
-            RecipeInput input = entry.getKey();
-            if (!input.getDisplayStacks().isEmpty()) {
-                recipes.add(new CentrifugeJeiCategory.Recipe(input, entry.getValue()));
-            }
-        }
-
-        return recipes;
-    }
-
-    private static List<ChemicalPlantRecipe> getChemicalPlantRecipes() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) {
-            return List.of();
-        }
-        return mc.level.getRecipeManager().getAllRecipesFor(ChemicalPlantRecipe.Type.INSTANCE);
-    }
-
-    private static List<CyclotronJeiRecipe> getCyclotronRecipes() {
-        CyclotronRecipes.registerRecipes();
-        List<CyclotronJeiRecipe> recipes = new ArrayList<>();
-        for (CyclotronRecipes.JeiRecipe recipe : CyclotronRecipes.getJeiRecipes()) {
-            ItemStack output = recipe.output();
-            if (output.isEmpty()) {
-                continue;
-            }
-
-            ItemStack[] targets = recipe.target().getItems();
-            ItemStack[] inputs = recipe.input().getItems();
-            if (targets.length == 0 || inputs.length == 0) {
-                continue;
-            }
-
-            recipes.add(CyclotronJeiRecipe.of(recipe.target(), recipe.input(), output, recipe.amatProduced()));
-        }
-        return recipes;
-    }
-
-    private static List<CrucibleCastingJeiRecipe> getCrucibleCastingRecipes() {
-        List<CrucibleCastingJeiRecipe> recipes = new ArrayList<>();
-        for (ItemStack[] r : CrucibleMoldRecipes.getMoldRecipes()) {
-            // r[0]=material, r[1]=mold, r[2]=unused, r[3]=output
-            recipes.add(new CrucibleCastingJeiRecipe(r[0], r[1], r[3]));
-        }
-        return recipes;
-    }
-
-    private static List<CrucibleAlloyingJeiRecipe> getCrucibleAlloyingRecipes() {
-        List<CrucibleAlloyingJeiRecipe> recipes = new ArrayList<>();
-        for (CrucibleAlloyingRecipe r : CrucibleAlloyingRecipes.getRecipes()) {
-            recipes.add(new CrucibleAlloyingJeiRecipe(r));
-        }
-        return recipes;
-    }
-
-    private static List<CrucibleSmeltingJeiRecipe> getCrucibleSmeltingRecipes() {
-        List<CrucibleSmeltingJeiRecipe> result = new ArrayList<>();
-        for (CrucibleSmeltingRecipes.SmeltingEntry e : CrucibleSmeltingRecipes.getRecipes()) {
-            // Show ingredient items → material name as a pseudo-output via cast plate if available
-            List<ItemStack> inputs = List.of(e.input().getItems());
-            var plate = e.output().hasCastPlate() ? e.output().getCastPlate(1) : null;
-            List<ItemStack> outputs = plate != null ? List.of(plate) : List.of();
-            result.add(new CrucibleSmeltingJeiRecipe(
-                    inputs.isEmpty() ? ItemStack.EMPTY : inputs.get(0), outputs));
-        }
-        return result;
-    }
-
-    private static List<ShredderRecipe> getShredderRecipes() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) {
-            return List.of();
-        }
-        return mc.level.getRecipeManager().getAllRecipesFor(ShredderRecipe.Type.INSTANCE);
-    }
-
-    private static List<BlastFurnaceRecipe> getBlastFurnaceRecipes() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) {
-            return List.of();
-        }
-        return mc.level.getRecipeManager().getAllRecipesFor(BlastFurnaceRecipe.Type.INSTANCE);
-    }
-
-    private static List<ArcFurnaceRecipe> getArcFurnaceRecipes() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) {
-            return List.of();
-        }
-        return mc.level.getRecipeManager().getAllRecipesFor(ArcFurnaceRecipe.Type.INSTANCE);
-    }
-
-    private static List<AmmoPressRecipe> getAmmoPressRecipes() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) {
-            return List.of();
-        }
-        return mc.level.getRecipeManager().getAllRecipesFor(AmmoPressRecipe.Type.INSTANCE);
-    }
-
-    private static List<PurexRecipe> getPurexRecipes() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) {
-            return List.of();
-        }
-        return mc.level.getRecipeManager().getAllRecipesFor(PurexRecipe.Type.INSTANCE);
-    }
-
-    private static void ensureCrucibleFallbackRecipes() {
-        if (CrucibleSmeltingRecipes.getRecipes().isEmpty()) {
-            CrucibleSmeltingRecipes.registerDefaults();
-        }
-        if (CrucibleAlloyingRecipes.getRecipes().isEmpty()) {
-            CrucibleAlloyingRecipes.register(new CrucibleAlloyingRecipe("crucible.jei_fallback")
-                    .setup(1, new ItemStack(Items.IRON_INGOT))
-                    .inputs(new ItemStack(Items.IRON_INGOT), new ItemStack(Items.COAL))
-                    .outputs(new ItemStack(Items.IRON_NUGGET, 3)));
-        }
-        if (CrucibleMoldRecipes.getMoldRecipes().isEmpty()) {
-            CrucibleMoldRecipes.register(new ItemStack(Items.CLAY_BALL), new ItemStack(Items.BRICK), new ItemStack(Items.FLOWER_POT));
-        }
     }
 }
 //?} else {

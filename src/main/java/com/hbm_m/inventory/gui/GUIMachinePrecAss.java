@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.recipe.AssemblerRecipe;
+import com.hbm_m.client.GuiCompat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -80,11 +81,11 @@ public class GUIMachinePrecAss extends AbstractContainerScreen<MachinePrecAssMen
         }
 
         // Текущий рецепт
-        ResourceLocation selectedRecipeId = this.menu.getBlockEntity().getSelectedRecipeId();
+        var precBe = this.menu.getBlockEntity(); // тайл может отсутствовать в реплее Flashback
+        ResourceLocation selectedRecipeId = precBe != null ? precBe.getSelectedRecipeId() : null;
         AssemblerRecipe recipe = null;
         if (selectedRecipeId != null && this.minecraft != null && this.minecraft.level != null) {
-            recipe = this.minecraft.level.getRecipeManager()
-                    .byKey(selectedRecipeId)
+            recipe = com.hbm_m.platform.recipe.RecipeHooks.getRecipeByKey(this.minecraft.level.getRecipeManager(), selectedRecipeId)
                     .filter(r -> r instanceof AssemblerRecipe)
                     .map(r -> (AssemblerRecipe) r)
                     .orElse(null);
@@ -113,7 +114,9 @@ public class GUIMachinePrecAss extends AbstractContainerScreen<MachinePrecAssMen
      * Группирует одинаковые ингредиенты и показывает суммарное количество.
      */
     private void renderGhostItems(GuiGraphics guiGraphics) {
-        NonNullList<ItemStack> ghostItems = this.menu.getBlockEntity().getGhostItems();
+        var be = this.menu.getBlockEntity();
+        // тайл может отсутствовать в реплее Flashback
+        NonNullList<ItemStack> ghostItems = be != null ? be.getGhostItems() : NonNullList.create();
 
         if (ghostItems.isEmpty()) {
             return;
@@ -127,7 +130,7 @@ public class GUIMachinePrecAss extends AbstractContainerScreen<MachinePrecAssMen
 
             ItemStack found = null;
             for (ItemStack key : groupedItems.keySet()) {
-                if (ItemStack.isSameItemSameTags(key, stack)) {
+                if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(key, stack)) {
                     found = key;
                     break;
                 }
@@ -188,7 +191,7 @@ public class GUIMachinePrecAss extends AbstractContainerScreen<MachinePrecAssMen
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTicks);
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
@@ -215,9 +218,14 @@ public class GUIMachinePrecAss extends AbstractContainerScreen<MachinePrecAssMen
 
         // Подсказка для кнопки выбора рецепта
         if (isMouseOver(pMouseX, pMouseY, 7, 125, 18, 18)) {
-            ResourceLocation selectedRecipeId = this.menu.getBlockEntity().getSelectedRecipeId();
-            if (selectedRecipeId != null && this.minecraft != null && this.minecraft.level != null) {
-                this.minecraft.level.getRecipeManager().byKey(selectedRecipeId).ifPresent(recipe -> {
+            var be = this.menu.getBlockEntity(); // тайл может отсутствовать в реплее Flashback
+            ResourceLocation selectedRecipeId = be != null ? be.getSelectedRecipeId() : null;
+            if (selectedRecipeId == null) {
+                guiGraphics.renderTooltip(this.font,
+                    Component.translatable("gui.recipe.setRecipe").withStyle(ChatFormatting.YELLOW),
+                    pMouseX, pMouseY);
+            } else if (this.minecraft != null && this.minecraft.level != null) {
+                com.hbm_m.platform.recipe.RecipeHooks.getRecipeByKey(this.minecraft.level.getRecipeManager(), selectedRecipeId).ifPresent(recipe -> {
                     if (recipe instanceof AssemblerRecipe assemblerRecipe) {
                         List<Component> tooltip = new ArrayList<>();
 
@@ -251,10 +259,13 @@ public class GUIMachinePrecAss extends AbstractContainerScreen<MachinePrecAssMen
     private void openRecipeSelector() {
         if (this.minecraft == null || this.minecraft.level == null) return;
 
-        ResourceLocation currentRecipe = this.menu.getBlockEntity().getSelectedRecipeId();
+        var be = this.menu.getBlockEntity();
+        // тайл может отсутствовать в реплее Flashback
+        if (be == null) return;
+        ResourceLocation currentRecipe = be.getSelectedRecipeId();
 
         this.minecraft.setScreen(new GUIScreenRecipeSelector(
-            this.menu.getBlockEntity().getBlockPos(),
+            be.getBlockPos(),
             currentRecipe,
             this
         ));
@@ -270,9 +281,10 @@ public class GUIMachinePrecAss extends AbstractContainerScreen<MachinePrecAssMen
                             8, this.imageHeight - 96 + 2, 0x404040, false);
 
         if (this.minecraft != null && this.minecraft.screen == this) {
-            ResourceLocation selectedRecipeId = this.menu.getBlockEntity().getSelectedRecipeId();
+            var labelBe = this.menu.getBlockEntity(); // тайл может отсутствовать в реплее Flashback
+            ResourceLocation selectedRecipeId = labelBe != null ? labelBe.getSelectedRecipeId() : null;
             if (selectedRecipeId != null && this.minecraft.level != null) {
-                this.minecraft.level.getRecipeManager().byKey(selectedRecipeId).ifPresent(recipe -> {
+                com.hbm_m.platform.recipe.RecipeHooks.getRecipeByKey(this.minecraft.level.getRecipeManager(), selectedRecipeId).ifPresent(recipe -> {
                     if (recipe instanceof AssemblerRecipe assemblerRecipe) {
                         ItemStack icon = assemblerRecipe.getResultItem(null);
                         guiGraphics.renderItem(icon, 8, 126);

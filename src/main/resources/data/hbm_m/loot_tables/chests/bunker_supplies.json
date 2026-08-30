@@ -1,0 +1,35 @@
+{
+  "_comment": "Авторский лут припасов бункера — топливо, стройматериалы, еда, расходники (порт POOL_SOLID_FUEL + саплай)",
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": { "min": 5, "max": 9 },
+      "entries": [
+        { "type": "item", "name": "hbm_m:solid_fuel", "weight": 8, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 5 } } ] },
+        { "type": "item", "name": "hbm_m:solid_fuel_presto", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "minecraft:coal", "weight": 8, "functions": [ { "function": "minecraft:set_count", "count": { "min": 4, "max": 16 } } ] },
+        { "type": "item", "name": "minecraft:redstone", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 2, "max": 8 } } ] },
+        { "type": "item", "name": "hbm_m:coal_powder", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:steel_ingot", "weight": 9, "functions": [ { "function": "minecraft:set_count", "count": { "min": 2, "max": 8 } } ] },
+        { "type": "item", "name": "hbm_m:lead_ingot", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:concrete", "weight": 7, "functions": [ { "function": "minecraft:set_count", "count": { "min": 4, "max": 16 } } ] },
+        { "type": "item", "name": "minecraft:iron_ingot", "weight": 8, "functions": [ { "function": "minecraft:set_count", "count": { "min": 2, "max": 8 } } ] },
+        { "type": "item", "name": "hbm_m:plate_steel", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:bolt_steel", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 4, "max": 12 } } ] },
+        { "type": "item", "name": "hbm_m:twinkie", "weight": 7, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:definitelyfood", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:can_redbomb", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:can_mrsugar", "weight": 4 },
+        { "type": "item", "name": "hbm_m:bottle_nuka", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:cap_nuka", "weight": 7, "functions": [ { "function": "minecraft:set_count", "count": { "min": 2, "max": 16 } } ] },
+        { "type": "item", "name": "hbm_m:gas_mask_m65", "weight": 4 },
+        { "type": "item", "name": "hbm_m:gas_mask_filter", "weight": 5 },
+        { "type": "item", "name": "hbm_m:pill_herbal", "weight": 4 },
+        { "type": "item", "name": "hbm_m:battery_red_cell_6", "weight": 4 },
+        { "type": "item", "name": "hbm_m:canister_empty", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:scrap", "weight": 8, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:coin_token", "weight": 5 }
+      ]
+    }
+  ]
+}
