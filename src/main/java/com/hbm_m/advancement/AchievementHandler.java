@@ -9,11 +9,10 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.event.entity.living.LivingDeathEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.event.level.BlockEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import dev.architectury.event.EventResult;
+import dev.architectury.event.events.common.BlockEvent;
+import dev.architectury.event.events.common.EntityEvent;
+import dev.architectury.event.events.common.PlayerEvent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,7 +27,6 @@ import java.util.function.Supplier;
  * port, so crafting, smelting and pickup all feed the same table - otherwise a player who
  * smelted their first desh nugget would silently never get the advancement.</p>
  */
-@Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class AchievementHandler {
 
     /**
@@ -98,42 +96,44 @@ public class AchievementHandler {
         if (advancement != null) ModAdvancements.grant(player, advancement);
     }
 
-    @SubscribeEvent
-    public static void onCrafted(PlayerEvent.ItemCraftedEvent event) {
-        fire(event.getEntity(), event.getCrafting());
+    /** Registriert die Handler auf den plattformneutralen Architectury-Events. */
+    public static void init() {
+        PlayerEvent.CRAFT_ITEM.register((player, constructed, inventory) -> fire(player, constructed));
+        PlayerEvent.SMELT_ITEM.register(AchievementHandler::fire);
+        PlayerEvent.PICKUP_ITEM_POST.register((player, entity, stack) -> onPickup(player, stack));
+        EntityEvent.LIVING_DEATH.register(AchievementHandler::onDeath);
+        BlockEvent.BREAK.register(AchievementHandler::onBlockBreak);
     }
 
-    @SubscribeEvent
-    public static void onSmelted(PlayerEvent.ItemSmeltedEvent event) {
-        fire(event.getEntity(), event.getSmelting());
-    }
-
-    @SubscribeEvent
-    public static void onPickup(PlayerEvent.ItemPickupEvent event) {
-        ItemStack stack = event.getStack();
+    private static void onPickup(Player player, ItemStack stack) {
         if (stack.is(Items.SLIME_BALL)) {
-            ModAdvancements.grant(event.getEntity(), ModAdvancements.SLIMEBALL);
+            ModAdvancements.grant(player, ModAdvancements.SLIMEBALL);
         }
         // Machines drop their output into the world rather than into a crafting slot, so a pickup
         // is the only moment the port can see some of these items reach the player.
-        fire(event.getEntity(), stack);
+        fire(player, stack);
     }
 
     /**
      * {@code ModEventHandler.onEntityDeath}: killing a tainted creeper specifically with boxcar
      * damage. The original hides this one behind an obscure interaction, hence the name.
      */
-    @SubscribeEvent
-    public static void onDeath(LivingDeathEvent event) {
-        if (!(event.getEntity() instanceof com.hbm_m.entity.mob.EntityCreeperTainted creeper)) return;
-        if (!event.getSource().is(com.hbm_m.damagesource.ModDamageTypes.BOXCAR)) return;
+    private static EventResult onDeath(net.minecraft.world.entity.LivingEntity entity,
+                                       net.minecraft.world.damagesource.DamageSource source) {
+        if (!(entity instanceof com.hbm_m.entity.mob.EntityCreeperTainted creeper)) return EventResult.pass();
+        if (!source.is(com.hbm_m.damagesource.ModDamageTypes.BOXCAR)) return EventResult.pass();
         ModAdvancements.grantNearby(creeper, 50D, ModAdvancements.HIDDEN);
+        return EventResult.pass();
     }
 
-    @SubscribeEvent
-    public static void onBlockBreak(BlockEvent.BreakEvent event) {
-        if (event.getState().is(ModBlocks.STONE_GNEISS.get())) {
-            ModAdvancements.grant(event.getPlayer(), ModAdvancements.STRATUM);
+    private static EventResult onBlockBreak(net.minecraft.world.level.Level level,
+                                            net.minecraft.core.BlockPos pos,
+                                            net.minecraft.world.level.block.state.BlockState state,
+                                            net.minecraft.server.level.ServerPlayer player,
+                                            dev.architectury.utils.value.IntValue exp) {
+        if (state.is(ModBlocks.STONE_GNEISS.get())) {
+            ModAdvancements.grant(player, ModAdvancements.STRATUM);
         }
+        return EventResult.pass();
     }
 }

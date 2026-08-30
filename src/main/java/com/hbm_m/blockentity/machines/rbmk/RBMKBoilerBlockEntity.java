@@ -350,6 +350,7 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
     }
 
     
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
@@ -357,6 +358,15 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
         steamTank.writeToNBT(tag, "steam");
         tag.putInt("ventDelay", ventDelay);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        waterTank.writeToNBT(tag, "water"); // kept as "water" (not the original's "feed") so existing saves keep their contents
+        steamTank.writeToNBT(tag, "steam");
+        tag.putInt("ventDelay", ventDelay);
+    }
+    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {

@@ -97,17 +97,33 @@ public class RBMKSteamOutletBlockEntity extends BlockEntity
 
     // ─── NBT / Sync ──────────────────────────────────────────────────────────
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         steamTank.writeToNBT(tag, "tank");
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        steamTank.writeToNBT(tag, "tank");
+    }
+    *///?}
 
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
         steamTank.readFromNBT(tag, "tank");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        steamTank.readFromNBT(tag, "tank");
+    }
+    *///?}
 
     @Override
     public CompoundTag getUpdateTag() {

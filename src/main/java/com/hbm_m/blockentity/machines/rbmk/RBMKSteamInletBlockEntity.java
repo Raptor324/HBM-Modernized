@@ -107,17 +107,33 @@ public class RBMKSteamInletBlockEntity extends BlockEntity
 
     // ─── NBT / Sync ──────────────────────────────────────────────────────────
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         waterTank.writeToNBT(tag, "tank");
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        waterTank.writeToNBT(tag, "tank");
+    }
+    *///?}
 
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
         waterTank.readFromNBT(tag, "tank");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        waterTank.readFromNBT(tag, "tank");
+    }
+    *///?}
 
     @Override
     public CompoundTag getUpdateTag() {
