@@ -241,7 +241,7 @@ public class EntityUFO extends Mob implements Enemy, IRadiationImmune {
         for (Entity entity : this.level().getEntities(this, column)) {
             if (!canAttack(entity)) continue;
             entity.hurt(this.damageSources().mobAttack(this), 1000F);
-            entity.setSecondsOnFire(5);
+            com.hbm_m.platform.PlatformHooks.setSecondsOnFire(entity, 5);
             if (entity instanceof LivingEntity living) {
                 ContaminationUtil.contaminate(living, HazardType.RADIATION, ContaminationType.CREATIVE, 5F);
             }

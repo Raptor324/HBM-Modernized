@@ -135,7 +135,7 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
         if (outputSlot.isEmpty()) return true;
 
         ItemStack out = recipe.solidOutput();
-        return ItemStack.isSameItemSameTags(outputSlot, out)
+        return com.hbm_m.platform.PlatformHooks.isSameItemSameTags(outputSlot, out)
                 && outputSlot.getCount() + out.getCount() <= outputSlot.getMaxStackSize();
     }
 
@@ -285,8 +285,8 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
     /*@Override
     protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        inputSlot  = tag.contains("inputSlot")  ? ItemStack.of(tag.getCompound("inputSlot"))  : ItemStack.EMPTY;
-        outputSlot = tag.contains("outputSlot") ? ItemStack.of(tag.getCompound("outputSlot")) : ItemStack.EMPTY;
+        inputSlot  = tag.contains("inputSlot")  ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("inputSlot"), registries)  : ItemStack.EMPTY;
+        outputSlot = tag.contains("outputSlot") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("outputSlot"), registries) : ItemStack.EMPTY;
         gasTank.readFromNBT(tag, "gas");
         progress = tag.getDouble("progress");
         lastUsedFlux = tag.getDouble("lastUsedFlux");

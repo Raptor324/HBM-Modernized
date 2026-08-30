@@ -182,11 +182,20 @@ public abstract class EntityWormBase extends PathfinderMob {
     @Override public boolean onClimbable()                   { return false; }
     @Override protected float getSoundVolume()               { return 5.0F; }
 
+    //? if < 1.21.1 {
     @Override
     protected float getStandingEyeHeight(@NotNull net.minecraft.world.entity.Pose pose,
                                          @NotNull net.minecraft.world.entity.EntityDimensions size) {
         return size.height * 0.5F;
     }
+    //?} else {
+    /*// 1.21 macht EntityDimensions zum Record; das Feld ist privat, der Accessor heisst height().
+    @Override
+    protected float getStandingEyeHeight(@NotNull net.minecraft.world.entity.Pose pose,
+                                         @NotNull net.minecraft.world.entity.EntityDimensions size) {
+        return size.height() * 0.5F;
+    }
+    *///?}
 
     protected boolean isCourseTraversable() {
         return this.canFly || this.isInWall();

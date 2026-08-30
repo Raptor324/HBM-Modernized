@@ -62,11 +62,8 @@ public class AdditiveParticleRenderType implements ParticleRenderType {
         IrisBufferHelper.beginWithoutExtending(buffer, VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
     }
     //?} else {
-    /*/**
-     * 1.21 gab {@code ParticleRenderType} eine neue Form: {@code begin} bekommt den Tesselator und
-     * liefert den BufferBuilder zurueck, und ein {@code end}-Hook existiert nicht mehr. Der
-     * Zustand wird daher nicht mehr selbst zurueckgesetzt - das uebernimmt der Partikel-Pass.
-     *\/
+    /*// 1.21: begin() bekommt den Tesselator und liefert den BufferBuilder zurueck;
+    // einen end()-Hook gibt es nicht mehr - der Zustand wird vom Partikel-Pass zurueckgesetzt.
     @Override
     public BufferBuilder begin(com.mojang.blaze3d.vertex.Tesselator tesselator, TextureManager textureManager) {
         RenderSystem.enableBlend();

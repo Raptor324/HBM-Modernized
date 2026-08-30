@@ -25,8 +25,8 @@ import org.jetbrains.annotations.NotNull;
 public class ItemCoffee extends Item {
 
     /** Nutrition is zero on both: the original heals directly rather than feeding. */
-    public static final FoodProperties COFFEE = new FoodProperties.Builder()
-            .nutrition(0).saturationMod(0F).alwaysEat().build();
+    public static final FoodProperties COFFEE = com.hbm_m.platform.PlatformHooks.foodBuilder(0, 0F)
+            .alwaysEat().build();
 
     private final boolean radium;
 

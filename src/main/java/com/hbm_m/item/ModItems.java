@@ -3336,9 +3336,9 @@ public class ModItems {
     public static final RegistrySupplier<Item> IV_XP = ITEMS.register("iv_xp", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> IV_XP_EMPTY = ITEMS.register("iv_xp_empty", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> JACKT = ITEMS.register("jackt",
-            () -> new ArmorItem(ModArmorMaterials.JACKT, ArmorItem.Type.CHESTPLATE, new Item.Properties().stacksTo(1)));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.JACKT), ArmorItem.Type.CHESTPLATE, new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> JACKT2 = ITEMS.register("jackt2",
-            () -> new ArmorItem(ModArmorMaterials.JACKT2, ArmorItem.Type.CHESTPLATE, new Item.Properties().stacksTo(1)));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.JACKT2), ArmorItem.Type.CHESTPLATE, new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> JETPACK_BOOST = ITEMS.register("jetpack_boost", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> JETPACK_BREAK = ITEMS.register("jetpack_break", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> JETPACK_FLY = ITEMS.register("jetpack_fly", () -> new Item(new Item.Properties()));
@@ -3416,7 +3416,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> NITRA = ITEMS.register("nitra", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> NITRA_SMALL = ITEMS.register("nitra_small", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> NO9 = ITEMS.register("no9",
-            () -> new ArmorItem(ModArmorMaterials.STEEL, ArmorItem.Type.HELMET, new Item.Properties().stacksTo(1)));
+            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.STEEL), ArmorItem.Type.HELMET, new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> NOTHING = ITEMS.register("nothing", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> NUCLEAR_WASTE = ITEMS.register("nuclear_waste", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> NUCLEAR_WASTE_LONG = ITEMS.register("nuclear_waste_long", () -> new Item(new Item.Properties()));
