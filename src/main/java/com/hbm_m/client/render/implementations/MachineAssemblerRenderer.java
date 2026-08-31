@@ -1,7 +1,6 @@
 package com.hbm_m.client.render.implementations;
 
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
 
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineAssemblerBlockEntity;
@@ -31,7 +30,6 @@ import net.minecraft.world.item.ItemStack;
 public final class MachineAssemblerRenderer {
 
     /** Degrees → radians multiplier. */
-    private static final float DEG_TO_RAD = (float) (Math.PI / 180.0);
 
     // Root transform from machine_assembler.json shifts model by (1,0,2); cog center is there, not at origin.
     private static final float ROOT_TX = 1f, ROOT_TZ = 2f;
@@ -91,7 +89,8 @@ public final class MachineAssemblerRenderer {
         // Slider: ping-pong 0..500 за 5000ms
         float sliderX = sliderX(be, System.currentTimeMillis());
         applyLegacyYaw(pose);
-        pose.last().pose().mul(new Matrix4f().translate(sliderX, 0, 0).translate(-0.5f, 0f, -0.5f));
+        pose.translate(sliderX, 0, 0);
+        pose.translate(-0.5f, 0f, -0.5f);
         return true;
     }
 
@@ -107,7 +106,8 @@ public final class MachineAssemblerRenderer {
         }
         // Arm ездит ВМЕСТЕ со Slider (общий sliderX) + добавляет своё качание armZ.
         applyLegacyYaw(pose);
-        pose.last().pose().mul(new Matrix4f().translate(sliderX(be, time), 0, armZ).translate(-0.5f, 0f, -0.5f));
+        pose.translate(sliderX(be, time), 0, armZ);
+        pose.translate(-0.5f, 0f, -0.5f);
         return true;
     }
 
@@ -140,15 +140,10 @@ public final class MachineAssemblerRenderer {
     private static boolean animateCog(MachineAssemblerBlockEntity be, long time, PoseStack pose,
                                       float cx, float cy, float cz, float rotationDeg) {
         applyLegacyYaw(pose);
-        pose.last().pose().mul(buildCogMatrix(cx, cy, cz, rotationDeg));
+        pose.translate(cx - 0.5f + VBO_COG_OFFSET_X, cy, cz - 0.5f + VBO_COG_OFFSET_Z);
+        pose.mulPose(Axis.ZP.rotationDegrees(rotationDeg));
+        pose.translate(-ROOT_TX, 0f, -ROOT_TZ);
         return true;
-    }
-
-    private static Matrix4f buildCogMatrix(float cx, float cy, float cz, float rotationDeg) {
-        return new Matrix4f()
-                .translate(cx - 0.5f + VBO_COG_OFFSET_X, cy, cz - 0.5f + VBO_COG_OFFSET_Z)
-                .rotateZ(rotationDeg * DEG_TO_RAD)
-                .translate(-ROOT_TX, 0f, -ROOT_TZ);
     }
 
     // ==================== RECIPE ICON (hook) ====================

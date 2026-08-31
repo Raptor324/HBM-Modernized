@@ -71,13 +71,13 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
 
     /** Статическая часть (рисуется в позе блока, без анимации). */
     public MachineSpecBuilder<T> part(String name) {
-        parts.add(new MachineSpec.PartDef<>(name, name, null, null, null, 0));
+        parts.add(new MachineSpec.PartDef<>(name, name, null, null, null, 0, id + "/" + name));
         return this;
     }
 
     /** Анимированная часть: {@link PartAnimator} задаёт трансформ относительно блока. */
     public MachineSpecBuilder<T> part(String name, PartAnimator<T> animator) {
-        parts.add(new MachineSpec.PartDef<>(name, name, animator, null, null, 0));
+        parts.add(new MachineSpec.PartDef<>(name, name, animator, null, null, 0, id + "/" + name));
         return this;
     }
 
@@ -86,7 +86,7 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
      * поверх одной части OBJ (например, 4 шестерни из части "Cog").
      */
     public MachineSpecBuilder<T> part(String modelPartName, String name, PartAnimator<T> animator) {
-        parts.add(new MachineSpec.PartDef<>(name, modelPartName, animator, null, null, 0));
+        parts.add(new MachineSpec.PartDef<>(name, modelPartName, animator, null, null, 0, id + "/" + name));
         return this;
     }
 
@@ -95,14 +95,14 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
      * VBO кешируется по ключу {@code cacheKeyFn}; возвращаемый квад-лист может быть пустым.
      */
     public MachineSpecBuilder<T> dynamicPart(String name, QuadResolver<T> quads, Function<T, String> cacheKeyFn) {
-        parts.add(new MachineSpec.PartDef<>(name, name, null, quads, cacheKeyFn, 0));
+        parts.add(new MachineSpec.PartDef<>(name, name, null, quads, cacheKeyFn, 0, id + "/" + name));
         return this;
     }
 
     /** Динамическая часть с per-BE геометрией И анимацией (например, dish крупного/малого радара). */
     public MachineSpecBuilder<T> dynamicPart(String name, PartAnimator<T> animator,
                                              QuadResolver<T> quads, Function<T, String> cacheKeyFn) {
-        parts.add(new MachineSpec.PartDef<>(name, name, animator, quads, cacheKeyFn, 0));
+        parts.add(new MachineSpec.PartDef<>(name, name, animator, quads, cacheKeyFn, 0, id + "/" + name));
         return this;
     }
 
@@ -139,7 +139,7 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
         for (MachineSpec.PartDef<T> p : parts) {
             Integer bone = boneIds.get(p.name());
             if (bone != null) {
-                resolved.add(new MachineSpec.PartDef<>(p.name(), p.modelPartName(), p.animator(), p.dynamicQuads(), p.dynamicCacheKey(), bone));
+                resolved.add(new MachineSpec.PartDef<>(p.name(), p.modelPartName(), p.animator(), p.dynamicQuads(), p.dynamicCacheKey(), bone, p.staticCacheKey()));
             } else {
                 resolved.add(p);
             }

@@ -3,7 +3,6 @@ package com.hbm_m.client.render.implementations;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
 
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -41,7 +40,6 @@ import net.minecraft.world.item.ItemStack;
  */
 public final class MachineAdvancedAssemblerRenderer {
 
-    private static final float DEG_TO_RAD = (float) (Math.PI / 180.0);
 
     private static final float ARM_PIVOT_Y_LOWER = 1.625f;
     private static final float ARM_PIVOT_Y_UPPER = 2.375f;
@@ -54,7 +52,10 @@ public final class MachineAdvancedAssemblerRenderer {
                 MachineAdvancedAssemblerBlockEntity.class)
             .part("Base", MachineAdvancedAssemblerRenderer::applyBakeOffset)
             .dynamicPart("Frame", MachineAdvancedAssemblerRenderer::applyBakeOffset,
-                    MachineAdvancedAssemblerRenderer::frameQuads, be -> "frame")
+                    MachineAdvancedAssemblerRenderer::frameQuads,
+                    // Ключ обязан различать FRAME=false/true: константный ключ кешировал бы
+                    // рендерер по ПЕРВОМУ встреченному состоянию (обычно пустому) навсегда.
+                    be -> frameCacheKey(be))
             .part("Ring", MachineAdvancedAssemblerRenderer::animateRing)
             .part("ArmLower1", (be, pt, t, pose) -> applyArm(be, pt, pose, 0, 0, false))
             .part("ArmUpper1", (be, pt, t, pose) -> applyArm(be, pt, pose, 0, 1, false))
@@ -90,6 +91,13 @@ public final class MachineAdvancedAssemblerRenderer {
 
     // ── Frame: видима только по свойству FRAME ─────────────────────────
 
+    private static String frameCacheKey(MachineAdvancedAssemblerBlockEntity be) {
+        var state = be.getBlockState();
+        boolean frame = state.hasProperty(MachineAdvancedAssemblerBlock.FRAME)
+                && state.getValue(MachineAdvancedAssemblerBlock.FRAME);
+        return String.valueOf(frame);
+    }
+
     private static List<net.minecraft.client.renderer.block.model.BakedQuad> frameQuads(
             MachineAdvancedAssemblerBlockEntity be) {
         var state = be.getBlockState();
@@ -109,17 +117,16 @@ public final class MachineAdvancedAssemblerRenderer {
 
     // ── Анимация: кольцо + цепочки рук ─────────────────────────────────
 
-    /** Матрица кольца. RING_PIVOT_LOCAL = ZERO → pivot-компенсация вырождается в чистый поворот. */
-    private static Matrix4f ringMatrix(float ringAngleDeg) {
-        return new Matrix4f()
-                .rotateY(ringAngleDeg * DEG_TO_RAD)
-                .translate(-0.5f, 0f, -0.5f);
+    /** Кольцо: чистый поворот + офсет запечки, прямо на PoseStack (без new Matrix4f в hot path). */
+    private static void applyRingRotation(PoseStack pose, float ringAngleDeg) {
+        pose.mulPose(Axis.YP.rotationDegrees(ringAngleDeg));
+        pose.translate(-0.5f, 0f, -0.5f);
     }
 
     private static boolean animateRing(MachineAdvancedAssemblerBlockEntity be, float partialTick,
                                        long gameTime, PoseStack pose) {
         float ringLerped = Mth.lerp(partialTick, be.getPrevRingAngle(), be.getRingAngle());
-        pose.last().pose().mul(ringMatrix(ringLerped));
+        applyRingRotation(pose, ringLerped);
         return true;
     }
 
@@ -148,22 +155,27 @@ public final class MachineAdvancedAssemblerRenderer {
         float headZ = zBase * ARM_HEAD_Z_SCALE;
         float ringLerped = Mth.lerp(partialTick, be.getPrevRingAngle(), be.getRingAngle());
 
-        Matrix4f m = ringMatrix(ringLerped);
+        applyRingRotation(pose, ringLerped);
         for (int i = 0; i <= chainIndex; i++) {
             switch (i) {
-                case 0 -> m.translate(0.5f, ARM_PIVOT_Y_LOWER, 0.5f + zBase)
-                        .rotateX(angleSign * a0 * DEG_TO_RAD)
-                        .translate(-0.5f, -ARM_PIVOT_Y_LOWER, -(0.5f + zBase));
-                case 1 -> m.translate(0.5f, ARM_PIVOT_Y_UPPER, 0.5f + zBase)
-                        .rotateX(angleSign * a1 * DEG_TO_RAD)
-                        .translate(-0.5f, -ARM_PIVOT_Y_UPPER, -(0.5f + zBase));
-                case 2 -> m.translate(0.5f, ARM_PIVOT_Y_UPPER, 0.5f + headZ)
-                        .rotateX(angleSign * a2 * DEG_TO_RAD)
-                        .translate(-0.5f, -ARM_PIVOT_Y_UPPER, -(0.5f + headZ));
-                case 3 -> m.translate(0, a3, 0);
+                case 0 -> {
+                    pose.translate(0.5f, ARM_PIVOT_Y_LOWER, 0.5f + zBase);
+                    pose.mulPose(Axis.XP.rotationDegrees(angleSign * a0));
+                    pose.translate(-0.5f, -ARM_PIVOT_Y_LOWER, -(0.5f + zBase));
+                }
+                case 1 -> {
+                    pose.translate(0.5f, ARM_PIVOT_Y_UPPER, 0.5f + zBase);
+                    pose.mulPose(Axis.XP.rotationDegrees(angleSign * a1));
+                    pose.translate(-0.5f, -ARM_PIVOT_Y_UPPER, -(0.5f + zBase));
+                }
+                case 2 -> {
+                    pose.translate(0.5f, ARM_PIVOT_Y_UPPER, 0.5f + headZ);
+                    pose.mulPose(Axis.XP.rotationDegrees(angleSign * a2));
+                    pose.translate(-0.5f, -ARM_PIVOT_Y_UPPER, -(0.5f + headZ));
+                }
+                case 3 -> pose.translate(0, a3, 0);
             }
         }
-        pose.last().pose().mul(m);
         return true;
     }
 

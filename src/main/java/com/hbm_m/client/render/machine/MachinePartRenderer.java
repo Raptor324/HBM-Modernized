@@ -60,6 +60,9 @@ final class MachinePartRenderer {
         this.dynamic = dynamic;
     }
 
+    /** true, если попытка построения уже была (успешной или нет) — квад resolver больше не вызывать. */
+    boolean isAttempted() { return attempted; }
+
     boolean matches(MachineSpec.PartDef<?> part, String cacheKey) {
         return this.key.equals(cacheKey) && this.boneId == part.boneId();
     }

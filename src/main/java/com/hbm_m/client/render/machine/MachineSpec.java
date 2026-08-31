@@ -29,7 +29,8 @@ public final class MachineSpec<T extends BlockEntity> {
             @Nullable PartAnimator<T> animator,      // null = статическая
             @Nullable QuadResolver<T> dynamicQuads,  // null = брать часть модели по имени
             @Nullable Function<T, String> dynamicCacheKey,
-            int boneId                                // 0 = не bone-часть; 1..N = chain-группа
+            int boneId,                               // 0 = не bone-часть; 1..N = chain-группа
+            String staticCacheKey                     // предвычисленный "id/name" — без String-аллокаций в hot path
     ) {
         boolean dynamic() { return dynamicQuads != null; }
         boolean animated() { return animator != null; }
@@ -101,7 +102,7 @@ public final class MachineSpec<T extends BlockEntity> {
     }
 
     String cacheKey(PartDef<T> part, @Nullable String dynamicKey) {
-        return part.dynamic() ? id + "/" + part.name() + "/" + dynamicKey : id + "/" + part.name();
+        return part.dynamic() ? part.staticCacheKey() + "/" + dynamicKey : part.staticCacheKey();
     }
 
     /** GPU-держатель части (лениво, на render thread). */
@@ -121,6 +122,34 @@ public final class MachineSpec<T extends BlockEntity> {
             return raced;
         }
         created.ensureBuilt(partModel, dynQuads);
+        return created;
+    }
+
+    /**
+     * Ленивый вариант {@link #partRenderer}: квад resolver ({@code dynamicQuads}) вызывается
+     * ТОЛЬКО когда рендерер ещё не был построен. Иначе (VBO уже в кеше) гора временных
+     * BakedQuad создавалась бы каждый кадр впустую — профайлер показывал ~75% времени кадра
+     * в retextureAndFixUV/BakedQuad.&lt;init&gt; (танки с жидкостью) + штормmarkSpriteActive у Embeddium.
+     */
+    MachinePartRenderer partRendererLazy(PartDef<T> part, @Nullable BakedModel partModel,
+                                         T be, @Nullable String dynamicKey) {
+        String key = cacheKey(part, dynamicKey);
+        MachinePartRenderer existing = partRenderers.get(key);
+        if (existing != null && existing.matches(part, key)) {
+            if (!existing.isAttempted()) {
+                existing.ensureBuilt(partModel, dynamicQuads(part, be));
+            }
+            return existing;
+        }
+        MachinePartRenderer created = new MachinePartRenderer(key, part.name(), part.boneId(), part.dynamic());
+        MachinePartRenderer raced = partRenderers.putIfAbsent(key, created);
+        if (raced != null) {
+            if (!raced.isAttempted()) {
+                raced.ensureBuilt(partModel, dynamicQuads(part, be));
+            }
+            return raced;
+        }
+        created.ensureBuilt(partModel, dynamicQuads(part, be));
         return created;
     }
 
