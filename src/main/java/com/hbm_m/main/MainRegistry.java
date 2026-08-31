@@ -96,6 +96,9 @@ public final class MainRegistry {
         PlayerHandler.register();
         ChunkRadiationManager.init();
         ModEventHandler.register();
+        // Опциональный Curios: слушатели вешаются только при наличии мода,
+        // иначе классы Curios API вообще не загружаются (NoClassDefFoundError).
+        com.hbm_m.compat.curios.CuriosCompat.init();
         PowerArmorHandlers.register();
         LadderClimbHandler.register();
         com.hbm_m.server.missile.MissileTrackBroadcaster.register();
