@@ -462,6 +462,7 @@ public class ClientSetup {
         MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_BATTERY_MENU.get(), GUIMachineBattery::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.BATTERY_SOCKET_MENU.get(), GUIBatterySocket::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.BLAST_FURNACE_MENU.get(), GUIBlastFurnace::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_BLAST_FURNACE_MENU.get(), com.hbm_m.inventory.gui.GUIMachineBlastFurnace::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.HEATING_OVEN_MENU.get(), GUIHeatingOven::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.PRESS_MENU.get(), GUIMachinePress::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.SHREDDER_MENU.get(), GUIMachineShredder::new);

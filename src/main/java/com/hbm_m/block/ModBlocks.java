@@ -45,6 +45,7 @@ import com.hbm_m.block.explosives.SmokeBombBlock;
 import com.hbm_m.block.explosives.WasteChargeBlock;
 import com.hbm_m.block.machines.ArmorTableBlock;
 import com.hbm_m.block.machines.BlastFurnaceBlock;
+import com.hbm_m.block.machines.MachineBlastFurnaceBlock;
 import com.hbm_m.block.machines.BlastFurnaceExtensionBlock;
 import com.hbm_m.block.machines.CargoElevatorBlock;
 import com.hbm_m.block.machines.FluidDuctBlock;
@@ -376,11 +377,19 @@ public class ModBlocks {
                     .sound(SoundType.METAL)
                     .requiresCorrectToolForDrops()));
 
+    /** Legacy одноблочная доменная печь (старые миры, ориг. MachineDifurnace). */
     public static final RegistrySupplier<Block> BLAST_FURNACE = registerBlock("blast_furnace",
             () -> new BlastFurnaceBlock(BlockProps.copy(Blocks.IRON_BLOCK)
                     .strength(4.0f, 4.0f)
                     .sound(SoundType.STONE)
                     .lightLevel(state -> state.getValue(BlastFurnaceBlock.LIT) ? 15 : 0)));
+
+    /** Обновлённая мультиблочная доменная печь 3x7x3 (ориг. MachineBlastFurnace). */
+    public static final RegistrySupplier<Block> MACHINE_BLAST_FURNACE = registerBlock("machine_blast_furnace",
+            () -> new MachineBlastFurnaceBlock(BlockProps.copy(Blocks.IRON_BLOCK)
+                    .strength(4.0f, 4.0f)
+                    .sound(SoundType.STONE)
+                    .lightLevel(state -> state.getValue(MachineBlastFurnaceBlock.LIT) ? 15 : 0)));
 
     public static final RegistrySupplier<Block> BLAST_FURNACE_EXTENSION = registerBlock("blast_furnace_extension",
             () -> new BlastFurnaceExtensionBlock(BlockProps.copy(Blocks.IRON_BLOCK)
@@ -3171,8 +3180,6 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> EVENT_TESTER = registerBlock("event_tester",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FLUID_DUCT_PAINTABLE_BLOCK_EXHAUST = registerBlock("fluid_duct_paintable_block_exhaust",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> GEIGER = registerBlock("geiger",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> GEYSIR_NETHER = registerBlock("geysir_nether",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE)));

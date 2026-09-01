@@ -66,7 +66,7 @@ public class AchievementHandler {
         item(ModItems.MISSILE_NUCLEAR_CLUSTER, ModAdvancements.RED_BALLOONS);
         item(ModItems.MISSILE_DOOMSDAY,        ModAdvancements.RED_BALLOONS);
         block(ModBlocks.STRUCT_TORUS_CORE,     ModAdvancements.FUSION);
-        block(ModBlocks.BLAST_FURNACE,         ModAdvancements.BLAST_FURNACE);
+        block(ModBlocks.MACHINE_BLAST_FURNACE,  ModAdvancements.BLAST_FURNACE);
         item(ModItems.MACHINE_ASSEMBLER,       ModAdvancements.ASSEMBLY);
         item(ModItems.BILLET_PU_MIX,           ModAdvancements.CHICAGO_PILE);
         item(ModItems.PARTICLE_DIGAMMA,        ModAdvancements.OMEGA12);

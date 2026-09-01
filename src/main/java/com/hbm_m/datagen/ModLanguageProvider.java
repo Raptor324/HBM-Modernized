@@ -320,18 +320,15 @@ public class ModLanguageProvider extends LanguageProvider {
 
     private void addTranslationsRuRuPart1() {
                 // КРЕАТИВНЫЕ ВКЛАДКИ
-                add("itemGroup.hbm_m.ntm_resources_tab", "Слитки и ресурсы NTM");
-                add("itemGroup.hbm_m.ntm_fuel_tab", "Топливо и элементы механизмов NTM");
-                add("itemGroup.hbm_m.ntm_templates_tab", "Шаблоны и штампы NTM");
-                add("itemGroup.hbm_m.ntm_ores_tab", "Руды и блоки NTM");
-                add("itemGroup.hbm_m.ntm_building_tab", "Строительные блоки NTM");
-                add("itemGroup.hbm_m.ntm_machines_tab", "Механизмы и станки NTM");
-                add("itemGroup.hbm_m.ntm_instruments_tab", "Броня и инструменты NTM");
-                add("itemGroup.hbm_m.ntm_spareparts_tab", "Запчасти NTM");
-                add("itemGroup.hbm_m.ntm_bombs_tab", "Бомбы NTM");
-                add("itemGroup.hbm_m.ntm_missiles_tab", "Ракеты и спутники NTM");
-                add("itemGroup.hbm_m.ntm_weapons_tab", "Оружие и турели NTM");
-                add("itemGroup.hbm_m.ntm_consumables_tab", "Расходники и снаряжение NTM");
+                add("itemGroup.hbm_m.ntm_parts_tab", "Ресурсы и запчасти NTM");
+                add("itemGroup.hbm_m.ntm_control_tab", "Детали механизмов и топливо NTM");
+                add("itemGroup.hbm_m.ntm_template_tab", "Шаблоны NTM");
+                add("itemGroup.hbm_m.ntm_blocks_tab", "Руды и блоки NTM");
+                add("itemGroup.hbm_m.ntm_machine_tab", "Механизмы NTM");
+                add("itemGroup.hbm_m.ntm_nuke_tab", "Бомбы NTM");
+                add("itemGroup.hbm_m.ntm_missile_tab", "Ракеты и спутники NTM");
+                add("itemGroup.hbm_m.ntm_weapon_tab", "Оружие и турели NTM");
+                add("itemGroup.hbm_m.ntm_consumable_tab", "Расходники и снаряжение NTM");
                 add("itemGroup.hbm_m.ntm_dev_tab", "Dev Items");
                 
                 // СНАРЯГА
@@ -1717,8 +1714,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.wire_coated", "Провод из красной меди");
                 add("block.hbm_m.wood_burner", "Дровяной генератор");
                 add("block.hbm_m.shredder", "Измельчитель");
-                add("block.hbm_m.blast_furnace", "Доменная печь");
-                add("block.hbm_m.blast_furnace_extension", "Расширение доменной печи");
+                add("block.hbm_m.blast_furnace", "Доменная печь (LEGACY)");
+                add("block.hbm_m.machine_blast_furnace", "Доменная печь");
+                add("block.hbm_m.blast_furnace_extension", "Расширение доменной печи (LEGACY)");
                 add("block.hbm_m.heating_oven", "Нагревательная печь");
                 add("block.hbm_m.press", "Пресс");
                 add("block.hbm_m.geiger_counter_block", "Стационарный счетчик Гейгера");
@@ -2787,19 +2785,16 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.missile.fuel.jetfuel_loxy", "Jet fuel + liquid oxygen");
 
                 // TABS
-                add("itemGroup.hbm_m.ntm_resources_tab", "NTM Ingots and Resources");
-                add("itemGroup.hbm_m.ntm_fuel_tab", "NTM Fuel and Machine Components");
-                add("itemGroup.hbm_m.ntm_templates_tab", "NTM Templates");
-                add("itemGroup.hbm_m.ntm_ores_tab", "NTM Ores and Blocks");
-                add("itemGroup.hbm_m.ntm_machines_tab", "NTM Machines");
-                add("itemGroup.hbm_m.ntm_bombs_tab", "NTM Bombs");
-                add("itemGroup.hbm_m.ntm_missiles_tab", "NTM Missiles and Satellites");
-                add("itemGroup.hbm_m.ntm_weapons_tab", "NTM Weapons and Turrets");
-                add("itemGroup.hbm_m.ntm_consumables_tab", "NTM Consumables and Equipment");
+                add("itemGroup.hbm_m.ntm_parts_tab", "NTM Resources and Parts");
+                add("itemGroup.hbm_m.ntm_control_tab", "NTM Machine Items and Fuel");
+                add("itemGroup.hbm_m.ntm_template_tab", "NTM Templates");
+                add("itemGroup.hbm_m.ntm_blocks_tab", "NTM Ores and Blocks");
+                add("itemGroup.hbm_m.ntm_machine_tab", "NTM Machines");
+                add("itemGroup.hbm_m.ntm_nuke_tab", "NTM Bombs");
+                add("itemGroup.hbm_m.ntm_missile_tab", "NTM Missiles and Satellites");
+                add("itemGroup.hbm_m.ntm_weapon_tab", "NTM Weapons and Turrets");
+                add("itemGroup.hbm_m.ntm_consumable_tab", "NTM Consumables and Gear");
                 add("itemGroup.hbm_m.ntm_dev_tab", "Dev Items");
-                add("itemGroup.hbm_m.ntm_spareparts_tab", "NTM Spare Parts");
-                add("itemGroup.hbm_m.ntm_instruments_tab", "NTM Instruments");
-                add("itemGroup.hbm_m.ntm_building_tab", "NTM Building Blocks");
 
                 add(ModBlocks.NUKE_FAT_MAN.get(), "Fat Man");
                 add(ModItems.NUKE_PROTOTYPE.get(), "Prototype");
@@ -4477,8 +4472,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.machine_battery", "Machine Battery");
                 add("block.hbm_m.shredder", "Shredder");
                 add("block.hbm_m.wood_burner", "Wood Burner Generator");
-                add("block.hbm_m.blast_furnace", "Blast Furnace");
-                add("block.hbm_m.blast_furnace_extension", "Blast Furnace Extension");
+                add("block.hbm_m.blast_furnace", "Blast Furnace (LEGACY)");
+                add("block.hbm_m.machine_blast_furnace", "Blast Furnace");
+                add("block.hbm_m.blast_furnace_extension", "Blast Furnace Extension (LEGACY)");
                 add("block.hbm_m.heating_oven", "Heating Oven");
                 add("block.hbm_m.press", "Press");
                 add("block.hbm_m.crate_iron", "Iron Crate");
@@ -7233,7 +7229,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.DUNGEON_SPAWNER.get(), "Dungeon Spawner");
                 add(ModBlocks.EVENT_TESTER.get(), "Event Tester");
                 add(ModBlocks.FLUID_DUCT_PAINTABLE_BLOCK_EXHAUST.get(), "Fluid Duct Paintable Block Exhaust");
-                add(ModBlocks.GEIGER.get(), "Geiger");
                 add(ModBlocks.GEYSIR_NETHER.get(), "Geysir Nether");
                 add(ModBlocks.ICF_BLOCK.get(), "Icf Block");
                 add(ModBlocks.LAUNCH_TABLE.get(), "Launch Table");

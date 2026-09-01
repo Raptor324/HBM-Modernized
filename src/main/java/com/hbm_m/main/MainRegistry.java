@@ -44,8 +44,8 @@ public final class MainRegistry {
     public static final String MOD_ID = RefStrings.MODID;
 
     /** Порт {@code MainRegistry.missileTab} / {@code MainRegistry.nukeTab} (1.7.10). */
-    public static final RegistrySupplier<CreativeModeTab> missileTab = ModCreativeTabs.NTM_MISSILES_TAB;
-    public static final RegistrySupplier<CreativeModeTab> nukeTab = ModCreativeTabs.NTM_BOMBS_TAB;
+    public static final RegistrySupplier<CreativeModeTab> missileTab = ModCreativeTabs.NTM_MISSILE_TAB;
+    public static final RegistrySupplier<CreativeModeTab> nukeTab = ModCreativeTabs.NTM_NUKE_TAB;
 
     static {
         // Загрузка JSON-конфига (client.json + server.json) ДО любой инициализации,

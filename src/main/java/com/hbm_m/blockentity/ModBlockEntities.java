@@ -14,6 +14,7 @@ import com.hbm_m.blockentity.crates.TungstenCrateBlockEntity;
 import com.hbm_m.blockentity.machines.AnvilBlockEntity;
 import com.hbm_m.blockentity.machines.BatterySocketBlockEntity;
 import com.hbm_m.blockentity.machines.BlastFurnaceBlockEntity;
+import com.hbm_m.blockentity.machines.MachineBlastFurnaceBlockEntity;
 import com.hbm_m.blockentity.machines.DeconBlockEntity;
 import com.hbm_m.blockentity.machines.TestBlockEntity;
 import com.hbm_m.blockentity.machines.FluidDuctBlockEntity;
@@ -781,6 +782,12 @@ public class ModBlockEntities {
 			BLOCK_ENTITIES.register("blast_furnace_be", () ->
 					BlockEntityType.Builder.of(BlastFurnaceBlockEntity::new,
 							ModBlocks.BLAST_FURNACE.get()).build(null));
+
+	/** Обновлённая мультиблочная доменная печь 3x7x3 (ориг. TileEntityMachineBlastFurnace). */
+	public static final RegistrySupplier<BlockEntityType<MachineBlastFurnaceBlockEntity>> MACHINE_BLAST_FURNACE_BE =
+			BLOCK_ENTITIES.register("machine_blast_furnace_be", () ->
+					BlockEntityType.Builder.of(MachineBlastFurnaceBlockEntity::new,
+							ModBlocks.MACHINE_BLAST_FURNACE.get()).build(null));
 
 	public static final RegistrySupplier<BlockEntityType<MachineElectricFurnaceBlockEntity>> ELECTRIC_FURNACE_BE =
 			BLOCK_ENTITIES.register("electric_furnace_be", () ->

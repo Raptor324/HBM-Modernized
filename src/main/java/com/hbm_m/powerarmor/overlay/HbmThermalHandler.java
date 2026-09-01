@@ -223,7 +223,7 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
 
         @Override
         public com.mojang.blaze3d.vertex.VertexConsumer getBuffer(net.minecraft.client.renderer.RenderType type) {
-            String name = type.toString().toLowerCase();
+            String name = type.toString().toLowerCase(java.util.Locale.ROOT);
 
             if (name.contains("shadow") || name.contains("glint") || name.contains("foil")) {
                 return noOp;

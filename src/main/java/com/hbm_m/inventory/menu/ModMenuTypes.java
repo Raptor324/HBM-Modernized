@@ -55,6 +55,9 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<BlastFurnaceMenu>> BLAST_FURNACE_MENU =
             MENUS.register("blast_furnace_menu", () -> MenuRegistry.ofExtended(BlastFurnaceMenu::new));
 
+    public static final RegistrySupplier<MenuType<MachineBlastFurnaceMenu>> MACHINE_BLAST_FURNACE_MENU =
+            MENUS.register("machine_blast_furnace_menu", () -> MenuRegistry.ofExtended(MachineBlastFurnaceMenu::new));
+
     public static final RegistrySupplier<MenuType<MachinePressMenu>> PRESS_MENU =
             MENUS.register("press_menu", () -> MenuRegistry.ofExtended(MachinePressMenu::new));
 

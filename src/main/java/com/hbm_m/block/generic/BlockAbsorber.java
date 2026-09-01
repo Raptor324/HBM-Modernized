@@ -49,7 +49,8 @@ public class BlockAbsorber extends Block {
 
         @Override
         public String getSerializedName() {
-            return name().toLowerCase();
+            // Locale.ROOT: в турецкой локали "PINK".toLowerCase() даёт "pınk" и ломает свойство блока
+            return name().toLowerCase(java.util.Locale.ROOT);
         }
     }
 

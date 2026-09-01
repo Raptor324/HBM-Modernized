@@ -9,6 +9,7 @@ import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.block.generic.BlockAbsorber;
 import com.hbm_m.block.generic.BlockSellafieldSlaked;
 import com.hbm_m.block.machines.BlastFurnaceBlock;
+import com.hbm_m.block.machines.MachineBlastFurnaceBlock;
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.machines.MachineAssemblerBlock;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
@@ -268,7 +269,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(ModBlocks.DUNGEON_SPAWNER.get(), models().cubeAll("dungeon_spawner", modLoc("block/ported/dungeon_spawner")));
         simpleBlockWithItem(ModBlocks.EVENT_TESTER.get(), models().cubeAll("event_tester", modLoc("block/ported/event_tester")));
         simpleBlockWithItem(ModBlocks.FLUID_DUCT_PAINTABLE_BLOCK_EXHAUST.get(), models().cubeAll("fluid_duct_paintable_block_exhaust", modLoc("block/ported/fluid_duct_paintable_block_exhaust")));
-        simpleBlockWithItem(ModBlocks.GEIGER.get(), models().cubeAll("geiger", modLoc("block/ported/geiger")));
         simpleBlockWithItem(ModBlocks.GEYSIR_NETHER.get(), models().cubeAll("geysir_nether", modLoc("block/ported/geysir_nether")));
         simpleBlockWithItem(ModBlocks.ICF_BLOCK.get(), models().cubeAll("icf_block", modLoc("block/ported/icf_block")));
         simpleBlockWithItem(ModBlocks.LAUNCH_TABLE.get(), models().cubeAll("launch_table", modLoc("block/ported/launch_table")));
@@ -727,10 +727,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.PRESS);
 
         // Машины со свойством LIT (включен/выключен)
-        // Доменная печь: в мире невидима (рендерит BER), blockstate указывает на частицу-модель.
+        // Legacy одноблочная доменная печь: ванильный orientable c текстурами оригинала (difurnace_*).
         registerLitMachineBlock(ModBlocks.BLAST_FURNACE,
             BlastFurnaceBlock.FACING, BlastFurnaceBlock.LIT,
-            "blast_furnace", "blast_furnace");
+            "blast_furnace", "blast_furnace_on");
+        // Мультиблочная доменная печь 3x7x3: цельная OBJ-модель ядра.
+        registerLitMachineBlock(ModBlocks.MACHINE_BLAST_FURNACE,
+            MachineBlastFurnaceBlock.FACING, MachineBlastFurnaceBlock.LIT,
+            "machine_blast_furnace", "machine_blast_furnace");
         registerLitMachineBlock(ModBlocks.WOOD_BURNER,
             MachineWoodBurnerBlock.FACING, MachineWoodBurnerBlock.LIT,
             "wood_burner", "wood_burner");

@@ -130,7 +130,7 @@ public final class AnvilRecipeGenerator {
 
         registerInventoryRecipe(writer, "iron", "7blast_furnace",
                 AnvilTier.IRON,
-                stack(ModBlocks.BLAST_FURNACE),
+                stack(ModBlocks.MACHINE_BLAST_FURNACE),
                 stack(ModItems.PLATE_COPPER, 4),
                 stack(Items.STONE_BRICKS, 4 ),
                 stack(ModItems.FIREBRICK, 4 ));

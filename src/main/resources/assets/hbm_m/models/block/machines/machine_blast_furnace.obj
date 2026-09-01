@@ -1,6 +1,6 @@
 # Blender v2.79 (sub 0) OBJ File: 'blast_furnace.blend'
 # www.blender.org
-mtllib blast_furnace.mtl
+mtllib machine_blast_furnace.mtl
 usemtl blast_furnace
 o Plane
 v 1.250000 0.000000 -1.250000

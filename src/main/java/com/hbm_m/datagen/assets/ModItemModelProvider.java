@@ -784,7 +784,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         
         // Регистрация моделей предметов для машин с кастомными 3D моделями
         blockItemFromBlockModelMachine(ModBlocks.PRESS);
-        blockItemFromBlockModelMachine(ModBlocks.BLAST_FURNACE);
+        blockItemFromBlockModelMachine(ModBlocks.BLAST_FURNACE); // legacy: parent = block/machines/blast_furnace
+        blockItemFromBlockModelMachine(ModBlocks.MACHINE_BLAST_FURNACE);
         blockItemFromBlockModelMachine(ModBlocks.WOOD_BURNER);
         blockItemFromBlockModelMachine(ModBlocks.CHEMICAL_PLANT);
         blockItemFromBlockModelMachine(ModBlocks.CRUCIBLE);
