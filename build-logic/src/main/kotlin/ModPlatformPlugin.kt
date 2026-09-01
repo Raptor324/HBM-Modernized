@@ -132,6 +132,11 @@ abstract class ModPlatformPlugin @Inject constructor() : Plugin<Project> {
 			dependsOn("kspKotlin")
 			duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
+			// Лицензии и NOTICE кладутся в META-INF каждого JAR (см. NOTICE.md).
+			from(rootProject.files("LICENSE", "LICENSE.LESSER", "NOTICE.md")) {
+				into("META-INF")
+			}
+
 			filesMatching("*.mixins.json") { expand("java" to "JAVA_${requiredJava.majorVersion}") }
 
 			var contributors = prop("mod.contributors")

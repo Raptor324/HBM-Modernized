@@ -137,17 +137,7 @@ public final class MissileTrackWorldRender {
         if (drewAny) {
             buffers.endBatch();
         }
-        com.hbm_m.client.render.FrameStateProbe.snap(drewAny ? "twr.drew" : "twr.idle");
         return drewAny;
-    }
-
-    /** Мировая позиция последнего отрисованного трек-меша — для fspWorld-пробников. */
-    private static final double[] LAST_MISSILE_POS = new double[3];
-    private static boolean lastMissilePosValid;
-
-    /** Позиция для FrameStateProbe.snapWorld (null, если ещё ничего не рисовалось). */
-    public static double[] lastDrawnMissilePos() {
-        return lastMissilePosValid ? LAST_MISSILE_POS : null;
     }
 
     private static double sqr(double v) {
@@ -160,10 +150,6 @@ public final class MissileTrackWorldRender {
         if (data == null) {
             return false;
         }
-        LAST_MISSILE_POS[0] = pose.x();
-        LAST_MISSILE_POS[1] = pose.y();
-        LAST_MISSILE_POS[2] = pose.z();
-        lastMissilePosValid = true;
 
         CameraRelativePose virtual = virtualizeWorld(pose.x(), pose.y(), pose.z(), camera);
         double drawX = camera.x + virtual.relX();
