@@ -23,8 +23,8 @@ import dev.architectury.utils.Env;
 import dev.architectury.utils.EnvExecutor;
 import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.nbt.CompoundTag;
-//? if forge {
 import net.minecraft.world.item.*;
+//? if forge {
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 //?} elif neoforge {
 /*import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
@@ -1213,7 +1213,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.SHREDDER.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_TELEPORTER.get()));
         add.accept(new ItemStack(ModBlocks.TELEANCHOR.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_RTG.get()));
         add.accept(new ItemStack(ModBlocks.RADIOLYSIS.get()));
         add.accept(new ItemStack(ModBlocks.HEPHAESTUS.get()));
         add.accept(new ItemStack(ModBlocks.RED_WIRE_COATED.get()));
@@ -1262,7 +1261,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.CRANE_UNBOXER.get()));
         add.accept(new ItemStack(ModBlocks.CRANE_SPLITTER.get()));
         add.accept(new ItemStack(ModBlocks.CRANE_PARTITIONER.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_FAN.get()));
         add.accept(new ItemStack(ModBlocks.DRONE_WAYPOINT.get()));
         add.accept(new ItemStack(ModBlocks.DRONE_CRATE.get()));
         add.accept(new ItemStack(ModBlocks.DRONE_WAYPOINT_REQUEST.get()));
@@ -1391,7 +1389,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.ANNIHILATOR.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_MINING_LASER.get()));
         add.accept(new ItemStack(ModBlocks.ASSEMBLY_FACTORY.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_PRECASS.get()));
         add.accept(new ItemStack(ModItems.ARC_WELDER.get()));
         add.accept(new ItemStack(ModItems.SOLDERING_STATION.get()));
         add.accept(new ItemStack(ModItems.CHEMICAL_PLANT.get()));
@@ -1423,7 +1420,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.SOLIDIFIER.get()));
         add.accept(new ItemStack(ModBlocks.INTAKE.get()));
         add.accept(new ItemStack(ModBlocks.COMPRESSOR.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_COMPRESSOR_COMPACT.get()));
         add.accept(new ItemStack(ModBlocks.ELECTROLYSER.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_AUTOCRAFTER.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_FUNNEL.get()));
