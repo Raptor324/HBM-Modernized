@@ -22,7 +22,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * Port of {@code TileEntityDiFurnaceRTG} (1.7.10 Original) - the RTG-heated variant of the
  * Blast/DiFurnace: same 2-ingredient recipe lookup as {@link BlastFurnaceBlockEntity} (reused
  * directly via {@link BlastFurnaceRecipe}), but heated by RTG pellets (6 slots) instead of solid
- * fuel items, using the same heat table as {@link MachineRtgBlockEntity} via {@link RtgPelletHeat}.
+ * fuel items, using the same heat table as the removed RTG block entity via {@link RtgPelletHeat}.
  */
 public class MachineDifurnaceRtgBlockEntity extends BaseMachineBlockEntity {
 

@@ -240,9 +240,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 modLoc("block/ported/block_insulator_side"), modLoc("block/ported/block_insulator_bottom"), modLoc("block/ported/block_insulator_top")));
         simpleBlockWithItem(ModBlocks.BLOCK_LITHIUM.get(), models().cubeAll("block_lithium", modLoc("block/ported/block_lithium")));
         simpleBlockWithItem(ModBlocks.BLOCK_MAGNETIZED_TUNGSTEN.get(), models().cubeAll("block_magnetized_tungsten", modLoc("block/ported/block_magnetized_tungsten")));
-        simpleBlockWithItem(ModBlocks.BLOCK_METEOR.get(), models().cubeAll("block_meteor", modLoc("block/ported/block_meteor")));
         simpleBlockWithItem(ModBlocks.BLOCK_METEOR_BROKEN.get(), models().cubeAll("block_meteor_broken", modLoc("block/ported/block_meteor_broken")));
-        simpleBlockWithItem(ModBlocks.BLOCK_METEOR_COBBLE.get(), models().cubeAll("block_meteor_cobble", modLoc("block/ported/block_meteor_cobble")));
         simpleBlockWithItem(ModBlocks.BLOCK_METEOR_MOLTEN.get(), models().cubeAll("block_meteor_molten", modLoc("block/ported/block_meteor_molten")));
         simpleBlockWithItem(ModBlocks.BLOCK_METEOR_TREASURE.get(), models().cubeAll("block_meteor_treasure", modLoc("block/ported/block_meteor_treasure")));
         simpleBlockWithItem(ModBlocks.BLOCK_NITER.get(), models().cubeAll("block_niter", modLoc("block/ported/block_niter")));
@@ -250,7 +248,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(ModBlocks.BLOCK_PU_MIX.get(), models().cubeAll("block_pu_mix", modLoc("block/ported/block_pu_mix")));
         simpleBlockWithItem(ModBlocks.BLOCK_RED_PHOSPHORUS.get(), models().cubeAll("block_red_phosphorus", modLoc("block/ported/block_red_phosphorus")));
         simpleBlockWithItem(ModBlocks.BLOCK_RUBBER.get(), models().cubeAll("block_rubber", modLoc("block/ported/block_rubber")));
-        simpleBlockWithItem(ModBlocks.BLOCK_SCRAP.get(), models().cubeAll("block_scrap", modLoc("block/ported/block_scrap")));
         simpleBlockWithItem(ModBlocks.BLOCK_SEMTEX.get(), models().cubeAll("block_semtex", modLoc("block/ported/block_semtex")));
         simpleBlockWithItem(ModBlocks.BLOCK_SMORE.get(), models().cubeBottomTop("block_smore",
                 modLoc("block/ported/block_smore_side"), modLoc("block/ported/block_smore_bottom"), modLoc("block/ported/block_smore_top")));
@@ -303,7 +300,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(ModBlocks.ORE_NETHER_TUNGSTEN.get(), models().cubeAll("ore_nether_tungsten", modLoc("block/ported/ore_nether_tungsten")));
         simpleBlockWithItem(ModBlocks.ORE_NETHER_URANIUM.get(), models().cubeAll("ore_nether_uranium", modLoc("block/ported/ore_nether_uranium")));
         simpleBlockWithItem(ModBlocks.ORE_NETHER_URANIUM_SCORCHED.get(), models().cubeAll("ore_nether_uranium_scorched", modLoc("block/ported/ore_nether_uranium_scorched")));
-        simpleBlockWithItem(ModBlocks.ORE_OIL_SAND.get(), models().cubeAll("ore_oil_sand", modLoc("block/ported/ore_oil_sand")));
         simpleBlockWithItem(ModBlocks.ORE_RARE.get(), models().cubeAll("ore_rare", modLoc("block/ported/ore_rare")));
         simpleBlockWithItem(ModBlocks.ORE_TEKTITE_OSMIRIDIUM.get(), models().cubeAll("ore_tektite_osmiridium", modLoc("block/ported/ore_tektite_osmiridium")));
         simpleBlockWithItem(ModBlocks.ORE_TIKITE.get(), models().cubeAll("ore_tikite", modLoc("block/ported/ore_tikite")));
@@ -317,7 +313,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(ModBlocks.PNEUMATIC_STORAGE_IMPORTER.get(), models().cubeAll("pneumatic_storage_importer", modLoc("block/ported/pneumatic_storage_importer")));
         simpleBlockWithItem(ModBlocks.PNEUMATIC_STORAGE_MONO.get(), models().cubeAll("pneumatic_storage_mono", modLoc("block/ported/pneumatic_storage_mono")));
         simpleBlockWithItem(ModBlocks.SOLAR_MIRROR.get(), models().cubeAll("solar_mirror", modLoc("block/ported/solar_mirror")));
-        simpleBlockWithItem(ModBlocks.STEEL_BEAM.get(), models().cubeAll("steel_beam", modLoc("block/ported/steel_beam")));
         simpleBlockWithItem(ModBlocks.STRUCTURE_ANCHOR.get(), models().cubeAll("structure_anchor", modLoc("block/ported/structure_anchor")));
         simpleBlockWithItem(ModBlocks.WAND_TANDEM.get(), models().cubeBottomTop("wand_tandem",
                 modLoc("block/ported/wand_tandem_side"), modLoc("block/ported/wand_tandem_bottom"), modLoc("block/ported/wand_tandem_top")));
@@ -629,8 +624,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.COMBUSTION_ENGINE);
         horizontalBlock(ModBlocks.COMPRESSOR.get(),
             models().getExistingFile(modLoc("block/machines/compressor")));
-        horizontalBlock(ModBlocks.MACHINE_COMPRESSOR_COMPACT.get(),
-            models().cubeAll(ModBlocks.MACHINE_COMPRESSOR_COMPACT.getId().getPath(), modLoc("block/machine/compressor_compact")));
         customMachineBlock(ModBlocks.CONDENSER_POWERED);
         customMachineBlock(ModBlocks.LPW2);
         customMachineBlock(ModBlocks.CONVEYOR_PRESS);
@@ -2848,8 +2841,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/machine_puf6_tank")
                 )
         );
-        plainFacingBlock(ModBlocks.MACHINE_FAN.get(),
-                models().cubeAll(ModBlocks.MACHINE_FAN.getId().getPath(), modLoc("block/machine/fan")));
         simpleBlockWithItem(ModBlocks.MACHINE_DRAIN.get(),
                 models().cubeAll(ModBlocks.MACHINE_DRAIN.getId().getPath(), modLoc("block/concrete")));
         orientableBlockWithItem(
@@ -2874,20 +2865,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/tele_anchor_top")
                 )
         );
-        simpleBlockWithItem(ModBlocks.MACHINE_PRECASS.get(),
-                models().cubeAll(ModBlocks.MACHINE_PRECASS.getId().getPath(), modLoc("block/machine/precass")));
         simpleBlockWithItem(ModBlocks.MACHINE_TRANSFORMER.get(),
                 models().cubeBottomTop(
                         ModBlocks.MACHINE_TRANSFORMER.getId().getPath(),
                         modLoc("block/machine_transformer_iron"),
                         modLoc("block/machine_transformer_top_iron"),
                         modLoc("block/machine_transformer_top_iron")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.MACHINE_RTG.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_RTG.getId().getPath(),
-                        modLoc("block/machine/rtg")
                 )
         );
         simpleBlockWithItem(ModBlocks.MACHINE_WASTE_DRUM.get(),
@@ -3443,15 +3426,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 "deco_rbmk_panel_smooth", "deco_rbmk_panel_smooth_side", 4);
         simpleBlockWithItem(ModBlocks.BLOCK_GRAPHITE.get(),
                 models().cubeAll(ModBlocks.BLOCK_GRAPHITE.getId().getPath(), modLoc("block/block_graphite")));
-        simpleBlockWithItem(ModBlocks.STEEL_GRATE.get(),
-                models().cubeBottomTop(ModBlocks.STEEL_GRATE.getId().getPath(),
-                        modLoc("block/grate_side"), modLoc("block/grate_top"), modLoc("block/grate_top")));
-        simpleBlockWithItem(ModBlocks.STEEL_SCAFFOLD.get(),
-                models().cubeAll(
-                        ModBlocks.STEEL_SCAFFOLD.getId().getPath(),
-                        modLoc("block/steel_scaffold")
-                )
-        );
         simpleBlockWithItem(ModBlocks.STONE_CRACKED.get(),
                 models().cubeAll(
                         ModBlocks.STONE_CRACKED.getId().getPath(),
@@ -4206,14 +4180,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         mig("rbmk_boiler", mrbmk_rbmk_boiler, "@0");
         mig("rbmk_control", mrbmk_rbmk_control, "@0");
         mig("rbmk_control_auto", mrbmk_rbmk_control_auto, "@0");
-        mig("rbmk_control_blue", mrbmk_rbmk_control_blue, "@0");
-        mig("rbmk_control_green", mrbmk_rbmk_control_green, "@0");
         mig("rbmk_control_mod", mrbmk_rbmk_control_mod, "@0");
-        mig("rbmk_control_mod_auto", mrbmk_rbmk_control_mod_auto, "@0");
-        mig("rbmk_control_purple", mrbmk_rbmk_control_purple, "@0");
         mig("rbmk_control_reasim", mrbmk_rbmk_control_reasim, "@0");
         mig("rbmk_control_reasim_auto", mrbmk_rbmk_control_reasim_auto, "@0");
-        mig("rbmk_control_yellow", mrbmk_rbmk_control_yellow, "@0");
         mig("rbmk_cooler", mrbmk_rbmk_cooler, "@0");
         mig("rbmk_crane_console", mrbmk_rbmk_crane_console, "@0");
         mig("rbmk_debris", mrbmk_rbmk_debris, "@0");
@@ -4230,7 +4199,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         mig("rbmk_graph", mrbmk_rbmk_graph, "@0");
         mig("rbmk_heater", mrbmk_rbmk_heater, "@0");
         mig("rbmk_indicator", mrbmk_rbmk_indicator, "@0");
-        mig("rbmk_keypad", mrbmk_rbmk_keypad, "@0");
+        mig("rbmk_key_pad", mrbmk_rbmk_keypad, "@0");
         mig("rbmk_lever", mrbmk_rbmk_lever, "@0");
         mig("rbmk_loader", mrbmk_rbmk_loader, "@0");
         mig("rbmk_moderator", mrbmk_rbmk_moderator, "@0");
@@ -4252,8 +4221,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         mig("ore_bedrock_oil", more_bedrock_oil, "@0");
         mig("particle_test_block", mparticle_test_block, "@0");
         mig("steam_turbine", mmachines_steam_turbine, "facing=east@90", "facing=north@0", "facing=south@180", "facing=west@270");
-        mig("jas39_trophy", mjas39_trophy, "@0");
-        mig("su47_trophy", msu47_trophy, "@0");
     }
 
     /** Блок по registry-имени (поиск по статическим полям ModBlocks). */

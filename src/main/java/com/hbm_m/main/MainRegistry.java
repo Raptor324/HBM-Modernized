@@ -152,6 +152,9 @@ public final class MainRegistry {
         com.hbm_m.handler.ArmorRegistryInit.init();
         HazardRegistry.registerItems();
         com.hbm_m.event.LungGasHandler.init();
+        com.hbm_m.advancement.AchievementHandler.init();
+        com.hbm_m.armormod.event.ArmorModTickHandler.init();
+        com.hbm_m.handler.BossSpawnHandler.init();
         com.hbm_m.config.FalloutConfigJSON.initialize();
         DamageResistanceHandler.initArmorStats();
         com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity.registerLaunchables();

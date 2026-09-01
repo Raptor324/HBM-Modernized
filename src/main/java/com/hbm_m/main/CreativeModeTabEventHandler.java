@@ -2507,12 +2507,9 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.MACHINE_MISSILE_ASSEMBLY.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_PRESS.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_PUF6_TANK.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_FAN.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_DRAIN.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_TRANSFORMER.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_RTG.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_WASTE_DRUM.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_COMPRESSOR_COMPACT.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_RADGEN.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_REACTOR.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_REACTOR_SMALL.get()));

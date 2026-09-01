@@ -4375,8 +4375,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.COMBUSTION_ENGINE.get(), "Combustion Engine");
                 add("container.hbm_m.combustion_engine", "Combustion Engine");
                 add(ModBlocks.COMPRESSOR.get(), "Compressor");
-                add(ModBlocks.MACHINE_COMPRESSOR_COMPACT.get(), "Compact Compressor");
-                add("container.hbm_m.machine_compressor_compact", "Compact Compressor");
                 add("container.hbm_m.compressor", "Compressor");
                 add(ModBlocks.CONDENSER_POWERED.get(), "Powered Condenser");
                 add(ModBlocks.LPW2.get(), "LPW2");
@@ -5522,18 +5520,14 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.MACHINE_MISSILE_ASSEMBLY.get(), "Missile Assembly Station");
                 add(ModBlocks.MACHINE_PRESS.get(), "Burner Press");
                 add(ModBlocks.MACHINE_PUF6_TANK.get(), "Plutonium Hexafluoride Tank");
-                add(ModBlocks.MACHINE_FAN.get(), "Industrial Fan");
                 add(ModBlocks.MACHINE_DRAIN.get(), "Drain");
                 add("container.hbm_m.machine_drain", "Drain");
                 add(ModBlocks.MACHINE_TRANSFORMER.get(), "Transformer");
-                add(ModBlocks.MACHINE_PRECASS.get(), "Precision Assembler");
-                add("container.hbm_m.machine_precass", "Precision Assembler");
                 add(ModBlocks.MACHINE_DIFURNACE_RTG.get(), "RTG Blast Furnace");
                 add("container.hbm_m.machine_difurnace_rtg", "RTG Blast Furnace");
                 add(ModBlocks.MACHINE_TELEPORTER.get(), "Teleporter");
                 add("container.hbm_m.machine_teleporter", "Teleporter");
                 add(ModBlocks.TELEANCHOR.get(), "Teleport Anchor");
-                add(ModBlocks.MACHINE_RTG.get(), "RTG");
                 add("container.hbm_m.machine_rtg", "RTG");
                 add(ModBlocks.MACHINE_WASTE_DRUM.get(), "Waste Drum");
                 add("container.hbm_m.machine_waste_drum", "Waste Drum");

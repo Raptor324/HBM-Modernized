@@ -72,7 +72,8 @@ public final class ContaminationUtil {
     public static boolean neutronActivateItem(net.minecraft.world.item.ItemStack stack, float rad, float decay) {
         if (stack == null || stack.isEmpty() || stack.getCount() != 1 || isRadItem(stack)) return false;
 
-        net.minecraft.nbt.CompoundTag tag = stack.getTag();
+        // NBT ueber PlatformHooks: 1.21 hat kein com.hbm_m.platform.PlatformHooks.getItemTag(ItemStack)/setTag() mehr.
+        net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
         float prevActivation = tag != null && tag.contains(NTM_NEUTRON_NBT_KEY)
                 ? tag.getFloat(NTM_NEUTRON_NBT_KEY) : 0F;
 
@@ -80,15 +81,15 @@ public final class ContaminationUtil {
 
         if (newActivation < 0.0001F) {
             if (prevActivation > 0 && tag != null) {
-                tag.remove(NTM_NEUTRON_NBT_KEY);
-                if (tag.isEmpty()) stack.setTag(null);
+                com.hbm_m.platform.PlatformHooks.remove(stack, NTM_NEUTRON_NBT_KEY);
                 return true;
             }
             return false;
         }
 
         if (Math.abs(newActivation - prevActivation) > 1e-6F) {
-            stack.getOrCreateTag().putFloat(NTM_NEUTRON_NBT_KEY, newActivation);
+            com.hbm_m.platform.PlatformHooks.editItemTag(stack,
+                    t -> t.putFloat(NTM_NEUTRON_NBT_KEY, newActivation));
             return true;
         }
         return false;
@@ -97,13 +98,13 @@ public final class ContaminationUtil {
     /** The whole stack's induced dose (the stored per-item value times the count). */
     public static float getNeutronRads(net.minecraft.world.item.ItemStack stack) {
         if (stack == null || stack.isEmpty() || isRadItem(stack)) return 0F;
-        net.minecraft.nbt.CompoundTag tag = stack.getTag();
+        net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
         if (tag == null || !tag.contains(NTM_NEUTRON_NBT_KEY)) return 0F;
         return tag.getFloat(NTM_NEUTRON_NBT_KEY) * stack.getCount();
     }
 
     public static boolean isContaminated(net.minecraft.world.item.ItemStack stack) {
-        net.minecraft.nbt.CompoundTag tag = stack == null ? null : stack.getTag();
+        net.minecraft.nbt.CompoundTag tag = stack == null ? null : com.hbm_m.platform.PlatformHooks.getItemTag(stack);
         return tag != null && tag.contains(NTM_NEUTRON_NBT_KEY);
     }
 

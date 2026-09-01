@@ -29,7 +29,10 @@ public class RBMKHeaterMenu extends AbstractContainerMenu {
         super(ModMenuTypes.RBMK_HEATER_MENU.get(), id);
         this.blockEntity = be;
 
-        addSlot(new net.minecraftforge.items.SlotItemHandler(be.inventory, RBMKHeaterBlockEntity.SLOT_FLUID_ID, 41, 45));
+        // Kein Forge-SlotItemHandler: der Handler wird als Container gekapselt (kross-plattform).
+        net.minecraft.world.Container heaterContainer =
+                new com.hbm_m.inventory.ModItemStackHandlerContainer(be.inventory, be::setChanged);
+        addSlot(new net.minecraft.world.inventory.Slot(heaterContainer, RBMKHeaterBlockEntity.SLOT_FLUID_ID, 41, 45));
 
         // Original (ContainerRBMKHeater): 8+j*18, 84+i*18+20 / 8+i*18, 142+20 -- image is 176x186,
         // 20px taller than the standard 166px machine GUI.

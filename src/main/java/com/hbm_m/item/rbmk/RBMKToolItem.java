@@ -109,7 +109,7 @@ public class RBMKToolItem extends Item implements com.hbm_m.item.ITooltipProvide
     public static void linkDisplay(ItemStack stack, Level level,
             com.hbm_m.blockentity.machines.rbmk.RBMKDisplayBlockEntity display, Player player) {
         if (level.isClientSide) return;
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
         if (tag == null || !tag.contains(NBT_X)) {
             player.displayClientMessage(
                     Component.translatable("msg.hbm_m.rbmk_tool.no_position").withStyle(ChatFormatting.RED), true);

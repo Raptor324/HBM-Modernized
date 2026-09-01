@@ -19,9 +19,7 @@ import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import dev.architectury.event.events.common.TickEvent;
 
 /**
  * 1:1 port of {@code BossSpawnHandler.rollTheDice} - the parts of it whose mobs exist.
@@ -37,7 +35,6 @@ import net.minecraftforge.fml.common.Mod;
  * of them being the leader. Nothing in this port sets that flag yet, so that half is dormant;
  * see the note on {@link #RAD_MARK}.</p>
  */
-@Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class BossSpawnHandler {
 
     /** Persistent-data keys, mirroring the original's PERSISTED_NBT_TAG entries. */
@@ -59,10 +56,12 @@ public class BossSpawnHandler {
     private static final int ELEMENTAL_AMOUNT = 5;
     private static final double RAID_DISTANCE = 30D;
 
-    @SubscribeEvent
-    public static void onLevelTick(TickEvent.LevelTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) return;
-        if (!(event.level instanceof ServerLevel level)) return;
+    /** Registriert den Level-Tick auf dem plattformneutralen Architectury-Event. */
+    public static void init() {
+        TickEvent.SERVER_LEVEL_POST.register(BossSpawnHandler::onLevelTick);
+    }
+
+    private static void onLevelTick(ServerLevel level) {
         if (level.getDifficulty() == Difficulty.PEACEFUL) return;
         // isSurfaceWorld: no stalking in the Nether or the End.
         if (!level.dimensionType().natural()) return;
@@ -170,20 +169,26 @@ public class BossSpawnHandler {
     private static boolean trySpawn(ServerLevel level, Mob mob, double x, double y, double z) {
         mob.moveTo(x, y, z, level.random.nextFloat() * 360.0F, 0.0F);
 
+        //? if forge {
         var result = net.minecraftforge.event.ForgeEventFactory.checkSpawnPosition(mob, level,
                 MobSpawnType.EVENT);
         if (!result) return false;
 
         mob.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(x, y, z)),
                 MobSpawnType.EVENT, null, null);
+        //?} else {
+        /*// Kein plattformneutrales Gegenstueck zu checkSpawnPosition; hier nur finalisieren.
+        // finalizeSpawn verlor auf 1.21 den abschliessenden CompoundTag-Parameter.
+        mob.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(x, y, z)),
+                MobSpawnType.EVENT, null);
+        *///?}
         level.addFreshEntity(mob);
         return true;
     }
 
     private static CompoundTag persistentData(ServerPlayer player) {
-        //? if forge {
-        return player.getPersistentData();
-        //?}
+        // getPersistentData() ist Forge-spezifisch; PlayerPersistentData kapselt beide Plattformen.
+        return com.hbm_m.platform.PlayerPersistentData.get(player);
     }
 
     private static int getTimer(ServerPlayer player) {

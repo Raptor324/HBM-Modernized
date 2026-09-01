@@ -213,7 +213,11 @@ public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity
         super.writeNbtData(tag, registries);
         inputTank.writeToNBT(tag, "input");
         outputTank.writeToNBT(tag, "output");
+        //? if < 1.21.1 {
         tag.put("inventory", inventory.serializeNBT());
+        //?} else {
+        /*tag.put("inventory", inventory.serializeNBT(registries));
+        *///?}
     }
 
     @Override
@@ -221,6 +225,10 @@ public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity
         super.readNbtData(tag, registries);
         inputTank.readFromNBT(tag, "input");
         outputTank.readFromNBT(tag, "output");
+        //? if < 1.21.1 {
         if (tag.contains("inventory")) inventory.deserializeNBT(tag.getCompound("inventory"));
+        //?} else {
+        /*if (tag.contains("inventory")) inventory.deserializeNBT(registries, tag.getCompound("inventory"));
+        *///?}
     }
 }
