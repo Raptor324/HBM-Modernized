@@ -3,7 +3,9 @@ package com.hbm_m.datagen.recipes.custom;
 import java.util.function.Consumer;
 
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.item.tags_and_tiers.ModTags;
 
 import net.minecraft.data.recipes.FinishedRecipe;
@@ -46,101 +48,101 @@ public final class PressRecipeGenerator {
     }
 
     private static void generatePlates(Consumer<FinishedRecipe> writer) {
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_IRON.get()))
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.IRON, MaterialShape.PLATE, 1))
                 .stamp(ModTags.Items.STAMPS_PLATE)
                 .material(Items.IRON_INGOT)
                 .save(writer, "plate_iron");
 
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_COPPER.get()))
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.COPPER, MaterialShape.PLATE, 1))
                 .stamp(ModTags.Items.STAMPS_PLATE)
                 .material(Items.COPPER_INGOT)
                 .save(writer, "plate_copper");
 
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_GOLD.get()))
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.GOLD, MaterialShape.PLATE, 1))
                 .stamp(ModTags.Items.STAMPS_PLATE)
                 .material(Items.GOLD_INGOT)
                 .save(writer, "plate_gold");
 
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_STEEL.get()))
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.STEEL, MaterialShape.PLATE, 1))
                 .stamp(ModTags.Items.STAMPS_PLATE)
-                .material(ModItems.getIngot(ModIngots.STEEL).get())
+                .material(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
                 .save(writer, "plate_steel");
 
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_LEAD.get()))
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.LEAD, MaterialShape.PLATE, 1))
                 .stamp(ModTags.Items.STAMPS_PLATE)
-                .material(ModItems.getIngot(ModIngots.LEAD).get())
+                .material(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
                 .save(writer, "plate_lead");
 
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_ADVANCED_ALLOY.get()))
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.ADVANCED_ALLOY, MaterialShape.PLATE, 1))
                 .stamp(ModTags.Items.STAMPS_PLATE)
-                .material(ModItems.getIngot(ModIngots.ADVANCED_ALLOY).get())
+                .material(ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.INGOT))
                 .save(writer, "plate_advanced_alloy");
 
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_SATURNITE.get()))
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.SATURNITE, MaterialShape.PLATE, 1))
                 .stamp(ModTags.Items.STAMPS_PLATE)
-                .material(ModItems.getIngot(ModIngots.SATURNITE).get())
+                .material(ModMaterialItems.item(ModMaterials.SATURNITE, MaterialShape.INGOT))
                 .save(writer, "plate_saturnite");
 
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_SCHRABIDIUM.get()))
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.SCHRABIDIUM, MaterialShape.PLATE, 1))
                 .stamp(ModTags.Items.STAMPS_PLATE)
-                .material(ModItems.getIngot(ModIngots.SCHRABIDIUM).get())
+                .material(ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.INGOT))
                 .save(writer, "plate_schrabidium");
 
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_TITANIUM.get()))
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.TITANIUM, MaterialShape.PLATE, 1))
                 .stamp(ModTags.Items.STAMPS_PLATE)
-                .material(ModItems.getIngot(ModIngots.TITANIUM).get())
+                .material(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.INGOT))
                 .save(writer, "plate_titanium");
 
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_ALUMINUM.get()))
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.ALUMINUM, MaterialShape.PLATE, 1))
                 .stamp(ModTags.Items.STAMPS_PLATE)
-                .material(ModItems.getIngot(ModIngots.ALUMINUM).get())
+                .material(ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.INGOT))
                 .save(writer, "plate_aluminium");
 
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_GUNSTEEL.get()))
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.GUNSTEEL, MaterialShape.PLATE, 1))
                 .stamp(ModTags.Items.STAMPS_PLATE)
-                .material(ModItems.getIngot(ModIngots.GUNSTEEL).get())
+                .material(ModMaterialItems.item(ModMaterials.GUNSTEEL, MaterialShape.INGOT))
                 .save(writer, "plate_gunsteel");
 
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_COMBINE_STEEL.get()))
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.COMBINE_STEEL, MaterialShape.PLATE, 1))
                 .stamp(ModTags.Items.STAMPS_PLATE)
-                .material(ModItems.getIngot(ModIngots.COMBINE_STEEL).get())
+                .material(ModMaterialItems.item(ModMaterials.COMBINE_STEEL, MaterialShape.INGOT))
                 .save(writer, "plate_combine_steel");
 
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_GUNMETAL.get()))
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.GUNMETAL, MaterialShape.PLATE, 1))
                 .stamp(ModTags.Items.STAMPS_PLATE)
-                .material(ModItems.getIngot(ModIngots.GUNMETAL).get())
+                .material(ModMaterialItems.item(ModMaterials.GUNMETAL, MaterialShape.INGOT))
                 .save(writer, "plate_gunmetal");
 
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_DURA_STEEL.get()))
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.DURA_STEEL, MaterialShape.PLATE, 1))
                 .stamp(ModTags.Items.STAMPS_PLATE)
-                .material(ModItems.getIngot(ModIngots.DURA_STEEL).get())
+                .material(ModMaterialItems.item(ModMaterials.DURA_STEEL, MaterialShape.INGOT))
                 .save(writer, "plate_dura_steel");
     }
 
     private static void generateWires(Consumer<FinishedRecipe> writer) {
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.WIRE_COPPER.get(), 8))
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.COPPER, MaterialShape.WIRE, 8))
                 .stamp(ModTags.Items.STAMPS_WIRE)
                 .material(Items.COPPER_INGOT)
                 .save(writer, "wire_copper");
 
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.WIRE_GOLD.get(), 8))
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.GOLD, MaterialShape.WIRE, 8))
                 .stamp(ModTags.Items.STAMPS_WIRE)
                 .material(Items.GOLD_INGOT)
                 .save(writer, "wire_gold");
 
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.WIRE_ADVANCED_ALLOY.get(), 8))
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.ADVANCED_ALLOY, MaterialShape.WIRE, 8))
                 .stamp(ModTags.Items.STAMPS_WIRE)
-                .material(ModItems.getIngot(ModIngots.ADVANCED_ALLOY).get())
+                .material(ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.INGOT))
                 .save(writer, "wire_advanced_alloy");
 
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.WIRE_ALUMINIUM.get(), 8))
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.ALUMINIUM, MaterialShape.WIRE, 8))
                 .stamp(ModTags.Items.STAMPS_WIRE)
-                .material(ModItems.getIngot(ModIngots.ALUMINUM).get())
+                .material(ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.INGOT))
                 .save(writer, "wire_aluminium");
 
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.WIRE_CARBON.get(), 8))
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.CARBON, MaterialShape.WIRE, 8))
                 .stamp(ModTags.Items.STAMPS_WIRE)
-                .material(ModItems.getIngot(ModIngots.LEAD).get())
+                .material(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
                 .save(writer, "wire_carbon");
 
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.WIRE_FINE.get(), 8))
@@ -148,29 +150,29 @@ public final class PressRecipeGenerator {
                 .material(Items.IRON_INGOT)
                 .save(writer, "wire_fine");
 
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.WIRE_MAGNETIZED_TUNGSTEN.get(), 8))
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.MAGNETIZED_TUNGSTEN, MaterialShape.WIRE, 8))
                 .stamp(ModTags.Items.STAMPS_WIRE)
-                .material(ModItems.getIngot(ModIngots.MAGNETIZED_TUNGSTEN).get())
+                .material(ModMaterialItems.item(ModMaterials.MAGNETIZED_TUNGSTEN, MaterialShape.INGOT))
                 .save(writer, "wire_magnetized_tungsten");
 
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.WIRE_RED_COPPER.get(), 8))
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.RED_COPPER, MaterialShape.WIRE, 8))
                 .stamp(ModTags.Items.STAMPS_WIRE)
-                .material(ModItems.getIngot(ModIngots.RED_COPPER).get())
+                .material(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.INGOT))
                 .save(writer, "wire_red_copper");
 
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.WIRE_SCHRABIDIUM.get(), 8))
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.SCHRABIDIUM, MaterialShape.WIRE, 8))
                 .stamp(ModTags.Items.STAMPS_WIRE)
-                .material(ModItems.getIngot(ModIngots.SCHRABIDIUM).get())
+                .material(ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.INGOT))
                 .save(writer, "wire_schrabidium");
 
-        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.WIRE_TUNGSTEN.get(), 8))
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.TUNGSTEN, MaterialShape.WIRE, 8))
                 .stamp(ModTags.Items.STAMPS_WIRE)
-                .material(ModItems.getIngot(ModIngots.TUNGSTEN).get())
+                .material(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.INGOT))
                 .save(writer, "wire_tungsten");
 
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.SILICON_CIRCUIT.get()))
                 .stamp(ModTags.Items.STAMPS_CIRCUIT)
-                .material(ModItems.BILLET_SILICON.get())
+                .material(ModMaterialItems.item(ModMaterials.SILICON, MaterialShape.BILLET))
                 .save(writer, "silicon_circuit");
     }
 

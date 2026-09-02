@@ -179,24 +179,40 @@ public class EngineHandler {
                 //    FB пайплайна) и копируем DH-глубину туда СЫРОЙ GL-программой
                 //    (RawDhDepthCopy) — маскирование на неё не действует.
                 boolean irisActive = com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive();
-                if (irisActive) {
-                    try {
-                        net.minecraft.client.renderer.ShaderInstance contentShader =
-                                com.hbm_m.client.render.shader.FarContentShaders.resolveTexColor();
-                        if (contentShader != null) {
-                            contentShader.apply(); // биндит целевой FB пайплайна
+                // ГЕЙТ КОПИИ ГЛУБИНЫ (перф, семантика не меняется):
+                //  - без Iris копия нужна ТОЛЬКО дальним мешам ракет — nuke_cloud
+                //    окклюдится в шейдере сэмплированием DH DEPTH32F (Sampler1),
+                //    фуллскрин-проход с gl_FragDepth им не требуется;
+                //  - под Iris setDhShaderFarMode не выставляется: окклюзия ВСЕГО
+                //    дальнего контента — нативным depth-тестом против скопированной
+                //    глубины, поэтому копия нужна при любом дальнем контенте.
+                // hasTrackInBucket даёт только ложноположительные ответы, так что
+                // гейт консервативен: копия никогда не пропускается, когда нужна.
+                boolean farMeshes = com.hbm_m.client.missile.track.MissileTrackWorldRender
+                        .hasTrackInBucket(partialTick, splitSq, true);
+                boolean needDepthCopy = irisActive
+                        ? (hasParticles || farMeshes)
+                        : farMeshes;
+                if (needDepthCopy) {
+                    if (irisActive) {
+                        try {
+                            net.minecraft.client.renderer.ShaderInstance contentShader =
+                                    com.hbm_m.client.render.shader.FarContentShaders.resolveTexColor();
+                            if (contentShader != null) {
+                                contentShader.apply(); // биндит целевой FB пайплайна
+                            }
+                            com.hbm_m.client.render.shader.RawDhDepthCopy.copyIntoBoundFramebuffer(
+                                    com.hbm_m.client.compat.dh.DhClientState.dhNear(),
+                                    com.hbm_m.client.compat.dh.DhClientState.dhFar(),
+                                    com.hbm_m.client.compat.dh.DhOcclusionGpu.getDhActiveDepthTextureId());
+                        } catch (Throwable t) {
+                            com.hbm_m.main.MainRegistry.LOGGER.info("HBM iris depth copy failed: {}", t.toString());
                         }
-                        com.hbm_m.client.render.shader.RawDhDepthCopy.copyIntoBoundFramebuffer(
+                    } else {
+                        com.hbm_m.client.compat.dh.DhDepthCopy.copyToMain(
                                 com.hbm_m.client.compat.dh.DhClientState.dhNear(),
-                                com.hbm_m.client.compat.dh.DhClientState.dhFar(),
-                                com.hbm_m.client.compat.dh.DhOcclusionGpu.getDhActiveDepthTextureId());
-                    } catch (Throwable t) {
-                        com.hbm_m.main.MainRegistry.LOGGER.info("HBM iris depth copy failed: {}", t.toString());
+                                com.hbm_m.client.compat.dh.DhClientState.dhFar());
                     }
-                } else {
-                    com.hbm_m.client.compat.dh.DhDepthCopy.copyToMain(
-                            com.hbm_m.client.compat.dh.DhClientState.dhNear(),
-                            com.hbm_m.client.compat.dh.DhClientState.dhFar());
                 }
 
                 // Дальние меши ракет: расширенная проекция (нет клипа far plane),

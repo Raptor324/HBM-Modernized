@@ -1,18 +1,18 @@
 package com.hbm_m.datagen;
 //? if forge {
 
-import static com.hbm_m.block.ModBlocks.ENABLED_INGOT_BLOCKS;
-import static com.hbm_m.block.ModBlocks.getIngotBlock;
-
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
-import com.hbm_m.item.tags_and_tiers.ModPowders;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.lib.RefStrings;
 
 import dev.architectury.registry.registries.RegistrySupplier;
@@ -28,27 +28,96 @@ public class ModLanguageProviderEn extends LanguageProvider {
         super(output, RefStrings.MODID, "en_us");
     }
 
+    /** Выделено из addTranslations: метод упирался в лимит 64КБ байткода. */
+    private void addPlateTranslations() {
+        // Дозарегистрированные провода (ориг. wire_fine, 4545/30 MAT_STEEL)
+        add(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.WIRE), "Steel Wire");
+        // Провода без аналога в оригинале (используются в recipes Arc Welder).
+        add(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.WIRE), "Titanium Wire");
+        add(ModMaterialItems.item(ModMaterials.SATURNITE, MaterialShape.WIRE), "Saturnite Wire");
+        add(ModMaterialItems.item(ModMaterials.COMBINE_STEEL, MaterialShape.WIRE), "Combine Steel Wire");
+        add(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.WIRE), "Iron Wire");
+        // Дозарегистрированные литые пластины (ориг. plate_cast, 4531; формат ориг. "Cast %s Plate")
+        add(ModMaterialItems.item(ModMaterials.SCHRABIDATE, MaterialShape.PLATE_CAST), "Cast Schrabidate Plate");
+        add(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE_CAST), "Cast Lead Plate");
+        add(ModMaterialItems.item(ModMaterials.FERROURANIUM, MaterialShape.PLATE_CAST), "Cast Ferrouranium Plate");
+        add(ModMaterialItems.item(ModMaterials.WEAPONSTEEL, MaterialShape.PLATE_CAST), "Cast Weapon Steel Plate");
+        add(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), "Cast Steel Plate");
+        add(ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.PLATE_CAST), "Cast Schrabidium Plate");
+        add(ModMaterialItems.item(ModMaterials.SATURNITE, MaterialShape.PLATE_CAST), "Cast Saturnite Plate");
+        add(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE_CAST), "Cast Titanium Plate");
+        add(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.PLATE_CAST), "Cast Tungsten Plate");
+        add(ModMaterialItems.item(ModMaterials.DESH, MaterialShape.PLATE_CAST), "Cast Desh Plate");
+        add(ModMaterialItems.item(ModMaterials.DURA_STEEL, MaterialShape.PLATE_CAST), "Cast High-Speed Steel Plate");
+        add(ModMaterialItems.item(ModMaterials.ZIRCONIUM, MaterialShape.PLATE_CAST), "Cast Zirconium Plate");
+        add(ModMaterialItems.item(ModMaterials.OSMIRIDIUM, MaterialShape.PLATE_CAST), "Cast Osmiridium Plate");
+        add(ModMaterialItems.item(ModMaterials.TCALLOY, MaterialShape.PLATE_CAST), "Cast Technetium Steel Plate");
+        add(ModMaterialItems.item(ModMaterials.CDALLOY, MaterialShape.PLATE_CAST), "Cast Cadmium Steel Plate");
+        add(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE_CAST), "Cast Iron Plate");
+        add(ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.PLATE_CAST), "Cast Gold Plate");
+        add(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE_CAST), "Cast Copper Plate");
+        add(ModMaterialItems.item(ModMaterials.ALUMINIUM, MaterialShape.PLATE_CAST), "Cast Aluminium Plate");
+        add(ModMaterialItems.item(ModMaterials.CMB, MaterialShape.PLATE_CAST), "Cast Combine Steel Plate");
+        add(ModMaterialItems.item(ModMaterials.ABRONZE, MaterialShape.PLATE_CAST), "Cast Arsenic Bronze Plate");
+        add(ModMaterialItems.item(ModMaterials.BBRONZE, MaterialShape.PLATE_CAST), "Cast Bismuth Bronze Plate");
+        add(ModMaterialItems.item(ModMaterials.STAR_METAL, MaterialShape.PLATE_CAST), "Cast Starmetal Plate");
+        add(ModMaterialItems.item(ModMaterials.ALLOY, MaterialShape.PLATE_CAST), "Cast Advanced Alloy Plate");
+        // Сварные пластины (ориг. plate_welded, 4532; формат ориг. "Welded %s Plate")
+        add(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_WELDED), "Welded Steel Plate");
+        add(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE_WELDED), "Welded Titanium Plate");
+        add(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.PLATE_WELDED), "Welded Tungsten Plate");
+        add(ModMaterialItems.item(ModMaterials.ZIRCONIUM, MaterialShape.PLATE_WELDED), "Welded Zirconium Plate");
+        add(ModMaterialItems.item(ModMaterials.OSMIRIDIUM, MaterialShape.PLATE_WELDED), "Welded Osmiridium Plate");
+        add(ModMaterialItems.item(ModMaterials.TCALLOY, MaterialShape.PLATE_WELDED), "Welded Technetium Steel Plate");
+        add(ModMaterialItems.item(ModMaterials.CDALLOY, MaterialShape.PLATE_WELDED), "Welded Cadmium Steel Plate");
+        add(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE_WELDED), "Welded Iron Plate");
+        add(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE_WELDED), "Welded Copper Plate");
+        add(ModMaterialItems.item(ModMaterials.ALUMINIUM, MaterialShape.PLATE_WELDED), "Welded Aluminium Plate");
+        add(ModMaterialItems.item(ModMaterials.CMB, MaterialShape.PLATE_WELDED), "Welded Combine Steel Plate");
+    }
+
+    /** Выделено из addTranslations: метод упирался в лимит 64КБ байткода. */
+    private void addWarheadTranslations() {
+        add(ModItems.WARHEAD_BUSTER_LARGE.get(), "Large Bunker Buster Warhead");
+        add(ModItems.WARHEAD_BUSTER_MEDIUM.get(), "Medium Bunker Buster Warhead");
+        add(ModItems.WARHEAD_BUSTER_SMALL.get(), "Small Bunker Buster Warhead");
+        add(ModItems.WARHEAD_CLUSTER_LARGE.get(), "Large Cluster Warhead");
+        add(ModItems.WARHEAD_CLUSTER_MEDIUM.get(), "Medium Cluster Warhead");
+        add(ModItems.WARHEAD_CLUSTER_SMALL.get(), "Small Cluster Warhead");
+        add(ModItems.WARHEAD_GENERIC_LARGE.get(), "Large Warhead");
+        add(ModItems.WARHEAD_GENERIC_MEDIUM.get(), "Medium Warhead");
+        add(ModItems.WARHEAD_GENERIC_SMALL.get(), "Small Warhead");
+        add(ModItems.WARHEAD_INCENDIARY_LARGE.get(), "Large Incendiary Warhead");
+        add(ModItems.WARHEAD_INCENDIARY_MEDIUM.get(), "Medium Incendiary Warhead");
+        add(ModItems.WARHEAD_INCENDIARY_SMALL.get(), "Small Incendiary Warhead");
+        add(ModItems.WARHEAD_MIRV.get(), "Thermonuclear Warhead");
+        add(ModItems.WARHEAD_NUCLEAR.get(), "Nuclear Warhead");
+        add(ModItems.WARHEAD_VOLCANO.get(), "Tectonic Warhead");
+    }
+
     private void addIngotPowderTranslations(Set<ResourceLocation> translatedPowders) {
-        for (ModIngots ingot : ModIngots.values()) {
-            if (ModItems.getPowder(ingot) != null) {
-                var powder = ModItems.getPowder(ingot);
-                if (!translatedPowders.contains(powder.getId())) {
-                    add(powder.get(), buildPowderName(ingot, false));
-                }
+        for (ModMaterials mat : ModMaterials.values()) {
+            RegistrySupplier<Item> powder = ModMaterialItems.get(mat, MaterialShape.POWDER);
+            if (powder != null && powder.isPresent() && !translatedPowders.contains(powder.getId())) {
+                add(powder.get(), buildPowderName(mat, false));
             }
-            ModItems.getTinyPowder(ingot).ifPresent(tiny ->
-                    add(tiny.get(), buildPowderName(ingot, true)));
+            RegistrySupplier<Item> tiny = ModMaterialItems.get(mat, MaterialShape.POWDER_TINY);
+            if (tiny != null && tiny.isPresent()) {
+                add(tiny.get(), buildPowderName(mat, true));
+            }
         }
 
         add(ModItems.DUST.get(), "Dust");
         add(ModItems.DUST_TINY.get(), "Tiny Dust");
+        // 4375 fallout, item.fallout.name оригинала (добавлен сюда: прошлый add лежал
+        // в никогда не вызывавшемся addIngotPowderTranslations — ключа в lang не было).
         add(ModItems.FALLOUT.get(), "Pile of Fallout");
     }
 
-    private String buildPowderName(ModIngots ingot, boolean tiny) {
-        String base = ingot.getTranslation("en_us");
+    private String buildPowderName(ModMaterials mat, boolean tiny) {
+        String base = mat.getTranslation("en_us");
         if (base == null || base.isBlank()) {
-            base = formatName(ingot.getName());
+            base = formatName(mat.getId());
         }
 
         String replaced = base.replace("Ingot", "Powder").replace("ingot", "powder");
@@ -70,20 +139,20 @@ public class ModLanguageProviderEn extends LanguageProvider {
     }
 
     private void addIngotBlockTranslations(Set<ResourceLocation> translatedBlocks) {
-        for (ModIngots ingot : ModIngots.values()) {
-            if (ENABLED_INGOT_BLOCKS.contains(ingot.getName())) {
-                RegistrySupplier<Block> block = getIngotBlock(ingot);
+        for (ModMaterials mat : ModMaterials.values()) {
+            if (mat.has(MaterialShape.BLOCK)) {
+                RegistrySupplier<Block> block = ModBlocks.getIngotBlock(mat);
                 if (block != null && !translatedBlocks.contains(block.getId())) {
-                    add(block.get(), buildBlockName(ingot));
+                    add(block.get(), buildBlockName(mat));
                 }
             }
         }
     }
 
-    private String buildBlockName(ModIngots ingot) {
-        String base = ingot.getTranslation("en_us");
+    private String buildBlockName(ModMaterials mat) {
+        String base = mat.getTranslation("en_us");
         if (base == null || base.isBlank()) {
-            base = formatName(ingot.getName());
+            base = formatName(mat.getId());
         }
 
         String replaced = base.replace("Ingot", "Block").replace("ingot", "block");
@@ -115,10 +184,10 @@ public class ModLanguageProviderEn extends LanguageProvider {
         addConfigTranslations();
 
         // Автоматическая локализация слитков
-        for (ModIngots ingot : ModIngots.values()) {
-            RegistrySupplier<Item> ingotItem = ModItems.getIngot(ingot);
+        for (ModMaterials mat : ModMaterials.values()) {
+            RegistrySupplier<Item> ingotItem = ModMaterialItems.get(mat, MaterialShape.INGOT);
             if (ingotItem != null && ingotItem.isPresent()) {
-                String translation = ingot.getTranslation("en_us");
+                String translation = mat.getTranslation("en_us");
                 if (translation != null) {
                     add(ingotItem.get(), translation);
                 }
@@ -127,45 +196,82 @@ public class ModLanguageProviderEn extends LanguageProvider {
 
         Set<ResourceLocation> translatedPowders = new HashSet<>();
 
-        // Автоматическая локализация порошков
-        for (ModPowders powders : ModPowders.values()) {
-            RegistrySupplier<Item> powderItem = ModItems.getPowders(powders);
+        // Автоматическая локализация порошков (ручные оверрайды шести порошков)
+        Map<ModMaterials, String> powderOverrides = new LinkedHashMap<>();
+        powderOverrides.put(ModMaterials.IRON, "Iron Powder");
+        powderOverrides.put(ModMaterials.GOLD, "Golden Powder");
+        powderOverrides.put(ModMaterials.COAL, "Coal Powder");
+        powderOverrides.put(ModMaterials.CEMENT, "Cement");
+        powderOverrides.put(ModMaterials.ALUMINUM, "Aluminum Powder");
+        powderOverrides.put(ModMaterials.LIMESTONE, "Limestone Powder");
+        // Порошки, принятые в единый реестр из ручных регистраций (имена 1:1)
+        powderOverrides.put(ModMaterials.COPPER, "Copper Powder");
+        powderOverrides.put(ModMaterials.DIAMOND, "Diamond Powder");
+        powderOverrides.put(ModMaterials.EMERALD, "Emerald Powder");
+        powderOverrides.put(ModMaterials.LAPIS, "Lapis Powder");
+        powderOverrides.put(ModMaterials.QUARTZ, "Quartz Powder");
+        powderOverrides.put(ModMaterials.LITHIUM, "Lithium Powder");
+        // Дозарегистрированные полноразмерные порошки (имена 1:1 из en_US.lang оригинала)
+        powderOverrides.put(ModMaterials.I131, "Iodine-131 Powder");
+        powderOverrides.put(ModMaterials.XE135, "Xenon-135 Powder");
+        powderOverrides.put(ModMaterials.CS137, "Caesium-137 Powder");
+        powderOverrides.put(ModMaterials.PALEOGENITE, "Paleogenite Powder");
+        powderOverrides.put(ModMaterials.AT209, "Astatine-209 Powder");
+        // Ориг. item.powder_lanthanium.name = "Lanthanium Powder" ("Semi-Stable" — только слиток).
+        powderOverrides.put(ModMaterials.LANTHANIUM, "Lanthanium Powder");
+        for (Map.Entry<ModMaterials, String> entry : powderOverrides.entrySet()) {
+            RegistrySupplier<Item> powderItem = ModMaterialItems.get(entry.getKey(), MaterialShape.POWDER);
             if (powderItem != null && powderItem.isPresent()) {
-                String translation = powders.getTranslation("en_us");
-                if (translation != null) {
-                    add(powderItem.get(), translation);
-                    translatedPowders.add(powderItem.getId());
-                }
+                add(powderItem.get(), entry.getValue());
+                translatedPowders.add(powderItem.getId());
+            }
+        }
+
+        // Tiny-порошки с историческими именами (имена 1:1 из ручных регистраций)
+        Set<ResourceLocation> translatedTinies = new HashSet<>();
+        Map<ModMaterials, String> tinyOverrides = new LinkedHashMap<>();
+        tinyOverrides.put(ModMaterials.COAL, "Tiny Pile of Coal Powder");
+        tinyOverrides.put(ModMaterials.CS137, "Tiny Cesium-137 Powder");
+        tinyOverrides.put(ModMaterials.I131, "Tiny Iodine-131 Powder");
+        tinyOverrides.put(ModMaterials.LITHIUM, "Tiny Lithium Powder");
+        tinyOverrides.put(ModMaterials.PALEOGENITE, "Tiny Paleogenite Powder");
+        tinyOverrides.put(ModMaterials.XE135, "Tiny Xenon-135 Powder");
+        tinyOverrides.put(ModMaterials.LANTHANIUM, "Tiny Pile of Lanthanium Powder"); // item.powder_lanthanium_tiny.name
+        for (Map.Entry<ModMaterials, String> entry : tinyOverrides.entrySet()) {
+            RegistrySupplier<Item> tinyItem = ModMaterialItems.get(entry.getKey(), MaterialShape.POWDER_TINY);
+            if (tinyItem != null && tinyItem.isPresent()) {
+                add(tinyItem.get(), entry.getValue());
+                translatedTinies.add(tinyItem.getId());
             }
         }
 
         // Автоматическая локализация порошков из слитков
-        for (ModIngots ingot : ModIngots.values()) {
-            RegistrySupplier<Item> powder = ModItems.getPowder(ingot);
+        for (ModMaterials mat : ModMaterials.values()) {
+            RegistrySupplier<Item> powder = ModMaterialItems.get(mat, MaterialShape.POWDER);
             if (powder != null && powder.isPresent() && !translatedPowders.contains(powder.getId())) {
-                add(powder.get(), buildPowderName(ingot, false));
+                add(powder.get(), buildPowderName(mat, false));
             }
-            ModItems.getTinyPowder(ingot).ifPresent(tiny -> {
-                if (tiny != null && tiny.isPresent()) {
-                    add(tiny.get(), buildPowderName(ingot, true));
-                }
-            });
+            RegistrySupplier<Item> tiny = ModMaterialItems.get(mat, MaterialShape.POWDER_TINY);
+            if (tiny != null && tiny.isPresent() && !translatedTinies.contains(tiny.getId())) {
+                add(tiny.get(), buildPowderName(mat, true));
+            }
         }
 
         // DEV / Боеприпасы / Порошки (из старой ветки else)
+        // Имена — дословно из en_US.lang оригинала (item.powder_*.name).
         add(ModItems.POWDER_SAWDUST.get(), "Sawdust");
-        add(ModItems.POWDER_YELLOWCAKE.get(), "Yellowcake Powder");
-        add(ModItems.POWDER_BALEFIRE.get(), "Balefire Powder");
-        add(ModItems.POWDER_PALEOGENITE.get(), "Paleogenite Powder");
+        add(ModItems.POWDER_YELLOWCAKE.get(), "Yellowcake");
+        add(ModItems.POWDER_BALEFIRE.get(), "Thermonuclear Ashes");
         add(ModItems.POWDER_THERMITE.get(), "Thermite");
         add(ModItems.POWDER_FERTILIZER.get(), "Fertilizer");
         add(ModItems.POWDER_FLUX.get(), "Flux");
-        add(ModItems.POWDER_MAGIC.get(), "Magic Powder");
-        add(ModItems.POWDER_ICE.get(), "Powdered Ice");
-        add(ModItems.POWDER_SPARK_MIX.get(), "Spark Mix");
+        add(ModItems.POWDER_MAGIC.get(), "Pulverized Enchantment");
+        add(ModItems.POWDER_ICE.get(), "Cryo Powder");
+        add(ModItems.POWDER_SPARK_MIX.get(), "Spark Blend");
         add(ModItems.POWDER_SEMTEX_MIX.get(), "Semtex Mix");
-        add(ModItems.POWDER_DESH_READY.get(), "Desh Ready Powder");
-        add(ModItems.POWDER_COLTAN.get(), "Coltan Powder");
+        add(ModItems.POWDER_DESH_READY.get(), "DeshReady™ Blend");
+        // Оригинал: 4310 powder_coltan_ore "Crushed Coltan" / 4311 powder_coltan "Purified Tantalite".
+        add(ModItems.POWDER_COLTAN.get(), "Crushed Coltan");
         add(ModItems.TURRET_AMMO.get(), "Turret Ammo");
         add(ModItems.AMMO_9MM_SP.get(), "9mm Round (Soft Point)");
         add(ModItems.AMMO_9MM_FMJ.get(), "9mm Round (FMJ)");
@@ -208,7 +314,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("item.hbm_m.missile_schrabidium", "Schrabidium Missile");
         add("item.hbm_m.missile_bhole", "Black Hole Missile");
         add(ModItems.BLACK_HOLE.get(), "Miniature Black Hole");
-        add("death.attack.black_hole", "%1$s was spaghettified.");
         add("item.hbm_m.missile_taint", "Taint Missile");
         add("item.hbm_m.missile_emp", "EMP Missile");
         add("item.hbm_m.missile_generic", "Generic Missile");
@@ -291,7 +396,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("container.hbm_m.nuke_boy", "Little Boy");
         add("container.hbm_m.nuke_mike", "Ivy Mike");
         add("container.hbm_m.nuke_tsar", "Tsar Bomba");
-        add(ModItems.EARLY_EXPLOSIVE_LENSES.get(), "Early Explosive Lenses");
         add(ModItems.EXPLOSIVE_LENSES.get(), "Explosive Lenses");
         add(ModBlocks.NUKE_FLEIJA.get(), "F.L.E.I.J.A.");
         add("container.hbm_m.nuke_fleija", "F.L.E.I.J.A.");
@@ -518,16 +622,43 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.BATTERY_SPARK_CELL_10000.get(), "Spark Energy Cell x10000");
         add(ModItems.BATTERY_SPARK_CELL_POWER.get(), "Spark Power Cell");
 
-        add(ModItems.WIRE_RED_COPPER.get(), "Red Copper Wire");
-        add(ModItems.WIRE_COPPER.get(), "Copper Wire");
-        add(ModItems.WIRE_ALUMINIUM.get(), "Aluminium Wire");
-        add(ModItems.WIRE_GOLD.get(), "Golden Wire");
-        add(ModItems.WIRE_TUNGSTEN.get(), "Tungsten Wire");
-        add(ModItems.WIRE_MAGNETIZED_TUNGSTEN.get(), "Magnetized Tungsten Wire");
+        // Ориг. wire_fine meta31 (MAT_MINGRADE) = "Minecraft Grade Copper Wire" (aot-текстура wire_red_copper).
+        add(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE), "Minecraft Grade Copper Wire");
+        add(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE_DENSE), "Dense Minecraft Grade Copper Wire");
+        add(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.WIRE), "Copper Wire");
+        add(ModMaterialItems.item(ModMaterials.ALUMINIUM, MaterialShape.WIRE), "Aluminium Wire");
+        add(ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.WIRE), "Golden Wire");
+        add(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.WIRE), "Tungsten Wire");
+        add(ModMaterialItems.item(ModMaterials.MAGNETIZED_TUNGSTEN, MaterialShape.WIRE), "Magnetized Tungsten Wire");
         add(ModItems.WIRE_FINE.get(), "Fine Wire");
-        add(ModItems.WIRE_CARBON.get(), "Lead Wire");
-        add(ModItems.WIRE_SCHRABIDIUM.get(), "Shrabidium Wire");
-        add(ModItems.WIRE_ADVANCED_ALLOY.get(), "Advanced Alloy Wire");
+        add(ModMaterialItems.item(ModMaterials.CARBON, MaterialShape.WIRE), "Carbon Wire");
+        add(ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.WIRE), "Shrabidium Wire");
+        add(ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.WIRE), "Advanced Alloy Wire");
+        // Дозарегистрированные провода (ориг. wire_fine, 4545: PB/ZR)
+        add(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.WIRE), "Lead Wire");
+        add(ModMaterialItems.item(ModMaterials.ZIRCONIUM, MaterialShape.WIRE), "Zirconium Wire");
+        // Дозарегистрированные плотные провода (ориг. wire_dense, 4546)
+        add(ModMaterialItems.item(ModMaterials.SCHRABIDATE, MaterialShape.WIRE_DENSE), "Dense Schrabidate Wire");
+        add(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.WIRE_DENSE), "Dense Tungsten Wire");
+        add(ModMaterialItems.item(ModMaterials.NEODYMIUM, MaterialShape.WIRE_DENSE), "Dense Neodymium Wire");
+        add(ModMaterialItems.item(ModMaterials.NIOBIUM, MaterialShape.WIRE_DENSE), "Dense Niobium Wire");
+        add(ModMaterialItems.item(ModMaterials.STAR_METAL, MaterialShape.WIRE_DENSE), "Dense Star Metal Wire");
+        add(ModMaterialItems.item(ModMaterials.BSCCO, MaterialShape.WIRE_DENSE), "Dense BSCCO Wire");
+        add(ModMaterialItems.item(ModMaterials.MAGNETIZED_TUNGSTEN, MaterialShape.WIRE_DENSE), "Dense Magnetized Tungsten Wire");
+        add(ModMaterialItems.item(ModMaterials.DNT, MaterialShape.WIRE_DENSE), "Dense Dineutronium Wire"); // hbmmat.dineutronium
+        // Дозарегистрированные плотные провода (формат ориг. item.wire_dense.name = "Dense %s Wire")
+        add(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.WIRE_DENSE), "Dense Steel Wire");
+        add(ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.WIRE_DENSE), "Dense Advanced Alloy Wire");
+        add(ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.WIRE_DENSE), "Dense Schrabidium Wire");
+        add(ModMaterialItems.item(ModMaterials.SATURNITE, MaterialShape.WIRE_DENSE), "Dense Saturnite Wire");
+        add(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.WIRE_DENSE), "Dense Lead Wire");
+        add(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.WIRE_DENSE), "Dense Titanium Wire");
+        add(ModMaterialItems.item(ModMaterials.COMBINE_STEEL, MaterialShape.WIRE_DENSE), "Dense Combine Steel Wire");
+        add(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.WIRE_DENSE), "Dense Iron Wire");
+        add(ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.WIRE_DENSE), "Dense Gold Wire");
+        add(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.WIRE_DENSE), "Dense Copper Wire");
+        add(ModMaterialItems.item(ModMaterials.ALUMINIUM, MaterialShape.WIRE_DENSE), "Dense Aluminium Wire");
+        addPlateTranslations();
 
         add(ModItems.STAMP_STONE_FLAT.get(), "Stone Flat Stamp");
         add(ModItems.STAMP_STONE_PLATE.get(), "Stone Plate Stamp");
@@ -1084,13 +1215,26 @@ public class ModLanguageProviderEn extends LanguageProvider {
 
         add(ModItems.DUST.get(), "Dust");
         add(ModItems.DUST_TINY.get(), "Tiny Pile of Dust");
-        add(ModItems.COAL_POWDER_TINY.get(), "Tiny Pile of Coal Powder");
-        add(ModItems.SCRAP.get(), "Scrap");
-        add("item.hbm_m.copper_powder", "Copper Powder");
-        add("item.hbm_m.cs137_powder_tiny", "Tiny Cesium-137 Powder");
-        add("item.hbm_m.diamond_powder", "Diamond Powder");
-        add("item.hbm_m.emerald_powder", "Emerald Powder");
-        add("item.hbm_m.fire_powder", "Fire Powder");
+        // 4375 fallout, item.fallout.name оригинала (прошлый add лежал в никогда
+        // не вызывавшемся addIngotPowderTranslations — ключа в lang не было).
+        add(ModItems.FALLOUT.get(), "Pile of Fallout");
+        add(ModMaterialItems.item(ModMaterials.SCRAP, MaterialShape.SCRAP), "Scrap");
+        // Литейные отходы (порт ItemScraps, 4765; имена из таблицы ModMaterialItems)
+        for (com.hbm_m.item.material.ModMaterialItems.ScrapEntry scrap : com.hbm_m.item.material.ModMaterialItems.scrapEntries()) {
+            Item scrapItem = com.hbm_m.item.material.ModMaterialItems.scrapItem(scrap.mat());
+            if (scrapItem != null) add(scrapItem, scrap.en());
+        }
+        // Ориг. item.powder_fire.name = "Red Phosphorus" (текстура powder_red_phosphorus).
+        add("item.hbm_m.fire_powder", "Red Phosphorus");
+        // Ключи matshape.* оригинала (en_US.lang 1718-1725) — тултип количества ScrapItem.
+        add("matshape.block", "%s Block");
+        add("matshape.blocks", "%s Blocks");
+        add("matshape.ingot", "%s Ingot");
+        add("matshape.ingots", "%s Ingots");
+        add("matshape.nugget", "%s Nugget");
+        add("matshape.nuggets", "%s Nuggets");
+        add("matshape.quantum", "%s Quantum");
+        add("matshape.quanta", "%s Quanta");
         add("item.hbm_m.fluid_barrel", "Fluid Barrel: %s");
         add("item.hbm_m.fluid_barrel.empty", "Empty Fluid Barrel");
         add("item.hbm_m.fluid_barrel_infinite", "Infinite Fluid Barrel");
@@ -1102,7 +1246,8 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.PIPE_TUNGSTEN.get(), "Tungsten Pipe");
         add(ModItems.PIPE_TITANIUM.get(), "Titanium Pipe");
         add(ModItems.PIPE_ALUMINUM.get(), "Aluminum Pipe");
-        add(ModItems.PIPE_DURA_STEEL.get(), "Dura Steel Pipe");
+        // Ориг. pipentm = "%s Pipe", MAT_DURA -> hbmmat.durasteel "High-Speed Steel".
+        add(ModItems.PIPE_DURA_STEEL.get(), "High-Speed Steel Pipe");
         add("item.hbm_m.fluid_identifier", "Multi Fluid Identifier: %s");
         add("item.hbm_m.fluid_identifier.none", "Multi Fluid Identifier");
         add("item.hbm_m.fluid_identifier.info", "Universal fluid identifier for:");
@@ -1145,11 +1290,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("fluid.hbm_m.toxin.estradiol.line2", "Systemic effects on exposure");
         add("fluid.hbm_m.toxin.redmud.line1", "Caustic and heavy-metal exposure");
         add("fluid.hbm_m.toxin.redmud.line2", "Skin burns and systemic intoxication");
-        add("item.hbm_m.i131_powder_tiny", "Tiny Iodine-131 Powder");
-        add("item.hbm_m.lapis_powder", "Lapis Powder");
         add("item.hbm_m.lignite_powder", "Lignite Powder");
-        add("item.hbm_m.lithium_powder", "Lithium Powder");
-        add("item.hbm_m.lithium_powder_tiny", "Tiny Lithium Powder");
         add("item.hbm_m.nuclear_waste_long_depleted_tiny", "Tiny Depleted Long-lived Nuclear Waste");
         add("item.hbm_m.nuclear_waste_long_tiny", "Tiny Long-lived Nuclear Waste");
         add("item.hbm_m.nuclear_waste_short_depleted_tiny", "Tiny Depleted Short-lived Nuclear Waste");
@@ -1157,9 +1298,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("item.hbm_m.nuclear_waste_tiny", "Tiny Nuclear Waste");
         add("item.hbm_m.nuclear_waste_vitrified_tiny", "Tiny Vitrified Nuclear Waste");
         add("item.hbm_m.nugget_mercury_tiny", "Tiny Mercury Nugget");
-        add("item.hbm_m.paleogenite_powder_tiny", "Tiny Paleogenite Powder");
-        add("item.hbm_m.quartz_powder", "Quartz Powder");
-        add("item.hbm_m.xe135_powder_tiny", "Tiny Xenon-135 Powder");
         add("fluid.hbm_m.water", "Water");
         add("fluid.hbm_m.air", "Air");
         add("fluid.hbm_m.crude_oil", "Crude Oil");
@@ -1317,8 +1455,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("fluid.hbm_m.death", "Death");
         add("fluid.hbm_m.pain", "Pain");
         add("fluid.hbm_m.stellar_flux", "Stellar Flux");
-        add("fluid.hbm_m.bromide", "Bromide");
-        add(ModItems.BILLET_PLUTONIUM.get(), "Plutonium Billet");
+        add(ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.BILLET), "Plutonium Billet");
 
         add(ModItems.GAS_EMPTY.get(), "Empty Gas Tank");
         add(ModItems.DUCTTAPE.get(), "Duct Tape");
@@ -1331,9 +1468,81 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.BLADE_TITANIUM.get(), "Titanium Blades");
         add(ModItems.BLADE_ALLOY.get(), "Advanced Alloy Blades");
         add(ModItems.BORAX.get(), "Borax");
+        // Заглушки диапазона вкладки Parts (id 4098–4500, раздел C отчёта parts_tab_report.md)
+        add(ModItems.INGOT_HES.get(), "Highly Enriched Schrabidium Fuel Ingot");
+        add(ModItems.INGOT_LES.get(), "Low Enriched Schrabidium Fuel Ingot");
+        add(ModItems.INGOT_REDSTONE.get(), "Redstone Ingot");
+        add(ModItems.INGOT_BORAX.get(), "Borax Ingot");
+        add(ModItems.INGOT_SODIUM.get(), "Sodium Ingot");
+        add(ModItems.INGOT_SLAG.get(), "Slag Ingot");
+        add(ModItems.COAL_COKE.get(), "Coal Coke");
+        add(ModItems.LIGNITE_COKE.get(), "Lignite Coke");
+        add(ModItems.COAL_BRIQUETTE.get(), "Coal Briquette");
+        add(ModItems.LIGNITE_BRIQUETTE.get(), "Lignite Briquette");
+        add(ModItems.SAWDUST_BRIQUETTE.get(), "Sawdust Briquette");
+        add(ModItems.NITER.get(), "Niter");
+        // Ориг. 4311 powder_coltan = "Purified Tantalite" (Crushed Coltan — это 4310 powder_coltan_ore).
+        add(ModItems.POWDER_COLTAN_PURE.get(), "Purified Tantalite");
+        add(ModItems.POWDER_TEKTITE.get(), "Tektite Powder");
+        add(ModItems.POWDER_IMPURE_OSMIRIDIUM.get(), "Impure Osmiridium Powder");
+        add(ModItems.POWDER_CHLOROPHYTE.get(), "Chlorophyte Powder");
+        add(ModItems.POWDER_TCALLOY.get(), "Technetium Steel Powder");
+        add(ModItems.POWDER_POISON.get(), "Poison Powder");
+        add(ModItems.MOONSTONE.get(), "Moonstone");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_COAL.get(), "Coal Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_LIGNITE.get(), "Lignite Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_IRON.get(), "Iron Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_GOLD.get(), "Gold Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_REDSTONE.get(), "Redstone Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_BAUXITE.get(), "Bauxite Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_CRYOLITE.get(), "Cryolite Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_URANIUM.get(), "Uranium Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_U238.get(), "Uranium-238 Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_PO210.get(), "Polonium-210 Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_TC99.get(), "Technetium-99 Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_TITANIUM.get(), "Titanium Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_TUNGSTEN.get(), "Tungsten Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_ALUMINIUM.get(), "Aluminium Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_BISMUTH.get(), "Bismuth Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_NEODYMIUM.get(), "Neodymium Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_NIOBIUM.get(), "Niobium Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_BERYLLIUM.get(), "Beryllium Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_COBALT.get(), "Cobalt Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_BORON.get(), "Boron Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_BORAX.get(), "Borax Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_ZIRCONIUM.get(), "Zirconium Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_SODIUM.get(), "Sodium Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_STRONTIUM.get(), "Strontium Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_LITHIUM.get(), "Lithium Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_SULFUR.get(), "Sulfur Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_FLUORITE.get(), "Fluorite Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_CHLOROCALCITE.get(), "Chlorocalcite Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_CINNABAR.get(), "Cinnabar Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_SILICON.get(), "Silicon Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_RARE_EARTH.get(), "Rare Earth Bedrock Ore Fragment");
+        // Дозарегистрированные 13 фрагментов бедрок-руды
+        add(ModItems.BEDROCK_ORE_FRAGMENT_DIAMOND.get(), "Diamond Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_THORIUM.get(), "Thorium Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_RA226.get(), "Radium-226 Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_COPPER.get(), "Copper Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_LEAD.get(), "Lead Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_TANTALIUM.get(), "Tantalium Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_EMERALD.get(), "Emerald Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_LANTHANIUM.get(), "Lanthanium Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_SODALITE.get(), "Sodalite Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_KNO.get(), "KNO Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_PHOSPHORUS.get(), "Phosphorus Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_MOLYSITE.get(), "Molysite Bedrock Ore Fragment");
+        add(ModItems.BEDROCK_ORE_FRAGMENT_ASBESTOS.get(), "Asbestos Bedrock Ore Fragment");
+        // Прочие дозарегистрированные предметы Parts
+        add(ModItems.POWDER_POWER.get(), "Energy Powder"); // item.powder_power.name оригинала
+        add(ModItems.FULLERENE.get(), "Fullerene");        // item.powder_ash.fullerene.name оригинала
+        add(ModItems.CRYOLITE_CHUNK.get(), "Cryolite Chunk"); // item.chunk_ore.cryolite.name оригинала
         add(ModItems.BALL_TNT.get(), "TNT Ball");
         add(ModItems.BOLT_STEEL.get(), "Steel Bolt");
         add(ModItems.BOLT_HIGHSPEED_STEEL.get(), "High-Speed Steel Bolt");
+        add(ModItems.INGOT_HIGHSPEED_STEEL.get(), "High-Speed Steel Ingot"); // item.ingot_dura_steel.name оригинала
+        add(ModItems.INGOT_TUNGSTEN_CARBIDE.get(), "Tungsten Carbide Ingot");
         add(ModItems.BOLT_LEAD.get(), "Lead Bolt");
         add(ModItems.BOLT_TUNGSTEN.get(), "Tungsten Bolt");
         add(ModItems.SHELL_STEEL.get(), "Steel Shell");
@@ -1378,7 +1587,14 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("item.hbm_m.entity_mob_gold_creeper_spawn_egg", "Golden Creeper Spawn Egg");
         add("entity.hbm_m.entity_mob_nuclear_creeper", "Nuclear Creeper");
         add("item.hbm_m.entity_mob_nuclear_creeper_spawn_egg", "Nuclear Creeper Spawn Egg");
-        add("death.attack.taint", "%1$s died from flux tumors.");
+        add("entity.hbm_m.bomber", "Bomber");
+        add("entity.hbm_m.bomblet_zeta", "Bomblet");
+        add("entity.hbm_m.bot_prime_body", "BOT Prime Segment");
+        add("entity.hbm_m.bot_prime_head", "BOT Prime");
+        add("entity.hbm_m.digamma_spear", "Digamma Lance");
+        add("entity.hbm_m.maskman", "Maskman");
+        add("entity.hbm_m.rad_beast", "RAD Beast");
+        add("entity.hbm_m.ufo", "UFO");
         add(ModBlocks.BARREL_IRON.get(), "Iron Barrel");
         add(ModBlocks.BARREL_STEEL.get(), "Steel Barrel");
         add(ModBlocks.BARREL_TCALLOY.get(), "Technetium Steel Barrel");
@@ -1431,26 +1647,27 @@ public class ModLanguageProviderEn extends LanguageProvider {
 
 
         add(ModBlocks.SMOKE_BOMB.get(), "Semtex");
-        add(ModItems.NUGGET_SILICON.get(), "Silicon Nugget");
-        add(ModItems.NUGGET_TANTALIUM.get(), "Tantalium Nugget");
-        add(ModItems.BILLET_SILICON.get(), "Silicon Billet");
-        add(ModItems.PLATE_GOLD.get(), "Golden Plate");
-        add(ModItems.PLATE_GUNMETAL.get(), "Gunmetal Plate");
-        add(ModItems.PLATE_GUNSTEEL.get(), "Gunsteel Plate");
-        add(ModItems.PLATE_TITANIUM.get(), "Titanium Plate");
-        add(ModItems.PLATE_IRON.get(), "Iron Plate");
+        add(ModMaterialItems.item(ModMaterials.SILICON, MaterialShape.NUGGET), "Silicon Nugget");
+        add(ModMaterialItems.item(ModMaterials.TANTALIUM, MaterialShape.NUGGET), "Tantalium Nugget");
+        add(ModMaterialItems.item(ModMaterials.SILICON, MaterialShape.BILLET), "Silicon Billet");
+        add(ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.PLATE), "Golden Plate");
+        add(ModMaterialItems.item(ModMaterials.GUNMETAL, MaterialShape.PLATE), "Gunmetal Plate");
+        add(ModMaterialItems.item(ModMaterials.GUNSTEEL, MaterialShape.PLATE), "Gunsteel Plate");
+        add(ModMaterialItems.item(ModMaterials.WEAPONSTEEL, MaterialShape.PLATE), "Weapon Steel Plate");
+        add(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), "Titanium Plate");
+        add(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE), "Iron Plate");
         add(ModItems.PLATE_KEVLAR.get(), "Kevlar Plate");
-        add(ModItems.PLATE_LEAD.get(), "Lead Plate");
+        add(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE), "Lead Plate");
         add(ModItems.PLATE_MIXED.get(), "Mixed Plate");
         add(ModItems.PLATE_PAA.get(), "PAA Plate");
         add(ModItems.INSULATOR.get(), "Insulator");
-        add(ModItems.PLATE_SATURNITE.get(), "Saturnite Plate");
-        add(ModItems.PLATE_SCHRABIDIUM.get(), "Schrabidium Plate");
-        add(ModItems.PLATE_STEEL.get(), "Steel Plate");
-        add(ModItems.PLATE_ADVANCED_ALLOY.get(), "Advanced Alloy Plate");
-        add(ModItems.PLATE_ALUMINUM.get(), "Aluminum Plate");
-        add(ModItems.PLATE_COPPER.get(), "Copper Plate");
-        add(ModItems.PLATE_BISMUTH.get(), "Bismuth Plate");
+        add(ModMaterialItems.item(ModMaterials.SATURNITE, MaterialShape.PLATE), "Saturnite Plate");
+        add(ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.PLATE), "Schrabidium Plate");
+        add(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), "Steel Plate");
+        add(ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.PLATE), "Advanced Alloy Plate");
+        add(ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.PLATE), "Aluminum Plate");
+        add(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE), "Copper Plate");
+        add(ModMaterialItems.item(ModMaterials.BISMUTH, MaterialShape.PLATE), "Bismuth Plate");
         add(ModItems.PLATE_ARMOR_AJR.get(), "AJR Armor Plate");
         add(ModItems.PLATE_ARMOR_DNT.get(), "DNT Armor Plate");
         add(ModItems.PLATE_ARMOR_DNT_RUSTED.get(), "Rusted DNT Armor Plate");
@@ -1460,14 +1677,14 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.PLATE_ARMOR_TITANIUM.get(), "Titanium Armor Plate");
         add(ModItems.PLATE_CAST.get(), "Casting Mold");
         add(ModItems.PLATE_CAST_ALT.get(), "Alternative Casting Mold");
-        add(ModItems.PLATE_CAST_BISMUTH.get(), "Bismuth Casting Mold");
+        add(ModMaterialItems.item(ModMaterials.BISMUTH, MaterialShape.PLATE_CAST), "Bismuth Casting Mold");
         add(ModItems.PLATE_CAST_DARK.get(), "Dark Casting Mold");
-        add(ModItems.PLATE_COMBINE_STEEL.get(), "Combine Steel Plate");
-        add(ModItems.PLATE_DURA_STEEL.get(), "Dura Steel Plate");
+        add(ModMaterialItems.item(ModMaterials.COMBINE_STEEL, MaterialShape.PLATE), "Combine Steel Plate");
+        add(ModMaterialItems.item(ModMaterials.DURA_STEEL, MaterialShape.PLATE), "Dura Steel Plate");
         add(ModItems.PLATE_DALEKANIUM.get(), "Dalekanium Plate");
-        add(ModItems.PLATE_DESH.get(), "Desh Plate");
-        add(ModItems.PLATE_DINEUTRONIUM.get(), "Dineutronium Plate");
-        add(ModItems.PLATE_EUPHEMIUM.get(), "Euphemium Plate");
+        add(ModMaterialItems.item(ModMaterials.DESH, MaterialShape.PLATE), "Desh Plate");
+        add(ModMaterialItems.item(ModMaterials.DINEUTRONIUM, MaterialShape.PLATE), "Dineutronium Plate");
+        add(ModMaterialItems.item(ModMaterials.EUPHEMIUM, MaterialShape.PLATE), "Euphemium Plate");
         add(ModItems.PLATE_FUEL_MOX.get(), "MOX Fuel Plate");
         add(ModItems.PLATE_FUEL_PU238BE.get(), "Pu-238/Be Fuel Plate");
         add(ModItems.PLATE_FUEL_PU239.get(), "Pu-239 Fuel Plate");
@@ -1672,6 +1889,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("block.hbm_m.explosive_charge", "Explosive Charge");
         add("block.hbm_m.reinforced_glass", "Reinforced Glass");
         add("block.hbm_m.machine_siren", "Siren");
+        add("block.hbm_m.steel_corner", "Steel Wall Corner");
         add("container.hbm_m.machine_siren", "Siren");
         add("block.hbm_m.broadcaster", "Broadcaster");
         add("block.hbm_m.crate", "Crate");
@@ -1681,16 +1899,140 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("block.hbm_m.block_uranium", "Uranium Block");
         add("block.hbm_m.plutonium_block", "Plutonium Block");
         add("block.hbm_m.plutonium_fuel_block", "Plutonium Fuel Block");
+        add("block.hbm_m.block_asbestos", "Block Asbestos");
+        add("block.hbm_m.block_bakelite", "Block Bakelite");
+        add("block.hbm_m.block_c4", "Block C4");
+        add("block.hbm_m.block_coltan", "Block Coltan");
+        add("block.hbm_m.block_corium", "Block Corium");
+        add("block.hbm_m.block_corium_cobble", "Block Corium Cobble");
+        add("block.hbm_m.block_euphemium_cluster", "Block Euphemium Cluster");
+        add("block.hbm_m.block_fiberglass", "Block Fiberglass");
+        add("block.hbm_m.block_fluorite", "Block Fluorite");
+        add("block.hbm_m.block_graphite", "Block of Graphite");
+        add("block.hbm_m.block_graphite_detector", "Block Graphite Detector");
+        add("block.hbm_m.block_graphite_drilled", "Block Graphite Drilled");
+        add("block.hbm_m.block_graphite_fuel", "Block Graphite Fuel");
+        add("block.hbm_m.block_graphite_lithium", "Block Graphite Lithium");
+        add("block.hbm_m.block_graphite_plutonium", "Block Graphite Plutonium");
+        add("block.hbm_m.block_graphite_source", "Block Graphite Source");
+        add("block.hbm_m.block_graphite_tritium", "Block Graphite Tritium");
+        add("block.hbm_m.block_insulator", "Block Insulator");
+        add("block.hbm_m.block_lithium", "Block Lithium");
+        add("block.hbm_m.block_magnetized_tungsten", "Block Magnetized Tungsten");
+        add("block.hbm_m.block_meteor_broken", "Block Meteor Broken");
+        add("block.hbm_m.block_meteor_molten", "Block Meteor Molten");
+        add("block.hbm_m.block_meteor_treasure", "Block Meteor Treasure");
+        add("block.hbm_m.block_niter", "Block Niter");
+        add("block.hbm_m.block_polymer", "Block Polymer");
+        add("block.hbm_m.block_pu_mix", "Block Pu Mix");
+        add("block.hbm_m.block_red_phosphorus", "Block Red Phosphorus");
+        add("block.hbm_m.block_rubber", "Block Rubber");
+        add("block.hbm_m.block_semtex", "Block Semtex");
+        add("block.hbm_m.block_slag", "Slag Block");
+        add("block.hbm_m.block_smore", "Block Smore");
+        add("block.hbm_m.block_sulfur", "Block Sulfur");
+        add("block.hbm_m.block_tantalium", "Block Tantalium");
+        add("block.hbm_m.block_trinitite", "Block Trinitite");
+        add("block.hbm_m.block_tritium", "Block Tritium");
+        add("block.hbm_m.block_waste", "Block Waste");
+        add("block.hbm_m.block_waste_vitrified", "Block Waste Vitrified");
+        add("block.hbm_m.block_white_phosphorus", "Block White Phosphorus");
+        add("block.hbm_m.block_yellowcake", "Block Yellowcake");
+        add("block.hbm_m.brick_forgotten", "Brick Forgotten");
+        add("block.hbm_m.concrete_liquid", "Concrete Liquid");
+        add("block.hbm_m.deco_rbmk", "RBMK Decoration Block");
+        add("block.hbm_m.deco_rbmk_panel", "RBMK Decoration Panel");
+        add("block.hbm_m.deco_rbmk_panel_slab2", "RBMK Panel Slab");
+        add("block.hbm_m.deco_rbmk_smooth", "Smooth RBMK Decoration Block");
+        add("block.hbm_m.deco_rbmk_smooth_panel", "Smooth RBMK Decoration Panel");
+        add("block.hbm_m.deco_rbmk_smooth_panel_slab2", "Smooth RBMK Panel Slab");
+        add("block.hbm_m.digamma_matter", "Digamma Matter");
+        add("block.hbm_m.dungeon_spawner", "Dungeon Spawner");
+        add("block.hbm_m.electric_furnace", "Electric Furnace");
+        add("block.hbm_m.emp", "EMP Device");
+        add("block.hbm_m.event_tester", "Event Tester");
+        add("block.hbm_m.fan", "Industrial Fan");
+        add("block.hbm_m.fluid_duct_paintable_block_exhaust", "Fluid Duct Paintable Block Exhaust");
+        add("block.hbm_m.furnace_brick", "Brick Furnace");
+        add("block.hbm_m.gas_centrifuge", "Gas Centrifuge");
+        add("block.hbm_m.geiger", "Geiger");
+        add("block.hbm_m.geysir_nether", "Geysir Nether");
+        add("block.hbm_m.icf_block", "Icf Block");
+        add("block.hbm_m.launch_table", "Launch Table");
+        add("block.hbm_m.logic_block", "Logic Block");
+        add("block.hbm_m.machine_radar", "Machine Radar");
+        add("block.hbm_m.machine_rtg_grey", "RTG");
+        add("block.hbm_m.mush_block_stem", "Mush Block Stem");
+        add("block.hbm_m.oil_pipe", "Oil Pipe");
+        add("block.hbm_m.ore_alexandrite", "Ore Alexandrite");
+        add("block.hbm_m.ore_aluminium", "Ore Aluminium");
+        add("block.hbm_m.ore_australium", "Ore Australium");
+        add("block.hbm_m.ore_bedrock_mineral", "Bedrock Mineral Deposit");
+        add("block.hbm_m.ore_bedrock_oil", "Bedrock Oil Deposit");
+        add("block.hbm_m.ore_cinnebar", "Ore Cinnebar");
+        add("block.hbm_m.ore_coltan", "Ore Coltan");
+        add("block.hbm_m.ore_copper", "Ore Copper");
+        add("block.hbm_m.ore_depth_borax", "Ore Depth Borax");
+        add("block.hbm_m.ore_depth_cinnebar", "Ore Depth Cinnebar");
+        add("block.hbm_m.ore_depth_nether_neodymium", "Ore Depth Nether Neodymium");
+        add("block.hbm_m.ore_depth_zirconium", "Ore Depth Zirconium");
+        add("block.hbm_m.ore_gneiss_asbestos", "Ore Gneiss Asbestos");
+        add("block.hbm_m.ore_gneiss_copper", "Ore Gneiss Copper");
+        add("block.hbm_m.ore_gneiss_gas", "Ore Gneiss Gas");
+        add("block.hbm_m.ore_gneiss_gold", "Ore Gneiss Gold");
+        add("block.hbm_m.ore_gneiss_iron", "Ore Gneiss Iron");
+        add("block.hbm_m.ore_gneiss_lithium", "Ore Gneiss Lithium");
+        add("block.hbm_m.ore_gneiss_rare", "Ore Gneiss Rare");
+        add("block.hbm_m.ore_gneiss_uranium", "Ore Gneiss Uranium");
+        add("block.hbm_m.ore_gneiss_uranium_scorched", "Ore Gneiss Uranium Scorched");
+        add("block.hbm_m.ore_nether_coal", "Ore Nether Coal");
+        add("block.hbm_m.ore_nether_cobalt", "Ore Nether Cobalt");
+        add("block.hbm_m.ore_nether_fire", "Ore Nether Fire");
+        add("block.hbm_m.ore_nether_plutonium", "Ore Nether Plutonium");
+        add("block.hbm_m.ore_nether_smoldering", "Ore Nether Smoldering");
+        add("block.hbm_m.ore_nether_sulfur", "Ore Nether Sulfur");
+        add("block.hbm_m.ore_nether_tungsten", "Ore Nether Tungsten");
+        add("block.hbm_m.ore_nether_uranium", "Ore Nether Uranium");
+        add("block.hbm_m.ore_nether_uranium_scorched", "Ore Nether Uranium Scorched");
+        add("block.hbm_m.ore_oil_empty", "Depleted Oil Deposit");
+        add("block.hbm_m.ore_rare", "Ore Rare");
+        add("block.hbm_m.ore_tektite_osmiridium", "Ore Tektite Osmiridium");
+        add("block.hbm_m.ore_tikite", "Ore Tikite");
+        add("block.hbm_m.ore_uranium_scorched", "Ore Uranium Scorched");
+        add("block.hbm_m.pile_block", "Pile Block");
+        add("block.hbm_m.pile_brick", "Pile Brick");
+        add("block.hbm_m.pneumatic_storage_access", "Pneumatic Storage Access");
+        add("block.hbm_m.pneumatic_storage_clutter", "Pneumatic Storage Clutter");
+        add("block.hbm_m.pneumatic_storage_exporter", "Pneumatic Storage Exporter");
+        add("block.hbm_m.pneumatic_storage_importer", "Pneumatic Storage Importer");
+        add("block.hbm_m.pneumatic_storage_mono", "Pneumatic Storage Mono");
+        add("block.hbm_m.refinery", "Refinery");
+        add("block.hbm_m.slag", "Slag");
+        add("block.hbm_m.solar_mirror", "Solar Mirror");
+        add("block.hbm_m.steam_condenser", "Steam Condenser");
+        add("block.hbm_m.structure_anchor", "Structure Anchor");
+        add("block.hbm_m.universal_machine_part", "Universal Machine Part");
+        add("block.hbm_m.wand_tandem", "Wand Tandem");
+        add("block.hbm_m.zirnox_deb_blank", "ZIRNOX Debris");
+        add("block.hbm_m.zirnox_deb_concrete", "ZIRNOX Concrete Debris");
+        add("block.hbm_m.zirnox_deb_element", "ZIRNOX Fuel Debris");
+        add("block.hbm_m.zirnox_deb_exchanger", "ZIRNOX Exchanger Debris");
+        add("block.hbm_m.zirnox_deb_shrapnel", "ZIRNOX Shrapnel");
+        add("block.hbm_m.zirnox_destroyed", "Destroyed ZIRNOX Reactor");
 
         add("block.hbm_m.polonium210_block", "Polonium-210 Block");
         add("block.hbm_m.armor_table", "Armor Modification Table");
-        add("block.hbm_m.machine_assembler", "Assembly Machine (Legacy)");
-        add("block.hbm_m.advanced_assembly_machine", "Assembly Machine");
+        add(ModBlocks.MACHINE_ASSEMBLER.get(), "Assembly Machine (LEGACY)");
+        add(ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get(), "Assembly Machine");
+        add(ModBlocks.MACHINE_BLAST_FURNACE.get(), "Blast Furnace");
+        add(ModBlocks.BLAST_FURNACE.get(), "Blast Furnace (LEGACY)");
+        add(ModBlocks.BLAST_FURNACE_EXTENSION.get(), "Blast Furnace Extension (LEGACY)");
         add(ModBlocks.LAUNCH_PAD.get(), "Launch Pad");
         add(ModBlocks.LAUNCH_PAD_RUSTED.get(), "Launch Pad Rusted");
         add(ModItems.DESIGNATOR.get(), "Designator");
         add(ModItems.DESIGNATOR_RANGE.get(), "Range Designator");
         add(ModItems.DESIGNATOR_MANUAL.get(), "Manual Designator");
+
         add("tooltip.hbm_m.designator.target", "Target Coordinates:");
         add("tooltip.hbm_m.designator.no_target", "Please select a target.");
         add("message.hbm_m.designator.position_set", "Position set!");
@@ -1950,8 +2292,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("block.hbm_m.machine_battery", "Machine Battery");
         add("block.hbm_m.shredder", "Shredder");
         add("block.hbm_m.wood_burner", "Wood Burner Generator");
-        add("block.hbm_m.blast_furnace", "Blast Furnace");
-        add("block.hbm_m.blast_furnace_extension", "Blast Furnace Extension");
         add("block.hbm_m.heating_oven", "Heating Oven");
         add("block.hbm_m.press", "Press");
         add("block.hbm_m.crate_iron", "Iron Crate");
@@ -2250,6 +2590,9 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("gui.hbm_m.radar.tooltip.show_map", "Show Map (WIP, can be buggy)");
         add("gui.hbm_m.radar.tooltip.toggle_gui", "Switch View");
         add("gui.hbm_m.radar.tooltip.clear_map", "Clear Map");
+        add("gui.hbm_m.jei.rbmk_disassembly", "RBMK Rod Disassembly");
+        add("gui.hbm_m.jei.rbmk_outgasser", "RBMK Neutron Activation");
+        add("gui.hbm_m.jei.rbmk_waste_decay", "Nuclear Waste Decay");
         add("tooltip.hbm_m.radar_linker.linked", "Linked to:");
         add("tooltip.hbm_m.radar_linker.not_linked", "Not linked. RMB a launch pad.");
         add("message.hbm_m.radar_linker.linked", "Launch pad linked to radar");
@@ -2356,6 +2699,36 @@ public class ModLanguageProviderEn extends LanguageProvider {
         // HAZARD TOOLTIPS
 
         add("trait.radioactive", "Radioactive");
+
+        // ── Material lore (1.7.10 item.<id>.desc, вкладка Parts) ──
+        add("tooltip.hbm_m.neptunium_ingot.desc1", "That one's my favourite!");
+        add("tooltip.hbm_m.tantalum.desc1", "'Tantalum'");
+        add("tooltip.hbm_m.lanthanium_ingot.desc1", "'Lanthanum'");
+        add("tooltip.hbm_m.combine_steel_ingot.desc1", "*insert Civil Protection reference here*");
+        add("tooltip.hbm_m.gh336.desc1", "Seaborgium's colleague.");
+        add("tooltip.hbm_m.fiberglass_ingot.desc1", "High in fiber, high in glass. Everything the body needs.");
+        add("tooltip.hbm_m.euphemium_ingot.desc1", "A very special and yet strange element.");
+        add("tooltip.hbm_m.euphemium_powder.desc1", "Pulverized pink.");
+        add("tooltip.hbm_m.euphemium_powder.desc2", "Tastes like strawberries.");
+        add("tooltip.hbm_m.euphemium_nugget.desc1", "A small piece of a pink metal.");
+        add("tooltip.hbm_m.euphemium_nugget.desc2", "Its properties are still unknown,");
+        add("tooltip.hbm_m.euphemium_nugget.desc3", "DEAL WITH IT CAREFULLY.");
+        add("tooltip.hbm_m.semtex_ingot.desc1", "Semtex H Plastic Explosive");
+        add("tooltip.hbm_m.semtex_ingot.desc2", "Performant explosive for many applications.");
+        add("tooltip.hbm_m.semtex_ingot.desc3", "Edible");
+        add("tooltip.hbm_m.flashlead_billet.desc1", "The lattice decays, causing antimatter-matter annihilation reactions,");
+        add("tooltip.hbm_m.flashlead_billet.desc2", "causing the release of pions, decaying into muons,");
+        add("tooltip.hbm_m.flashlead_billet.desc3", "catalyzing fusion of the nuclei, creating the new element.");
+        add("tooltip.hbm_m.flashlead_billet.desc4", "Please try to keep up.");
+        add("tooltip.hbm_m.asbestos_ingot.desc1", "\"Filled with life, self-doubt and asbestos. That comes with the air.\"");
+        add("tooltip.hbm_m.asbestos_powder.desc1", "\"Sniffffffff- MHHHHHHMHHHHHHHHH\"");
+        add("tooltip.hbm_m.dust.desc1", "I hate dust!");
+        add("tooltip.hbm_m.fire_powder.desc1", "Used in multi purpose bombs:");
+        add("tooltip.hbm_m.fire_powder.desc2", "Incendiary bombs are fun!");
+        add("tooltip.hbm_m.poison_powder.desc1", "Used in multi purpose bombs:");
+        add("tooltip.hbm_m.poison_powder.desc2", "Warning: Poisonous!");
+        add("tooltip.hbm_m.tantalum_polycrystal.desc1", "'Tantalum'");
+
         add("trait.asbestos", "Asbestos");
         // ── Lung disease / gas masks (1.7.10 port) ──
         add("info.asbestos", "My lungs are burning.");
@@ -2485,15 +2858,12 @@ public class ModLanguageProviderEn extends LanguageProvider {
         
         // DEATH ATTACK MESSAGES
         add("death.attack.radiation", "%s died from radiation poisoning");
-        // 1.7.10 en_US.lang: death.attack.asbestos / death.attack.blacklung
+        add("death.attack.black_hole", "%1$s was spaghettified.");
         add("death.attack.asbestos", "%1$s is now entitled to financial compensation.");
         add("death.attack.blacklung", "%1$s died from black lung disease.");
         add("death.attack.hardlanding_smash", "%1$s was flattened by %2$s");
+        add("death.attack.taint", "%1$s died from flux tumors.");
 
-        add("advancements.hbm_m.radiation_200.title", "Hooray, Radiation!");
-        add("advancements.hbm_m.radiation_200.description", "Reach a radiation level of 200 RAD");
-        add("advancements.hbm_m.radiation_1000.title", "Ouch, Radiation!");
-        add("advancements.hbm_m.radiation_1000.description", "Die from radiation sickness");
 
         add("chat.hbm_m.structure.obstructed", "Placement obstructed by other blocks!");
         add("chat.hbm_m.chungus.on", "Leviathan Turbine: ON");
@@ -3332,6 +3702,39 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("item.hbm_m.bedrock_ore.type.actinide.name", "Actinide");
         add("item.hbm_m.bedrock_ore.type.nonmetal.name", "Non-Metal");
         add("item.hbm_m.bedrock_ore.type.crystal.name", "Crystalline");
+        add("item.hbm_m.ore_density_scanner.verypoor", "Very Poor");
+        add("item.hbm_m.ore_density_scanner.poor", "Poor");
+        add("item.hbm_m.ore_density_scanner.low", "Low");
+        add("item.hbm_m.ore_density_scanner.moderate", "Moderate");
+        add("item.hbm_m.ore_density_scanner.high", "High");
+        add("item.hbm_m.ore_density_scanner.veryhigh", "Very High");
+        add("item.hbm_m.ore_density_scanner.excellent", "Excellent");
+        add("item.hbm_m.bomb_caller_atomic", "Airstrike Designator (Atomic)");
+        add("item.hbm_m.bomb_caller_chlorine", "Airstrike Designator (Poison Gas)");
+        add("item.hbm_m.bomb_caller_napalm", "Airstrike Designator (Napalm)");
+        add("item.hbm_m.bot_prime_spawn_egg", "BOT Prime Spawn Egg");
+        add("item.hbm_m.circuit_numitron", "Numitron Tube Circuit");
+        add("item.hbm_m.maskman_spawn_egg", "Maskman Spawn Egg");
+        add("item.hbm_m.music_disc_ch", "Music Disc");
+        add("item.hbm_m.music_disc_ch.desc", "Schweizerpsalm");
+        add("item.hbm_m.music_disc_ch.flavour", "Great since 1291 , Motherland of the Dev FuchsDev");
+        add("item.hbm_m.oil_tar_coal", "Coal Tar");
+        add("item.hbm_m.oil_tar_crack", "Cracking Tar");
+        add("item.hbm_m.oil_tar_crude", "Crude Oil Tar");
+        add("item.hbm_m.oil_tar_paraffin", "Paraffin Wax");
+        add("item.hbm_m.oil_tar_wax", "Chlorinated Tar Wax");
+        add("item.hbm_m.oil_tar_wood", "Wood Tar");
+        add("item.hbm_m.rad_beast_spawn_egg", "RAD Beast Spawn Egg");
+        add("item.hbm_m.rbmk_fuel_test", "RBMK Fuel Rod (Test)");
+        add("item.hbm_m.rocket_himars_single", "HIMARS Rocket (Single)");
+        add("item.hbm_m.rocket_himars_single_tb", "HIMARS Rocket (Single Thermobaric)");
+        add("item.hbm_m.rocket_turret_demo", "Turret Rocket (Demolition)");
+        add("item.hbm_m.rocket_turret_heat", "Turret Rocket (HEAT)");
+        add("item.hbm_m.rocket_turret_inc", "Turret Rocket (Incendiary)");
+        add("item.hbm_m.rocket_turret_phosphorus", "Turret Rocket (Phosphorus)");
+        add("item.hbm_m.ufo_spawn_egg", "UFO Spawn Egg");
+        add("item.hbm_m.upgrade_5g", "5G Upgrade");
+        add("item.hbm_m.upgrade_screm", "Screaming Upgrade");
 
         add("tooltip.hbm_m.bedrock_ore.trait.roasted", "§eCombination Oven Roasted");
         add("tooltip.hbm_m.bedrock_ore.trait.arc", "§6Arc Smelted");
@@ -3498,58 +3901,59 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.BEDROCK_ORE_RAD_WASHED_CRYSTAL.get(), "Crystalline Washed Radioactive Byproduct");
         add(ModItems.BETA.get(), "Beta Features");
         add(ModItems.BIG_SWORD.get(), "Great Sword");
-        add(ModItems.BILLET_ACTINIUM.get(), "Actinium-227 Billet");
-        add(ModItems.BILLET_AM241.get(), "Americium-241 Billet");
-        add(ModItems.BILLET_AM242.get(), "Americium-242 Billet");
-        add(ModItems.BILLET_AM_MIX.get(), "Reactor Grade Americium Billet");
-        add(ModItems.BILLET_AMERICIUM_FUEL.get(), "Americium Fuel Billet");
-        add(ModItems.BILLET_AU198.get(), "Gold-198 Billet");
-        add(ModItems.BILLET_AUSTRALIUM.get(), "Australium Billet");
-        add(ModItems.BILLET_AUSTRALIUM_GREATER.get(), "Greater Australium Billet");
-        add(ModItems.BILLET_AUSTRALIUM_LESSER.get(), "Lesser Australium Billet");
-        add(ModItems.BILLET_BALEFIRE_GOLD.get(), "Flashgold Billet");
-        add(ModItems.BILLET_BERYLLIUM.get(), "Beryllium Billet");
-        add(ModItems.BILLET_BISMUTH.get(), "Bismuth Billet");
-        add(ModItems.BILLET_CO60.get(), "Cobalt-60 Billet");
-        add(ModItems.BILLET_COBALT.get(), "Cobalt Billet");
-        add(ModItems.BILLET_FLASHLEAD.get(), "Flashlead Billet");
-        add(ModItems.BILLET_GH336.get(), "Ghiorsium-336 Billet");
-        add(ModItems.BILLET_HES.get(), "Highly Enriched Schrabidium Fuel Billet");
-        add(ModItems.BILLET_LES.get(), "Low Enriched Schrabidium Fuel Billet");
-        add(ModItems.BILLET_MOX_FUEL.get(), "MOX Fuel Billet");
-        add(ModItems.BILLET_NEPTUNIUM.get(), "Neptunium Billet");
-        add(ModItems.BILLET_NEPTUNIUM_FUEL.get(), "Neptunium Fuel Billet");
-        add(ModItems.BILLET_NUCLEAR_WASTE.get(), "Nuclear Waste Billet");
-        add(ModItems.BILLET_PB209.get(), "Lead-209 Billet");
-        add(ModItems.BILLET_PLUTONIUM_FUEL.get(), "Plutonium Fuel Billet");
-        add(ModItems.BILLET_PO210BE.get(), "Po210Be Billet");
-        add(ModItems.BILLET_POLONIUM.get(), "Polonium-210 Billet");
-        add(ModItems.BILLET_PU238.get(), "Plutonium-238 Billet");
-        add(ModItems.BILLET_PU238BE.get(), "Pu238Be Billet");
-        add(ModItems.BILLET_PU239.get(), "Plutonium-239 Billet");
-        add(ModItems.BILLET_PU240.get(), "Plutonium-240 Billet");
-        add(ModItems.BILLET_PU241.get(), "Plutonium-241 Billet");
-        add(ModItems.BILLET_PU_MIX.get(), "Reactor Grade Plutonium Billet");
-        add(ModItems.BILLET_RA226.get(), "Radium-226 Billet");
-        add(ModItems.BILLET_RA226BE.get(), "Ra226Be Billet");
-        add(ModItems.BILLET_SCHRABIDIUM.get(), "Schrabidium Billet");
-        add(ModItems.BILLET_SCHRABIDIUM_FUEL.get(), "Schrabidium Fuel Billet");
-        add(ModItems.BILLET_SOLINIUM.get(), "Solinium Billet");
-        add(ModItems.BILLET_SR90.get(), "Strontium-90 Billet");
-        add(ModItems.BILLET_TECHNETIUM.get(), "Technetium-99 Billet");
-        add(ModItems.BILLET_TH232.get(), "Thorium-232 Billet");
-        add(ModItems.BILLET_THORIUM_FUEL.get(), "Thorium Fuel Billet");
-        add(ModItems.BILLET_U233.get(), "Uranium-233 Billet");
-        add(ModItems.BILLET_U235.get(), "Uranium-235 Billet");
-        add(ModItems.BILLET_U238.get(), "Uranium-238 Billet");
-        add(ModItems.BILLET_URANIUM.get(), "Uranium Billet");
-        add(ModItems.BILLET_URANIUM_FUEL.get(), "Uranium Fuel Billet");
-        add(ModItems.BILLET_UZH.get(), "Uranium Zirconium Hydride Billet");
-        add(ModItems.BILLET_YHARONITE.get(), "Yharonite Billet");
-        add(ModItems.BILLET_ZFB_AM_MIX.get(), "Reactor Grade Americium ZFB Billet");
-        add(ModItems.BILLET_ZFB_BISMUTH.get(), "Bismuth ZFB Billet");
-        add(ModItems.BILLET_ZFB_PU241.get(), "Pu-241 ZFB Billet");
-        add(ModItems.BILLET_ZIRCONIUM.get(), "Zirconium Billet");
+        add(ModMaterialItems.item(ModMaterials.ACTINIUM, MaterialShape.BILLET), "Actinium-227 Billet");
+        add(ModMaterialItems.item(ModMaterials.AM241, MaterialShape.BILLET), "Americium-241 Billet");
+        add(ModMaterialItems.item(ModMaterials.AM242, MaterialShape.BILLET), "Americium-242 Billet");
+        add(ModMaterialItems.item(ModMaterials.AM_MIX, MaterialShape.BILLET), "Reactor Grade Americium Billet");
+        add(ModMaterialItems.item(ModMaterials.AMERICIUM_FUEL, MaterialShape.BILLET), "Americium Fuel Billet");
+        add(ModMaterialItems.item(ModMaterials.AU198, MaterialShape.BILLET), "Gold-198 Billet");
+        add(ModMaterialItems.item(ModMaterials.AUSTRALIUM, MaterialShape.BILLET), "Australium Billet");
+        add(ModMaterialItems.item(ModMaterials.AUSTRALIUM_GREATER, MaterialShape.BILLET), "Greater Australium Billet");
+        add(ModMaterialItems.item(ModMaterials.AUSTRALIUM_LESSER, MaterialShape.BILLET), "Lesser Australium Billet");
+        add(ModMaterialItems.item(ModMaterials.BALEFIRE_GOLD, MaterialShape.BILLET), "Flashgold Billet");
+        add(ModMaterialItems.item(ModMaterials.BERYLLIUM, MaterialShape.BILLET), "Beryllium Billet");
+        add(ModMaterialItems.item(ModMaterials.BISMUTH, MaterialShape.BILLET), "Bismuth Billet");
+        add(ModMaterialItems.item(ModMaterials.CO60, MaterialShape.BILLET), "Cobalt-60 Billet");
+        add(ModMaterialItems.item(ModMaterials.COBALT, MaterialShape.BILLET), "Cobalt Billet");
+        add(ModMaterialItems.item(ModMaterials.FLASHLEAD, MaterialShape.BILLET), "Flashlead Billet");
+        add(ModMaterialItems.item(ModMaterials.GH336, MaterialShape.INGOT), "Ghiorsium-336 Ingot");
+        add(ModMaterialItems.item(ModMaterials.GH336, MaterialShape.BILLET), "Ghiorsium-336 Billet");
+        add(ModMaterialItems.item(ModMaterials.HES, MaterialShape.BILLET), "Highly Enriched Schrabidium Fuel Billet");
+        add(ModMaterialItems.item(ModMaterials.LES_FUEL, MaterialShape.BILLET), "Low Enriched Schrabidium Fuel Billet");
+        add(ModMaterialItems.item(ModMaterials.MOX_FUEL, MaterialShape.BILLET), "MOX Fuel Billet");
+        add(ModMaterialItems.item(ModMaterials.NEPTUNIUM, MaterialShape.BILLET), "Neptunium Billet");
+        add(ModMaterialItems.item(ModMaterials.NEPTUNIUM_FUEL, MaterialShape.BILLET), "Neptunium Fuel Billet");
+        add(ModMaterialItems.item(ModMaterials.NUCLEAR_WASTE, MaterialShape.BILLET), "Nuclear Waste Billet");
+        add(ModMaterialItems.item(ModMaterials.PB209, MaterialShape.BILLET), "Lead-209 Billet");
+        add(ModMaterialItems.item(ModMaterials.PLUTONIUM_FUEL, MaterialShape.BILLET), "Plutonium Fuel Billet");
+        add(ModMaterialItems.item(ModMaterials.PO210BE, MaterialShape.BILLET), "Po210Be Billet");
+        add(ModMaterialItems.item(ModMaterials.POLONIUM, MaterialShape.BILLET), "Polonium-210 Billet");
+        add(ModMaterialItems.item(ModMaterials.PLUTONIUM238, MaterialShape.BILLET), "Plutonium-238 Billet");
+        add(ModMaterialItems.item(ModMaterials.PU238BE, MaterialShape.BILLET), "Pu238Be Billet");
+        add(ModMaterialItems.item(ModMaterials.PLUTONIUM239, MaterialShape.BILLET), "Plutonium-239 Billet");
+        add(ModMaterialItems.item(ModMaterials.PLUTONIUM240, MaterialShape.BILLET), "Plutonium-240 Billet");
+        add(ModMaterialItems.item(ModMaterials.PLUTONIUM241, MaterialShape.BILLET), "Plutonium-241 Billet");
+        add(ModMaterialItems.item(ModMaterials.PU_MIX, MaterialShape.BILLET), "Reactor Grade Plutonium Billet");
+        add(ModMaterialItems.item(ModMaterials.RA226, MaterialShape.BILLET), "Radium-226 Billet");
+        add(ModMaterialItems.item(ModMaterials.RA226BE, MaterialShape.BILLET), "Ra226Be Billet");
+        add(ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.BILLET), "Schrabidium Billet");
+        add(ModMaterialItems.item(ModMaterials.SCHRABIDIUM_FUEL, MaterialShape.BILLET), "Schrabidium Fuel Billet");
+        add(ModMaterialItems.item(ModMaterials.SOLINIUM, MaterialShape.BILLET), "Solinium Billet");
+        add(ModMaterialItems.item(ModMaterials.SR90, MaterialShape.BILLET), "Strontium-90 Billet");
+        add(ModMaterialItems.item(ModMaterials.TECHNETIUM, MaterialShape.BILLET), "Technetium-99 Billet");
+        add(ModMaterialItems.item(ModMaterials.THORIUM232, MaterialShape.BILLET), "Thorium-232 Billet");
+        add(ModMaterialItems.item(ModMaterials.THORIUM_FUEL, MaterialShape.BILLET), "Thorium Fuel Billet");
+        add(ModMaterialItems.item(ModMaterials.URANIUM233, MaterialShape.BILLET), "Uranium-233 Billet");
+        add(ModMaterialItems.item(ModMaterials.URANIUM235, MaterialShape.BILLET), "Uranium-235 Billet");
+        add(ModMaterialItems.item(ModMaterials.URANIUM238, MaterialShape.BILLET), "Uranium-238 Billet");
+        add(ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.BILLET), "Uranium Billet");
+        add(ModMaterialItems.item(ModMaterials.URANIUM_FUEL, MaterialShape.BILLET), "Uranium Fuel Billet");
+        add(ModMaterialItems.item(ModMaterials.UZH, MaterialShape.BILLET), "Uranium Zirconium Hydride Billet");
+        add(ModMaterialItems.item(ModMaterials.YHARONITE, MaterialShape.BILLET), "Yharonite Billet");
+        add(ModMaterialItems.item(ModMaterials.ZFB_AM_MIX, MaterialShape.BILLET), "Reactor Grade Americium ZFB Billet");
+        add(ModMaterialItems.item(ModMaterials.ZFB_BISMUTH, MaterialShape.BILLET), "Bismuth ZFB Billet");
+        add(ModMaterialItems.item(ModMaterials.ZFB_PU241, MaterialShape.BILLET), "Pu-241 ZFB Billet");
+        add(ModMaterialItems.item(ModMaterials.ZIRCONIUM, MaterialShape.BILLET), "Zirconium Billet");
         add(ModItems.BIO_WAFER.get(), "Algae Wafer");
         add(ModItems.BIOMASS.get(), "Biomass");
         add(ModItems.BIOMASS_COMPRESSED.get(), "Compressed Biomass");
@@ -3688,7 +4092,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.COIN_TOKEN.get(), "Vending Machine Token");
         add(ModItems.COIN_UFO.get(), "UFO Coin");
         add(ModItems.COIN_WORM.get(), "Balls-O-Tron Coin");
-        add(ModItems.COMBINE_SCRAP.get(), "CMB Scrap Metal");
+        add(ModMaterialItems.item(ModMaterials.COMBINE_SCRAP, MaterialShape.SCRAP), "CMB Scrap Metal");
         add(ModItems.COMPONENT_EMITTER.get(), "Emitter Component");
         add(ModItems.COMPONENT_LIMITER.get(), "Stabilizer Component");
         add(ModItems.CONTAINMENT_BOX.get(), "Containment Box");
@@ -3725,8 +4129,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.DESIGNATOR_ARTY_RANGE.get(), "Long Range Artillery Remote");
         add(ModItems.DETONATOR_DE.get(), "Dead Man's Explosive");
         add(ModItems.DETONATOR_DEADMAN.get(), "Dead Man's Detonator");
-        add(ModItems.DETONATOR_LASER.get(), "Laser Detonator");
-        add(ModItems.DETONATOR_MULTI.get(), "Multi Detonator");
         add(ModItems.DEUTERIUM_FILTER.get(), "Deuterium Filter");
         add(ModItems.DIAMOND_GAVEL.get(), "Diamond Gavel");
         add(ModItems.DIESELSUIT_BOOTS.get(), "Diesel-Powered High Heels");
@@ -3752,6 +4154,141 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.ITEM_SECRET_FOLLY.get(), "Secret: Folly");
         add("advancements.hbm_m.red_room.title", "The Other Side");
         add("advancements.hbm_m.red_room.description", "No key, no entry. Unless it's cracked.");
+        add("advancements.hbm_m.acidizer.description", "Craft a Crystallizer");
+        add("advancements.hbm_m.acidizer.title", "Acid Bath");
+        add("advancements.hbm_m.assembly.description", "Craft an Assembly Machine");
+        add("advancements.hbm_m.assembly.title", "Some Assembly Required");
+        add("advancements.hbm_m.bismuth.description", "Produce bismuth");
+        add("advancements.hbm_m.bismuth.title", "Pepto Bismuth");
+        add("advancements.hbm_m.blast_furnace.description", "Craft a Blast Furnace");
+        add("advancements.hbm_m.blast_furnace.title", "Steel Yourself");
+        add("advancements.hbm_m.boss_creeper.description", "Kill a nuclear creeper");
+        add("advancements.hbm_m.boss_creeper.title", "Creeper Killer");
+        add("advancements.hbm_m.boss_maskman.description", "Kill the Maskman");
+        add("advancements.hbm_m.boss_maskman.title", "Maskman");
+        add("advancements.hbm_m.boss_meltdown.description", "Kill the RAD beast");
+        add("advancements.hbm_m.boss_meltdown.title", "Meltdown");
+        add("advancements.hbm_m.boss_ufo.description", "Kill a UFO");
+        add("advancements.hbm_m.boss_ufo.title", "Close Encounter");
+        add("advancements.hbm_m.boss_worm.description", "Kill BOT Prime");
+        add("advancements.hbm_m.boss_worm.title", "Bottomless Pit");
+        add("advancements.hbm_m.breeding.description", "Produce americium");
+        add("advancements.hbm_m.breeding.title", "Breeding Program");
+        add("advancements.hbm_m.burner_press.description", "Craft a Burner Press");
+        add("advancements.hbm_m.burner_press.title", "Squeeze Play");
+        add("advancements.hbm_m.c20_5.description", "Find out for yourself");
+        add("advancements.hbm_m.c20_5.title", "C20-5");
+        add("advancements.hbm_m.centrifuge.description", "Craft a Centrifuge");
+        add("advancements.hbm_m.centrifuge.title", "Round and Round");
+        add("advancements.hbm_m.chemplant.description", "Craft a Chemical Plant");
+        add("advancements.hbm_m.chemplant.title", "Better Living Through Chemistry");
+        add("advancements.hbm_m.chicago_pile.description", "Craft a plutonium pile rod");
+        add("advancements.hbm_m.chicago_pile.title", "Chicago Pile");
+        add("advancements.hbm_m.concrete.description", "Craft smooth or asbestos concrete");
+        add("advancements.hbm_m.concrete.title", "Set in Stone");
+        add("advancements.hbm_m.desh.description", "Produce desh");
+        add("advancements.hbm_m.desh.title", "Dense Matter");
+        add("advancements.hbm_m.digamma_feel.description", "Reach 2 digamma");
+        add("advancements.hbm_m.digamma_feel.title", "You Feel It");
+        add("advancements.hbm_m.digamma_kauai_moho.description", "Witness the digamma lance");
+        add("advancements.hbm_m.digamma_kauai_moho.title", "Kauai Moho");
+        add("advancements.hbm_m.digamma_know.description", "Reach 10 digamma");
+        add("advancements.hbm_m.digamma_know.title", "You Know It");
+        add("advancements.hbm_m.digamma_see.description", "Take your first digamma exposure");
+        add("advancements.hbm_m.digamma_see.title", "You See It");
+        add("advancements.hbm_m.digamma_up_on_top.description", "Survive what comes after");
+        add("advancements.hbm_m.digamma_up_on_top.title", "Up On Top");
+        add("advancements.hbm_m.fiend.description", "Wield the shimmer sledge");
+        add("advancements.hbm_m.fiend.title", "Fiend");
+        add("advancements.hbm_m.fiend2.description", "Wield the shimmer axe");
+        add("advancements.hbm_m.fiend2.title", "Fiend Folio");
+        add("advancements.hbm_m.foeq.description", "Deploy the FOEQ satellite");
+        add("advancements.hbm_m.foeq.title", "Fist of Enraged Quaking");
+        add("advancements.hbm_m.fox_breeding.description", "Breed two foxes");
+        add("advancements.hbm_m.fox_breeding.title", "Great since 1291");
+        add("advancements.hbm_m.fusion.description", "Craft a fusion torus core");
+        add("advancements.hbm_m.fusion.title", "Like The Sun");
+        add("advancements.hbm_m.gas_cent.description", "Craft a Gas Centrifuge");
+        add("advancements.hbm_m.gas_cent.title", "Enrichment Centre");
+        add("advancements.hbm_m.go_fish.description", "Catch something unusual");
+        add("advancements.hbm_m.go_fish.title", "Go Fish");
+        add("advancements.hbm_m.hidden.description", "Some things are not advertised");
+        add("advancements.hbm_m.hidden.title", "Hidden");
+        add("advancements.hbm_m.horizons_bonus.description", "Finish what Horizons started");
+        add("advancements.hbm_m.horizons_bonus.title", "Beyond The Horizon");
+        add("advancements.hbm_m.horizons_end.description", "See what Horizons found");
+        add("advancements.hbm_m.horizons_end.title", "Event Horizon");
+        add("advancements.hbm_m.horizons_start.description", "Put Horizons into orbit");
+        add("advancements.hbm_m.horizons_start.title", "Broader Horizons");
+        add("advancements.hbm_m.impossible.description", "Obtain nothing");
+        add("advancements.hbm_m.impossible.title", "Impossible");
+        add("advancements.hbm_m.inferno.description", "Set an oil refinery ablaze");
+        add("advancements.hbm_m.inferno.title", "Inferno");
+        add("advancements.hbm_m.manhattan.description", "Detonate a nuclear device");
+        add("advancements.hbm_m.manhattan.title", "Now I Am Become Death");
+        add("advancements.hbm_m.no9.description", "Smoke a No. 9");
+        add("advancements.hbm_m.no9.title", "No. 9");
+        add("advancements.hbm_m.omega12.description", "Craft a digamma particle");
+        add("advancements.hbm_m.omega12.title", "Omega 12");
+        add("advancements.hbm_m.polymer.description", "Produce polymer");
+        add("advancements.hbm_m.polymer.title", "Plastic Fantastic");
+        add("advancements.hbm_m.potato.description", "Craft a potato battery");
+        add("advancements.hbm_m.potato.title", "Potato Battery");
+        add("advancements.hbm_m.rad_death.description", "Die from radiation sickness");
+        add("advancements.hbm_m.rad_death.title", "Ouch, Radiation!");
+        add("advancements.hbm_m.rad_poison.description", "Reach a radiation level of 200 RAD");
+        add("advancements.hbm_m.rad_poison.title", "Hooray, Radiation!");
+        add("advancements.hbm_m.radium.description", "Drink radium coffee");
+        add("advancements.hbm_m.radium.title", "Glow With It");
+        add("advancements.hbm_m.rbmk.description", "Craft an empty RBMK fuel rod");
+        add("advancements.hbm_m.rbmk.title", "Reaktor Bolshoy Moshchnosti Kanalnyy");
+        add("advancements.hbm_m.rbmk_boom.description", "Cause an RBMK meltdown");
+        add("advancements.hbm_m.rbmk_boom.title", "3.6 Roentgen");
+        add("advancements.hbm_m.red_balloons.description", "Craft a nuclear missile");
+        add("advancements.hbm_m.red_balloons.title", "99 Red Balloons");
+        add("advancements.hbm_m.root.description", "Split some atoms and live with the consequences");
+        add("advancements.hbm_m.root.title", "Nuclear Tech");
+        add("advancements.hbm_m.sacrifice.description", "Give something up");
+        add("advancements.hbm_m.sacrifice.title", "Sacrifice");
+        add("advancements.hbm_m.schrab.description", "Produce schrabidium");
+        add("advancements.hbm_m.schrab.title", "Element 126");
+        add("advancements.hbm_m.selenium.description", "Craft a selenium piston or a B92 rifle");
+        add("advancements.hbm_m.selenium.title", "Selenium Steel");
+        add("advancements.hbm_m.silex.description", "Craft a SILEX");
+        add("advancements.hbm_m.silex.title", "Laser Focus");
+        add("advancements.hbm_m.slimeball.description", "Pick up a slimeball");
+        add("advancements.hbm_m.slimeball.title", "Slimeball");
+        add("advancements.hbm_m.some_wounds.description", "Use a knife injector");
+        add("advancements.hbm_m.some_wounds.title", "Some Wounds Never Heal");
+        add("advancements.hbm_m.soyuz.description", "Launch a Soyuz with a passenger");
+        add("advancements.hbm_m.soyuz.title", "Potato In Space");
+        add("advancements.hbm_m.space.description", "Reach orbit");
+        add("advancements.hbm_m.space.title", "Space Race");
+        add("advancements.hbm_m.stratum.description", "Mine gneiss");
+        add("advancements.hbm_m.stratum.title", "Deepest Stratum");
+        add("advancements.hbm_m.sulfuric.description", "Swim in something corrosive");
+        add("advancements.hbm_m.sulfuric.title", "Sulfuric");
+        add("advancements.hbm_m.tantalum.description", "Produce tantalium");
+        add("advancements.hbm_m.tantalum.title", "Tantalising");
+        add("advancements.hbm_m.taste_of_blood.description", "Drink something you shouldn't");
+        add("advancements.hbm_m.taste_of_blood.title", "A Taste Of Blood");
+        add("advancements.hbm_m.technetium.description", "Produce technetium");
+        add("advancements.hbm_m.technetium.title", "Artificial Element");
+        add("advancements.hbm_m.watz.description", "Craft a Watz core");
+        add("advancements.hbm_m.watz.title", "Watz Up");
+        add("advancements.hbm_m.watz_boom.description", "Blow up a Watz plant");
+        add("advancements.hbm_m.watz_boom.title", "Sludge Factory");
+        add("advancements.hbm_m.zirnox_boom.description", "Blow up a ZIRNOX reactor");
+        add("advancements.hbm_m.zirnox_boom.title", "Not Great, Not Terrible");
+        add("msg.hbm_m.rbmk_console.linked_invalid", "No RBMK column found at %s, %s, %s - right-click a column again");
+        add("sounds.hbm_m.subtitle.d_flash", "Digamma flash");
+        add("sounds.hbm_m.subtitle.rbmk_az5_cover", "AZ-5 cover flips");
+        add("sounds.hbm_m.subtitle.rbmk_explosion", "Reactor explodes");
+        add("sounds.hbm_m.subtitle.steam_engine_operate", "Steam vents");
+        add("advancements.hbm_m.radiation_200.title", "Hooray, Radiation!");
+        add("advancements.hbm_m.radiation_200.description", "Reach a radiation level of 200 RAD");
+        add("advancements.hbm_m.radiation_1000.title", "Ouch, Radiation!");
+        add("advancements.hbm_m.radiation_1000.description", "Die from radiation sickness");
 
         add(ModItems.DRAX.get(), "Terra Drill (LEGACY)");
         add(ModItems.DRAX_MK2.get(), "Hardened Terra Drill (LEGACY)");
@@ -3946,8 +4483,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.LOOT_10.get(), "Size 10 Missile Loot Crate");
         add(ModItems.LOOT_15.get(), "Size 15 Missile Loot Crate");
         add(ModItems.LOOT_MISC.get(), "General Missile Loot Crate");
-        add(ModItems.MAN_CORE.get(), "Plutonium Core");
-        add(ModItems.MAN_IGNITER.get(), "Bomb Firing Unit");
         add(ModItems.MAN_KIT.get(), "Fat Man Kit");
         add(ModItems.MARSHMALLOW.get(), "Marshmallow on a Stick");
         add(ModItems.MASK_OF_INFAMY.get(), "Mask of Infamy");
@@ -4000,56 +4535,56 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.NUCLEAR_WASTE_SHORT_DEPLETED.get(), "Decayed Short-Lived Nuclear Waste");
         add(ModItems.NUCLEAR_WASTE_VITRIFIED.get(), "Vitrified Nuclear Waste");
         add(ModItems.NUGGET.get(), "Chicken Nugget");
-        add(ModItems.NUGGET_ACTINIUM.get(), "Actinium-227 Nugget");
-        add(ModItems.NUGGET_AM241.get(), "Americium-241 Nugget");
-        add(ModItems.NUGGET_AM242.get(), "Americium-242 Nugget");
-        add(ModItems.NUGGET_AM_MIX.get(), "Reactor Grade Americium Nugget");
-        add(ModItems.NUGGET_AMERICIUM_FUEL.get(), "Americium Fuel Nugget");
-        add(ModItems.NUGGET_ARSENIC.get(), "Arsenic Nugget");
-        add(ModItems.NUGGET_AU198.get(), "Gold-198 Nugget");
-        add(ModItems.NUGGET_AUSTRALIUM.get(), "Australium Nugget");
-        add(ModItems.NUGGET_AUSTRALIUM_GREATER.get(), "Greater Australium Nugget");
-        add(ModItems.NUGGET_AUSTRALIUM_LESSER.get(), "Lesser Australium Nugget");
-        add(ModItems.NUGGET_BERYLLIUM.get(), "Beryllium Nugget");
-        add(ModItems.NUGGET_BISMUTH.get(), "Bismuth Nugget");
-        add(ModItems.NUGGET_CO60.get(), "Cobalt-60 Nugget");
-        add(ModItems.NUGGET_COBALT.get(), "Cobalt Nugget");
-        add(ModItems.NUGGET_DESH.get(), "Desh Nugget");
-        add(ModItems.NUGGET_DINEUTRONIUM.get(), "Dineutronium Nugget");
-        add(ModItems.NUGGET_EUPHEMIUM.get(), "Euphemium Nugget");
-        add(ModItems.NUGGET_GH336.get(), "Ghiorsium-336 Nugget");
-        add(ModItems.NUGGET_HES.get(), "Highly Enriched Schrabidium Fuel Nugget");
-        add(ModItems.NUGGET_LEAD.get(), "Lead Nugget");
-        add(ModItems.NUGGET_LES.get(), "Low Enriched Schrabidium Fuel Nugget");
+        add(ModMaterialItems.item(ModMaterials.ACTINIUM, MaterialShape.NUGGET), "Actinium-227 Nugget");
+        add(ModMaterialItems.item(ModMaterials.AM241, MaterialShape.NUGGET), "Americium-241 Nugget");
+        add(ModMaterialItems.item(ModMaterials.AM242, MaterialShape.NUGGET), "Americium-242 Nugget");
+        add(ModMaterialItems.item(ModMaterials.AM_MIX, MaterialShape.NUGGET), "Reactor Grade Americium Nugget");
+        add(ModMaterialItems.item(ModMaterials.AMERICIUM_FUEL, MaterialShape.NUGGET), "Americium Fuel Nugget");
+        add(ModMaterialItems.item(ModMaterials.ARSENIC, MaterialShape.NUGGET), "Arsenic Nugget");
+        add(ModMaterialItems.item(ModMaterials.AU198, MaterialShape.NUGGET), "Gold-198 Nugget");
+        add(ModMaterialItems.item(ModMaterials.AUSTRALIUM, MaterialShape.NUGGET), "Australium Nugget");
+        add(ModMaterialItems.item(ModMaterials.AUSTRALIUM_GREATER, MaterialShape.NUGGET), "Greater Australium Nugget");
+        add(ModMaterialItems.item(ModMaterials.AUSTRALIUM_LESSER, MaterialShape.NUGGET), "Lesser Australium Nugget");
+        add(ModMaterialItems.item(ModMaterials.BERYLLIUM, MaterialShape.NUGGET), "Beryllium Nugget");
+        add(ModMaterialItems.item(ModMaterials.BISMUTH, MaterialShape.NUGGET), "Bismuth Nugget");
+        add(ModMaterialItems.item(ModMaterials.CO60, MaterialShape.NUGGET), "Cobalt-60 Nugget");
+        add(ModMaterialItems.item(ModMaterials.COBALT, MaterialShape.NUGGET), "Cobalt Nugget");
+        add(ModMaterialItems.item(ModMaterials.DESH, MaterialShape.NUGGET), "Desh Nugget");
+        add(ModMaterialItems.item(ModMaterials.DINEUTRONIUM, MaterialShape.NUGGET), "Dineutronium Nugget");
+        add(ModMaterialItems.item(ModMaterials.EUPHEMIUM, MaterialShape.NUGGET), "Euphemium Nugget");
+        add(ModMaterialItems.item(ModMaterials.GH336, MaterialShape.NUGGET), "Ghiorsium-336 Nugget");
+        add(ModMaterialItems.item(ModMaterials.HES, MaterialShape.NUGGET), "Highly Enriched Schrabidium Fuel Nugget");
+        add(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.NUGGET), "Lead Nugget");
+        add(ModMaterialItems.item(ModMaterials.LES_FUEL, MaterialShape.NUGGET), "Low Enriched Schrabidium Fuel Nugget");
         add(ModItems.NUGGET_MERCURY.get(), "Drop of Mercury");
-        add(ModItems.NUGGET_MOX_FUEL.get(), "Nugget of MOX Fuel");
-        add(ModItems.NUGGET_NEPTUNIUM.get(), "Neptunium Nugget");
-        add(ModItems.NUGGET_NEPTUNIUM_FUEL.get(), "Neptunium Fuel Nugget");
-        add(ModItems.NUGGET_NIOBIUM.get(), "Niobium Nugget");
-        add(ModItems.NUGGET_OSMIRIDIUM.get(), "Osmiridium Nugget");
-        add(ModItems.NUGGET_PB209.get(), "Lead-209 Nugget");
-        add(ModItems.NUGGET_PLUTONIUM.get(), "Plutonium Nugget");
-        add(ModItems.NUGGET_PLUTONIUM_FUEL.get(), "Nugget of Plutonium Fuel");
-        add(ModItems.NUGGET_POLONIUM.get(), "Polonium-210 Nugget");
-        add(ModItems.NUGGET_PU238.get(), "Plutonium-238 Nugget");
-        add(ModItems.NUGGET_PU239.get(), "Plutonium-239 Nugget");
-        add(ModItems.NUGGET_PU240.get(), "Plutonium-240 Nugget");
-        add(ModItems.NUGGET_PU241.get(), "Plutonium-241 Nugget");
-        add(ModItems.NUGGET_PU_MIX.get(), "Reactor Grade Plutonium Nugget");
-        add(ModItems.NUGGET_RA226.get(), "Radium-226 Nugget");
-        add(ModItems.NUGGET_SCHRABIDIUM.get(), "Schrabidium Nugget");
-        add(ModItems.NUGGET_SCHRABIDIUM_FUEL.get(), "Nugget of Schrabidium Fuel");
-        add(ModItems.NUGGET_SOLINIUM.get(), "Solinium Nugget");
-        add(ModItems.NUGGET_SR90.get(), "Strontium-90 Nugget");
-        add(ModItems.NUGGET_TECHNETIUM.get(), "Technetium-99 Nugget");
-        add(ModItems.NUGGET_TH232.get(), "Thorium-232 Nugget");
-        add(ModItems.NUGGET_THORIUM_FUEL.get(), "Nugget of Thorium Fuel");
-        add(ModItems.NUGGET_U233.get(), "Uranium-233 Nugget");
-        add(ModItems.NUGGET_U235.get(), "Uranium-235 Nugget");
-        add(ModItems.NUGGET_U238.get(), "Uranium-238 Nugget");
-        add(ModItems.NUGGET_URANIUM.get(), "Uranium Nugget");
-        add(ModItems.NUGGET_URANIUM_FUEL.get(), "Nugget of Uranium Fuel");
-        add(ModItems.NUGGET_ZIRCONIUM.get(), "Zirconium Splinter");
+        add(ModMaterialItems.item(ModMaterials.MOX_FUEL, MaterialShape.NUGGET), "Nugget of MOX Fuel");
+        add(ModMaterialItems.item(ModMaterials.NEPTUNIUM, MaterialShape.NUGGET), "Neptunium Nugget");
+        add(ModMaterialItems.item(ModMaterials.NEPTUNIUM_FUEL, MaterialShape.NUGGET), "Neptunium Fuel Nugget");
+        add(ModMaterialItems.item(ModMaterials.NIOBIUM, MaterialShape.NUGGET), "Niobium Nugget");
+        add(ModMaterialItems.item(ModMaterials.OSMIRIDIUM, MaterialShape.NUGGET), "Osmiridium Nugget");
+        add(ModMaterialItems.item(ModMaterials.PB209, MaterialShape.NUGGET), "Lead-209 Nugget");
+        add(ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.NUGGET), "Plutonium Nugget");
+        add(ModMaterialItems.item(ModMaterials.PLUTONIUM_FUEL, MaterialShape.NUGGET), "Nugget of Plutonium Fuel");
+        add(ModMaterialItems.item(ModMaterials.POLONIUM, MaterialShape.NUGGET), "Polonium-210 Nugget");
+        add(ModMaterialItems.item(ModMaterials.PLUTONIUM238, MaterialShape.NUGGET), "Plutonium-238 Nugget");
+        add(ModMaterialItems.item(ModMaterials.PLUTONIUM239, MaterialShape.NUGGET), "Plutonium-239 Nugget");
+        add(ModMaterialItems.item(ModMaterials.PLUTONIUM240, MaterialShape.NUGGET), "Plutonium-240 Nugget");
+        add(ModMaterialItems.item(ModMaterials.PLUTONIUM241, MaterialShape.NUGGET), "Plutonium-241 Nugget");
+        add(ModMaterialItems.item(ModMaterials.PU_MIX, MaterialShape.NUGGET), "Reactor Grade Plutonium Nugget");
+        add(ModMaterialItems.item(ModMaterials.RA226, MaterialShape.NUGGET), "Radium-226 Nugget");
+        add(ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.NUGGET), "Schrabidium Nugget");
+        add(ModMaterialItems.item(ModMaterials.SCHRABIDIUM_FUEL, MaterialShape.NUGGET), "Nugget of Schrabidium Fuel");
+        add(ModMaterialItems.item(ModMaterials.SOLINIUM, MaterialShape.NUGGET), "Solinium Nugget");
+        add(ModMaterialItems.item(ModMaterials.SR90, MaterialShape.NUGGET), "Strontium-90 Nugget");
+        add(ModMaterialItems.item(ModMaterials.TECHNETIUM, MaterialShape.NUGGET), "Technetium-99 Nugget");
+        add(ModMaterialItems.item(ModMaterials.THORIUM232, MaterialShape.NUGGET), "Thorium-232 Nugget");
+        add(ModMaterialItems.item(ModMaterials.THORIUM_FUEL, MaterialShape.NUGGET), "Nugget of Thorium Fuel");
+        add(ModMaterialItems.item(ModMaterials.URANIUM233, MaterialShape.NUGGET), "Uranium-233 Nugget");
+        add(ModMaterialItems.item(ModMaterials.URANIUM235, MaterialShape.NUGGET), "Uranium-235 Nugget");
+        add(ModMaterialItems.item(ModMaterials.URANIUM238, MaterialShape.NUGGET), "Uranium-238 Nugget");
+        add(ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.NUGGET), "Uranium Nugget");
+        add(ModMaterialItems.item(ModMaterials.URANIUM_FUEL, MaterialShape.NUGGET), "Nugget of Uranium Fuel");
+        add(ModMaterialItems.item(ModMaterials.ZIRCONIUM, MaterialShape.NUGGET), "Zirconium Splinter");
         add(ModItems.NUKE_ADVANCED_KIT.get(), "Atomic Science Advanced Kit");
         add(ModItems.NUKE_COMMERCIALLY_KIT.get(), "Atomic Science Kit for Commercial Uses");
         add(ModItems.NUKE_ELECTRIC_KIT.get(), "Electronic Engineer's Kit");
@@ -4139,7 +4674,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.PLAN_C.get(), "Plan C");
         add(ModItems.PLASTIC_BAG.get(), "Plastic Bag");
         add(ModItems.PLATE_ALUMINIUM.get(), "Aluminium Plate");
-        add(ModItems.PLATE_POLYMER.get(), "Insulator");
+        add(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE), "Insulator");
         add(ModItems.POLAROID.get(), "The Polaroid");
         add(ModItems.POLLUTION_DETECTOR.get(), "Pollution Detector");
         add(ModItems.POWER_NET_TOOL.get(), "Cable Network Analysis Tool");
@@ -4180,6 +4715,9 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.QUARTZ_PLUTONIUM.get(), "Plutonic Quartz");
         add(ModItems.RADAR_LINKER.get(), "Radar Linker");
         add(ModItems.RAG.get(), "Cloth");
+        // Ориг. item.rag.desc (en_US.lang, ItemRag.addInformation).
+        add("tooltip.hbm_m.rag.desc1", "Drop into water to make damp cloth.");
+        add("tooltip.hbm_m.rag.desc2", "Right-click to urinate on the cloth.");
         add(ModItems.RAG_DAMP.get(), "Damp Cloth");
         add(ModItems.RAG_PISS.get(), "Piss-Soaked Rag");
         add(ModItems.RBMK_FUEL_BALEFIRE.get(), "Balefire RBMK Fuel Rod");
@@ -4290,9 +4828,9 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.SCHRABIDIUM_PLATE.get(), "Schrabidium Chestplate");
         add(ModItems.SCHRABIDIUM_SHOVEL.get(), "Schrabidium Shovel");
         add(ModItems.SCHRABIDIUM_SWORD.get(), "Schrabidium Sword");
-        add(ModItems.SCRAP_NUCLEAR.get(), "Radioactive Scraps");
-        add(ModItems.SCRAP_OIL.get(), "Oily Scraps");
-        add(ModItems.SCRAP_PLASTIC.get(), "Plastic Scraps");
+        add(ModMaterialItems.item(ModMaterials.SCRAP_NUCLEAR, MaterialShape.SCRAP), "Radioactive Scraps");
+        add(ModMaterialItems.item(ModMaterials.SCRAP_OIL, MaterialShape.SCRAP), "Oily Scraps");
+        add(ModMaterialItems.item(ModMaterials.SCRAP_PLASTIC, MaterialShape.SCRAP), "Plastic Scraps");
         add(ModItems.SCRAPS.get(), "%s Scraps");
         add(ModItems.SCREWDRIVER_DESH.get(), "Desh Screwdriver");
         add(ModItems.SCRUMPY.get(), "Bottle of Scrumpy");
@@ -4392,7 +4930,9 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.VOLCANIC_PICKAXE.get(), "Molten Pickaxe");
         add(ModItems.WAND_D.get(), "Debug Wand");
         add(ModItems.WAND_S.get(), "Structure Wand");
-        add(ModItems.WARHEAD_INCENDIARY_LARGE.get(), "Large Incendiary Warhead");
+        // Warheads (имена 1:1 из item.warhead_* оригинала) — вынесено в отдельный метод
+        // (addTranslations упирается в лимит 64КБ байткода).
+        addWarheadTranslations();
         add(ModItems.WASTE_MOX.get(), "Depleted MOX Fuel");
         add(ModItems.WASTE_PLATE_MOX.get(), "Depleted MOX Plate Fuel");
         add(ModItems.WASTE_PLATE_PU238BE.get(), "Depleted Pu238Be Plate Fuel");
@@ -4403,6 +4943,27 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.WASTE_THORIUM.get(), "Depleted Thorium Fuel");
         add(ModItems.WASTE_URANIUM.get(), "Depleted Uranium Fuel");
         add(ModItems.WASTE_ZFB_MOX.get(), "Depleted ZFB MOX Fuel");
+        // Заглушки хвоста вкладки Parts (id 4502+)
+        add(ModItems.BOLT.get(), "Bolt");
+        add(ModItems.CASING.get(), "Casing");
+        add(ModItems.CHEMICAL_DYE.get(), "Chemical Dye");
+        add(ModItems.CIRCUIT.get(), "Circuit");
+        add(ModItems.CRAYON.get(), "Crayon");
+        add(ModItems.ITEM_EXPENSIVE.get(), "Expensive Item");
+        add("tooltip.hbm_m.item_expensive.desc", "Expensive mode item");
+        add(ModItems.PART_GENERIC.get(), "Generic Part");
+        add(ModItems.PELLET_BUCKSHOT.get(), "Lead Pellets");
+        add(ModItems.PELLET_CHARGED.get(), "Ionized Particles");
+        add(ModItems.PIPE.get(), "Pipe");
+        add(ModItems.PLANT_ITEM.get(), "Plant");
+        add(ModItems.PLATE_WELDED.get(), "Welded Plate");
+        add(ModItems.SHELL.get(), "Shell");
+        add(ModItems.UPGRADE_MUFFLER.get(), "Muffler");
+        add(ModItems.UPGRADE_TEMPLATE.get(), "Machine Upgrade Template");
+        add(ModItems.WASTE_NATURAL_URANIUM.get(), "Depleted Natural Uranium Fuel");
+        add(ModItems.WASTE_U233.get(), "Depleted Uranium-233 Fuel");
+        add(ModItems.WASTE_U235.get(), "Depleted Uranium-235 Fuel");
+        add(ModItems.WIRE_DENSE.get(), "Dense Wire");
         add(ModItems.CASSETTE_AMS_SIREN.get(), "Cassette: AMS Siren");
         add(ModItems.CASSETTE_BEEP_SIREN.get(), "Cassette: Beep Siren");
         add(ModItems.CASSETTE_CLASSIC_SIREN.get(), "Cassette: Classic Siren");
@@ -4422,7 +4983,15 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.WRENCH_FLIPPED.get(), "Blade on a Wrench");
         add(ModItems.XANAX.get(), "NAXA Anti-Digamma Medication");
         add(ModItems.ZIRCONIUM_LEGS.get(), "Zirconium Pants");
+
+        // Мета-предметы вкладки Parts (PartTabMetaItems): имена из en_US.lang оригинала.
+        for (com.hbm_m.item.PartTabMetaItems.Entry e : com.hbm_m.item.PartTabMetaItems.entries()) {
+            dev.architectury.registry.registries.RegistrySupplier<Item> sup = com.hbm_m.item.PartTabMetaItems.get(e.id);
+            if (sup != null && sup.isPresent()) {
+                add(sup.get(), e.en);
+            }
+        }
+        add("tooltip.hbm_m.waste_cooling.desc", "Cool in a Spent Fuel Pool Drum");
     }
 }
 //?}
-

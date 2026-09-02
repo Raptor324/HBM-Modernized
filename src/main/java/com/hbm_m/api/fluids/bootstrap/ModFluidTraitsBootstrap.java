@@ -268,7 +268,6 @@ public final class ModFluidTraitsBootstrap {
         t(ModFluids.TOXIN_BASE, null, new FT_VentRadiation(0.5F), NOCON, LQ, VIS);
         t(ModFluids.DEATH, 300, new FT_Corrosive(80), new FT_Poison(true, 4), LEADCON, LQ, VIS);
         t(ModFluids.STELLAR_FLUX, null, ANTI, GAS);
-        t(ModFluids.BROMIDE, null, LQ);
 
         t(ModFluids.HELIUM3, null, GAS);
         t(ModFluids.HELIUM4, null, GAS);

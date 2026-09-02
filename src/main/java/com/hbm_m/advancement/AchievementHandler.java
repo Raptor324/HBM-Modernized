@@ -2,6 +2,9 @@ package com.hbm_m.advancement;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.world.entity.player.Player;
@@ -47,26 +50,26 @@ public class AchievementHandler {
         block(ModBlocks.CHEMICAL_PLANT,        ModAdvancements.CHEMPLANT);
         block(ModBlocks.CONCRETE,              ModAdvancements.CONCRETE);
         block(ModBlocks.CONCRETE_ASBESTOS,     ModAdvancements.CONCRETE);
-        item(ModItems.PLATE_POLYMER,           ModAdvancements.POLYMER);
-        item(ModItems.NUGGET_DESH,             ModAdvancements.DESH);
+        item(ModMaterialItems.get(ModMaterials.POLYMER, MaterialShape.PLATE), ModAdvancements.POLYMER);
+        item(ModMaterialItems.get(ModMaterials.DESH, MaterialShape.NUGGET),  ModAdvancements.DESH);
         item(ModItems.GEM_TANTALIUM,           ModAdvancements.TANTALUM);
         block(ModBlocks.MACHINE_GASCENT,       ModAdvancements.GAS_CENT);
         block(ModBlocks.MACHINE_CENTRIFUGE,    ModAdvancements.CENTRIFUGE);
-        item(ModItems.NUGGET_SCHRABIDIUM,      ModAdvancements.SCHRAB);
+        item(ModMaterialItems.get(ModMaterials.SCHRABIDIUM, MaterialShape.NUGGET), ModAdvancements.SCHRAB);
         block(ModBlocks.MACHINE_CRYSTALLIZER,  ModAdvancements.ACIDIZER);
         block(ModBlocks.SILEX,                 ModAdvancements.SILEX);
-        item(ModItems.NUGGET_TECHNETIUM,       ModAdvancements.TECHNETIUM);
+        item(ModMaterialItems.get(ModMaterials.TECHNETIUM, MaterialShape.NUGGET),     ModAdvancements.TECHNETIUM);
         block(ModBlocks.STRUCT_WATZ_CORE,      ModAdvancements.WATZ);
-        item(ModItems.NUGGET_BISMUTH,          ModAdvancements.BISMUTH);
-        item(ModItems.NUGGET_AM241,            ModAdvancements.BREEDING);
-        item(ModItems.NUGGET_AM242,            ModAdvancements.BREEDING);
+        item(ModMaterialItems.get(ModMaterials.BISMUTH, MaterialShape.NUGGET), ModAdvancements.BISMUTH);
+        item(ModMaterialItems.get(ModMaterials.AM241, MaterialShape.NUGGET),   ModAdvancements.BREEDING);
+        item(ModMaterialItems.get(ModMaterials.AM242, MaterialShape.NUGGET),   ModAdvancements.BREEDING);
         item(ModItems.MISSILE_NUCLEAR,         ModAdvancements.RED_BALLOONS);
         item(ModItems.MISSILE_NUCLEAR_CLUSTER, ModAdvancements.RED_BALLOONS);
         item(ModItems.MISSILE_DOOMSDAY,        ModAdvancements.RED_BALLOONS);
         block(ModBlocks.STRUCT_TORUS_CORE,     ModAdvancements.FUSION);
         block(ModBlocks.MACHINE_BLAST_FURNACE,  ModAdvancements.BLAST_FURNACE);
         item(ModItems.MACHINE_ASSEMBLER,       ModAdvancements.ASSEMBLY);
-        item(ModItems.BILLET_PU_MIX,           ModAdvancements.CHICAGO_PILE);
+        item(ModMaterialItems.get(ModMaterials.PU_MIX, MaterialShape.BILLET),  ModAdvancements.CHICAGO_PILE);
         item(ModItems.PARTICLE_DIGAMMA,        ModAdvancements.OMEGA12);
     }
 

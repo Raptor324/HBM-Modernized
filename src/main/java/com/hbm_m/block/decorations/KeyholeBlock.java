@@ -101,11 +101,7 @@ public class KeyholeBlock extends Block {
             // Порт достижения redRoom ("The Other Side") из 1.7.10
             if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
                 net.minecraft.resources.ResourceLocation advId =
-                        //? if < 1.21.1 {
-                        new net.minecraft.resources.ResourceLocation(RefStrings.MODID, "red_room");
-                        //?} else {
-                        /*net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "red_room");
-                        *///?}
+                        net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "red_room");
                 PlatformHooks.awardAdvancementIfEligible(serverPlayer, advId, true);
             }
             level.playSound(null, pos, SoundEvents.ZOMBIE_ATTACK_WOODEN_DOOR, SoundSource.BLOCKS, 0.7F, 1.4F);

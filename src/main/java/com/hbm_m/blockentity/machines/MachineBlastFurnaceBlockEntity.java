@@ -9,7 +9,9 @@ import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineBlastFurnaceMenu;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModPowders;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.recipe.BlastFurnaceRecipe;
@@ -428,7 +430,7 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
             return 1_200;
         }
         // Угольная пыль (оригинал: powder_coal 1600)
-        if (item == ModItems.getPowders(ModPowders.COAL).get()) {
+        if (item == ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER)) {
             return 1_600;
         }
         return 0;

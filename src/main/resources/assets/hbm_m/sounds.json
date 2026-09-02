@@ -871,7 +871,7 @@
     "subtitle": "sounds.hbm_m.subtitle.steam_engine_operate",
     "sounds": [
       {
-        "name": "hbm_m:block/steamEngineOperate",
+        "name": "hbm_m:block/steamengineoperate",
         "stream": false
       }
     ]
@@ -881,7 +881,7 @@
     "subtitle": "sounds.hbm_m.subtitle.d_flash",
     "sounds": [
       {
-        "name": "hbm_m:weapon/dFlash",
+        "name": "hbm_m:weapon/dflash",
         "stream": false
       }
     ]

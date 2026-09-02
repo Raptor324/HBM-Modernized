@@ -4,7 +4,9 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.creativetabs.MissileTab;
 import com.hbm_m.creativetabs.NukeTab;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.lib.RefStrings;
 
 import dev.architectury.registry.registries.DeferredRegister;
@@ -46,15 +48,15 @@ public class ModCreativeTabs {
     // Оригинал: PartsTab (иконка — ingot_uranium)
     public static final RegistrySupplier<CreativeModeTab> NTM_PARTS_TAB = CREATIVE_MODE_TABS.register("ntm_parts_tab",
             () -> tabBuilder()
-                    .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_parts_tab"))
-                    .icon(() -> new ItemStack(ModItems.getIngot(ModIngots.URANIUM).get()))
+                    .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_resources_tab"))
+                    .icon(() -> new ItemStack(ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.INGOT)))
                     .displayItems((params, output) -> CreativeModeTabEventHandler.populatePartsTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
                     .build());
 
     // Оригинал: ControlTab (иконка — pellet_rtg)
     public static final RegistrySupplier<CreativeModeTab> NTM_CONTROL_TAB = CREATIVE_MODE_TABS.register("ntm_control_tab",
             () -> tabBuilderAfter("ntm_parts_tab")
-                    .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_control_tab"))
+                    .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_fuel_tab"))
                     .icon(() -> new ItemStack(ModItems.PELLET_RTG.get()))
                     .displayItems((params, output) -> CreativeModeTabEventHandler.populateControlTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
                     .build());
@@ -62,7 +64,7 @@ public class ModCreativeTabs {
     // Оригинал: TemplateTab (иконка — blueprints)
     public static final RegistrySupplier<CreativeModeTab> NTM_TEMPLATE_TAB = CREATIVE_MODE_TABS.register("ntm_template_tab",
             () -> tabBuilderAfter("ntm_control_tab")
-                    .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_template_tab"))
+                    .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_templates_tab"))
                     .icon(() -> new ItemStack(ModItems.ASSEMBLY_TEMPLATE.get()))
                     .displayItems((params, output) -> CreativeModeTabEventHandler.populateTemplatesTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
                     .build());
@@ -70,7 +72,7 @@ public class ModCreativeTabs {
     // Оригинал: BlockTab (иконка — ore_uranium)
     public static final RegistrySupplier<CreativeModeTab> NTM_BLOCKS_TAB = CREATIVE_MODE_TABS.register("ntm_blocks_tab",
             () -> tabBuilderAfter("ntm_template_tab")
-                    .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_blocks_tab"))
+                    .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_ores_tab"))
                     .icon(() -> new ItemStack(ModBlocks.URANIUM_ORE.get()))
                     .displayItems((params, output) -> CreativeModeTabEventHandler.populateBlocksTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
                     .build());
@@ -78,7 +80,7 @@ public class ModCreativeTabs {
     // Оригинал: MachineTab (иконка — pwr_controller)
     public static final RegistrySupplier<CreativeModeTab> NTM_MACHINE_TAB = CREATIVE_MODE_TABS.register("ntm_machine_tab",
             () -> tabBuilderAfter("ntm_blocks_tab")
-                    .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_machine_tab"))
+                    .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_machines_tab"))
                     .icon(() -> new ItemStack(ModBlocks.PWR_CONTROLLER.get()))
                     .displayItems((params, output) -> CreativeModeTabEventHandler.populateMachinesTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
                     .build());
@@ -87,7 +89,7 @@ public class ModCreativeTabs {
     public static final RegistrySupplier<CreativeModeTab> NTM_NUKE_TAB = CREATIVE_MODE_TABS.register("ntm_nuke_tab",
             () -> {
                 CreativeModeTab.Builder builder = tabBuilderAfter("ntm_machine_tab")
-                        .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_nuke_tab"))
+                        .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_bombs_tab"))
                         .icon(() -> new ItemStack(ModBlocks.NUKE_FAT_MAN.get()))
                         .displayItems((params, output) -> CreativeModeTabEventHandler.populateNukeTab(CreativeModeTabEventHandler.deduplicated(output::accept)));
                 NukeTab.applyBackgroundTexture(builder);
@@ -97,7 +99,7 @@ public class ModCreativeTabs {
     // Оригинал: MissileTab (иконка — missile_nuclear)
     public static final RegistrySupplier<CreativeModeTab> NTM_MISSILE_TAB = CREATIVE_MODE_TABS.register("ntm_missile_tab",
             () -> tabBuilderAfter("ntm_nuke_tab")
-                    .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_missile_tab"))
+                    .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_missiles_tab"))
                     .icon(() -> new ItemStack(ModItems.MISSILE_NUCLEAR.get()))
                     .displayItems((params, output) -> CreativeModeTabEventHandler.populateMissilesTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
                     .build());
@@ -105,7 +107,7 @@ public class ModCreativeTabs {
     // Оригинал: WeaponTab (иконка — gun_greasegun; у нас его пока нет, берём ближайшее оружие)
     public static final RegistrySupplier<CreativeModeTab> NTM_WEAPON_TAB = CREATIVE_MODE_TABS.register("ntm_weapon_tab",
             () -> tabBuilderAfter("ntm_missile_tab")
-                    .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_weapon_tab"))
+                    .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_weapons_tab"))
                     .icon(() -> new ItemStack(ModItems.GUN_B92.get()))
                     .displayItems((params, output) -> CreativeModeTabEventHandler.populateWeaponsTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
                     .build());
@@ -113,7 +115,7 @@ public class ModCreativeTabs {
     // Оригинал: ConsumableTab (иконка — bottle_nuka)
     public static final RegistrySupplier<CreativeModeTab> NTM_CONSUMABLE_TAB = CREATIVE_MODE_TABS.register("ntm_consumable_tab",
             () -> tabBuilderAfter("ntm_weapon_tab")
-                    .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_consumable_tab"))
+                    .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_consumables_tab"))
                     .icon(() -> new ItemStack(ModItems.BOTTLE_NUKA.get()))
                     .displayItems((params, output) -> CreativeModeTabEventHandler.populateConsumablesTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
                     .build());

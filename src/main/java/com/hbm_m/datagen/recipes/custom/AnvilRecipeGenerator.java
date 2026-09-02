@@ -5,7 +5,9 @@ import java.util.function.Consumer;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.machines.anvils.AnvilTier;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.recipe.AnvilRecipe;
 
 import net.minecraft.data.recipes.FinishedRecipe;
@@ -33,60 +35,60 @@ public final class AnvilRecipeGenerator {
         registerCombineRecipe(writer, "iron", "silicon",
                 stack(ModItems.CINNABAR.get(), 1),
                 stack(ModItems.BORAX.get(), 1),
-                stack(ModItems.BILLET_SILICON.get(), 3),
+                stack(ModMaterialItems.item(ModMaterials.SILICON, MaterialShape.BILLET), 3),
                 AnvilTier.IRON);
 
         registerCombineRecipe(writer, "iron", "anvil_steel",
                 stack(ModBlocks.ANVIL_IRON.get(), 1),
-                stack(ModItems.getIngot(ModIngots.STEEL).get(), 10),
+                stack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT), 10),
                 stack(ModBlocks.ANVIL_STEEL.get(), 1),
                 AnvilTier.IRON);
 
         registerCombineRecipe(writer, "iron", "anvil_desh",
                 stack(ModBlocks.ANVIL_IRON.get(), 1),
-                stack(ModItems.getIngot(ModIngots.DESH).get(), 10),
+                stack(ModMaterialItems.item(ModMaterials.DESH, MaterialShape.INGOT), 10),
                 stack(ModBlocks.ANVIL_DESH.get(), 1),
                 AnvilTier.IRON);
 
         registerCombineRecipe(writer, "iron", "anvil_ferrouranium",
                 stack(ModBlocks.ANVIL_IRON.get(), 1),
-                stack(ModItems.getIngot(ModIngots.FERROURANIUM).get(), 10),
+                stack(ModMaterialItems.item(ModMaterials.FERROURANIUM, MaterialShape.INGOT), 10),
                 stack(ModBlocks.ANVIL_FERROURANIUM.get(), 1),
                 AnvilTier.IRON);
 
         registerCombineRecipe(writer, "iron", "anvil_saturnite",
                 stack(ModBlocks.ANVIL_IRON.get(), 1),
-                stack(ModItems.getIngot(ModIngots.SATURNITE).get(), 10),
+                stack(ModMaterialItems.item(ModMaterials.SATURNITE, MaterialShape.INGOT), 10),
                 stack(ModBlocks.ANVIL_SATURNITE.get(), 1),
                 AnvilTier.IRON);
 
         registerCombineRecipe(writer, "iron", "anvil_bismuth_bronze",
                 stack(ModBlocks.ANVIL_IRON.get(), 1),
-                stack(ModItems.getIngot(ModIngots.BISMUTH_BRONZE).get(), 10),
+                stack(ModMaterialItems.item(ModMaterials.BISMUTH_BRONZE, MaterialShape.INGOT), 10),
                 stack(ModBlocks.ANVIL_BISMUTH_BRONZE.get(), 1),
                 AnvilTier.IRON);
 
         registerCombineRecipe(writer, "iron", "anvil_arsenic_bronze",
                 stack(ModBlocks.ANVIL_IRON.get(), 1),
-                stack(ModItems.getIngot(ModIngots.ARSENIC_BRONZE).get(), 10),
+                stack(ModMaterialItems.item(ModMaterials.ARSENIC_BRONZE, MaterialShape.INGOT), 10),
                 stack(ModBlocks.ANVIL_ARSENIC_BRONZE.get(), 1),
                 AnvilTier.IRON);
 
         registerCombineRecipe(writer, "iron", "anvil_schrabidate",
                 stack(ModBlocks.ANVIL_IRON.get(), 1),
-                stack(ModItems.getIngot(ModIngots.SCHRABIDATE).get(), 10),
+                stack(ModMaterialItems.item(ModMaterials.SCHRABIDATE, MaterialShape.INGOT), 10),
                 stack(ModBlocks.ANVIL_SCHRABIDATE.get(), 1),
                 AnvilTier.IRON);
 
         registerCombineRecipe(writer, "iron", "anvil_dineutronium",
                 stack(ModBlocks.ANVIL_IRON.get(), 1),
-                stack(ModItems.getIngot(ModIngots.DINEUTRONIUM).get(), 10),
+                stack(ModMaterialItems.item(ModMaterials.DINEUTRONIUM, MaterialShape.INGOT), 10),
                 stack(ModBlocks.ANVIL_DNT.get(), 1),
                 AnvilTier.IRON);
 
         registerCombineRecipe(writer, "iron", "anvil_osmiridium",
                 stack(ModBlocks.ANVIL_IRON.get(), 1),
-                stack(ModItems.getIngot(ModIngots.OSMIRIDIUM).get(), 10),
+                stack(ModMaterialItems.item(ModMaterials.OSMIRIDIUM, MaterialShape.INGOT), 10),
                 stack(ModBlocks.ANVIL_OSMIRIDIUM.get(), 1),
                 AnvilTier.IRON);
 
@@ -119,19 +121,19 @@ public final class AnvilRecipeGenerator {
         registerInventoryRecipe(writer, "steel", "5silicon",
                 AnvilTier.STEEL,
                 stack(ModItems.SILICON_CIRCUIT),
-                stack(ModItems.BILLET_SILICON, 1 ));
+                stack(ModMaterialItems.item(ModMaterials.SILICON, MaterialShape.BILLET), 1 ));
 
         registerInventoryRecipe(writer, "steel", "6motor",
                 AnvilTier.STEEL,
                 stack(ModItems.MOTOR),
                 stack(ModItems.COIL_COPPER, 1 ),
-                stack(ModItems.PLATE_IRON, 2 ),
+                stack(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE), 2 ),
                 stack(ModItems.COIL_COPPER_TORUS, 1 ));
 
         registerInventoryRecipe(writer, "iron", "7blast_furnace",
                 AnvilTier.IRON,
                 stack(ModBlocks.MACHINE_BLAST_FURNACE),
-                stack(ModItems.PLATE_COPPER, 4),
+                stack(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE), 4),
                 stack(Items.STONE_BRICKS, 4 ),
                 stack(ModItems.FIREBRICK, 4 ));
 
@@ -139,7 +141,7 @@ public final class AnvilRecipeGenerator {
                 AnvilTier.STEEL,
                 stack(ModBlocks.HEATING_OVEN),
                 stack(Items.BRICK, 16),
-                stack(ModItems.PLATE_STEEL, 4),
+                stack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 4),
                 stack(Items.COPPER_INGOT, 8));
 
         registerInventoryRecipe(writer, "steel", "7crucible",
@@ -147,24 +149,24 @@ public final class AnvilRecipeGenerator {
                 stack(ModBlocks.CRUCIBLE),
                 stack(ModItems.FIREBRICK, 20),
                 stack(Items.COPPER_INGOT, 8),
-                stack(ModItems.PLATE_STEEL, 8));
+                stack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 8));
 
         registerInventoryRecipe(writer, "steel", "8advanced_assemble_machine",
                 AnvilTier.STEEL,
                 stack(ModBlocks.ADVANCED_ASSEMBLY_MACHINE),
-                stack(ModItems.PLATE_COPPER, 4),
-                stack(ModItems.getIngot(ModIngots.STEEL).get(), 8),
+                stack(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE), 4),
+                stack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT), 8),
                 stack(ModItems.MOTOR, 2 ),
                 stack(ModItems.VACUUM_TUBE, 4 ));
 
         registerInventoryRecipe(writer, "steel", "9arc_welder",
                 AnvilTier.STEEL,
                 stack(ModBlocks.ARC_WELDER),
-                stack(ModItems.PLATE_CAST_STEEL, 4),
-                stack(ModItems.getIngot(ModIngots.TUNGSTEN).get(), 8),
+                stack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 4),
+                stack(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.INGOT), 8),
                 stack(ModItems.BOLT_STEEL, 16),
-                stack(ModBlocks.getIngotBlock(ModIngots.STEEL).get(), 2),
-                stack(ModItems.WIRE_COPPER, 32));
+                stack(ModBlocks.getIngotBlock(ModMaterials.STEEL).get(), 2),
+                stack(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.WIRE), 32));
 
     }
 
@@ -173,8 +175,8 @@ public final class AnvilRecipeGenerator {
         registerDisassemblyRecipe(writer, "steel", "crt_breakdown1",
                 AnvilTier.STEEL,
                 stack(ModBlocks.CRT_BROKEN),
-                stack(ModItems.PLATE_STEEL, 4),
-                builder -> builder.addOutput(stack(ModItems.PLATE_LEAD), 1.0F)
+                stack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 4),
+                builder -> builder.addOutput(stack(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE)), 1.0F)
                         .addOutput(stack(ModItems.CAPACITOR_BOARD), 0.4F)
                         .addOutput(stack(ModItems.PCB), 1F)
                         .addOutput(stack(ModItems.ANALOG_CIRCUIT), 0.4F)
@@ -184,8 +186,8 @@ public final class AnvilRecipeGenerator {
         registerDisassemblyRecipe(writer, "steel", "crt_breakdown2",
                 AnvilTier.STEEL,
                 stack(ModBlocks.CRT_BSOD),
-                stack(ModItems.PLATE_STEEL, 4),
-                builder -> builder.addOutput(stack(ModItems.PLATE_LEAD), 1.0F)
+                stack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 4),
+                builder -> builder.addOutput(stack(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE)), 1.0F)
                         .addOutput(stack(ModItems.CAPACITOR_BOARD), 0.4F)
                         .addOutput(stack(ModItems.PCB), 1F)
                         .addOutput(stack(ModItems.ANALOG_CIRCUIT), 0.4F)
@@ -195,8 +197,8 @@ public final class AnvilRecipeGenerator {
         registerDisassemblyRecipe(writer, "steel", "crt_breakdown3",
                 AnvilTier.STEEL,
                 stack(ModBlocks.CRT_CLEAN),
-                stack(ModItems.PLATE_STEEL, 4),
-                builder -> builder.addOutput(stack(ModItems.PLATE_LEAD), 1.0F)
+                stack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 4),
+                builder -> builder.addOutput(stack(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE)), 1.0F)
                         .addOutput(stack(ModItems.CAPACITOR_BOARD), 0.4F)
                         .addOutput(stack(ModItems.PCB), 1F)
                         .addOutput(stack(ModItems.ANALOG_CIRCUIT), 0.4F)
@@ -206,27 +208,27 @@ public final class AnvilRecipeGenerator {
         registerDisassemblyRecipe(writer, "steel", "tape_breakdown",
                 AnvilTier.STEEL,
                 stack(ModBlocks.TAPE_RECORDER),
-                stack(ModItems.PLATE_STEEL, 4),
-                builder -> builder.addOutput(stack(ModItems.PLATE_LEAD), 1.0F)
-                        .addOutput(stack(ModItems.WIRE_RED_COPPER), 0.5F)
+                stack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 4),
+                builder -> builder.addOutput(stack(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE)), 1.0F)
+                        .addOutput(stack(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE)), 0.5F)
                         .addOutput(stack(ModItems.VACUUM_TUBE), 0.5F)
                         .addOutput(stack(ModItems.MICROCHIP), 0.1F));
 
         registerDisassemblyRecipe(writer, "iron", "cabinet_breakdown",
                 AnvilTier.IRON,
                 stack(ModBlocks.FILE_CABINET),
-                stack(ModItems.PLATE_STEEL, 2),
+                stack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 2),
                 builder -> builder.addOutput(stack(ModItems.DUST), 1.0F)
-                        .addOutput(stack(ModItems.PLATE_STEEL), 0.5F)
-                        .addOutput(stack(ModItems.PLATE_STEEL), 0.5F)
+                        .addOutput(stack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)), 0.5F)
+                        .addOutput(stack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)), 0.5F)
                         .addOutput(stack(ModItems.INSULATOR), 0.25F)
                         .addOutput(stack(ModItems.INSULATOR), 0.25F)
-                        .addOutput(stack(ModItems.SCRAP), 1F));
+                        .addOutput(stack(ModMaterialItems.item(ModMaterials.SCRAP, MaterialShape.SCRAP)), 1F));
 
         registerDisassemblyRecipe(writer, "steel", "toaster_breakdown",
                 AnvilTier.STEEL,
                 stack(ModBlocks.TOASTER),
-                stack(ModItems.PLATE_STEEL, 2),
+                stack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 2),
                 builder -> builder
                         .addOutput(stack(ModItems.FAT_MAN_CORE), 0.001F));
 

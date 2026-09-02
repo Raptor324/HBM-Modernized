@@ -1,7 +1,9 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.world.item.ItemStack;
@@ -24,19 +26,19 @@ public final class SilexRecipeGenerator {
 
     public static void generate(Consumer<FinishedRecipe> writer) {
         // U -> 1x U235 / 11x U238
-        silex(writer, "uranium", ModIngots.URANIUM,
-                out(ModItems.NUGGET_U235.get(), 1), 1,
-                out(ModItems.NUGGET_U238.get(), 1), 11);
+        silex(writer, "uranium", ModMaterials.URANIUM,
+                ModMaterialItems.stack(ModMaterials.URANIUM235, MaterialShape.NUGGET, 1), 1,
+                ModMaterialItems.stack(ModMaterials.URANIUM238, MaterialShape.NUGGET, 1), 11);
 
         // Pu-Mix -> 6x Pu239 / 3x Pu240
-        silex(writer, "pu_mix", ModIngots.PU_MIX,
-                out(ModItems.NUGGET_PU239.get(), 1), 6,
-                out(ModItems.NUGGET_PU240.get(), 1), 3);
+        silex(writer, "pu_mix", ModMaterials.PU_MIX,
+                ModMaterialItems.stack(ModMaterials.PLUTONIUM239, MaterialShape.NUGGET, 1), 6,
+                ModMaterialItems.stack(ModMaterials.PLUTONIUM240, MaterialShape.NUGGET, 1), 3);
 
         // Am-Mix -> 3x Am241 / 6x Am242
-        silex(writer, "am_mix", ModIngots.AM_MIX,
-                out(ModItems.NUGGET_AM241.get(), 1), 3,
-                out(ModItems.NUGGET_AM242.get(), 1), 6);
+        silex(writer, "am_mix", ModMaterials.AM_MIX,
+                ModMaterialItems.stack(ModMaterials.AM241, MaterialShape.NUGGET, 1), 3,
+                ModMaterialItems.stack(ModMaterials.AM242, MaterialShape.NUGGET, 1), 6);
     }
 
     // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -45,10 +47,10 @@ public final class SilexRecipeGenerator {
         return new ItemStack(item, count);
     }
 
-    private static void silex(Consumer<FinishedRecipe> writer, String id, ModIngots input,
+    private static void silex(Consumer<FinishedRecipe> writer, String id, ModMaterials input,
                               ItemStack outA, int weightA, ItemStack outB, int weightB) {
         SilexRecipeBuilder.silexRecipe(
-                        Ingredient.of(ModItems.getIngot(input).get()),
+                        Ingredient.of(ModMaterialItems.item(input, MaterialShape.INGOT)),
                         100, 100,
                         new ItemStack[]{outA, outB},
                         new int[]{weightA, weightB})

@@ -45,7 +45,9 @@ import com.hbm_m.datagen.recipes.custom.SolidificationRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.SolderingRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.VacuumDistillRecipeGenerator;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.data.PackOutput;
@@ -105,21 +107,22 @@ public class ModRecipeProvider extends RecipeProvider {
         ElectrolyserMetalRecipeGenerator.generate(pWriter);
 
         // ==================== АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ РЕЦЕПТОВ ДЛЯ БЛОКОВ СЛИТКОВ ====================
-        for (ModIngots ingot : ModIngots.values()) {
+        for (ModMaterials mat : ModMaterials.values()) {
+            if (!mat.has(MaterialShape.INGOT)) continue;
 
             // !!! ВАЖНОЕ ИСПРАВЛЕНИЕ !!!
             // Сначала проверяем, есть ли вообще блок у этого слитка.
             // Если блока нет (например, у gunsteel или mud), мы пропускаем этот шаг, чтобы избежать краша.
-            if (!ModBlocks.hasIngotBlock(ingot)) {
+            if (!ModBlocks.hasIngotBlock(mat)) {
                 continue;
             }
 
             // Теперь безопасно получаем предмет и блок
-            var ingotItem = ModItems.getIngot(ingot);
-            var ingotBlock = ModBlocks.getIngotBlock(ingot);
+            var ingotItem = ModMaterialItems.get(mat, MaterialShape.INGOT);
+            var ingotBlock = ModBlocks.getIngotBlock(mat);
 
             if (ingotItem != null && ingotItem.isPresent() && ingotBlock != null && ingotBlock.isPresent()) {
-            String ingotName = ingot.getName();
+            String ingotName = mat.getId();
 
             // Рецепт: 9 слитков -> 1 блок (Shaped Recipe 3x3)
             ShapedRecipeBuilder.shaped(net.minecraft.data.recipes.RecipeCategory.MISC, ingotBlock.get())

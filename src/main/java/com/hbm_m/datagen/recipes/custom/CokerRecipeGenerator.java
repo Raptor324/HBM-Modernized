@@ -2,8 +2,9 @@ package com.hbm_m.datagen.recipes.custom;
 //? if forge {
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
-import com.hbm_m.item.tags_and_tiers.ModPowders;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.data.recipes.FinishedRecipe;
@@ -67,7 +68,7 @@ public final class CokerRecipeGenerator {
         // Watz -> грязевые слитки (без побочной жидкости).
         CokerRecipeBuilder.cokerRecipe(
                 fluid(ModFluids.WATZ, 4_000),
-                new ItemStack(ModItems.getIngot(ModIngots.MUD).get(), 4),
+                new ItemStack(ModMaterialItems.item(ModMaterials.MUD, MaterialShape.INGOT), 4),
                 null
         ).save(writer, "coker/watz");
 
@@ -102,14 +103,14 @@ public final class CokerRecipeGenerator {
         // Шлам -> известняковый порошок + коллоид.
         CokerRecipeBuilder.cokerRecipe(
                 fluid(ModFluids.SLOP, 1_000),
-                new ItemStack(ModItems.getPowders(ModPowders.LIMESTONE).get()),
+                new ItemStack(ModMaterialItems.item(ModMaterials.LIMESTONE, MaterialShape.POWDER)),
                 fluid(ModFluids.COLLOID, 250)
         ).save(writer, "coker/slop");
 
         // Купорос -> железный порошок + серная кислота.
         CokerRecipeBuilder.cokerRecipe(
                 fluid(ModFluids.VITRIOL, 4_000),
-                new ItemStack(ModItems.getPowders(ModPowders.IRON).get()),
+                new ItemStack(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.POWDER)),
                 fluid(ModFluids.SULFURIC_ACID, 500)
         ).save(writer, "coker/vitriol");
     }

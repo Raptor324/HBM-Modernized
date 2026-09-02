@@ -16,7 +16,9 @@ import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.BlastFurnaceMenu;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModPowders;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.recipe.BlastFurnaceRecipe;
 import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.platform.recipe.RecipeInputWrapper;
@@ -433,7 +435,7 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
             return 150;
         }
         // Coal powder (original: powder_coal 200)
-        if (item == ModItems.getPowders(ModPowders.COAL).get()) {
+        if (item == ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER)) {
             return 200;
         }
         return 0;

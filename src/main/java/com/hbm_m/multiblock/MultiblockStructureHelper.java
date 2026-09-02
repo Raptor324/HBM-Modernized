@@ -62,6 +62,52 @@ public class MultiblockStructureHelper {
         return IS_REPAIRING.get();
     }
 
+    /**
+     * Окно (в тиках) подавления взаимодействия со свежеустановленной структурой.
+     *
+     * <p>Ваниль повторяет пакет {@code UseItemOn} каждые 4 тика, пока зажата ПКМ. Из-за
+     * placement-offset структура занимает точку прицела сразу после установки, поэтому
+     * повторный пакет того же клика попадает уже в станок и открывает GUI «мгновенно
+     * после установки». Сюда пишется время установки каждого контроллера
+     * (см. {@link #placeStructure}); гард в {@code MultiblockClickGuardForge/NeoForge}
+     * глушит такие клики в течение окна.
+     */
+    private static final int PLACEMENT_CLICK_SUPPRESS_TICKS = 10;
+    private static final Map<net.minecraft.resources.ResourceKey<Level>, Map<BlockPos, Long>> RECENT_PLACEMENTS = new HashMap<>();
+
+    public static void markRecentlyPlaced(Level level, BlockPos controllerPos) {
+        if (level.isClientSide) return;
+        long now = level.getGameTime();
+        Map<BlockPos, Long> byDim = RECENT_PLACEMENTS.computeIfAbsent(level.dimension(), k -> new HashMap<>());
+        byDim.values().removeIf(t -> now - t > PLACEMENT_CLICK_SUPPRESS_TICKS);
+        byDim.put(controllerPos.immutable(), now);
+    }
+
+    /**
+     * Истинно, если клик по {@code clickedPos} (сам контроллер или любая его часть)
+     * приходится на структуру, установленную в пределах {@link #PLACEMENT_CLICK_SUPPRESS_TICKS}.
+     */
+    public static boolean isRecentlyPlacedInteraction(Level level, BlockPos clickedPos) {
+        if (RECENT_PLACEMENTS.isEmpty()) return false;
+        BlockPos controllerPos = clickedPos;
+        BlockEntity be = level.getBlockEntity(clickedPos);
+        if (be instanceof IMultiblockPart part) {
+            BlockPos stored = part.getControllerPos();
+            if (stored == null) return false;
+            controllerPos = stored;
+        }
+        if (!(level.getBlockState(controllerPos).getBlock() instanceof IMultiblockController)) return false;
+        Map<BlockPos, Long> byDim = RECENT_PLACEMENTS.get(level.dimension());
+        if (byDim == null) return false;
+        Long placedAt = byDim.get(controllerPos);
+        if (placedAt == null) return false;
+        if (level.getGameTime() - placedAt > PLACEMENT_CLICK_SUPPRESS_TICKS) {
+            byDim.remove(controllerPos);
+            return false;
+        }
+        return true;
+    }
+
     private final Map<BlockPos, Supplier<BlockState>> structureMap;
     private final Supplier<BlockState> phantomBlockState;
     // Карта символов на роли для рецептоподобного определения структуры
@@ -1311,6 +1357,20 @@ public class MultiblockStructureHelper {
     }
 
     /**
+     * Тихая проверка размещения без сообщений игроку и пакетов подсветки.
+     * Для клиентского предпросмотра рамки при установке (вызывается каждый кадр).
+     */
+    public boolean checkPlacementFromFacadeQuiet(Level level, BlockPos facadePos, Direction facing, Block controllerBlock) {
+        BlockPos controllerPos = MultiblockPlacement.getCorePos(facadePos, facing, this, controllerBlock);
+        for (BlockPos relativePos : structureMap.keySet()) {
+            BlockPos worldPos = getRotatedPos(controllerPos, relativePos, facing);
+            if (worldPos.equals(controllerPos)) continue;
+            if (!isBlockReplaceable(level.getBlockState(worldPos))) return false;
+        }
+        return true;
+    }
+
+    /**
      * @return A Set of all local offsets for the multiblock parts, relative to the controller.
      */
     public Set<BlockPos> getPartOffsets() {
@@ -1334,6 +1394,8 @@ public class MultiblockStructureHelper {
 
         List<BlockPos> energyConnectorPositions = new ArrayList<>();
         List<BlockPos> allPlacedPositions = new ArrayList<>();
+
+        markRecentlyPlaced(level, controllerPos);
 
         for (Map.Entry<BlockPos, Supplier<BlockState>> entry : structureMap.entrySet()) {
             BlockPos gridPos = entry.getKey();

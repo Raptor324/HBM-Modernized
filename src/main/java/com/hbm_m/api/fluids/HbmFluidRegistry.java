@@ -70,7 +70,7 @@ public final class HbmFluidRegistry {
             ModFluids.EGG, ModFluids.CHOLESTEROL, ModFluids.ESTRADIOL, ModFluids.PHEROMONE,
             ModFluids.PHEROMONE_M, ModFluids.SEEDSLURRY,
             ModFluids.ENDERJUICE, ModFluids.XPJUICE, ModFluids.MUG, ModFluids.MUG_HOT,
-            ModFluids.DEATH, ModFluids.PAIN, ModFluids.STELLAR_FLUX, ModFluids.BROMIDE
+            ModFluids.DEATH, ModFluids.PAIN, ModFluids.STELLAR_FLUX
         );
     }
 
