@@ -2,43 +2,43 @@
   "alarm.amssiren": {
     "category": "blocks",
     "sounds": [
-      "hbm_m:alarm/amsSiren"
+      "hbm_m:alarm/amssiren"
     ]
   },
   "alarm.beepsiren": {
     "category": "blocks",
     "sounds": [
-      "hbm_m:alarm/beepSiren"
+      "hbm_m:alarm/beepsiren"
     ]
   },
   "alarm.classicsiren": {
     "category": "blocks",
     "sounds": [
-      "hbm_m:alarm/classicSiren"
+      "hbm_m:alarm/classicsiren"
     ]
   },
   "alarm.nostromosiren": {
     "category": "blocks",
     "sounds": [
-      "hbm_m:alarm/nostromoSiren"
+      "hbm_m:alarm/nostromosiren"
     ]
   },
   "alarm.regularsiren": {
     "category": "blocks",
     "sounds": [
-      "hbm_m:alarm/regularSiren"
+      "hbm_m:alarm/regularsiren"
     ]
   },
   "alarm.stridersiren": {
     "category": "blocks",
     "sounds": [
-      "hbm_m:alarm/striderSiren"
+      "hbm_m:alarm/stridersiren"
     ]
   },
   "alarm.sweepsiren": {
     "category": "blocks",
     "sounds": [
-      "hbm_m:alarm/sweepSiren"
+      "hbm_m:alarm/sweepsiren"
     ]
   },
   "soyuz.alarm": {
